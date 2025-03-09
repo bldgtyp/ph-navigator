@@ -1,4 +1,11 @@
+alembic
+bcrypt
 fastapi
-uvicorn
-python-dotenv
+passlib
+psycopg2-binary
 pyairtable
+pyjwt
+python-dotenv
+python-multipart
+sqlalchemy
+uvicorn
