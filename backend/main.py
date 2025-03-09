@@ -64,9 +64,12 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-    )
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+        )
+    except ValueError as e:
+        return False
 
 
 def get_password_hash(password: str) -> bytes:
@@ -82,6 +85,7 @@ async def authenticate_user(db: Session, username: str, password: str) -> models
     if not user:
         return False
     if not verify_password(password, str(user.hashed_password)):
+        print(f"User {user.username} | Password '{password}' is not correct.")
         return False
     return user
 
@@ -151,7 +155,7 @@ async def login_for_access_token(
 async def read_users_me(
     current_user: Annotated[schemas.User, Depends(get_current_active_user)],
 ) -> schemas.User:
-    return current_user
+    return schemas.User.model_validate(current_user)
 
 
 @app.get("/users/me/items/")

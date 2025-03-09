@@ -29,7 +29,7 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    return os.getenv("DATABASE_URL", "sqlite:///./backend/test.db")
+    return os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
 
 config.set_main_option("sqlalchemy.url", get_url())
