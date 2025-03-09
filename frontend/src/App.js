@@ -5,7 +5,8 @@ function App() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/data")
+    // axios.get("http://localhost:8000/data")
+    axios.get("https://ph-dash-0cye.onrender.com/data")
       .then(response => setData(response.data || []))
       .catch(error => console.error("Error fetching data:", error));
   }, []);
