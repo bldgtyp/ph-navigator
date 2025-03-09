@@ -23,6 +23,8 @@ origins = [
     "localhost:3000",
     "https://ph-tools.github.io",
     "https://bldgtyp.github.io",
+    "https://ph-dash-frontend.onrender.com",
+    "https://ph-dash-0cye.onrender.com",
 ]
 
 
