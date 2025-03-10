@@ -13,7 +13,6 @@ class User(BaseModel):
     email: str | None = None
     # projects: list["Project"] = [] # Causes a circular reference error
     class Config:
-        orm_mode = True
         from_attributes = True
 
 class Token(BaseModel):
@@ -41,7 +40,6 @@ class AirTableTable(AirTableTableBase):
     parent_base_id: int
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # ---------------------------------------------------------------------------------------
@@ -60,7 +58,6 @@ class AirTableBase(AirTableBaseBase):
     tables: list[AirTableTable] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 
@@ -83,7 +80,6 @@ class Project(ProjectBase):
     users: list[User] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # Update forward references
