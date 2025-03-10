@@ -11,7 +11,7 @@ class User(BaseModel):
     id: int
     username: str
     email: str | None = None
-    projects: list["Project"] = []
+    # projects: list["Project"] = [] # Causes a circular reference error
     class Config:
         orm_mode = True
         from_attributes = True
