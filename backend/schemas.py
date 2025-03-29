@@ -1,5 +1,11 @@
+from __future__ import annotations  # Enables forward references
+
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel
 
+if TYPE_CHECKING:
+    from schemas import Project  # Import Project only for type checking
 
 
 class UserCreate(BaseModel):
@@ -11,9 +17,15 @@ class User(BaseModel):
     id: int
     username: str
     email: str | None = None
-    # projects: list["Project"] = [] # Causes a circular reference error
+    owned_project_ids: list[int] = []
+    all_project_ids: list[int] = []
+
     class Config:
         from_attributes = True
+
+
+# ---------------------------------------------------------------------------------------
+
 
 class Token(BaseModel):
     access_token: str
@@ -25,6 +37,7 @@ class TokenData(BaseModel):
 
 
 # ---------------------------------------------------------------------------------------
+
 
 class AirTableTableBase(BaseModel):
     name: str
@@ -42,7 +55,9 @@ class AirTableTable(AirTableTableBase):
     class Config:
         from_attributes = True
 
+
 # ---------------------------------------------------------------------------------------
+
 
 class AirTableBaseBase(BaseModel):
     name: str
@@ -63,6 +78,7 @@ class AirTableBase(AirTableBaseBase):
 
 # ---------------------------------------------------------------------------------------
 
+
 class ProjectBase(BaseModel):
     name: str
     bt_number: str
@@ -75,12 +91,14 @@ class ProjectCreate(ProjectBase):
 
 class Project(ProjectBase):
     id: int
-    airtable_base: AirTableBase
-    owner: User
-    users: list[User] = []
+    owner_id: int
+    user_ids: list[int] = []
+    airtable_base_ref: str
+    airtable_base_url: str
 
     class Config:
         from_attributes = True
+
 
 # Update forward references
 User.model_rebuild()

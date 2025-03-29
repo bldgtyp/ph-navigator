@@ -1,51 +1,55 @@
-import { createContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useState, useEffect, useCallback, ReactNode } from "react";
 import constants from "../data/constants.json";
+import { User, UserContextType } from "../types/database/User";
 
-export interface User {
-  email: string;
-  id: number;
-  username: string;
-}
+const defaultUserContext: UserContextType = {
+  user: null,
+  login: () => { },
+  logout: () => { },
+};
 
-export interface UserContextType {
-  user: User | null;
-  login: (token: string) => void;
-  logout: () => void;
-}
-
-export const UserContext = createContext<UserContextType | null>(null);
+export const UserContext = createContext<UserContextType>(defaultUserContext);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  const fetchUserInfo = useCallback(async (token: string) => {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
+    try {
+      console.log("UserContext | useEffect | Fetching user info with Access Token:", token.substring(0, 10) + "...");
+      const response = await fetch(`${API_BASE_URL}user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("UserContext | useEffect | Fetched user data:", data);
+        setUser(data);
+      } else {
+        console.error("UserContext | useEffect | Failed to fetch user info:", response.statusText);
+        logout(); // Clear token if fetching user info fails
+      }
+    } catch (error) {
+      console.error("UserContext | useEffect | Error fetching user:", error);
+      logout(); // Clear token if an error occurs
+    }
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // Fetch user info from backend
-      fetchUserInfo(token);
+      fetchUserInfo(token); // Fetch user info from backend
     }
-  }, []);
-
-  const fetchUserInfo = async (token: string) => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setUser(data);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    }
-  };
+  }, [fetchUserInfo]);
 
   const login = (access_token: string) => {
+    console.log("UserContext | login | setting Access Token:", access_token.substring(0, 10) + "...");
     localStorage.setItem("token", access_token);
     fetchUserInfo(access_token);
   };
 
   const logout = () => {
+    console.log("UserContext | logout | Removing Access Token.");
     localStorage.removeItem("token");
     setUser(null);
   };
