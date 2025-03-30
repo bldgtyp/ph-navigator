@@ -1,7 +1,7 @@
 import constants from "../data/constants.json";
 
 
-async function fetchUserData<T>(
+async function fetchPhView<T>(
     endpoint: string,
     token: string | null = null,
     params: Record<string, string | number> = {}
@@ -12,11 +12,7 @@ async function fetchUserData<T>(
         token = localStorage.getItem("token");
     }
 
-    if (!token) {
-        return { data: null, error: "No Access Token." };
-    }
-
-    console.log(`fetchModelServer: endpoint=/${endpoint}, token=${token.substring(0, 5)}..., params=${JSON.stringify(params)}`);
+    console.log(`fetchModelServer: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., params=${JSON.stringify(params)}`);
     const API_BASE_URL: string = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
     const API_ENDPOINT: string = `${API_BASE_URL}${endpoint}`
 
@@ -43,7 +39,7 @@ async function fetchUserData<T>(
 }
 
 export async function fetchWithModal<T>(endpoint: string, token: string | null = null, params: Record<string, string | number> = {}): Promise<T | null> {
-    const { data, error } = await fetchUserData<T>(endpoint, token, params);
+    const { data, error } = await fetchPhView<T>(endpoint, token, params);
     if (error) {
         const message = `Error getting data: ${error}`;
         alert(message);

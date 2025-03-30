@@ -1,30 +1,20 @@
 import { useContext, useEffect, useState } from "react";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { UserContext } from "../contexts/UserContext";
 import { fetchWithModal } from "../hooks/fetchUserData";
-import { Project } from "../types/database/Project";
-import ProjectCard from "../components/ProjectCard";
+import { ProjectType, defaultProjectType } from "../types/database/Project";
+import ProjectCard from "../components/common/ProjectCard";
 
-const defaultProjectCardData = {
-    name: "",
-    id: "",
-    bt_number: "",
-    phius_number: "",
-    airtable_base: "",
-    owner_id: "",
-    user_ids: "",
-    airtable_base_ref: "",
-    airtable_base_url: "",
-}
-
-function Projects() {
+export default function Projects() {
     const userContext = useContext(UserContext);
     const [isLoading, setIsLoading] = useState(true);
-    const [projectCardData, setProjectCardData] = useState<Project[]>([defaultProjectCardData]);
+    const [projectCardData, setProjectCardData] = useState<ProjectType[]>([defaultProjectType]);
 
     useEffect(() => {
         async function loadProjectCardData() {
             try {
-                const projectCardData = await fetchWithModal<Project[]>("get_project_card_data")
+                const projectCardData = await fetchWithModal<ProjectType[]>("get_project_card_data")
                 setProjectCardData(projectCardData || [])
             } catch (error) {
                 alert("Error loading project data. Please try again later.");
@@ -39,29 +29,15 @@ function Projects() {
     }, [userContext]);
 
     return (
-        <div>
-            <div>User:</div>
-            {userContext && userContext.user ? (
-                <div>
-                    <div>ID: {userContext.user.id}</div>
-                    <div>Username: {userContext.user.username}</div>
-                    <div>Email: {userContext.user.email}</div>
-                </div>
-            ) : (
-                <div>Loading user data...</div>
-            )}
-
-            <div>Projects:</div>
+        <Stack spacing={2} sx={{ m: 3 }}>
             {!isLoading && (
-                <>
-                    {projectCardData.map((d) => {
-                        return <ProjectCard {...d} key={d.id} />;
+                <Grid container spacing={3}>
+                    {projectCardData.map((p) => {
+                        return <ProjectCard {...p} key={p.id} />;
                     })}
-                </>
+                </Grid>
             )}
 
-        </div>
+        </Stack>
     );
 }
-
-export default Projects;

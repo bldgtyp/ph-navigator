@@ -95,6 +95,7 @@ class Project(ProjectBase):
     user_ids: list[int] = []
     airtable_base_ref: str
     airtable_base_url: str
+    phius_dropbox_url: str
 
     class Config:
         from_attributes = True

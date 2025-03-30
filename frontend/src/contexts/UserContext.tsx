@@ -1,8 +1,8 @@
 import { createContext, useState, useEffect, useCallback, ReactNode } from "react";
 import constants from "../data/constants.json";
-import { User, UserContextType } from "../types/database/User";
+import { UserType, UserContextType } from "../types/database/User";
 
-const defaultUserContext: UserContextType = {
+export const defaultUserContext: UserContextType = {
   user: null,
   login: () => { },
   logout: () => { },
@@ -11,7 +11,7 @@ const defaultUserContext: UserContextType = {
 export const UserContext = createContext<UserContextType>(defaultUserContext);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
 
   const fetchUserInfo = useCallback(async (token: string) => {
     const API_BASE_URL = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;

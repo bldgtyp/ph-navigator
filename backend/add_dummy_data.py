@@ -12,7 +12,8 @@ project_data = [
         "name": "409 Sackett St",
         "airtable_ref": "app64a1JuYVBs7Z1m",
         "bt_number": 2305,
-        "phius_number": 1001,
+        "phius_number": 2445,
+        "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
         "tables": [
             {
                 "name": "Summary",
@@ -28,7 +29,8 @@ project_data = [
         "name": "Arverne St",
         "airtable_ref": "app2huKgwyKrnMRbp",
         "bt_number": 2242,
-        "phius_number": 1002,
+        "phius_number": 2441,
+        "phius_dropbox_url": "https://www.dropbox.com/scl/fo/5b2w4n9wc1psda63xso4m/h?rlkey=e5c4bvo1visbecr0uea9lt0r3&dl=0",
         "tables": [
             {
                 "name": "Summary",
@@ -44,7 +46,8 @@ project_data = [
         "name": "Alpine St",
         "airtable_ref": "appMJvv2qkl5eZ1S0",
         "bt_number": 2141,
-        "phius_number": 1003,
+        "phius_number": 2628,
+        "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
         "tables": [
             {
                 "name": "Summary",
@@ -83,7 +86,7 @@ def add_dummy_users(db: Session) -> list[models.User]:
     return db_users
 
 
-def add_dummy_projects(db: Session, users: list[models.User]) -> None:about:blank#blocked
+def add_dummy_projects(db: Session, users: list[models.User]) -> None:
     for user, project in zip(users, project_data):
         # -------------------------------------------------------------------------------
         # -- Build the AirTableTables
@@ -116,6 +119,7 @@ def add_dummy_projects(db: Session, users: list[models.User]) -> None:about:blan
             phius_number=project["phius_number"],
             owner=user,
             airtable_base=db_airtable_base,
+            phius_dropbox_url=project["phius_dropbox_url"],
         )
 
         # Add additional users to the project

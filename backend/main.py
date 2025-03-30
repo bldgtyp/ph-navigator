@@ -87,6 +87,13 @@ async def get_projects(db: Session, project_ids: list[int]) -> list[models.Proje
     return db.query(models.Project).filter(models.Project.id.in_(project_ids)).all()
 
 
+async def get_project_by_bt_number(
+    db: Session, project_bt_number: int
+) -> models.Project | None:
+    """Return a project by its BuildingType Number."""
+    return db.query(models.Project).filter(models.Project.bt_number == project_bt_number).first()
+
+
 async def authenticate_user(
     db: Session, username: str, password: str
 ) -> models.User | Literal[False]:
@@ -186,6 +193,19 @@ async def get_project_card_data(
 ) -> list[schemas.Project]:
     projects = await get_projects(db, current_user.all_project_ids)
     return [schemas.Project.model_validate(p) for p in projects]
+
+
+@app.get("/project/{project_bt_num}", response_model=schemas.Project)
+async def project(
+    project_bt_num: int,
+    db: Session = Depends(get_db), 
+) -> schemas.Project:
+    
+    """Return a project by its BuildingType Number."""
+    project = await get_project_by_bt_number(db, project_bt_num)
+    if not project:
+        raise HTTPException(status_code=404, detail=f"Project {project_bt_num} not found")
+    return schemas.Project.model_validate(project)
 
 
 # @app.get("/users/me/items/")

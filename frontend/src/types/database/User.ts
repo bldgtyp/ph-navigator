@@ -1,4 +1,4 @@
-export interface User {
+export interface UserType {
     email: string;
     id: number;
     username: string;
@@ -6,7 +6,7 @@ export interface User {
 }
 
 export interface UserContextType {
-    user: User | null;
+    user: UserType | null;
     login: (token: string) => void;
     logout: () => void;
 }

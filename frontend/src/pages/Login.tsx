@@ -1,5 +1,10 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import Card from "@mui/material/Card";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { UserContext } from "../contexts/UserContext";
 import { UserContextType } from "../types/database/User";
 import constants from "../data/constants.json";
@@ -33,22 +38,62 @@ const Login = () => {
         }
     };
 
+    const providers = [{ id: 'credentials', name: 'Email and Password' }];
+
     return (
-        <form onSubmit={handleLogin}>
-            <input
-                type="username"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit">Login</button>
-        </form>
+        <Box
+            sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: "100vh",
+                backgroundColor: "#f5f5f5",
+            }}
+        >
+            <Card sx={{ width: 400, padding: 4, boxShadow: 3 }}>
+                <Typography variant="h5" component="h1" gutterBottom align="center">
+                    Login
+                </Typography>
+                <Box
+                    component="form"
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                    noValidate
+                    autoComplete="off"
+                    onSubmit={handleLogin}
+                >
+                    <TextField
+                        required
+                        id="username"
+                        label="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        fullWidth
+                    />
+                    <TextField
+                        required
+                        id="password"
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        fullWidth
+                    />
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        size="large"
+                        sx={{ mt: 2 }}
+                        fullWidth
+                    >
+                        Login
+                    </Button>
+                </Box>
+            </Card>
+        </Box>
     );
 };
 

@@ -77,6 +77,7 @@ class Project(Base):
     phius_number = Column(String, index=True, nullable=True)
     airtable_base_id = Column(Integer, ForeignKey("airtable_bases.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
+    phius_dropbox_url = Column(String, index=True, nullable=True)
 
     # The AirTable base with the Project's data
     airtable_base: Mapped[AirTableBase] = relationship("AirTableBase", back_populates="project")
