@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProjectType, defaultProjectType } from "../types/database/Project";
-import { fetchWithModal } from "../hooks/fetchUserData";
-import ProjectBar from "../components/layout/ProjectBar";
-import ProjectTabBar from "../components/layout/ProjectTabBar";
-import ProjectData from "../pages/ProjectData";
-import Project3DModel from "../pages/Project3DModel";
-import ProjectCertificationStatus from "../pages/ProjectCertificationStatus";
+import { ProjectType, defaultProjectType } from "../../types/database/Project";
+import { fetchWithModal } from "../../hooks/fetchUserData";
+import ProjectBar from "../../components/layout/ProjectBar";
+import ProjectTabBar from "../../components/layout/ProjectTabBar";
+import ProjectData from "./InputData";
+import Project3DModel from "./Model";
+import ProjectCertification from "./Certification";
 
 export default function Project() {
     const { projectId } = useParams();
@@ -43,7 +43,7 @@ export default function Project() {
                     <ProjectBar {...projectData} />
                     <ProjectTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
                     <div style={{ marginTop: "16px" }}>
-                        {activeTab === 0 && <ProjectCertificationStatus {...projectData} />}
+                        {activeTab === 0 && <ProjectCertification {...projectData} />}
                         {activeTab === 1 && <ProjectData {...projectData} />}
                         {activeTab === 2 && <Project3DModel {...projectData} />}
                     </div>

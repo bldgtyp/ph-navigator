@@ -9,4 +9,5 @@ python-dotenv
 python-multipart
 rich
 sqlalchemy
+slowapi
 uvicorn

@@ -5,9 +5,9 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { UserContext } from "../contexts/UserContext";
-import { UserContextType } from "../types/database/User";
-import constants from "../data/constants.json";
+import { UserContext } from "../../contexts/UserContext";
+import { UserContextType } from "../../types/database/User";
+import constants from "../../data/constants.json";
 
 const Login = () => {
     const [username, setUsername] = useState("");
@@ -23,7 +23,7 @@ const Login = () => {
         formData.append("username", username);
         formData.append("password", password);
 
-        const response = await fetch(`${API_BASE_URL}token`, {
+        const response = await fetch(`${API_BASE_URL}auth/token`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: formData.toString(),
@@ -32,6 +32,8 @@ const Login = () => {
         if (response.ok) {
             const data = await response.json();
             userContext.login(data.access_token);
+            console.log("Login successful");
+            console.log("Redirecting to: /projects");
             navigate("/projects");
         } else {
             alert("Invalid credentials");

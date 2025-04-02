@@ -1,14 +1,14 @@
 import { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { UserContext } from "../contexts/UserContext";
-import { UserContextType } from "../types/database/User";
+import { UserContext } from "../../contexts/UserContext";
+import { UserContextType } from "../../types/database/User";
 
 const ProtectedRoute = () => {
     const userContext = useContext(UserContext) as UserContextType;
     console.log("ProtectedRoute | userContext:", userContext);
 
     // If userContext.user is null but a token DOES exist, show a loading state
-    // It may take time to get the current user from the backend.
+    // It may take time to get the current user from the 
     if (!userContext.user && localStorage.getItem("token")) {
         return <div>Loading...</div>;
     }

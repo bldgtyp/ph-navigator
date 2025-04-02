@@ -17,7 +17,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const API_BASE_URL = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
     try {
       console.log("UserContext | useEffect | Fetching user info with Access Token:", token.substring(0, 10) + "...");
-      const response = await fetch(`${API_BASE_URL}user`, {
+      const response = await fetch(`${API_BASE_URL}auth/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

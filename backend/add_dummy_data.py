@@ -3,8 +3,11 @@
 import bcrypt
 from sqlalchemy.orm import Session
 
-import database
-import models
+from database import Base, SessionLocal, engine
+from db_entities.airtable.at_base import AirTableBase
+from db_entities.airtable.at_table import AirTableTable
+from db_entities.project import Project
+from db_entities.user import User
 
 # Mock Data
 project_data = [
@@ -23,6 +26,10 @@ project_data = [
                 "name": "Config",
                 "airtable_ref": "tblRMar5uK7mDZ8yM",
             },
+            {
+                "name": "Fans",
+                "airtable_ref": "tbldbadmmNca7E1Nr",
+            },
         ],
     },
     {
@@ -39,6 +46,10 @@ project_data = [
             {
                 "name": "Config",
                 "airtable_ref": "tblOPg6rOq7Uy2zJT",
+            },
+            {
+                "name": "Fans",
+                "airtable_ref": "tblCwWhH3YuNV34ec",
             },
         ],
     },
@@ -57,6 +68,10 @@ project_data = [
                 "name": "Config",
                 "airtable_ref": "tblqXGps9noqY0LqZ",
             },
+            {
+                "name": "Fans",
+                "airtable_ref": "tblmYX2tXK5rMgeVN",
+            },
         ],
     },
 ]
@@ -66,7 +81,7 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def add_dummy_users(db: Session) -> list[models.User]:
+def add_dummy_users(db: Session) -> list[User]:
     users = [
         {"username": "user1", "password": "password1", "email": "user1@email.com"},
         {"username": "user2", "password": "password2", "email": "user2@email.com"},
@@ -75,7 +90,7 @@ def add_dummy_users(db: Session) -> list[models.User]:
     db_users = []
     for user in users:
         hashed_password = get_password_hash(user["password"])
-        db_user = models.User(
+        db_user = User(
             username=user["username"],
             email=user["email"],
             hashed_password=hashed_password,
@@ -86,13 +101,13 @@ def add_dummy_users(db: Session) -> list[models.User]:
     return db_users
 
 
-def add_dummy_projects(db: Session, users: list[models.User]) -> None:
+def add_dummy_projects(db: Session, users: list[User]) -> None:
     for user, project in zip(users, project_data):
         # -------------------------------------------------------------------------------
         # -- Build the AirTableTables
-        at_tables: list[models.AirTableTable] = []
+        at_tables: list[AirTableTable] = []
         for at_table_data in project["tables"]:
-            db_airtable_table = models.AirTableTable(
+            db_airtable_table = AirTableTable(
                 name=at_table_data["name"],
                 airtable_ref=at_table_data["airtable_ref"],
                 airtable_base=None,
@@ -103,7 +118,7 @@ def add_dummy_projects(db: Session, users: list[models.User]) -> None:
 
         # -------------------------------------------------------------------------------
         # -- Build a new AirTableBase, add the new Tables
-        db_airtable_base = models.AirTableBase(
+        db_airtable_base = AirTableBase(
             name=project["name"], airtable_ref=project["airtable_ref"]
         )
         for at_table in at_tables:
@@ -113,7 +128,7 @@ def add_dummy_projects(db: Session, users: list[models.User]) -> None:
 
         # -------------------------------------------------------------------------------
         # -- Now build the Project
-        db_project = models.Project(
+        db_project = Project(
             name=project["name"],
             bt_number=project["bt_number"],
             phius_number=project["phius_number"],
@@ -133,12 +148,12 @@ def add_dummy_projects(db: Session, users: list[models.User]) -> None:
 
 if __name__ == "__main__":
     # -- Drop all existing tables so we start fresh
-    models.Base.metadata.drop_all(bind=database.engine)
+    Base.metadata.drop_all(bind=engine)
 
     # -- Create the database tables
-    models.Base.metadata.create_all(bind=database.engine)
+    Base.metadata.create_all(bind=engine)
 
-    db = database.SessionLocal()
+    db = SessionLocal()
     users = add_dummy_users(db)
     add_dummy_projects(db, users)
     db.close()

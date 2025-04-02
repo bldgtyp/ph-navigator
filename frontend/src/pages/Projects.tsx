@@ -14,7 +14,7 @@ export default function Projects() {
     useEffect(() => {
         async function loadProjectCardData() {
             try {
-                const projectCardData = await fetchWithModal<ProjectType[]>("get_project_card_data")
+                const projectCardData = await fetchWithModal<ProjectType[]>("project_browser/get_project_card_data")
                 setProjectCardData(projectCardData || [])
             } catch (error) {
                 alert("Error loading project data. Please try again later.");
