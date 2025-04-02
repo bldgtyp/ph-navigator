@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel
@@ -29,5 +31,4 @@ class ProjectSchema(ProjectBaseSchema):
         from_attributes = True
 
 
-ProjectSchema.model_rebuild() # Update the forward references in the model
-
+ProjectSchema.model_rebuild()  # Update the forward references in the model

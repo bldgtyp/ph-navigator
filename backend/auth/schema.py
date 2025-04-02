@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 from pydantic import BaseModel  # , EmailStr
 
 # ---------------------------------------------------------------------------------------
@@ -19,7 +21,7 @@ class UserSchema(BaseModel):
         from_attributes = True
 
 
-UserSchema.model_rebuild() # Update the forward references in the model
+UserSchema.model_rebuild()  # Update the forward references in the model
 
 
 # ---------------------------------------------------------------------------------------
@@ -32,4 +34,3 @@ class TokenSchema(BaseModel):
 
 class TokenDataSchema(BaseModel):
     username: str | None = None
-

@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel
@@ -40,4 +42,3 @@ class AirTableBaseSchema(AirTableBaseBaseSchema):
 
     class Config:
         from_attributes = True
-

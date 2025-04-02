@@ -1,4 +1,4 @@
-# python3.11 (Render.com)
+# -*- Python Version: 3.11 (Render.com) -*-
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session

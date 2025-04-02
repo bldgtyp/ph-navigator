@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 from sqlalchemy import Column, ForeignKey, Integer, Table
 
 from database import Base

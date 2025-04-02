@@ -1,4 +1,4 @@
-# python3.11 (Render.com)
+# -*- Python Version: 3.11 (Render.com) -*-
 
 import os
 from datetime import datetime, timedelta, timezone
@@ -21,7 +21,7 @@ load_dotenv()
 
 
 # to generate a new SECRET KEY: `openssl rand -hex 32``
-JSON_WEB_TOKEN_SECRET_KEY = str(os.getenv("JSON_WEB_TOKEN_SECRET_KEY"))  
+JSON_WEB_TOKEN_SECRET_KEY = str(os.getenv("JSON_WEB_TOKEN_SECRET_KEY"))
 JSON_WEB_TOKEN_ALGORITHM = str(os.getenv("JSON_WEB_TOKEN_ALGORITHM"))
 JSON_WEB_TOKEN_EXPIRE_MINUTES = int(os.getenv("JSON_WEB_TOKEN_EXPIRE_MINUTES", "30"))
 
@@ -108,5 +108,3 @@ async def get_current_active_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_active_user)]
-
-

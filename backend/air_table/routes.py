@@ -1,4 +1,4 @@
-# python3.11 (Render.com)
+# -*- Python Version: 3.11 (Render.com) -*-
 
 import os
 
@@ -8,15 +8,15 @@ from pyairtable import Api
 from pyairtable.api.types import RecordDict
 from sqlalchemy.orm import Session
 
-from air_table.services import (get_at_base_id_by_project_id,
-                                get_at_table_id_by_project_id)
+from air_table.services import (
+    get_at_base_id_by_project_id,
+    get_at_table_id_by_project_id,
+)
 from database import get_db
 from rate_limiting import limiter
 
 load_dotenv()
 
-AIRTABLE_API_KEY = str(os.getenv("AIRTABLE_API_KEY"))
-AIRTABLE_BASE_ID = str(os.getenv("AIRTABLE_BASE_ID"))
 AIRTABLE_TABLE_NAME = "tblapLjAFgm7RIllz"
 AIRTABLE_GET_TOKEN = str(os.getenv("AIRTABLE_GET_TOKEN"))
 
@@ -25,6 +25,7 @@ router = APIRouter(
     prefix="/air_table",
     tags=["air_table"],
 )
+
 
 @router.get("/{project_bt_num}/config")
 async def get_project_config(

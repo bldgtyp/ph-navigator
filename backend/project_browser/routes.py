@@ -1,4 +1,4 @@
-# python3.11 (Render.com)
+# -*- Python Version: 3.11 (Render.com) -*-
 
 import logging
 from typing import Annotated
@@ -16,6 +16,7 @@ router = APIRouter(
     prefix="/project_browser",
     tags=["project_browser"],
 )
+
 
 @router.get("/get_project_card_data", response_model=list[ProjectSchema])
 async def get_project_card_data(

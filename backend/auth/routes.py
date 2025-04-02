@@ -1,4 +1,4 @@
-# python3.11 (Render.com)
+# -*- Python Version: 3.11 (Render.com) -*-
 
 import logging
 import os
@@ -12,8 +12,11 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from auth.schema import TokenSchema, UserSchema
-from auth.services import (authenticate_user, create_access_token,
-                           get_current_active_user)
+from auth.services import (
+    authenticate_user,
+    create_access_token,
+    get_current_active_user,
+)
 from database import get_db
 from db_entities.user import User
 from rate_limiting import limiter
@@ -27,6 +30,7 @@ router = APIRouter(
 )
 
 JSON_WEB_TOKEN_EXPIRE_MINUTES = int(os.getenv("JSON_WEB_TOKEN_EXPIRE_MINUTES", "30"))
+
 
 @router.post("/token", status_code=status.HTTP_200_OK)
 @limiter.limit("10/hour")
@@ -54,7 +58,8 @@ async def login_for_access_token(
 
 
 @router.get("/user/", response_model=UserSchema)
-async def user(current_user: Annotated[User, Depends(get_current_active_user)],
+async def user(
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UserSchema:
     """Return the current user."""
     logger.info(f"user(current_user.id={current_user.id})")

@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 from typing import cast
 
 from sqlalchemy import Column, ForeignKey, Integer, String

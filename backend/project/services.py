@@ -1,4 +1,4 @@
-# python3.11 (Render.com)
+# -*- Python Version: 3.11 (Render.com) -*-
 
 from sqlalchemy.orm import Session
 
@@ -14,5 +14,3 @@ async def get_project_by_bt_number(
 ) -> Project | None:
     """Return a project by its BuildingType Number."""
     return db.query(Project).filter(Project.bt_number == project_bt_number).first()
-
-

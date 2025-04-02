@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 """Utility to add some fake users to the database for testing and development."""
 
 import bcrypt

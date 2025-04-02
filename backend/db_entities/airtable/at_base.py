@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, validates
 
