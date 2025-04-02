@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 @router.get("/{project_bt_num}", response_model=ProjectSchema)
-@limiter.limit("10/hour")
+@limiter.limit("100/hour")
 async def project(
     request: Request,
     project_bt_num: int,

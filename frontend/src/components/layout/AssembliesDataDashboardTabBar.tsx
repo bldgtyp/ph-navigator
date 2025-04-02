@@ -8,13 +8,9 @@ type paramsType = {
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
 }
 
-export default function ProjectTabBar({ projectId, activeTab, onTabChange }: paramsType) {
+export default function AssembliesDataDashboardTabBar({ projectId, activeTab, onTabChange }: paramsType) {
     const tabs = [
-        { label: "Certification", path: `/projects/${projectId}/certification` },
-        { label: "Windows", path: `/projects/${projectId}/window_data` },
-        { label: "Assemblies", path: `/projects/${projectId}/assembly_data` },
-        { label: "Equipment", path: `/projects/${projectId}/equipment_data` },
-        { label: "Model", path: `/projects/${projectId}/model` },
+        { label: "Materials", path: `${projectId}/material_layers` },
     ];
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {

@@ -33,7 +33,7 @@ JSON_WEB_TOKEN_EXPIRE_MINUTES = int(os.getenv("JSON_WEB_TOKEN_EXPIRE_MINUTES", "
 
 
 @router.post("/token", status_code=status.HTTP_200_OK)
-@limiter.limit("10/hour")
+@limiter.limit("100/hour")
 async def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],

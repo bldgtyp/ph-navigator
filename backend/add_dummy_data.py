@@ -19,20 +19,19 @@ project_data = [
         "bt_number": 2305,
         "phius_number": 2445,
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
-        "tables": [
-            {
-                "name": "Summary",
-                "airtable_ref": "tblapLjAFgm7RIllz",
-            },
-            {
-                "name": "Config",
-                "airtable_ref": "tblRMar5uK7mDZ8yM",
-            },
-            {
-                "name": "Fans",
-                "airtable_ref": "tbldbadmmNca7E1Nr",
-            },
-        ],
+        "tables": {
+            "SUMMARY": "tblapLjAFgm7RIllz",
+            "CONFIG": "tblRMar5uK7mDZ8yM",
+            "FANS": "tbldbadmmNca7E1Nr",
+            "PUMPS": "tbliRO0hZim8oQ2qw",
+            "DHW_TANKS": "tbl3EYwyh6HhmlbqP",
+            "LIGHTING": "tblkLN5vn6fcXnTRT",
+            "APPLIANCES": "tblqfzzcqc3o2IcD4",
+            "GLAZING_TYPES": "tbl3JAeRMqiloWQ65",
+            "FRAME_TYPES": "tblejOjMq62zdRT3D",
+            "WINDOW_UNIT_TYPES": "tblGOpIen7MnCuQRe",
+            "MATERIAL_LAYERS": "tblkWxg3xXMjzjO32",
+        },
     },
     {
         "name": "Arverne St",
@@ -40,20 +39,19 @@ project_data = [
         "bt_number": 2242,
         "phius_number": 2441,
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/5b2w4n9wc1psda63xso4m/h?rlkey=e5c4bvo1visbecr0uea9lt0r3&dl=0",
-        "tables": [
-            {
-                "name": "Summary",
-                "airtable_ref": "tblb8D5jcw1KyB522",
-            },
-            {
-                "name": "Config",
-                "airtable_ref": "tblOPg6rOq7Uy2zJT",
-            },
-            {
-                "name": "Fans",
-                "airtable_ref": "tblCwWhH3YuNV34ec",
-            },
-        ],
+        "tables": {
+            "SUMMARY": "tblb8D5jcw1KyB522",
+            "CONFIG": "tblOPg6rOq7Uy2zJT",
+            "FANS": "tblCwWhH3YuNV34ec",
+            "PUMPS": "tbl3F59OhLXcgaWm0",
+            "DHW_TANKS": "tblPPiCNkZE1s5NgW",
+            "LIGHTING": "tblRH6A9tLyKGsUD0",
+            "APPLIANCES": "tblgk5pneolD192Dv",
+            "GLAZING_TYPES": "tblbreMnmdsKDCYTN",
+            "FRAME_TYPES": "tblJm0uhhChDY0jKQ",
+            "WINDOW_UNIT_TYPES": "tbln2qVrxqSNlAJOK",
+            "MATERIAL_LAYERS": "tblaqehqmP6xfOPUP",
+        },
     },
     {
         "name": "Alpine St",
@@ -61,20 +59,19 @@ project_data = [
         "bt_number": 2141,
         "phius_number": 2628,
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
-        "tables": [
-            {
-                "name": "Summary",
-                "airtable_ref": "tblTWt78WrqpxvseQ",
-            },
-            {
-                "name": "Config",
-                "airtable_ref": "tblqXGps9noqY0LqZ",
-            },
-            {
-                "name": "Fans",
-                "airtable_ref": "tblmYX2tXK5rMgeVN",
-            },
-        ],
+        "tables": {
+            "SUMMARY": "tblTWt78WrqpxvseQ",
+            "CONFIG": "tblqXGps9noqY0LqZ",
+            "FANS": "tblmYX2tXK5rMgeVN",
+            "PUMPS": "tblhCV9mCZpmsfzqb",
+            "DHW_TANKS": "tbl3tJSHXY6zbqFyn",
+            "LIGHTING": "tbloPDsPtkyCa17Vs",
+            "APPLIANCES": "tbl0M6a98aWhSmck6",
+            "GLAZING_TYPES": "tblBrale1asxtzuNo",
+            "FRAME_TYPES": "tblgfvZKVLArxhyTC",
+            "WINDOW_UNIT_TYPES": "tbl47pEy8yTM3rwdC",
+            "MATERIAL_LAYERS": "tblUSf2cgBHb61ZBq",
+        },
     },
 ]
 
@@ -108,10 +105,10 @@ def add_dummy_projects(db: Session, users: list[User]) -> None:
         # -------------------------------------------------------------------------------
         # -- Build the AirTableTables
         at_tables: list[AirTableTable] = []
-        for at_table_data in project["tables"]:
+        for at_table_table_name, at_table_ref in project["tables"].items():
             db_airtable_table = AirTableTable(
-                name=at_table_data["name"],
-                airtable_ref=at_table_data["airtable_ref"],
+                name=at_table_table_name,
+                airtable_ref=at_table_ref,
                 airtable_base=None,
             )
             db.add(db_airtable_table)

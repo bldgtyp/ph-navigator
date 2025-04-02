@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProjectType, defaultProjectType } from "../../types/database/Project";
+import Page from "./Page";
 import { fetchWithModal } from "../../hooks/fetchUserData";
-import ProjectBar from "../../components/layout/ProjectBar";
-import ProjectTabBar from "../../components/layout/ProjectTabBar";
-import EquipmentDataDashboard from "./EquipmentDataDashboard";
-import WindowDataDashboard from "./WindowDataDashboard";
-import AssemblyDataDashboard from "./AssemblyDataDashboard";
-import Project3DModel from "./Model";
-import ProjectCertification from "./Certification";
+import WindowDataDashboardTabBar from "../../components/layout/WindowDataDashboardTabBar";
+import ContentBlock from "../../components/layout/ContentBlock";
+import FrameTypesDataGrid from "../../components/tables/FrameTypesDataGrid";
+import GlazingTypesDataGrid from "../../components/tables/GlazingTypesDataGrid";
+import WindowUnitDataGrid from "../../components/tables/WindowUnitDataGrid";
+import { ProjectType, defaultProjectType } from "../../types/database/Project";
 
-export default function Project() {
+
+export default function WindowDataDashboard(params: any) {
     const { projectId } = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const [projectData, setProjectData] = useState<ProjectType>(defaultProjectType);
@@ -42,15 +42,14 @@ export default function Project() {
                 <div>Loading Project Data</div>
             ) : (
                 <div>
-                    <ProjectBar {...projectData} />
-                    <ProjectTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
-                    <div style={{ marginTop: "16px" }}>
-                        {activeTab === 0 && <ProjectCertification {...projectData} />}
-                        {activeTab === 1 && <WindowDataDashboard {...projectData} />}
-                        {activeTab === 2 && <AssemblyDataDashboard {...projectData} />}
-                        {activeTab === 3 && <EquipmentDataDashboard {...projectData} />}
-                        {activeTab === 4 && <Project3DModel {...projectData} />}
-                    </div>
+                    <WindowDataDashboardTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
+                    <Page>
+                        <ContentBlock>
+                            {activeTab === 0 && <GlazingTypesDataGrid />}
+                            {activeTab === 1 && <FrameTypesDataGrid />}
+                            {activeTab === 2 && <WindowUnitDataGrid />}
+                        </ContentBlock>
+                    </Page>
                 </div>
             )}
         </>

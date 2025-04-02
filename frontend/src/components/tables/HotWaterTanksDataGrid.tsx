@@ -13,7 +13,7 @@ import useLoadDataGridFromAirTable from "../../hooks/useLoadDataGridFromAirTable
 
 // ----------------------------------------------------------------------------
 // Define the AirTable data types
-type PumpsFields = {
+type DHWTankFields = {
   DISPLAY_NAME: string;
   MANUFACTURER: string;
   MODEL: string;
@@ -21,7 +21,7 @@ type PumpsFields = {
   SPECIFICATION: string;
 };
 
-type PumpsRecord = { id: string; createdTime: string; fields: PumpsFields };
+type DHWTankRecord = { id: string; createdTime: string; fields: DHWTankFields };
 
 // --------------------------------------------------------------------------
 // Define the rows and columns
@@ -68,7 +68,7 @@ const defaultRow = generateDefaultRow(tableFields);
 function HotWaterTanksDataGrid() {
   // Load in the table data from the Database
   const { projectId } = useParams();
-  const { showModal, rowData } = useLoadDataGridFromAirTable<PumpsRecord>(defaultRow, "hot_water_tanks", projectId);
+  const { showModal, rowData } = useLoadDataGridFromAirTable<DHWTankRecord>(defaultRow, "dhw_tanks", projectId);
 
   // --------------------------------------------------------------------------
   // Render the component
@@ -77,7 +77,7 @@ function HotWaterTanksDataGrid() {
       {" "}
       <LoadingModal showModal={showModal} />
       <Stack className="content-block-heading" spacing={1}>
-        <h3>Pumps:</h3>
+        <h3>HOT WATER TANKS:</h3>
       </Stack>
       <Box>
         <StyledDataGrid

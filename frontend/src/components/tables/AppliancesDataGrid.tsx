@@ -91,7 +91,7 @@ function AppliancesDataGrid() {
       {" "}
       <LoadingModal showModal={showModal} />
       <Stack className="content-block-heading" spacing={1}>
-        <h3>Appliances Fixtures:</h3>
+        <h3>Electrical Appliances:</h3>
       </Stack>
       <Box>
         <StyledDataGrid
