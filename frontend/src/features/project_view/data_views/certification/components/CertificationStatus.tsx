@@ -2,9 +2,9 @@ import { Stack } from "@mui/material";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
-import { Config } from "../../../../../types/airtable/Config";
+import { CertificationDataType } from "../../types/CertificationData";
 
-function CertificationStatus(props: { statusData: any; linkData: any; projData: Config }) {
+function CertificationStatus(props: { statusData: any; linkData: any; projData: CertificationDataType }) {
   const currentStep: number = props.statusData.CURRENT_STATUS ? parseInt(props.statusData.CURRENT_STATUS as string) : 0;
 
   // Pull out any 'statusData' items who have 'STEP' in the field name and return

@@ -10,7 +10,7 @@ import { TooltipWithComment } from "../../shared/components/TooltipWithComment";
 import { TooltipHeader } from "../../shared/components/TooltipHeader";
 import LoadingModal from "../../shared/components/LoadingModal";
 import { ValueAsDecimal } from "../../../../../formatters/ValueAsDecimal";
-import useLoadDataGridFromAirTable from "../../../../../hooks/useLoadDataGridFromAirTable";
+import useLoadDataGridFromAirTable from "../../../model_viewer/hooks/useLoadDataGridFromAirTable";
 
 // ----------------------------------------------------------------------------
 // Define the AirTable data types

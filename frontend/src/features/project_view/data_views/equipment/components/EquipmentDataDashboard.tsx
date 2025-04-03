@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DataViewPage from "../../shared/components/DataViewPage";
-import { fetchWithModal } from "../../../../../hooks/fetchUserData";
+import { fetchWithAlert } from "../../../../../api/fetchData";
 import EquipmentDataDashboardTabBar from "./EquipmentDataDashboardTabBar";
 import ContentBlock from "../../shared/components/ContentBlock";
 import FanDataGrid from "./FanDataGrid";
@@ -9,7 +9,7 @@ import PumpDataGrid from "./PumpDataGrid";
 import HotWaterTankDataGrid from "./HotWaterTanksDataGrid";
 import LightingDataGrid from "./LightingDataGrid";
 import AppliancesDataGrid from "./AppliancesDataGrid";
-import { ProjectType, defaultProjectType } from "../../../../../types/database/Project";
+import { ProjectType, defaultProjectType } from "../../../../types/Project";
 
 
 export default function EquipmentDataDashboard(params: any) {
@@ -21,7 +21,7 @@ export default function EquipmentDataDashboard(params: any) {
     useEffect(() => {
         async function loadProjectData() {
             try {
-                const d = await fetchWithModal<ProjectType>(`project/${projectId}`)
+                const d = await fetchWithAlert<ProjectType>(`project/${projectId}`)
                 setProjectData(d || defaultProjectType)
             } catch (error) {
                 alert("Error loading project data. Please try again later.");

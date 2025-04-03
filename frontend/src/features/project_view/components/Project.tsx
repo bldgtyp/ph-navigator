@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProjectType, defaultProjectType } from "../../../types/database/Project";
-import { fetchWithModal } from "../../../hooks/fetchUserData";
+import { ProjectType, defaultProjectType } from "../../types/Project";
+import { fetchWithAlert } from "../../../api/fetchData";
 import ProjectBar from "./ProjectBar";
 import ProjectTabBar from "./ProjectTabBar";
 import EquipmentDataDashboard from "../data_views/equipment/components/EquipmentDataDashboard";
 import WindowDataDashboard from "../data_views/windows/components/WindowDataDashboard";
 import AssemblyDataDashboard from "../data_views/assemblies/components/AssemblyDataDashboard";
-import Project3DModel from "../model_viewer/Model";
+import Viewer from "../model_viewer/Viewer";
 import ProjectCertification from "../data_views/certification/components/Certification";
 
 export default function Project() {
@@ -19,7 +19,7 @@ export default function Project() {
     useEffect(() => {
         async function loadProjectData() {
             try {
-                const d = await fetchWithModal<ProjectType>(`project/${projectId}`)
+                const d = await fetchWithAlert<ProjectType>(`project/${projectId}`)
                 setProjectData(d || defaultProjectType)
             } catch (error) {
                 alert("Error loading project data. Please try again later.");
@@ -49,7 +49,7 @@ export default function Project() {
                         {activeTab === 1 && <WindowDataDashboard {...projectData} />}
                         {activeTab === 2 && <AssemblyDataDashboard {...projectData} />}
                         {activeTab === 3 && <EquipmentDataDashboard {...projectData} />}
-                        {activeTab === 4 && <Project3DModel {...projectData} />}
+                        {activeTab === 4 && <Viewer {...projectData} />}
                     </div>
                 </div>
             )}

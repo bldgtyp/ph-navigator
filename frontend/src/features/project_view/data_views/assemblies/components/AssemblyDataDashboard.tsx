@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DataViewPage from "../../shared/components/DataViewPage";
-import { fetchWithModal } from "../../../../../hooks/fetchUserData";
+import { fetchWithAlert } from "../../../../../api/fetchData";
 import AssembliesDataDashboardTabBar from "./AssembliesDataDashboardTabBar";
 import ContentBlock from "../../shared/components/ContentBlock";
 import MaterialsDataGrid from "./MaterialsDataGrid";
-import { ProjectType, defaultProjectType } from "../../../../../types/database/Project";
+import { ProjectType, defaultProjectType } from "../../../../types/Project";
 
 
 export default function AssemblyDataDashboard(params: any) {
@@ -17,7 +17,7 @@ export default function AssemblyDataDashboard(params: any) {
     useEffect(() => {
         async function loadProjectData() {
             try {
-                const d = await fetchWithModal<ProjectType>(`project/${projectId}`)
+                const d = await fetchWithAlert<ProjectType>(`project/${projectId}`)
                 setProjectData(d || defaultProjectType)
             } catch (error) {
                 alert("Error loading project data. Please try again later.");

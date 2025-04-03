@@ -2,8 +2,8 @@ import { useContext, useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import { UserContext } from "../../auth/contexts/UserContext";
-import { fetchWithModal } from "../../../hooks/fetchUserData";
-import { ProjectType, defaultProjectType } from "../../../types/database/Project";
+import { fetchWithAlert } from "../../../api/fetchData";
+import { ProjectType, defaultProjectType } from "../../types/Project";
 import ProjectCard from "./ProjectCard";
 
 export default function Projects() {
@@ -14,7 +14,7 @@ export default function Projects() {
     useEffect(() => {
         async function loadProjectCardData() {
             try {
-                const projectCardData = await fetchWithModal<ProjectType[]>("project_browser/get_project_card_data")
+                const projectCardData = await fetchWithAlert<ProjectType[]>("project_browser/get_project_card_data")
                 setProjectCardData(projectCardData || [])
             } catch (error) {
                 alert("Error loading project data. Please try again later.");

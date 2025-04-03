@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DataViewPage from "../../shared/components/DataViewPage";
-import { fetchWithModal } from "../../../../../hooks/fetchUserData";
+import { fetchWithAlert } from "../../../../../api/fetchData";
 import WindowDataDashboardTabBar from "./WindowDataDashboardTabBar";
 import ContentBlock from "../../shared/components/ContentBlock";
 import FrameTypesDataGrid from "./FrameTypesDataGrid";
 import GlazingTypesDataGrid from "./GlazingTypesDataGrid";
 import WindowUnitDataGrid from "./WindowUnitDataGrid";
-import { ProjectType, defaultProjectType } from "../../../../../types/database/Project";
+import { ProjectType, defaultProjectType } from "../../../../types/Project";
 
 
 export default function WindowDataDashboard(params: any) {
@@ -19,7 +19,7 @@ export default function WindowDataDashboard(params: any) {
     useEffect(() => {
         async function loadProjectData() {
             try {
-                const d = await fetchWithModal<ProjectType>(`project/${projectId}`)
+                const d = await fetchWithAlert<ProjectType>(`project/${projectId}`)
                 setProjectData(d || defaultProjectType)
             } catch (error) {
                 alert("Error loading project data. Please try again later.");

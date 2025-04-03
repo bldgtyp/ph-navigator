@@ -6,7 +6,7 @@ import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
-import { ProjectType } from "../../../types/database/Project";
+import { ProjectType } from "../../types/Project";
 
 function ProjectCard(props: ProjectType) {
     return (
