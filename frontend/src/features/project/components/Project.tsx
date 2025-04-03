@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProjectType, defaultProjectType } from "../../types/database/Project";
-import { fetchWithModal } from "../../hooks/fetchUserData";
-import ProjectBar from "../../components/layout/ProjectBar";
-import ProjectTabBar from "../../components/layout/ProjectTabBar";
-import EquipmentDataDashboard from "./EquipmentDataDashboard";
-import WindowDataDashboard from "./WindowDataDashboard";
-import AssemblyDataDashboard from "./AssemblyDataDashboard";
+import { ProjectType, defaultProjectType } from "../../../types/database/Project";
+import { fetchWithModal } from "../../../hooks/fetchUserData";
+import ProjectBar from "../../../components/layout/ProjectBar";
+import ProjectTabBar from "../../../components/layout/ProjectTabBar";
+import EquipmentDataDashboard from "../data_views/equipment/components/EquipmentDataDashboard";
+import WindowDataDashboard from "../data_views/windows/components/WindowDataDashboard";
+import AssemblyDataDashboard from "../data_views/assemblies/components/AssemblyDataDashboard";
 import Project3DModel from "./Model";
-import ProjectCertification from "./Certification";
+import ProjectCertification from "../data_views/certification/components/Certification";
 
 export default function Project() {
     const { projectId } = useParams();

@@ -5,7 +5,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import { UserContext } from "../../contexts/UserContext";
+import { UserContext } from "../../features/auth/contexts/UserContext";
 import { UserMenu } from "../common/UserMenu";
 
 export default function TopAppBar() {

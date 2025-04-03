@@ -5,9 +5,9 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { UserContext } from "../../contexts/UserContext";
-import { UserContextType } from "../../types/database/User";
-import constants from "../../data/constants.json";
+import { UserContext } from "../contexts/UserContext";
+import { UserContextType } from "../../../types/database/User";
+import constants from "../../../data/constants.json";
 
 const Login = () => {
     const [username, setUsername] = useState("");

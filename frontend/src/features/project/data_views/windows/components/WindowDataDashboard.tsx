@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import Page from "./Page";
-import { fetchWithModal } from "../../hooks/fetchUserData";
-import WindowDataDashboardTabBar from "../../components/layout/WindowDataDashboardTabBar";
-import ContentBlock from "../../components/layout/ContentBlock";
-import FrameTypesDataGrid from "../../components/tables/FrameTypesDataGrid";
-import GlazingTypesDataGrid from "../../components/tables/GlazingTypesDataGrid";
-import WindowUnitDataGrid from "../../components/tables/WindowUnitDataGrid";
-import { ProjectType, defaultProjectType } from "../../types/database/Project";
+import Page from "../../../components/Page";
+import { fetchWithModal } from "../../../../../hooks/fetchUserData";
+import WindowDataDashboardTabBar from "./WindowDataDashboardTabBar";
+import ContentBlock from "../../../../../components/layout/ContentBlock";
+import FrameTypesDataGrid from "../../../../../components/tables/FrameTypesDataGrid";
+import GlazingTypesDataGrid from "../../../../../components/tables/GlazingTypesDataGrid";
+import WindowUnitDataGrid from "../../../../../components/tables/WindowUnitDataGrid";
+import { ProjectType, defaultProjectType } from "../../../../../types/database/Project";
 
 
 export default function WindowDataDashboard(params: any) {

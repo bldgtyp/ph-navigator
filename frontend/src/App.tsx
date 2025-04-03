@@ -1,14 +1,14 @@
 import './styles/App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
-import { UserProvider } from "./contexts/UserContext";
+import { UserProvider } from "./features/auth/contexts/UserContext";
 import TopAppBar from './components/layout/AppBar';
-import Landing from "./pages/Landing";
-import Login from "./pages/auth/Login";
-import Projects from "./pages/Projects";
-import ProtectedRoute from "./pages/auth/ProtectedRoute";
-import Project from "./pages/project/Project";
-import Account from "./pages/auth/Account";
+import Landing from "./Landing";
+import Login from "./features/auth/components/Login";
+import Projects from "./features/project_browser/components/Projects";
+import ProtectedRoute from "./features/auth/components/ProtectedRoute";
+import Project from "./features/project/components/Project";
+import Account from "./features/auth/components/Account";
 
 function App() {
   return (

@@ -2,12 +2,12 @@ import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Box, Modal } from "@mui/material";
 
-import fetchData from "../../hooks/fetchAirTable";
-import { AirTableRecord } from "../../types/airtable/Record";
-import Page from "./Page";
+import fetchData from "../../../../../hooks/fetchAirTable";
+import { AirTableRecord } from "../../../../../types/airtable/Record";
+import Page from "../../../components/Page";
 import CertificationStatus from "./CertificationStatus";
-import ContentBlock from "../../components/layout/ContentBlock";
-import { Config, defaultConfig } from "../../types/airtable/Config";
+import ContentBlock from "../../../../../components/layout/ContentBlock";
+import { Config, defaultConfig } from "../../../../../types/airtable/Config";
 
 function flattenData(d: AirTableRecord[]): any {
     const flatData: Record<string, string | undefined> = {};

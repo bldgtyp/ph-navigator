@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import { UserContext } from "../contexts/UserContext";
-import { fetchWithModal } from "../hooks/fetchUserData";
-import { ProjectType, defaultProjectType } from "../types/database/Project";
-import ProjectCard from "../components/common/ProjectCard";
+import { UserContext } from "../../auth/contexts/UserContext";
+import { fetchWithModal } from "../../../hooks/fetchUserData";
+import { ProjectType, defaultProjectType } from "../../../types/database/Project";
+import ProjectCard from "../../../components/common/ProjectCard";
 
 export default function Projects() {
     const userContext = useContext(UserContext);
@@ -37,7 +37,6 @@ export default function Projects() {
                     })}
                 </Grid>
             )}
-
         </Stack>
     );
 }
