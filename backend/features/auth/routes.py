@@ -1,35 +1,30 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
 import logging
-import os
 from datetime import timedelta
 from typing import Annotated
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from starlette import status
 
-from auth.schema import TokenSchema, UserSchema
-from auth.services import (
+from config import settings, limiter
+from database import get_db
+from db_entities.user import User
+from features.auth.schema import TokenSchema, UserSchema
+from features.auth.services import (
     authenticate_user,
     create_access_token,
     get_current_active_user,
 )
-from database import get_db
-from db_entities.user import User
-from rate_limiting import limiter
 
-load_dotenv()
 logger = logging.getLogger()
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
-
-JSON_WEB_TOKEN_EXPIRE_MINUTES = int(os.getenv("JSON_WEB_TOKEN_EXPIRE_MINUTES", "30"))
 
 
 @router.post("/token", status_code=status.HTTP_200_OK)
@@ -50,7 +45,7 @@ async def login_for_access_token(
         )
 
     # -- Create JWT Token
-    access_token_expires = timedelta(minutes=JSON_WEB_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.JSON_WEB_TOKEN_EXPIRE_MINUTES)
     access_token = await create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
@@ -62,5 +57,5 @@ async def user(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UserSchema:
     """Return the current user."""
-    logger.info(f"user(current_user.id={current_user.id})")
+    logger.info(f"user({current_user.id=})")
     return UserSchema.model_validate(current_user)

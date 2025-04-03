@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 
-from air_table.routes import router as air_table_router
-from auth.routes import router as auth_router
-from project.routes import router as project_router
-from project_browser.routes import router as project_browser_router
+from features.air_table.routes import router as air_table_router
+from features.auth.routes import router as auth_router
+from features.project.routes import router as project_router
+from features.project_browser.routes import router as project_browser_router
 
 
 def register_routes(app: FastAPI):

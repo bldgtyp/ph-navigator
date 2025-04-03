@@ -4,7 +4,7 @@ from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel
 
-from air_table.schema import AirTableBaseCreateSchema
+from features.air_table.schema import AirTableBaseCreateSchema
 
 # ---------------------------------------------------------------------------------------
 

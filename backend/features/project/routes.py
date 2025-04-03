@@ -5,10 +5,10 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from config import limiter
 from database import get_db
-from project.schema import ProjectSchema
-from project.services import get_project_by_bt_number
-from rate_limiting import limiter
+from features.project.schema import ProjectSchema
+from features.project.services import get_project_by_bt_number
 
 logger = logging.getLogger()
 
@@ -26,7 +26,7 @@ async def project(
     db: Session = Depends(get_db),
 ) -> ProjectSchema:
     """Return a project by its BuildingType Number."""
-    logger.info(f"project(project_bt_num={project_bt_num})")
+    logger.info(f"project({project_bt_num=})")
     project = await get_project_by_bt_number(db, project_bt_num)
     if not project:
         raise HTTPException(

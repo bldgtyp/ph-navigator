@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from db_entities.airtable.at_table import AirTableTable
-from project.services import get_project_by_bt_number
+from features.project.services import get_project_by_bt_number
 
 
 async def get_at_base_id_by_project_id(project_bt_num: int, db: Session) -> str:

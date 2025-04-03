@@ -1,29 +1,20 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
 import bcrypt
 import jwt
-from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from rich import print
 from sqlalchemy.orm import Session
 
-from auth.schema import TokenDataSchema, UserSchema
+from config import settings
 from database import get_db
 from db_entities.user import User
-
-load_dotenv()
-
-
-# to generate a new SECRET KEY: `openssl rand -hex 32``
-JSON_WEB_TOKEN_SECRET_KEY = str(os.getenv("JSON_WEB_TOKEN_SECRET_KEY"))
-JSON_WEB_TOKEN_ALGORITHM = str(os.getenv("JSON_WEB_TOKEN_ALGORITHM"))
-JSON_WEB_TOKEN_EXPIRE_MINUTES = int(os.getenv("JSON_WEB_TOKEN_EXPIRE_MINUTES", "30"))
+from features.auth.schema import TokenDataSchema, UserSchema
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -67,7 +58,9 @@ async def create_access_token(
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
-        to_encode, JSON_WEB_TOKEN_SECRET_KEY, algorithm=JSON_WEB_TOKEN_ALGORITHM
+        to_encode,
+        settings.JSON_WEB_TOKEN_SECRET_KEY,
+        algorithm=settings.JSON_WEB_TOKEN_ALGORITHM,
     )
     return encoded_jwt
 
@@ -82,7 +75,9 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(
-            token, JSON_WEB_TOKEN_SECRET_KEY, algorithms=[JSON_WEB_TOKEN_ALGORITHM]
+            token,
+            settings.JSON_WEB_TOKEN_SECRET_KEY,
+            algorithms=[settings.JSON_WEB_TOKEN_ALGORITHM],
         )
         username = payload.get("sub")
         if username is None:
