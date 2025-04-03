@@ -2,12 +2,12 @@ import './styles/App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import { UserProvider } from "./features/auth/contexts/UserContext";
-import TopAppBar from './components/layout/AppBar';
+import TopAppBar from './features/auth/components/AppBar';
 import Landing from "./Landing";
 import Login from "./features/auth/components/Login";
 import Projects from "./features/project_browser/components/Projects";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
-import Project from "./features/project/components/Project";
+import Project from "./features/project_view/components/Project";
 import Account from "./features/auth/components/Account";
 
 function App() {

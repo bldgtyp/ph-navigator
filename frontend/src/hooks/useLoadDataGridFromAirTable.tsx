@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { datasheetRequired } from "../components/common/CheckboxForDatasheet";
+import { datasheetRequired } from "../features/project_view/data_views/shared/components/CheckboxForDatasheet";
 import fetchData from "../hooks/fetchAirTable";
 
 /**
