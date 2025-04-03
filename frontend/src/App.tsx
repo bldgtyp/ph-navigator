@@ -1,33 +1,42 @@
 import './styles/App.css';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Component, ReactNode, ErrorInfo } from 'react'
+import { BrowserRouter as Router } from 'react-router-dom';
 
 import { UserProvider } from "./features/auth/contexts/UserContext";
 import TopAppBar from './features/auth/components/AppBar';
-import Landing from "./Landing";
-import Login from "./features/auth/components/Login";
-import Projects from "./features/project_browser/components/Projects";
-import ProtectedRoute from "./features/auth/components/ProtectedRoute";
-import Project from "./features/project_view/components/Project";
-import Account from "./features/auth/components/Account";
+import AppRoutes from './Routes';
+
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+    return this.props.children;
+  }
+}
+
 
 function App() {
   return (
-    <UserProvider>
-      <Router>
-        <TopAppBar />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/projects" element={<Projects />} />
-          </Route>
-          <Route element={<ProtectedRoute />}>
-            <Route path="/account" element={<Account />} />
-          </Route>
-          <Route path="/project/:projectId" element={<Project />} />
-        </Routes>
-      </Router>
-    </UserProvider>
+    <ErrorBoundary>
+      <UserProvider>
+        <Router>
+          <TopAppBar />
+          <AppRoutes />
+        </Router>
+      </UserProvider>
+    </ErrorBoundary>
   );
 }
 
