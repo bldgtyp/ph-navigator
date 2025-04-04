@@ -3,6 +3,7 @@ bcrypt
 fastapi
 honeybee-ph
 passlib
+PHX
 psycopg2-binary
 pyairtable
 pyjwt
