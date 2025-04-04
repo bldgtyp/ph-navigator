@@ -9,15 +9,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from starlette import status
 
-from config import settings, limiter
+from config import limiter, settings
 from database import get_db
 from db_entities.user import User
 from features.auth.schema import TokenSchema, UserSchema
-from features.auth.services import (
-    authenticate_user,
-    create_access_token,
-    get_current_active_user,
-)
+from features.auth.services import (authenticate_user, create_access_token,
+                                    get_current_active_user)
 
 logger = logging.getLogger()
 
@@ -58,4 +55,4 @@ async def user(
 ) -> UserSchema:
     """Return the current user."""
     logger.info(f"user({current_user.id=})")
-    return UserSchema.model_validate(current_user)
+    return UserSchema.from_orm(current_user)

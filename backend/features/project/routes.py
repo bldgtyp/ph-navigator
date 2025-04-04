@@ -32,4 +32,4 @@ async def project(
         raise HTTPException(
             status_code=404, detail=f"Project {project_bt_num} not found"
         )
-    return ProjectSchema.model_validate(project)
+    return ProjectSchema.from_orm(project)

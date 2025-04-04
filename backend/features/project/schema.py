@@ -29,6 +29,5 @@ class ProjectSchema(ProjectBaseSchema):
 
     class Config:
         from_attributes = True
+        orm_mode = True
 
-
-ProjectSchema.model_rebuild()  # Update the forward references in the model

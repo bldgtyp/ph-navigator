@@ -1,13 +1,14 @@
 alembic
 bcrypt
 fastapi
+honeybee-ph
 passlib
 psycopg2-binary
 pyairtable
 pyjwt
 python-dotenv
 python-multipart
-pydantic-settings
+pydantic<2.0
 rich
 sqlalchemy
 slowapi

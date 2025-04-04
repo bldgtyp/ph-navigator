@@ -22,6 +22,7 @@ class AirTableTableSchema(AirTableTableBaseSchema):
 
     class Config:
         from_attributes = True
+        from_orm = True
 
 
 # ---------------------------------------------------------------------------------------
@@ -42,3 +43,4 @@ class AirTableBaseSchema(AirTableBaseBaseSchema):
 
     class Config:
         from_attributes = True
+        orm_mode = True

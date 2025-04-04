@@ -60,8 +60,7 @@ function createTextLabel(text: string, msh: THREE.Mesh): any {
     textMesh.anchorX = 'center';
     textMesh.anchorY = 'middle';
     textMesh.color = 0x000000;
-    return null
-    // return textMesh
+    return textMesh
 }
 
 
@@ -114,7 +113,8 @@ export function loadModelFaces(world: React.RefObject<SceneSetup>, hbFaces: hbFa
                 world.current.buildingGeometryVertices.add(apertureGeom.vertices)
 
                 const txt = createTextLabel(aperture.display_name, apertureGeom.mesh)
-                world.current.buildingGeometryMeshes.add(txt)
+                // TODO: Text is still not working right. So leave this off for now.
+                //world.current.buildingGeometryMeshes.add(txt)
             }
         });
     });

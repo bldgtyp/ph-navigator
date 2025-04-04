@@ -50,16 +50,17 @@ function Model(props: ModelProps) {
     useEffect(() => {
         async function loadModelDataIntoWorld(projectId: string,) {
             console.log("Loading Model Data into World...");
+
             try {
                 const modelData = await fetchModelData(projectId);
                 if (modelData === null) { return }
                 handleLoadError(loadModelFaces, world, modelData.facesData);
-                // handleLoadError(loadSpaces, world, modelData.spacesData);
-                // handleLoadError(loadSpaceFloors, world, modelData.spacesData);
-                // handleLoadError(loadSunPath, world, modelData.sunPathData);
-                // handleLoadError(loadHotWaterPiping, world, modelData.hotWaterSystemData);
-                // handleLoadError(loadERVDucting, world, modelData.ventilationSystemData);
-                // handleLoadError(loadShades, world, modelData.shadingElementsData);
+                handleLoadError(loadSpaces, world, modelData.spacesData);
+                handleLoadError(loadSpaceFloors, world, modelData.spacesData);
+                handleLoadError(loadSunPath, world, modelData.sunPathData);
+                handleLoadError(loadHotWaterPiping, world, modelData.hotWaterSystemData);
+                handleLoadError(loadERVDucting, world, modelData.ventilationSystemData);
+                handleLoadError(loadShades, world, modelData.shadingElementsData);
             } catch (error) {
                 alert(`Error loading model data: ${error}`);
             } finally {

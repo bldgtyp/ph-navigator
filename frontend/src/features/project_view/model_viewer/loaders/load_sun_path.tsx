@@ -4,9 +4,9 @@ import { convertLBTPolyline3DtoLine } from '../to_three_geometry/ladybug_geometr
 import { convertLBTArc3DtoLine } from '../to_three_geometry/ladybug_geometry/geometry3d/arc';
 import { convertLBTArc2DtoLine } from '../to_three_geometry/ladybug_geometry/geometry2d/arc';
 import { convertLBTLineSegment2DtoLine } from '../to_three_geometry/ladybug_geometry/geometry2d/line';
-import { lbtSunPathDTO } from "../types/ladybug/sunpath";
+import { lbtSunPathAndCompass } from "../types/ladybug/sunpath";
 
-export function loadSunPath(world: React.RefObject<SceneSetup>, data: lbtSunPathDTO) {
+export function loadSunPath(world: React.RefObject<SceneSetup>, data: lbtSunPathAndCompass) {
     data.sunpath.hourly_analemma_polyline3d.forEach((lbtPolyline3D) => {
         const line = convertLBTPolyline3DtoLine(lbtPolyline3D)
         line.computeLineDistances(); // Dashes don't work without this

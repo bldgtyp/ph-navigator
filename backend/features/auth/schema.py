@@ -19,9 +19,9 @@ class UserSchema(BaseModel):
 
     class Config:
         from_attributes = True
+        orm_mode = True
 
 
-UserSchema.model_rebuild()  # Update the forward references in the model
 
 
 # ---------------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 import bcrypt
 from sqlalchemy.orm import Session
 
-from database import Base, SessionLocal, engine
+from database import Base, SessionLocal, engine, get_db
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.project import Project
@@ -31,6 +31,7 @@ project_data = [
             "FRAME_TYPES": "tblejOjMq62zdRT3D",
             "WINDOW_UNIT_TYPES": "tblGOpIen7MnCuQRe",
             "MATERIAL_LAYERS": "tblkWxg3xXMjzjO32",
+            "HBJSON": "tbllXDdHXDwMxeb30",
         },
     },
     {
@@ -51,6 +52,7 @@ project_data = [
             "FRAME_TYPES": "tblJm0uhhChDY0jKQ",
             "WINDOW_UNIT_TYPES": "tbln2qVrxqSNlAJOK",
             "MATERIAL_LAYERS": "tblaqehqmP6xfOPUP",
+            "HBJSON": "tblyXNYA0z8OiZQ2a",
         },
     },
     {
@@ -71,6 +73,7 @@ project_data = [
             "FRAME_TYPES": "tblgfvZKVLArxhyTC",
             "WINDOW_UNIT_TYPES": "tbl47pEy8yTM3rwdC",
             "MATERIAL_LAYERS": "tblUSf2cgBHb61ZBq",
+            "HBJSON": "",
         },
     },
 ]
@@ -153,6 +156,8 @@ if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
-    users = add_dummy_users(db)
-    add_dummy_projects(db, users)
-    db.close()
+    try:
+        users = add_dummy_users(db)
+        add_dummy_projects(db, users)
+    finally:
+        db.close()

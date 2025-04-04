@@ -19,7 +19,7 @@ type lbtSunPath = {
     monthly_day_arc3d: lbtArc3D[],
 }
 
-export type lbtSunPathDTO = {
+export type lbtSunPathAndCompass = {
     sunpath: lbtSunPath,
     compass: lbtCompass
 };
