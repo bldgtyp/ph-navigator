@@ -8,19 +8,37 @@ import { Route, Routes, useParams, useNavigate } from "react-router-dom";
 import { SceneSetup } from './scene_setup/SceneSetup';
 import World from './World';
 import Model from './Model';
-
+import BottomMenubar from './components/BottomMenubar';
+import { HoverObjectContext } from './contexts/hover_object_context';
+import { AppStateContextProvider } from './contexts/app_viz_state_context';
+import { AppToolStateContextProvider } from './contexts/app_tool_state_context';
+import { SelectedObjectContextProvider } from './contexts/selected_object_context';
+import { HoverObjectContextProvider } from './contexts/hover_object_context';
 
 export default function Viewer(params: any) {
     console.log("Rendering Viewer Component...");
 
-    const { teamId, projectId } = useParams();
     const [showModel, setShowModel] = useState(true);
     const world = useRef(new SceneSetup());
 
+    // THREE.js Dimension Lines
+    const hoveringVertex = useRef<THREE.Vector3 | null>(null);
+    const dimensionLinesRef = useRef(new THREE.Group());
+    world.current.scene.add(dimensionLinesRef.current);
+
     return (
         <>
-            <World world={world} />
-            <Model world={world} showModel={showModel} />
+            <AppStateContextProvider>
+                <AppToolStateContextProvider>
+                    <SelectedObjectContextProvider>
+                        <HoverObjectContextProvider>
+                            <World world={world} hoveringVertex={hoveringVertex} dimensionLinesRef={dimensionLinesRef} />
+                            <Model world={world} showModel={showModel} />
+                        </HoverObjectContextProvider>
+                    </SelectedObjectContextProvider>
+                    <BottomMenubar />
+                </AppToolStateContextProvider>
+            </AppStateContextProvider>
         </>
     )
 }

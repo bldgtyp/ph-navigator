@@ -1,0 +1,35 @@
+/* ------------------------------------------------------------------------- */
+/* Tool-State Icon Bar  */
+
+.tool-state-menubar {
+    background-color: rgba(247, 249, 253, 0.6) !important;
+    border: 1px solid rgba(222 231 249) !important;
+    border-radius: 20%;
+    box-shadow: none !important;
+    text-align: center;
+    padding: 0.35em;
+    margin-right: 10px !important;
+}
+
+.tool-state-button {
+    width: 40px;
+    height: 40px;
+    border-style: none;
+    border-radius: 50%;
+    cursor: pointer;
+    /* box-shadow: 2px 2px 3px 0px rgba(101, 106, 115, 0.1); */
+    background: none;
+
+}
+
+.tool-state-button:hover {
+    background-color: #deb5de;
+}
+
+.tool-state-button.active {
+    background-color: #ff1bff;
+}
+
+.tool-state-button svg {
+    pointer-events: none;
+}
