@@ -2,16 +2,18 @@
 
 from logging import getLogger
 
-from ladybug import epw
+from ladybug.epw import EPW
 from pyairtable import Api
 from sqlalchemy.orm import Session
 
 from config import settings
 
 from ...air_table.services import download_epw_file, get_airtable_base_ref, get_airtable_table_ref
+from ..cache import LimitedCache
 
 logger = getLogger(__name__)
 
+EPW_CACHE = LimitedCache[EPW]()
 
 class MissingFileException(Exception):
     """Custom exception for missing HBJSON file."""
@@ -48,16 +50,21 @@ async def find_epw_file_url(db: Session, project_id: int) -> str:
         raise Exception(e)
     
 
-async def load_epw_object(db: Session, project_id: int) -> epw.EPW:
+async def load_epw_object(db: Session, project_id: int) -> EPW:
     """Return a Ladybug-EPW object for the specified Project."""
     logger.info(f"load_epw_object({project_id=})")
+
+    if epw_object := EPW_CACHE[project_id]:
+        logger.info(f"EPW object found in cache for Project ID: {project_id}")
+        return epw_object
 
     # -- Get the HBJSON File URL from the database and download it
     epw_file_url = await find_epw_file_url(db, project_id)
     epw_file = await download_epw_file(epw_file_url)
 
     # -- Parse the EPW content into a Ladybug EPW object
-    epw_object = epw.EPW.from_file_string(epw_file)
+    epw_object = EPW.from_file_string(epw_file)
+    EPW_CACHE[project_id] = epw_object
 
     return epw_object
 

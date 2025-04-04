@@ -7,11 +7,13 @@ from PHX.from_HBJSON import read_HBJSON_file
 from pyairtable import Api
 from sqlalchemy.orm import Session
 
+from ...air_table.services import download_hbjson_file, get_airtable_base_ref, get_airtable_table_ref
+from ..cache import LimitedCache
 from config import settings
 
-from ...air_table.services import download_hbjson_file, get_airtable_base_ref, get_airtable_table_ref
-
 logger = getLogger(__name__)
+
+MODEL_CACHE = LimitedCache[Model]()
 
 
 class MissingFileException(Exception):
@@ -59,13 +61,19 @@ async def load_hb_model(db: Session, project_id: int) -> Model:
     """Return a Honeybee-Model object for the specified Project"""
     logger.info(f"get_model({project_id=})")
     
+    if hb_model := MODEL_CACHE[project_id]:
+        logger.info(f"Model found in cache for Project ID: {project_id}")
+        return hb_model
+
     # -- Get the HBJSON File URL from the database and download it
     hbjson_file_url = await find_hbjson_file_url(db, project_id)
     hb_model_dict = await download_hbjson_file(hbjson_file_url)
 
     # -- Convert the HBJSON file to a Honeybee-Model object
     try:
-        return read_HBJSON_file.convert_hbjson_dict_to_hb_model(hb_model_dict)
+        hb_model = read_HBJSON_file.convert_hbjson_dict_to_hb_model(hb_model_dict)
+        MODEL_CACHE[project_id] = hb_model
+        return hb_model
     except Exception as e:
         logger.error(f"Error converting HBJSON to Honeybee-Model: {e}")
         raise HBJSONModelLoadError(project_id, e)
