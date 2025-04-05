@@ -6,7 +6,7 @@ import InfoIcon from "@mui/icons-material/Info";
  * @param params - The parameters for the cell.
  * @returns The rendered info tooltip cell.
  */
-export const TooltipWithInfo = (params: any) =>
+export const TooltipWithInfo: React.FC<any> = (params) =>
   params.row.FLAG ? (
     <Tooltip title={params.row.FLAG}>
       <Stack direction="row" spacing={1}>

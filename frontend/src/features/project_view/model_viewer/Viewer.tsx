@@ -13,7 +13,8 @@ import { AppToolStateContextProvider } from './contexts/app_tool_state_context';
 import { SelectedObjectContextProvider } from './contexts/selected_object_context';
 import { HoverObjectContextProvider } from './contexts/hover_object_context';
 
-export default function Viewer(params: any) {
+
+const Viewer: React.FC<any> = () => {
     console.log("Rendering Viewer Component...");
 
     const [showModel, setShowModel] = useState(true);
@@ -40,3 +41,5 @@ export default function Viewer(params: any) {
         </>
     )
 }
+
+export default Viewer;

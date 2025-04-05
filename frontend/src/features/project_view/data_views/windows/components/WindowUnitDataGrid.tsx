@@ -72,7 +72,7 @@ const columns = generateGridColumns(tableFields);
 const defaultRow = generateDefaultRow(tableFields);
 
 // ----------------------------------------------------------------------------
-function WindowUnitDataGrid() {
+const WindowUnitDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
   const { showModal, rowData } = useLoadDataGridFromAirTable<WindowUnitTypesRecord>(

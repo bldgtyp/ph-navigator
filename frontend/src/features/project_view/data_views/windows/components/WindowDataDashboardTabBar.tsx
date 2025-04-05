@@ -2,13 +2,13 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 
-type paramsType = {
+type propsType = {
     projectId: string;
     activeTab: number; // The active tab index managed by the parent
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
 }
 
-export default function WindowDataDashboardTabBar({ projectId, activeTab, onTabChange }: paramsType) {
+const WindowDataDashboardTabBar: React.FC<propsType> = ({ projectId, activeTab, onTabChange }) => {
     const tabs = [
         { label: "Glazing Types", path: `${projectId}/glazing_types` },
         { label: "Frame Types", path: `${projectId}/frame_types` },
@@ -34,3 +34,5 @@ export default function WindowDataDashboardTabBar({ projectId, activeTab, onTabC
         </Box>
     );
 }
+
+export default WindowDataDashboardTabBar;

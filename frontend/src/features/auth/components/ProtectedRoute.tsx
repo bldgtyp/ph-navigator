@@ -1,9 +1,9 @@
 import { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
-import { UserContextType } from "../../types/User";
+import { UserContextType } from "../../types/UserType";
 
-const ProtectedRoute = () => {
+const ProtectedRoute: React.FC = () => {
     const userContext = useContext(UserContext) as UserContextType;
     console.log("ProtectedRoute | userContext:", userContext);
 

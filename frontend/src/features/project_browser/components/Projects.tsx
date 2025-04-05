@@ -3,10 +3,10 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import { UserContext } from "../../auth/contexts/UserContext";
 import { fetchWithAlert } from "../../../api/fetchData";
-import { ProjectType, defaultProjectType } from "../../types/Project";
+import { ProjectType, defaultProjectType } from "../../types/ProjectType";
 import ProjectCard from "./ProjectCard";
 
-export default function Projects() {
+const Projects: React.FC = () => {
     const userContext = useContext(UserContext);
     const [isLoading, setIsLoading] = useState(true);
     const [projectCardData, setProjectCardData] = useState<ProjectType[]>([defaultProjectType]);
@@ -40,3 +40,5 @@ export default function Projects() {
         </Stack>
     );
 }
+
+export default Projects;

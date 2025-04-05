@@ -1,7 +1,8 @@
-export default function Account() {
+const Account: React.FC = () => {
     return (
         <>
             Account Page
         </>
     )
 }
+export default Account;

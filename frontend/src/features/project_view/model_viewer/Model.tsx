@@ -15,10 +15,6 @@ import { loadHotWaterPiping } from './loaders/load_hot_water_piping';
 import { loadERVDucting } from './loaders/load_erv_ducting';
 import { loadShades } from './loaders/load_shades';
 
-type ModelProps = {
-    world: React.RefObject<SceneSetup>;
-    showModel: boolean;
-};
 
 /**
  * Handles errors in the specified function.
@@ -38,10 +34,12 @@ function handleLoadError<T>(_func: any, world: React.RefObject<SceneSetup>, data
     }
 }
 
-function Model(props: ModelProps) {
-    console.log("Rendering Model Component...")
+type ModelProps = {
+    world: React.RefObject<SceneSetup>;
+    showModel: boolean;
+};
 
-    const { world, showModel } = props;
+const Model: React.FC<ModelProps> = ({ world, showModel }) => {
     const { projectId } = useParams();
     const [isLoading, setIsLoading] = useState(true);
 

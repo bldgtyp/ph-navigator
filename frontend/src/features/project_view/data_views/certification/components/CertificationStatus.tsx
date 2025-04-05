@@ -4,15 +4,19 @@ import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import { CertificationDataType } from "../../types/CertificationData";
 
-function CertificationStatus(props: { statusData: any; linkData: any; projData: CertificationDataType }) {
-  const currentStep: number = props.statusData.CURRENT_STATUS ? parseInt(props.statusData.CURRENT_STATUS as string) : 0;
+type propsType = {
+  statusData: any;
+};
+
+const CertificationStatus: React.FC<propsType> = ({ statusData }) => {
+  const currentStep: number = statusData.CURRENT_STATUS ? parseInt(statusData.CURRENT_STATUS as string) : 0;
 
   // Pull out any 'statusData' items who have 'STEP' in the field name and return
   // an array in alphabetical order by the key ("STEP_1", "STEP_2", etc)
-  const steps = Object.keys(props.statusData)
+  const steps = Object.keys(statusData)
     .filter((item) => item.includes("STEP"))
     .sort()
-    .map((key: string) => props.statusData[key]);
+    .map((key: string) => statusData[key]);
 
   return (
     <>

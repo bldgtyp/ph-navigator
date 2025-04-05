@@ -19,7 +19,7 @@ const icons: any[] = [
     <PipeIcon key={6} title="Hot Water Piping" />,
 ];
 
-const VizStateMenubar = () => {
+const VizStateMenubar: React.FC = () => {
     const [activeButton, setActiveButton] = useState<number | null>(null);
     const appStateContext = useAppVizStateContext();
 

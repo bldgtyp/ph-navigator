@@ -7,14 +7,14 @@ import LinkIcon from "@mui/icons-material/Link";
  * @param params - The parameters for the cell.
  * @returns The rendered link cell.
  */
-export const LinkIconWithDefault = (params: { value?: string }) => {
-  if (params.value) {
+export const LinkIconWithDefault: React.FC<{ value?: string }> = ({ value }) => {
+  if (value) {
     return (
-      <a href={params.value as string} target="_blank" rel="noopener noreferrer">
+      <a href={value as string} target="_blank" rel="noopener noreferrer">
         <LinkIcon />
       </a>
     );
   } else {
-    return "-";
+    return <p>-</p>;
   }
 };

@@ -49,7 +49,7 @@ const tableFields = [
     flex: 1,
     renderCell: (params: any) => CheckboxForSpecification(params),
     renderHeader: (params: any) =>
-      TooltipHeader(params, "Do we have a PDF data-sheet with the product's performance values? Yes/No"),
+      TooltipHeader({ params, title: "Do we have a PDF data-sheet with the product's performance values? Yes/No" }),
   },
   {
     field: "DATA_SHEET",
@@ -57,13 +57,13 @@ const tableFields = [
     flex: 1,
     renderCell: (params: any) => CheckboxForDatasheet(params),
     renderHeader: (params: any) =>
-      TooltipHeader(params, "Do we have a PDF data-sheet with the product's performance values? Yes/No"),
+      TooltipHeader({ params, title: "Do we have a PDF data-sheet with the product's performance values? Yes/No" }),
   },
   {
     field: "MATERIAL RESISTIVITY [HR-FT2-F / BTU-IN]",
     headerName: "R/Inch Value",
     flex: 1,
-    renderHeader: (params: any) => TooltipHeader(params, "Do we have a product specification? Yes/No"),
+    renderHeader: (params: any) => TooltipHeader({ params, title: "Do we have a product specification? Yes/No" }),
     renderCell: (params: any) => {
       return ValueAsDecimal(params, 2);
     },
@@ -83,7 +83,7 @@ const columns = generateGridColumns(tableFields);
 const defaultRow = generateDefaultRow(tableFields);
 
 // ----------------------------------------------------------------------------
-function MaterialsDataGrid() {
+const MaterialsDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
   const { showModal, rowData } = useLoadDataGridFromAirTable<MaterialsRecord>(defaultRow, "material_layers", projectId);

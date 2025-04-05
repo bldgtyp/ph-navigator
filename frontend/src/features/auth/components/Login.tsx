@@ -6,10 +6,10 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { UserContext } from "../contexts/UserContext";
-import { UserContextType } from "../../types/User";
+import { UserContextType } from "../../types/UserType";
 import constants from "../../../data/constants.json";
 
-const Login = () => {
+const Login: React.FC = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const userContext = useContext(UserContext) as UserContextType;

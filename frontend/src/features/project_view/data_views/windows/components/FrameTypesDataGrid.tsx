@@ -52,7 +52,7 @@ const tableFields = [
     headerName: "Specification",
     flex: 1,
     renderCell: (params: any) => CheckboxForSpecification(params),
-    renderHeader: (params: any) => TooltipHeader(params, "Do we have a product specification? Yes/No"),
+    renderHeader: (params: any) => TooltipHeader({ params, title: "Do we have a product specification? Yes/No" }),
   },
   {
     field: "DATA_SHEET",
@@ -60,7 +60,7 @@ const tableFields = [
     flex: 1,
     renderCell: (params: any) => CheckboxForDatasheet(params),
     renderHeader: (params: any) =>
-      TooltipHeader(params, "Do we have a PDF data-sheet with the product's performance values? Yes/No"),
+      TooltipHeader({ params, title: "Do we have a PDF data-sheet with the product's performance values? Yes/No" }),
   },
   { field: "MANUFACTURER", headerName: "Manuf.", flex: 1 },
   { field: "MODEL", headerName: "Model", flex: 1 },
@@ -105,7 +105,7 @@ const columns = generateGridColumns(tableFields);
 const defaultRow = generateDefaultRow(tableFields);
 
 // ----------------------------------------------------------------------------
-function FrameTypesDataGrid() {
+const FrameTypesDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
   const { showModal, rowData } = useLoadDataGridFromAirTable<FrameTypesRecord>(defaultRow, "frame_types", projectId);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
-import { ProjectType, defaultProjectType } from "../../types/Project";
+import { ProjectType, defaultProjectType } from "../../types/ProjectType";
 import { fetchWithAlert } from "../../../api/fetchData";
 import ProjectBar from "./ProjectBar";
 import ProjectTabBar from "./ProjectTabBar";
@@ -11,7 +11,8 @@ import AssemblyDataDashboard from "../data_views/assemblies/components/AssemblyD
 import Viewer from "../model_viewer/Viewer";
 import ProjectCertification from "../data_views/certification/components/Certification";
 
-export default function ProjectContainer() {
+
+const ProjectContainer: React.FC = () => {
     const { projectId } = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const [projectData, setProjectData] = useState<ProjectType>(defaultProjectType);
@@ -46,10 +47,10 @@ export default function ProjectContainer() {
                     <ProjectBar {...projectData} />
                     <ProjectTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
                     <Box id="project-container" style={{ marginTop: "16px" }}>
-                        {activeTab === 0 && <ProjectCertification {...projectData} />}
-                        {activeTab === 1 && <WindowDataDashboard {...projectData} />}
-                        {activeTab === 2 && <AssemblyDataDashboard {...projectData} />}
-                        {activeTab === 3 && <EquipmentDataDashboard {...projectData} />}
+                        {activeTab === 0 && <ProjectCertification />}
+                        {activeTab === 1 && <WindowDataDashboard />}
+                        {activeTab === 2 && <AssemblyDataDashboard />}
+                        {activeTab === 3 && <EquipmentDataDashboard />}
                         {activeTab === 4 && <Viewer {...projectData} />}
                     </Box>
                 </>
@@ -57,3 +58,5 @@ export default function ProjectContainer() {
         </>
     )
 }
+
+export default ProjectContainer;

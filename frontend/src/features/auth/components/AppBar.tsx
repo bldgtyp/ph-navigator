@@ -6,9 +6,9 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { UserContext } from "../../../features/auth/contexts/UserContext";
-import { UserMenu } from "./UserMenu";
+import UserMenu from "./UserMenu";
 
-export default function TopAppBar() {
+const TopAppBar: React.FC = () => {
     const userContext = useContext(UserContext);
     const appBarStyle = { minHeight: "30px !important", height: "30px" }
     const titleStyle = { flexGrow: 1, textDecoration: "none", color: "inherit", fontSize: "0.8rem", alignItems: "center" }
@@ -35,3 +35,5 @@ export default function TopAppBar() {
         </AppBar>
     )
 }
+
+export default TopAppBar;

@@ -30,14 +30,19 @@ const tableFields = [
   },
 ];
 
-function ResultDataGrid(props: { title: string; rowData: DataGridRow[] }) {
+type propsType = {
+  title: string;
+  rowData: DataGridRow[];
+};
+
+const ResultDataGrid: React.FC<propsType> = ({ title, rowData }) => {
   const [columns, setColumns] = useState(generateGridColumns(tableFields));
 
   // Once the data is finished downloading and props is updated...
   useEffect(() => {
     // Add in the user-determined result columns, if any
-    if (props.rowData.length > 0) {
-      for (const [newKey] of Object.entries(props.rowData[0])) {
+    if (rowData.length > 0) {
+      for (const [newKey] of Object.entries(rowData[0])) {
         if (newKey.includes("RESULT")) {
           // Make sure not to duplicate any columns
           const tableExistingColumnNames = tableFields.map((item) => item.key);
@@ -60,17 +65,17 @@ function ResultDataGrid(props: { title: string; rowData: DataGridRow[] }) {
       }
       setColumns(generateGridColumns(tableFields));
     }
-  }, [props.rowData]);
+  }, [rowData]);
 
   // --------------------------------------------------------------------------
   return (
     <>
       <Stack className="content-block-heading" spacing={1}>
-        <h3>{props.title}:</h3>
+        <h3>{title}:</h3>
       </Stack>
       <Box>
         <StyledDataGrid
-          rows={props.rowData}
+          rows={rowData}
           columns={columns}
           initialState={{
             pagination: {

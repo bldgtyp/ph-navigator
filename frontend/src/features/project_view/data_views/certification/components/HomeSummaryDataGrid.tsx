@@ -12,6 +12,7 @@ import { generateDefaultRow } from "../../shared/components/DataGridFunctions";
 import LoadingModal from "../../shared/components/LoadingModal";
 import useLoadDataGridFromAirTable from "../../../model_viewer/hooks/useLoadDataGridFromAirTable";
 import ValueAsSentenceCase from "../../../../../formatters/ValueAsSentenceCase";
+import React from "react";
 
 // ----------------------------------------------------------------------------
 // Define the AirTable data types
@@ -80,7 +81,8 @@ const tableFields = [
 // This will display while the data is being fetched
 const defaultRow = generateDefaultRow(tableFields);
 
-function HomeSummaryDataGrid() {
+
+const HomeSummaryDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const location = useLocation();
   const { projectId } = useParams();

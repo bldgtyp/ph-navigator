@@ -19,17 +19,12 @@ interface ViewContainerProps {
     dimensionLinesRef: React.RefObject<THREE.Group>;
 }
 
-function World(props: ViewContainerProps) {
-    console.log("Rendering World Component...")
-
+const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionLinesRef }) => {
     const appVizStateContext = useAppVizStateContext();
     const appToolStateContext = useAppToolStateContext();
     const selectedObjectContext = useSelectedObjectContext();
     const hoverObjectContext = useHoverObjectContext();
-
-    const { world, hoveringVertex, dimensionLinesRef } = props;
     const mountRef = useRef<HTMLDivElement | null>(null);
-
 
     // Setup all the Event Listener Callbacks for the different Tool-States
     // For some reason, this does not work unless these are all wrapped in useCallback?

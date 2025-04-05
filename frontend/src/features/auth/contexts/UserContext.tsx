@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useCallback, ReactNode } from "react";
 import constants from "../../../data/constants.json";
-import { UserType, UserContextType } from "../../types/User";
+import { UserType, UserContextType } from "../../types/UserType";
 
 export const defaultUserContext: UserContextType = {
   user: null,

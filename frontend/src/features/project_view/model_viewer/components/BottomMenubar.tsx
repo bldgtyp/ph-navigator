@@ -2,7 +2,7 @@ import { Stack } from "@mui/material";
 import ToolStateMenubar from './ToolStateMenubar';
 import VizStateMenubar from './VizStateMenubar';
 
-function BottomMenubar() {
+const BottomMenubar: React.FC = () => {
 
     return (
         <Stack

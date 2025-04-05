@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 
-function DataViewPage(props: any) {
+const DataViewPage: React.FC<any> = (props) => {
   return <Box className="page">{props.children}</Box>;
 }
 

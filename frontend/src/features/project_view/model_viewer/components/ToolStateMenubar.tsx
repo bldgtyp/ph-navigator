@@ -14,7 +14,7 @@ const icons: any[] = [
 ];
 
 
-function ToolStateMenubar() {
+const ToolStateMenubar: React.FC = () => {
     const [activeButton, setActiveButton] = useState<number | null>(null);
     const appStateContext = useAppToolStateContext();
 

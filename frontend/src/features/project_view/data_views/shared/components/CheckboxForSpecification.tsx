@@ -22,10 +22,10 @@ function specificationCheckboxStyle(value?: string) {
  * @param params.row - The row data for the checkbox.
  * @returns The rendered checkbox component.
  */
-export const CheckboxForSpecification = (params: { value?: string; row: any }) => {
-  const { style } = specificationCheckboxStyle(params.value);
+export const CheckboxForSpecification: React.FC<{ value?: string; row: any }> = ({ value, row }) => {
+  const { style } = specificationCheckboxStyle(value);
   return (
-    <Tooltip title={params.row.FLAG}>
+    <Tooltip title={row.FLAG}>
       <div className={style} />
     </Tooltip>
   );

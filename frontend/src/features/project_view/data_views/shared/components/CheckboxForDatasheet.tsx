@@ -24,17 +24,19 @@ export const datasheetRequired = (item: { id: string; createdTime: string; field
   return itemCopy;
 };
 
+
+
 /**
  * Renders a checkbox with a link for each item in the data sheet.
  * @param params - An array of parameters for each item.
  * @param params.url - The url for the link.
  */
-export function CheckboxWithLink(params: { url: string; required: boolean }) {
+export const CheckboxWithLink: React.FC<{ url: string; required: boolean }> = ({ url, required }) => {
   return (
     <Stack direction="row" spacing={1}>
       <div className="checkbox-checked" />
-      {params.url && (
-        <a href={params.url} target="_blank" rel="noopener noreferrer">
+      {url && (
+        <a href={url} target="_blank" rel="noopener noreferrer">
           <LinkIcon />
         </a>
       )}
@@ -47,20 +49,22 @@ export function CheckboxWithLink(params: { url: string; required: boolean }) {
  * @param params - The parameters for the checkbox.
  * @param params.value - The value of the checkbox.
  */
-export const CheckboxForDatasheet = (params: { value?: any[] }) => {
-  if (params.value === undefined || params.value.length === 0) {
+export const CheckboxForDatasheet: React.FC<{ value?: any[] }> = ({ value }) => {
+  if (value === undefined || value.length === 0) {
     return <div className="checkbox-na" />;
   }
 
-  if (params.value[0].required === false) {
+  if (value[0].required === false) {
     return <div className="checkbox-na" />;
   }
 
-  if (params.value[0].required === true) {
-    if (params.value[0].url === "") {
+  if (value[0].required === true) {
+    if (value[0].url === "") {
       return <div className="checkbox-needed" />;
     } else {
-      return CheckboxWithLink(params.value[0]);
+      return CheckboxWithLink(value[0]);
     }
   }
+
+  return <div className="checkbox-na" />;
 };

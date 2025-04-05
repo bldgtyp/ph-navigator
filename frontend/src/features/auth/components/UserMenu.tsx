@@ -11,8 +11,11 @@ type userMenuItemType = {
     onClick: () => void;
 }
 
+type propsType = {
+    username: string;
+}
 
-export function UserMenu(params: { username: string }) {
+const UserMenu: React.FC<propsType> = ({ username }) => {
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
     const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -42,7 +45,7 @@ export function UserMenu(params: { username: string }) {
         <Box sx={{ flexGrow: 0 }}>
 
             <Tooltip title="Account">
-                <Button onClick={handleOpenUserMenu} sx={{ p: 0, fontSize: "0.8rem" }} color="inherit">{params.username}</Button>
+                <Button onClick={handleOpenUserMenu} sx={{ p: 0, fontSize: "0.8rem" }} color="inherit">{username}</Button>
             </Tooltip>
 
             <Menu
@@ -71,3 +74,5 @@ export function UserMenu(params: { username: string }) {
         </Box>
     )
 }
+
+export default UserMenu;

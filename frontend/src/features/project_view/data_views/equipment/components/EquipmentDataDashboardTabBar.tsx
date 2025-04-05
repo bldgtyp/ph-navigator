@@ -2,13 +2,13 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 
-type paramsType = {
+type propsType = {
     projectId: string;
     activeTab: number; // The active tab index managed by the parent
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
 }
 
-export default function EquipmentDataDashboardTabBar({ projectId, activeTab, onTabChange }: paramsType) {
+const EquipmentDataDashboardTabBar: React.FC<propsType> = ({ projectId, activeTab, onTabChange }) => {
     const tabs = [
         { label: "Pumps", path: `${projectId}/pumps` },
         { label: "Tanks", path: `${projectId}/dhw_tanks` },
@@ -36,3 +36,5 @@ export default function EquipmentDataDashboardTabBar({ projectId, activeTab, onT
         </Box>
     );
 }
+
+export default EquipmentDataDashboardTabBar;
