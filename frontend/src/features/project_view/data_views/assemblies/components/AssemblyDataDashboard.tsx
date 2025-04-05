@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Box } from "@mui/material";
 import DataViewPage from "../../shared/components/DataViewPage";
 import { fetchWithAlert } from "../../../../../api/fetchData";
 import AssembliesDataDashboardTabBar from "./AssembliesDataDashboardTabBar";
@@ -39,14 +40,14 @@ export default function AssemblyDataDashboard(params: any) {
             {isLoading ? (
                 <div>Loading Project Data</div>
             ) : (
-                <div>
+                <Box id="assemblies-data-dashboard">
                     <AssembliesDataDashboardTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
                     <DataViewPage>
                         <ContentBlock>
                             {activeTab === 0 && <MaterialsDataGrid />}
                         </ContentBlock>
                     </DataViewPage>
-                </div>
+                </Box>
             )}
         </>
     )

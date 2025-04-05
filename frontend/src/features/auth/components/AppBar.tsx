@@ -14,7 +14,7 @@ export default function TopAppBar() {
     const titleStyle = { flexGrow: 1, textDecoration: "none", color: "inherit", fontSize: "0.8rem", alignItems: "center" }
 
     return (
-        <AppBar position="sticky" sx={appBarStyle}>
+        <AppBar id="app-bar" position="sticky" sx={appBarStyle}>
             <Container maxWidth="xl" sx={appBarStyle}>
                 <Toolbar disableGutters sx={appBarStyle}>
 

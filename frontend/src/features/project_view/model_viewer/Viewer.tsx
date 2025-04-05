@@ -2,14 +2,12 @@
 // Setup all the contexts, navbars, controls, and state handlers
 
 import * as THREE from 'three';
-import { useRef, useEffect, useState } from 'react';
-import { Route, Routes, useParams, useNavigate } from "react-router-dom";
+import { useRef, useState } from 'react';
 
 import { SceneSetup } from './scene_setup/SceneSetup';
 import World from './World';
 import Model from './Model';
 import BottomMenubar from './components/BottomMenubar';
-import { HoverObjectContext } from './contexts/hover_object_context';
 import { AppStateContextProvider } from './contexts/app_viz_state_context';
 import { AppToolStateContextProvider } from './contexts/app_tool_state_context';
 import { SelectedObjectContextProvider } from './contexts/selected_object_context';

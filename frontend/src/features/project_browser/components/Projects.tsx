@@ -29,7 +29,7 @@ export default function Projects() {
     }, [userContext]);
 
     return (
-        <Stack spacing={2} sx={{ m: 3 }}>
+        <Stack id="projects" spacing={2} sx={{ m: 3 }}>
             {!isLoading && (
                 <Grid container spacing={3}>
                     {projectCardData.map((p) => {

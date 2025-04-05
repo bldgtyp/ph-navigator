@@ -24,7 +24,7 @@ const VizStateMenubar = () => {
     const appStateContext = useAppVizStateContext();
 
     return (
-        <Stack direction="row" spacing={2} className="viz-state-menubar">
+        <Stack id="viz-state-menubar" direction="row" spacing={2} className="viz-state-menubar">
             {icons.map((icon, index) => (
                 <LightTooltip title={icon.props.title} key={index} placement='top'>
                     <button

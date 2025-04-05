@@ -1,5 +1,5 @@
 import './styles/App.css';
-import { Component, ReactNode, ErrorInfo } from 'react'
+import React, { Component, ReactNode, ErrorInfo } from 'react'
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from "@mui/material/styles";
 import { UserProvider } from "./features/auth/contexts/UserContext";
@@ -26,8 +26,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
-
-function App() {
+const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ThemeProvider theme={theme}>

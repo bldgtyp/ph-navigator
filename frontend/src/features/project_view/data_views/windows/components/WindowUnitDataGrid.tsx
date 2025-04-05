@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { Box, Stack } from "@mui/material";
-import StyledDataGrid from "../../../../../styles/DataGrid";
+import StyledDataGrid from "../../styles/DataGrid";
 import { generateGridColumns, generateDefaultRow } from "../../shared/components/DataGridFunctions";
 import { TooltipWithInfo } from "../../shared/components/TooltipWithInfo";
 import { TooltipWithComment } from "../../shared/components/TooltipWithComment";

@@ -23,17 +23,15 @@ function AppBarLink(props: { url: string, displayText: string }) {
 
 export default function ProjectBar(projectData: ProjectType) {
     return (
-        <Box sx={{ flexGrow: 1 }}>
-            <AppBar position="sticky" sx={{ backgroundColor: "#68a0e2" }}>
-                <Toolbar>
-                    <Typography variant="h6" sx={{ flexGrow: 1, textDecoration: "none", color: "inherit", }}>
-                        {projectData.name}
-                    </Typography>
-                    {AppBarLink({ url: "https://www.phius.org/certifications/projects/certification-review-queue", displayText: "Phius Queue" })}
-                    {AppBarLink({ url: projectData.phius_dropbox_url, displayText: "Phius Dropbox" })}
-                    {AppBarLink({ url: projectData.airtable_base_url, displayText: "AirTable" })}
-                </Toolbar>
-            </AppBar>
-        </Box>
+        <AppBar id="project-bar" position="sticky" sx={{ backgroundColor: "#68a0e2" }}>
+            <Toolbar>
+                <Typography variant="h6" sx={{ flexGrow: 1, textDecoration: "none", color: "inherit", }}>
+                    {projectData.name}
+                </Typography>
+                {AppBarLink({ url: "https://www.phius.org/certifications/projects/certification-review-queue", displayText: "Phius Queue" })}
+                {AppBarLink({ url: projectData.phius_dropbox_url, displayText: "Phius Dropbox" })}
+                {AppBarLink({ url: projectData.airtable_base_url, displayText: "AirTable" })}
+            </Toolbar>
+        </AppBar>
     )
 }

@@ -22,7 +22,7 @@ export default function ProjectTabBar({ projectId, activeTab, onTabChange }: par
     };
 
     return (
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box id="project-tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
                 value={activeTab} // The active tab is managed by the parent
                 onChange={handleTabChange}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import Box from "@mui/material/Box";
 import { ProjectType, defaultProjectType } from "../../types/Project";
 import { fetchWithAlert } from "../../../api/fetchData";
 import ProjectBar from "./ProjectBar";
@@ -10,7 +11,7 @@ import AssemblyDataDashboard from "../data_views/assemblies/components/AssemblyD
 import Viewer from "../model_viewer/Viewer";
 import ProjectCertification from "../data_views/certification/components/Certification";
 
-export default function Project() {
+export default function ProjectContainer() {
     const { projectId } = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const [projectData, setProjectData] = useState<ProjectType>(defaultProjectType);
@@ -41,17 +42,17 @@ export default function Project() {
             {isLoading ? (
                 <div>Loading Project Data</div>
             ) : (
-                <div>
+                <>
                     <ProjectBar {...projectData} />
                     <ProjectTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
-                    <div style={{ marginTop: "16px" }}>
+                    <Box id="project-container" style={{ marginTop: "16px" }}>
                         {activeTab === 0 && <ProjectCertification {...projectData} />}
                         {activeTab === 1 && <WindowDataDashboard {...projectData} />}
                         {activeTab === 2 && <AssemblyDataDashboard {...projectData} />}
                         {activeTab === 3 && <EquipmentDataDashboard {...projectData} />}
                         {activeTab === 4 && <Viewer {...projectData} />}
-                    </div>
-                </div>
+                    </Box>
+                </>
             )}
         </>
     )

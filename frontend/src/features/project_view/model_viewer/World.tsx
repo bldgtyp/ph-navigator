@@ -260,7 +260,7 @@ function World(props: ViewContainerProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return <div ref={mountRef} />
+    return <div id="world" style={{ position: "absolute", top: "0", zIndex: -1 }} ref={mountRef} />
 
 }
 
