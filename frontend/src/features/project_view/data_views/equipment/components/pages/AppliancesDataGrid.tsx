@@ -1,27 +1,34 @@
 import { useParams } from "react-router-dom";
 import { Box, Stack } from "@mui/material";
-import StyledDataGrid from "../../styles/DataGrid";
-import { generateGridColumns, generateDefaultRow } from "../../shared/components/DataGridFunctions";
-import { CheckboxForDatasheet } from "../../shared/components/CheckboxForDatasheet";
-import { CheckboxForSpecification } from "../../shared/components/CheckboxForSpecification";
-import { TooltipWithInfo } from "../../shared/components/TooltipWithInfo";
-import { TooltipWithComment } from "../../shared/components/TooltipWithComment";
-import { TooltipHeader } from "../../shared/components/TooltipHeader";
-import { LinkIconWithDefault } from "../../shared/components/LinkIconWithDefault";
-import LoadingModal from "../../shared/components/LoadingModal";
-import useLoadDataGridFromAirTable from "../../../model_viewer/hooks/useLoadDataGridFromAirTable";
+import StyledDataGrid from "../../../styles/DataGrid";
+import { generateGridColumns, generateDefaultRow } from "../../../shared/components/DataGridFunctions";
+import { CheckboxForDatasheet } from "../../../shared/components/CheckboxForDatasheet";
+import { CheckboxForSpecification } from "../../../shared/components/CheckboxForSpecification";
+import { LinkIconWithDefault } from "../../../shared/components/LinkIconWithDefault";
+import { TooltipWithInfo } from "../../../shared/components/TooltipWithInfo";
+import { TooltipWithComment } from "../../../shared/components/TooltipWithComment";
+import { TooltipHeader } from "../../../shared/components/TooltipHeader";
+import LoadingModal from "../../../shared/components/LoadingModal";
+import useLoadDataGridFromAirTable from "../../../../model_viewer/hooks/useLoadDataGridFromAirTable";
+import React from "react";
 
 // ----------------------------------------------------------------------------
 // Define the AirTable data types
-type DHWTankFields = {
+type AppliancesFields = {
   DISPLAY_NAME: string;
+  ZONE: string;
+  DESCRIPTION: string;
   MANUFACTURER: string;
   MODEL: string;
+  ENERGY_STAR: string;
+  LINK: string;
+  SPECIFICATION: boolean;
   DATA_SHEET: string;
-  SPECIFICATION: string;
+  NOTES: string;
+  FLAG: string;
 };
 
-type DHWTankRecord = { id: string; createdTime: string; fields: DHWTankFields };
+type AppliancesRecord = { id: string; createdTime: string; fields: AppliancesFields };
 
 // --------------------------------------------------------------------------
 // Define the rows and columns
@@ -53,9 +60,17 @@ const tableFields = [
     renderHeader: (params: any) =>
       TooltipHeader({ params, title: "Do we have a PDF data-sheet with the product's performance values? Yes/No" }),
   },
-  { field: "MANUFACTURER", headerName: "Manufacturer", flex: 1 },
+  { field: "DESCRIPTION", headerName: "Type", flex: 1 },
+  { field: "MANUFACTURER", headerName: "Manuf.", flex: 1 },
   { field: "MODEL", headerName: "Model", flex: 1 },
-  { field: "LINK", headerName: "Link", flex: 1, renderCell: (params: any) => LinkIconWithDefault(params) },
+  { field: "ZONE", headerName: "Zone", flex: 1 },
+  { field: "ENERGY_STAR", headerName: "EnergyStar", flex: 1 },
+  {
+    field: "LINK",
+    headerName: "Link",
+    flex: 1,
+    renderCell: (params: any) => LinkIconWithDefault(params),
+  },
 ];
 
 // Create the columns object based on tableFields and then
@@ -65,10 +80,10 @@ const columns = generateGridColumns(tableFields);
 const defaultRow = generateDefaultRow(tableFields);
 
 // ----------------------------------------------------------------------------
-const HotWaterTanksDataGrid: React.FC = () => {
+const AppliancesDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
-  const { showModal, rowData } = useLoadDataGridFromAirTable<DHWTankRecord>(defaultRow, "dhw_tanks", projectId);
+  const { showModal, rowData } = useLoadDataGridFromAirTable<AppliancesRecord>(defaultRow, "appliances", projectId);
 
   // --------------------------------------------------------------------------
   // Render the component
@@ -77,7 +92,7 @@ const HotWaterTanksDataGrid: React.FC = () => {
       {" "}
       <LoadingModal showModal={showModal} />
       <Stack className="content-block-heading" spacing={1}>
-        <h3>HOT WATER TANKS:</h3>
+        <h3>Electrical Appliances:</h3>
       </Stack>
       <Box>
         <StyledDataGrid
@@ -96,4 +111,4 @@ const HotWaterTanksDataGrid: React.FC = () => {
   );
 }
 
-export default HotWaterTanksDataGrid;
+export default AppliancesDataGrid;

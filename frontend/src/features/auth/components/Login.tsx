@@ -32,18 +32,14 @@ const Login: React.FC = () => {
         if (response.ok) {
             const data = await response.json();
             userContext.login(data.access_token);
-            console.log("Login successful");
-            console.log("Redirecting to: /projects");
             navigate("/projects");
         } else {
             alert("Invalid credentials");
         }
     };
 
-    const providers = [{ id: 'credentials', name: 'Email and Password' }];
-
     return (
-        <Box
+        <Box id="login-container"
             sx={{
                 display: "flex",
                 justifyContent: "center",
@@ -52,17 +48,14 @@ const Login: React.FC = () => {
                 backgroundColor: "#f5f5f5",
             }}
         >
-            <Card sx={{ width: 400, padding: 4, boxShadow: 3 }}>
+            <Card id="login-card" sx={{ width: 400, padding: 4, boxShadow: 3 }}>
                 <Typography variant="h5" component="h1" gutterBottom align="center">
                     Login
                 </Typography>
                 <Box
+                    id="login-form"
                     component="form"
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                    }}
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                     noValidate
                     autoComplete="off"
                     onSubmit={handleLogin}

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
+
 import { ProjectType, defaultProjectType } from "../../types/ProjectType";
 import { fetchWithAlert } from "../../../api/fetchData";
+
 import ProjectBar from "./ProjectBar";
 import ProjectTabBar from "./ProjectTabBar";
+import Viewer from "../model_viewer/Viewer";
 import EquipmentDataDashboard from "../data_views/equipment/components/EquipmentDataDashboard";
 import WindowDataDashboard from "../data_views/windows/components/WindowDataDashboard";
 import AssemblyDataDashboard from "../data_views/assemblies/components/AssemblyDataDashboard";
-import Viewer from "../model_viewer/Viewer";
 import ProjectCertification from "../data_views/certification/components/Certification";
 
 
@@ -34,10 +36,6 @@ const ProjectContainer: React.FC = () => {
         loadProjectData();
     }, [projectId])
 
-    const handleTabChange = (newTab: number) => {
-        setActiveTab(newTab);
-    };
-
     return (
         <>
             {isLoading ? (
@@ -45,7 +43,11 @@ const ProjectContainer: React.FC = () => {
             ) : (
                 <>
                     <ProjectBar {...projectData} />
-                    <ProjectTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
+                    <ProjectTabBar
+                        projectId={projectId!}
+                        activeTabNumber={activeTab}
+                        onTabChange={(tabNumber) => setActiveTab(tabNumber)}
+                    />
                     <Box id="project-container" style={{ marginTop: "16px" }}>
                         {activeTab === 0 && <ProjectCertification />}
                         {activeTab === 1 && <WindowDataDashboard />}

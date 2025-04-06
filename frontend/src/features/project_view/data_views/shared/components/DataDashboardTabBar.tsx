@@ -3,25 +3,18 @@ import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 
 type propsType = {
-    projectId: string;
+    tabs: { label: string, path: string }[];
     activeTab: number; // The active tab index managed by the parent
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
 }
 
-const AssembliesDataDashboardTabBar: React.FC<propsType> = ({ projectId, activeTab, onTabChange }) => {
-    const tabs = [
-        { label: "Materials", path: `${projectId}/material_layers` },
-    ];
-
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        onTabChange(newValue); // Notify the parent component of the tab change
-    };
+const DataDashboardTabBar: React.FC<propsType> = ({ tabs, activeTab, onTabChange }) => {
 
     return (
-        <Box id="assemblies-tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box id="tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
                 value={activeTab} // The active tab is managed by the parent
-                onChange={handleTabChange}
+                onChange={(e, newValue) => onTabChange(newValue)}
                 indicatorColor="primary"
                 textColor="primary"
             >
@@ -33,4 +26,4 @@ const AssembliesDataDashboardTabBar: React.FC<propsType> = ({ projectId, activeT
     );
 }
 
-export default AssembliesDataDashboardTabBar;
+export default DataDashboardTabBar;

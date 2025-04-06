@@ -4,11 +4,11 @@ import Box from "@mui/material/Box";
 
 type propsType = {
     projectId: string;
-    activeTab: number; // The active tab index managed by the parent
+    activeTabNumber: number; // The active tab index managed by the parent
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
 }
 
-const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTab, onTabChange }) => {
+const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabChange }) => {
     const tabs = [
         { label: "Certification", path: `/projects/${projectId}/certification` },
         { label: "Windows", path: `/projects/${projectId}/window_data` },
@@ -17,15 +17,11 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTab, onTabChange 
         { label: "Model", path: `/projects/${projectId}/model` },
     ];
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        onTabChange(newValue); // Notify the parent component of the tab change
-    };
-
     return (
         <Box id="project-tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
-                value={activeTab} // The active tab is managed by the parent
-                onChange={handleTabChange}
+                value={activeTabNumber} // The active tab is managed by the parent
+                onChange={(e, tabNumber) => onTabChange(tabNumber)}
                 indicatorColor="primary"
                 textColor="primary"
             >

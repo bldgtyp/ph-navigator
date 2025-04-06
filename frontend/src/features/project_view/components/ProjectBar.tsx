@@ -2,6 +2,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+
 import { ProjectType } from "../../types/ProjectType";
 
 type propsType = {
@@ -30,9 +31,9 @@ const ProjectBar: React.FC<ProjectType> = ({ name, phius_dropbox_url, airtable_b
                 <Typography variant="h6" sx={{ flexGrow: 1, textDecoration: "none", color: "inherit", }}>
                     {name}
                 </Typography>
-                {ProjectBarLink({ url: "https://www.phius.org/certifications/projects/certification-review-queue", displayText: "Phius Queue" })}
-                {ProjectBarLink({ url: phius_dropbox_url, displayText: "Phius Dropbox" })}
-                {ProjectBarLink({ url: airtable_base_url, displayText: "AirTable" })}
+                <ProjectBarLink url="https://www.phius.org/certifications/projects/certification-review-queue" displayText="Phius Queue" />
+                <ProjectBarLink url={phius_dropbox_url} displayText="Phius Dropbox" />
+                <ProjectBarLink url={airtable_base_url} displayText="AirTable" />
             </Toolbar>
         </AppBar>
     )

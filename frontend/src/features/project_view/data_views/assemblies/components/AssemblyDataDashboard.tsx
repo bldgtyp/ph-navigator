@@ -1,24 +1,29 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box } from "@mui/material";
+
+import MaterialsDataGrid from "./pages/MaterialsDataGrid";
 import DataViewPage from "../../shared/components/DataViewPage";
-import AssembliesDataDashboardTabBar from "./AssembliesDataDashboardTabBar";
 import ContentBlock from "../../shared/components/ContentBlock";
-import MaterialsDataGrid from "./MaterialsDataGrid";
+import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
 
 
 const AssemblyDataDashboard: React.FC = () => {
     const { projectId } = useParams();
     const [activeTab, setActiveTab] = useState(0);
 
-    const handleTabChange = (newTab: number) => {
-        setActiveTab(newTab);
-    };
+    const tabs = [
+        { label: "Materials", path: `${projectId}/material_layers` },
+    ];
 
     return (
         <>
             <Box id="assemblies-data-dashboard">
-                <AssembliesDataDashboardTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
+                <DataDashboardTabBar
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={(tabNumber) => setActiveTab(tabNumber)}
+                />
                 <DataViewPage>
                     <ContentBlock>
                         {activeTab === 0 && <MaterialsDataGrid />}

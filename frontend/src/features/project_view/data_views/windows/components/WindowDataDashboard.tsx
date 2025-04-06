@@ -1,24 +1,29 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import DataViewPage from "../../shared/components/DataViewPage";
-import WindowDataDashboardTabBar from "./WindowDataDashboardTabBar";
-import ContentBlock from "../../shared/components/ContentBlock";
-import FrameTypesDataGrid from "./FrameTypesDataGrid";
-import GlazingTypesDataGrid from "./GlazingTypesDataGrid";
-import WindowUnitDataGrid from "./WindowUnitDataGrid";
 
+import FrameTypesDataGrid from "./pages/FrameTypesDataGrid";
+import GlazingTypesDataGrid from "./pages/GlazingTypesDataGrid";
+import WindowUnitDataGrid from "./pages/WindowUnitDataGrid";
+import DataViewPage from "../../shared/components/DataViewPage";
+import ContentBlock from "../../shared/components/ContentBlock";
+import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
 
 const WindowDataDashboard: React.FC = () => {
     const { projectId } = useParams();
     const [activeTab, setActiveTab] = useState(0);
 
-    const handleTabChange = (newTab: number) => {
-        setActiveTab(newTab);
-    };
+    const tabs = [
+        { label: "Glazing Types", path: `${projectId}/glazing_types` },
+        { label: "Frame Types", path: `${projectId}/frame_types` },
+        { label: "Unit Types", path: `${projectId}/window_unit_type` },
+    ];
 
     return (
         <>
-            <WindowDataDashboardTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
+            <DataDashboardTabBar
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={(tabNumber) => setActiveTab(tabNumber)} />
             <DataViewPage>
                 <ContentBlock>
                     {activeTab === 0 && <GlazingTypesDataGrid />}

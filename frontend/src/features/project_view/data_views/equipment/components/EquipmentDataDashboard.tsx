@@ -1,26 +1,34 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import DataViewPage from "../../shared/components/DataViewPage";
-import EquipmentDataDashboardTabBar from "./EquipmentDataDashboardTabBar";
-import ContentBlock from "../../shared/components/ContentBlock";
-import FanDataGrid from "./FanDataGrid";
-import PumpDataGrid from "./PumpDataGrid";
-import HotWaterTankDataGrid from "./HotWaterTanksDataGrid";
-import LightingDataGrid from "./LightingDataGrid";
-import AppliancesDataGrid from "./AppliancesDataGrid";
 
+import FanDataGrid from "./pages/FanDataGrid";
+import PumpDataGrid from "./pages/PumpDataGrid";
+import HotWaterTankDataGrid from "./pages/HotWaterTanksDataGrid";
+import LightingDataGrid from "./pages/LightingDataGrid";
+import AppliancesDataGrid from "./pages/AppliancesDataGrid";
+import DataViewPage from "../../shared/components/DataViewPage";
+import ContentBlock from "../../shared/components/ContentBlock";
+import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
 
 const EquipmentDataDashboard: React.FC = () => {
     const { projectId } = useParams();
     const [activeTab, setActiveTab] = useState(0);
 
-    const handleTabChange = (newTab: number) => {
-        setActiveTab(newTab);
-    };
+    const tabs = [
+        { label: "Pumps", path: `${projectId}/pumps` },
+        { label: "Tanks", path: `${projectId}/dhw_tanks` },
+        { label: "Fans", path: `${projectId}/fans` },
+        { label: "Lighting", path: `${projectId}/lighting` },
+        { label: "Appliances", path: `${projectId}/appliances` },
+    ];
 
     return (
         <>
-            <EquipmentDataDashboardTabBar projectId={projectId!} activeTab={activeTab} onTabChange={handleTabChange} />
+            <DataDashboardTabBar
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={(tabNumber) => setActiveTab(tabNumber)}
+            />
             <DataViewPage>
                 <ContentBlock>
                     {activeTab === 0 && <PumpDataGrid />}

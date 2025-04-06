@@ -23,14 +23,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("UserContext | useEffect | Fetched user data:", data);
         setUser(data);
       } else {
-        console.error("UserContext | useEffect | Failed to fetch user info:", response.statusText);
         logout(); // Clear token if fetching user info fails
       }
     } catch (error) {
-      console.error("UserContext | useEffect | Error fetching user:", error);
       logout(); // Clear token if an error occurs
     }
   }, []);
@@ -43,13 +40,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchUserInfo]);
 
   const login = (access_token: string) => {
-    console.log("UserContext | login | setting Access Token:", access_token.substring(0, 10) + "...");
     localStorage.setItem("token", access_token);
     fetchUserInfo(access_token);
   };
 
   const logout = () => {
-    console.log("UserContext | logout | Removing Access Token.");
     localStorage.removeItem("token");
     setUser(null);
   };
