@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
-import FrameTypesDataGrid from "./pages/FrameTypesDataGrid";
-import GlazingTypesDataGrid from "./pages/GlazingTypesDataGrid";
-import WindowUnitDataGrid from "./pages/WindowUnitDataGrid";
+import FrameTypesDataGrid from "./pages/Frames.DataGrid";
+import GlazingTypesDataGrid from "./pages/Glazing.DataGrid";
+import WindowUnitDataGrid from "./pages/WindowUnit.DataGrid";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";

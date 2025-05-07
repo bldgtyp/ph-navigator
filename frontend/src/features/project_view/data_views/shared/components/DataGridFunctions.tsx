@@ -7,6 +7,7 @@ type TableField = {
   flex?: number;
   renderCell?: any;
   renderHeader?: any;
+  minWidth?: number;
 };
 
 /**
@@ -19,12 +20,14 @@ type TableField = {
  * @returns An array of GridColDef representing the generated grid columns.
  */
 export function generateGridColumns(tableFields: Array<TableField>): GridColDef[] {
+
   return tableFields.map((item: TableField) => {
     // Build the basic column object
     const column: Partial<GridColDef> = {
       field: item.field,
       headerName: item.headerName,
       flex: item.flex,
+      minWidth: item.minWidth ? item.minWidth : 0,
     };
 
     // Add the renderCell, if it exists

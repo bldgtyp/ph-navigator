@@ -48,7 +48,7 @@ const ProjectContainer: React.FC = () => {
                         activeTabNumber={activeTab}
                         onTabChange={(tabNumber) => setActiveTab(tabNumber)}
                     />
-                    <Box id="project-container" style={{ marginTop: "16px" }}>
+                    <Box id="project-container">
                         {activeTab === 0 && <ProjectCertification />}
                         {activeTab === 1 && <WindowDataDashboard />}
                         {activeTab === 2 && <AssemblyDataDashboard />}

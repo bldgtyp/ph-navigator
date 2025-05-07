@@ -26,7 +26,9 @@ export const CheckboxForSpecification: React.FC<{ value?: string; row: any }> = 
   const { style } = specificationCheckboxStyle(value);
   return (
     <Tooltip title={row.FLAG}>
-      <div className={style} />
+      <div className="checkbox-cell">
+        <div className={style} />
+      </div>
     </Tooltip>
   );
 };

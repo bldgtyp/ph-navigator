@@ -31,16 +31,16 @@ export const datasheetRequired = (item: { id: string; createdTime: string; field
  * @param params - An array of parameters for each item.
  * @param params.url - The url for the link.
  */
-export const CheckboxWithLink: React.FC<{ url: string; required: boolean }> = ({ url, required }) => {
+export const CheckboxWithLink: React.FC<{ url: string }> = ({ url }) => {
   return (
-    <Stack direction="row" spacing={1}>
+    <div className="checkbox-cell">
       <div className="checkbox-checked" />
       {url && (
-        <a href={url} target="_blank" rel="noopener noreferrer">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="datasheet-link">
           <LinkIcon />
         </a>
       )}
-    </Stack>
+    </div>
   );
 }
 
@@ -49,22 +49,41 @@ export const CheckboxWithLink: React.FC<{ url: string; required: boolean }> = ({
  * @param params - The parameters for the checkbox.
  * @param params.value - The value of the checkbox.
  */
-export const CheckboxForDatasheet: React.FC<{ value?: any[] }> = ({ value }) => {
+export const CheckboxForDatasheet: React.FC<{ value?: { id: string, url: string, required: boolean }[] }> = ({ value }) => {
+
+  // If there is no item...
   if (value === undefined || value.length === 0) {
-    return <div className="checkbox-na" />;
+    return (
+      <div className="checkbox-cell">
+        <div className="checkbox-na" />
+      </div>
+    )
   }
 
+  //  If the item isn't required....
   if (value[0].required === false) {
-    return <div className="checkbox-na" />;
+    return (
+      <div className="checkbox-cell">
+        <div className="checkbox-na" />
+      </div>
+    )
   }
 
   if (value[0].required === true) {
     if (value[0].url === "") {
-      return <div className="checkbox-needed" />;
+      return (
+        <div className="checkbox-cell">
+          <div className="checkbox-needed" />
+        </div>
+      )
     } else {
       return CheckboxWithLink(value[0]);
     }
   }
 
-  return <div className="checkbox-na" />;
+  return (
+    <div className="checkbox-cell">
+      <div className="checkbox-na" />;
+    </div>
+  )
 };

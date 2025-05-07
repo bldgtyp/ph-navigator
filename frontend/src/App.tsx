@@ -1,4 +1,5 @@
 import './styles/App.css';
+import './styles/Colors.css';
 import { Component, ReactNode, ErrorInfo } from 'react'
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from "@mui/material/styles";

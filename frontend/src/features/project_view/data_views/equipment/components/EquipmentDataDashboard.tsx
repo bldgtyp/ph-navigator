@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
-import FanDataGrid from "./pages/FanDataGrid";
-import PumpDataGrid from "./pages/PumpDataGrid";
-import HotWaterTankDataGrid from "./pages/HotWaterTanksDataGrid";
-import LightingDataGrid from "./pages/LightingDataGrid";
-import AppliancesDataGrid from "./pages/AppliancesDataGrid";
+import FanDataGrid from "./pages/Fans.DataGrid";
+import PumpDataGrid from "./pages/Pumps.DataGrid";
+import HotWaterTankDataGrid from "./pages/HotWaterTanks.DataGrid";
+import LightingDataGrid from "./pages/Lighting.DataGrid";
+import AppliancesDataGrid from "./pages/Appliances.DataGrid";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
+import ErvDataGrid from "./pages/Ervs.DataGrid";
 
 const EquipmentDataDashboard: React.FC = () => {
     const { projectId } = useParams();
     const [activeTab, setActiveTab] = useState(0);
 
     const tabs = [
+        { label: "Ventilation", path: `${projectId}/erv_units` },
         { label: "Pumps", path: `${projectId}/pumps` },
         { label: "Tanks", path: `${projectId}/dhw_tanks` },
         { label: "Fans", path: `${projectId}/fans` },
@@ -31,11 +33,12 @@ const EquipmentDataDashboard: React.FC = () => {
             />
             <DataViewPage>
                 <ContentBlock>
-                    {activeTab === 0 && <PumpDataGrid />}
-                    {activeTab === 1 && <HotWaterTankDataGrid />}
-                    {activeTab === 2 && <FanDataGrid />}
-                    {activeTab === 3 && <LightingDataGrid />}
-                    {activeTab === 4 && <AppliancesDataGrid />}
+                    {activeTab === 0 && <ErvDataGrid />}
+                    {activeTab === 1 && <PumpDataGrid />}
+                    {activeTab === 2 && <HotWaterTankDataGrid />}
+                    {activeTab === 3 && <FanDataGrid />}
+                    {activeTab === 4 && <LightingDataGrid />}
+                    {activeTab === 5 && <AppliancesDataGrid />}
                 </ContentBlock>
             </DataViewPage>
         </>

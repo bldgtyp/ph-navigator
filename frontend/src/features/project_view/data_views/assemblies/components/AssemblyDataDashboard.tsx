@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 
-import MaterialsDataGrid from "./pages/MaterialsDataGrid";
+import MaterialsDataGrid from "./pages/Materials.DataGrid";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";

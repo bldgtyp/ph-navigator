@@ -15,10 +15,11 @@ const ProjectBarLink: React.FC<propsType> = ({ url, displayText }) => {
         color="inherit"
         size="small"
         variant="outlined"
-        sx={{ m: "10px", borderRadius: "999px" }}
+        sx={{ m: "10px" }}
         target="_blank"
         rel="noopener noreferrer"
-        href={url}>
+        href={url}
+    >
         {displayText}
     </Button>
 
@@ -26,14 +27,23 @@ const ProjectBarLink: React.FC<propsType> = ({ url, displayText }) => {
 
 const ProjectBar: React.FC<ProjectType> = ({ name, phius_dropbox_url, airtable_base_url }) => {
     return (
-        <AppBar id="project-bar" position="sticky" sx={{ backgroundColor: "#68a0e2" }}>
+        <AppBar id="project-bar" position="sticky">
             <Toolbar>
-                <Typography variant="h6" sx={{ flexGrow: 1, textDecoration: "none", color: "inherit", }}>
+                <Typography variant="h5" sx={{ flexGrow: 1 }}>
                     {name}
                 </Typography>
-                <ProjectBarLink url="https://www.phius.org/certifications/projects/certification-review-queue" displayText="Phius Queue" />
-                <ProjectBarLink url={phius_dropbox_url} displayText="Phius Dropbox" />
-                <ProjectBarLink url={airtable_base_url} displayText="AirTable" />
+                <ProjectBarLink
+                    url="https://www.phius.org/certifications/projects/certification-review-queue"
+                    displayText="Phius Queue"
+                />
+                <ProjectBarLink
+                    url={phius_dropbox_url}
+                    displayText="Phius Dropbox"
+                />
+                <ProjectBarLink
+                    url={airtable_base_url}
+                    displayText="AirTable"
+                />
             </Toolbar>
         </AppBar>
     )

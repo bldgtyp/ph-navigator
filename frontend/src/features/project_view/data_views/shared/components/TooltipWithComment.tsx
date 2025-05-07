@@ -9,12 +9,12 @@ export const TooltipWithComment: React.FC<{ row: { NOTES?: string } }> = ({ row 
   if (row.NOTES) {
     return (
       <Tooltip title={row.NOTES}>
-        <Stack direction="row" spacing={1}>
+        <div className="checkbox-cell">
           <CommentIcon className="notes-icon" fontSize="medium" />
-        </Stack>
+        </div>
       </Tooltip>
     );
   } else {
-    return <div>-</div>;
+    return <div className="checkbox-cell"><div>-</div></div>;
   }
 };
