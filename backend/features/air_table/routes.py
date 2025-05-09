@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session
 
 from config import limiter, settings
 from database import get_db
-from features.air_table.services import (get_airtable_base_ref,
-                                         get_airtable_table_ref)
+from features.air_table.services import get_airtable_base_ref, get_airtable_table_ref
+from db_entities.assembly.material import Material
 
 router = APIRouter(
     prefix="/air_table",
     tags=["air_table"],
 )
+
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type WindowUnitTypesFields = {
+export interface WindowUnitTypesFields {
     DISPLAY_NAME: string;
     "WIDTH [FT-IN]": string;
     "HEIGHT [FT-IN]": string;
@@ -13,6 +11,4 @@ type WindowUnitTypesFields = {
     "FRAME ELEMENT NAME: BOTTOM": string;
 };
 
-type WindowUnitTypesRecord = { id: string; createdTime: string; fields: WindowUnitTypesFields };
-
-export type { WindowUnitTypesRecord };
+export interface WindowUnitTypesRecord { id: string; createdTime: string; fields: WindowUnitTypesFields };

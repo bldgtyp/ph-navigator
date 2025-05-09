@@ -3,13 +3,13 @@
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from project import Project
+    from backend.db_entities.app.project import Project
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from database import Base
-from db_entities.relationships import project_users
+from db_entities.app.relationships import project_users
 
 
 class User(Base):

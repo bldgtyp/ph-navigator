@@ -1,12 +1,12 @@
 import { useParams } from "react-router-dom";
 import { Box } from "@mui/material";
-import StyledDataGrid from "../../../styles/DataGrid";
+import StyledDataGrid from "../../../shared/styles/DataGrid";
 import { generateGridColumns, generateDefaultRow } from "../../../shared/components/DataGridFunctions";
 import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 import LoadingModal from "../../../shared/components/LoadingModal";
 import useLoadDataGridFromAirTable from "../../../../model_viewer/hooks/useLoadDataGridFromAirTable";
-import { MaterialsRecord } from "../../types/Materials";
-import tableFields from "./Materials.TableFields";
+import { MaterialLayersRecord } from "../../types/MaterialLayers";
+import tableFields from "./MaterialLayers.TableFields";
 import { useDynamicColumns } from "../../../shared/hooks/useDynamicColumns";
 
 
@@ -20,7 +20,7 @@ const defaultRow = generateDefaultRow(tableFields);
 const MaterialsDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
-  const { showModal, rowData } = useLoadDataGridFromAirTable<MaterialsRecord>(defaultRow, "material_layers", projectId);
+  const { showModal, rowData } = useLoadDataGridFromAirTable<MaterialLayersRecord>(defaultRow, "material_layers", projectId);
 
   // --------------------------------------------------------------------------
   // Update columns dynamically when rowData changes

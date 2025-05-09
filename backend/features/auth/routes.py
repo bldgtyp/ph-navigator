@@ -11,7 +11,7 @@ from starlette import status
 
 from config import limiter, settings
 from database import get_db
-from db_entities.user import User
+from db_entities.app.user import User
 from features.auth.schema import TokenSchema, UserSchema
 from features.auth.services import (authenticate_user, create_access_token,
                                     get_current_active_user)

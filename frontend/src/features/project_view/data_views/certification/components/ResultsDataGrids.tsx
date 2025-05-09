@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Box, Stack } from "@mui/material";
-import StyledDataGrid from "../../styles/DataGrid";
+import StyledDataGrid from "../../shared/styles/DataGrid";
 import { generateGridColumns } from "../../shared/components/DataGridFunctions";
 import { TooltipWithInfo } from "../../shared/components/TooltipWithInfo";
 

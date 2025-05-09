@@ -1,9 +1,8 @@
-import { Paper } from "@mui/material";
+import { Box } from "@mui/material";
 
 const ContentBlock: React.FC<any> = (props) => {
   return (
-    <Paper
-      elevation={0}
+    <Box
       className="content-block"
       sx={{
         outline: "1px solid #E0E0E0",
@@ -11,11 +10,13 @@ const ContentBlock: React.FC<any> = (props) => {
         padding: "0px",
         marginLeft: "7%",
         marginRight: "7%",
-        marginTop: "35px"
+        marginTop: "35px",
+        marginBottom: "35px",
+        overflow: "hidden",
       }}
     >
       {props.children}
-    </Paper>
+    </Box>
   );
 }
 

@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, relationship, validates
 
 from database import Base
 from db_entities.airtable.at_base import AirTableBase
-from db_entities.relationships import project_users
-from db_entities.user import User
+from db_entities.app.relationships import project_users
+from db_entities.app.user import User
 
 
 class Project(Base):

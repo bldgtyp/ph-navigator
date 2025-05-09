@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type FanFields = {
+export interface FanFields {
     DISPLAY_NAME: string;
     QUANTITY: number;
     ID_NUMBER: string;
@@ -20,6 +18,4 @@ type FanFields = {
     FLAG: string;
 };
 
-type FanRecord = { id: string; createdTime: string; fields: FanFields };
-
-export type { FanRecord };
+export interface FanRecord { id: string; createdTime: string; fields: FanFields };

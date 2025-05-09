@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from config import settings
 from database import get_db
-from db_entities.user import User
+from db_entities.app.user import User
 from features.auth.schema import TokenDataSchema, UserSchema
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type AppliancesFields = {
+export interface AppliancesFields {
     DISPLAY_NAME: string;
     ZONE: string;
     DESCRIPTION: string;
@@ -14,6 +12,4 @@ type AppliancesFields = {
     FLAG: string;
 };
 
-type AppliancesRecord = { id: string; createdTime: string; fields: AppliancesFields };
-
-export type { AppliancesRecord };
+export interface AppliancesRecord { id: string; createdTime: string; fields: AppliancesFields };

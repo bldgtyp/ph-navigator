@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type DHWTankFields = {
+export interface DHWTankFields {
     DISPLAY_NAME: string;
     MANUFACTURER: string;
     MODEL: string;
@@ -8,6 +6,4 @@ type DHWTankFields = {
     SPECIFICATION: string;
 };
 
-type DHWTankRecord = { id: string; createdTime: string; fields: DHWTankFields };
-
-export type { DHWTankRecord };
+export interface DHWTankRecord { id: string; createdTime: string; fields: DHWTankFields };

@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Session
 
-from db_entities.project import Project
+from db_entities.app.project import Project
 
 
 class ProjectNotFoundException(Exception):

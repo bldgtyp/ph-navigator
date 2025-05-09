@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type GlazingTypesFields = {
+export interface GlazingTypesFields {
     DISPLAY_NAME: string;
     ZONE: string;
     MANUFACTURER: string;
@@ -14,6 +12,4 @@ type GlazingTypesFields = {
     FLAG: string;
 };
 
-type GlazingTypesRecord = { id: string; createdTime: string; fields: GlazingTypesFields };
-
-export type { GlazingTypesRecord };
+export interface GlazingTypesRecord { id: string; createdTime: string; fields: GlazingTypesFields };

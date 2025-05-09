@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     JSON_WEB_TOKEN_ALGORITHM: str = "HS256"
     JSON_WEB_TOKEN_EXPIRE_MINUTES: int = 30
     DATABASE_URL: str = "sqlite:///./test.db"
-    AIRTABLE_GET_TOKEN: str = "default_airtable_token"
+    AIRTABLE_GET_TOKEN: str = "__token__"
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "localhost:3000",
@@ -21,6 +21,9 @@ class Settings(BaseSettings):
         "https://ph-dash-frontend.onrender.com",
         "https://ph-dash-0cye.onrender.com",
     ]
+    AIRTABLE_MATERIAL_BASE_ID: str = "appvuwBhK0he4PbVi"
+    AIRTABLE_MATERIAL_TABLE_ID: str = "tbl6GnWtkPX0OALMu"
+    AIRTABLE_MATERIAL_GET_TOKEN: str = "__token__"
 
     class Config:
         env_file = ".env"

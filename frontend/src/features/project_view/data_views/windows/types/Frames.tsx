@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type FrameTypesFields = {
+export interface FrameTypesFields {
     DISPLAY_NAME: string;
     MANUFACTURER: string;
     MODEL: string;
@@ -16,6 +14,4 @@ type FrameTypesFields = {
     FLAG: string;
 };
 
-type FrameTypesRecord = { id: string; createdTime: string; fields: FrameTypesFields };
-
-export type { FrameTypesRecord };
+export interface FrameTypesRecord { id: string; createdTime: string; fields: FrameTypesFields };

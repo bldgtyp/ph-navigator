@@ -1,7 +1,4 @@
-
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type LightingFields = {
+export interface LightingFields {
     DISPLAY_NAME: string;
     ZONE: string;
     ENERGY_STAR: string;
@@ -14,6 +11,4 @@ type LightingFields = {
     FLAG: string;
 };
 
-type LightingRecord = { id: string; createdTime: string; fields: LightingFields };
-
-export type { LightingRecord };
+export interface LightingRecord { id: string; createdTime: string; fields: LightingFields };

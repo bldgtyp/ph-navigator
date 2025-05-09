@@ -1,4 +1,4 @@
-export type ProjectType = {
+export interface ProjectType {
     name: string,
     id: string,
     bt_number: string,

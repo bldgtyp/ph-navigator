@@ -3,6 +3,14 @@
     --secondary-color: #db0697;
     --text-primary-color: #1f2328;
     --text-secondary-color: #db0697;
+    --text-highlight-color: #db0697;
     --appbar-bg-color: #f6f8fa;
     --outline-color: #d1d9e0;
+
+    /* Constructions */
+    --construction-layer-segment-rect-fill: #e0e0e0;
+    --construction-layer-segment-rect-stroke: #434343;
+    --construction-layer-segment-hover-fill: #f9e9f4;
+    --construction-layer-segment-hover-stroke: #b2087c;
+    --highlight-light-color: #f9e9f4;
 }

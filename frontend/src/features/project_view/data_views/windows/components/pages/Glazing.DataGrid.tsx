@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Box } from "@mui/material";
-import StyledDataGrid from "../../../styles/DataGrid";
+import StyledDataGrid from "../../../shared/styles/DataGrid";
 import { generateGridColumns, generateDefaultRow } from "../../../shared/components/DataGridFunctions";
 import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 import LoadingModal from "../../../shared/components/LoadingModal";

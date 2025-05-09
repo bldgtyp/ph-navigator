@@ -2,7 +2,8 @@
 
 from __future__ import annotations  # Enables forward references
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
+from pyairtable.api.types import RecordDict
 
 # ---------------------------------------------------------------------------------------
 

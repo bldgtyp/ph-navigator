@@ -1,0 +1,18 @@
+.layer-segment-svg:hover rect {
+    fill: var(--construction-layer-segment-hover-fill);
+    stroke: var(--construction-layer-segment-hover-stroke);
+    stroke-width: 3px;
+}
+
+.layer-segment-rect {
+    fill: var(--construction-layer-segment-rect-fill);
+    stroke: var(--construction-layer-segment-rect-stroke);
+    stroke-width: 1px;
+}
+
+.construction-layer-thickness:hover {
+    color: var(--text-highlight-color);
+    font-weight: 700;
+    border-right: 1px solid var(--text-highlight-color);
+    background-color: var(--highlight-light-color)
+}

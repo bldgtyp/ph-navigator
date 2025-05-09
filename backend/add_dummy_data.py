@@ -8,11 +8,16 @@ from sqlalchemy.orm import Session
 from database import Base, SessionLocal, engine, get_db
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
-from db_entities.project import Project
-from db_entities.user import User
+from db_entities.app.project import Project
+from db_entities.app.user import User
+from db_entities.assembly.material import Material
+from db_entities.assembly.assembly import Assembly
+from db_entities.assembly.layer import Layer
+from db_entities.assembly.segment import Segment
+
 
 # Mock Data
-project_data = [
+PROJECT_DATA = [
     {
         "name": "409 Sackett St",
         "airtable_ref": "app64a1JuYVBs7Z1m",
@@ -107,7 +112,7 @@ def add_dummy_users(db: Session) -> list[User]:
 
 
 def add_dummy_projects(db: Session, users: list[User]) -> None:
-    for user, project in zip(users, project_data):
+    for user, project in zip(users, PROJECT_DATA):
         # -------------------------------------------------------------------------------
         # -- Build the AirTableTables
         at_tables: list[AirTableTable] = []
@@ -151,6 +156,73 @@ def add_dummy_projects(db: Session, users: list[User]) -> None:
     db.commit()
 
 
+# Mock Data
+MATERIALS = [
+    {
+        "id" : "1",
+        "name" :  "Material 1",
+        "argb_color" :  "(255, 255, 255, 255)",
+        "category" :  "None",
+        "conductivity_w_mk" :  0.0,
+        "emissivity" :  0.0,
+    }, 
+    {
+        "id" : "2",
+        "name" :  "Material 2",
+        "argb_color" :  "(255, 255, 255, 255)",
+        "category" :  "None",
+        "conductivity_w_mk" :  0.0,
+        "emissivity" :  0.0,
+    },
+    {
+        "id" : "3",
+        "name" :  "Material 3",
+        "argb_color" :  "(255, 255, 255, 255)",
+        "category" :  "None",
+        "conductivity_w_mk" :  0.0,
+        "emissivity" :  0.0,
+    },
+]
+
+
+def add_dummy_materials(db: Session) -> None:
+    for material in MATERIALS:
+        db_material = Material(
+            id=material["id"],
+            name=material["name"],
+            category=material["category"],
+            argb_color=material["argb_color"],
+            conductivity_w_mk=material["conductivity_w_mk"],
+            emissivity=material["emissivity"],
+        )
+        db.add(db_material)
+    db.commit()
+
+
+def add_dummy_assembly(db: Session) -> None:
+    layer_1 = Layer(thickness_mm=50.0)
+    layer_2 = Layer(thickness_mm=100.0)
+
+    assembly = Assembly(name="__assembly__")
+    assembly.layers.append(layer_1)
+    assembly.layers.append(layer_2)
+    
+    mat_1 = Material.get_by_name(db, "Material 1")
+    segment_1 = Segment(width_mm=200, material=mat_1)
+    layer_1.segments.append(segment_1)
+
+    mat_2 = Material.get_by_name(db, "Material 2")
+    segment_2 = Segment(width_mm=100, material=mat_2)
+    layer_1.segments.append(segment_2)
+    
+    mat_3 = Material.get_by_name(db, "Material 3")
+    segment_3 = Segment(width_mm=300, material=mat_3)
+    layer_2.segments.append(segment_3)
+
+    db.add(assembly)
+    db.commit()
+
+
 if __name__ == "__main__":
     # -- Drop all existing tables so we start fresh
     Base.metadata.drop_all(bind=engine)
@@ -162,5 +234,7 @@ if __name__ == "__main__":
     try:
         users = add_dummy_users(db)
         add_dummy_projects(db, users)
+        add_dummy_materials(db)
+        add_dummy_assembly(db)
     finally:
         db.close()

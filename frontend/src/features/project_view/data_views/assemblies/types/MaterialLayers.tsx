@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 // Define the AirTable data types
-type MaterialsFields = {
+export interface MaterialLayersFields {
     DISPLAY_NAME: string;
     LAYER_MATERIAL_NAME: string;
     "MATERIAL RESISTIVITY [HR-FT2-F / BTU-IN]": number;
@@ -9,8 +9,10 @@ type MaterialsFields = {
     DATA_SHEET?: [{ url: string; required: boolean }];
     NOTES: string;
     FLAG: string;
-};
+}
 
-type MaterialsRecord = { id: string; createdTime: string; fields: MaterialsFields };
-
-export type { MaterialsRecord }
+export interface MaterialLayersRecord {
+    id: string;
+    createdTime: string;
+    fields: MaterialLayersFields;
+}

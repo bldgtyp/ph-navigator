@@ -1,6 +1,4 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
-type ErvFields = {
+export interface ErvFields {
     "AIRFLOW [CFM]": number;
     "DEFROST MIN TEMP [°F]": number;
     DISPLAY_NAME: string;
@@ -28,10 +26,8 @@ type ErvFields = {
     FLAG: string;
 };
 
-type ErvRecord = {
+export interface ErvRecord {
     id: string;
     createdTime: string;
     fields: ErvFields;
 };
-
-export type { ErvRecord };

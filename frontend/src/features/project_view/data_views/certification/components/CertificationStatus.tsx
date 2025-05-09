@@ -2,7 +2,6 @@ import { Stack } from "@mui/material";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
-import { CertificationDataType } from "../../types/CertificationData";
 
 type propsType = {
   statusData: any;
