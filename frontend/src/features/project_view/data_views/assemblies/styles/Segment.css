@@ -1,0 +1,38 @@
+.assembly-layer-segments {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    padding: 0px;
+    justify-content: center;
+}
+
+.assembly-layer-segment {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    padding: 0px;
+    text-align: center;
+    cursor: pointer;
+    height: 100%;
+    position: relative;
+}
+
+.add-segment-button {
+    font-size: 14px;
+    font-weight: 800;
+    position: absolute;
+    top: 50%;
+    right: -20px;
+    transform: translateY(-50%) translateX(-50%);
+    background-color: #b2087c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

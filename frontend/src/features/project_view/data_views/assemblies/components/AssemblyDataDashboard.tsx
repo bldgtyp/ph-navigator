@@ -1,4 +1,6 @@
 import '../styles/Assembly.css';
+import '../styles/Layer.css';
+import '../styles/Segment.css';
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Button } from "@mui/material";

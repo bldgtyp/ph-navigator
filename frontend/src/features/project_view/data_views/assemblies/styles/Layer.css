@@ -1,0 +1,39 @@
+.assembly-layer {
+    display: flex;
+    flex-direction: row;
+    padding: 0px;
+    border-bottom: 1px dashed #ccc;
+}
+
+.assembly-layer-thickness {
+    flex: 0;
+    position: relative;
+    font-size: 8px;
+    justify-self: left;
+    align-content: center;
+    max-width: 35px;
+    min-width: 35px;
+    width: 35px;
+    border-right: 1px dashed #ccc;
+    cursor: pointer;
+}
+
+.add-layer-button {
+    font-size: 12px;
+    font-weight: 800;
+    position: absolute;
+    top: 100%;
+    right: 50%;
+    transform: translateY(-50%) translateX(50%);
+    background-color: #b2087c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
