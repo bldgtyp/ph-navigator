@@ -1,8 +1,17 @@
+import { useEffect, useRef } from "react";
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Divider, ButtonGroup } from "@mui/material";
 import { OkCancelButtonsProps, HeightInputProps, DeleteButtonProps, LayerHeightModalType } from "./Modal.LayerHeight.Types";
 
 
 const HeightInput: React.FC<HeightInputProps> = (props) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.select(); // Automatically select all text
+        }
+    }, []);
+
     return (
         <TextField
             type="number"
@@ -14,6 +23,8 @@ const HeightInput: React.FC<HeightInputProps> = (props) => {
             onChange={props.handleHeightChange}
             fullWidth
             margin="dense"
+            autoFocus
+            inputRef={inputRef}
         />
     )
 }

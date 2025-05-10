@@ -1,10 +1,18 @@
-import { Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField } from "@mui/material";
-import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
+import { useEffect, useRef } from "react";
+import { Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
 import { useMaterials } from '../../contexts/MaterialsContext';
 import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps } from "./Modal.LayerSegment.Types";
 
 
 const WidthInput: React.FC<WidthInputProps> = (props) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.select(); // Automatically select all text
+        }
+    }, []);
+
     return (
         <TextField
             type="number"
@@ -16,6 +24,8 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
             onChange={props.handleWidthChange}
             fullWidth
             margin="dense"
+            autoFocus
+            inputRef={inputRef}
         />
     )
 };
