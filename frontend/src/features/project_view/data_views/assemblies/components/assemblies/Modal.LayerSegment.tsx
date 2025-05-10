@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
-import { Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
+import { Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, MenuItem, InputLabel, FormControl, Typography } from "@mui/material";
 import { useMaterials } from '../../contexts/MaterialsContext';
 import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps } from "./Modal.LayerSegment.Types";
-
 
 const WidthInput: React.FC<WidthInputProps> = (props) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -34,25 +33,41 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
 const MaterialInput: React.FC<MaterialInputProps> = (props) => {
     const { isLoadingMaterials, materials } = useMaterials();
 
+    // Sort materials by category
+    const materialOptions = [...materials].sort((a, b) => {
+        if (a.category < b.category) return -1;
+        if (a.category > b.category) return 1;
+        return 0;
+    });
+
+    // Find the selected material based on the materialId
+    const selectedMaterial = materialOptions.find((material) => material.id === props.materialId) || null;
+
     return (
         <FormControl fullWidth margin="dense">
-            <InputLabel id="material-select-label">Material</InputLabel>
-            <Select
-                labelId="material-select-label"
-                value={props.materialId} // Use the temporary material ID
-                onChange={(e) => props.handleMaterialChange(e.target.value)} // Update temporary state
-                disabled={isLoadingMaterials} // Disable if materials are still loading
-            >
-                {materials.map((material) => (
-                    <MenuItem key={material.id} value={material.id}>
-                        {material.name}
-                    </MenuItem>
-                ))}
-            </Select>
+            <Box>
+                <Autocomplete
+                    options={materialOptions}
+                    groupBy={(option) => option.category}
+                    getOptionLabel={(option) => option.name}
+                    value={selectedMaterial}
+                    onChange={(event, newValue) => {
+                        props.handleMaterialChange(newValue?.id || "");
+                    }}
+                    loading={isLoadingMaterials}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Select a material"
+                            placeholder="Select a material"
+                            fullWidth
+                        />
+                    )}
+                />
+            </Box>
         </FormControl>
     );
 };
-
 
 const OkCancelButtons: React.FC<OkCancelButtonsProps> = (props) => {
     return (
@@ -88,7 +103,7 @@ const DeleteButton: React.FC<DeleteButtonProps> = (props) => {
 
 const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
     return (
-        <Dialog open={props.isModalOpen} onClose={props.handleModalClose}>
+        <Dialog open={props.isModalOpen} onClose={props.handleModalClose} fullWidth maxWidth="sm">
             <DialogTitle>Segment</DialogTitle>
             <Divider />
             <form onSubmit={(e) => { e.preventDefault(); props.handleSubmit(); }}>
