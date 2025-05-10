@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { datasheetRequired } from "../../data_views/shared/components/CheckboxForDatasheet";
-import { fetchWithAlert } from "../../../../api/fetchData";
+import { getWithAlert } from "../../../../api/getWithAlert";
 
 
 /**
@@ -47,7 +47,7 @@ function useLoadDataGridFromAirTable<T>(
     }, 1000);
 
     const fetchProjectData = async () => {
-      const records: AirTableRecord[] | null = await fetchWithAlert<AirTableRecord[] | null>(`air_table/${projectId}/${page}`);
+      const records: AirTableRecord[] | null = await getWithAlert<AirTableRecord[] | null>(`air_table/${projectId}/${page}`);
 
       // Use the AirTable record data as the row-data
       // Add the record ID as the row-ID

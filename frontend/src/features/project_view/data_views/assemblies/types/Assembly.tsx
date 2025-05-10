@@ -1,12 +1,12 @@
-import { Layer } from "./Layer";
+import { LayerType } from "./Layer";
 
-export interface Assembly {
-    id: string;
+export interface AssemblyType {
+    id: number;
     name: string;
-    layers: Layer[];
+    layers: LayerType[];
 }
 
 export interface UseLoadAssembliesReturn {
     isLoadingAssemblies: boolean;
-    assemblies: Assembly[];
+    assemblies: AssemblyType[];
 }

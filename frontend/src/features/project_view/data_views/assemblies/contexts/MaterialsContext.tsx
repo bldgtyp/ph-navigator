@@ -1,10 +1,10 @@
 import React, { createContext, useContext } from "react";
-import { Material } from "../types/Material";
+import { MaterialType } from "../types/Material";
 import { useLoadMaterials } from "./MaterialsContext.Hooks";
 
 
 interface MaterialsContextType {
-    materials: Material[];
+    materials: MaterialType[];
     isLoadingMaterials: boolean;
 }
 

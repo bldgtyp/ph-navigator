@@ -6,7 +6,7 @@ import { Dialog } from '@mui/material';
 import MoonLoader from "react-spinners/MoonLoader";
 
 import { SceneSetup } from './scene_setup/SceneSetup';
-import { fetchModelData } from "../../../api/fetchModelData";
+import { get3DModelData } from "../../../api/get3DModelData";
 import { loadModelFaces } from './loaders/load_faces';
 import { loadSpaces } from './loaders/load_spaces';
 import { loadSpaceFloors } from './loaders/load_space_floors';
@@ -50,7 +50,7 @@ const Model: React.FC<ModelProps> = ({ world, showModel }) => {
             console.log("Loading Model Data into World...");
 
             try {
-                const modelData = await fetchModelData(projectId);
+                const modelData = await get3DModelData(projectId);
                 if (modelData === null) { return }
                 handleLoadError(loadModelFaces, world, modelData.facesData);
                 handleLoadError(loadSpaces, world, modelData.spacesData);

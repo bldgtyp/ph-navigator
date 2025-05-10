@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 
 import { ProjectType, defaultProjectType } from "../../types/ProjectType";
-import { fetchWithAlert } from "../../../api/fetchData";
+import { getWithAlert } from "../../../api/getWithAlert";
 
 import ProjectBar from "./ProjectBar";
 import ProjectTabBar from "./ProjectTabBar";
@@ -23,7 +23,7 @@ const ProjectContainer: React.FC = () => {
     useEffect(() => {
         async function loadProjectData() {
             try {
-                const d = await fetchWithAlert<ProjectType>(`project/${projectId}`)
+                const d = await getWithAlert<ProjectType>(`project/${projectId}`)
                 setProjectData(d || defaultProjectType)
             } catch (error) {
                 alert("Error loading project data. Please try again later.");

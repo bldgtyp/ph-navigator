@@ -1,7 +1,5 @@
 import constants from "../data/constants.json";
 
-
-
 /**
  * Fetches data from a specified API endpoint with optional query parameters and token-based authentication.
  * Displays an alert if the HTTP response is not successful.
@@ -27,7 +25,7 @@ import constants from "../data/constants.json";
  * }
  * ```
  */
-export async function fetchWithAlert<T>(
+export async function getWithAlert<T>(
     endpoint: string,
     token: string | null = null,
     params: Record<string, string | number> = {}
@@ -39,7 +37,7 @@ export async function fetchWithAlert<T>(
         token = localStorage.getItem("token");
     }
 
-    console.log(`fetchData: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., params=${JSON.stringify(params)}`);
+    console.log(`getWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., params=${JSON.stringify(params)}`);
 
     // -----------------------------------------------------------------------------------------------------------------
     // Define the API base URL and endpoint
@@ -54,7 +52,19 @@ export async function fetchWithAlert<T>(
     // Delay (for testing)
     // await new Promise(resolve => setTimeout(resolve, 1000)); // 1/2 second delay
 
-    const response = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
+    // -----------------------------------------------------------------------------------------------------------------
+    // Define the fetch options
+    const options: RequestInit = {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json", // Set Content-Type for JSON payloads
+        },
+    };
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Make the fetch request
+    const response = await fetch(url.toString(), options);
 
     // -----------------------------------------------------------------------------------------------------------------
     // Display an alert if the response is not ok

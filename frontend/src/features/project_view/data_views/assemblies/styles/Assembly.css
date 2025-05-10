@@ -10,7 +10,7 @@
     stroke-width: 1px;
 }
 
-.construction-layer-thickness:hover {
+.assembly-layer-thickness:hover {
     color: var(--text-highlight-color);
     font-weight: 700;
     border-right: 1px solid var(--text-highlight-color);

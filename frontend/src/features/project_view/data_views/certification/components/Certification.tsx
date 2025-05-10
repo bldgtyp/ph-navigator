@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Box, Modal } from "@mui/material";
 
-import { fetchWithAlert } from "../../../../../api/fetchData";
+import { getWithAlert } from "../../../../../api/getWithAlert";
 import { AirTableRecordType } from "../../../../types/AirTableRecordType";
 import DataViewPage from "../../shared/components/DataViewPage";
 import CertificationStatus from "./CertificationStatus";
@@ -31,7 +31,7 @@ const ProjectCertification: React.FC = () => {
         }, 1000);
 
         const fetchProjectData = async () => {
-            const d: any = await fetchWithAlert(`air_table/${projectId}/config`);
+            const d: any = await getWithAlert(`air_table/${projectId}/config`);
 
             // handle the fetched data
             setCertStatusData(flattenData(d.filter((item: any) => item.fields.SECTION === "CERT_STATUS")));

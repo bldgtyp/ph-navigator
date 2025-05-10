@@ -37,6 +37,52 @@ class MaterialSchema(BaseModel):
         orm_mode = True
 
 
+class CreateLayerSegmentRequest(BaseModel):
+    layer_id: int
+    material_id: int
+    width_mm: float
+    order: int
+
+
+class CreateLayerRequest(BaseModel):
+    assembly_id: int
+    thickness_mm: float
+    order: int
+
+    @root_validator(pre=True)
+    def check_height(cls, values):
+        thickness_mm = values.get("thickness_mm")
+        if thickness_mm <= 0:
+            raise ValueError("Layer thickness must be greater than 0.")
+        return values
+
+
+class UpdateSegmentMaterialRequest(BaseModel):
+    material_id: str
+
+
+class UpdateSegmentWidthRequest(BaseModel):
+    width_mm: float
+
+    @root_validator(pre=True)
+    def check_width(cls, values):
+        width_mm = values.get("width_mm")
+        if width_mm <= 0:
+            raise ValueError("Segment width must be greater than 0.")
+        return values
+
+
+class UpdateLayerHeightRequest(BaseModel):
+    thickness_mm: float
+
+    @root_validator(pre=True)
+    def check_height(cls, values):
+        thickness_mm = values.get("thickness_mm")
+        if thickness_mm <= 0:
+            raise ValueError("Layer thickness must be greater than 0.")
+        return values
+
+
 class AssemblyLayerSegmentSchema(BaseModel):
     id: int
     layer_id: int

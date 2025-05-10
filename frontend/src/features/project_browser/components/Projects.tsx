@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 
 import { UserContext } from "../../auth/contexts/UserContext";
-import { fetchWithAlert } from "../../../api/fetchData";
+import { getWithAlert } from "../../../api/getWithAlert";
 import { ProjectType, defaultProjectType } from "../../types/ProjectType";
 import ProjectCard from "./ProjectCard";
 
@@ -15,7 +15,7 @@ const Projects: React.FC = () => {
     useEffect(() => {
         async function loadProjectCardData() {
             try {
-                const projectCardData = await fetchWithAlert<ProjectType[]>("project_browser/get_project_card_data")
+                const projectCardData = await getWithAlert<ProjectType[]>("project_browser/get_project_card_data")
                 setProjectCardData(projectCardData || [])
             } catch (error) {
                 alert("Error loading project data. Please try again later.");

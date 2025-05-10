@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import '../styles/Assembly.css';
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 
@@ -6,11 +7,11 @@ import { MaterialsProvider } from "../contexts/MaterialsContext";
 import { AssembliesProvider } from "../contexts/AssembliesContext";
 
 import MaterialsDataGrid from "./pages/MaterialLayers.DataGrid";
-import Constructions from "./pages/Constructions";
+import AssembliesPage from "./assemblies/Page";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
-import { fetchWithAlert } from "../../../../../api/fetchData";
+import { getWithAlert } from "../../../../../api/getWithAlert";
 
 
 const AssemblyDataDashboard: React.FC = () => {
@@ -24,7 +25,7 @@ const AssemblyDataDashboard: React.FC = () => {
 
     const handleOnClick = () => {
         try {
-            fetchWithAlert('assembly/load_materials_from_air_table');
+            getWithAlert('assembly/load_materials_from_air_table');
         }
         catch (error) {
             alert("Error loading Material Data. Please try again later.");
@@ -45,7 +46,7 @@ const AssemblyDataDashboard: React.FC = () => {
                     <DataViewPage>
                         <ContentBlock>
                             {activeTab === 0 && <MaterialsDataGrid />}
-                            {activeTab === 1 && <Constructions />}
+                            {activeTab === 1 && <AssembliesPage />}
                         </ContentBlock>
                     </DataViewPage>
                 </Box>

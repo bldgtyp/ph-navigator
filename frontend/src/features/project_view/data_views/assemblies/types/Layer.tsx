@@ -1,9 +1,9 @@
-import { Segment } from './Segment';
+import { SegmentType } from './Segment';
 
-export interface Layer {
+export interface LayerType {
     id: number;
     assembly_id: number;
     order: number;
     thickness_mm: number;
-    segments: Segment[]
+    segments: SegmentType[]
 }

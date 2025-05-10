@@ -1,5 +1,3 @@
-// ----------------------------------------------------------------------------
-// Define the AirTable data types
 export interface MaterialLayersFields {
     DISPLAY_NAME: string;
     LAYER_MATERIAL_NAME: string;

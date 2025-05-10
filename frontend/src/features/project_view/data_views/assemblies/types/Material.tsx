@@ -1,4 +1,4 @@
-export interface Material {
+export interface MaterialType {
     // Define the structure of a material object based on your API response
     id: string;
     name: string;
@@ -11,5 +11,5 @@ export interface Material {
 
 export interface UseLoadMaterialsReturn {
     isLoadingMaterials: boolean;
-    materials: Material[];
+    materials: MaterialType[];
 }

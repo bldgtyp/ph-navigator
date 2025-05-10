@@ -1,4 +1,4 @@
-import { fetchWithAlert } from "./fetchData";
+import { getWithAlert } from "./getWithAlert";
 import { hbFace } from "../features/project_view/model_viewer/types/honeybee/face";
 import { hbPhSpace } from "../features/project_view/model_viewer/types/honeybee_ph/space";
 import { lbtSunPathAndCompass } from "../features/project_view/model_viewer/types/ladybug/sunpath";
@@ -13,21 +13,21 @@ import { hbShadeGroup } from "../features/project_view/model_viewer/types/honeyb
  * hot water system data, ventilation system data, and shading elements data.
  * Returns null if there was an error during the fetch.
  */
-export async function fetchModelData(projectId: string) {
+export async function get3DModelData(projectId: string) {
     try {
-        console.log(`fetchModelData(projectId=${projectId})`)
+        console.log(`get3DModelData(projectId=${projectId})`)
 
         // TODO: this should be done automatically on the server when any model data is accessed
         // const routeLoadModel = `${projectId}/load_hb_model`;
         // const modelData = await fetchWithAlert<hbFace[]>(routeLoadModel);
         // if (!modelData) { return null }
 
-        const facesData = await fetchWithAlert<hbFace[]>(`hb_model/${projectId}/faces`);
-        const spacesData = await fetchWithAlert<hbPhSpace[]>(`hb_model/${projectId}/spaces`);
-        const sunPathData = await fetchWithAlert<lbtSunPathAndCompass[]>(`hb_model/${projectId}/sun_path`);
-        const hotWaterSystemData = await fetchWithAlert<hbPhHvacHotWaterSystem[]>(`hb_model/${projectId}/hot_water_systems`);
-        const ventilationSystemData = await fetchWithAlert<hbPhHvacVentilationSystem[]>(`hb_model/${projectId}/ventilation_systems`);
-        const shadingElementsData = await fetchWithAlert<hbShadeGroup[]>(`hb_model/${projectId}/shading_elements`);
+        const facesData = await getWithAlert<hbFace[]>(`hb_model/${projectId}/faces`);
+        const spacesData = await getWithAlert<hbPhSpace[]>(`hb_model/${projectId}/spaces`);
+        const sunPathData = await getWithAlert<lbtSunPathAndCompass[]>(`hb_model/${projectId}/sun_path`);
+        const hotWaterSystemData = await getWithAlert<hbPhHvacHotWaterSystem[]>(`hb_model/${projectId}/hot_water_systems`);
+        const ventilationSystemData = await getWithAlert<hbPhHvacVentilationSystem[]>(`hb_model/${projectId}/ventilation_systems`);
+        const shadingElementsData = await getWithAlert<hbShadeGroup[]>(`hb_model/${projectId}/shading_elements`);
 
         return { facesData, spacesData, sunPathData, hotWaterSystemData, ventilationSystemData, shadingElementsData };
     } catch (error) {

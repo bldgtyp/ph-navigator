@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { fetchWithAlert } from "../../../../../api/fetchData";
-import { Material, UseLoadMaterialsReturn } from "../types/Material";
+import { getWithAlert } from "../../../../../api/getWithAlert";
+import { MaterialType, UseLoadMaterialsReturn } from "../types/Material";
 
 
 /**
@@ -35,7 +35,7 @@ import { Material, UseLoadMaterialsReturn } from "../types/Material";
  */
 export const useLoadMaterials = (): UseLoadMaterialsReturn => {
     const [isLoadingMaterials, setIsLoadingMaterials] = useState<boolean>(true);
-    const [materials, setMaterials] = useState<Material[]>([]);
+    const [materials, setMaterials] = useState<MaterialType[]>([]);
 
     const cacheKey = 'materials';
     const cacheExpiryKey = 'materials_expiry';
@@ -57,7 +57,7 @@ export const useLoadMaterials = (): UseLoadMaterialsReturn => {
 
                 // ----------------------------------------------------------------------
                 // If no valid cached data, fetch from API
-                const d = await fetchWithAlert<Material[]>('assembly/get_materials');
+                const d = await getWithAlert<MaterialType[]>('assembly/get_materials');
                 setMaterials(d || []);
 
                 // ----------------------------------------------------------------------

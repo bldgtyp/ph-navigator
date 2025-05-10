@@ -1,10 +1,10 @@
-import { Material } from "./Material";
+import { MaterialType } from "./Material";
 
-export interface Segment {
+export interface SegmentType {
     id: number;
     layer_id: number;
     order: number;
-    material_id: number;
     width_mm: number;
-    material: Material;
+    material_id: string;
+    material: MaterialType;
 }

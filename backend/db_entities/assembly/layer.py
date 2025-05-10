@@ -1,7 +1,7 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
 from sqlalchemy import Column, Integer, Float, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, MappedColumn
 from sqlalchemy.ext.orderinglist import ordering_list
 from database import Base
 
@@ -11,7 +11,7 @@ class Layer(Base):
     id = Column(Integer, primary_key=True)
     assembly_id = Column(Integer, ForeignKey('assemblies.id'))
     order = Column(Integer)  # Used to maintain order within the assembly
-    thickness_mm = Column(Float)
+    thickness_mm: Mapped[float]  = MappedColumn(Float, nullable=False)
 
     assembly = relationship("Assembly", back_populates="layers")
 

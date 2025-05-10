@@ -1,10 +1,10 @@
 import React, { createContext, useContext } from "react";
-import { Assembly } from "../types/Assembly";
+import { AssemblyType } from "../types/Assembly";
 import { useLoadAssemblies } from "./AssembliesContext.Hooks";
 
 
 interface AssembliesContextType {
-    assemblies: Assembly[];
+    assemblies: AssemblyType[];
     isLoadingAssemblies: boolean;
 }
 
