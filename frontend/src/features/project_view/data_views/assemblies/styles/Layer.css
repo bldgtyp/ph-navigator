@@ -5,6 +5,11 @@
     border-bottom: 1px dashed #ccc;
 }
 
+.assembly-layer:first-of-type {
+    border-top: 1px dashed #ccc;
+    /* Add a top border to the first layer */
+}
+
 .assembly-layer-thickness {
     flex: 0;
     position: relative;
