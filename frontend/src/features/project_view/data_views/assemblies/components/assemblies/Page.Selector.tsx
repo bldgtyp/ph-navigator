@@ -30,6 +30,9 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
         }
     };
 
+    // Create a sorted copy of the assemblies array
+    const sortedAssemblies = [...assemblies].sort((a, b) => a.name.localeCompare(b.name));
+
     return (
         <Box sx={{ display: "flex", alignItems: "top", gap: 2, marginBottom: 2 }}>
 
@@ -42,7 +45,7 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
                     onChange={handleAssemblyChange}
                     label="Select Assembly"
                 >
-                    {assemblies.map((assembly: any) => (
+                    {sortedAssemblies.map((assembly: any) => (
                         <MenuItem key={assembly.id} value={assembly.id}>
                             {assembly.name}
                         </MenuItem>

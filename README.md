@@ -10,7 +10,7 @@
 - [x] Delete
 - [ ] Fix Material-Refresh to clear local-storage
 - [x] Set Name of Assembly
-- [ ] Alphabetize Assembly Select
+- [x] Alphabetize Assembly Select
 - [ ] Display Material Attributes
 - [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
