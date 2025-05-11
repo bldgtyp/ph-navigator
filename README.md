@@ -4,18 +4,26 @@
 
 #### Assemblies:
 - [x] Material Color
-- [x] Filtered by Projectåß
+- [x] Filtered by Project
 - [x] Add New
 - [x] Select Assembly from Dropdown list
 - [x] Delete
-- [ ] Set Name of Assembly
-- [ ] Steel-Stud checkbox and auto-find nearest match
+- [ ] Fix Material-Refresh to clear local-storage
+- [x] Set Name of Assembly
+- [ ] Alphabetize Assembly Select
 - [ ] Display Material Attributes
-- [ ] Serialize (download)
-- [ ] De-Serialize (upload)
+- [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
 - [ ] Turn off editing for non-login users
+- [ ] Serialize (download)
+- [ ] De-Serialize (upload)
+- [ ] API endpoints for Rhino access
+- [ ] API-Key / Token for Rhino access
+- [ ] Materials DataGrid page gets data from Constructions (not AirTable)
+- [ ] Air-Cavity (automatic-thickness detection)
+- [ ] Steel-Stud-Cavity checkbox
+- [ ] Steel-Stud-Cavity (automatic-thickness detection)
 
 
 #### Get Geometry:

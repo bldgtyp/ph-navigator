@@ -23,6 +23,7 @@ from features.assembly.schema import (
     AddAssemblyRequest,
     DeleteAssemblyRequest,
     DeleteAssemblyRequest,
+    UpdateAssemblyNameRequest,
 )
 from db_entities.assembly import Material, Assembly, Segment, Layer
 from db_entities.app import Project
@@ -447,3 +448,27 @@ async def delete_assembly(
         content={"message": f"Assembly {request.assembly_id} deleted successfully."},
         status_code=200
     )
+
+
+@router.patch("/update_assembly_name/")
+async def update_assembly_name(request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)) -> JSONResponse:
+    """Update the name of an Assembly."""
+    logger.info(f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})")
+
+    # Fetch the assembly to be updated
+    assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
+    if not assembly:
+        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
+
+    # Update the name
+    assembly.name = request.new_name
+    db.commit()
+
+    return JSONResponse(
+        content={
+            "message": f"Assembly {request.assembly_id} name updated successfully.",
+            "new_name": request.new_name
+        },
+        status_code=200
+    )
+

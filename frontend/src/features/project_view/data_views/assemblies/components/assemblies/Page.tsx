@@ -6,13 +6,14 @@ import { useMaterials } from "../../contexts/MaterialsContext";
 
 import { postWithAlert } from "../../../../../../api/postWithAlert";
 import { getWithAlert } from "../../../../../../api/getWithAlert";
+import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
+import { patchWithAlert } from "../../../../../../api/patchWithAlert";
 
 import LoadingModal from "../../../shared/components/LoadingModal";
 import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 import { AssemblyType } from "../../types/Assembly";
 import { AssemblySelector } from "./Page.Selector";
 import { AssemblyView } from "./Page.AssemblyView";
-import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
 
 
 const AssembliesPage: React.FC = () => {
@@ -114,6 +115,27 @@ const AssembliesPage: React.FC = () => {
     }
   };
 
+  const handleNameChange = async (assemblyId: number, newName: string) => {
+    try {
+      await patchWithAlert(
+        `assembly/update_assembly_name`,
+        null,
+        {
+          assembly_id: assemblyId,
+          new_name: newName,
+        }
+      );
+
+      // Update the assemblies state
+      const updatedAssemblies = assemblies.map((assembly) =>
+        assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
+      );
+      setAssemblies(updatedAssemblies);
+    } catch (error) {
+      console.error("Failed to update assembly name:", error);
+    }
+  };
+
   const headerButtons = [
     <Button
       key="+"
@@ -146,6 +168,7 @@ const AssembliesPage: React.FC = () => {
           assemblies={assemblies}
           selectedAssemblyId={selectedAssemblyId}
           handleAssemblyChange={handleAssemblyChange}
+          handleNameChange={handleNameChange}
         />
         {isLoadingAssemblies && <p>Loading...</p>}
         {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}
