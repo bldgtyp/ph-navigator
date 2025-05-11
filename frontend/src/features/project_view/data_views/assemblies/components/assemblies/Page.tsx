@@ -132,6 +132,13 @@ const AssembliesPage: React.FC = () => {
         assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
       );
       setAssemblies(updatedAssemblies);
+
+      // Ensure the selected assembly is updated
+      handleAssemblyChange({
+        target: {
+          value: assemblyId,
+        },
+      } as SelectChangeEvent<number>);
     } catch (error) {
       console.error("Failed to update assembly name:", error);
     }

@@ -12,6 +12,7 @@
 - [x] Set Name of Assembly
 - [x] Alphabetize Assembly Select
 - [ ] Display Material Attributes
+- [ ] Display Material Legend
 - [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
