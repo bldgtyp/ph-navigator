@@ -15,7 +15,7 @@ import { AssemblyType } from "../../types/Assembly";
 import { AssemblySelector } from "./Page.Selector";
 import { AssemblyView } from "./Page.AssemblyView";
 import { fetchAndCacheMaterials } from "../../contexts/MaterialsContext.Utility";
-
+import { headerButtons } from "./Page.HeaderButtons";
 
 const AssembliesPage: React.FC = () => {
   const { projectId } = useParams();
@@ -158,43 +158,12 @@ const AssembliesPage: React.FC = () => {
     }
   }
 
-  const headerButtons = [
-    <Button
-      key="+"
-      className="header-button"
-      variant="outlined"
-      color="inherit"
-      size="small"
-      onClick={handleAddAssembly}
-    >
-      + Add New Assembly
-    </Button>,
-    <Button
-      key="-"
-      className="header-button"
-      variant="outlined"
-      color="inherit"
-      size="small"
-      onClick={handleDeleteAssembly}
-    >
-      Delete Assembly
-    </Button>,
-    <Button
-      key="refresh"
-      className="header-button"
-      variant="contained"
-      color="info"
-      size="small"
-      onClick={handleRefreshMaterials}
-    >
-      Refresh Materials
-    </Button>
-  ];
-
   return (
     <>
       <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
-      <ContentBlockHeader text="Constructions" buttons={headerButtons} />
+
+      <ContentBlockHeader text="Constructions" buttons={headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials)} />
+
       <Box sx={{ margin: 2 }}>
         <AssemblySelector
           assemblies={assemblies}

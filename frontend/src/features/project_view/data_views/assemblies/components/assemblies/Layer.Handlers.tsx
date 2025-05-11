@@ -27,8 +27,6 @@ export const handleAddSegmentToRight = async (
         });
 
         if (response) {
-            console.log(`Segment added successfully: ${response.segment_id}`);
-
             // Add the new segment to the local state
             const newSegment: SegmentType = {
                 id: response.segment_id,
@@ -63,8 +61,6 @@ export const handleDeleteSegment = async (
         const response = await deleteWithAlert<{ message: string }>(`assembly/delete_layer_segment/${segmentId}`, null);
 
         if (response) {
-            console.log(`Segment deleted successfully: ${segmentId}`);
-
             // Remove the segment from the local state
             const updatedSegments = segments.filter((segment) => segment.id !== segmentId);
 
@@ -94,7 +90,6 @@ export const handleSubmit = async (
             });
 
             if (response) {
-                console.log(`Width updated successfully for layer ${layer.id}`);
                 setCurrentLayerThicknessMM(newLayerThicknessMM);
             } else {
                 console.error("Failed to update layer-thickness.");

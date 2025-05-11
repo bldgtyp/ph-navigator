@@ -29,7 +29,6 @@ export const handleSubmit = async (
             });
 
             if (response) {
-                console.log(`Width updated successfully for segment ${segment.id}`);
                 setCurrentWidth(newWidthMM);
             } else {
                 console.error("Failed to update Segment-Width.");
@@ -43,7 +42,6 @@ export const handleSubmit = async (
             });
 
             if (response) {
-                console.log(`Material updated successfully for segment ${segment.id}`);
                 setCurrentMaterialId(newMaterialId);
                 setCurrentMaterialColor(convertArgbToRgba(response.material_argb_color, "#ccc"));
             } else {

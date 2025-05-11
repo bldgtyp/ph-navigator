@@ -1,12 +1,10 @@
 import { useParams } from "react-router-dom";
-import { useEffect } from "react";
 import { Box, Tooltip } from "@mui/material";
 
 import ModalLayerSegment from "./Modal.LayerSegment";
 import { SegmentType } from '../../types/Segment';
 import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange } from "./LayerSegment.Handlers";
 import { useLayerSegmentHooks } from "./LayerSegment.Hooks";
-import { convertArgbToRgba } from '../../types/Material';
 
 
 type LayerSegmentProps = {

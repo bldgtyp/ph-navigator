@@ -34,7 +34,6 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
 
             if (response) {
                 const newLayerId = response.layer_id;
-                console.log(`layer added successfully: ${response.layer_id}`);
 
                 // Get the new Layer for display
                 try {
@@ -66,8 +65,6 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
             const response = await deleteWithAlert<{ message: string }>(`assembly/delete_layer/${layerId}`, null);
 
             if (response) {
-                console.log(`Layer deleted successfully: ${layerId}`);
-
                 // Remove the layer from the local state
                 const updatedLayers = layers.filter((layer) => layer.id !== layerId);
 
