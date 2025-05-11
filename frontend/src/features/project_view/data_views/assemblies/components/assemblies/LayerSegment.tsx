@@ -1,5 +1,8 @@
+import { useContext } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Tooltip } from "@mui/material";
+
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import ModalLayerSegment from "./Modal.LayerSegment";
 import { SegmentType } from '../../types/Segment';
@@ -25,6 +28,7 @@ const AddSegmentButton: React.FC<{ onClick: () => void }> = (props) => {
 }
 
 const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDeleteSegment }) => {
+    const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const hooks = useLayerSegmentHooks(segment);
 
@@ -65,7 +69,7 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
             />
 
             {/* Add Segment Button */}
-            {hooks.isSegmentHovered && (<AddSegmentButton onClick={() => onAddSegment(segment)} />)}
+            {hooks.isSegmentHovered && userContext.user ? (<AddSegmentButton onClick={() => onAddSegment(segment)} />) : null}
 
         </Box>
     );

@@ -16,7 +16,7 @@
 - [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
-- [ ] Turn off editing for non-login users
+- [x] Turn off editing for non-login users
 - [ ] Serialize (download)
 - [ ] De-Serialize (upload)
 - [ ] API endpoints for Rhino access

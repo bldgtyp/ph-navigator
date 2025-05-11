@@ -1,5 +1,8 @@
+import { useContext } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Tooltip } from "@mui/material";
+
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import LayerSegment from "./LayerSegment";
 import ModalLayerHeight from "./Modal.LayerHeight";
@@ -17,7 +20,10 @@ interface LayerProps {
 const AddLayerButton: React.FC<{ onClick: () => void }> = (props) => {
     return (
         <Tooltip title="Add a New Layer" placement="bottom">
-            <button className="add-layer-button" onClick={(event) => { event.stopPropagation(); props.onClick(); }}>
+            <button
+                className="add-layer-button"
+                onClick={(event) => { event.stopPropagation(); props.onClick(); }}
+            >
                 +
             </button>
         </Tooltip>
@@ -26,6 +32,7 @@ const AddLayerButton: React.FC<{ onClick: () => void }> = (props) => {
 }
 
 const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
+    const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const hooks = useLayerHooks(layer);
 
@@ -42,7 +49,7 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                 {hooks.currentLayerThicknessMM}
 
                 {/* Add-Layer Button */}
-                {hooks.isLayerHovered && (<AddLayerButton onClick={() => onAddLayer(layer)} />)}
+                {hooks.isLayerHovered && userContext.user ? (<AddLayerButton onClick={() => onAddLayer(layer)} />) : null}
             </Box>
 
             <ModalLayerHeight

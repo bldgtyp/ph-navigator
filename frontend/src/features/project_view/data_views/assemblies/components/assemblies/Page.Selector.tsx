@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Box, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import { AssemblyType } from "../../types/Assembly";
 import ChangeNameModal from "./Modal.ChangeName";
@@ -11,6 +13,20 @@ interface AssemblySelectorProps {
     handleNameChange: (assemblyId: number, newName: string) => void;
 }
 
+const ChangeNameButton: React.FC<{ openModal: () => void }> = ({ openModal }) => {
+    return (
+        <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
+            onClick={openModal}
+        >
+            Change Name
+        </Button>
+    )
+}
+
 
 export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
     assemblies,
@@ -18,7 +34,7 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
     handleAssemblyChange,
     handleNameChange
 }) => {
-
+    const userContext = useContext(UserContext);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => setIsModalOpen(true);
@@ -53,15 +69,7 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
                 </Select>
             </FormControl>
 
-            <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
-                onClick={openModal}
-            >
-                Change Name
-            </Button>
+            {userContext.user ? (<ChangeNameButton openModal={openModal} />) : null}
             <ChangeNameModal
                 open={isModalOpen}
                 onClose={closeModal}

@@ -1,9 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useContext } from "react";
+
+import { UserContext } from "../../../../../auth/contexts/UserContext";
+
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Divider, ButtonGroup } from "@mui/material";
 import { OkCancelButtonsProps, HeightInputProps, DeleteButtonProps, LayerHeightModalType } from "./Modal.LayerHeight.Types";
 
 
 const HeightInput: React.FC<HeightInputProps> = (props) => {
+    const userContext = useContext(UserContext);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -25,6 +29,7 @@ const HeightInput: React.FC<HeightInputProps> = (props) => {
             margin="dense"
             autoFocus
             inputRef={inputRef}
+            disabled={!userContext.user}
         />
     )
 }
@@ -47,14 +52,21 @@ const OkCancelButtons: React.FC<OkCancelButtonsProps> = (props) => {
 
 
 const DeleteButton: React.FC<DeleteButtonProps> = (props) => {
+    const userContext = useContext(UserContext);
     return (
         <DialogActions sx={{ display: "flex", justifyContent: "center" }}>
-            <Button onClick={() => {
-                const isConfirmed = window.confirm("Are you sure you want to delete this Layer?");
-                if (isConfirmed) {
-                    props.handleDeleteLayer();
-                }
-            }} color="error" size="small" fullWidth variant="outlined">
+            <Button
+                color="error"
+                size="small"
+                fullWidth
+                variant="outlined"
+                disabled={!userContext.user}
+                onClick={() => {
+                    const isConfirmed = window.confirm("Are you sure you want to delete this Layer?");
+                    if (isConfirmed) {
+                        props.handleDeleteLayer();
+                    }
+                }} >
                 Delete Layer
             </Button>
         </DialogActions>
@@ -63,7 +75,6 @@ const DeleteButton: React.FC<DeleteButtonProps> = (props) => {
 
 
 const ModalLayerHeight: React.FC<LayerHeightModalType> = (props) => {
-
     return (
         <Dialog open={props.isModalOpen} onClose={props.handleModalClose}>
             <DialogTitle>Layer</DialogTitle>
@@ -82,6 +93,5 @@ const ModalLayerHeight: React.FC<LayerHeightModalType> = (props) => {
         </Dialog>
     )
 }
-
 
 export default ModalLayerHeight;

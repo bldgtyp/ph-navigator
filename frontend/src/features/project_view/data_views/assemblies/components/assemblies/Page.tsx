@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
-import { Box, Button, SelectChangeEvent } from "@mui/material";
+import { Box, SelectChangeEvent } from "@mui/material";
 
 import { useMaterials } from "../../contexts/MaterialsContext";
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import { postWithAlert } from "../../../../../../api/postWithAlert";
 import { getWithAlert } from "../../../../../../api/getWithAlert";
@@ -18,6 +19,7 @@ import { fetchAndCacheMaterials } from "../../contexts/MaterialsContext.Utility"
 import { headerButtons } from "./Page.HeaderButtons";
 
 const AssembliesPage: React.FC = () => {
+  const userContext = useContext(UserContext);
   const { projectId } = useParams();
   const { isLoadingMaterials, setMaterials } = useMaterials();
   const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
@@ -162,7 +164,11 @@ const AssembliesPage: React.FC = () => {
     <>
       <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
 
-      <ContentBlockHeader text="Constructions" buttons={headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials)} />
+      {
+        userContext.user ? (
+          <ContentBlockHeader text="Assembly" buttons={headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials)} />
+        ) : <ContentBlockHeader text="Assembly" />
+      }
 
       <Box sx={{ margin: 2 }}>
         <AssemblySelector

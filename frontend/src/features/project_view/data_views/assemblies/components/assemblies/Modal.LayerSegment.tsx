@@ -1,11 +1,15 @@
-import { useEffect, useRef } from "react";
-import { Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, MenuItem, InputLabel, FormControl, Typography } from "@mui/material";
+import { useEffect, useRef, useContext } from "react";
+
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 import { useMaterials } from '../../contexts/MaterialsContext';
+
+import { Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, MenuItem, InputLabel, FormControl, Typography } from "@mui/material";
 import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps } from "./Modal.LayerSegment.Types";
 
 
 const WidthInput: React.FC<WidthInputProps> = (props) => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const userContext = useContext(UserContext);
 
     useEffect(() => {
         if (inputRef.current) {
@@ -26,6 +30,7 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
             margin="dense"
             autoFocus
             inputRef={inputRef}
+            disabled={!userContext.user}
         />
     )
 };
@@ -33,6 +38,7 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
 
 const MaterialInput: React.FC<MaterialInputProps> = (props) => {
     const { isLoadingMaterials, materials } = useMaterials();
+    const userContext = useContext(UserContext);
 
     // Sort materials by category
     const materialOptions = [...materials].sort((a, b) => {
@@ -55,6 +61,7 @@ const MaterialInput: React.FC<MaterialInputProps> = (props) => {
                     onChange={(event, newValue) => {
                         props.handleMaterialChange(newValue?.id || "", newValue?.argb_color || "#ccc");
                     }}
+                    disabled={!userContext.user}
                     loading={isLoadingMaterials}
                     renderInput={(params) => (
                         <TextField
@@ -87,14 +94,21 @@ const OkCancelButtons: React.FC<OkCancelButtonsProps> = (props) => {
 
 
 const DeleteButton: React.FC<DeleteButtonProps> = (props) => {
+    const userContext = useContext(UserContext);
+
     return (
         <DialogActions sx={{ display: "flex", justifyContent: "center" }}>
-            <Button onClick={() => {
-                const isConfirmed = window.confirm("Are you sure you want to delete this Layer Segment?");
-                if (isConfirmed) {
-                    props.handleDeleteSegment(props.segmentId); // Pass the segment ID to the handler
-                }
-            }} color="error" size="small" fullWidth variant="outlined">
+            <Button
+                color="error"
+                size="small"
+                fullWidth variant="outlined"
+                disabled={!userContext.user}
+                onClick={() => {
+                    const isConfirmed = window.confirm("Are you sure you want to delete this Layer Segment?");
+                    if (isConfirmed) {
+                        props.handleDeleteSegment(props.segmentId); // Pass the segment ID to the handler
+                    }
+                }} >
                 Delete Segment
             </Button>
         </DialogActions>
