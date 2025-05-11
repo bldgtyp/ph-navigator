@@ -2,14 +2,15 @@
 
 from typing import TYPE_CHECKING, cast
 
-if TYPE_CHECKING:
-    from backend.db_entities.app.project import Project
-
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from database import Base
 from db_entities.app.relationships import project_users
+
+if TYPE_CHECKING:
+    # Backwards relationships only
+    from backend.db_entities.app.project import Project
 
 
 class User(Base):
@@ -20,12 +21,10 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String)
 
-    # A User can 'own' one or more Projects
+    # Relationships
     owned_projects: Mapped[list["Project"]] = relationship(
         "Project", back_populates="owner"
     )
-
-    # A User can have access to one or more Projects
     all_projects: Mapped[list["Project"]] = relationship(
         "Project", secondary=project_users, back_populates="users"
     )

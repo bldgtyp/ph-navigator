@@ -3,11 +3,11 @@
 ## TODO:
 
 #### Assemblies:
-- [ ] Material Color
-- [ ] Select (Multiple)
+- [x] Material Color
+- [x] Filtered by Project
 - [ ] Add New
 - [ ] Delete
-- [ ] Filtered by Project / User
+- [ ] Select Assembly from Dropdown list
 - [ ] Serialize (download)
 - [ ] De-Serialize (upload)
 - [ ] Steel-Stud checkbox and auto-find nearest match

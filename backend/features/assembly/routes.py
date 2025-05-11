@@ -22,6 +22,7 @@ from features.assembly.schema import (
     CreateLayerRequest,
 )
 from db_entities.assembly import Material, Assembly, Segment, Layer
+from db_entities.app import Project
 
 router = APIRouter(
     prefix="/assembly",
@@ -91,11 +92,16 @@ async def get_materials_from_air_table(db: Session = Depends(get_db)) -> list[Ma
     return [MaterialSchema.from_orm(material) for material in materials]
 
 
-@router.get("/get_assemblies")
-async def get_assemblies(db: Session = Depends(get_db)) -> list[AssemblySchema]:
-    """Get all assemblies from the database."""
+@router.get("/get_assemblies/{project_bt_num}")
+async def get_assemblies(project_bt_num: int, db: Session = Depends(get_db)) -> list[AssemblySchema]:
+    """Get all assemblies for a specific project from the database."""
     logger.info(f"get_assemblies()")
-    assemblies = db.query(Assembly).all()
+    assemblies = (
+        db.query(Assembly)
+        .join(Project)
+        .filter(Project.bt_number == project_bt_num)
+        .all()
+    )
     return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 
 
@@ -135,7 +141,7 @@ async def update_segment_material(
         )
 
     # Update the segment's material
-    segment.set_material(material)
+    segment.material = material
     db.commit()
 
     return JSONResponse(
@@ -280,10 +286,11 @@ async def add_layer(
     default_material = db.query(Material).first()
     default_segment = Segment(
         width_mm=812.8, # 32 inches
-        order=0         # First segment in the layer
+        order=0,         # First segment in the layer
+        layer=layer,
     )
-    default_segment.set_layer(layer)
-    default_segment.set_material(default_material)
+    # default_segment.set_layer(layer)
+    default_segment.material = default_material
     db.add(default_segment)
     db.commit()
 

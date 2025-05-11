@@ -200,10 +200,13 @@ def add_dummy_materials(db: Session) -> None:
 
 
 def add_dummy_assembly(db: Session) -> None:
+
+    project_1 = db.query(Project).filter(Project.id == 1).first()
+
     layer_1 = Layer(thickness_mm=50.0)
     layer_2 = Layer(thickness_mm=100.0)
 
-    assembly = Assembly(name="__assembly__")
+    assembly = Assembly(name="__assembly__", project=project_1)
     assembly.layers.append(layer_1)
     assembly.layers.append(layer_2)
     

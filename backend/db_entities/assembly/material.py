@@ -1,9 +1,15 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Column, String, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 
 from database import Base, Session
+if TYPE_CHECKING:
+    # Backwards relationships only
+    from db_entities.assembly.segment import Segment
+
 
 class Material(Base):
     __tablename__ = "assembly_materials"
@@ -16,7 +22,7 @@ class Material(Base):
     conductivity_w_mk = Column(Float)
     emissivity = Column(Float)
 
-    segments = relationship("Segment", back_populates="material")
+    segments: Mapped[list["Segment"]] = relationship("Segment", back_populates="material")
 
     @classmethod
     def get_by_name(cls, session: Session, name: str) -> "Material | None":

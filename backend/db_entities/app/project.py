@@ -6,9 +6,11 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship, validates
 
 from database import Base
-from db_entities.airtable.at_base import AirTableBase
 from db_entities.app.relationships import project_users
+
+from db_entities.airtable.at_base import AirTableBase
 from db_entities.app.user import User
+from db_entities.assembly.assembly import Assembly
 
 
 class Project(Base):
@@ -21,22 +23,31 @@ class Project(Base):
     airtable_base_id = Column(Integer, ForeignKey("airtable_bases.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
     phius_dropbox_url = Column(String, index=True, nullable=True)
-
-    # The AirTable base with the Project's data
-    airtable_base: Mapped[AirTableBase] = relationship(
-        "AirTableBase", back_populates="project"
+    
+    # -----------------------------------------------------------------------------------
+    # Relationships
+    assemblies: Mapped[list[Assembly]] = relationship(
+        "Assembly",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="Assembly.name",
     )
-
-    # A Project will always have an 'owner' (User)
-    owner: Mapped[User] = relationship("User", back_populates="owned_projects")
-
-    # Users other than the 'owner' can also have access to the project
+    airtable_base: Mapped[AirTableBase] = relationship(
+        "AirTableBase", 
+        back_populates="project",
+    )
+    owner: Mapped[User] = relationship(
+        "User",
+        back_populates="owned_projects",
+    )
     users: Mapped[list[User]] = relationship(
-        "User", secondary=project_users, back_populates="all_projects"
+        "User", 
+        secondary=project_users, 
+        back_populates="all_projects",
     )
 
     @validates("name")
-    def convert_to_uppercase(self, key, value):
+    def convert_to_uppercase(self, key, value: str) -> str:
         return value.upper()
 
     @property
