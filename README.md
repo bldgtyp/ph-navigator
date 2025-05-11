@@ -4,14 +4,15 @@
 
 #### Assemblies:
 - [x] Material Color
-- [x] Filtered by Project
-- [ ] Add New
-- [ ] Delete
-- [ ] Select Assembly from Dropdown list
-- [ ] Serialize (download)
-- [ ] De-Serialize (upload)
+- [x] Filtered by Projectåß
+- [x] Add New
+- [x] Select Assembly from Dropdown list
+- [x] Delete
+- [ ] Set Name of Assembly
 - [ ] Steel-Stud checkbox and auto-find nearest match
 - [ ] Display Material Attributes
+- [ ] Serialize (download)
+- [ ] De-Serialize (upload)
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
 - [ ] Turn off editing for non-login users

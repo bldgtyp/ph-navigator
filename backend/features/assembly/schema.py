@@ -47,6 +47,16 @@ class AddAssemblyRequest(BaseModel):
             raise ValueError("Project number is required.")
         return values
 
+class DeleteAssemblyRequest(BaseModel):
+    assembly_id: int
+
+    @root_validator(pre=True)
+    def check_assembly_id(cls, values):
+        assembly_id = values.get("assembly_id")
+        if not assembly_id:
+            raise ValueError("Assembly ID is required.")
+        return values
+
 class CreateLayerSegmentRequest(BaseModel):
     layer_id: int
     material_id: str

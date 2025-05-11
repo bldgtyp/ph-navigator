@@ -21,6 +21,8 @@ from features.assembly.schema import (
     CreateLayerSegmentRequest,
     CreateLayerRequest,
     AddAssemblyRequest,
+    DeleteAssemblyRequest,
+    DeleteAssemblyRequest,
 )
 from db_entities.assembly import Material, Assembly, Segment, Layer
 from db_entities.app import Project
@@ -415,3 +417,33 @@ async def add_assembly(
         status_code=201
     )
 
+
+@router.delete("/delete_assembly/")
+async def delete_assembly(
+    request: DeleteAssemblyRequest,
+    db: Session = Depends(get_db)
+) -> JSONResponse:
+    """Delete an Assembly and all its associated layers and segments."""
+    logger.info(f"delete_assembly(assembly_id={request.assembly_id})")
+
+    # Fetch the assembly to be deleted
+    assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
+    if not assembly:
+        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
+
+    # Delete all associated segments for each layer in the assembly
+    db.query(Segment).filter(Segment.layer_id.in_(
+        db.query(Layer.id).filter_by(assembly_id=assembly.id)
+    )).delete(synchronize_session="fetch")
+
+    # Delete all layers associated with the assembly
+    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
+
+    # Delete the assembly itself
+    db.delete(assembly)
+    db.commit()
+
+    return JSONResponse(
+        content={"message": f"Assembly {request.assembly_id} deleted successfully."},
+        status_code=200
+    )

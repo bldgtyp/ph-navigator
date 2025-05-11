@@ -35,6 +35,6 @@ class Segment(Base):
     def default(cls, material: Material) -> "Segment":
         return Segment(
             order=0,
-            width_mm=50.0,
+            width_mm=812.8, # 32 inches
             material=material, 
         )

@@ -12,6 +12,7 @@ import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 import { AssemblyType } from "../../types/Assembly";
 import { AssemblySelector } from "./Page.Selector";
 import { AssemblyView } from "./Page.AssemblyView";
+import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
 
 
 const AssembliesPage: React.FC = () => {
@@ -79,6 +80,40 @@ const AssembliesPage: React.FC = () => {
     }
   };
 
+  const handleDeleteAssembly = async () => {
+    if (!selectedAssemblyId) {
+      console.error("No assembly selected to delete.");
+      return;
+    }
+
+    try {
+      const confirmed = window.confirm("Are you sure you want to delete this assembly?");
+      if (!confirmed) return;
+
+      await deleteWithAlert(
+        `assembly/delete_assembly`,
+        null,
+        {
+          assembly_id: selectedAssemblyId,
+        }
+      );
+
+      console.log(`Assembly ${selectedAssemblyId} deleted successfully.`);
+
+      // Fetch updated assemblies and update the state
+      const updatedAssemblies = await fetchAssemblies();
+
+      // Select the first assembly in the updated list, or set to null if none remain
+      if (updatedAssemblies.length > 0) {
+        setSelectedAssemblyId(updatedAssemblies[0].id);
+      } else {
+        setSelectedAssemblyId(null);
+      }
+    } catch (error) {
+      console.error("Failed to delete assembly:", error);
+    }
+  };
+
   const headerButtons = [
     <Button
       key="+"
@@ -90,7 +125,14 @@ const AssembliesPage: React.FC = () => {
     >
       + Add New Assembly
     </Button>,
-    <Button key="-" className="header-button" variant="outlined" color="inherit" size="small">
+    <Button
+      key="-"
+      className="header-button"
+      variant="outlined"
+      color="inherit"
+      size="small"
+      onClick={handleDeleteAssembly}
+    >
       Delete Assembly
     </Button>,
   ];

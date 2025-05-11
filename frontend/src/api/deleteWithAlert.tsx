@@ -8,6 +8,7 @@ import constants from "../data/constants.json";
  * @template T - The expected type of the response data.
  * @param {string} endpoint - The API endpoint to send the DELETE request to.
  * @param {string | null} [token=null] - The optional authorization token. If not provided, it will be retrieved from localStorage.
+ * @param {any} [data={}] - The data to include in the request body, serialized as JSON.
  * @returns {Promise<T | null>} - A promise that resolves to the response data of type `T` if the request is successful, or `null` if an error occurs.
  *
  * @throws {Error} - Throws an error if the fetch request fails unexpectedly.
@@ -24,9 +25,10 @@ import constants from "../data/constants.json";
  */
 export async function deleteWithAlert<T>(
     endpoint: string,
-    token: string | null = null
+    token: string | null = null,
+    data: any = {}
 ): Promise<T | null> {
-    console.log(`deleteWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}...`);
+    console.log(`deleteWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., data=${JSON.stringify(data)}`);
 
     // If token is not provided, try to get it from localStorage
     if (!token) {
@@ -42,7 +44,9 @@ export async function deleteWithAlert<T>(
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
         },
+        body: JSON.stringify(data),
     };
 
     // Make the fetch request
