@@ -3,7 +3,7 @@ import '../styles/Layer.css';
 import '../styles/Segment.css';
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 
 import { MaterialsProvider } from "../contexts/MaterialsContext";
 
@@ -12,7 +12,6 @@ import AssembliesPage from "./assemblies/Page";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
-import { getWithAlert } from "../../../../../api/getWithAlert";
 
 
 const AssemblyDataDashboard: React.FC = () => {
@@ -24,16 +23,6 @@ const AssemblyDataDashboard: React.FC = () => {
         { label: "Constructions", path: `${projectId}/constructions` },
     ];
 
-    const handleOnClick = () => {
-        try {
-            getWithAlert('assembly/load_materials_from_air_table');
-        }
-        catch (error) {
-            alert("Error loading Material Data. Please try again later.");
-            console.error("Error loading Material Data:", error);
-        }
-    }
-
     return (
         <MaterialsProvider>
             <Box id="assemblies-data-dashboard">
@@ -42,13 +31,14 @@ const AssemblyDataDashboard: React.FC = () => {
                     activeTab={activeTab}
                     onTabChange={(tabNumber) => setActiveTab(tabNumber)}
                 />
-                <Button variant="contained" color="info" size="small" sx={{ marginLeft: 8, marginTop: 2 }} onClick={handleOnClick}>Refresh Materials</Button>
+
                 <DataViewPage>
                     <ContentBlock>
                         {activeTab === 0 && <MaterialsDataGrid />}
                         {activeTab === 1 && <AssembliesPage />}
                     </ContentBlock>
                 </DataViewPage>
+
             </Box>
         </MaterialsProvider>
     )

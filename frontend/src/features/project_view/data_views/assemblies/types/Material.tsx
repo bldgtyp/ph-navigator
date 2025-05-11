@@ -11,7 +11,9 @@ export interface MaterialType {
 
 export interface UseLoadMaterialsReturn {
     isLoadingMaterials: boolean;
+    setIsLoadingMaterials: React.Dispatch<React.SetStateAction<boolean>>;
     materials: MaterialType[];
+    setMaterials: React.Dispatch<React.SetStateAction<MaterialType[]>>;
 }
 
 export const convertArgbToRgba = (argbColor: string | null | undefined, defaultColor: string = "#ccc"): string => {

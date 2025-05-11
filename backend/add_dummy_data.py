@@ -5,7 +5,7 @@
 import bcrypt
 from sqlalchemy.orm import Session
 
-from database import Base, SessionLocal, engine, get_db
+from database import Base, SessionLocal, engine
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.app.project import Project

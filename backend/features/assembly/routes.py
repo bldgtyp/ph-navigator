@@ -37,10 +37,10 @@ logger = logging.getLogger(__name__)
 
 
 
-@router.get("/load_materials_from_air_table")
-async def load_materials_from_air_table(db: Session = Depends(get_db)) -> JSONResponse:
+@router.get("/refresh_db_materials_from_air_table")
+async def refresh_db_materials_from_air_table(db: Session = Depends(get_db)) -> JSONResponse:
     """Load all of the records from the AirTable into the Database."""
-    logger.info(f"load_materials_from_air_table()")
+    logger.info(f"refresh_db_materials_from_air_table()")
     
     # -- Go get the Materials from AirTable
     api = Api(settings.AIRTABLE_MATERIAL_GET_TOKEN)
@@ -56,6 +56,24 @@ async def load_materials_from_air_table(db: Session = Depends(get_db)) -> JSONRe
         new_mat = AirTableMaterialSchema(**d)
         materials.append(new_mat)
     
+
+    # -- Remove all of the existing materials which are not used by any of the Segments
+    # Get all existing materials
+    existing_materials = db.query(Material).all()
+    existing_material_ids = {material.id for material in existing_materials}
+    # Get all segment material IDs
+    segment_material_ids = {segment.material.id for segment in db.query(Segment).all()}
+    # Find materials that are not used by any segments
+    unused_material_ids = existing_material_ids - segment_material_ids
+    # Delete unused materials
+    for material_id in unused_material_ids:
+        material = db.query(Material).filter_by(id=material_id).first()
+        if material:
+            db.delete(material)
+            logger.info(f"Deleted unused material with ID: {material_id}")
+    db.commit()
+
+
     # -- Add the Materials to the database
     materials_added = 0
     materials_updated = 0

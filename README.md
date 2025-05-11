@@ -8,7 +8,7 @@
 - [x] Add New
 - [x] Select Assembly from Dropdown list
 - [x] Delete
-- [ ] Fix Material-Refresh to clear local-storage
+- [x] Fix Material-Refresh to clear local-storage
 - [x] Set Name of Assembly
 - [x] Alphabetize Assembly Select
 - [ ] Display Material Attributes

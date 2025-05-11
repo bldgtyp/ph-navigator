@@ -4,8 +4,10 @@ import { useLoadMaterials } from "./MaterialsContext.Hooks";
 
 
 interface MaterialsContextType {
-    materials: MaterialType[];
     isLoadingMaterials: boolean;
+    setIsLoadingMaterials: React.Dispatch<React.SetStateAction<boolean>>;
+    materials: MaterialType[];
+    setMaterials: React.Dispatch<React.SetStateAction<MaterialType[]>>;
 }
 
 
@@ -27,10 +29,10 @@ const MaterialsContext = createContext<MaterialsContextType | undefined>(undefin
  * and loading state.
  */
 export const MaterialsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { materials, isLoadingMaterials } = useLoadMaterials();
+    const { isLoadingMaterials, setIsLoadingMaterials, materials, setMaterials } = useLoadMaterials();
 
     return (
-        <MaterialsContext.Provider value={{ materials, isLoadingMaterials }}>
+        <MaterialsContext.Provider value={{ isLoadingMaterials, setIsLoadingMaterials, materials, setMaterials }}>
             {children}
         </MaterialsContext.Provider>
     );

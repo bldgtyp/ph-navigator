@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import Mapped, relationship, Session
+from sqlalchemy.orm import Mapped, relationship, MappedColumn
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from database import Base
@@ -18,7 +18,7 @@ class Assembly(Base):
     __tablename__ = 'assemblies'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name: Mapped[str] = MappedColumn(String)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     project: Mapped["Project"] = relationship(
         "Project",
