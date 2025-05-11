@@ -37,6 +37,16 @@ class MaterialSchema(BaseModel):
         orm_mode = True
 
 
+class AddAssemblyRequest(BaseModel):
+    project_bt_num: str
+
+    @root_validator(pre=True)
+    def check_project_id(cls, values):
+        project_bt_num = values.get("project_bt_num")
+        if not project_bt_num:
+            raise ValueError("Project number is required.")
+        return values
+
 class CreateLayerSegmentRequest(BaseModel):
     layer_id: int
     material_id: str

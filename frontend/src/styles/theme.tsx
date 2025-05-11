@@ -57,6 +57,14 @@ const theme = createTheme({
                     borderColor: borderColor,
                     textTransform: 'none',
                 },
+                sizeSmall: {
+                    fontSize: '0.725rem',
+                    padding: '4px 10px',
+                    minWidth: '24px',
+                },
+            },
+            defaultProps: {
+                size: 'medium',
             },
         },
     },

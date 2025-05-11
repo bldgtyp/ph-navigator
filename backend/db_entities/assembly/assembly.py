@@ -3,11 +3,12 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship, Session
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from database import Base
 from db_entities.assembly.layer import Layer
+from db_entities.assembly.material import Material
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.app.project import Project
@@ -30,3 +31,11 @@ class Assembly(Base):
         collection_class=ordering_list('order'),
         cascade="all, delete-orphan",
     )
+
+    @classmethod
+    def default(cls, project: "Project", material: "Material") -> "Assembly":
+        return Assembly(
+            name="Unnamed Assembly",
+            project=project,
+            layers = [Layer.default(material)]
+        )   

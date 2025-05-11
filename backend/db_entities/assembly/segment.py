@@ -30,3 +30,11 @@ class Segment(Base):
         "Material",
         back_populates="segments"
     )
+
+    @classmethod
+    def default(cls, material: Material) -> "Segment":
+        return Segment(
+            order=0,
+            width_mm=50.0,
+            material=material, 
+        )

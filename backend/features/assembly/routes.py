@@ -20,6 +20,7 @@ from features.assembly.schema import (
     UpdateLayerHeightRequest,
     CreateLayerSegmentRequest,
     CreateLayerRequest,
+    AddAssemblyRequest,
 )
 from db_entities.assembly import Material, Assembly, Segment, Layer
 from db_entities.app import Project
@@ -381,4 +382,36 @@ async def delete_layer(
     )
 
 
+@router.post("/add_assembly/")
+async def add_assembly(
+    request: AddAssemblyRequest,
+    db: Session = Depends(get_db)
+) -> JSONResponse:
+    """Add a new Assembly to a Project."""
+    logger.info(f"add_assembly(project_bt_num={request.project_bt_num})")
+
+    # Check if the project exists
+    project = db.query(Project).filter_by(bt_number=request.project_bt_num).first()
+    if not project:
+        raise HTTPException(status_code=404, detail=f"Project with bt_number {request.project_bt_num} not found.")
+
+    # Just use the 'first' material in the database for simplicity
+    default_material = db.query(Material).first()
+
+    # Create the new Assembly
+    new_assembly = Assembly.default(project=project, material=default_material)
+    db.add(new_assembly)
+    db.commit()
+    db.refresh(new_assembly)
+
+    return JSONResponse(
+        content={
+            "message": "Assembly added successfully.",
+            "assembly": {
+                "id": new_assembly.id,
+                "project_id": new_assembly.project_id,
+            },
+        },
+        status_code=201
+    )
 

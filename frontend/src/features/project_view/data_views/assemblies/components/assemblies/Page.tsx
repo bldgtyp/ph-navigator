@@ -1,138 +1,121 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, Button, SelectChangeEvent } from "@mui/material";
 
 import { useMaterials } from "../../contexts/MaterialsContext";
-import { useAssemblies } from "../../contexts/AssembliesContext";
 
 import { postWithAlert } from "../../../../../../api/postWithAlert";
 import { getWithAlert } from "../../../../../../api/getWithAlert";
-import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
 
 import LoadingModal from "../../../shared/components/LoadingModal";
 import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
-import Layer from "./Layer"
-import { LayerType } from "../../types/Layer";
 import { AssemblyType } from "../../types/Assembly";
-
-
-const AssemblySelector: React.FC = () => {
-  const { projectId } = useParams();
-
-  return (
-    <div className='assembly-selector'>
-      Assembly Selector...
-    </div>
-  );
-}
-
-
-const SingleAssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
-  const { projectId } = useParams();
-  const [layers, setLayers] = useState(assembly.layers);
-
-  const onAddLayerBelow = async (layer: LayerType) => {
-    const DEFAULT_THICKNESS = 25;
-
-    // Add the Layer
-    try {
-      // New Segment goes to the right of the current segment
-      const orderPosition = layer.order + 1;
-
-      // Call the backend API to add the new segment
-      const response = await postWithAlert<{ message: string, layer_id: number }>(`assembly/add_layer`, null, {
-        assembly_id: assembly.id,
-        thickness_mm: DEFAULT_THICKNESS,
-        order: orderPosition,
-      });
-
-      if (response) {
-        const newLayerId = response.layer_id;
-        console.log(`layer added successfully: ${response.layer_id}`);
-
-        // Get the new Layer for display
-        try {
-          const newLayer = await getWithAlert<LayerType>(`assembly/get_layer/${newLayerId}`, null);
-          if (newLayer) {
-            // Update the layers array to reflect the insertion
-            const updatedLayers = [...layers];
-            updatedLayers.splice(newLayer.order, 0, newLayer); // Insert the new layer
-            updatedLayers.forEach((segment, index) => {
-              segment.order = index; // Recalculate the order for all Layers
-            });
-
-            setLayers(updatedLayers);
-          }
-        } catch (error) {
-
-          console.error("Failed to get layer:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to add segment:", error);
-    }
-
-  };
-  const onDeleteLayer = async (layerId: number) => {
-    try {
-      // Call the backend API to delete the layer
-      const response = await deleteWithAlert<{ message: string }>(`assembly/delete_layer/${layerId}`, null);
-
-      if (response) {
-        console.log(`Layer deleted successfully: ${layerId}`);
-
-        // Remove the layer from the local state
-        const updatedLayers = layers.filter((layer) => layer.id !== layerId);
-
-        // Recalculate the order for the remaining layers
-        updatedLayers.forEach((layer, index) => {
-          layer.order = index;
-        });
-
-        setLayers(updatedLayers);
-      }
-    } catch (error) {
-      console.error("Failed to delete layer:", error);
-    }
-  };
-  return (
-    <Box className="assembly-layers" sx={{ margin: 4 }}>
-      {layers.map((layer: LayerType) => {
-        return <Layer key={layer.id} layer={layer} onAddLayer={onAddLayerBelow} onDeleteLayer={onDeleteLayer} />;
-      })}
-    </Box>
-  );
-}
+import { AssemblySelector } from "./Page.Selector";
+import { AssemblyView } from "./Page.AssemblyView";
 
 
 const AssembliesPage: React.FC = () => {
-  // Load in the table data from the Database
   const { projectId } = useParams();
-  const { isLoadingMaterials, materials } = useMaterials();
-  const { isLoadingAssemblies, assemblies } = useAssemblies();
+  const { isLoadingMaterials } = useMaterials();
+  const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
+  const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
+  const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
 
-  // --------------------------------------------------------------------------
-  // Render the component
+  const fetchAssemblies = async () => {
+    try {
+      const response = await getWithAlert<AssemblyType[]>(`assembly/get_assemblies/${projectId}`);
+      setAssemblies(response ?? []);
+      return response ?? [];
+    } catch (error) {
+      console.error("Failed to fetch assemblies:", error);
+      return [];
+    } finally {
+      setIsLoadingAssemblies(false);
+    }
+  };
+
+  useEffect(() => {
+    const initializeAssemblies = async () => {
+      const fetchedAssemblies = await fetchAssemblies();
+      if (fetchedAssemblies.length > 0) {
+        setSelectedAssemblyId(fetchedAssemblies[0].id); // Set the first assembly as selected
+      } else {
+        setSelectedAssemblyId(null); // No assemblies available
+      }
+    };
+
+    initializeAssemblies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  const selectedAssembly = useMemo(() => {
+    return assemblies.find((assembly) => assembly.id === selectedAssemblyId) || null;
+  }, [assemblies, selectedAssemblyId]);
+
+  const handleAssemblyChange = async (event: SelectChangeEvent<number>) => {
+    const newSelectedAssemblyId = event.target.value as number;
+    setSelectedAssemblyId(newSelectedAssemblyId);
+    await fetchAssemblies();
+  };
+
+  const handleAddAssembly = async () => {
+    try {
+      const response = await postWithAlert<{ message: string; assembly: AssemblyType }>(
+        `assembly/add_assembly/`,
+        null,
+        {
+          project_bt_num: projectId,
+        }
+      );
+
+      if (response) {
+        const newAssembly = response.assembly;
+        console.log(`Assembly added successfully: ${newAssembly.id}`);
+        const updatedAssemblies = await fetchAssemblies();
+        setSelectedAssemblyId(newAssembly.id);
+      }
+    } catch (error) {
+      console.error("Failed to add assembly:", error);
+    }
+  };
+
+  const headerButtons = [
+    <Button
+      key="+"
+      className="header-button"
+      variant="outlined"
+      color="inherit"
+      size="small"
+      onClick={handleAddAssembly}
+    >
+      + Add New Assembly
+    </Button>,
+    <Button key="-" className="header-button" variant="outlined" color="inherit" size="small">
+      Delete Assembly
+    </Button>,
+  ];
+
   return (
     <>
-      {" "}
       <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
-      <ContentBlockHeader text="Constructions" />
+      <ContentBlockHeader text="Constructions" buttons={headerButtons} />
       <Box sx={{ margin: 2 }}>
-        {/* TODO: Add selector for multiple assemblies.... */}
-        <AssemblySelector />
-
-        {/* TEMP: just render the first one for now... */}
+        <AssemblySelector
+          assemblies={assemblies}
+          selectedAssemblyId={selectedAssemblyId}
+          handleAssemblyChange={handleAssemblyChange}
+        />
         {isLoadingAssemblies && <p>Loading...</p>}
-        {!isLoadingAssemblies && assemblies[0] && assemblies[0].layers.length === 0 && <p>No layers found.</p>}
-        {!isLoadingAssemblies && assemblies[0] && assemblies[0].layers.length > 0 && (
-          <SingleAssemblyView assembly={assemblies[0]} />
+        {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}
+        {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length === 0 && (
+          <p>No layers found.</p>
         )}
-
+        {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length > 0 && (
+          <AssemblyView assembly={selectedAssembly} />
+        )}
       </Box>
     </>
   );
-}
-
+};
 
 export default AssembliesPage;

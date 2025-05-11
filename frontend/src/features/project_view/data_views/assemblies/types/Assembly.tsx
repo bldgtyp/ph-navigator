@@ -8,5 +8,7 @@ export interface AssemblyType {
 
 export interface UseLoadAssembliesReturn {
     isLoadingAssemblies: boolean;
+    setIsLoadingAssemblies: React.Dispatch<React.SetStateAction<boolean>>;
     assemblies: AssemblyType[];
+    setAssemblies: React.Dispatch<React.SetStateAction<AssemblyType[]>>;
 }

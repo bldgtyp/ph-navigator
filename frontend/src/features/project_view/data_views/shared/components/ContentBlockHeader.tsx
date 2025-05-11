@@ -1,16 +1,20 @@
-import { Stack } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 
 type ContentBlockHeaderProps = {
-    text: string; // Add a 'text' prop for the header content
+    text: string;
+    buttons?: React.ReactNode[];
 };
 
-const ContentBlockHeader: React.FC<ContentBlockHeaderProps> = ({ text }) => {
+const ContentBlockHeader: React.FC<ContentBlockHeaderProps> = ({ text, buttons = [] }) => {
     const headerBgColor = getComputedStyle(document.documentElement).getPropertyValue('--appbar-bg-color').trim()
     const headerBorderColor = getComputedStyle(document.documentElement).getPropertyValue('--outline-color').trim()
 
     return (
         <Stack
             className="content-block-heading"
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
             spacing={1}
             sx={{
                 backgroundColor: headerBgColor,
@@ -21,7 +25,13 @@ const ContentBlockHeader: React.FC<ContentBlockHeaderProps> = ({ text }) => {
                 textAlign: "left",
             }}
         >
-            <h4>{text}</h4>
+            {/* Header Text */}
+            <h4 style={{ margin: 0 }}>{text}</h4>
+
+            {/* Header Buttons */}
+            <Box sx={{ display: "flex", gap: "8px" }}>
+                {buttons.map((button, index) => <Box key={index}>{button}</Box>)}
+            </Box>
         </Stack>
     )
 };

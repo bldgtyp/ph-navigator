@@ -6,7 +6,6 @@ import { useParams } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 
 import { MaterialsProvider } from "../contexts/MaterialsContext";
-import { AssembliesProvider } from "../contexts/AssembliesContext";
 
 import MaterialsDataGrid from "./pages/MaterialLayers.DataGrid";
 import AssembliesPage from "./assemblies/Page";
@@ -37,22 +36,20 @@ const AssemblyDataDashboard: React.FC = () => {
 
     return (
         <MaterialsProvider>
-            <AssembliesProvider>
-                <Box id="assemblies-data-dashboard">
-                    <DataDashboardTabBar
-                        tabs={tabs}
-                        activeTab={activeTab}
-                        onTabChange={(tabNumber) => setActiveTab(tabNumber)}
-                    />
-                    <Button variant="contained" color="info" size="small" sx={{ marginLeft: 8, marginTop: 2 }} onClick={handleOnClick}>Refresh Materials</Button>
-                    <DataViewPage>
-                        <ContentBlock>
-                            {activeTab === 0 && <MaterialsDataGrid />}
-                            {activeTab === 1 && <AssembliesPage />}
-                        </ContentBlock>
-                    </DataViewPage>
-                </Box>
-            </AssembliesProvider>
+            <Box id="assemblies-data-dashboard">
+                <DataDashboardTabBar
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={(tabNumber) => setActiveTab(tabNumber)}
+                />
+                <Button variant="contained" color="info" size="small" sx={{ marginLeft: 8, marginTop: 2 }} onClick={handleOnClick}>Refresh Materials</Button>
+                <DataViewPage>
+                    <ContentBlock>
+                        {activeTab === 0 && <MaterialsDataGrid />}
+                        {activeTab === 1 && <AssembliesPage />}
+                    </ContentBlock>
+                </DataViewPage>
+            </Box>
         </MaterialsProvider>
     )
 }
