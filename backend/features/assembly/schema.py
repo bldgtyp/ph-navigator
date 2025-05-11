@@ -39,7 +39,7 @@ class MaterialSchema(BaseModel):
 
 class CreateLayerSegmentRequest(BaseModel):
     layer_id: int
-    material_id: int
+    material_id: str
     width_mm: float
     order: int
 
@@ -86,7 +86,7 @@ class UpdateLayerHeightRequest(BaseModel):
 class AssemblyLayerSegmentSchema(BaseModel):
     id: int
     layer_id: int
-    material_id: int
+    material_id: str
     order: int
     width_mm: float
     material: AirTableMaterialSchema

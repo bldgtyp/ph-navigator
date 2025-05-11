@@ -1,16 +1,25 @@
 import { SegmentType } from '../../types/Segment';
 import { patchWithAlert } from "../../../../../../api/patchWithAlert";
+import { convertArgbToRgba } from '../../types/Material';
+
+interface responseType {
+    message: string;
+    material_id: number;
+    material_name: string;
+    material_argb_color: string;
+}
 
 
 export const handleSubmit = async (
+    segment: SegmentType,
     newWidthMM: number,
     currentSegmentWidth: number,
-    segment: SegmentType,
-    setCurrentWidth: React.Dispatch<React.SetStateAction<number>>,
     newMaterialId: string,
     currentMaterialId: string,
-    setCurrentMaterialId: React.Dispatch<React.SetStateAction<string>>,
     setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
+    setCurrentWidth: React.Dispatch<React.SetStateAction<number>>,
+    setCurrentMaterialId: React.Dispatch<React.SetStateAction<string>>,
+    setCurrentMaterialColor: React.Dispatch<React.SetStateAction<any>>,
 ) => {
     try {
         // Update the segment width in the database if it has changed
@@ -25,18 +34,18 @@ export const handleSubmit = async (
             } else {
                 console.error("Failed to update Segment-Width.");
             }
-
         }
 
         // Update the material in the database if it has changed
         if (newMaterialId !== currentMaterialId) {
-            const response = await patchWithAlert(`assembly/update_segment_material/${segment.id}`, null, {
+            const response = await patchWithAlert<responseType>(`assembly/update_segment_material/${segment.id}`, null, {
                 material_id: newMaterialId,
             });
 
             if (response) {
                 console.log(`Material updated successfully for segment ${segment.id}`);
                 setCurrentMaterialId(newMaterialId);
+                setCurrentMaterialColor(convertArgbToRgba(response.material_argb_color, "#ccc"));
             } else {
                 console.error("Failed to update Segment-Material.");
             }
@@ -65,5 +74,10 @@ export const handleWidthChange = (
 
 export const handleMaterialChange = (
     materialId: string,
-    setNewMaterialId: React.Dispatch<React.SetStateAction<string>>
-) => setNewMaterialId(materialId);
+    materialColor: string,
+    setNewMaterialId: React.Dispatch<React.SetStateAction<string>>,
+    setNewMaterialColor: React.Dispatch<React.SetStateAction<string>>,
+) => {
+    setNewMaterialId(materialId);
+    setNewMaterialColor(materialColor);
+};

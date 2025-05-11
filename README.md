@@ -2,6 +2,21 @@
 
 ## TODO:
 
+#### Assemblies:
+- [ ] Material Color
+- [ ] Select (Multiple)
+- [ ] Add New
+- [ ] Delete
+- [ ] Filtered by Project / User
+- [ ] Serialize (download)
+- [ ] De-Serialize (upload)
+- [ ] Steel-Stud checkbox and auto-find nearest match
+- [ ] Display Material Attributes
+- [ ] IP Units for all (conversion)
+- [ ] Scale properly with screen
+- [ ] Turn off editing for non-login users
+
+
 #### Get Geometry:
 - [ ] Thermal Bridge Edges
 - [ ] Winter / Summer Window Radiation Grid and Legend

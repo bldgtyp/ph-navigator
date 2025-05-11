@@ -17,6 +17,18 @@
     position: relative;
 }
 
+.layer-segment-svg:hover rect {
+    fill: var(--construction-layer-segment-hover-fill);
+    stroke: var(--construction-layer-segment-hover-stroke);
+    stroke-width: 3px;
+}
+
+.layer-segment-rect {
+    fill: var(--construction-layer-segment-rect-fill);
+    stroke: var(--construction-layer-segment-rect-stroke);
+    stroke-width: 1px;
+}
+
 .add-segment-button {
     font-size: 14px;
     font-weight: 800;

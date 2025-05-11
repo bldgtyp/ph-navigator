@@ -139,7 +139,12 @@ async def update_segment_material(
     db.commit()
 
     return JSONResponse(
-        content={"message": f"Segment {segment_id} updated with material {request.material_id}."},
+        content={
+            "message": f"Segment {segment_id} updated with material {request.material_id}.",
+            "material_id": request.material_id,
+            "material_name": material.name,
+            "material_argb_color": material.argb_color,
+            },
         status_code=200
     )
 

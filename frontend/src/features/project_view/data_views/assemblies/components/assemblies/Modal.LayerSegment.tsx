@@ -3,6 +3,7 @@ import { Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogC
 import { useMaterials } from '../../contexts/MaterialsContext';
 import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps } from "./Modal.LayerSegment.Types";
 
+
 const WidthInput: React.FC<WidthInputProps> = (props) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +53,7 @@ const MaterialInput: React.FC<MaterialInputProps> = (props) => {
                     getOptionLabel={(option) => option.name}
                     value={selectedMaterial}
                     onChange={(event, newValue) => {
-                        props.handleMaterialChange(newValue?.id || "");
+                        props.handleMaterialChange(newValue?.id || "", newValue?.argb_color || "#ccc");
                     }}
                     loading={isLoadingMaterials}
                     renderInput={(params) => (

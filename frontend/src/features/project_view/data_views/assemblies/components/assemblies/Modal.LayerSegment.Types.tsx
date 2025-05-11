@@ -5,7 +5,7 @@ export interface LayerSegmentWidthModalProps {
     segmentId: number; // ID of the segment being edited
     handleWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleDeleteSegment: (segmentId: number) => void;
-    handleMaterialChange: (materialId: string) => void;
+    handleMaterialChange: (materialId: string, materialColor: string) => void;
     handleSubmit: () => void;
     handleModalClose: () => void;
 }
@@ -22,5 +22,5 @@ export interface WidthInputProps {
 }
 export interface MaterialInputProps {
     materialId: string;
-    handleMaterialChange: (materialId: string) => void;
+    handleMaterialChange: (materialId: string, materialColor: string) => void;
 }

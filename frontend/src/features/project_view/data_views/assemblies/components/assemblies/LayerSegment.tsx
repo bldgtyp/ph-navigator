@@ -1,10 +1,13 @@
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 import { Box, Tooltip } from "@mui/material";
 
 import ModalLayerSegment from "./Modal.LayerSegment";
 import { SegmentType } from '../../types/Segment';
 import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange } from "./LayerSegment.Handlers";
 import { useLayerSegmentHooks } from "./LayerSegment.Hooks";
+import { convertArgbToRgba } from '../../types/Material';
+
 
 type LayerSegmentProps = {
     segment: SegmentType;
@@ -37,7 +40,7 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
 
             {/* The LayerSegment rectangle */}
             <svg className="layer-segment-svg" width="100%" height="100%" onClick={hooks.handleMouseClick}>
-                <rect className="layer-segment-rect" width="100%" height="100%" />
+                <rect className="layer-segment-rect" width="100%" height="100%" style={{ fill: hooks.currentMaterialColor }} />
             </svg>
 
             {/* Modal for input */}
@@ -48,16 +51,17 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
                 segmentId={segment.id}
                 handleWidthChange={(e) => handleWidthChange(e, hooks.setNewWidth)}
                 handleDeleteSegment={(segmentId: number) => handleDeleteSegment(segmentId, onDeleteSegment, hooks.setIsModalOpen)}
-                handleMaterialChange={(materialId) => handleMaterialChange(materialId, hooks.setNewMaterialId)}
+                handleMaterialChange={(materialId: string, materialColor: string) => handleMaterialChange(materialId, materialColor, hooks.setNewMaterialId, hooks.setNewMaterialColor)}
                 handleSubmit={() => handleSubmit(
+                    segment,
                     hooks.newWidthMM,
                     hooks.currentSegmentWidth,
-                    segment,
-                    hooks.setCurrentWidth,
                     hooks.newMaterialId,
                     hooks.currentMaterialId,
+                    hooks.setIsModalOpen,
+                    hooks.setCurrentWidth,
                     hooks.setCurrentMaterialId,
-                    hooks.setIsModalOpen
+                    hooks.setCurrentMaterialColor,
                 )}
                 handleModalClose={hooks.handleModalClose}
             />
