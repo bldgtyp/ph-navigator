@@ -20,6 +20,7 @@ export const handleSubmit = async (
     setCurrentWidth: React.Dispatch<React.SetStateAction<number>>,
     setCurrentMaterialId: React.Dispatch<React.SetStateAction<string>>,
     setCurrentMaterialColor: React.Dispatch<React.SetStateAction<any>>,
+    setIsSegmentHovered: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
     try {
         // Update the segment width in the database if it has changed
@@ -49,9 +50,11 @@ export const handleSubmit = async (
             }
         }
 
+        setIsSegmentHovered(false)
         setIsModalOpen(false);
     } catch (error) {
         console.error("Failed to update material:", error);
+        setIsSegmentHovered(false)
         setIsModalOpen(false);
     }
 };

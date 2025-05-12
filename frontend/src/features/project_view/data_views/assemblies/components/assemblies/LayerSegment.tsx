@@ -64,6 +64,7 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
                     hooks.setCurrentWidth,
                     hooks.setCurrentMaterialId,
                     hooks.setCurrentMaterialColor,
+                    hooks.setIsSegmentHovered,
                 )}
                 handleModalClose={hooks.handleModalClose}
             />

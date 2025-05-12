@@ -20,12 +20,13 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
 
     const handleMouseEnter = () => setIsSegmentHovered(true);
     const handleMouseLeave = () => setIsSegmentHovered(false);
-    const handleMouseClick = () => setIsModalOpen(true)
+    const handleMouseClick = () => { setIsSegmentHovered(false); setIsModalOpen(true); };
     const handleModalClose = () => {
+        setIsSegmentHovered(false);
         setNewMaterialColor(currentMaterialColor);
         setNewMaterialId(currentMaterialId);
         setNewWidth(currentSegmentWidth);
-        setIsModalOpen(false)
+        setIsModalOpen(false);
     };
 
     return {

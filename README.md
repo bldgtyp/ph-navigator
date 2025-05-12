@@ -2,6 +2,12 @@
 
 ## TODO:
 
+#### Project
+- [ ] Add Config / Projects Button to Browser
+- [ ] Add New Project
+- [ ] Set Project AirTable Refs
+- [ ] Delete Project
+
 #### Assemblies:
 - [x] Material Color
 - [x] Filtered by Project
@@ -17,7 +23,7 @@
 - [x] Clean Material and Assembly Names for Honeybee-Energy Construction conversion
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths?
-- [ ] Fix: Add-segment button doesn't go away after Modal
+- [x] Fix: Add-segment button doesn't go away after Modal
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [ ] Display Material Attributes
 - [ ] Display Material Legend
