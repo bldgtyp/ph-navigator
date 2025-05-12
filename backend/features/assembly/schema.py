@@ -1,25 +1,29 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
 from __future__ import annotations  # Enables forward references
-import re 
+
+import re
 
 from pydantic import BaseModel, root_validator
 
 
 class AirTableMaterialSchema(BaseModel):
     """Schema for Material records when they come in directly from AirTable."""
+
     id: str
     name: str = ""
     category: str = ""
     argb_color: str = ""
     conductivity_w_mk: float = 0.0
     emissivity: float = 0.0
+    density_kg_m3: float = 0.0
+    specific_heat_j_kgk: float = 100.0
 
     @root_validator(pre=True)
     def lowercase_keys(cls, values):
         # Convert all keys to lowercase
         return {k.lower(): v for k, v in values.items()}
-    
+
     class Config:
         from_attributes = True
         orm_mode = True
@@ -27,6 +31,7 @@ class AirTableMaterialSchema(BaseModel):
 
 class MaterialSchema(BaseModel):
     """Schema for Material records in the database."""
+
     id: str
     name: str = ""
     category: str = ""
@@ -48,6 +53,7 @@ class AddAssemblyRequest(BaseModel):
             raise ValueError("Project number is required.")
         return values
 
+
 class DeleteAssemblyRequest(BaseModel):
     assembly_id: int
 
@@ -57,6 +63,7 @@ class DeleteAssemblyRequest(BaseModel):
         if not assembly_id:
             raise ValueError("Assembly ID is required.")
         return values
+
 
 class UpdateAssemblyNameRequest(BaseModel):
     assembly_id: int
@@ -68,17 +75,17 @@ class UpdateAssemblyNameRequest(BaseModel):
         if not assembly_id:
             raise ValueError("Assembly ID is required.")
         return values
-    
+
     @root_validator(pre=True)
     def check_new_name(cls, values):
         new_name = values.get("new_name")
         if not new_name:
             raise ValueError("New name is required.")
-        
+
         # Clean the name
         new_name = new_name.strip()  # Remove leading/trailing spaces
         new_name = " ".join(new_name.split())  # Normalize whitespace
-            # Validate length
+        # Validate length
         if len(new_name) < 1:
             raise ValueError("New name must not be empty.")
         if len(new_name) > 100:

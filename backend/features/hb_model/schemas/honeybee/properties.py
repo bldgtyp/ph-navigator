@@ -6,8 +6,7 @@
 
 from pydantic.main import BaseModel
 
-from ..honeybee_energy.properties.aperture import \
-    ApertureEnergyPropertiesSchema
+from ..honeybee_energy.properties.aperture import ApertureEnergyPropertiesSchema
 from ..honeybee_energy.properties.face import FaceEnergyPropertiesSchema
 
 

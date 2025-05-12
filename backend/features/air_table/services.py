@@ -10,8 +10,10 @@ from features.project.services import get_project_by_bt_number
 
 logger = getLogger(__name__)
 
+
 class TableNotFoundException(Exception):
     """Custom exception for missing table in AirTable."""
+
     def __init__(self, table_name: str):
         self.table_name = table_name
         super().__init__(f"Table {table_name} not found in AirTable.")
@@ -19,8 +21,11 @@ class TableNotFoundException(Exception):
 
 class DownloadError(Exception):
     """Custom exception for download errors."""
+
     def __init__(self, url: str, message: str):
-        super().__init__(f"DownloadError: Failed to download from URL: {url} | {message}")
+        super().__init__(
+            f"DownloadError: Failed to download from URL: {url} | {message}"
+        )
 
 
 async def get_airtable_base_ref(db: Session, project_bt_num: int) -> str:
@@ -30,10 +35,10 @@ async def get_airtable_base_ref(db: Session, project_bt_num: int) -> str:
 
 
 async def get_airtable_table_ref(
-    db: Session, project_bt_num: int, table_name: str 
+    db: Session, project_bt_num: int, table_name: str
 ) -> str:
     """Get the AirTable Table Ref given a project-BT-number and table name."""
-    
+
     # -- Find the Project
     project = await get_project_by_bt_number(db, project_bt_num)
 

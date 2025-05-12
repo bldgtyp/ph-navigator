@@ -1,12 +1,13 @@
+from collections import OrderedDict
 from time import time
 from typing import Generic, TypeVar
-from collections import OrderedDict
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class CacheRecordWithTime(Generic[T]):
     """A simple cache record with a timestamp."""
+
     CACHE_EXPIRATION_SECONDS = 3600  # 1 hour
 
     def __init__(self, data: T):

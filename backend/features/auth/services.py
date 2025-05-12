@@ -1,11 +1,12 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from rich import print
@@ -13,10 +14,14 @@ from sqlalchemy.orm import Session
 
 from config import settings
 from database import get_db
+from db_entities.app.api_token import APIKey
 from db_entities.app.user import User
 from features.auth.schema import TokenDataSchema, UserSchema
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# ---------------------------------------------------------------------------------------
+# User-Auth (Website)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -103,3 +108,47 @@ async def get_current_active_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_active_user)]
+
+
+# ---------------------------------------------------------------------------------------
+# API-Token Auth (3D Party API)
+
+
+async def generate_api_key(
+    client_name: str,
+    scope: str | None = None,
+    expires_at: datetime | None = None,
+    db: Session = Depends(get_db),
+) -> str:
+    key = secrets.token_hex(32)  # Generate a 64-character hex key
+    api_key = APIKey(
+        key=key,
+        client_name=client_name,
+        scope=scope,
+        expires_at=expires_at,
+    )
+    db.add(api_key)
+    db.commit()
+    db.refresh(api_key)
+    return key
+
+
+async def validate_api_key(
+    api_key: str = Header(...), db: Session = Depends(get_db)
+) -> APIKey:
+    api_key_record = db.query(APIKey).filter_by(key=api_key, is_active=True).first()
+
+    if not api_key_record:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or inactive API key",
+        )
+
+    if api_key_record.expires_at and api_key_record.expires_at < datetime.now(
+        timezone.utc
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has expired"
+        )
+
+    return api_key_record

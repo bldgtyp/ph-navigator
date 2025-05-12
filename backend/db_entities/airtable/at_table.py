@@ -3,9 +3,10 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, validates, Mapped
+from sqlalchemy.orm import Mapped, relationship, validates
 
 from database import Base
+
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.airtable.at_base import AirTableBase
@@ -20,7 +21,9 @@ class AirTableTable(Base):
     parent_base_id = Column(Integer, ForeignKey("airtable_bases.id"))
 
     # Relationships
-    airtable_base: Mapped["AirTableBase"] = relationship("AirTableBase", back_populates="tables")
+    airtable_base: Mapped["AirTableBase"] = relationship(
+        "AirTableBase", back_populates="tables"
+    )
 
     @validates("name")
     def convert_to_uppercase(self, key, value: str) -> str:

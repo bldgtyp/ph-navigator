@@ -10,13 +10,13 @@ from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.app.project import Project
 from db_entities.app.user import User
-from db_entities.assembly.material import Material
 from db_entities.assembly.assembly import Assembly
 from db_entities.assembly.layer import Layer
+from db_entities.assembly.material import Material
 from db_entities.assembly.segment import Segment
+from features.auth.services import generate_api_key
 
-
-# Mock Data
+# PROJECTS:
 PROJECT_DATA = [
     {
         "name": "409 Sackett St",
@@ -156,31 +156,37 @@ def add_dummy_projects(db: Session, users: list[User]) -> None:
     db.commit()
 
 
-# Mock Data
+# ASSEMBLIES / MATERIALS
 MATERIALS = [
     {
-        "id" : "1",
-        "name" :  "Material 1",
-        "argb_color" :  "(255, 255, 255, 255)",
-        "category" :  "Category-A",
-        "conductivity_w_mk" :  0.0,
-        "emissivity" :  0.0,
-    }, 
-    {
-        "id" : "2",
-        "name" :  "Material 2",
-        "argb_color" :  "(255, 255, 255, 255)",
-        "category" :  "Category-B",
-        "conductivity_w_mk" :  0.0,
-        "emissivity" :  0.0,
+        "id": "1",
+        "name": "Material 1",
+        "argb_color": "(255, 255, 255, 255)",
+        "category": "Category-A",
+        "conductivity_w_mk": 1.0,
+        "emissivity": 0.9,
+        "density_kg_m3": 999.0,
+        "specific_heat_j_kgk": 999.0,
     },
     {
-        "id" : "3",
-        "name" :  "Material 3",
-        "argb_color" :  "(255, 255, 255, 255)",
-        "category" :  "Category-B",
-        "conductivity_w_mk" :  0.0,
-        "emissivity" :  0.0,
+        "id": "2",
+        "name": "Material 2",
+        "argb_color": "(255, 255, 255, 255)",
+        "category": "Category-B",
+        "conductivity_w_mk": 2.0,
+        "emissivity": 0.9,
+        "density_kg_m3": 999.0,
+        "specific_heat_j_kgk": 999.0,
+    },
+    {
+        "id": "3",
+        "name": "Material 3",
+        "argb_color": "(255, 255, 255, 255)",
+        "category": "Category-B",
+        "conductivity_w_mk": 3.0,
+        "emissivity": 0.9,
+        "density_kg_m3": 999.0,
+        "specific_heat_j_kgk": 999.0,
     },
 ]
 
@@ -194,36 +200,49 @@ def add_dummy_materials(db: Session) -> None:
             argb_color=material["argb_color"],
             conductivity_w_mk=material["conductivity_w_mk"],
             emissivity=material["emissivity"],
+            density_kg_m3=material["density_kg_m3"],
+            specific_heat_j_kgk=material["specific_heat_j_kgk"],
         )
         db.add(db_material)
     db.commit()
 
 
 def add_dummy_assembly(db: Session) -> None:
-
     project_1 = db.query(Project).filter(Project.id == 1).first()
 
     layer_1 = Layer(thickness_mm=50.0)
     layer_2 = Layer(thickness_mm=100.0)
 
-    assembly = Assembly(name="__assembly__", project=project_1)
+    assembly = Assembly(name="__test_assembly__", project=project_1)
     assembly.layers.append(layer_1)
     assembly.layers.append(layer_2)
-    
-    mat_1 = Material.get_by_name(db, "Material 1")
+
+    mat_1 = Material.get_by_name(db, "Test Material 1")
     segment_1 = Segment(width_mm=200, material=mat_1)
     layer_1.segments.append(segment_1)
 
-    mat_2 = Material.get_by_name(db, "Material 2")
+    mat_2 = Material.get_by_name(db, "Test Material 2")
     segment_2 = Segment(width_mm=100, material=mat_2)
     layer_1.segments.append(segment_2)
-    
-    mat_3 = Material.get_by_name(db, "Material 3")
+
+    mat_3 = Material.get_by_name(db, "Test Material 3")
     segment_3 = Segment(width_mm=300, material=mat_3)
     layer_2.segments.append(segment_3)
 
     db.add(assembly)
     db.commit()
+
+
+# MOCK RHINO API
+
+
+def add_api_key(db: Session) -> None:
+    new_api_key = generate_api_key(
+        client_name="TESTING",
+        scope="read",
+        expires_at=None,
+        db=db,
+    )
 
 
 if __name__ == "__main__":
@@ -239,5 +258,8 @@ if __name__ == "__main__":
         add_dummy_projects(db, users)
         add_dummy_materials(db)
         add_dummy_assembly(db)
+
+        # -- Rhino API
+        add_api_key(db)
     finally:
         db.close()

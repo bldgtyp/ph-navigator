@@ -4,10 +4,11 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship, validates, Mapped
+from sqlalchemy.orm import Mapped, relationship, validates
 
 from database import Base
 from db_entities.airtable.at_table import AirTableTable
+
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.app.project import Project
@@ -21,7 +22,9 @@ class AirTableBase(Base):
     airtable_ref = Column(String, index=True)
 
     # Relationship to the tables in the base
-    tables: Mapped[list[AirTableTable]] = relationship("AirTableTable", back_populates="airtable_base")
+    tables: Mapped[list[AirTableTable]] = relationship(
+        "AirTableTable", back_populates="airtable_base"
+    )
 
     # Relationship to the project that uses this base
     project: Mapped["Project"] = relationship("Project", back_populates="airtable_base")

@@ -6,6 +6,7 @@ from slowapi.util import get_remote_address
 
 limiter = Limiter(key_func=get_remote_address)
 
+
 class Settings(BaseSettings):
     # to generate a new SECRET KEY: `openssl rand -hex 32``
     JSON_WEB_TOKEN_SECRET_KEY: str = "default_secret_key"
@@ -28,4 +29,5 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
-settings = Settings() # type: ignore
+
+settings = Settings()  # type: ignore

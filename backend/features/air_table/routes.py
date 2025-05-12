@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 
 from config import limiter, settings
 from database import get_db
-from features.air_table.services import get_airtable_base_ref, get_airtable_table_ref
 from db_entities.assembly.material import Material
+from features.air_table.services import get_airtable_base_ref, get_airtable_table_ref
 
 router = APIRouter(
     prefix="/air_table",
@@ -38,7 +38,9 @@ async def get_project_air_table_records_from_table(
     project_bt_num: int, at_table_name: str, db: Session = Depends(get_db)
 ) -> list[RecordDict]:
     """Return all of the records from a specified Table (name), for a specified Project (bldgtyp-number)."""
-    logger.info(f"get_project_air_table_records_from_table({project_bt_num=}, {at_table_name=})")
+    logger.info(
+        f"get_project_air_table_records_from_table({project_bt_num=}, {at_table_name=})"
+    )
     api = Api(settings.AIRTABLE_GET_TOKEN)
     at_base_id = await get_airtable_base_ref(db, project_bt_num)
     at_table_id = await get_airtable_table_ref(db, project_bt_num, at_table_name)

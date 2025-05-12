@@ -30,4 +30,3 @@ class ProjectSchema(ProjectBaseSchema):
     class Config:
         from_attributes = True
         orm_mode = True
-

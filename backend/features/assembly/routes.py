@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pyairtable import Api
 from pyairtable.api.types import RecordDict
@@ -10,23 +10,23 @@ from sqlalchemy.orm import Session
 
 from config import limiter, settings
 from database import get_db
+from db_entities.app import Project
+from db_entities.assembly import Assembly, Layer, Material, Segment
 from features.assembly.schema import (
+    AddAssemblyRequest,
     AirTableMaterialSchema,
-    AssemblySchema,
     AssemblyLayerSchema,
+    AssemblySchema,
+    CreateLayerRequest,
+    CreateLayerSegmentRequest,
+    DeleteAssemblyRequest,
     MaterialSchema,
+    UpdateAssemblyNameRequest,
+    UpdateLayerHeightRequest,
     UpdateSegmentMaterialRequest,
     UpdateSegmentWidthRequest,
-    UpdateLayerHeightRequest,
-    CreateLayerSegmentRequest,
-    CreateLayerRequest,
-    AddAssemblyRequest,
-    DeleteAssemblyRequest,
-    DeleteAssemblyRequest,
-    UpdateAssemblyNameRequest,
 )
-from db_entities.assembly import Material, Assembly, Segment, Layer
-from db_entities.app import Project
+from features.assembly.services import convert_assemblies_to_hbjson, get_all_assemblies
 
 router = APIRouter(
     prefix="/assembly",
@@ -36,15 +36,18 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-
 @router.get("/refresh_db_materials_from_air_table")
-async def refresh_db_materials_from_air_table(db: Session = Depends(get_db)) -> JSONResponse:
+async def refresh_db_materials_from_air_table(
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """Load all of the records from the AirTable into the Database."""
     logger.info(f"refresh_db_materials_from_air_table()")
-    
+
     # -- Go get the Materials from AirTable
     api = Api(settings.AIRTABLE_MATERIAL_GET_TOKEN)
-    table = api.table(settings.AIRTABLE_MATERIAL_BASE_ID, settings.AIRTABLE_MATERIAL_TABLE_ID)
+    table = api.table(
+        settings.AIRTABLE_MATERIAL_BASE_ID, settings.AIRTABLE_MATERIAL_TABLE_ID
+    )
     material_records: list[RecordDict] = table.all()
 
     # -- Convert the records to AirTableMaterialSchema for validation
@@ -55,7 +58,6 @@ async def refresh_db_materials_from_air_table(db: Session = Depends(get_db)) -> 
         d["id"] = record["id"]
         new_mat = AirTableMaterialSchema(**d)
         materials.append(new_mat)
-    
 
     # -- Remove all of the existing materials which are not used by any of the Segments
     # Get all existing materials
@@ -72,7 +74,6 @@ async def refresh_db_materials_from_air_table(db: Session = Depends(get_db)) -> 
             db.delete(material)
             logger.info(f"Deleted unused material with ID: {material_id}")
     db.commit()
-
 
     # -- Add the Materials to the database
     materials_added = 0
@@ -96,18 +97,20 @@ async def refresh_db_materials_from_air_table(db: Session = Depends(get_db)) -> 
     db.commit()
 
     return JSONResponse(
-            content={
-                "message": "Materials loaded successfully",
-                "materials_number_added": materials_added,
-                "materials_number_updated": materials_updated,
-                "material_total_count": len(materials),
-            },
-            status_code=200
-        )
+        content={
+            "message": "Materials loaded successfully",
+            "materials_number_added": materials_added,
+            "materials_number_updated": materials_updated,
+            "material_total_count": len(materials),
+        },
+        status_code=200,
+    )
 
 
 @router.get("/get_materials")
-async def get_materials_from_air_table(db: Session = Depends(get_db)) -> list[MaterialSchema]:
+async def get_materials_from_air_table(
+    db: Session = Depends(get_db),
+) -> list[MaterialSchema]:
     """Return all of the records from the AirTable Materials DataBase."""
     logger.info(f"get_materials()")
     materials = db.query(Material).all()
@@ -115,9 +118,11 @@ async def get_materials_from_air_table(db: Session = Depends(get_db)) -> list[Ma
 
 
 @router.get("/get_assemblies/{project_bt_num}")
-async def get_assemblies(project_bt_num: int, db: Session = Depends(get_db)) -> list[AssemblySchema]:
+async def get_assemblies(
+    project_bt_num: int, db: Session = Depends(get_db)
+) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
-    logger.info(f"get_assemblies()")
+    logger.info(f"get_assemblies(project_bt_num={project_bt_num})")
     assemblies = (
         db.query(Assembly)
         .join(Project)
@@ -128,12 +133,16 @@ async def get_assemblies(project_bt_num: int, db: Session = Depends(get_db)) -> 
 
 
 @router.get("/get_layer/{layer_id}")
-async def get_layer(layer_id: int, db: Session = Depends(get_db)) -> AssemblyLayerSchema:
+async def get_layer(
+    layer_id: int, db: Session = Depends(get_db)
+) -> AssemblyLayerSchema:
     """Get a specific layer by ID."""
     logger.info(f"get_layer(layer_id={layer_id})")
     layer = db.query(Layer).filter_by(id=layer_id).first()
     if not layer:
-        raise HTTPException(status_code=404, detail=f"Layer with ID {layer_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Layer with ID {layer_id} not found."
+        )
     return AssemblyLayerSchema.from_orm(layer)
 
 
@@ -141,25 +150,27 @@ async def get_layer(layer_id: int, db: Session = Depends(get_db)) -> AssemblyLay
 async def update_segment_material(
     segment_id: int,
     request: UpdateSegmentMaterialRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Update the Material of a Layer Segment."""
-    logger.info(f"update_segment_material(segment_id={segment_id}, material_id={request.material_id})")
+    logger.info(
+        f"update_segment_material(segment_id={segment_id}, material_id={request.material_id})"
+    )
 
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()
     if not segment:
         return JSONResponse(
             content={"message": f"Segment with ID {segment_id} not found."},
-            status_code=404
+            status_code=404,
         )
-    
+
     # Get the right material from the database
     material = db.query(Material).filter_by(id=request.material_id).first()
     if not material:
         return JSONResponse(
             content={"message": f"Material with ID {request.material_id} not found."},
-            status_code=404
+            status_code=404,
         )
 
     # Update the segment's material
@@ -172,26 +183,26 @@ async def update_segment_material(
             "material_id": request.material_id,
             "material_name": material.name,
             "material_argb_color": material.argb_color,
-            },
-        status_code=200
+        },
+        status_code=200,
     )
 
 
 @router.patch("/update_segment_width/{segment_id}")
 async def update_segment_width(
-    segment_id: int,
-    request: UpdateSegmentWidthRequest,
-    db: Session = Depends(get_db)
+    segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Update the width (mm) of a Layer Segment."""
-    logger.info(f"update_segment_width(segment_id={segment_id}, width_mm={request.width_mm})")
+    logger.info(
+        f"update_segment_width(segment_id={segment_id}, width_mm={request.width_mm})"
+    )
 
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()
     if not segment:
         return JSONResponse(
             content={"message": f"Segment with ID {segment_id} not found."},
-            status_code=404
+            status_code=404,
         )
 
     # Update the segment's width
@@ -199,26 +210,27 @@ async def update_segment_width(
     db.commit()
 
     return JSONResponse(
-        content={"message": f"Segment {segment_id} updated with new width {request.width_mm}."},
-        status_code=200
+        content={
+            "message": f"Segment {segment_id} updated with new width {request.width_mm}."
+        },
+        status_code=200,
     )
 
 
 @router.patch("/update_layer_thickness/{layer_id}")
 async def update_layer_thickness(
-    layer_id: int,
-    request: UpdateLayerHeightRequest,
-    db: Session = Depends(get_db)
+    layer_id: int, request: UpdateLayerHeightRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Update the height (mm) of a Layer."""
-    logger.info(f"update_layer_height(layer_id={layer_id}, height_mm={request.thickness_mm})")
+    logger.info(
+        f"update_layer_height(layer_id={layer_id}, height_mm={request.thickness_mm})"
+    )
 
     # Get the right layer from the database
     layer = db.query(Layer).filter_by(id=layer_id).first()
     if not layer:
         return JSONResponse(
-            content={"message": f"Layer with ID {layer_id} not found."},
-            status_code=404
+            content={"message": f"Layer with ID {layer_id} not found."}, status_code=404
         )
 
     # Update the layer's thickness (mm)
@@ -226,33 +238,41 @@ async def update_layer_thickness(
     db.commit()
 
     return JSONResponse(
-        content={"message": f"Layer {layer_id} updated with new height {request.thickness_mm}."},
-        status_code=200
+        content={
+            "message": f"Layer {layer_id} updated with new height {request.thickness_mm}."
+        },
+        status_code=200,
     )
 
 
 @router.post("/add_layer_segment/")
 async def add_layer_segment(
-    request: CreateLayerSegmentRequest,
-    db: Session = Depends(get_db)
+    request: CreateLayerSegmentRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Add a new LayerSegment to a Layer at a specific position."""
-    logger.info(f"add_layer_segment(layer_id={request.layer_id}, material_id={request.material_id}, width_mm={request.width_mm}, order={request.order})")
+    logger.info(
+        f"add_layer_segment(layer_id={request.layer_id}, material_id={request.material_id}, width_mm={request.width_mm}, order={request.order})"
+    )
 
     # Check if the layer exists
     layer = db.query(Layer).filter_by(id=request.layer_id).first()
     if not layer:
-        raise HTTPException(status_code=404, detail=f"Layer with ID {request.layer_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Layer with ID {request.layer_id} not found."
+        )
 
     # Check if the material exists
     material = db.query(Material).filter_by(id=request.material_id).first()
     if not material:
-        raise HTTPException(status_code=404, detail=f"Material with ID {request.material_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Material with ID {request.material_id} not found."
+        )
 
     # Shift the order of existing segments
     db.query(Segment).filter(
         Segment.layer_id == layer.id,
-        Segment.order >= request.order  # Shift only segments at or after the insertion point
+        Segment.order
+        >= request.order,  # Shift only segments at or after the insertion point
     ).update({"order": Segment.order + 1}, synchronize_session="fetch")
 
     # Create the new LayerSegment
@@ -260,22 +280,24 @@ async def add_layer_segment(
         layer_id=layer.id,
         material_id=request.material_id,
         width_mm=request.width_mm,
-        order=request.order
+        order=request.order,
     )
     db.add(new_segment)
     db.commit()
     db.refresh(new_segment)
 
     return JSONResponse(
-        content={"message": "LayerSegment added successfully.", "segment_id": new_segment.id},
-        status_code=201
+        content={
+            "message": "LayerSegment added successfully.",
+            "segment_id": new_segment.id,
+        },
+        status_code=201,
     )
 
 
 @router.post("/add_layer/")
 async def add_layer(
-    request: CreateLayerRequest,
-    db: Session = Depends(get_db)
+    request: CreateLayerRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Add a new Layer to an Assembly."""
     logger.info(f"add_layer(assembly_id={request.assembly_id}, order={request.order})")
@@ -283,19 +305,20 @@ async def add_layer(
     # Check if the assembly exists
     assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
     if not assembly:
-        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Assembly with ID {request.assembly_id} not found."
+        )
 
     # Shift the order of existing layers
     db.query(Layer).filter(
         Layer.assembly_id == assembly.id,
-        Layer.order >= request.order  # Shift only layers at or after the insertion point
+        Layer.order
+        >= request.order,  # Shift only layers at or after the insertion point
     ).update({"order": Layer.order + 1}, synchronize_session="fetch")
 
     # Create the new Layer
     layer = Layer(
-        assembly_id=assembly.id,
-        thickness_mm=request.thickness_mm,
-        order=request.order
+        assembly_id=assembly.id, thickness_mm=request.thickness_mm, order=request.order
     )
 
     # Add the new layer to the database
@@ -307,8 +330,8 @@ async def add_layer(
     # Just get the first material from the database for simplicity
     default_material = db.query(Material).first()
     default_segment = Segment(
-        width_mm=812.8, # 32 inches
-        order=0,         # First segment in the layer
+        width_mm=812.8,  # 32 inches
+        order=0,  # First segment in the layer
         layer=layer,
     )
     # default_segment.set_layer(layer)
@@ -320,16 +343,15 @@ async def add_layer(
         content={
             "message": "Layer added successfully.",
             "layer_id": layer.id,
-            "segment_id": default_segment.id
+            "segment_id": default_segment.id,
         },
-        status_code=201
+        status_code=201,
     )
 
 
 @router.delete("/delete_layer_segment/{segment_id}")
 async def delete_layer_segment(
-    segment_id: int,
-    db: Session = Depends(get_db)
+    segment_id: int, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Delete a LayerSegment and adjust the order of remaining segments."""
     logger.info(f"delete_layer_segment(segment_id={segment_id})")
@@ -337,20 +359,21 @@ async def delete_layer_segment(
     # Fetch the segment to be deleted
     segment = db.query(Segment).filter_by(id=segment_id).first()
     if not segment:
-        raise HTTPException(status_code=404, detail=f"Segment with ID {segment_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Segment with ID {segment_id} not found."
+        )
 
     # Check if this is the last segment in the layer
     layer_segments = db.query(Segment).filter_by(layer_id=segment.layer_id).all()
     if len(layer_segments) <= 1:
         raise HTTPException(
             status_code=400,
-            detail="Cannot delete the last segment in the layer. Delete the Layer instead."
+            detail="Cannot delete the last segment in the layer. Delete the Layer instead.",
         )
 
     # Adjust the order of remaining segments
     db.query(Segment).filter(
-        Segment.layer_id == segment.layer_id,
-        Segment.order > segment.order
+        Segment.layer_id == segment.layer_id, Segment.order > segment.order
     ).update({"order": Segment.order - 1}, synchronize_session="fetch")
 
     # Delete the segment
@@ -359,29 +382,27 @@ async def delete_layer_segment(
 
     return JSONResponse(
         content={"message": f"Segment {segment_id} deleted successfully."},
-        status_code=200
+        status_code=200,
     )
 
 
 @router.delete("/delete_layer/{layer_id}")
-async def delete_layer(
-    layer_id: int,
-    db: Session = Depends(get_db)
-) -> JSONResponse:
+async def delete_layer(layer_id: int, db: Session = Depends(get_db)) -> JSONResponse:
     """Delete a Layer and adjust the order of remaining layers."""
     logger.info(f"delete_layer(layer_id={layer_id})")
 
     # Fetch the layer to be deleted
     layer = db.query(Layer).filter_by(id=layer_id).first()
     if not layer:
-        raise HTTPException(status_code=404, detail=f"Layer with ID {layer_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Layer with ID {layer_id} not found."
+        )
 
     # Check if this is the last layer in the assembly
     assembly_layers = db.query(Layer).filter_by(assembly_id=layer.assembly_id).all()
     if len(assembly_layers) <= 1:
         raise HTTPException(
-            status_code=400,
-            detail="Cannot delete the last layer in the assembly."
+            status_code=400, detail="Cannot delete the last layer in the assembly."
         )
 
     # Delete all associated segments for the layer
@@ -389,8 +410,7 @@ async def delete_layer(
 
     # Adjust the order of remaining layers
     db.query(Layer).filter(
-        Layer.assembly_id == layer.assembly_id,
-        Layer.order > layer.order
+        Layer.assembly_id == layer.assembly_id, Layer.order > layer.order
     ).update({"order": Layer.order - 1}, synchronize_session="fetch")
 
     # Delete the layer
@@ -398,15 +418,13 @@ async def delete_layer(
     db.commit()
 
     return JSONResponse(
-        content={"message": f"Layer {layer_id} deleted successfully."},
-        status_code=200
+        content={"message": f"Layer {layer_id} deleted successfully."}, status_code=200
     )
 
 
 @router.post("/add_assembly/")
 async def add_assembly(
-    request: AddAssemblyRequest,
-    db: Session = Depends(get_db)
+    request: AddAssemblyRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Add a new Assembly to a Project."""
     logger.info(f"add_assembly(project_bt_num={request.project_bt_num})")
@@ -414,7 +432,10 @@ async def add_assembly(
     # Check if the project exists
     project = db.query(Project).filter_by(bt_number=request.project_bt_num).first()
     if not project:
-        raise HTTPException(status_code=404, detail=f"Project with bt_number {request.project_bt_num} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with bt_number {request.project_bt_num} not found.",
+        )
 
     # Just use the 'first' material in the database for simplicity
     default_material = db.query(Material).first()
@@ -433,14 +454,13 @@ async def add_assembly(
                 "project_id": new_assembly.project_id,
             },
         },
-        status_code=201
+        status_code=201,
     )
 
 
 @router.delete("/delete_assembly/")
 async def delete_assembly(
-    request: DeleteAssemblyRequest,
-    db: Session = Depends(get_db)
+    request: DeleteAssemblyRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Delete an Assembly and all its associated layers and segments."""
     logger.info(f"delete_assembly(assembly_id={request.assembly_id})")
@@ -448,15 +468,19 @@ async def delete_assembly(
     # Fetch the assembly to be deleted
     assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
     if not assembly:
-        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Assembly with ID {request.assembly_id} not found."
+        )
 
     # Delete all associated segments for each layer in the assembly
-    db.query(Segment).filter(Segment.layer_id.in_(
-        db.query(Layer.id).filter_by(assembly_id=assembly.id)
-    )).delete(synchronize_session="fetch")
+    db.query(Segment).filter(
+        Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))
+    ).delete(synchronize_session="fetch")
 
     # Delete all layers associated with the assembly
-    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
+    db.query(Layer).filter_by(assembly_id=assembly.id).delete(
+        synchronize_session="fetch"
+    )
 
     # Delete the assembly itself
     db.delete(assembly)
@@ -464,19 +488,25 @@ async def delete_assembly(
 
     return JSONResponse(
         content={"message": f"Assembly {request.assembly_id} deleted successfully."},
-        status_code=200
+        status_code=200,
     )
 
 
 @router.patch("/update_assembly_name/")
-async def update_assembly_name(request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)) -> JSONResponse:
+async def update_assembly_name(
+    request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)
+) -> JSONResponse:
     """Update the name of an Assembly."""
-    logger.info(f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})")
+    logger.info(
+        f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})"
+    )
 
     # Fetch the assembly to be updated
     assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
     if not assembly:
-        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Assembly with ID {request.assembly_id} not found."
+        )
 
     # Update the name
     assembly.name = request.new_name
@@ -485,8 +515,28 @@ async def update_assembly_name(request: UpdateAssemblyNameRequest, db: Session =
     return JSONResponse(
         content={
             "message": f"Assembly {request.assembly_id} name updated successfully.",
-            "new_name": request.new_name
+            "new_name": request.new_name,
         },
-        status_code=200
+        status_code=200,
     )
 
+
+@router.get("/get_assemblies_as_hb_json/{project_bt_num}")
+async def get_assemblies_as_hb_json(
+    project_bt_num: int,
+    offset: int = Query(0, description="The offset for the test function"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Test function to check if the module is working."""
+    logger.info(f"test(project_bt_num={project_bt_num}, offset={offset})")
+
+    assemblies = await get_all_assemblies(db, project_bt_num=project_bt_num)
+    assembly_hb_json = await convert_assemblies_to_hbjson(assemblies)
+
+    return JSONResponse(
+        content={
+            "message": "Test successful.",
+            "hb_constructions": assembly_hb_json,
+        },
+        status_code=200,
+    )

@@ -1,20 +1,26 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from starlette import status
 
 from config import limiter, settings
 from database import get_db
+from db_entities.app.api_token import APIKey
 from db_entities.app.user import User
 from features.auth.schema import TokenSchema, UserSchema
-from features.auth.services import (authenticate_user, create_access_token,
-                                    get_current_active_user)
+from features.auth.services import (
+    authenticate_user,
+    create_access_token,
+    generate_api_key,
+    get_current_active_user,
+)
 
 logger = logging.getLogger()
 
@@ -25,7 +31,7 @@ router = APIRouter(
 
 
 @router.post("/token", status_code=status.HTTP_200_OK)
-@limiter.limit("100/hour")
+@limiter.limit("60/hour")
 async def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -56,3 +62,23 @@ async def user(
     """Return the current user."""
     logger.info(f"user({current_user.id=})")
     return UserSchema.from_orm(current_user)
+
+
+@router.post("/create-api-key", status_code=status.HTTP_201_CREATED)
+def create_api_key(
+    client_name: str,
+    scope: str | None = None,
+    expires_at: datetime | None = None,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    key = generate_api_key(client_name, scope, expires_at, db)
+    return JSONResponse(content={"api_key": key})
+
+
+@router.delete("/delete-api-key/{key_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_api_key(key_id: int, db: Session = Depends(get_db)) -> None:
+    api_key = db.query(APIKey).filter_by(id=key_id).first()
+    if not api_key:
+        raise HTTPException(status_code=404, detail="API key not found")
+    api_key.is_active = False
+    db.commit()
