@@ -11,20 +11,26 @@
 - [x] Fix Material-Refresh to clear local-storage
 - [x] Set Name of Assembly
 - [x] Alphabetize Assembly Select
+- [x] Turn off editing for non-login users
+- [x] API endpoint for getting Construction into Rhino
+- [x] API-Key / Token for Rhino access
+- [x] Clean Material and Assembly Names for Honeybee-Energy Construction conversion
+- [x] HBE Conversion to include mixed materials
+  - [ ] Check what happens with uneven widths?
+- [ ] Fix: Add-segment button doesn't go away after Modal
+- [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [ ] Display Material Attributes
 - [ ] Display Material Legend
 - [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
-- [x] Turn off editing for non-login users
 - [ ] Serialize (download)
 - [ ] De-Serialize (upload)
-- [ ] API endpoints for Rhino access
-- [ ] API-Key / Token for Rhino access
-- [ ] Materials DataGrid page gets data from Constructions (not AirTable)
+- [ ] Consider limiter (slowAPI) for all endpoints?
 - [ ] Air-Cavity (automatic-thickness detection)
 - [ ] Steel-Stud-Cavity checkbox
 - [ ] Steel-Stud-Cavity (automatic-thickness detection)
+- [ ] Materials DataGrid page gets data from Constructions (not AirTable)
 
 
 #### Get Geometry:

@@ -1,0 +1,42 @@
+# -*- Python Version: 3.11 (Render.com) -*-
+
+from __future__ import annotations  # Enables forward references
+
+from pydantic import BaseModel, root_validator
+
+from features.assembly.schemas.segment import AssemblyLayerSegmentSchema
+
+
+class AssemblyLayerSchema(BaseModel):
+    id: int
+    order: int
+    assembly_id: int
+    thickness_mm: float
+    segments: list[AssemblyLayerSegmentSchema] = []
+
+    class Config:
+        orm_mode = True
+
+
+class CreateLayerRequest(BaseModel):
+    assembly_id: int
+    thickness_mm: float
+    order: int
+
+    @root_validator(pre=True)
+    def check_height(cls, values):
+        thickness_mm = values.get("thickness_mm")
+        if thickness_mm <= 0:
+            raise ValueError("Layer thickness must be greater than 0.")
+        return values
+
+
+class UpdateLayerHeightRequest(BaseModel):
+    thickness_mm: float
+
+    @root_validator(pre=True)
+    def check_height(cls, values):
+        thickness_mm = values.get("thickness_mm")
+        if thickness_mm <= 0:
+            raise ValueError("Layer thickness must be greater than 0.")
+        return values
