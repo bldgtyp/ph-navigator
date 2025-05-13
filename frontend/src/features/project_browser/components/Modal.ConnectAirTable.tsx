@@ -64,10 +64,9 @@ interface formDataType {
 const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props) => {
     const { projectId } = useParams();
     const [formData, setFormData] = useState<formDataType>({
-        airtable_base_api_key: "pathyb8d4Hmu6AiLX.842da9fb1d9db5fbef8cb352d5722a43eece673c1d5d9c4046537979de738891",
-        airtable_base_ref: "",
+        airtable_base_api_key: "...",
+        airtable_base_ref: "...",
     });
-    // appEfDfirhVnByZxr
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
