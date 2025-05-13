@@ -3,9 +3,9 @@
 ## TODO:
 
 #### Project
-- [ ] Add Config / Projects Button to Browser
-- [ ] Add New Project
-- [ ] Set Project AirTable Refs
+- [x] Add Config / Projects Button to Browser
+- [x] Add New Project
+- [x] Set Project AirTable Refs
 - [ ] Delete Project
 
 #### Assemblies:
