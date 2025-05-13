@@ -10,7 +10,6 @@ from config import limiter
 from database import get_db
 from db_entities.app.user import User
 from db_entities.app.project import Project 
-from db_entities.airtable.at_base import AirTableBase   
 from features.auth.services import get_current_active_user
 from features.project.schema import ProjectSchema, ProjectCreateSchema
 from features.project.services import get_project_by_bt_number

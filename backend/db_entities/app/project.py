@@ -58,8 +58,4 @@ class Project(Base):
     @property
     def airtable_base_url(self) -> str:
         """Return the AirTable base URL for this project."""
-        return (
-            f"https://airtable.com/{self.airtable_base.id}"
-            if self.airtable_base
-            else ""
-        )
+        return f"https://airtable.com/{self.airtable_base.id}"

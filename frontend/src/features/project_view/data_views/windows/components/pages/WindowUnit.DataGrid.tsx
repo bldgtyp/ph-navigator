@@ -21,7 +21,7 @@ const WindowUnitDataGrid: React.FC = () => {
   const { projectId } = useParams();
   const { showModal, rowData } = useLoadDataGridFromAirTable<WindowUnitTypesRecord>(
     defaultRow,
-    "window_unit_types",
+    "window_units",
     projectId
   );
 

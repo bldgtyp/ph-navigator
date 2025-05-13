@@ -2,13 +2,22 @@
 
 ## TODO:
 
-#### Project
+#### Project Browser
 - [x] Add Config / Projects Button to Browser
 - [x] Add New Project
 - [x] Set Project AirTable Refs
 - [ ] Delete Project
+- [ ] Figure out API-Key strategy
+- [ ] Cancel / Save buttons on Project Config form
 
-#### Assemblies:
+#### Assemblies (IO):
+- [ ] Serialize (download)
+- [ ] De-Serialize (upload)
+- [ ] Consider limiter (slowAPI) for all endpoints?
+- [ ] Upload corresponding Flixo PDF (link)
+- [ ] Handle and Store Material Submittals 
+
+#### Assemblies (UI):
 - [x] Material Color
 - [x] Filtered by Project
 - [x] Add New
@@ -27,17 +36,12 @@
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [x] Display Material Attributes
 - [ ] Display Material Legend
-- [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
-- [ ] Serialize (download)
-- [ ] De-Serialize (upload)
-- [ ] Consider limiter (slowAPI) for all endpoints?
 - [ ] Air-Cavity (automatic-thickness detection)
 - [ ] Steel-Stud-Cavity checkbox
 - [ ] Steel-Stud-Cavity (automatic-thickness detection)
 - [ ] Materials DataGrid page gets data from Constructions (not AirTable)
-- [ ] Handle and Store Material Submittals 
 
 
 #### Get Geometry:
