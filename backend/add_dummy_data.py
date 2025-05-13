@@ -212,6 +212,7 @@ def add_dummy_assembly(db: Session) -> None:
 
     mat_1 = Material.get_by_name(db, "Test Material 1")
     segment_1 = Segment(width_mm=200, material=mat_1)
+    segment_1.steel_stud_spacing_mm = 200
     layer_1.segments.append(segment_1)
 
     mat_2 = Material.get_by_name(db, "Test Material 2")

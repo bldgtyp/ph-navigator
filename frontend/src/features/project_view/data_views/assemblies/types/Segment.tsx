@@ -7,4 +7,5 @@ export interface SegmentType {
     width_mm: number;
     material_id: string;
     material: MaterialType;
+    steel_stud_spacing_mm: number | null;
 }

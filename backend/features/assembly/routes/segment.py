@@ -13,6 +13,7 @@ from features.assembly.schemas.segment import (
     CreateLayerSegmentRequest,
     UpdateSegmentMaterialRequest,
     UpdateSegmentWidthRequest,
+    UpdateSegmentSteelStudSpacingRequest,
 )
 
 router = APIRouter(
@@ -144,6 +145,35 @@ async def update_segment_width(
     )
 
 
+@router.patch("/update_segment_steel_stud_spacing/{segment_id}")
+async def update_segment_steel_stud_spacing(segment_id: int, request: UpdateSegmentSteelStudSpacingRequest, db: Session = Depends(get_db)) -> JSONResponse:
+    """Update the steel stud spacing of a Layer Segment."""
+    logger.info(f"update_segment_steel_stud_spacing(segment_id={segment_id}, steel_stud_spacing_mm={request.steel_stud_spacing_mm})")
+    
+    # Get the right segment from the database
+    segment = db.query(Segment).filter_by(id=segment_id).first()
+    if not segment:
+        return JSONResponse(
+            content={"message": f"Segment with ID {segment_id} not found."},
+            status_code=404,
+        )
+    
+    # Update the segment's steel stud spacing
+    if request.steel_stud_spacing_mm is not None:
+        segment.steel_stud_spacing_mm = request.steel_stud_spacing_mm
+    else:
+        segment.steel_stud_spacing_mm = None
+    db.commit()
+    db.refresh(segment)
+
+    return JSONResponse(
+        content={
+            "message": f"Segment {segment_id} updated with new steel stud spacing {request.steel_stud_spacing_mm}."
+        },
+        status_code=200,
+    )
+
+
 @router.delete("/delete_layer_segment/{segment_id}")
 async def delete_layer_segment(
     segment_id: int, db: Session = Depends(get_db)
@@ -179,3 +209,5 @@ async def delete_layer_segment(
         content={"message": f"Segment {segment_id} deleted successfully."},
         status_code=200,
     )
+
+

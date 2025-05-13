@@ -19,12 +19,12 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     const [newMaterialColor, setNewMaterialColor] = useState(convertArgbToRgba(segment.material.argb_color));
 
     // Is Steel Stud Segment
-    const [currentIsSteelStudChecked, setCurrentIsSteelStudChecked] = useState<boolean>(false);
-    const [newIsSteelStudChecked, setNewIsSteelStudChecked] = useState<boolean>(false);
+    const [currentIsSteelStudChecked, setCurrentIsSteelStudChecked] = useState<boolean>(segment.steel_stud_spacing_mm !== null);
+    const [newIsSteelStudChecked, setNewIsSteelStudChecked] = useState<boolean>(segment.steel_stud_spacing_mm !== null);
 
     // Steel Stud Spacing
-    const [currentSteelStudSpacing, setCurrentSteelStudSpacing] = useState<number>(406.4); // 16 inches
-    const [newSteelStudSpacing, setNewSteelStudSpacing] = useState<number>(406.4); // 16 inches
+    const [currentSteelStudSpacing, setCurrentSteelStudSpacing] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
+    const [newSteelStudSpacing, setNewSteelStudSpacing] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
 
 
     const handleMouseEnter = () => setIsSegmentHovered(true);
@@ -36,6 +36,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         setNewMaterialId(currentMaterialId);
         setNewWidth(currentSegmentWidth);
         setNewIsSteelStudChecked(currentIsSteelStudChecked);
+        setNewSteelStudSpacing(currentSteelStudSpacing);
         setIsModalOpen(false);
     };
 
@@ -56,7 +57,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         "handleMouseLeave": handleMouseLeave,
         "handleMouseClick": handleMouseClick,
         "handleModalClose": handleModalClose,
-        // Material Coloe
+        // Material Color
         "currentMaterialColor": currentMaterialColor,
         "setCurrentMaterialColor": setCurrentMaterialColor,
         "newMaterialColor": newMaterialColor,

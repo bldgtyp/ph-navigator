@@ -40,7 +40,7 @@
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
-- [ ] Steel-Stud-Cavity checkbox
+- [x] Steel-Stud-Cavity checkbox
 - [ ] Steel-Stud-Cavity (automatic-thickness detection)
 - [ ] Materials DataGrid page gets data from Constructions (not AirTable)
 

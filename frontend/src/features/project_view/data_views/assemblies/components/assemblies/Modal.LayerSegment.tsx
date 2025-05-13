@@ -35,6 +35,7 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
     )
 };
 
+
 const MaterialDataDisplay: React.FC<MaterialDataDisplayProps> = (props) => {
     return (
         <Box sx={{ p: 2, marginBottom: "25px", border: "1px solid #ccc", borderRadius: 2, backgroundColor: "#f9f9f9", marginTop: 2 }}>
@@ -49,6 +50,7 @@ const MaterialDataDisplay: React.FC<MaterialDataDisplayProps> = (props) => {
         </Box>
     )
 }
+
 
 const MaterialInput: React.FC<MaterialInputProps> = (props) => {
     const userContext = useContext(UserContext);
@@ -190,6 +192,7 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                             onChange={props.handleSteelStudSpacingChange}
                             fullWidth
                             margin="dense"
+                            disabled={!userContext.user}
                         />
                     )}
 

@@ -12,10 +12,21 @@ interface responseType {
 
 export const handleSubmit = async (
     segment: SegmentType,
-    newWidthMM: number,
-    currentSegmentWidth: number,
+    // Segment Width
+    newSegmentWidthMM: number,
+    currentSegmentWidthMM: number,
+    // Material Type
     newMaterialId: string,
     currentMaterialId: string,
+    // Is Steel Stud
+    currentIsSteelStud: boolean,
+    newIsSteelStud: boolean,
+    setCurrentIsSteelStudChecked: React.Dispatch<React.SetStateAction<boolean>>,
+    // Steel Stud Spacing
+    currentSteelStudSpacing: number,
+    newSteelStudSpacing: number,
+    setCurrentSteelStudSpacing: React.Dispatch<React.SetStateAction<number>>,
+    // 
     setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
     setCurrentWidth: React.Dispatch<React.SetStateAction<number>>,
     setCurrentMaterialId: React.Dispatch<React.SetStateAction<string>>,
@@ -24,13 +35,13 @@ export const handleSubmit = async (
 ) => {
     try {
         // Update the segment width in the database if it has changed
-        if (newWidthMM !== currentSegmentWidth) {
+        if (newSegmentWidthMM !== currentSegmentWidthMM) {
             const response = await patchWithAlert(`assembly/update_segment_width/${segment.id}`, null, {
-                width_mm: newWidthMM,
+                width_mm: newSegmentWidthMM,
             });
 
             if (response) {
-                setCurrentWidth(newWidthMM);
+                setCurrentWidth(newSegmentWidthMM);
             } else {
                 console.error("Failed to update Segment-Width.");
             }
@@ -47,6 +58,23 @@ export const handleSubmit = async (
                 setCurrentMaterialColor(convertArgbToRgba(response.material_argb_color, "#ccc"));
             } else {
                 console.error("Failed to update Segment-Material.");
+            }
+        }
+
+        // Update the steel stud spacing in the database if it has changed
+        if (newIsSteelStud !== currentIsSteelStud || (newIsSteelStud && newSteelStudSpacing !== currentSteelStudSpacing)) {
+            console.log("in here")
+            console.log("newIsSteelStud ? newSteelStudSpacing : null = ", newIsSteelStud ? newSteelStudSpacing : null)
+            const response = await patchWithAlert(`assembly/update_segment_steel_stud_spacing/${segment.id}`, null, {
+                steel_stud_spacing_mm: newIsSteelStud ? newSteelStudSpacing : null
+            });
+
+
+            if (response) {
+                setCurrentIsSteelStudChecked(newIsSteelStud);
+                setCurrentSteelStudSpacing(newSteelStudSpacing);
+            } else {
+                console.error("Failed to update Segment-Steel-Stud.");
             }
         }
 

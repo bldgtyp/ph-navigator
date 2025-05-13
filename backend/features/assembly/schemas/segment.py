@@ -16,6 +16,7 @@ class AssemblyLayerSegmentSchema(BaseModel):
     order: int
     width_mm: float
     material: MaterialSchema
+    steel_stud_spacing_mm: float | None = None
 
     class Config:
         orm_mode = True
@@ -40,4 +41,15 @@ class UpdateSegmentWidthRequest(BaseModel):
         width_mm = values.get("width_mm")
         if width_mm <= 0:
             raise ValueError("Segment width must be greater than 0.")
+        return values
+
+
+class UpdateSegmentSteelStudSpacingRequest(BaseModel):
+    steel_stud_spacing_mm: float | None = None
+
+    @root_validator(pre=True)
+    def check_steel_stud_spacing(cls, values):
+        steel_stud_spacing_mm = values.get("steel_stud_spacing_mm")
+        if steel_stud_spacing_mm and steel_stud_spacing_mm <= 0:
+            raise ValueError("Steel stud spacing must be greater than 0.")
         return values
