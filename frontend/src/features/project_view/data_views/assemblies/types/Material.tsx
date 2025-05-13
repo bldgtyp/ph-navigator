@@ -4,6 +4,8 @@ export interface MaterialType {
     name: string;
     emissivity: number;
     conductivity_w_mk: number;
+    density_kg_m3: number;
+    specific_heat_j_kgk: number;
     category: string;
     argb_color: string;
     [key: string]: any; // Add additional fields as needed

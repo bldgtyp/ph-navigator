@@ -1,3 +1,5 @@
+import { MaterialType } from "../../types/Material";
+
 export interface LayerSegmentWidthModalProps {
     isModalOpen: boolean;
     widthMM: number; // Current width of the segment
@@ -22,5 +24,12 @@ export interface WidthInputProps {
 }
 export interface MaterialInputProps {
     materialId: string;
+    materialOptions: MaterialType[];
+    selectedMaterial: MaterialType | null;
+    isLoadingMaterials: boolean;
     handleMaterialChange: (materialId: string, materialColor: string) => void;
+}
+
+export interface MaterialDataDisplayProps {
+    selectedMaterial: MaterialType | null;
 }

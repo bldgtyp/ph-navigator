@@ -25,7 +25,7 @@
   - [ ] Check what happens with uneven widths?
 - [x] Fix: Add-segment button doesn't go away after Modal
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
-- [ ] Display Material Attributes
+- [x] Display Material Attributes
 - [ ] Display Material Legend
 - [ ] Upload corresponding Flixo PDF (link)
 - [ ] IP Units for all (conversion)
