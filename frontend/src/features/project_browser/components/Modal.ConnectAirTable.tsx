@@ -80,7 +80,6 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
         e.preventDefault();
         try {
             console.log("Connecting to AirTable base with data:", formData);
-            // endpoint=/air_table/connect_at_base_to_project, token=..., data={"airtable_base_api_key":"pathyb8d4Hmu6AiLX.842da9fb1d9db5fbef8cb352d5722a43eece673c1d5d9c4046537979de738891","airtable_base_ref":"appEfDfirhVnByZxr","bt_number":""}
             const response = await postWithAlert("air_table/connect_at_base_to_project", null, { ...formData, bt_number: projectId });
             props.handleModalClose();
         } catch (error) {
