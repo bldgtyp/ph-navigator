@@ -59,6 +59,7 @@ export const handleSubmit = async (
     }
 };
 
+
 export const handleDeleteSegment = (
     segmentId: number,
     onDeleteSegment: (segmentId: number) => void,
@@ -68,10 +69,12 @@ export const handleDeleteSegment = (
     setIsModalOpen(false); // Close the modal
 };
 
+
 export const handleWidthChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setNewWidth: React.Dispatch<React.SetStateAction<number>>
 ) => { setNewWidth(Number(e.target.value)) };
+
 
 export const handleMaterialChange = (
     materialId: string,
@@ -82,3 +85,20 @@ export const handleMaterialChange = (
     setNewMaterialId(materialId);
     setNewMaterialColor(materialColor);
 };
+
+
+export const handleSteelStudCheckboxChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setNewIsSteelStudChecked: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+    const isChecked = e.target.checked;
+    setNewIsSteelStudChecked(isChecked);
+}
+
+export const handleSteelStudSpacingChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setNewSteelStudSpacing: React.Dispatch<React.SetStateAction<number>>
+) => {
+    const value = Number(e.target.value);
+    setNewSteelStudSpacing(value);
+}

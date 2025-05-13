@@ -3,7 +3,7 @@ import { useEffect, useRef, useContext } from "react";
 import { UserContext } from "../../../../../auth/contexts/UserContext";
 import { useMaterials } from '../../contexts/MaterialsContext';
 
-import { List, ListItemText, Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, FormControl, Typography } from "@mui/material";
+import { List, ListItemText, Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, FormControl, Typography, FormControlLabel, Checkbox } from "@mui/material";
 import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps, MaterialDataDisplayProps } from "./Modal.LayerSegment.Types";
 
 
@@ -135,6 +135,7 @@ const DeleteButton: React.FC<DeleteButtonProps> = (props) => {
 
 const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
     const { isLoadingMaterials, materials } = useMaterials();
+    const userContext = useContext(UserContext);
 
     // Sort materials by category
     const materialOptions = [...materials].sort((a, b) => {
@@ -162,6 +163,36 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                     />
                     <MaterialDataDisplay selectedMaterial={selectedMaterial} />
                     <WidthInput widthMM={props.widthMM} handleWidthChange={props.handleWidthChange} />
+
+
+                    {/* Checkbox for steel stud spacing */}
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={props.steelStudChecked}
+                                onChange={props.handleCheckboxChange}
+                                color="primary"
+                                disabled={!userContext.user}
+                            />
+                        }
+                        label="Steel Stud Layer"
+                    />
+
+                    {/* Conditionally render the spacing input */}
+                    {props.steelStudChecked && (
+                        <TextField
+                            type="number"
+                            slotProps={{
+                                htmlInput: { step: "any", }
+                            }}
+                            label="Steel Stud Spacing (mm)"
+                            value={props.steelStudSpacing}
+                            onChange={props.handleSteelStudSpacingChange}
+                            fullWidth
+                            margin="dense"
+                        />
+                    )}
+
                 </DialogContent>
                 <OkCancelButtons handleModalClose={props.handleModalClose} />
             </form>

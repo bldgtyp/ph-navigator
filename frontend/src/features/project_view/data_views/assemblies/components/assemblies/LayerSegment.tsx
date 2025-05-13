@@ -5,7 +5,7 @@ import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import ModalLayerSegment from "./Modal.LayerSegment";
 import { SegmentType } from '../../types/Segment';
-import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange } from "./LayerSegment.Handlers";
+import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange, handleSteelStudCheckboxChange, handleSteelStudSpacingChange } from "./LayerSegment.Handlers";
 import { useLayerSegmentHooks } from "./LayerSegment.Hooks";
 
 
@@ -65,6 +65,10 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
                     hooks.setIsSegmentHovered,
                 )}
                 handleModalClose={hooks.handleModalClose}
+                steelStudChecked={hooks.newIsSteelStudChecked}
+                handleCheckboxChange={(e) => handleSteelStudCheckboxChange(e, hooks.setNewIsSteelStudChecked)}
+                steelStudSpacing={hooks.newSteelStudSpacing}
+                handleSteelStudSpacingChange={(e) => handleSteelStudSpacingChange(e, hooks.setNewSteelStudSpacing)}
             />
 
             {/* Add Segment Button */}

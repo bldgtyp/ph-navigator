@@ -10,18 +10,28 @@ export interface LayerSegmentWidthModalProps {
     handleMaterialChange: (materialId: string, materialColor: string) => void;
     handleSubmit: () => void;
     handleModalClose: () => void;
+    // State for steel stud checkbox
+    steelStudChecked: boolean;
+    handleCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    // State for steel stud spacing
+    steelStudSpacing: number;
+    handleSteelStudSpacingChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
+
 export interface DeleteButtonProps {
     segmentId: number; // ID of the segment being edited
     handleDeleteSegment: (segmentId: number) => void;
 }
+
 export interface OkCancelButtonsProps {
     handleModalClose: () => void;
 }
+
 export interface WidthInputProps {
     widthMM: number;
     handleWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
+
 export interface MaterialInputProps {
     materialId: string;
     materialOptions: MaterialType[];

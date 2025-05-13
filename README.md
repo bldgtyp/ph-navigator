@@ -15,7 +15,8 @@
 - [ ] De-Serialize (upload)
 - [ ] Consider limiter (slowAPI) for all endpoints?
 - [ ] Upload corresponding Flixo PDF (link)
-- [ ] Handle and Store Material Submittals 
+- [ ] Handle and Store Material Submittals
+- [ ] Setup Database migration tooling
 
 #### Assemblies (UI):
 - [x] Material Color

@@ -18,6 +18,15 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     const [currentMaterialColor, setCurrentMaterialColor] = useState(convertArgbToRgba(segment.material.argb_color));
     const [newMaterialColor, setNewMaterialColor] = useState(convertArgbToRgba(segment.material.argb_color));
 
+    // Is Steel Stud Segment
+    const [currentIsSteelStudChecked, setCurrentIsSteelStudChecked] = useState<boolean>(false);
+    const [newIsSteelStudChecked, setNewIsSteelStudChecked] = useState<boolean>(false);
+
+    // Steel Stud Spacing
+    const [currentSteelStudSpacing, setCurrentSteelStudSpacing] = useState<number>(406.4); // 16 inches
+    const [newSteelStudSpacing, setNewSteelStudSpacing] = useState<number>(406.4); // 16 inches
+
+
     const handleMouseEnter = () => setIsSegmentHovered(true);
     const handleMouseLeave = () => setIsSegmentHovered(false);
     const handleMouseClick = () => { setIsSegmentHovered(false); setIsModalOpen(true); };
@@ -26,6 +35,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         setNewMaterialColor(currentMaterialColor);
         setNewMaterialId(currentMaterialId);
         setNewWidth(currentSegmentWidth);
+        setNewIsSteelStudChecked(currentIsSteelStudChecked);
         setIsModalOpen(false);
     };
 
@@ -46,9 +56,20 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         "handleMouseLeave": handleMouseLeave,
         "handleMouseClick": handleMouseClick,
         "handleModalClose": handleModalClose,
+        // Material Coloe
         "currentMaterialColor": currentMaterialColor,
         "setCurrentMaterialColor": setCurrentMaterialColor,
         "newMaterialColor": newMaterialColor,
         "setNewMaterialColor": setNewMaterialColor,
+        // Is Steel Stud Segment
+        "currentIsSteelStudChecked": currentIsSteelStudChecked,
+        "setCurrentIsSteelStudChecked": setCurrentIsSteelStudChecked,
+        "newIsSteelStudChecked": newIsSteelStudChecked,
+        "setNewIsSteelStudChecked": setNewIsSteelStudChecked,
+        // Steel Stud Spacing
+        "currentSteelStudSpacing": currentSteelStudSpacing,
+        "setCurrentSteelStudSpacing": setCurrentSteelStudSpacing,
+        "newSteelStudSpacing": newSteelStudSpacing,
+        "setNewSteelStudSpacing": setNewSteelStudSpacing,
     }
 }

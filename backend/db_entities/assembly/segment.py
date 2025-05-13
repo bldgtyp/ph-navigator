@@ -21,6 +21,7 @@ class Segment(Base):
     material_id = Column(String, ForeignKey("assembly_materials.id"))
     order = Column(Integer)  # Used to maintain order within the layer
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False)
+    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(Float, nullable=True, default=None)
 
     # Relationships
     layer: Mapped["Layer"] = relationship("Layer", back_populates="segments")
@@ -32,4 +33,5 @@ class Segment(Base):
             order=0,
             width_mm=812.8,  # 32 inches
             material=material,
+            steel_stud_spacing_mm=None,
         )
