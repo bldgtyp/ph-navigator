@@ -22,7 +22,7 @@ const GlazingTypesDataGrid: React.FC = () => {
   const { projectId } = useParams();
   const { showModal, rowData } = useLoadDataGridFromAirTable<GlazingTypesRecord>(
     defaultRow,
-    "glazing_types",
+    "WINDOW_GLAZING_TYPES",
     projectId
   );
 

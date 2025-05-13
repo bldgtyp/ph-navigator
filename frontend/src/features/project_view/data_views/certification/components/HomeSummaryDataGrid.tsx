@@ -46,9 +46,9 @@ function createTableCellWithLink(categoryName: string, location: any) {
     LIGHTING_FIXTURES: "lighting",
     APPLIANCES: "appliances",
     MATERIAL_LAYERS: "materials",
-    GLAZING_TYPES: "glazing-types",
-    FRAME_TYPES: "frame-types",
-    DHW_TANKS: "hot-water-tanks",
+    WINDOW_GLAZING_TYPES: "window-glazing-types",
+    WINDOW_FRAME_TYPES: "window-frame-types",
+    DHW_TANKS: "dhw-tanks",
   };
 
   return <a href={baseURL + refs[categoryName]}>{ValueAsSentenceCase(categoryName)}</a>;

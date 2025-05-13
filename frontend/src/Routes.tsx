@@ -1,11 +1,13 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+
 import Landing from "./Landing";
 import Login from "./features/auth/components/Login";
-import Projects from "./features/project_browser/components/Projects";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
-import ProjectContainer from "./features/project_view/components/ProjectContainer";
 import Account from "./features/auth/components/Account";
+import Projects from "./features/project_browser/components/Projects";
+import ProjectContainer from "./features/project_view/components/ProjectContainer";
+import Settings from './features/project_browser/components/Settings';
 
 
 const AppRoutes: React.FC = () => (
@@ -15,6 +17,7 @@ const AppRoutes: React.FC = () => (
         <Route element={<ProtectedRoute />}>
             <Route path="/projects" element={<Projects />} />
             <Route path="/account" element={<Account />} />
+            <Route path="//project/:projectId/settings" element={<Settings />} />
         </Route>
         <Route path="/project/:projectId" element={<ProjectContainer />} />
     </Routes>

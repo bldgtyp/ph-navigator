@@ -2,23 +2,16 @@
 
 from __future__ import annotations  # Enables forward references
 
-from pyairtable.api.types import RecordDict
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel
+
 
 # ---------------------------------------------------------------------------------------
+# -- Table
 
-
-class AirTableTableBaseSchema(BaseModel):
-    name: str
-    airtable_ref: str
-
-
-class AirTableTableCreateSchema(AirTableTableBaseSchema):
-    pass
-
-
-class AirTableTableSchema(AirTableTableBaseSchema):
+class AirTableTableSchema(BaseModel):
     id: int
+    name: str
+    at_ref: str
     parent_base_id: int
 
     class Config:
@@ -27,21 +20,25 @@ class AirTableTableSchema(AirTableTableBaseSchema):
 
 
 # ---------------------------------------------------------------------------------------
+# -- Base
 
 
-class AirTableBaseBaseSchema(BaseModel):
-    name: str
-    airtable_ref: str
-
-
-class AirTableBaseCreateSchema(AirTableBaseBaseSchema):
-    pass
-
-
-class AirTableBaseSchema(AirTableBaseBaseSchema):
-    id: int
+class AirTableBaseSchema(BaseModel):
+    id: str
     tables: list[AirTableTableSchema] = []
 
     class Config:
         from_attributes = True
         orm_mode = True
+
+
+class AddAirTableBaseRequest(BaseModel):
+    airtable_base_api_key: str
+    airtable_base_ref: str
+    bt_number: str
+
+    def __repr__(self) -> str:
+        return f"AddAirTableBaseRequest(bt_number={self.bt_number}, airtable_base_api_key={self.airtable_base_api_key[0:5]}****, airtable_base_ref={self.airtable_base_ref})"
+    
+    def __str__(self) -> str:
+        return repr(self)

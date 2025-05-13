@@ -69,7 +69,7 @@ const AssembliesPage: React.FC = () => {
         `assembly/add_assembly/`,
         null,
         {
-          project_bt_num: projectId,
+          bt_number: projectId,
         }
       );
 

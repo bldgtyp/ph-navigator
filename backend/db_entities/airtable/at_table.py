@@ -2,8 +2,8 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, relationship, validates
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
 
 from database import Base
 
@@ -15,16 +15,20 @@ if TYPE_CHECKING:
 class AirTableTable(Base):
     __tablename__ = "airtable_tables"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    airtable_ref = Column(String, index=True)
-    parent_base_id = Column(Integer, ForeignKey("airtable_bases.id"))
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
+    name: Mapped[str] = MappedColumn(String, index=True)
+    at_ref: Mapped[str] = MappedColumn(String, index=True)
+    parent_base_id: Mapped[int] = MappedColumn(Integer, ForeignKey("airtable_bases.id"))
 
     # Relationships
-    airtable_base: Mapped["AirTableBase"] = relationship(
+    parent_base: Mapped["AirTableBase"] = relationship(
         "AirTableBase", back_populates="tables"
     )
 
     @validates("name")
-    def convert_to_uppercase(self, key, value: str) -> str:
-        return value.upper()
+    def clean_name(self, key, value: str) -> str:
+        name = value.upper()
+        name = name.replace(" ", "_")
+        name = name.replace("-", "_")
+        name = name.replace(":", "")
+        return name

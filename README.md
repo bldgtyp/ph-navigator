@@ -37,6 +37,7 @@
 - [ ] Steel-Stud-Cavity checkbox
 - [ ] Steel-Stud-Cavity (automatic-thickness detection)
 - [ ] Materials DataGrid page gets data from Constructions (not AirTable)
+- [ ] Handle and Store Material Submittals 
 
 
 #### Get Geometry:

@@ -19,9 +19,11 @@ class Layer(Base):
     __tablename__ = "assembly_layers"
 
     id = Column(Integer, primary_key=True)
-    assembly_id = Column(Integer, ForeignKey("assemblies.id"))
-    order = Column(Integer)  # Used to maintain order within the assembly
+    order = Column(Integer)  # Used to maintain layer order within the assembly
     thickness_mm: Mapped[float] = MappedColumn(Float, nullable=False)
+
+    # Foreign Keys
+    assembly_id = Column(Integer, ForeignKey("assemblies.id"))
 
     # Relationships
     assembly: Mapped["Assembly"] = relationship("Assembly", back_populates="layers")

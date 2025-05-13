@@ -3,8 +3,8 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import Mapped, relationship, validates
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, relationship, validates, MappedColumn
 
 from database import Base
 from db_entities.airtable.at_table import AirTableTable
@@ -17,17 +17,13 @@ if TYPE_CHECKING:
 class AirTableBase(Base):
     __tablename__ = "airtable_bases"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    airtable_ref = Column(String, index=True)
+    id: Mapped[str] = MappedColumn(String, primary_key=True, index=True)
 
-    # Relationship to the tables in the base
-    tables: Mapped[list[AirTableTable]] = relationship(
-        "AirTableTable", back_populates="airtable_base"
-    )
-
-    # Relationship to the project that uses this base
+    # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="airtable_base")
+    tables: Mapped[list[AirTableTable]] = relationship(
+        "AirTableTable", back_populates="parent_base"
+    )
 
     @validates("name")
     def convert_to_uppercase(self, key, value: str) -> str:

@@ -18,7 +18,7 @@ const defaultRow = generateDefaultRow(tableFields);
 const FrameTypesDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
-  const { showModal, rowData } = useLoadDataGridFromAirTable<FrameTypesRecord>(defaultRow, "frame_types", projectId);
+  const { showModal, rowData } = useLoadDataGridFromAirTable<FrameTypesRecord>(defaultRow, "WINDOW_FRAME_TYPES", projectId);
 
   // --------------------------------------------------------------------------
   // Update columns dynamically when rowData changes

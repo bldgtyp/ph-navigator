@@ -3,7 +3,7 @@
 from typing import cast
 
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, relationship, validates
+from sqlalchemy.orm import Mapped, relationship, validates, MappedColumn
 
 from database import Base
 from db_entities.airtable.at_base import AirTableBase
@@ -15,13 +15,14 @@ from db_entities.assembly.assembly import Assembly
 class Project(Base):
     __tablename__ = "projects"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    bt_number = Column(String, index=True)
-    phius_number = Column(String, index=True, nullable=True)
-    airtable_base_id = Column(Integer, ForeignKey("airtable_bases.id"))
-    owner_id = Column(Integer, ForeignKey("users.id"))
-    phius_dropbox_url = Column(String, index=True, nullable=True)
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
+    name: Mapped[str] = MappedColumn(String, index=True)
+    bt_number: Mapped[str] = MappedColumn(String, index=True)
+    phius_number: Mapped[str | None] = MappedColumn(String, index=True, nullable=True)
+    phius_dropbox_url: Mapped[str | None] = MappedColumn(String, index=True, nullable=True)
+
+    owner_id: Mapped[int] = MappedColumn(Integer, ForeignKey("users.id"))
+    airtable_base_id: Mapped[str] = MappedColumn(String, ForeignKey("airtable_bases.id"), nullable=True)
 
     # -----------------------------------------------------------------------------------
     # Relationships
@@ -55,15 +56,10 @@ class Project(Base):
         return [cast(int, user.id) for user in self.users]
 
     @property
-    def airtable_base_ref(self) -> str:
-        """Return the AirTable base reference for this project."""
-        return str(self.airtable_base.airtable_ref) if self.airtable_base else ""
-
-    @property
     def airtable_base_url(self) -> str:
         """Return the AirTable base URL for this project."""
         return (
-            f"https://airtable.com/{self.airtable_base_ref}"
+            f"https://airtable.com/{self.airtable_base.id}"
             if self.airtable_base
             else ""
         )

@@ -5,7 +5,9 @@ import Stack from "@mui/material/Stack";
 import { UserContext } from "../../auth/contexts/UserContext";
 import { getWithAlert } from "../../../api/getWithAlert";
 import { ProjectType, defaultProjectType } from "../../types/ProjectType";
-import ProjectCard from "./ProjectCard";
+import ProjectCard from "./Card.Project";
+import CreateNewProjectCard from "./Card.CreateNew";
+
 
 const Projects: React.FC = () => {
     const userContext = useContext(UserContext);
@@ -16,6 +18,12 @@ const Projects: React.FC = () => {
         async function loadProjectCardData() {
             try {
                 const projectCardData = await getWithAlert<ProjectType[]>("project_browser/get_project_card_data")
+                // Sort the projectCardData by the 'bt_number' property
+                projectCardData?.sort((a, b) => {
+                    if (Number(a.bt_number) < Number(b.bt_number)) return -1;
+                    if (Number(a.bt_number) > Number(b.bt_number)) return 1;
+                    return 0;
+                });
                 setProjectCardData(projectCardData || [])
             } catch (error) {
                 alert("Error loading project data. Please try again later.");
@@ -33,6 +41,7 @@ const Projects: React.FC = () => {
         <Stack id="projects" spacing={2} sx={{ m: 3 }}>
             {!isLoading && (
                 <Grid container spacing={3}>
+                    <CreateNewProjectCard setProjectCardData={setProjectCardData} />
                     {projectCardData.map((p) => {
                         return <ProjectCard {...p} key={p.id} />;
                     })}

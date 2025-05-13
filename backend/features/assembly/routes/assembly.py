@@ -32,14 +32,14 @@ async def add_assembly(
     request: AddAssemblyRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Add a new Assembly to a Project."""
-    logger.info(f"add_assembly(project_bt_num={request.project_bt_num})")
+    logger.info(f"add_assembly(bt_number={request.bt_number})")
 
     # Check if the project exists
-    project = db.query(Project).filter_by(bt_number=request.project_bt_num).first()
+    project = db.query(Project).filter_by(bt_number=request.bt_number).first()
     if not project:
         raise HTTPException(
             status_code=404,
-            detail=f"Project with bt_number {request.project_bt_num} not found.",
+            detail=f"Project with bt_number {request.bt_number} not found.",
         )
 
     # Just use the 'first' material in the database for simplicity
@@ -63,16 +63,16 @@ async def add_assembly(
     )
 
 
-@router.get("/get_assemblies/{project_bt_num}")
+@router.get("/get_assemblies/{bt_number}")
 async def get_assemblies(
-    project_bt_num: int, db: Session = Depends(get_db)
+    bt_number: int, db: Session = Depends(get_db)
 ) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
-    logger.info(f"get_assemblies(project_bt_num={project_bt_num})")
+    logger.info(f"get_assemblies(bt_number={bt_number})")
     assemblies = (
         db.query(Assembly)
         .join(Project)
-        .filter(Project.bt_number == project_bt_num)
+        .filter(Project.bt_number == bt_number)
         .all()
     )
     return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
@@ -141,22 +141,22 @@ async def delete_assembly(
     )
 
 
-@router.get("/get_assemblies_as_hb_json/{project_bt_num}")
+@router.get("/get_assemblies_as_hb_json/{bt_number}")
 async def get_assemblies_as_hb_json(
-    project_bt_num: int,
+    bt_number: int,
     offset: int = Query(0, description="The offset for the test function"),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Test function to check if the module is working."""
     logger.info(
-        f"get_assemblies_as_hb_json(project_bt_num={project_bt_num}, offset={offset})"
+        f"get_assemblies_as_hb_json(bt_number={bt_number}, offset={offset})"
     )
 
     # Get all the Assemblies for the project
     assemblies = (
         db.query(Assembly)
         .join(Project)
-        .filter(Project.bt_number == project_bt_num)
+        .filter(Project.bt_number == bt_number)
         .all()
     )
     assemblies = [AssemblySchema.from_orm(assembly) for assembly in assemblies]

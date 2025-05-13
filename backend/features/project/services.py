@@ -8,9 +8,9 @@ from db_entities.app.project import Project
 class ProjectNotFoundException(Exception):
     """Custom exception for missing project."""
 
-    def __init__(self, project_bt_num: int):
-        self.project_bt_num = project_bt_num
-        super().__init__(f"Project {project_bt_num} not found.")
+    def __init__(self, bt_number: int):
+        self.bt_number = bt_number
+        super().__init__(f"Project {bt_number} not found.")
 
 
 async def get_projects(db: Session, project_ids: list[int]) -> list[Project]:

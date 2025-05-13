@@ -13,8 +13,8 @@ const WindowDataDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState(0);
 
     const tabs = [
-        { label: "Glazing Types", path: `${projectId}/glazing_types` },
-        { label: "Frame Types", path: `${projectId}/frame_types` },
+        { label: "Glazing Types", path: `${projectId}/WINDOW_GLAZING_TYPES` },
+        { label: "Frame Types", path: `${projectId}/WINDOW_FRAME_TYPES` },
         { label: "Unit Types", path: `${projectId}/window_unit_type` },
     ];
 

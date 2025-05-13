@@ -19,12 +19,12 @@ class AssemblySchema(BaseModel):
 
 
 class AddAssemblyRequest(BaseModel):
-    project_bt_num: str
+    bt_number: str
 
     @root_validator(pre=True)
     def check_project_id(cls, values):
-        project_bt_num = values.get("project_bt_num")
-        if not project_bt_num:
+        bt_number = values.get("bt_number")
+        if not bt_number:
             raise ValueError("Project number is required.")
         return values
 
