@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Float, ForeignKey, Integer
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
@@ -18,7 +18,7 @@ class Segment(Base):
 
     id = Column(Integer, primary_key=True)
     layer_id = Column(Integer, ForeignKey("assembly_layers.id"))
-    material_id = Column(Integer, ForeignKey("assembly_materials.id"))
+    material_id = Column(String, ForeignKey("assembly_materials.id"))
     order = Column(Integer)  # Used to maintain order within the layer
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False)
 

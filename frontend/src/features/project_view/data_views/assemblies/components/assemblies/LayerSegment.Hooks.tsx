@@ -7,8 +7,8 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     const [isSegmentHovered, setIsSegmentHovered] = useState(false);
 
     // State variables for Segment Material
-    const [currentMaterialId, setCurrentMaterialId] = useState(segment.material.id);
-    const [newMaterialId, setNewMaterialId] = useState(segment.material.id);
+    const [currentMaterialId, setCurrentMaterialId] = useState<string>(segment.material.id);
+    const [newMaterialId, setNewMaterialId] = useState<string>(segment.material.id);
 
     // State variables for Segment Width
     const [currentSegmentWidth, setCurrentWidth] = useState(segment.width_mm);

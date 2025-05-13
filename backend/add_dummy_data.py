@@ -152,8 +152,8 @@ def add_dummy_projects(db: Session, users: list[User]) -> None:
 # ASSEMBLIES / MATERIALS
 MATERIALS = [
     {
-        "id": "1",
-        "name": "Material 1",
+        "id": "mat1",
+        "name": "Test Material 1",
         "argb_color": "(255, 255, 255, 255)",
         "category": "Category-A",
         "conductivity_w_mk": 1.0,
@@ -162,8 +162,8 @@ MATERIALS = [
         "specific_heat_j_kgk": 999.0,
     },
     {
-        "id": "2",
-        "name": "Material 2",
+        "id": "mat2",
+        "name": "Test Material 2",
         "argb_color": "(255, 255, 255, 255)",
         "category": "Category-B",
         "conductivity_w_mk": 2.0,
@@ -172,8 +172,8 @@ MATERIALS = [
         "specific_heat_j_kgk": 999.0,
     },
     {
-        "id": "3",
-        "name": "Material 3",
+        "id": "mat3",
+        "name": "Test Material 3",
         "argb_color": "(255, 255, 255, 255)",
         "category": "Category-B",
         "conductivity_w_mk": 3.0,
