@@ -7,7 +7,7 @@
 - [x] Add New Project
 - [x] Set Project AirTable Refs
 - [ ] Delete Project
-- [ ] Figure out API-Key strategy
+- [x] Figure out API-Key strategy
 - [ ] Cancel / Save buttons on Project Config form
 
 #### Assemblies (IO):
@@ -36,6 +36,7 @@
 - [x] Fix: Add-segment button doesn't go away after Modal
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [x] Display Material Attributes
+- [x] Add Loading State to Material Refresh Button
 - [ ] Display Material Legend
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
