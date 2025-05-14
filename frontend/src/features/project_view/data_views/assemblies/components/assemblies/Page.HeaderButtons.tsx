@@ -4,9 +4,10 @@ interface HeaderButtonProps {
     key: string;
     text: string;
     handler: () => Promise<void>;
+    loading?: boolean;
 }
 
-const HeaderButton: React.FC<HeaderButtonProps> = ({ key, text, handler }) => {
+const HeaderButton: React.FC<HeaderButtonProps> = ({ key, text, handler, loading }) => {
 
     return (
         <Button
@@ -16,8 +17,9 @@ const HeaderButton: React.FC<HeaderButtonProps> = ({ key, text, handler }) => {
             color="inherit"
             size="small"
             onClick={handler}
+            disabled={loading}
         >
-            {text}
+            {loading ? "Loading...." : text}
         </Button>
     )
 }
@@ -26,11 +28,12 @@ const HeaderButton: React.FC<HeaderButtonProps> = ({ key, text, handler }) => {
 export function headerButtons(
     handleAddAssembly: () => Promise<void>,
     handleDeleteAssembly: () => Promise<void>,
-    handleRefreshMaterials: () => Promise<void>
+    handleRefreshMaterials: () => Promise<void>,
+    loading: boolean = false,
 ): React.ReactElement[] {
     return [
-        <HeaderButton key={"+"} text={"+ Add New Assembly"} handler={handleAddAssembly} />,
-        <HeaderButton key={"-"} text={"Delete Assembly"} handler={handleDeleteAssembly} />,
-        <HeaderButton key={"refresh"} text={"Refresh Materials"} handler={handleRefreshMaterials} />,
+        <HeaderButton key={"+"} text={"+ Add New Assembly"} handler={handleAddAssembly} loading={false} />,
+        <HeaderButton key={"-"} text={"Delete Assembly"} handler={handleDeleteAssembly} loading={false} />,
+        <HeaderButton key={"refresh"} text={"Refresh Materials"} handler={handleRefreshMaterials} loading={loading} />,
     ]
 }

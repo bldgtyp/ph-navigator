@@ -21,6 +21,8 @@ import { headerButtons } from "./Page.HeaderButtons";
 const AssembliesPage: React.FC = () => {
   const userContext = useContext(UserContext);
   const { projectId } = useParams();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const { isLoadingMaterials, setMaterials } = useMaterials();
   const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
   const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
@@ -147,18 +149,20 @@ const AssembliesPage: React.FC = () => {
   };
 
   const handleRefreshMaterials = async () => {
+    setIsRefreshing(true);
+    setRefreshMessage(null);
     try {
-      // Make sure that the Database has all the values from AirTable
       await getWithAlert('assembly/refresh_db_materials_from_air_table');
-      // Update the localStorage with the new values
       const fetchedMaterials = await fetchAndCacheMaterials();
       setMaterials(fetchedMaterials);
-    }
-    catch (error) {
-      alert("Error loading Material Data. Please try again later.");
+      setRefreshMessage("Materials refreshed successfully!");
+    } catch (error) {
+      setRefreshMessage("Error loading Material Data. Please try again later.");
       console.error("Error loading Material Data:", error);
+    } finally {
+      setIsRefreshing(false);
     }
-  }
+  };
 
   return (
     <>
@@ -166,7 +170,10 @@ const AssembliesPage: React.FC = () => {
 
       {
         userContext.user ? (
-          <ContentBlockHeader text="Assembly" buttons={headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials)} />
+          <ContentBlockHeader
+            text="Assembly"
+            buttons={headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials, isRefreshing)}
+          />
         ) : <ContentBlockHeader text="Assembly" />
       }
 
