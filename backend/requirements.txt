@@ -1,5 +1,6 @@
 alembic
 bcrypt
+cryptography
 fastapi
 honeybee-ph
 passlib

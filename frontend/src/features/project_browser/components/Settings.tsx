@@ -127,14 +127,6 @@ const Settings: React.FC = () => {
 
             <Stack spacing={2} >
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ display: "flex" }}>
-                    <TextField
-                        label="AirTable Base Ref."
-                        name="airtable_base_ref"
-                        value={formData.airtable_base_ref || ""}
-                        onChange={handleInputChange}
-                        disabled
-                        sx={{ flex: 1 }}
-                    />
                     <Button
                         size="medium"
                         variant="contained"
@@ -144,6 +136,13 @@ const Settings: React.FC = () => {
                     >
                         Connect an AirTable Base
                     </Button>
+                    <TextField
+                        label="AirTable Base Ref."
+                        name="airtable_base_ref"
+                        value={formData.airtable_base_ref || ""}
+                        disabled
+                        sx={{ flex: 1 }}
+                    />
                 </Stack>
             </Stack>
 

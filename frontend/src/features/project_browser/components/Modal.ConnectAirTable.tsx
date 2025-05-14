@@ -79,7 +79,10 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await postWithAlert("air_table/connect_at_base_to_project", null, { ...formData, bt_number: projectId });
+            const response = await postWithAlert("air_table/connect_at_base_to_project", null, {
+                ...formData,
+                bt_number: projectId
+            });
             props.handleModalClose();
         } catch (error) {
             alert("Error connecting to AirTable base. Please try again.");
@@ -112,17 +115,8 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
 
                 <DialogActions sx={{ display: "flex", flexDirection: 'row', justifyContent: "center" }}>
                     <ButtonGroup>
-                        <Button onClick={props.handleModalClose} size="large" color="primary">
-                            Cancel
-                        </Button>
-
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            color="primary"
-                        >
-                            Connect
-                        </Button>
+                        <Button onClick={props.handleModalClose} size="large" color="primary">Cancel</Button>
+                        <Button type="submit" variant="contained" color="primary" >Connect</Button>
                     </ButtonGroup>
                 </DialogActions>
             </form>
