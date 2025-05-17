@@ -26,6 +26,9 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     const [currentSteelStudSpacing, setCurrentSteelStudSpacing] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
     const [newSteelStudSpacing, setNewSteelStudSpacing] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
 
+    // Continuous Insulation Checkbox
+    const [currentContinuousInsulationChecked, setCurrentContinuousInsulationChecked] = useState<boolean>(segment.is_continuous_insulation);
+    const [newContinuousInsulationChecked, setNewContinuousInsulationChecked] = useState<boolean>(segment.is_continuous_insulation);
 
     const handleMouseEnter = () => setIsSegmentHovered(true);
     const handleMouseLeave = () => setIsSegmentHovered(false);
@@ -72,5 +75,10 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         "setCurrentSteelStudSpacing": setCurrentSteelStudSpacing,
         "newSteelStudSpacing": newSteelStudSpacing,
         "setNewSteelStudSpacing": setNewSteelStudSpacing,
+        // Continuous Insulation Checkbox
+        "currentContinuousInsulationChecked": currentContinuousInsulationChecked,
+        "newContinuousInsulationChecked": newContinuousInsulationChecked,
+        "setCurrentContinuousInsulationChecked": setCurrentContinuousInsulationChecked,
+        "setNewContinuousInsulationChecked": setNewContinuousInsulationChecked,
     }
 }

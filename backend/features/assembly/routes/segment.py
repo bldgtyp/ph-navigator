@@ -11,9 +11,10 @@ from database import get_db
 from db_entities.assembly import Layer, Material, Segment
 from features.assembly.schemas.segment import (
     CreateLayerSegmentRequest,
+    UpdateSegmentIsContinuousInsulationRequest,
     UpdateSegmentMaterialRequest,
-    UpdateSegmentWidthRequest,
     UpdateSegmentSteelStudSpacingRequest,
+    UpdateSegmentWidthRequest,
 )
 
 router = APIRouter(
@@ -146,10 +147,16 @@ async def update_segment_width(
 
 
 @router.patch("/update_segment_steel_stud_spacing/{segment_id}")
-async def update_segment_steel_stud_spacing(segment_id: int, request: UpdateSegmentSteelStudSpacingRequest, db: Session = Depends(get_db)) -> JSONResponse:
+async def update_segment_steel_stud_spacing(
+    segment_id: int,
+    request: UpdateSegmentSteelStudSpacingRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """Update the steel stud spacing of a Layer Segment."""
-    logger.info(f"update_segment_steel_stud_spacing(segment_id={segment_id}, steel_stud_spacing_mm={request.steel_stud_spacing_mm})")
-    
+    logger.info(
+        f"update_segment_steel_stud_spacing(segment_id={segment_id}, steel_stud_spacing_mm={request.steel_stud_spacing_mm})"
+    )
+
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()
     if not segment:
@@ -157,7 +164,7 @@ async def update_segment_steel_stud_spacing(segment_id: int, request: UpdateSegm
             content={"message": f"Segment with ID {segment_id} not found."},
             status_code=404,
         )
-    
+
     # Update the segment's steel stud spacing
     if request.steel_stud_spacing_mm is not None:
         segment.steel_stud_spacing_mm = request.steel_stud_spacing_mm
@@ -169,6 +176,38 @@ async def update_segment_steel_stud_spacing(segment_id: int, request: UpdateSegm
     return JSONResponse(
         content={
             "message": f"Segment {segment_id} updated with new steel stud spacing {request.steel_stud_spacing_mm}."
+        },
+        status_code=200,
+    )
+
+
+@router.patch("/update_segment_continuous_insulation/{segment_id}")
+async def update_segment_continuous_insulation(
+    segment_id: int,
+    request: UpdateSegmentIsContinuousInsulationRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Update the continuous insulation flag of a Layer Segment."""
+    logger.info(
+        f"update_segment_continuous_insulation(segment_id={segment_id}, is_continuous_insulation={request.is_continuous_insulation})"
+    )
+
+    # Get the right segment from the database
+    segment = db.query(Segment).filter_by(id=segment_id).first()
+    if not segment:
+        return JSONResponse(
+            content={"message": f"Segment with ID {segment_id} not found."},
+            status_code=404,
+        )
+
+    # Update the segment's continuous insulation flag
+    segment.is_continuous_insulation = request.is_continuous_insulation
+    db.commit()
+    db.refresh(segment)
+
+    return JSONResponse(
+        content={
+            "message": f"Segment {segment_id} updated with new continuous insulation flag {request.is_continuous_insulation}."
         },
         status_code=200,
     )
@@ -209,5 +248,3 @@ async def delete_layer_segment(
         content={"message": f"Segment {segment_id} deleted successfully."},
         status_code=200,
     )
-
-

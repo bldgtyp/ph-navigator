@@ -4,9 +4,9 @@ from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel
 
-
 # ---------------------------------------------------------------------------------------
 # -- Table
+
 
 class AirTableTableSchema(BaseModel):
     id: int
@@ -39,6 +39,6 @@ class AddAirTableBaseRequest(BaseModel):
 
     def __repr__(self) -> str:
         return f"AddAirTableBaseRequest(bt_number={self.bt_number}, airtable_base_api_key={self.airtable_base_api_key[0:5]}****, airtable_base_ref={self.airtable_base_ref})"
-    
+
     def __str__(self) -> str:
         return repr(self)

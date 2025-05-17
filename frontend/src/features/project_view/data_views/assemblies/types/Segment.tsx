@@ -8,4 +8,5 @@ export interface SegmentType {
     material_id: string;
     material: MaterialType;
     steel_stud_spacing_mm: number | null;
+    is_continuous_insulation: boolean;
 }

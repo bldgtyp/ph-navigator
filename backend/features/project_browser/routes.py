@@ -25,6 +25,6 @@ async def get_project_card_data(
 ) -> list[ProjectSchema]:
     """Return summary-data for each of the user's projects for the project browser."""
     logging.info(f"get_project_card_data({current_user.id=})")
-    
+
     projects = await get_projects(db, current_user.all_project_ids)
     return [ProjectSchema.from_orm(p) for p in projects]

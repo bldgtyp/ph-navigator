@@ -43,7 +43,7 @@ class HBJSONModelLoadError(Exception):
 async def find_hbjson_file_url(db: Session, bt_number: int) -> str:
     """Given a Project ID, find the HBJSON file URL from the AirTable repository."""
     logger.info(f"find_hbjson_url({bt_number=})")
-    
+
     # Get the Project
     project = db.query(Project).filter_by(bt_number=bt_number).first()
     if not project:
@@ -51,21 +51,21 @@ async def find_hbjson_file_url(db: Session, bt_number: int) -> str:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project {bt_number} not found.",
         )
-    
+
     # Get the AirTable base
     if not project.airtable_base:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AirTable base not found for Project {bt_number}.",
         )
-    
+
     # Check the AirTable access token
     if not project.airtable_base.airtable_access_token:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AirTable access token not found for Project {bt_number}.",
         )
-    
+
     at_base_id = await get_airtable_base_ref(db, bt_number)
     at_tbl_id = await get_airtable_table_ref(db, bt_number, "HBJSON")
 

@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
@@ -21,7 +21,12 @@ class Segment(Base):
     material_id = Column(String, ForeignKey("assembly_materials.id"))
     order = Column(Integer)  # Used to maintain order within the layer
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False)
-    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(Float, nullable=True, default=None)
+    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(
+        Float, nullable=True, default=None
+    )
+    is_continuous_insulation: Mapped[bool] = MappedColumn(
+        Boolean, nullable=False, default=False
+    )  # for Steel Stud walls
 
     # Relationships
     layer: Mapped["Layer"] = relationship("Layer", back_populates="segments")
@@ -34,4 +39,5 @@ class Segment(Base):
             width_mm=812.8,  # 32 inches
             material=material,
             steel_stud_spacing_mm=None,
+            is_continuous_insulation=False,
         )

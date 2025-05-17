@@ -17,7 +17,9 @@ from features.assembly.schemas.assembly import (
     DeleteAssemblyRequest,
     UpdateAssemblyNameRequest,
 )
-from features.assembly.services import convert_assemblies_to_hbe_constructions
+from features.assembly.services.to_hbe_construction import (
+    convert_assemblies_to_hbe_constructions,
+)
 
 router = APIRouter(
     prefix="/assembly",
@@ -70,10 +72,7 @@ async def get_assemblies(
     """Get all assemblies for a specific project from the database."""
     logger.info(f"get_assemblies(bt_number={bt_number})")
     assemblies = (
-        db.query(Assembly)
-        .join(Project)
-        .filter(Project.bt_number == bt_number)
-        .all()
+        db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
     )
     return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 
@@ -148,16 +147,11 @@ async def get_assemblies_as_hb_json(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Test function to check if the module is working."""
-    logger.info(
-        f"get_assemblies_as_hb_json(bt_number={bt_number}, offset={offset})"
-    )
+    logger.info(f"get_assemblies_as_hb_json(bt_number={bt_number}, offset={offset})")
 
     # Get all the Assemblies for the project
     assemblies = (
-        db.query(Assembly)
-        .join(Project)
-        .filter(Project.bt_number == bt_number)
-        .all()
+        db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
     )
     assemblies = [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 

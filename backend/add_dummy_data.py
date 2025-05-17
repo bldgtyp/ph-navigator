@@ -2,10 +2,10 @@
 
 """Utility to add some fake users to the database for testing and development."""
 
-import dotenv
 import os
 
 import bcrypt
+import dotenv
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine
@@ -28,7 +28,7 @@ PROJECT_DATA = [
         "bt_number": 2305,
         "phius_number": 2445,
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
-        "at_key": os.environ['TESTING_ST_KEY_1'],
+        "at_key": os.environ["TESTING_ST_KEY_1"],
         "tables": {
             "SUMMARY": "tblapLjAFgm7RIllz",
             "CONFIG": "tblRMar5uK7mDZ8yM",
@@ -51,7 +51,7 @@ PROJECT_DATA = [
         "bt_number": 2242,
         "phius_number": 2441,
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/5b2w4n9wc1psda63xso4m/h?rlkey=e5c4bvo1visbecr0uea9lt0r3&dl=0",
-        "at_key": os.environ['TESTING_ST_KEY_2'],
+        "at_key": os.environ["TESTING_ST_KEY_2"],
         "tables": {
             "SUMMARY": "tblb8D5jcw1KyB522",
             "CONFIG": "tblOPg6rOq7Uy2zJT",
@@ -74,7 +74,7 @@ PROJECT_DATA = [
         "bt_number": 2141,
         "phius_number": 2628,
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
-        "at_key": os.environ['TESTING_ST_KEY_3'],
+        "at_key": os.environ["TESTING_ST_KEY_3"],
         "tables": {
             "SUMMARY": "tblTWt78WrqpxvseQ",
             "CONFIG": "tblqXGps9noqY0LqZ",
@@ -136,7 +136,6 @@ def add_dummy_projects(db: Session, users: list[User]) -> None:
             db.add(db_airtable_table)
             at_tables.append(db_airtable_table)
         db.commit()
-
 
         # -------------------------------------------------------------------------------
         # -- Now build the Project
@@ -234,7 +233,6 @@ def add_dummy_assembly(db: Session) -> None:
 
     db.add(assembly)
     db.commit()
-
 
 
 if __name__ == "__main__":

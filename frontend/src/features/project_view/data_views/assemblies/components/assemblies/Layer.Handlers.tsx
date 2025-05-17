@@ -36,6 +36,7 @@ export const handleAddSegmentToRight = async (
                 width_mm: 50,
                 order: orderPosition,
                 steel_stud_spacing_mm: null,
+                is_continuous_insulation: false,
             };
 
             // Update the segments array to reflect the insertion

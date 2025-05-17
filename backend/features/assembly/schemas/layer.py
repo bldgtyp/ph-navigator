@@ -17,6 +17,16 @@ class AssemblyLayerSchema(BaseModel):
     class Config:
         orm_mode = True
 
+    @property
+    def is_steel_stud_layer(self) -> bool:
+        """Check if the layer has any Steel-Stud segments."""
+        return any([s.steel_stud_spacing_mm is not None for s in self.segments])
+
+    @property
+    def is_continuous_insulation_layer(self) -> bool:
+        """Check if the layer has any Continuous Insulation segments."""
+        return any([s.is_continuous_insulation for s in self.segments])
+
 
 class CreateLayerRequest(BaseModel):
     assembly_id: int

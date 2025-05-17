@@ -15,9 +15,12 @@ export const handleSubmit = async (
     // Segment Width
     newSegmentWidthMM: number,
     currentSegmentWidthMM: number,
+    setCurrentWidth: React.Dispatch<React.SetStateAction<number>>,
     // Material Type
     newMaterialId: string,
     currentMaterialId: string,
+    setCurrentMaterialId: React.Dispatch<React.SetStateAction<string>>,
+    setCurrentMaterialColor: React.Dispatch<React.SetStateAction<any>>,
     // Is Steel Stud
     currentIsSteelStud: boolean,
     newIsSteelStud: boolean,
@@ -26,11 +29,12 @@ export const handleSubmit = async (
     currentSteelStudSpacing: number,
     newSteelStudSpacing: number,
     setCurrentSteelStudSpacing: React.Dispatch<React.SetStateAction<number>>,
-    // 
+    // Continuous Insulation Checkbox
+    currentContinuousInsulationChecked: boolean,
+    newContinuousInsulationChecked: boolean,
+    setCurrentContinuousInsulationChecked: React.Dispatch<React.SetStateAction<boolean>>,
+    // Vis
     setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
-    setCurrentWidth: React.Dispatch<React.SetStateAction<number>>,
-    setCurrentMaterialId: React.Dispatch<React.SetStateAction<string>>,
-    setCurrentMaterialColor: React.Dispatch<React.SetStateAction<any>>,
     setIsSegmentHovered: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
     try {
@@ -75,6 +79,19 @@ export const handleSubmit = async (
                 setCurrentSteelStudSpacing(newSteelStudSpacing);
             } else {
                 console.error("Failed to update Segment-Steel-Stud.");
+            }
+        }
+
+        // Update the continuous insulation in the database if it has changed
+        if (newContinuousInsulationChecked !== currentContinuousInsulationChecked) {
+            const response = await patchWithAlert(`assembly/update_segment_continuous_insulation/${segment.id}`, null, {
+                is_continuous_insulation: newContinuousInsulationChecked,
+            });
+
+            if (response) {
+                setCurrentContinuousInsulationChecked(newContinuousInsulationChecked);
+            } else {
+                console.error("Failed to update Segment-Continuous-Insulation.");
             }
         }
 
@@ -123,10 +140,20 @@ export const handleSteelStudCheckboxChange = (
     setNewIsSteelStudChecked(isChecked);
 }
 
+
 export const handleSteelStudSpacingChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setNewSteelStudSpacing: React.Dispatch<React.SetStateAction<number>>
 ) => {
     const value = Number(e.target.value);
     setNewSteelStudSpacing(value);
+}
+
+
+export const handleContinuousInsulationChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setNewContinuousInsulationChecked: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+    const isChecked = e.target.checked;
+    setNewContinuousInsulationChecked(isChecked);
 }

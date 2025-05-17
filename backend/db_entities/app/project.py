@@ -3,7 +3,7 @@
 from typing import cast
 
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, relationship, validates, MappedColumn
+from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
 
 from database import Base
 from db_entities.airtable.at_base import AirTableBase
@@ -19,10 +19,14 @@ class Project(Base):
     name: Mapped[str] = MappedColumn(String, index=True)
     bt_number: Mapped[str] = MappedColumn(String, index=True)
     phius_number: Mapped[str | None] = MappedColumn(String, index=True, nullable=True)
-    phius_dropbox_url: Mapped[str | None] = MappedColumn(String, index=True, nullable=True)
+    phius_dropbox_url: Mapped[str | None] = MappedColumn(
+        String, index=True, nullable=True
+    )
 
     owner_id: Mapped[int] = MappedColumn(Integer, ForeignKey("users.id"))
-    airtable_base_id: Mapped[str] = MappedColumn(String, ForeignKey("airtable_bases.id"), nullable=True)
+    airtable_base_id: Mapped[str] = MappedColumn(
+        String, ForeignKey("airtable_bases.id"), nullable=True
+    )
 
     # -----------------------------------------------------------------------------------
     # Relationships

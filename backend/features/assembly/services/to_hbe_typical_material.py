@@ -4,14 +4,13 @@ import logging
 from collections import OrderedDict
 
 from honeybee.typing import clean_ep_string
-from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.material.opaque import EnergyMaterial
 from honeybee_energy_ph.properties.materials.opaque import (
     EnergyMaterialPhProperties,
     PhDivisionGrid,
 )
 
-from features.assembly.schemas.assembly import AssemblyLayerSchema, AssemblySchema
+from features.assembly.schemas.assembly import AssemblyLayerSchema
 from features.assembly.schemas.material import MaterialSchema
 from features.assembly.schemas.segment import AssemblyLayerSegmentSchema
 
@@ -88,7 +87,7 @@ async def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMat
     return new_material_
 
 
-async def convert_assembly_layer_to_hb_material(
+async def convert_single_assembly_layer_to_hb_material(
     layer: AssemblyLayerSchema,
 ) -> EnergyMaterial:
     """Convert an assembly layer to a Honeybee Energy Material."""
@@ -97,23 +96,14 @@ async def convert_assembly_layer_to_hb_material(
     division_grid = await build_ph_division_grid_from_segments(
         layer.segments, layer.thickness_mm / 1000
     )
-    hbe_mat = await create_hybrid_hbe_material(division_grid)
-    return hbe_mat
+    hbe_material_ = await create_hybrid_hbe_material(division_grid)
+    return hbe_material_
 
 
-async def convert_assemblies_to_hbe_constructions(
-    assemblies: list[AssemblySchema],
-) -> list[OpaqueConstruction]:
-    """Convert a list of assemblies to Honeybee JSON format."""
-    logger.info(f"convert_assemblies_to_hbjson([{len(assemblies)}] assemblies)")
-
-    return [
-        OpaqueConstruction(
-            identifier=assembly.name,
-            materials=[
-                await convert_assembly_layer_to_hb_material(layer)
-                for layer in assembly.layers
-            ],
-        )
-        for assembly in assemblies
-    ]
+async def convert_multiple_assembly_layers_to_hb_material(
+    _layers: list[AssemblyLayerSchema],
+) -> list[EnergyMaterial]:
+    hbe_materials_: list[EnergyMaterial] = []
+    for layer in _layers:
+        hbe_materials_.append(await convert_single_assembly_layer_to_hb_material(layer))
+    return hbe_materials_

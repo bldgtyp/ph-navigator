@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
+from db_entities.app.project import Project
 from db_entities.app.user import User
-from db_entities.app.project import Project 
 from features.auth.services import get_current_active_user
-from features.project.schema import ProjectSchema, ProjectCreateSchema
+from features.project.schema import ProjectCreateSchema, ProjectSchema
 from features.project.services import get_project_by_bt_number
 
 logger = logging.getLogger()
@@ -31,16 +31,18 @@ async def project(
 ) -> ProjectSchema:
     """Return a project by its BuildingType Number."""
     logger.info(f"project({bt_number=})")
-    
+
     project = await get_project_by_bt_number(db, bt_number)
     if not project:
-        raise HTTPException(
-            status_code=404, detail=f"Project {bt_number} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Project {bt_number} not found")
     return ProjectSchema.from_orm(project)
 
 
-@router.get("/{bt_number}/get_settings", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+@router.get(
+    "/{bt_number}/get_settings",
+    response_model=ProjectSchema,
+    status_code=status.HTTP_200_OK,
+)
 async def get_project_settings(
     request: Request,
     bt_number: int,
@@ -54,11 +56,15 @@ async def get_project_settings(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with bt_number {bt_number} not found.",
         )
-        
+
     return ProjectSchema.from_orm(project)
 
 
-@router.patch("/{bt_number}/update_settings", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{bt_number}/update_settings",
+    response_model=ProjectSchema,
+    status_code=status.HTTP_200_OK,
+)
 async def update_project_settings(
     request: Request,
     bt_number: int,
@@ -81,7 +87,7 @@ async def update_project_settings(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to update this project.",
         )
-    
+
     # Update the project settings
     project.name = project_settings_data.name
     project.bt_number = project_settings_data.bt_number
@@ -93,7 +99,11 @@ async def update_project_settings(
     return ProjectSchema.from_orm(project)
 
 
-@router.post("/create_new_project", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/create_new_project",
+    response_model=ProjectSchema,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_new_project(
     request: Request,
     new_project_data: ProjectCreateSchema,
@@ -104,7 +114,9 @@ async def create_new_project(
     logger.info(f"create_new_project()")
 
     # Check if a project with the same bt_number already exists
-    existing_project = db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
+    existing_project = (
+        db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
+    )
     if existing_project:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -118,7 +130,7 @@ async def create_new_project(
         phius_number=new_project_data.phius_number,
         owner=current_user,
         airtable_base=None,
-        users=[current_user]
+        users=[current_user],
     )
 
     # Add the project to the database
@@ -127,4 +139,3 @@ async def create_new_project(
     db.refresh(new_project)
 
     return ProjectSchema.from_orm(new_project)
-

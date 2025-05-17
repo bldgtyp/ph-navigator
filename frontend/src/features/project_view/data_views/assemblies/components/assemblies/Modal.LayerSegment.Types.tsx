@@ -16,6 +16,9 @@ export interface LayerSegmentWidthModalProps {
     // State for steel stud spacing
     steelStudSpacing: number;
     handleSteelStudSpacingChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    // State for continuous insulation checkbox
+    isConInsulationChecked: boolean;
+    handleConInsulationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export interface DeleteButtonProps {

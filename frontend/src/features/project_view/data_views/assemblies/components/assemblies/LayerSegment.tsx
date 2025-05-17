@@ -5,7 +5,7 @@ import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import ModalLayerSegment from "./Modal.LayerSegment";
 import { SegmentType } from '../../types/Segment';
-import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange, handleSteelStudCheckboxChange, handleSteelStudSpacingChange } from "./LayerSegment.Handlers";
+import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange, handleSteelStudCheckboxChange, handleSteelStudSpacingChange, handleContinuousInsulationChange } from "./LayerSegment.Handlers";
 import { useLayerSegmentHooks } from "./LayerSegment.Hooks";
 
 
@@ -54,20 +54,29 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
                 handleMaterialChange={(materialId: string, materialColor: string) => handleMaterialChange(materialId, materialColor, hooks.setNewMaterialId, hooks.setNewMaterialColor)}
                 handleSubmit={() => handleSubmit(
                     segment,
+                    // Segment Size
                     hooks.newWidthMM,
                     hooks.currentSegmentWidth,
+                    hooks.setCurrentWidth,
+                    // Material
                     hooks.newMaterialId,
                     hooks.currentMaterialId,
+                    hooks.setCurrentMaterialId,
+                    hooks.setCurrentMaterialColor,
+                    // Steel Stud Checkbox
                     hooks.currentIsSteelStudChecked,
                     hooks.newIsSteelStudChecked,
                     hooks.setCurrentIsSteelStudChecked,
+                    // Steel Stud Spacing
                     hooks.currentSteelStudSpacing,
                     hooks.newSteelStudSpacing,
                     hooks.setCurrentSteelStudSpacing,
+                    // Continuous Ext Insulation Checkbox
+                    hooks.currentContinuousInsulationChecked,
+                    hooks.newContinuousInsulationChecked,
+                    hooks.setCurrentContinuousInsulationChecked,
+                    // Vis
                     hooks.setIsModalOpen,
-                    hooks.setCurrentWidth,
-                    hooks.setCurrentMaterialId,
-                    hooks.setCurrentMaterialColor,
                     hooks.setIsSegmentHovered,
                 )}
                 handleModalClose={hooks.handleModalClose}
@@ -75,6 +84,8 @@ const LayerSegment: React.FC<LayerSegmentProps> = ({ segment, onAddSegment, onDe
                 handleCheckboxChange={(e) => handleSteelStudCheckboxChange(e, hooks.setNewIsSteelStudChecked)}
                 steelStudSpacing={hooks.newSteelStudSpacing}
                 handleSteelStudSpacingChange={(e) => handleSteelStudSpacingChange(e, hooks.setNewSteelStudSpacing)}
+                isConInsulationChecked={hooks.newContinuousInsulationChecked}
+                handleConInsulationChange={(e) => handleContinuousInsulationChange(e, hooks.setNewContinuousInsulationChecked)}
             />
 
             {/* Add Segment Button */}

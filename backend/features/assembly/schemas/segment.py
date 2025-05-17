@@ -17,6 +17,7 @@ class AssemblyLayerSegmentSchema(BaseModel):
     width_mm: float
     material: MaterialSchema
     steel_stud_spacing_mm: float | None = None
+    is_continuous_insulation: bool = False
 
     class Config:
         orm_mode = True
@@ -52,4 +53,15 @@ class UpdateSegmentSteelStudSpacingRequest(BaseModel):
         steel_stud_spacing_mm = values.get("steel_stud_spacing_mm")
         if steel_stud_spacing_mm and steel_stud_spacing_mm <= 0:
             raise ValueError("Steel stud spacing must be greater than 0.")
+        return values
+
+
+class UpdateSegmentIsContinuousInsulationRequest(BaseModel):
+    is_continuous_insulation: bool
+
+    @root_validator(pre=True)
+    def check_is_continuous_insulation(cls, values):
+        is_continuous_insulation = values.get("is_continuous_insulation")
+        if not isinstance(is_continuous_insulation, bool):
+            raise ValueError("is_continuous_insulation must be a boolean.")
         return values

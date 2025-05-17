@@ -171,7 +171,7 @@ const AssembliesPage: React.FC = () => {
       {
         userContext.user ? (
           <ContentBlockHeader
-            text="Assembly"
+            text={`Assembly: ${selectedAssembly?.name || ""}`}
             buttons={headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials, isRefreshing)}
           />
         ) : <ContentBlockHeader text="Assembly" />

@@ -3,8 +3,8 @@
 from logging import getLogger
 
 import requests
-from sqlalchemy.orm import Session
 from pyairtable import Base, Table
+from sqlalchemy.orm import Session
 
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
@@ -36,9 +36,7 @@ async def get_airtable_base_ref(db: Session, bt_number: int) -> str:
     return project.airtable_base.id
 
 
-async def get_airtable_table_ref(
-    db: Session, bt_number: int, table_name: str
-) -> str:
+async def get_airtable_table_ref(db: Session, bt_number: int, table_name: str) -> str:
     """Get the AirTable Table Ref given a project-BT-number and table name."""
 
     # -- Find the Project
@@ -62,7 +60,7 @@ async def get_airtable_table_ref(
 async def download_hbjson_file(url: str) -> dict:
     """Download the HBJSON File from the specified URL and return the content as JSON."""
     logger.info(f"download_hbjson_file(url={url[0:25]}...)")
-    
+
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise an exception for HTTP errors
@@ -110,7 +108,9 @@ async def get_base_table_schemas(base: Base) -> list[Table]:
     return tables
 
 
-async def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> None:
+async def add_tables_to_base(
+    db: Session, base: AirTableBase, tables: list[Table]
+) -> None:
     """Add the tables to the AirTableBase object."""
     logger.info(f"add_tables_to_base(base={base.id}, tables=[{len(tables)}])")
 
@@ -126,5 +126,5 @@ async def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table
         db.refresh(new_table)
 
         base.tables.append(new_table)
-    
+
     return None

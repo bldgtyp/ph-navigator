@@ -38,9 +38,9 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
 
 const MaterialDataDisplay: React.FC<MaterialDataDisplayProps> = (props) => {
     return (
-        <Box sx={{ p: 2, marginBottom: "25px", border: "1px solid #ccc", borderRadius: 2, backgroundColor: "#f9f9f9", marginTop: 2 }}>
+        <Box sx={{ p: 2, marginBottom: "25px", border: "1px solid #ccc", borderRadius: 1, backgroundColor: "#f9f9f9", marginTop: 2 }}>
             <Typography variant="h5" gutterBottom>Layer Segment Material:</Typography>
-            <List>
+            <List dense sx={{}}>
                 <ListItemText>Name: {props.selectedMaterial?.name || "--"}</ListItemText>
                 <ListItemText>Category: {props.selectedMaterial?.category || "--"}</ListItemText>
                 <ListItemText>Conductivity: {props.selectedMaterial?.conductivity_w_mk || "--"} w/mk</ListItemText>
@@ -155,7 +155,7 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
             <Divider />
 
             <form onSubmit={(e) => { e.preventDefault(); props.handleSubmit(); }}>
-                <DialogContent>
+                <DialogContent sx={{ display: "flex", flexDirection: "column" }}>
                     <MaterialInput
                         materialId={props.materialId}
                         materialOptions={materialOptions}
@@ -165,6 +165,22 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                     />
                     <MaterialDataDisplay selectedMaterial={selectedMaterial} />
                     <WidthInput widthMM={props.widthMM} handleWidthChange={props.handleWidthChange} />
+
+                    <h4>Segment Attributes:</h4>
+                    {/* Continuous Insulation Checkbox */}
+                    {userContext.user && (
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={props.isConInsulationChecked}
+                                    onChange={props.handleConInsulationChange}
+                                    color="primary"
+                                    disabled={!userContext.user}
+                                />
+                            }
+                            label="Continuous Insulation (for Steel Stud Walls)"
+                        />
+                    )}
 
 
                     {/* Checkbox for steel stud spacing */}
@@ -180,6 +196,7 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                         label="Steel Stud Layer"
                     />
 
+
                     {/* Conditionally render the spacing input */}
                     {props.steelStudChecked && (
                         <TextField
@@ -192,6 +209,7 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                             onChange={props.handleSteelStudSpacingChange}
                             fullWidth
                             margin="dense"
+                            size="small"
                             disabled={!userContext.user}
                         />
                     )}

@@ -8,6 +8,7 @@ from pyairtable import Api
 from sqlalchemy.orm import Session
 
 from db_entities.app.project import Project
+
 from ...air_table.services import (
     download_epw_file,
     get_airtable_base_ref,
@@ -40,21 +41,21 @@ async def find_epw_file_url(db: Session, bt_number: int) -> str:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project {bt_number} not found.",
         )
-    
+
     # Get the AirTable base
     if not project.airtable_base:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AirTable base not found for Project {bt_number}.",
         )
-    
+
     # Check the AirTable access token
     if not project.airtable_base.airtable_access_token:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AirTable access token not found for Project {bt_number}.",
         )
-    
+
     at_base_id = await get_airtable_base_ref(db, bt_number)
     at_tbl_id = await get_airtable_table_ref(db, bt_number, "HBJSON")
 

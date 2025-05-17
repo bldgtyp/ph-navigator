@@ -20,7 +20,7 @@ const AssemblyDataDashboard: React.FC = () => {
 
     const tabs = [
         { label: "Materials", path: `${projectId}/material_layers` },
-        { label: "Constructions", path: `${projectId}/constructions` },
+        { label: "Assemblies", path: `${projectId}/assemblies` },
     ];
 
     return (

@@ -17,6 +17,11 @@ class AssemblySchema(BaseModel):
     class Config:
         orm_mode = True
 
+    @property
+    def is_steel_stud_assembly(self) -> bool:
+        """Check if the assembly contains a steel stud layer."""
+        return any([l.is_steel_stud_layer for l in self.layers])
+
 
 class AddAssemblyRequest(BaseModel):
     bt_number: str
