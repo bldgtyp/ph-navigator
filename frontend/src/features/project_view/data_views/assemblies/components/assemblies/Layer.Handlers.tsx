@@ -38,8 +38,8 @@ export const handleAddSegmentToRight = async (
                 steel_stud_spacing_mm: null,
                 is_continuous_insulation: false,
                 specification_status: SpecificationStatus.NA,
-                data_sheet_urls: [],
-                photo_urls: [],
+                material_photos: [],
+                material_datasheets: [],
             };
 
             // Update the segments array to reflect the insertion

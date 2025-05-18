@@ -8,6 +8,8 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 
 from config import settings
 from database import get_db
+from db_entities.assembly.segment import Segment
+from db_entities.assembly.material_photo import MaterialPhoto
 from features.gcp.schemas import SegmentPhotoUploadResponse
 from features.gcp.services import upload_segment_photo
 
@@ -46,3 +48,24 @@ def add_new_segment_photo(
         raise HTTPException(status_code=500, detail="Failed to upload file")
 
     return SegmentPhotoUploadResponse(public_url=public_url)
+
+@router.get("/get-thumbnail-urls/{segment_id}")
+async def get_thumbnail_urls(
+    segment_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get the thumbnail URLs for a given segment ID.
+    """
+    segment = db.query(Segment).filter(Segment.id == segment_id).first()
+    if not segment:
+        raise HTTPException(status_code=404, detail=f"Segment '{segment_id}' not found")
+
+    # Get each of the MaterialPhotos associated with the segment
+    thumbnail_urls = [
+        photo.thumbnail_url
+        for photo in db.query(MaterialPhoto).filter(MaterialPhoto.segment_id == segment_id).all()
+    ]
+    logger.info(f"Segment: '{segment_id}' thumbnail URLs: {thumbnail_urls}")
+
+    return {"thumbnail_urls": thumbnail_urls}

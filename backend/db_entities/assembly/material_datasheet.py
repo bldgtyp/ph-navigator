@@ -12,6 +12,7 @@ class MaterialDatasheet(Base):
     segment_id = Column(
         Integer, ForeignKey("assembly_layer_segments.id"), nullable=False
     )
-    url = Column(String, nullable=False)
+    full_size_url = Column(String, nullable=False)
+    thumbnail_url = Column(String, nullable=False)
 
     segment = relationship("Segment", back_populates="material_datasheets")

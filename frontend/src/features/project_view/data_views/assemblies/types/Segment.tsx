@@ -1,4 +1,6 @@
 import { MaterialType } from "./Material";
+import { MaterialPhotoType } from "./MaterialPhoto";
+import { MaterialDatasheetType } from "./MaterialDatasheet";
 
 export enum SpecificationStatus {
     COMPLETE = "complete",
@@ -17,6 +19,6 @@ export interface SegmentType {
     steel_stud_spacing_mm: number | null;
     is_continuous_insulation: boolean;
     specification_status: SpecificationStatus;
-    data_sheet_urls: string[];
-    photo_urls: string[];
+    material_photos: MaterialPhotoType[];
+    material_datasheets: MaterialDatasheetType[];
 }

@@ -48,7 +48,7 @@ def upload_segment_photo(
     blob.upload_from_file(file.file, content_type=file.content_type)
     blob.make_public()
     full_size_url = blob.public_url
-    
+
     # -- Create the thumbnail, upload it to GCS, and get the public URL
     file.file.seek(0)
     thumb_bytes = create_thumbnail(file)

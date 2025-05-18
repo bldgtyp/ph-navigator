@@ -1,23 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Modal } from "@mui/material";
 import { uploadImageFiles } from "../../../../../../api/uploadImageFiles";
 import { useParams } from "react-router-dom";
+import { getWithAlert } from "../../../../../../api/getWithAlert";
+import { SegmentType } from "../../types/Segment";
 
-interface PhotosProps {
-    photo_urls: string[];
-    segmentId: number;
-    materialName: string;
-    onUploadComplete?: (urls: string[]) => void;
-}
+
+// Remove whitespace, commas, and other illegal filename characters
+const sanitize = (name: string) =>
+    name
+        .replace(/[/\\?%*:|"<>.,\s]+/g, "_") // replace illegal chars and whitespace with underscore
+        .replace(/_+/g, "_") // collapse multiple underscores
+        .replace(/^_+|_+$/g, ""); // trim leading/trailing underscores
+
 
 const cleanFilenames = (materialName: string, files: FileList): FileList => {
-    // Remove whitespace, commas, and other illegal filename characters
-    const sanitize = (name: string) =>
-        name
-            .replace(/[/\\?%*:|"<>.,\s]+/g, "_") // replace illegal chars and whitespace with underscore
-            .replace(/_+/g, "_") // collapse multiple underscores
-            .replace(/^_+|_+$/g, ""); // trim leading/trailing underscores
-
     const cleanedFiles = Array.from(files).map((file) => {
         const baseName = sanitize(materialName);
 
@@ -36,10 +33,35 @@ const cleanFilenames = (materialName: string, files: FileList): FileList => {
     return dataTransfer.files;
 };
 
+
+interface PhotosProps {
+    segment: SegmentType;
+    materialName: string;
+    onUploadComplete?: (urls: string[]) => void;
+}
+
+
 const SegmentPhotos: React.FC<PhotosProps> = (props) => {
     const { projectId } = useParams();
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [thumbnailUrls, setThumbnailUrls] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchThumbnails = async () => {
+            console.log("Fetching thumbnails for segment:", props.segment.id);
+            try {
+                const response = await getWithAlert<any>(`gcp/get-thumbnail-urls/${props.segment.id}`);
+                if (response) {
+                    setThumbnailUrls(response.thumbnail_urls);
+                }
+            } catch (error) {
+                console.error("Failed to fetch thumbnails:", error);
+            }
+        }
+        fetchThumbnails();
+    }, [projectId, props.segment.id]);
+
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -57,7 +79,7 @@ const SegmentPhotos: React.FC<PhotosProps> = (props) => {
 
         const files = e.dataTransfer.files;
         const filesWithCleanNames = cleanFilenames(materialName, files);
-        uploadImageFiles(projectId, props.segmentId, filesWithCleanNames);
+        uploadImageFiles(projectId, props.segment.id, filesWithCleanNames);
     };
 
     return (
@@ -80,14 +102,14 @@ const SegmentPhotos: React.FC<PhotosProps> = (props) => {
         >
 
             {/* Thumbnails */}
-            {props.photo_urls.length === 0 && <span style={{ color: "#888" }}>No photos</span>}
-            {props.photo_urls.map((url, idx) => (
+            {thumbnailUrls.length === 0 && <span style={{ color: "#888" }}>No photos</span>}
+            {thumbnailUrls.map((url, idx) => (
                 <img
                     key={idx}
                     src={url}
                     alt={`Photo ${idx + 1}`}
                     style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, cursor: "pointer" }}
-                    onClick={() => setSelectedPhoto(url)}
+                // onClick={() => setSelectedPhoto(url)}
                 />
             ))}
 

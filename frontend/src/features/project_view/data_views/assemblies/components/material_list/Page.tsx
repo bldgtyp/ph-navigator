@@ -31,12 +31,10 @@ const LayerSegment: React.FC<{ segment: SegmentType }> = (props) => {
                     Spec: {props.segment.specification_status}
                 </Box>
                 <Box className="row-item datasheet-urls">
-                    {/* {props.segment.data_sheet_urls} */}
                     Datasheet
                 </Box>
                 <SegmentPhotos
-                    photo_urls={[]}
-                    segmentId={props.segment.id}
+                    segment={props.segment}
                     materialName={props.segment.material.name}
                 />
             </Stack>

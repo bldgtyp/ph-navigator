@@ -5,6 +5,8 @@ from __future__ import annotations  # Enables forward references
 from pydantic import BaseModel, root_validator
 
 from features.assembly.schemas.material import MaterialSchema
+from features.assembly.schemas.material_photo import MaterialPhotoSchema
+from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from db_entities.assembly.segment import SpecificationStatus
 
 
@@ -18,8 +20,8 @@ class AssemblyLayerSegmentSchema(BaseModel):
     steel_stud_spacing_mm: float | None = None
     is_continuous_insulation: bool = False
     specification_status: SpecificationStatus = SpecificationStatus.NA
-    data_sheet_urls: list[str] | None = None
-    photo_urls: list[str] | None = None
+    material_photos: MaterialPhotoSchema | None = None
+    material_datasheets: MaterialDatasheetSchema | None = None
 
     class Config:
         orm_mode = True
