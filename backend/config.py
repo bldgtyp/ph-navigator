@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     # Encryption key for AirTable PAT Tokens
     # To generate a fresh key: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     FERNET_SECRET_KEY: str = "__fernet_key__"
+    GCP_BUCKET_NAME: str = "__gcp_bucket_name__"
 
     class Config:
         env_file = ".env"

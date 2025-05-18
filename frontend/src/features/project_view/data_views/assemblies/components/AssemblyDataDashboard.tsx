@@ -7,7 +7,7 @@ import { Box } from "@mui/material";
 
 import { MaterialsProvider } from "../contexts/MaterialsContext";
 
-import MaterialsDataGrid from "./pages/MaterialLayers.DataGrid";
+import MaterialsPage from "./materials/Page";
 import AssembliesPage from "./assemblies/Page";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
@@ -34,7 +34,7 @@ const AssemblyDataDashboard: React.FC = () => {
 
                 <DataViewPage>
                     <ContentBlock>
-                        {activeTab === 0 && <MaterialsDataGrid />}
+                        {activeTab === 0 && <MaterialsPage />}
                         {activeTab === 1 && <AssembliesPage />}
                     </ContentBlock>
                 </DataViewPage>

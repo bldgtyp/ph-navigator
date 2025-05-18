@@ -1,8 +1,9 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
 from typing import TYPE_CHECKING
+from enum import Enum
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Enum as SqlEnum
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
@@ -11,6 +12,13 @@ from db_entities.assembly.material import Material
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.assembly.layer import Layer
+
+
+class SpecificationStatus(str, Enum):
+    COMPLETE = "complete"
+    MISSING = "missing"
+    QUESTION = "question"
+    NA = "na"
 
 
 class Segment(Base):
@@ -26,7 +34,19 @@ class Segment(Base):
     )
     is_continuous_insulation: Mapped[bool] = MappedColumn(
         Boolean, nullable=False, default=False
-    )  # for Steel Stud walls
+    )  # for Steel Stud wall assemblies
+
+    specification_status: Mapped[SpecificationStatus] = MappedColumn(
+        SqlEnum(SpecificationStatus, name="specification_status_enum"),
+        nullable=False,
+        default=SpecificationStatus.NA,
+    )
+    data_sheet_urls: Mapped[list[str]] = MappedColumn(
+        String, nullable=True, default=None
+    )
+    photo_urls: Mapped[list[str]] = MappedColumn(
+        String, nullable=True, default=None
+    ) 
 
     # Relationships
     layer: Mapped["Layer"] = relationship("Layer", back_populates="segments")

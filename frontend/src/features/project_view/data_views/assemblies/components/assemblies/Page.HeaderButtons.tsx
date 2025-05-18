@@ -1,17 +1,15 @@
 import { Button } from "@mui/material";
 
 interface HeaderButtonProps {
-    key: string;
     text: string;
     handler: () => Promise<void>;
     loading?: boolean;
 }
 
-const HeaderButton: React.FC<HeaderButtonProps> = ({ key, text, handler, loading }) => {
+const HeaderButton: React.FC<HeaderButtonProps> = ({ text, handler, loading }) => {
 
     return (
         <Button
-            key={key}
             className="header-button"
             variant="outlined"
             color="inherit"

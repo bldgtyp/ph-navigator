@@ -3,7 +3,7 @@ import { postWithAlert } from "../../../../../../api/postWithAlert";
 import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
 
 import { LayerType } from '../../types/Layer';
-import { SegmentType } from "../../types/Segment";
+import { SegmentType, SpecificationStatus } from "../../types/Segment";
 
 
 export const handleAddSegmentToRight = async (
@@ -37,6 +37,9 @@ export const handleAddSegmentToRight = async (
                 order: orderPosition,
                 steel_stud_spacing_mm: null,
                 is_continuous_insulation: false,
+                specification_status: SpecificationStatus.NA,
+                data_sheet_urls: [],
+                photo_urls: [],
             };
 
             // Update the segments array to reflect the insertion

@@ -1,0 +1,29 @@
+.have-specification {
+    font-size: 0.6em;
+    font-weight: 700;
+    min-width: 100px;
+    min-height: 20px;
+    max-height: 20px;
+    text-align: center;
+    align-content: center;
+    align-self: center;
+    border-radius: 999px;
+}
+
+.have-specification-complete {
+    background-color: rgb(147, 222, 147);
+}
+
+.have-specification-missing {
+    color: white;
+    background-color: red;
+}
+
+.have-specification-question {
+    color: white;
+    background-color: orange;
+}
+
+.have-specification-na {
+    background-color: rgb(203, 202, 202);
+}

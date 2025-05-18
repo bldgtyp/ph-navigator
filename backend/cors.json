@@ -1,0 +1,19 @@
+[
+    {
+        "origin": [
+            "http://localhost:3000",
+            "https://ph-dash-frontend.onrender.com"
+        ],
+        "responseHeader": [
+            "Content-Type",
+            "x-goog-resumable"
+        ],
+        "method": [
+            "PUT",
+            "POST",
+            "GET",
+            "HEAD"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]

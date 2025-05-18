@@ -2,6 +2,7 @@ alembic
 bcrypt
 cryptography
 fastapi
+google-cloud-storage
 honeybee-ph
 passlib
 PHX

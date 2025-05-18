@@ -73,7 +73,7 @@ async def get_assemblies(
     logger.info(f"get_assemblies(bt_number={bt_number})")
     assemblies = (
         db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-    )
+    ) 
     return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 
 
