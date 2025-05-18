@@ -24,8 +24,8 @@ class SteelStudAssemblyLayers:
     """Class to organize the layers of a Steel Stud Assembly HBE-Material Layers."""
 
     STUD_FLANGE_WIDTH_INCH = 1.625
-    R_SE = 0.17 # hr-ft2-F/Btu
-    R_SI = 0.68 # hr-ft2-F/Btu
+    R_SE = 0.17  # hr-ft2-F/Btu
+    R_SI = 0.68  # hr-ft2-F/Btu
 
     def __init__(self, stud_cavity_layer: EnergyMaterial) -> None:
         self.stud_cavity_layer = stud_cavity_layer
@@ -36,7 +36,9 @@ class SteelStudAssemblyLayers:
 
     def __str__(self) -> str:
         def layer_view(layer: EnergyMaterial, r_value: float):
-            return f"Layer: {layer.display_name} | {layer.thickness}-m | R-{r_value:.2f}"
+            return (
+                f"Layer: {layer.display_name} | {layer.thickness}-m | R-{r_value:.2f}"
+            )
 
         msg = " -" * 25 + "\n"
         msg += "SteelStudAssemblyLayers()\n"
@@ -51,7 +53,9 @@ class SteelStudAssemblyLayers:
             msg += layer_view(layer, self.r_IP_value_ext_sheathing)
         msg += "- stud_cavity Layer:\n"
         if self.stud_cavity_layer:
-            msg += layer_view(self.stud_cavity_layer, self.r_IP_value_stud_cavity_insulation)
+            msg += layer_view(
+                self.stud_cavity_layer, self.r_IP_value_stud_cavity_insulation
+            )
         else:
             msg += "  None\n"
         msg += "- int_sheathing Layers:\n"

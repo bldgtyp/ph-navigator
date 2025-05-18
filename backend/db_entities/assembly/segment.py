@@ -3,11 +3,21 @@
 from typing import TYPE_CHECKING
 from enum import Enum
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Enum as SqlEnum
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
 from db_entities.assembly.material import Material
+from db_entities.assembly.material_photo import MaterialPhoto
+from db_entities.assembly.material_datasheet import MaterialDatasheet
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -41,14 +51,14 @@ class Segment(Base):
         nullable=False,
         default=SpecificationStatus.NA,
     )
-    data_sheet_urls: Mapped[list[str]] = MappedColumn(
-        String, nullable=True, default=None
-    )
-    photo_urls: Mapped[list[str]] = MappedColumn(
-        String, nullable=True, default=None
-    ) 
 
     # Relationships
+    material_photos: Mapped["MaterialPhoto"] = relationship(
+        "MaterialPhoto", back_populates="segment", cascade="all, delete-orphan"
+    )
+    material_datasheets: Mapped["MaterialDatasheet"] = relationship(
+        "MaterialDatasheet", back_populates="segment", cascade="all, delete-orphan"
+    )
     layer: Mapped["Layer"] = relationship("Layer", back_populates="segments")
     material: Mapped[Material] = relationship("Material", back_populates="segments")
 

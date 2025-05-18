@@ -7,6 +7,7 @@ from pydantic import BaseModel, root_validator
 from features.assembly.schemas.material import MaterialSchema
 from db_entities.assembly.segment import SpecificationStatus
 
+
 class AssemblyLayerSegmentSchema(BaseModel):
     id: int
     layer_id: int

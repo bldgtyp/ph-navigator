@@ -1,14 +1,36 @@
 import React, { useState } from "react";
 import { Box, Modal } from "@mui/material";
-import { uploadImageFile } from "../../../../../../api/uploadImageFiles";
+import { uploadImageFiles } from "../../../../../../api/uploadImageFiles";
 import { useParams } from "react-router-dom";
 
 interface PhotosProps {
     photo_urls: string[];
+    segmentId: number;
+    materialName: string;
     onUploadComplete?: (urls: string[]) => void;
 }
 
-const Photos: React.FC<PhotosProps> = ({ photo_urls, onUploadComplete }) => {
+const cleanFilenames = (materialName: string, files: FileList): FileList => {
+    // Remove whitespace, commas, and other illegal filename characters
+    const sanitize = (name: string) =>
+        name
+            .replace(/[/\\?%*:|"<>.,\s]+/g, "_") // replace illegal chars and whitespace with underscore
+            .replace(/_+/g, "_") // collapse multiple underscores
+            .replace(/^_+|_+$/g, ""); // trim leading/trailing underscores
+
+    const cleanedFiles = Array.from(files).map((file) => {
+        const baseName = sanitize(materialName);
+        const originalName = sanitize(file.name);
+        const newName = `${baseName}_${originalName}`;
+        return new File([file], newName, { type: file.type });
+    });
+
+    const dataTransfer = new DataTransfer();
+    cleanedFiles.forEach(file => dataTransfer.items.add(file));
+    return dataTransfer.files;
+};
+
+const SegmentPhotos: React.FC<PhotosProps> = (props) => {
     const { projectId } = useParams();
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -24,12 +46,19 @@ const Photos: React.FC<PhotosProps> = ({ photo_urls, onUploadComplete }) => {
         setIsDragOver(false);
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent, materialName: string) => {
         e.preventDefault();
         setIsDragOver(false);
         const files = e.dataTransfer.files;
-        console.log("Dropped file:", files[0]);
-        uploadImageFile(projectId, files[0])
+        const filesWithCleanNames = cleanFilenames(materialName, files);
+        console.log("Dropped file:", filesWithCleanNames);
+        const results = await uploadImageFiles(
+            projectId,
+            props.segmentId,
+            filesWithCleanNames
+        )
+        console.log("Upload results:", results);
+
     };
 
     return (
@@ -48,12 +77,12 @@ const Photos: React.FC<PhotosProps> = ({ photo_urls, onUploadComplete }) => {
             }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            onDrop={(e) => handleDrop(e, props.materialName)}
         >
 
             {/* Thumbnails */}
-            {photo_urls.length === 0 && <span style={{ color: "#888" }}>No photos</span>}
-            {photo_urls.map((url, idx) => (
+            {props.photo_urls.length === 0 && <span style={{ color: "#888" }}>No photos</span>}
+            {props.photo_urls.map((url, idx) => (
                 <img
                     key={idx}
                     src={url}
@@ -97,4 +126,4 @@ const Photos: React.FC<PhotosProps> = ({ photo_urls, onUploadComplete }) => {
     );
 };
 
-export default Photos;
+export default SegmentPhotos;

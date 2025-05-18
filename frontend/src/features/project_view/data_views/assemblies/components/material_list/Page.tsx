@@ -14,11 +14,11 @@ import LoadingModal from "../../../shared/components/LoadingModal";
 import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 
 import { AssemblyType } from "../../types/Assembly";
-import { LayerType } from "../../types/Layer";
 import { SegmentType } from "../../types/Segment";
-import Photos from "./Photos";
+import SegmentPhotos from "./SegmentPhotos";
 
-const AssemblyLayerSegment: React.FC<{ layer: LayerType, segment: SegmentType }> = (props) => {
+
+const LayerSegment: React.FC<{ segment: SegmentType }> = (props) => {
     const userContext = useContext(UserContext);
 
     return (
@@ -34,20 +34,24 @@ const AssemblyLayerSegment: React.FC<{ layer: LayerType, segment: SegmentType }>
                     {/* {props.segment.data_sheet_urls} */}
                     Datasheet
                 </Box>
-                <Photos photo_urls={[]} />
+                <SegmentPhotos
+                    photo_urls={[]}
+                    segmentId={props.segment.id}
+                    materialName={props.segment.material.name}
+                />
             </Stack>
         ) : null
     );
 }
 
 
-const AssemblyMaterialContainer: React.FC<{ assembly: AssemblyType }> = (props) => {
+const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = (props) => {
     return (
         <Box className="assembly-material-list-container">
             <h4 className="assembly-title">Assembly: {props.assembly.id}</h4>
             {props.assembly.layers.map((layer) =>
                 layer.segments.map((segment) => (
-                    <AssemblyLayerSegment key={segment.id} layer={layer} segment={segment} />
+                    <LayerSegment key={segment.id} segment={segment} />
                 ))
             )}
         </Box>
@@ -55,7 +59,7 @@ const AssemblyMaterialContainer: React.FC<{ assembly: AssemblyType }> = (props) 
 }
 
 
-const MaterialsPage: React.FC = () => {
+const MaterialListPage: React.FC = () => {
     const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const { isLoadingMaterials, setMaterials } = useMaterials();
@@ -94,11 +98,11 @@ const MaterialsPage: React.FC = () => {
             />
             <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
             {assemblies.map((assembly) => (
-                <AssemblyMaterialContainer key={assembly.id} assembly={assembly} />
+                <MaterialListContainer key={assembly.id} assembly={assembly} />
             ))}
 
         </>
     )
 }
 
-export default MaterialsPage;
+export default MaterialListPage;
