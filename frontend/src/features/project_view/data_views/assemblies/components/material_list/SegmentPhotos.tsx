@@ -20,8 +20,14 @@ const cleanFilenames = (materialName: string, files: FileList): FileList => {
 
     const cleanedFiles = Array.from(files).map((file) => {
         const baseName = sanitize(materialName);
-        const originalName = sanitize(file.name);
-        const newName = `${baseName}_${originalName}`;
+
+        // Split filename into name and extension
+        const match = file.name.match(/^(.*?)(\.[^.]*$|$)/);
+        const originalBase = match ? match[1] : file.name;
+        const ext = match ? match[2] : "";
+
+        const sanitizedBase = sanitize(originalBase);
+        const newName = `${baseName}_${sanitizedBase}${ext}`;
         return new File([file], newName, { type: file.type });
     });
 
@@ -35,7 +41,6 @@ const SegmentPhotos: React.FC<PhotosProps> = (props) => {
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
 
-    // Drag-and-drop handlers
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(true);
@@ -49,16 +54,10 @@ const SegmentPhotos: React.FC<PhotosProps> = (props) => {
     const handleDrop = async (e: React.DragEvent, materialName: string) => {
         e.preventDefault();
         setIsDragOver(false);
+
         const files = e.dataTransfer.files;
         const filesWithCleanNames = cleanFilenames(materialName, files);
-        console.log("Dropped file:", filesWithCleanNames);
-        const results = await uploadImageFiles(
-            projectId,
-            props.segmentId,
-            filesWithCleanNames
-        )
-        console.log("Upload results:", results);
-
+        uploadImageFiles(projectId, props.segmentId, filesWithCleanNames);
     };
 
     return (

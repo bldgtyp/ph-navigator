@@ -7,5 +7,6 @@ from fastapi import Form
 
 from pydantic import BaseModel
 
+
 class SegmentPhotoUploadResponse(BaseModel):
     public_url: str

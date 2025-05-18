@@ -6,6 +6,7 @@ google-cloud-storage
 honeybee-ph
 passlib
 PHX
+pillow
 psycopg2-binary
 pyairtable
 pyjwt

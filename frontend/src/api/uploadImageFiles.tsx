@@ -7,7 +7,7 @@ export async function uploadImageFiles<T>(
 ): Promise<(T | null)[]> {
     const token = localStorage.getItem("token");
     const API_BASE_URL: string = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
-    const API_ENDPOINT: string = `${API_BASE_URL}gcp/upload-segment-photo/${projectId}`;
+    const API_ENDPOINT: string = `${API_BASE_URL}gcp/add-new-segment-photo/${projectId}`;
 
     const results: (T | null)[] = [];
 
