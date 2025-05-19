@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Box, Tooltip } from "@mui/material";
 import { useParams } from "react-router-dom";
 
@@ -9,6 +9,7 @@ import { SegmentType } from "../../types/Segment";
 import { MaterialDatasheetType, MaterialDatasheetsType } from "../../types/Material.Datasheet";
 import ImageFullViewModal from "./Image.FullViewModal";
 import ImageThumbnail from "./Image.Thumbnail";
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 
 interface DatasheetsProps {
@@ -19,6 +20,7 @@ interface DatasheetsProps {
 
 
 const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
+    const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const [isDragOver, setIsDragOver] = useState(false);
     const [datasheets, setDatasheets] = useState<MaterialDatasheetType[]>([]);
@@ -53,6 +55,10 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(false);
+        if (!userContext.user) {
+            alert("Please log in to upload files.");
+            return null;
+        }
 
         const files = e.dataTransfer.files;
         const response = await uploadDatasheetFiles<MaterialDatasheetType>(projectId, props.segment.id, files);

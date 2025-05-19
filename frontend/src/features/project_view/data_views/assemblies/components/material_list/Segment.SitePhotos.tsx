@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Box, Tooltip } from "@mui/material";
 import { useParams } from "react-router-dom";
 
@@ -9,6 +9,7 @@ import { SegmentType } from "../../types/Segment";
 import { SitePhotoType, SitePhotosType } from "../../types/Material.Images";
 import ImageFullViewModal from "./Image.FullViewModal";
 import ImageThumbnail from "./Image.Thumbnail";
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 
 
@@ -20,6 +21,7 @@ interface SegmentSitePhotosProps {
 
 
 const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
+    const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const [isDragOver, setIsDragOver] = useState(false);
     const [sitePhotos, setSitePhotos] = useState<SitePhotoType[]>([]);
@@ -54,6 +56,11 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(false);
+
+        if (!userContext.user) {
+            alert("Please log in to upload files.");
+            return null;
+        }
 
         const files = e.dataTransfer.files;
         const response = await uploadSitePhotoFiles<SitePhotoType>(projectId, props.segment.id, files);
