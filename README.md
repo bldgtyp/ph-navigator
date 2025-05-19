@@ -2,7 +2,7 @@
 
 ## TODO:
 
-### Data View:
+## Data View:
 #### Project Browser
 - [x] Add Config / Projects Button to Browser
 - [x] Add New Project
@@ -11,7 +11,7 @@
 - [x] Figure out API-Key strategy
 - [ ] Cancel / Save buttons on Project Config form don't work
 
-#### Assemblies (IO):
+#### (IO):
 - [ ] Serialize (download)
 - [ ] De-Serialize (upload)
 - [ ] Consider limiter (slowAPI) for all endpoints?
@@ -19,7 +19,7 @@
 - [ ] Handle and Store Material Submittals
 - [ ] Setup Database migration tooling
 
-### Material List:
+## Material List:
 - [x] Materials DataGrid page gets data from Constructions (not AirTable)
 - [ ] add .pdf, .jpg, .png validation to upload
 - [ ] resize .png for full-size (make smaller)
@@ -29,7 +29,7 @@
 - [ ] Add Comments / Notes
 - [ ] Add download as HBJSON button
 
-#### Assemblies (UI):
+## Assemblies (UI):
 - [x] Material Color
 - [x] Filtered by Project
 - [x] Add New
@@ -59,7 +59,7 @@
 - [ ] When getting materials from new DB, Add thickness to material name (avoid HB Model conflicts)
 
 
-### 3D Model:
+## 3D Model:
 #### Get Geometry:
 - [ ] Thermal Bridge Edges
 - [ ] Winter / Summer Window Radiation Grid and Legend
