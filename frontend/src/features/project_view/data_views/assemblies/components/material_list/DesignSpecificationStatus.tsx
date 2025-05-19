@@ -48,10 +48,9 @@ const DesignSpecificationStatus: React.FC<{ segment: SegmentType }> = (props) =>
             <Select
                 className={`row-item specification-dropdown have-specification-${status}`}
                 value={status}
-                onChange={handleChange}
+                onChange={userContext.user ? handleChange : () => { alert("Please log in to update the status.") }}
                 size="small"
                 sx={{ minWidth: 200, fontSize: "0.7rem" }}
-                disabled={!userContext.user}
             >
                 {Object.values(SpecificationStatus).map((value) => (
                     <MenuItem

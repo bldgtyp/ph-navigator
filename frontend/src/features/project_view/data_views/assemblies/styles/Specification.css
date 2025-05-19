@@ -3,7 +3,7 @@
 }
 
 .have-specification-missing {
-    color: white;
+    color: var(--missing-strong) !important;
     background-color: var(--missing-weak);
     border: 1px solid var(--missing-strong);
 }
