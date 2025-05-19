@@ -2,13 +2,14 @@
 
 ## TODO:
 
+### Data View:
 #### Project Browser
 - [x] Add Config / Projects Button to Browser
 - [x] Add New Project
 - [x] Set Project AirTable Refs
 - [ ] Delete Project
 - [x] Figure out API-Key strategy
-- [ ] Cancel / Save buttons on Project Config form
+- [ ] Cancel / Save buttons on Project Config form don't work
 
 #### Assemblies (IO):
 - [ ] Serialize (download)
@@ -17,6 +18,16 @@
 - [ ] Upload corresponding Flixo PDF (link)
 - [ ] Handle and Store Material Submittals
 - [ ] Setup Database migration tooling
+
+### Material List:
+- [x] Materials DataGrid page gets data from Constructions (not AirTable)
+- [ ] add .pdf, .jpg, .png validation to upload
+- [ ] resize .png for full-size (make smaller)
+- [ ] handle Upload PDFs?
+- [ ] Add delete Datasheet / Photo
+- [ ] Add image carousel / scroll
+- [ ] Add Comments / Notes
+- [ ] Add download as HBJSON button
 
 #### Assemblies (UI):
 - [x] Material Color
@@ -43,10 +54,12 @@
 - [ ] Air-Cavity (automatic-thickness detection)
 - [x] Steel-Stud-Cavity checkbox
 - [x] Steel-Stud-Cavity (automatic-thickness detection)
-- [ ] Materials DataGrid page gets data from Constructions (not AirTable)
-- [ ] Add thickness to material name (HB Model conflicts)
+
+#### Honeybee-PH Tools:
+- [ ] When getting materials from new DB, Add thickness to material name (avoid HB Model conflicts)
 
 
+### 3D Model:
 #### Get Geometry:
 - [ ] Thermal Bridge Edges
 - [ ] Winter / Summer Window Radiation Grid and Legend
