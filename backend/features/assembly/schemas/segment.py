@@ -22,6 +22,7 @@ class AssemblyLayerSegmentSchema(BaseModel):
     specification_status: SpecificationStatus = SpecificationStatus.NA
     material_photos: MaterialPhotoSchema | None = None
     material_datasheets: MaterialDatasheetSchema | None = None
+    notes: str | None = None
 
     class Config:
         orm_mode = True
@@ -73,3 +74,6 @@ class UpdateSegmentIsContinuousInsulationRequest(BaseModel):
 
 class UpdateSegmentSpecificationStatusRequest(BaseModel):
     specification_status: SpecificationStatus
+
+class UpdateSegmentNotesRequest(BaseModel):
+    notes: str | None = None

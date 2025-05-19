@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy import Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
@@ -39,11 +39,13 @@ class Segment(Base):
     is_continuous_insulation: Mapped[bool] = MappedColumn(
         Boolean, nullable=False, default=False
     )  # for Steel Stud wall assemblies
-
     specification_status: Mapped[SpecificationStatus] = MappedColumn(
         SqlEnum(SpecificationStatus, name="specification_status_enum"),
         nullable=False,
         default=SpecificationStatus.NA,
+    )
+    notes: Mapped[str | None] = MappedColumn(
+        Text, nullable=True, default=None
     )
 
     # Relationships

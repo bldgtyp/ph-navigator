@@ -16,6 +16,7 @@ from features.assembly.schemas.segment import (
     UpdateSegmentSpecificationStatusRequest,
     UpdateSegmentSteelStudSpacingRequest,
     UpdateSegmentWidthRequest,
+    UpdateSegmentNotesRequest,
 )
 
 router = APIRouter(
@@ -241,6 +242,36 @@ async def update_segment_specification_status(
     return JSONResponse(
         content={
             "message": f"Segment {segment_id} updated with new specification status {request.specification_status}."
+        },
+        status_code=200,
+    )
+
+
+@router.patch("/update-segment-notes/{segment_id}")
+async def update_segment_notes(
+    segment_id: int,
+    request: UpdateSegmentNotesRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Update the notes of a Layer Segment."""
+    logger.info(f"update_segment_notes(segment_id={segment_id}, notes={str(request.notes)[0:10]})...")
+
+    # Get the right segment from the database
+    segment = db.query(Segment).filter_by(id=segment_id).first()
+    if not segment:
+        return JSONResponse(
+            content={"message": f"Segment with ID {segment_id} not found."},
+            status_code=404,
+        )
+
+    # Update the segment's notes
+    segment.notes = request.notes
+    db.commit()
+    db.refresh(segment)
+
+    return JSONResponse(
+        content={
+            "message": f"Segment {segment_id} updated with new notes: {str(request.notes)[0:10]})..."
         },
         status_code=200,
     )

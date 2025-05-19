@@ -222,11 +222,13 @@ def add_dummy_assembly(db: Session) -> None:
     segment_1 = Segment(width_mm=200, material=mat_1)
     segment_1.specification_status = SpecificationStatus.COMPLETE
     segment_1.steel_stud_spacing_mm = 200
+    segment_1.notes = "A test note"
     layer_1.segments.append(segment_1)
 
     mat_2 = Material.get_by_name(db, "Test Material 2")
     segment_2 = Segment(width_mm=100, material=mat_2)
     segment_2.specification_status = SpecificationStatus.MISSING
+    segment_2.notes = "Another test note"
     layer_1.segments.append(segment_2)
 
     mat_3 = Material.get_by_name(db, "Test Material 3")

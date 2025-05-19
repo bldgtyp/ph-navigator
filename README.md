@@ -1,6 +1,5 @@
 # PH-Dashboard
 
-## TODO:
 
 ## Data View:
 #### Project Browser
