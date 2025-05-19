@@ -25,7 +25,7 @@
 - [ ] handle Upload PDFs?
 - [ ] Add delete Datasheet / Photo
 - [ ] Add image carousel / scroll
-- [ ] Add Comments / Notes
+- [x] Add Comments / Notes
 - [ ] Add download as HBJSON button
 - [ ] Show only one item for each Material in the Layer (when multiple segments with same material)
 - [ ] Add Loading state to file uploads
