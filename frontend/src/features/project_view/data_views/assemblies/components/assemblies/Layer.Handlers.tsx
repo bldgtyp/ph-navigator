@@ -40,6 +40,7 @@ export const handleAddSegmentToRight = async (
                 specification_status: SpecificationStatus.NA,
                 material_photos: [],
                 material_datasheets: [],
+                notes: null,
             };
 
             // Update the segments array to reflect the insertion

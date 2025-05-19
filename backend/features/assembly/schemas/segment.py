@@ -75,5 +75,7 @@ class UpdateSegmentIsContinuousInsulationRequest(BaseModel):
 class UpdateSegmentSpecificationStatusRequest(BaseModel):
     specification_status: SpecificationStatus
 
+
 class UpdateSegmentNotesRequest(BaseModel):
     notes: str | None = None
+

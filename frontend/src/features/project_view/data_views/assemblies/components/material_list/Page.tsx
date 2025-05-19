@@ -1,12 +1,11 @@
 import "../../styles/Specification.css";
 import "../../styles/MaterialsList.css";
 
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box, Stack } from "@mui/material";
+import { Box } from "@mui/material";
 
 import { useMaterials } from "../../contexts/MaterialsContext";
-import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 import { getWithAlert } from "../../../../../../api/getWithAlert";
 
@@ -14,26 +13,7 @@ import LoadingModal from "../../../shared/components/LoadingModal";
 import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 
 import { AssemblyType } from "../../types/Assembly";
-import { SegmentType } from "../../types/Segment";
-import SegmentSitePhotos from "./SegmentSitePhotos";
-import SegmentDatasheets from "./SegmentDatasheets";
-import DesignSpecificationStatus from "./DesignSpecificationStatus";
-
-
-const MaterialListItem: React.FC<{ segment: SegmentType }> = (props) => {
-    const userContext = useContext(UserContext);
-
-    return (
-        userContext.user || props.segment.specification_status !== "na" ? (
-            <Stack className="material-row" direction="row" spacing={2} sx={{ padding: 1 }}>
-                <Box className="row-item material-name" sx={{ flex: 1 }}>{props.segment.material.name}</Box>
-                <DesignSpecificationStatus segment={props.segment} />
-                <SegmentDatasheets segment={props.segment} materialName={props.segment.material.name} />
-                <SegmentSitePhotos segment={props.segment} materialName={props.segment.material.name} />
-            </Stack>
-        ) : null
-    );
-}
+import MaterialListItem from "./ListItem";
 
 
 const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = (props) => {

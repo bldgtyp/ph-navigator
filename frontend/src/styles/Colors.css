@@ -15,6 +15,9 @@
     --highlight-light-color: #f9e9f4;
 
     /* Specs */
+    /* --complete: #beebbe; */
     --missing-strong: #b2087c;
     --missing-weak: #f9e9f4;
+    --question: #ffda95;
+    --question-stroke: #e9a422;
 }

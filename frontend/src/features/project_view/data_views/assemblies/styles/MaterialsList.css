@@ -21,6 +21,10 @@
     align-content: center;
 }
 
+.specification-dropdown {
+    min-height: 40px;
+}
+
 .thumbnail-container {
     display: flex;
     flex: 1;
@@ -29,14 +33,23 @@
     text-align: center;
     gap: 5px;
     border-radius: 5px;
-    padding: 4px;
-    min-height: 30px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 4px;
+    padding-right: 4px;
+    min-height: 40px;
+    max-height: 40px;
     font-size: 0.70em;
 }
 
 .thumbnail {
     border: 2px solid #e0e0e0;
     border-radius: 5px;
+    height: 90%;
+    overflow: hidden;
+    /* object-fit: cover; */
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .full-image-modal {

@@ -1,5 +1,5 @@
 .have-specification-complete {
-    background-color: rgb(190, 235, 190);
+    background-color: var(--complete);
 }
 
 .have-specification-missing {
@@ -10,7 +10,7 @@
 
 .have-specification-question {
     color: white;
-    background-color: rgb(249, 195, 96);
+    background-color: var(--question);
 }
 
 .have-specification-na {

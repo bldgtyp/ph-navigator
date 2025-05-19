@@ -17,7 +17,6 @@ const ImageThumbnail = <T extends { thumbnail_url: string }>(props: ThumbnailPro
             className="thumbnail"
             src={props.image.thumbnail_url}
             alt={`Photo ${props.idx + 1}`}
-            style={{ width: 38, height: 38, objectFit: "cover", borderRadius: 4, cursor: "pointer" }}
             onClick={() => props.setSelectedImage(props.image)}
         />)
 }

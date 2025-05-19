@@ -56,6 +56,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         "setCurrentWidth": setCurrentWidth,
         "newWidthMM": newWidthMM,
         "setNewWidth": setNewWidth,
+        // 
         "handleMouseEnter": handleMouseEnter,
         "handleMouseLeave": handleMouseLeave,
         "handleMouseClick": handleMouseClick,

@@ -21,4 +21,5 @@ export interface SegmentType {
     specification_status: SpecificationStatus;
     material_photos: MaterialPhotoType[];
     material_datasheets: MaterialDatasheetsType[];
+    notes: string | null;
 }

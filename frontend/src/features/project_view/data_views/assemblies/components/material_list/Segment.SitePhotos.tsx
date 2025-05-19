@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { useParams } from "react-router-dom";
 
 import { uploadSitePhotoFiles } from "../../../../../../api/uploadSitePhotoFiles";
@@ -62,27 +62,34 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
         setSitePhotos((prev) => [...prev, ...newPhotoUrls]);
     };
 
+    const handleSetSelectedImage = (item: SitePhotoType | null) => {
+        setSelectedSitePhoto(item);
+        setIsDragOver(false);
+    }
+
     return (
-        <Box
-            id="site-photo-urls"
-            className="row-item thumbnail-container"
-            sx={{
-                border: isDragOver ? "1px dashed #1976d2" : `1px solid ${sitePhotos.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
-                background: isDragOver ? "#e3f2fd" : "white",
-            }}
-            onMouseOver={() => setIsDragOver(true)}
-            onMouseOut={() => setIsDragOver(false)}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
+        <Tooltip title="Site-Photos" placement="top" arrow>
+            <Box
+                id="site-photo-urls"
+                className="row-item thumbnail-container"
+                sx={{
+                    border: isDragOver ? "1px dashed #1976d2" : `1px solid ${sitePhotos.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
+                    background: isDragOver ? "#e3f2fd" : `${sitePhotos.length > 0 ? 'white' : 'var(--missing-weak)'}`,
+                }}
+                onMouseOver={() => setIsDragOver(true)}
+                onMouseOut={() => setIsDragOver(false)}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
 
-            {/* Thumbnails */}
-            {sitePhotos.length === 0 && <span style={{ color: "var(--missing-strong)" }}>Site Photo Needed</span>}
-            {sitePhotos.map((photo, idx) => <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={setSelectedSitePhoto} />)}
+                {/* Thumbnails */}
+                {sitePhotos.length === 0 && <span style={{ color: "var(--missing-strong)" }}>Site Photo Needed</span>}
+                {sitePhotos.map((photo, idx) => <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedImage} />)}
 
-            <ImageFullViewModal selectedItem={selectedSitePhoto} setSelectedItem={setSelectedSitePhoto} />
-        </Box>
+                <ImageFullViewModal selectedItem={selectedSitePhoto} setSelectedItem={handleSetSelectedImage} />
+            </Box>
+        </Tooltip>
     );
 };
 

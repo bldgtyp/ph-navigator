@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { useParams } from "react-router-dom";
 
 import { uploadDatasheetFiles } from "../../../../../../api/uploadDatasheetFiles";
@@ -61,27 +61,34 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
         setDatasheets((prev) => [...prev, ...newPhotoUrls]);
     };
 
+    const handleSetSelectedDatasheet = (item: MaterialDatasheetType | null) => {
+        setSelectedDatasheet(item);
+        setIsDragOver(false);
+    }
+
     return (
-        <Box
-            id="datasheet-urls"
-            className="row-item thumbnail-container"
-            sx={{
-                border: isDragOver ? "1px dashed #1976d2" : `1px solid ${datasheets.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
-                background: isDragOver ? "#e3f2fd" : "white",
-            }}
-            onMouseOver={() => setIsDragOver(true)}
-            onMouseOut={() => setIsDragOver(false)}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
+        <Tooltip title="Datasheets" placement="top" arrow>
+            <Box
+                id="datasheet-urls"
+                className="row-item thumbnail-container"
+                sx={{
+                    border: isDragOver ? "1px dashed #1976d2" : `1px solid ${datasheets.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
+                    background: isDragOver ? "#e3f2fd" : `${datasheets.length > 0 ? 'white' : 'var(--missing-weak)'}`,
+                }}
+                onMouseOver={() => setIsDragOver(true)}
+                onMouseOut={() => setIsDragOver(false)}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
 
-            {/* Thumbnails */}
-            {datasheets.length === 0 && <span style={{ color: "var(--missing-strong)" }}>Product Datasheet Needed</span>}
-            {datasheets.map((photo, idx) => <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={setSelectedDatasheet} />)}
+                {/* Thumbnails */}
+                {datasheets.length === 0 && <span style={{ color: "var(--missing-strong)" }}>Product Datasheet Needed</span>}
+                {datasheets.map((photo, idx) => <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedDatasheet} />)}
 
-            <ImageFullViewModal selectedItem={selectedDatasheet} setSelectedItem={setSelectedDatasheet} />
-        </Box>
+                <ImageFullViewModal selectedItem={selectedDatasheet} setSelectedItem={handleSetSelectedDatasheet} />
+            </Box>
+        </Tooltip>
     );
 };
 
