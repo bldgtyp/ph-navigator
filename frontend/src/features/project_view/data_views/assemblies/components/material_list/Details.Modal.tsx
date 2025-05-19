@@ -70,8 +70,6 @@ const OkCancelButtons: React.FC<OkCancelButtonsProps> = (props) => {
 }
 
 const DetailsModal: React.FC<DetailsModalProps> = (props) => {
-
-
     return (
         <Dialog open={props.isModalOpen} onClose={props.handleModalClose} fullWidth maxWidth="sm">
             <DialogTitle>{props.segment.material.name}</DialogTitle>
