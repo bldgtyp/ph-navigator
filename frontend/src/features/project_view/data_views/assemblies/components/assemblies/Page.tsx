@@ -169,7 +169,7 @@ const AssembliesPage: React.FC = () => {
       <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
 
       <ContentBlockHeader
-        text={`Assembly Details: [ ${selectedAssembly?.name || ""} ]`}
+        text={`Assembly Details [ ${selectedAssembly?.name || ""} ]`}
         buttons={userContext.user ? headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials, isRefreshing) : []}
       />
 

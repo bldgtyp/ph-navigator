@@ -2,8 +2,9 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
+
 from database import Base
 
 if TYPE_CHECKING:
@@ -14,12 +15,12 @@ if TYPE_CHECKING:
 class MaterialPhoto(Base):
     __tablename__ = "material_photos"
 
-    id = Column(Integer, primary_key=True)
-    segment_id = Column(
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True)
+    segment_id: Mapped[int] = MappedColumn(
         Integer, ForeignKey("assembly_layer_segments.id"), nullable=False
     )
-    full_size_url = Column(String, nullable=False)
-    thumbnail_url = Column(String, nullable=False)
+    full_size_url: Mapped[str] = MappedColumn(String, nullable=False)
+    thumbnail_url: Mapped[str] = MappedColumn(String, nullable=False)
 
     # Relationships
     segment: Mapped["Segment"] = relationship(

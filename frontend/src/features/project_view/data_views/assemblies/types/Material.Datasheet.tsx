@@ -4,3 +4,7 @@ export interface MaterialDatasheetType {
     full_size_url: string;
     thumbnail_url: string;
 }
+
+export interface MaterialDatasheetsType {
+    datasheet_urls: MaterialDatasheetType[];
+}

@@ -2,11 +2,15 @@
 
 from __future__ import annotations  # Enables forward references
 
-
-from fastapi import Form
-
 from pydantic import BaseModel
 
+from features.assembly.schemas.material_photo import MaterialPhotoSchema
+from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 
-class SegmentPhotoUploadResponse(BaseModel):
-    public_url: str
+
+class SegmentSitePhotoUrlsResponse(BaseModel):
+    photo_urls: list[MaterialPhotoSchema]
+
+
+class SegmentDatasheetUrlResponse(BaseModel):
+    datasheet_urls: list[MaterialDatasheetSchema]

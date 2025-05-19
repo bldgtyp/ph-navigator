@@ -1,23 +1,17 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-from typing import TYPE_CHECKING
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Enum as SqlEnum,
-)
+from sqlalchemy import Boolean, Column
+from sqlalchemy import Enum as SqlEnum
+from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
 from db_entities.assembly.material import Material
-from db_entities.assembly.material_photo import MaterialPhoto
 from db_entities.assembly.material_datasheet import MaterialDatasheet
+from db_entities.assembly.material_photo import MaterialPhoto
 
 if TYPE_CHECKING:
     # Backwards relationships only

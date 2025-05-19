@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, Float, String
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship, MappedColumn
 
 from database import Base, Session
 
@@ -16,14 +16,14 @@ class Material(Base):
     __tablename__ = "assembly_materials"
 
     # Use AirTable String for the primary key
-    id = Column(String, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    category = Column(String, nullable=False)
-    argb_color = Column(String)
-    conductivity_w_mk = Column(Float)
-    emissivity = Column(Float)
-    density_kg_m3 = Column(Float)
-    specific_heat_j_kgk = Column(Float)
+    id: Mapped[str] = MappedColumn(String, primary_key=True, index=True)
+    name: Mapped[str] = MappedColumn(String, nullable=False)
+    category: Mapped[str] = MappedColumn(String, nullable=False)
+    argb_color: Mapped[str] = MappedColumn(String)
+    conductivity_w_mk: Mapped[float] = MappedColumn(Float)
+    emissivity: Mapped[float] = MappedColumn(Float)
+    density_kg_m3: Mapped[float] = MappedColumn(Float)
+    specific_heat_j_kgk: Mapped[float] = MappedColumn(Float)
 
     segments: Mapped[list["Segment"]] = relationship(
         "Segment", back_populates="material"

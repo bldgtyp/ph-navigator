@@ -1,13 +1,13 @@
 import constants from "../data/constants.json";
 
-export async function uploadImageFiles<T>(
+export async function uploadDatasheetFiles<T>(
     projectId: string | undefined,
     segmentId: number,
     files: FileList,
 ): Promise<(T | null)[]> {
     const token = localStorage.getItem("token");
     const API_BASE_URL: string = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
-    const API_ENDPOINT: string = `${API_BASE_URL}gcp/add-new-segment-photo/${projectId}`;
+    const API_ENDPOINT: string = `${API_BASE_URL}gcp/add-new-segment-datasheet/${projectId}`;
 
     const results: (T | null)[] = [];
 

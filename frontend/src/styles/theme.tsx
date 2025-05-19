@@ -28,7 +28,12 @@ const theme = createTheme({
             fontSize: '1.25rem',
             fontWeight: 700,
             color: textPrimaryColor,
-        }
+        },
+        caption: {
+            fontSize: '0.65rem',
+            fontWeight: 300,
+            color: textSecondaryColor,
+        },
     },
     components: {
         MuiAppBar: {

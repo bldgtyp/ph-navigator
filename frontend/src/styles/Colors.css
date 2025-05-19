@@ -13,4 +13,8 @@
     --construction-layer-segment-hover-fill: #f9e9f4;
     --construction-layer-segment-hover-stroke: #b2087c;
     --highlight-light-color: #f9e9f4;
+
+    /* Specs */
+    --missing-strong: #b2087c;
+    --missing-weak: #f9e9f4;
 }

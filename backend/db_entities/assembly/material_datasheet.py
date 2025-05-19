@@ -1,18 +1,19 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import  ForeignKey, Integer, String
+from sqlalchemy.orm import relationship, Mapped, MappedColumn
+
 from database import Base
 
 
 class MaterialDatasheet(Base):
     __tablename__ = "material_datasheets"
 
-    id = Column(Integer, primary_key=True)
-    segment_id = Column(
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True)
+    segment_id: Mapped[int] = MappedColumn(
         Integer, ForeignKey("assembly_layer_segments.id"), nullable=False
     )
-    full_size_url = Column(String, nullable=False)
-    thumbnail_url = Column(String, nullable=False)
+    full_size_url: Mapped[str] = MappedColumn(String, nullable=False)
+    thumbnail_url: Mapped[str] = MappedColumn(String, nullable=False)
 
     segment = relationship("Segment", back_populates="material_datasheets")

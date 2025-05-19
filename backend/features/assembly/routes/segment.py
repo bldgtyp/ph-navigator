@@ -13,6 +13,7 @@ from features.assembly.schemas.segment import (
     CreateLayerSegmentRequest,
     UpdateSegmentIsContinuousInsulationRequest,
     UpdateSegmentMaterialRequest,
+    UpdateSegmentSpecificationStatusRequest,
     UpdateSegmentSteelStudSpacingRequest,
     UpdateSegmentWidthRequest,
 )
@@ -208,6 +209,38 @@ async def update_segment_continuous_insulation(
     return JSONResponse(
         content={
             "message": f"Segment {segment_id} updated with new continuous insulation flag {request.is_continuous_insulation}."
+        },
+        status_code=200,
+    )
+
+
+@router.patch("/update-segment-specification-status/{segment_id}")
+async def update_segment_specification_status(
+    segment_id: int,
+    request: UpdateSegmentSpecificationStatusRequest,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Update the specification status of a Layer Segment."""
+    logger.info(
+        f"update_segment_specification_status(segment_id={segment_id}, specification_status={request.specification_status})"
+    )
+
+    # Get the right segment from the database
+    segment = db.query(Segment).filter_by(id=segment_id).first()
+    if not segment:
+        return JSONResponse(
+            content={"message": f"Segment with ID {segment_id} not found."},
+            status_code=404,
+        )
+
+    # Update the segment's specification status
+    segment.specification_status = request.specification_status
+    db.commit()
+    db.refresh(segment)
+
+    return JSONResponse(
+        content={
+            "message": f"Segment {segment_id} updated with new specification status {request.specification_status}."
         },
         status_code=200,
     )

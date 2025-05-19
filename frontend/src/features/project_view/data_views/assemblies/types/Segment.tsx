@@ -1,6 +1,6 @@
 import { MaterialType } from "./Material";
-import { MaterialPhotoType } from "./MaterialPhoto";
-import { MaterialDatasheetType } from "./MaterialDatasheet";
+import { MaterialPhotoType } from "./Material.Photo";
+import { MaterialDatasheetsType } from "./Material.Datasheet";
 
 export enum SpecificationStatus {
     COMPLETE = "complete",
@@ -20,5 +20,5 @@ export interface SegmentType {
     is_continuous_insulation: boolean;
     specification_status: SpecificationStatus;
     material_photos: MaterialPhotoType[];
-    material_datasheets: MaterialDatasheetType[];
+    material_datasheets: MaterialDatasheetsType[];
 }

@@ -4,10 +4,10 @@ from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel, root_validator
 
-from features.assembly.schemas.material import MaterialSchema
-from features.assembly.schemas.material_photo import MaterialPhotoSchema
-from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from db_entities.assembly.segment import SpecificationStatus
+from features.assembly.schemas.material import MaterialSchema
+from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
+from features.assembly.schemas.material_photo import MaterialPhotoSchema
 
 
 class AssemblyLayerSegmentSchema(BaseModel):
@@ -69,3 +69,7 @@ class UpdateSegmentIsContinuousInsulationRequest(BaseModel):
         if not isinstance(is_continuous_insulation, bool):
             raise ValueError("is_continuous_insulation must be a boolean.")
         return values
+
+
+class UpdateSegmentSpecificationStatusRequest(BaseModel):
+    specification_status: SpecificationStatus

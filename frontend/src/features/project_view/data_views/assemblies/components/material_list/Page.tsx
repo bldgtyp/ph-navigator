@@ -1,5 +1,5 @@
 import "../../styles/Specification.css";
-import "../../styles/Materials.css";
+import "../../styles/MaterialsList.css";
 
 import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
@@ -15,28 +15,21 @@ import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
 
 import { AssemblyType } from "../../types/Assembly";
 import { SegmentType } from "../../types/Segment";
-import SegmentPhotos from "./SegmentPhotos";
+import SegmentSitePhotos from "./SegmentSitePhotos";
+import SegmentDatasheets from "./SegmentDatasheets";
+import DesignSpecificationStatus from "./DesignSpecificationStatus";
 
 
-const LayerSegment: React.FC<{ segment: SegmentType }> = (props) => {
+const MaterialListItem: React.FC<{ segment: SegmentType }> = (props) => {
     const userContext = useContext(UserContext);
 
     return (
         userContext.user || props.segment.specification_status !== "na" ? (
             <Stack className="material-row" direction="row" spacing={2} sx={{ padding: 1 }}>
-                <Box className="row-item material-name">
-                    {props.segment.material.name}
-                </Box>
-                <Box className={`row-item have-specification have-specification-${props.segment.specification_status}`}>
-                    Spec: {props.segment.specification_status}
-                </Box>
-                <Box className="row-item datasheet-urls">
-                    Datasheet
-                </Box>
-                <SegmentPhotos
-                    segment={props.segment}
-                    materialName={props.segment.material.name}
-                />
+                <Box className="row-item material-name" sx={{ flex: 1 }}>{props.segment.material.name}</Box>
+                <DesignSpecificationStatus segment={props.segment} />
+                <SegmentDatasheets segment={props.segment} materialName={props.segment.material.name} />
+                <SegmentSitePhotos segment={props.segment} materialName={props.segment.material.name} />
             </Stack>
         ) : null
     );
@@ -46,10 +39,10 @@ const LayerSegment: React.FC<{ segment: SegmentType }> = (props) => {
 const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = (props) => {
     return (
         <Box className="assembly-material-list-container">
-            <h4 className="assembly-title">Assembly: {props.assembly.id}</h4>
+            <h4 className="assembly-title">Assembly: {props.assembly.name}</h4>
             {props.assembly.layers.map((layer) =>
                 layer.segments.map((segment) => (
-                    <LayerSegment key={segment.id} segment={segment} />
+                    <MaterialListItem key={segment.id} segment={segment} />
                 ))
             )}
         </Box>
@@ -58,7 +51,6 @@ const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = (props) => {
 
 
 const MaterialListPage: React.FC = () => {
-    const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const { isLoadingMaterials, setMaterials } = useMaterials();
     const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
@@ -91,14 +83,12 @@ const MaterialListPage: React.FC = () => {
 
     return (
         <>
-            <ContentBlockHeader
-                text={"Assembly Materials:"}
-            />
+            <ContentBlockHeader text={"Project Materials"} />
             <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
+
             {assemblies.map((assembly) => (
                 <MaterialListContainer key={assembly.id} assembly={assembly} />
             ))}
-
         </>
     )
 }
