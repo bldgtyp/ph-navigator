@@ -3,30 +3,35 @@
 
 ## Data View:
 #### Project Browser
+- [ ] Better Landing page
 - [x] Add Config / Projects Button to Browser
 - [x] Add New Project
 - [x] Set Project AirTable Refs
-- [ ] Delete Project
 - [x] Figure out API-Key strategy
+- [ ] Delete Project
 - [ ] Cancel / Save buttons on Project Config form don't work
 
 #### (IO):
-- [ ] Serialize (download)
-- [ ] De-Serialize (upload)
+- [-] Serialize HBJSON Constructions (download)
+  - [x] Grasshopper Component
+  - [ ] UI Button 
+- [x] De-Serialize HBJSON Constructions (upload)
 - [ ] Consider limiter (slowAPI) for all endpoints?
 - [ ] Upload corresponding Flixo PDF (link)
-- [ ] Handle and Store Material Submittals
-- [ ] Setup Database migration tooling
+- [x] Setup Database migration tooling
 
 ## Material List:
 - [x] Materials DataGrid page gets data from Constructions (not AirTable)
+- [-] Handle and Store Material Submittals
+  - [ ] Add 'delete' button to Material Modal viewer
+  - [ ] Add 'delete' button to Datasheet Modal viewer
 - [ ] add .pdf, .jpg, .png validation to upload
 - [ ] resize .png for full-size (make smaller)
 - [ ] handle Upload PDFs?
-- [ ] Add delete Datasheet / Photo
 - [ ] Add image carousel / scroll
 - [x] Add Comments / Notes
-- [ ] Add download as HBJSON button
+- [x] Add download as HBJSON button
+  - [ ] Support Steel Stud Assemblies
 - [ ] Show only one item for each Material in the Layer (when multiple segments with same material)
 - [ ] Add Loading state to file uploads
 
