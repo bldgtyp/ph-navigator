@@ -1,4 +1,7 @@
-
+### Create Migration Version
+```bash
+`alembic revision --autogenerate -m "Initial migration"`
+```
 
 ### To Update (local dev)
 ```bash
