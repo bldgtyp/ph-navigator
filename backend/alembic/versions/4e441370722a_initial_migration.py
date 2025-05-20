@@ -58,7 +58,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('at_ref', sa.String(), nullable=False),
-    sa.Column('parent_base_id', sa.Integer(), nullable=False),
+    sa.Column('parent_base_id', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['parent_base_id'], ['airtable_bases.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
