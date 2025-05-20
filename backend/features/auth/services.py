@@ -1,6 +1,6 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-import secrets
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
@@ -9,7 +9,6 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
-from rich import print
 from sqlalchemy.orm import Session
 
 from config import settings
@@ -18,6 +17,9 @@ from db_entities.app.user import User
 from features.auth.schema import TokenDataSchema, UserSchema
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+logger = logging.getLogger(__name__)
+
 
 # ---------------------------------------------------------------------------------------
 # User-Auth (Website)
@@ -32,8 +34,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
-def get_password_hash(password: str) -> bytes:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 async def get_user(db: Session, username: str) -> User:
@@ -45,9 +47,11 @@ async def authenticate_user(
 ) -> User | Literal[False]:
     user = await get_user(db, username)
     if not user:
+        logger.error(f"User '{username}' not found.")   
         return False
+    
     if not verify_password(password, str(user.hashed_password)):
-        print(f"User {user.username} | Password '{password}' is not correct.")
+        logger.error(f"User {user.username} | Password '{password}' is not correct.")
         return False
     return user
 

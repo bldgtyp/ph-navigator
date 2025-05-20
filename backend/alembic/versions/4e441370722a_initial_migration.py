@@ -5,11 +5,16 @@ Revises:
 Create Date: 2025-05-20 15:03:25.088524
 
 """
+import os
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
+import dotenv
+dotenv.load_dotenv()
+
+from features.auth.services import get_password_hash
 
 # revision identifiers, used by Alembic.
 revision: str = '4e441370722a'
@@ -130,6 +135,28 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
+
+    # -- Add Users
+    users_table = sa.table(
+        "users",
+        sa.column("id", sa.Integer),
+        sa.column("username", sa.String),
+        sa.column("email", sa.String),
+        sa.column("hashed_password", sa.String),
+    )
+    op.bulk_insert(users_table, [
+        {
+            "username": "ed_may", 
+            "email": "ed@bldgtyp.com",
+            "hashed_password": get_password_hash(os.environ["PASSWORD_ED"]),
+        },
+        {
+            "username": "john_mitchell", 
+            "email" :"john@bldgtyp.com",
+            "hashed_password": get_password_hash(os.environ["PASSWORD_JOHN"])
+        },
+    ])
+
 
 
 def downgrade() -> None:
