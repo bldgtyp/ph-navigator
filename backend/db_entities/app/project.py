@@ -2,7 +2,7 @@
 
 from typing import cast
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
 
 from database import Base

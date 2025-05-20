@@ -24,13 +24,13 @@ EPW_CACHE = LimitedCache[EPW]()
 class MissingFileException(Exception):
     """Custom exception for missing HBJSON file."""
 
-    def __init__(self, bt_number: int, file_type: str):
+    def __init__(self, bt_number: str, file_type: str):
         super().__init__(
             f"MissingFileException: {file_type} file not found for Project ID: {bt_number}"
         )
 
 
-async def find_epw_file_url(db: Session, bt_number: int) -> str:
+async def find_epw_file_url(db: Session, bt_number: str) -> str:
     """Given a BT-Number, find the EPW file URL from the AirTable repository."""
     logger.info(f"find_epw_file_url({bt_number=})")
 
@@ -83,7 +83,7 @@ async def find_epw_file_url(db: Session, bt_number: int) -> str:
         raise Exception(e)
 
 
-async def load_epw_object(db: Session, bt_number: int) -> EPW:
+async def load_epw_object(db: Session, bt_number: str) -> EPW:
     """Return a Ladybug-EPW object for the specified Project."""
     logger.info(f"load_epw_object({bt_number=})")
 

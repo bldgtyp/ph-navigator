@@ -69,7 +69,7 @@ async def add_assembly(
 
 @router.post("/add-assemblies-from-hbjson-constructions/{bt_number}")
 async def add_assemblies_from_hbjson_constructions(
-    bt_number: int,
+    bt_number: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
@@ -94,7 +94,7 @@ async def add_assemblies_from_hbjson_constructions(
 
 @router.get("/get_assemblies/{bt_number}")
 async def get_assemblies(
-    bt_number: int, db: Session = Depends(get_db)
+    bt_number: str, db: Session = Depends(get_db)
 ) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
     logger.info(f"get_assemblies(bt_number={bt_number})")
@@ -169,7 +169,7 @@ async def delete_assembly(
 
 @router.get("/get_assemblies_as_hb_json/{bt_number}")
 async def get_assemblies_as_hb_json(
-    bt_number: int,
+    bt_number: str,
     offset: int = Query(0, description="The offset for the test function"),
     db: Session = Depends(get_db),
 ) -> JSONResponse:

@@ -30,13 +30,13 @@ class DownloadError(Exception):
         )
 
 
-async def get_airtable_base_ref(db: Session, bt_number: int) -> str:
+async def get_airtable_base_ref(db: Session, bt_number: str) -> str:
     """Get the AirTable Base Ref by the project-BT-number."""
     project = await get_project_by_bt_number(db, bt_number)
     return project.airtable_base.id
 
 
-async def get_airtable_table_ref(db: Session, bt_number: int, table_name: str) -> str:
+async def get_airtable_table_ref(db: Session, bt_number: str, table_name: str) -> str:
     """Get the AirTable Table Ref given a project-BT-number and table name."""
 
     # -- Find the Project

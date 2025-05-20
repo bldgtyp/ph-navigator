@@ -26,7 +26,7 @@ router = APIRouter(
 @limiter.limit("100/hour")
 async def project(
     request: Request,
-    bt_number: int,
+    bt_number: str,
     db: Session = Depends(get_db),
 ) -> ProjectSchema:
     """Return a project by its BuildingType Number."""
@@ -45,7 +45,7 @@ async def project(
 )
 async def get_project_settings(
     request: Request,
-    bt_number: int,
+    bt_number: str,
     db: Session = Depends(get_db),
 ):
     # Get the project from the database
@@ -67,7 +67,7 @@ async def get_project_settings(
 )
 async def update_project_settings(
     request: Request,
-    bt_number: int,
+    bt_number: str,
     project_settings_data: ProjectCreateSchema,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),

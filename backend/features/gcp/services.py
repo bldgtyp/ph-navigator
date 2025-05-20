@@ -72,7 +72,7 @@ def check_gcs_bucket_create_file_permissions() -> bool:
 
 async def upload_segment_site_photo_to_cdn(
     db: Session,
-    bt_number: int,
+    bt_number: str,
     segment_id: int,
     file: UploadFile,
     bucket_name: str,
@@ -134,7 +134,7 @@ async def add_site_photo_to_segment(
 
 async def upload_segment_datasheet_to_cdn(
     db: Session,
-    bt_number: int,
+    bt_number: str,
     segment_id: int,
     file: UploadFile,
     bucket_name: str,

@@ -25,7 +25,7 @@ MODEL_CACHE = LimitedCache[Model]()
 class MissingFileException(Exception):
     """Custom exception for missing HBJSON file."""
 
-    def __init__(self, bt_number: int, file_type: str):
+    def __init__(self, bt_number: str, file_type: str):
         super().__init__(
             f"MissingFileException: {file_type} file not found for Project ID: {bt_number}"
         )
@@ -34,13 +34,13 @@ class MissingFileException(Exception):
 class HBJSONModelLoadError(Exception):
     """Custom exception for Honeybee-Model loading errors."""
 
-    def __init__(self, bt_number: int, e: Exception):
+    def __init__(self, bt_number: str, e: Exception):
         super().__init__(
             f"HBJSONModelLoadError: Failed to load Honeybee-Model for Project ID: {bt_number} | {e}"
         )
 
 
-async def find_hbjson_file_url(db: Session, bt_number: int) -> str:
+async def find_hbjson_file_url(db: Session, bt_number: str) -> str:
     """Given a Project ID, find the HBJSON file URL from the AirTable repository."""
     logger.info(f"find_hbjson_url({bt_number=})")
 
@@ -93,7 +93,7 @@ async def find_hbjson_file_url(db: Session, bt_number: int) -> str:
         raise Exception(e)
 
 
-async def load_hb_model(db: Session, bt_number: int) -> Model:
+async def load_hb_model(db: Session, bt_number: str) -> Model:
     """Return a Honeybee-Model object for the specified Project"""
     logger.info(f"get_model({bt_number=})")
 

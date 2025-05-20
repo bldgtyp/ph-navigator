@@ -25,8 +25,8 @@ PROJECT_DATA = [
     {
         "id": "app64a1JuYVBs7Z1m",
         "name": "409 Sackett St",
-        "bt_number": 2305,
-        "phius_number": 2445,
+        "bt_number": "2305",
+        "phius_number": "2445",
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
         "at_key": os.environ["TESTING_ST_KEY_1"],
         "tables": {
@@ -48,8 +48,8 @@ PROJECT_DATA = [
     {
         "id": "app2huKgwyKrnMRbp",
         "name": "Arverne St",
-        "bt_number": 2242,
-        "phius_number": 2441,
+        "bt_number": "2242",
+        "phius_number": "2441",
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/5b2w4n9wc1psda63xso4m/h?rlkey=e5c4bvo1visbecr0uea9lt0r3&dl=0",
         "at_key": os.environ["TESTING_ST_KEY_2"],
         "tables": {
@@ -71,8 +71,8 @@ PROJECT_DATA = [
     {
         "id": "appMJvv2qkl5eZ1S0",
         "name": "Alpine St",
-        "bt_number": 2141,
-        "phius_number": 2628,
+        "bt_number": "2141",
+        "phius_number": "2628",
         "phius_dropbox_url": "https://www.dropbox.com/scl/fo/wqjaevwa95qaoij71bw89/h?rlkey=nwbwyt67ou62c6ir36zsjkodz&dl=0",
         "at_key": os.environ["TESTING_ST_KEY_3"],
         "tables": {

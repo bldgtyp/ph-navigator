@@ -120,7 +120,7 @@ async def create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial
     return new_layer
 
 
-async def create_assembly_from_hb_construction(db: Session, bt_number: int, hb_opaque_construction: OpaqueConstruction) -> Assembly:
+async def create_assembly_from_hb_construction(db: Session, bt_number: str, hb_opaque_construction: OpaqueConstruction) -> Assembly:
     """Create an AssemblySchema from a Honeybee OpaqueConstruction."""
     logger.info(f"create_assembly_from_hb_construction(hb_opaque_construction={hb_opaque_construction.display_name})")
     

@@ -40,7 +40,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-creds.json"
     response_model=MaterialPhotoSchema,
 )
 async def add_new_segment_site_photo(
-    bt_number: int,
+    bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -110,7 +110,7 @@ async def get_site_photo_urls(
     response_model=MaterialDatasheetSchema,
 )
 async def add_new_segment_datasheet(
-    bt_number: int,
+    bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
