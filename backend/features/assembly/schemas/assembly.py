@@ -9,11 +9,10 @@ from pydantic import BaseModel, root_validator
 from features.assembly.schemas.layer import AssemblyLayerSchema
 
 
-class AssemblySchema(BaseModel):
-    id: int
+class AssemblySchemaBase(BaseModel):
+    """Base schema for Assembly."""
     name: str
     layers: list[AssemblyLayerSchema] = []
-
     class Config:
         orm_mode = True
 
@@ -21,6 +20,13 @@ class AssemblySchema(BaseModel):
     def is_steel_stud_assembly(self) -> bool:
         """Check if the assembly contains a steel stud layer."""
         return any([l.is_steel_stud_layer for l in self.layers])
+
+
+class AssemblySchema(AssemblySchemaBase):
+    """Schema for Assembly with ID."""
+    id: int
+    class Config:
+        orm_mode = True
 
 
 class AddAssemblyRequest(BaseModel):

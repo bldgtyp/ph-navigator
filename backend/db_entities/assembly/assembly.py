@@ -35,3 +35,8 @@ class Assembly(Base):
         return Assembly(
             name="Unnamed Assembly", project=project, layers=[Layer.default(material)]
         )
+     
+    def remove_all_layers(self):
+        """Remove all the existing layers from the assembly."""
+        self.layers.clear()
+    

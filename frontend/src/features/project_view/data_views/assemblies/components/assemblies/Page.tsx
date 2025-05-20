@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useContext } from "react";
+import React, { useEffect, useMemo, useState, useContext, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Box, SelectChangeEvent } from "@mui/material";
 
@@ -17,9 +17,11 @@ import { AssemblySelector } from "./Page.Selector";
 import { AssemblyView } from "./Page.AssemblyView";
 import { fetchAndCacheMaterials } from "../../contexts/MaterialsContext.Utility";
 import { headerButtons } from "./Page.HeaderButtons";
+import { postFileWithAlert } from "../../../../../../api/postFileWithAlert";
 
 const AssembliesPage: React.FC = () => {
   const userContext = useContext(UserContext);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { projectId } = useParams();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
@@ -164,13 +166,68 @@ const AssembliesPage: React.FC = () => {
     }
   };
 
+  const handleUploadConstructions = async () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handleFileSelected");
+    const file = event.target.files?.[0];
+    if (!file) return;
+    console.log("Selected file:", file);
+    // Validate file extension
+    if (
+      !(
+        file.name.toLowerCase().endsWith('.hbjson') ||
+        file.name.toLowerCase().endsWith('.json')
+      )
+    ) {
+      alert("Please select a valid .hbjson or .json file");
+      return;
+    }
+
+    try {
+      // Show loading state
+      setIsRefreshing(true);
+
+      // Upload the file
+      console.log("Uploading file...");
+      const response = await postFileWithAlert<any>(
+        `assembly/add-assemblies-from-hbjson-constructions/${projectId}`,
+        null,
+        file
+      );
+
+      // Refresh assemblies to show the newly added ones
+      await fetchAssemblies();
+      alert("Constructions uploaded successfully!");
+    } catch (error) {
+      console.error("Failed to upload constructions:", error);
+      alert(`Failed to upload: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsRefreshing(false);
+      // Reset the file input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <>
       <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
 
       <ContentBlockHeader
         text={`Assembly Details [ ${selectedAssembly?.name || ""} ]`}
-        buttons={userContext.user ? headerButtons(handleAddAssembly, handleDeleteAssembly, handleRefreshMaterials, isRefreshing) : []}
+        buttons={userContext.user ? headerButtons(
+          handleAddAssembly,
+          handleDeleteAssembly,
+          handleRefreshMaterials,
+          handleUploadConstructions,
+          isRefreshing) : []}
       />
 
       <Box sx={{ margin: 2 }}>
@@ -189,6 +246,15 @@ const AssembliesPage: React.FC = () => {
           <AssemblyView assembly={selectedAssembly} />
         )}
       </Box>
+
+      {/* File Upload Dialog */}
+      <input
+        type="file"
+        accept=".hbjson, .json"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={handleFileSelected}
+      />
     </>
   );
 };
