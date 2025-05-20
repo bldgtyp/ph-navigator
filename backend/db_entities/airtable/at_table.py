@@ -18,7 +18,7 @@ class AirTableTable(Base):
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
     name: Mapped[str] = MappedColumn(String, index=True)
     at_ref: Mapped[str] = MappedColumn(String, index=True)
-    parent_base_id: Mapped[int] = MappedColumn(Integer, ForeignKey("airtable_bases.id"))
+    parent_base_id: Mapped[str] = MappedColumn(String, ForeignKey("airtable_bases.id"))
 
     # Relationships
     parent_base: Mapped["AirTableBase"] = relationship(
