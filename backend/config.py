@@ -1,7 +1,7 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
 from cryptography.fernet import Fernet
-from pydantic import BaseSettings
+from pydantic import BaseSettings, validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-
+    
 
 settings = Settings()  # type: ignore
 fernet = Fernet(settings.FERNET_SECRET_KEY)
