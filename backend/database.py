@@ -1,10 +1,10 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-from typing import Generator
+from typing import Type, Generator, Annotated
 
+from fastapi import Depends
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, DeclarativeBase, declarative_base
 
 from config import settings
 
@@ -17,7 +17,7 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+Base: Type[DeclarativeBase] = declarative_base()
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -26,3 +26,6 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+AnnotatedSession = Annotated[Session, Depends(get_db)]

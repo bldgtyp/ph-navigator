@@ -48,6 +48,7 @@ async def add_assembly(
 
     # Just use the 'first' material in the database for simplicity
     default_material = db.query(Material).first()
+    assert default_material, "No Materials found in the database."
 
     # Create the new Assembly
     new_assembly = Assembly.default(project=project, material=default_material)

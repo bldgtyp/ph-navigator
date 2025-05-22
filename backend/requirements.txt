@@ -3,6 +3,7 @@ bcrypt
 cryptography
 fastapi
 google-cloud-storage
+httpx
 honeybee-ph
 passlib
 PHX
@@ -10,6 +11,8 @@ pillow
 psycopg2-binary
 pyairtable
 pyjwt
+pytest
+pytest-asyncio
 python-dotenv
 python-multipart
 pydantic<2.0

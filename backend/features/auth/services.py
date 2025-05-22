@@ -38,7 +38,7 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-async def get_user(db: Session, username: str) -> User:
+async def get_user(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
 
 
@@ -106,7 +106,7 @@ async def get_current_user(
 
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
-) -> UserSchema:
+) -> User:
     return current_user
 
 
