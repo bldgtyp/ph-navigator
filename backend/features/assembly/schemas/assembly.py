@@ -11,8 +11,10 @@ from features.assembly.schemas.layer import AssemblyLayerSchema
 
 class AssemblySchemaBase(BaseModel):
     """Base schema for Assembly."""
+
     name: str
     layers: list[AssemblyLayerSchema] = []
+
     class Config:
         orm_mode = True
 
@@ -24,7 +26,9 @@ class AssemblySchemaBase(BaseModel):
 
 class AssemblySchema(AssemblySchemaBase):
     """Schema for Assembly with ID."""
+
     id: int
+
     class Config:
         orm_mode = True
 

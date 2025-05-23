@@ -1,7 +1,7 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-from sqlalchemy import  ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, Mapped, MappedColumn
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
 

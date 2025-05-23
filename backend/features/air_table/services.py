@@ -3,11 +3,14 @@
 from logging import getLogger
 
 import requests
-from pyairtable import Base, Table
+from pyairtable import Api, Base, Table
 from sqlalchemy.orm import Session
 
+from config import settings
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
+from db_entities.assembly import Material
+from features.assembly.schemas.material import AirTableMaterialSchema
 from features.project.services import get_project_by_bt_number
 
 logger = getLogger(__name__)
@@ -128,3 +131,19 @@ async def add_tables_to_base(
         base.tables.append(new_table)
 
     return None
+
+
+def get_all_material_from_airtable() -> list[Material]:
+    """Get all of the materials from AirTable and return them as a list of Material objects."""
+    logger.info(f"get_all_material_from_airtable()")
+
+    api = Api(settings.AIRTABLE_MATERIAL_GET_TOKEN)
+    table = api.table(
+        settings.AIRTABLE_MATERIAL_BASE_ID,
+        settings.AIRTABLE_MATERIAL_TABLE_ID,
+    )
+
+    return [
+        Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict())
+        for record in table.all()
+    ]

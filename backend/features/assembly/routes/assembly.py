@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -17,11 +17,13 @@ from features.assembly.schemas.assembly import (
     DeleteAssemblyRequest,
     UpdateAssemblyNameRequest,
 )
+from features.assembly.services.assembly_from_hbjson import (
+    create_assembly_from_hb_construction,
+    get_hb_constructions_from_hbjson,
+)
 from features.assembly.services.to_hbe_construction import (
     convert_assemblies_to_hbe_constructions,
 )
-from features.assembly.services.assembly_from_hbjson import get_hb_constructions_from_hbjson, create_assembly_from_hb_construction
-
 
 router = APIRouter(
     prefix="/assembly",
@@ -81,15 +83,13 @@ async def add_assemblies_from_hbjson_constructions(
     try:
         data = json.loads(contents)
     except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=400, detail="Invalid JSON file provided."
-        )
-    
+        raise HTTPException(status_code=400, detail="Invalid JSON file provided.")
+
     hb_constructions = await get_hb_constructions_from_hbjson(data)
     logger.info(f"hb_constructions: {len(hb_constructions)}")
     for hb_const in hb_constructions:
         assembly = await create_assembly_from_hb_construction(db, bt_number, hb_const)
-    
+
     return None
 
 

@@ -14,9 +14,11 @@ logger = logging.getLogger()
 
 app = FastAPI()
 
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to PH-Navigator."}
+
 
 register_routes(app)
 

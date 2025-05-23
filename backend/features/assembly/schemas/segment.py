@@ -78,4 +78,3 @@ class UpdateSegmentSpecificationStatusRequest(BaseModel):
 
 class UpdateSegmentNotesRequest(BaseModel):
     notes: str | None = None
-

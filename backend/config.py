@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-    
+
 
 settings = Settings()  # type: ignore
 fernet = Fernet(settings.FERNET_SECRET_KEY)

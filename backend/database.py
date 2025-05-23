@@ -1,10 +1,10 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-from typing import Type, Generator, Annotated
+from typing import Annotated, Generator, Type
 
 from fastapi import Depends
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker, DeclarativeBase, declarative_base
+from sqlalchemy.orm import DeclarativeBase, Session, declarative_base, sessionmaker
 
 from config import settings
 

@@ -11,12 +11,12 @@ from database import get_db
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
 from db_entities.assembly.segment import Segment
+from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
+from features.assembly.schemas.material_photo import MaterialPhotoSchema
 from features.gcp.schemas import (
     SegmentDatasheetUrlResponse,
     SegmentSitePhotoUrlsResponse,
 )
-from features.assembly.schemas.material_photo import MaterialPhotoSchema
-from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.gcp.services import (
     add_datasheet_to_segment,
     add_site_photo_to_segment,
@@ -58,7 +58,9 @@ async def add_new_segment_site_photo(
             file=file,
             bucket_name=settings.GCP_BUCKET_NAME,
         )
-        new_material_photo = await add_site_photo_to_segment(db, segment_id, thumbnail_url, full_size_url)
+        new_material_photo = await add_site_photo_to_segment(
+            db, segment_id, thumbnail_url, full_size_url
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -128,7 +130,9 @@ async def add_new_segment_datasheet(
             file=file,
             bucket_name=settings.GCP_BUCKET_NAME,
         )
-        new_material_datasheet= await add_datasheet_to_segment(db, segment_id, thumbnail_url, full_size_url)
+        new_material_datasheet = await add_datasheet_to_segment(
+            db, segment_id, thumbnail_url, full_size_url
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -163,7 +167,7 @@ async def get_datasheet_thumbnail_urls(
         .filter(MaterialDatasheet.segment_id == segment_id)
         .all()
     )
-    
+
     return SegmentDatasheetUrlResponse(
         datasheet_urls=[
             MaterialDatasheetSchema(

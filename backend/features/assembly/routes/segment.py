@@ -13,11 +13,12 @@ from features.assembly.schemas.segment import (
     CreateLayerSegmentRequest,
     UpdateSegmentIsContinuousInsulationRequest,
     UpdateSegmentMaterialRequest,
+    UpdateSegmentNotesRequest,
     UpdateSegmentSpecificationStatusRequest,
     UpdateSegmentSteelStudSpacingRequest,
     UpdateSegmentWidthRequest,
-    UpdateSegmentNotesRequest,
 )
+from features.assembly.services.segment import add_layer_segment_to_db
 
 router = APIRouter(
     prefix="/assembly",
@@ -36,38 +37,11 @@ async def add_layer_segment(
         f"add_layer_segment(layer_id={request.layer_id}, material_id={request.material_id}, width_mm={request.width_mm}, order={request.order})"
     )
 
-    # Check if the layer exists
-    layer = db.query(Layer).filter_by(id=request.layer_id).first()
-    if not layer:
-        raise HTTPException(
-            status_code=404, detail=f"Layer with ID {request.layer_id} not found."
-        )
-
-    # Check if the material exists
-    material = db.query(Material).filter_by(id=request.material_id).first()
-    if not material:
-        raise HTTPException(
-            status_code=404, detail=f"Material with ID {request.material_id} not found."
-        )
-
-    # Shift the order of existing segments
-    db.query(Segment).filter(
-        Segment.layer_id == layer.id,
-        Segment.order
-        >= request.order,  # Shift only segments at or after the insertion point
-    ).update({"order": Segment.order + 1}, synchronize_session="fetch")
-
-    # Create the new LayerSegment
-    new_segment = Segment(
-        layer_id=layer.id,
-        material_id=request.material_id,
-        width_mm=request.width_mm,
-        order=request.order,
+    new_segment = add_layer_segment_to_db(
+        request.layer_id, request.material_id, request.width_mm, request.order, db
     )
-    db.add(new_segment)
-    db.commit()
-    db.refresh(new_segment)
 
+    # TODO: Change all these to return a Pydantic object instead
     return JSONResponse(
         content={
             "message": "LayerSegment added successfully.",
@@ -254,7 +228,9 @@ async def update_segment_notes(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Update the notes of a Layer Segment."""
-    logger.info(f"update_segment_notes(segment_id={segment_id}, notes={str(request.notes)[0:10]})...")
+    logger.info(
+        f"update_segment_notes(segment_id={segment_id}, notes={str(request.notes)[0:10]})..."
+    )
 
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()

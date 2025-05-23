@@ -6,6 +6,7 @@ from pydantic import BaseModel, root_validator
 
 from features.assembly.schemas.segment import AssemblyLayerSegmentSchema
 
+
 class AssemblyLayerSchemaBase(BaseModel):
     order: int
     assembly_id: int
@@ -28,6 +29,7 @@ class AssemblyLayerSchemaBase(BaseModel):
 
 class AssemblyLayerSchema(AssemblyLayerSchemaBase):
     id: int
+
 
 class CreateLayerRequest(BaseModel):
     assembly_id: int

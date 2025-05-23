@@ -2,6 +2,7 @@
 
 from __future__ import annotations  # Enables forward references
 
+from pyairtable.api.types import RecordDict
 from pydantic import BaseModel, root_validator
 
 
@@ -25,6 +26,14 @@ class AirTableMaterialSchema(BaseModel):
     class Config:
         from_attributes = True
         orm_mode = True
+
+    @classmethod
+    def fromAirTableRecordDict(cls, record: RecordDict) -> AirTableMaterialSchema:
+        """Create an AirTableMaterialSchema instance from an AirTable RecordDict with 'fields' and 'id'."""
+        d = {}
+        d = d | record["fields"]
+        d["id"] = record["id"]  # Add the ID to the fields
+        return cls(**d)  # Create an instance of the schema
 
 
 class MaterialSchema(BaseModel):

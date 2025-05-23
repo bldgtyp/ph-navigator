@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class Layer(Base):
     __tablename__ = "assembly_layers"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     order = Column(Integer)  # Used to maintain layer order within the assembly
     thickness_mm: Mapped[float] = MappedColumn(Float, nullable=False)
 

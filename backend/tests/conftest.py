@@ -1,16 +1,20 @@
 from typing import Generator
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
-from database import get_db, Base
+from database import Base, get_db
 from main import app
 
-DATABASE_URL = "sqlite:///:memory:"    
-testing_engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_engine)
+DATABASE_URL = "sqlite:///:memory:"
+testing_engine = create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
+)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=testing_engine
+)
 
 # client = TestClient(app)
 
@@ -29,6 +33,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testi
 @pytest.fixture(scope="module")
 def client() -> Generator[TestClient, None, None]:
     """Create a test client using the test database."""
+
     # Override the get_db dependency
     def override_get_db():
         db = TestingSessionLocal()
@@ -36,12 +41,12 @@ def client() -> Generator[TestClient, None, None]:
             yield db
         finally:
             db.close()
-            
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     # Reset the override after tests complete
     app.dependency_overrides = {}
 

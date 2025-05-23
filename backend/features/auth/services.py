@@ -47,9 +47,9 @@ async def authenticate_user(
 ) -> User | Literal[False]:
     user = await get_user(db, username)
     if not user:
-        logger.error(f"User '{username}' not found.")   
+        logger.error(f"User '{username}' not found.")
         return False
-    
+
     if not verify_password(password, str(user.hashed_password)):
         logger.error(f"User {user.username} | Password '{password}' is not correct.")
         return False

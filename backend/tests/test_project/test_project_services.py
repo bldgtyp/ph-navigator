@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
 import pytest
-from features.project.services import get_project_by_bt_number, ProjectNotFoundException
+from sqlalchemy.orm import Session
+
+from features.project.services import ProjectNotFoundException, get_project_by_bt_number
 
 
 @pytest.mark.asyncio

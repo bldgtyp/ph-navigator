@@ -44,9 +44,7 @@ class Segment(Base):
         nullable=False,
         default=SpecificationStatus.NA,
     )
-    notes: Mapped[str | None] = MappedColumn(
-        Text, nullable=True, default=None
-    )
+    notes: Mapped[str | None] = MappedColumn(Text, nullable=True, default=None)
 
     # Relationships
     material_photos: Mapped["MaterialPhoto"] = relationship(

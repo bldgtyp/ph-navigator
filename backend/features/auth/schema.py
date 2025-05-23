@@ -5,7 +5,7 @@ from pydantic import BaseModel  # , EmailStr
 # ---------------------------------------------------------------------------------------
 
 
-class UserCreateSchema(BaseModel):
+class UserCreate(BaseModel):
     username: str
     password: str
 

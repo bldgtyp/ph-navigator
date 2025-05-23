@@ -12,6 +12,7 @@ psycopg2-binary
 pyairtable
 pyjwt
 pytest
+pytest-cov
 pytest-asyncio
 python-dotenv
 python-multipart
