@@ -11,10 +11,7 @@ from database import get_db
 from db_entities.assembly import Material
 from features.air_table.services import get_all_material_from_airtable
 from features.assembly.schemas.material import MaterialSchema
-from features.assembly.services.material import (
-    add_materials_to_db,
-    purge_unused_materials,
-)
+from features.assembly.services.material import add_materials_to_db, purge_unused_materials
 
 router = APIRouter(
     prefix="/assembly",
@@ -24,7 +21,7 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.get("/refresh_db_materials_from_air_table")
+@router.get("/refresh_db_materials_from_air_table", response_model=JSONResponse)
 async def refresh_db_materials_from_air_table(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
@@ -46,7 +43,7 @@ async def refresh_db_materials_from_air_table(
     )
 
 
-@router.get("/get_all_materials")
+@router.get("/get_all_materials", response_model=list[MaterialSchema])
 async def get_all_materials(
     db: Session = Depends(get_db),
 ) -> list[MaterialSchema]:

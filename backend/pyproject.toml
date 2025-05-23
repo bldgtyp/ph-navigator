@@ -1,0 +1,31 @@
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    'ignore:function ham\(\) is deprecated:DeprecationWarning',
+]
+pythonpath = "."
+python_files = "test_*.py"
+testpaths = "tests"
+addopts = "--cov=features --cov=db_entities --cov-report=html"
+
+
+[tool.coverage.run]
+command_line = "-m pytest tests"
+source = ["db_entities", "features"]
+branch = true
+cover_pylib = false
+omit = ["*/__init__.py", "*.venv/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+
+[tool.coverage.html]
+directory = "_coverage_html"
+
+
+[tool.black]
+line-length = 120
+
+[tool.setuptools_scm]

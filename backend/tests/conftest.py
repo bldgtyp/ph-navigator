@@ -9,12 +9,8 @@ from database import Base, get_db
 from main import app
 
 DATABASE_URL = "sqlite:///:memory:"
-testing_engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
-)
-TestingSessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, bind=testing_engine
-)
+testing_engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_engine)
 
 # client = TestClient(app)
 

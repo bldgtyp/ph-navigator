@@ -21,9 +21,7 @@ from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_hb_constructions_from_hbjson,
 )
-from features.assembly.services.to_hbe_construction import (
-    convert_assemblies_to_hbe_constructions,
-)
+from features.assembly.services.to_hbe_construction import convert_assemblies_to_hbe_constructions
 
 router = APIRouter(
     prefix="/assembly",
@@ -34,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/add_assembly/")
-async def add_assembly(
-    request: AddAssemblyRequest, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def add_assembly(request: AddAssemblyRequest, db: Session = Depends(get_db)) -> JSONResponse:
     """Add a new Assembly to a Project."""
     logger.info(f"add_assembly(bt_number={request.bt_number})")
 
@@ -94,32 +90,22 @@ async def add_assemblies_from_hbjson_constructions(
 
 
 @router.get("/get_assemblies/{bt_number}")
-async def get_assemblies(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[AssemblySchema]:
+async def get_assemblies(bt_number: str, db: Session = Depends(get_db)) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
     logger.info(f"get_assemblies(bt_number={bt_number})")
-    assemblies = (
-        db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-    )
+    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
     return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 
 
 @router.patch("/update_assembly_name/")
-async def update_assembly_name(
-    request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def update_assembly_name(request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)) -> JSONResponse:
     """Update the name of an Assembly."""
-    logger.info(
-        f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})"
-    )
+    logger.info(f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})")
 
     # Fetch the assembly to be updated
     assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
     if not assembly:
-        raise HTTPException(
-            status_code=404, detail=f"Assembly with ID {request.assembly_id} not found."
-        )
+        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
 
     # Update the name
     assembly.name = request.new_name
@@ -135,28 +121,22 @@ async def update_assembly_name(
 
 
 @router.delete("/delete_assembly/")
-async def delete_assembly(
-    request: DeleteAssemblyRequest, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def delete_assembly(request: DeleteAssemblyRequest, db: Session = Depends(get_db)) -> JSONResponse:
     """Delete an Assembly and all its associated layers and segments."""
     logger.info(f"delete_assembly(assembly_id={request.assembly_id})")
 
     # Fetch the assembly to be deleted
     assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
     if not assembly:
-        raise HTTPException(
-            status_code=404, detail=f"Assembly with ID {request.assembly_id} not found."
-        )
+        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
 
     # Delete all associated segments for each layer in the assembly
-    db.query(Segment).filter(
-        Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))
-    ).delete(synchronize_session="fetch")
-
-    # Delete all layers associated with the assembly
-    db.query(Layer).filter_by(assembly_id=assembly.id).delete(
+    db.query(Segment).filter(Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))).delete(
         synchronize_session="fetch"
     )
+
+    # Delete all layers associated with the assembly
+    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
 
     # Delete the assembly itself
     db.delete(assembly)
@@ -178,18 +158,14 @@ async def get_assemblies_as_hb_json(
     logger.info(f"get_assemblies_as_hb_json(bt_number={bt_number}, offset={offset})")
 
     # Get all the Assemblies for the project
-    assemblies = (
-        db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-    )
+    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
     assemblies = [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 
     # -- Convert the Assemblies to HBE-Constructions
     hbe_constructions = await convert_assemblies_to_hbe_constructions(assemblies)
 
     # -- Convert the HBE-Constructions to JSON
-    hbe_construction_json = json.dumps(
-        [hb_const.to_dict() for hb_const in hbe_constructions]
-    )
+    hbe_construction_json = json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
 
     return JSONResponse(
         content={

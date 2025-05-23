@@ -33,9 +33,7 @@ class Segment(Base):
     material_id = Column(String, ForeignKey("assembly_materials.id"))
     order = Column(Integer)  # Used to maintain order within the layer
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False)
-    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(
-        Float, nullable=True, default=None
-    )
+    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(Float, nullable=True, default=None)
     is_continuous_insulation: Mapped[bool] = MappedColumn(
         Boolean, nullable=False, default=False
     )  # for Steel Stud wall assemblies

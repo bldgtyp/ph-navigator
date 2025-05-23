@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 from db_entities.assembly import Material
 from features.assembly.services.material import (
     MaterialNotFoundException,
+    add_materials_to_db,
     create_new_material_in_db,
     get_material_by_id,
     update_material_in_db,
-    add_materials_to_db,
 )
 
 
@@ -93,11 +93,11 @@ def test_add_list_of_new_materials_to_db_adds_them(session: Session):
             id="material_2",
             name="Material 2",
             category="Category 2",
-        )
+        ),
     ]
 
     add_materials_to_db(session, materials)
-    
+
     # Verify that the materials were added
     added_material_1 = get_material_by_id("material_1", session)
     assert added_material_1.name == "Material 1"
@@ -132,7 +132,7 @@ def test_add_list_of_existing_materials_to_db_updates_them(session: Session):
             id="material_2",
             name="Material 2",
             category="Category 2",
-        )
+        ),
     ]
 
     add_materials_to_db(session, materials)
@@ -146,8 +146,3 @@ def test_add_list_of_existing_materials_to_db_updates_them(session: Session):
     added_material_2 = get_material_by_id("material_2", session)
     assert added_material_2.name == "Material 2"
     assert added_material_2.category == "Category 2"
-
-
-
-
-

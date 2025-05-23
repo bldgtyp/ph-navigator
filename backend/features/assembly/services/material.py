@@ -30,7 +30,7 @@ def get_material_by_id(id: str, db: Session) -> Material:
     """Get a material by its ID or raise MaterialNotFoundException."""
     logger.info(f"Fetching material with ID: {id}")
 
-    if material :=  db.query(Material).filter_by(id=id).first():
+    if material := db.query(Material).filter_by(id=id).first():
         return material
 
     raise MaterialNotFoundException(id)
@@ -79,7 +79,7 @@ def update_material_in_db(
     emissivity: float | None = None,
     density_kg_m3: float | None = None,
     specific_heat_j_kgk: float | None = None,
-    *args: Any, 
+    *args: Any,
     **kwargs: Any,
 ) -> Material:
     """Update an existing material in the database."""
@@ -103,9 +103,7 @@ def update_material_in_db(
 
 def add_materials_to_db(db: Session, materials: list[Material]) -> tuple[int, int]:
     """Add (or update) materials from AirTable to the database."""
-    logger.info(
-        f"add_airtable_material_to_db(db, materials={len(materials)} materials)"
-    )
+    logger.info(f"add_airtable_material_to_db(db, materials={len(materials)} materials)")
 
     num_materials_added = 0
     num_materials_updated = 0
@@ -140,7 +138,7 @@ def purge_unused_materials(db: Session) -> None:
 
     # Delete unused materials
     for material_id in unused_material_ids:
-        try: 
+        try:
             material = get_material_by_id(material_id, db)
             db.delete(material)
             logger.info(f"Deleted unused material with ID: {material_id}")

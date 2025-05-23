@@ -21,9 +21,7 @@ class AirTableTable(Base):
     parent_base_id: Mapped[str] = MappedColumn(String, ForeignKey("airtable_bases.id"))
 
     # Relationships
-    parent_base: Mapped["AirTableBase"] = relationship(
-        "AirTableBase", back_populates="tables"
-    )
+    parent_base: Mapped["AirTableBase"] = relationship("AirTableBase", back_populates="tables")
 
     @validates("name")
     def clean_name(self, key, value: str) -> str:

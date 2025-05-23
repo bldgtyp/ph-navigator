@@ -5,10 +5,7 @@ from collections import OrderedDict
 
 from honeybee.typing import clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
-from honeybee_energy_ph.properties.materials.opaque import (
-    EnergyMaterialPhProperties,
-    PhDivisionGrid,
-)
+from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhDivisionGrid
 
 from features.assembly.schemas.assembly import AssemblyLayerSchema
 from features.assembly.schemas.material import MaterialSchema
@@ -21,9 +18,7 @@ async def convert_segment_material_to_hb_material(
     segment_material: MaterialSchema, thickness_m: float
 ) -> EnergyMaterial:
     """Convert a segment material to a Honeybee-Energy-Material."""
-    logger.info(
-        f"convert_segment_material_to_hb_material(segment_material={segment_material.name})"
-    )
+    logger.info(f"convert_segment_material_to_hb_material(segment_material={segment_material.name})")
 
     return EnergyMaterial(
         identifier=clean_ep_string(segment_material.name),
@@ -45,12 +40,8 @@ async def build_ph_division_grid_from_segments(
     division_grid.set_column_widths([segment.width_mm / 1000 for segment in segments])
 
     for i, segment in enumerate(segments):
-        hbe_mat = await convert_segment_material_to_hb_material(
-            segment.material, layer_thickness_m
-        )
-        division_grid.set_cell_material(
-            _column_num=i, _row_num=0, _hbe_material=hbe_mat
-        )
+        hbe_mat = await convert_segment_material_to_hb_material(segment.material, layer_thickness_m)
+        division_grid.set_cell_material(_column_num=i, _row_num=0, _hbe_material=hbe_mat)
 
     return division_grid
 
@@ -80,9 +71,7 @@ async def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMat
     new_material_.conductivity = division_grid.get_equivalent_conductivity()
     # TODO: eq density
     # TODO: eq spec-heat
-    hbph_props = getattr(
-        new_material_.properties, "ph"
-    )  # type: EnergyMaterialPhProperties
+    hbph_props = getattr(new_material_.properties, "ph")  # type: EnergyMaterialPhProperties
     hbph_props.divisions = division_grid
     return new_material_
 
@@ -93,9 +82,7 @@ async def convert_single_assembly_layer_to_hb_material(
     """Convert an assembly layer to a Honeybee Energy Material."""
     logger.info(f"convert_assembly_layer_to_hb_material(layer.id={layer.id})")
 
-    division_grid = await build_ph_division_grid_from_segments(
-        layer.segments, layer.thickness_mm / 1000
-    )
+    division_grid = await build_ph_division_grid_from_segments(layer.segments, layer.thickness_mm / 1000)
     hbe_material_ = await create_hybrid_hbe_material(division_grid)
     return hbe_material_
 

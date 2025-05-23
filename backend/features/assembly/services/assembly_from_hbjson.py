@@ -25,9 +25,7 @@ async def get_single_hb_construction_from_hbjson(data) -> OpaqueConstruction | N
         hb_objs = energy_dict_util.dict_to_object(data, False)
 
     if not isinstance(hb_objs, OpaqueConstruction):
-        logger.warning(
-            f"HB-Object provided of type: {type(hb_objs)} is not construction. Ignoring."
-        )
+        logger.warning(f"HB-Object provided of type: {type(hb_objs)} is not construction. Ignoring.")
         return None
 
     return hb_objs
@@ -52,34 +50,22 @@ async def get_hb_constructions_from_hbjson(data) -> list[OpaqueConstruction]:
     return hb_objs
 
 
-async def get_material_from_hb_material(
-    db: Session, hb_material: EnergyMaterial
-) -> Material:
+async def get_material_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Material:
     """Get a Material from the Database which matches the name of the HB-Material."""
-    logger.info(
-        f"get_material_from_hb_material(hb_material={hb_material.display_name})"
-    )
+    logger.info(f"get_material_from_hb_material(hb_material={hb_material.display_name})")
 
-    if (
-        db_material := db.query(Material)
-        .filter_by(name=hb_material.display_name)
-        .first()
-    ):
+    if db_material := db.query(Material).filter_by(name=hb_material.display_name).first():
         return db_material
 
     raise ValueError(f"Material {hb_material.display_name} not found in database.")
 
 
-async def create_segment_from_hb_material(
-    db: Session, hb_material: EnergyMaterial
-) -> Segment:
+async def create_segment_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Segment:
     """Create a Assembly-Layer-Segment from a Honeybee EnergyMaterial.
 
     Note: Changes are staged but NOT committed. Caller must commit.
     """
-    logger.info(
-        f"create_segment_from_hb_material(hb_material={hb_material.display_name})"
-    )
+    logger.info(f"create_segment_from_hb_material(hb_material={hb_material.display_name})")
 
     # Get the Segment-Material from the database
     db_material = await get_material_from_hb_material(db, hb_material)
@@ -95,16 +81,12 @@ async def create_segment_from_hb_material(
     return new_segment
 
 
-async def create_layer_from_hb_material(
-    db: Session, hb_material: EnergyMaterial
-) -> Layer:
+async def create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Layer:
     """Create a new Assembly-Layer from a Honeybee EnergyMaterial.
 
     Note: Changes are staged but NOT committed. Caller must commit.
     """
-    logger.info(
-        f"create_layer_from_hb_material(hb_material={hb_material.display_name})"
-    )
+    logger.info(f"create_layer_from_hb_material(hb_material={hb_material.display_name})")
 
     segments: list[Segment] = []
 
@@ -139,9 +121,7 @@ async def create_assembly_from_hb_construction(
     db: Session, bt_number: str, hb_opaque_construction: OpaqueConstruction
 ) -> Assembly:
     """Create an AssemblySchema from a Honeybee OpaqueConstruction."""
-    logger.info(
-        f"create_assembly_from_hb_construction(hb_opaque_construction={hb_opaque_construction.display_name})"
-    )
+    logger.info(f"create_assembly_from_hb_construction(hb_opaque_construction={hb_opaque_construction.display_name})")
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Check if the project exists
@@ -156,13 +136,9 @@ async def create_assembly_from_hb_construction(
         .filter_by(name=hb_opaque_construction.display_name, project_id=project.id)
         .first()
     ):
-        logger.warning(
-            f"Assembly with name {assembly.name} already exists for project {project.id}. Updating."
-        )
+        logger.warning(f"Assembly with name {assembly.name} already exists for project {project.id}. Updating.")
     else:
-        logger.info(
-            f"Creating new Assembly with name {hb_opaque_construction.display_name} for project {project.id}."
-        )
+        logger.info(f"Creating new Assembly with name {hb_opaque_construction.display_name} for project {project.id}.")
         assembly = Assembly(
             name=hb_opaque_construction.display_name,
             project=project,
@@ -191,8 +167,6 @@ async def create_assembly_from_hb_construction(
     db.commit()
     db.refresh(assembly)
 
-    logger.info(
-        f"Created / Updated Assembly: {assembly.name} with {len(assembly.layers)} layers."
-    )
+    logger.info(f"Created / Updated Assembly: {assembly.name} with {len(assembly.layers)} layers.")
 
     return assembly

@@ -29,17 +29,13 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/add_layer_segment/")
-async def add_layer_segment(
-    request: CreateLayerSegmentRequest, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def add_layer_segment(request: CreateLayerSegmentRequest, db: Session = Depends(get_db)) -> JSONResponse:
     """Add a new LayerSegment to a Layer at a specific position."""
     logger.info(
         f"add_layer_segment(layer_id={request.layer_id}, material_id={request.material_id}, width_mm={request.width_mm}, order={request.order})"
     )
 
-    new_segment = add_layer_segment_to_db(
-        request.layer_id, request.material_id, request.width_mm, request.order, db
-    )
+    new_segment = add_layer_segment_to_db(request.layer_id, request.material_id, request.width_mm, request.order, db)
 
     # TODO: Change all these to return a Pydantic object instead
     return JSONResponse(
@@ -58,9 +54,7 @@ async def update_segment_material(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Update the Material of a Layer Segment."""
-    logger.info(
-        f"update_segment_material(segment_id={segment_id}, material_id={request.material_id})"
-    )
+    logger.info(f"update_segment_material(segment_id={segment_id}, material_id={request.material_id})")
 
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()
@@ -98,9 +92,7 @@ async def update_segment_width(
     segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Update the width (mm) of a Layer Segment."""
-    logger.info(
-        f"update_segment_width(segment_id={segment_id}, width_mm={request.width_mm})"
-    )
+    logger.info(f"update_segment_width(segment_id={segment_id}, width_mm={request.width_mm})")
 
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()
@@ -115,9 +107,7 @@ async def update_segment_width(
     db.commit()
 
     return JSONResponse(
-        content={
-            "message": f"Segment {segment_id} updated with new width {request.width_mm}."
-        },
+        content={"message": f"Segment {segment_id} updated with new width {request.width_mm}."},
         status_code=200,
     )
 
@@ -228,9 +218,7 @@ async def update_segment_notes(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Update the notes of a Layer Segment."""
-    logger.info(
-        f"update_segment_notes(segment_id={segment_id}, notes={str(request.notes)[0:10]})..."
-    )
+    logger.info(f"update_segment_notes(segment_id={segment_id}, notes={str(request.notes)[0:10]})...")
 
     # Get the right segment from the database
     segment = db.query(Segment).filter_by(id=segment_id).first()
@@ -246,26 +234,20 @@ async def update_segment_notes(
     db.refresh(segment)
 
     return JSONResponse(
-        content={
-            "message": f"Segment {segment_id} updated with new notes: {str(request.notes)[0:10]})..."
-        },
+        content={"message": f"Segment {segment_id} updated with new notes: {str(request.notes)[0:10]})..."},
         status_code=200,
     )
 
 
 @router.delete("/delete_layer_segment/{segment_id}")
-async def delete_layer_segment(
-    segment_id: int, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def delete_layer_segment(segment_id: int, db: Session = Depends(get_db)) -> JSONResponse:
     """Delete a LayerSegment and adjust the order of remaining segments."""
     logger.info(f"delete_layer_segment(segment_id={segment_id})")
 
     # Fetch the segment to be deleted
     segment = db.query(Segment).filter_by(id=segment_id).first()
     if not segment:
-        raise HTTPException(
-            status_code=404, detail=f"Segment with ID {segment_id} not found."
-        )
+        raise HTTPException(status_code=404, detail=f"Segment with ID {segment_id} not found.")
 
     # Check if this is the last segment in the layer
     layer_segments = db.query(Segment).filter_by(layer_id=segment.layer_id).all()
@@ -276,9 +258,9 @@ async def delete_layer_segment(
         )
 
     # Adjust the order of remaining segments
-    db.query(Segment).filter(
-        Segment.layer_id == segment.layer_id, Segment.order > segment.order
-    ).update({"order": Segment.order - 1}, synchronize_session="fetch")
+    db.query(Segment).filter(Segment.layer_id == segment.layer_id, Segment.order > segment.order).update(
+        {"order": Segment.order - 1}, synchronize_session="fetch"
+    )
 
     # Delete the segment
     db.delete(segment)

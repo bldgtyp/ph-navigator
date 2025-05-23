@@ -11,13 +11,9 @@ from features.assembly.services.material import get_material_by_id
 logger = logging.getLogger(__name__)
 
 
-def add_layer_segment_to_db(
-    layer_id: int, material_id: str, width_mm: float, order: int, db: Session
-) -> Segment:
+def add_layer_segment_to_db(layer_id: int, material_id: str, width_mm: float, order: int, db: Session) -> Segment:
     """Add a new segment to a layer in the database."""
-    logger.info(
-        f"Adding segment to layer {layer_id} with material {material_id}, width {width_mm}, order {order}"
-    )
+    logger.info(f"Adding segment to layer {layer_id} with material {material_id}, width {width_mm}, order {order}")
 
     layer = get_layer_by_id(layer_id, db)
     material = get_material_by_id(material_id, db)
