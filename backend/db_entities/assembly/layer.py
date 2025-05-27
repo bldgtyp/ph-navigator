@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Float, ForeignKey, Integer
+from sqlalchemy import Float, ForeignKey, Integer
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 

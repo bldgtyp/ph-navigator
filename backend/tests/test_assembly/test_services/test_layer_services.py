@@ -1,10 +1,17 @@
-from sqlalchemy.orm import Session
 import pytest
+from sqlalchemy.orm import Session
 
 from features.assembly.services.assembly import get_assembly_by_id
-from features.assembly.services.segment import create_new_segment, get_segment_by_id, SegmentNotFoundException
-from features.assembly.services.layer import (LayerNotFoundException, LastLayerAssemblyException, create_new_layer, get_layer_by_id, update_layer_thickness, delete_layer, )
+from features.assembly.services.layer import (
+    LastLayerAssemblyException,
+    LayerNotFoundException,
+    create_new_layer,
+    delete_layer,
+    get_layer_by_id,
+    update_layer_thickness,
+)
 from features.assembly.services.material import get_default_material
+from features.assembly.services.segment import SegmentNotFoundException, create_new_segment, get_segment_by_id
 
 
 def test_create_new_layer(session: Session, create_test_project):
@@ -59,7 +66,7 @@ def test_delete_layer_with_no_segments(session: Session, create_test_project):
     new_layer = create_new_layer(db=session, assembly_id=1, thickness_mm=150.0, order=2)
     existing_assembly = get_assembly_by_id(session, 1)
     assert len(existing_assembly.layers) == 2
-    
+
     # Delete the second layer
     delete_layer(session, new_layer.id)
     assert len(existing_assembly.layers) == 1
@@ -86,10 +93,9 @@ def test_delete_layer_with_segments(session: Session, create_test_project):
     assert len(existing_assembly.layers) == 2
     assert len(new_layer.segments) == 2
 
-
     # Delete the layer with segments
     delete_layer(session, new_layer.id)
-    
+
     # Verify the layer is deleted
     with pytest.raises(LayerNotFoundException):
         get_layer_by_id(session, new_layer.id)
@@ -106,7 +112,7 @@ def test_delete_layer_with_segments(session: Session, create_test_project):
     with pytest.raises(SegmentNotFoundException):
         get_segment_by_id(session, seg_2.id)
 
-    
+
 def test_delete_last_layer_raises_exception(session: Session, create_test_project):
     create_test_project(db=session, username="user1", project_name="Project 1")
 
@@ -115,5 +121,3 @@ def test_delete_last_layer_raises_exception(session: Session, create_test_projec
     # Attempt to delete the last layer in the assembly
     with pytest.raises(LastLayerAssemblyException):
         delete_layer(session, 1)
-
-
