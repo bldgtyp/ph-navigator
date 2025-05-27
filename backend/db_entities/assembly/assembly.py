@@ -32,9 +32,7 @@ class Assembly(Base):
 
     @classmethod
     def default(cls, project: "Project", material: "Material") -> "Assembly":
-        return Assembly(
-            name="Unnamed Assembly", project=project, layers=[Layer.default(material)]
-        )
+        return Assembly(name="Unnamed Assembly", project=project, layers=[Layer.default(material)])
 
     def remove_all_layers(self):
         """Remove all the existing layers from the assembly."""

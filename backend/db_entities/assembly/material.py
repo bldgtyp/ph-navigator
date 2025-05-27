@@ -25,9 +25,7 @@ class Material(Base):
     density_kg_m3: Mapped[float | None] = MappedColumn(Float)
     specific_heat_j_kgk: Mapped[float | None] = MappedColumn(Float)
 
-    segments: Mapped[list["Segment"]] = relationship(
-        "Segment", back_populates="material"
-    )
+    segments: Mapped[list["Segment"]] = relationship("Segment", back_populates="material")
 
     @classmethod
     def get_by_name(cls, session: Session, name: str) -> "Material | None":

@@ -114,9 +114,7 @@ async def create_new_project(
     logger.info(f"create_new_project()")
 
     # Check if a project with the same bt_number already exists
-    existing_project = (
-        db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
-    )
+    existing_project = db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
     if existing_project:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

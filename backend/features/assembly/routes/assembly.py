@@ -9,21 +9,17 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from features.assembly.schemas.assembly import (
-    AssemblySchema,
-    DeleteAssemblyRequest,
-    UpdateAssemblyNameRequest,
+from features.assembly.schemas.assembly import AssemblySchema, DeleteAssemblyRequest, UpdateAssemblyNameRequest
+from features.assembly.services.assembly import (
+    create_new_assembly_on_project,
+    delete_assembly,
+    get_all_project_assemblies,
+    get_all_project_assemblies_as_hbjson,
+    update_assembly_name,
 )
 from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_hb_constructions_from_hbjson,
-)
-from features.assembly.services.assembly import (
-    get_all_project_assemblies,
-    update_assembly_name,
-    delete_assembly,
-    create_new_assembly_on_project,
-    get_all_project_assemblies_as_hbjson,
 )
 
 router = APIRouter(
@@ -38,9 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/create-new-assembly-on_project/{bt_number}")
-async def create_new_assembly_on_project_route(
-    bt_number: str, db: Session = Depends(get_db)
-):
+async def create_new_assembly_on_project_route(bt_number: str, db: Session = Depends(get_db)):
     """Add a new Assembly to a Project."""
     logger.info(f"create_new_assembly_on_project_route({bt_number=})")
 
@@ -83,9 +77,7 @@ async def add_assemblies_from_hbjson_constructions_route(
 
 
 @router.get("/get_assemblies/{bt_number}")
-async def get_project_assemblies_route(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[AssemblySchema]:
+async def get_project_assemblies_route(bt_number: str, db: Session = Depends(get_db)) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
     logger.info(f"get_assemblies({bt_number=})")
 
@@ -94,13 +86,9 @@ async def get_project_assemblies_route(
 
 
 @router.patch("/update_assembly_name/")
-async def update_assembly_name_route(
-    request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)
-):
+async def update_assembly_name_route(request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)):
     """Update the name of an Assembly."""
-    logger.info(
-        f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})"
-    )
+    logger.info(f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})")
 
     assembly = update_assembly_name(db, request.assembly_id, request.new_name)
 
@@ -114,9 +102,7 @@ async def update_assembly_name_route(
 
 
 @router.delete("/delete_assembly/")
-async def delete_assembly_route(
-    request: DeleteAssemblyRequest, db: Session = Depends(get_db)
-):
+async def delete_assembly_route(request: DeleteAssemblyRequest, db: Session = Depends(get_db)):
     """Delete an Assembly and all its associated layers and segments."""
     logger.info(f"delete_assembly(assembly_id={request.assembly_id})")
 

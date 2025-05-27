@@ -51,9 +51,7 @@ async def get_faces(bt_number: str, db: Session = Depends(get_db)) -> list[FaceS
 
 
 @router.get("/{bt_number}/spaces", response_model=list[SpaceSchema])
-async def get_spaces(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[SpaceSchema]:
+async def get_spaces(bt_number: str, db: Session = Depends(get_db)) -> list[SpaceSchema]:
     """Return a list of all the Spaces from a Project's Honeybee-Model."""
     logger.info(f"get_spaces({bt_number=})")
 
@@ -63,9 +61,7 @@ async def get_spaces(
 
 
 @router.get("/{bt_number}/sun_path", response_model=SunPathAndCompassDTOSchema)
-async def get_sun_path(
-    bt_number: str, db: Session = Depends(get_db)
-) -> SunPathAndCompassDTOSchema:
+async def get_sun_path(bt_number: str, db: Session = Depends(get_db)) -> SunPathAndCompassDTOSchema:
     """Return a list of all the Sun Path from a Project's Honeybee-Model."""
     logger.info(f"get_sun_path({bt_number=})")
 
@@ -74,12 +70,8 @@ async def get_sun_path(
     return sun_path
 
 
-@router.get(
-    "/{bt_number}/hot_water_systems", response_model=list[PhHotWaterSystemSchema]
-)
-async def get_hot_water_systems(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[PhHotWaterSystemSchema]:
+@router.get("/{bt_number}/hot_water_systems", response_model=list[PhHotWaterSystemSchema])
+async def get_hot_water_systems(bt_number: str, db: Session = Depends(get_db)) -> list[PhHotWaterSystemSchema]:
     """Return a list of all the Hot Water Systems from a Project's Honeybee-Model."""
     logger.info(f"get_hot_water_systems({bt_number=})")
 
@@ -88,12 +80,8 @@ async def get_hot_water_systems(
     return hw_systems
 
 
-@router.get(
-    "/{bt_number}/ventilation_systems", response_model=list[PhVentilationSystemSchema]
-)
-async def get_ventilation_systems(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[PhVentilationSystemSchema]:
+@router.get("/{bt_number}/ventilation_systems", response_model=list[PhVentilationSystemSchema])
+async def get_ventilation_systems(bt_number: str, db: Session = Depends(get_db)) -> list[PhVentilationSystemSchema]:
     """Return a list of all the Ventilation Systems from a Project's Honeybee-Model."""
     logger.info(f"get_ventilation_systems({bt_number=})")
 
@@ -103,9 +91,7 @@ async def get_ventilation_systems(
 
 
 @router.get("/{bt_number}/shading_elements", response_model=list[ShadeGroupSchema])
-async def get_shading_elements(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[ShadeGroupSchema]:
+async def get_shading_elements(bt_number: str, db: Session = Depends(get_db)) -> list[ShadeGroupSchema]:
     """Return a list of all the Shading Elements from a Project's Honeybee-Model."""
     logger.info(f"get_shading_elements({bt_number=})")
 

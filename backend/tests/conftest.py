@@ -8,19 +8,15 @@ from sqlalchemy.orm import Session, sessionmaker
 from database import Base, get_db
 from db_entities.app import Project
 from features.app.services import create_new_project_in_db, create_new_user_in_db
-from features.assembly.services.assembly import create_new_assembly_in_db
-from features.assembly.services.layer import create_new_layer_in_db
+from features.assembly.services.assembly import create_new_assembly
+from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
 from features.assembly.services.segment import create_new_segment
 from main import app
 
 DATABASE_URL = "sqlite:///:memory:"
-testing_engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
-)
-TestingSessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, bind=testing_engine
-)
+testing_engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_engine)
 
 
 @pytest.fixture(scope="module")
@@ -73,24 +69,16 @@ def create_test_project(
     ```
     """
 
-    def _create_project(
-        db: Session, username="test_user", project_name="Test Project", bt_number="1234"
-    ) -> Project:
+    def _create_project(db: Session, username="test_user", project_name="Test Project", bt_number="1234") -> Project:
         user = create_new_user_in_db(
             db=session,
             username="test_user",
             email="test@eamil.com",
             hashed_password="12345",
         )
-        project = create_new_project_in_db(
-            db=session, name="Test Project", bt_number="1234", owner_id=user.id
-        )
-        assembly = create_new_assembly_in_db(
-            db=session, name="Test Assembly", project_id=project.id
-        )
-        layer = create_new_layer_in_db(
-            db=session, thickness_mm=50.0, assembly_id=assembly.id, order=1
-        )
+        project = create_new_project_in_db(db=session, name="Test Project", bt_number="1234", owner_id=user.id)
+        assembly = create_new_assembly(db=session, name="Test Assembly", project_id=project.id)
+        layer = create_new_layer(db=session, thickness_mm=50.0, assembly_id=assembly.id, order=1)
         material = create_new_material(
             db=session,
             id="test_material",

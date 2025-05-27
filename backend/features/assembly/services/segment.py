@@ -26,9 +26,7 @@ class LastSegmentInLayerException(Exception):
     def __init__(self, segment_id: int, layer_id: int):
         self.segment_id = segment_id
         self.layer_id = layer_id
-        super().__init__(
-            f"Cannot pop Segment {segment_id} as it is the last segment in Layer {layer_id}."
-        )
+        super().__init__(f"Cannot pop Segment {segment_id} as it is the last segment in Layer {layer_id}.")
 
 
 def get_segment_by_id(db: Session, id: int) -> Segment:
@@ -41,13 +39,9 @@ def get_segment_by_id(db: Session, id: int) -> Segment:
     raise SegmentNotFoundException(id)
 
 
-def create_new_segment(
-    db: Session, layer_id: int, material_id: str, width_mm: float, order: int
-) -> Segment:
+def create_new_segment(db: Session, layer_id: int, material_id: str, width_mm: float, order: int) -> Segment:
     """Create a new segment in the database."""
-    logger.info(
-        f"Adding segment to layer {layer_id} with material {material_id}, width {width_mm}, order {order}"
-    )
+    logger.info(f"Adding segment to layer {layer_id} with material {material_id}, width {width_mm}, order {order}")
 
     layer = get_layer_by_id(db, layer_id)
     material = get_material_by_id(material_id, db)
@@ -97,13 +91,9 @@ def update_segment_width(db: Session, segment_id: int, width_mm: float) -> Segme
     return seg
 
 
-def update_segment_steel_stud_spacing(
-    db: Session, segment_id: int, steel_stud_spacing_mm: float | None
-) -> Segment:
+def update_segment_steel_stud_spacing(db: Session, segment_id: int, steel_stud_spacing_mm: float | None) -> Segment:
     """Update the steel stud spacing of a Segment."""
-    logger.info(
-        f"update_segment_steel_stud_spacing({segment_id=}, {steel_stud_spacing_mm=})"
-    )
+    logger.info(f"update_segment_steel_stud_spacing({segment_id=}, {steel_stud_spacing_mm=})")
 
     seg = get_segment_by_id(db, segment_id)
     seg.steel_stud_spacing_mm = steel_stud_spacing_mm
@@ -119,9 +109,7 @@ def update_segment_is_continuous_insulation(
     is_continuous_insulation: bool,
 ) -> Segment:
     """Update the is_continuous_insulation of a Segment."""
-    logger.info(
-        f"update_segment_is_continuous_insulation({segment_id=}, {is_continuous_insulation=})"
-    )
+    logger.info(f"update_segment_is_continuous_insulation({segment_id=}, {is_continuous_insulation=})")
 
     seg = get_segment_by_id(db, segment_id)
     seg.is_continuous_insulation = is_continuous_insulation
@@ -137,9 +125,7 @@ def update_segment_specification_status(
     specification_status: str,
 ) -> Segment:
     """Update the specification status of a Segment."""
-    logger.info(
-        f"update_segment_specification_status({segment_id=}, {specification_status=})"
-    )
+    logger.info(f"update_segment_specification_status({segment_id=}, {specification_status=})")
 
     seg = get_segment_by_id(db, segment_id)
     try:
@@ -177,9 +163,9 @@ def delete_segment(db: Session, segment_id: int) -> Segment:
         raise LastSegmentInLayerException(segment_id=seg.id, layer_id=seg.layer_id)
 
     # Adjust the order of remaining Segments in the same Layer
-    db.query(Segment).filter(
-        Segment.layer_id == seg.layer_id, Segment.order > seg.order
-    ).update({"order": Segment.order - 1}, synchronize_session="fetch")
+    db.query(Segment).filter(Segment.layer_id == seg.layer_id, Segment.order > seg.order).update(
+        {"order": Segment.order - 1}, synchronize_session="fetch"
+    )
 
     db.delete(seg)
     db.commit()

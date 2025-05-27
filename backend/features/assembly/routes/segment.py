@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from db_entities.assembly import Segment
 from features.assembly.schemas.segment import (
     CreateLayerSegmentRequest,
     UpdateSegmentIsContinuousInsulationRequest,
@@ -43,17 +42,13 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/create-new-segment/")
-async def add_segment_route(
-    request: CreateLayerSegmentRequest, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def add_segment_route(request: CreateLayerSegmentRequest, db: Session = Depends(get_db)) -> JSONResponse:
     """Add a new LayerSegment to a Layer at a specific position."""
     logger.info(
         f"add-add_segment_route(layer_id={request.layer_id}, material_id={request.material_id}, width_mm={request.width_mm}, order={request.order})"
     )
 
-    seg = create_new_segment(
-        db, request.layer_id, request.material_id, request.width_mm, request.order
-    )
+    seg = create_new_segment(db, request.layer_id, request.material_id, request.width_mm, request.order)
 
     return JSONResponse(
         content={
@@ -71,9 +66,7 @@ async def update_segment_material_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Update the Material of a Layer Segment."""
-    logger.info(
-        f"update_segment_material_route({segment_id=}, material_id={request.material_id})"
-    )
+    logger.info(f"update_segment_material_route({segment_id=}, material_id={request.material_id})")
 
     seg = update_segment_material(db, segment_id, request.material_id)
 
@@ -93,16 +86,12 @@ async def update_segment_width_route(
     segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
 ) -> JSONResponse:
     """Update the width (mm) of a Layer Segment."""
-    logger.info(
-        f"update_segment_width_route({segment_id=}, width_mm={request.width_mm})"
-    )
+    logger.info(f"update_segment_width_route({segment_id=}, width_mm={request.width_mm})")
 
     seg = update_segment_width(db, segment_id, request.width_mm)
 
     return JSONResponse(
-        content={
-            "message": f"Segment {seg.id} updated to new width: {seg.width_mm} mm."
-        },
+        content={"message": f"Segment {seg.id} updated to new width: {seg.width_mm} mm."},
         status_code=200,
     )
 
@@ -118,14 +107,10 @@ async def update_segment_steel_stud_spacing_route(
         f"update_segment_steel_stud_spacing_route({segment_id=}, steel_stud_spacing_mm={request.steel_stud_spacing_mm})"
     )
 
-    seg = update_segment_steel_stud_spacing(
-        db, segment_id, request.steel_stud_spacing_mm
-    )
+    seg = update_segment_steel_stud_spacing(db, segment_id, request.steel_stud_spacing_mm)
 
     return JSONResponse(
-        content={
-            "message": f"Segment {seg.id} updated with new steel stud spacing: {seg.steel_stud_spacing_mm} mm."
-        },
+        content={"message": f"Segment {seg.id} updated with new steel stud spacing: {seg.steel_stud_spacing_mm} mm."},
         status_code=200,
     )
 
@@ -141,9 +126,7 @@ async def update_segment_continuous_insulation_route(
         f"update_segment_continuous_insulation_route(segment_id={segment_id}, is_continuous_insulation={request.is_continuous_insulation})"
     )
 
-    seg = update_segment_is_continuous_insulation(
-        db, segment_id, request.is_continuous_insulation
-    )
+    seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
 
     return JSONResponse(
         content={
@@ -164,14 +147,10 @@ async def update_segment_specification_status_route(
         f"update_segment_specification_status_route(segment_id={segment_id}, specification_status={request.specification_status})"
     )
 
-    seg = update_segment_specification_status(
-        db, segment_id, request.specification_status
-    )
+    seg = update_segment_specification_status(db, segment_id, request.specification_status)
 
     return JSONResponse(
-        content={
-            "message": f"Segment {seg.id} updated with new specification status {seg.specification_status}."
-        },
+        content={"message": f"Segment {seg.id} updated with new specification status {seg.specification_status}."},
         status_code=200,
     )
 
@@ -183,24 +162,18 @@ async def update_segment_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Update the notes of a Layer Segment."""
-    logger.info(
-        f"update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})..."
-    )
+    logger.info(f"update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})...")
 
     seg = update_segment_notes(db, segment_id, request.notes)
 
     return JSONResponse(
-        content={
-            "message": f"Segment {seg.id} updated with new notes: {str(seg.notes)[0:10]})..."
-        },
+        content={"message": f"Segment {seg.id} updated with new notes: {str(seg.notes)[0:10]})..."},
         status_code=200,
     )
 
 
 @router.delete("/delete-segment/{segment_id}")
-async def delete_segment_route(
-    segment_id: int, db: Session = Depends(get_db)
-) -> JSONResponse:
+async def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> JSONResponse:
     """Delete a LayerSegment and adjust the order of remaining segments."""
     logger.info(f"delete-segment_route(segment_id={segment_id})")
 

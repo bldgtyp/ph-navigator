@@ -28,9 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/{bt_number}/config")
-async def get_project_config(
-    bt_number: str, db: Session = Depends(get_db)
-) -> list[RecordDict]:
+async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> list[RecordDict]:
     logger.info(f"air_table/get_project_config({bt_number=})")
 
     # Get the Project
@@ -67,9 +65,7 @@ async def get_project_air_table_records_from_table(
     bt_number: str, at_table_name: str, db: Session = Depends(get_db)
 ) -> list[RecordDict]:
     """Return all of the records from a specified Table (name), for a specified Project (bldgtyp-number)."""
-    logger.info(
-        f"air_table/get_project_air_table_records_from_table({bt_number=}, {at_table_name=})"
-    )
+    logger.info(f"air_table/get_project_air_table_records_from_table({bt_number=}, {at_table_name=})")
 
     # Get the Project
     project = db.query(Project).filter_by(bt_number=bt_number).first()

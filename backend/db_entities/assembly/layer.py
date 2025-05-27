@@ -19,9 +19,7 @@ class Layer(Base):
     __tablename__ = "assembly_layers"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
-    order: Mapped[int] = MappedColumn(
-        Integer
-    )  # Used to maintain layer order within the assembly
+    order: Mapped[int] = MappedColumn(Integer)  # Used to maintain layer order within the assembly
     thickness_mm: Mapped[float] = MappedColumn(Float, nullable=False)
 
     # Foreign Keys
@@ -34,6 +32,7 @@ class Layer(Base):
         back_populates="layer",
         order_by="Segment.order",
         collection_class=ordering_list("order"),
+        cascade="all, delete-orphan",
     )
 
     @classmethod

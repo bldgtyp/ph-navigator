@@ -28,9 +28,7 @@ class DownloadError(Exception):
     """Custom exception for download errors."""
 
     def __init__(self, url: str, message: str):
-        super().__init__(
-            f"DownloadError: Failed to download from URL: {url} | {message}"
-        )
+        super().__init__(f"DownloadError: Failed to download from URL: {url} | {message}")
 
 
 async def get_airtable_base_ref(db: Session, bt_number: str) -> str:
@@ -111,9 +109,7 @@ async def get_base_table_schemas(base: Base) -> list[Table]:
     return tables
 
 
-async def add_tables_to_base(
-    db: Session, base: AirTableBase, tables: list[Table]
-) -> None:
+async def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> None:
     """Add the tables to the AirTableBase object."""
     logger.info(f"add_tables_to_base(base={base.id}, tables=[{len(tables)}])")
 
@@ -143,7 +139,4 @@ def get_all_material_from_airtable() -> list[Material]:
         settings.AIRTABLE_MATERIAL_TABLE_ID,
     )
 
-    return [
-        Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict())
-        for record in table.all()
-    ]
+    return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]

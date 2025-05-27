@@ -91,9 +91,7 @@ async def upload_segment_site_photo_to_cdn(
     sanitized_material_name = await sanitize_name(segment.material.name)
 
     # -- Upload the full-size image to GCS and get the public URL
-    blob = bucket.blob(
-        f"{bt_number}/site_photos/{sanitized_material_name}_{sanitized_file_name}"
-    )
+    blob = bucket.blob(f"{bt_number}/site_photos/{sanitized_material_name}_{sanitized_file_name}")
     blob.upload_from_file(file.file, content_type=file.content_type)
     blob.make_public()
     full_size_url = blob.public_url
@@ -101,9 +99,7 @@ async def upload_segment_site_photo_to_cdn(
     # -- Create the thumbnail, upload it to GCS, and get the public URL
     file.file.seek(0)
     thumb_bytes = await create_thumbnail(file)
-    thumb_blob = bucket.blob(
-        f"{bt_number}/site_photos/thumbnails/{sanitized_material_name}_{sanitized_file_name}"
-    )
+    thumb_blob = bucket.blob(f"{bt_number}/site_photos/thumbnails/{sanitized_material_name}_{sanitized_file_name}")
     thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
     thumb_blob.make_public()
     thumbnail_url = thumb_blob.public_url
@@ -124,9 +120,7 @@ async def add_site_photo_to_segment(
         raise ValueError("Segment not found")
 
     # -- Create the Photo DB entry
-    material_photo = MaterialPhoto(
-        segment_id=segment.id, full_size_url=full_size_url, thumbnail_url=thumbnail_url
-    )
+    material_photo = MaterialPhoto(segment_id=segment.id, full_size_url=full_size_url, thumbnail_url=thumbnail_url)
     db.add(material_photo)
     db.commit()
     db.refresh(material_photo)
@@ -157,9 +151,7 @@ async def upload_segment_datasheet_to_cdn(
     sanitized_material_name = await sanitize_name(segment.material.name)
 
     # -- Upload the full-size image to GCS and get the public URL
-    blob = bucket.blob(
-        f"{bt_number}/datasheets/{sanitized_material_name}_{sanitized_file_name}"
-    )
+    blob = bucket.blob(f"{bt_number}/datasheets/{sanitized_material_name}_{sanitized_file_name}")
     blob.upload_from_file(file.file, content_type=file.content_type)
     blob.make_public()
     full_size_url = blob.public_url
@@ -167,9 +159,7 @@ async def upload_segment_datasheet_to_cdn(
     # -- Create the thumbnail, upload it to GCS, and get the public URL
     file.file.seek(0)
     thumb_bytes = await create_thumbnail(file)
-    thumb_blob = bucket.blob(
-        f"{bt_number}/datasheets/thumbnails/{sanitized_material_name}_{sanitized_file_name}"
-    )
+    thumb_blob = bucket.blob(f"{bt_number}/datasheets/thumbnails/{sanitized_material_name}_{sanitized_file_name}")
     thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
     thumb_blob.make_public()
     thumbnail_url = thumb_blob.public_url

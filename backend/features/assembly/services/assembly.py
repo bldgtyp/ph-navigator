@@ -1,19 +1,17 @@
 # -*- Python Version: 3.11 (Render.com) -*-
 
-import logging
 import json
+import logging
 
 from sqlalchemy.orm import Session
 
 from db_entities.app import Project
 from db_entities.assembly import Assembly, Layer, Segment
 from features.app.services import get_project_by_bt_number
-from features.assembly.services.layer import create_new_layer_in_db
+from features.assembly.services.assembly_to_hbe_construction import convert_assemblies_to_hbe_constructions
+from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import get_default_material
 from features.assembly.services.segment import create_new_segment
-from features.assembly.services.to_hbe_construction import (
-    convert_assemblies_to_hbe_constructions,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +44,7 @@ def get_all_project_assemblies(db: Session, bt_number: str) -> list[Assembly]:
 def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
 
     # Get all the Assemblies for the project
-    assemblies = (
-        db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-    )
+    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
 
     # -- Convert the Assemblies to HBE-Constructions
     hbe_constructions = convert_assemblies_to_hbe_constructions(assemblies)
@@ -57,7 +53,7 @@ def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
     return json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
 
 
-def create_new_assembly_in_db(
+def create_new_assembly(
     db: Session,
     name: str,
     project_id: int,
@@ -111,9 +107,7 @@ def add_layer_to_assembly(db: Session, assembly_id: int, layer: Layer) -> Assemb
     return assembly
 
 
-def add_default_layer_to_assembly(
-    db: Session, assembly_id: int, order: int
-) -> tuple[Assembly, Layer]:
+def add_default_layer_to_assembly(db: Session, assembly_id: int, order: int) -> tuple[Assembly, Layer]:
     logger.info(f"add_default_layer_to_assembly({assembly_id=}, {order=})")
 
     THICKNESS_MM = 50.0
@@ -123,7 +117,7 @@ def add_default_layer_to_assembly(
     mat = get_default_material(db)
 
     # Create a new Layer, new Segment
-    layer = create_new_layer_in_db(db, assembly.id, THICKNESS_MM, order)
+    layer = create_new_layer(db, assembly.id, THICKNESS_MM, order)
     seg = create_new_segment(db, layer.id, mat.id, WIDTH_MM, 0)
 
     add_layer_to_assembly(db, assembly.id, layer)
@@ -150,14 +144,12 @@ def delete_assembly(db: Session, assembly_id: int) -> None:
     assembly = get_assembly_by_id(db, assembly_id)
 
     # Delete all associated segments for each layer in the assembly
-    db.query(Segment).filter(
-        Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))
-    ).delete(synchronize_session="fetch")
-
-    # Delete all layers associated with the assembly
-    db.query(Layer).filter_by(assembly_id=assembly.id).delete(
+    db.query(Segment).filter(Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))).delete(
         synchronize_session="fetch"
     )
+
+    # Delete all layers associated with the assembly
+    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
 
     # Delete the assembly itself
     db.delete(assembly)
