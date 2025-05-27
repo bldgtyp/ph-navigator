@@ -39,7 +39,7 @@ class Assembly(Base):
     def remove_all_layers(self):
         """Remove all the existing layers from the assembly."""
         self.layers.clear()
-    
+
     @property
     def is_steel_stud_assembly(self) -> bool:
         """Check if the assembly contains a steel stud layer."""

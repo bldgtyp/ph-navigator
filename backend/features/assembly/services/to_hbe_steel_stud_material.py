@@ -64,9 +64,7 @@ class SteelStudAssemblyLayers:
         return msg
 
     @classmethod
-    def sort_layers_into_groups(
-        cls, layers: list[Layer]
-    ) -> tuple[dict, dict]:
+    def sort_layers_into_groups(cls, layers: list[Layer]) -> tuple[dict, dict]:
         """Sort the layers into groups based on their type / order."""
 
         # Group the layers into three groups: exterior, the cavity, and interior
@@ -106,9 +104,7 @@ class SteelStudAssemblyLayers:
         return layer_groups, exterior_layer_groups
 
     @classmethod
-    def from_layers(
-        cls, layers: list[Layer]
-    ) -> "SteelStudAssemblyLayers":
+    def from_layers(cls, layers: list[Layer]) -> "SteelStudAssemblyLayers":
         """Create a SteelStudAssemblyLayers object from a list of layers."""
         logger.info(f"SteelStudAssemblyLayers.from_layers([{len(layers)}] layers)")
 
@@ -118,22 +114,16 @@ class SteelStudAssemblyLayers:
         )
         steel_stud_assembly_layers = cls(cavity_layer_hbe_material)
         steel_stud_assembly_layers.ext_cladding = (
-                convert_multiple_assembly_layers_to_hb_material(
-                exterior_layer_groups[0]
-            )
+            convert_multiple_assembly_layers_to_hb_material(exterior_layer_groups[0])
         )
         steel_stud_assembly_layers.ext_insulation_layers = (
-                convert_multiple_assembly_layers_to_hb_material(
-                exterior_layer_groups[1]
-            )
+            convert_multiple_assembly_layers_to_hb_material(exterior_layer_groups[1])
         )
         steel_stud_assembly_layers.ext_sheathing_layers = (
-                convert_multiple_assembly_layers_to_hb_material(
-                exterior_layer_groups[2]
-            )
+            convert_multiple_assembly_layers_to_hb_material(exterior_layer_groups[2])
         )
         steel_stud_assembly_layers.int_sheathing_layers = (
-                convert_multiple_assembly_layers_to_hb_material(layer_groups[2])
+            convert_multiple_assembly_layers_to_hb_material(layer_groups[2])
         )
 
         return steel_stud_assembly_layers
@@ -229,9 +219,7 @@ def get_steel_stud_layers_as_hb_materials(
     logger.info(f"get_steel_stud_layers([{len(layers)}] layers)")
 
     # Calc the stud-cavity equivalent thermal conductivity
-    steel_stud_assembly_hbe_materials = SteelStudAssemblyLayers.from_layers(
-        layers
-    )
+    steel_stud_assembly_hbe_materials = SteelStudAssemblyLayers.from_layers(layers)
     stud_layer_eq_conductivity_w_mk = calculate_steel_stud_eq_conductivity(
         steel_stud_assembly_hbe_materials
     )

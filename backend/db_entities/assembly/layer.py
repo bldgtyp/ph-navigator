@@ -39,7 +39,7 @@ class Layer(Base):
     @classmethod
     def default(cls, material: Material) -> "Layer":
         return Layer(order=0, thickness_mm=50.0, segments=[Segment.default(material)])
-    
+
     @property
     def is_steel_stud_layer(self) -> bool:
         """Check if the layer has any Steel-Stud segments."""
@@ -49,4 +49,3 @@ class Layer(Base):
     def is_continuous_insulation_layer(self) -> bool:
         """Check if the layer has any Continuous Insulation segments."""
         return any([s.is_continuous_insulation for s in self.segments])
-

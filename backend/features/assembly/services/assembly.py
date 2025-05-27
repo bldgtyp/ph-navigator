@@ -11,7 +11,9 @@ from features.app.services import get_project_by_bt_number
 from features.assembly.services.layer import create_new_layer_in_db
 from features.assembly.services.material import get_default_material
 from features.assembly.services.segment import create_new_segment
-from features.assembly.services.to_hbe_construction import convert_assemblies_to_hbe_constructions
+from features.assembly.services.to_hbe_construction import (
+    convert_assemblies_to_hbe_constructions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +46,15 @@ def get_all_project_assemblies(db: Session, bt_number: str) -> list[Assembly]:
 def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
 
     # Get all the Assemblies for the project
-    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
+    assemblies = (
+        db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
+    )
 
     # -- Convert the Assemblies to HBE-Constructions
     hbe_constructions = convert_assemblies_to_hbe_constructions(assemblies)
 
     # -- Convert the HBE-Constructions to JSON
     return json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
-
 
 
 def create_new_assembly_in_db(
@@ -75,7 +78,7 @@ def create_new_assembly_in_db(
 def create_new_assembly_on_project(
     db: Session,
     bt_number: str,
-) -> Assembly:  
+) -> Assembly:
     """Create a new assembly for a project identified by its bt_number."""
     logger.info(f"create_new_assembly_on_project({bt_number=})")
 
@@ -108,7 +111,9 @@ def add_layer_to_assembly(db: Session, assembly_id: int, layer: Layer) -> Assemb
     return assembly
 
 
-def add_default_layer_to_assembly(db: Session, assembly_id: int, order: int) -> tuple[Assembly, Layer]:
+def add_default_layer_to_assembly(
+    db: Session, assembly_id: int, order: int
+) -> tuple[Assembly, Layer]:
     logger.info(f"add_default_layer_to_assembly({assembly_id=}, {order=})")
 
     THICKNESS_MM = 50.0
@@ -145,16 +150,17 @@ def delete_assembly(db: Session, assembly_id: int) -> None:
     assembly = get_assembly_by_id(db, assembly_id)
 
     # Delete all associated segments for each layer in the assembly
-    db.query(Segment).filter(Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))).delete(
-        synchronize_session="fetch"
-    )
+    db.query(Segment).filter(
+        Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))
+    ).delete(synchronize_session="fetch")
 
     # Delete all layers associated with the assembly
-    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
+    db.query(Layer).filter_by(assembly_id=assembly.id).delete(
+        synchronize_session="fetch"
+    )
 
     # Delete the assembly itself
     db.delete(assembly)
     db.commit()
 
     return None
-

@@ -138,7 +138,7 @@ async def get_project_assemblies_as_hb_json_route(
     logger.info(f"get_project_assemblies_as_hb_json_route({bt_number=}, {offset=})")
 
     hbe_construction_json = get_all_project_assemblies_as_hbjson(db, bt_number)
-    
+
     return JSONResponse(
         content={
             "message": "Test successful.",

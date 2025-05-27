@@ -52,9 +52,7 @@ def get_hb_constructions_from_hbjson(data) -> list[OpaqueConstruction]:
     return hb_objs
 
 
-async def get_material_from_hb_material(
-    db: Session, hb_material: EnergyMaterial
-) -> Material:
+def get_material_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Material:
     """Get a Material from the Database which matches the name of the HB-Material."""
     logger.info(
         f"get_material_from_hb_material(hb_material={hb_material.display_name})"
@@ -70,7 +68,7 @@ async def get_material_from_hb_material(
     raise ValueError(f"Material {hb_material.display_name} not found in database.")
 
 
-async def create_segment_from_hb_material(
+def create_segment_from_hb_material(
     db: Session, hb_material: EnergyMaterial
 ) -> Segment:
     """Create a Assembly-Layer-Segment from a Honeybee EnergyMaterial.
@@ -82,7 +80,7 @@ async def create_segment_from_hb_material(
     )
 
     # Get the Segment-Material from the database
-    db_material = await get_material_from_hb_material(db, hb_material)
+    db_material = get_material_from_hb_material(db, hb_material)
 
     # Create a new Segment object
     new_segment = Segment(
@@ -95,9 +93,7 @@ async def create_segment_from_hb_material(
     return new_segment
 
 
-async def create_layer_from_hb_material(
-    db: Session, hb_material: EnergyMaterial
-) -> Layer:
+def create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Layer:
     """Create a new Assembly-Layer from a Honeybee EnergyMaterial.
 
     Note: Changes are staged but NOT committed. Caller must commit.
@@ -117,10 +113,10 @@ async def create_layer_from_hb_material(
             raise NotImplementedError(msg)
 
         for cell in ph_props.divisions.cells:
-            segments.append(await create_segment_from_hb_material(db, cell.material))
+            segments.append(create_segment_from_hb_material(db, cell.material))
 
     # -- Create a new Segment from the Honeybee EnergyMaterial
-    segments.append(await create_segment_from_hb_material(db, hb_material))
+    segments.append(create_segment_from_hb_material(db, hb_material))
 
     # -- Create a new Layer object
     new_layer = Layer(
