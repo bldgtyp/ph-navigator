@@ -18,7 +18,7 @@ type LayerSegmentProps = {
 const AddSegmentButton: React.FC<{ onClick: () => void }> = (props) => {
     return (
         <Tooltip title="Add a New Segment" placement="right">
-            <button className="add-segment-button" onClick={props.onClick} >
+            <button className="create-new-segment-button" onClick={props.onClick} >
                 +
             </button>
         </Tooltip>

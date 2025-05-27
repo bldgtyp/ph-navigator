@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
 from db_entities.app.relationships import project_users
@@ -16,14 +16,18 @@ if TYPE_CHECKING:
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=True)
-    hashed_password = Column(String)
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
+    username: Mapped[str] = MappedColumn(String, unique=True, index=True)
+    email: Mapped[str] = MappedColumn(String, unique=True, index=True, nullable=True)
+    hashed_password: Mapped[str] = MappedColumn(String)
 
     # Relationships
-    owned_projects: Mapped[list["Project"]] = relationship("Project", back_populates="owner")
-    all_projects: Mapped[list["Project"]] = relationship("Project", secondary=project_users, back_populates="users")
+    owned_projects: Mapped[list["Project"]] = relationship(
+        "Project", back_populates="owner"
+    )
+    all_projects: Mapped[list["Project"]] = relationship(
+        "Project", secondary=project_users, back_populates="users"
+    )
 
     @property
     def owned_project_ids(self) -> list[int]:

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class Assembly(Base):
     __tablename__ = "assemblies"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True)
     name: Mapped[str] = MappedColumn(String)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     project: Mapped["Project"] = relationship("Project", back_populates="assemblies")
@@ -32,8 +32,15 @@ class Assembly(Base):
 
     @classmethod
     def default(cls, project: "Project", material: "Material") -> "Assembly":
-        return Assembly(name="Unnamed Assembly", project=project, layers=[Layer.default(material)])
+        return Assembly(
+            name="Unnamed Assembly", project=project, layers=[Layer.default(material)]
+        )
 
     def remove_all_layers(self):
         """Remove all the existing layers from the assembly."""
         self.layers.clear()
+    
+    @property
+    def is_steel_stud_assembly(self) -> bool:
+        """Check if the assembly contains a steel stud layer."""
+        return any([l.is_steel_stud_layer for l in self.layers])

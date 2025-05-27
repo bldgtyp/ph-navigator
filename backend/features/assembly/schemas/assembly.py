@@ -33,17 +33,6 @@ class AssemblySchema(AssemblySchemaBase):
         orm_mode = True
 
 
-class AddAssemblyRequest(BaseModel):
-    bt_number: str
-
-    @root_validator(pre=True)
-    def check_project_id(cls, values):
-        bt_number = values.get("bt_number")
-        if not bt_number:
-            raise ValueError("Project number is required.")
-        return values
-
-
 class UpdateAssemblyNameRequest(BaseModel):
     assembly_id: int
     new_name: str

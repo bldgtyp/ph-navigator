@@ -18,12 +18,14 @@ if TYPE_CHECKING:
 class Layer(Base):
     __tablename__ = "assembly_layers"
 
-    id = Column(Integer, primary_key=True, index=True)
-    order = Column(Integer)  # Used to maintain layer order within the assembly
+    id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
+    order: Mapped[int] = MappedColumn(
+        Integer
+    )  # Used to maintain layer order within the assembly
     thickness_mm: Mapped[float] = MappedColumn(Float, nullable=False)
 
     # Foreign Keys
-    assembly_id = Column(Integer, ForeignKey("assemblies.id"))
+    assembly_id: Mapped[int] = MappedColumn(Integer, ForeignKey("assemblies.id"))
 
     # Relationships
     assembly: Mapped["Assembly"] = relationship("Assembly", back_populates="layers")
@@ -37,3 +39,14 @@ class Layer(Base):
     @classmethod
     def default(cls, material: Material) -> "Layer":
         return Layer(order=0, thickness_mm=50.0, segments=[Segment.default(material)])
+    
+    @property
+    def is_steel_stud_layer(self) -> bool:
+        """Check if the layer has any Steel-Stud segments."""
+        return any([s.steel_stud_spacing_mm is not None for s in self.segments])
+
+    @property
+    def is_continuous_insulation_layer(self) -> bool:
+        """Check if the layer has any Continuous Insulation segments."""
+        return any([s.is_continuous_insulation for s in self.segments])
+

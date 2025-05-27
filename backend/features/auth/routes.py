@@ -13,7 +13,11 @@ from config import limiter, settings
 from database import get_db
 from db_entities.app.user import User
 from features.auth.schema import TokenSchema, UserSchema
-from features.auth.services import authenticate_user, create_access_token, get_current_active_user
+from features.auth.services import (
+    authenticate_user,
+    create_access_token,
+    get_current_active_user,
+)
 
 logger = logging.getLogger()
 
@@ -42,7 +46,9 @@ async def login_for_access_token(
 
     # -- Create JWT Token
     access_token_expires = timedelta(minutes=settings.JSON_WEB_TOKEN_EXPIRE_MINUTES)
-    access_token = await create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = await create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
     return TokenSchema(access_token=access_token, token_type="bearer")
 
 

@@ -26,6 +26,14 @@ class DeleteNonExistentMaterialException(Exception):
         super().__init__(f"Attempted to delete non-existent material {material_id}.")
 
 
+class NoMaterialsException(Exception):
+    """Custom exception for when no materials are found."""
+
+    def __init__(self, material_type: str):
+        logger.error(f"No materials found for type: {material_type}.")
+        super().__init__(f"No materials found for type: {material_type}.")
+
+
 def get_material_by_id(id: str, db: Session) -> Material:
     """Get a material by its ID or raise MaterialNotFoundException."""
     logger.info(f"Fetching material with ID: {id}")
@@ -36,7 +44,14 @@ def get_material_by_id(id: str, db: Session) -> Material:
     raise MaterialNotFoundException(id)
 
 
-def create_new_material_in_db(
+def get_default_material(db: Session) -> Material:
+    mat = db.query(Material).first()
+    if not mat:
+        raise NoMaterialsException("any")
+    return mat
+
+
+def create_new_material(
     db: Session,
     id: str,
     name: str,
@@ -69,7 +84,7 @@ def create_new_material_in_db(
     return new_material
 
 
-def update_material_in_db(
+def update_material(
     db: Session,
     id: str,
     name: str,
@@ -101,20 +116,22 @@ def update_material_in_db(
     return material
 
 
-def add_materials_to_db(db: Session, materials: list[Material]) -> tuple[int, int]:
+def add_materials(db: Session, materials: list[Material]) -> tuple[int, int]:
     """Add (or update) materials from AirTable to the database."""
-    logger.info(f"add_airtable_material_to_db(db, materials={len(materials)} materials)")
+    logger.info(
+        f"add_airtable_material_to_db(db, materials={len(materials)} materials)"
+    )
 
     num_materials_added = 0
     num_materials_updated = 0
     for material in materials:
         try:
             # Try and update an existing material
-            update_material_in_db(db=db, **material.__dict__)
+            update_material(db=db, **material.__dict__)
             num_materials_updated += 1
         except MaterialNotFoundException:
             # If the material doesn't exist, create a new one
-            create_new_material_in_db(db=db, **material.__dict__)
+            create_new_material(db=db, **material.__dict__)
             num_materials_added += 1
 
     db.commit()

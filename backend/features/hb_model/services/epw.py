@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 
 from db_entities.app.project import Project
 
-from ...air_table.services import download_epw_file, get_airtable_base_ref, get_airtable_table_ref
+from ...air_table.services import (
+    download_epw_file,
+    get_airtable_base_ref,
+    get_airtable_table_ref,
+)
 from ..cache import LimitedCache
 
 logger = getLogger(__name__)
@@ -21,7 +25,9 @@ class MissingFileException(Exception):
     """Custom exception for missing HBJSON file."""
 
     def __init__(self, bt_number: str, file_type: str):
-        super().__init__(f"MissingFileException: {file_type} file not found for Project ID: {bt_number}")
+        super().__init__(
+            f"MissingFileException: {file_type} file not found for Project ID: {bt_number}"
+        )
 
 
 async def find_epw_file_url(db: Session, bt_number: str) -> str:
@@ -60,7 +66,9 @@ async def find_epw_file_url(db: Session, bt_number: str) -> str:
 
         # Return the URL of the the most recent HBJSON file
         current_record = sorted(table_data, key=lambda x: x["fields"]["DATE"])[-1]
-        current_record_hbjson_file = current_record.get("fields", {}).get("EPW_FILE", "")
+        current_record_hbjson_file = current_record.get("fields", {}).get(
+            "EPW_FILE", ""
+        )
         if not current_record_hbjson_file:
             logger.error(f"HBJSON file not found for Project ID: {bt_number}")
             raise MissingFileException(bt_number, "EPW")

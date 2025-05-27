@@ -40,7 +40,7 @@ export const handleSubmit = async (
     try {
         // Update the segment width in the database if it has changed
         if (newSegmentWidthMM !== currentSegmentWidthMM) {
-            const response = await patchWithAlert(`assembly/update_segment_width/${segment.id}`, null, {
+            const response = await patchWithAlert(`assembly/update-segment-width/${segment.id}`, null, {
                 width_mm: newSegmentWidthMM,
             });
 
@@ -53,7 +53,7 @@ export const handleSubmit = async (
 
         // Update the material in the database if it has changed
         if (newMaterialId !== currentMaterialId) {
-            const response = await patchWithAlert<responseType>(`assembly/update_segment_material/${segment.id}`, null, {
+            const response = await patchWithAlert<responseType>(`assembly/update-segment-material/${segment.id}`, null, {
                 material_id: newMaterialId,
             });
 
@@ -69,7 +69,7 @@ export const handleSubmit = async (
         if (newIsSteelStud !== currentIsSteelStud || (newIsSteelStud && newSteelStudSpacing !== currentSteelStudSpacing)) {
             console.log("in here")
             console.log("newIsSteelStud ? newSteelStudSpacing : null = ", newIsSteelStud ? newSteelStudSpacing : null)
-            const response = await patchWithAlert(`assembly/update_segment_steel_stud_spacing/${segment.id}`, null, {
+            const response = await patchWithAlert(`assembly/update-segment-steel-stud-spacing/${segment.id}`, null, {
                 steel_stud_spacing_mm: newIsSteelStud ? newSteelStudSpacing : null
             });
 
@@ -84,7 +84,7 @@ export const handleSubmit = async (
 
         // Update the continuous insulation in the database if it has changed
         if (newContinuousInsulationChecked !== currentContinuousInsulationChecked) {
-            const response = await patchWithAlert(`assembly/update_segment_continuous_insulation/${segment.id}`, null, {
+            const response = await patchWithAlert(`assembly/update-segment-continuous-insulation/${segment.id}`, null, {
                 is_continuous_insulation: newContinuousInsulationChecked,
             });
 

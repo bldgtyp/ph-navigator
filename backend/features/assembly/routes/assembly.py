@@ -9,10 +9,7 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from db_entities.app import Project
-from db_entities.assembly import Assembly, Layer, Material, Segment
 from features.assembly.schemas.assembly import (
-    AddAssemblyRequest,
     AssemblySchema,
     DeleteAssemblyRequest,
     UpdateAssemblyNameRequest,
@@ -21,7 +18,13 @@ from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_hb_constructions_from_hbjson,
 )
-from features.assembly.services.to_hbe_construction import convert_assemblies_to_hbe_constructions
+from features.assembly.services.assembly import (
+    get_all_project_assemblies,
+    update_assembly_name,
+    delete_assembly,
+    create_new_assembly_on_project,
+    get_all_project_assemblies_as_hbjson,
+)
 
 router = APIRouter(
     prefix="/assembly",
@@ -30,29 +33,18 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
+# TODO: Change all these responses to return a Pydantic object instead?
+# Will need to check the frontend to see what it expects?
 
-@router.post("/add_assembly/")
-async def add_assembly(request: AddAssemblyRequest, db: Session = Depends(get_db)) -> JSONResponse:
+
+@router.post("/create-new-assembly-on_project/{bt_number}")
+async def create_new_assembly_on_project_route(
+    bt_number: str, db: Session = Depends(get_db)
+):
     """Add a new Assembly to a Project."""
-    logger.info(f"add_assembly(bt_number={request.bt_number})")
+    logger.info(f"create_new_assembly_on_project_route({bt_number=})")
 
-    # Check if the project exists
-    project = db.query(Project).filter_by(bt_number=request.bt_number).first()
-    if not project:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Project with bt_number {request.bt_number} not found.",
-        )
-
-    # Just use the 'first' material in the database for simplicity
-    default_material = db.query(Material).first()
-    assert default_material, "No Materials found in the database."
-
-    # Create the new Assembly
-    new_assembly = Assembly.default(project=project, material=default_material)
-    db.add(new_assembly)
-    db.commit()
-    db.refresh(new_assembly)
+    new_assembly = create_new_assembly_on_project(db, bt_number)
 
     return JSONResponse(
         content={
@@ -67,7 +59,7 @@ async def add_assembly(request: AddAssemblyRequest, db: Session = Depends(get_db
 
 
 @router.post("/add-assemblies-from-hbjson-constructions/{bt_number}")
-async def add_assemblies_from_hbjson_constructions(
+async def add_assemblies_from_hbjson_constructions_route(
     bt_number: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -79,68 +71,56 @@ async def add_assemblies_from_hbjson_constructions(
     try:
         data = json.loads(contents)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON file provided.")
+        raise HTTPException(status_code=400, detail="Invalid HB-JSON file provided.")
 
-    hb_constructions = await get_hb_constructions_from_hbjson(data)
+    # Convert the JSON data to HBE-Constructions, then create Assemblies
+    hb_constructions = get_hb_constructions_from_hbjson(data)
     logger.info(f"hb_constructions: {len(hb_constructions)}")
     for hb_const in hb_constructions:
-        assembly = await create_assembly_from_hb_construction(db, bt_number, hb_const)
+        create_assembly_from_hb_construction(db, bt_number, hb_const)
 
     return None
 
 
 @router.get("/get_assemblies/{bt_number}")
-async def get_assemblies(bt_number: str, db: Session = Depends(get_db)) -> list[AssemblySchema]:
+async def get_project_assemblies_route(
+    bt_number: str, db: Session = Depends(get_db)
+) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
-    logger.info(f"get_assemblies(bt_number={bt_number})")
-    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
+    logger.info(f"get_assemblies({bt_number=})")
+
+    assemblies = get_all_project_assemblies(db, bt_number)
     return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
 
 
 @router.patch("/update_assembly_name/")
-async def update_assembly_name(request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)) -> JSONResponse:
+async def update_assembly_name_route(
+    request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)
+):
     """Update the name of an Assembly."""
-    logger.info(f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})")
+    logger.info(
+        f"update_assembly_name(assembly_id={request.assembly_id}, new_name={request.new_name})"
+    )
 
-    # Fetch the assembly to be updated
-    assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
-    if not assembly:
-        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
-
-    # Update the name
-    assembly.name = request.new_name
-    db.commit()
+    assembly = update_assembly_name(db, request.assembly_id, request.new_name)
 
     return JSONResponse(
         content={
-            "message": f"Assembly {request.assembly_id} name updated successfully.",
-            "new_name": request.new_name,
+            "message": f"Assembly {assembly.id} name updated successfully.",
+            "new_name": assembly.name,
         },
         status_code=200,
     )
 
 
 @router.delete("/delete_assembly/")
-async def delete_assembly(request: DeleteAssemblyRequest, db: Session = Depends(get_db)) -> JSONResponse:
+async def delete_assembly_route(
+    request: DeleteAssemblyRequest, db: Session = Depends(get_db)
+):
     """Delete an Assembly and all its associated layers and segments."""
     logger.info(f"delete_assembly(assembly_id={request.assembly_id})")
 
-    # Fetch the assembly to be deleted
-    assembly = db.query(Assembly).filter_by(id=request.assembly_id).first()
-    if not assembly:
-        raise HTTPException(status_code=404, detail=f"Assembly with ID {request.assembly_id} not found.")
-
-    # Delete all associated segments for each layer in the assembly
-    db.query(Segment).filter(Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))).delete(
-        synchronize_session="fetch"
-    )
-
-    # Delete all layers associated with the assembly
-    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
-
-    # Delete the assembly itself
-    db.delete(assembly)
-    db.commit()
+    delete_assembly(db, request.assembly_id)
 
     return JSONResponse(
         content={"message": f"Assembly {request.assembly_id} deleted successfully."},
@@ -149,24 +129,16 @@ async def delete_assembly(request: DeleteAssemblyRequest, db: Session = Depends(
 
 
 @router.get("/get_assemblies_as_hb_json/{bt_number}")
-async def get_assemblies_as_hb_json(
+async def get_project_assemblies_as_hb_json_route(
     bt_number: str,
     offset: int = Query(0, description="The offset for the test function"),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Test function to check if the module is working."""
-    logger.info(f"get_assemblies_as_hb_json(bt_number={bt_number}, offset={offset})")
+    logger.info(f"get_project_assemblies_as_hb_json_route({bt_number=}, {offset=})")
 
-    # Get all the Assemblies for the project
-    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-    assemblies = [AssemblySchema.from_orm(assembly) for assembly in assemblies]
-
-    # -- Convert the Assemblies to HBE-Constructions
-    hbe_constructions = await convert_assemblies_to_hbe_constructions(assemblies)
-
-    # -- Convert the HBE-Constructions to JSON
-    hbe_construction_json = json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
-
+    hbe_construction_json = get_all_project_assemblies_as_hbjson(db, bt_number)
+    
     return JSONResponse(
         content={
             "message": "Test successful.",

@@ -4,15 +4,15 @@ from sqlalchemy.orm import Session
 from db_entities.assembly import Material
 from features.assembly.services.material import (
     MaterialNotFoundException,
-    add_materials_to_db,
-    create_new_material_in_db,
+    add_materials,
+    create_new_material,
     get_material_by_id,
-    update_material_in_db,
+    update_material,
 )
 
 
-def test_add_new_material_to_db(session: Session):
-    new_material = create_new_material_in_db(
+def test_create_new_material_in_db(session: Session):
+    new_material = create_new_material(
         session,
         id="test_material_id",
         name="test_material",
@@ -26,7 +26,7 @@ def test_add_new_material_to_db(session: Session):
 
 def test_update_existing_material_in_db(session: Session):
     # Add a material to the session
-    material = create_new_material_in_db(
+    material = create_new_material(
         session,
         id="test_material_id",
         name="test_material",
@@ -34,7 +34,7 @@ def test_update_existing_material_in_db(session: Session):
     )
 
     # Update the material
-    updated_material = update_material_in_db(
+    updated_material = update_material(
         session,
         id=material.id,
         name="updated_test_material",
@@ -48,7 +48,7 @@ def test_update_existing_material_in_db(session: Session):
 
 def test_get_existing_material_by_id(session: Session):
     # Add a material to the session
-    material = create_new_material_in_db(
+    material = create_new_material(
         session,
         id="test_material_id",
         name="test_material",
@@ -74,7 +74,7 @@ def test_update_non_existing_material_raises_MaterialNotFoundException(
     session: Session,
 ):
     with pytest.raises(MaterialNotFoundException):
-        update_material_in_db(
+        update_material(
             session,
             id="non_existing_material_id",
             name="updated_test_material",
@@ -96,7 +96,7 @@ def test_add_list_of_new_materials_to_db_adds_them(session: Session):
         ),
     ]
 
-    add_materials_to_db(session, materials)
+    add_materials(session, materials)
 
     # Verify that the materials were added
     added_material_1 = get_material_by_id("material_1", session)
@@ -110,7 +110,7 @@ def test_add_list_of_new_materials_to_db_adds_them(session: Session):
 
 def test_add_list_of_existing_materials_to_db_updates_them(session: Session):
     # Add a material to the session
-    create_new_material_in_db(
+    create_new_material(
         session,
         id="material_1",
         name="Material 1",
@@ -135,7 +135,7 @@ def test_add_list_of_existing_materials_to_db_updates_them(session: Session):
         ),
     ]
 
-    add_materials_to_db(session, materials)
+    add_materials(session, materials)
 
     # Verify that the existing material was updated
     updated_material_1 = get_material_by_id("material_1", session)

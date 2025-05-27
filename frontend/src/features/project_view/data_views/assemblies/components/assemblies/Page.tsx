@@ -70,11 +70,7 @@ const AssembliesPage: React.FC = () => {
   const handleAddAssembly = async () => {
     try {
       const response = await postWithAlert<{ message: string; assembly: AssemblyType }>(
-        `assembly/add_assembly/`,
-        null,
-        {
-          bt_number: projectId,
-        }
+        `assembly/create-new-assembly-on_project/${projectId}`,
       );
 
       if (response) {
@@ -154,7 +150,7 @@ const AssembliesPage: React.FC = () => {
     setIsRefreshing(true);
     setRefreshMessage(null);
     try {
-      await getWithAlert('assembly/refresh_db_materials_from_air_table');
+      await getWithAlert('assembly/refresh-db-materials-from-air-table');
       const fetchedMaterials = await fetchAndCacheMaterials();
       setMaterials(fetchedMaterials);
       setRefreshMessage("Materials refreshed successfully!");

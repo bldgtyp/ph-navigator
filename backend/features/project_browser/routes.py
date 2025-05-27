@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from db_entities.app.user import User
+from features.app.schema import ProjectSchema
+from features.app.services import get_projects
 from features.auth.services import get_current_active_user
-from features.project.schema import ProjectSchema
-from features.project.services import get_projects
 
 router = APIRouter(
     prefix="/project_browser",

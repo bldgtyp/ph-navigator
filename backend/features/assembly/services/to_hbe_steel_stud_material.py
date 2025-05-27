@@ -11,7 +11,7 @@ from honeybee_ph_utils.aisi_s250_21 import (
 )
 from ph_units.converter import convert
 
-from features.assembly.schemas.assembly import AssemblyLayerSchema
+from db_entities.assembly import Assembly, Layer, Segment
 from features.assembly.services.to_hbe_typical_material import (
     convert_multiple_assembly_layers_to_hb_material,
     convert_single_assembly_layer_to_hb_material,
@@ -36,7 +36,9 @@ class SteelStudAssemblyLayers:
 
     def __str__(self) -> str:
         def layer_view(layer: EnergyMaterial, r_value: float):
-            return f"Layer: {layer.display_name} | {layer.thickness}-m | R-{r_value:.2f}"
+            return (
+                f"Layer: {layer.display_name} | {layer.thickness}-m | R-{r_value:.2f}"
+            )
 
         msg = " -" * 25 + "\n"
         msg += "SteelStudAssemblyLayers()\n"
@@ -51,7 +53,9 @@ class SteelStudAssemblyLayers:
             msg += layer_view(layer, self.r_IP_value_ext_sheathing)
         msg += "- stud_cavity Layer:\n"
         if self.stud_cavity_layer:
-            msg += layer_view(self.stud_cavity_layer, self.r_IP_value_stud_cavity_insulation)
+            msg += layer_view(
+                self.stud_cavity_layer, self.r_IP_value_stud_cavity_insulation
+            )
         else:
             msg += "  None\n"
         msg += "- int_sheathing Layers:\n"
@@ -60,16 +64,18 @@ class SteelStudAssemblyLayers:
         return msg
 
     @classmethod
-    async def sort_layers_into_groups(cls, layers: list[AssemblyLayerSchema]) -> tuple[dict, dict]:
+    def sort_layers_into_groups(
+        cls, layers: list[Layer]
+    ) -> tuple[dict, dict]:
         """Sort the layers into groups based on their type / order."""
 
         # Group the layers into three groups: exterior, the cavity, and interior
-        layer_groups: dict[int, list[AssemblyLayerSchema]] = {
+        layer_groups: dict[int, list[Layer]] = {
             0: [],  # Exterior Layers
             1: [],  # the Stud Cavity
             2: [],  # Interior Layers
         }
-        current_layer_group: list[AssemblyLayerSchema] = layer_groups[0]
+        current_layer_group: list[Layer] = layer_groups[0]
         for layer in layers:
             if layer.is_steel_stud_layer:
                 layer_groups[1].append(layer)  # Store the Cavity Layer
@@ -100,24 +106,34 @@ class SteelStudAssemblyLayers:
         return layer_groups, exterior_layer_groups
 
     @classmethod
-    async def from_layers(cls, layers: list[AssemblyLayerSchema]) -> "SteelStudAssemblyLayers":
+    def from_layers(
+        cls, layers: list[Layer]
+    ) -> "SteelStudAssemblyLayers":
         """Create a SteelStudAssemblyLayers object from a list of layers."""
         logger.info(f"SteelStudAssemblyLayers.from_layers([{len(layers)}] layers)")
 
-        layer_groups, exterior_layer_groups = await cls.sort_layers_into_groups(layers)
-        cavity_layer_hbe_material = await convert_single_assembly_layer_to_hb_material(layer_groups[1][0])
+        layer_groups, exterior_layer_groups = cls.sort_layers_into_groups(layers)
+        cavity_layer_hbe_material = convert_single_assembly_layer_to_hb_material(
+            layer_groups[1][0]
+        )
         steel_stud_assembly_layers = cls(cavity_layer_hbe_material)
-        steel_stud_assembly_layers.ext_cladding = await convert_multiple_assembly_layers_to_hb_material(
-            exterior_layer_groups[0]
+        steel_stud_assembly_layers.ext_cladding = (
+                convert_multiple_assembly_layers_to_hb_material(
+                exterior_layer_groups[0]
+            )
         )
-        steel_stud_assembly_layers.ext_insulation_layers = await convert_multiple_assembly_layers_to_hb_material(
-            exterior_layer_groups[1]
+        steel_stud_assembly_layers.ext_insulation_layers = (
+                convert_multiple_assembly_layers_to_hb_material(
+                exterior_layer_groups[1]
+            )
         )
-        steel_stud_assembly_layers.ext_sheathing_layers = await convert_multiple_assembly_layers_to_hb_material(
-            exterior_layer_groups[2]
+        steel_stud_assembly_layers.ext_sheathing_layers = (
+                convert_multiple_assembly_layers_to_hb_material(
+                exterior_layer_groups[2]
+            )
         )
-        steel_stud_assembly_layers.int_sheathing_layers = await convert_multiple_assembly_layers_to_hb_material(
-            layer_groups[2]
+        steel_stud_assembly_layers.int_sheathing_layers = (
+                convert_multiple_assembly_layers_to_hb_material(layer_groups[2])
         )
 
         return steel_stud_assembly_layers
@@ -150,7 +166,9 @@ class SteelStudAssemblyLayers:
     def r_IP_value_stud_cavity_insulation(self) -> float:
         """Get the R-value of the stud cavity insulation in IP units (hr-ft2-F/Btu)."""
         if self.stud_cavity_layer:
-            return convert(self.stud_cavity_layer.r_value, "M2-K/W", "HR-FT2-F/BTU") or 0.0
+            return (
+                convert(self.stud_cavity_layer.r_value, "M2-K/W", "HR-FT2-F/BTU") or 0.0
+            )
         return 0.0
 
     @property
@@ -176,7 +194,7 @@ class SteelStudAssemblyLayers:
         return 0.0
 
 
-async def calculate_steel_stud_eq_conductivity(
+def calculate_steel_stud_eq_conductivity(
     stl_stud_layers: SteelStudAssemblyLayers,
 ) -> float:
     """Return equivalent conductivity (W/m-K) of a steel-stud assembly's stud-cavity."""
@@ -205,18 +223,24 @@ async def calculate_steel_stud_eq_conductivity(
     return conductivity_W_mk
 
 
-async def get_steel_stud_layers_as_hb_materials(
-    layers: list[AssemblyLayerSchema],
+def get_steel_stud_layers_as_hb_materials(
+    layers: list[Layer],
 ) -> list[EnergyMaterial]:
     logger.info(f"get_steel_stud_layers([{len(layers)}] layers)")
 
     # Calc the stud-cavity equivalent thermal conductivity
-    steel_stud_assembly_hbe_materials = await SteelStudAssemblyLayers.from_layers(layers)
-    stud_layer_eq_conductivity_w_mk = await calculate_steel_stud_eq_conductivity(steel_stud_assembly_hbe_materials)
+    steel_stud_assembly_hbe_materials = SteelStudAssemblyLayers.from_layers(
+        layers
+    )
+    stud_layer_eq_conductivity_w_mk = calculate_steel_stud_eq_conductivity(
+        steel_stud_assembly_hbe_materials
+    )
 
     # Build the stud layer's  Honeybee-Energy Material
     new_eq_stud_layer_material = EnergyMaterial(
-        identifier="Steel-Stud Layer [" + steel_stud_assembly_hbe_materials.stud_cavity_layer.identifier + "]",
+        identifier="Steel-Stud Layer ["
+        + steel_stud_assembly_hbe_materials.stud_cavity_layer.identifier
+        + "]",
         thickness=steel_stud_assembly_hbe_materials.stud_depth_m,
         conductivity=stud_layer_eq_conductivity_w_mk,
         density=steel_stud_assembly_hbe_materials.stud_cavity_layer.density,

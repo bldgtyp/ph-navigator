@@ -26,7 +26,7 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
             const orderPosition = layer.order + 1;
 
             // Call the backend API to add the new segment
-            const response = await postWithAlert<{ message: string, layer_id: number }>(`assembly/add_layer`, null, {
+            const response = await postWithAlert<{ message: string, layer_id: number }>(`assembly/add-layer`, null, {
                 assembly_id: assembly.id,
                 thickness_mm: DEFAULT_THICKNESS,
                 order: orderPosition,
@@ -37,7 +37,7 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
 
                 // Get the new Layer for display
                 try {
-                    const newLayer = await getWithAlert<LayerType>(`assembly/get_layer/${newLayerId}`, null);
+                    const newLayer = await getWithAlert<LayerType>(`assembly/get-layer/${newLayerId}`, null);
                     if (newLayer) {
                         // Update the layers array to reflect the insertion
                         const updatedLayers = [...layers];

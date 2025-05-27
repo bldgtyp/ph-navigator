@@ -8,10 +8,9 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from db_entities.assembly import Material
 from features.air_table.services import get_all_material_from_airtable
 from features.assembly.schemas.material import MaterialSchema
-from features.assembly.services.material import add_materials_to_db, purge_unused_materials
+from features.assembly.services.material import add_materials, purge_unused_materials
 
 router = APIRouter(
     prefix="/assembly",
@@ -21,16 +20,20 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.get("/refresh_db_materials_from_air_table", response_model=JSONResponse)
-async def refresh_db_materials_from_air_table(
+# TODO: Change all these responses to return a Pydantic object instead?
+# Will need to check the frontend to see what it expects?
+
+
+@router.get("/refresh-db-materials-from-air-table")
+async def refresh_db_materials_from_air_table_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Load all of the records from AirTable into the Database."""
-    logger.info(f"refresh_db_materials_from_air_table()")
+    logger.info(f"refresh_db_materials_from_air_table_route()")
 
     materials = get_all_material_from_airtable()
     purge_unused_materials(db)
-    number_added, number_updated = add_materials_to_db(db, materials)
+    number_added, number_updated = add_materials(db, materials)
 
     return JSONResponse(
         content={
@@ -43,12 +46,12 @@ async def refresh_db_materials_from_air_table(
     )
 
 
-@router.get("/get_all_materials", response_model=list[MaterialSchema])
-async def get_all_materials(
+@router.get("/get-all-materials", response_model=list[MaterialSchema])
+async def get_all_materials_route(
     db: Session = Depends(get_db),
 ) -> list[MaterialSchema]:
     """Return all of the Materials in the database."""
-    logger.info(f"get_all_materials()")
+    logger.info(f"get_all_materials_route()")
 
-    materials = db.query(Material).all()
+    materials = get_all_material_from_airtable()
     return [MaterialSchema.from_orm(material) for material in materials]

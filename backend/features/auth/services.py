@@ -27,7 +27,9 @@ logger = logging.getLogger(__name__)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+        )
     except ValueError as e:
         return False
 
@@ -40,7 +42,9 @@ async def get_user(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
 
 
-async def authenticate_user(db: Session, username: str, password: str) -> User | Literal[False]:
+async def authenticate_user(
+    db: Session, username: str, password: str
+) -> User | Literal[False]:
     user = await get_user(db, username)
     if not user:
         logger.error(f"User '{username}' not found.")
@@ -52,7 +56,9 @@ async def authenticate_user(db: Session, username: str, password: str) -> User |
     return user
 
 
-async def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+async def create_access_token(
+    data: dict, expires_delta: timedelta | None = None
+) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -67,7 +73,9 @@ async def create_access_token(data: dict, expires_delta: timedelta | None = None
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)) -> User:
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

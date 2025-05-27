@@ -10,9 +10,9 @@ from config import limiter
 from database import get_db
 from db_entities.app.project import Project
 from db_entities.app.user import User
+from features.app.schema import ProjectCreateSchema, ProjectSchema
+from features.app.services import get_project_by_bt_number
 from features.auth.services import get_current_active_user
-from features.project.schema import ProjectCreateSchema, ProjectSchema
-from features.project.services import get_project_by_bt_number
 
 logger = logging.getLogger()
 
@@ -32,7 +32,7 @@ async def project(
     """Return a project by its BuildingType Number."""
     logger.info(f"project({bt_number=})")
 
-    project = await get_project_by_bt_number(db, bt_number)
+    project = get_project_by_bt_number(db, bt_number)
     if not project:
         raise HTTPException(status_code=404, detail=f"Project {bt_number} not found")
     return ProjectSchema.from_orm(project)
@@ -49,7 +49,7 @@ async def get_project_settings(
     db: Session = Depends(get_db),
 ):
     # Get the project from the database
-    project = await get_project_by_bt_number(db, bt_number)
+    project = get_project_by_bt_number(db, bt_number)
 
     if not project:
         HTTPException(
@@ -73,7 +73,7 @@ async def update_project_settings(
     db: Session = Depends(get_db),
 ):
     # Get the project from the database
-    project = await get_project_by_bt_number(db, bt_number)
+    project = get_project_by_bt_number(db, bt_number)
 
     if not project:
         raise HTTPException(
@@ -114,7 +114,9 @@ async def create_new_project(
     logger.info(f"create_new_project()")
 
     # Check if a project with the same bt_number already exists
-    existing_project = db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
+    existing_project = (
+        db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
+    )
     if existing_project:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

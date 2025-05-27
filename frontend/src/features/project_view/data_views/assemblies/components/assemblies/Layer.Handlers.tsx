@@ -19,7 +19,7 @@ export const handleAddSegmentToRight = async (
         const orderPosition = segment.order + 1;
 
         // Call the backend API to add the new segment
-        const response = await postWithAlert<{ message: string, segment_id: number }>(`assembly/add_layer_segment`, null, {
+        const response = await postWithAlert<{ message: string, segment_id: number }>(`assembly/create-new-segment`, null, {
             layer_id: layer.id,
             material_id: segment.material.id, // Match the material ID from the segment
             width_mm: DEFAULT_WIDTH,
@@ -64,7 +64,7 @@ export const handleDeleteSegment = async (
 ) => {
     try {
         // Call the backend API to delete the segment
-        const response = await deleteWithAlert<{ message: string }>(`assembly/delete_layer_segment/${segmentId}`, null);
+        const response = await deleteWithAlert<{ message: string }>(`assembly/delete-segment/${segmentId}`, null);
 
         if (response) {
             // Remove the segment from the local state
@@ -91,7 +91,7 @@ export const handleSubmit = async (
 ) => {
     try {
         if (newLayerThicknessMM !== currentLayerThicknessMM) {
-            const response = await patchWithAlert(`assembly/update_layer_thickness/${layer.id}`, null, {
+            const response = await patchWithAlert(`assembly/update-layer-thickness/${layer.id}`, null, {
                 thickness_mm: newLayerThicknessMM,
             });
 
