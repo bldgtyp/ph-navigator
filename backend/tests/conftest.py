@@ -87,6 +87,10 @@ def create_test_project(
             id="test_material",
             name="Test Material",
             category="Test Category",
+            conductivity_w_mk=1.0,
+            emissivity=0.9,
+            density_kg_m3=999,
+            specific_heat_j_kgk=999,
         )
         segment = create_new_segment(
             db=session,

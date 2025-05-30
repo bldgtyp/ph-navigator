@@ -1,7 +1,5 @@
 # -*- Python Version: 3.11 -*-
 
-from copy import copy
-
 import pytest
 from sqlalchemy.orm import Session
 
@@ -12,6 +10,7 @@ from features.assembly.services.assembly import (
     create_new_default_assembly_on_project,
     create_new_empty_assembly_on_project,
     delete_assembly,
+    get_all_project_assemblies,
     get_assembly_by_id,
     insert_default_layer_into_assembly,
     insert_layer_into_assembly,
@@ -23,8 +22,14 @@ from features.assembly.services.layer import (
     create_new_layer,
     delete_layer,
     get_layer_by_id,
-    update_layer_thickness,
 )
+
+
+def test_get_all_project_assemblies(session: Session, create_test_project):
+    """Get all assemblies for a specific project by its bt_number."""
+    create_test_project(db=session, username="user1", project_name="Project 1")
+    assemblies = get_all_project_assemblies(session, "1234")
+    assert len(assemblies) == 1  # Initial assembly created by default
 
 
 def test_get_existing_assembly_by_id(session, create_test_project):
