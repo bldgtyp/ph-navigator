@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 """Utility to add some fake users to the database for testing and development."""
 

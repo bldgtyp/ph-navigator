@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 import logging
 
@@ -36,16 +36,11 @@ def get_layer_by_id(db: Session, layer_id: int) -> Layer:
     return layer
 
 
-def create_new_layer(db: Session, assembly_id: int, thickness_mm: float, order: int) -> Layer:
-    """Add a new layer to the database."""
-    logger.info(f"Adding new layer with thickness {thickness_mm} mm")
+def create_new_layer(thickness_mm: float = 50.0, order: int = 0) -> Layer:
+    """Create a new Layer instance. This new Layer must next be added to an assembly."""
+    logger.info(f"create_new_layer({thickness_mm=}, {order=})")
 
-    new_layer = Layer(thickness_mm=thickness_mm, assembly_id=assembly_id, order=order)
-    db.add(new_layer)
-    db.commit()
-    db.refresh(new_layer)
-
-    return new_layer
+    return Layer(thickness_mm=thickness_mm, order=order)
 
 
 def update_layer_thickness(db: Session, layer_id: int, new_thickness_mm: float) -> Layer:

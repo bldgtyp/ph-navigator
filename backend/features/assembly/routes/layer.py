@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 import logging
 
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from config import limiter
 from database import get_db
 from features.assembly.schemas.layer import AssemblyLayerSchema, CreateLayerRequest, UpdateLayerHeightRequest
-from features.assembly.services.assembly import add_default_layer_to_assembly
+from features.assembly.services.assembly import insert_default_layer_into_assembly
 from features.assembly.services.layer import (
     LastLayerAssemblyException,
     delete_layer,
@@ -33,7 +33,7 @@ async def add_layer_to_assembly_route(request: CreateLayerRequest, db: Session =
     """Add a new Layer to an Assembly."""
     logger.info(f"add_layer_to_assembly_route(assembly_id={request.assembly_id}, order={request.order})")
 
-    assembly, layer = add_default_layer_to_assembly(db, request.assembly_id, request.order)
+    assembly, layer = insert_default_layer_into_assembly(db, request.assembly_id, request.order)
 
     return JSONResponse(
         content={

@@ -1,8 +1,8 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
@@ -20,7 +20,7 @@ class Assembly(Base):
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True)
     name: Mapped[str] = MappedColumn(String)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    project_id: Mapped[int] = MappedColumn(Integer, ForeignKey("projects.id"), nullable=False)
     project: Mapped["Project"] = relationship("Project", back_populates="assemblies")
     layers: Mapped[list[Layer]] = relationship(
         "Layer",

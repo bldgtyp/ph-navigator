@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 from enum import Enum
 from typing import TYPE_CHECKING

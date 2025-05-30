@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 -*-
+
 from fastapi.testclient import TestClient
 
 

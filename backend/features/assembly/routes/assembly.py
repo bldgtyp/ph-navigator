@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 import json
 import logging
@@ -11,7 +11,7 @@ from config import limiter
 from database import get_db
 from features.assembly.schemas.assembly import AssemblySchema, DeleteAssemblyRequest, UpdateAssemblyNameRequest
 from features.assembly.services.assembly import (
-    create_new_assembly_on_project,
+    create_new_default_assembly_on_project,
     delete_assembly,
     get_all_project_assemblies,
     get_all_project_assemblies_as_hbjson,
@@ -38,7 +38,7 @@ async def create_new_assembly_on_project_route(bt_number: str, db: Session = Dep
     """Add a new Assembly to a Project."""
     logger.info(f"create_new_assembly_on_project_route({bt_number=})")
 
-    new_assembly = create_new_assembly_on_project(db, bt_number)
+    new_assembly = create_new_default_assembly_on_project(db, bt_number)
 
     return JSONResponse(
         content={

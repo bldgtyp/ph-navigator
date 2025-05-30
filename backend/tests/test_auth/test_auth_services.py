@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 -*-
+
 from features.auth.services import get_password_hash, verify_password
 
 

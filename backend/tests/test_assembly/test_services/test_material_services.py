@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 -*-
+
 import pytest
 from sqlalchemy.orm import Session
 

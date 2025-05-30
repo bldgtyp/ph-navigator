@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 from typing import TYPE_CHECKING
 
@@ -36,8 +36,8 @@ class Layer(Base):
     )
 
     @classmethod
-    def default(cls, material: Material) -> "Layer":
-        return Layer(order=0, thickness_mm=50.0, segments=[Segment.default(material)])
+    def default(cls, material: Material, order: int = 0) -> "Layer":
+        return Layer(order=order, thickness_mm=50.0, segments=[Segment.default(material)])
 
     @property
     def is_steel_stud_layer(self) -> bool:

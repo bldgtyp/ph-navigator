@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 import json
 import logging
@@ -7,11 +7,9 @@ from sqlalchemy.orm import Session
 
 from db_entities.app import Project
 from db_entities.assembly import Assembly, Layer, Segment
-from features.app.services import get_project_by_bt_number
+from features.app.services import get_project_by_bt_number, get_project_by_id
 from features.assembly.services.assembly_to_hbe_construction import convert_assemblies_to_hbe_constructions
-from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import get_default_material
-from features.assembly.services.segment import create_new_segment
 
 logger = logging.getLogger(__name__)
 
@@ -53,29 +51,24 @@ def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
     return json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
 
 
-def create_new_assembly(
+def create_new_empty_assembly_on_project(
     db: Session,
     name: str,
     project_id: int,
 ) -> Assembly:
-    """Add a new assembly to the database."""
+    """Add a new assembly on the Project."""
     logger.info(f"create_new_assembly_in_db({name=}, {project_id=})")
 
-    new_assembly = Assembly(
-        name=name,
-        project_id=project_id,
-    )
+    project = get_project_by_id(db, project_id)
+    new_assembly = Assembly(name=name, project_id=project.id)
     db.add(new_assembly)
     db.commit()
     db.refresh(new_assembly)
     return new_assembly
 
 
-def create_new_assembly_on_project(
-    db: Session,
-    bt_number: str,
-) -> Assembly:
-    """Create a new assembly for a project identified by its bt_number."""
+def create_new_default_assembly_on_project(db: Session, bt_number: str) -> Assembly:
+    """Create a new a default Assembly with a default Layer on the Project."""
     logger.info(f"create_new_assembly_on_project({bt_number=})")
 
     project = get_project_by_bt_number(db, bt_number)
@@ -87,42 +80,55 @@ def create_new_assembly_on_project(
     return new_assembly
 
 
-def add_layer_to_assembly(db: Session, assembly_id: int, layer: Layer) -> Assembly:
-    """Add a layer to an assembly."""
-    logger.info(f"add_layer_to_assembly({assembly_id=}, layer={layer.id})")
+def insert_layer_into_assembly(db: Session, assembly_id: int, layer: Layer) -> tuple[Assembly, Layer]:
+    """Insert a Layer to an Assembly Layer list at a specific location."""
+    logger.info(f"insert_layer_into_assembly({assembly_id=}, layer={layer.id})")
 
     assembly = get_assembly_by_id(db, assembly_id)
 
-    # Shift the order of any existing layers
-    db.query(Layer).filter(
-        Layer.assembly_id == assembly.id,
-        Layer.order >= layer.order,  # Shift only layers at or after the insertion point
-    ).update({"order": Layer.order + 1}, synchronize_session="fetch")
+    # Ensure the layer is in the session (handles both new and existing layers)
+    layer.assembly_id = assembly.id
+    db.add(layer)
 
-    # Add the layer to the assembly
+    # Insert the layer into the assembly
     assembly.layers.insert(layer.order, layer)
+
     db.commit()
     db.refresh(assembly)
 
-    return assembly
+    return assembly, layer
 
 
-def add_default_layer_to_assembly(db: Session, assembly_id: int, order: int) -> tuple[Assembly, Layer]:
-    logger.info(f"add_default_layer_to_assembly({assembly_id=}, {order=})")
-
-    THICKNESS_MM = 50.0
-    WIDTH_MM = 812.8  # 32 inches
+def append_layer_to_assembly(db: Session, assembly_id: int, layer: Layer) -> tuple[Assembly, Layer]:
+    """Append a Layer to the end of an Assembly Layer list."""
+    logger.info(f"append_layer_to_assembly({assembly_id=}, layer={layer.id})")
 
     assembly = get_assembly_by_id(db, assembly_id)
-    mat = get_default_material(db)
 
-    # Create a new Layer, new Segment
-    layer = create_new_layer(db, assembly.id, THICKNESS_MM, order)
-    seg = create_new_segment(db, layer.id, mat.id, WIDTH_MM, 0)
+    # Append to the end of the Layers list
+    layer.order = len(assembly.layers)
 
-    add_layer_to_assembly(db, assembly.id, layer)
+    return insert_layer_into_assembly(db, assembly.id, layer)
 
-    return assembly, layer
+
+def insert_default_layer_into_assembly(db: Session, assembly_id: int, order: int) -> tuple[Assembly, Layer]:
+    """Insert a default Layer to an Assembly Layer list at a specific location."""
+    logger.info(f"insert_default_layer_into_assembly({assembly_id=}, {order=})")
+
+    assembly, default_layer = insert_layer_into_assembly(
+        db=db, assembly_id=get_assembly_by_id(db, assembly_id).id, layer=Layer.default(get_default_material(db), order)
+    )
+
+    return assembly, default_layer
+
+
+def append_default_layer_to_assembly(db: Session, assembly_id: int) -> tuple[Assembly, Layer]:
+    """Append a default Layer to the end of an Assembly Layer list."""
+    logger.info(f"append_default_layer_to_assembly({assembly_id=})")
+
+    assembly = get_assembly_by_id(db, assembly_id)
+
+    return insert_default_layer_into_assembly(db, assembly.id, len(assembly.layers))
 
 
 def update_assembly_name(db: Session, assembly_id: int, new_name: str) -> Assembly:
@@ -138,7 +144,7 @@ def update_assembly_name(db: Session, assembly_id: int, new_name: str) -> Assemb
 
 
 def delete_assembly(db: Session, assembly_id: int) -> None:
-    """Delete an assembly and all its associated layers and segments."""
+    """Delete an Assembly and all its associated Layers and Segments."""
     logger.info(f"delete_assembly({assembly_id=})")
 
     assembly = get_assembly_by_id(db, assembly_id)

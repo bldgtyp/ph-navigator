@@ -1,7 +1,9 @@
+# -*- Python Version: 3.11 -*-
+
 import pytest
 from sqlalchemy.orm import Session
 
-from features.assembly.services.assembly import get_assembly_by_id
+from features.assembly.services.assembly import append_layer_to_assembly, get_assembly_by_id, insert_layer_into_assembly
 from features.assembly.services.layer import (
     LastLayerAssemblyException,
     LayerNotFoundException,
@@ -12,18 +14,6 @@ from features.assembly.services.layer import (
 )
 from features.assembly.services.material import get_default_material
 from features.assembly.services.segment import SegmentNotFoundException, create_new_segment, get_segment_by_id
-
-
-def test_create_new_layer(session: Session, create_test_project):
-    create_test_project(db=session, username="user1", project_name="Project 1")
-    new_layer = create_new_layer(db=session, assembly_id=1, thickness_mm=150.0, order=2)
-
-    # Get the newly created layer back out
-    existing_layer = get_layer_by_id(session, new_layer.id)
-    assert existing_layer.id == 2
-    assert existing_layer.assembly_id == 1
-    assert existing_layer.thickness_mm == 150.0
-    assert existing_layer.order == 2
 
 
 def test_get_valid_layer_by_id(session: Session, create_test_project):
@@ -63,7 +53,11 @@ def test_update_layer_thickness(session: Session, create_test_project):
 
 def test_delete_layer_with_no_segments(session: Session, create_test_project):
     create_test_project(db=session, username="user1", project_name="Project 1")
-    new_layer = create_new_layer(db=session, assembly_id=1, thickness_mm=150.0, order=2)
+    assembly = get_assembly_by_id(session, 1)
+    new_layer = create_new_layer(thickness_mm=150.0)
+    assembly = append_layer_to_assembly(session, assembly.id, new_layer)
+
+    # Verify the layer is added
     existing_assembly = get_assembly_by_id(session, 1)
     assert len(existing_assembly.layers) == 2
 
@@ -82,7 +76,9 @@ def test_delete_layer_with_no_segments(session: Session, create_test_project):
 
 def test_delete_layer_with_segments(session: Session, create_test_project):
     create_test_project(db=session, username="user1", project_name="Project 1")
-    new_layer = create_new_layer(db=session, assembly_id=1, thickness_mm=150.0, order=2)
+    assembly = get_assembly_by_id(session, 1)
+    new_layer = create_new_layer(thickness_mm=150.0)
+    assembly = append_layer_to_assembly(session, assembly.id, new_layer)
 
     # Add segments to the layer
     mat = get_default_material(session)

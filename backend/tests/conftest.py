@@ -1,3 +1,5 @@
+# -*- Python Version: 3.11 -*-
+
 from typing import Callable, Generator
 
 import pytest
@@ -8,7 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from database import Base, get_db
 from db_entities.app import Project
 from features.app.services import create_new_project_in_db, create_new_user_in_db
-from features.assembly.services.assembly import create_new_assembly
+from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
 from features.assembly.services.segment import create_new_segment
@@ -77,8 +79,9 @@ def create_test_project(
             hashed_password="12345",
         )
         project = create_new_project_in_db(db=session, name="Test Project", bt_number="1234", owner_id=user.id)
-        assembly = create_new_assembly(db=session, name="Test Assembly", project_id=project.id)
-        layer = create_new_layer(db=session, thickness_mm=50.0, assembly_id=assembly.id, order=1)
+        assembly = create_new_empty_assembly_on_project(db=session, name="Test Assembly", project_id=project.id)
+        layer = create_new_layer(thickness_mm=50.0)
+        assembly, layer = append_layer_to_assembly(db=session, assembly_id=assembly.id, layer=layer)
         material = create_new_material(
             db=session,
             id="test_material",

@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 from sqlalchemy.orm import Session
 
@@ -23,6 +23,14 @@ def get_project_by_bt_number(db: Session, project_bt_number: str) -> Project:
     project = db.query(Project).filter(Project.bt_number == project_bt_number).first()
     if not project:
         raise ProjectNotFoundException(project_bt_number)
+    return project
+
+
+def get_project_by_id(db: Session, project_id: int) -> Project:
+    """Return a project by its ID."""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise ProjectNotFoundException(f"Project with ID {project_id} not found.")
     return project
 
 

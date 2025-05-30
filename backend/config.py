@@ -1,4 +1,4 @@
-# -*- Python Version: 3.11 (Render.com) -*-
+# -*- Python Version: 3.11 -*-
 
 from cryptography.fernet import Fernet
 from pydantic import BaseSettings
