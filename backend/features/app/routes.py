@@ -31,9 +31,12 @@ async def get_project_route(
     """Return a project by its BuildingType Number."""
     logger.info(f"project({bt_number=})")
 
-    project = get_project_by_bt_number(db, bt_number)
-
-    return ProjectSchema.from_orm(project)
+    try:
+        project = get_project_by_bt_number(db, bt_number)
+        return ProjectSchema.from_orm(project)
+    except Exception as e:
+        logger.error(f"Failed to get project {bt_number}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get project '{bt_number}'")
 
 
 @router.patch("/update-settings/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
@@ -45,21 +48,26 @@ async def update_project_settings_route(
     db: Session = Depends(get_db),
 ):
 
-    project = get_project_by_bt_number(db, bt_number)
+    try:
+        project = get_project_by_bt_number(db, bt_number)
 
-    # TODO: is there a better way to do this?
-    # Check if the current user is the owner of the project
-    if project.owner != current_user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to update this project.",
-        )
+        # TODO: is there a better way to do this?
+        # Check if the current user is the owner of the project
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update this project.",
+            )
 
-    project = update_project_settings(db, project, project_settings_data)
+        project = update_project_settings(db, project, project_settings_data)
 
-    return ProjectSchema.from_orm(project)
+        return ProjectSchema.from_orm(project)
+    except Exception as e:
+        logger.error(f"Failed to update project settings for {bt_number}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update project settings for '{bt_number}'")
 
 
+# TODO move to Service....
 @router.post("/create-new-project", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
 async def create_new_project_route(
     request: Request,

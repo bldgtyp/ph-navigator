@@ -3,7 +3,7 @@
 import logging
 import os
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from config import settings
@@ -44,14 +44,14 @@ async def add_new_segment_site_photo_route(
     logger.info(f"gcp/add_new_segment_site_photo_route(bt_number={bt_number}, segment_id={segment_id})")
 
     try:
-        thumbnail_url, full_size_url = await upload_segment_site_photo_to_cdn(
+        thumbnail_url, full_size_url = upload_segment_site_photo_to_cdn(
             db=db,
             bt_number=bt_number,
             segment_id=segment_id,
             file=file,
             bucket_name=settings.GCP_BUCKET_NAME,
         )
-        new_material_photo = await add_site_photo_to_segment(db, segment_id, thumbnail_url, full_size_url)
+        new_material_photo = add_site_photo_to_segment(db, segment_id, thumbnail_url, full_size_url)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -66,6 +66,7 @@ async def add_new_segment_site_photo_route(
     )
 
 
+# TODO: Move to service
 @router.get("/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse)
 async def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_db)) -> SegmentSitePhotoUrlsResponse:
     """Get the site-photo thumbnail URLs for a given segment ID."""
@@ -73,7 +74,7 @@ async def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_d
 
     segment = db.query(Segment).filter(Segment.id == segment_id).first()
     if not segment:
-        raise HTTPException(status_code=404, detail=f"Segment '{segment_id}' not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Segment '{segment_id}' not found")
 
     segment_photos = db.query(MaterialPhoto).filter(MaterialPhoto.segment_id == segment_id).all()
 
@@ -102,26 +103,25 @@ async def add_new_segment_datasheet_route(
     logger.info(f"gcp/add_new_segment_datasheet_route(bt_number={bt_number}, segment_id={segment_id})")
 
     try:
-        thumbnail_url, full_size_url = await upload_segment_datasheet_to_cdn(
+        thumbnail_url, full_size_url = upload_segment_datasheet_to_cdn(
             db=db,
             bt_number=bt_number,
             segment_id=segment_id,
             file=file,
             bucket_name=settings.GCP_BUCKET_NAME,
         )
-        new_material_datasheet = await add_datasheet_to_segment(db, segment_id, thumbnail_url, full_size_url)
+        new_material_datasheet = add_datasheet_to_segment(db, segment_id, thumbnail_url, full_size_url)
+        return MaterialDatasheetSchema(
+            id=new_material_datasheet.id,
+            segment_id=new_material_datasheet.segment_id,
+            full_size_url=new_material_datasheet.full_size_url,
+            thumbnail_url=new_material_datasheet.thumbnail_url,
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to upload file: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload file")
-
-    return MaterialDatasheetSchema(
-        id=new_material_datasheet.id,
-        segment_id=new_material_datasheet.segment_id,
-        full_size_url=new_material_datasheet.full_size_url,
-        thumbnail_url=new_material_datasheet.thumbnail_url,
-    )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload file")
 
 
 @router.get("/get-datasheet-urls/{segment_id}", response_model=SegmentDatasheetUrlResponse)

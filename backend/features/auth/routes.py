@@ -32,20 +32,24 @@ async def login_for_access_token(
     db: Session = Depends(get_db),
 ) -> TokenSchema:
     logger.info(f"auth/login_for_access_token({form_data.username=}, form_data.password=....)")
-    
-    # -- Authenticate User
-    user = await authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
-    # -- Create JWT Token
-    access_token_expires = timedelta(minutes=settings.JSON_WEB_TOKEN_EXPIRE_MINUTES)
-    access_token = await create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
-    return TokenSchema(access_token=access_token, token_type="bearer")
+    try:
+        # -- Authenticate User
+        user = await authenticate_user(db, form_data.username, form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # -- Create JWT Token
+        access_token_expires = timedelta(minutes=settings.JSON_WEB_TOKEN_EXPIRE_MINUTES)
+        access_token = await create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+        return TokenSchema(access_token=access_token, token_type="bearer")
+    except Exception as e:
+        logger.error(f"Authentication failed for user {form_data.username}: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication failed")
 
 
 @router.get("/user/", response_model=UserSchema)
@@ -54,4 +58,9 @@ async def user(
 ) -> UserSchema:
     """Return the current user."""
     logger.info(f"auth/user({current_user.id=})")
-    return UserSchema.from_orm(current_user)
+    
+    try:
+        return UserSchema.from_orm(current_user)
+    except Exception as e:
+        logger.error(f"Failed to retrieve user {current_user.id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user data")

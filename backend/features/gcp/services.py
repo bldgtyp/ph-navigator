@@ -17,7 +17,7 @@ from db_entities.assembly.segment import Segment
 logger = logging.getLogger(__name__)
 
 
-async def create_thumbnail(image_file: UploadFile, size=(64, 64)) -> bytes:
+def create_thumbnail(image_file: UploadFile, size=(64, 64)) -> bytes:
     """Create a simple thumbnail from an image file."""
 
     image = Image.open(image_file.file)
@@ -28,7 +28,7 @@ async def create_thumbnail(image_file: UploadFile, size=(64, 64)) -> bytes:
     return thumb_io.read()
 
 
-async def sanitize_name(name: str) -> str:
+def sanitize_name(name: str) -> str:
     """Sanitize a name to ensure it is safe for use in URLs.
 
     Example:
@@ -41,7 +41,7 @@ async def sanitize_name(name: str) -> str:
     return sanitized_file_name
 
 
-async def sanitize_file_name(filename: str) -> str:
+def sanitize_file_name(filename: str) -> str:
     """Sanitize a file-name (with extension) to ensure it is safe for use in URLs.
 
     Example:
@@ -50,7 +50,7 @@ async def sanitize_file_name(filename: str) -> str:
     """
 
     file_object = Path(filename)
-    sanitized_file_name = await sanitize_name(file_object.stem)
+    sanitized_file_name = sanitize_name(file_object.stem)
     sanitized_file_name = sanitized_file_name + file_object.suffix
     return sanitized_file_name
 
@@ -68,7 +68,7 @@ def check_gcs_bucket_create_file_permissions() -> bool:
     return "storage.objects.create" in result
 
 
-async def upload_segment_site_photo_to_cdn(
+def upload_segment_site_photo_to_cdn(
     db: Session,
     bt_number: str,
     segment_id: int,
@@ -87,8 +87,8 @@ async def upload_segment_site_photo_to_cdn(
     # -- Sanitize the file name
     if not file.filename:
         raise ValueError("File name is missing?")
-    sanitized_file_name = await sanitize_file_name(file.filename)
-    sanitized_material_name = await sanitize_name(segment.material.name)
+    sanitized_file_name = sanitize_file_name(file.filename)
+    sanitized_material_name = sanitize_name(segment.material.name)
 
     # -- Upload the full-size image to GCS and get the public URL
     blob = bucket.blob(f"{bt_number}/site_photos/{sanitized_material_name}_{sanitized_file_name}")
@@ -98,7 +98,7 @@ async def upload_segment_site_photo_to_cdn(
 
     # -- Create the thumbnail, upload it to GCS, and get the public URL
     file.file.seek(0)
-    thumb_bytes = await create_thumbnail(file)
+    thumb_bytes = create_thumbnail(file)
     thumb_blob = bucket.blob(f"{bt_number}/site_photos/thumbnails/{sanitized_material_name}_{sanitized_file_name}")
     thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
     thumb_blob.make_public()
@@ -107,7 +107,7 @@ async def upload_segment_site_photo_to_cdn(
     return thumbnail_url, full_size_url
 
 
-async def add_site_photo_to_segment(
+def add_site_photo_to_segment(
     db: Session,
     segment_id: int,
     thumbnail_url: str,
@@ -128,7 +128,7 @@ async def add_site_photo_to_segment(
     return material_photo
 
 
-async def upload_segment_datasheet_to_cdn(
+def upload_segment_datasheet_to_cdn(
     db: Session,
     bt_number: str,
     segment_id: int,
@@ -147,8 +147,8 @@ async def upload_segment_datasheet_to_cdn(
     # -- Sanitize the file name
     if not file.filename:
         raise ValueError("File name is missing?")
-    sanitized_file_name = await sanitize_file_name(file.filename)
-    sanitized_material_name = await sanitize_name(segment.material.name)
+    sanitized_file_name = sanitize_file_name(file.filename)
+    sanitized_material_name = sanitize_name(segment.material.name)
 
     # -- Upload the full-size image to GCS and get the public URL
     blob = bucket.blob(f"{bt_number}/datasheets/{sanitized_material_name}_{sanitized_file_name}")
@@ -158,7 +158,7 @@ async def upload_segment_datasheet_to_cdn(
 
     # -- Create the thumbnail, upload it to GCS, and get the public URL
     file.file.seek(0)
-    thumb_bytes = await create_thumbnail(file)
+    thumb_bytes = create_thumbnail(file)
     thumb_blob = bucket.blob(f"{bt_number}/datasheets/thumbnails/{sanitized_material_name}_{sanitized_file_name}")
     thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
     thumb_blob.make_public()
@@ -167,7 +167,7 @@ async def upload_segment_datasheet_to_cdn(
     return thumbnail_url, full_size_url
 
 
-async def add_datasheet_to_segment(
+def add_datasheet_to_segment(
     db: Session,
     segment_id: int,
     thumbnail_url: str,
