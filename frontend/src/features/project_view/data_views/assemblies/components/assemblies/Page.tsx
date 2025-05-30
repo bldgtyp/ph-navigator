@@ -32,7 +32,7 @@ const AssembliesPage: React.FC = () => {
 
   const fetchAssemblies = async () => {
     try {
-      const response = await getWithAlert<AssemblyType[]>(`assembly/get_assemblies/${projectId}`);
+      const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
       setAssemblies(response ?? []);
       return response ?? [];
     } catch (error) {
@@ -69,12 +69,12 @@ const AssembliesPage: React.FC = () => {
 
   const handleAddAssembly = async () => {
     try {
-      const response = await postWithAlert<{ message: string; assembly: AssemblyType }>(
-        `assembly/create-new-assembly-on_project/${projectId}`,
+      const response = await postWithAlert<AssemblyType>(
+        `assembly/create-new-assembly-on-project/${projectId}`,
       );
 
       if (response) {
-        const newAssembly = response.assembly;
+        const newAssembly = response;
         console.log(`Assembly added successfully: ${newAssembly.id}`);
         const updatedAssemblies = await fetchAssemblies();
         setSelectedAssemblyId(newAssembly.id);
@@ -95,7 +95,7 @@ const AssembliesPage: React.FC = () => {
       if (!confirmed) return;
 
       await deleteWithAlert(
-        `assembly/delete_assembly`,
+        `assembly/delete-assembly`,
         null,
         {
           assembly_id: selectedAssemblyId,
@@ -121,7 +121,7 @@ const AssembliesPage: React.FC = () => {
   const handleNameChange = async (assemblyId: number, newName: string) => {
     try {
       await patchWithAlert(
-        `assembly/update_assembly_name`,
+        `assembly/update-assembly-name`,
         null,
         {
           assembly_id: assemblyId,

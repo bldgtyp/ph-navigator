@@ -17,14 +17,16 @@ router = APIRouter(
     tags=["project_browser"],
 )
 
+logger = logging.getLogger(__name__)
 
-@router.get("/get_project_card_data", response_model=list[ProjectSchema])
-async def get_project_card_data(
+
+@router.get("/get-project-card-data", response_model=list[ProjectSchema])
+async def get_project_card_data_route(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ) -> list[ProjectSchema]:
     """Return summary-data for each of the user's projects for the project browser."""
-    logging.info(f"get_project_card_data({current_user.id=})")
+    logger.info(f"get_project_card_data({current_user.id=})")
 
-    projects = await get_projects(db, current_user.all_project_ids)
+    projects = get_projects(db, current_user.all_project_ids)
     return [ProjectSchema.from_orm(p) for p in projects]

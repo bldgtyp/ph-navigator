@@ -1,8 +1,13 @@
 # -*- Python Version: 3.11 -*-
 
+import logging
+
 from sqlalchemy.orm import Session
 
 from db_entities.app import Project, User
+from features.app.schema import ProjectCreateSchema
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectNotFoundException(Exception):
@@ -13,16 +18,16 @@ class ProjectNotFoundException(Exception):
         super().__init__(f"Project {bt_number} not found.")
 
 
-async def get_projects(db: Session, project_ids: list[int]) -> list[Project]:
+def get_projects(db: Session, project_ids: list[int]) -> list[Project]:
     return db.query(Project).filter(Project.id.in_(project_ids)).all()
 
 
-def get_project_by_bt_number(db: Session, project_bt_number: str) -> Project:
+def get_project_by_bt_number(db: Session, bt_number: str) -> Project:
     """Return a project by its BuildingType Number."""
 
-    project = db.query(Project).filter(Project.bt_number == project_bt_number).first()
+    project = db.query(Project).filter(Project.bt_number == bt_number).first()
     if not project:
-        raise ProjectNotFoundException(project_bt_number)
+        raise ProjectNotFoundException(bt_number)
     return project
 
 
@@ -34,7 +39,7 @@ def get_project_by_id(db: Session, project_id: int) -> Project:
     return project
 
 
-def create_new_user_in_db(
+def create_new_user(
     db: Session,
     username: str,
     email: str,
@@ -52,7 +57,7 @@ def create_new_user_in_db(
     return new_user
 
 
-def create_new_project_in_db(
+def create_new_project(
     db: Session,
     name: str,
     owner_id: int,
@@ -74,3 +79,19 @@ def create_new_project_in_db(
     db.commit()
     db.refresh(new_project)
     return new_project
+
+
+def update_project_settings(db: Session, project: Project, project_settings_data: ProjectCreateSchema) -> Project:
+    """Update the project settings in the database."""
+    logger.info(f"update_project_settings({project.id=}, {project_settings_data=})")
+
+    # Update the project settings
+    project.name = project_settings_data.name
+    project.bt_number = project_settings_data.bt_number
+    project.phius_number = project_settings_data.phius_number
+    project.phius_dropbox_url = project_settings_data.phius_dropbox_url
+
+    db.commit()
+    db.refresh(project)
+
+    return project

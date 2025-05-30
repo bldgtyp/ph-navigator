@@ -40,7 +40,7 @@ const Settings: React.FC = () => {
     useEffect(() => {
         async function loadProjectSettings() {
             try {
-                const projectSettingsData = await getWithAlert<projectSettingsDataType>(`project/${projectId}/get_settings`);
+                const projectSettingsData = await getWithAlert<projectSettingsDataType>(`project/${projectId}`);
                 if (projectSettingsData) {
                     setProjectSettingsData(projectSettingsData);
                     setFormData(projectSettingsData); // Initialize form data
@@ -64,7 +64,7 @@ const Settings: React.FC = () => {
 
     const handleSave = async () => {
         try {
-            const response = await patchWithAlert<any>(`project/${projectId}/update_settings`, null, formData);
+            const response = await patchWithAlert<any>(`project/update-settings/${projectId}`, null, formData);
             if (response) {
                 alert("Project settings updated successfully!");
                 setProjectSettingsData(formData); // Update the original data

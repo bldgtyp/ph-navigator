@@ -17,7 +17,7 @@ const Projects: React.FC = () => {
     useEffect(() => {
         async function loadProjectCardData() {
             try {
-                const projectCardData = await getWithAlert<ProjectType[]>("project_browser/get_project_card_data")
+                const projectCardData = await getWithAlert<ProjectType[]>("project_browser/get-project-card-data")
                 // Sort the projectCardData by the 'bt_number' property
                 projectCardData?.sort((a, b) => {
                     if (Number(a.bt_number) < Number(b.bt_number)) return -1;

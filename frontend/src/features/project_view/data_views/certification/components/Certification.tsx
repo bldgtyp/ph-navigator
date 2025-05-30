@@ -31,7 +31,7 @@ const ProjectCertification: React.FC = () => {
         }, 1000);
 
         const fetchProjectData = async () => {
-            const d: any = await getWithAlert(`air_table/${projectId}/config`);
+            const d: any = await getWithAlert(`air_table/config/${projectId}`);
 
             // handle the fetched data
             setCertStatusData(flattenData(d.filter((item: any) => item.fields.SECTION === "CERT_STATUS")));

@@ -79,7 +79,7 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await postWithAlert("air_table/connect_at_base_to_project", null, {
+            const response = await postWithAlert("air_table/connect-AT-base-to-project", null, {
                 ...formData,
                 bt_number: projectId
             });

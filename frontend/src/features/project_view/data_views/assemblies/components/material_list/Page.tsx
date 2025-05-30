@@ -38,7 +38,7 @@ const MaterialListPage: React.FC = () => {
 
     const fetchAssemblies = async () => {
         try {
-            const response = await getWithAlert<AssemblyType[]>(`assembly/get_assemblies/${projectId}`);
+            const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
             setAssemblies(response ?? []);
             return response ?? [];
         } catch (error) {

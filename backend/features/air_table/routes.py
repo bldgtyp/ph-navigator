@@ -27,9 +27,10 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.get("/{bt_number}/config")
+# TODO: Return Pydantic Object
+@router.get("/config/{bt_number}")
 async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> list[RecordDict]:
-    logger.info(f"air_table/get_project_config({bt_number=})")
+    logger.info(f"/air_table/get_project_config({bt_number=})")
 
     # Get the Project
     project = db.query(Project).filter_by(bt_number=bt_number).first()
@@ -60,6 +61,7 @@ async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> l
     return table.all()
 
 
+# TODO: Return Pydantic Object
 @router.get("/{bt_number}/{at_table_name}")
 async def get_project_air_table_records_from_table(
     bt_number: str, at_table_name: str, db: Session = Depends(get_db)
@@ -96,7 +98,8 @@ async def get_project_air_table_records_from_table(
     return table.all()
 
 
-@router.post("/connect_at_base_to_project", status_code=status.HTTP_201_CREATED)
+# TODO: Return Pydantic Object
+@router.post("/connect-AT-base-to-project", status_code=status.HTTP_201_CREATED)
 async def connect_at_base_to_project(
     request: AddAirTableBaseRequest,
     db: Session = Depends(get_db),

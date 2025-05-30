@@ -11,20 +11,19 @@ from database import get_db
 from db_entities.app.project import Project
 from db_entities.app.user import User
 from features.app.schema import ProjectCreateSchema, ProjectSchema
-from features.app.services import get_project_by_bt_number
+from features.app.services import get_project_by_bt_number, update_project_settings
 from features.auth.services import get_current_active_user
-
-logger = logging.getLogger()
 
 router = APIRouter(
     prefix="/project",
     tags=["project"],
 )
 
+logger = logging.getLogger()
 
-@router.get("/{bt_number}", response_model=ProjectSchema)
-@limiter.limit("100/hour")
-async def project(
+
+@router.get("/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+async def get_project_route(
     request: Request,
     bt_number: str,
     db: Session = Depends(get_db),
@@ -33,54 +32,22 @@ async def project(
     logger.info(f"project({bt_number=})")
 
     project = get_project_by_bt_number(db, bt_number)
-    if not project:
-        raise HTTPException(status_code=404, detail=f"Project {bt_number} not found")
-    return ProjectSchema.from_orm(project)
-
-
-@router.get(
-    "/{bt_number}/get_settings",
-    response_model=ProjectSchema,
-    status_code=status.HTTP_200_OK,
-)
-async def get_project_settings(
-    request: Request,
-    bt_number: str,
-    db: Session = Depends(get_db),
-):
-    # Get the project from the database
-    project = get_project_by_bt_number(db, bt_number)
-
-    if not project:
-        HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project with bt_number {bt_number} not found.",
-        )
 
     return ProjectSchema.from_orm(project)
 
 
-@router.patch(
-    "/{bt_number}/update_settings",
-    response_model=ProjectSchema,
-    status_code=status.HTTP_200_OK,
-)
-async def update_project_settings(
+@router.patch("/update-settings/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+async def update_project_settings_route(
     request: Request,
     bt_number: str,
     project_settings_data: ProjectCreateSchema,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ):
-    # Get the project from the database
+
     project = get_project_by_bt_number(db, bt_number)
 
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project with bt_number {bt_number} not found.",
-        )
-
+    # TODO: is there a better way to do this?
     # Check if the current user is the owner of the project
     if project.owner != current_user:
         raise HTTPException(
@@ -88,23 +55,13 @@ async def update_project_settings(
             detail="You do not have permission to update this project.",
         )
 
-    # Update the project settings
-    project.name = project_settings_data.name
-    project.bt_number = project_settings_data.bt_number
-    project.phius_number = project_settings_data.phius_number
-    project.phius_dropbox_url = project_settings_data.phius_dropbox_url
-
-    db.commit()
+    project = update_project_settings(db, project, project_settings_data)
 
     return ProjectSchema.from_orm(project)
 
 
-@router.post(
-    "/create_new_project",
-    response_model=ProjectSchema,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_new_project(
+@router.post("/create-new-project", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
+async def create_new_project_route(
     request: Request,
     new_project_data: ProjectCreateSchema,
     current_user: Annotated[User, Depends(get_current_active_user)],

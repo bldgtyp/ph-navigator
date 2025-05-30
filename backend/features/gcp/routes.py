@@ -32,18 +32,16 @@ logger = logging.getLogger(__name__)
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-creds.json"
 
 
-@router.post(
-    "/add-new-segment-site-photo/{bt_number}",
-    response_model=MaterialPhotoSchema,
-)
-async def add_new_segment_site_photo(
+# TODO: pass just the segment ID, not a whole form?
+@router.post("/add-new-segment-site-photo/{bt_number}", response_model=MaterialPhotoSchema)
+async def add_new_segment_site_photo_route(
     bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> MaterialPhotoSchema:
     """Upload a new site photo for a segment."""
-    logger.info(f"add_new_segment_site_photo(bt_number={bt_number}, segment_id={segment_id})")
+    logger.info(f"gcp/add_new_segment_site_photo_route(bt_number={bt_number}, segment_id={segment_id})")
 
     try:
         thumbnail_url, full_size_url = await upload_segment_site_photo_to_cdn(
@@ -68,16 +66,10 @@ async def add_new_segment_site_photo(
     )
 
 
-@router.get(
-    "/get-site-photo-urls/{segment_id}",
-    response_model=SegmentSitePhotoUrlsResponse,
-)
-async def get_site_photo_urls(
-    segment_id: int,
-    db: Session = Depends(get_db),
-) -> SegmentSitePhotoUrlsResponse:
+@router.get("/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse)
+async def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_db)) -> SegmentSitePhotoUrlsResponse:
     """Get the site-photo thumbnail URLs for a given segment ID."""
-    logger.info(f"get_site_photo_urls(segment_id={segment_id})")
+    logger.info(f"gcp/get_site_photo_urls_route(segment_id={segment_id})")
 
     segment = db.query(Segment).filter(Segment.id == segment_id).first()
     if not segment:
@@ -98,18 +90,16 @@ async def get_site_photo_urls(
     )
 
 
-@router.post(
-    "/add-new-segment-datasheet/{bt_number}",
-    response_model=MaterialDatasheetSchema,
-)
-async def add_new_segment_datasheet(
+# TODO: pass just the segment ID, not a whole form?
+@router.post("/add-new-segment-datasheet/{bt_number}", response_model=MaterialDatasheetSchema)
+async def add_new_segment_datasheet_route(
     bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> MaterialDatasheetSchema:
     """Upload a new datasheet file for a segment."""
-    logger.info(f"add_new_segment_datasheet(bt_number={bt_number}, segment_id={segment_id})")
+    logger.info(f"gcp/add_new_segment_datasheet_route(bt_number={bt_number}, segment_id={segment_id})")
 
     try:
         thumbnail_url, full_size_url = await upload_segment_datasheet_to_cdn(
@@ -134,16 +124,13 @@ async def add_new_segment_datasheet(
     )
 
 
-@router.get(
-    "/get-datasheet-urls/{segment_id}",
-    response_model=SegmentDatasheetUrlResponse,
-)
-async def get_datasheet_thumbnail_urls(
+@router.get("/get-datasheet-urls/{segment_id}", response_model=SegmentDatasheetUrlResponse)
+async def get_datasheet_thumbnail_urls_route(
     segment_id: int,
     db: Session = Depends(get_db),
 ) -> SegmentDatasheetUrlResponse:
     """Get the datasheet thumbnail URLs for a given segment ID."""
-    logger.info(f"get_datasheet_thumbnail_urls(segment_id={segment_id})")
+    logger.info(f"gcp/get_datasheet_thumbnail_urls_route(segment_id={segment_id})")
 
     segment = db.query(Segment).filter(Segment.id == segment_id).first()
     if not segment:

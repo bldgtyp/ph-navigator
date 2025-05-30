@@ -15,22 +15,24 @@ from db_entities.app.user import User
 from features.auth.schema import TokenSchema, UserSchema
 from features.auth.services import authenticate_user, create_access_token, get_current_active_user
 
-logger = logging.getLogger()
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
 
+logger = logging.getLogger()
 
-@router.post("/token", status_code=status.HTTP_200_OK)
+
+@router.post("/token", response_model=TokenSchema)
 @limiter.limit("60/hour")
 async def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
 ) -> TokenSchema:
-    logger.info(f"login_for_access_token()")
+    logger.info(f"auth/login_for_access_token({form_data.username=}, form_data.password=....)")
+    
     # -- Authenticate User
     user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -51,5 +53,5 @@ async def user(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UserSchema:
     """Return the current user."""
-    logger.info(f"user({current_user.id=})")
+    logger.info(f"auth/user({current_user.id=})")
     return UserSchema.from_orm(current_user)

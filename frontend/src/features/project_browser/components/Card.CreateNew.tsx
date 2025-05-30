@@ -24,7 +24,7 @@ const CreateNewProjectCard: React.FC<CreateNewProjectCardType> = (props) => {
     const handleModalClose = () => { setIsModalOpen(false); }
     const handleSubmit = async (formData: formDataType) => {
         try {
-            const response = await postWithAlert<any>('project/create_new_project', null, formData)
+            const response = await postWithAlert<any>('project/create-new-project', null, formData)
 
             if (response) {
                 //Add the new Project to the local state
