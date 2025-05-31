@@ -15,7 +15,6 @@ from db_entities.app.user import User
 from features.auth.schema import TokenSchema, UserSchema
 from features.auth.services import authenticate_user, create_access_token, get_current_active_user
 
-
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
@@ -58,7 +57,7 @@ async def user(
 ) -> UserSchema:
     """Return the current user."""
     logger.info(f"auth/user({current_user.id=})")
-    
+
     try:
         return UserSchema.from_orm(current_user)
     except Exception as e:

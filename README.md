@@ -36,6 +36,7 @@
 - [ ] Add Loading state to file uploads
 
 ## Assemblies (UI):
+- [ ] BUG: Delete Layer doesn't update UI until Refresh
 - [x] Material Color
 - [x] Filtered by Project
 - [x] Add New

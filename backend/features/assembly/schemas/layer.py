@@ -7,7 +7,7 @@ from pydantic import BaseModel, root_validator
 from features.assembly.schemas.segment import AssemblyLayerSegmentSchema
 
 
-class AssemblyLayerSchemaBase(BaseModel):
+class LayerSchemaBase(BaseModel):
     order: int
     assembly_id: int
     thickness_mm: float
@@ -27,7 +27,7 @@ class AssemblyLayerSchemaBase(BaseModel):
         return any([s.is_continuous_insulation for s in self.segments])
 
 
-class AssemblyLayerSchema(AssemblyLayerSchemaBase):
+class LayerSchema(LayerSchemaBase):
     id: int
 
 

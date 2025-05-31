@@ -26,14 +26,14 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
             const orderPosition = layer.order + 1;
 
             // Call the backend API to add the new segment
-            const response = await postWithAlert<{ message: string, layer_id: number }>(`assembly/add-layer`, null, {
+            const response = await postWithAlert<LayerType>(`assembly/create-new-layer`, null, {
                 assembly_id: assembly.id,
                 thickness_mm: DEFAULT_THICKNESS,
                 order: orderPosition,
             });
 
             if (response) {
-                const newLayerId = response.layer_id;
+                const newLayerId = response.id;
 
                 // Get the new Layer for display
                 try {
@@ -62,7 +62,7 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
     const onDeleteLayer = async (layerId: number) => {
         try {
             // Call the backend API to delete the layer
-            const response = await deleteWithAlert<{ message: string }>(`assembly/delete_layer/${layerId}`, null);
+            const response = await deleteWithAlert<{ message: string }>(`assembly/delete-layer/${layerId}`, null);
 
             if (response) {
                 // Remove the layer from the local state

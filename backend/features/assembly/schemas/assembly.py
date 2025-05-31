@@ -6,14 +6,14 @@ import re
 
 from pydantic import BaseModel, root_validator
 
-from features.assembly.schemas.layer import AssemblyLayerSchema
+from features.assembly.schemas.layer import LayerSchema
 
 
 class AssemblySchemaBase(BaseModel):
     """Base schema for Assembly."""
 
     name: str
-    layers: list[AssemblyLayerSchema] = []
+    layers: list[LayerSchema] = []
 
     class Config:
         orm_mode = True
