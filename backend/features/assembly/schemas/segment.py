@@ -29,7 +29,6 @@ class SegmentSchema(BaseModel):
 
 
 class CreateSegmentRequest(BaseModel):
-    layer_id: int
     material_id: str
     width_mm: float
     order: int

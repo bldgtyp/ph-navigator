@@ -19,8 +19,7 @@ export const handleAddSegmentToRight = async (
         const orderPosition = segment.order + 1;
 
         // Call the backend API to add the new segment
-        const response = await postWithAlert<SegmentType>(`assembly/create-new-segment`, null, {
-            layer_id: layer.id,
+        const response = await postWithAlert<SegmentType>(`assembly/create-new-segment-on-layer/${layer.id}`, null, {
             material_id: segment.material.id, // Match the material ID from the segment
             width_mm: DEFAULT_WIDTH,
             order: orderPosition,

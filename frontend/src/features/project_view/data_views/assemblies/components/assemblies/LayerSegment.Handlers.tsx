@@ -76,7 +76,7 @@ export const handleSubmit = async (
 
         // Update the continuous insulation in the database if it has changed
         if (newContinuousInsulationChecked !== currentContinuousInsulationChecked) {
-            const response = await patchWithAlert<SegmentType>(`assembly/update-segment-continuous-insulation/${segment.id}`, null, {
+            const response = await patchWithAlert<SegmentType>(`assembly/update-segment-is-continuous-insulation/${segment.id}`, null, {
                 is_continuous_insulation: newContinuousInsulationChecked,
             });
 

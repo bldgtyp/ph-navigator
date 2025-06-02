@@ -37,15 +37,15 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.post("/create-new-segment/", response_model=SegmentSchema)
-async def create_new_segment_route(request: CreateSegmentRequest, db: Session = Depends(get_db)) -> SegmentSchema:
+@router.post("/create-new-segment-on-layer/{layer_id}", response_model=SegmentSchema, status_code=status.HTTP_201_CREATED)
+async def create_new_segment_on_layer_route(request: CreateSegmentRequest, layer_id:int, db: Session = Depends(get_db)) -> SegmentSchema:
     """Add a new LayerSegment to a Layer at a specific position."""
     logger.info(
-        f"add-create_new_segment_route({request.layer_id=}, {request.material_id=}, {request.width_mm=}, {request.order=})"
+        f"add-create_new_segment_on_layer_route({layer_id=}, {request.material_id=}, {request.width_mm=}, {request.order=})"
     )
 
     try:
-        seg = create_new_segment(db, request.layer_id, request.material_id, request.width_mm, request.order)
+        seg = create_new_segment(db, layer_id, request.material_id, request.width_mm, request.order)
         return SegmentSchema.from_orm(seg)
     except Exception as e:
         logger.error(f"Error creating new segment: {e}")
@@ -113,14 +113,14 @@ async def update_segment_steel_stud_spacing_route(
         )
 
 
-@router.patch("/update-segment-continuous-insulation/{segment_id}", response_model=SegmentSchema)
-async def update_segment_continuous_insulation_route(
+@router.patch("/update-segment-is-continuous-insulation/{segment_id}", response_model=SegmentSchema)
+async def update_segment_is_continuous_insulation_route(
     segment_id: int,
     request: UpdateSegmentIsContinuousInsulationRequest,
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the continuous insulation flag of a Layer Segment."""
-    logger.info(f"update_segment_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})")
+    logger.info(f"update_segment_is_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})")
 
     try:
         seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
@@ -154,7 +154,7 @@ async def update_segment_specification_status_route(
 
 
 @router.patch("/update-segment-notes/{segment_id}", response_model=SegmentSchema)
-async def update_segment_route(
+async def update_segment_notes_route(
     segment_id: int,
     request: UpdateSegmentNotesRequest,
     db: Session = Depends(get_db),
