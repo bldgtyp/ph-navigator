@@ -86,7 +86,7 @@ def convert_multiple_assembly_layers_to_hb_material(
 ) -> list[EnergyMaterial]:
     """Convert multiple assembly layers to Honeybee Energy Materials."""
     logger.info(f"convert_multiple_assembly_layers_to_hb_material([{len(_layers)}] layers)")
-    
+
     hbe_materials_: list[EnergyMaterial] = []
     for layer in _layers:
         hbe_materials_.append(convert_single_assembly_layer_to_hb_material(layer))

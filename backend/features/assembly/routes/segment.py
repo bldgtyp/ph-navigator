@@ -124,7 +124,9 @@ async def update_segment_is_continuous_insulation_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the continuous insulation flag of a Layer Segment."""
-    logger.info(f"assembly/update_segment_is_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})")
+    logger.info(
+        f"assembly/update_segment_is_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})"
+    )
 
     try:
         seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)

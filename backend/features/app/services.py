@@ -29,7 +29,7 @@ class ProjectAlreadyExistsException(Exception):
 def get_projects(db: Session, project_ids: list[int]) -> list[Project]:
     """Return a list of projects by their IDs."""
     logger.info(f"get_projects({project_ids=})")
-    
+
     return db.query(Project).filter(Project.id.in_(project_ids)).all()
 
 
@@ -46,7 +46,7 @@ def get_project_by_bt_number(db: Session, bt_number: str) -> Project:
 def get_project_by_id(db: Session, project_id: int) -> Project:
     """Return a project by its ID."""
     logger.info(f"get_project_by_id({project_id=})")
-    
+
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise ProjectNotFoundException(f"Project with ID {project_id} not found.")

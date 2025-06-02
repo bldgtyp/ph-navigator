@@ -48,7 +48,7 @@ def get_user(db: Session, username: str) -> User | None:
 def authenticate_user(db: Session, username: str, password: str) -> User | Literal[False]:
     """Authenticate a user by checking the username and password against the database."""
     logger.info(f"authenticate_user({username=}, password=****)")
-    
+
     user = get_user(db, username)
     if not user:
         logger.error(f"User '{username}' not found.")
