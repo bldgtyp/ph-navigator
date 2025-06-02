@@ -25,18 +25,18 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.post("/create-new-layer/", response_model=LayerSchema)
+@router.post("/create-new-layer/{assembly_id}", response_model=LayerSchema, status_code=status.HTTP_201_CREATED)
 async def create_new_default_layer_on_assembly_route(
-    request: CreateLayerRequest, db: Session = Depends(get_db)
+    request: CreateLayerRequest, assembly_id: int, db: Session = Depends(get_db)
 ) -> LayerSchema:
     """Create a new Layer on a specified Assembly."""
-    logger.info(f"create_new_default_layer_on_assembly_route(assembly_id={request.assembly_id}, order={request.order})")
+    logger.info(f"create_new_default_layer_on_assembly_route({assembly_id=}, order={request.order})")
 
     try:
-        assembly, layer = insert_default_layer_into_assembly(db, request.assembly_id, request.order)
+        assembly, layer = insert_default_layer_into_assembly(db, assembly_id, request.order)
         return LayerSchema.from_orm(layer)
     except Exception as e:
-        logger.error(f"Error creating new layer: {e}")
+        logger.error(f"Error creating new layer on assembly {assembly_id=}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
@@ -49,7 +49,6 @@ async def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> Layer
         layer = get_layer_by_id(db, layer_id)
         return LayerSchema.from_orm(layer)
     except LayerNotFoundException as e:
-        logger.warning(f"Layer not found: {e}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         logger.error(f"Error retrieving layer: {e}")
@@ -58,7 +57,7 @@ async def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> Layer
 
 @router.patch("/update-layer-thickness/{layer_id}", response_model=LayerSchema)
 async def update_layer_thickness_route(
-    layer_id: int, request: UpdateLayerHeightRequest, db: Session = Depends(get_db)
+    request: UpdateLayerHeightRequest, layer_id: int, db: Session = Depends(get_db)
 ) -> LayerSchema:
     """Update the thickness (mm) of a Layer."""
     logger.info(f"update_layer_thickness_route(layer_id={layer_id}, thickness_mm={request.thickness_mm})")

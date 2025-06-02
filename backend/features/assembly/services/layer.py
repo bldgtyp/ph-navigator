@@ -13,8 +13,8 @@ class LayerNotFoundException(Exception):
     """Custom exception for missing layer."""
 
     def __init__(self, layer_id: int):
-        logger.error(f"Layer {layer_id} not found.")
-        super().__init__(f"Layer {layer_id} not found.")
+        logger.error(f"Layer '{layer_id}' not found.")
+        super().__init__(f"Layer '{layer_id}' not found.")
 
 
 class LastLayerAssemblyException(Exception):
@@ -23,7 +23,7 @@ class LastLayerAssemblyException(Exception):
     def __init__(self, layer_id: int, assembly_id: int):
         self.layer_id = layer_id
         self.assembly_id = assembly_id
-        super().__init__(f"Cannot delete Layer-{layer_id}. Tt is the last layer in Assembly-{assembly_id}.")
+        super().__init__(f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}.")
 
 
 def get_layer_by_id(db: Session, layer_id: int) -> Layer:

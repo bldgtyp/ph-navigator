@@ -32,16 +32,7 @@ class LayerSchema(LayerSchemaBase):
 
 
 class CreateLayerRequest(BaseModel):
-    assembly_id: int
-    thickness_mm: float
     order: int
-
-    @root_validator(pre=True)
-    def check_height(cls, values):
-        thickness_mm = values.get("thickness_mm")
-        if thickness_mm <= 0:
-            raise ValueError("Layer thickness must be greater than 0.")
-        return values
 
 
 class UpdateLayerHeightRequest(BaseModel):

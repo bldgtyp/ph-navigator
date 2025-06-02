@@ -18,17 +18,13 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
     }, [assembly]);
 
     const onAddLayerBelow = async (layer: LayerType) => {
-        const DEFAULT_THICKNESS = 25;
-
         // Add the Layer
         try {
             // New Segment goes to the right of the current segment
             const orderPosition = layer.order + 1;
 
             // Call the backend API to add the new segment
-            const response = await postWithAlert<LayerType>(`assembly/create-new-layer`, null, {
-                assembly_id: assembly.id,
-                thickness_mm: DEFAULT_THICKNESS,
+            const response = await postWithAlert<LayerType>(`assembly/create-new-layer/${assembly.id}`, null, {
                 order: orderPosition,
             });
 
