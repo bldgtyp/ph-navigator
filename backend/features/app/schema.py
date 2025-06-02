@@ -18,7 +18,6 @@ class ProjectSchema(BaseModel):
     bt_number: str
     phius_number: str | None = None
     phius_dropbox_url: str | None = None
-    airtable_base_url: str | None = None
 
     # Foreign Keys
     owner_id: int

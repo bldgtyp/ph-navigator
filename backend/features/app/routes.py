@@ -8,10 +8,14 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from db_entities.app.project import Project
 from db_entities.app.user import User
 from features.app.schema import ProjectCreateSchema, ProjectSchema
-from features.app.services import get_project_by_bt_number, update_project_settings
+from features.app.services import (
+    ProjectAlreadyExistsException,
+    create_new_project,
+    get_project_by_bt_number,
+    update_project_settings,
+)
 from features.auth.services import get_current_active_user
 
 router = APIRouter(
@@ -23,13 +27,13 @@ logger = logging.getLogger()
 
 
 @router.get("/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
-async def get_project_route(
+async def get_project_by_bt_number_route(
     request: Request,
     bt_number: str,
     db: Session = Depends(get_db),
 ) -> ProjectSchema:
     """Return a project by its BuildingType Number."""
-    logger.info(f"project({bt_number=})")
+    logger.info(f"get_project_by_bt_number_route({bt_number=})")
 
     try:
         project = get_project_by_bt_number(db, bt_number)
@@ -47,6 +51,7 @@ async def update_project_settings_route(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ):
+    logger.info(f"update_project_settings_route({bt_number=}, {project_settings_data=})")
 
     try:
         project = get_project_by_bt_number(db, bt_number)
@@ -67,7 +72,6 @@ async def update_project_settings_route(
         raise HTTPException(status_code=500, detail=f"Failed to update project settings for '{bt_number}'")
 
 
-# TODO move to Service....
 @router.post("/create-new-project", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
 async def create_new_project_route(
     request: Request,
@@ -76,29 +80,22 @@ async def create_new_project_route(
     db: Session = Depends(get_db),
 ) -> ProjectSchema:
     """Add a new project to the database."""
-    logger.info(f"create_new_project()")
+    logger.info(f"create_new_project({new_project_data=}, {current_user=})")
 
-    # Check if a project with the same bt_number already exists
-    existing_project = db.query(Project).filter_by(bt_number=new_project_data.bt_number).first()
-    if existing_project:
+    try:
+        project = create_new_project(
+            db=db,
+            name=new_project_data.name,
+            owner_id=current_user.id,
+            bt_number=new_project_data.bt_number,
+            phius_number=new_project_data.phius_number,
+        )
+        return ProjectSchema.from_orm(project)
+    except ProjectAlreadyExistsException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"A project with bt_number '{new_project_data.bt_number}' already exists.",
         )
-
-    # Create a new Project instance
-    new_project = Project(
-        name=new_project_data.name,
-        bt_number=new_project_data.bt_number,
-        phius_number=new_project_data.phius_number,
-        owner=current_user,
-        airtable_base=None,
-        users=[current_user],
-    )
-
-    # Add the project to the database
-    db.add(new_project)
-    db.commit()
-    db.refresh(new_project)
-
-    return ProjectSchema.from_orm(new_project)
+    except Exception as e:
+        logger.error(f"Failed to create new project: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create new project: {e}")

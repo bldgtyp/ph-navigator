@@ -18,6 +18,14 @@ class ProjectNotFoundException(Exception):
         super().__init__(f"Project {bt_number} not found.")
 
 
+class ProjectAlreadyExistsException(Exception):
+    """Custom exception for existing project."""
+
+    def __init__(self, bt_number: str):
+        self.bt_number = bt_number
+        super().__init__(f"Project with BuildingType Number {bt_number} already exists.")
+
+
 def get_projects(db: Session, project_ids: list[int]) -> list[Project]:
     return db.query(Project).filter(Project.id.in_(project_ids)).all()
 
@@ -61,12 +69,22 @@ def create_new_project(
     db: Session,
     name: str,
     owner_id: int,
-    bt_number: str | None = None,
+    bt_number: str,
     phius_number: str | None = None,
     phius_dropbox_url: str | None = None,
     airtable_base_id: str | None = None,
 ) -> Project:
     """Add a new project to the database."""
+
+    # -- Check if project with same bt_number already exists
+    try:
+        get_project_by_bt_number(db, bt_number)
+        raise ProjectAlreadyExistsException(bt_number)
+    except ProjectNotFoundException:
+        # Project does not exist, continue with creation
+        pass
+
+    # -- Create a new Project instance
     new_project = Project(
         bt_number=bt_number,
         name=name,
@@ -75,9 +93,12 @@ def create_new_project(
         owner_id=owner_id,
         airtable_base_id=airtable_base_id,
     )
+
     db.add(new_project)
     db.commit()
     db.refresh(new_project)
+    db.refresh(new_project.owner)
+
     return new_project
 
 
