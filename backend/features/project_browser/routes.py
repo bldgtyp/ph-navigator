@@ -26,7 +26,7 @@ async def get_project_card_data_route(
     db: Session = Depends(get_db),
 ) -> list[ProjectSchema]:
     """Return summary-data for each of the user's projects for the project browser."""
-    logger.info(f"get_project_card_data({current_user.id=})")
+    logger.info(f"project_browser/get_project_card_data({current_user.id=})")
 
     try:
         projects = get_projects(db, current_user.all_project_ids)

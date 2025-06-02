@@ -45,7 +45,7 @@ async def create_new_segment_on_layer_route(
 ) -> SegmentSchema:
     """Add a new LayerSegment to a Layer at a specific position."""
     logger.info(
-        f"add-create_new_segment_on_layer_route({layer_id=}, {request.material_id=}, {request.width_mm=}, {request.order=})"
+        f"assembly/add-create_new_segment_on_layer_route({layer_id=}, {request.material_id=}, {request.width_mm=}, {request.order=})"
     )
 
     try:
@@ -66,7 +66,7 @@ async def update_segment_material_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the Material of a Layer Segment."""
-    logger.info(f"update_segment_material_route({segment_id=}, {request.material_id=})")
+    logger.info(f"assembly/update_segment_material_route({segment_id=}, {request.material_id=})")
 
     try:
         seg = update_segment_material(db, segment_id, request.material_id)
@@ -84,7 +84,7 @@ async def update_segment_width_route(
     segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
 ) -> SegmentSchema:
     """Update the width (mm) of a Layer Segment."""
-    logger.info(f"update_segment_width_route({segment_id=}, {request.width_mm=})")
+    logger.info(f"assembly/update_segment_width_route({segment_id=}, {request.width_mm=})")
 
     try:
         seg = update_segment_width(db, segment_id, request.width_mm)
@@ -104,7 +104,7 @@ async def update_segment_steel_stud_spacing_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the steel stud spacing of a Layer Segment."""
-    logger.info(f"update_segment_steel_stud_spacing_route({segment_id=}, {request.steel_stud_spacing_mm=})")
+    logger.info(f"assembly/update_segment_steel_stud_spacing_route({segment_id=}, {request.steel_stud_spacing_mm=})")
 
     try:
         seg = update_segment_steel_stud_spacing(db, segment_id, request.steel_stud_spacing_mm)
@@ -124,7 +124,7 @@ async def update_segment_is_continuous_insulation_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the continuous insulation flag of a Layer Segment."""
-    logger.info(f"update_segment_is_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})")
+    logger.info(f"assembly/update_segment_is_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})")
 
     try:
         seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
@@ -144,7 +144,7 @@ async def update_segment_specification_status_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the specification status of a Layer Segment."""
-    logger.info(f"update_segment_specification_status_route({segment_id=}, {request.specification_status=})")
+    logger.info(f"assembly/update_segment_specification_status_route({segment_id=}, {request.specification_status=})")
 
     try:
         seg = update_segment_specification_status(db, segment_id, request.specification_status)
@@ -164,7 +164,7 @@ async def update_segment_notes_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the notes of a Layer Segment."""
-    logger.info(f"update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})...")
+    logger.info(f"assembly/update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})...")
 
     try:
         seg = update_segment_notes(db, segment_id, request.notes)
@@ -180,7 +180,7 @@ async def update_segment_notes_route(
 @router.delete("/delete-segment/{segment_id}")
 async def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a LayerSegment and adjust the order of remaining segments."""
-    logger.info(f"delete-segment_route({segment_id=})")
+    logger.info(f"assembly/delete-segment_route({segment_id=})")
 
     try:
         delete_segment(db, segment_id)

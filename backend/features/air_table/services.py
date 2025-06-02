@@ -21,6 +21,7 @@ class TableNotFoundException(Exception):
 
     def __init__(self, table_name: str):
         self.table_name = table_name
+        logger.error(f"Table {table_name} not found in AirTable.")
         super().__init__(f"Table {table_name} not found in AirTable.")
 
 
@@ -28,6 +29,7 @@ class DownloadError(Exception):
     """Custom exception for download errors."""
 
     def __init__(self, url: str, message: str):
+        logger.error(f"DownloadError: Failed to download from URL: {url} | {message}")
         super().__init__(f"DownloadError: Failed to download from URL: {url} | {message}")
 
 

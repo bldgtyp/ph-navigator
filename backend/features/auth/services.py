@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed password using bcrypt."""
+    logger.info("verify_password()")
+
     try:
         return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
     except ValueError as e:
@@ -31,15 +33,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """Hash a password using bcrypt."""
+    logger.info("get_password_hash()")
+
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def get_user(db: Session, username: str) -> User | None:
     """Retrieve a user by username from the database."""
+    logger.info(f"get_user({username=})")
+
     return db.query(User).filter(User.username == username).first()
 
 
 def authenticate_user(db: Session, username: str, password: str) -> User | Literal[False]:
+    """Authenticate a user by checking the username and password against the database."""
+    logger.info(f"authenticate_user({username=}, password=****)")
+    
     user = get_user(db, username)
     if not user:
         logger.error(f"User '{username}' not found.")
@@ -53,6 +62,7 @@ def authenticate_user(db: Session, username: str, password: str) -> User | Liter
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create a JWT access token with an expiration time."""
+    logger.info(f"create_access_token(data=..., {expires_delta=})")
 
     to_encode = data.copy()
     if expires_delta:
@@ -70,6 +80,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)) -> User:
     """Get the current user from the JWT token."""
+    logger.info("get_current_user(token=...)")
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -103,6 +114,7 @@ def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     """Get the current active user, ensuring they are not disabled."""
+    logger.info(f"get_current_active_user({current_user.username=})")
 
     return current_user
 

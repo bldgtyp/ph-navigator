@@ -25,7 +25,7 @@ async def refresh_db_materials_from_air_table_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Load all of the records from AirTable into the Database."""
-    logger.info(f"refresh_db_materials_from_air_table_route()")
+    logger.info(f"assembly/refresh_db_materials_from_air_table_route()")
 
     materials = get_all_material_from_airtable()
     purge_unused_materials(db)
@@ -47,7 +47,7 @@ async def load_all_materials_from_airtable_route(
     db: Session = Depends(get_db),
 ) -> list[MaterialSchema]:
     """Return all of the Materials in the database."""
-    logger.info(f"load_all_materials_from_airtable_route()")
+    logger.info(f"assembly/load_all_materials_from_airtable_route()")
 
     materials = get_all_material_from_airtable()
     return [MaterialSchema.from_orm(material) for material in materials]

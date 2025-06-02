@@ -33,7 +33,7 @@ async def get_project_by_bt_number_route(
     db: Session = Depends(get_db),
 ) -> ProjectSchema:
     """Return a project by its BuildingType Number."""
-    logger.info(f"get_project_by_bt_number_route({bt_number=})")
+    logger.info(f"project/get_project_by_bt_number_route({bt_number=})")
 
     try:
         project = get_project_by_bt_number(db, bt_number)
@@ -51,7 +51,7 @@ async def update_project_settings_route(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ):
-    logger.info(f"update_project_settings_route({bt_number=}, {project_settings_data=})")
+    logger.info(f"project/update_project_settings_route({bt_number=}, {project_settings_data=})")
 
     try:
         project = get_project_by_bt_number(db, bt_number)
@@ -80,7 +80,7 @@ async def create_new_project_route(
     db: Session = Depends(get_db),
 ) -> ProjectSchema:
     """Add a new project to the database."""
-    logger.info(f"create_new_project({new_project_data=}, {current_user=})")
+    logger.info(f"project/create_new_project({new_project_data=}, {current_user=})")
 
     try:
         project = create_new_project(

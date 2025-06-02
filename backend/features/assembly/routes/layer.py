@@ -30,7 +30,7 @@ async def create_new_default_layer_on_assembly_route(
     request: CreateLayerRequest, assembly_id: int, db: Session = Depends(get_db)
 ) -> LayerSchema:
     """Create a new Layer on a specified Assembly."""
-    logger.info(f"create_new_default_layer_on_assembly_route({assembly_id=}, order={request.order})")
+    logger.info(f"assembly/create_new_default_layer_on_assembly_route({assembly_id=}, order={request.order})")
 
     try:
         assembly, layer = insert_default_layer_into_assembly(db, assembly_id, request.order)
@@ -43,7 +43,7 @@ async def create_new_default_layer_on_assembly_route(
 @router.get("/get-layer/{layer_id}")
 async def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> LayerSchema:
     """Get a specific layer by ID."""
-    logger.info(f"get_layer_route(layer_id={layer_id})")
+    logger.info(f"assembly/get_layer_route(layer_id={layer_id})")
 
     try:
         layer = get_layer_by_id(db, layer_id)
@@ -60,7 +60,7 @@ async def update_layer_thickness_route(
     request: UpdateLayerHeightRequest, layer_id: int, db: Session = Depends(get_db)
 ) -> LayerSchema:
     """Update the thickness (mm) of a Layer."""
-    logger.info(f"update_layer_thickness_route(layer_id={layer_id}, thickness_mm={request.thickness_mm})")
+    logger.info(f"assembly/update_layer_thickness_route(layer_id={layer_id}, thickness_mm={request.thickness_mm})")
 
     try:
         layer = update_layer_thickness(db, layer_id, request.thickness_mm)
@@ -73,7 +73,7 @@ async def update_layer_thickness_route(
 @router.delete("/delete-layer/{layer_id}")
 async def delete_layer_route(layer_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a Layer and adjust the order of remaining layers."""
-    logger.info(f"delete_layer_route(layer_id={layer_id})")
+    logger.info(f"assembly/delete_layer_route(layer_id={layer_id})")
 
     try:
         delete_layer(db, layer_id)

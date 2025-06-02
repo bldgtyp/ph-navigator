@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 def create_thumbnail(image_file: UploadFile, size=(64, 64)) -> bytes:
     """Create a simple thumbnail from an image file."""
+    logger.info(f"create_thumbnail({image_file.filename}, {size=})")
 
     image = Image.open(image_file.file)
     image.thumbnail(size)
@@ -35,6 +36,7 @@ def sanitize_name(name: str) -> str:
         name = "my_file" -> "my_file"
         name = "my_file@#$%" -> "my_file"
     """
+    logger.info(f"sanitize_name({name})")
 
     sanitized_file_name = "".join(c for c in name if c.isalnum() or c in ("_"))
     sanitized_file_name = sanitized_file_name
@@ -48,6 +50,7 @@ def sanitize_file_name(filename: str) -> str:
         filename = "my_file.jpg" -> "my_file.jpg"
         filename = "my_file@#$%.jpg" -> "my_file.jpg"
     """
+    logger.info(f"sanitize_file_name({filename})")
 
     file_object = Path(filename)
     sanitized_file_name = sanitize_name(file_object.stem)
@@ -57,6 +60,7 @@ def sanitize_file_name(filename: str) -> str:
 
 def check_gcs_bucket_create_file_permissions() -> bool:
     """Check if the account has permission to write to the Google-Cloud-Storage bucket."""
+    logger.info("check_gcs_bucket_create_file_permissions()")
 
     storage_client = storage.Client()
     bucket = storage_client.bucket(settings.GCP_BUCKET_NAME)
@@ -76,6 +80,7 @@ def upload_segment_site_photo_to_cdn(
     bucket_name: str,
 ) -> tuple[str, str]:
     """Upload a segment site photo (and thumbnail) to Google Cloud Storage and return the public URLs."""
+    logger.info(f"upload_segment_site_photo_to_cdn({bt_number=}, {segment_id=}, {file.filename=})")
 
     segment = db.get(Segment, segment_id)
     if not segment:
@@ -114,6 +119,7 @@ def add_site_photo_to_segment(
     full_size_url: str,
 ) -> MaterialPhoto:
     """Add a site photo's URLS (thumbnail, full-size) to a segment in the database."""
+    logger.info(f"add_site_photo_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})")
 
     segment = db.get(Segment, segment_id)
     if not segment:
@@ -136,6 +142,7 @@ def upload_segment_datasheet_to_cdn(
     bucket_name: str,
 ) -> tuple[str, str]:
     """Upload a segment datasheet (and thumbnail) to Google Cloud Storage and return the public URLs."""
+    logger.info(f"upload_segment_datasheet_to_cdn({bt_number=}, {segment_id=}, {file.filename=})")
 
     segment = db.get(Segment, segment_id)
     if not segment:
@@ -174,6 +181,7 @@ def add_datasheet_to_segment(
     full_size_url: str,
 ) -> MaterialDatasheet:
     """Add a site photo's URLS (thumbnail, full-size) to a segment in the database."""
+    logger.info(f"add_datasheet_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})")
 
     segment = db.get(Segment, segment_id)
     if not segment:

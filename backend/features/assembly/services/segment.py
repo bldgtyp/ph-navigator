@@ -16,7 +16,7 @@ class SegmentNotFoundException(Exception):
     """Exception raised when a Segment is not found in the database."""
 
     def __init__(self, segment_id: int):
-        self.segment_id = segment_id
+        logger.error(f"Segment with ID {segment_id} not found.")
         super().__init__(f"Segment with ID {segment_id} not found.")
 
 
@@ -24,8 +24,7 @@ class LastSegmentInLayerException(Exception):
     """Exception raised when trying to pop the last segment in a layer."""
 
     def __init__(self, segment_id: int, layer_id: int):
-        self.segment_id = segment_id
-        self.layer_id = layer_id
+        logger.error(f"Cannot pop Segment {segment_id} as it is the last segment in Layer {layer_id}.")
         super().__init__(f"Cannot pop Segment {segment_id} as it is the last segment in Layer {layer_id}.")
 
 

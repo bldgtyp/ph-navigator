@@ -45,6 +45,8 @@ def get_material_by_id(id: str, db: Session) -> Material:
 
 
 def get_default_material(db: Session) -> Material:
+    """Get the default material from the database or raise NoMaterialsException."""
+    logger.info("get_default_material()")
     mat = db.query(Material).first()
     if not mat:
         raise NoMaterialsException("any")

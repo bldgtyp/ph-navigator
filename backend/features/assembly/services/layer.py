@@ -21,8 +21,7 @@ class LastLayerAssemblyException(Exception):
     """Exception raised when trying to delete the last layer in an assembly."""
 
     def __init__(self, layer_id: int, assembly_id: int):
-        self.layer_id = layer_id
-        self.assembly_id = assembly_id
+        logger.error(f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}.")
         super().__init__(f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}.")
 
 
