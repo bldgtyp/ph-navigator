@@ -1,5 +1,7 @@
 # -*- Python Version: 3.11 -*-
 
+import json
+
 import pytest
 from sqlalchemy.orm import Session
 
@@ -11,6 +13,7 @@ from features.assembly.services.assembly import (
     create_new_empty_assembly_on_project,
     delete_assembly,
     get_all_project_assemblies,
+    get_all_project_assemblies_as_hbjson,
     get_assembly_by_id,
     insert_default_layer_into_assembly,
     insert_layer_into_assembly,
@@ -336,3 +339,88 @@ def test_delete_assembly(session, create_test_project):
     # Verify the layer is also deleted
     with pytest.raises(LayerNotFoundException):
         get_layer_by_id(session, 1)
+
+
+def test_get_assemblies_as_hbjson(session, create_test_project):
+    create_test_project(db=session, username="user1", project_name="Project 1")
+    assemblies_json = get_all_project_assemblies_as_hbjson(session, "1234")
+
+    obj = json.loads(assemblies_json)
+    """
+    [
+        {
+            "type": "OpaqueConstruction",
+            "identifier": "Test Assembly",
+            "materials": [
+                {
+                    "type": "EnergyMaterial",
+                    "identifier": "Test Material",
+                    "roughness": "MediumRough",
+                    "thickness": 0.05,
+                    "conductivity": 1.0,
+                    "density": 999.0,
+                    "specific_heat": 999.0,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "display_name": "Test Material",
+                    "properties": {
+                        "type": "EnergyMaterialProperties",
+                        "ph": {
+                            "id_num": 0,
+                            "divisions": {
+                                "column_widths": [0.1],
+                                "row_heights": [1.0],
+                                "cells": [
+                                    {
+                                        "row": 0,
+                                        "column": 0,
+                                        "material": {
+                                            "type": "EnergyMaterial",
+                                            "identifier": "Test Material",
+                                            "roughness": "MediumRough",
+                                            "thickness": 0.05,
+                                            "conductivity": 1.0,
+                                            "density": 999.0,
+                                            "specific_heat": 999.0,
+                                            "thermal_absorptance": 0.9,
+                                            "solar_absorptance": 0.7,
+                                            "visible_absorptance": 0.7,
+                                            "properties": {
+                                                "type": "EnergyMaterialProperties",
+                                                "ph": {
+                                                    "id_num": 0,
+                                                    "divisions": {
+                                                        "column_widths": [],
+                                                        "row_heights": [],
+                                                        "cells": [],
+                                                        "is_a_steel_stud_cavity": False,
+                                                    },
+                                                    "user_data": {},
+                                                },
+                                            },
+                                        },
+                                    }
+                                ],
+                                "is_a_steel_stud_cavity": False,
+                            },
+                            "user_data": {},
+                        },
+                    },
+                }
+            ],
+            "properties": {
+                "type": "OpaqueConstructionProperties",
+                "ph": {
+                    "type": "OpaqueConstructionPhProperties",
+                    "id_num": 0
+                },
+            },
+        },
+    ]
+    """
+
+    assert len(obj) == 1  # Initial assembly created by default
+    assert obj[0]["identifier"] == "Test Assembly"
+    assert obj[0]["type"] == "OpaqueConstruction"
+    assert len(obj[0]["materials"]) == 1

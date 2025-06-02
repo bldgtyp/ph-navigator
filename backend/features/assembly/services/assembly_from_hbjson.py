@@ -15,7 +15,7 @@ from db_entities.assembly import Assembly, Layer, Material, Segment
 logger = logging.getLogger(__name__)
 
 
-def get_single_hb_construction_from_hbjson(data) -> OpaqueConstruction | None:
+def get_single_hb_construction_from_hbjson(data: dict) -> OpaqueConstruction | None:
     """De-serialize a single HB OpaqueConstruction from HB-JSON data."""
     logger.info(f"get_single_hb_construction_from_json(data={data['type']}...)")
 
@@ -31,7 +31,7 @@ def get_single_hb_construction_from_hbjson(data) -> OpaqueConstruction | None:
     return hb_objs
 
 
-def get_hb_constructions_from_hbjson(data) -> list[OpaqueConstruction]:
+def get_hb_constructions_from_hbjson(data: dict) -> list[OpaqueConstruction]:
     """De-serialize a list of HB OpaqueConstructions from HB-JSON data."""
     logger.info("hb_constructions_from_hbjson(data=...)")
 
@@ -57,7 +57,7 @@ def get_material_from_hb_material(db: Session, hb_material: EnergyMaterial) -> M
     if db_material := db.query(Material).filter_by(name=hb_material.display_name).first():
         return db_material
 
-    raise ValueError(f"Material {hb_material.display_name} not found in database.")
+    raise ValueError(f"Material '{hb_material.display_name}' not found in database.")
 
 
 def create_segment_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Segment:
@@ -136,9 +136,9 @@ def create_assembly_from_hb_construction(
         .filter_by(name=hb_opaque_construction.display_name, project_id=project.id)
         .first()
     ):
-        logger.warning(f"Assembly with name {assembly.name} already exists for project {project.id}. Updating.")
+        logger.info(f"Assembly with name '{assembly.name}' already exists for project '{project.id}'. Updating.")
     else:
-        logger.info(f"Creating new Assembly with name {hb_opaque_construction.display_name} for project {project.id}.")
+        logger.info(f"Creating new Assembly with name '{hb_opaque_construction.display_name}' for project {project.id}.")
         assembly = Assembly(
             name=hb_opaque_construction.display_name,
             project=project,
