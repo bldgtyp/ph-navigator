@@ -20,10 +20,6 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-# TODO: Change all these responses to return a Pydantic object instead?
-# Will need to check the frontend to see what it expects?
-
-
 @router.get("/refresh-db-materials-from-air-table")
 async def refresh_db_materials_from_air_table_route(
     db: Session = Depends(get_db),
@@ -46,12 +42,12 @@ async def refresh_db_materials_from_air_table_route(
     )
 
 
-@router.get("/get-all-materials", response_model=list[MaterialSchema])
-async def get_all_materials_route(
+@router.get("/load-all-materials-from-airtable", response_model=list[MaterialSchema])
+async def load_all_materials_from_airtable_route(
     db: Session = Depends(get_db),
 ) -> list[MaterialSchema]:
     """Return all of the Materials in the database."""
-    logger.info(f"get_all_materials_route()")
+    logger.info(f"load_all_materials_from_airtable_route()")
 
     materials = get_all_material_from_airtable()
     return [MaterialSchema.from_orm(material) for material in materials]

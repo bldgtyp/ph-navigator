@@ -238,3 +238,4 @@ def test_delete_segment_route(client: TestClient, session: Session, create_test_
     # Verify the segment was deleted
     session.refresh(project)
     assert len(project.assemblies[0].layers[0].segments) == 1
+
