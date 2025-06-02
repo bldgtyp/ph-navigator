@@ -111,7 +111,7 @@ async def delete_assembly_route(request: DeleteAssemblyRequest, db: Session = De
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete assembly")
 
 
-# TODO: no route uses this endpoint? Remove? Update?
+# TODO: Remove? Update?
 # @router.get("/get_assemblies_as_hb_json/{bt_number}")
 # async def get_project_assemblies_as_hb_json_route(
 #     bt_number: str,

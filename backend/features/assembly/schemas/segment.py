@@ -10,7 +10,7 @@ from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.assembly.schemas.material_photo import MaterialPhotoSchema
 
 
-class AssemblyLayerSegmentSchema(BaseModel):
+class SegmentSchema(BaseModel):
     id: int
     layer_id: int
     material_id: str
@@ -28,7 +28,7 @@ class AssemblyLayerSegmentSchema(BaseModel):
         orm_mode = True
 
 
-class CreateLayerSegmentRequest(BaseModel):
+class CreateSegmentRequest(BaseModel):
     layer_id: int
     material_id: str
     width_mm: float

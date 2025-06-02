@@ -4,14 +4,14 @@ from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel, root_validator
 
-from features.assembly.schemas.segment import AssemblyLayerSegmentSchema
+from features.assembly.schemas.segment import SegmentSchema
 
 
 class LayerSchemaBase(BaseModel):
     order: int
     assembly_id: int
     thickness_mm: float
-    segments: list[AssemblyLayerSegmentSchema] = []
+    segments: list[SegmentSchema] = []
 
     class Config:
         orm_mode = True

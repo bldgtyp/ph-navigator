@@ -2,14 +2,14 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
 from features.assembly.schemas.segment import (
-    CreateLayerSegmentRequest,
+    CreateSegmentRequest,
+    SegmentSchema,
     UpdateSegmentIsContinuousInsulationRequest,
     UpdateSegmentMaterialRequest,
     UpdateSegmentNotesRequest,
@@ -37,154 +37,152 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-# TODO: Change all these responses to return a Pydantic object instead?
-# Will need to check the frontend to see what it expects?
-
-
-@router.post("/create-new-segment/")
-async def add_segment_route(request: CreateLayerSegmentRequest, db: Session = Depends(get_db)) -> JSONResponse:
+@router.post("/create-new-segment/", response_model=SegmentSchema)
+async def create_new_segment_route(request: CreateSegmentRequest, db: Session = Depends(get_db)) -> SegmentSchema:
     """Add a new LayerSegment to a Layer at a specific position."""
     logger.info(
-        f"add-add_segment_route(layer_id={request.layer_id}, material_id={request.material_id}, width_mm={request.width_mm}, order={request.order})"
+        f"add-create_new_segment_route({request.layer_id=}, {request.material_id=}, {request.width_mm=}, {request.order=})"
     )
 
-    seg = create_new_segment(db, request.layer_id, request.material_id, request.width_mm, request.order)
+    try:
+        seg = create_new_segment(db, request.layer_id, request.material_id, request.width_mm, request.order)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error creating new segment: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create new segment: {str(e)}",
+        )
 
-    return JSONResponse(
-        content={
-            "message": "LayerSegment added successfully.",
-            "segment_id": seg.id,
-        },
-        status_code=201,
-    )
 
-
-@router.patch("/update-segment-material/{segment_id}")
+@router.patch("/update-segment-material/{segment_id}", response_model=SegmentSchema)
 async def update_segment_material_route(
     segment_id: int,
     request: UpdateSegmentMaterialRequest,
     db: Session = Depends(get_db),
-) -> JSONResponse:
+) -> SegmentSchema:
     """Update the Material of a Layer Segment."""
-    logger.info(f"update_segment_material_route({segment_id=}, material_id={request.material_id})")
+    logger.info(f"update_segment_material_route({segment_id=}, {request.material_id=})")
 
-    seg = update_segment_material(db, segment_id, request.material_id)
-
-    return JSONResponse(
-        content={
-            "message": f"Segment {segment_id} updated with material {request.material_id}.",
-            "material_id": request.material_id,
-            "material_name": seg.material.name,
-            "material_argb_color": seg.material.argb_color,
-        },
-        status_code=200,
-    )
+    try:
+        seg = update_segment_material(db, segment_id, request.material_id)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error updating segment material: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update segment material: {str(e)}",
+        )
 
 
-@router.patch("/update-segment-width/{segment_id}")
+@router.patch("/update-segment-width/{segment_id}", response_model=SegmentSchema)
 async def update_segment_width_route(
     segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
-) -> JSONResponse:
+) -> SegmentSchema:
     """Update the width (mm) of a Layer Segment."""
-    logger.info(f"update_segment_width_route({segment_id=}, width_mm={request.width_mm})")
+    logger.info(f"update_segment_width_route({segment_id=}, {request.width_mm=})")
 
-    seg = update_segment_width(db, segment_id, request.width_mm)
+    try:
+        seg = update_segment_width(db, segment_id, request.width_mm)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error updating segment width: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update segment width: {str(e)}",
+        )
 
-    return JSONResponse(
-        content={"message": f"Segment {seg.id} updated to new width: {seg.width_mm} mm."},
-        status_code=200,
-    )
 
-
-@router.patch("/update-segment-steel-stud-spacing/{segment_id}")
+@router.patch("/update-segment-steel-stud-spacing/{segment_id}", response_model=SegmentSchema)
 async def update_segment_steel_stud_spacing_route(
     segment_id: int,
     request: UpdateSegmentSteelStudSpacingRequest,
     db: Session = Depends(get_db),
-) -> JSONResponse:
+) -> SegmentSchema:
     """Update the steel stud spacing of a Layer Segment."""
-    logger.info(
-        f"update_segment_steel_stud_spacing_route({segment_id=}, steel_stud_spacing_mm={request.steel_stud_spacing_mm})"
-    )
+    logger.info(f"update_segment_steel_stud_spacing_route({segment_id=}, {request.steel_stud_spacing_mm=})")
 
-    seg = update_segment_steel_stud_spacing(db, segment_id, request.steel_stud_spacing_mm)
+    try:
+        seg = update_segment_steel_stud_spacing(db, segment_id, request.steel_stud_spacing_mm)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error updating segment steel stud spacing: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update segment steel stud spacing: {str(e)}",
+        )
 
-    return JSONResponse(
-        content={"message": f"Segment {seg.id} updated with new steel stud spacing: {seg.steel_stud_spacing_mm} mm."},
-        status_code=200,
-    )
 
-
-@router.patch("/update-segment-continuous-insulation/{segment_id}")
+@router.patch("/update-segment-continuous-insulation/{segment_id}", response_model=SegmentSchema)
 async def update_segment_continuous_insulation_route(
     segment_id: int,
     request: UpdateSegmentIsContinuousInsulationRequest,
     db: Session = Depends(get_db),
-) -> JSONResponse:
+) -> SegmentSchema:
     """Update the continuous insulation flag of a Layer Segment."""
-    logger.info(
-        f"update_segment_continuous_insulation_route(segment_id={segment_id}, is_continuous_insulation={request.is_continuous_insulation})"
-    )
+    logger.info(f"update_segment_continuous_insulation_route({segment_id=}, {request.is_continuous_insulation=})")
 
-    seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
+    try:
+        seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error updating segment continuous insulation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update segment continuous insulation: {str(e)}",
+        )
 
-    return JSONResponse(
-        content={
-            "message": f"Segment {seg.id} updated with new continuous insulation flag {seg.is_continuous_insulation}."
-        },
-        status_code=200,
-    )
 
-
-@router.patch("/update-segment-specification-status/{segment_id}")
+@router.patch("/update-segment-specification-status/{segment_id}", response_model=SegmentSchema)
 async def update_segment_specification_status_route(
     segment_id: int,
     request: UpdateSegmentSpecificationStatusRequest,
     db: Session = Depends(get_db),
-) -> JSONResponse:
+) -> SegmentSchema:
     """Update the specification status of a Layer Segment."""
-    logger.info(
-        f"update_segment_specification_status_route(segment_id={segment_id}, specification_status={request.specification_status})"
-    )
+    logger.info(f"update_segment_specification_status_route({segment_id=}, {request.specification_status=})")
 
-    seg = update_segment_specification_status(db, segment_id, request.specification_status)
+    try:
+        seg = update_segment_specification_status(db, segment_id, request.specification_status)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error updating segment specification status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update segment specification status: {str(e)}",
+        )
 
-    return JSONResponse(
-        content={"message": f"Segment {seg.id} updated with new specification status {seg.specification_status}."},
-        status_code=200,
-    )
 
-
-@router.patch("/update-segment-notes/{segment_id}")
+@router.patch("/update-segment-notes/{segment_id}", response_model=SegmentSchema)
 async def update_segment_route(
     segment_id: int,
     request: UpdateSegmentNotesRequest,
     db: Session = Depends(get_db),
-) -> JSONResponse:
+) -> SegmentSchema:
     """Update the notes of a Layer Segment."""
     logger.info(f"update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})...")
 
-    seg = update_segment_notes(db, segment_id, request.notes)
-
-    return JSONResponse(
-        content={"message": f"Segment {seg.id} updated with new notes: {str(seg.notes)[0:10]})..."},
-        status_code=200,
-    )
+    try:
+        seg = update_segment_notes(db, segment_id, request.notes)
+        return SegmentSchema.from_orm(seg)
+    except Exception as e:
+        logger.error(f"Error updating segment notes: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update segment notes: {str(e)}",
+        )
 
 
 @router.delete("/delete-segment/{segment_id}")
-async def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> JSONResponse:
+async def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a LayerSegment and adjust the order of remaining segments."""
-    logger.info(f"delete-segment_route(segment_id={segment_id})")
+    logger.info(f"delete-segment_route({segment_id=})")
 
     try:
         delete_segment(db, segment_id)
-        return JSONResponse(
-            content={"message": f"Segment {segment_id} deleted successfully."},
-            status_code=200,
-        )
+        return None
     except LastSegmentInLayerException as e:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )

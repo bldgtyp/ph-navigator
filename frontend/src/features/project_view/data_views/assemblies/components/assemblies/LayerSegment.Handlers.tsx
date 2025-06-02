@@ -2,14 +2,6 @@ import { SegmentType } from '../../types/Segment';
 import { patchWithAlert } from "../../../../../../api/patchWithAlert";
 import { convertArgbToRgba } from '../../types/Material';
 
-interface responseType {
-    message: string;
-    material_id: number;
-    material_name: string;
-    material_argb_color: string;
-}
-
-
 export const handleSubmit = async (
     segment: SegmentType,
     // Segment Width
@@ -40,12 +32,12 @@ export const handleSubmit = async (
     try {
         // Update the segment width in the database if it has changed
         if (newSegmentWidthMM !== currentSegmentWidthMM) {
-            const response = await patchWithAlert(`assembly/update-segment-width/${segment.id}`, null, {
+            const response = await patchWithAlert<SegmentType>(`assembly/update-segment-width/${segment.id}`, null, {
                 width_mm: newSegmentWidthMM,
             });
 
             if (response) {
-                setCurrentWidth(newSegmentWidthMM);
+                setCurrentWidth(response.width_mm);
             } else {
                 console.error("Failed to update Segment-Width.");
             }
@@ -53,13 +45,13 @@ export const handleSubmit = async (
 
         // Update the material in the database if it has changed
         if (newMaterialId !== currentMaterialId) {
-            const response = await patchWithAlert<responseType>(`assembly/update-segment-material/${segment.id}`, null, {
+            const response = await patchWithAlert<SegmentType>(`assembly/update-segment-material/${segment.id}`, null, {
                 material_id: newMaterialId,
             });
 
             if (response) {
-                setCurrentMaterialId(newMaterialId);
-                setCurrentMaterialColor(convertArgbToRgba(response.material_argb_color, "#ccc"));
+                setCurrentMaterialId(response.material.id);
+                setCurrentMaterialColor(convertArgbToRgba(response.material.argb_color, "#ccc"));
             } else {
                 console.error("Failed to update Segment-Material.");
             }
@@ -69,7 +61,7 @@ export const handleSubmit = async (
         if (newIsSteelStud !== currentIsSteelStud || (newIsSteelStud && newSteelStudSpacing !== currentSteelStudSpacing)) {
             console.log("in here")
             console.log("newIsSteelStud ? newSteelStudSpacing : null = ", newIsSteelStud ? newSteelStudSpacing : null)
-            const response = await patchWithAlert(`assembly/update-segment-steel-stud-spacing/${segment.id}`, null, {
+            const response = await patchWithAlert<SegmentType>(`assembly/update-segment-steel-stud-spacing/${segment.id}`, null, {
                 steel_stud_spacing_mm: newIsSteelStud ? newSteelStudSpacing : null
             });
 
@@ -84,12 +76,12 @@ export const handleSubmit = async (
 
         // Update the continuous insulation in the database if it has changed
         if (newContinuousInsulationChecked !== currentContinuousInsulationChecked) {
-            const response = await patchWithAlert(`assembly/update-segment-continuous-insulation/${segment.id}`, null, {
+            const response = await patchWithAlert<SegmentType>(`assembly/update-segment-continuous-insulation/${segment.id}`, null, {
                 is_continuous_insulation: newContinuousInsulationChecked,
             });
 
             if (response) {
-                setCurrentContinuousInsulationChecked(newContinuousInsulationChecked);
+                setCurrentContinuousInsulationChecked(response.is_continuous_insulation);
             } else {
                 console.error("Failed to update Segment-Continuous-Insulation.");
             }

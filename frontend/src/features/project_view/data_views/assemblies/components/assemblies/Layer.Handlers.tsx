@@ -12,14 +12,14 @@ export const handleAddSegmentToRight = async (
     segments: SegmentType[],
     setSegments: React.Dispatch<React.SetStateAction<SegmentType[]>>
 ) => {
-    const DEFAULT_WIDTH = 25;
+    const DEFAULT_WIDTH = 50;
 
     try {
         // New Segment goes to the right of the current segment
         const orderPosition = segment.order + 1;
 
         // Call the backend API to add the new segment
-        const response = await postWithAlert<{ message: string, segment_id: number }>(`assembly/create-new-segment`, null, {
+        const response = await postWithAlert<SegmentType>(`assembly/create-new-segment`, null, {
             layer_id: layer.id,
             material_id: segment.material.id, // Match the material ID from the segment
             width_mm: DEFAULT_WIDTH,
@@ -29,12 +29,12 @@ export const handleAddSegmentToRight = async (
         if (response) {
             // Add the new segment to the local state
             const newSegment: SegmentType = {
-                id: response.segment_id,
-                layer_id: layer.id,
-                material_id: segment.material.id,
-                material: segment.material,
-                width_mm: 50,
-                order: orderPosition,
+                id: response.id,
+                layer_id: response.layer_id,
+                material_id: response.material.id,
+                material: response.material,
+                width_mm: response.width_mm,
+                order: response.order,
                 steel_stud_spacing_mm: null,
                 is_continuous_insulation: false,
                 specification_status: SpecificationStatus.NA,

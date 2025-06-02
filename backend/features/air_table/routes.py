@@ -27,7 +27,7 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-# TODO: Return Pydantic Object
+# TODO: Return Pydantic Object. Move to Service.
 @router.get("/config/{bt_number}")
 async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> list[RecordDict]:
     logger.info(f"/air_table/get_project_config({bt_number=})")

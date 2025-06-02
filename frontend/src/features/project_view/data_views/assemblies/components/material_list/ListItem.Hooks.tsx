@@ -26,12 +26,12 @@ export const useMaterialListItemHooks = (segment: SegmentType) => {
             console.log(e.target.value);
             // Update the segment width in the database if it has changed
             if (newNotes !== currentNotes) {
-                const response = await patchWithAlert(`assembly/update-segment-notes/${segment.id}`, null, {
+                const response = await patchWithAlert<SegmentType>(`assembly/update-segment-notes/${segment.id}`, null, {
                     notes: newNotes,
                 });
 
                 if (response) {
-                    setCurrentNotes(newNotes);
+                    setCurrentNotes(response.notes || "");
                 } else {
                     console.error("Failed to update Segment-Notes.");
                 }

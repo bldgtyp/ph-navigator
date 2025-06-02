@@ -32,11 +32,19 @@ const DesignSpecificationStatus: React.FC<{ segment: SegmentType }> = (props) =>
         setStatus(newStatus);
 
         try {
-            await patchWithAlert(
+            const response = await patchWithAlert<SegmentType>(
                 `assembly/update-segment-specification-status/${props.segment.id}`,
                 null,
                 { specification_status: newStatus }
             );
+
+            if (response) {
+                setStatus(response.specification_status);
+            } else {
+                console.error("Failed to update Segment-Specification-Status.");
+                alert("Failed to update status.");
+            }
+
         } catch (error) {
             setStatus(props.segment.specification_status);
             alert("Failed to update status.");
