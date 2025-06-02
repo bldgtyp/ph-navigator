@@ -37,8 +37,12 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.post("/create-new-segment-on-layer/{layer_id}", response_model=SegmentSchema, status_code=status.HTTP_201_CREATED)
-async def create_new_segment_on_layer_route(request: CreateSegmentRequest, layer_id:int, db: Session = Depends(get_db)) -> SegmentSchema:
+@router.post(
+    "/create-new-segment-on-layer/{layer_id}", response_model=SegmentSchema, status_code=status.HTTP_201_CREATED
+)
+async def create_new_segment_on_layer_route(
+    request: CreateSegmentRequest, layer_id: int, db: Session = Depends(get_db)
+) -> SegmentSchema:
     """Add a new LayerSegment to a Layer at a specific position."""
     logger.info(
         f"add-create_new_segment_on_layer_route({layer_id=}, {request.material_id=}, {request.width_mm=}, {request.order=})"

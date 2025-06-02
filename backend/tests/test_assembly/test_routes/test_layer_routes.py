@@ -7,7 +7,7 @@ from db_entities.app import Project
 
 
 def test_create_new_default_layer_on_assembly_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")    
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
 
@@ -16,10 +16,11 @@ def test_create_new_default_layer_on_assembly_route(client: TestClient, session:
         json={"order": 1},
     )
     assert response.status_code == 201
-    
+
     session.refresh(project)  # Refresh the Project to get the updated assemblies
 
     assert len(project.assemblies[0].layers) == 2
+
 
 def test_get_valid_layer_route(client: TestClient, session: Session, create_test_project):
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
@@ -88,14 +89,19 @@ def test_delete_layer_route(client: TestClient, session: Session, create_test_pr
     session.refresh(project)
     assert len(project.assemblies[0].layers) == 1
 
-def test_delete_last_layer_raises_LastLayerAssemblyException_route(client: TestClient, session: Session, create_test_project):
+
+def test_delete_last_layer_raises_LastLayerAssemblyException_route(
+    client: TestClient, session: Session, create_test_project
+):
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
 
     layer_id_to_delete = project.assemblies[0].layers[0].id
     response = client.delete(f"/assembly/delete-layer/{layer_id_to_delete}")
-    
-    assert response.status_code == 200
-    assert response.json()["detail"] == f"Cannot delete Layer-{layer_id_to_delete}. It is the last layer in Assembly-{project.assemblies[0].id}."
 
+    assert response.status_code == 200
+    assert (
+        response.json()["detail"]
+        == f"Cannot delete Layer-{layer_id_to_delete}. It is the last layer in Assembly-{project.assemblies[0].id}."
+    )

@@ -138,7 +138,9 @@ def create_assembly_from_hb_construction(
     ):
         logger.info(f"Assembly with name '{assembly.name}' already exists for project '{project.id}'. Updating.")
     else:
-        logger.info(f"Creating new Assembly with name '{hb_opaque_construction.display_name}' for project {project.id}.")
+        logger.info(
+            f"Creating new Assembly with name '{hb_opaque_construction.display_name}' for project {project.id}."
+        )
         assembly = Assembly(
             name=hb_opaque_construction.display_name,
             project=project,

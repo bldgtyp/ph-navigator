@@ -1,17 +1,18 @@
 # -*- Python Version: 3.11 -*-
 
 import json
-import pytest
-from sqlalchemy.orm import Session
 
+import pytest
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass
-from features.assembly.services.assembly_from_hbjson import (
-    create_assembly_from_hb_construction, get_hb_constructions_from_hbjson
-)
+from sqlalchemy.orm import Session
 
 from db_entities.app import Project
 from features.assembly.services.assembly import get_assembly_by_id
+from features.assembly.services.assembly_from_hbjson import (
+    create_assembly_from_hb_construction,
+    get_hb_constructions_from_hbjson,
+)
 
 
 def test_create_assembly_from_hb_construction(session: Session, create_test_project):
@@ -25,7 +26,8 @@ def test_create_assembly_from_hb_construction(session: Session, create_test_proj
                 conductivity=1.0,
                 density=999,
                 specific_heat=999,
-        )],
+            )
+        ],
     )
     assembly = create_assembly_from_hb_construction(session, "1234", hbe_construction)
 
@@ -50,9 +52,10 @@ def test_create_assembly_from_hb_construction_with_missing_project(session: Sess
                 conductivity=1.0,
                 density=999,
                 specific_heat=999,
-        )],
+            )
+        ],
     )
-    
+
     with pytest.raises(ValueError, match="Project with id 4567 not found in database."):
         create_assembly_from_hb_construction(session, "4567", hbe_construction)
 
@@ -68,9 +71,10 @@ def test_create_assembly_from_hb_construction_with_non_existing_material(session
                 conductivity=1.0,
                 density=999,
                 specific_heat=999,
-        )],
+            )
+        ],
     )
-    
+
     with pytest.raises(ValueError, match="Material 'Invalid Material' not found in database."):
         create_assembly_from_hb_construction(session, "1234", hbe_construction)
 
@@ -79,7 +83,7 @@ def test_create_assembly_with_existing_id(session: Session, create_test_project)
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_assembly = get_assembly_by_id(session, 1)
     assert existing_assembly.name == "Test Assembly"
-    
+
     hbe_construction = OpaqueConstruction(
         identifier="Test Assembly",
         materials=[
@@ -89,7 +93,8 @@ def test_create_assembly_with_existing_id(session: Session, create_test_project)
                 conductivity=1.0,
                 density=999,
                 specific_heat=999,
-        )],
+            )
+        ],
     )
 
     assert hbe_construction.identifier == "Test Assembly"
@@ -111,18 +116,18 @@ def test_create_assembly_from_hb_construction_with_EnergyMaterialNoMass_material
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_assembly = get_assembly_by_id(session, 1)
     assert existing_assembly.name == "Test Assembly"
-    
+
     mat_energy = EnergyMaterial(
-                identifier="Test Material",
-                thickness=1.0,
-                conductivity=1.0,
-                density=999,
-                specific_heat=999,
-            )
+        identifier="Test Material",
+        thickness=1.0,
+        conductivity=1.0,
+        density=999,
+        specific_heat=999,
+    )
     mat_no_mass = EnergyMaterialNoMass(
-                identifier="New EnergyMaterialNoMass",
-                r_value=1.0,
-            )
+        identifier="New EnergyMaterialNoMass",
+        r_value=1.0,
+    )
     assert isinstance(mat_energy, EnergyMaterial)
     assert not isinstance(mat_no_mass, EnergyMaterial)
 
@@ -135,16 +140,17 @@ def test_create_assembly_from_hb_construction_with_EnergyMaterialNoMass_material
     assert hbe_construction.display_name == "New Assembly"
 
     assembly = create_assembly_from_hb_construction(session, project.bt_number, hbe_construction)
-    
+
     assert assembly.name == "New Assembly"
     assert assembly.project_id == project.id
-    assert len(assembly.layers) == 1 # NoMass Gets ignored
+    assert len(assembly.layers) == 1  # NoMass Gets ignored
     assert len(assembly.layers[0].segments) == 1
     assert assembly.layers[0].segments[0].material.name == "Test Material"
     assert assembly.layers[0].thickness_mm == 1000
     assert assembly.layers[0].segments[0].material.conductivity_w_mk == 1.0
     assert assembly.layers[0].segments[0].material.density_kg_m3 == 999
     assert assembly.layers[0].segments[0].material.specific_heat_j_kgk == 999
+
 
 def test_get_single_hb_construction_from_hbjson():
     hbe_construction = OpaqueConstruction(
@@ -161,11 +167,12 @@ def test_get_single_hb_construction_from_hbjson():
     )
 
     hb_constructions = get_hb_constructions_from_hbjson(hbe_construction.to_dict())
-    
+
     assert len(hb_constructions) == 1
     assert hb_constructions[0].identifier == "Test Construction"
     assert len(hb_constructions[0].materials) == 1
     assert hb_constructions[0].materials[0].identifier == "Test Material"
+
 
 def test_get_multiple_hb_constructions_from_hbjson():
     hbe_construction_1 = OpaqueConstruction(
@@ -200,7 +207,7 @@ def test_get_multiple_hb_constructions_from_hbjson():
 
     # --- Rebuild the hb_constructions from the JSON
     rebuilt_hb_constructions = get_hb_constructions_from_hbjson(json.loads(hbe_constructions_json))
-    
+
     assert len(rebuilt_hb_constructions) == 2
     assert rebuilt_hb_constructions[0].identifier == "Test Construction"
     assert len(rebuilt_hb_constructions[0].materials) == 1
@@ -208,4 +215,3 @@ def test_get_multiple_hb_constructions_from_hbjson():
     assert rebuilt_hb_constructions[1].identifier == "Another Construction"
     assert len(rebuilt_hb_constructions[1].materials) == 1
     assert rebuilt_hb_constructions[1].materials[0].identifier == "Another Material"
-    

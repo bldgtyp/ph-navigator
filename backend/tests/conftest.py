@@ -10,17 +10,18 @@ from sqlalchemy.orm import Session, sessionmaker
 from database import Base, get_db
 from db_entities.app import Project
 from features.app.services import create_new_project, create_new_user
-from features.auth.services import get_password_hash
 from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
 from features.assembly.services.segment import create_new_segment
+from features.auth.services import get_password_hash
 from main import app
 
 DATABASE_URL = "sqlite:///:memory:"
 testing_engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_engine)
 TEST_PASSWORD = get_password_hash("12345")
+
 
 @pytest.fixture(scope="module")
 def client() -> Generator[TestClient, None, None]:

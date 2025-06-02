@@ -85,7 +85,7 @@ async def get_project_assemblies_route(bt_number: str, db: Session = Depends(get
 
 @router.patch("/update-assembly-name/{assembly_id}", response_model=AssemblySchema)
 async def update_assembly_name_route(
-    request: UpdateAssemblyNameRequest, assembly_id: int,  db: Session = Depends(get_db)
+    request: UpdateAssemblyNameRequest, assembly_id: int, db: Session = Depends(get_db)
 ) -> AssemblySchema:
     """Update the name of an Assembly."""
     logger.info(f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={request.new_name})")

@@ -12,7 +12,7 @@ def test_create_new_assembly_on_project_route(client: TestClient, session: Sessi
 
     response = client.post(f"/assembly/create-new-assembly-on-project/{project.bt_number}")
     assert response.status_code == 201
-    
+
     session.refresh(project)  # Refresh the Project to get the updated assemblies
 
     assert len(project.assemblies) == 2
@@ -25,7 +25,7 @@ def test_add_single_assembly_from_hbjson_construction(client: TestClient, sessio
 
     response = client.post(
         f"/assembly/add-assemblies-from-hbjson-constructions/{project.bt_number}",
-        files={"file": ("single_construction.json", open("tests/test_data/single_construction.json", "rb"))}
+        files={"file": ("single_construction.json", open("tests/test_data/single_construction.json", "rb"))},
     )
 
     assert response.status_code == 201
@@ -41,7 +41,7 @@ def test_add_multiple_assemblies_from_hbjson_construction(client: TestClient, se
 
     response = client.post(
         f"/assembly/add-assemblies-from-hbjson-constructions/{project.bt_number}",
-        files={"file": ("two_constructions.json", open("tests/test_data/two_constructions.json", "rb"))}
+        files={"file": ("two_constructions.json", open("tests/test_data/two_constructions.json", "rb"))},
     )
 
     assert response.status_code == 201
@@ -65,11 +65,9 @@ def test_update_assembly_name_route(client: TestClient, session: Session, create
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert project.assemblies[0].name == "Test Assembly"
 
-
     # Create a new assembly first
     response = client.patch(
-        f"/assembly/update-assembly-name/{project.assemblies[0].id}",
-        json={"new_name": "Updated Assembly Name"}
+        f"/assembly/update-assembly-name/{project.assemblies[0].id}", json={"new_name": "Updated Assembly Name"}
     )
 
     session.refresh(project)  # Refresh the Project to get the updated name
@@ -86,8 +84,7 @@ def test_delete_assembly_route(client: TestClient, session: Session, create_test
     response = client.delete(f"/assembly/delete-assembly/{project.assemblies[0].id}")
 
     assert response.status_code == 200
-   
-    session.refresh(project)  # Refresh the Project to get the updated assemblies
-    
-    assert len(project.assemblies) == 0
 
+    session.refresh(project)  # Refresh the Project to get the updated assemblies
+
+    assert len(project.assemblies) == 0

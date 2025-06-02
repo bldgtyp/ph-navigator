@@ -9,7 +9,7 @@ from features.assembly.services.material import create_new_material
 
 
 def test_create_new_segment_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")    
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -125,7 +125,7 @@ def test_update_segment_specification_status_route(client: TestClient, session: 
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
     assert project.assemblies[0].layers[0].segments[0].specification_status == SpecificationStatus.NA
-    
+
     segment = project.assemblies[0].layers[0].segments[0]
 
     # -----------------------------------------------------------------------------------
@@ -206,9 +206,12 @@ def test_delete_last_segment_raises_exception_route(client: TestClient, session:
 
     segment_id_to_delete = project.assemblies[0].layers[0].segments[0].id
     response = client.delete(f"/assembly/delete-segment/{segment_id_to_delete}")
-    
+
     assert response.status_code == 400
-    assert response.json()["detail"] == f"Cannot pop Segment {segment_id_to_delete} as it is the last segment in Layer {project.assemblies[0].layers[0].id}."
+    assert (
+        response.json()["detail"]
+        == f"Cannot pop Segment {segment_id_to_delete} as it is the last segment in Layer {project.assemblies[0].layers[0].id}."
+    )
 
 
 def test_delete_segment_route(client: TestClient, session: Session, create_test_project):
@@ -238,4 +241,3 @@ def test_delete_segment_route(client: TestClient, session: Session, create_test_
     # Verify the segment was deleted
     session.refresh(project)
     assert len(project.assemblies[0].layers[0].segments) == 1
-

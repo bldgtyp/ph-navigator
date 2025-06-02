@@ -13,7 +13,7 @@ def test_token(client: TestClient, session: Session, create_test_project):
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert project.owner.username == "test_user"
     assert verify_password("12345", project.owner.hashed_password) == True
-    
+
     response = client.post("/auth/token", data={"username": "test_user", "password": "12345"})
     assert response.status_code == 200
     assert "access_token" in response.json()
@@ -24,11 +24,8 @@ def test_login_failure_wrong_password(client: TestClient, session: Session):
     """Test login failure with wrong password."""
 
     # Attempt login with wrong password
-    response = client.post(
-        "/auth/token",
-        data={"username": "test_user", "password": "this_is_not_the_password"}
-    )
-    
+    response = client.post("/auth/token", data={"username": "test_user", "password": "this_is_not_the_password"})
+
     # Assert failure
     assert response.status_code == 401
     assert "detail" in response.json()
@@ -36,32 +33,23 @@ def test_login_failure_wrong_password(client: TestClient, session: Session):
 
 def test_login_failure_nonexistent_user(client: TestClient):
     """Test login failure with non-existent user."""
-    response = client.post(
-        "/auth/token",
-        data={"username": "nonexistent_user", "password": "testpassword"}
-    )
-    
+    response = client.post("/auth/token", data={"username": "nonexistent_user", "password": "testpassword"})
+
     assert response.status_code == 401
 
 
 def test_get_current_user(client: TestClient, session: Session, create_test_project):
     """Test getting the current authenticated user."""
-    
+
     project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
-    
+
     # Login to get token
-    login_response = client.post(
-        "/auth/token",
-        data={"username": "test_user", "password": "12345"}
-    )
+    login_response = client.post("/auth/token", data={"username": "test_user", "password": "12345"})
     token = login_response.json()["access_token"]
-    
+
     # Use token to get current user
-    response = client.get(
-        "/auth/user/",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-    
+    response = client.get("/auth/user/", headers={"Authorization": f"Bearer {token}"})
+
     # Assert successful user retrieval
     assert response.status_code == 200
     user_data = response.json()
