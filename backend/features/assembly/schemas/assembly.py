@@ -34,15 +34,7 @@ class AssemblySchema(AssemblySchemaBase):
 
 
 class UpdateAssemblyNameRequest(BaseModel):
-    assembly_id: int
     new_name: str
-
-    @root_validator(pre=True)
-    def check_assembly_id(cls, values):
-        assembly_id = values.get("assembly_id")
-        if not assembly_id:
-            raise ValueError("Assembly ID is required.")
-        return values
 
     @root_validator(pre=True)
     def check_new_name(cls, values):
@@ -65,15 +57,4 @@ class UpdateAssemblyNameRequest(BaseModel):
 
         # Update the cleaned name back into the values
         values["new_name"] = new_name
-        return values
-
-
-class DeleteAssemblyRequest(BaseModel):
-    assembly_id: int
-
-    @root_validator(pre=True)
-    def check_assembly_id(cls, values):
-        assembly_id = values.get("assembly_id")
-        if not assembly_id:
-            raise ValueError("Assembly ID is required.")
         return values

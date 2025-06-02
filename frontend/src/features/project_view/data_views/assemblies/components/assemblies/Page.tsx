@@ -94,13 +94,7 @@ const AssembliesPage: React.FC = () => {
       const confirmed = window.confirm("Are you sure you want to delete this assembly?");
       if (!confirmed) return;
 
-      await deleteWithAlert(
-        `assembly/delete-assembly`,
-        null,
-        {
-          assembly_id: selectedAssemblyId,
-        }
-      );
+      await deleteWithAlert(`assembly/delete-assembly/${selectedAssemblyId}`, null, {});
 
       console.log(`Assembly ${selectedAssemblyId} deleted successfully.`);
 
@@ -121,10 +115,9 @@ const AssembliesPage: React.FC = () => {
   const handleNameChange = async (assemblyId: number, newName: string) => {
     try {
       await patchWithAlert(
-        `assembly/update-assembly-name`,
+        `assembly/update-assembly-name/${assemblyId}`,
         null,
         {
-          assembly_id: assemblyId,
           new_name: newName,
         }
       );

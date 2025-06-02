@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from features.assembly.schemas.assembly import AssemblySchema, DeleteAssemblyRequest, UpdateAssemblyNameRequest
+from features.assembly.schemas.assembly import AssemblySchema, UpdateAssemblyNameRequest
 from features.assembly.services.assembly import (
     create_new_default_assembly_on_project,
     delete_assembly,
@@ -83,31 +83,31 @@ async def get_project_assemblies_route(bt_number: str, db: Session = Depends(get
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve assemblies")
 
 
-@router.patch("/update-assembly-name/", response_model=AssemblySchema)
+@router.patch("/update-assembly-name/{assembly_id}", response_model=AssemblySchema)
 async def update_assembly_name_route(
-    request: UpdateAssemblyNameRequest, db: Session = Depends(get_db)
+    request: UpdateAssemblyNameRequest, assembly_id: int,  db: Session = Depends(get_db)
 ) -> AssemblySchema:
     """Update the name of an Assembly."""
-    logger.info(f"assembly/update_assembly_name_route(assembly_id={request.assembly_id}, new_name={request.new_name})")
+    logger.info(f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={request.new_name})")
 
     try:
-        assembly = update_assembly_name(db, request.assembly_id, request.new_name)
+        assembly = update_assembly_name(db, assembly_id, request.new_name)
         return AssemblySchema.from_orm(assembly)
     except Exception as e:
-        logger.error(f"Failed to update assembly id-{request.assembly_id} name to: '{e}'")
+        logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update assembly name")
 
 
-@router.delete("/delete-assembly/")
-async def delete_assembly_route(request: DeleteAssemblyRequest, db: Session = Depends(get_db)) -> None:
+@router.delete("/delete-assembly/{assembly_id}")
+async def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> None:
     """Delete an Assembly and all its associated layers and segments."""
-    logger.info(f"assembly/delete_assembly_route(assembly_id={request.assembly_id})")
+    logger.info(f"assembly/delete_assembly_route({assembly_id=})")
 
     try:
-        delete_assembly(db, request.assembly_id)
+        delete_assembly(db, assembly_id)
         return None
     except Exception as e:
-        logger.error(f"Failed to delete assembly id-{request.assembly_id}: {e}")
+        logger.error(f"Failed to delete {assembly_id=}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete assembly")
 
 

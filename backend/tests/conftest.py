@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from database import Base, get_db
 from db_entities.app import Project
 from features.app.services import create_new_project, create_new_user
+from features.auth.services import get_password_hash
 from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
@@ -19,7 +20,7 @@ from main import app
 DATABASE_URL = "sqlite:///:memory:"
 testing_engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_engine)
-
+TEST_PASSWORD = get_password_hash("12345")
 
 @pytest.fixture(scope="module")
 def client() -> Generator[TestClient, None, None]:
@@ -75,8 +76,8 @@ def create_test_project(
         user = create_new_user(
             db=session,
             username="test_user",
-            email="test@eamil.com",
-            hashed_password="12345",
+            email="test@email.com",
+            hashed_password=TEST_PASSWORD,
         )
         project = create_new_project(db=session, name="Test Project", bt_number="1234", owner_id=user.id)
         assembly = create_new_empty_assembly_on_project(db=session, name="Test Assembly", project_id=project.id)
@@ -87,6 +88,7 @@ def create_test_project(
             id="test_material",
             name="Test Material",
             category="Test Category",
+            argb_color="#FF0000",
             conductivity_w_mk=1.0,
             emissivity=0.9,
             density_kg_m3=999,
