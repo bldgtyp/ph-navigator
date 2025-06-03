@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from db_entities.app import Project
 from features.assembly.services.assembly import create_new_default_assembly_on_project, get_assembly_by_id
-from features.assembly.services.assembly_to_hbe_construction import convert_assemblies_to_hbe_constructions
+from features.assembly.services.to_hbe_construction import convert_assemblies_to_hbe_constructions
 from features.assembly.services.segment import update_segment_steel_stud_spacing
 
 

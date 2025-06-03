@@ -13,7 +13,6 @@ from features.assembly.services.assembly import (
     create_new_empty_assembly_on_project,
     delete_assembly,
     get_all_project_assemblies,
-    get_all_project_assemblies_as_hbjson,
     get_assembly_by_id,
     insert_default_layer_into_assembly,
     insert_layer_into_assembly,
@@ -26,6 +25,7 @@ from features.assembly.services.layer import (
     delete_layer,
     get_layer_by_id,
 )
+from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson
 
 
 def test_get_all_project_assemblies(session: Session, create_test_project):

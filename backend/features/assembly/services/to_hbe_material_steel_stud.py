@@ -12,7 +12,7 @@ from honeybee_ph_utils.aisi_s250_21 import (
 from ph_units.converter import convert
 
 from db_entities.assembly import Layer
-from features.assembly.services.to_hbe_typical_material import (
+from features.assembly.services.to_hbe_material_typical import (
     convert_multiple_assembly_layers_to_hb_material,
     convert_single_assembly_layer_to_hb_material,
 )

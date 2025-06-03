@@ -1,6 +1,5 @@
 # -*- Python Version: 3.11 -*-
 
-import json
 import logging
 
 from sqlalchemy.orm import Session
@@ -8,7 +7,6 @@ from sqlalchemy.orm import Session
 from db_entities.app import Project
 from db_entities.assembly import Assembly, Layer, Segment
 from features.app.services import get_project_by_bt_number, get_project_by_id
-from features.assembly.services.assembly_to_hbe_construction import convert_assemblies_to_hbe_constructions
 from features.assembly.services.material import get_default_material
 
 logger = logging.getLogger(__name__)
@@ -37,18 +35,6 @@ def get_all_project_assemblies(db: Session, bt_number: str) -> list[Assembly]:
     logger.info(f"get_all_project_assemblies({bt_number=})")
 
     return db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-
-
-def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
-
-    # Get all the Assemblies for the project
-    assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
-
-    # -- Convert the Assemblies to HBE-Constructions
-    hbe_constructions = convert_assemblies_to_hbe_constructions(assemblies)
-
-    # -- Convert the HBE-Constructions to JSON
-    return json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
 
 
 def create_new_empty_assembly_on_project(

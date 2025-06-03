@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -15,12 +15,12 @@ from features.assembly.services.assembly import (
     delete_assembly,
     get_all_project_assemblies,
     update_assembly_name,
-    get_all_project_assemblies_as_hbjson,
 )
 from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_hb_constructions_from_hbjson,
 )
+from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson
 
 router = APIRouter(
     prefix="/assembly",
