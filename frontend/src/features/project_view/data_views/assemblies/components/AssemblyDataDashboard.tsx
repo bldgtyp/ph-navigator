@@ -1,27 +1,38 @@
 import '../styles/Assembly.css';
 import '../styles/Layer.css';
 import '../styles/Segment.css';
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
 import { Box } from "@mui/material";
 
 import { MaterialsProvider } from "../contexts/MaterialsContext";
 
-import MaterialListPage from "./material_list/Page";
-import AssembliesPage from "./assemblies/Page";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
 
 
 const AssemblyDataDashboard: React.FC = () => {
-    const { projectId } = useParams();
-    const [activeTab, setActiveTab] = useState(0);
-
     const tabs = [
-        { label: "Materials", path: `${projectId}/material_layers` },
-        { label: "Assemblies", path: `${projectId}/assemblies` },
+        { label: "Materials", path: "material-layers" },
+        { label: "Assemblies", path: "assemblies" },
     ];
+
+    // Determine active tab from URL path
+    const getActiveTabFromPath = () => {
+        const path = location.pathname;
+        if (path.includes('/material-layers')) return 0;
+        if (path.includes('/assemblies')) return 1;
+        return 0; // Default
+    };
+
+    const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
+
+    // Update active tab when URL changes
+    useEffect(() => {
+        setActiveTab(getActiveTabFromPath());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname]);
 
     return (
         <MaterialsProvider>
@@ -34,8 +45,7 @@ const AssemblyDataDashboard: React.FC = () => {
 
                 <DataViewPage>
                     <ContentBlock>
-                        {activeTab === 0 && <MaterialListPage />}
-                        {activeTab === 1 && <AssembliesPage />}
+                        <Outlet />
                     </ContentBlock>
                 </DataViewPage>
 

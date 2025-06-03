@@ -1,28 +1,39 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
 
-import FanDataGrid from "./pages/Fans.DataGrid";
-import PumpDataGrid from "./pages/Pumps.DataGrid";
-import HotWaterTankDataGrid from "./pages/HotWaterTanks.DataGrid";
-import LightingDataGrid from "./pages/Lighting.DataGrid";
-import AppliancesDataGrid from "./pages/Appliances.DataGrid";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
-import ErvDataGrid from "./pages/Ervs.DataGrid";
 
 const EquipmentDataDashboard: React.FC = () => {
-    const { projectId } = useParams();
-    const [activeTab, setActiveTab] = useState(0);
-
     const tabs = [
-        { label: "Ventilation", path: `${projectId}/erv_units` },
-        { label: "Pumps", path: `${projectId}/pumps` },
-        { label: "Tanks", path: `${projectId}/dhw_tanks` },
-        { label: "Fans", path: `${projectId}/fans` },
-        { label: "Lighting", path: `${projectId}/lighting` },
-        { label: "Appliances", path: `${projectId}/appliances` },
+        { label: "Ventilation", path: "erv-units" },
+        { label: "Pumps", path: "pumps" },
+        { label: "Tanks", path: "dhw-tanks" },
+        { label: "Fans", path: "fans" },
+        { label: "Lighting", path: "lighting" },
+        { label: "Appliances", path: "appliances" },
     ];
+
+    // Determine active tab from URL path
+    const getActiveTabFromPath = () => {
+        const path = location.pathname;
+        if (path.includes('/erv-units')) return 0;
+        if (path.includes('/pumps')) return 1;
+        if (path.includes('/dhw-tanks')) return 2;
+        if (path.includes('/fans')) return 3;
+        if (path.includes('/lighting')) return 4;
+        if (path.includes('/appliances')) return 5;
+        return 0; // Default
+    };
+
+    const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
+
+    // Update active tab when URL changes
+    useEffect(() => {
+        setActiveTab(getActiveTabFromPath());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname]);
 
     return (
         <>
@@ -33,12 +44,7 @@ const EquipmentDataDashboard: React.FC = () => {
             />
             <DataViewPage>
                 <ContentBlock>
-                    {activeTab === 0 && <ErvDataGrid />}
-                    {activeTab === 1 && <PumpDataGrid />}
-                    {activeTab === 2 && <HotWaterTankDataGrid />}
-                    {activeTab === 3 && <FanDataGrid />}
-                    {activeTab === 4 && <LightingDataGrid />}
-                    {activeTab === 5 && <AppliancesDataGrid />}
+                    <Outlet />
                 </ContentBlock>
             </DataViewPage>
         </>

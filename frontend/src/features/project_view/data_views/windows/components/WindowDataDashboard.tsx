@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
 
 const WindowDataDashboard: React.FC = () => {
-
     const tabs = [
-        { label: "Glazing Types", path: `window-glazing-types` },
-        { label: "Frame Types", path: `window-frame-types` },
-        { label: "Unit Types", path: `window-unit-type` },
+        { label: "Glazing Types", path: "window-glazing-types" },
+        { label: "Frame Types", path: "window-frame-types" },
+        { label: "Unit Types", path: "window-unit-type" },
     ];
 
     // Determine active tab from URL path
