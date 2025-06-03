@@ -25,17 +25,17 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabC
         },
         {
             label: "Windows",
-            path: `/project/${projectId}/window_data`,
+            path: `/project/${projectId}/window-data`,
             icon: <DoorSlidingOutlinedIcon fontSize="small" />
         },
         {
             label: "Assemblies",
-            path: `/project/${projectId}/assembly_data`,
+            path: `/project/${projectId}/assembly-data`,
             icon: <LayersOutlinedIcon fontSize="small" />
         },
         {
             label: "Equipment",
-            path: `/project/${projectId}/equipment_data`,
+            path: `/project/${projectId}/equipment-data`,
             icon: <HomeRepairServiceOutlinedIcon fontSize="small" />
         },
         {

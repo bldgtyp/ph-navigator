@@ -1,6 +1,7 @@
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
+import { useNavigate } from 'react-router-dom';
 
 type propsType = {
     tabs: { label: string, path: string }[];
@@ -8,14 +9,25 @@ type propsType = {
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
 }
 
-const tabHeight = 40;
+
 const DataDashboardTabBar: React.FC<propsType> = ({ tabs, activeTab, onTabChange }) => {
+    const navigate = useNavigate();
+
+    const handleTabChange = (event: React.SyntheticEvent, newTabIndex: number) => {
+        // Update parent component state
+        onTabChange(newTabIndex);
+
+        // Navigate to the new URL
+        navigate(tabs[newTabIndex].path);
+    };
+
+    const tabHeight = 40;
 
     return (
         <Box id="tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
                 value={activeTab} // The active tab is managed by the parent
-                onChange={(e, newValue) => onTabChange(newValue)}
+                onChange={handleTabChange}
                 indicatorColor="primary"
                 textColor="primary"
                 sx={{

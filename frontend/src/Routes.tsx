@@ -13,6 +13,9 @@ import WindowDataDashboard from './features/project_view/data_views/windows/comp
 import AssemblyDataDashboard from './features/project_view/data_views/assemblies/components/AssemblyDataDashboard';
 import EquipmentDataDashboard from './features/project_view/data_views/equipment/components/EquipmentDataDashboard';
 import Viewer from './features/project_view/model_viewer/Viewer';
+import WindowUnitDataGrid from './features/project_view/data_views/windows/components/pages/WindowUnit.DataGrid';
+import FrameTypesDataGrid from './features/project_view/data_views/windows/components/pages/Frames.DataGrid';
+import GlazingTypesDataGrid from './features/project_view/data_views/windows/components/pages/Glazing.DataGrid';
 
 
 const AppRoutes: React.FC = () => (
@@ -30,9 +33,13 @@ const AppRoutes: React.FC = () => (
         <Route path="/project/:projectId" element={<ProjectContainer />}>
             <Route index element={<ProjectCertification />} />
             <Route path="certification" element={<ProjectCertification />} />
-            <Route path="window_data" element={<WindowDataDashboard />} />
-            <Route path="assembly_data" element={<AssemblyDataDashboard />} />
-            <Route path="equipment_data" element={<EquipmentDataDashboard />} />
+            <Route path="window-data" element={<WindowDataDashboard />}>
+                <Route path="window-glazing-types" element={<GlazingTypesDataGrid />} />
+                <Route path="window-frame-types" element={<FrameTypesDataGrid />} />
+                <Route path="window-unit-type" element={<WindowUnitDataGrid />} />
+            </Route>
+            <Route path="assembly-data" element={<AssemblyDataDashboard />} />
+            <Route path="equipment-data" element={<EquipmentDataDashboard />} />
             <Route path="model" element={<Viewer />} />
         </Route>
 

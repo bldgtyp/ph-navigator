@@ -1,22 +1,34 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet, useParams } from "react-router-dom";
 
-import FrameTypesDataGrid from "./pages/Frames.DataGrid";
-import GlazingTypesDataGrid from "./pages/Glazing.DataGrid";
-import WindowUnitDataGrid from "./pages/WindowUnit.DataGrid";
 import DataViewPage from "../../shared/components/DataViewPage";
 import ContentBlock from "../../shared/components/ContentBlock";
 import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
 
 const WindowDataDashboard: React.FC = () => {
-    const { projectId } = useParams();
-    const [activeTab, setActiveTab] = useState(0);
 
     const tabs = [
-        { label: "Glazing Types", path: `${projectId}/WINDOW_GLAZING_TYPES` },
-        { label: "Frame Types", path: `${projectId}/WINDOW_FRAME_TYPES` },
-        { label: "Unit Types", path: `${projectId}/window_unit_type` },
+        { label: "Glazing Types", path: `window-glazing-types` },
+        { label: "Frame Types", path: `window-frame-types` },
+        { label: "Unit Types", path: `window-unit-type` },
     ];
+
+    // Determine active tab from URL path
+    const getActiveTabFromPath = () => {
+        const path = location.pathname;
+        if (path.includes('/window-glazing-types')) return 0;
+        if (path.includes('/window-frame-types')) return 1;
+        if (path.includes('/window-unit-type')) return 2;
+        return 0; // Default
+    };
+
+    const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
+
+    // Update active tab when URL changes
+    useEffect(() => {
+        setActiveTab(getActiveTabFromPath());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname]);
 
     return (
         <>
@@ -26,9 +38,7 @@ const WindowDataDashboard: React.FC = () => {
                 onTabChange={(tabNumber) => setActiveTab(tabNumber)} />
             <DataViewPage>
                 <ContentBlock>
-                    {activeTab === 0 && <GlazingTypesDataGrid />}
-                    {activeTab === 1 && <FrameTypesDataGrid />}
-                    {activeTab === 2 && <WindowUnitDataGrid />}
+                    <Outlet />
                 </ContentBlock>
             </DataViewPage>
         </>

@@ -19,9 +19,9 @@ const ProjectContainer: React.FC = () => {
     const getActiveTabFromPath = () => {
         const path = location.pathname;
         if (path.includes('/certification')) return 0;
-        if (path.includes('/window_data')) return 1;
-        if (path.includes('/assembly_data')) return 2;
-        if (path.includes('/equipment_data')) return 3;
+        if (path.includes('/window-data')) return 1;
+        if (path.includes('/assembly-data')) return 2;
+        if (path.includes('/equipment-data')) return 3;
         if (path.includes('/model')) return 4;
         return 0; // Default to certification if path doesn't match any tab
     };
