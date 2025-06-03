@@ -45,10 +45,10 @@ class Segment(Base):
     notes: Mapped[str | None] = MappedColumn(Text, nullable=True, default=None)
 
     # Relationships
-    material_photos: Mapped["MaterialPhoto"] = relationship(
+    material_photos: Mapped[list["MaterialPhoto"]] = relationship(
         "MaterialPhoto", back_populates="segment", cascade="all, delete-orphan"
     )
-    material_datasheets: Mapped["MaterialDatasheet"] = relationship(
+    material_datasheets: Mapped[list["MaterialDatasheet"]] = relationship(
         "MaterialDatasheet", back_populates="segment", cascade="all, delete-orphan"
     )
     layer: Mapped["Layer"] = relationship("Layer", back_populates="segments")

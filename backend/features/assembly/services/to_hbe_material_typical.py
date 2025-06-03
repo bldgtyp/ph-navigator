@@ -6,23 +6,60 @@ from collections import OrderedDict
 from honeybee.typing import clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
 from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhDivisionGrid
+from honeybee_energy_ref.document_ref import DocumentReference
+from honeybee_energy_ref.image_ref import ImageReference
+from honeybee_energy_ref.properties.hb_obj import _HBObjectWithReferences
 
-from db_entities.assembly import Layer, Material, Segment
+from db_entities.assembly import Layer, Segment
+from db_entities.assembly.material_datasheet import MaterialDatasheet
+from db_entities.assembly.material_photo import MaterialPhoto
 
 logger = logging.getLogger(__name__)
 
 
-def convert_segment_material_to_hb_material(segment_material: Material, thickness_m: float) -> EnergyMaterial:
-    """Convert a segment material to a Honeybee-Energy-Material."""
-    logger.info(f"convert_segment_material_to_hb_material(segment_material={segment_material.name})")
+def convert_MaterialDatasheet_to_hbe_ref(material_datasheet: MaterialDatasheet) -> DocumentReference:
+    """Convert a MaterialDatasheet to a Honeybee-Energy Document-Reference."""
+    logger.info(f"convert_MaterialDatasheet_to_hbe_ref({material_datasheet.id=})")
 
-    return EnergyMaterial(
-        identifier=clean_ep_string(segment_material.name),
-        thickness=thickness_m,
-        conductivity=segment_material.conductivity_w_mk,
-        density=segment_material.density_kg_m3,
-        specific_heat=segment_material.specific_heat_j_kgk,
+    return DocumentReference(
+        document_uri=material_datasheet.full_size_url,
+        thumbnail_image_uri=material_datasheet.thumbnail_url,
+        full_size_image_uri=material_datasheet.full_size_url,
     )
+
+
+def convert_MaterialPhoto_to_hbe_ref(material_photo: MaterialPhoto) -> ImageReference:
+    """Convert a MaterialDatasheet to a Honeybee-Energy Image-Reference."""
+    logger.info(f"convert_MaterialPhoto_to_hbe_ref({material_photo.id=})")
+
+    return ImageReference(
+        thumbnail_image_uri=material_photo.thumbnail_url,
+        full_size_image_uri=material_photo.full_size_url,
+    )
+
+
+def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float) -> EnergyMaterial:
+    """Convert a segment material to a Honeybee-Energy-Material."""
+    logger.info(f"convert_segment_material_to_hb_material({segment.id=})")
+
+    mat = EnergyMaterial(
+        identifier=clean_ep_string(segment.material.name),
+        thickness=thickness_m,
+        conductivity=segment.material.conductivity_w_mk,
+        density=segment.material.density_kg_m3,
+        specific_heat=segment.material.specific_heat_j_kgk,
+    )
+    hbe_prop_ref: _HBObjectWithReferences = getattr(mat.properties, "ref")
+
+    hbe_prop_ref.unlock()
+    for d in segment.material_datasheets:
+        hbe_prop_ref.add_document_ref(convert_MaterialDatasheet_to_hbe_ref(d))
+
+    for p in segment.material_photos:
+        hbe_prop_ref.add_image_ref(convert_MaterialPhoto_to_hbe_ref(p))
+    hbe_prop_ref.lock()
+
+    return mat
 
 
 def build_ph_division_grid_from_segments(segments: list[Segment], layer_thickness_m: float) -> PhDivisionGrid:
@@ -34,7 +71,7 @@ def build_ph_division_grid_from_segments(segments: list[Segment], layer_thicknes
     division_grid.set_column_widths([segment.width_mm / 1000 for segment in segments])
 
     for i, segment in enumerate(segments):
-        hbe_mat = convert_segment_material_to_hb_material(segment.material, layer_thickness_m)
+        hbe_mat = convert_segment_material_to_hb_material(segment, layer_thickness_m)
         division_grid.set_cell_material(_column_num=i, _row_num=0, _hbe_material=hbe_mat)
 
     return division_grid
@@ -70,9 +107,7 @@ def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMaterial:
     return new_material_
 
 
-def convert_single_assembly_layer_to_hb_material(
-    layer: Layer,
-) -> EnergyMaterial:
+def convert_single_assembly_layer_to_hb_material(layer: Layer) -> EnergyMaterial:
     """Convert an assembly layer to a Honeybee Energy Material."""
     logger.info(f"convert_assembly_layer_to_hb_material(layer.id={layer.id})")
 
@@ -81,9 +116,7 @@ def convert_single_assembly_layer_to_hb_material(
     return hbe_material_
 
 
-def convert_multiple_assembly_layers_to_hb_material(
-    _layers: list[Layer],
-) -> list[EnergyMaterial]:
+def convert_multiple_assembly_layers_to_hb_material(_layers: list[Layer]) -> list[EnergyMaterial]:
     """Convert multiple assembly layers to Honeybee Energy Materials."""
     logger.info(f"convert_multiple_assembly_layers_to_hb_material([{len(_layers)}] layers)")
 

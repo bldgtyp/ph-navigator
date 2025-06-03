@@ -20,8 +20,8 @@ class SegmentSchema(BaseModel):
     steel_stud_spacing_mm: float | None = None
     is_continuous_insulation: bool = False
     specification_status: SpecificationStatus = SpecificationStatus.NA
-    material_photos: MaterialPhotoSchema | None = None
-    material_datasheets: MaterialDatasheetSchema | None = None
+    material_photos: list[MaterialPhotoSchema] | None = None
+    material_datasheets: list[MaterialDatasheetSchema] | None = None
     notes: str | None = None
 
     class Config:
