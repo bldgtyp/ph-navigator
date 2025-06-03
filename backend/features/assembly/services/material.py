@@ -34,14 +34,14 @@ class NoMaterialsException(Exception):
         super().__init__(f"No materials found for type: {material_type}.")
 
 
-def get_material_by_id(id: str, db: Session) -> Material:
+def get_material_by_id(db: Session, material_id: str) -> Material:
     """Get a material by its ID or raise MaterialNotFoundException."""
-    logger.info(f"Fetching material with ID: {id}")
+    logger.info(f"get_material_by_id({material_id=})")
 
-    if material := db.query(Material).filter_by(id=id).first():
+    if material := db.query(Material).filter_by(id=material_id).first():
         return material
 
-    raise MaterialNotFoundException(id)
+    raise MaterialNotFoundException(material_id)
 
 
 def get_default_material(db: Session) -> Material:
@@ -102,7 +102,7 @@ def update_material(
     """Update an existing material in the database."""
     logger.info(f"Updating material with ID: {id}")
 
-    material = get_material_by_id(id, db)
+    material = get_material_by_id(db, id)
 
     material.name = name
     material.category = category
@@ -156,7 +156,7 @@ def purge_unused_materials(db: Session) -> None:
     # Delete unused materials
     for material_id in unused_material_ids:
         try:
-            material = get_material_by_id(material_id, db)
+            material = get_material_by_id(db, material_id)
             db.delete(material)
             logger.info(f"Deleted unused material with ID: {material_id}")
         except MaterialNotFoundException:

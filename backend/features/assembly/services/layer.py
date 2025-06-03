@@ -27,7 +27,7 @@ class LastLayerAssemblyException(Exception):
 
 def get_layer_by_id(db: Session, layer_id: int) -> Layer:
     """Get a layer by its ID."""
-    logger.info(f"Fetching layer with ID: {layer_id}")
+    logger.info(f"get_layer_by_id({layer_id=})")
 
     layer = db.query(Layer).filter_by(id=layer_id).first()
     if not layer:

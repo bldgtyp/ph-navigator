@@ -28,14 +28,14 @@ class LastSegmentInLayerException(Exception):
         super().__init__(f"Cannot pop Segment {segment_id} as it is the last segment in Layer {layer_id}.")
 
 
-def get_segment_by_id(db: Session, id: int) -> Segment:
+def get_segment_by_id(db: Session, segment_id: int) -> Segment:
     """Get a Segment by its ID or raise SegmentNotFoundException."""
-    logger.info(f"Fetching Segment with ID: {id}")
+    logger.info(f"get_segment_by_id({segment_id=})")
 
-    if segment := db.query(Segment).filter_by(id=id).first():
+    if segment := db.query(Segment).filter_by(id=segment_id).first():
         return segment
 
-    raise SegmentNotFoundException(id)
+    raise SegmentNotFoundException(segment_id)
 
 
 def create_new_segment(db: Session, layer_id: int, material_id: str, width_mm: float, order: int) -> Segment:
@@ -43,7 +43,7 @@ def create_new_segment(db: Session, layer_id: int, material_id: str, width_mm: f
     logger.info(f"Adding segment to layer {layer_id} with material {material_id}, width {width_mm}, order {order}")
 
     layer = get_layer_by_id(db, layer_id)
-    material = get_material_by_id(material_id, db)
+    material = get_material_by_id(db, material_id)
 
     # Shift the order of any existing segments
     db.query(Segment).filter(
@@ -69,7 +69,7 @@ def update_segment_material(db: Session, segment_id: int, material_id: str) -> S
     """Update the Material of a Segment."""
     logger.info(f"update_segment_material({segment_id=}, {material_id=})")
 
-    new_material = get_material_by_id(material_id, db)
+    new_material = get_material_by_id(db, material_id)
     seg = get_segment_by_id(db, segment_id)
     seg.material_id = new_material.id
     db.commit()

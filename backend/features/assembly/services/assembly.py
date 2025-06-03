@@ -24,7 +24,7 @@ class AssemblyNotFoundException(Exception):
 
 def get_assembly_by_id(db: Session, assembly_id: int) -> Assembly:
     """Get an assembly by its ID."""
-    logger.info(f"Fetching assembly with ID: {assembly_id}")
+    logger.info(f"get_assembly_by_id({assembly_id=})")
 
     assembly = db.query(Assembly).filter_by(id=assembly_id).first()
     if not assembly:

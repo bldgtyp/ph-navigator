@@ -58,7 +58,7 @@ def test_get_existing_material_by_id(session: Session):
     )
 
     # Fetch the material by ID
-    fetched_material = get_material_by_id("test_material_id", session)
+    fetched_material = get_material_by_id(session, "test_material_id")
 
     assert fetched_material.id == material.id
     assert fetched_material.name == material.name
@@ -69,7 +69,7 @@ def test_get_non_existing_material_by_id_raises_MaterialNotFoundException(
     session: Session,
 ):
     with pytest.raises(MaterialNotFoundException):
-        get_material_by_id("non_existing_material_id", session)
+        get_material_by_id(session, "non_existing_material_id")
 
 
 def test_update_non_existing_material_raises_MaterialNotFoundException(
@@ -101,11 +101,11 @@ def test_add_list_of_new_materials_to_db_adds_them(session: Session):
     add_materials(session, materials)
 
     # Verify that the materials were added
-    added_material_1 = get_material_by_id("material_1", session)
+    added_material_1 = get_material_by_id(session, "material_1")
     assert added_material_1.name == "Material 1"
     assert added_material_1.category == "Category 1"
 
-    added_material_2 = get_material_by_id("material_2", session)
+    added_material_2 = get_material_by_id(session, "material_2")
     assert added_material_2.name == "Material 2"
     assert added_material_2.category == "Category 2"
 
@@ -120,7 +120,7 @@ def test_add_list_of_existing_materials_to_db_updates_them(session: Session):
     )
 
     # Verify
-    existing_material = get_material_by_id("material_1", session)
+    existing_material = get_material_by_id(session, "material_1")
     assert existing_material.name == "Material 1"
     assert existing_material.category == "Category 1"
 
@@ -140,11 +140,11 @@ def test_add_list_of_existing_materials_to_db_updates_them(session: Session):
     add_materials(session, materials)
 
     # Verify that the existing material was updated
-    updated_material_1 = get_material_by_id("material_1", session)
+    updated_material_1 = get_material_by_id(session, "material_1")
     assert updated_material_1.name == "Material 1"
     assert updated_material_1.category == "Updated Category 1"
 
     # Verify that the new material was added
-    added_material_2 = get_material_by_id("material_2", session)
+    added_material_2 = get_material_by_id(session, "material_2")
     assert added_material_2.name == "Material 2"
     assert added_material_2.category == "Category 2"
