@@ -83,8 +83,9 @@ def test_delete_layer_route(client: TestClient, session: Session, create_test_pr
     assert len(project.assemblies[0].layers) == 2
     layer_id_to_delete = project.assemblies[0].layers[0].id
     response = client.delete(f"/assembly/delete-layer/{layer_id_to_delete}")
-    assert response.status_code == 200
-    assert response.json() is None
+    assert response.status_code == 204
+    assert response.content == b''  # Check for empty response body
+    
     # Verify the layer was deleted
     session.refresh(project)
     assert len(project.assemblies[0].layers) == 1

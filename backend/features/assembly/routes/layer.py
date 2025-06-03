@@ -70,7 +70,7 @@ async def update_layer_thickness_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.delete("/delete-layer/{layer_id}")
+@router.delete("/delete-layer/{layer_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_layer_route(layer_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a Layer and adjust the order of remaining layers."""
     logger.info(f"assembly/delete_layer_route(layer_id={layer_id})")

@@ -236,8 +236,9 @@ def test_delete_segment_route(client: TestClient, session: Session, create_test_
     assert len(project.assemblies[0].layers[0].segments) == 2
     segment_id_to_delete = project.assemblies[0].layers[0].segments[0].id
     response = client.delete(f"/assembly/delete-segment/{segment_id_to_delete}")
-    assert response.status_code == 200
-    assert response.json() is None
+    assert response.status_code == 204
+    assert response.content == b''
+    
     # Verify the segment was deleted
     session.refresh(project)
     assert len(project.assemblies[0].layers[0].segments) == 1

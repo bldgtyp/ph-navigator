@@ -3,7 +3,8 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from config import limiter
@@ -14,6 +15,7 @@ from features.assembly.services.assembly import (
     delete_assembly,
     get_all_project_assemblies,
     update_assembly_name,
+    get_all_project_assemblies_as_hbjson,
 )
 from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
@@ -98,7 +100,7 @@ async def update_assembly_name_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update assembly name")
 
 
-@router.delete("/delete-assembly/{assembly_id}")
+@router.delete("/delete-assembly/{assembly_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> None:
     """Delete an Assembly and all its associated layers and segments."""
     logger.info(f"assembly/delete_assembly_route({assembly_id=})")
@@ -111,22 +113,20 @@ async def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete assembly")
 
 
-# TODO: Remove? Update?
-# @router.get("/get_assemblies_as_hb_json/{bt_number}")
-# async def get_project_assemblies_as_hb_json_route(
-#     bt_number: str,
-#     offset: int = Query(0, description="The offset for the test function"),
-#     db: Session = Depends(get_db),
-# ) -> JSONResponse:
-#     """Test function to check if the module is working."""
-#     logger.info(f"assembly/get_project_assemblies_as_hb_json_route({bt_number=}, {offset=})")
+@router.get("/get_assemblies_as_hb_json/{bt_number}")
+async def get_project_assemblies_as_hb_json_route(
+    bt_number: str,
+    offset: int = Query(0, description="The offset for the test function"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Test function to check if the module is working."""
+    logger.info(f"assembly/get_project_assemblies_as_hb_json_route({bt_number=}, {offset=})")
 
-#     hbe_construction_json = get_all_project_assemblies_as_hbjson(db, bt_number)
+    hbe_construction_json = get_all_project_assemblies_as_hbjson(db, bt_number)
 
-#     return JSONResponse(
-#         content={
-#             "message": "Test successful.",
-#             "hb_constructions": hbe_construction_json,
-#         },
-#         status_code=200,
-#     )
+    return JSONResponse(
+        content={
+            "hb_constructions": hbe_construction_json,
+        },
+        status_code=200,
+    )

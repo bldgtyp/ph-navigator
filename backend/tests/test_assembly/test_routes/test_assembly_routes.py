@@ -83,7 +83,7 @@ def test_delete_assembly_route(client: TestClient, session: Session, create_test
 
     response = client.delete(f"/assembly/delete-assembly/{project.assemblies[0].id}")
 
-    assert response.status_code == 200
+    assert response.status_code == 204
 
     session.refresh(project)  # Refresh the Project to get the updated assemblies
 

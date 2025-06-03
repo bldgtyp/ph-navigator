@@ -179,7 +179,7 @@ async def update_segment_notes_route(
         )
 
 
-@router.delete("/delete-segment/{segment_id}")
+@router.delete("/delete-segment/{segment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a LayerSegment and adjust the order of remaining segments."""
     logger.info(f"assembly/delete-segment_route({segment_id=})")
