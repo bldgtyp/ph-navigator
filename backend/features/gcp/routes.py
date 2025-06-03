@@ -149,3 +149,6 @@ async def get_datasheet_thumbnail_urls_route(
             for datasheet in datasheets
         ]
     )
+
+
+# TODO: Add Delete endpoints for photos and datasheets
