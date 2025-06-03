@@ -1,6 +1,7 @@
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
+import { useNavigate } from 'react-router-dom';
 import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined';
 import HomeRepairServiceOutlinedIcon from '@mui/icons-material/HomeRepairServiceOutlined';
 import ApartmentOutlinedIcon from '@mui/icons-material/ApartmentOutlined';
@@ -14,41 +15,51 @@ type propsType = {
 }
 
 const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabChange }) => {
+    const navigate = useNavigate();
+
     const tabs = [
         {
             label: "Certification",
-            path: `/projects/${projectId}/certification`,
+            path: `/project/${projectId}/certification`,
             icon: <WorkspacePremiumOutlinedIcon fontSize="small" />
         },
         {
             label: "Windows",
-            path: `/projects/${projectId}/window_data`,
+            path: `/project/${projectId}/window_data`,
             icon: <DoorSlidingOutlinedIcon fontSize="small" />
         },
         {
             label: "Assemblies",
-            path: `/projects/${projectId}/assembly_data`,
+            path: `/project/${projectId}/assembly_data`,
             icon: <LayersOutlinedIcon fontSize="small" />
         },
         {
             label: "Equipment",
-            path: `/projects/${projectId}/equipment_data`,
+            path: `/project/${projectId}/equipment_data`,
             icon: <HomeRepairServiceOutlinedIcon fontSize="small" />
         },
         {
             label: "Model",
-            path: `/projects/${projectId}/model`,
+            path: `/project/${projectId}/model`,
             icon: <ApartmentOutlinedIcon fontSize="small" />
         },
     ];
+
+    const handleTabChange = (event: React.SyntheticEvent, newTabIndex: number) => {
+        // Update parent component state
+        onTabChange(newTabIndex);
+
+        // Navigate to the new URL
+        navigate(tabs[newTabIndex].path);
+    };
 
     const tabHeight = 40;
 
     return (
         <Box id="project-tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
-                value={activeTabNumber} // The active tab is managed by the parent
-                onChange={(e, tabNumber) => onTabChange(tabNumber)}
+                value={activeTabNumber}
+                onChange={handleTabChange}
                 indicatorColor="primary"
                 textColor="primary"
                 sx={{
