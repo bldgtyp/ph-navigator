@@ -26,7 +26,7 @@ class ProjectAlreadyExistsException(Exception):
         super().__init__(f"Project with BuildingType Number {bt_number} already exists.")
 
 
-def get_projects(db: Session, project_ids: list[int]) -> list[Project]:
+def get_all_projects(db: Session, project_ids: list[int]) -> list[Project]:
     """Return a list of projects by their IDs."""
     logger.info(f"get_projects({project_ids=})")
 

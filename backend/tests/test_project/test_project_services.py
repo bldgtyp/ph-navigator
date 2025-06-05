@@ -11,7 +11,7 @@ from features.app.services import (
     create_new_user,
     get_project_by_bt_number,
     get_project_by_id,
-    get_projects,
+    get_all_projects,
 )
 
 
@@ -42,7 +42,7 @@ def test_get_projects(session: Session, create_test_project):
     assert existing_project.owner_id == existing_user.id
     assert len(existing_user.owned_projects) == 1
 
-    projects = get_projects(db=session, project_ids=[existing_project.id])
+    projects = get_all_projects(db=session, project_ids=[existing_project.id])
 
     assert len(projects) == 1
     assert projects[0].id == existing_project.id

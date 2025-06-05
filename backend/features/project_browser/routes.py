@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from db_entities.app.user import User
 from features.app.schema import ProjectSchema
-from features.app.services import get_projects
+from features.app.services import get_all_projects
 from features.auth.services import get_current_active_user
 
 router = APIRouter(
@@ -29,7 +29,7 @@ async def get_project_card_data_route(
     logger.info(f"project_browser/get_project_card_data({current_user.id=})")
 
     try:
-        projects = get_projects(db, current_user.all_project_ids)
+        projects = get_all_projects(db, current_user.owned_project_ids)
         return [ProjectSchema.from_orm(p) for p in projects]
     except Exception as e:
         logger.error(f"Failed to get project card data for user {current_user.id}: {e}")
