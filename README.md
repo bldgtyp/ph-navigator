@@ -16,6 +16,8 @@
   - [x] Grasshopper Component
   - [x] UI Button 
 - [x] De-Serialize HBJSON Constructions (upload)
+- [x] Upload handles steel-stud cavity insulation
+- [ ] Upload handles steel-stud continuous exterior insulation
 - [ ] Consider limiter (slowAPI) for all endpoints?
 - [ ] Upload corresponding Flixo PDF (link)
 - [x] Setup Database migration tooling

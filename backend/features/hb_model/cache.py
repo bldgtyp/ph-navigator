@@ -20,19 +20,19 @@ class CacheRecordWithTime(Generic[T]):
         return (time() - self.timestamp) > self.CACHE_EXPIRATION_SECONDS
 
 
-class LimitedCache(Generic[T], OrderedDict[int, CacheRecordWithTime[T]]):
+class LimitedCache(Generic[T], OrderedDict[str, CacheRecordWithTime[T]]):
     """A Very simple in-memory cache for storing model data."""
 
     def __init__(self, max_size: int = 10):
         super().__init__()
         self.max_size = max_size
 
-    def __setitem__(self, key: int, value: T) -> None:
+    def __setitem__(self, key: str, value: T) -> None:
         if len(self) >= self.max_size:
             self.popitem(last=False)  # Remove the oldest item
         super().__setitem__(key, CacheRecordWithTime(value))
 
-    def __getitem__(self, key: int) -> T | None:
+    def __getitem__(self, key: str) -> T | None:
         try:
             d = super().__getitem__(key)
             if d.is_expired:

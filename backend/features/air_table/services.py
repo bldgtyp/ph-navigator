@@ -36,13 +36,13 @@ class DownloadError(Exception):
         super().__init__(f"DownloadError: Failed to download from URL: {url} | {message}")
 
 
-async def get_airtable_base_ref(db: Session, bt_number: str) -> str:
+def get_airtable_base_ref(db: Session, bt_number: str) -> str:
     """Get the AirTable Base Ref by the project-BT-number."""
     project = get_project_by_bt_number(db, bt_number)
     return project.airtable_base.id
 
 
-async def get_airtable_table_ref(db: Session, bt_number: str, table_name: str) -> str:
+def get_airtable_table_ref(db: Session, bt_number: str, table_name: str) -> str:
     """Get the AirTable Table Ref given a project-BT-number and table name."""
 
     # -- Find the Project
@@ -63,7 +63,7 @@ async def get_airtable_table_ref(db: Session, bt_number: str, table_name: str) -
     return table.at_ref
 
 
-async def download_hbjson_file(url: str) -> dict:
+def download_hbjson_file(url: str) -> dict:
     """Download the HBJSON File from the specified URL and return the content as JSON."""
     logger.info(f"download_hbjson_file(url={url[0:25]}...)")
 
@@ -76,7 +76,7 @@ async def download_hbjson_file(url: str) -> dict:
     return response.json()
 
 
-async def download_epw_file(url: str) -> str:
+def download_epw_file(url: str) -> str:
     """Download the EPW data from the specified URL and return the content as a string."""
     logger.info(f"download_epw_file(url={url[0:25]}...)")
     try:
@@ -95,7 +95,7 @@ async def download_epw_file(url: str) -> str:
         raise DownloadError(url, str(e))
 
 
-async def get_base_table_schemas(base: Base) -> list[Table]:
+def get_base_table_schemas(base: Base) -> list[Table]:
     """Get a list of all the Base's pyAirtable Table objects."""
     logger.info(f"validate_access(base={base})")
 
@@ -114,7 +114,7 @@ async def get_base_table_schemas(base: Base) -> list[Table]:
     return tables
 
 
-async def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> None:
+def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> None:
     """Add the tables to the AirTableBase object."""
     logger.info(f"add_tables_to_base(base={base.id}, tables=[{len(tables)}])")
 
@@ -134,7 +134,8 @@ async def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table
     return None
 
 
-async def get_all_material_from_airtable() -> list[Material]:
+# TODO: Make the AirTable call async....
+def get_all_material_from_airtable() -> list[Material]:
     """Get all of the materials from AirTable and return them as a list of Material objects."""
     logger.info(f"get_all_material_from_airtable()")
 
@@ -146,7 +147,7 @@ async def get_all_material_from_airtable() -> list[Material]:
 
     return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
-    # TODO: consider....
+    
     #  Use aiohttp directly since PyAirTable doesn't have async support
     # async with aiohttp.ClientSession() as session:
     #     url = f"https://api.airtable.com/v0/{settings.AIRTABLE_MATERIAL_BASE_ID}/{settings.AIRTABLE_MATERIAL_TABLE_ID}"

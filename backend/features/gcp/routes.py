@@ -32,9 +32,10 @@ logger = logging.getLogger(__name__)
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-creds.json"
 
 
+# TODO: make these routes all async
 # TODO: pass just the segment ID, not a whole form?
 @router.post("/add-new-segment-site-photo/{bt_number}", response_model=MaterialPhotoSchema)
-async def add_new_segment_site_photo_route(
+def add_new_segment_site_photo_route(
     bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
@@ -68,7 +69,7 @@ async def add_new_segment_site_photo_route(
 
 # TODO: Move to service
 @router.get("/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse)
-async def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_db)) -> SegmentSitePhotoUrlsResponse:
+def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_db)) -> SegmentSitePhotoUrlsResponse:
     """Get the site-photo thumbnail URLs for a given segment ID."""
     logger.info(f"gcp/get_site_photo_urls_route(segment_id={segment_id})")
 

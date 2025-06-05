@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 @router.post(
     "/create-new-segment-on-layer/{layer_id}", response_model=SegmentSchema, status_code=status.HTTP_201_CREATED
 )
-async def create_new_segment_on_layer_route(
+def create_new_segment_on_layer_route(
     request: CreateSegmentRequest, layer_id: int, db: Session = Depends(get_db)
 ) -> SegmentSchema:
     """Add a new LayerSegment to a Layer at a specific position."""
@@ -60,7 +60,7 @@ async def create_new_segment_on_layer_route(
 
 
 @router.patch("/update-segment-material/{segment_id}", response_model=SegmentSchema)
-async def update_segment_material_route(
+def update_segment_material_route(
     segment_id: int,
     request: UpdateSegmentMaterialRequest,
     db: Session = Depends(get_db),
@@ -80,7 +80,7 @@ async def update_segment_material_route(
 
 
 @router.patch("/update-segment-width/{segment_id}", response_model=SegmentSchema)
-async def update_segment_width_route(
+def update_segment_width_route(
     segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
 ) -> SegmentSchema:
     """Update the width (mm) of a Layer Segment."""
@@ -98,7 +98,7 @@ async def update_segment_width_route(
 
 
 @router.patch("/update-segment-steel-stud-spacing/{segment_id}", response_model=SegmentSchema)
-async def update_segment_steel_stud_spacing_route(
+def update_segment_steel_stud_spacing_route(
     segment_id: int,
     request: UpdateSegmentSteelStudSpacingRequest,
     db: Session = Depends(get_db),
@@ -118,7 +118,7 @@ async def update_segment_steel_stud_spacing_route(
 
 
 @router.patch("/update-segment-is-continuous-insulation/{segment_id}", response_model=SegmentSchema)
-async def update_segment_is_continuous_insulation_route(
+def update_segment_is_continuous_insulation_route(
     segment_id: int,
     request: UpdateSegmentIsContinuousInsulationRequest,
     db: Session = Depends(get_db),
@@ -140,7 +140,7 @@ async def update_segment_is_continuous_insulation_route(
 
 
 @router.patch("/update-segment-specification-status/{segment_id}", response_model=SegmentSchema)
-async def update_segment_specification_status_route(
+def update_segment_specification_status_route(
     segment_id: int,
     request: UpdateSegmentSpecificationStatusRequest,
     db: Session = Depends(get_db),
@@ -160,7 +160,7 @@ async def update_segment_specification_status_route(
 
 
 @router.patch("/update-segment-notes/{segment_id}", response_model=SegmentSchema)
-async def update_segment_notes_route(
+def update_segment_notes_route(
     segment_id: int,
     request: UpdateSegmentNotesRequest,
     db: Session = Depends(get_db),
@@ -180,7 +180,7 @@ async def update_segment_notes_route(
 
 
 @router.delete("/delete-segment/{segment_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> None:
+def delete_segment_route(segment_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a LayerSegment and adjust the order of remaining segments."""
     logger.info(f"assembly/delete-segment_route({segment_id=})")
 

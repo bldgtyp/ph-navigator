@@ -24,7 +24,7 @@ class MissingFileException(Exception):
         super().__init__(f"MissingFileException: {file_type} file not found for Project ID: {bt_number}")
 
 
-async def find_epw_file_url(db: Session, bt_number: str) -> str:
+def find_epw_file_url(db: Session, bt_number: str) -> str:
     """Given a BT-Number, find the EPW file URL from the AirTable repository."""
     logger.info(f"find_epw_file_url({bt_number=})")
 
@@ -50,8 +50,8 @@ async def find_epw_file_url(db: Session, bt_number: str) -> str:
             detail=f"AirTable access token not found for Project {bt_number}.",
         )
 
-    at_base_id = await get_airtable_base_ref(db, bt_number)
-    at_tbl_id = await get_airtable_table_ref(db, bt_number, "HBJSON")
+    at_base_id = get_airtable_base_ref(db, bt_number)
+    at_tbl_id = get_airtable_table_ref(db, bt_number, "HBJSON")
 
     try:
         api = Api(project.airtable_base.airtable_access_token)
@@ -84,8 +84,8 @@ async def load_epw_object(db: Session, bt_number: str) -> EPW:
         return epw_object
 
     # -- Get the HBJSON File URL from the database and download it
-    epw_file_url = await find_epw_file_url(db, bt_number)
-    epw_file = await download_epw_file(epw_file_url)
+    epw_file_url = find_epw_file_url(db, bt_number)
+    epw_file = download_epw_file(epw_file_url)
 
     # -- Parse the EPW content into a Ladybug EPW object
     epw_object = EPW.from_file_string(epw_file)

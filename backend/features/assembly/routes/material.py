@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/refresh-db-materials-from-air-table")
-async def refresh_db_materials_from_air_table_route(
+def refresh_db_materials_from_air_table_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Load all of the records from AirTable into the Database."""
     logger.info(f"assembly/refresh_db_materials_from_air_table_route()")
 
-    materials = await get_all_material_from_airtable()
+    materials = get_all_material_from_airtable()
     purge_unused_materials(db)
     number_added, number_updated = add_materials(db, materials)
 
@@ -43,11 +43,11 @@ async def refresh_db_materials_from_air_table_route(
 
 
 @router.get("/load-all-materials-from-airtable", response_model=list[MaterialSchema])
-async def load_all_materials_from_airtable_route(
+def load_all_materials_from_airtable_route(
     db: Session = Depends(get_db),
 ) -> list[MaterialSchema]:
     """Return all of the Materials in the database."""
     logger.info(f"assembly/load_all_materials_from_airtable_route()")
 
-    materials = await get_all_material_from_airtable()
+    materials = get_all_material_from_airtable()
     return [MaterialSchema.from_orm(material) for material in materials]

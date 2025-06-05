@@ -25,7 +25,7 @@ logger = logging.getLogger()
 
 @router.post("/token", response_model=TokenSchema)
 @limiter.limit("60/hour")
-async def login_for_access_token(
+def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
@@ -52,7 +52,7 @@ async def login_for_access_token(
 
 
 @router.get("/user/", response_model=UserSchema)
-async def user(
+def user(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UserSchema:
     """Return the current user."""

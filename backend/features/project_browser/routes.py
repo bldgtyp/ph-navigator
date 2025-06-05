@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/get-project-card-data", response_model=list[ProjectSchema])
-async def get_project_card_data_route(
+def get_project_card_data_route(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ) -> list[ProjectSchema]:

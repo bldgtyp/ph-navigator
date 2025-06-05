@@ -32,7 +32,7 @@ class HBJSONModelLoadError(Exception):
         super().__init__(f"HBJSONModelLoadError: Failed to load Honeybee-Model for Project ID: {bt_number} | {e}")
 
 
-async def find_hbjson_file_url(db: Session, bt_number: str) -> str:
+def find_hbjson_file_url(db: Session, bt_number: str) -> str:
     """Given a Project ID, find the HBJSON file URL from the AirTable repository."""
     logger.info(f"find_hbjson_url({bt_number=})")
 
@@ -58,8 +58,8 @@ async def find_hbjson_file_url(db: Session, bt_number: str) -> str:
             detail=f"AirTable access token not found for Project {bt_number}.",
         )
 
-    at_base_id = await get_airtable_base_ref(db, bt_number)
-    at_tbl_id = await get_airtable_table_ref(db, bt_number, "HBJSON")
+    at_base_id = get_airtable_base_ref(db, bt_number)
+    at_tbl_id = get_airtable_table_ref(db, bt_number, "HBJSON")
 
     try:
         api = Api(project.airtable_base.airtable_access_token)
@@ -92,8 +92,8 @@ async def load_hb_model(db: Session, bt_number: str) -> Model:
         return hb_model
 
     # -- Get the HBJSON File URL from the database and download it
-    hbjson_file_url = await find_hbjson_file_url(db, bt_number)
-    hb_model_dict = await download_hbjson_file(hbjson_file_url)
+    hbjson_file_url = find_hbjson_file_url(db, bt_number)
+    hb_model_dict = download_hbjson_file(hbjson_file_url)
 
     # -- Convert the HBJSON file to a Honeybee-Model object
     try:

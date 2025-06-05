@@ -55,8 +55,8 @@ async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> l
         )
 
     api = Api(project.airtable_base.airtable_access_token)
-    at_base_id = await get_airtable_base_ref(db, bt_number)
-    at_table_id = await get_airtable_table_ref(db, bt_number, "config")
+    at_base_id = get_airtable_base_ref(db, bt_number)
+    at_table_id = get_airtable_table_ref(db, bt_number, "config")
     table = api.table(at_base_id, at_table_id)
     return table.all()
 
@@ -92,8 +92,8 @@ async def get_project_air_table_records_from_table(
         )
 
     api = Api(project.airtable_base.airtable_access_token)
-    at_base_id = await get_airtable_base_ref(db, bt_number)
-    at_table_id = await get_airtable_table_ref(db, bt_number, at_table_name)
+    at_base_id = get_airtable_base_ref(db, bt_number)
+    at_table_id = get_airtable_table_ref(db, bt_number, at_table_name)
     table = api.table(at_base_id, at_table_id)
     return table.all()
 
@@ -122,7 +122,7 @@ async def connect_at_base_to_project(
         at_base = api.base(request.airtable_base_ref)
         logger.info(f"New AirTable base info: {at_base}")
 
-        tables: list[Table] = await get_base_table_schemas(at_base)
+        tables: list[Table] = get_base_table_schemas(at_base)
         logger.info(f"Tables in the AirTable base: [{len(tables)}]")
     except Exception as e:
         raise HTTPException(
@@ -146,7 +146,7 @@ async def connect_at_base_to_project(
     db.refresh(new_base)
 
     # Create the new AirTable-Tables and add them to the Base
-    await add_tables_to_base(db, new_base, tables)
+    add_tables_to_base(db, new_base, tables)
     db.refresh(new_base)
 
     # Connect the AirTable base to the Project
