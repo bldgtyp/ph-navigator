@@ -2,7 +2,7 @@
 
 from __future__ import annotations  # Enables forward references
 
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, Field, validator
 
 # ---------------------------------------------------------------------------------------
 # -- Table
@@ -35,14 +35,14 @@ class AirTableBaseSchema(BaseModel):
 class AddAirTableBaseRequest(BaseModel):
     airtable_base_api_key: str = Field(..., min_length=20)
     airtable_base_ref: str = Field(..., min_length=8, max_length=50)
-    bt_number: str = Field(..., pattern=r'^[a-zA-Z0-9\-]+$')
+    bt_number: str = Field(..., pattern=r"^[a-zA-Z0-9\-]+$")
 
-    @validator('airtable_base_api_key')
-    def validate_api_key(cls, v:str):
-        if not v.startswith('pat'):
-            raise ValueError('Invalid AirTable API key format')
+    @validator("airtable_base_api_key")
+    def validate_api_key(cls, v: str):
+        if not v.startswith("pat"):
+            raise ValueError("Invalid AirTable API key format")
         return v
-    
+
     def __repr__(self) -> str:
         return f"AddAirTableBaseRequest(bt_number={self.bt_number}, airtable_base_api_key=*****, airtable_base_ref={self.airtable_base_ref})"
 

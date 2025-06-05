@@ -1,7 +1,6 @@
 # -*- Python Version: 3.11 -*-
 
 import logging
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pyairtable import Api, Table
@@ -21,7 +20,6 @@ from features.air_table.services import (
     get_base_table_schemas,
 )
 from features.app.services import get_project_by_bt_number
-from features.auth.services import get_current_active_user
 
 router = APIRouter(
     prefix="/air_table",

@@ -16,7 +16,7 @@ configure_logging()
 logger = logging.getLogger()
 
 app = FastAPI(
-    docs_url=None,   # Disable docs in production
+    docs_url=None,  # Disable docs in production
     redoc_url=None,  # Disable redoc in production
 )
 
@@ -35,6 +35,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Add request IDs for better debugging
 @app.middleware("http")

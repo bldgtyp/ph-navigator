@@ -70,11 +70,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({
-        "exp": expire,
-        "iat": datetime.now(timezone.utc),
-        "jti": str(uuid4())
-    })
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc), "jti": str(uuid4())})
     encoded_jwt = jwt.encode(
         to_encode,
         settings.JSON_WEB_TOKEN_SECRET_KEY,
