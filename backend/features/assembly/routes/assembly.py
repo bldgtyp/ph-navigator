@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 @router.post(
     "/create-new-assembly-on-project/{bt_number}", response_model=AssemblySchema, status_code=status.HTTP_201_CREATED
 )
-async def create_new_assembly_on_project_route(bt_number: str, db: Session = Depends(get_db)) -> AssemblySchema:
+def create_new_assembly_on_project_route(bt_number: str, db: Session = Depends(get_db)) -> AssemblySchema:
     """Add a new Assembly to a Project."""
     logger.info(f"assembly/create_new_assembly_on_project_route({bt_number=})")
 
@@ -73,7 +73,7 @@ async def add_assemblies_from_hbjson_constructions_route(
 
 
 @router.get("/get-assemblies/{bt_number}", response_model=list[AssemblySchema])
-async def get_project_assemblies_route(bt_number: str, db: Session = Depends(get_db)) -> list[AssemblySchema]:
+def get_project_assemblies_route(bt_number: str, db: Session = Depends(get_db)) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
     logger.info(f"assembly/get_project_assemblies_route({bt_number=})")
 
@@ -86,7 +86,7 @@ async def get_project_assemblies_route(bt_number: str, db: Session = Depends(get
 
 
 @router.patch("/update-assembly-name/{assembly_id}", response_model=AssemblySchema)
-async def update_assembly_name_route(
+def update_assembly_name_route(
     request: UpdateAssemblyNameRequest, assembly_id: int, db: Session = Depends(get_db)
 ) -> AssemblySchema:
     """Update the name of an Assembly."""
@@ -101,7 +101,7 @@ async def update_assembly_name_route(
 
 
 @router.delete("/delete-assembly/{assembly_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> None:
+def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> None:
     """Delete an Assembly and all its associated layers and segments."""
     logger.info(f"assembly/delete_assembly_route({assembly_id=})")
 
@@ -114,7 +114,7 @@ async def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db))
 
 
 @router.get("/get_assemblies_as_hb_json/{bt_number}")
-async def get_project_assemblies_as_hb_json_route(
+def get_project_assemblies_as_hb_json_route(
     bt_number: str,
     offset: int = Query(0, description="The offset for the test function"),
     db: Session = Depends(get_db),

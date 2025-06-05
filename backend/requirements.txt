@@ -5,6 +5,7 @@ fastapi
 google-cloud-storage
 httpx
 honeybee-ph
+honeybee-ref
 passlib
 PHX
 pillow

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/create-new-layer/{assembly_id}", response_model=LayerSchema, status_code=status.HTTP_201_CREATED)
-async def create_new_default_layer_on_assembly_route(
+def create_new_default_layer_on_assembly_route(
     request: CreateLayerRequest, assembly_id: int, db: Session = Depends(get_db)
 ) -> LayerSchema:
     """Create a new Layer on a specified Assembly."""
@@ -41,7 +41,7 @@ async def create_new_default_layer_on_assembly_route(
 
 
 @router.get("/get-layer/{layer_id}")
-async def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> LayerSchema:
+def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> LayerSchema:
     """Get a specific layer by ID."""
     logger.info(f"assembly/get_layer_route(layer_id={layer_id})")
 
@@ -56,7 +56,7 @@ async def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> Layer
 
 
 @router.patch("/update-layer-thickness/{layer_id}", response_model=LayerSchema)
-async def update_layer_thickness_route(
+def update_layer_thickness_route(
     request: UpdateLayerHeightRequest, layer_id: int, db: Session = Depends(get_db)
 ) -> LayerSchema:
     """Update the thickness (mm) of a Layer."""
@@ -71,7 +71,7 @@ async def update_layer_thickness_route(
 
 
 @router.delete("/delete-layer/{layer_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_layer_route(layer_id: int, db: Session = Depends(get_db)) -> None:
+def delete_layer_route(layer_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a Layer and adjust the order of remaining layers."""
     logger.info(f"assembly/delete_layer_route(layer_id={layer_id})")
 

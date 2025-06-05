@@ -27,7 +27,7 @@ async def refresh_db_materials_from_air_table_route(
     """Load all of the records from AirTable into the Database."""
     logger.info(f"assembly/refresh_db_materials_from_air_table_route()")
 
-    materials = get_all_material_from_airtable()
+    materials = await get_all_material_from_airtable()
     purge_unused_materials(db)
     number_added, number_updated = add_materials(db, materials)
 
@@ -49,5 +49,5 @@ async def load_all_materials_from_airtable_route(
     """Return all of the Materials in the database."""
     logger.info(f"assembly/load_all_materials_from_airtable_route()")
 
-    materials = get_all_material_from_airtable()
+    materials = await get_all_material_from_airtable()
     return [MaterialSchema.from_orm(material) for material in materials]
