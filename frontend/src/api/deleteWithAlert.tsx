@@ -8,7 +8,7 @@ import constants from "../data/constants.json";
  * @template T - The expected type of the response data.
  * @param {string} endpoint - The API endpoint to send the DELETE request to.
  * @param {string | null} [token=null] - The optional authorization token. If not provided, it will be retrieved from localStorage.
- * @param {any} [data={}] - The data to include in the request body, serialized as JSON.
+ * @param {any} [params={}] - Any params to include in the request body, serialized as JSON.
  * @returns {Promise<T | null>} - A promise that resolves to the response data of type `T` if the request is successful, or `null` if an error occurs.
  *
  * @throws {Error} - Throws an error if the fetch request fails unexpectedly.
@@ -26,9 +26,9 @@ import constants from "../data/constants.json";
 export async function deleteWithAlert<T>(
     endpoint: string,
     token: string | null = null,
-    data: any = {}
+    params: any = {}
 ): Promise<T | null> {
-    console.log(`deleteWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., data=${JSON.stringify(data)}`);
+    console.log(`deleteWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., params=${JSON.stringify(params)}`);
 
     // If token is not provided, try to get it from localStorage
     if (!token) {
@@ -39,26 +39,28 @@ export async function deleteWithAlert<T>(
     const API_BASE_URL: string = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
     const API_ENDPOINT: string = `${API_BASE_URL}${endpoint}`;
 
-    // Define the fetch options
-    const options: RequestInit = {
-        method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    };
+    // Call the backend API to delete the layer
+    // Delete returns a 204 No Content response, so we don't expect a body
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: params ? JSON.stringify(params) : undefined,
+        });
 
-    // Make the fetch request
-    const response = await fetch(API_ENDPOINT, options);
+        if (response.status === 204) {
+            // No content response - return a non-null value so calling code knows it succeeded
+            return true as T;  // or just return true
+        } else {
+            alert(`Error: ${response.status} - ${response.statusText}`);
+            return null;
+        }
 
-    if (response.ok) {
-        const responseData = await response.json();
-        return responseData;
-    } else {
-        const errorText = await response.text();
-        console.error(`Error: ${response.status} - ${errorText}`);
-        alert(`Error: ${response.status} - ${errorText}`);
+    } catch (error: any) {
+        console.error(`Error: ${error.message}`);
+        alert(`Error: ${error.message}`);
         return null;
     }
 }
