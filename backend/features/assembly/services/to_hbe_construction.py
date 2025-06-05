@@ -31,9 +31,18 @@ def convert_assemblies_to_hbe_constructions(assemblies: list[Assembly]) -> list[
     return constructions_
 
 
-def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
-    """Get all assemblies for a project and convert them to Honeybee JSON format."""
-    logger.info(f"get_all_project_assemblies_as_hbjson({bt_number=})")
+def get_all_project_assemblies_as_hbjson_string(db: Session, bt_number: str) -> str:
+    """Return all of the Project's Assemblies as a single JSON object string.
+    
+    The returned JSON object will be structured as follows, with each assembly's identifier as the key:
+
+    return {
+        "Assembly 1: {....},
+        "Assembly 2: {....},
+        ...
+    }
+    """
+    logger.info(f"get_all_project_assemblies_as_hbjson_object({bt_number=})")
 
     # Get all the Assemblies for the project
     assemblies = db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
@@ -42,4 +51,4 @@ def get_all_project_assemblies_as_hbjson(db: Session, bt_number: str) -> str:
     hbe_constructions = convert_assemblies_to_hbe_constructions(assemblies)
 
     # -- Convert the HBE-Constructions to JSON
-    return json.dumps([hb_const.to_dict() for hb_const in hbe_constructions])
+    return json.dumps({hb_const.identifier: hb_const.to_dict() for hb_const in hbe_constructions})

@@ -162,6 +162,63 @@ const AssembliesPage: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const handleDownloadConstructions = async () => {
+    console.log("handleDownloadConstructions");
+    try {
+      setIsRefreshing(true); // Show loading state
+
+      // Download the HBJSON data
+      console.log(`Downloading Construction HBJSON for project: ${projectId}`);
+      const response = await getWithAlert<any>(
+        `assembly/get-assemblies-as-hbjson/${projectId}`,
+        null,
+      );
+
+      if (!response || !response.hb_constructions) {
+        throw new Error("No data received from server");
+      }
+
+      // Parse the string if it's returned as a string
+      let constructionsData;
+      if (typeof response.hb_constructions === 'string') {
+        // If the API returns a JSON string, parse it to an object
+        constructionsData = JSON.parse(response.hb_constructions);
+      } else {
+        // If it's already an object, use it directly
+        constructionsData = response.hb_constructions;
+      }
+
+      // Create a JSON string with proper formatting
+      const jsonString = JSON.stringify(constructionsData, null, 2);
+
+      // Create a Blob from the JSON string
+      const blob = new Blob([jsonString], { type: "application/json" });
+
+      // Create a URL for the Blob
+      const url = URL.createObjectURL(blob);
+
+      // Create a temporary anchor element to trigger the download
+      const downloadLink = document.createElement("a");
+      downloadLink.href = url;
+      downloadLink.download = `project_${projectId}_assemblies.json`; // File name
+
+      // Trigger the download
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+
+      // Clean up
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error("Failed to download constructions:", error);
+      alert(`Failed to download: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsRefreshing(false); // Hide loading state
+    }
+
+  }
+
   const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("handleFileSelected");
     const file = event.target.files?.[0];
@@ -216,6 +273,7 @@ const AssembliesPage: React.FC = () => {
           handleDeleteAssembly,
           handleRefreshMaterials,
           handleUploadConstructions,
+          handleDownloadConstructions,
           isRefreshing) : []}
       />
 

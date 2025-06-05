@@ -25,7 +25,7 @@ from features.assembly.services.layer import (
     delete_layer,
     get_layer_by_id,
 )
-from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson
+from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
 
 
 def test_get_all_project_assemblies(session: Session, create_test_project):
@@ -343,7 +343,7 @@ def test_delete_assembly(session, create_test_project):
 
 def test_get_assemblies_as_hbjson(session, create_test_project):
     create_test_project(db=session, username="user1", project_name="Project 1")
-    assemblies_json = get_all_project_assemblies_as_hbjson(session, "1234")
+    assemblies_json = get_all_project_assemblies_as_hbjson_string(session, "1234")
 
     obj = json.loads(assemblies_json)
     """

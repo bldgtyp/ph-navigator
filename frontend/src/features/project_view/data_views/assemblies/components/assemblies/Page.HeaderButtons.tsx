@@ -1,9 +1,10 @@
-import { Button, Tooltip } from "@mui/material";
+import { Button, Tooltip, IconButton } from "@mui/material";
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 
-type HeaderButtonId = "+" | "-" | "refresh" | "upload";
+type HeaderButtonId = "+" | "-" | "refresh" | "upload" | "download";
 
 interface HeaderButtonProps {
     id: HeaderButtonId;
@@ -18,9 +19,10 @@ const hoverText = {
     "-": "Delete the current Assembly.",
     "refresh": "Reload the materials from the AirTable database.",
     "upload": "Upload an HBJSON file containing one or more HB-Constructions. These will be added to the set of assemblies and will OVERWRITE any existing Assemblies with the same name.",
+    "download": "Download an HBJSON file all of the HB-Constructions or the project.",
 }
 
-const HeaderButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler, loading }) => {
+const HeaderTextIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler, loading }) => {
 
     return (
         <Tooltip title={hoverText[id]} placement="top" arrow>
@@ -39,25 +41,48 @@ const HeaderButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler, lo
     )
 }
 
+const HeaderIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler, loading }) => {
+    return (
+        <Tooltip title={hoverText[id]} placement="top" arrow>
+            <IconButton
+                className="header-button"
+                id={id}
+                color="inherit"
+                size="small"
+                onClick={handler}
+                disabled={loading}
+                sx={{
+                    height: '30px',
+                    width: '30px',
+                }}
+            >
+                {loading ? "..." : icon}
+            </IconButton>
+        </Tooltip>
+    )
+}
+
+
 
 export function headerButtons(
     handleAddAssembly: () => Promise<void>,
     handleDeleteAssembly: () => Promise<void>,
     handleRefreshMaterials: () => Promise<void>,
     handleUploadConstructions: () => Promise<void>,
+    handleDownloadConstructions: () => Promise<void>,
     loading: boolean = false,
 ): React.ReactElement[] {
 
 
     return [
-        <HeaderButton
+        <HeaderTextIconButton
             key={"+"}
             id={"+"}
             text={"+ Add New Assembly"}
             handler={handleAddAssembly}
             loading={loading}
         />,
-        <HeaderButton
+        <HeaderTextIconButton
             key={"-"}
             id={"-"}
             text={"Delete Assembly"}
@@ -65,7 +90,7 @@ export function headerButtons(
             handler={handleDeleteAssembly}
             loading={loading}
         />,
-        <HeaderButton
+        <HeaderTextIconButton
             key={"refresh"}
             id={"refresh"}
             text={"Refresh Materials"}
@@ -73,12 +98,20 @@ export function headerButtons(
             handler={handleRefreshMaterials}
             loading={loading}
         />,
-        <HeaderButton
+        <HeaderIconButton
             key={"upload"}
             id={"upload"}
-            text={"Upload HBJSON"}
+            text={""}
             icon={<FileUploadOutlinedIcon />}
             handler={handleUploadConstructions}
+            loading={loading}
+        />,
+        <HeaderIconButton
+            key={"download"}
+            id={"download"}
+            text={""}
+            icon={<FileDownloadOutlinedIcon />}
+            handler={handleDownloadConstructions}
             loading={loading}
         />,
     ]

@@ -20,7 +20,7 @@ from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_hb_constructions_from_hbjson,
 )
-from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson
+from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
 
 router = APIRouter(
     prefix="/assembly",
@@ -113,16 +113,25 @@ def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> No
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete assembly")
 
 
-@router.get("/get_assemblies_as_hb_json/{bt_number}")
-def get_project_assemblies_as_hb_json_route(
+@router.get("/get-assemblies-as-hbjson/{bt_number}")
+def get_project_assemblies_as_hbjson_object_route(
     bt_number: str,
     offset: int = Query(0, description="The offset for the test function"),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    """Test function to check if the module is working."""
-    logger.info(f"assembly/get_project_assemblies_as_hb_json_route({bt_number=}, {offset=})")
+    """Get all of the Project's Assemblies as Honeybee JSON.
+    
+    The format will follow the HBJSON Dump Objects, which outputs a single object:
 
-    hbe_construction_json = get_all_project_assemblies_as_hbjson(db, bt_number)
+    hb_constructions = {
+        "Assembly 1: {....},
+        "Assembly 2: {....},
+        ...
+    }
+    """
+    logger.info(f"assembly/get_project_assemblies_as_hbjson_object_route({bt_number=}, {offset=})")
+
+    hbe_construction_json = get_all_project_assemblies_as_hbjson_string(db, bt_number)
 
     return JSONResponse(
         content={
