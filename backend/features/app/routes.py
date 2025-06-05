@@ -27,6 +27,7 @@ logger = logging.getLogger()
 
 
 @router.get("/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
 def get_project_by_bt_number_route(
     request: Request,
     bt_number: str,
@@ -44,6 +45,7 @@ def get_project_by_bt_number_route(
 
 
 @router.patch("/update-settings/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
 def update_project_settings_route(
     request: Request,
     bt_number: str,
@@ -73,6 +75,7 @@ def update_project_settings_route(
 
 
 @router.post("/create-new-project", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 def create_new_project_route(
     request: Request,
     new_project_data: ProjectCreateSchema,

@@ -9,9 +9,9 @@ from features.app.services import (
     ProjectNotFoundException,
     create_new_project,
     create_new_user,
+    get_all_projects,
     get_project_by_bt_number,
     get_project_by_id,
-    get_all_projects,
 )
 
 

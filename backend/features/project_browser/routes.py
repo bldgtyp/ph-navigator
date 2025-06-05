@@ -3,9 +3,10 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from config import limiter
 from database import get_db
 from db_entities.app.user import User
 from features.app.schema import ProjectSchema
@@ -21,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/get-project-card-data", response_model=list[ProjectSchema])
+@limiter.limit("30/minute")
 def get_project_card_data_route(
+    request: Request,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ) -> list[ProjectSchema]:

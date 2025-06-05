@@ -1,15 +1,18 @@
 # -*- Python Version: 3.11 -*-
 
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pyairtable import Api, Table
 from pyairtable.api.types import RecordDict
 from sqlalchemy.orm import Session
 
+from config import limiter
 from database import get_db
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.app.project import Project
+from db_entities.app.user import User
 from features.air_table.schema import AddAirTableBaseRequest
 from features.air_table.services import (
     add_tables_to_base,
@@ -17,6 +20,8 @@ from features.air_table.services import (
     get_airtable_table_ref,
     get_base_table_schemas,
 )
+from features.app.services import get_project_by_bt_number
+from features.auth.services import get_current_active_user
 
 router = APIRouter(
     prefix="/air_table",
@@ -29,16 +34,15 @@ logger = logging.getLogger(__name__)
 
 # TODO: Return Pydantic Object. Move to Service.
 @router.get("/config/{bt_number}")
-async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> list[RecordDict]:
+@limiter.limit("10/minute")
+async def get_project_config(
+    request: Request,
+    bt_number: str,
+    db: Session = Depends(get_db),
+) -> list[RecordDict]:
     logger.info(f"/air_table/get_project_config({bt_number=})")
 
-    # Get the Project
-    project = db.query(Project).filter_by(bt_number=bt_number).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project {bt_number} not found.",
-        )
+    project = get_project_by_bt_number(db, bt_number)
 
     # Get the AirTable base
     if not project.airtable_base:
@@ -63,8 +67,9 @@ async def get_project_config(bt_number: str, db: Session = Depends(get_db)) -> l
 
 # TODO: Return Pydantic Object
 @router.get("/{bt_number}/{at_table_name}")
+@limiter.limit("10/minute")
 async def get_project_air_table_records_from_table(
-    bt_number: str, at_table_name: str, db: Session = Depends(get_db)
+    request: Request, bt_number: str, at_table_name: str, db: Session = Depends(get_db)
 ) -> list[RecordDict]:
     """Return all of the records from a specified Table (name), for a specified Project (bldgtyp-number)."""
     logger.info(f"air_table/get_project_air_table_records_from_table({bt_number=}, {at_table_name=})")
@@ -100,6 +105,7 @@ async def get_project_air_table_records_from_table(
 
 # TODO: Return Pydantic Object
 @router.post("/connect-AT-base-to-project", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def connect_at_base_to_project(
     request: AddAirTableBaseRequest,
     db: Session = Depends(get_db),

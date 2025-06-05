@@ -4,9 +4,10 @@
 
 from logging import getLogger
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
+from config import limiter
 from database import get_db
 
 from .schemas.honeybee.face import FaceSchema
@@ -41,7 +42,8 @@ logger = getLogger(__name__)
 
 
 @router.get("/{bt_number}/faces", response_model=list[FaceSchema])
-async def get_faces(bt_number: str, db: Session = Depends(get_db)) -> list[FaceSchema]:
+@limiter.limit("5/minute")
+async def get_faces(request: Request, bt_number: str, db: Session = Depends(get_db)) -> list[FaceSchema]:
     """Return a list of all the Faces from a Project's Honeybee-Model."""
     logger.info(f"get_faces({bt_number=})")
 
@@ -51,7 +53,8 @@ async def get_faces(bt_number: str, db: Session = Depends(get_db)) -> list[FaceS
 
 
 @router.get("/{bt_number}/spaces", response_model=list[SpaceSchema])
-async def get_spaces(bt_number: str, db: Session = Depends(get_db)) -> list[SpaceSchema]:
+@limiter.limit("5/minute")
+async def get_spaces(request: Request, bt_number: str, db: Session = Depends(get_db)) -> list[SpaceSchema]:
     """Return a list of all the Spaces from a Project's Honeybee-Model."""
     logger.info(f"get_spaces({bt_number=})")
 
@@ -61,7 +64,7 @@ async def get_spaces(bt_number: str, db: Session = Depends(get_db)) -> list[Spac
 
 
 @router.get("/{bt_number}/sun_path", response_model=SunPathAndCompassDTOSchema)
-async def get_sun_path(bt_number: str, db: Session = Depends(get_db)) -> SunPathAndCompassDTOSchema:
+async def get_sun_path(request: Request, bt_number: str, db: Session = Depends(get_db)) -> SunPathAndCompassDTOSchema:
     """Return a list of all the Sun Path from a Project's Honeybee-Model."""
     logger.info(f"get_sun_path({bt_number=})")
 
@@ -71,7 +74,10 @@ async def get_sun_path(bt_number: str, db: Session = Depends(get_db)) -> SunPath
 
 
 @router.get("/{bt_number}/hot_water_systems", response_model=list[PhHotWaterSystemSchema])
-async def get_hot_water_systems(bt_number: str, db: Session = Depends(get_db)) -> list[PhHotWaterSystemSchema]:
+@limiter.limit("5/minute")
+async def get_hot_water_systems(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> list[PhHotWaterSystemSchema]:
     """Return a list of all the Hot Water Systems from a Project's Honeybee-Model."""
     logger.info(f"get_hot_water_systems({bt_number=})")
 
@@ -81,7 +87,10 @@ async def get_hot_water_systems(bt_number: str, db: Session = Depends(get_db)) -
 
 
 @router.get("/{bt_number}/ventilation_systems", response_model=list[PhVentilationSystemSchema])
-async def get_ventilation_systems(bt_number: str, db: Session = Depends(get_db)) -> list[PhVentilationSystemSchema]:
+@limiter.limit("5/minute")
+async def get_ventilation_systems(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> list[PhVentilationSystemSchema]:
     """Return a list of all the Ventilation Systems from a Project's Honeybee-Model."""
     logger.info(f"get_ventilation_systems({bt_number=})")
 
@@ -91,7 +100,10 @@ async def get_ventilation_systems(bt_number: str, db: Session = Depends(get_db))
 
 
 @router.get("/{bt_number}/shading_elements", response_model=list[ShadeGroupSchema])
-async def get_shading_elements(bt_number: str, db: Session = Depends(get_db)) -> list[ShadeGroupSchema]:
+@limiter.limit("5/minute")
+async def get_shading_elements(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> list[ShadeGroupSchema]:
     """Return a list of all the Shading Elements from a Project's Honeybee-Model."""
     logger.info(f"get_shading_elements({bt_number=})")
 

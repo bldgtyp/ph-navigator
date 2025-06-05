@@ -120,7 +120,7 @@ def get_project_assemblies_as_hbjson_object_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Get all of the Project's Assemblies as Honeybee JSON.
-    
+
     The format will follow the HBJSON Dump Objects, which outputs a single object:
 
     hb_constructions = {

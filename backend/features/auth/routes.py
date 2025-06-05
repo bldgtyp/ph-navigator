@@ -24,7 +24,7 @@ logger = logging.getLogger()
 
 
 @router.post("/token", response_model=TokenSchema)
-@limiter.limit("60/hour")
+@limiter.limit("5/5minute")
 def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],

@@ -33,7 +33,7 @@ def convert_assemblies_to_hbe_constructions(assemblies: list[Assembly]) -> list[
 
 def get_all_project_assemblies_as_hbjson_string(db: Session, bt_number: str) -> str:
     """Return all of the Project's Assemblies as a single JSON object string.
-    
+
     The returned JSON object will be structured as follows, with each assembly's identifier as the key:
 
     return {

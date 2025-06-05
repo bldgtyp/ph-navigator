@@ -3,10 +3,10 @@
 import logging
 import os
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
-from config import settings
+from config import limiter, settings
 from database import get_db
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
@@ -35,7 +35,9 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-creds.json"
 # TODO: make these routes all async
 # TODO: pass just the segment ID, not a whole form?
 @router.post("/add-new-segment-site-photo/{bt_number}", response_model=MaterialPhotoSchema)
+@limiter.limit("10/minute")
 def add_new_segment_site_photo_route(
+    request: Request,
     bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
@@ -69,7 +71,10 @@ def add_new_segment_site_photo_route(
 
 # TODO: Move to service
 @router.get("/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse)
-def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_db)) -> SegmentSitePhotoUrlsResponse:
+@limiter.limit("30/minute")
+def get_site_photo_urls_route(
+    request: Request, segment_id: int, db: Session = Depends(get_db)
+) -> SegmentSitePhotoUrlsResponse:
     """Get the site-photo thumbnail URLs for a given segment ID."""
     logger.info(f"gcp/get_site_photo_urls_route(segment_id={segment_id})")
 
@@ -94,7 +99,9 @@ def get_site_photo_urls_route(segment_id: int, db: Session = Depends(get_db)) ->
 
 # TODO: pass just the segment ID, not a whole form?
 @router.post("/add-new-segment-datasheet/{bt_number}", response_model=MaterialDatasheetSchema)
+@limiter.limit("10/minute")
 async def add_new_segment_datasheet_route(
+    request: Request,
     bt_number: str,
     segment_id: int = Form(...),
     file: UploadFile = File(...),
@@ -126,7 +133,9 @@ async def add_new_segment_datasheet_route(
 
 
 @router.get("/get-datasheet-urls/{segment_id}", response_model=SegmentDatasheetUrlResponse)
+@limiter.limit("30/minute")
 async def get_datasheet_thumbnail_urls_route(
+    request: Request,
     segment_id: int,
     db: Session = Depends(get_db),
 ) -> SegmentDatasheetUrlResponse:

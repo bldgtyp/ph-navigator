@@ -1,12 +1,21 @@
 import logging
-
+from logging.handlers import RotatingFileHandler
+import os
 
 def configure_logging():
+    # Ensure logs directory exists
+    os.makedirs("logs", exist_ok=True)
+    
     logging.basicConfig(
-        level=logging.INFO,  # Set the logging level
-        format="%(levelname)s:     %(asctime)s - %(name)s - %(message)s",  # Log format
+        level=logging.INFO,
+        format="%(levelname)s:     %(asctime)s - %(name)s - %(message)s",
         handlers=[
             logging.StreamHandler(),  # Output logs to the console
-            logging.FileHandler("logs/app.log", mode="w"),  # Log to a file named "app.log"
+            RotatingFileHandler(
+                "logs/app.log",
+                maxBytes=10485760,  # 10MB per file
+                backupCount=5,      # Keep 5 backup files
+                encoding="utf-8"
+            ),
         ],
     )

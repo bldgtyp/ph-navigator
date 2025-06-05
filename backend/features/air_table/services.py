@@ -147,17 +147,15 @@ def get_all_material_from_airtable() -> list[Material]:
 
     return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
-    
     #  Use aiohttp directly since PyAirTable doesn't have async support
     # async with aiohttp.ClientSession() as session:
     #     url = f"https://api.airtable.com/v0/{settings.AIRTABLE_MATERIAL_BASE_ID}/{settings.AIRTABLE_MATERIAL_TABLE_ID}"
     #     headers = {"Authorization": f"Bearer {settings.AIRTABLE_MATERIAL_GET_TOKEN}"}
-        
+
     #     async with session.get(url, headers=headers) as response:
     #         response.raise_for_status()
     #         data = await response.json()
-            
+
     #         # AirTable returns data in a specific format, typically under a 'records' key
     #         records = data.get('records', [])
     #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in records]
-

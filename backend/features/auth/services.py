@@ -3,6 +3,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
+from uuid import uuid4
 
 import bcrypt
 import jwt
@@ -69,7 +70,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    to_encode.update({
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "jti": str(uuid4())
+    })
     encoded_jwt = jwt.encode(
         to_encode,
         settings.JSON_WEB_TOKEN_SECRET_KEY,

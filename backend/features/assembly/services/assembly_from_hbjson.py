@@ -60,7 +60,9 @@ def get_material_from_hb_material(db: Session, hb_material: EnergyMaterial) -> M
     raise ValueError(f"Material '{hb_material.display_name}' not found in database.")
 
 
-def stage_create_segment_from_hb_material(db: Session, hb_material: EnergyMaterial, stl_stud_spacing_mm: float | None = None) -> Segment:
+def stage_create_segment_from_hb_material(
+    db: Session, hb_material: EnergyMaterial, stl_stud_spacing_mm: float | None = None
+) -> Segment:
     """Create a Assembly-Layer-Segment from a Honeybee EnergyMaterial.
 
     Note: Changes are staged but NOT committed. Caller must commit.
@@ -96,13 +98,16 @@ def stage_create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial
     if ph_props.divisions.row_count > 1:
         msg = f"Material {hb_material.display_name} has more than 1 row of Materials. This is not supported yet."
         raise NotImplementedError(msg)
-    
+
     if ph_props.divisions.cell_count > 0 and ph_props.divisions.is_a_steel_stud_cavity:
         # -- Handle a Steel Stud Layer
-        segments.append(stage_create_segment_from_hb_material(
-            db, ph_props.divisions.cells[0].material,
-            stl_stud_spacing_mm=ph_props.divisions.steel_stud_spacing_mm,
-        ))
+        segments.append(
+            stage_create_segment_from_hb_material(
+                db,
+                ph_props.divisions.cells[0].material,
+                stl_stud_spacing_mm=ph_props.divisions.steel_stud_spacing_mm,
+            )
+        )
     elif ph_props.divisions.cell_count > 0 and not ph_props.divisions.is_a_steel_stud_cavity:
         # -- Handle Typical heterogeneous layer
         for cell in ph_props.divisions.cells:
