@@ -3,6 +3,7 @@
 import logging
 
 from honeybee_energy.material.opaque import EnergyMaterial
+from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties
 from honeybee_ph_utils.aisi_s250_21 import (
     STEEL_CONDUCTIVITY,
     StudSpacingInches,
@@ -222,6 +223,17 @@ def get_steel_stud_layers_as_hb_materials(
         conductivity=stud_layer_eq_conductivity_w_mk,
         density=steel_stud_assembly_hbe_materials.stud_cavity_layer.density,
         specific_heat=steel_stud_assembly_hbe_materials.stud_cavity_layer.specific_heat,
+    )
+
+    # Add the cavity material as a 'division', so we can pull it back out later
+    hb_prop_p: EnergyMaterialPhProperties = getattr(new_eq_stud_layer_material.properties, "ph")
+    hb_prop_p.divisions.steel_stud_spacing_mm = 406.4  # 16 inches in mm
+    hb_prop_p.divisions.add_new_column(1)
+    hb_prop_p.divisions.add_new_row(1)
+    hb_prop_p.divisions.set_cell_material(
+        _column_num=0,
+        _row_num=0,
+        _hbe_material=steel_stud_assembly_hbe_materials.stud_cavity_layer,
     )
 
     # Build the list of materials for the Assembly

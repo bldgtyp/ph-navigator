@@ -108,16 +108,21 @@ def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMaterial:
 
 
 def convert_single_assembly_layer_to_hb_material(layer: Layer) -> EnergyMaterial:
-    """Convert an assembly layer to a Honeybee Energy Material."""
+    """Convert an assembly layer to a Honeybee-Energy EnergyMaterial."""
     logger.info(f"convert_assembly_layer_to_hb_material(layer.id={layer.id})")
 
-    division_grid = build_ph_division_grid_from_segments(layer.segments, layer.thickness_mm / 1000)
-    hbe_material_ = create_hybrid_hbe_material(division_grid)
+    if len(layer.segments) > 1:
+        # If the layer has multiple segments, create a hybrid material
+        division_grid = build_ph_division_grid_from_segments(layer.segments, layer.thickness_mm / 1000)
+        hbe_material_ = create_hybrid_hbe_material(division_grid)
+    else:
+        # If the layer has a single segment, convert it directly
+        hbe_material_ = convert_segment_material_to_hb_material(layer.segments[0], layer.thickness_mm / 1000)
     return hbe_material_
 
 
 def convert_multiple_assembly_layers_to_hb_material(_layers: list[Layer]) -> list[EnergyMaterial]:
-    """Convert multiple assembly layers to Honeybee Energy Materials."""
+    """Convert multiple assembly layers into a list of Honeybee-Energy EnergyMaterials."""
     logger.info(f"convert_multiple_assembly_layers_to_hb_material([{len(_layers)}] layers)")
 
     hbe_materials_: list[EnergyMaterial] = []
