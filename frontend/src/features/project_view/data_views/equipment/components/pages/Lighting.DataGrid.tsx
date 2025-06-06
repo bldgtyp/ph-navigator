@@ -19,7 +19,7 @@ const defaultRow = generateDefaultRow(tableFields);
 const LightingDataGrid: React.FC = () => {
   // Load in the table data from the Database
   const { projectId } = useParams();
-  const { showModal, rowData } = useLoadDataGridFromAirTable<LightingRecord>(defaultRow, "lighting", projectId);
+  const { showModal, rowData } = useLoadDataGridFromAirTable<LightingRecord>(defaultRow, "lighting_fixtures", projectId);
 
   // --------------------------------------------------------------------------
   // Render the component
