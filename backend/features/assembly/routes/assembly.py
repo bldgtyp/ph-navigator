@@ -17,9 +17,9 @@ from features.assembly.services.assembly import (
     update_assembly_name,
 )
 from features.assembly.services.assembly_from_hbjson import (
+    MaterialNotFoundException,
     create_assembly_from_hb_construction,
     get_hb_constructions_from_hbjson,
-    MaterialNotFoundException,
 )
 from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
 
@@ -61,9 +61,9 @@ async def add_assemblies_from_hbjson_constructions_route(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid HB-JSON file provided.")
 
-    # -- Convert the JSON data to HBE-Constructions, 
+    # -- Convert the JSON data to HBE-Constructions,
     try:
-        hb_constructions =  get_hb_constructions_from_hbjson(data)
+        hb_constructions = get_hb_constructions_from_hbjson(data)
     except Exception as e:
         logger.error(f"Failed to convert JSON data to HB-Constructions: {e}")
         raise HTTPException(status_code=400, detail="Invalid HB-JSON format provided.")
@@ -76,16 +76,12 @@ async def add_assemblies_from_hbjson_constructions_route(
     except MaterialNotFoundException as e:
         # Return a 400 status with the specific error message about missing materials
         logger.warning(f"Material not found error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         # Generic server error for other issues
         logger.error(f"Failed to add assemblies from HB-JSON: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Failed to add assemblies from HB-JSON"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to add assemblies from HB-JSON"
         )
 
 

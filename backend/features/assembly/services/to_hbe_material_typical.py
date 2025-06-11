@@ -5,12 +5,12 @@ from collections import OrderedDict
 
 from honeybee.typing import clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
-from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhDivisionGrid, PhColor
+from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhColor, PhDivisionGrid
 from honeybee_energy_ref.document_ref import DocumentReference
 from honeybee_energy_ref.image_ref import ImageReference
 from honeybee_energy_ref.properties.hb_obj import _HBObjectWithReferences
 
-from db_entities.assembly import Layer, Segment, Material
+from db_entities.assembly import Layer, Material, Segment
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
 
@@ -41,10 +41,10 @@ def convert_MaterialPhoto_to_hbe_ref(material_photo: MaterialPhoto) -> ImageRefe
 def get_PhColor_from_material(material: Material) -> PhColor | None:
     """Get a PhColor from a material's ARGB color."""
     logger.info(f"get_PhColor_from_material({material.id=})")
-    
+
     if not material.argb_color:
         return None
-    
+
     ph_color = PhColor()
     ph_color.a = material.color_a
     ph_color.r = material.color_r
@@ -54,31 +54,43 @@ def get_PhColor_from_material(material: Material) -> PhColor | None:
     return ph_color
 
 
+def get_material_name_from_segment(material: Material, thickness_m: float) -> str:
+    """Get a material name from a segment's material and thickness."""
+    logger.info(f"get_material_name_from_segment({material.id=}, {thickness_m=})")
+
+    return f"{clean_ep_string(material.name)} [{thickness_m * 39.3701 : .1f} in]"
+
+
 def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float) -> EnergyMaterial:
     """Convert a segment material to a Honeybee-Energy-Material."""
     logger.info(f"convert_segment_material_to_hb_material({segment.id=})")
 
     mat = EnergyMaterial(
-        identifier=clean_ep_string(segment.material.name),
+        identifier=get_material_name_from_segment(segment.material, thickness_m),
         thickness=thickness_m,
         conductivity=segment.material.conductivity_w_mk,
         density=segment.material.density_kg_m3,
         specific_heat=segment.material.specific_heat_j_kgk,
     )
-    # -- Set the 'PH' attributes
-    hbe_prop_ph: EnergyMaterialPhProperties = getattr(mat.properties, "ph")
-    hbe_prop_ph.ph_color = get_PhColor_from_material(segment.material)
+    # -- Set any 'PH' attributes
+    hbe_prop_ph: EnergyMaterialPhProperties | None
+    if hbe_prop_ph := getattr(mat.properties, "ph", None):
+        hbe_prop_ph.ph_color = get_PhColor_from_material(segment.material)
 
-    # -- Set the 'Ref' attributes
-    hbe_prop_ref: _HBObjectWithReferences = getattr(mat.properties, "ref")
+    # -- Set any 'Ref' attributes
+    hbe_prop_ref: _HBObjectWithReferences | None
+    if hbe_prop_ref := getattr(mat.properties, "ref", None):
 
-    hbe_prop_ref.unlock()
-    for d in segment.material_datasheets:
-        hbe_prop_ref.add_document_ref(convert_MaterialDatasheet_to_hbe_ref(d))
+        hbe_prop_ref.unlock()
+        for d in segment.material_datasheets:
+            hbe_prop_ref.add_document_ref(convert_MaterialDatasheet_to_hbe_ref(d))
 
-    for p in segment.material_photos:
-        hbe_prop_ref.add_image_ref(convert_MaterialPhoto_to_hbe_ref(p))
-    hbe_prop_ref.lock()
+        for p in segment.material_photos:
+            hbe_prop_ref.add_image_ref(convert_MaterialPhoto_to_hbe_ref(p))
+
+        hbe_prop_ref.add_external_identifier("ph_nav", segment.material.id)
+
+        hbe_prop_ref.lock()
 
     return mat
 

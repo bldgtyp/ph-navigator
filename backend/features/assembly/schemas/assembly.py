@@ -2,10 +2,11 @@
 
 from __future__ import annotations  # Enables forward references
 
+from honeybee.typing import clean_ep_string
 from pydantic import BaseModel, root_validator
 
 from features.assembly.schemas.layer import LayerSchema
-from honeybee.typing import clean_ep_string
+
 
 class AssemblySchemaBase(BaseModel):
     """Base schema for Assembly."""

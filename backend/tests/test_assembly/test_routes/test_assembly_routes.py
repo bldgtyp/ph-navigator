@@ -74,9 +74,7 @@ def test_update_assembly_name_route(client: TestClient, session: Session, create
     assert response.status_code == 200
     assert project.assemblies[0].name == "Updated Assembly Name"
 
-    response = client.patch(
-        f"/assembly/update-assembly-name/{project.assemblies[0].id}", json={"new_name": "Wall_01"}
-    )
+    response = client.patch(f"/assembly/update-assembly-name/{project.assemblies[0].id}", json={"new_name": "Wall_01"})
 
     session.refresh(project)  # Refresh the Project to get the updated name
 
