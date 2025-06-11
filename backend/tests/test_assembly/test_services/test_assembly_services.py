@@ -347,8 +347,8 @@ def test_get_assemblies_as_hbjson(session, create_test_project):
 
     obj = json.loads(assemblies_json)
     """
-    [
-        {
+    {
+        "Test Assembly": {
             "type": "OpaqueConstruction",
             "identifier": "Test Assembly",
             "materials": [
@@ -417,10 +417,10 @@ def test_get_assemblies_as_hbjson(session, create_test_project):
                 },
             },
         },
-    ]
+    }
     """
 
     assert len(obj) == 1  # Initial assembly created by default
-    assert obj[0]["identifier"] == "Test Assembly"
-    assert obj[0]["type"] == "OpaqueConstruction"
-    assert len(obj[0]["materials"]) == 1
+    assert obj["Test Assembly"]["identifier"] == "Test Assembly"
+    assert obj["Test Assembly"]["type"] == "OpaqueConstruction"
+    assert len(obj["Test Assembly"]["materials"]) == 1

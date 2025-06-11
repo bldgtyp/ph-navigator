@@ -2,12 +2,10 @@
 
 from __future__ import annotations  # Enables forward references
 
-import re
-
 from pydantic import BaseModel, root_validator
 
 from features.assembly.schemas.layer import LayerSchema
-
+from honeybee.typing import clean_ep_string
 
 class AssemblySchemaBase(BaseModel):
     """Base schema for Assembly."""
@@ -52,8 +50,10 @@ class UpdateAssemblyNameRequest(BaseModel):
             raise ValueError("New name must not exceed 100 characters.")
 
         # Validate characters
-        if not re.match(r"^[a-zA-Z0-9\s:\-[\],]+$", new_name):
-            raise ValueError("New name contains invalid characters.")
+        try:
+            new_name = clean_ep_string(new_name)
+        except Exception as e:
+            raise ValueError(f"New name is not valid.\n{e}")
 
         # Update the cleaned name back into the values
         values["new_name"] = new_name
