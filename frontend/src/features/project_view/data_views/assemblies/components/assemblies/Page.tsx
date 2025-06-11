@@ -247,18 +247,20 @@ const AssembliesPage: React.FC = () => {
         file
       );
 
-      // Refresh assemblies to show the newly added ones
-      await fetchAssemblies();
-      alert("Constructions uploaded successfully!");
     } catch (error) {
-      console.error("Failed to upload constructions:", error);
-      alert(`Failed to upload: ${error instanceof Error ? error.message : "Unknown error"}`);
+      console.error("API error:", error);
+      throw error;
     } finally {
-      setIsRefreshing(false);
+      // Refresh Assemblies to show the newly added ones
+      await fetchAssemblies();
+
       // Reset the file input so the same file can be selected again
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+
+      // Hide loading state
+      setIsRefreshing(false);
     }
   };
 

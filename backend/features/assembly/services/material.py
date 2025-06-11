@@ -14,9 +14,10 @@ class MaterialNotFoundException(Exception):
     """Custom exception for missing material."""
 
     def __init__(self, material_id: str):
-        logger.error(f"Material {material_id} not found.")
-        super().__init__(f"Material {material_id} not found.")
-
+        logger.error(f"{self.__class__.__name__}: Material {material_id} not found.")
+        self.material_id = material_id
+        self.message = f"Material(s) not found in the database: {material_id}"
+        super().__init__(self.message)
 
 class DeleteNonExistentMaterialException(Exception):
     """Custom exception for attempting to delete a non-existent material."""
@@ -44,9 +45,20 @@ def get_material_by_id(db: Session, material_id: str) -> Material:
     raise MaterialNotFoundException(material_id)
 
 
+def get_material_by_name(db: Session, material_name: str) -> Material:
+    """Get a material by its Name or raise MaterialNotFoundException."""
+    logger.info(f"get_material_by_name({material_name=})")
+
+    if db_material := db.query(Material).filter_by(name=material_name).first():
+        return db_material
+
+    raise MaterialNotFoundException(material_name)
+
+
 def get_default_material(db: Session) -> Material:
     """Get the default material from the database or raise NoMaterialsException."""
     logger.info("get_default_material()")
+    
     mat = db.query(Material).first()
     if not mat:
         raise NoMaterialsException("any")

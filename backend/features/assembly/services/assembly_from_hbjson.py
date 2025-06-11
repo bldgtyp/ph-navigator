@@ -10,7 +10,8 @@ from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhPrope
 from sqlalchemy.orm import Session
 
 from db_entities.app import Project
-from db_entities.assembly import Assembly, Layer, Material, Segment
+from db_entities.assembly import Assembly, Layer, Segment
+from features.assembly.services.material import MaterialNotFoundException, get_material_by_name
 
 logger = logging.getLogger(__name__)
 
@@ -50,16 +51,6 @@ def get_hb_constructions_from_hbjson(data: dict) -> list[OpaqueConstruction]:
     return hb_objs
 
 
-def get_material_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Material:
-    """Get a Material from the Database which matches the name of the HB-Material."""
-    logger.info(f"get_material_from_hb_material({hb_material.display_name=})")
-
-    if db_material := db.query(Material).filter_by(name=hb_material.display_name).first():
-        return db_material
-
-    raise ValueError(f"Material '{hb_material.display_name}' not found in database.")
-
-
 def stage_create_segment_from_hb_material(
     db: Session, hb_material: EnergyMaterial, stl_stud_spacing_mm: float | None = None
 ) -> Segment:
@@ -70,7 +61,7 @@ def stage_create_segment_from_hb_material(
     logger.info(f"stage_create_segment_from_hb_material({hb_material.display_name=}, {stl_stud_spacing_mm=})")
 
     # Get the Segment-Material from the database
-    db_material = get_material_from_hb_material(db, hb_material)
+    db_material = get_material_by_name(db, hb_material.display_name)
 
     # Create a new Segment object
     new_segment = Segment(
@@ -163,13 +154,35 @@ def create_assembly_from_hb_construction(
     # ------------------------------------------------------------------------------------------------------------------
     # -- Build up all of the new Layers and Segments
     new_layers = []
+    missing_materials = []
+
     for hb_mat in hb_opaque_construction.materials:
         if not isinstance(hb_mat, EnergyMaterial):
             logger.warning(
                 f"Material {getattr(hb_mat, 'display_name', str(hb_mat))} [{type(hb_mat)=}] is not an EnergyMaterial. Ignoring."
             )
             continue
-        new_layers.append(stage_create_layer_from_hb_material(db, hb_mat))
+
+        # --------------------------------------------------------------------------------------------------------------
+        # -- TODO: bubble up....
+        try:
+            mat = stage_create_layer_from_hb_material(db, hb_mat)
+        except MaterialNotFoundException as e:
+            # Collect missing materials
+            logger.warning(f"{e.__class__.__name__}, {e.message}")
+            missing_materials.append(e.material_id)
+        except Exception as e:
+            # Log and re-raise other exceptions
+            logger.error(f"Unexpected error creating layer: {str(e)}")
+            raise
+        
+        # --------------------------------------------------------------------------------------------------------------
+        # If we found any missing materials, raise a specific exception
+        if missing_materials:
+            missing_list = ", ".join(missing_materials)
+            raise MaterialNotFoundException(f"[{missing_list}]")
+
+        new_layers.append(mat)
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Add the new layers to the Assembly

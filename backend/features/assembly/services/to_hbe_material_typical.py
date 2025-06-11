@@ -5,12 +5,12 @@ from collections import OrderedDict
 
 from honeybee.typing import clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
-from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhDivisionGrid
+from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhDivisionGrid, PhColor
 from honeybee_energy_ref.document_ref import DocumentReference
 from honeybee_energy_ref.image_ref import ImageReference
 from honeybee_energy_ref.properties.hb_obj import _HBObjectWithReferences
 
-from db_entities.assembly import Layer, Segment
+from db_entities.assembly import Layer, Segment, Material
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
 
@@ -38,6 +38,22 @@ def convert_MaterialPhoto_to_hbe_ref(material_photo: MaterialPhoto) -> ImageRefe
     )
 
 
+def get_PhColor_from_material(material: Material) -> PhColor | None:
+    """Get a PhColor from a material's ARGB color."""
+    logger.info(f"get_PhColor_from_material({material.id=})")
+    
+    if not material.argb_color:
+        return None
+    
+    ph_color = PhColor()
+    ph_color.a = material.color_a
+    ph_color.r = material.color_r
+    ph_color.g = material.color_g
+    ph_color.b = material.color_b
+
+    return ph_color
+
+
 def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float) -> EnergyMaterial:
     """Convert a segment material to a Honeybee-Energy-Material."""
     logger.info(f"convert_segment_material_to_hb_material({segment.id=})")
@@ -49,6 +65,11 @@ def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float
         density=segment.material.density_kg_m3,
         specific_heat=segment.material.specific_heat_j_kgk,
     )
+    # -- Set the 'PH' attributes
+    hbe_prop_ph: EnergyMaterialPhProperties = getattr(mat.properties, "ph")
+    hbe_prop_ph.ph_color = get_PhColor_from_material(segment.material)
+
+    # -- Set the 'Ref' attributes
     hbe_prop_ref: _HBObjectWithReferences = getattr(mat.properties, "ref")
 
     hbe_prop_ref.unlock()
@@ -104,6 +125,7 @@ def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMaterial:
     # TODO: eq spec-heat
     hbph_props = getattr(new_material_.properties, "ph")  # type: EnergyMaterialPhProperties
     hbph_props.divisions = division_grid
+    hbph_props.ph_color = getattr(base_material.properties, "ph").ph_color
     return new_material_
 
 

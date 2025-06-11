@@ -36,9 +36,9 @@ export async function postFileWithAlert<T>(
         const responseData = await response.json();
         return responseData;
     } else {
-        const errorText = await response.text();
-        console.error(`Error: ${response.status} - ${errorText}`);
-        alert(`Error: ${response.status} - ${errorText}`);
+        const errorJson = await response.json();
+        console.error(`Error: ${response.status} - ${errorJson["detail"]}`);
+        alert(`Error: ${response.status} - ${errorJson["detail"]}`);
         return null;
     }
 }
