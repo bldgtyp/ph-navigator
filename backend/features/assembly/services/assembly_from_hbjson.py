@@ -52,7 +52,10 @@ def get_hb_constructions_from_hbjson(data: dict) -> list[OpaqueConstruction]:
 
 
 def stage_create_segment_from_hb_material(
-    db: Session, hb_material: EnergyMaterial, stl_stud_spacing_mm: float | None = None
+    db: Session,
+    hb_material: EnergyMaterial,
+    stl_stud_spacing_mm: float | None,
+    segment_width_mm: float,
 ) -> Segment:
     """Create a Assembly-Layer-Segment from a Honeybee EnergyMaterial.
 
@@ -66,7 +69,7 @@ def stage_create_segment_from_hb_material(
     # Create a new Segment object
     new_segment = Segment(
         order=0,
-        width_mm=1000,
+        width_mm=segment_width_mm,
     )
     new_segment.material = db_material
     new_segment.steel_stud_spacing_mm = stl_stud_spacing_mm
@@ -75,7 +78,18 @@ def stage_create_segment_from_hb_material(
     return new_segment
 
 
-def stage_create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial) -> Layer:
+def get_material_ph_props(hb_material: EnergyMaterial) -> EnergyMaterialPhProperties:
+    """Get the EnergyMaterialPhProperties from a Honeybee EnergyMaterial."""
+
+    ph_props: EnergyMaterialPhProperties = getattr(hb_material.properties, "ph")
+    if ph_props.divisions.row_count > 1:
+        msg = f"Material '{hb_material.display_name}' has more than 1 row of Materials. This is not supported yet."
+        raise NotImplementedError(msg)
+    
+    return ph_props
+
+
+def stage_create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial, layer_width_mm: float) -> Layer:
     """Create a new Assembly-Layer from a Honeybee EnergyMaterial.
 
     Note: Changes are staged but NOT committed. Caller must commit.
@@ -84,30 +98,42 @@ def stage_create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial
 
     segments: list[Segment] = []
 
-    # -- Deal with Mixed Materials
-    ph_props: EnergyMaterialPhProperties = getattr(hb_material.properties, "ph")
-    if ph_props.divisions.row_count > 1:
-        msg = f"Material {hb_material.display_name} has more than 1 row of Materials. This is not supported yet."
-        raise NotImplementedError(msg)
-
+    # -- Create the new Layer Segment(s)
+    # TODO: work out the right segment width(s)....
+    ph_props = get_material_ph_props(hb_material)
     if ph_props.divisions.cell_count > 0 and ph_props.divisions.is_a_steel_stud_cavity:
+        # --------------------------------------------------------------------------------------------------------------
         # -- Handle a Steel Stud Layer
         segments.append(
             stage_create_segment_from_hb_material(
-                db,
-                ph_props.divisions.cells[0].material,
+                db=db,
+                hb_material=ph_props.divisions.cells[0].material,
                 stl_stud_spacing_mm=ph_props.divisions.steel_stud_spacing_mm,
+                segment_width_mm=layer_width_mm,
             )
         )
     elif ph_props.divisions.cell_count > 0 and not ph_props.divisions.is_a_steel_stud_cavity:
+        # --------------------------------------------------------------------------------------------------------------
         # -- Handle Typical heterogeneous layer
         for cell in ph_props.divisions.cells:
-            segments.append(stage_create_segment_from_hb_material(db, cell.material))
+            segments.append(stage_create_segment_from_hb_material(
+                db=db, 
+                hb_material=cell.material,
+                stl_stud_spacing_mm=None,
+                segment_width_mm=ph_props.divisions.get_cell_width_m(cell) * 1000,
+            ))
     else:
+        # --------------------------------------------------------------------------------------------------------------
         # -- Create a new Segment from the Honeybee EnergyMaterial
-        segments.append(stage_create_segment_from_hb_material(db, hb_material))
+        segments.append(stage_create_segment_from_hb_material(
+            db=db, 
+            hb_material=hb_material,
+            stl_stud_spacing_mm=None,
+            segment_width_mm=layer_width_mm
+        ))
 
-    # -- Create a new Layer object
+    # ------------------------------------------------------------------------------------------------------------------
+    # -- Create a new Layer object with Segments
     new_layer = Layer(
         order=0,
         thickness_mm=hb_material.thickness * 1000,
@@ -116,8 +142,22 @@ def stage_create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial
     for new_segment in segments:
         new_layer.segments.append(new_segment)
 
+    # ------------------------------------------------------------------------------------------------------------------
+    # -- Add the new Layer to the database, but do not commit yet
     db.add(new_layer)
     return new_layer
+
+
+def find_maximum_assembly_width(hb_materials: list[EnergyMaterial]) -> float:
+    """Find the maximum assembly width (mm) considering all the segments."""
+    logger.info(f"find_maximum_assembly_width(hb_materials=[{len(hb_materials)}])")
+
+    material_widths = [812.8, ] # 16 inches default for assemblies
+    for hb_material in hb_materials:
+        ph_props = get_material_ph_props(hb_material)
+        for cell in ph_props.divisions.cells:
+            material_widths.append(ph_props.divisions.get_cell_width_m(cell) * 1000)
+    return max(material_widths)
 
 
 def create_assembly_from_hb_construction(
@@ -152,21 +192,28 @@ def create_assembly_from_hb_construction(
         db.add(assembly)
 
     # ------------------------------------------------------------------------------------------------------------------
-    # -- Build up all of the new Layers and Segments
-    new_layers = []
-    missing_materials = []
-
+    # -- Get just the EnergyMaterials from the OpaqueConstruction.
+    energy_materials: list[EnergyMaterial] = []
     for hb_mat in hb_opaque_construction.materials:
         if not isinstance(hb_mat, EnergyMaterial):
             logger.warning(
                 f"Material {getattr(hb_mat, 'display_name', str(hb_mat))} [{type(hb_mat)=}] is not an EnergyMaterial. Ignoring."
             )
             continue
+        energy_materials.append(hb_mat) 
 
-        # --------------------------------------------------------------------------------------------------------------
-        # -- TODO: bubble up....
+    # ------------------------------------------------------------------------------------------------------------------
+    # -- Figure out the total Assembly width for the layers (considering the segment widths)
+    assembly_width_mm = find_maximum_assembly_width(energy_materials)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # -- Build up all of the new Layers and Segments
+    new_layers = []
+    missing_materials = []
+
+    for hb_mat in energy_materials:
         try:
-            mat = stage_create_layer_from_hb_material(db, hb_mat)
+            mat = stage_create_layer_from_hb_material(db, hb_mat, assembly_width_mm)
         except MaterialNotFoundException as e:
             # Collect missing materials
             logger.warning(f"{e.__class__.__name__}, {e.message}")
