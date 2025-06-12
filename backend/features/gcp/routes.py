@@ -26,6 +26,7 @@ from features.gcp.services import (
     material_datasheet_file_exists,
     material_photo_file_exists,
     upload_file_to_gcs,
+    validate_image_file_type,
 )
 
 router = APIRouter(
@@ -37,6 +38,17 @@ logger = logging.getLogger(__name__)
 
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-creds.json"
+
+
+class UnsupportedFileTypeException(Exception):
+    """Custom exception for unsupported file types."""
+
+    def __init__(self, filename: str | None, content_type: str | None, valid_extensions: list[str]):
+        self.message = (
+            f"File {filename} with type {content_type} is not supported. Only {valid_extensions} files are allowed."
+        )
+        logger.error(self.message)
+        super().__init__(self.message)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -57,6 +69,10 @@ async def add_new_segment_site_photo_route(
     logger.info(f"gcp/add_new_segment_site_photo_route(bt_number={bt_number}, segment_id={segment_id})")
 
     try:
+        valid_extensions = [".jpg", ".jpeg", ".png"]
+        if not validate_image_file_type(file, valid_extensions):
+            raise UnsupportedFileTypeException(file.filename, file.content_type, valid_extensions)
+
         thumbnail_url, full_size_url, content_hash = await upload_file_to_gcs(
             db=db,
             bt_number=bt_number,
@@ -156,6 +172,10 @@ async def add_new_segment_datasheet_route(
     logger.info(f"gcp/add_new_segment_datasheet_route(bt_number={bt_number}, segment_id={segment_id})")
 
     try:
+        valid_extensions = [".jpg", ".jpeg", ".png", ".pdf"]
+        if not validate_image_file_type(file, valid_extensions):
+            raise UnsupportedFileTypeException(file.filename, file.content_type, valid_extensions)
+
         thumbnail_url, full_size_url, content_hash = await upload_file_to_gcs(
             db=db,
             bt_number=bt_number,

@@ -60,6 +60,32 @@ class FileExistsInDBException(Exception):
 # -- Google Cloud Storage Utilities
 
 
+def validate_image_file_type(file: UploadFile, valid_extensions: list[str]) -> bool:
+    """Validate that the file is a supported image format (PNG or JPEG).
+
+    Args:
+        file: The uploaded file to validate
+
+    Returns:
+        bool: True if the file is a valid image type, False otherwise
+    """
+    logger.info(f"validate_image_file_type({file.filename=})")
+
+    # Check file extension
+    if not file.filename:
+        return False
+
+    filename_lower = file.filename.lower()
+    has_valid_extension = any(filename_lower.endswith(ext) for ext in valid_extensions)
+
+    # Check content type
+    content_type = file.content_type or ""
+    valid_content_types = ["image/jpeg", "image/jpg", "image/png"]
+    has_valid_content_type = content_type.lower() in valid_content_types
+
+    return has_valid_extension and has_valid_content_type
+
+
 async def calculate_file_hash(file: UploadFile) -> str:
     """Calculate MD5 hash of a file without loading it entirely into memory."""
     logger.info(f"calculate_file_hash({file.filename=})")

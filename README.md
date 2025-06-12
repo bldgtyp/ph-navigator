@@ -27,7 +27,7 @@
 - [x] Handle and Store Material Submittals
   - [x] Add 'delete' button to Material Modal viewer
   - [x] Add 'delete' button to Datasheet Modal viewer
-- [ ] add .pdf, .jpg, .png validation to upload
+- [x] add .pdf, .jpg, .png validation to upload
 - [ ] handle Upload PDFs?
 - [ ] resize .png for full-size (make smaller)
 - [ ] Add image carousel / scroll
