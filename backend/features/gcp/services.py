@@ -243,29 +243,29 @@ def material_datasheet_file_exists(db: Session, segment_id, content_hash) -> boo
     return False
 
 
-async def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path: str) -> dict:
-    """Check if blobs already exist in Google Cloud Storage."""
-    logger.info(f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})")
+# async def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path: str) -> dict:
+#     """Check if blobs already exist in Google Cloud Storage."""
+#     logger.info(f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})")
 
-    def check_blobs_exist():
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
+#     def check_blobs_exist():
+#         storage_client = storage.Client()
+#         bucket = storage_client.bucket(bucket_name)
 
-        full_size_blob = bucket.blob(full_size_path)
-        thumb_blob = bucket.blob(thumb_path)
+#         full_size_blob = bucket.blob(full_size_path)
+#         thumb_blob = bucket.blob(thumb_path)
 
-        full_exists = full_size_blob.exists()
-        thumb_exists = thumb_blob.exists()
+#         full_exists = full_size_blob.exists()
+#         thumb_exists = thumb_blob.exists()
 
-        return {
-            "full_exists": full_exists,
-            "thumb_exists": thumb_exists,
-            "full_url": f"https://storage.googleapis.com/{bucket_name}/{full_size_path}" if full_exists else None,
-            "thumb_url": f"https://storage.googleapis.com/{bucket_name}/{thumb_path}" if thumb_exists else None,
-        }
+#         return {
+#             "full_exists": full_exists,
+#             "thumb_exists": thumb_exists,
+#             "full_url": f"https://storage.googleapis.com/{bucket_name}/{full_size_path}" if full_exists else None,
+#             "thumb_url": f"https://storage.googleapis.com/{bucket_name}/{thumb_path}" if thumb_exists else None,
+#         }
 
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, check_blobs_exist)
+#     loop = asyncio.get_running_loop()
+#     return await loop.run_in_executor(None, check_blobs_exist)
 
 
 def resize_image_if_needed(
@@ -338,13 +338,13 @@ def resize_image_if_needed(
 
 
 async def upload_full_size_image(
-    content: bytes, content_type: str, bucket_name: str, full_size_path: str, blob_status: dict
+    content: bytes, content_type: str, bucket_name: str, full_size_path: str, #blob_status: dict
 ) -> str:
     """Upload full-size image after resizing to reasonable dimensions if needed."""
     logger.info(f"upload_full_size_image({bucket_name=}, {full_size_path=})")
 
-    if blob_status["full_exists"]:
-        return blob_status["full_url"]
+    # if blob_status["full_exists"]:
+    #     return blob_status["full_url"]
 
     loop = asyncio.get_running_loop()
 
@@ -363,12 +363,12 @@ async def upload_full_size_image(
     return await loop.run_in_executor(None, resize_and_upload)
 
 
-async def upload_thumbnail_image(content: bytes, bucket_name: str, thumb_path: str, blob_status: dict) -> str:
+async def upload_thumbnail_image(content: bytes, bucket_name: str, thumb_path: str) -> str:#, blob_status: dict) -> str:
     """Create and upload thumbnail if needed."""
     logger.info(f"upload_thumbnail_image({bucket_name=}, {thumb_path=})")
 
-    if blob_status["thumb_exists"]:
-        return blob_status["thumb_url"]
+    # if blob_status["thumb_exists"]:
+    #     return blob_status["thumb_url"]
 
     loop = asyncio.get_running_loop()
 
@@ -392,19 +392,19 @@ async def upload_thumbnail_image(content: bytes, bucket_name: str, thumb_path: s
 
 
 async def upload_images_to_gcs(
-    content: bytes, content_type: str, bucket_name: str, full_size_path: str, thumb_path: str, blob_status: dict
+    content: bytes, content_type: str, bucket_name: str, full_size_path: str, thumb_path: str, #blob_status: dict
 ) -> tuple[str, str]:
     """Upload images to GCS and return URLs."""
     logger.info(f"upload_images_to_gcs({bucket_name=}, {full_size_path=}, {thumb_path=})")
 
     # If both exist, return existing URLs
-    if blob_status["full_exists"] and blob_status["thumb_exists"]:
-        logger.info(f"Files already exist, skipping upload")
-        return blob_status["thumb_url"], blob_status["full_url"]
+    # if blob_status["full_exists"] and blob_status["thumb_exists"]:
+    #     logger.info(f"Files already exist, skipping upload")
+    #     return blob_status["thumb_url"], blob_status["full_url"]
 
     # Run both operations (only if needed)
-    full_size_url_task = upload_full_size_image(content, content_type, bucket_name, full_size_path, blob_status)
-    thumbnail_url_task = upload_thumbnail_image(content, bucket_name, thumb_path, blob_status)
+    full_size_url_task = upload_full_size_image(content, content_type, bucket_name, full_size_path)#, blob_status)
+    thumbnail_url_task = upload_thumbnail_image(content, bucket_name, thumb_path)#, blob_status)
 
     thumbnail_url, full_size_url = await asyncio.gather(thumbnail_url_task, full_size_url_task)
 
@@ -432,11 +432,11 @@ async def upload_file_to_gcs(
         raise FileExistsInDBException()
 
     # Check if files already exist in GCS
-    blob_status = await check_gcs_blobs_existence(bucket_name, full_size_path, thumb_path)
+    # blob_status = await check_gcs_blobs_existence(bucket_name, full_size_path, thumb_path)
 
     # Upload files (only if needed)
     thumbnail_url, full_size_url = await upload_images_to_gcs(
-        content, content_type, bucket_name, full_size_path, thumb_path, blob_status
+        content, content_type, bucket_name, full_size_path, thumb_path, #blob_status
     )
 
     return thumbnail_url, full_size_url, content_hash
