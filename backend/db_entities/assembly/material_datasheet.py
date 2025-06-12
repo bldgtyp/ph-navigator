@@ -13,5 +13,7 @@ class MaterialDatasheet(Base):
     segment_id: Mapped[int] = MappedColumn(Integer, ForeignKey("assembly_layer_segments.id"), nullable=False)
     full_size_url: Mapped[str] = MappedColumn(String, nullable=False)
     thumbnail_url: Mapped[str] = MappedColumn(String, nullable=False)
+    content_hash: Mapped[str] = MappedColumn(String, nullable=True, index=True)
 
+    # Relationships
     segment = relationship("Segment", back_populates="material_datasheets")

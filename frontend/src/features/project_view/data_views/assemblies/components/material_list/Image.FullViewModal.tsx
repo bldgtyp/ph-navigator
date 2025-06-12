@@ -1,28 +1,87 @@
-import { Box, Modal } from "@mui/material";
+import { Box, Button, Modal } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useState } from "react";
+import { MaterialSitePhotoType } from "../../types/Material.SitePhoto";
 
-type T = {
-    full_size_url: string;
-    thumbnail_url: string;
+
+interface FullImageModalType {
+    selectedItem: MaterialSitePhotoType | null;
+    setSelectedItem: (item: MaterialSitePhotoType | null) => void;
+    onDeleteSitePhoto: (id: number) => Promise<void>;
 }
 
-interface FullImageModalType<T extends { full_size_url: string }> {
-    selectedItem: T | null;
-    setSelectedItem: (item: T | null) => void;
-}
 
+const ImageFullViewModal = (props: FullImageModalType) => {
+    const [isDeleting, setIsDeleting] = useState(false);
 
-const ImageFullViewModal = <T extends { full_size_url: string }>(props: FullImageModalType<T>) => {
+    const handleDelete = async () => {
+        if (!props.selectedItem || !props.onDeleteSitePhoto) return;
+
+        const confirmDelete = window.confirm("Are you sure you want to delete this image?");
+        if (!confirmDelete) return;
+
+        try {
+            setIsDeleting(true);
+            await props.onDeleteSitePhoto(props.selectedItem.id);
+            props.setSelectedItem(null);
+        } catch (error) {
+            console.error("Error deleting image:", error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
-        <Modal open={!!props.selectedItem} onClose={() => props.setSelectedItem(null)}>
+        <Modal
+            open={!!props.selectedItem}
+            onClose={() => props.setSelectedItem(null)}
+        >
             <Box
                 className="full-image-modal"
-                sx={{ bgcolor: "background.paper", p: 2 }}>
+                sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: "background.paper",
+                    p: 3,
+                    borderRadius: 2,
+                    maxWidth: "90vw",
+                    maxHeight: "90vh",
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2
+                }}
+            >
                 {props.selectedItem && (
-                    <img
-                        src={props.selectedItem.full_size_url}
-                        alt="Enlarged"
-                        style={{ maxWidth: "80vw", maxHeight: "80vh", borderRadius: 8 }}
-                    />
+                    <>
+                        <Box sx={{ position: 'relative' }}>
+                            <img
+                                src={props.selectedItem.full_size_url}
+                                alt="Enlarged material"
+                                style={{
+                                    maxWidth: "80vw",
+                                    maxHeight: "70vh",
+                                    borderRadius: 8,
+                                    display: 'block'
+                                }}
+                            />
+                        </Box>
+
+                        {(
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    startIcon={<DeleteIcon />}
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? "Deleting..." : "Delete Image"}
+                                </Button>
+                            </Box>
+                        )}
+                    </>
                 )}
             </Box>
         </Modal>

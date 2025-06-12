@@ -24,18 +24,18 @@
 
 ## Material List:
 - [x] Materials DataGrid page gets data from Constructions (not AirTable)
-- [-] Handle and Store Material Submittals
-  - [ ] Add 'delete' button to Material Modal viewer
-  - [ ] Add 'delete' button to Datasheet Modal viewer
+- [x] Handle and Store Material Submittals
+  - [x] Add 'delete' button to Material Modal viewer
+  - [x] Add 'delete' button to Datasheet Modal viewer
 - [ ] add .pdf, .jpg, .png validation to upload
-- [ ] resize .png for full-size (make smaller)
 - [ ] handle Upload PDFs?
+- [ ] resize .png for full-size (make smaller)
 - [ ] Add image carousel / scroll
 - [x] Add Comments / Notes
 - [x] Add download as HBJSON button
   - [ ] Support Steel Stud Assemblies
 - [ ] Show only one item for each Material in the Layer (when multiple segments with same material)
-- [ ] Add Loading state to file uploads
+- [x] Add Loading state to file uploads
 
 ## Assemblies (UI):
 - [x] BUG: Delete Layer / Segment doesn't update UI until Refresh

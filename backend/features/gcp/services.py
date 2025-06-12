@@ -1,115 +1,411 @@
 # -*- Python Version: 3.11 -*-
 
+import asyncio
+import hashlib
 import io
 import logging
 from pathlib import Path
+from typing import Callable
+from urllib.parse import urlparse
 
 from fastapi import UploadFile
 from google.cloud import storage
 from PIL import Image
 from sqlalchemy.orm import Session
 
-from config import settings
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
-from db_entities.assembly.segment import Segment
+from features.assembly.services.segment import get_segment_by_id
 
 logger = logging.getLogger(__name__)
 
 
-def create_thumbnail(image_file: UploadFile, size=(64, 64)) -> bytes:
-    """Create a simple thumbnail from an image file."""
-    logger.info(f"create_thumbnail({image_file.filename}, {size=})")
+class SitePhotoNotFoundException(Exception):
+    """Custom exception for missing site photo."""
 
-    image = Image.open(image_file.file)
-    image.thumbnail(size)
-    thumb_io = io.BytesIO()
-    image.save(thumb_io, format="PNG")
-    thumb_io.seek(0)
-    return thumb_io.read()
+    def __init__(self, photo_id: int):
+        self.message = f"Site photo with ID {photo_id} not found."
+        logger.error(self.message)
+        super().__init__(self.message)
 
 
-def sanitize_name(name: str) -> str:
+class FileDeleteFailedException(Exception):
+    """Custom exception for file deletion failures."""
+
+    def __init__(self, file_url: str):
+        self.message = f"File at {file_url=} could not be deleted from storage."
+        super().__init__(self.message)
+        logger.error(self.message)
+
+
+class DatasheetNotFoundException(Exception):
+    """Custom exception for missing datasheet."""
+
+    def __init__(self, datasheet_id: int):
+        self.message = f"Datasheet with ID {datasheet_id} not found."
+        logger.error(self.message)
+        super().__init__(self.message)
+
+
+class FileExistsInDBException(Exception):
+    """Custom exception for file already existing in the database."""
+
+    def __init__(self):
+        self.message = "File with identical content already exists in the database."
+        logger.error(self.message)
+        super().__init__(self.message)
+
+
+# ---------------------------------------------------------------------------------------
+# -- Google Cloud Storage Utilities
+
+
+async def calculate_file_hash(file: UploadFile) -> str:
+    """Calculate MD5 hash of a file without loading it entirely into memory."""
+    logger.info(f"calculate_file_hash({file.filename=})")
+
+    md5 = hashlib.md5()
+    chunk_size = 8192  # 8KB chunks
+
+    # Reset file position to start
+    await file.seek(0)
+
+    # Process in chunks
+    while chunk := await file.read(chunk_size):
+        md5.update(chunk)
+
+    # Reset file position for subsequent use
+    await file.seek(0)
+
+    return md5.hexdigest()
+
+
+def parse_gcs_url(url: str) -> tuple[str, str]:
+    """Parse a Google Cloud Storage URL and return the bucket name and object name."""
+    logger.info(f"parse_gcs_url({url=})")
+
+    parsed = urlparse(url)
+
+    if parsed.netloc == "storage.googleapis.com":
+        # Format: https://storage.googleapis.com/[BUCKET]/[OBJECT]
+        path_parts = parsed.path.lstrip("/").split("/", 1)
+        if len(path_parts) != 2:
+            raise ValueError("URL does not contain both bucket and object name.")
+        bucket_name, object_name = path_parts
+    elif parsed.netloc.endswith(".storage.googleapis.com"):
+        # Format: https://[BUCKET].storage.googleapis.com/[OBJECT]
+        bucket_name = parsed.netloc.split(".storage.googleapis.com")[0]
+        object_name = parsed.path.lstrip("/")
+    else:
+        raise ValueError("Unsupported GCS URL format.")
+
+    return bucket_name, object_name
+
+
+def sanitize_file_name_stem(name: str) -> str:
     """Sanitize a name to ensure it is safe for use in URLs.
 
     Example:
         name = "my_file" -> "my_file"
         name = "my_file@#$%" -> "my_file"
     """
-    logger.info(f"sanitize_name({name})")
+    logger.info(f"sanitize_file_name_stem({name})")
 
     sanitized_file_name = "".join(c for c in name if c.isalnum() or c in ("_"))
     sanitized_file_name = sanitized_file_name
     return sanitized_file_name
 
 
-def sanitize_file_name(filename: str) -> str:
+def sanitize_file_name_with_suffix(filename: str) -> str:
     """Sanitize a file-name (with extension) to ensure it is safe for use in URLs.
 
     Example:
         filename = "my_file.jpg" -> "my_file.jpg"
         filename = "my_file@#$%.jpg" -> "my_file.jpg"
     """
-    logger.info(f"sanitize_file_name({filename})")
+    logger.info(f"sanitize_file_name_with_suffix({filename})")
 
     file_object = Path(filename)
-    sanitized_file_name = sanitize_name(file_object.stem)
+    sanitized_file_name = sanitize_file_name_stem(file_object.stem)
     sanitized_file_name = sanitized_file_name + file_object.suffix
     return sanitized_file_name
 
 
-def check_gcs_bucket_create_file_permissions() -> bool:
-    """Check if the account has permission to write to the Google-Cloud-Storage bucket."""
-    logger.info("check_gcs_bucket_create_file_permissions()")
+async def get_file_content(file: UploadFile) -> tuple[bytes, str, str]:
+    """Read the content of an uploaded file and return its content, hash, and content type."""
+    logger.info(f"get_file_content({file.filename=}, {file.content_type=})")
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(settings.GCP_BUCKET_NAME)
-    permissions = ["storage.objects.create"]
-    result = bucket.test_iam_permissions(permissions)
+    # -- Read the file content once
+    content = await file.read()
 
-    logger.info(f"Permissions result: {result}")
+    # -- Generate content hash for deduplication
+    content_hash = await calculate_file_hash(file)
 
-    return "storage.objects.create" in result
+    # -- Detect image format
+    try:
+        with Image.open(io.BytesIO(content)) as img:
+            img_format = img.format.lower() if img.format else "jpeg"
+            content_type = f"image/{img_format}"
+    except Exception as e:
+        logger.error(f"Failed to detect image format: {e}")
+        content_type = file.content_type or "image/jpeg"
+
+    return content, content_hash, content_type
 
 
-def upload_segment_site_photo_to_cdn(
+def create_image_upload_paths(
+    db: Session, bt_number: str, segment_id: int, folder_name: str, content_hash: str, file: UploadFile
+) -> tuple[str, str]:
+    """Generate the full-size and thumbnail paths for an image upload."""
+    logger.info(
+        f"get_image_upload_paths({bt_number=}, {segment_id=}, {folder_name=}, {content_hash=}, {file.filename=})"
+    )
+
+    segment = get_segment_by_id(db, segment_id)
+
+    # -- Validate file
+    if not file.filename:
+        raise ValueError("File name is missing")
+
+    # -- Create file paths with content hash
+    file_ext = Path(file.filename).suffix
+    sanitized_material_name = sanitize_file_name_stem(segment.material.name)
+
+    # Use the content hash in the filename
+    full_size_path = f"{bt_number}/{folder_name}/{sanitized_material_name}_{content_hash}{file_ext}"
+    thumb_path = f"{bt_number}/{folder_name}/thumbnails/{sanitized_material_name}_{content_hash}{file_ext}"
+
+    return full_size_path, thumb_path
+
+
+def material_photo_file_exists(db: Session, segment_id, content_hash) -> bool:
+    """Check if this content hash already exists in db for this segment."""
+    logger.info(f"material_photo_file_exists({segment_id=}, {content_hash=})")
+
+    existing = (
+        db.query(MaterialPhoto)
+        .filter(
+            MaterialPhoto.segment_id == segment_id,
+            MaterialPhoto.content_hash == content_hash,  # You'd need to add this column
+        )
+        .first()
+    )
+
+    if existing:
+        logger.info(f"File with identical content already exists (id: {existing.id})")
+        return True
+    return False
+
+
+def material_datasheet_file_exists(db: Session, segment_id, content_hash) -> bool:
+    """Check if this content hash already exists in db for this segment."""
+    logger.info(f"material_datasheet_file_exists({segment_id=}, {content_hash=})")
+
+    existing = (
+        db.query(MaterialDatasheet)
+        .filter(
+            MaterialDatasheet.segment_id == segment_id,
+            MaterialDatasheet.content_hash == content_hash,  # You'd need to add this column
+        )
+        .first()
+    )
+
+    if existing:
+        logger.info(f"File with identical content already exists (id: {existing.id})")
+        return True
+    return False
+
+
+async def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path: str) -> dict:
+    """Check if blobs already exist in Google Cloud Storage."""
+    logger.info(f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})")
+
+    def check_blobs_exist():
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+
+        full_size_blob = bucket.blob(full_size_path)
+        thumb_blob = bucket.blob(thumb_path)
+
+        full_exists = full_size_blob.exists()
+        thumb_exists = thumb_blob.exists()
+
+        return {
+            "full_exists": full_exists,
+            "thumb_exists": thumb_exists,
+            "full_url": f"https://storage.googleapis.com/{bucket_name}/{full_size_path}" if full_exists else None,
+            "thumb_url": f"https://storage.googleapis.com/{bucket_name}/{thumb_path}" if thumb_exists else None,
+        }
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, check_blobs_exist)
+
+
+async def upload_full_size_image(
+    content: bytes, content_type: str, bucket_name: str, full_size_path: str, blob_status: dict
+) -> str:
+    """Upload full-size image if needed."""
+    logger.info(f"upload_full_size_image({bucket_name=}, {full_size_path=})")
+
+    if blob_status["full_exists"]:
+        return blob_status["full_url"]
+
+    loop = asyncio.get_running_loop()
+
+    def do_upload():
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(full_size_path)
+        blob.upload_from_string(content, content_type=content_type)
+        blob.make_public()
+        return blob.public_url
+
+    return await loop.run_in_executor(None, do_upload)
+
+
+async def upload_thumbnail_image(content: bytes, bucket_name: str, thumb_path: str, blob_status: dict) -> str:
+    """Create and upload thumbnail if needed."""
+    logger.info(f"upload_thumbnail_image({bucket_name=}, {thumb_path=})")
+
+    if blob_status["thumb_exists"]:
+        return blob_status["thumb_url"]
+
+    loop = asyncio.get_running_loop()
+
+    def do_thumbnail():
+        # Create thumbnail
+        image = Image.open(io.BytesIO(content))
+        image.thumbnail((64, 64))
+        thumb_io = io.BytesIO()
+        image.save(thumb_io, format="PNG")
+        thumb_bytes = thumb_io.getvalue()
+
+        # Upload thumbnail
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        thumb_blob = bucket.blob(thumb_path)
+        thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
+        thumb_blob.make_public()
+        return thumb_blob.public_url
+
+    return await loop.run_in_executor(None, do_thumbnail)
+
+
+async def upload_images_to_gcs(
+    content: bytes, content_type: str, bucket_name: str, full_size_path: str, thumb_path: str, blob_status: dict
+) -> tuple[str, str]:
+    """Upload images to GCS and return URLs."""
+    logger.info(f"upload_images_to_gcs({bucket_name=}, {full_size_path=}, {thumb_path=})")
+
+    # If both exist, return existing URLs
+    if blob_status["full_exists"] and blob_status["thumb_exists"]:
+        logger.info(f"Files already exist, skipping upload")
+        return blob_status["thumb_url"], blob_status["full_url"]
+
+    # Run both operations (only if needed)
+    full_size_url_task = upload_full_size_image(content, content_type, bucket_name, full_size_path, blob_status)
+    thumbnail_url_task = upload_thumbnail_image(content, bucket_name, thumb_path, blob_status)
+
+    thumbnail_url, full_size_url = await asyncio.gather(thumbnail_url_task, full_size_url_task)
+
+    return thumbnail_url, full_size_url
+
+
+async def upload_file_to_gcs(
     db: Session,
     bt_number: str,
     segment_id: int,
     file: UploadFile,
     bucket_name: str,
-) -> tuple[str, str]:
-    """Upload a segment site photo (and thumbnail) to Google Cloud Storage and return the public URLs."""
-    logger.info(f"upload_segment_site_photo_to_cdn({bt_number=}, {segment_id=}, {file.filename=})")
+    folder_name: str,
+    file_exists_in_db: Callable[[Session, int, str], bool],
+) -> tuple[str, str, str]:
+    """Upload an Image-file to Google-Cloud-Storage and return the public URLs."""
+    logger.info(f"upload_file_to_gcs({bt_number=}, {segment_id=}, {file.filename=}, {bucket_name=})")
 
-    segment = db.get(Segment, segment_id)
-    if not segment:
-        raise ValueError("Segment not found")
+    # Prepare file content and paths
+    content, content_hash, content_type = await get_file_content(file)
+    full_size_path, thumb_path = create_image_upload_paths(db, bt_number, segment_id, folder_name, content_hash, file)
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
+    # Check if file already exists in DB
+    if file_exists_in_db(db, segment_id, content_hash):
+        raise FileExistsInDBException()
 
-    # -- Sanitize the file name
-    if not file.filename:
-        raise ValueError("File name is missing?")
-    sanitized_file_name = sanitize_file_name(file.filename)
-    sanitized_material_name = sanitize_name(segment.material.name)
+    # Check if files already exist in GCS
+    blob_status = await check_gcs_blobs_existence(bucket_name, full_size_path, thumb_path)
 
-    # -- Upload the full-size image to GCS and get the public URL
-    blob = bucket.blob(f"{bt_number}/site_photos/{sanitized_material_name}_{sanitized_file_name}")
-    blob.upload_from_file(file.file, content_type=file.content_type)
-    blob.make_public()
-    full_size_url = blob.public_url
+    # Upload files (only if needed)
+    thumbnail_url, full_size_url = await upload_images_to_gcs(
+        content, content_type, bucket_name, full_size_path, thumb_path, blob_status
+    )
 
-    # -- Create the thumbnail, upload it to GCS, and get the public URL
-    file.file.seek(0)
-    thumb_bytes = create_thumbnail(file)
-    thumb_blob = bucket.blob(f"{bt_number}/site_photos/thumbnails/{sanitized_material_name}_{sanitized_file_name}")
-    thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
-    thumb_blob.make_public()
-    thumbnail_url = thumb_blob.public_url
+    return thumbnail_url, full_size_url, content_hash
 
-    return thumbnail_url, full_size_url
+
+async def delete_file_from_gcs(file_url: str) -> bool:
+    """Delete a file from Google-Cloud-Storage given its public URL.
+
+    Args:
+        file_url: The public URL of the file to delete.
+
+    Returns:
+        bool: True if deletion was successful, False otherwise
+    """
+    logger.info(f"delete_file_from_storage({file_url=})")
+
+    try:
+        # Parse the URL to get bucket name and object name
+        bucket_name, object_name = parse_gcs_url(file_url)
+
+        # Run the blocking GCS operations in a thread pool
+        loop = asyncio.get_running_loop()
+
+        # Define the function to run in the thread pool
+        def delete_blob():
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(bucket_name)
+            blob = bucket.blob(object_name)
+
+            # Check if the blob exists before attempting to delete
+            if not blob.exists():
+                logger.warning(f"File at {file_url} does not exist in storage")
+                return False
+
+            # Delete the blob if it exists
+            blob.delete()
+            return True
+
+        # Execute the blocking operation in a thread pool
+        result = await loop.run_in_executor(None, delete_blob)
+
+        if result:
+            logger.info(f"Successfully deleted file at: {file_url}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to delete file from storage: {e}")
+        return False
+
+
+# ---------------------------------------------------------------------------------------
+# -- Site Photos
+
+
+def get_segment_site_photos(db: Session, segment_id: int) -> list[MaterialPhoto]:
+    """Get all of the site-photos associated with a Segment."""
+    logger.info(f"get_segment_site_photos({segment_id=})")
+
+    segment = get_segment_by_id(db, segment_id)
+    return db.query(MaterialPhoto).filter(MaterialPhoto.segment_id == segment.id).all()
+
+
+def get_site_photo_by_id(db: Session, site_photo_id: int) -> MaterialPhoto:
+    """Get a site-photo by its ID from the database."""
+    logger.info(f"get_site_photo_by_id({site_photo_id=})")
+
+    photo = db.query(MaterialPhoto).filter(MaterialPhoto.id == site_photo_id).first()
+    if not photo:
+        raise SitePhotoNotFoundException(site_photo_id)
+    return photo
 
 
 def add_site_photo_to_segment(
@@ -117,16 +413,30 @@ def add_site_photo_to_segment(
     segment_id: int,
     thumbnail_url: str,
     full_size_url: str,
+    content_hash: str,
 ) -> MaterialPhoto:
-    """Add a site photo's URLS (thumbnail, full-size) to a segment in the database."""
+    """Add a site photo's URLS (thumbnail, full-size) to a segment in the database.
+
+    Args:
+        db: Database session
+        segment_id: The ID of the segment to which the photo belongs
+        thumbnail_url: The public URL of the thumbnail image
+        full_size_url: The public URL of the full-size image
+        content_hash: The MD5 hash of the file content for deduplication
+    Returns:
+        MaterialPhoto: The created MaterialPhoto object with the segment's photo URLs
+    """
     logger.info(f"add_site_photo_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})")
 
-    segment = db.get(Segment, segment_id)
-    if not segment:
-        raise ValueError("Segment not found")
+    segment = get_segment_by_id(db, segment_id)
 
     # -- Create the Photo DB entry
-    material_photo = MaterialPhoto(segment_id=segment.id, full_size_url=full_size_url, thumbnail_url=thumbnail_url)
+    material_photo = MaterialPhoto(
+        segment_id=segment.id,
+        full_size_url=full_size_url,
+        thumbnail_url=thumbnail_url,
+        content_hash=content_hash,
+    )
     db.add(material_photo)
     db.commit()
     db.refresh(material_photo)
@@ -134,44 +444,50 @@ def add_site_photo_to_segment(
     return material_photo
 
 
-def upload_segment_datasheet_to_cdn(
-    db: Session,
-    bt_number: str,
-    segment_id: int,
-    file: UploadFile,
-    bucket_name: str,
-) -> tuple[str, str]:
-    """Upload a segment datasheet (and thumbnail) to Google Cloud Storage and return the public URLs."""
-    logger.info(f"upload_segment_datasheet_to_cdn({bt_number=}, {segment_id=}, {file.filename=})")
+async def delete_site_photo(db: Session, photo: MaterialPhoto) -> None:
+    """Delete a site-photo from the database and storage.
 
-    segment = db.get(Segment, segment_id)
-    if not segment:
-        raise ValueError("Segment not found")
+    Args:
+        db: Database session
+        photo: The MaterialPhoto object to delete
+    """
+    logger.info(f"delete_site_photo({photo.id=})")
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
+    # -- Delete the Thumbnail file from storage
+    deleted = await delete_file_from_gcs(file_url=photo.thumbnail_url)
+    if not deleted:
+        raise FileDeleteFailedException(photo.thumbnail_url)
 
-    # -- Sanitize the file name
-    if not file.filename:
-        raise ValueError("File name is missing?")
-    sanitized_file_name = sanitize_file_name(file.filename)
-    sanitized_material_name = sanitize_name(segment.material.name)
+    # -- Delete the Full-Size file from storage
+    deleted = await delete_file_from_gcs(file_url=photo.full_size_url)
+    if not deleted:
+        raise FileDeleteFailedException(photo.full_size_url)
 
-    # -- Upload the full-size image to GCS and get the public URL
-    blob = bucket.blob(f"{bt_number}/datasheets/{sanitized_material_name}_{sanitized_file_name}")
-    blob.upload_from_file(file.file, content_type=file.content_type)
-    blob.make_public()
-    full_size_url = blob.public_url
+    # -- Delete from database
+    db.delete(photo)
+    db.commit()
 
-    # -- Create the thumbnail, upload it to GCS, and get the public URL
-    file.file.seek(0)
-    thumb_bytes = create_thumbnail(file)
-    thumb_blob = bucket.blob(f"{bt_number}/datasheets/thumbnails/{sanitized_material_name}_{sanitized_file_name}")
-    thumb_blob.upload_from_string(thumb_bytes, content_type="image/png")
-    thumb_blob.make_public()
-    thumbnail_url = thumb_blob.public_url
 
-    return thumbnail_url, full_size_url
+# ---------------------------------------------------------------------------------------
+# -- Datasheets
+
+
+def get_segment_datasheets(db: Session, segment_id: int) -> list[MaterialDatasheet]:
+    """Get all of the datasheets associated with a Segment."""
+    logger.info(f"get_segment_datasheets({segment_id=})")
+
+    segment = get_segment_by_id(db, segment_id)
+    return db.query(MaterialDatasheet).filter(MaterialDatasheet.segment_id == segment.id).all()
+
+
+def get_datasheet_by_id(db: Session, datasheet_id: int) -> MaterialDatasheet:
+    """Get a datasheet by its ID from the database."""
+    logger.info(f"get_datasheet_by_id({datasheet_id=})")
+
+    datasheet = db.query(MaterialDatasheet).filter(MaterialDatasheet.id == datasheet_id).first()
+    if not datasheet:
+        raise SitePhotoNotFoundException(datasheet_id)
+    return datasheet
 
 
 def add_datasheet_to_segment(
@@ -179,20 +495,58 @@ def add_datasheet_to_segment(
     segment_id: int,
     thumbnail_url: str,
     full_size_url: str,
+    content_hash: str,
 ) -> MaterialDatasheet:
-    """Add a site photo's URLS (thumbnail, full-size) to a segment in the database."""
+    """Add a site photo's URLS (thumbnail, full-size) to a segment in the database.
+
+    Args:
+        db: Database session
+        segment_id: The ID of the segment to which the datasheet belongs
+        thumbnail_url: The public URL of the thumbnail image
+        full_size_url: The public URL of the full-size image
+        content_hash: The MD5 hash of the file content for deduplication
+    Returns:
+        MaterialDatasheet: The created MaterialDatasheet object with the segment's datasheet URLs
+    """
     logger.info(f"add_datasheet_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})")
 
-    segment = db.get(Segment, segment_id)
-    if not segment:
-        raise ValueError("Segment not found")
+    segment = get_segment_by_id(db, segment_id)
 
     # -- Create the Photo DB entry
     material_datasheet = MaterialDatasheet(
-        segment_id=segment.id, full_size_url=full_size_url, thumbnail_url=thumbnail_url
+        segment_id=segment.id,
+        full_size_url=full_size_url,
+        thumbnail_url=thumbnail_url,
+        content_hash=content_hash,
     )
     db.add(material_datasheet)
     db.commit()
     db.refresh(material_datasheet)
 
     return material_datasheet
+
+
+async def delete_datasheet(db: Session, datasheet: MaterialDatasheet) -> None:
+    """Delete a datasheet from the database and storage.
+
+    Args:
+        db: Database session
+        datasheet: The MaterialDatasheet object to delete
+    """
+    logger.info(f"delete_datasheet({datasheet.id=})")
+
+    # -- Delete the Thumbnail file from storage
+    deleted = await delete_file_from_gcs(file_url=datasheet.thumbnail_url)
+    if not deleted:
+        raise FileDeleteFailedException(datasheet.thumbnail_url)
+
+    # -- Delete the Full-Size file from storage
+    deleted = await delete_file_from_gcs(file_url=datasheet.full_size_url)
+    if not deleted:
+        raise FileDeleteFailedException(datasheet.full_size_url)
+
+    # TODO: PDF file delete....
+
+    # -- Delete from database
+    db.delete(datasheet)
+    db.commit()

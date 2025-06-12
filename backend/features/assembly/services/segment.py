@@ -16,8 +16,9 @@ class SegmentNotFoundException(Exception):
     """Exception raised when a Segment is not found in the database."""
 
     def __init__(self, segment_id: int):
-        logger.error(f"Segment with ID {segment_id} not found.")
-        super().__init__(f"Segment with ID {segment_id} not found.")
+        self.message = f"Segment with ID {segment_id} not found."
+        logger.error(self.message)
+        super().__init__(self.message)
 
 
 class LastSegmentInLayerException(Exception):

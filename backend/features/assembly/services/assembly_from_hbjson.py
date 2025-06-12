@@ -180,7 +180,9 @@ def stage_create_segment_from_hb_material(
     return new_segment
 
 
-def stage_create_layer_from_hb_material(db: Session, hb_material: EnergyMaterial, layer_width_mm: float, order: int) -> Layer:
+def stage_create_layer_from_hb_material(
+    db: Session, hb_material: EnergyMaterial, layer_width_mm: float, order: int
+) -> Layer:
     """Create a new Assembly-Layer from a Honeybee EnergyMaterial.
 
     Note: Changes are staged but NOT committed. Caller must commit.
@@ -273,7 +275,9 @@ def create_assembly_from_hb_construction(
 
     for i, hb_mat in enumerate(energy_materials):
         try:
-            mat = stage_create_layer_from_hb_material(db=db, hb_material=hb_mat, layer_width_mm=assembly_width_mm, order=i)
+            mat = stage_create_layer_from_hb_material(
+                db=db, hb_material=hb_mat, layer_width_mm=assembly_width_mm, order=i
+            )
         except MaterialNotFoundException as e:
             # Collect missing materials
             logger.warning(f"{e.__class__.__name__}, {e.message}")
