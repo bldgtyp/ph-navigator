@@ -29,7 +29,7 @@
   - [x] Add 'delete' button to Datasheet Modal viewer
 - [x] add .pdf, .jpg, .png validation to upload
 - [ ] handle Upload PDFs?
-- [ ] resize .png for full-size (make smaller)
+- [x] resize .png for full-size (make smaller)
 - [ ] Add image carousel / scroll
 - [x] Add Comments / Notes
 - [x] Add download as HBJSON button

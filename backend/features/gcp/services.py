@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from fastapi import UploadFile
 from google.cloud import storage
 from PIL import Image
+from PIL.Image import Resampling
 from sqlalchemy.orm import Session
 
 from db_entities.assembly.material_datasheet import MaterialDatasheet
@@ -60,7 +61,7 @@ class FileExistsInDBException(Exception):
 # -- Google Cloud Storage Utilities
 
 
-def validate_image_file_type(file: UploadFile, valid_extensions: list[str]) -> bool:
+def validate_upload_file_type(file: UploadFile, valid_extensions: list[str]) -> bool:
     """Validate that the file is a supported image format (PNG or JPEG).
 
     Args:
@@ -267,10 +268,79 @@ async def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb
     return await loop.run_in_executor(None, check_blobs_exist)
 
 
+def resize_image_if_needed(
+    image_content: bytes,
+    content_type: str,
+    max_width: int = 1920,
+    max_height: int = 1080,
+    quality: int = 85
+) -> tuple[bytes, bool]:
+    """
+    Resize an image if it exceeds maximum dimensions.
+    
+    Args:
+        image_content: Original image content as bytes
+        content_type: Content type of the image (e.g., 'image/jpeg')
+        max_width: Maximum allowed width
+        max_height: Maximum allowed height
+        quality: JPEG quality (0-100) when saving resized images
+        
+    Returns:
+        tuple: (Resized or original image content as bytes, whether image was resized)
+    """
+    try:
+        # Open the image
+        image = Image.open(io.BytesIO(image_content))
+        
+        # Check current dimensions
+        width, height = image.size
+        
+        # Check if resizing is needed
+        if width <= max_width and height <= max_height:
+            return image_content, False
+            
+        # Calculate new dimensions maintaining aspect ratio
+        if width / height > max_width / max_height:
+            # Width is the limiting factor
+            new_width = max_width
+            new_height = int(height * (max_width / width))
+        else:
+            # Height is the limiting factor
+            new_height = max_height
+            new_width = int(width * (max_height / height))
+        
+        logger.info(f"Resizing image from {width}x{height} to {new_width}x{new_height}")
+        
+        image = image.resize((new_width, new_height), Resampling.LANCZOS)
+        
+        # Convert back to bytes
+        img_io = io.BytesIO()
+        
+        # Determine format from content_type or use original format
+        format_name = content_type.split('/')[-1].upper() if content_type else image.format
+        if format_name == "JPG":
+            format_name = "JPEG"
+        
+        # Save with appropriate quality
+        if format_name == "JPEG":
+            image.save(img_io, format=format_name, quality=quality)
+        else:
+            image.save(img_io, format=format_name)
+            
+        resized_content = img_io.getvalue()
+        logger.info(f"Image resized from {len(image_content)} bytes to {len(resized_content)} bytes")
+        
+        return resized_content, True
+        
+    except Exception as e:
+        logger.error(f"Failed to resize image: {e}")
+        return image_content, False
+
+
 async def upload_full_size_image(
     content: bytes, content_type: str, bucket_name: str, full_size_path: str, blob_status: dict
 ) -> str:
-    """Upload full-size image if needed."""
+    """Upload full-size image after resizing to reasonable dimensions if needed."""
     logger.info(f"upload_full_size_image({bucket_name=}, {full_size_path=})")
 
     if blob_status["full_exists"]:
@@ -278,15 +348,19 @@ async def upload_full_size_image(
 
     loop = asyncio.get_running_loop()
 
-    def do_upload():
+    def resize_and_upload():
+        # Resize image if needed
+        upload_content, was_resized = resize_image_if_needed(content, content_type)
+        
+        # Upload to GCS
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(full_size_path)
-        blob.upload_from_string(content, content_type=content_type)
+        blob.upload_from_string(upload_content, content_type=content_type)
         blob.make_public()
         return blob.public_url
 
-    return await loop.run_in_executor(None, do_upload)
+    return await loop.run_in_executor(None, resize_and_upload)
 
 
 async def upload_thumbnail_image(content: bytes, bucket_name: str, thumb_path: str, blob_status: dict) -> str:

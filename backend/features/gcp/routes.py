@@ -26,7 +26,7 @@ from features.gcp.services import (
     material_datasheet_file_exists,
     material_photo_file_exists,
     upload_file_to_gcs,
-    validate_image_file_type,
+    validate_upload_file_type,
 )
 
 router = APIRouter(
@@ -70,7 +70,7 @@ async def add_new_segment_site_photo_route(
 
     try:
         valid_extensions = [".jpg", ".jpeg", ".png"]
-        if not validate_image_file_type(file, valid_extensions):
+        if not validate_upload_file_type(file, valid_extensions):
             raise UnsupportedFileTypeException(file.filename, file.content_type, valid_extensions)
 
         thumbnail_url, full_size_url, content_hash = await upload_file_to_gcs(
@@ -173,7 +173,7 @@ async def add_new_segment_datasheet_route(
 
     try:
         valid_extensions = [".jpg", ".jpeg", ".png", ".pdf"]
-        if not validate_image_file_type(file, valid_extensions):
+        if not validate_upload_file_type(file, valid_extensions):
             raise UnsupportedFileTypeException(file.filename, file.content_type, valid_extensions)
 
         thumbnail_url, full_size_url, content_hash = await upload_file_to_gcs(
