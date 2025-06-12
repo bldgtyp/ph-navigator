@@ -19,7 +19,7 @@
 - [x] Upload handles steel-stud cavity insulation
 - [ ] Upload handles steel-stud continuous exterior insulation
 - [x] Consider limiter (slowAPI) for all endpoints?
-- [ ] Upload corresponding Flixo PDF (link)
+- [ ] Upload corresponding Flixo PDF
 - [x] Setup Database migration tooling
 
 ## Material List:

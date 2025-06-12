@@ -244,7 +244,10 @@ def material_datasheet_file_exists(db: Session, segment_id, content_hash) -> boo
 
 
 def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path: str) -> dict:
-    """Check if blobs already exist in Google Cloud Storage."""
+    """Check if blobs already exist in Google Cloud Storage.
+    
+    Note: do not run this function in parallel, it will cause timeout errors when run in deployment.
+    """
     logger.info(f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})")
 
     storage_client = storage.Client()
