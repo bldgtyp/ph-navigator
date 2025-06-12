@@ -1,7 +1,8 @@
 import { Box, Button, Modal } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { MaterialSitePhotoType } from "../../types/Material.SitePhoto";
+import { UserContext } from "../../../../../auth/contexts/UserContext";
 
 
 interface FullImageModalType {
@@ -12,6 +13,7 @@ interface FullImageModalType {
 
 
 const ImageFullViewModal = (props: FullImageModalType) => {
+    const userContext = useContext(UserContext);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = async () => {
@@ -68,7 +70,7 @@ const ImageFullViewModal = (props: FullImageModalType) => {
                             />
                         </Box>
 
-                        {(
+                        {userContext.user && (
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                                 <Button
                                     variant="contained"
