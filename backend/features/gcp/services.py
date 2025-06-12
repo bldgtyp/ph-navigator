@@ -392,23 +392,26 @@ async def upload_thumbnail_image(content: bytes, bucket_name: str, thumb_path: s
 
 
 async def upload_images_to_gcs(
-    content: bytes, content_type: str, bucket_name: str, full_size_path: str, thumb_path: str, #blob_status: dict
+    content: bytes, content_type: str, bucket_name: str, full_size_path: str, thumb_path: str
 ) -> tuple[str, str]:
-    """Upload images to GCS and return URLs."""
+    """Upload images to GCS and return URLs - sequentially instead of in parallel."""
     logger.info(f"upload_images_to_gcs({bucket_name=}, {full_size_path=}, {thumb_path=})")
 
-    # If both exist, return existing URLs
-    # if blob_status["full_exists"] and blob_status["thumb_exists"]:
-    #     logger.info(f"Files already exist, skipping upload")
-    #     return blob_status["thumb_url"], blob_status["full_url"]
-
-    # Run both operations (only if needed)
-    full_size_url_task = upload_full_size_image(content, content_type, bucket_name, full_size_path)#, blob_status)
-    thumbnail_url_task = upload_thumbnail_image(content, bucket_name, thumb_path)#, blob_status)
-
-    thumbnail_url, full_size_url = await asyncio.gather(thumbnail_url_task, full_size_url_task)
-
-    return thumbnail_url, full_size_url
+    try:
+        # Upload full image first
+        full_size_url = await upload_full_size_image(content, content_type, bucket_name, full_size_path)
+        logger.info(f"Full size image uploaded successfully: {full_size_url}")
+        
+        # Then upload thumbnail 
+        thumbnail_url = await upload_thumbnail_image(content, bucket_name, thumb_path)
+        logger.info(f"Thumbnail uploaded successfully: {thumbnail_url}")
+        
+        return thumbnail_url, full_size_url
+        
+    except Exception as e:
+        logger.error(f"Error during image upload: {e}")
+        # Re-raise with more context for better debugging
+        raise RuntimeError(f"Failed to upload images to GCS: {e}") from e
 
 
 async def upload_file_to_gcs(
