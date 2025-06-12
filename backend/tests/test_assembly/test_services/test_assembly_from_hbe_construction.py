@@ -8,11 +8,13 @@ from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass
 from sqlalchemy.orm import Session
 
 from db_entities.app import Project
+from features.app.services import ProjectNotFoundException
 from features.assembly.services.assembly import get_assembly_by_id
 from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
-    get_hb_constructions_from_hbjson,
+    get_multiple_hb_constructions_from_hbjson,
 )
+from features.assembly.services.material import MaterialNotFoundException
 
 
 def test_create_assembly_from_hb_construction(session: Session, create_test_project):
@@ -56,7 +58,7 @@ def test_create_assembly_from_hb_construction_with_missing_project(session: Sess
         ],
     )
 
-    with pytest.raises(ValueError, match="Project with id 4567 not found in database."):
+    with pytest.raises(ProjectNotFoundException, match="Project 4567 not found."):
         create_assembly_from_hb_construction(session, "4567", hbe_construction)
 
 
@@ -75,7 +77,7 @@ def test_create_assembly_from_hb_construction_with_non_existing_material(session
         ],
     )
 
-    with pytest.raises(ValueError, match="Material 'Invalid Material' not found in database."):
+    with pytest.raises(MaterialNotFoundException):
         create_assembly_from_hb_construction(session, "1234", hbe_construction)
 
 
@@ -166,7 +168,7 @@ def test_get_single_hb_construction_from_hbjson():
         ],
     )
 
-    hb_constructions = get_hb_constructions_from_hbjson(hbe_construction.to_dict())
+    hb_constructions = get_multiple_hb_constructions_from_hbjson(hbe_construction.to_dict())
 
     assert len(hb_constructions) == 1
     assert hb_constructions[0].identifier == "Test Construction"
@@ -206,7 +208,7 @@ def test_get_multiple_hb_constructions_from_hbjson():
     hbe_constructions_json = json.dumps(hbe_constructions)
 
     # --- Rebuild the hb_constructions from the JSON
-    rebuilt_hb_constructions = get_hb_constructions_from_hbjson(json.loads(hbe_constructions_json))
+    rebuilt_hb_constructions = get_multiple_hb_constructions_from_hbjson(json.loads(hbe_constructions_json))
 
     assert len(rebuilt_hb_constructions) == 2
     assert rebuilt_hb_constructions[0].identifier == "Test Construction"

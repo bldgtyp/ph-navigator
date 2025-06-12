@@ -19,7 +19,8 @@ def test_convert_one_simple_assembly_to_hbe_constructions(session: Session, crea
 
     assert len(hbe_construction.materials) == 1
     hbe_material = hbe_construction.materials[0]
-    assert hbe_material.identifier == assembly.layers[0].segments[0].material.name
+    assert assembly.layers[0].segments[0].material.name == "Test Material"
+    assert hbe_material.identifier == "Test Material [ 2.0 in]"
     assert hbe_material.conductivity == assembly.layers[0].segments[0].material.conductivity_w_mk
     assert hbe_material.thickness == assembly.layers[0].thickness_mm / 1000
 

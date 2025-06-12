@@ -89,7 +89,7 @@ def create_test_project(
             id="test_material",
             name="Test Material",
             category="Test Category",
-            argb_color="#FF0000",
+            argb_color="255,255,255,255",
             conductivity_w_mk=1.0,
             emissivity=0.9,
             density_kg_m3=999,

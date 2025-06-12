@@ -30,11 +30,18 @@ def get_assembly_by_id(db: Session, assembly_id: int) -> Assembly:
     return assembly
 
 
+def get_assembly_by_name(db: Session, project_id: int, assembly_name: str) -> Assembly | None:
+    """Get an assembly by its name and project ID."""
+    logger.info(f"get_assembly_by_name({assembly_name=}, {project_id=})")
+
+    return db.query(Assembly).filter_by(name=assembly_name, project_id=project_id).first()
+
+
 def get_all_project_assemblies(db: Session, bt_number: str) -> list[Assembly]:
-    """Get all assemblies for a specific project by its bt_number."""
+    """Get all assemblies for a specific project by its 'bt_number'."""
     logger.info(f"get_all_project_assemblies({bt_number=})")
 
-    return db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).all()
+    return db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).order_by(Assembly.name.asc()).all()
 
 
 def create_new_empty_assembly_on_project(

@@ -19,7 +19,7 @@ from features.assembly.services.assembly import (
 from features.assembly.services.assembly_from_hbjson import (
     MaterialNotFoundException,
     create_assembly_from_hb_construction,
-    get_hb_constructions_from_hbjson,
+    get_multiple_hb_constructions_from_hbjson,
 )
 from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
 
@@ -63,7 +63,7 @@ async def add_assemblies_from_hbjson_constructions_route(
 
     # -- Convert the JSON data to HBE-Constructions,
     try:
-        hb_constructions = get_hb_constructions_from_hbjson(data)
+        hb_constructions = get_multiple_hb_constructions_from_hbjson(data)
     except Exception as e:
         logger.error(f"Failed to convert JSON data to HB-Constructions: {e}")
         raise HTTPException(status_code=400, detail="Invalid HB-JSON format provided.")

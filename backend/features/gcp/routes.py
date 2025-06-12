@@ -71,7 +71,6 @@ def add_new_segment_site_photo_route(
 
 # TODO: Move to service
 @router.get("/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse)
-@limiter.limit("30/minute")
 def get_site_photo_urls_route(
     request: Request, segment_id: int, db: Session = Depends(get_db)
 ) -> SegmentSitePhotoUrlsResponse:
@@ -133,7 +132,6 @@ async def add_new_segment_datasheet_route(
 
 
 @router.get("/get-datasheet-urls/{segment_id}", response_model=SegmentDatasheetUrlResponse)
-@limiter.limit("30/minute")
 async def get_datasheet_thumbnail_urls_route(
     request: Request,
     segment_id: int,

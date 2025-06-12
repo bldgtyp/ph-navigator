@@ -89,7 +89,7 @@ def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float
             hbe_prop_ref.add_image_ref(convert_MaterialPhoto_to_hbe_ref(p))
 
         hbe_prop_ref.add_external_identifier("ph_nav", segment.material.id)
-
+        hbe_prop_ref.ref_status = segment.specification_status.value
         hbe_prop_ref.lock()
 
     return mat
