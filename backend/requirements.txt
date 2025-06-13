@@ -13,6 +13,7 @@ pillow
 psycopg2-binary
 pyairtable
 pyjwt
+PyMuPDF
 pytest
 pytest-cov
 pytest-asyncio

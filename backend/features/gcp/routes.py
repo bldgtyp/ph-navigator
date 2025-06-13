@@ -12,22 +12,25 @@ from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.assembly.schemas.material_photo import MaterialPhotoSchema
 from features.assembly.services.segment import SegmentNotFoundException
 from features.gcp.schemas import SegmentDatasheetUrlResponse, SegmentSitePhotoUrlsResponse
-from features.gcp.services import (
+from features.gcp.services.datasheet import (
     DatasheetNotFoundException,
-    SitePhotoNotFoundException,
     add_datasheet_to_segment,
-    add_site_photo_to_segment,
     delete_datasheet,
-    delete_site_photo,
     get_datasheet_by_id,
     get_segment_datasheets,
+)
+from features.gcp.services.site_photo import (
+    SitePhotoNotFoundException,
+    add_site_photo_to_segment,
+    delete_site_photo,
     get_segment_site_photos,
     get_site_photo_by_id,
-    material_datasheet_file_exists,
-    material_photo_file_exists,
-    upload_file_to_gcs,
-    validate_upload_file_type,
 )
+from features.gcp.services.datasheet import material_datasheet_file_exists
+from features.gcp.services.file_utils import valid_upload_file_type, get_file_content, valid_file_size
+from features.gcp.services.site_photo import material_site_photo_file_exists
+from features.gcp.services.gcs_utils import upload_file_to_gcs
+
 
 router = APIRouter(
     prefix="/gcp",
@@ -51,6 +54,33 @@ class UnsupportedFileTypeException(Exception):
         super().__init__(self.message)
 
 
+class SitePhotoFileAlreadyExistsException(Exception):
+    """Custom exception for site photo file already existing."""
+
+    def __init__(self, filename: str | None, content_type: str | None):
+        self.message = f"Site photo file {filename} with type {content_type} already exists."
+        logger.error(self.message)
+        super().__init__(self.message)
+
+
+class DatasheetFileAlreadyExistsException(Exception):
+    """Custom exception for datasheet file already existing."""
+
+    def __init__(self, filename: str | None, content_type: str | None):
+        self.message = f"Datasheet file {filename} with type {content_type} already exists."
+        logger.error(self.message)
+        super().__init__(self.message)
+
+
+class FileTooLargeException(Exception):
+    """Custom exception for file size exceeding the limit."""
+
+    def __init__(self, filename: str | None, content_type: str | None, max_size_mb: int):
+        self.message = f"File {filename} with type {content_type} exceeds the maximum size of {max_size_mb} MB."
+        logger.error(self.message)
+        super().__init__(self.message)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # -- Site Photos
 
@@ -67,27 +97,33 @@ async def add_new_segment_site_photo_route(
 ) -> MaterialPhotoSchema | None:
     """Upload a new site photo for a segment."""
     logger.info(f"gcp/add_new_segment_site_photo_route(bt_number={bt_number}, segment_id={segment_id})")
+    VALID_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
     try:
-        valid_extensions = [".jpg", ".jpeg", ".png"]
-        if not validate_upload_file_type(file, valid_extensions):
-            raise UnsupportedFileTypeException(file.filename, file.content_type, valid_extensions)
-
-        thumbnail_url, full_size_url, content_hash = await upload_file_to_gcs(
+        file_content = await get_file_content(file)
+        if material_site_photo_file_exists(db, segment_id, file_content.content_hash):
+            raise SitePhotoFileAlreadyExistsException(file_content.filename, file_content.content_type)
+        
+        if not valid_upload_file_type(file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type):
+            raise UnsupportedFileTypeException(file_content.filename, file_content.content_type, VALID_EXTENSIONS)
+        
+        if not valid_file_size(file_content.content, max_size_mb=5):
+            raise FileTooLargeException(file_content.filename, file_content.content_type, max_size_mb=5)
+        
+        thumbnail_url, full_size_url = await upload_file_to_gcs(
             db=db,
             bt_number=bt_number,
             segment_id=segment_id,
-            file=file,
+            file=file_content,
             bucket_name=settings.GCP_BUCKET_NAME,
             folder_name="site_photos",
-            file_exists_in_db=material_photo_file_exists,
         )
         new_material_photo = add_site_photo_to_segment(
             db=db,
             segment_id=segment_id,
             thumbnail_url=thumbnail_url,
             full_size_url=full_size_url,
-            content_hash=content_hash,
+            content_hash=file_content.content_hash,
         )
         return MaterialPhotoSchema(
             id=new_material_photo.id,
@@ -170,27 +206,33 @@ async def add_new_segment_datasheet_route(
 ) -> MaterialDatasheetSchema:
     """Upload a new datasheet file for a segment."""
     logger.info(f"gcp/add_new_segment_datasheet_route(bt_number={bt_number}, segment_id={segment_id})")
+    VALID_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"]
 
     try:
-        valid_extensions = [".jpg", ".jpeg", ".png", ".pdf"]
-        if not validate_upload_file_type(file, valid_extensions):
-            raise UnsupportedFileTypeException(file.filename, file.content_type, valid_extensions)
+        file_content = await get_file_content(file)
+        if material_datasheet_file_exists(db, segment_id, file_content.content_hash):
+            raise DatasheetFileAlreadyExistsException(file_content.filename, file_content.content_type)
+        
+        if not valid_upload_file_type(file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type):
+            raise UnsupportedFileTypeException(file_content.filename, file_content.content_type, VALID_EXTENSIONS)
+        
+        if not valid_file_size(file_content.content, max_size_mb=5):
+            raise FileTooLargeException(file_content.filename, file_content.content_type, max_size_mb=5)
 
-        thumbnail_url, full_size_url, content_hash = await upload_file_to_gcs(
+        thumbnail_url, full_size_url = await upload_file_to_gcs(
             db=db,
             bt_number=bt_number,
             segment_id=segment_id,
-            file=file,
+            file=file_content,
             bucket_name=settings.GCP_BUCKET_NAME,
             folder_name="datasheets",
-            file_exists_in_db=material_datasheet_file_exists,
         )
         new_material_datasheet = add_datasheet_to_segment(
             db=db,
             segment_id=segment_id,
             thumbnail_url=thumbnail_url,
             full_size_url=full_size_url,
-            content_hash=content_hash,
+            content_hash=file_content.content_hash,
         )
         return MaterialDatasheetSchema(
             id=new_material_datasheet.id,

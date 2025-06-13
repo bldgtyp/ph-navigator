@@ -4,68 +4,26 @@
 ## Data View:
 #### Project Browser
 - [ ] Better Landing page
-- [x] Add Config / Projects Button to Browser
-- [x] Add New Project
-- [x] Set Project AirTable Refs
-- [x] Figure out API-Key strategy
 - [ ] Delete Project
 - [ ] Cancel / Save buttons on Project Config form don't work
 
 #### (IO):
-- [-] Serialize HBJSON Constructions (download)
-  - [x] Grasshopper Component
-  - [x] UI Button 
-- [x] De-Serialize HBJSON Constructions (upload)
-- [x] Upload handles steel-stud cavity insulation
 - [ ] Upload handles steel-stud continuous exterior insulation
-- [x] Consider limiter (slowAPI) for all endpoints?
 - [ ] Upload corresponding Flixo PDF
-- [x] Setup Database migration tooling
 
 ## Material List:
-- [x] Materials DataGrid page gets data from Constructions (not AirTable)
-- [x] Handle and Store Material Submittals
-  - [x] Add 'delete' button to Material Modal viewer
-  - [x] Add 'delete' button to Datasheet Modal viewer
-- [x] add .pdf, .jpg, .png validation to upload
-- [ ] handle Upload PDFs?
-- [x] resize .png for full-size (make smaller)
-- [ ] Add image carousel / scroll
-- [x] Add Comments / Notes
-- [x] Add download as HBJSON button
-  - [ ] Support Steel Stud Assemblies
-- [ ] Show only one item for each Material in the Layer (when multiple segments with same material)
-- [x] Add Loading state to file uploads
+- [ ] Add 'download' button to viewer
+- [ ] PDF full-view looks a little odd... clean up a little.
 
 ## Assemblies (UI):
-- [x] BUG: Delete Layer / Segment doesn't update UI until Refresh
-- [x] Material Color
-- [x] Filtered by Project
-- [x] Add New
-- [x] Select Assembly from Dropdown list
-- [x] Delete
-- [x] Fix Material-Refresh to clear local-storage
-- [x] Set Name of Assembly
-- [x] Alphabetize Assembly Select
-- [x] Turn off editing for non-login users
-- [x] API endpoint for getting Construction into Rhino
-- [x] API-Key / Token for Rhino access
-- [x] Clean Material and Assembly Names for Honeybee-Energy Construction conversion
+- [ ] HBJSON Download supports Steel Stud Assemblies
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths?
-- [x] Fix: Add-segment button doesn't go away after Modal
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
-- [x] Display Material Attributes
-- [x] Add Loading State to Material Refresh Button
 - [ ] Display Material Legend
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
-- [x] Steel-Stud-Cavity checkbox
-- [x] Steel-Stud-Cavity (automatic-thickness detection)
-
-#### Honeybee-PH Tools:
-- [ ] When getting materials from new DB, Add thickness to material name (avoid HB Model conflicts)
 
 
 ## 3D Model:

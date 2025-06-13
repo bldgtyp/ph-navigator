@@ -3,6 +3,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useState } from "react";
 import { MaterialSitePhotoType } from "../../types/Material.SitePhoto";
 import { UserContext } from "../../../../../auth/contexts/UserContext";
+import PDFViewer from "./PDFViewer";
 
 
 interface FullImageModalType {
@@ -15,6 +16,7 @@ interface FullImageModalType {
 const ImageFullViewModal = (props: FullImageModalType) => {
     const userContext = useContext(UserContext);
     const [isDeleting, setIsDeleting] = useState(false);
+    const isPDF = props.selectedItem?.full_size_url?.toLowerCase().endsWith('.pdf');
 
     const handleDelete = async () => {
         if (!props.selectedItem || !props.onDeleteSitePhoto) return;
@@ -58,16 +60,20 @@ const ImageFullViewModal = (props: FullImageModalType) => {
                 {props.selectedItem && (
                     <>
                         <Box sx={{ position: 'relative' }}>
-                            <img
-                                src={props.selectedItem.full_size_url}
-                                alt="Enlarged material"
-                                style={{
-                                    maxWidth: "80vw",
-                                    maxHeight: "70vh",
-                                    borderRadius: 8,
-                                    display: 'block'
-                                }}
-                            />
+                            {isPDF ? (
+                                <PDFViewer url={props.selectedItem.full_size_url} />
+                            ) : (
+                                <img
+                                    src={props.selectedItem.full_size_url}
+                                    alt="Enlarged material"
+                                    style={{
+                                        maxWidth: "80vw",
+                                        maxHeight: "70vh",
+                                        borderRadius: 8,
+                                        display: 'block'
+                                    }}
+                                />
+                            )}
                         </Box>
 
                         {userContext.user && (
