@@ -179,7 +179,9 @@ def flip_assembly_layers(db: Session, assembly: Assembly) -> Assembly:
     total_layers = len(assembly.layers)
     for layer in assembly.layers:
         # Calculate new reversed order
+        logger.info(f"Flipping layer {layer.id} from order {layer.order} to {total_layers - layer.order - 1}")
         layer.order = total_layers - layer.order - 1
+        logger.info(f"Layer order updated to: {layer.order}")
     
     # Force flush to make sure order changes are in the database
     db.flush()
@@ -193,6 +195,7 @@ def flip_assembly_layers(db: Session, assembly: Assembly) -> Assembly:
     # Refresh DB objects
     db.refresh(assembly)
     for layer in assembly.layers:
+        logger.info(f"Refreshing layer {layer.id} with new order {layer.order}")
         db.refresh(layer)
 
     return assembly

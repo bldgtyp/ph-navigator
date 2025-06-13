@@ -24,8 +24,6 @@
 - [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
-- [ ] Add 'exterior' / 'interior' labels to graphic
-- [ ] Allow floors upside down (somehow?)
 
 
 ## 3D Model:
