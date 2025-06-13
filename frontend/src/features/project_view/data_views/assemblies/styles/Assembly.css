@@ -4,3 +4,12 @@
     border-right: 1px solid var(--text-highlight-color);
     background-color: var(--highlight-light-color)
 }
+
+.assembly-orientation-text {
+    display: flex;
+    flex-direction: row;
+    font-size: 0.7em;
+    padding: 4px;
+    justify-content: center;
+    color: var(--text-secondary-color);
+}

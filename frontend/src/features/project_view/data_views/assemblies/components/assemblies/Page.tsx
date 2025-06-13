@@ -31,6 +31,7 @@ const AssembliesPage: React.FC = () => {
   const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
 
   const fetchAssemblies = async () => {
+    console.log("fetchAssemblies", projectId);
     try {
       const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
       setAssemblies(response ?? []);
@@ -62,12 +63,14 @@ const AssembliesPage: React.FC = () => {
   }, [assemblies, selectedAssemblyId]);
 
   const handleAssemblyChange = async (event: SelectChangeEvent<number>) => {
+    console.log("handleAssemblyChange", event.target.value);
     const newSelectedAssemblyId = event.target.value as number;
     setSelectedAssemblyId(newSelectedAssemblyId);
     await fetchAssemblies();
   };
 
   const handleAddAssembly = async () => {
+    console.log("handleAddAssembly");
     try {
       const response = await postWithAlert<AssemblyType>(
         `assembly/create-new-assembly-on-project/${projectId}`,
@@ -85,6 +88,7 @@ const AssembliesPage: React.FC = () => {
   };
 
   const handleDeleteAssembly = async () => {
+    console.log("handleDeleteAssembly", selectedAssemblyId);
     if (!selectedAssemblyId) {
       console.error("No assembly selected to delete.");
       return;
@@ -113,6 +117,7 @@ const AssembliesPage: React.FC = () => {
   };
 
   const handleNameChange = async (assemblyId: number, newName: string) => {
+    console.log("handleNameChange", assemblyId, newName);
     try {
       await patchWithAlert(
         `assembly/update-assembly-name/${assemblyId}`,
@@ -140,6 +145,7 @@ const AssembliesPage: React.FC = () => {
   };
 
   const handleRefreshMaterials = async () => {
+    console.log("handleRefreshMaterials");
     setIsRefreshing(true);
     setRefreshMessage(null);
     try {
@@ -156,6 +162,7 @@ const AssembliesPage: React.FC = () => {
   };
 
   const handleUploadConstructions = async () => {
+    console.log("handleUploadConstructions");
     if (fileInputRef.current) {
       fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
     }
@@ -264,6 +271,60 @@ const AssembliesPage: React.FC = () => {
     }
   };
 
+  const handleFlipOrientation = async (assemblyId: number) => {
+    console.log("handleFlipOrientation", assemblyId);
+    try {
+      const updatedAssembly = await patchWithAlert<AssemblyType>(`assembly/flip-assembly-orientation/${assemblyId}`, null, {});
+
+      if (!updatedAssembly) {
+        console.error("Failed to flip assembly orientation: No data returned");
+        return;
+      }
+
+      // Update the assemblies state
+      const updatedAssemblies = assemblies.map((assembly) =>
+        assembly.id === assemblyId ? { ...updatedAssembly } : assembly
+      );
+      setAssemblies(updatedAssemblies);
+
+      // Ensure the selected assembly is updated
+      handleAssemblyChange({
+        target: {
+          value: assemblyId,
+        },
+      } as SelectChangeEvent<number>);
+    } catch (error) {
+      console.error("Failed to update assembly name:", error);
+    }
+  };
+
+  const handleFlipLayers = async (assemblyId: number) => {
+    console.log("handleFlipLayers", assemblyId);
+    try {
+      const updatedAssembly = await patchWithAlert<AssemblyType>(`assembly/flip-assembly-layers/${assemblyId}`, null, {});
+
+      if (!updatedAssembly) {
+        console.error("Failed to flip assembly layers: No data returned");
+        return;
+      }
+
+      // Update the assemblies state
+      const updatedAssemblies = assemblies.map((assembly) =>
+        assembly.id === assemblyId ? { ...updatedAssembly } : assembly
+      );
+      setAssemblies(updatedAssemblies);
+
+      // Ensure the selected assembly is updated
+      handleAssemblyChange({
+        target: {
+          value: assemblyId,
+        },
+      } as SelectChangeEvent<number>);
+    } catch (error) {
+      console.error("Failed to update assembly layers:", error);
+    }
+  };
+
   return (
     <>
       <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
@@ -285,6 +346,8 @@ const AssembliesPage: React.FC = () => {
           selectedAssemblyId={selectedAssemblyId}
           handleAssemblyChange={handleAssemblyChange}
           handleNameChange={handleNameChange}
+          handleFlipOrientation={handleFlipOrientation}
+          handleFlipLayers={handleFlipLayers} // Assuming flip layers is the same as flip orientation
         />
         {isLoadingAssemblies && <p>Loading...</p>}
         {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}

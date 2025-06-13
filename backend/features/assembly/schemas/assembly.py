@@ -13,6 +13,7 @@ class AssemblySchemaBase(BaseModel):
 
     name: str
     layers: list[LayerSchema] = []
+    orientation: str
 
     class Config:
         orm_mode = True

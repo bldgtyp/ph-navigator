@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -15,6 +15,9 @@ from features.assembly.services.assembly import (
     delete_assembly,
     get_all_project_assemblies,
     update_assembly_name,
+    get_assembly_by_id,
+    flip_assembly_orientation,
+    flip_assembly_layers,
 )
 from features.assembly.services.assembly_from_hbjson import (
     MaterialNotFoundException,
@@ -34,7 +37,12 @@ logger = logging.getLogger(__name__)
 @router.post(
     "/create-new-assembly-on-project/{bt_number}", response_model=AssemblySchema, status_code=status.HTTP_201_CREATED
 )
-def create_new_assembly_on_project_route(bt_number: str, db: Session = Depends(get_db)) -> AssemblySchema:
+@limiter.limit("10/minute")
+def create_new_assembly_on_project_route(
+    request: Request,
+    bt_number: str,
+    db: Session = Depends(get_db)
+) -> AssemblySchema:
     """Add a new Assembly to a Project."""
     logger.info(f"assembly/create_new_assembly_on_project_route({bt_number=})")
 
@@ -47,7 +55,9 @@ def create_new_assembly_on_project_route(bt_number: str, db: Session = Depends(g
 
 
 @router.post("/add-assemblies-from-hbjson-constructions/{bt_number}", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def add_assemblies_from_hbjson_constructions_route(
+    request: Request,
     bt_number: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -86,7 +96,12 @@ async def add_assemblies_from_hbjson_constructions_route(
 
 
 @router.get("/get-assemblies/{bt_number}", response_model=list[AssemblySchema])
-def get_project_assemblies_route(bt_number: str, db: Session = Depends(get_db)) -> list[AssemblySchema]:
+@limiter.limit("30/minute")
+def get_project_assemblies_route(
+    request: Request,
+    bt_number: str,
+    db: Session = Depends(get_db)
+) -> list[AssemblySchema]:
     """Get all assemblies for a specific project from the database."""
     logger.info(f"assembly/get_project_assemblies_route({bt_number=})")
 
@@ -99,14 +114,18 @@ def get_project_assemblies_route(bt_number: str, db: Session = Depends(get_db)) 
 
 
 @router.patch("/update-assembly-name/{assembly_id}", response_model=AssemblySchema)
+@limiter.limit("10/minute")
 def update_assembly_name_route(
-    request: UpdateAssemblyNameRequest, assembly_id: int, db: Session = Depends(get_db)
+    request: Request,
+    update_request: UpdateAssemblyNameRequest,
+    assembly_id: int,
+    db: Session = Depends(get_db)
 ) -> AssemblySchema:
     """Update the name of an Assembly."""
-    logger.info(f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={request.new_name})")
+    logger.info(f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={update_request.new_name})")
 
     try:
-        assembly = update_assembly_name(db, assembly_id, request.new_name)
+        assembly = update_assembly_name(db, assembly_id, update_request.new_name)
         return AssemblySchema.from_orm(assembly)
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
@@ -127,7 +146,9 @@ def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> No
 
 
 @router.get("/get-assemblies-as-hbjson/{bt_number}")
+@limiter.limit("10/minute")
 def get_project_assemblies_as_hbjson_object_route(
+    request: Request,
     bt_number: str,
     offset: int = Query(0, description="The offset for the test function"),
     db: Session = Depends(get_db),
@@ -152,3 +173,37 @@ def get_project_assemblies_as_hbjson_object_route(
         },
         status_code=200,
     )
+
+
+@router.patch("/flip-assembly-orientation/{assembly_id}", response_model=AssemblySchema)
+@limiter.limit("20/minute")
+def flip_assembly_orientation_route(
+    request: Request,
+    assembly_id: int,
+    db: Session = Depends(get_db)
+) -> AssemblySchema:
+    """Flip the orientation of the Assembly."""
+    logger.info(f"assembly/flip_assembly_orientation_route({assembly_id=})")
+    
+    try:
+        assembly = get_assembly_by_id(db, assembly_id)
+        flipped_assembly = flip_assembly_orientation(db, assembly)
+        return AssemblySchema.from_orm(flipped_assembly)
+    except Exception as e:
+        logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to flip assembly orientation")
+
+
+@router.patch("/flip-assembly-layers/{assembly_id}", response_model=AssemblySchema)
+def flip_assembly_layers_route(assembly_id: int, db: Session = Depends(get_db)):
+    """Flip (reverse) the Layers of the Assembly."""
+    logger.info(f"assembly/flip_assembly_layers_route({assembly_id=})")
+    
+    try:
+        assembly = get_assembly_by_id(db, assembly_id)
+        flipped_assembly = flip_assembly_layers(db, assembly)
+        return AssemblySchema.from_orm(flipped_assembly)
+    except Exception as e:
+        logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to flip assembly layers")
+

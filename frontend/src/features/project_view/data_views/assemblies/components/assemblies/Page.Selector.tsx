@@ -11,6 +11,8 @@ interface AssemblySelectorProps {
     selectedAssemblyId: number | null;
     handleAssemblyChange: (event: SelectChangeEvent<number>) => void;
     handleNameChange: (assemblyId: number, newName: string) => void;
+    handleFlipOrientation: (assemblyId: number) => void;
+    handleFlipLayers: (assemblyId: number) => void;
 }
 
 const ChangeNameButton: React.FC<{ openModal: () => void }> = ({ openModal }) => {
@@ -27,12 +29,41 @@ const ChangeNameButton: React.FC<{ openModal: () => void }> = ({ openModal }) =>
     )
 }
 
+const FlipOrientationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+    return (
+        <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
+            onClick={onClick}
+        >
+            Flip Orientation
+        </Button>
+    )
+}
+
+const FlipLayersButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+    return (
+        <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
+            onClick={onClick}
+        >
+            Flip Layers
+        </Button>
+    )
+}
 
 export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
     assemblies,
     selectedAssemblyId,
     handleAssemblyChange,
-    handleNameChange
+    handleNameChange,
+    handleFlipOrientation,
+    handleFlipLayers,
 }) => {
     const userContext = useContext(UserContext);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,6 +76,18 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
             handleNameChange(selectedAssemblyId, newName);
         }
     };
+
+    const handleSubmitFlipOrientation = () => {
+        if (selectedAssemblyId) {
+            handleFlipOrientation(selectedAssemblyId);
+        }
+    }
+
+    const handleSubmitFlipLayers = () => {
+        if (selectedAssemblyId) {
+            handleFlipLayers(selectedAssemblyId);
+        }
+    }
 
     // Create a sorted copy of the assemblies array
     const sortedAssemblies = [...assemblies].sort((a, b) => a.name.localeCompare(b.name));
@@ -75,6 +118,8 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
                 onClose={closeModal}
                 onSubmit={handleSubmitNameChange}
             />
+            {userContext.user ? (<FlipOrientationButton onClick={handleSubmitFlipOrientation} />) : null}
+            {userContext.user ? (<FlipLayersButton onClick={handleSubmitFlipLayers} />) : null}
         </Box>
     );
 }
