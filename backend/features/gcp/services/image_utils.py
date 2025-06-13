@@ -5,12 +5,8 @@ import logging
 
 from PIL import Image
 from PIL.Image import Resampling
-import pymupdf
-from pymupdf.utils import get_pixmap
-
 
 logger = logging.getLogger(__name__)
-
 
 class PDFThumbnailGenerationException(Exception):
     """Custom exception for PDF thumbnail generation failures."""
@@ -41,6 +37,8 @@ def resize_image(
     Returns:
         bytes: Resized image content as bytes, or original content if no resizing was needed
     """
+    logger.info(f"resize_image({len(image_bytes)=}, {content_type=}, {max_width=}, {max_height=}, {quality=})")
+
     try:
         # Open the image
         image = Image.open(io.BytesIO(image_bytes))
@@ -94,6 +92,15 @@ def generate_pdf_thumbnail(pdf_bytes: bytes) -> bytes:
     """Generate a thumbnail image from a PDF file."""
     logger.info(f"generate_pdf_thumbnail({len(pdf_bytes)=})")
     
+    # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # -- Note: In order to avoid seg-fault during test-discovery (pytest), we need to
+    # -- import pymupdf here, not at the top of the file.
+    import pymupdf
+    from pymupdf.utils import get_pixmap
+    # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+
     try:
         # Load the PDF from bytes
         pdf_document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
