@@ -77,17 +77,19 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
     };
 
     return (
-        <Box className="assembly-layers" sx={{ margin: 4 }}>
+        <Box className="assembly-container" sx={{ margin: 4 }}>
             <Box className="assembly-orientation-text">{assembly.orientation === "first_layer_outside" && "exterior" || "interior"}</Box>
+            <Box className="assembly-layers">
 
-            {layers.map((layer: LayerType) => {
-                return <Layer
-                    key={layer.id}
-                    layer={layer}
-                    onAddLayer={onAddLayerBelow}
-                    onDeleteLayer={onDeleteLayer}
-                />;
-            })}
+                {layers.map((layer: LayerType) => {
+                    return <Layer
+                        key={layer.id}
+                        layer={layer}
+                        onAddLayer={onAddLayerBelow}
+                        onDeleteLayer={onDeleteLayer}
+                    />;
+                })}
+            </Box>
 
             <Box className="assembly-orientation-text">{assembly.orientation === "last_layer_outside" && "exterior" || "interior"}</Box>
         </Box>

@@ -1,6 +1,5 @@
 # PH-Dashboard
 
-
 ## Data View:
 #### Project Browser
 - [ ] Better Landing page
@@ -12,7 +11,7 @@
 - [ ] Upload corresponding Flixo PDF
 
 ## Material List:
-- [ ] Add 'download' button to viewer
+- [ ] Add 'download' button to pdf/png file viewer
 - [ ] PDF full-view looks a little odd... clean up a little.
 
 ## Assemblies (UI):
