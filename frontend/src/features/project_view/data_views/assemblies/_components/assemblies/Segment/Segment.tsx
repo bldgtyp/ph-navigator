@@ -48,7 +48,7 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
                 widthMM={hooks.newSegmentWidthMM}
                 materialId={hooks.newMaterialId}
                 segmentId={segment.id}
-                handleWidthChange={(e) => hooks.setNewSegmentWidthMM(Number(e.target.value))}
+                onSegmentWidthChange={(e) => hooks.handleSegmentWidthChange(Number(e.target.value))}
                 handleDeleteSegment={(segmentId: number) => hooks.handleDeleteSegment(segmentId, onDeleteSegment)}
                 handleMaterialChange={(materialId: string, materialColor: string) => hooks.handleMaterialChange(materialId, materialColor)}
                 handleSubmit={() => hooks.handleSubmit(segment)}

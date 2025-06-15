@@ -4,15 +4,13 @@ import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Divider, ButtonGroup } from "@mui/material";
 import { OkCancelButtonsProps, HeightInputProps, DeleteButtonProps, LayerHeightModalType } from "./Modal.LayerHeight.Types";
-import { useUnitSystem } from "../../../../../_contexts/UnitSystemContext";
 import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 
 const HeightInput: React.FC<HeightInputProps> = (props) => {
     const userContext = useContext(UserContext);
-    const { valueInCurrentUnitSystem } = useUnitConversion()
+    const { valueInCurrentUnitSystem, unitSystem } = useUnitConversion()
     const inputRef = useRef<HTMLInputElement>(null);
-    const { unitSystem } = useUnitSystem();
 
     useEffect(() => {
         if (inputRef.current) {
@@ -23,7 +21,10 @@ const HeightInput: React.FC<HeightInputProps> = (props) => {
     return (
         <>
             <TextField
-                type="Number"
+                type="number"
+                slotProps={{
+                    htmlInput: { step: "any", }
+                }}
                 label={`Layer Height [${unitSystem === "SI" ? "mm" : "inch"}]`}
                 defaultValue={Number(valueInCurrentUnitSystem(props.layerThicknessUserInput, "mm", "in")).toFixed(unitSystem === "SI" ? 1 : 3)}
                 onChange={props.handleLayerThicknessUserInputChange}

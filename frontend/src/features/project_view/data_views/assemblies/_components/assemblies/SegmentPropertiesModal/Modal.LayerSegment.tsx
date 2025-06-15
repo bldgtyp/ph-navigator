@@ -2,14 +2,16 @@ import { useEffect, useRef, useContext } from "react";
 
 import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 import { useMaterials } from '../../../_contexts/MaterialsContext';
+import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 import { List, ListItemText, Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, FormControl, Typography, FormControlLabel, Checkbox } from "@mui/material";
 import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps, MaterialDataDisplayProps } from "./Modal.LayerSegment.Types";
 
 
 const WidthInput: React.FC<WidthInputProps> = (props) => {
-    const inputRef = useRef<HTMLInputElement>(null);
+    const { valueInCurrentUnitSystem, unitSystem } = useUnitConversion()
     const userContext = useContext(UserContext);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (inputRef.current) {
@@ -23,9 +25,9 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
             slotProps={{
                 htmlInput: { step: "any", }
             }}
-            label="Segment Width"
-            value={props.widthMM}
-            onChange={props.handleWidthChange}
+            label={`Segment Width [${unitSystem === "SI" ? "mm" : "inch"}]`}
+            defaultValue={Number(valueInCurrentUnitSystem(props.widthMM, "mm", "in")).toFixed(unitSystem === "SI" ? 1 : 3)}
+            onChange={props.onSegmentWidthChange}
             fullWidth
             margin="dense"
             autoFocus
@@ -164,7 +166,7 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                         handleMaterialChange={props.handleMaterialChange}
                     />
                     <MaterialDataDisplay selectedMaterial={selectedMaterial} />
-                    <WidthInput widthMM={props.widthMM} handleWidthChange={props.handleWidthChange} />
+                    <WidthInput widthMM={props.widthMM} onSegmentWidthChange={props.onSegmentWidthChange} />
 
                     <h4>Segment Attributes:</h4>
                     {/* Continuous Insulation Checkbox */}

@@ -2,13 +2,13 @@ import { useContext } from "react";
 import { Box, Tooltip } from "@mui/material";
 
 import { UserContext } from "../../../../../../auth/_contexts/UserContext";
+import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 import Segment from "../Segment/Segment";
 import ModalLayerThickness from "../LayerHeightModal/Modal.LayerHeight";
 import { LayerType } from '../../../types/Layer';
 
 import { useLayerHooks } from "./Layer.Hooks";
-import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 interface LayerProps {
     layer: LayerType;

@@ -2,8 +2,11 @@ import { useState } from "react";
 import { SegmentType } from "../../../types/Segment";
 import { convertArgbToRgba } from '../../../types/Material';
 import { patchWithAlert } from "../../../../../../../api/patchWithAlert";
+import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 export const useLayerSegmentHooks = (segment: SegmentType) => {
+    const { valueInSIUnits } = useUnitConversion();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSegmentHovered, setIsSegmentHovered] = useState(false);
 
@@ -129,13 +132,17 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         setNewMaterialColor(materialColor);
     };
 
+    const handleSegmentWidthChange = (newWidth: number) => {
+        setNewSegmentWidthMM(valueInSIUnits(newWidth, "mm", "in"))
+    }
+
     return {
         "isModalOpen": isModalOpen,
         "isSegmentHovered": isSegmentHovered,
         "newMaterialId": newMaterialId,
         "currentSegmentWidthMM": currentSegmentWidthMM,
         "newSegmentWidthMM": newSegmentWidthMM,
-        "setNewSegmentWidthMM": setNewSegmentWidthMM,
+        "handleSegmentWidthChange": handleSegmentWidthChange,
         "handleMouseEnter": handleMouseEnter,
         "handleMouseLeave": handleMouseLeave,
         "handleMouseClick": handleMouseClick,

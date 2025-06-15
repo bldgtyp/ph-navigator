@@ -21,7 +21,9 @@ export const useLayerHooks = (layer: LayerType) => {
     const handleMouseClick = () => setIsModalOpen(true)
     const handleModalClose = () => { setLayerThicknessUserInputMM(currentLayerThicknessMM); setIsModalOpen(false); }
 
-    const handleLayerThicknessChange = (e: React.ChangeEvent<HTMLInputElement>) => { setLayerThicknessUserInputMM(valueInSIUnits(Number(e.target.value), "mm", "in")) }
+    const handleLayerThicknessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setLayerThicknessUserInputMM(valueInSIUnits(Number(e.target.value), "mm", "in"))
+    }
 
     const handleAddSegmentToRight = async (
         segment: SegmentType,

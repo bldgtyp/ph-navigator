@@ -5,7 +5,7 @@ export interface LayerSegmentWidthModalProps {
     widthMM: number; // Current width of the segment
     materialId: string; // Current material ID for the segment
     segmentId: number; // ID of the segment being edited
-    handleWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSegmentWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleDeleteSegment: (segmentId: number) => void;
     handleMaterialChange: (materialId: string, materialColor: string) => void;
     handleSubmit: () => void;
@@ -32,7 +32,7 @@ export interface OkCancelButtonsProps {
 
 export interface WidthInputProps {
     widthMM: number;
-    handleWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSegmentWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export interface MaterialInputProps {
