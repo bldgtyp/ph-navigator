@@ -55,9 +55,15 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
             <ModalLayerHeight
                 isModalOpen={hooks.isModalOpen}
                 handleModalClose={hooks.handleModalClose}
-                layerHeightMM={hooks.newLayerThicknessMM}
+                layerHeightMM={hooks.layerThicknessInput}
                 handleHeightChange={(e) => handleLayerThicknessChange(e, hooks.setNewLayerThicknessMM)}
-                handleSubmit={() => handleSubmit(hooks.newLayerThicknessMM, hooks.currentLayerThicknessMM, layer, hooks.setCurrentLayerThicknessMM, hooks.setIsModalOpen)}
+                handleSubmit={() => handleSubmit(
+                    hooks.layerThicknessInput,
+                    hooks.currentLayerThicknessMM,
+                    layer,
+                    hooks.setCurrentLayerThicknessMM,
+                    hooks.setIsModalOpen
+                )}
                 handleDeleteLayer={() => onDeleteLayer(layer.id)} // Pass the layer ID to the handler
             />
 

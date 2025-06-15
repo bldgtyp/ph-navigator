@@ -2,7 +2,9 @@
 
 from __future__ import annotations  # Enables forward references
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, validator
+from ph_units.parser import parse_input
+from ph_units.converter import convert
 
 from features.assembly.schemas.segment import SegmentSchema
 
@@ -38,9 +40,15 @@ class CreateLayerRequest(BaseModel):
 class UpdateLayerHeightRequest(BaseModel):
     thickness_mm: float
 
-    @root_validator(pre=True)
-    def check_height(cls, values):
-        thickness_mm = values.get("thickness_mm")
+    @validator("thickness_mm", pre=True, always=True)
+    def validate_thickness(cls, v: str | float) -> float:
+        input_value, input_unit = parse_input(v)
+        thickness_mm = convert(input_value, input_unit or "MM", "MM")
+        
+        if not thickness_mm:
+            raise ValueError(f"Error getting Layer Thickness from input: {thickness_mm}.")
+        
         if thickness_mm <= 0:
             raise ValueError("Layer thickness must be greater than 0.")
-        return values
+
+        return thickness_mm

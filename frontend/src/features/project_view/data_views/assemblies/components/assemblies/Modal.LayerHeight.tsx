@@ -12,18 +12,15 @@ const HeightInput: React.FC<HeightInputProps> = (props) => {
 
     useEffect(() => {
         if (inputRef.current) {
-            inputRef.current.select(); // Automatically select all text
+            inputRef.current.select();
         }
     }, []);
 
     return (
         <TextField
-            type="number"
-            slotProps={{
-                htmlInput: { step: "any", }
-            }}
+            type="text"
             label="Layer Height"
-            value={props.layerHeightMM}
+            value={props.layerHeightInput}
             onChange={props.handleHeightChange}
             fullWidth
             margin="dense"
@@ -82,7 +79,7 @@ const ModalLayerHeight: React.FC<LayerHeightModalType> = (props) => {
             <form onSubmit={(e) => { e.preventDefault(); props.handleSubmit(); }} >
                 <DialogContent>
                     <HeightInput
-                        layerHeightMM={props.layerHeightMM}
+                        layerHeightInput={props.layerHeightMM}
                         handleHeightChange={props.handleHeightChange}
                     />
                 </DialogContent>

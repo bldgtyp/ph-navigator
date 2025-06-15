@@ -82,22 +82,22 @@ export const handleDeleteSegment = async (
 };
 
 export const handleSubmit = async (
-    newLayerThicknessMM: number,
+    layerThicknessInput: string,
     currentLayerThicknessMM: number,
     layer: LayerType,
     setCurrentLayerThicknessMM: React.Dispatch<React.SetStateAction<number>>,
     setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
     try {
-        if (newLayerThicknessMM !== currentLayerThicknessMM) {
-            const response = await patchWithAlert(`assembly/update-layer-thickness/${layer.id}`, null, {
-                thickness_mm: newLayerThicknessMM,
+        if (layerThicknessInput !== String(currentLayerThicknessMM)) {
+            const response = await patchWithAlert<LayerType>(`assembly/update-layer-thickness/${layer.id}`, null, {
+                thickness_mm: layerThicknessInput,
             });
 
             if (response) {
-                setCurrentLayerThicknessMM(newLayerThicknessMM);
+                setCurrentLayerThicknessMM(response.thickness_mm);
             } else {
-                console.error("Failed to update layer-thickness.");
+                console.error(`Failed to update layer-thickness to: '${layerThicknessInput}'`);
             }
         }
 
@@ -110,5 +110,5 @@ export const handleSubmit = async (
 
 export const handleLayerThicknessChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setNewLayerThicknessMM: React.Dispatch<React.SetStateAction<number>>
-) => setNewLayerThicknessMM(Number(e.target.value));
+    setNewLayerThicknessMM: React.Dispatch<React.SetStateAction<string>>
+) => setNewLayerThicknessMM(String(e.target.value));
