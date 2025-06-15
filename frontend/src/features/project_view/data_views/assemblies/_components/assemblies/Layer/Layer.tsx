@@ -1,15 +1,14 @@
 import { useContext } from "react";
-import { useParams } from "react-router-dom";
 import { Box, Tooltip } from "@mui/material";
 
 import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 
 import Segment from "../Segment/Segment";
-import ModalLayerHeight from "../LayerHeightModal/Modal.LayerHeight";
+import ModalLayerThickness from "../LayerHeightModal/Modal.LayerHeight";
 import { LayerType } from '../../../types/Layer';
 
-import { handleAddSegmentToRight, handleDeleteSegment, handleLayerThicknessChange, handleSubmit } from "./Layer.Handlers";
 import { useLayerHooks } from "./Layer.Hooks";
+import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 interface LayerProps {
     layer: LayerType;
@@ -32,8 +31,8 @@ const AddLayerButton: React.FC<{ onClick: () => void }> = (props) => {
 }
 
 const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
+    const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion()
     const userContext = useContext(UserContext);
-    const { projectId } = useParams();
     const hooks = useLayerHooks(layer);
 
     return (
@@ -46,25 +45,19 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                 onMouseEnter={hooks.handleMouseEnter}
                 onMouseLeave={hooks.handleMouseLeave}
             >
-                {hooks.currentLayerThicknessMM}
+                {valueInCurrentUnitSystemWithDecimal(hooks.currentLayerThicknessMM, "mm", "in", unitSystem === "SI" ? 1 : 3)}
 
                 {/* Add-Layer Button */}
                 {hooks.isLayerHovered && userContext.user ? (<AddLayerButton onClick={() => onAddLayer(layer)} />) : null}
             </Box>
 
-            <ModalLayerHeight
+            <ModalLayerThickness
                 isModalOpen={hooks.isModalOpen}
-                handleModalClose={hooks.handleModalClose}
-                layerHeightMM={hooks.layerThicknessInput}
-                handleHeightChange={(e) => handleLayerThicknessChange(e, hooks.setNewLayerThicknessMM)}
-                handleSubmit={() => handleSubmit(
-                    hooks.layerThicknessInput,
-                    hooks.currentLayerThicknessMM,
-                    layer,
-                    hooks.setCurrentLayerThicknessMM,
-                    hooks.setIsModalOpen
-                )}
-                handleDeleteLayer={() => onDeleteLayer(layer.id)} // Pass the layer ID to the handler
+                onModalClose={hooks.handleModalClose}
+                layerThickness={hooks.layerThicknessUserInputMM}
+                onLayerThicknessChange={hooks.handleLayerThicknessChange}
+                onSubmit={() => hooks.handleSubmitChangeLayerThickness(layer)}
+                onDeleteLayer={() => onDeleteLayer(layer.id)}
             />
 
             {/* The actual Graphic elements for the Layers Segments */}
@@ -73,8 +66,8 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                     <Segment
                         key={segment.id}
                         segment={segment}
-                        onAddSegment={(segment) => handleAddSegmentToRight(segment, layer, hooks.segments, hooks.setSegments)}
-                        onDeleteSegment={(segmentId) => handleDeleteSegment(segmentId, hooks.segments, hooks.setSegments)}
+                        onAddSegment={(segment) => hooks.handleAddSegmentToRight(segment, layer)}
+                        onDeleteSegment={(segmentId) => hooks.handleDeleteSegment(segmentId)}
                     />
                 ))}
             </Box>

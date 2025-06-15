@@ -5,11 +5,14 @@ import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Divider, ButtonGroup } from "@mui/material";
 import { OkCancelButtonsProps, HeightInputProps, DeleteButtonProps, LayerHeightModalType } from "./Modal.LayerHeight.Types";
 import { useUnitSystem } from "../../../../../_contexts/UnitSystemContext";
+import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 
 const HeightInput: React.FC<HeightInputProps> = (props) => {
     const userContext = useContext(UserContext);
+    const { valueInCurrentUnitSystem } = useUnitConversion()
     const inputRef = useRef<HTMLInputElement>(null);
+    const { unitSystem } = useUnitSystem();
 
     useEffect(() => {
         if (inputRef.current) {
@@ -18,17 +21,19 @@ const HeightInput: React.FC<HeightInputProps> = (props) => {
     }, []);
 
     return (
-        <TextField
-            type="text"
-            label="Layer Height"
-            value={props.layerHeightInput}
-            onChange={props.handleHeightChange}
-            fullWidth
-            margin="dense"
-            autoFocus
-            inputRef={inputRef}
-            disabled={!userContext.user}
-        />
+        <>
+            <TextField
+                type="Number"
+                label={`Layer Height [${unitSystem === "SI" ? "mm" : "inch"}]`}
+                defaultValue={Number(valueInCurrentUnitSystem(props.layerThicknessUserInput, "mm", "in")).toFixed(unitSystem === "SI" ? 1 : 3)}
+                onChange={props.handleLayerThicknessUserInputChange}
+                fullWidth
+                margin="dense"
+                autoFocus
+                inputRef={inputRef}
+                disabled={!userContext.user}
+            />
+        </>
     )
 }
 
@@ -72,26 +77,25 @@ const DeleteButton: React.FC<DeleteButtonProps> = (props) => {
 }
 
 
-const ModalLayerHeight: React.FC<LayerHeightModalType> = (props) => {
-    const { unitSystem } = useUnitSystem();
+const ModalLayerThickness: React.FC<LayerHeightModalType> = (props) => {
 
     return (
-        <Dialog open={props.isModalOpen} onClose={props.handleModalClose}>
+        <Dialog open={props.isModalOpen} onClose={props.onModalClose}>
             <DialogTitle>Layer</DialogTitle>
             <Divider />
-            <form onSubmit={(e) => { e.preventDefault(); props.handleSubmit(); }} >
+            <form onSubmit={(e) => { e.preventDefault(); props.onSubmit(); }} >
                 <DialogContent>
                     <HeightInput
-                        layerHeightInput={props.layerHeightMM}
-                        handleHeightChange={props.handleHeightChange}
+                        layerThicknessUserInput={props.layerThickness}
+                        handleLayerThicknessUserInputChange={props.onLayerThicknessChange}
                     />
                 </DialogContent>
-                <OkCancelButtons handleModalClose={props.handleModalClose} />
+                <OkCancelButtons handleModalClose={props.onModalClose} />
             </form>
             <Divider />
-            <DeleteButton handleDeleteLayer={props.handleDeleteLayer} />
+            <DeleteButton handleDeleteLayer={props.onDeleteLayer} />
         </Dialog>
     )
 }
 
-export default ModalLayerHeight;
+export default ModalLayerThickness;

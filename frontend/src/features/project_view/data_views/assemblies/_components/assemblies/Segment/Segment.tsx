@@ -5,7 +5,6 @@ import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 
 import ModalLayerSegment from "../SegmentPropertiesModal/Modal.LayerSegment";
 import { SegmentType } from '../../../types/Segment';
-import { handleSubmit, handleDeleteSegment, handleWidthChange, handleMaterialChange, handleSteelStudCheckboxChange, handleSteelStudSpacingChange, handleContinuousInsulationChange } from "./Segment.Handlers";
 import { useLayerSegmentHooks } from "./Segment.Hooks";
 
 
@@ -33,7 +32,7 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
     return (
         <Box
             className="assembly-layer-segment"
-            sx={{ maxWidth: `${hooks.currentSegmentWidth}px` }}
+            sx={{ maxWidth: `${hooks.currentSegmentWidthMM}px` }}
             onMouseEnter={hooks.handleMouseEnter}
             onMouseLeave={hooks.handleMouseLeave}
         >
@@ -46,46 +45,20 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
             {/* Modal for input */}
             <ModalLayerSegment
                 isModalOpen={hooks.isModalOpen}
-                widthMM={hooks.newWidthMM}
+                widthMM={hooks.newSegmentWidthMM}
                 materialId={hooks.newMaterialId}
                 segmentId={segment.id}
-                handleWidthChange={(e) => handleWidthChange(e, hooks.setNewWidth)}
-                handleDeleteSegment={(segmentId: number) => handleDeleteSegment(segmentId, onDeleteSegment, hooks.setIsModalOpen)}
-                handleMaterialChange={(materialId: string, materialColor: string) => handleMaterialChange(materialId, materialColor, hooks.setNewMaterialId, hooks.setNewMaterialColor)}
-                handleSubmit={() => handleSubmit(
-                    segment,
-                    // Segment Size
-                    hooks.newWidthMM,
-                    hooks.currentSegmentWidth,
-                    hooks.setCurrentWidth,
-                    // Material
-                    hooks.newMaterialId,
-                    hooks.currentMaterialId,
-                    hooks.setCurrentMaterialId,
-                    hooks.setCurrentMaterialColor,
-                    // Steel Stud Checkbox
-                    hooks.currentIsSteelStudChecked,
-                    hooks.newIsSteelStudChecked,
-                    hooks.setCurrentIsSteelStudChecked,
-                    // Steel Stud Spacing
-                    hooks.currentSteelStudSpacing,
-                    hooks.newSteelStudSpacing,
-                    hooks.setCurrentSteelStudSpacing,
-                    // Continuous Ext Insulation Checkbox
-                    hooks.currentContinuousInsulationChecked,
-                    hooks.newContinuousInsulationChecked,
-                    hooks.setCurrentContinuousInsulationChecked,
-                    // Vis
-                    hooks.setIsModalOpen,
-                    hooks.setIsSegmentHovered,
-                )}
+                handleWidthChange={(e) => hooks.setNewSegmentWidthMM(Number(e.target.value))}
+                handleDeleteSegment={(segmentId: number) => hooks.handleDeleteSegment(segmentId, onDeleteSegment)}
+                handleMaterialChange={(materialId: string, materialColor: string) => hooks.handleMaterialChange(materialId, materialColor)}
+                handleSubmit={() => hooks.handleSubmit(segment)}
                 handleModalClose={hooks.handleModalClose}
                 steelStudChecked={hooks.newIsSteelStudChecked}
-                handleCheckboxChange={(e) => handleSteelStudCheckboxChange(e, hooks.setNewIsSteelStudChecked)}
+                handleCheckboxChange={(e) => hooks.setNewIsSteelStudChecked(e.target.checked)}
                 steelStudSpacing={hooks.newSteelStudSpacing}
-                handleSteelStudSpacingChange={(e) => handleSteelStudSpacingChange(e, hooks.setNewSteelStudSpacing)}
+                handleSteelStudSpacingChange={(e) => hooks.setNewSteelStudSpacing(Number(e.target.value))}
                 isConInsulationChecked={hooks.newContinuousInsulationChecked}
-                handleConInsulationChange={(e) => handleContinuousInsulationChange(e, hooks.setNewContinuousInsulationChecked)}
+                handleConInsulationChange={(e) => hooks.setNewContinuousInsulationChecked(e.target.checked)}
             />
 
             {/* Add Segment Button */}
