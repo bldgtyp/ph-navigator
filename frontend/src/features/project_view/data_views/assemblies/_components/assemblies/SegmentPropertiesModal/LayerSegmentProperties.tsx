@@ -5,7 +5,7 @@ import { useMaterials } from '../../../_contexts/MaterialsContext';
 import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 import { List, ListItemText, Autocomplete, Box, Divider, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, FormControl, Typography, FormControlLabel, Checkbox } from "@mui/material";
-import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps, MaterialDataDisplayProps } from "./Modal.LayerSegment.Types";
+import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps, MaterialDataDisplayProps } from "./LayerSegmentProperties.Types";
 
 
 const WidthInput: React.FC<WidthInputProps> = (props) => {
@@ -39,13 +39,19 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
 
 
 const MaterialDataDisplay: React.FC<MaterialDataDisplayProps> = (props) => {
+    const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion()
+
     return (
         <Box sx={{ p: 2, marginBottom: "25px", border: "1px solid #ccc", borderRadius: 1, backgroundColor: "#f9f9f9", marginTop: 2 }}>
             <Typography variant="h5" gutterBottom>Layer Segment Material:</Typography>
             <List dense sx={{}}>
                 <ListItemText>Name: {props.selectedMaterial?.name || "--"}</ListItemText>
                 <ListItemText>Category: {props.selectedMaterial?.category || "--"}</ListItemText>
-                <ListItemText>Conductivity: {props.selectedMaterial?.conductivity_w_mk || "--"} w/mk</ListItemText>
+                <ListItemText>Conductivity: {
+                    valueInCurrentUnitSystemWithDecimal(props.selectedMaterial?.conductivity_w_mk || 0.0, "w/mk", "hr-ft2-F/btu-in", 3)}
+                    {unitSystem === "SI" ? ' [w/mk]' : ' [R/inch]'}
+
+                </ListItemText>
                 <ListItemText>Density: {props.selectedMaterial?.density_kg_m3 || "--"} kg/m3</ListItemText>
                 <ListItemText>Specific-Heat-Capacity: {props.selectedMaterial?.specific_heat_j_kgk || "--"} J/kg-K</ListItemText>
             </List>

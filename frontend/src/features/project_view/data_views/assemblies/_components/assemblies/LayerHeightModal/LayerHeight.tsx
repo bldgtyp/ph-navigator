@@ -3,7 +3,7 @@ import { useEffect, useRef, useContext } from "react";
 import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Divider, ButtonGroup } from "@mui/material";
-import { OkCancelButtonsProps, HeightInputProps, DeleteButtonProps, LayerHeightModalType } from "./Modal.LayerHeight.Types";
+import { OkCancelButtonsProps, HeightInputProps, DeleteButtonProps, LayerHeightModalType } from "./LayerHeight.Types";
 import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 

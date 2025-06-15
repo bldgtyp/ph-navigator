@@ -3,7 +3,7 @@ import { Box, Tooltip } from "@mui/material";
 
 import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 
-import ModalLayerSegment from "../SegmentPropertiesModal/Modal.LayerSegment";
+import ModalLayerSegment from "../SegmentPropertiesModal/LayerSegmentProperties";
 import { SegmentType } from '../../../types/Segment';
 import { useLayerSegmentHooks } from "./Segment.Hooks";
 

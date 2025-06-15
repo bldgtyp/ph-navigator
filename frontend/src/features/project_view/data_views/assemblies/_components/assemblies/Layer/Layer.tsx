@@ -5,7 +5,7 @@ import { UserContext } from "../../../../../../auth/_contexts/UserContext";
 import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 import Segment from "../Segment/Segment";
-import ModalLayerThickness from "../LayerHeightModal/Modal.LayerHeight";
+import ModalLayerThickness from "../LayerHeightModal/LayerHeight";
 import { LayerType } from '../../../types/Layer';
 
 import { useLayerHooks } from "./Layer.Hooks";
