@@ -7,11 +7,11 @@ import { useRef, useState } from 'react';
 import { SceneSetup } from './scene_setup/SceneSetup';
 import World from './World';
 import Model from './Model';
-import BottomMenubar from './components/BottomMenubar';
-import { AppStateContextProvider } from './contexts/app_viz_state_context';
-import { AppToolStateContextProvider } from './contexts/app_tool_state_context';
-import { SelectedObjectContextProvider } from './contexts/selected_object_context';
-import { HoverObjectContextProvider } from './contexts/hover_object_context';
+import BottomMenubar from './_components/BottomMenubar';
+import { AppStateContextProvider } from './_contexts/app_viz_state_context';
+import { AppToolStateContextProvider } from './_contexts/app_tool_state_context';
+import { SelectedObjectContextProvider } from './_contexts/selected_object_context';
+import { HoverObjectContextProvider } from './_contexts/hover_object_context';
 
 
 const Viewer: React.FC<any> = () => {

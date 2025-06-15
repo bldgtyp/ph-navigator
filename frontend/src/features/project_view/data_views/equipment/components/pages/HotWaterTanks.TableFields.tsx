@@ -1,9 +1,9 @@
-import { CheckboxForDatasheet } from "../../../shared/components/CheckboxForDatasheet";
-import { CheckboxForSpecification } from "../../../shared/components/CheckboxForSpecification";
-import { TooltipWithInfo } from "../../../shared/components/TooltipWithInfo";
-import { TooltipWithComment } from "../../../shared/components/TooltipWithComment";
-import { TooltipHeader } from "../../../shared/components/TooltipHeader";
-import { LinkIconWithDefault } from "../../../shared/components/LinkIconWithDefault";
+import { CheckboxForDatasheet } from "../../../_components/CheckboxForDatasheet";
+import { CheckboxForSpecification } from "../../../_components/CheckboxForSpecification";
+import { TooltipWithInfo } from "../../../_components/TooltipWithInfo";
+import { TooltipWithComment } from "../../../_components/TooltipWithComment";
+import { TooltipHeader } from "../../../_components/TooltipHeader";
+import { LinkIconWithDefault } from "../../../_components/LinkIconWithDefault";
 
 // --------------------------------------------------------------------------
 // Define the rows and columns

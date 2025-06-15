@@ -1,10 +1,10 @@
 import { useParams } from "react-router-dom";
 import { Box } from "@mui/material";
-import StyledDataGrid from "../../../shared/styles/DataGrid";
-import { generateGridColumns, generateDefaultRow } from "../../../shared/components/DataGridFunctions";
-import ContentBlockHeader from "../../../shared/components/ContentBlockHeader";
-import LoadingModal from "../../../shared/components/LoadingModal";
-import useLoadDataGridFromAirTable from "../../../../model_viewer/hooks/useLoadDataGridFromAirTable";
+import StyledDataGrid from "../../../_styles/DataGrid";
+import { generateGridColumns, generateDefaultRow } from "../../../_components/DataGridFunctions";
+import ContentBlockHeader from "../../../_components/ContentBlockHeader";
+import LoadingModal from "../../../_components/LoadingModal";
+import useLoadDataGridFromAirTable from "../../../../model_viewer/_hooks/useLoadDataGridFromAirTable";
 import { PumpsRecord } from "../../types/Pumps";
 import tableFields from "./Pumps.TableFields";
 

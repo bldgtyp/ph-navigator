@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 
-import DataViewPage from "../../shared/components/DataViewPage";
-import ContentBlock from "../../shared/components/ContentBlock";
-import DataDashboardTabBar from "../../shared/components//DataDashboardTabBar";
+import DataViewPage from "../../_components/DataViewPage";
+import ContentBlock from "../../_components/ContentBlock";
+import DataDashboardTabBar from "../../_components/DataDashboardTabBar";
 
 const EquipmentDataDashboard: React.FC = () => {
     const tabs = [

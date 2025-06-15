@@ -4,9 +4,9 @@ import { Box, Modal } from "@mui/material";
 
 import { getWithAlert } from "../../../../../api/getWithAlert";
 import { AirTableRecordType } from "../../../../types/AirTableRecordType";
-import DataViewPage from "../../shared/components/DataViewPage";
+import DataViewPage from "../../_components/DataViewPage";
 import CertificationStatus from "./CertificationStatus";
-import ContentBlock from "../../shared/components/ContentBlock";
+import ContentBlock from "../../_components/ContentBlock";
 
 function flattenData(d: AirTableRecordType[]): any {
     const flatData: Record<string, string | undefined> = {};

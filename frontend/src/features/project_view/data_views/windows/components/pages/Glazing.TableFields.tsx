@@ -1,9 +1,9 @@
-import { CheckboxForDatasheet } from "../../../shared/components/CheckboxForDatasheet";
-import { CheckboxForSpecification } from "../../../shared/components/CheckboxForSpecification";
-import { LinkIconWithDefault } from "../../../shared/components/LinkIconWithDefault";
-import { TooltipWithInfo } from "../../../shared/components/TooltipWithInfo";
-import { TooltipWithComment } from "../../../shared/components/TooltipWithComment";
-import { TooltipHeader } from "../../../shared/components/TooltipHeader";
+import { CheckboxForDatasheet } from "../../../_components/CheckboxForDatasheet";
+import { CheckboxForSpecification } from "../../../_components/CheckboxForSpecification";
+import { LinkIconWithDefault } from "../../../_components/LinkIconWithDefault";
+import { TooltipWithInfo } from "../../../_components/TooltipWithInfo";
+import { TooltipWithComment } from "../../../_components/TooltipWithComment";
+import { TooltipHeader } from "../../../_components/TooltipHeader";
 import { ValueAsDecimal } from "../../../../../../formatters/ValueAsDecimal";
 
 // --------------------------------------------------------------------------

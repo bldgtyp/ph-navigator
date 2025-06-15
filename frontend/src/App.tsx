@@ -3,10 +3,11 @@ import './styles/Colors.css';
 import { Component, ReactNode, ErrorInfo } from 'react'
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from "@mui/material/styles";
-import { UserProvider } from "./features/auth/contexts/UserContext";
-import TopAppBar from './features/auth/components/AppBar';
+import { UserProvider } from "./features/auth/_contexts/UserContext";
+import TopAppBar from './features/auth/_components/AppBar';
 import AppRoutes from './Routes';
 import theme from "./styles/theme";
+import { UnitSystemProvider } from './features/project_view/_contexts/UnitSystemContext';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -32,10 +33,12 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <ThemeProvider theme={theme}>
         <UserProvider>
-          <Router>
-            <TopAppBar />
-            <AppRoutes />
-          </Router>
+          <UnitSystemProvider>
+            <Router>
+              <TopAppBar />
+              <AppRoutes />
+            </Router>
+          </UnitSystemProvider>
         </UserProvider>
       </ThemeProvider>
     </ErrorBoundary>

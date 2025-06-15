@@ -1,5 +1,5 @@
-import { TooltipWithInfo } from "../../../shared/components/TooltipWithInfo";
-import { TooltipWithComment } from "../../../shared/components/TooltipWithComment";
+import { TooltipWithInfo } from "../../../_components/TooltipWithInfo";
+import { TooltipWithComment } from "../../../_components/TooltipWithComment";
 import { ValueAsDecimal } from "../../../../../../formatters/ValueAsDecimal";
 
 

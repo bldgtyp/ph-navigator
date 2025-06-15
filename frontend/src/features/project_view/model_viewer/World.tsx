@@ -3,13 +3,13 @@ import { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
 import { SceneSetup } from './scene_setup/SceneSetup';
-import { onResize } from './handlers/onResize';
-import { useAppVizStateContext } from './contexts/app_viz_state_context';
-import { useAppToolStateContext } from './contexts/app_tool_state_context';
-import { useSelectedObjectContext } from './contexts/selected_object_context';
-import { useHoverObjectContext } from './contexts/hover_object_context';
-import { handleOnClick, handleOnMouseOver, clearSelection } from './handlers/selectObject';
-import { measureModeOnMouseClick, measureModeOnMouseMove } from './handlers/modeMeasurement';
+import { onResize } from './_handlers/onResize';
+import { useAppVizStateContext } from './_contexts/app_viz_state_context';
+import { useAppToolStateContext } from './_contexts/app_tool_state_context';
+import { useSelectedObjectContext } from './_contexts/selected_object_context';
+import { useHoverObjectContext } from './_contexts/hover_object_context';
+import { handleOnClick, handleOnMouseOver, clearSelection } from './_handlers/selectObject';
+import { measureModeOnMouseClick, measureModeOnMouseMove } from './_handlers/modeMeasurement';
 import { addVizStateMountHandler, addVizStateDismountHandler } from './states/VizState';
 import { addToolStateEventHandler, addToolStateDismountHandler } from './states/ToolState';
 
