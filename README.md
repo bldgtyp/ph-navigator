@@ -5,8 +5,7 @@
 #### Project Browser
 
 - [ ] Better Landing page
-- [ ] Delete Project
-- [ ] Cancel / Save buttons on Project Config form don't work
+- [ ] Implement Delete Project
 
 #### (IO):
 
@@ -26,6 +25,12 @@
 - [ ] Display Material Legend
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
+
+## Pages:
+
+- [ ] Airtightness / Blower Door test
+- [ ] Ventilation Balancing
+- [ ] Project Photographs
 
 ## 3D Model:
 

@@ -121,17 +121,17 @@ def get_project_airtable_table_identifiers(
         raise HTTPException(status_code=500, detail=msg)
 
 
-@router.patch("/update-airtable-tables-identifiers/{bt_number}")
+@router.patch("/update-airtable-tables-identifiers/{bt_number}", response_model=list[AirTableTableSchema])
 def update_airtable_tables_identifiers(
      request: Request, bt_number: str, table_records: list[AirTableTableUpdateSchema], db: Session = Depends(get_db)
-) -> None:
+) -> list[AirTableTableSchema]:
     """Update the AirTable Table Identifiers/Refs for a given project."""
     logger.info(f"project/update_airtable_tables_identifiers({bt_number=}, {len(table_records)=})")
     
     try:
         for table_record in table_records:
             update_airtable_table(db, bt_number, table_record)
-        return None
+        return [AirTableTableSchema.from_orm(t) for t in get_all_project_tables(db, bt_number)]
     except Exception as e:
         msg = f"Failed to update AirTable tables identifiers for '{bt_number}': {e}"
         logger.error(msg)
