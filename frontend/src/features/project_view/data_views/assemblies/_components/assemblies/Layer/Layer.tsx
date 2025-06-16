@@ -21,7 +21,7 @@ const AddLayerButton: React.FC<{ onClick: () => void }> = (props) => {
         <Tooltip title="Add a New Layer" placement="bottom">
             <button
                 className="add-layer-button"
-                onClick={(event) => { event.stopPropagation(); props.onClick(); }}
+                onClick={(e) => { e.stopPropagation(); props.onClick(); }}
             >
                 +
             </button>
@@ -55,7 +55,7 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                 isModalOpen={hooks.isModalOpen}
                 onModalClose={hooks.handleModalClose}
                 layerThickness={hooks.layerThickness.newValue}
-                onLayerThicknessChange={(args: { thickness_mm: number }) => hooks.layerThickness.setNewValue(args)}
+                onLayerThicknessChange={hooks.layerThickness.setNewValue}
                 onSubmit={() => hooks.handleSubmitChangeLayerThickness(layer)}
                 onDeleteLayer={() => onDeleteLayer(layer.id)}
             />
@@ -67,7 +67,7 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                         key={segment.id}
                         segment={segment}
                         onAddSegment={(segment) => hooks.handleAddSegmentToRight(segment, layer)}
-                        onDeleteSegment={(segmentId) => hooks.handleDeleteSegment(segmentId)}
+                        onDeleteSegment={hooks.handleDeleteSegment}
                     />
                 ))}
             </Box>
