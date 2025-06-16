@@ -4,26 +4,55 @@ import { SegmentType, SpecificationStatus } from "../../../types/Segment";
 import { postWithAlert } from "../../../../../../../api/postWithAlert";
 import { deleteWithAlert } from "../../../../../../../api/deleteWithAlert";
 import { patchWithAlert } from "../../../../../../../api/patchWithAlert";
-import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
+import { UpdatableInput } from "../../../../../../types/UpdatableInput";
 
 export const useLayerHooks = (layer: LayerType) => {
-    const { valueInSIUnits } = useUnitConversion()
+    // Basic State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLayerHovered, setIsLayerHovered] = useState(false);
-
     const [segments, setSegments] = useState(layer.segments);
 
+    // Layer Thickness
     const [currentLayerThicknessMM, setCurrentLayerThicknessMM] = useState(layer.thickness_mm);
     const [layerThicknessUserInputMM, setLayerThicknessUserInputMM] = useState(layer.thickness_mm);
+    const layerThickness = new UpdatableInput<number, { thickness_mm: number }>(
+        currentLayerThicknessMM,
+        setCurrentLayerThicknessMM,
+        layerThicknessUserInputMM,
+        (args: { thickness_mm: number }) => {
+            setLayerThicknessUserInputMM(args.thickness_mm)
+        }
+    )
 
+    const handleSubmitChangeLayerThickness = async (
+        layer: LayerType,
+    ) => {
+        try {
+            if (layerThickness.hasChanged()) {
+                const response = await patchWithAlert<LayerType>(`assembly/update-layer-thickness/${layer.id}`, null, {
+                    thickness_mm: layerThickness.newValue,
+                });
+
+                if (response) {
+                    layerThickness.setCurrentValue(response.thickness_mm);
+                } else {
+                    console.error(`Failed to update layer-thickness to: '${layerThickness.newValue}'`);
+                }
+            }
+
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error("Failed to update layer:", error);
+            setIsModalOpen(false);
+        }
+    };
+
+    // Mouse Event Handlers
     const handleMouseEnter = () => setIsLayerHovered(true);
     const handleMouseLeave = () => setIsLayerHovered(false);
     const handleMouseClick = () => setIsModalOpen(true)
     const handleModalClose = () => { setLayerThicknessUserInputMM(currentLayerThicknessMM); setIsModalOpen(false); }
 
-    const handleLayerThicknessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setLayerThicknessUserInputMM(valueInSIUnits(Number(e.target.value), "mm", "in"))
-    }
 
     const handleAddSegmentToRight = async (
         segment: SegmentType,
@@ -96,29 +125,6 @@ export const useLayerHooks = (layer: LayerType) => {
         }
     };
 
-    const handleSubmitChangeLayerThickness = async (
-        layer: LayerType,
-    ) => {
-        try {
-            if (layerThicknessUserInputMM !== currentLayerThicknessMM) {
-                const response = await patchWithAlert<LayerType>(`assembly/update-layer-thickness/${layer.id}`, null, {
-                    thickness_mm: layerThicknessUserInputMM,
-                });
-
-                if (response) {
-                    setCurrentLayerThicknessMM(response.thickness_mm);
-                } else {
-                    console.error(`Failed to update layer-thickness to: '${layerThicknessUserInputMM}'`);
-                }
-            }
-
-            setIsModalOpen(false);
-        } catch (error) {
-            console.error("Failed to update layer:", error);
-            setIsModalOpen(false);
-        }
-    };
-
     return {
         "isModalOpen": isModalOpen,
         "setIsModalOpen": setIsModalOpen,
@@ -126,10 +132,6 @@ export const useLayerHooks = (layer: LayerType) => {
         "setIsLayerHovered": setIsLayerHovered,
         "segments": segments,
         "setSegments": setSegments,
-        "currentLayerThicknessMM": currentLayerThicknessMM,
-        "setCurrentLayerThicknessMM": setCurrentLayerThicknessMM,
-        "layerThicknessUserInputMM": layerThicknessUserInputMM,
-        "setLayerThicknessUserInputMM": setLayerThicknessUserInputMM,
         "handleMouseEnter": handleMouseEnter,
         "handleMouseLeave": handleMouseLeave,
         "handleMouseClick": handleMouseClick,
@@ -137,7 +139,7 @@ export const useLayerHooks = (layer: LayerType) => {
         "handleAddSegmentToRight": handleAddSegmentToRight,
         "handleDeleteSegment": handleDeleteSegment,
         "handleSubmitChangeLayerThickness": handleSubmitChangeLayerThickness,
-        "handleLayerThicknessChange": handleLayerThicknessChange,
+        "layerThickness": layerThickness,
     }
 };
 

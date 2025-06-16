@@ -9,7 +9,7 @@ import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 
 const HeightInput: React.FC<HeightInputProps> = (props) => {
     const userContext = useContext(UserContext);
-    const { valueInCurrentUnitSystem, unitSystem } = useUnitConversion()
+    const { valueInCurrentUnitSystemWithDecimal, valueInSIUnits, unitSystem } = useUnitConversion()
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -26,8 +26,10 @@ const HeightInput: React.FC<HeightInputProps> = (props) => {
                     htmlInput: { step: "any", }
                 }}
                 label={`Layer Height [${unitSystem === "SI" ? "mm" : "inch"}]`}
-                defaultValue={Number(valueInCurrentUnitSystem(props.layerThicknessUserInput, "mm", "in")).toFixed(unitSystem === "SI" ? 1 : 3)}
-                onChange={props.handleLayerThicknessUserInputChange}
+                defaultValue={Number(valueInCurrentUnitSystemWithDecimal(props.layerThicknessUserInput, "mm", "in", unitSystem === "SI" ? 1 : 3))}
+                onChange={(e) => {
+                    props.handleLayerThicknessUserInputChange({ thickness_mm: valueInSIUnits(Number(e.target.value), "mm", "in") })
+                }}
                 fullWidth
                 margin="dense"
                 autoFocus

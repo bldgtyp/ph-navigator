@@ -2,7 +2,7 @@ export interface LayerHeightModalType {
     isModalOpen: boolean;
     onModalClose: () => void;
     layerThickness: number;
-    onLayerThicknessChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onLayerThicknessChange: (args: { thickness_mm: number }) => void;
     onSubmit: () => void;
     onDeleteLayer: () => void;
 }
@@ -11,7 +11,7 @@ export interface OkCancelButtonsProps {
 }
 export interface HeightInputProps {
     layerThicknessUserInput: number;
-    handleLayerThicknessUserInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleLayerThicknessUserInputChange: (args: { thickness_mm: number }) => void;
 }
 export interface DeleteButtonProps {
     handleDeleteLayer: () => void;

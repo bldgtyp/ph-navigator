@@ -45,7 +45,7 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                 onMouseEnter={hooks.handleMouseEnter}
                 onMouseLeave={hooks.handleMouseLeave}
             >
-                {valueInCurrentUnitSystemWithDecimal(hooks.currentLayerThicknessMM, "mm", "in", unitSystem === "SI" ? 1 : 3)}
+                {valueInCurrentUnitSystemWithDecimal(hooks.layerThickness.currentValue, "mm", "in", unitSystem === "SI" ? 1 : 3)}
 
                 {/* Add-Layer Button */}
                 {hooks.isLayerHovered && userContext.user ? (<AddLayerButton onClick={() => onAddLayer(layer)} />) : null}
@@ -54,14 +54,14 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
             <ModalLayerThickness
                 isModalOpen={hooks.isModalOpen}
                 onModalClose={hooks.handleModalClose}
-                layerThickness={hooks.layerThicknessUserInputMM}
-                onLayerThicknessChange={hooks.handleLayerThicknessChange}
+                layerThickness={hooks.layerThickness.newValue}
+                onLayerThicknessChange={(args: { thickness_mm: number }) => hooks.layerThickness.setNewValue(args)}
                 onSubmit={() => hooks.handleSubmitChangeLayerThickness(layer)}
                 onDeleteLayer={() => onDeleteLayer(layer.id)}
             />
 
             {/* The actual Graphic elements for the Layers Segments */}
-            <Box className="assembly-layer-segments" sx={{ height: hooks.currentLayerThicknessMM }}>
+            <Box className="assembly-layer-segments" sx={{ height: hooks.layerThickness.currentValue }}>
                 {hooks.segments.map((segment) => (
                     <Segment
                         key={segment.id}

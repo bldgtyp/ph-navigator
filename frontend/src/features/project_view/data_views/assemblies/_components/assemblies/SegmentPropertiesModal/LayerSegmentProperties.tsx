@@ -6,11 +6,11 @@ import { useMaterials } from '../../../_contexts/MaterialsContext';
 
 import { useUnitConversion } from "../../../../../_hooks/useUnitConversion";
 import { Unit } from "../../../../../../../formatters/Unit.ConversionFactors";
-import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps, MaterialDataDisplayProps } from "./LayerSegmentProperties.Types";
+import { DeleteButtonProps, OkCancelButtonsProps, WidthInputProps, MaterialInputProps, LayerSegmentWidthModalProps, MaterialDataDisplayProps, SteelStudSpacingInputProps } from "./LayerSegmentProperties.Types";
 
 
 const WidthInput: React.FC<WidthInputProps> = (props) => {
-    const { valueInCurrentUnitSystem, unitSystem } = useUnitConversion()
+    const { valueInSIUnits, valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion()
     const userContext = useContext(UserContext);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,8 +27,10 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
                 htmlInput: { step: "any", }
             }}
             label={`Segment Width [${unitSystem === "SI" ? "mm" : "inch"}]`}
-            defaultValue={Number(valueInCurrentUnitSystem(props.widthMM, "mm", "in")).toFixed(unitSystem === "SI" ? 1 : 3)}
-            onChange={props.onSegmentWidthChange}
+            defaultValue={valueInCurrentUnitSystemWithDecimal(props.widthMM, "mm", "in", unitSystem === "SI" ? 1 : 3)}
+            onChange={(e) => {
+                props.onSegmentWidthChange({ widthMM: valueInSIUnits(Number(e.target.value), "mm", "in") })
+            }}
             fullWidth
             margin="dense"
             autoFocus
@@ -39,10 +41,45 @@ const WidthInput: React.FC<WidthInputProps> = (props) => {
 };
 
 
+const SteelStudSpacingInput: React.FC<SteelStudSpacingInputProps> = (props) => {
+    const { valueInSIUnits, valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion()
+    const userContext = useContext(UserContext);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.select(); // Automatically select all text
+        }
+    }, []);
+
+    return (
+        <TextField
+            type="number"
+            slotProps={{
+                htmlInput: { step: "any", }
+            }}
+            label={`Steel Stud Spacing  [${unitSystem === "SI" ? "mm" : "inch"}]`}
+            defaultValue={valueInCurrentUnitSystemWithDecimal(props.steelStudSpacing, "mm", "in", unitSystem === "SI" ? 1 : 3)}
+            onChange={(e) => {
+                props.onSteelStudSpacingChange(
+                    { steelStudSpacingMM: valueInSIUnits(Number(e.target.value), "mm", "in") }
+                )
+            }}
+            fullWidth
+            margin="dense"
+            size="small"
+            inputRef={inputRef}
+            disabled={!userContext.user}
+        />
+    )
+}
+
+
 const MaterialDataDisplay: React.FC<MaterialDataDisplayProps> = (props) => {
     const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion()
 
-    const convertValue = (value: number | undefined, siUnit: Unit, ipUnit: Unit, decimal: number) => {
+    // Wrap valueInCurrentUnitSystemWithDecimal to allow for null or undefined values
+    const convertValueOrNull = (value: number | undefined, siUnit: Unit, ipUnit: Unit, decimal: number) => {
         if (value === undefined || value === null || value === 0.0) return "--";
         return valueInCurrentUnitSystemWithDecimal(value, siUnit, ipUnit, decimal)
     }
@@ -55,14 +92,13 @@ const MaterialDataDisplay: React.FC<MaterialDataDisplayProps> = (props) => {
                 <ListItemText>Category: {props.selectedMaterial?.category || "--"}</ListItemText>
                 <ListItemText>
                     {unitSystem === "SI" ? 'Conductivity [w/mk]' : 'Resistivity [R/inch]'} : {
-                        convertValue(props.selectedMaterial?.conductivity_w_mk, "w/mk", "hr-ft2-F/btu-in", 3)}
+                        convertValueOrNull(props.selectedMaterial?.conductivity_w_mk, "w/mk", "hr-ft2-F/btu-in", 3)}
                 </ListItemText>
                 <ListItemText>Density {unitSystem === "SI" ? ' [kg/m3]' : ' [lb/ft3]'} : {
-                    convertValue(props.selectedMaterial?.density_kg_m3, "kg/m3", "lb/ft3", 1)}
-
+                    convertValueOrNull(props.selectedMaterial?.density_kg_m3, "kg/m3", "lb/ft3", 1)}
                 </ListItemText>
                 <ListItemText>Specific-Heat-Capacity {unitSystem === "SI" ? ' [J/kg-K]' : ' [Btu/lb-F]'} : {
-                    convertValue(props.selectedMaterial?.specific_heat_j_kgk, "J/kg-K", "Btu/lb-F", 2)}
+                    convertValueOrNull(props.selectedMaterial?.specific_heat_j_kgk, "J/kg-K", "Btu/lb-F", 2)}
 
                 </ListItemText>
             </List>
@@ -84,7 +120,7 @@ const MaterialInput: React.FC<MaterialInputProps> = (props) => {
                         getOptionLabel={(option) => option.name}
                         value={props.selectedMaterial}
                         onChange={(event, newValue) => {
-                            props.handleMaterialChange(newValue?.id || "", newValue?.argb_color || "#ccc");
+                            props.handleMaterialChange({ materialId: newValue?.id || "", materialColor: newValue?.argb_color || "#ccc" });
                         }}
                         disabled={!userContext.user}
                         loading={props.isLoadingMaterials}
@@ -166,24 +202,27 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
     });
 
     // Find the selected material based on the materialId
-    const selectedMaterial = materialOptions.find((material) => material.id === props.materialId) || null;
+    const selectedMaterial = materialOptions.find((material) => material.id === props.materialId.newValue) || null;
 
     return (
-        <Dialog open={props.isModalOpen} onClose={props.handleModalClose} fullWidth maxWidth="sm">
+        <Dialog open={props.isModalOpen} onClose={props.onModalClose} fullWidth maxWidth="sm">
             <DialogTitle>Segment: {selectedMaterial?.name}</DialogTitle>
             <Divider />
 
-            <form onSubmit={(e) => { e.preventDefault(); props.handleSubmit(); }}>
+            <form onSubmit={(e) => { e.preventDefault(); props.onSubmit(); }}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column" }}>
                     <MaterialInput
-                        materialId={props.materialId}
+                        materialId={props.materialId.newValue}
                         materialOptions={materialOptions}
                         selectedMaterial={selectedMaterial}
                         isLoadingMaterials={isLoadingMaterials}
-                        handleMaterialChange={props.handleMaterialChange}
+                        handleMaterialChange={props.materialId.setNewValue}
                     />
                     <MaterialDataDisplay selectedMaterial={selectedMaterial} />
-                    <WidthInput widthMM={props.widthMM} onSegmentWidthChange={props.onSegmentWidthChange} />
+                    <WidthInput
+                        widthMM={props.segmentWidthMM.newValue}
+                        onSegmentWidthChange={props.segmentWidthMM.setNewValue}
+                    />
 
                     <h4>Segment Attributes:</h4>
                     {/* Continuous Insulation Checkbox */}
@@ -191,8 +230,8 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={props.isConInsulationChecked}
-                                    onChange={props.handleConInsulationChange}
+                                    checked={props.continuousInsulationChecked.newValue}
+                                    onChange={(e) => { props.continuousInsulationChecked.setNewValue({ checked: e.target.checked }) }}
                                     color="primary"
                                     disabled={!userContext.user}
                                 />
@@ -206,8 +245,8 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                     <FormControlLabel
                         control={
                             <Checkbox
-                                checked={props.steelStudChecked}
-                                onChange={props.handleCheckboxChange}
+                                checked={props.steelStudChecked.newValue}
+                                onChange={(e) => { props.steelStudChecked.setNewValue({ checked: e.target.checked }) }}
                                 color="primary"
                                 disabled={!userContext.user}
                             />
@@ -216,29 +255,18 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = (props) => {
                     />
 
 
-                    {/* Conditionally render the spacing input */}
-                    {props.steelStudChecked && (
-                        <TextField
-                            type="number"
-                            slotProps={{
-                                htmlInput: { step: "any", }
-                            }}
-                            label="Steel Stud Spacing (mm)"
-                            value={props.steelStudSpacing}
-                            onChange={props.handleSteelStudSpacingChange}
-                            fullWidth
-                            margin="dense"
-                            size="small"
-                            disabled={!userContext.user}
-                        />
-                    )}
+                    {/* Conditionally render the steel-stud spacing input */}
+                    {props.steelStudChecked.newValue && (<SteelStudSpacingInput
+                        steelStudSpacing={props.steelStudSpacingMM.newValue}
+                        onSteelStudSpacingChange={props.steelStudSpacingMM.setNewValue}
+                    />)}
 
                 </DialogContent>
-                <OkCancelButtons handleModalClose={props.handleModalClose} />
+                <OkCancelButtons handleModalClose={props.onModalClose} />
             </form>
 
             <Divider />
-            <DeleteButton handleDeleteSegment={props.handleDeleteSegment} segmentId={props.segmentId} />
+            <DeleteButton handleDeleteSegment={props.onDeleteSegment} segmentId={props.segmentId} />
         </Dialog >
     )
 }

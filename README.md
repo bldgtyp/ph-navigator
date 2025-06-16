@@ -20,7 +20,6 @@
   - [ ] Check what happens with uneven widths?
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [ ] Display Material Legend
-- [ ] IP Units for all (conversion)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
 

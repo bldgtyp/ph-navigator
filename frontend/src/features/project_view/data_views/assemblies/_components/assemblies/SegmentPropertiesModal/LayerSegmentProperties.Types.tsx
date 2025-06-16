@@ -1,24 +1,17 @@
+import { UpdatableInput } from "../../../../../../types/UpdatableInput";
 import { MaterialType } from "../../../types/Material";
 
 export interface LayerSegmentWidthModalProps {
     isModalOpen: boolean;
-    widthMM: number; // Current width of the segment
-    materialId: string; // Current material ID for the segment
-    segmentId: number; // ID of the segment being edited
-    onSegmentWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleDeleteSegment: (segmentId: number) => void;
-    handleMaterialChange: (materialId: string, materialColor: string) => void;
-    handleSubmit: () => void;
-    handleModalClose: () => void;
-    // State for steel stud checkbox
-    steelStudChecked: boolean;
-    handleCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    // State for steel stud spacing
-    steelStudSpacing: number;
-    handleSteelStudSpacingChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    // State for continuous insulation checkbox
-    isConInsulationChecked: boolean;
-    handleConInsulationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    segmentId: number;
+    materialId: UpdatableInput<string, { materialId: string, materialColor: string }>;
+    segmentWidthMM: UpdatableInput<number, { widthMM: number }>;
+    steelStudChecked: UpdatableInput<boolean, { checked: boolean }>;
+    steelStudSpacingMM: UpdatableInput<number, { steelStudSpacingMM: number }>;
+    continuousInsulationChecked: UpdatableInput<boolean, { checked: boolean }>;
+    onDeleteSegment: (segmentId: number) => void;
+    onSubmit: () => void;
+    onModalClose: () => void;
 }
 
 export interface DeleteButtonProps {
@@ -32,7 +25,12 @@ export interface OkCancelButtonsProps {
 
 export interface WidthInputProps {
     widthMM: number;
-    onSegmentWidthChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSegmentWidthChange: (args: { widthMM: number }) => void;
+}
+
+export interface SteelStudSpacingInputProps {
+    steelStudSpacing: number;
+    onSteelStudSpacingChange: (args: { steelStudSpacingMM: number }) => void;
 }
 
 export interface MaterialInputProps {
@@ -40,7 +38,7 @@ export interface MaterialInputProps {
     materialOptions: MaterialType[];
     selectedMaterial: MaterialType | null;
     isLoadingMaterials: boolean;
-    handleMaterialChange: (materialId: string, materialColor: string) => void;
+    handleMaterialChange: (args: { materialId: string, materialColor: string }) => void;
 }
 
 export interface MaterialDataDisplayProps {
