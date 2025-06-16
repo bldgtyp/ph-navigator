@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
 import { uploadSitePhotoFiles } from '../../../../../../api/uploadSitePhotoFiles';
 import { getWithAlert } from '../../../../../../api/getWithAlert';
 
-import { SegmentType } from '../../types/Segment';
+import { SegmentType, SpecificationStatus } from '../../types/Segment';
 import { MaterialSitePhotoType, MaterialSitePhotosType } from '../../types/Material.SitePhoto';
 import ImageFullViewModal from './Image.FullViewModal';
 import ImageThumbnail from './Image.Thumbnail';
@@ -15,7 +15,7 @@ import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 interface SegmentSitePhotosProps {
     segment: SegmentType;
     materialName: string;
-    onUploadComplete?: (urls: string[]) => void;
+    specificationStatus: SpecificationStatus;
 }
 
 const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
@@ -42,6 +42,24 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
         };
         fetchSitePhotoUrls();
     }, [projectId, props.segment.id]);
+
+    const boxStyles = useMemo(() => {
+        const isDisabled = props.specificationStatus === 'na';
+
+        return {
+            border: isDisabled
+                ? '1px solid #ccc'
+                : isDragOver
+                  ? '1px dashed #1976d2'
+                  : `1px solid ${sitePhotos.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
+            background: isDisabled
+                ? 'var(--appbar-bg-color)'
+                : isDragOver
+                  ? '#e3f2fd'
+                  : `${sitePhotos.length > 0 ? 'white' : 'var(--missing-weak)'}`,
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
+        };
+    }, [props.specificationStatus, isDragOver, sitePhotos.length]);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -103,13 +121,8 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
         <Tooltip title="Site-Photos" placement="top" arrow>
             <Box
                 id="site-photo-urls"
-                className="row-item thumbnail-container"
-                sx={{
-                    border: isDragOver
-                        ? '1px dashed #1976d2'
-                        : `1px solid ${sitePhotos.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
-                    background: isDragOver ? '#e3f2fd' : `${sitePhotos.length > 0 ? 'white' : 'var(--missing-weak)'}`,
-                }}
+                className={`row-item thumbnail-container`}
+                sx={boxStyles}
                 onMouseOver={() => setIsDragOver(true)}
                 onMouseOut={() => setIsDragOver(false)}
                 onDragOver={handleDragOver}
@@ -140,7 +153,11 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
                 )}
 
                 {/* Thumbnails */}
-                {sitePhotos.length === 0 && <span style={{ color: 'var(--missing-strong)' }}>Site Photo Needed</span>}
+                {sitePhotos.length === 0 && (
+                    <span style={{ color: 'var(--missing-strong)' }}>
+                        {props.specificationStatus !== 'na' ? 'Site Photo Needed' : ''}
+                    </span>
+                )}
                 {sitePhotos.map((photo, idx) => (
                     <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />
                 ))}

@@ -1,7 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { Box, Select, MenuItem, SelectChangeEvent, Typography } from '@mui/material';
-
-import { patchWithAlert } from '../../../../../../api/patchWithAlert';
+import React, { useContext } from 'react';
+import { Box, Select, MenuItem } from '@mui/material';
 
 import { SegmentType, SpecificationStatus } from '../../types/Segment';
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
@@ -21,47 +19,30 @@ const getDesignSpecificationText = (value: SpecificationStatus) => {
     }
 };
 
-const DesignSpecificationStatus: React.FC<{ segment: SegmentType }> = props => {
+interface DesignSpecificationStatusPropsType {
+    segment: SegmentType;
+    specificationStatus: any;
+    onChangeSpecificationStatus: any;
+}
+
+const DesignSpecificationStatus: React.FC<DesignSpecificationStatusPropsType> = props => {
     const userContext = useContext(UserContext);
-    const [status, setStatus] = useState<SpecificationStatus>(props.segment.specification_status);
-
-    const handleChange = async (event: SelectChangeEvent<SpecificationStatus>) => {
-        const newStatus = event.target.value as SpecificationStatus;
-        setStatus(newStatus);
-
-        try {
-            const response = await patchWithAlert<SegmentType>(
-                `assembly/update-segment-specification-status/${props.segment.id}`,
-                null,
-                { specification_status: newStatus }
-            );
-
-            if (response) {
-                setStatus(response.specification_status);
-            } else {
-                console.error('Failed to update Segment-Specification-Status.');
-                alert('Failed to update status.');
-            }
-        } catch (error) {
-            setStatus(props.segment.specification_status);
-            alert('Failed to update status.');
-        }
-    };
 
     return (
         <Box sx={{ flex: 1, alignItems: 'left', display: 'flex', flexDirection: 'column' }}>
             <Select
-                className={`row-item specification-dropdown have-specification-${status}`}
-                value={status}
+                className={`row-item specification-dropdown have-specification-${props.specificationStatus}`}
+                value={props.specificationStatus}
                 onChange={
                     userContext.user
-                        ? handleChange
+                        ? props.onChangeSpecificationStatus
                         : () => {
                               alert('Please log in to update the status.');
                           }
                 }
                 size="small"
                 sx={{ minWidth: 200, fontSize: '0.7rem' }}
+                disabled={userContext.user === null}
             >
                 {Object.values(SpecificationStatus).map(value => (
                     <MenuItem key={value} value={value}>

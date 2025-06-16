@@ -55,19 +55,31 @@ const MaterialListItem: React.FC<{ segment: SegmentType }> = props => {
         >
             <MaterialListItemName
                 name={props.segment.material.name}
-                notes={hooks.currentNotes}
+                notes={hooks.notes.newValue}
                 onClick={hooks.handleMouseClick}
             />
-            <DesignSpecificationStatus segment={props.segment} />
-            <SegmentDatasheets segment={props.segment} materialName={props.segment.material.name} />
-            <SegmentSitePhotos segment={props.segment} materialName={props.segment.material.name} />
-            <DetailsModal
-                isModalOpen={hooks.isModalOpen}
-                handleModalClose={hooks.handleModalClose}
-                handleSubmit={hooks.handleSubmit}
-                handleNotesChange={hooks.handleNotesChange}
+            <DesignSpecificationStatus
                 segment={props.segment}
-                currentNotes={hooks.currentNotes}
+                specificationStatus={hooks.specificationStatus}
+                onChangeSpecificationStatus={hooks.handleChangeSpecificationStatus}
+            />
+            <SegmentDatasheets
+                segment={props.segment}
+                materialName={props.segment.material.name}
+                specificationStatus={hooks.specificationStatus}
+            />
+            <SegmentSitePhotos
+                segment={props.segment}
+                materialName={props.segment.material.name}
+                specificationStatus={hooks.specificationStatus}
+            />
+            <DetailsModal
+                segment={props.segment}
+                currentNotes={hooks.notes.currentValue}
+                isModalOpen={hooks.isModalOpen}
+                onModalClose={hooks.handleModalClose}
+                onSubmit={hooks.handleSubmit}
+                onNotesChange={hooks.notes.setNewValue}
             />
         </Stack>
     ) : null;

@@ -6,14 +6,14 @@ export interface MaterialDataProps {
 }
 
 export interface OkCancelButtonsProps {
-    handleModalClose: () => void;
+    onModalClose: () => void;
 }
 
 export interface DetailsModalProps {
     isModalOpen: boolean;
     segment: SegmentType;
     currentNotes: string;
-    handleModalClose: () => void;
-    handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-    handleNotesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    onModalClose: () => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    onNotesChange: (args: { notes: string }) => void;
 }

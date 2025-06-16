@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
 import { uploadDatasheetFiles } from '../../../../../../api/uploadDatasheetFiles';
 import { getWithAlert } from '../../../../../../api/getWithAlert';
 
-import { SegmentType } from '../../types/Segment';
+import { SegmentType, SpecificationStatus } from '../../types/Segment';
 import { MaterialDatasheetType, MaterialDatasheetsType } from '../../types/Material.Datasheet';
 import ImageFullViewModal from './Image.FullViewModal';
 import ImageThumbnail from './Image.Thumbnail';
@@ -15,7 +15,7 @@ import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 interface DatasheetsProps {
     segment: SegmentType;
     materialName: string;
-    onUploadComplete?: (urls: string[]) => void;
+    specificationStatus: SpecificationStatus;
 }
 
 const SegmentDatasheets: React.FC<DatasheetsProps> = props => {
@@ -42,6 +42,24 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = props => {
         };
         fetchDatasheets();
     }, [projectId, props.segment.id]);
+
+    const boxStyles = useMemo(() => {
+        const isDisabled = props.specificationStatus === 'na';
+
+        return {
+            border: isDisabled
+                ? '1px solid #ccc'
+                : isDragOver
+                  ? '1px dashed #1976d2'
+                  : `1px solid ${datasheets.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
+            background: isDisabled
+                ? 'var(--appbar-bg-color)'
+                : isDragOver
+                  ? '#e3f2fd'
+                  : `${datasheets.length > 0 ? 'white' : 'var(--missing-weak)'}`,
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
+        };
+    }, [props.specificationStatus, isDragOver, datasheets.length]);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -104,12 +122,7 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = props => {
             <Box
                 id="datasheet-urls"
                 className="row-item thumbnail-container"
-                sx={{
-                    border: isDragOver
-                        ? '1px dashed #1976d2'
-                        : `1px solid ${datasheets.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
-                    background: isDragOver ? '#e3f2fd' : `${datasheets.length > 0 ? 'white' : 'var(--missing-weak)'}`,
-                }}
+                sx={boxStyles}
                 onMouseOver={() => setIsDragOver(true)}
                 onMouseOut={() => setIsDragOver(false)}
                 onDragOver={handleDragOver}
@@ -141,7 +154,9 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = props => {
 
                 {/* Thumbnails */}
                 {datasheets.length === 0 && (
-                    <span style={{ color: 'var(--missing-strong)' }}>Product Datasheet Needed</span>
+                    <span style={{ color: 'var(--missing-strong)' }}>
+                        {props.specificationStatus !== 'na' ? 'Product Datasheet Needed' : ''}
+                    </span>
                 )}
                 {datasheets.map((photo, idx) => (
                     <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedDatasheet} />

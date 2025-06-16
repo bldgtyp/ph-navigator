@@ -42,6 +42,10 @@
     font-size: 0.7em;
 }
 
+.thumbnail-container-disabled {
+    opacity: 0.5;
+}
+
 .thumbnail {
     border: 2px solid #e0e0e0;
     border-radius: 5px;

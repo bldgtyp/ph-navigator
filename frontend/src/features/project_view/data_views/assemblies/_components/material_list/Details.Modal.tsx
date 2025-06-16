@@ -48,7 +48,7 @@ const MaterialData: React.FC<MaterialDataProps> = props => {
 
 interface MaterialNotesProps {
     currentNotes: string;
-    handleNotesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    onNotesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 const MaterialNotes: React.FC<MaterialNotesProps> = props => {
@@ -64,7 +64,7 @@ const MaterialNotes: React.FC<MaterialNotesProps> = props => {
                 placeholder={'Add notes here...'}
                 defaultValue={props.currentNotes}
                 style={{ width: '100%', maxWidth: '100%' }}
-                onChange={props.handleNotesChange}
+                onChange={props.onNotesChange}
                 disabled={!userContext.user}
             />
         </Box>
@@ -78,7 +78,7 @@ const OkCancelButtons: React.FC<OkCancelButtonsProps> = props => {
         <DialogActions sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
             {userContext.user ? (
                 <ButtonGroup variant="text">
-                    <Button onClick={props.handleModalClose} size="large" color="primary">
+                    <Button onClick={props.onModalClose} size="large" color="primary">
                         Cancel
                     </Button>
                     <Button type="submit" size="large" color="primary">
@@ -96,21 +96,24 @@ const OkCancelButtons: React.FC<OkCancelButtonsProps> = props => {
 
 const DetailsModal: React.FC<DetailsModalProps> = props => {
     return (
-        <Dialog open={props.isModalOpen} onClose={props.handleModalClose} fullWidth maxWidth="sm">
+        <Dialog open={props.isModalOpen} onClose={props.onModalClose} fullWidth maxWidth="sm">
             <DialogTitle>{props.segment.material.name}</DialogTitle>
             <Divider />
 
             <form
                 onSubmit={e => {
                     e.preventDefault();
-                    props.handleSubmit(e);
+                    props.onSubmit(e);
                 }}
             >
                 <DialogContent sx={{ display: 'flex', flexDirection: 'column' }}>
                     <MaterialData material={props.segment.material} />
-                    <MaterialNotes currentNotes={props.currentNotes} handleNotesChange={props.handleNotesChange} />
+                    <MaterialNotes
+                        currentNotes={props.currentNotes}
+                        onNotesChange={e => props.onNotesChange({ notes: e.target.value })}
+                    />
                 </DialogContent>
-                <OkCancelButtons handleModalClose={props.handleModalClose} />
+                <OkCancelButtons onModalClose={props.onModalClose} />
             </form>
 
             <Divider />
