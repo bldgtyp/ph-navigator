@@ -2,6 +2,7 @@
  * Represents an input value that can be updated, tracking both its current and new values.
  * 
  * @typeParam T - The type of the input value.
+ * @typeParam U - The type of the argument for the setter function for the new value.
  * 
  * @property currentValue - The current value of the input.
  * @property setCurrentValue - Function to update the current value.

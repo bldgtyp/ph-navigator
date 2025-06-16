@@ -59,14 +59,14 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     );
 
     // Steel Stud Spacing
-    const [currentSteelStudSpacing, setCurrentSteelStudSpacing] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
-    const [newSteelStudSpacing, setNewSteelStudSpacing] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
+    const [currentSteelStudSpacingMM, setCurrentSteelStudSpacingMM] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
+    const [newSteelStudSpacingMM, setNewSteelStudSpacingMM] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
     const steelStudSpacingMM = new UpdatableInput<number, { steelStudSpacingMM: number }>(
-        currentSteelStudSpacing,
-        setCurrentSteelStudSpacing,
-        newSteelStudSpacing,
+        currentSteelStudSpacingMM,
+        setCurrentSteelStudSpacingMM,
+        newSteelStudSpacingMM,
         (args: { steelStudSpacingMM: number }) => {
-            setNewSteelStudSpacing(args.steelStudSpacingMM);
+            setNewSteelStudSpacingMM(args.steelStudSpacingMM);
         }
     );
 
@@ -92,7 +92,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         setNewMaterialId(currentMaterialId);
         setNewSegmentWidthMM(currentSegmentWidthMM);
         setNewIsSteelStudChecked(currentIsSteelStudChecked);
-        setNewSteelStudSpacing(currentSteelStudSpacing);
+        setNewSteelStudSpacingMM(currentSteelStudSpacingMM);
         setIsModalOpen(false);
     };
 
@@ -126,17 +126,17 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
             }
 
             // Update the steel stud spacing in the database if it has changed
-            if (newIsSteelStudChecked !== currentIsSteelStudChecked || (newIsSteelStudChecked && newSteelStudSpacing !== currentSteelStudSpacing)) {
+            if (newIsSteelStudChecked !== currentIsSteelStudChecked || (newIsSteelStudChecked && newSteelStudSpacingMM !== currentSteelStudSpacingMM)) {
                 console.log("in here")
-                console.log("newIsSteelStudChecked ? newSteelStudSpacing : null = ", newIsSteelStudChecked ? newSteelStudSpacing : null)
+                console.log("newIsSteelStudChecked ? newSteelStudSpacing : null = ", newIsSteelStudChecked ? newSteelStudSpacingMM : null)
                 const response = await patchWithAlert<SegmentType>(`assembly/update-segment-steel-stud-spacing/${segment.id}`, null, {
-                    steel_stud_spacing_mm: newIsSteelStudChecked ? newSteelStudSpacing : null
+                    steel_stud_spacing_mm: newIsSteelStudChecked ? newSteelStudSpacingMM : null
                 });
 
 
                 if (response) {
                     setCurrentIsSteelStudChecked(newIsSteelStudChecked);
-                    setCurrentSteelStudSpacing(newSteelStudSpacing);
+                    setCurrentSteelStudSpacingMM(newSteelStudSpacingMM);
                 } else {
                     console.error("Failed to update Segment-Steel-Stud.");
                 }
