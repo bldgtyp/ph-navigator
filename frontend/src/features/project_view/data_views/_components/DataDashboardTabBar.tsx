@@ -1,14 +1,13 @@
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import Box from "@mui/material/Box";
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Box from '@mui/material/Box';
 import { useNavigate } from 'react-router-dom';
 
 type propsType = {
-    tabs: { label: string, path: string }[];
+    tabs: { label: string; path: string }[];
     activeTab: number; // The active tab index managed by the parent
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
-}
-
+};
 
 const DataDashboardTabBar: React.FC<propsType> = ({ tabs, activeTab, onTabChange }) => {
     const navigate = useNavigate();
@@ -49,6 +48,6 @@ const DataDashboardTabBar: React.FC<propsType> = ({ tabs, activeTab, onTabChange
             </Tabs>
         </Box>
     );
-}
+};
 
 export default DataDashboardTabBar;

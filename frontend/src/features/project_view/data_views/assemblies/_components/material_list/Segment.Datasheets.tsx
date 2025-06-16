@@ -1,17 +1,16 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Box, CircularProgress, Tooltip, Typography } from "@mui/material";
-import { useParams } from "react-router-dom";
+import React, { useContext, useEffect, useState } from 'react';
+import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
+import { useParams } from 'react-router-dom';
 
-import { uploadDatasheetFiles } from "../../../../../../api/uploadDatasheetFiles";
-import { getWithAlert } from "../../../../../../api/getWithAlert";
+import { uploadDatasheetFiles } from '../../../../../../api/uploadDatasheetFiles';
+import { getWithAlert } from '../../../../../../api/getWithAlert';
 
-import { SegmentType } from "../../types/Segment";
-import { MaterialDatasheetType, MaterialDatasheetsType } from "../../types/Material.Datasheet";
-import ImageFullViewModal from "./Image.FullViewModal";
-import ImageThumbnail from "./Image.Thumbnail";
-import { UserContext } from "../../../../../auth/_contexts/UserContext";
-import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
-
+import { SegmentType } from '../../types/Segment';
+import { MaterialDatasheetType, MaterialDatasheetsType } from '../../types/Material.Datasheet';
+import ImageFullViewModal from './Image.FullViewModal';
+import ImageThumbnail from './Image.Thumbnail';
+import { UserContext } from '../../../../../auth/_contexts/UserContext';
+import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 
 interface DatasheetsProps {
     segment: SegmentType;
@@ -19,8 +18,7 @@ interface DatasheetsProps {
     onUploadComplete?: (urls: string[]) => void;
 }
 
-
-const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
+const SegmentDatasheets: React.FC<DatasheetsProps> = props => {
     const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const [isDragOver, setIsDragOver] = useState(false);
@@ -30,16 +28,18 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
 
     useEffect(() => {
         const fetchDatasheets = async () => {
-            console.log("Fetching datasheet thumbnails for segment:", props.segment.id);
+            console.log('Fetching datasheet thumbnails for segment:', props.segment.id);
             try {
-                const response = await getWithAlert<MaterialDatasheetsType>(`gcp/get-segment-datasheet-urls/${props.segment.id}`);
+                const response = await getWithAlert<MaterialDatasheetsType>(
+                    `gcp/get-segment-datasheet-urls/${props.segment.id}`
+                );
                 if (response) {
                     setDatasheets(response.datasheet_urls);
                 }
             } catch (error) {
-                console.error("Failed to fetch thumbnails:", error);
+                console.error('Failed to fetch thumbnails:', error);
             }
-        }
+        };
         fetchDatasheets();
     }, [projectId, props.segment.id]);
 
@@ -57,7 +57,7 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
         e.preventDefault();
         setIsDragOver(false);
         if (!userContext.user) {
-            alert("Please log in to upload files.");
+            alert('Please log in to upload files.');
             return null;
         }
 
@@ -68,16 +68,17 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
 
         try {
             const response = await uploadDatasheetFiles<MaterialDatasheetType>(projectId, props.segment.id, files);
-            const newPhotoUrls: MaterialDatasheetType[] = response
-                .filter((res): res is MaterialDatasheetType => res !== null);
-            setDatasheets((prev) => [...prev, ...newPhotoUrls]);
+            const newPhotoUrls: MaterialDatasheetType[] = response.filter(
+                (res): res is MaterialDatasheetType => res !== null
+            );
+            setDatasheets(prev => [...prev, ...newPhotoUrls]);
 
             // Optional: Show success message
             if (newPhotoUrls.length > 0) {
                 // You could show a success notification here
             }
         } catch (error) {
-            console.error("Upload failed:", error);
+            console.error('Upload failed:', error);
             // Optional: Show error message
         } finally {
             // Hide loading state
@@ -88,7 +89,7 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
     const handleSetSelectedDatasheet = (item: MaterialDatasheetType | null) => {
         setSelectedDatasheet(item);
         setIsDragOver(false);
-    }
+    };
 
     const handleDeleteDatasheeet = async (datasheetId: number) => {
         const success = await deleteWithAlert(`gcp/delete-segment-datasheet/${datasheetId}`);
@@ -104,8 +105,10 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
                 id="datasheet-urls"
                 className="row-item thumbnail-container"
                 sx={{
-                    border: isDragOver ? "1px dashed #1976d2" : `1px solid ${datasheets.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
-                    background: isDragOver ? "#e3f2fd" : `${datasheets.length > 0 ? 'white' : 'var(--missing-weak)'}`,
+                    border: isDragOver
+                        ? '1px dashed #1976d2'
+                        : `1px solid ${datasheets.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
+                    background: isDragOver ? '#e3f2fd' : `${datasheets.length > 0 ? 'white' : 'var(--missing-weak)'}`,
                 }}
                 onMouseOver={() => setIsDragOver(true)}
                 onMouseOut={() => setIsDragOver(false)}
@@ -137,8 +140,12 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
                 )}
 
                 {/* Thumbnails */}
-                {datasheets.length === 0 && <span style={{ color: "var(--missing-strong)" }}>Product Datasheet Needed</span>}
-                {datasheets.map((photo, idx) => <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedDatasheet} />)}
+                {datasheets.length === 0 && (
+                    <span style={{ color: 'var(--missing-strong)' }}>Product Datasheet Needed</span>
+                )}
+                {datasheets.map((photo, idx) => (
+                    <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedDatasheet} />
+                ))}
 
                 <ImageFullViewModal
                     selectedItem={selectedDatasheet}
@@ -148,6 +155,6 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = (props) => {
             </Box>
         </Tooltip>
     );
-}
+};
 
 export default SegmentDatasheets;

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { SegmentType } from "../../../types/Segment";
+import { useState } from 'react';
+import { SegmentType } from '../../../types/Segment';
 import { convertArgbToRgba } from '../../../types/Material';
-import { patchWithAlert } from "../../../../../../../api/patchWithAlert";
-import { UpdatableInput } from "../../../../../../types/UpdatableInput";
+import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
+import { UpdatableInput } from '../../../../../../types/UpdatableInput';
 
 export const useLayerSegmentHooks = (segment: SegmentType) => {
     // Basic Modal State
@@ -24,11 +24,11 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     // Segment Material
     const [currentMaterialId, setCurrentMaterialId] = useState<string>(segment.material.id);
     const [newMaterialId, setNewMaterialId] = useState<string>(segment.material.id);
-    const materialID = new UpdatableInput<string, { materialId: string, materialColor: string }>(
+    const materialID = new UpdatableInput<string, { materialId: string; materialColor: string }>(
         currentMaterialId,
         setCurrentMaterialId,
         newMaterialId,
-        (args: { materialId: string, materialColor: string }) => {
+        (args: { materialId: string; materialColor: string }) => {
             setNewMaterialId(args.materialId);
             setNewMaterialColor(args.materialColor);
         }
@@ -47,7 +47,9 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     );
 
     // Is Steel Stud Segment Checkbox
-    const [currentIsSteelStudChecked, setCurrentIsSteelStudChecked] = useState<boolean>(segment.steel_stud_spacing_mm !== null);
+    const [currentIsSteelStudChecked, setCurrentIsSteelStudChecked] = useState<boolean>(
+        segment.steel_stud_spacing_mm !== null
+    );
     const [newIsSteelStudChecked, setNewIsSteelStudChecked] = useState<boolean>(segment.steel_stud_spacing_mm !== null);
     const steelStudChecked = new UpdatableInput<boolean, { checked: boolean }>(
         currentIsSteelStudChecked,
@@ -59,7 +61,9 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     );
 
     // Steel Stud Spacing
-    const [currentSteelStudSpacingMM, setCurrentSteelStudSpacingMM] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
+    const [currentSteelStudSpacingMM, setCurrentSteelStudSpacingMM] = useState<number>(
+        segment.steel_stud_spacing_mm || 406.4
+    ); // 16 inches
     const [newSteelStudSpacingMM, setNewSteelStudSpacingMM] = useState<number>(segment.steel_stud_spacing_mm || 406.4); // 16 inches
     const steelStudSpacingMM = new UpdatableInput<number, { steelStudSpacingMM: number }>(
         currentSteelStudSpacingMM,
@@ -71,8 +75,12 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     );
 
     // Continuous Insulation Checkbox
-    const [currentContinuousInsulationChecked, setCurrentContinuousInsulationChecked] = useState<boolean>(segment.is_continuous_insulation);
-    const [newContinuousInsulationChecked, setNewContinuousInsulationChecked] = useState<boolean>(segment.is_continuous_insulation);
+    const [currentContinuousInsulationChecked, setCurrentContinuousInsulationChecked] = useState<boolean>(
+        segment.is_continuous_insulation
+    );
+    const [newContinuousInsulationChecked, setNewContinuousInsulationChecked] = useState<boolean>(
+        segment.is_continuous_insulation
+    );
     const continuousInsulationChecked = new UpdatableInput<boolean, { checked: boolean }>(
         currentContinuousInsulationChecked,
         setCurrentContinuousInsulationChecked,
@@ -85,7 +93,10 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
     // Handlers
     const handleMouseEnter = () => setIsSegmentHovered(true);
     const handleMouseLeave = () => setIsSegmentHovered(false);
-    const handleMouseClick = () => { setIsSegmentHovered(false); setIsModalOpen(true); };
+    const handleMouseClick = () => {
+        setIsSegmentHovered(false);
+        setIsModalOpen(true);
+    };
     const handleModalClose = () => {
         setIsSegmentHovered(false);
         setNewMaterialColor(currentMaterialColor);
@@ -100,92 +111,110 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         try {
             // Update the segment width in the database if it has changed
             if (newSegmentWidthMM !== currentSegmentWidthMM) {
-                const response = await patchWithAlert<SegmentType>(`assembly/update-segment-width/${segment.id}`, null, {
-                    width_mm: newSegmentWidthMM,
-                });
+                const response = await patchWithAlert<SegmentType>(
+                    `assembly/update-segment-width/${segment.id}`,
+                    null,
+                    {
+                        width_mm: newSegmentWidthMM,
+                    }
+                );
 
                 if (response) {
                     setCurrentSegmentWidthMM(response.width_mm);
                 } else {
-                    console.error("Failed to update Segment-Width.");
+                    console.error('Failed to update Segment-Width.');
                 }
             }
 
             // Update the material in the database if it has changed
             if (newMaterialId !== currentMaterialId) {
-                const response = await patchWithAlert<SegmentType>(`assembly/update-segment-material/${segment.id}`, null, {
-                    material_id: newMaterialId,
-                });
+                const response = await patchWithAlert<SegmentType>(
+                    `assembly/update-segment-material/${segment.id}`,
+                    null,
+                    {
+                        material_id: newMaterialId,
+                    }
+                );
 
                 if (response) {
                     setCurrentMaterialId(response.material.id);
-                    setCurrentMaterialColor(convertArgbToRgba(response.material.argb_color, "#ccc"));
+                    setCurrentMaterialColor(convertArgbToRgba(response.material.argb_color, '#ccc'));
                 } else {
-                    console.error("Failed to update Segment-Material.");
+                    console.error('Failed to update Segment-Material.');
                 }
             }
 
             // Update the steel stud spacing in the database if it has changed
-            if (newIsSteelStudChecked !== currentIsSteelStudChecked || (newIsSteelStudChecked && newSteelStudSpacingMM !== currentSteelStudSpacingMM)) {
-                console.log("in here")
-                console.log("newIsSteelStudChecked ? newSteelStudSpacing : null = ", newIsSteelStudChecked ? newSteelStudSpacingMM : null)
-                const response = await patchWithAlert<SegmentType>(`assembly/update-segment-steel-stud-spacing/${segment.id}`, null, {
-                    steel_stud_spacing_mm: newIsSteelStudChecked ? newSteelStudSpacingMM : null
-                });
-
+            if (
+                newIsSteelStudChecked !== currentIsSteelStudChecked ||
+                (newIsSteelStudChecked && newSteelStudSpacingMM !== currentSteelStudSpacingMM)
+            ) {
+                console.log('in here');
+                console.log(
+                    'newIsSteelStudChecked ? newSteelStudSpacing : null = ',
+                    newIsSteelStudChecked ? newSteelStudSpacingMM : null
+                );
+                const response = await patchWithAlert<SegmentType>(
+                    `assembly/update-segment-steel-stud-spacing/${segment.id}`,
+                    null,
+                    {
+                        steel_stud_spacing_mm: newIsSteelStudChecked ? newSteelStudSpacingMM : null,
+                    }
+                );
 
                 if (response) {
                     setCurrentIsSteelStudChecked(newIsSteelStudChecked);
                     setCurrentSteelStudSpacingMM(newSteelStudSpacingMM);
                 } else {
-                    console.error("Failed to update Segment-Steel-Stud.");
+                    console.error('Failed to update Segment-Steel-Stud.');
                 }
             }
 
             // Update the continuous insulation in the database if it has changed
             if (newContinuousInsulationChecked !== currentContinuousInsulationChecked) {
-                const response = await patchWithAlert<SegmentType>(`assembly/update-segment-is-continuous-insulation/${segment.id}`, null, {
-                    is_continuous_insulation: newContinuousInsulationChecked,
-                });
+                const response = await patchWithAlert<SegmentType>(
+                    `assembly/update-segment-is-continuous-insulation/${segment.id}`,
+                    null,
+                    {
+                        is_continuous_insulation: newContinuousInsulationChecked,
+                    }
+                );
 
                 if (response) {
                     setCurrentContinuousInsulationChecked(response.is_continuous_insulation);
                 } else {
-                    console.error("Failed to update Segment-Continuous-Insulation.");
+                    console.error('Failed to update Segment-Continuous-Insulation.');
                 }
             }
 
-            setIsSegmentHovered(false)
+            setIsSegmentHovered(false);
             setIsModalOpen(false);
         } catch (error) {
-            console.error("Failed to update material:", error);
-            setIsSegmentHovered(false)
+            console.error('Failed to update material:', error);
+            setIsSegmentHovered(false);
             setIsModalOpen(false);
         }
     };
 
-    const handleDeleteSegment = (
-        segmentId: number,
-        onDeleteSegment: (segmentId: number) => void,
-    ) => {
+    const handleDeleteSegment = (segmentId: number, onDeleteSegment: (segmentId: number) => void) => {
         onDeleteSegment(segmentId); // Call the delete handler
         setIsModalOpen(false); // Close the modal
     };
 
     return {
-        "isModalOpen": isModalOpen,
-        "isSegmentHovered": isSegmentHovered,
-        "handleMouseEnter": handleMouseEnter,
-        "handleMouseLeave": handleMouseLeave,
-        "handleMouseClick": handleMouseClick,
-        "handleModalClose": handleModalClose,
-        "handleSubmit": handleSubmit,
-        "handleDeleteSegment": handleDeleteSegment,
-        "materialID": materialID,
-        "materialColor": materialColor,
-        "segmentWidthMM": segmentWidthMM,
-        "steelStudChecked": steelStudChecked,
-        "steelStudSpacingMM": steelStudSpacingMM,
-        "continuousInsulationChecked": continuousInsulationChecked,
+        isModalOpen: isModalOpen,
+        isSegmentHovered: isSegmentHovered,
+        handleMouseEnter: handleMouseEnter,
+        handleMouseLeave: handleMouseLeave,
+        handleMouseClick: handleMouseClick,
+        handleModalClose: handleModalClose,
+        handleSubmit: handleSubmit,
+        handleDeleteSegment: handleDeleteSegment,
+        materialID: materialID,
+        materialColor: materialColor,
+        segmentWidthMM: segmentWidthMM,
+        steelStudChecked: steelStudChecked,
+        steelStudSpacingMM: steelStudSpacingMM,
+        continuousInsulationChecked: continuousInsulationChecked,
     };
 };

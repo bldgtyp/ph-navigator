@@ -1,10 +1,10 @@
-import React, { useState, useContext } from "react";
-import { Box, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+import React, { useState, useContext } from 'react';
+import { Box, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 
-import { UserContext } from "../../../../../../auth/_contexts/UserContext";
+import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
-import { AssemblyType } from "../../../types/Assembly";
-import ChangeNameModal from "../ChangeNameModal/Modal.ChangeName";
+import { AssemblyType } from '../../../types/Assembly';
+import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 
 interface AssemblySelectorProps {
     assemblies: AssemblyType[];
@@ -21,13 +21,13 @@ const ChangeNameButton: React.FC<{ openModal: () => void }> = ({ openModal }) =>
             variant="outlined"
             color="primary"
             size="small"
-            sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
+            sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
             onClick={openModal}
         >
             Change Name
         </Button>
-    )
-}
+    );
+};
 
 const FlipOrientationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     return (
@@ -35,13 +35,13 @@ const FlipOrientationButton: React.FC<{ onClick: () => void }> = ({ onClick }) =
             variant="outlined"
             color="primary"
             size="small"
-            sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
+            sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
             onClick={onClick}
         >
             Flip Orientation
         </Button>
-    )
-}
+    );
+};
 
 const FlipLayersButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     return (
@@ -49,13 +49,13 @@ const FlipLayersButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
             variant="outlined"
             color="primary"
             size="small"
-            sx={{ marginBottom: 2, minWidth: "120px", color: "inherit" }}
+            sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
             onClick={onClick}
         >
             Flip Layers
         </Button>
-    )
-}
+    );
+};
 
 export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
     assemblies,
@@ -81,26 +81,25 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
         if (selectedAssemblyId) {
             handleFlipOrientation(selectedAssemblyId);
         }
-    }
+    };
 
     const handleSubmitFlipLayers = () => {
         if (selectedAssemblyId) {
             handleFlipLayers(selectedAssemblyId);
         }
-    }
+    };
 
     // Create a sorted copy of the assemblies array
     const sortedAssemblies = [...assemblies].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
-        <Box sx={{ display: "flex", alignItems: "top", gap: 2, marginBottom: 2 }}>
-
-            <FormControl className='assembly-selector' fullWidth sx={{ marginBottom: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'top', gap: 2, marginBottom: 2 }}>
+            <FormControl className="assembly-selector" fullWidth sx={{ marginBottom: 2 }}>
                 <InputLabel id="assembly-select-label">Select Assembly</InputLabel>
                 <Select
                     size="medium"
                     labelId="assembly-select-label"
-                    value={selectedAssemblyId || ""}
+                    value={selectedAssemblyId || ''}
                     onChange={handleAssemblyChange}
                     label="Select Assembly"
                 >
@@ -112,15 +111,10 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
                 </Select>
             </FormControl>
 
-            {userContext.user ? (<ChangeNameButton openModal={openModal} />) : null}
-            <ChangeNameModal
-                open={isModalOpen}
-                onClose={closeModal}
-                onSubmit={handleSubmitNameChange}
-            />
-            {userContext.user ? (<FlipOrientationButton onClick={handleSubmitFlipOrientation} />) : null}
-            {userContext.user ? (<FlipLayersButton onClick={handleSubmitFlipLayers} />) : null}
+            {userContext.user ? <ChangeNameButton openModal={openModal} /> : null}
+            <ChangeNameModal open={isModalOpen} onClose={closeModal} onSubmit={handleSubmitNameChange} />
+            {userContext.user ? <FlipOrientationButton onClick={handleSubmitFlipOrientation} /> : null}
+            {userContext.user ? <FlipLayersButton onClick={handleSubmitFlipLayers} /> : null}
         </Box>
     );
-}
-
+};

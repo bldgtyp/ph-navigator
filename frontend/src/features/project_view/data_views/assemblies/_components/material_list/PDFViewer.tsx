@@ -16,20 +16,22 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url }) => {
 
     const handleError = () => {
         setIsLoading(false);
-        setError("Failed to load PDF");
+        setError('Failed to load PDF');
     };
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', height: '70vh' }}>
             {isLoading && (
-                <Box sx={{
-                    position: 'absolute',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '100%'
-                }}>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%',
+                        height: '100%',
+                    }}
+                >
                     <CircularProgress />
                 </Box>
             )}
@@ -39,7 +41,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url }) => {
                     <PictureAsPdfIcon sx={{ fontSize: 60, color: 'error.main' }} />
                     <Typography color="error">Failed to load PDF</Typography>
                     <Typography variant="body2">
-                        <a href={url} target="_blank" rel="noopener noreferrer">Open PDF in new tab</a>
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                            Open PDF in new tab
+                        </a>
                     </Typography>
                 </Box>
             ) : (

@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { LayerType } from "../../../types/Layer";
-import { SegmentType, SpecificationStatus } from "../../../types/Segment";
-import { postWithAlert } from "../../../../../../../api/postWithAlert";
-import { deleteWithAlert } from "../../../../../../../api/deleteWithAlert";
-import { patchWithAlert } from "../../../../../../../api/patchWithAlert";
-import { UpdatableInput } from "../../../../../../types/UpdatableInput";
+import { useState } from 'react';
+import { LayerType } from '../../../types/Layer';
+import { SegmentType, SpecificationStatus } from '../../../types/Segment';
+import { postWithAlert } from '../../../../../../../api/postWithAlert';
+import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
+import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
+import { UpdatableInput } from '../../../../../../types/UpdatableInput';
 
 export const useLayerHooks = (layer: LayerType) => {
     // Basic State
@@ -20,13 +20,11 @@ export const useLayerHooks = (layer: LayerType) => {
         setCurrentLayerThicknessMM,
         layerThicknessUserInputMM,
         (args: { thickness_mm: number }) => {
-            setLayerThicknessUserInputMM(args.thickness_mm)
+            setLayerThicknessUserInputMM(args.thickness_mm);
         }
-    )
+    );
 
-    const handleSubmitChangeLayerThickness = async (
-        layer: LayerType,
-    ) => {
+    const handleSubmitChangeLayerThickness = async (layer: LayerType) => {
         try {
             if (layerThickness.hasChanged()) {
                 const response = await patchWithAlert<LayerType>(`assembly/update-layer-thickness/${layer.id}`, null, {
@@ -42,7 +40,7 @@ export const useLayerHooks = (layer: LayerType) => {
 
             setIsModalOpen(false);
         } catch (error) {
-            console.error("Failed to update layer:", error);
+            console.error('Failed to update layer:', error);
             setIsModalOpen(false);
         }
     };
@@ -50,14 +48,13 @@ export const useLayerHooks = (layer: LayerType) => {
     // Mouse Event Handlers
     const handleMouseEnter = () => setIsLayerHovered(true);
     const handleMouseLeave = () => setIsLayerHovered(false);
-    const handleMouseClick = () => setIsModalOpen(true)
-    const handleModalClose = () => { setLayerThicknessUserInputMM(currentLayerThicknessMM); setIsModalOpen(false); }
+    const handleMouseClick = () => setIsModalOpen(true);
+    const handleModalClose = () => {
+        setLayerThicknessUserInputMM(currentLayerThicknessMM);
+        setIsModalOpen(false);
+    };
 
-
-    const handleAddSegmentToRight = async (
-        segment: SegmentType,
-        layer: LayerType,
-    ) => {
+    const handleAddSegmentToRight = async (segment: SegmentType, layer: LayerType) => {
         const DEFAULT_WIDTH = 50;
 
         try {
@@ -65,11 +62,15 @@ export const useLayerHooks = (layer: LayerType) => {
             const orderPosition = segment.order + 1;
 
             // Call the backend API to add the new segment
-            const response = await postWithAlert<SegmentType>(`assembly/create-new-segment-on-layer/${layer.id}`, null, {
-                material_id: segment.material.id, // Match the material ID from the segment
-                width_mm: DEFAULT_WIDTH,
-                order: orderPosition,
-            });
+            const response = await postWithAlert<SegmentType>(
+                `assembly/create-new-segment-on-layer/${layer.id}`,
+                null,
+                {
+                    material_id: segment.material.id, // Match the material ID from the segment
+                    width_mm: DEFAULT_WIDTH,
+                    order: orderPosition,
+                }
+            );
 
             if (response) {
                 // Add the new segment to the local state
@@ -98,20 +99,18 @@ export const useLayerHooks = (layer: LayerType) => {
                 setSegments(updatedSegments);
             }
         } catch (error) {
-            console.error("Failed to add segment:", error);
+            console.error('Failed to add segment:', error);
         }
     };
 
-    const handleDeleteSegment = async (
-        segmentId: number,
-    ) => {
+    const handleDeleteSegment = async (segmentId: number) => {
         try {
             // Call the backend API to delete the segment
             const response = await deleteWithAlert<{ message: string }>(`assembly/delete-segment/${segmentId}`, null);
 
             if (response) {
                 // Remove the segment from the local state
-                const updatedSegments = segments.filter((segment) => segment.id !== segmentId);
+                const updatedSegments = segments.filter(segment => segment.id !== segmentId);
 
                 // Recalculate the order for the remaining segments
                 updatedSegments.forEach((segment, index) => {
@@ -121,25 +120,24 @@ export const useLayerHooks = (layer: LayerType) => {
                 setSegments(updatedSegments);
             }
         } catch (error) {
-            console.error("Failed to delete segment:", error);
+            console.error('Failed to delete segment:', error);
         }
     };
 
     return {
-        "isModalOpen": isModalOpen,
-        "setIsModalOpen": setIsModalOpen,
-        "isLayerHovered": isLayerHovered,
-        "setIsLayerHovered": setIsLayerHovered,
-        "segments": segments,
-        "setSegments": setSegments,
-        "handleMouseEnter": handleMouseEnter,
-        "handleMouseLeave": handleMouseLeave,
-        "handleMouseClick": handleMouseClick,
-        "handleModalClose": handleModalClose,
-        "handleAddSegmentToRight": handleAddSegmentToRight,
-        "handleDeleteSegment": handleDeleteSegment,
-        "handleSubmitChangeLayerThickness": handleSubmitChangeLayerThickness,
-        "layerThickness": layerThickness,
-    }
+        isModalOpen: isModalOpen,
+        setIsModalOpen: setIsModalOpen,
+        isLayerHovered: isLayerHovered,
+        setIsLayerHovered: setIsLayerHovered,
+        segments: segments,
+        setSegments: setSegments,
+        handleMouseEnter: handleMouseEnter,
+        handleMouseLeave: handleMouseLeave,
+        handleMouseClick: handleMouseClick,
+        handleModalClose: handleModalClose,
+        handleAddSegmentToRight: handleAddSegmentToRight,
+        handleDeleteSegment: handleDeleteSegment,
+        handleSubmitChangeLayerThickness: handleSubmitChangeLayerThickness,
+        layerThickness: layerThickness,
+    };
 };
-

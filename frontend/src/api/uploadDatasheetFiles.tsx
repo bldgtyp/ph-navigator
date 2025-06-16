@@ -1,11 +1,11 @@
-import constants from "../data/constants.json";
+import constants from '../data/constants.json';
 
 export async function uploadDatasheetFiles<T>(
     projectId: string | undefined,
     segmentId: number,
-    files: FileList,
+    files: FileList
 ): Promise<(T | null)[]> {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     const API_BASE_URL: string = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
     const API_ENDPOINT: string = `${API_BASE_URL}gcp/add-new-segment-datasheet/${projectId}`;
 
@@ -13,11 +13,11 @@ export async function uploadDatasheetFiles<T>(
 
     for (const file of files) {
         const formData = new FormData();
-        formData.append("segment_id", segmentId.toString());
-        formData.append("file", file);
+        formData.append('segment_id', segmentId.toString());
+        formData.append('file', file);
 
         const response = await fetch(API_ENDPOINT, {
-            method: "POST",
+            method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,
             },

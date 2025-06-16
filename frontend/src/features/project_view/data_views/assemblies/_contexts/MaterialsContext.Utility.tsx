@@ -1,5 +1,5 @@
-import { getWithAlert } from "../../../../../api/getWithAlert";
-import { MaterialType } from "../types/Material";
+import { getWithAlert } from '../../../../../api/getWithAlert';
+import { MaterialType } from '../types/Material';
 
 const cacheKey = 'materials';
 const cacheExpiryKey = 'materials_expiry';
@@ -16,7 +16,7 @@ export const fetchAndCacheMaterials = async (): Promise<MaterialType[]> => {
 
         return materials || [];
     } catch (error) {
-        console.error("Error fetching materials:", error);
+        console.error('Error fetching materials:', error);
         throw error;
     }
 };

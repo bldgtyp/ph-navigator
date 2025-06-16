@@ -1,18 +1,18 @@
-import { Tooltip } from "@mui/material";
+import { Tooltip } from '@mui/material';
 
 /**
  * Applies a specific style to a data sheet checkbox based on the provided value.
  * @param value - The value to determine the style for.
  */
 function specificationCheckboxStyle(value?: string) {
-  if (value === "NEEDED") {
-    return { checked: false, style: "checkbox-needed" };
-  } else if (value === "COMPLETE") {
-    return { checked: true, style: "checkbox-checked" };
-  } else if (value === "QUESTION") {
-    return { checked: false, style: "checkbox-question" };
-  }
-  return { checked: false, style: "checkbox-na" };
+    if (value === 'NEEDED') {
+        return { checked: false, style: 'checkbox-needed' };
+    } else if (value === 'COMPLETE') {
+        return { checked: true, style: 'checkbox-checked' };
+    } else if (value === 'QUESTION') {
+        return { checked: false, style: 'checkbox-question' };
+    }
+    return { checked: false, style: 'checkbox-na' };
 }
 
 /**
@@ -23,12 +23,12 @@ function specificationCheckboxStyle(value?: string) {
  * @returns The rendered checkbox component.
  */
 export const CheckboxForSpecification: React.FC<{ value?: string; row: any }> = ({ value, row }) => {
-  const { style } = specificationCheckboxStyle(value);
-  return (
-    <Tooltip title={row.FLAG}>
-      <div className="checkbox-cell">
-        <div className={style} />
-      </div>
-    </Tooltip>
-  );
+    const { style } = specificationCheckboxStyle(value);
+    return (
+        <Tooltip title={row.FLAG}>
+            <div className="checkbox-cell">
+                <div className={style} />
+            </div>
+        </Tooltip>
+    );
 };

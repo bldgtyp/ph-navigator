@@ -1,4 +1,4 @@
-import constants from "../data/constants.json";
+import constants from '../data/constants.json';
 
 /**
  * Sends a POST request to the specified API endpoint with the provided data and token.
@@ -6,10 +6,10 @@ import constants from "../data/constants.json";
  *
  * @template T - The expected type of the response data.
  * @param {string} endpoint - The API endpoint to send the request to (relative to the base URL).
- * @param {string | null} [token=null] - The authorization token to include in the request headers. 
+ * @param {string | null} [token=null] - The authorization token to include in the request headers.
  * If not provided, it will attempt to retrieve the token from localStorage.
  * @param {any} [data={}] - The data to include in the request body, serialized as JSON.
- * @returns {Promise<T | null>} - A promise that resolves to the response data of type `T` if the request is successful, 
+ * @returns {Promise<T | null>} - A promise that resolves to the response data of type `T` if the request is successful,
  * or `null` if the request fails.
  *
  * @throws {Error} - Throws an error if the fetch request encounters a network issue.
@@ -29,11 +29,13 @@ export async function postWithAlert<T>(
     token: string | null = null,
     data: any = {}
 ): Promise<T | null> {
-    console.log(`postWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., data=${JSON.stringify(data)}`);
+    console.log(
+        `postWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ''}..., data=${JSON.stringify(data)}`
+    );
 
     // If token is not provided, try to get it from localStorage
     if (!token) {
-        token = localStorage.getItem("token");
+        token = localStorage.getItem('token');
     }
 
     // Define the API base URL and endpoint
@@ -42,10 +44,10 @@ export async function postWithAlert<T>(
 
     // Define the fetch options
     const options: RequestInit = {
-        method: "POST",
+        method: 'POST',
         headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
     };

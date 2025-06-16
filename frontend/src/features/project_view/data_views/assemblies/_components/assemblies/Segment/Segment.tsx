@@ -1,12 +1,11 @@
-import { useContext } from "react";
-import { Box, Tooltip } from "@mui/material";
+import { useContext } from 'react';
+import { Box, Tooltip } from '@mui/material';
 
-import { UserContext } from "../../../../../../auth/_contexts/UserContext";
+import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
-import ModalLayerSegment from "../SegmentPropertiesModal/LayerSegmentProperties";
+import ModalLayerSegment from '../SegmentPropertiesModal/LayerSegmentProperties';
 import { SegmentType } from '../../../types/Segment';
-import { useLayerSegmentHooks } from "./Segment.Hooks";
-
+import { useLayerSegmentHooks } from './Segment.Hooks';
 
 type SegmentProps = {
     segment: SegmentType;
@@ -14,16 +13,15 @@ type SegmentProps = {
     onDeleteSegment: (segmentId: number) => void;
 };
 
-const AddSegmentButton: React.FC<{ onClick: () => void }> = (props) => {
+const AddSegmentButton: React.FC<{ onClick: () => void }> = props => {
     return (
         <Tooltip title="Add a New Segment" placement="right">
-            <button className="create-new-segment-button" onClick={props.onClick} >
+            <button className="create-new-segment-button" onClick={props.onClick}>
                 +
             </button>
         </Tooltip>
-
-    )
-}
+    );
+};
 
 const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegment }) => {
     const userContext = useContext(UserContext);
@@ -36,10 +34,14 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
             onMouseEnter={hooks.handleMouseEnter}
             onMouseLeave={hooks.handleMouseLeave}
         >
-
             {/* The LayerSegment rectangle */}
             <svg className="layer-segment-svg" width="100%" height="100%" onClick={hooks.handleMouseClick}>
-                <rect className="layer-segment-rect" width="100%" height="100%" style={{ fill: hooks.materialColor.currentValue }} />
+                <rect
+                    className="layer-segment-rect"
+                    width="100%"
+                    height="100%"
+                    style={{ fill: hooks.materialColor.currentValue }}
+                />
             </svg>
 
             {/* Modal for input */}
@@ -51,14 +53,15 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
                 steelStudChecked={hooks.steelStudChecked}
                 steelStudSpacingMM={hooks.steelStudSpacingMM}
                 continuousInsulationChecked={hooks.continuousInsulationChecked}
-                onDeleteSegment={(segmentId) => hooks.handleDeleteSegment(segmentId, onDeleteSegment)}
+                onDeleteSegment={segmentId => hooks.handleDeleteSegment(segmentId, onDeleteSegment)}
                 onSubmit={() => hooks.handleSubmit(segment)}
                 onModalClose={hooks.handleModalClose}
             />
 
             {/* Add Segment Button */}
-            {hooks.isSegmentHovered && userContext.user ? (<AddSegmentButton onClick={() => onAddSegment(segment)} />) : null}
-
+            {hooks.isSegmentHovered && userContext.user ? (
+                <AddSegmentButton onClick={() => onAddSegment(segment)} />
+            ) : null}
         </Box>
     );
 };

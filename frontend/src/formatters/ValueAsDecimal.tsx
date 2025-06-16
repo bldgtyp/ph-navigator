@@ -6,6 +6,6 @@
  */
 
 export const ValueAsDecimal = (params: any, places: number = 2) => {
-  const value = params.value ? parseFloat(params.value).toFixed(places) : "";
-  return <>{value}</>;
+    const value = params.value ? parseFloat(params.value).toFixed(places) : '';
+    return <>{value}</>;
 };

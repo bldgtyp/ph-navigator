@@ -1,10 +1,10 @@
-import { LayerType } from "./Layer";
+import { LayerType } from './Layer';
 
 export interface AssemblyType {
     id: number;
     name: string;
     layers: LayerType[];
-    orientation: "first_layer_outside" | "last_layer_outside"
+    orientation: 'first_layer_outside' | 'last_layer_outside';
 }
 
 export interface UseLoadAssembliesReturn {

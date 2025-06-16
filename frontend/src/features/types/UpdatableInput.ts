@@ -1,23 +1,22 @@
 /**
  * Represents an input value that can be updated, tracking both its current and new values.
- * 
+ *
  * @typeParam T - The type of the input value.
  * @typeParam U - The type of the argument for the setter function for the new value.
- * 
+ *
  * @property currentValue - The current value of the input.
  * @property setCurrentValue - Function to update the current value.
  * @property newValue - The new value to be set for the input.
  * @property setNewValue - Function to update the new value.
- * 
+ *
  * @method hasChanged - Determines if the new value is different from the current value.
  */
 export class UpdatableInput<T, U> {
-
     constructor(
         public currentValue: T,
         public setCurrentValue: (value: T) => void,
         public newValue: T,
-        public setNewValue: (args: U) => void,
+        public setNewValue: (args: U) => void
     ) {
         this.currentValue = currentValue;
         this.setCurrentValue = setCurrentValue;
@@ -27,5 +26,5 @@ export class UpdatableInput<T, U> {
 
     hasChanged = (): boolean => {
         return this.currentValue !== this.newValue;
-    }
+    };
 }

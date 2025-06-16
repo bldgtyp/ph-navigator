@@ -1,13 +1,13 @@
 // Functions for use when building DataGrid
-import { GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from '@mui/x-data-grid';
 
 type TableField = {
-  field: string;
-  headerName: string;
-  flex?: number;
-  renderCell?: any;
-  renderHeader?: any;
-  minWidth?: number;
+    field: string;
+    headerName: string;
+    flex?: number;
+    renderCell?: any;
+    renderHeader?: any;
+    minWidth?: number;
 };
 
 /**
@@ -20,28 +20,27 @@ type TableField = {
  * @returns An array of GridColDef representing the generated grid columns.
  */
 export function generateGridColumns(tableFields: Array<TableField>): GridColDef[] {
+    return tableFields.map((item: TableField) => {
+        // Build the basic column object
+        const column: Partial<GridColDef> = {
+            field: item.field,
+            headerName: item.headerName,
+            flex: item.flex,
+            minWidth: item.minWidth ? item.minWidth : 0,
+        };
 
-  return tableFields.map((item: TableField) => {
-    // Build the basic column object
-    const column: Partial<GridColDef> = {
-      field: item.field,
-      headerName: item.headerName,
-      flex: item.flex,
-      minWidth: item.minWidth ? item.minWidth : 0,
-    };
+        // Add the renderCell, if it exists
+        if (item.renderCell) {
+            column['renderCell'] = item.renderCell;
+        }
 
-    // Add the renderCell, if it exists
-    if (item.renderCell) {
-      column["renderCell"] = item.renderCell;
-    }
+        // Add the renderHeader, if it exists
+        if (item.renderHeader) {
+            column['renderHeader'] = item.renderHeader;
+        }
 
-    // Add the renderHeader, if it exists
-    if (item.renderHeader) {
-      column["renderHeader"] = item.renderHeader;
-    }
-
-    return column as GridColDef;
-  });
+        return column as GridColDef;
+    });
 }
 
 /**
@@ -52,8 +51,8 @@ export function generateGridColumns(tableFields: Array<TableField>): GridColDef[
  * @returns An array with one default row in it.
  */
 export function generateDefaultRow(tableFields: Array<TableField>): Array<any> {
-  const defaultRow = tableFields.reduce((acc, key) => {
-    return { ...acc, id: "-", [key.field]: "-" };
-  }, {});
-  return [defaultRow];
+    const defaultRow = tableFields.reduce((acc, key) => {
+        return { ...acc, id: '-', [key.field]: '-' };
+    }, {});
+    return [defaultRow];
 }

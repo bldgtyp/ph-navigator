@@ -1,34 +1,30 @@
-import "../../styles/Specification.css";
-import "../../styles/MaterialsList.css";
+import '../../styles/Specification.css';
+import '../../styles/MaterialsList.css';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Box } from "@mui/material";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Box } from '@mui/material';
 
-import { useMaterials } from "../../_contexts/MaterialsContext";
+import { useMaterials } from '../../_contexts/MaterialsContext';
 
-import { getWithAlert } from "../../../../../../api/getWithAlert";
+import { getWithAlert } from '../../../../../../api/getWithAlert';
 
-import LoadingModal from "../../../_components/LoadingModal";
-import ContentBlockHeader from "../../../_components/ContentBlockHeader";
+import LoadingModal from '../../../_components/LoadingModal';
+import ContentBlockHeader from '../../../_components/ContentBlockHeader';
 
-import { AssemblyType } from "../../types/Assembly";
-import MaterialListItem from "./ListItem";
+import { AssemblyType } from '../../types/Assembly';
+import MaterialListItem from './ListItem';
 
-
-const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = (props) => {
+const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = props => {
     return (
         <Box className="assembly-material-list-container">
             <h4 className="assembly-title">Assembly: {props.assembly.name}</h4>
-            {props.assembly.layers.map((layer) =>
-                layer.segments.map((segment) => (
-                    <MaterialListItem key={segment.id} segment={segment} />
-                ))
+            {props.assembly.layers.map(layer =>
+                layer.segments.map(segment => <MaterialListItem key={segment.id} segment={segment} />)
             )}
         </Box>
-    )
-}
-
+    );
+};
 
 const MaterialListPage: React.FC = () => {
     const { projectId } = useParams();
@@ -42,7 +38,7 @@ const MaterialListPage: React.FC = () => {
             setAssemblies(response ?? []);
             return response ?? [];
         } catch (error) {
-            console.error("Failed to fetch assemblies:", error);
+            console.error('Failed to fetch assemblies:', error);
             return [];
         } finally {
             setIsLoadingAssemblies(false);
@@ -55,7 +51,7 @@ const MaterialListPage: React.FC = () => {
             if (fetchedAssemblies) {
                 setAssemblies(fetchedAssemblies);
             }
-        }
+        };
 
         initializeAssemblies();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,14 +59,14 @@ const MaterialListPage: React.FC = () => {
 
     return (
         <>
-            <ContentBlockHeader text={"Project Materials"} />
+            <ContentBlockHeader text={'Project Materials'} />
             <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
 
-            {assemblies.map((assembly) => (
+            {assemblies.map(assembly => (
                 <MaterialListContainer key={assembly.id} assembly={assembly} />
             ))}
         </>
-    )
-}
+    );
+};
 
 export default MaterialListPage;

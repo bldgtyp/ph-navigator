@@ -1,15 +1,17 @@
-import constants from "../data/constants.json";
+import constants from '../data/constants.json';
 
 export async function postFileWithAlert<T>(
     endpoint: string,
     token: string | null = null,
-    file: File,
+    file: File
 ): Promise<T | null> {
-    console.log(`postWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., file=${file.name}`);
+    console.log(
+        `postWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ''}..., file=${file.name}`
+    );
 
     // If token is not provided, try to get it from localStorage
     if (!token) {
-        token = localStorage.getItem("token");
+        token = localStorage.getItem('token');
     }
 
     // Define the API base URL and endpoint
@@ -18,13 +20,13 @@ export async function postFileWithAlert<T>(
 
     // Create a FormData object to hold the file
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     // Define the fetch options
     const options: RequestInit = {
-        method: "POST",
+        method: 'POST',
         headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
         },
         body: formData,
     };
@@ -37,8 +39,8 @@ export async function postFileWithAlert<T>(
         return responseData;
     } else {
         const errorJson = await response.json();
-        console.error(`Error: ${response.status} - ${errorJson["detail"]}`);
-        alert(`Error: ${response.status} - ${errorJson["detail"]}`);
+        console.error(`Error: ${response.status} - ${errorJson['detail']}`);
+        alert(`Error: ${response.status} - ${errorJson['detail']}`);
         return null;
     }
 }

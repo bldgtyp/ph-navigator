@@ -1,4 +1,4 @@
-import constants from "../data/constants.json";
+import constants from '../data/constants.json';
 
 /**
  * Sends a PATCH request to the specified API endpoint with the provided data and token.
@@ -27,11 +27,13 @@ export async function patchWithAlert<T>(
     token: string | null = null,
     data: any = {}
 ): Promise<T | null> {
-    console.log(`patchWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., data=${JSON.stringify(data)}`);
+    console.log(
+        `patchWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ''}..., data=${JSON.stringify(data)}`
+    );
 
     // If token is not provided, try to get it from localStorage
     if (!token) {
-        token = localStorage.getItem("token");
+        token = localStorage.getItem('token');
     }
 
     // Define the API base URL and endpoint
@@ -40,10 +42,10 @@ export async function patchWithAlert<T>(
 
     // Define the fetch options
     const options: RequestInit = {
-        method: "PATCH",
+        method: 'PATCH',
         headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
     };

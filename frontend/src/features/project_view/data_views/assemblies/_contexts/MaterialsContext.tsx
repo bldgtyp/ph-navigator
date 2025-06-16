@@ -1,7 +1,6 @@
-import React, { createContext, useContext } from "react";
-import { MaterialType } from "../types/Material";
-import { useLoadMaterials } from "./MaterialsContext.Hooks";
-
+import React, { createContext, useContext } from 'react';
+import { MaterialType } from '../types/Material';
+import { useLoadMaterials } from './MaterialsContext.Hooks';
 
 interface MaterialsContextType {
     isLoadingMaterials: boolean;
@@ -10,9 +9,7 @@ interface MaterialsContextType {
     setMaterials: React.Dispatch<React.SetStateAction<MaterialType[]>>;
 }
 
-
 const MaterialsContext = createContext<MaterialsContextType | undefined>(undefined);
-
 
 /**
  * MaterialsProvider is a React context provider component that supplies
@@ -38,7 +35,6 @@ export const MaterialsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 };
 
-
 /**
  * Custom hook to access the `MaterialsContext`.
  *
@@ -52,7 +48,7 @@ export const MaterialsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export const useMaterials = (): MaterialsContextType => {
     const context = useContext(MaterialsContext);
     if (!context) {
-        throw new Error("useMaterials must be used within a MaterialsProvider");
+        throw new Error('useMaterials must be used within a MaterialsProvider');
     }
     return context;
 };

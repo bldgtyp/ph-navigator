@@ -14,7 +14,7 @@ export const UnitSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Load preference from localStorage, default to SI
     const [unitSystem, setUnitSystemState] = useState<UnitSystem>(() => {
         const savedSystem = localStorage.getItem('unitSystem');
-        return (savedSystem === 'SI' || savedSystem === 'IP') ? savedSystem : 'SI';
+        return savedSystem === 'SI' || savedSystem === 'IP' ? savedSystem : 'SI';
     });
 
     // Update localStorage when preference changes
@@ -24,7 +24,7 @@ export const UnitSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     // Toggle between SI and IP
     const toggleUnitSystem = () => {
-        setUnitSystemState(current => current === 'SI' ? 'IP' : 'SI');
+        setUnitSystemState(current => (current === 'SI' ? 'IP' : 'SI'));
     };
 
     // Set unit system explicitly

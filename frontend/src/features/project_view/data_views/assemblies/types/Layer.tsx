@@ -5,5 +5,5 @@ export interface LayerType {
     assembly_id: number;
     order: number;
     thickness_mm: number;
-    segments: SegmentType[]
+    segments: SegmentType[];
 }

@@ -1,8 +1,8 @@
-import { Tooltip } from "@mui/material";
+import { Tooltip } from '@mui/material';
 
 type propsType = {
-  params: { colDef: { headerName: string;[key: string]: any };[key: string]: any },
-  title: string
+    params: { colDef: { headerName: string; [key: string]: any }; [key: string]: any };
+    title: string;
 };
 
 /**
@@ -13,7 +13,7 @@ type propsType = {
  * @returns The rendered tooltip header component.
  */
 export const TooltipHeader: React.FC<propsType> = ({ params, title }) => (
-  <Tooltip title={title}>
-    <span>{params.colDef.headerName}</span>
-  </Tooltip>
+    <Tooltip title={title}>
+        <span>{params.colDef.headerName}</span>
+    </Tooltip>
 );

@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { MaterialType, UseLoadMaterialsReturn } from "../types/Material";
-import { fetchAndCacheMaterials } from "./MaterialsContext.Utility";
+import { MaterialType, UseLoadMaterialsReturn } from '../types/Material';
+import { fetchAndCacheMaterials } from './MaterialsContext.Utility';
 
 export const useLoadMaterials = (): UseLoadMaterialsReturn => {
     const [isLoadingMaterials, setIsLoadingMaterials] = useState<boolean>(true);
@@ -22,8 +22,8 @@ export const useLoadMaterials = (): UseLoadMaterialsReturn => {
                     setMaterials(fetchedMaterials);
                 }
             } catch (error) {
-                alert("Error loading Material Data. Please try again later.");
-                console.error("Error loading Material Data:", error);
+                alert('Error loading Material Data. Please try again later.');
+                console.error('Error loading Material Data:', error);
             } finally {
                 setIsLoadingMaterials(false);
             }

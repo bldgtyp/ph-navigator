@@ -1,4 +1,4 @@
-import constants from "../data/constants.json";
+import constants from '../data/constants.json';
 
 /**
  * Fetches data from a specified API endpoint with optional query parameters and token-based authentication.
@@ -30,19 +30,20 @@ export async function getWithAlert<T>(
     token: string | null = null,
     params: Record<string, string | number> = {}
 ): Promise<T | null> {
-
     // -----------------------------------------------------------------------------------------------------------------
     // If token is not provided, try to get it from localStorage
     if (!token) {
-        token = localStorage.getItem("token");
+        token = localStorage.getItem('token');
     }
 
-    console.log(`getWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., params=${JSON.stringify(params)}`);
+    console.log(
+        `getWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ''}..., params=${JSON.stringify(params)}`
+    );
 
     // -----------------------------------------------------------------------------------------------------------------
     // Define the API base URL and endpoint
     const API_BASE_URL: string = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
-    const API_ENDPOINT: string = `${API_BASE_URL}${endpoint}`
+    const API_ENDPOINT: string = `${API_BASE_URL}${endpoint}`;
 
     // -----------------------------------------------------------------------------------------------------------------
     // Add query parameters to the URL
@@ -55,10 +56,10 @@ export async function getWithAlert<T>(
     // -----------------------------------------------------------------------------------------------------------------
     // Define the fetch options
     const options: RequestInit = {
-        method: "GET",
+        method: 'GET',
         headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json", // Set Content-Type for JSON payloads
+            'Content-Type': 'application/json', // Set Content-Type for JSON payloads
         },
     };
 
@@ -69,7 +70,7 @@ export async function getWithAlert<T>(
     // -----------------------------------------------------------------------------------------------------------------
     // Display an alert if the response is not ok
     if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         return data;
     } else {
         const txt: any = await response.json();

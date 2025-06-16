@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import React, { useEffect, useState } from 'react';
+import { Box } from '@mui/material';
 
-import { postWithAlert } from "../../../../../../../api/postWithAlert";
-import { getWithAlert } from "../../../../../../../api/getWithAlert";
-import { deleteWithAlert } from "../../../../../../../api/deleteWithAlert";
+import { postWithAlert } from '../../../../../../../api/postWithAlert';
+import { getWithAlert } from '../../../../../../../api/getWithAlert';
+import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
 
-import Layer from "../Layer/Layer"
-import { LayerType } from "../../../types/Layer";
-import { AssemblyType } from "../../../types/Assembly";
-
+import Layer from '../Layer/Layer';
+import { LayerType } from '../../../types/Layer';
+import { AssemblyType } from '../../../types/Assembly';
 
 export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
     const [layers, setLayers] = useState(assembly.layers);
@@ -45,14 +44,12 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
                         setLayers(updatedLayers);
                     }
                 } catch (error) {
-
-                    console.error("Failed to get layer:", error);
+                    console.error('Failed to get layer:', error);
                 }
             }
         } catch (error) {
-            console.error("Failed to add segment:", error);
+            console.error('Failed to add segment:', error);
         }
-
     };
 
     const onDeleteLayer = async (layerId: number) => {
@@ -62,7 +59,7 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
 
             if (response) {
                 // Remove the layer from the local state
-                const updatedLayers = layers.filter((layer) => layer.id !== layerId);
+                const updatedLayers = layers.filter(layer => layer.id !== layerId);
 
                 // Recalculate the order for the remaining layers
                 updatedLayers.forEach((layer, index) => {
@@ -72,27 +69,31 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
                 setLayers(updatedLayers);
             }
         } catch (error) {
-            console.error("Failed to delete layer:", error);
+            console.error('Failed to delete layer:', error);
         }
     };
 
     return (
         <Box className="assembly-container" sx={{ margin: 4 }}>
-            <Box className="assembly-orientation-text">{assembly.orientation === "first_layer_outside" && "exterior" || "interior"}</Box>
+            <Box className="assembly-orientation-text">
+                {(assembly.orientation === 'first_layer_outside' && 'exterior') || 'interior'}
+            </Box>
             <Box className="assembly-layers">
-
                 {layers.map((layer: LayerType) => {
-                    return <Layer
-                        key={layer.id}
-                        layer={layer}
-                        onAddLayer={onAddLayerBelow}
-                        onDeleteLayer={onDeleteLayer}
-                    />;
+                    return (
+                        <Layer
+                            key={layer.id}
+                            layer={layer}
+                            onAddLayer={onAddLayerBelow}
+                            onDeleteLayer={onDeleteLayer}
+                        />
+                    );
                 })}
             </Box>
 
-            <Box className="assembly-orientation-text">{assembly.orientation === "last_layer_outside" && "exterior" || "interior"}</Box>
+            <Box className="assembly-orientation-text">
+                {(assembly.orientation === 'last_layer_outside' && 'exterior') || 'interior'}
+            </Box>
         </Box>
     );
-}
-
+};

@@ -1,0 +1,19 @@
+# Build outputs
+
+/build
+/dist
+/.next
+/public
+
+# Node modules
+
+/node_modules
+
+# Coverage reports
+
+/coverage
+
+# Other generated files
+
+.DS_Store
+/backend

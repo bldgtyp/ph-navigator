@@ -1,17 +1,16 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Box, CircularProgress, Tooltip, Typography } from "@mui/material";
-import { useParams } from "react-router-dom";
+import React, { useContext, useEffect, useState } from 'react';
+import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
+import { useParams } from 'react-router-dom';
 
-import { uploadSitePhotoFiles } from "../../../../../../api/uploadSitePhotoFiles";
-import { getWithAlert } from "../../../../../../api/getWithAlert";
+import { uploadSitePhotoFiles } from '../../../../../../api/uploadSitePhotoFiles';
+import { getWithAlert } from '../../../../../../api/getWithAlert';
 
-import { SegmentType } from "../../types/Segment";
-import { MaterialSitePhotoType, MaterialSitePhotosType } from "../../types/Material.SitePhoto";
-import ImageFullViewModal from "./Image.FullViewModal";
-import ImageThumbnail from "./Image.Thumbnail";
-import { UserContext } from "../../../../../auth/_contexts/UserContext";
-import { deleteWithAlert } from "../../../../../../api/deleteWithAlert";
-
+import { SegmentType } from '../../types/Segment';
+import { MaterialSitePhotoType, MaterialSitePhotosType } from '../../types/Material.SitePhoto';
+import ImageFullViewModal from './Image.FullViewModal';
+import ImageThumbnail from './Image.Thumbnail';
+import { UserContext } from '../../../../../auth/_contexts/UserContext';
+import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 
 interface SegmentSitePhotosProps {
     segment: SegmentType;
@@ -19,8 +18,7 @@ interface SegmentSitePhotosProps {
     onUploadComplete?: (urls: string[]) => void;
 }
 
-
-const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
+const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
     const userContext = useContext(UserContext);
     const { projectId } = useParams();
     const [isDragOver, setIsDragOver] = useState(false);
@@ -30,16 +28,18 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
 
     useEffect(() => {
         const fetchSitePhotoUrls = async () => {
-            console.log("Fetching site-photo-urls for segment:", props.segment.id);
+            console.log('Fetching site-photo-urls for segment:', props.segment.id);
             try {
-                const response = await getWithAlert<MaterialSitePhotosType>(`gcp/get-site-photo-urls/${props.segment.id}`);
+                const response = await getWithAlert<MaterialSitePhotosType>(
+                    `gcp/get-site-photo-urls/${props.segment.id}`
+                );
                 if (response) {
                     setSitePhotos(response.photo_urls);
                 }
             } catch (error) {
-                console.error("Failed to fetch site-photo-urls thumbnails:", error);
+                console.error('Failed to fetch site-photo-urls thumbnails:', error);
             }
-        }
+        };
         fetchSitePhotoUrls();
     }, [projectId, props.segment.id]);
 
@@ -57,7 +57,7 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
         e.preventDefault();
         setIsDragOver(false);
         if (!userContext.user) {
-            alert("Please log in to upload files.");
+            alert('Please log in to upload files.');
             return null;
         }
 
@@ -68,16 +68,17 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
 
         try {
             const response = await uploadSitePhotoFiles<MaterialSitePhotoType>(projectId, props.segment.id, files);
-            const newPhotoUrls: MaterialSitePhotoType[] = response
-                .filter((res): res is MaterialSitePhotoType => res !== null);
-            setSitePhotos((prev) => [...prev, ...newPhotoUrls]);
+            const newPhotoUrls: MaterialSitePhotoType[] = response.filter(
+                (res): res is MaterialSitePhotoType => res !== null
+            );
+            setSitePhotos(prev => [...prev, ...newPhotoUrls]);
 
             // Optional: Show success message
             if (newPhotoUrls.length > 0) {
                 // You could show a success notification here
             }
         } catch (error) {
-            console.error("Upload failed:", error);
+            console.error('Upload failed:', error);
             // Optional: Show error message
         } finally {
             // Hide loading state
@@ -88,7 +89,7 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
     const handleSetSelectedPhoto = (item: MaterialSitePhotoType | null) => {
         setSelectedSitePhoto(item);
         setIsDragOver(false);
-    }
+    };
 
     const handleDeletePhoto = async (photoId: number) => {
         const success = await deleteWithAlert(`gcp/delete-segment-site-photo/${photoId}`);
@@ -104,8 +105,10 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
                 id="site-photo-urls"
                 className="row-item thumbnail-container"
                 sx={{
-                    border: isDragOver ? "1px dashed #1976d2" : `1px solid ${sitePhotos.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
-                    background: isDragOver ? "#e3f2fd" : `${sitePhotos.length > 0 ? 'white' : 'var(--missing-weak)'}`,
+                    border: isDragOver
+                        ? '1px dashed #1976d2'
+                        : `1px solid ${sitePhotos.length > 0 ? '#ccc' : 'var(--missing-strong)'}`,
+                    background: isDragOver ? '#e3f2fd' : `${sitePhotos.length > 0 ? 'white' : 'var(--missing-weak)'}`,
                 }}
                 onMouseOver={() => setIsDragOver(true)}
                 onMouseOut={() => setIsDragOver(false)}
@@ -113,7 +116,6 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
             >
-
                 {/* Loading Overlay */}
                 {isUploading && (
                     <Box
@@ -138,8 +140,10 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = (props) => {
                 )}
 
                 {/* Thumbnails */}
-                {sitePhotos.length === 0 && <span style={{ color: "var(--missing-strong)" }}>Site Photo Needed</span>}
-                {sitePhotos.map((photo, idx) => <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />)}
+                {sitePhotos.length === 0 && <span style={{ color: 'var(--missing-strong)' }}>Site Photo Needed</span>}
+                {sitePhotos.map((photo, idx) => (
+                    <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />
+                ))}
 
                 <ImageFullViewModal
                     selectedItem={selectedSitePhoto}

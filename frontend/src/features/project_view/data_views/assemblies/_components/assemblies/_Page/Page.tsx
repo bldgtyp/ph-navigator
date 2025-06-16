@@ -1,374 +1,370 @@
-import React, { useEffect, useMemo, useState, useContext, useRef } from "react";
-import { useParams } from "react-router-dom";
-import { Box, SelectChangeEvent } from "@mui/material";
+import React, { useEffect, useMemo, useState, useContext, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { Box, SelectChangeEvent } from '@mui/material';
 
-import { useMaterials } from "../../../_contexts/MaterialsContext";
-import { UserContext } from "../../../../../../auth/_contexts/UserContext";
+import { useMaterials } from '../../../_contexts/MaterialsContext';
+import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
-import { postWithAlert } from "../../../../../../../api/postWithAlert";
-import { getWithAlert } from "../../../../../../../api/getWithAlert";
-import { deleteWithAlert } from "../../../../../../../api/deleteWithAlert";
-import { patchWithAlert } from "../../../../../../../api/patchWithAlert";
+import { postWithAlert } from '../../../../../../../api/postWithAlert';
+import { getWithAlert } from '../../../../../../../api/getWithAlert';
+import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
+import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
 
-import LoadingModal from "../../../../_components/LoadingModal";
-import ContentBlockHeader from "../../../../_components/ContentBlockHeader";
-import { AssemblyType } from "../../../types/Assembly";
-import { AssemblySelector } from "./Assembly.Selector";
-import { AssemblyView } from "./Assembly.View";
-import { fetchAndCacheMaterials } from "../../../_contexts/MaterialsContext.Utility";
-import { headerButtons } from "./HeaderButtons";
-import { postFileWithAlert } from "../../../../../../../api/postFileWithAlert";
+import LoadingModal from '../../../../_components/LoadingModal';
+import ContentBlockHeader from '../../../../_components/ContentBlockHeader';
+import { AssemblyType } from '../../../types/Assembly';
+import { AssemblySelector } from './Assembly.Selector';
+import { AssemblyView } from './Assembly.View';
+import { fetchAndCacheMaterials } from '../../../_contexts/MaterialsContext.Utility';
+import { headerButtons } from './HeaderButtons';
+import { postFileWithAlert } from '../../../../../../../api/postFileWithAlert';
 
 const AssembliesPage: React.FC = () => {
-  const userContext = useContext(UserContext);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { projectId } = useParams();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
-  const { isLoadingMaterials, setMaterials } = useMaterials();
-  const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
-  const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
-  const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
+    const userContext = useContext(UserContext);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { projectId } = useParams();
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+    const { isLoadingMaterials, setMaterials } = useMaterials();
+    const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
+    const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
+    const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
 
-  const fetchAssemblies = async () => {
-    console.log("fetchAssemblies", projectId);
-    try {
-      const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
-      setAssemblies(response ?? []);
-      return response ?? [];
-    } catch (error) {
-      console.error("Failed to fetch assemblies:", error);
-      return [];
-    } finally {
-      setIsLoadingAssemblies(false);
-    }
-  };
-
-  useEffect(() => {
-    const initializeAssemblies = async () => {
-      const fetchedAssemblies = await fetchAssemblies();
-      if (fetchedAssemblies.length > 0) {
-        setSelectedAssemblyId(fetchedAssemblies[0].id); // Set the first assembly as selected
-      } else {
-        setSelectedAssemblyId(null); // No assemblies available
-      }
+    const fetchAssemblies = async () => {
+        console.log('fetchAssemblies', projectId);
+        try {
+            const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
+            setAssemblies(response ?? []);
+            return response ?? [];
+        } catch (error) {
+            console.error('Failed to fetch assemblies:', error);
+            return [];
+        } finally {
+            setIsLoadingAssemblies(false);
+        }
     };
 
-    initializeAssemblies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]);
+    useEffect(() => {
+        const initializeAssemblies = async () => {
+            const fetchedAssemblies = await fetchAssemblies();
+            if (fetchedAssemblies.length > 0) {
+                setSelectedAssemblyId(fetchedAssemblies[0].id); // Set the first assembly as selected
+            } else {
+                setSelectedAssemblyId(null); // No assemblies available
+            }
+        };
 
-  const selectedAssembly = useMemo(() => {
-    return assemblies.find((assembly) => assembly.id === selectedAssemblyId) || null;
-  }, [assemblies, selectedAssemblyId]);
+        initializeAssemblies();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [projectId]);
 
-  const handleAssemblyChange = async (event: SelectChangeEvent<number>) => {
-    console.log("handleAssemblyChange", event.target.value);
-    const newSelectedAssemblyId = event.target.value as number;
-    setSelectedAssemblyId(newSelectedAssemblyId);
-    await fetchAssemblies();
-  };
+    const selectedAssembly = useMemo(() => {
+        return assemblies.find(assembly => assembly.id === selectedAssemblyId) || null;
+    }, [assemblies, selectedAssemblyId]);
 
-  const handleAddAssembly = async () => {
-    console.log("handleAddAssembly");
-    try {
-      const response = await postWithAlert<AssemblyType>(
-        `assembly/create-new-assembly-on-project/${projectId}`,
-      );
+    const handleAssemblyChange = async (event: SelectChangeEvent<number>) => {
+        console.log('handleAssemblyChange', event.target.value);
+        const newSelectedAssemblyId = event.target.value as number;
+        setSelectedAssemblyId(newSelectedAssemblyId);
+        await fetchAssemblies();
+    };
 
-      if (response) {
-        const newAssembly = response;
-        console.log(`Assembly added successfully: ${newAssembly.id}`);
-        const updatedAssemblies = await fetchAssemblies();
-        setSelectedAssemblyId(newAssembly.id);
-      }
-    } catch (error) {
-      console.error("Failed to add assembly:", error);
-    }
-  };
+    const handleAddAssembly = async () => {
+        console.log('handleAddAssembly');
+        try {
+            const response = await postWithAlert<AssemblyType>(`assembly/create-new-assembly-on-project/${projectId}`);
 
-  const handleDeleteAssembly = async () => {
-    console.log("handleDeleteAssembly", selectedAssemblyId);
-    if (!selectedAssemblyId) {
-      console.error("No assembly selected to delete.");
-      return;
-    }
-
-    try {
-      const confirmed = window.confirm("Are you sure you want to delete this assembly?");
-      if (!confirmed) return;
-
-      await deleteWithAlert(`assembly/delete-assembly/${selectedAssemblyId}`, null, {});
-
-      console.log(`Assembly ${selectedAssemblyId} deleted successfully.`);
-
-      // Fetch updated assemblies and update the state
-      const updatedAssemblies = await fetchAssemblies();
-
-      // Select the first assembly in the updated list, or set to null if none remain
-      if (updatedAssemblies.length > 0) {
-        setSelectedAssemblyId(updatedAssemblies[0].id);
-      } else {
-        setSelectedAssemblyId(null);
-      }
-    } catch (error) {
-      console.error("Failed to delete assembly:", error);
-    }
-  };
-
-  const handleNameChange = async (assemblyId: number, newName: string) => {
-    console.log("handleNameChange", assemblyId, newName);
-    try {
-      await patchWithAlert(
-        `assembly/update-assembly-name/${assemblyId}`,
-        null,
-        {
-          new_name: newName,
+            if (response) {
+                const newAssembly = response;
+                console.log(`Assembly added successfully: ${newAssembly.id}`);
+                const updatedAssemblies = await fetchAssemblies();
+                setSelectedAssemblyId(newAssembly.id);
+            }
+        } catch (error) {
+            console.error('Failed to add assembly:', error);
         }
-      );
+    };
 
-      // Update the assemblies state
-      const updatedAssemblies = assemblies.map((assembly) =>
-        assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
-      );
-      setAssemblies(updatedAssemblies);
+    const handleDeleteAssembly = async () => {
+        console.log('handleDeleteAssembly', selectedAssemblyId);
+        if (!selectedAssemblyId) {
+            console.error('No assembly selected to delete.');
+            return;
+        }
 
-      // Ensure the selected assembly is updated
-      handleAssemblyChange({
-        target: {
-          value: assemblyId,
-        },
-      } as SelectChangeEvent<number>);
-    } catch (error) {
-      console.error("Failed to update assembly name:", error);
-    }
-  };
+        try {
+            const confirmed = window.confirm('Are you sure you want to delete this assembly?');
+            if (!confirmed) return;
 
-  const handleRefreshMaterials = async () => {
-    console.log("handleRefreshMaterials");
-    setIsRefreshing(true);
-    setRefreshMessage(null);
-    try {
-      await getWithAlert('assembly/refresh-db-materials-from-air-table');
-      const fetchedMaterials = await fetchAndCacheMaterials();
-      setMaterials(fetchedMaterials);
-      setRefreshMessage("Materials refreshed successfully!");
-    } catch (error) {
-      setRefreshMessage("Error loading Material Data. Please try again later.");
-      console.error("Error loading Material Data:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+            await deleteWithAlert(`assembly/delete-assembly/${selectedAssemblyId}`, null, {});
 
-  const handleUploadConstructions = async () => {
-    console.log("handleUploadConstructions");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
-    }
-    fileInputRef.current?.click();
-  };
+            console.log(`Assembly ${selectedAssemblyId} deleted successfully.`);
 
-  const handleDownloadConstructions = async () => {
-    console.log("handleDownloadConstructions");
-    try {
-      setIsRefreshing(true); // Show loading state
+            // Fetch updated assemblies and update the state
+            const updatedAssemblies = await fetchAssemblies();
 
-      // Download the HBJSON data
-      console.log(`Downloading Construction HBJSON for project: ${projectId}`);
-      const response = await getWithAlert<any>(
-        `assembly/get-assemblies-as-hbjson/${projectId}`,
-        null,
-      );
+            // Select the first assembly in the updated list, or set to null if none remain
+            if (updatedAssemblies.length > 0) {
+                setSelectedAssemblyId(updatedAssemblies[0].id);
+            } else {
+                setSelectedAssemblyId(null);
+            }
+        } catch (error) {
+            console.error('Failed to delete assembly:', error);
+        }
+    };
 
-      if (!response || !response.hb_constructions) {
-        throw new Error("No data received from server");
-      }
+    const handleNameChange = async (assemblyId: number, newName: string) => {
+        console.log('handleNameChange', assemblyId, newName);
+        try {
+            await patchWithAlert(`assembly/update-assembly-name/${assemblyId}`, null, {
+                new_name: newName,
+            });
 
-      // Parse the string if it's returned as a string
-      let constructionsData;
-      if (typeof response.hb_constructions === 'string') {
-        // If the API returns a JSON string, parse it to an object
-        constructionsData = JSON.parse(response.hb_constructions);
-      } else {
-        // If it's already an object, use it directly
-        constructionsData = response.hb_constructions;
-      }
+            // Update the assemblies state
+            const updatedAssemblies = assemblies.map(assembly =>
+                assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
+            );
+            setAssemblies(updatedAssemblies);
 
-      // Create a JSON string with proper formatting
-      const jsonString = JSON.stringify(constructionsData, null, 2);
+            // Ensure the selected assembly is updated
+            handleAssemblyChange({
+                target: {
+                    value: assemblyId,
+                },
+            } as SelectChangeEvent<number>);
+        } catch (error) {
+            console.error('Failed to update assembly name:', error);
+        }
+    };
 
-      // Create a Blob from the JSON string
-      const blob = new Blob([jsonString], { type: "application/json" });
+    const handleRefreshMaterials = async () => {
+        console.log('handleRefreshMaterials');
+        setIsRefreshing(true);
+        setRefreshMessage(null);
+        try {
+            await getWithAlert('assembly/refresh-db-materials-from-air-table');
+            const fetchedMaterials = await fetchAndCacheMaterials();
+            setMaterials(fetchedMaterials);
+            setRefreshMessage('Materials refreshed successfully!');
+        } catch (error) {
+            setRefreshMessage('Error loading Material Data. Please try again later.');
+            console.error('Error loading Material Data:', error);
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
-      // Create a URL for the Blob
-      const url = URL.createObjectURL(blob);
+    const handleUploadConstructions = async () => {
+        console.log('handleUploadConstructions');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
+        }
+        fileInputRef.current?.click();
+    };
 
-      // Create a temporary anchor element to trigger the download
-      const downloadLink = document.createElement("a");
-      downloadLink.href = url;
-      downloadLink.download = `project_${projectId}_assemblies.json`; // File name
+    const handleDownloadConstructions = async () => {
+        console.log('handleDownloadConstructions');
+        try {
+            setIsRefreshing(true); // Show loading state
 
-      // Trigger the download
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
+            // Download the HBJSON data
+            console.log(`Downloading Construction HBJSON for project: ${projectId}`);
+            const response = await getWithAlert<any>(`assembly/get-assemblies-as-hbjson/${projectId}`, null);
 
-      // Clean up
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(url);
+            if (!response || !response.hb_constructions) {
+                throw new Error('No data received from server');
+            }
 
-    } catch (error) {
-      console.error("Failed to download constructions:", error);
-      alert(`Failed to download: ${error instanceof Error ? error.message : "Unknown error"}`);
-    } finally {
-      setIsRefreshing(false); // Hide loading state
-    }
+            // Parse the string if it's returned as a string
+            let constructionsData;
+            if (typeof response.hb_constructions === 'string') {
+                // If the API returns a JSON string, parse it to an object
+                constructionsData = JSON.parse(response.hb_constructions);
+            } else {
+                // If it's already an object, use it directly
+                constructionsData = response.hb_constructions;
+            }
 
-  }
+            // Create a JSON string with proper formatting
+            const jsonString = JSON.stringify(constructionsData, null, 2);
 
-  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("handleFileSelected");
-    const file = event.target.files?.[0];
-    if (!file) return;
-    console.log("Selected file:", file);
-    // Validate file extension
-    if (
-      !(
-        file.name.toLowerCase().endsWith('.hbjson') ||
-        file.name.toLowerCase().endsWith('.json')
-      )
-    ) {
-      alert("Please select a valid .hbjson or .json file");
-      return;
-    }
+            // Create a Blob from the JSON string
+            const blob = new Blob([jsonString], { type: 'application/json' });
 
-    try {
-      // Show loading state
-      setIsRefreshing(true);
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
 
-      // Upload the file
-      console.log("Uploading file...");
-      const response = await postFileWithAlert<any>(
-        `assembly/add-assemblies-from-hbjson-constructions/${projectId}`,
-        null,
-        file
-      );
+            // Create a temporary anchor element to trigger the download
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = `project_${projectId}_assemblies.json`; // File name
 
-    } catch (error) {
-      console.error("API error:", error);
-      throw error;
-    } finally {
-      // Refresh Assemblies to show the newly added ones
-      await fetchAssemblies();
+            // Trigger the download
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
 
-      // Reset the file input so the same file can be selected again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+            // Clean up
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to download constructions:', error);
+            alert(`Failed to download: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsRefreshing(false); // Hide loading state
+        }
+    };
 
-      // Hide loading state
-      setIsRefreshing(false);
-    }
-  };
+    const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log('handleFileSelected');
+        const file = event.target.files?.[0];
+        if (!file) return;
+        console.log('Selected file:', file);
+        // Validate file extension
+        if (!(file.name.toLowerCase().endsWith('.hbjson') || file.name.toLowerCase().endsWith('.json'))) {
+            alert('Please select a valid .hbjson or .json file');
+            return;
+        }
 
-  const handleFlipOrientation = async (assemblyId: number) => {
-    console.log("handleFlipOrientation", assemblyId);
-    try {
-      const updatedAssembly = await patchWithAlert<AssemblyType>(`assembly/flip-assembly-orientation/${assemblyId}`, null, {});
+        try {
+            // Show loading state
+            setIsRefreshing(true);
 
-      if (!updatedAssembly) {
-        console.error("Failed to flip assembly orientation: No data returned");
-        return;
-      }
+            // Upload the file
+            console.log('Uploading file...');
+            const response = await postFileWithAlert<any>(
+                `assembly/add-assemblies-from-hbjson-constructions/${projectId}`,
+                null,
+                file
+            );
+        } catch (error) {
+            console.error('API error:', error);
+            throw error;
+        } finally {
+            // Refresh Assemblies to show the newly added ones
+            await fetchAssemblies();
 
-      // Update the assemblies state
-      const updatedAssemblies = assemblies.map((assembly) =>
-        assembly.id === assemblyId ? { ...updatedAssembly } : assembly
-      );
-      setAssemblies(updatedAssemblies);
+            // Reset the file input so the same file can be selected again
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
 
-      // Ensure the selected assembly is updated
-      handleAssemblyChange({
-        target: {
-          value: assemblyId,
-        },
-      } as SelectChangeEvent<number>);
-    } catch (error) {
-      console.error("Failed to update assembly name:", error);
-    }
-  };
+            // Hide loading state
+            setIsRefreshing(false);
+        }
+    };
 
-  const handleFlipLayers = async (assemblyId: number) => {
-    console.log("handleFlipLayers", assemblyId);
-    try {
-      const updatedAssembly = await patchWithAlert<AssemblyType>(`assembly/flip-assembly-layers/${assemblyId}`, null, {});
+    const handleFlipOrientation = async (assemblyId: number) => {
+        console.log('handleFlipOrientation', assemblyId);
+        try {
+            const updatedAssembly = await patchWithAlert<AssemblyType>(
+                `assembly/flip-assembly-orientation/${assemblyId}`,
+                null,
+                {}
+            );
 
-      if (!updatedAssembly) {
-        console.error("Failed to flip assembly layers: No data returned");
-        return;
-      }
+            if (!updatedAssembly) {
+                console.error('Failed to flip assembly orientation: No data returned');
+                return;
+            }
 
-      // Update the assemblies state
-      const updatedAssemblies = assemblies.map((assembly) =>
-        assembly.id === assemblyId ? { ...updatedAssembly } : assembly
-      );
-      setAssemblies(updatedAssemblies);
+            // Update the assemblies state
+            const updatedAssemblies = assemblies.map(assembly =>
+                assembly.id === assemblyId ? { ...updatedAssembly } : assembly
+            );
+            setAssemblies(updatedAssemblies);
 
-      // Ensure the selected assembly is updated
-      handleAssemblyChange({
-        target: {
-          value: assemblyId,
-        },
-      } as SelectChangeEvent<number>);
-    } catch (error) {
-      console.error("Failed to update assembly layers:", error);
-    }
-  };
+            // Ensure the selected assembly is updated
+            handleAssemblyChange({
+                target: {
+                    value: assemblyId,
+                },
+            } as SelectChangeEvent<number>);
+        } catch (error) {
+            console.error('Failed to update assembly name:', error);
+        }
+    };
 
-  return (
-    <>
-      <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
+    const handleFlipLayers = async (assemblyId: number) => {
+        console.log('handleFlipLayers', assemblyId);
+        try {
+            const updatedAssembly = await patchWithAlert<AssemblyType>(
+                `assembly/flip-assembly-layers/${assemblyId}`,
+                null,
+                {}
+            );
 
-      <ContentBlockHeader
-        text={`Assembly Details [ ${selectedAssembly?.name || ""} ]`}
-        buttons={userContext.user ? headerButtons(
-          handleAddAssembly,
-          handleDeleteAssembly,
-          handleRefreshMaterials,
-          handleUploadConstructions,
-          handleDownloadConstructions,
-          isRefreshing) : []}
-      />
+            if (!updatedAssembly) {
+                console.error('Failed to flip assembly layers: No data returned');
+                return;
+            }
 
-      <Box sx={{ margin: 2 }}>
-        <AssemblySelector
-          assemblies={assemblies}
-          selectedAssemblyId={selectedAssemblyId}
-          handleAssemblyChange={handleAssemblyChange}
-          handleNameChange={handleNameChange}
-          handleFlipOrientation={handleFlipOrientation}
-          handleFlipLayers={handleFlipLayers} // Assuming flip layers is the same as flip orientation
-        />
-        {isLoadingAssemblies && <p>Loading...</p>}
-        {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}
-        {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length === 0 && (
-          <p>No layers found.</p>
-        )}
-        {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length > 0 && (
-          <AssemblyView assembly={selectedAssembly} />
-        )}
-      </Box>
+            // Update the assemblies state
+            const updatedAssemblies = assemblies.map(assembly =>
+                assembly.id === assemblyId ? { ...updatedAssembly } : assembly
+            );
+            setAssemblies(updatedAssemblies);
 
-      {/* File Upload Dialog */}
-      <input
-        type="file"
-        accept=".hbjson, .json"
-        ref={fileInputRef}
-        style={{ display: "none" }}
-        onChange={handleFileSelected}
-      />
-    </>
-  );
+            // Ensure the selected assembly is updated
+            handleAssemblyChange({
+                target: {
+                    value: assemblyId,
+                },
+            } as SelectChangeEvent<number>);
+        } catch (error) {
+            console.error('Failed to update assembly layers:', error);
+        }
+    };
+
+    return (
+        <>
+            <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
+
+            <ContentBlockHeader
+                text={`Assembly Details [ ${selectedAssembly?.name || ''} ]`}
+                buttons={
+                    userContext.user
+                        ? headerButtons(
+                              handleAddAssembly,
+                              handleDeleteAssembly,
+                              handleRefreshMaterials,
+                              handleUploadConstructions,
+                              handleDownloadConstructions,
+                              isRefreshing
+                          )
+                        : []
+                }
+            />
+
+            <Box sx={{ margin: 2 }}>
+                <AssemblySelector
+                    assemblies={assemblies}
+                    selectedAssemblyId={selectedAssemblyId}
+                    handleAssemblyChange={handleAssemblyChange}
+                    handleNameChange={handleNameChange}
+                    handleFlipOrientation={handleFlipOrientation}
+                    handleFlipLayers={handleFlipLayers} // Assuming flip layers is the same as flip orientation
+                />
+                {isLoadingAssemblies && <p>Loading...</p>}
+                {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}
+                {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length === 0 && (
+                    <p>No layers found.</p>
+                )}
+                {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length > 0 && (
+                    <AssemblyView assembly={selectedAssembly} />
+                )}
+            </Box>
+
+            {/* File Upload Dialog */}
+            <input
+                type="file"
+                accept=".hbjson, .json"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileSelected}
+            />
+        </>
+    );
 };
 
 export default AssembliesPage;

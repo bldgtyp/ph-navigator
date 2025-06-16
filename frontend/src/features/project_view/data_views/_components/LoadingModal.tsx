@@ -1,9 +1,9 @@
-import "../../../../styles/Modal.css";
-import { Box, Modal } from "@mui/material";
+import '../../../../styles/Modal.css';
+import { Box, Modal } from '@mui/material';
 
 type propsType = {
-  showModal?: boolean;
-}
+    showModal?: boolean;
+};
 
 /**
  * Renders a loading modal-window component.
@@ -13,13 +13,13 @@ type propsType = {
  * @returns {JSX.Element} The loading modal component.
  */
 const LoadingModal: React.FC<propsType> = ({ showModal }) => {
-  return showModal ? (
-    <Modal open={showModal}>
-      <Box className="modal-box-loading">Loading Project Data...</Box>
-    </Modal>
-  ) : (
-    <></>
-  );
-}
+    return showModal ? (
+        <Modal open={showModal}>
+            <Box className="modal-box-loading">Loading Project Data...</Box>
+        </Modal>
+    ) : (
+        <></>
+    );
+};
 
 export default LoadingModal;

@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
-import { useParams, useLocation, Outlet } from "react-router-dom";
-import Box from "@mui/material/Box";
+import { useEffect, useState } from 'react';
+import { useParams, useLocation, Outlet } from 'react-router-dom';
+import Box from '@mui/material/Box';
 
-import { ProjectType, defaultProjectType } from "../../types/ProjectType";
-import { getWithAlert } from "../../../api/getWithAlert";
+import { ProjectType, defaultProjectType } from '../../types/ProjectType';
+import { getWithAlert } from '../../../api/getWithAlert';
 
-import ProjectBar from "./ProjectBar";
-import ProjectTabBar from "./ProjectTabBar";
-
+import ProjectBar from './ProjectBar';
+import ProjectTabBar from './ProjectTabBar';
 
 const ProjectContainer: React.FC = () => {
     const { projectId } = useParams();
@@ -38,18 +37,18 @@ const ProjectContainer: React.FC = () => {
     useEffect(() => {
         async function loadProjectData() {
             try {
-                const d = await getWithAlert<ProjectType>(`project/${projectId}`)
-                setProjectData(d || defaultProjectType)
+                const d = await getWithAlert<ProjectType>(`project/${projectId}`);
+                setProjectData(d || defaultProjectType);
             } catch (error) {
-                alert("Error loading project data. Please try again later.");
-                console.error("Error loading project data:", error);
+                alert('Error loading project data. Please try again later.');
+                console.error('Error loading project data:', error);
             } finally {
                 setIsLoading(false);
             }
         }
 
         loadProjectData();
-    }, [projectId])
+    }, [projectId]);
 
     return (
         <>
@@ -61,7 +60,7 @@ const ProjectContainer: React.FC = () => {
                     <ProjectTabBar
                         projectId={projectId!}
                         activeTabNumber={activeTab}
-                        onTabChange={(tabNumber) => setActiveTab(tabNumber)}
+                        onTabChange={tabNumber => setActiveTab(tabNumber)}
                     />
                     <Box id="project-container">
                         <Outlet context={projectData} />
@@ -69,7 +68,7 @@ const ProjectContainer: React.FC = () => {
                 </>
             )}
         </>
-    )
-}
+    );
+};
 
 export default ProjectContainer;

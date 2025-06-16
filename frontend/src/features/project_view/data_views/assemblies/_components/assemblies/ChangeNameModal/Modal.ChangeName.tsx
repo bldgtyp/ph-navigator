@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button } from "@mui/material";
+import React, { useState } from 'react';
+import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button } from '@mui/material';
 
 interface ChangeNameModalProps {
     open: boolean;
@@ -8,11 +8,11 @@ interface ChangeNameModalProps {
 }
 
 const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ open, onClose, onSubmit }) => {
-    const [newName, setNewName] = useState("");
+    const [newName, setNewName] = useState('');
 
     const handleSubmit = () => {
         onSubmit(newName);
-        setNewName(""); // Clear the input field
+        setNewName(''); // Clear the input field
         onClose(); // Close the modal
     };
 
@@ -27,7 +27,7 @@ const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ open, onClose, onSubm
                     type="text"
                     fullWidth
                     value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
+                    onChange={e => setNewName(e.target.value)}
                 />
             </DialogContent>
             <DialogActions>

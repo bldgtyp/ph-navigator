@@ -1,5 +1,5 @@
-import { MaterialType } from "../../types/Material";
-import { SegmentType } from "../../types/Segment";
+import { MaterialType } from '../../types/Material';
+import { SegmentType } from '../../types/Segment';
 
 export interface MaterialDataProps {
     material: MaterialType | null;

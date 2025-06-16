@@ -9,12 +9,7 @@ export const UnitSystemToggle: React.FC = () => {
         <Tooltip title={`Switch to ${unitSystem === 'SI' ? 'Imperial (IP)' : 'Metric (SI)'} units`}>
             <FormControlLabel
                 control={
-                    <Switch
-                        size="small"
-                        checked={unitSystem === 'IP'}
-                        onChange={toggleUnitSystem}
-                        color="primary"
-                    />
+                    <Switch size="small" checked={unitSystem === 'IP'} onChange={toggleUnitSystem} color="primary" />
                 }
                 label={unitSystem === 'SI' ? 'SI' : 'IP'}
             />

@@ -1,6 +1,6 @@
-import { convertValue } from "../../../formatters/Unit.Converter";
-import { Unit } from "../../../formatters/Unit.ConversionFactors";
-import { useUnitSystem } from "../_contexts/UnitSystemContext";
+import { convertValue } from '../../../formatters/Unit.Converter';
+import { Unit } from '../../../formatters/Unit.ConversionFactors';
+import { useUnitSystem } from '../_contexts/UnitSystemContext';
 
 /**
  * Hook for handling unit conversions based on user's unit system preference
@@ -21,7 +21,7 @@ export function useUnitConversion() {
     }
 
     /**
-     * Converts a numeric value from SI units to the current unit system (SI or IP), 
+     * Converts a numeric value from SI units to the current unit system (SI or IP),
      * and formats the result as a string with a specified number of decimal places.
      *
      * @param value - The numeric value to convert.
@@ -55,6 +55,6 @@ export function useUnitConversion() {
         valueInCurrentUnitSystem,
         valueInCurrentUnitSystemWithDecimal,
         valueInSIUnits,
-        unitSystem
+        unitSystem,
     };
 }

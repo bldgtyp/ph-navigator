@@ -1,21 +1,20 @@
 import '../styles/Assembly.css';
 import '../styles/Layer.css';
 import '../styles/Segment.css';
-import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import { Box } from '@mui/material';
 
-import { MaterialsProvider } from "../_contexts/MaterialsContext";
+import { MaterialsProvider } from '../_contexts/MaterialsContext';
 
-import DataViewPage from "../../_components/DataViewPage";
-import ContentBlock from "../../_components/ContentBlock";
-import DataDashboardTabBar from "../../_components/DataDashboardTabBar";
-
+import DataViewPage from '../../_components/DataViewPage';
+import ContentBlock from '../../_components/ContentBlock';
+import DataDashboardTabBar from '../../_components/DataDashboardTabBar';
 
 const AssemblyDataDashboard: React.FC = () => {
     const tabs = [
-        { label: "Materials", path: "material-layers" },
-        { label: "Assemblies", path: "assemblies" },
+        { label: 'Materials', path: 'material-layers' },
+        { label: 'Assemblies', path: 'assemblies' },
     ];
 
     // Determine active tab from URL path
@@ -40,7 +39,7 @@ const AssemblyDataDashboard: React.FC = () => {
                 <DataDashboardTabBar
                     tabs={tabs}
                     activeTab={activeTab}
-                    onTabChange={(tabNumber) => setActiveTab(tabNumber)}
+                    onTabChange={tabNumber => setActiveTab(tabNumber)}
                 />
 
                 <DataViewPage>
@@ -48,10 +47,9 @@ const AssemblyDataDashboard: React.FC = () => {
                         <Outlet />
                     </ContentBlock>
                 </DataViewPage>
-
             </Box>
         </MaterialsProvider>
-    )
-}
+    );
+};
 
 export default AssemblyDataDashboard;

@@ -1,4 +1,4 @@
-import constants from "../data/constants.json";
+import constants from '../data/constants.json';
 
 /**
  * Sends a DELETE request to the specified API endpoint with an optional authorization token.
@@ -28,11 +28,13 @@ export async function deleteWithAlert<T>(
     token: string | null = null,
     params: any = {}
 ): Promise<T | null> {
-    console.log(`deleteWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ""}..., params=${JSON.stringify(params)}`);
+    console.log(
+        `deleteWithAlert: endpoint=/${endpoint}, token=${token ? token.substring(0, 5) : ''}..., params=${JSON.stringify(params)}`
+    );
 
     // If token is not provided, try to get it from localStorage
     if (!token) {
-        token = localStorage.getItem("token");
+        token = localStorage.getItem('token');
     }
 
     // Define the API base URL and endpoint
@@ -52,12 +54,11 @@ export async function deleteWithAlert<T>(
 
         if (response.status === 204) {
             // No content response - return a non-null value so calling code knows it succeeded
-            return true as T;  // or just return true
+            return true as T; // or just return true
         } else {
             alert(`Error: ${response.status} - ${response.statusText}`);
             return null;
         }
-
     } catch (error: any) {
         console.error(`Error: ${error.message}`);
         alert(`Error: ${error.message}`);

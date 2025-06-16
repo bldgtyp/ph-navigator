@@ -8,7 +8,6 @@ const textSecondaryColor = rootStyle.getPropertyValue('--text-secondary-color').
 const appBarBgColor = rootStyle.getPropertyValue('--appbar-bg-color').trim();
 const borderColor = rootStyle.getPropertyValue('--outline-color').trim();
 
-
 const theme = createTheme({
     palette: {
         primary: {
@@ -23,7 +22,8 @@ const theme = createTheme({
         },
     },
     typography: {
-        fontFamily: '-apple-system, "system-ui", "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+        fontFamily:
+            '-apple-system, "system-ui", "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
         h5: {
             fontSize: '1.25rem',
             fontWeight: 700,

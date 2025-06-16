@@ -1,6 +1,6 @@
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import Box from "@mui/material/Box";
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Box from '@mui/material/Box';
 import { useNavigate } from 'react-router-dom';
 import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined';
 import HomeRepairServiceOutlinedIcon from '@mui/icons-material/HomeRepairServiceOutlined';
@@ -12,36 +12,36 @@ type propsType = {
     projectId: string;
     activeTabNumber: number; // The active tab index managed by the parent
     onTabChange: (newTab: number) => void; // Callback function to notify parent of tab changes
-}
+};
 
 const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabChange }) => {
     const navigate = useNavigate();
 
     const tabs = [
         {
-            label: "Certification",
+            label: 'Certification',
             path: `/project/${projectId}/certification`,
-            icon: <WorkspacePremiumOutlinedIcon fontSize="small" />
+            icon: <WorkspacePremiumOutlinedIcon fontSize="small" />,
         },
         {
-            label: "Windows",
+            label: 'Windows',
             path: `/project/${projectId}/window-data`,
-            icon: <DoorSlidingOutlinedIcon fontSize="small" />
+            icon: <DoorSlidingOutlinedIcon fontSize="small" />,
         },
         {
-            label: "Assemblies",
+            label: 'Assemblies',
             path: `/project/${projectId}/assembly-data`,
-            icon: <LayersOutlinedIcon fontSize="small" />
+            icon: <LayersOutlinedIcon fontSize="small" />,
         },
         {
-            label: "Equipment",
+            label: 'Equipment',
             path: `/project/${projectId}/equipment-data`,
-            icon: <HomeRepairServiceOutlinedIcon fontSize="small" />
+            icon: <HomeRepairServiceOutlinedIcon fontSize="small" />,
         },
         {
-            label: "Model",
+            label: 'Model',
             path: `/project/${projectId}/model`,
-            icon: <ApartmentOutlinedIcon fontSize="small" />
+            icon: <ApartmentOutlinedIcon fontSize="small" />,
         },
     ];
 
@@ -83,6 +83,6 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabC
             </Tabs>
         </Box>
     );
-}
+};
 
 export default ProjectTabBar;

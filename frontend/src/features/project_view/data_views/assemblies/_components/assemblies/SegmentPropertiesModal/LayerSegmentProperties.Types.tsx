@@ -1,10 +1,10 @@
-import { UpdatableInput } from "../../../../../../types/UpdatableInput";
-import { MaterialType } from "../../../types/Material";
+import { UpdatableInput } from '../../../../../../types/UpdatableInput';
+import { MaterialType } from '../../../types/Material';
 
 export interface LayerSegmentWidthModalProps {
     isModalOpen: boolean;
     segmentId: number;
-    materialId: UpdatableInput<string, { materialId: string, materialColor: string }>;
+    materialId: UpdatableInput<string, { materialId: string; materialColor: string }>;
     segmentWidthMM: UpdatableInput<number, { widthMM: number }>;
     steelStudChecked: UpdatableInput<boolean, { checked: boolean }>;
     steelStudSpacingMM: UpdatableInput<number, { steelStudSpacingMM: number }>;
@@ -38,7 +38,7 @@ export interface MaterialInputProps {
     materialOptions: MaterialType[];
     selectedMaterial: MaterialType | null;
     isLoadingMaterials: boolean;
-    handleMaterialChange: (args: { materialId: string, materialColor: string }) => void;
+    handleMaterialChange: (args: { materialId: string; materialColor: string }) => void;
 }
 
 export interface MaterialDataDisplayProps {

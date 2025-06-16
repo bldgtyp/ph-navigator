@@ -5,16 +5,16 @@
  * @returns The converted display name.
  */
 function ValueAsSentenceCase(categoryName?: string) {
-  if (!categoryName) {
-    return "";
-  }
+    if (!categoryName) {
+        return '';
+    }
 
-  return categoryName
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/(^\s*\w|[.!?]\s*\w)/g, function (c) {
-      return c.toUpperCase();
-    });
+    return categoryName
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .replace(/(^\s*\w|[.!?]\s*\w)/g, function (c) {
+            return c.toUpperCase();
+        });
 }
 
 export default ValueAsSentenceCase;

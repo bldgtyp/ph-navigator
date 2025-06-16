@@ -1,12 +1,12 @@
-import { MaterialType } from "./Material";
-import { MaterialPhotoType } from "./Material.Photo";
-import { MaterialDatasheetsType } from "./Material.Datasheet";
+import { MaterialType } from './Material';
+import { MaterialPhotoType } from './Material.Photo';
+import { MaterialDatasheetsType } from './Material.Datasheet';
 
 export enum SpecificationStatus {
-    COMPLETE = "complete",
-    MISSING = "missing",
-    QUESTION = "question",
-    NA = "na",
+    COMPLETE = 'complete',
+    MISSING = 'missing',
+    QUESTION = 'question',
+    NA = 'na',
 }
 
 export interface SegmentType {

@@ -1,14 +1,13 @@
 type T = {
     full_size_url: string;
     thumbnail_url: string;
-}
+};
 
 interface ThumbnailProps<T> {
     image: T;
     idx: number;
     setSelectedImage: (item: T) => void;
 }
-
 
 const ImageThumbnail = <T extends { thumbnail_url: string }>(props: ThumbnailProps<T>) => {
     return (
@@ -18,7 +17,8 @@ const ImageThumbnail = <T extends { thumbnail_url: string }>(props: ThumbnailPro
             src={props.image.thumbnail_url}
             alt={`Photo ${props.idx + 1}`}
             onClick={() => props.setSelectedImage(props.image)}
-        />)
-}
+        />
+    );
+};
 
 export default ImageThumbnail;
