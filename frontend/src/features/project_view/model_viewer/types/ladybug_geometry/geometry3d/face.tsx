@@ -1,6 +1,6 @@
-import { lbtPoint3D } from "./pointvector";
-import { lbtPlane } from "./plane";
-import { lbtMesh3D } from "./mesh";
+import { lbtPoint3D } from './pointvector';
+import { lbtPlane } from './plane';
+import { lbtMesh3D } from './mesh';
 
 export type lbtFace3D = {
     type: string;

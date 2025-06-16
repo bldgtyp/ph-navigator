@@ -5,8 +5,8 @@ export interface CertificationDataType {
 }
 
 export const defaultCertificationData = {
-    BLDGTYP_PROJECT_NUMBER: "",
-    PHIUS_PROJECT_NUMBER: "",
-    PROJECT_NAME: "",
-    PROJECT_TYPE: "",
-}
+    BLDGTYP_PROJECT_NUMBER: '',
+    PHIUS_PROJECT_NUMBER: '',
+    PROJECT_NAME: '',
+    PROJECT_TYPE: '',
+};

@@ -1,4 +1,4 @@
-// The App can be in many 'states'. Each State will mount an arbitrary number of 
+// The App can be in many 'states'. Each State will mount an arbitrary number of
 // event handlers, and visibility settings when activated. The AppState class
 // will also unmount these event-handlers and visibility settings when the State is
 // deactivated.
@@ -46,14 +46,26 @@ export const toolStates: { [key: number]: ToolState } = {
     3: new ToolState(appToolStateTypeEnum.Comments),
 };
 
-export function addToolStateEventHandler(appToolState: number, eventName: string, callbackFunction: EventHandlerFunction) {
+export function addToolStateEventHandler(
+    appToolState: number,
+    eventName: string,
+    callbackFunction: EventHandlerFunction
+) {
     toolStates[appToolState].addEventHandler(eventName, callbackFunction);
 }
 
-export function addToolStateMountHandler(appToolState: number, eventName: string, callbackFunction: MountHandlerFunction) {
+export function addToolStateMountHandler(
+    appToolState: number,
+    eventName: string,
+    callbackFunction: MountHandlerFunction
+) {
     toolStates[appToolState].addMountHandler(eventName, callbackFunction);
 }
 
-export function addToolStateDismountHandler(appToolState: number, eventName: string, callbackFunction: DismountHandlerFunction) {
+export function addToolStateDismountHandler(
+    appToolState: number,
+    eventName: string,
+    callbackFunction: DismountHandlerFunction
+) {
     toolStates[appToolState].addDismountHandler(eventName, callbackFunction);
 }

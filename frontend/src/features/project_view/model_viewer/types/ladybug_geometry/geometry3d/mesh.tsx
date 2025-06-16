@@ -1,4 +1,4 @@
-import { lbtPoint3D } from "./pointvector";
+import { lbtPoint3D } from './pointvector';
 
 export type lbtMesh3D = {
     type: string;

@@ -1,4 +1,4 @@
-import { lbtVector3D, lbtPoint3D } from "./pointvector";
+import { lbtVector3D, lbtPoint3D } from './pointvector';
 
 export type lbtPlane = {
     type: string;

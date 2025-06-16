@@ -1,4 +1,4 @@
-import { lbtFace3D } from "../ladybug_geometry/geometry3d/face";
+import { lbtFace3D } from '../ladybug_geometry/geometry3d/face';
 
 export type hbPhSpaceFloorSegment = {
     identifier: string;
@@ -7,7 +7,7 @@ export type hbPhSpaceFloorSegment = {
     weighting_factor: number;
     weighted_floor_area: number;
     floor_area: number;
-}
+};
 
 export type hbPhSpaceFloor = {
     identifier: string;

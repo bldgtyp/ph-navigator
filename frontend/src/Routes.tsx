@@ -1,12 +1,12 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import Landing from "./Landing";
-import Login from "./features/auth/_components/Login";
-import ProtectedRoute from "./features/auth/_components/ProtectedRoute";
-import Account from "./features/auth/_components/Account";
-import Projects from "./features/project_browser/_components/Projects";
-import ProjectContainer from "./features/project_view/_components/ProjectContainer";
+import Landing from './Landing';
+import Login from './features/auth/_components/Login';
+import ProtectedRoute from './features/auth/_components/ProtectedRoute';
+import Account from './features/auth/_components/Account';
+import Projects from './features/project_browser/_components/Projects';
+import ProjectContainer from './features/project_view/_components/ProjectContainer';
 import Settings from './features/project_browser/_components/Settings';
 import ProjectCertification from './features/project_view/data_views/certification/components/Certification';
 import WindowDataDashboard from './features/project_view/data_views/windows/components/WindowDataDashboard';
@@ -24,7 +24,6 @@ import HotWaterTankDataGrid from './features/project_view/data_views/equipment/c
 import FanDataGrid from './features/project_view/data_views/equipment/components/pages/Fans.DataGrid';
 import LightingDataGrid from './features/project_view/data_views/equipment/components/pages/Lighting.DataGrid';
 import AppliancesDataGrid from './features/project_view/data_views/equipment/components/pages/Appliances.DataGrid';
-
 
 const AppRoutes: React.FC = () => (
     <Routes>
@@ -67,7 +66,6 @@ const AppRoutes: React.FC = () => (
 
             <Route path="model" element={<Viewer />} />
         </Route>
-
     </Routes>
 );
 

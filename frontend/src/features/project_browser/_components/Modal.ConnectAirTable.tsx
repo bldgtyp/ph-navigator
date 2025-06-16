@@ -1,17 +1,25 @@
-import React, { useState } from "react";
-import { Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Divider, TextField, Typography } from "@mui/material";
-import { postWithAlert } from "../../../api/postWithAlert";
-import { useParams } from "react-router-dom";
-
+import React, { useState } from 'react';
+import {
+    Button,
+    ButtonGroup,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { postWithAlert } from '../../../api/postWithAlert';
+import { useParams } from 'react-router-dom';
 
 interface OkCancelButtonsProps {
     handleModalClose: () => void;
 }
 
-
-const OkCancelButtons: React.FC<OkCancelButtonsProps> = (props) => {
+const OkCancelButtons: React.FC<OkCancelButtonsProps> = props => {
     return (
-        <DialogActions sx={{ display: "flex", flexDirection: 'row', justifyContent: "center" }}>
+        <DialogActions sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
             <ButtonGroup variant="text">
                 <Button onClick={props.handleModalClose} size="large" color="primary">
                     Cancel
@@ -21,9 +29,8 @@ const OkCancelButtons: React.FC<OkCancelButtonsProps> = (props) => {
                 </Button>
             </ButtonGroup>
         </DialogActions>
-    )
-}
-
+    );
+};
 
 interface FormFieldProps {
     label: string;
@@ -32,8 +39,7 @@ interface FormFieldProps {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-
-const FormField: React.FC<FormFieldProps> = (props) => {
+const FormField: React.FC<FormFieldProps> = props => {
     return (
         <TextField
             type="text"
@@ -44,9 +50,8 @@ const FormField: React.FC<FormFieldProps> = (props) => {
             fullWidth
             margin="normal"
         />
-    )
-}
-
+    );
+};
 
 interface ModalConnectAirTableBaseType {
     bt_number: string;
@@ -54,23 +59,21 @@ interface ModalConnectAirTableBaseType {
     handleModalClose: () => void;
 }
 
-
 interface formDataType {
     airtable_base_api_key: string;
     airtable_base_ref: string;
 }
 
-
-const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props) => {
+const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = props => {
     const { projectId } = useParams();
     const [formData, setFormData] = useState<formDataType>({
-        airtable_base_api_key: "...",
-        airtable_base_ref: "...",
+        airtable_base_api_key: '...',
+        airtable_base_ref: '...',
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
+        setFormData(prev => ({
             ...prev,
             [name]: value, // Update the specific field in the form data
         }));
@@ -79,14 +82,14 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await postWithAlert("air_table/connect-AT-base-to-project", null, {
+            const response = await postWithAlert('air_table/connect-AT-base-to-project', null, {
                 ...formData,
-                bt_number: projectId
+                bt_number: projectId,
             });
             props.handleModalClose();
         } catch (error) {
-            alert("Error connecting to AirTable base. Please try again.");
-            console.error("Error:", error);
+            alert('Error connecting to AirTable base. Please try again.');
+            console.error('Error:', error);
         }
     };
 
@@ -94,8 +97,9 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
         <Dialog open={props.isModalOpen} onClose={props.handleModalClose} fullWidth>
             <DialogTitle>Project {props.bt_number}: Connect to an AirTable Base</DialogTitle>
             <Divider />
-            <Typography variant="body2" sx={{ padding: "25px", textAlign: "left" }}>
-                Connect to an existing AirTable &apos;Base&apos; to enable project data view. Make sure that that &apos;Base&apos; has the correct &apos;read&apos; permissions before trying to connect.
+            <Typography variant="body2" sx={{ padding: '25px', textAlign: 'left' }}>
+                Connect to an existing AirTable &apos;Base&apos; to enable project data view. Make sure that that
+                &apos;Base&apos; has the correct &apos;read&apos; permissions before trying to connect.
             </Typography>
             <form onSubmit={handleFormSubmit}>
                 <DialogContent>
@@ -113,16 +117,19 @@ const ModalConnectAirTableBase: React.FC<ModalConnectAirTableBaseType> = (props)
                     />
                 </DialogContent>
 
-                <DialogActions sx={{ display: "flex", flexDirection: 'row', justifyContent: "center" }}>
+                <DialogActions sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
                     <ButtonGroup>
-                        <Button onClick={props.handleModalClose} size="large" color="primary">Cancel</Button>
-                        <Button type="submit" variant="contained" color="primary" >Connect</Button>
+                        <Button onClick={props.handleModalClose} size="large" color="primary">
+                            Cancel
+                        </Button>
+                        <Button type="submit" variant="contained" color="primary">
+                            Connect
+                        </Button>
                     </ButtonGroup>
                 </DialogActions>
             </form>
         </Dialog>
     );
 };
-
 
 export default ModalConnectAirTableBase;

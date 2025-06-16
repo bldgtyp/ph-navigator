@@ -1,4 +1,4 @@
-import Card from "@mui/material/Card";
+import Card from '@mui/material/Card';
 
 const CardContainer: React.FC<any> = ({ children }) => {
     return (
@@ -9,14 +9,13 @@ const CardContainer: React.FC<any> = ({ children }) => {
                 minWidth: 300,
                 minHeight: 250,
                 maxWidth: 450,
-                margin: "10px",
-                backgroundColor: "#f5f5f5"
-            }}>
-
+                margin: '10px',
+                backgroundColor: '#f5f5f5',
+            }}
+        >
             {children}
-
         </Card>
     );
-}
+};
 
 export default CardContainer;

@@ -10,6 +10,10 @@ export interface AppliancesFields {
     DATA_SHEET: string;
     NOTES: string;
     FLAG: string;
-};
+}
 
-export interface AppliancesRecord { id: string; createdTime: string; fields: AppliancesFields };
+export interface AppliancesRecord {
+    id: string;
+    createdTime: string;
+    fields: AppliancesFields;
+}

@@ -1,44 +1,46 @@
-import { CheckboxForDatasheet } from "../../../_components/CheckboxForDatasheet";
-import { CheckboxForSpecification } from "../../../_components/CheckboxForSpecification";
-import { LinkIconWithDefault } from "../../../_components/LinkIconWithDefault";
-import { TooltipWithInfo } from "../../../_components/TooltipWithInfo";
-import { TooltipWithComment } from "../../../_components/TooltipWithComment";
-import { TooltipHeader } from "../../../_components/TooltipHeader";
-
+import { CheckboxForDatasheet } from '../../../_components/CheckboxForDatasheet';
+import { CheckboxForSpecification } from '../../../_components/CheckboxForSpecification';
+import { LinkIconWithDefault } from '../../../_components/LinkIconWithDefault';
+import { TooltipWithInfo } from '../../../_components/TooltipWithInfo';
+import { TooltipWithComment } from '../../../_components/TooltipWithComment';
+import { TooltipHeader } from '../../../_components/TooltipHeader';
 
 // ----------------------------------------------------------------------------
 // Define the table columns and rows to display
 const tableFields = [
-  {
-    field: "ID_NUMBER",
-    headerName: "ID",
-    flex: 1,
-    renderCell: (params: any) => TooltipWithInfo(params),
-  },
-  {
-    field: "NOTES",
-    headerName: "Notes",
-    flex: 0.5,
-    renderCell: (params: any) => TooltipWithComment(params),
-  },
-  {
-    field: "SPECIFICATION",
-    headerName: "Specification",
-    flex: 1,
-    renderCell: (params: any) => CheckboxForSpecification(params),
-    renderHeader: (params: any) => TooltipHeader({ params, title: "Do we have a product specification? Yes/No" }),
-  },
-  {
-    field: "DATA_SHEET",
-    headerName: "Data Sheet",
-    flex: 1,
-    renderCell: (params: any) => CheckboxForDatasheet(params),
-    renderHeader: (params: any) =>
-      TooltipHeader({ params, title: "Do we have a PDF data-sheet with the product's performance values? Yes/No" }),
-  },
-  { field: "MANUFACTURER", headerName: "Manufacturer", flex: 1 },
-  { field: "MODEL", headerName: "Model", flex: 1 },
-  { field: "SERVICE", headerName: "Service", flex: 1 },
-  { field: "LINK", headerName: "Link", flex: 1, renderCell: (params: any) => LinkIconWithDefault(params) },
+    {
+        field: 'ID_NUMBER',
+        headerName: 'ID',
+        flex: 1,
+        renderCell: (params: any) => TooltipWithInfo(params),
+    },
+    {
+        field: 'NOTES',
+        headerName: 'Notes',
+        flex: 0.5,
+        renderCell: (params: any) => TooltipWithComment(params),
+    },
+    {
+        field: 'SPECIFICATION',
+        headerName: 'Specification',
+        flex: 1,
+        renderCell: (params: any) => CheckboxForSpecification(params),
+        renderHeader: (params: any) => TooltipHeader({ params, title: 'Do we have a product specification? Yes/No' }),
+    },
+    {
+        field: 'DATA_SHEET',
+        headerName: 'Data Sheet',
+        flex: 1,
+        renderCell: (params: any) => CheckboxForDatasheet(params),
+        renderHeader: (params: any) =>
+            TooltipHeader({
+                params,
+                title: "Do we have a PDF data-sheet with the product's performance values? Yes/No",
+            }),
+    },
+    { field: 'MANUFACTURER', headerName: 'Manufacturer', flex: 1 },
+    { field: 'MODEL', headerName: 'Model', flex: 1 },
+    { field: 'SERVICE', headerName: 'Service', flex: 1 },
+    { field: 'LINK', headerName: 'Link', flex: 1, renderCell: (params: any) => LinkIconWithDefault(params) },
 ];
 export default tableFields;

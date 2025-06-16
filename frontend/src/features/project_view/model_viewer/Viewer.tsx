@@ -13,9 +13,8 @@ import { AppToolStateContextProvider } from './_contexts/app_tool_state_context'
 import { SelectedObjectContextProvider } from './_contexts/selected_object_context';
 import { HoverObjectContextProvider } from './_contexts/hover_object_context';
 
-
 const Viewer: React.FC<any> = () => {
-    console.log("Rendering Viewer Component...");
+    console.log('Rendering Viewer Component...');
 
     const [showModel, setShowModel] = useState(true);
     const world = useRef(new SceneSetup());
@@ -31,7 +30,11 @@ const Viewer: React.FC<any> = () => {
                 <AppToolStateContextProvider>
                     <SelectedObjectContextProvider>
                         <HoverObjectContextProvider>
-                            <World world={world} hoveringVertex={hoveringVertex} dimensionLinesRef={dimensionLinesRef} />
+                            <World
+                                world={world}
+                                hoveringVertex={hoveringVertex}
+                                dimensionLinesRef={dimensionLinesRef}
+                            />
                             <Model world={world} showModel={showModel} />
                         </HoverObjectContextProvider>
                     </SelectedObjectContextProvider>
@@ -39,7 +42,7 @@ const Viewer: React.FC<any> = () => {
                 </AppToolStateContextProvider>
             </AppStateContextProvider>
         </>
-    )
-}
+    );
+};
 
 export default Viewer;

@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { CardActionArea, CardContent, Typography } from "@mui/material";
+import { useState } from 'react';
+import { CardActionArea, CardContent, Typography } from '@mui/material';
 
-import { postWithAlert } from "../../../api/postWithAlert";
-import CardContainer from "./Card.Container";
-import ModalCreateNewProject from "./Modal.CreateNewProject";
+import { postWithAlert } from '../../../api/postWithAlert';
+import CardContainer from './Card.Container';
+import ModalCreateNewProject from './Modal.CreateNewProject';
 
 interface formDataType {
     name: string;
@@ -12,23 +12,26 @@ interface formDataType {
     phius_dropbox_url: string | null;
 }
 
-
 interface CreateNewProjectCardType {
     setProjectCardData: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-const CreateNewProjectCard: React.FC<CreateNewProjectCardType> = (props) => {
+const CreateNewProjectCard: React.FC<CreateNewProjectCardType> = props => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleOnClick = () => { setIsModalOpen(true); }
-    const handleModalClose = () => { setIsModalOpen(false); }
+    const handleOnClick = () => {
+        setIsModalOpen(true);
+    };
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+    };
     const handleSubmit = async (formData: formDataType) => {
         try {
-            const response = await postWithAlert<any>('project/create-new-project', null, formData)
+            const response = await postWithAlert<any>('project/create-new-project', null, formData);
 
             if (response) {
                 //Add the new Project to the local state
-                props.setProjectCardData((prev) => {
+                props.setProjectCardData(prev => {
                     const newProject = {
                         id: response.id,
                         name: formData.name,
@@ -39,15 +42,17 @@ const CreateNewProjectCard: React.FC<CreateNewProjectCardType> = (props) => {
                 });
             }
         } catch (error) {
-            console.error("Failed to create new project:", error);
+            console.error('Failed to create new project:', error);
         }
         setIsModalOpen(false);
     };
 
     return (
         <CardContainer>
-            <CardActionArea onClick={handleOnClick} sx={{ cursor: "pointer" }}>
-                <CardContent sx={{ alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column" }}>
+            <CardActionArea onClick={handleOnClick} sx={{ cursor: 'pointer' }}>
+                <CardContent
+                    sx={{ alignItems: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column' }}
+                >
                     <Typography color="primary" variant="h5" component="div">
                         Add a New Project...
                     </Typography>
@@ -62,6 +67,6 @@ const CreateNewProjectCard: React.FC<CreateNewProjectCardType> = (props) => {
             />
         </CardContainer>
     );
-}
+};
 
 export default CreateNewProjectCard;

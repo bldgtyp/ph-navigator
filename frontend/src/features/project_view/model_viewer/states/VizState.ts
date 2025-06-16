@@ -1,4 +1,4 @@
-// The App can be in many 'states'. Each State will mount an arbitrary number of 
+// The App can be in many 'states'. Each State will mount an arbitrary number of
 // event handlers, and visibility settings when activated. The AppState class
 // will also unmount these event-handlers and visibility settings when the State is
 // deactivated.
@@ -27,7 +27,6 @@ export class VizState {
         this.vizState = vizState;
     }
 
-
     addEventHandler(event: string, handler: EventHandlerFunction) {
         // All these will get added when the State is switched 'on'
         // They will all get removed when the State is switched 'off'
@@ -53,14 +52,26 @@ export const vizStates: { [key: number]: VizState } = {
     6: new VizState(appVizStateTypeEnum.HotWaterPiping),
 };
 
-export function addVizStateEventHandler(appVizState: number, eventName: string, callbackFunction: EventHandlerFunction) {
+export function addVizStateEventHandler(
+    appVizState: number,
+    eventName: string,
+    callbackFunction: EventHandlerFunction
+) {
     vizStates[appVizState].addEventHandler(eventName, callbackFunction);
 }
 
-export function addVizStateMountHandler(appVizState: number, eventName: string, callbackFunction: MountHandlerFunction) {
+export function addVizStateMountHandler(
+    appVizState: number,
+    eventName: string,
+    callbackFunction: MountHandlerFunction
+) {
     vizStates[appVizState].addMountHandler(eventName, callbackFunction);
 }
 
-export function addVizStateDismountHandler(appVizState: number, eventName: string, callbackFunction: DismountHandlerFunction) {
+export function addVizStateDismountHandler(
+    appVizState: number,
+    eventName: string,
+    callbackFunction: DismountHandlerFunction
+) {
     vizStates[appVizState].addDismountHandler(eventName, callbackFunction);
 }

@@ -5,27 +5,26 @@ import { SceneSetup } from '../scene_setup/SceneSetup';
 import { convertLBTFace3DToMesh } from '../to_three_geometry/ladybug_geometry/geometry3d/face';
 import { hbShadeGroup } from '../types/honeybee/shade';
 
-export function loadShades(
-    world: React.RefObject<SceneSetup>,
-    data: hbShadeGroup[]
-) {
+export function loadShades(world: React.RefObject<SceneSetup>, data: hbShadeGroup[]) {
     world.current.shadingGeometryMeshes.visible = false;
     world.current.shadingGeometryMeshes.castShadow = false;
-    world.current.shadingGeometryWireframe.visible = false
-    world.current.shadingGeometryWireframe.castShadow = false
+    world.current.shadingGeometryWireframe.visible = false;
+    world.current.shadingGeometryWireframe.castShadow = false;
 
-    data.forEach((shadeGroup) => {
+    data.forEach(shadeGroup => {
         // -- Build up the mesh geometry for each shade-group's faces
-        const shadeMeshGroup = new THREE.Group;
-        shadeGroup.shades.forEach((shade) => {
-            const geom = convertLBTFace3DToMesh(shade.geometry)
+        const shadeMeshGroup = new THREE.Group();
+        shadeGroup.shades.forEach(shade => {
+            const geom = convertLBTFace3DToMesh(shade.geometry);
             geom ? shadeMeshGroup.add(geom.mesh) : null;
-        })
+        });
 
         // -- Merge the shade group's elements into a single mesh
         const mergedBufferGeometry = BufferGeometryUtils.mergeGeometries(
-            shadeMeshGroup.children.map((child) => { return (child as THREE.Mesh).geometry; }
-            ));
+            shadeMeshGroup.children.map(child => {
+                return (child as THREE.Mesh).geometry;
+            })
+        );
         const mergedMesh = new THREE.Mesh(mergedBufferGeometry);
         mergedMesh.material = appMaterials.geometryShading;
         world.current.shadingGeometryMeshes.add(mergedMesh);

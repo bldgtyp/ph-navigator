@@ -1,4 +1,4 @@
-import { hbEnergyOpaqueMaterial } from "../material/opaque";
+import { hbEnergyOpaqueMaterial } from '../material/opaque';
 
 export type hbEnergyOpaqueConstruction = {
     identifier: string;

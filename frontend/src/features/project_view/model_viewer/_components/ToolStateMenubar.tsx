@@ -1,6 +1,6 @@
-import "../styles/ToolStateMenubar.css";
+import '../styles/ToolStateMenubar.css';
 import { useState } from 'react';
-import { Paper } from "@mui/material";
+import { Paper } from '@mui/material';
 import { ReactComponent as RulerIcon } from '../icons/Ruler.svg';
 import { ReactComponent as SurfaceIcon } from '../icons/Surface.svg';
 import { ReactComponent as NoteIcon } from '../icons/Note.svg';
@@ -13,13 +13,12 @@ const icons: any[] = [
     <NoteIcon key={2} title="Comments" />,
 ];
 
-
 const ToolStateMenubar: React.FC = () => {
     const [activeButton, setActiveButton] = useState<number | null>(null);
     const appStateContext = useAppToolStateContext();
 
     return (
-        <Paper className="tool-state-menubar" >
+        <Paper className="tool-state-menubar">
             {icons.map((icon, index) => (
                 <LightTooltip title={icon.props.title} key={index}>
                     <button
@@ -45,6 +44,6 @@ const ToolStateMenubar: React.FC = () => {
             ))}
         </Paper>
     );
-}
+};
 
 export default ToolStateMenubar;

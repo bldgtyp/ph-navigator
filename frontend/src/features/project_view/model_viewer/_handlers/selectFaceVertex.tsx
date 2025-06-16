@@ -7,11 +7,7 @@ function findNearestFaceVertex(faceIndex: any, intersect: any) {
     const bc = new THREE.Vector3();
     const pos = new THREE.Vector3();
     const tri = new THREE.Triangle();
-    const tp = [
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3()
-    ];
+    const tp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     const intersectPoint = new THREE.Vector3();
     intersectPoint.copy(intersect.point);
     intersect.object.worldToLocal(intersectPoint);
@@ -38,13 +34,13 @@ function findNearestFaceVertex(faceIndex: any, intersect: any) {
 function getIntersectionObjectFromMouseClick(
     event: any,
     ray_caster: THREE.Raycaster,
-    world: SceneSetup,
+    world: SceneSetup
 ): THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>> | null {
     // calculate pointer position in normalized device coordinates
     // (-1 to +1) for both components
     const pointer = new THREE.Vector2();
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     // update the ray-cast with the camera and pointer position
     ray_caster.setFromCamera(pointer, world.camera);
@@ -55,14 +51,11 @@ function getIntersectionObjectFromMouseClick(
     return intersect ? intersect : null;
 }
 
-export function getNearestFaceVertex(event: any,
-    ray_caster: THREE.Raycaster,
-    world: SceneSetup): THREE.Vector3 | null {
-
+export function getNearestFaceVertex(event: any, ray_caster: THREE.Raycaster, world: SceneSetup): THREE.Vector3 | null {
     const intersect = getIntersectionObjectFromMouseClick(event, ray_caster, world);
     if (intersect && intersect.object instanceof THREE.Mesh) {
         const faceVertex = findNearestFaceVertex(intersect.faceIndex, intersect);
         return faceVertex;
     }
-    return null
+    return null;
 }

@@ -1,3 +1,3 @@
 export type HoneybeeBoundaryCondition = {
-    type: string,
+    type: string;
 };

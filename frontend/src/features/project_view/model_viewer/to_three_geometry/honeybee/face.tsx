@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { hbAperture } from "../../types/honeybee/aperture";
-import { hbFace } from "../../types/honeybee/face";
+import { hbAperture } from '../../types/honeybee/aperture';
+import { hbFace } from '../../types/honeybee/face';
 import { convertLBTFace3DToMesh } from '../ladybug_geometry/geometry3d/face';
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 
@@ -10,7 +10,7 @@ import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHel
  *
  * @param face - The Honeybee face or aperture object to be converted. This object
  *               contains geometric and property data for the face or aperture.
- * 
+ *
  * @returns An object containing the following elements if the conversion is successful:
  *          - `mesh`: A Three.js `Mesh` object representing the face geometry.
  *          - `wireframe`: A Three.js `LineLoop` object representing the wireframe of the face.
@@ -25,12 +25,16 @@ import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHel
  * boundary condition, and energy-related properties such as construction identifiers and
  * thermal performance metrics (R-factor and U-factor).
  */
-export function convertHBFaceToMesh(face: hbFace | hbAperture): { mesh: THREE.Mesh, wireframe: THREE.LineLoop, vertices: THREE.Points, vertexHelper: VertexNormalsHelper } | null {
+export function convertHBFaceToMesh(
+    face: hbFace | hbAperture
+): { mesh: THREE.Mesh; wireframe: THREE.LineLoop; vertices: THREE.Points; vertexHelper: VertexNormalsHelper } | null {
     // ------------------------------------------------------------------------
     // Build the Surface geometry elements
-    const lbtFace3D = face.geometry
-    const mesh = convertLBTFace3DToMesh(lbtFace3D)
-    if (!mesh) { return null }
+    const lbtFace3D = face.geometry;
+    const mesh = convertLBTFace3DToMesh(lbtFace3D);
+    if (!mesh) {
+        return null;
+    }
 
     // -- Add the HB-Face properties to the Mesh's user-data
     mesh.mesh.userData['display_name'] = face.display_name;
@@ -45,10 +49,10 @@ export function convertHBFaceToMesh(face: hbFace | hbAperture): { mesh: THREE.Me
                 identifier: face.properties.energy.construction.identifier,
                 r_factor: face.properties.energy.construction.r_factor,
                 u_factor: face.properties.energy.construction.u_factor,
-            }
-        }
+            },
+        },
     };
 
     // ------------------------------------------------------------------------
-    return mesh
+    return mesh;
 }

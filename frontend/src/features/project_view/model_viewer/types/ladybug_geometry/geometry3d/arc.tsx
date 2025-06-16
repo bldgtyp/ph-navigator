@@ -1,4 +1,4 @@
-import { lbtPlane } from "./plane";
+import { lbtPlane } from './plane';
 
 export type lbtArc3D = {
     type: string;

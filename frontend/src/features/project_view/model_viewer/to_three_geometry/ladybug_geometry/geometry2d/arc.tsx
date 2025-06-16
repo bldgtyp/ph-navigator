@@ -1,17 +1,17 @@
 import * as THREE from 'three';
-import { lbtArc2D } from "../../../types/ladybug_geometry/geometry2d/arc";
+import { lbtArc2D } from '../../../types/ladybug_geometry/geometry2d/arc';
 
 /**
  * Converts a 2D Ladybug Tools arc (`lbtArc2D`) into a THREE.js `Line` object.
  *
- * @param lbtArc2D - An object representing a 2D arc in Ladybug Tools format. 
+ * @param lbtArc2D - An object representing a 2D arc in Ladybug Tools format.
  *                   It contains the following properties:
  *                   - `r`: The radius of the arc.
  *                   - `c`: The center of the arc as a 2D coordinate [x, y].
  *                   - `a1`: The starting angle of the arc in radians.
  *                   - `a2`: The ending angle of the arc in radians.
  * @param num_interpolation_points - The number of points to sample along the arc. Default is 50.
- * 
+ *
  * @returns A THREE.js `Line` object representing the arc.
  *
  * @remarks
@@ -26,9 +26,12 @@ export function convertLBTArc2DtoLine(lbtArc2D: lbtArc2D, num_interpolation_poin
 
     // Create an elliptical curve
     const curve = new THREE.EllipseCurve(
-        0, 0, // aX, aY
-        r, r, // xRadius, yRadius
-        a1, a2, // aStartAngle, aEndAngle
+        0,
+        0, // aX, aY
+        r,
+        r, // xRadius, yRadius
+        a1,
+        a2, // aStartAngle, aEndAngle
         false, // aClockwise
         0 // aRotation
     );
@@ -55,5 +58,5 @@ export function convertLBTArc2DtoLine(lbtArc2D: lbtArc2D, num_interpolation_poin
     // Apply the transformation to the line
     line.applyMatrix4(matrix);
 
-    return line
+    return line;
 }

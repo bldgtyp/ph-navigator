@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { lbtArc3D } from "../../../types/ladybug_geometry/geometry3d/arc";
+import { lbtArc3D } from '../../../types/ladybug_geometry/geometry3d/arc';
 
 /**
  * Converts a Ladybug Tools 3D arc (lbtArc3D) into a THREE.Line object.
@@ -27,9 +27,12 @@ export function convertLBTArc3DtoLine(lbtArc3D: lbtArc3D): THREE.Line {
 
     // Create an elliptical curve
     const curve = new THREE.EllipseCurve(
-        0, 0, // aX, aY
-        radius, radius, // xRadius, yRadius
-        a1, a2, // aStartAngle, aEndAngle
+        0,
+        0, // aX, aY
+        radius,
+        radius, // xRadius, yRadius
+        a1,
+        a2, // aStartAngle, aEndAngle
         false, // aClockwise
         0 // aRotation
     );
@@ -65,5 +68,5 @@ export function convertLBTArc3DtoLine(lbtArc3D: lbtArc3D): THREE.Line {
     // Orient the line to face the plane's normal
     line.lookAt(normal);
 
-    return line
+    return line;
 }

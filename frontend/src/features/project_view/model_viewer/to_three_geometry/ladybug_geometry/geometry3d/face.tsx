@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { lbtFace3D } from "../../../types/ladybug_geometry/geometry3d/face";
+import { lbtFace3D } from '../../../types/ladybug_geometry/geometry3d/face';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 
@@ -15,8 +15,12 @@ import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHel
  * - `vertexHelper`: A `VertexNormalsHelper` for visualizing vertex normals.
  * Returns `null` if the input `lbtFace3D` does not contain a mesh.
  */
-export function convertLBTFace3DToMesh(lbtFace3D: lbtFace3D): { mesh: THREE.Mesh, wireframe: THREE.LineLoop, vertices: THREE.Points, vertexHelper: VertexNormalsHelper } | null {
-    if (!lbtFace3D.mesh) { return null }
+export function convertLBTFace3DToMesh(
+    lbtFace3D: lbtFace3D
+): { mesh: THREE.Mesh; wireframe: THREE.LineLoop; vertices: THREE.Points; vertexHelper: VertexNormalsHelper } | null {
+    if (!lbtFace3D.mesh) {
+        return null;
+    }
 
     // ------------------------------------------------------------------------
     // Build up the Surface Mesh from an input Ladybug-Face3D
@@ -36,7 +40,7 @@ export function convertLBTFace3DToMesh(lbtFace3D: lbtFace3D): { mesh: THREE.Mesh
         vertices[i].toArray(verticesArray, i * vertSize);
     }
 
-    // Set vertices attribute  
+    // Set vertices attribute
     buffGeometry.setAttribute('position', new THREE.BufferAttribute(verticesArray, vertSize));
 
     // Define faces using vertex indices
@@ -83,7 +87,7 @@ export function convertLBTFace3DToMesh(lbtFace3D: lbtFace3D): { mesh: THREE.Mesh
     cornerVertices.geometry.computeBoundingBox();
 
     // ------------------------------------------------------------------------
-    const vertexHelper = new VertexNormalsHelper(threeMesh, 0.10, 0x000000)
+    const vertexHelper = new VertexNormalsHelper(threeMesh, 0.1, 0x000000);
     vertexHelper.visible = true;
 
     // ------------------------------------------------------------------------

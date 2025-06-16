@@ -13,22 +13,19 @@ type hbPhHvacPipeSegment = {
     length: number;
 };
 
-
 export type hbPhHvacPipeElement = {
     identifier: string;
     display_name: string;
     user_data: Object;
-    segments: { [key: string]: hbPhHvacPipeSegment; };
+    segments: { [key: string]: hbPhHvacPipeSegment };
 };
-
 
 export type hbPhHvacPipeBranch = {
     identifier: string;
     display_name: string;
     pipe_element: hbPhHvacPipeElement;
-    fixtures: { [key: string]: hbPhHvacPipeElement; };
+    fixtures: { [key: string]: hbPhHvacPipeElement };
     user_data: Object;
-
 };
 
 export type hbPhHvacPipeTrunk = {
@@ -38,6 +35,4 @@ export type hbPhHvacPipeTrunk = {
     branches: { [key: string]: hbPhHvacPipeBranch };
     multiplier: number;
     user_data: Object;
-}
-
-
+};

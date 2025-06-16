@@ -1,4 +1,4 @@
-import { lbtPoint2D, lbtVector2D } from "./pointvector";
+import { lbtPoint2D, lbtVector2D } from './pointvector';
 
 export type lbtLineSegment2D = {
     p: lbtPoint2D;

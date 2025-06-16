@@ -1,4 +1,4 @@
-import { lbtPoint2D } from "./pointvector";
+import { lbtPoint2D } from './pointvector';
 
 export type lbtArc2D = {
     type: string;

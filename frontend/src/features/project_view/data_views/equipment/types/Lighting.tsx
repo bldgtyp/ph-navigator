@@ -9,6 +9,10 @@ export interface LightingFields {
     LINK: string;
     NOTES: string;
     FLAG: string;
-};
+}
 
-export interface LightingRecord { id: string; createdTime: string; fields: LightingFields };
+export interface LightingRecord {
+    id: string;
+    createdTime: string;
+    fields: LightingFields;
+}

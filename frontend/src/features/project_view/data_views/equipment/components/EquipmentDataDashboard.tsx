@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
 
-import DataViewPage from "../../_components/DataViewPage";
-import ContentBlock from "../../_components/ContentBlock";
-import DataDashboardTabBar from "../../_components/DataDashboardTabBar";
+import DataViewPage from '../../_components/DataViewPage';
+import ContentBlock from '../../_components/ContentBlock';
+import DataDashboardTabBar from '../../_components/DataDashboardTabBar';
 
 const EquipmentDataDashboard: React.FC = () => {
     const tabs = [
-        { label: "Ventilation", path: "erv-units" },
-        { label: "Pumps", path: "pumps" },
-        { label: "Tanks", path: "dhw-tanks" },
-        { label: "Fans", path: "fans" },
-        { label: "Lighting", path: "lighting" },
-        { label: "Appliances", path: "appliances" },
+        { label: 'Ventilation', path: 'erv-units' },
+        { label: 'Pumps', path: 'pumps' },
+        { label: 'Tanks', path: 'dhw-tanks' },
+        { label: 'Fans', path: 'fans' },
+        { label: 'Lighting', path: 'lighting' },
+        { label: 'Appliances', path: 'appliances' },
     ];
 
     // Determine active tab from URL path
@@ -37,18 +37,14 @@ const EquipmentDataDashboard: React.FC = () => {
 
     return (
         <>
-            <DataDashboardTabBar
-                tabs={tabs}
-                activeTab={activeTab}
-                onTabChange={(tabNumber) => setActiveTab(tabNumber)}
-            />
+            <DataDashboardTabBar tabs={tabs} activeTab={activeTab} onTabChange={tabNumber => setActiveTab(tabNumber)} />
             <DataViewPage>
                 <ContentBlock>
                     <Outlet />
                 </ContentBlock>
             </DataViewPage>
         </>
-    )
-}
+    );
+};
 
 export default EquipmentDataDashboard;

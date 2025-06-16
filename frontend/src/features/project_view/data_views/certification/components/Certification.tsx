@@ -1,23 +1,22 @@
-import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { Box, Modal } from "@mui/material";
+import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Box, Modal } from '@mui/material';
 
-import { getWithAlert } from "../../../../../api/getWithAlert";
-import { AirTableRecordType } from "../../../../types/AirTableRecordType";
-import DataViewPage from "../../_components/DataViewPage";
-import CertificationStatus from "./CertificationStatus";
-import ContentBlock from "../../_components/ContentBlock";
+import { getWithAlert } from '../../../../../api/getWithAlert';
+import { AirTableRecordType } from '../../../../types/AirTableRecordType';
+import DataViewPage from '../../_components/DataViewPage';
+import CertificationStatus from './CertificationStatus';
+import ContentBlock from '../../_components/ContentBlock';
 
 function flattenData(d: AirTableRecordType[]): any {
     const flatData: Record<string, string | undefined> = {};
-    d.forEach((item) => {
+    d.forEach(item => {
         if (item.fields !== undefined && item.fields.FIELD_NAME !== undefined) {
             flatData[item.fields.FIELD_NAME] = item.fields.VALUE;
         }
     });
     return flatData;
 }
-
 
 const ProjectCertification: React.FC = () => {
     const { projectId } = useParams();
@@ -34,7 +33,7 @@ const ProjectCertification: React.FC = () => {
             const d: any = await getWithAlert(`air_table/config/${projectId}`);
 
             // handle the fetched data
-            setCertStatusData(flattenData(d.filter((item: any) => item.fields.SECTION === "CERT_STATUS")));
+            setCertStatusData(flattenData(d.filter((item: any) => item.fields.SECTION === 'CERT_STATUS')));
 
             // Cleanup
             clearTimeout(timerId);
@@ -43,7 +42,6 @@ const ProjectCertification: React.FC = () => {
 
         fetchProjectData();
     }, [projectId]);
-
 
     return (
         <>
@@ -58,7 +56,7 @@ const ProjectCertification: React.FC = () => {
                 </ContentBlock>
             </DataViewPage>
         </>
-    )
-}
+    );
+};
 
 export default ProjectCertification;

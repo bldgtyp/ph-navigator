@@ -1,12 +1,12 @@
 // Load and Build the 3D Model to show in the Viewer
 
 import { useEffect, useState } from 'react';
-import { useParams } from "react-router-dom";
+import { useParams } from 'react-router-dom';
 import { Dialog } from '@mui/material';
-import MoonLoader from "react-spinners/MoonLoader";
+import MoonLoader from 'react-spinners/MoonLoader';
 
 import { SceneSetup } from './scene_setup/SceneSetup';
-import { get3DModelData } from "../../../api/get3DModelData";
+import { get3DModelData } from '../../../api/get3DModelData';
 import { loadModelFaces } from './loaders/load_faces';
 import { loadSpaces } from './loaders/load_spaces';
 import { loadSpaceFloors } from './loaders/load_space_floors';
@@ -15,10 +15,9 @@ import { loadHotWaterPiping } from './loaders/load_hot_water_piping';
 import { loadERVDucting } from './loaders/load_erv_ducting';
 import { loadShades } from './loaders/load_shades';
 
-
 /**
  * Handles errors in the specified function.
- * 
+ *
  * @template T - The type of data being handled.
  * @param _func - The function to handle errors for.
  * @param world - A mutable ref object containing the scene setup.
@@ -46,12 +45,14 @@ const Model: React.FC<ModelProps> = ({ world, showModel }) => {
     // Load the Model-Elements from the Server based on: team-id / project-id / model-id
     // ------------------------------------------------------------------------
     useEffect(() => {
-        async function loadModelDataIntoWorld(projectId: string,) {
-            console.log("Loading Model Data into World...");
+        async function loadModelDataIntoWorld(projectId: string) {
+            console.log('Loading Model Data into World...');
 
             try {
                 const modelData = await get3DModelData(projectId);
-                if (modelData === null) { return }
+                if (modelData === null) {
+                    return;
+                }
                 handleLoadError(loadModelFaces, world, modelData.facesData);
                 handleLoadError(loadSpaces, world, modelData.spacesData);
                 handleLoadError(loadSpaceFloors, world, modelData.spacesData);
@@ -84,18 +85,18 @@ const Model: React.FC<ModelProps> = ({ world, showModel }) => {
                         <MoonLoader
                             color="#1976d2"
                             cssOverride={{
-                                display: "block",
-                                margin: "0 auto",
-                                padding: "8px",
+                                display: 'block',
+                                margin: '0 auto',
+                                padding: '8px',
                             }}
                             size="25px"
                             aria-label="Loading Spinner"
                             data-testid="loader"
                         />
                     </div>
-                </Dialog>)
-            }
+                </Dialog>
+            )}
         </>
-    )
-}
+    );
+};
 export default Model;

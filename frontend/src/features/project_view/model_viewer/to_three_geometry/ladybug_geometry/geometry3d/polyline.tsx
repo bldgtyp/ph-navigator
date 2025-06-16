@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { lbtPolyline3D } from "../../../types/ladybug_geometry/geometry3d/polyline";
+import { lbtPolyline3D } from '../../../types/ladybug_geometry/geometry3d/polyline';
 
 /**
  * Converts a Ladybug Tools 3D polyline (`lbtPolyline3D`) into a THREE.js `Line` object.
@@ -13,7 +13,6 @@ import { lbtPolyline3D } from "../../../types/ladybug_geometry/geometry3d/polyli
  * @returns A THREE.js `Line` object representing the smoothed polyline.
  */
 export function convertLBTPolyline3DtoLine(lbtPolyline3D: lbtPolyline3D): THREE.Line {
-
     const points: THREE.Vector3[] = [];
     lbtPolyline3D.vertices.forEach((point: any) => {
         const vertex = new THREE.Vector3(point[0], point[1], point[2]);
@@ -24,5 +23,5 @@ export function convertLBTPolyline3DtoLine(lbtPolyline3D: lbtPolyline3D): THREE.
     const curve = new THREE.CatmullRomCurve3(points);
     const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(50));
     const line = new THREE.Line(geometry);
-    return line
+    return line;
 }

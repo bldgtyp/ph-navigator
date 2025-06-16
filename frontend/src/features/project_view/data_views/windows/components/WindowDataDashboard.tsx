@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
 
-import DataViewPage from "../../_components/DataViewPage";
-import ContentBlock from "../../_components/ContentBlock";
-import DataDashboardTabBar from "../../_components/DataDashboardTabBar";
+import DataViewPage from '../../_components/DataViewPage';
+import ContentBlock from '../../_components/ContentBlock';
+import DataDashboardTabBar from '../../_components/DataDashboardTabBar';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [
-        { label: "Glazing Types", path: "window-glazing-types" },
-        { label: "Frame Types", path: "window-frame-types" },
-        { label: "Unit Types", path: "window-unit-type" },
+        { label: 'Glazing Types', path: 'window-glazing-types' },
+        { label: 'Frame Types', path: 'window-frame-types' },
+        { label: 'Unit Types', path: 'window-unit-type' },
     ];
 
     // Determine active tab from URL path
@@ -31,17 +31,14 @@ const WindowDataDashboard: React.FC = () => {
 
     return (
         <>
-            <DataDashboardTabBar
-                tabs={tabs}
-                activeTab={activeTab}
-                onTabChange={(tabNumber) => setActiveTab(tabNumber)} />
+            <DataDashboardTabBar tabs={tabs} activeTab={activeTab} onTabChange={tabNumber => setActiveTab(tabNumber)} />
             <DataViewPage>
                 <ContentBlock>
                     <Outlet />
                 </ContentBlock>
             </DataViewPage>
         </>
-    )
-}
+    );
+};
 
 export default WindowDataDashboard;

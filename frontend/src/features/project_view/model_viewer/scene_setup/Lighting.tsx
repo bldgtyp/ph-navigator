@@ -7,4 +7,4 @@ export const defaultLightConfiguration = {
     azimuth: 0.75,
     radius: 0,
     indirectLightIntensity: 1,
-}
+};

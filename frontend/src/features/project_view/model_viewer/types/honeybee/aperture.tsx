@@ -1,6 +1,6 @@
-import { lbtFace3D } from "../ladybug_geometry/geometry3d/face";
-import { HoneybeeBoundaryCondition } from "./boundarycondition";
-import { hbApertureProperties } from "./properties";
+import { lbtFace3D } from '../ladybug_geometry/geometry3d/face';
+import { HoneybeeBoundaryCondition } from './boundarycondition';
+import { hbApertureProperties } from './properties';
 
 export type hbAperture = {
     type: string;

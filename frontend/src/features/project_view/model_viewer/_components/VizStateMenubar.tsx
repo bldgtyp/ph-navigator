@@ -1,6 +1,6 @@
 import '../styles/VizStateMenubar.css';
 import { useState } from 'react';
-import { Stack } from "@mui/material";
+import { Stack } from '@mui/material';
 import { ReactComponent as Geometry } from '../icons/Geometry.svg';
 import { ReactComponent as FloorSegmentIcon } from '../icons/FloorSegments.svg';
 import { ReactComponent as DuctIcon } from '../icons/Ducts.svg';
@@ -26,20 +26,20 @@ const VizStateMenubar: React.FC = () => {
     return (
         <Stack id="viz-state-menubar" direction="row" spacing={2} className="viz-state-menubar">
             {icons.map((icon, index) => (
-                <LightTooltip title={icon.props.title} key={index} placement='top'>
+                <LightTooltip title={icon.props.title} key={index} placement="top">
                     <button
                         key={index}
                         className={`viz-state-button ${activeButton === index ? 'active' : ''}`}
                         onClick={() => {
                             // Set the App-State based on the button clicked
                             // Remember: The Toolbar Icon Index starts ay 0, but AppState starts at 1
-                            const newAppStateNumber = index + 1
+                            const newAppStateNumber = index + 1;
                             if (newAppStateNumber === appStateContext.appVizState.vizState) {
-                                appStateContext.dispatch(0)
+                                appStateContext.dispatch(0);
                                 setActiveButton(null);
                             } else {
                                 // Set the new State 'On'
-                                appStateContext.dispatch(newAppStateNumber)
+                                appStateContext.dispatch(newAppStateNumber);
                                 setActiveButton(index);
                             }
                         }}

@@ -3,7 +3,7 @@ const raycaster = new THREE.Raycaster();
 
 /**
  * Performs a ray-cast intersection to select a point in 3D space.
- * 
+ *
  * @param pointer - The pointer coordinates in normalized device space.
  * @param world - The world object containing the camera and building geometry.
  * @param tolerance - The maximum distance from the ray to consider a point as selected. Default is 0.5.
@@ -29,6 +29,10 @@ export function selectPoint(pointer: any, world: any, tolerance: number = 0.5): 
     const geom: THREE.BufferGeometry = object.geometry;
     const values: THREE.TypedArray = geom.attributes.position.array;
     const startingIndex = index * geom.attributes.position.itemSize;
-    const updatedVertex = new THREE.Vector3(values[startingIndex], values[startingIndex + 1], values[startingIndex + 2]);
-    return updatedVertex
+    const updatedVertex = new THREE.Vector3(
+        values[startingIndex],
+        values[startingIndex + 1],
+        values[startingIndex + 2]
+    );
+    return updatedVertex;
 }

@@ -1,4 +1,4 @@
-import { lbtFace3D } from "../ladybug_geometry/geometry3d/face";
+import { lbtFace3D } from '../ladybug_geometry/geometry3d/face';
 
 export type hbShade = {
     type: string;

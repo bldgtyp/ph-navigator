@@ -1,8 +1,4 @@
 const Account: React.FC = () => {
-    return (
-        <>
-            Account Page
-        </>
-    )
-}
+    return <>Account Page</>;
+};
 export default Account;

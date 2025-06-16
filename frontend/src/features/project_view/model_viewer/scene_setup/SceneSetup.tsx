@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
+import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { appColors } from '../../../../styles/AppColors';
 import { appMaterials } from './Materials';
@@ -36,8 +36,6 @@ export class SceneSetup {
     shadingGeometryMeshes: THREE.Group;
     shadingGeometryWireframe: THREE.Group;
 
-
-
     constructor() {
         // -- Scene
         this.scene = new THREE.Scene();
@@ -47,7 +45,7 @@ export class SceneSetup {
         this.scene.add(this.selectableObjects);
 
         // -- Camera
-        const FOV = 45
+        const FOV = 45;
         this.camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(-25, 40, 30);
         this.camera.lookAt(0, 0, 0);
@@ -86,12 +84,12 @@ export class SceneSetup {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         // LabelRendered
-        this.labelRenderer = new CSS2DRenderer()
-        this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
-        this.labelRenderer.domElement.style.position = 'absolute'
-        this.labelRenderer.domElement.style.top = '0px'
-        this.labelRenderer.domElement.style.pointerEvents = 'none'
-        document.body.appendChild(this.labelRenderer.domElement)
+        this.labelRenderer = new CSS2DRenderer();
+        this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        this.labelRenderer.domElement.style.position = 'absolute';
+        this.labelRenderer.domElement.style.top = '0px';
+        this.labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(this.labelRenderer.domElement);
 
         // -- Controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -115,11 +113,17 @@ export class SceneSetup {
         this.scene.add(grid);
 
         // --- Hemisphere Light
-        const light_1 = new THREE.AmbientLight(appColors.SURFACE_WHITE, defaultLightConfiguration.indirectLightIntensity);
+        const light_1 = new THREE.AmbientLight(
+            appColors.SURFACE_WHITE,
+            defaultLightConfiguration.indirectLightIntensity
+        );
         this.scene.add(light_1);
 
         // -- Sunlight
-        const light_2 = new THREE.DirectionalLight(defaultLightConfiguration.color, defaultLightConfiguration.intensity);
+        const light_2 = new THREE.DirectionalLight(
+            defaultLightConfiguration.color,
+            defaultLightConfiguration.intensity
+        );
         light_2.position.set(-10, -10, 25);
         light_2.castShadow = defaultLightConfiguration.castShadow;
         light_2.shadow.camera.updateProjectionMatrix();
@@ -132,73 +136,70 @@ export class SceneSetup {
 
         // -- Ground
         this.groundGeometry = new THREE.Group();
-        const ground = new THREE.Mesh(
-            new THREE.PlaneGeometry(50, 50),
-            appMaterials.groundShadow
-        );
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), appMaterials.groundShadow);
         ground.receiveShadow = true;
         this.groundGeometry.add(ground);
         this.scene.add(this.groundGeometry);
 
         // -- Groups for the Loaded Geometry
         this.buildingGeometryMeshes = new THREE.Group();
-        this.buildingGeometryMeshes.name = "Building Geometry | Meshes";
+        this.buildingGeometryMeshes.name = 'Building Geometry | Meshes';
         this.scene.add(this.buildingGeometryMeshes);
 
         this.buildingGeometryOutlines = new THREE.Group();
-        this.buildingGeometryOutlines.name = "Building Geometry | Outlines";
+        this.buildingGeometryOutlines.name = 'Building Geometry | Outlines';
         this.scene.add(this.buildingGeometryOutlines);
 
         this.buildingGeometryVertices = new THREE.Group();
-        this.buildingGeometryVertices.name = "Building Geometry | Vertices";
+        this.buildingGeometryVertices.name = 'Building Geometry | Vertices';
         this.scene.add(this.buildingGeometryVertices);
 
         this.sunPathDiagram = new THREE.Group();
-        this.sunPathDiagram.name = "Sun Path Diagram";
+        this.sunPathDiagram.name = 'Sun Path Diagram';
         this.scene.add(this.sunPathDiagram);
 
         // ----
         this.spaceGeometryMeshes = new THREE.Group();
-        this.spaceGeometryMeshes.name = "Space Geometry | Meshes";
+        this.spaceGeometryMeshes.name = 'Space Geometry | Meshes';
         this.scene.add(this.spaceGeometryMeshes);
 
         this.spaceGeometryOutlines = new THREE.Group();
-        this.spaceGeometryOutlines.name = "Space Geometry | Outlines";
+        this.spaceGeometryOutlines.name = 'Space Geometry | Outlines';
         this.scene.add(this.spaceGeometryOutlines);
 
         this.spaceGeometryVertices = new THREE.Group();
-        this.spaceGeometryVertices.name = "Space Geometry | Vertices";
+        this.spaceGeometryVertices.name = 'Space Geometry | Vertices';
         this.scene.add(this.spaceGeometryVertices);
 
         // ----
         this.spaceFloorGeometryMeshes = new THREE.Group();
-        this.spaceFloorGeometryMeshes.name = "SpaceFloor Geometry | Meshes";
+        this.spaceFloorGeometryMeshes.name = 'SpaceFloor Geometry | Meshes';
         this.scene.add(this.spaceFloorGeometryMeshes);
 
         this.spaceFloorGeometryOutlines = new THREE.Group();
-        this.spaceFloorGeometryOutlines.name = "SpaceFloor Geometry | Outlines";
+        this.spaceFloorGeometryOutlines.name = 'SpaceFloor Geometry | Outlines';
         this.scene.add(this.spaceFloorGeometryOutlines);
 
         this.spaceFloorGeometryVertices = new THREE.Group();
-        this.spaceFloorGeometryVertices.name = "SpaceFloor Geometry | Vertices";
+        this.spaceFloorGeometryVertices.name = 'SpaceFloor Geometry | Vertices';
         this.scene.add(this.spaceFloorGeometryVertices);
 
-        // --- 
+        // ---
         this.pipeGeometry = new THREE.Group();
-        this.pipeGeometry.name = "Pipe Geometry";
+        this.pipeGeometry.name = 'Pipe Geometry';
         this.scene.add(this.pipeGeometry);
 
         this.ventilationGeometry = new THREE.Group();
-        this.ventilationGeometry.name = "Ventilation Geometry";
+        this.ventilationGeometry.name = 'Ventilation Geometry';
         this.scene.add(this.ventilationGeometry);
 
         // ---
         this.shadingGeometryMeshes = new THREE.Group();
-        this.shadingGeometryMeshes.name = "Shading Geometry | Meshes";
+        this.shadingGeometryMeshes.name = 'Shading Geometry | Meshes';
         this.scene.add(this.shadingGeometryMeshes);
 
         this.shadingGeometryWireframe = new THREE.Group();
-        this.shadingGeometryWireframe.name = "Shading Geometry | Outlines";
+        this.shadingGeometryWireframe.name = 'Shading Geometry | Outlines';
         this.scene.add(this.shadingGeometryWireframe);
 
         // -- Show Helpers

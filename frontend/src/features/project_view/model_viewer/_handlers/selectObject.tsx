@@ -5,41 +5,43 @@ import { appMaterials } from '../scene_setup/Materials';
 import { SelectedObjectContextType } from '../_contexts/selected_object_context';
 import { HoverObjectContextType } from '../_contexts/hover_object_context';
 
-
-
-export function clearSelection(SelectedObjectContext: SelectedObjectContextType, hoverObjectContext: HoverObjectContextType) {
+export function clearSelection(
+    SelectedObjectContext: SelectedObjectContextType,
+    hoverObjectContext: HoverObjectContextType
+) {
     // Remove the selection effect from the selected object
-    setStandardMaterialFromStore(SelectedObjectContext.selectedObjectRef.current)
-    SelectedObjectContext.selectedObjectRef.current = null
-    SelectedObjectContext.setSelectedObjectState(null)
+    setStandardMaterialFromStore(SelectedObjectContext.selectedObjectRef.current);
+    SelectedObjectContext.selectedObjectRef.current = null;
+    SelectedObjectContext.setSelectedObjectState(null);
 
     // Remove the hover effect from the hovered object
-    setStandardMaterialFromStore(hoverObjectContext.hoverObjectRef.current)
-    hoverObjectContext.hoverObjectRef.current = null
-    hoverObjectContext.setHoverObjectState(null)
+    setStandardMaterialFromStore(hoverObjectContext.hoverObjectRef.current);
+    hoverObjectContext.hoverObjectRef.current = null;
+    hoverObjectContext.setHoverObjectState(null);
 }
 
-
 // Material handling --------------------------------------------------------------------
-
 
 /**
  * Sets the standard material from the material store on the given object and its children.
  * @param object - The object to set the material on.
  */
 function setStandardMaterialFromStore(object: THREE.Object3D | THREE.Group | null) {
-    if (!object) { return null; }
+    if (!object) {
+        return null;
+    }
 
     if (object instanceof THREE.Mesh) {
-        if (object.userData["materialStore"] === undefined) { return null; }
-        object.material = object.userData["materialStore"];
+        if (object.userData['materialStore'] === undefined) {
+            return null;
+        }
+        object.material = object.userData['materialStore'];
     } else if (object instanceof THREE.Group) {
         object.children.forEach((child: any) => {
-            setStandardMaterialFromStore(child)
+            setStandardMaterialFromStore(child);
         });
     }
 }
-
 
 /**
  * Stores the standard material of a THREE.Mesh object or its children in the userData.
@@ -48,15 +50,16 @@ function setStandardMaterialFromStore(object: THREE.Object3D | THREE.Group | nul
  */
 function storeStandardMaterial(object: THREE.Object3D | THREE.Group | null) {
     if (object instanceof THREE.Mesh) {
-        if (object.userData["materialStore"] !== undefined) { return null; }
-        object.userData["materialStore"] = object.material;
+        if (object.userData['materialStore'] !== undefined) {
+            return null;
+        }
+        object.userData['materialStore'] = object.material;
     } else if (object instanceof THREE.Group) {
         object.children.forEach((child: any) => {
-            storeStandardMaterial(child)
+            storeStandardMaterial(child);
         });
     }
 }
-
 
 /**
  * Sets a new material for the given object and all of its children.
@@ -70,14 +73,12 @@ function setNewMaterial(object: THREE.Object3D | THREE.Group | null, material: T
         object.material = material;
     } else if (object instanceof THREE.Group) {
         object.children.forEach((child: any) => {
-            setNewMaterial(child, material)
+            setNewMaterial(child, material);
         });
     }
 }
 
-
 // Click --------------------------------------------------------------------------------
-
 
 /**
  * Sets the 'selected' state to 'true' for the given object and all its children.
@@ -89,11 +90,10 @@ function setSelectedObject(object: THREE.Object3D | THREE.Group | null) {
     } else if (object instanceof THREE.Group) {
         object.userData['selected'] = true;
         object.children.forEach((child: any) => {
-            setSelectedObject(child)
+            setSelectedObject(child);
         });
     }
 }
-
 
 /**
  * Sets the 'selected' state to 'false' for the given object and all its children.
@@ -105,31 +105,32 @@ function unSetSelectedObject(object: THREE.Object3D | THREE.Group | null) {
     } else if (object instanceof THREE.Group) {
         object.userData['selected'] = false;
         object.children.forEach((child: any) => {
-            unSetSelectedObject(child)
+            unSetSelectedObject(child);
         });
     }
 }
 
-
 /**
  * Handles the onClick event for changing the material of a selected object.
- * 
+ *
  * @param selectedObject - The selected object to change the material for.
  * @param selectedObjectContext - The context object containing the selected object reference and state.
  */
-function handleOnClickMaterialChange(selectedObject: THREE.Mesh | THREE.Group | null, selectedObjectContext: SelectedObjectContextType) {
+function handleOnClickMaterialChange(
+    selectedObject: THREE.Mesh | THREE.Group | null,
+    selectedObjectContext: SelectedObjectContextType
+) {
     // Re-set any existing object's materials
-    setStandardMaterialFromStore(selectedObjectContext.selectedObjectRef.current)
+    setStandardMaterialFromStore(selectedObjectContext.selectedObjectRef.current);
 
     // Set the new object Material
-    storeStandardMaterial(selectedObject)
-    setNewMaterial(selectedObject, appMaterials.geometrySelected)
+    storeStandardMaterial(selectedObject);
+    setNewMaterial(selectedObject, appMaterials.geometrySelected);
 
     // Track the new selected object
-    selectedObjectContext.selectedObjectRef.current = selectedObject
-    selectedObjectContext.setSelectedObjectState(selectedObject)
+    selectedObjectContext.selectedObjectRef.current = selectedObject;
+    selectedObjectContext.setSelectedObjectState(selectedObject);
 }
-
 
 /**
  * Handles the click event on a mesh face or group.
@@ -138,26 +139,22 @@ function handleOnClickMaterialChange(selectedObject: THREE.Mesh | THREE.Group | 
  * @param world - The scene setup object.
  * @param selectedObjectContext - The selected object context.
  */
-export function handleOnClick(
-    e: any,
-    world: SceneSetup,
-    selectedObjectContext: SelectedObjectContextType,
-) {
+export function handleOnClick(e: any, world: SceneSetup, selectedObjectContext: SelectedObjectContextType) {
     e.preventDefault();
-    const newMesh = getSelectedMeshFromMouseClick(e, world.camera, world.selectableObjects.children)
+    const newMesh = getSelectedMeshFromMouseClick(e, world.camera, world.selectableObjects.children);
     if (newMesh) {
         // The user has clicked on a selectable object, so change the material
         world.renderer.domElement.style.cursor = 'pointer';
-        unSetSelectedObject(selectedObjectContext.selectedObjectRef.current)
+        unSetSelectedObject(selectedObjectContext.selectedObjectRef.current);
 
-        if (newMesh.parent?.userData['type'] == "spaceGroup" && newMesh.parent instanceof THREE.Group) {
+        if (newMesh.parent?.userData['type'] == 'spaceGroup' && newMesh.parent instanceof THREE.Group) {
             // If the selected object is a space group, select the parent group
-            setSelectedObject(newMesh.parent)
-            handleOnClickMaterialChange(newMesh.parent, selectedObjectContext)
+            setSelectedObject(newMesh.parent);
+            handleOnClickMaterialChange(newMesh.parent, selectedObjectContext);
         } else {
             // If the selected object is a simple mesh surface, select the surface
-            setSelectedObject(newMesh)
-            handleOnClickMaterialChange(newMesh, selectedObjectContext)
+            setSelectedObject(newMesh);
+            handleOnClickMaterialChange(newMesh, selectedObjectContext);
         }
     } else {
         // The user has clicked on blank space, so remove any selection effect.
@@ -165,9 +162,7 @@ export function handleOnClick(
     }
 }
 
-
 // Hover --------------------------------------------------------------------------------
-
 
 /**
  * Handles the material change when hovering over an object.
@@ -175,23 +170,25 @@ export function handleOnClick(
  * @param hoverObject - The object being hovered over.
  * @param objectContext - The context object containing hover object references and state.
  */
-function handleOnHoverMaterialChange(hoverObject: THREE.Mesh | THREE.Group | null, objectContext: HoverObjectContextType) {
+function handleOnHoverMaterialChange(
+    hoverObject: THREE.Mesh | THREE.Group | null,
+    objectContext: HoverObjectContextType
+) {
     // Do not change any material of the existing active selection
-    if (objectContext.hoverObjectRef.current?.userData["selected"] !== true) {
-        setStandardMaterialFromStore(objectContext.hoverObjectRef.current)
+    if (objectContext.hoverObjectRef.current?.userData['selected'] !== true) {
+        setStandardMaterialFromStore(objectContext.hoverObjectRef.current);
     }
 
     // Change the material of the new hover object
-    if (hoverObject?.userData["selected"] !== true) {
-        storeStandardMaterial(hoverObject)
-        setNewMaterial(hoverObject, appMaterials.geometryHoverOver)
+    if (hoverObject?.userData['selected'] !== true) {
+        storeStandardMaterial(hoverObject);
+        setNewMaterial(hoverObject, appMaterials.geometryHoverOver);
     }
 
     // Track the new hover object
-    objectContext.hoverObjectRef.current = hoverObject
-    objectContext.setHoverObjectState(hoverObject)
+    objectContext.hoverObjectRef.current = hoverObject;
+    objectContext.setHoverObjectState(hoverObject);
 }
-
 
 /**
  * Handles the mouse over event on a selectable object.
@@ -201,26 +198,22 @@ function handleOnHoverMaterialChange(hoverObject: THREE.Mesh | THREE.Group | nul
  * @param world - The scene setup object.
  * @param hoverObjectContext - The hover object context.
  */
-export function handleOnMouseOver(
-    e: PointerEvent,
-    world: SceneSetup,
-    hoverObjectContext: HoverObjectContextType,
-) {
+export function handleOnMouseOver(e: PointerEvent, world: SceneSetup, hoverObjectContext: HoverObjectContextType) {
     e.preventDefault();
-    const newMesh = getMeshFromMouseOver(e, world.camera, world.selectableObjects.children)
+    const newMesh = getMeshFromMouseOver(e, world.camera, world.selectableObjects.children);
     if (newMesh) {
         // The user is hovering over a selectable object, so change the material
         world.renderer.domElement.style.cursor = 'pointer';
-        if (newMesh.parent?.userData['type'] == "spaceGroup" && newMesh.parent instanceof THREE.Group) {
-            handleOnHoverMaterialChange(newMesh.parent, hoverObjectContext)
+        if (newMesh.parent?.userData['type'] == 'spaceGroup' && newMesh.parent instanceof THREE.Group) {
+            handleOnHoverMaterialChange(newMesh.parent, hoverObjectContext);
         } else {
-            handleOnHoverMaterialChange(newMesh, hoverObjectContext)
+            handleOnHoverMaterialChange(newMesh, hoverObjectContext);
         }
     } else {
         // The user is hovering over blank space, so remove any hovering effect.
         world.renderer.domElement.style.cursor = 'auto';
-        if (hoverObjectContext.hoverObjectRef.current?.userData["selected"] !== true) {
-            setStandardMaterialFromStore(hoverObjectContext.hoverObjectRef.current)
+        if (hoverObjectContext.hoverObjectRef.current?.userData['selected'] !== true) {
+            setStandardMaterialFromStore(hoverObjectContext.hoverObjectRef.current);
         }
     }
 }

@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
-import { datasheetRequired } from "../../data_views/_components/CheckboxForDatasheet";
-import { getWithAlert } from "../../../../api/getWithAlert";
-
+import { useState, useEffect } from 'react';
+import { datasheetRequired } from '../../data_views/_components/CheckboxForDatasheet';
+import { getWithAlert } from '../../../../api/getWithAlert';
 
 /**
  * Custom hook to load data grid rows from an AirTable API endpoint.
@@ -23,50 +22,54 @@ import { getWithAlert } from "../../../../api/getWithAlert";
  * const { showModal, rowData } = useLoadDataGridFromAirTable<MyFieldsType>([], "myPage", "12345");
  */
 function useLoadDataGridFromAirTable<T>(
-  defaultRow: Array<any>,
-  page: string,
-  projectId?: string
+    defaultRow: Array<any>,
+    page: string,
+    projectId?: string
 ): { showModal: boolean; rowData: any[] } {
-  type AirTableRecord = {
-    id: string;
-    createdTime: string;
-    fields: T;
-  };
-
-  const [showModal, setShowModal] = useState(false);
-  const [rowData, setRowData] = useState<Array<any>>(defaultRow);
-
-  useEffect(() => {
-    if (!projectId) {
-      return;
-    }
-
-    // Start the Model Timer
-    const timerId: NodeJS.Timeout = setTimeout(() => {
-      setShowModal(true);
-    }, 1000);
-
-    const fetchProjectData = async () => {
-      const records: AirTableRecord[] | null = await getWithAlert<AirTableRecord[] | null>(`air_table/${projectId}/${page}`);
-
-      // Use the AirTable record data as the row-data
-      // Add the record ID as the row-ID
-      const newRows: Record<string, any>[] = records ? records.map((item) => {
-        item = datasheetRequired(item);
-        return { id: item.id, ...item.fields };
-      }) : [];
-
-      newRows.length > 0 ? setRowData(newRows) : setRowData(defaultRow);
-
-      // Cancel the Model timer when the loading is done.
-      clearTimeout(timerId);
-      setShowModal(false);
+    type AirTableRecord = {
+        id: string;
+        createdTime: string;
+        fields: T;
     };
 
-    fetchProjectData();
-  }, [projectId, defaultRow, page]);
+    const [showModal, setShowModal] = useState(false);
+    const [rowData, setRowData] = useState<Array<any>>(defaultRow);
 
-  return { showModal, rowData };
+    useEffect(() => {
+        if (!projectId) {
+            return;
+        }
+
+        // Start the Model Timer
+        const timerId: NodeJS.Timeout = setTimeout(() => {
+            setShowModal(true);
+        }, 1000);
+
+        const fetchProjectData = async () => {
+            const records: AirTableRecord[] | null = await getWithAlert<AirTableRecord[] | null>(
+                `air_table/${projectId}/${page}`
+            );
+
+            // Use the AirTable record data as the row-data
+            // Add the record ID as the row-ID
+            const newRows: Record<string, any>[] = records
+                ? records.map(item => {
+                      item = datasheetRequired(item);
+                      return { id: item.id, ...item.fields };
+                  })
+                : [];
+
+            newRows.length > 0 ? setRowData(newRows) : setRowData(defaultRow);
+
+            // Cancel the Model timer when the loading is done.
+            clearTimeout(timerId);
+            setShowModal(false);
+        };
+
+        fetchProjectData();
+    }, [projectId, defaultRow, page]);
+
+    return { showModal, rowData };
 }
 
 export default useLoadDataGridFromAirTable;
