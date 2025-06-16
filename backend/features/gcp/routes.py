@@ -18,19 +18,18 @@ from features.gcp.services.datasheet import (
     delete_datasheet,
     get_datasheet_by_id,
     get_segment_datasheets,
+    material_datasheet_file_exists,
 )
+from features.gcp.services.file_utils import get_file_content, valid_file_size, valid_upload_file_type
+from features.gcp.services.gcs_utils import upload_file_to_gcs
 from features.gcp.services.site_photo import (
     SitePhotoNotFoundException,
     add_site_photo_to_segment,
     delete_site_photo,
     get_segment_site_photos,
     get_site_photo_by_id,
+    material_site_photo_file_exists,
 )
-from features.gcp.services.datasheet import material_datasheet_file_exists
-from features.gcp.services.file_utils import valid_upload_file_type, get_file_content, valid_file_size
-from features.gcp.services.site_photo import material_site_photo_file_exists
-from features.gcp.services.gcs_utils import upload_file_to_gcs
-
 
 router = APIRouter(
     prefix="/gcp",
@@ -103,13 +102,13 @@ async def add_new_segment_site_photo_route(
         file_content = await get_file_content(file)
         if material_site_photo_file_exists(db, segment_id, file_content.content_hash):
             raise SitePhotoFileAlreadyExistsException(file_content.filename, file_content.content_type)
-        
+
         if not valid_upload_file_type(file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type):
             raise UnsupportedFileTypeException(file_content.filename, file_content.content_type, VALID_EXTENSIONS)
-        
+
         if not valid_file_size(file_content.content, max_size_mb=5):
             raise FileTooLargeException(file_content.filename, file_content.content_type, max_size_mb=5)
-        
+
         thumbnail_url, full_size_url = await upload_file_to_gcs(
             db=db,
             bt_number=bt_number,
@@ -212,10 +211,10 @@ async def add_new_segment_datasheet_route(
         file_content = await get_file_content(file)
         if material_datasheet_file_exists(db, segment_id, file_content.content_hash):
             raise DatasheetFileAlreadyExistsException(file_content.filename, file_content.content_type)
-        
+
         if not valid_upload_file_type(file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type):
             raise UnsupportedFileTypeException(file_content.filename, file_content.content_type, VALID_EXTENSIONS)
-        
+
         if not valid_file_size(file_content.content, max_size_mb=5):
             raise FileTooLargeException(file_content.filename, file_content.content_type, max_size_mb=5)
 

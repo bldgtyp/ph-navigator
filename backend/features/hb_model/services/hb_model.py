@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from db_entities.app.project import Project
 
-from ...air_table.services import download_hbjson_file, get_airtable_base_ref, get_airtable_table_ref
+from ...air_table.services import download_hbjson_file, get_project_airtable_base_ref, get_airtable_table_ref_by_name
 from ..cache import LimitedCache
 
 logger = getLogger(__name__)
@@ -58,8 +58,8 @@ def find_hbjson_file_url(db: Session, bt_number: str) -> str:
             detail=f"AirTable access token not found for Project {bt_number}.",
         )
 
-    at_base_id = get_airtable_base_ref(db, bt_number)
-    at_tbl_id = get_airtable_table_ref(db, bt_number, "HBJSON")
+    at_base_id = get_project_airtable_base_ref(db, bt_number)
+    at_tbl_id = get_airtable_table_ref_by_name(db, bt_number, "HBJSON")
 
     try:
         api = Api(project.airtable_base.airtable_access_token)

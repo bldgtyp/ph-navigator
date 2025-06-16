@@ -23,7 +23,9 @@ def convert_assemblies_to_hbe_constructions(assemblies: list[Assembly]) -> list[
         if assembly.is_steel_stud_assembly:
             materials = get_steel_stud_layers_as_hb_materials(assembly.layers_outside_to_inside)
         else:
-            materials = [convert_single_assembly_layer_to_hb_material(layer) for layer in assembly.layers_outside_to_inside]
+            materials = [
+                convert_single_assembly_layer_to_hb_material(layer) for layer in assembly.layers_outside_to_inside
+            ]
 
         # Create the OpaqueConstruction
         constructions_.append(OpaqueConstruction(identifier=assembly.name, materials=materials))

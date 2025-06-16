@@ -11,13 +11,12 @@ from config import limiter
 from database import get_db
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.app.project import Project
-from db_entities.app.user import User
 from features.air_table.schema import AddAirTableBaseRequest
 from features.air_table.services import (
     add_tables_to_base,
-    get_airtable_base_ref,
-    get_airtable_table_ref,
-    get_base_table_schemas,
+    get_project_airtable_base_ref,
+    get_airtable_table_ref_by_name,
+    get_base_table_schemas_from_airtable,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -57,8 +56,8 @@ async def get_project_config(
         )
 
     api = Api(project.airtable_base.airtable_access_token)
-    at_base_id = get_airtable_base_ref(db, bt_number)
-    at_table_id = get_airtable_table_ref(db, bt_number, "config")
+    at_base_id = get_project_airtable_base_ref(db, bt_number)
+    at_table_id = get_airtable_table_ref_by_name(db, bt_number, "config")
     table = api.table(at_base_id, at_table_id)
     return table.all()
 
@@ -95,8 +94,8 @@ async def get_project_air_table_records_from_table(
         )
 
     api = Api(project.airtable_base.airtable_access_token)
-    at_base_id = get_airtable_base_ref(db, bt_number)
-    at_table_id = get_airtable_table_ref(db, bt_number, at_table_name)
+    at_base_id = get_project_airtable_base_ref(db, bt_number)
+    at_table_id = get_airtable_table_ref_by_name(db, bt_number, at_table_name)
     table = api.table(at_base_id, at_table_id)
     return table.all()
 
@@ -126,7 +125,7 @@ async def connect_at_base_to_project(
         at_base = api.base(request.airtable_base_ref)
         logger.info(f"New AirTable base info: {at_base}")
 
-        tables: list[Table] = get_base_table_schemas(at_base)
+        tables: list[Table] = get_base_table_schemas_from_airtable(at_base)
         logger.info(f"Tables in the AirTable base: [{len(tables)}]")
     except Exception as e:
         raise HTTPException(
@@ -159,3 +158,4 @@ async def connect_at_base_to_project(
     db.refresh(project)
 
     return {"message": "AirTable base connected successfully.", "base_id": new_base.id}
+

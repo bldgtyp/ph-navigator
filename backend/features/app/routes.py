@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from config import limiter
 from database import get_db
 from db_entities.app.user import User
-from features.app.schema import ProjectCreateSchema, ProjectSchema
+from features.app.schema import ProjectCreateSchema, ProjectSchema, AirTableTableUpdateSchema
+from features.air_table.schema import AirTableTableSchema
 from features.app.services import (
     ProjectAlreadyExistsException,
     create_new_project,
@@ -17,6 +18,7 @@ from features.app.services import (
     update_project_settings,
 )
 from features.auth.services import get_current_active_user
+from features.air_table.services import get_all_project_tables, update_airtable_table
 
 router = APIRouter(
     prefix="/project",
@@ -102,3 +104,36 @@ def create_new_project_route(
     except Exception as e:
         logger.error(f"Failed to create new project: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create new project: {e}")
+
+
+@router.get("/get-project-airtable-table-identifiers/{bt_number}", response_model=list[AirTableTableSchema])
+def get_project_airtable_table_identifiers(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> list[AirTableTableSchema]:
+    """Return a list of the AirTable Table Identifiers for a given project."""
+    logger.info(f"project/get_project_airtable_table_identifiers({bt_number=})")
+
+    try:
+        return [AirTableTableSchema.from_orm(t) for t in get_all_project_tables(db, bt_number)]
+    except Exception as e:
+        msg = f"Failed to get project AirTable Tables for '{bt_number}': {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=500, detail=msg)
+
+
+@router.patch("/update-airtable-tables-identifiers/{bt_number}")
+def update_airtable_tables_identifiers(
+     request: Request, bt_number: str, table_records: list[AirTableTableUpdateSchema], db: Session = Depends(get_db)
+) -> None:
+    """Update the AirTable Table Identifiers/Refs for a given project."""
+    logger.info(f"project/update_airtable_tables_identifiers({bt_number=}, {len(table_records)=})")
+    
+    try:
+        for table_record in table_records:
+            update_airtable_table(db, bt_number, table_record)
+        return None
+    except Exception as e:
+        msg = f"Failed to update AirTable tables identifiers for '{bt_number}': {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=500, detail=msg)
+    

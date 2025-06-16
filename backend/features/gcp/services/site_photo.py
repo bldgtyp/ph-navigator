@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from db_entities.assembly.material_photo import MaterialPhoto
 from features.assembly.services.segment import get_segment_by_id
-from features.gcp.services.gcs_utils import delete_file_from_gcs, FileDeleteFailedException
+from features.gcp.services.gcs_utils import FileDeleteFailedException, delete_file_from_gcs
 
 logger = logging.getLogger(__name__)
 
@@ -115,4 +115,3 @@ async def delete_site_photo(db: Session, photo: MaterialPhoto) -> None:
     # -- Delete from database
     db.delete(photo)
     db.commit()
-

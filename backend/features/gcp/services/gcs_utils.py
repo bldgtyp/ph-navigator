@@ -9,8 +9,8 @@ from google.cloud import storage
 from sqlalchemy.orm import Session
 
 from features.assembly.services.segment import get_segment_by_id
-from features.gcp.services.file_utils import sanitize_file_name_stem, FileContent
-from features.gcp.services.image_utils import generate_pdf_thumbnail, generate_image_thumbnail, resize_image
+from features.gcp.services.file_utils import FileContent, sanitize_file_name_stem
+from features.gcp.services.image_utils import generate_image_thumbnail, generate_pdf_thumbnail, resize_image
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +50,7 @@ def create_image_upload_paths(
     db: Session, bt_number: str, segment_id: int, folder_name: str, content_hash: str, file_name: str
 ) -> tuple[str, str]:
     """Generate the full-size and thumbnail paths for an image upload."""
-    logger.info(
-        f"get_image_upload_paths({bt_number=}, {segment_id=}, {folder_name=}, {content_hash=}, {file_name=})"
-    )
+    logger.info(f"get_image_upload_paths({bt_number=}, {segment_id=}, {folder_name=}, {content_hash=}, {file_name=})")
 
     segment = get_segment_by_id(db, segment_id)
 
@@ -69,7 +67,7 @@ def create_image_upload_paths(
 
 def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path: str) -> dict:
     """Check if blobs already exist in Google Cloud Storage.
-    
+
     Note: do not run this function in parallel, it will cause timeout errors when run in deployment.
     """
     logger.info(f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})")
@@ -91,12 +89,7 @@ def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path:
     }
 
 
-async def upload_thumbnail_image(
-        image_bytes: bytes,
-        bucket_name: str,
-        thumb_path: str,
-        blob_status: dict
-) -> str:
+async def upload_thumbnail_image(image_bytes: bytes, bucket_name: str, thumb_path: str, blob_status: dict) -> str:
     """Create and upload thumbnail if needed."""
     logger.info(f"upload_thumbnail_image({len(image_bytes)=}, {bucket_name=}, {thumb_path=})")
 
@@ -150,19 +143,21 @@ async def upload_file_to_gcs(
     logger.info(f"upload_file_to_gcs({bt_number=}, {segment_id=}, {file.filename=}, {bucket_name=}, {folder_name=})")
 
     # Prepare file content and paths
-    file_path, thumbnail_path = create_image_upload_paths(db, bt_number, segment_id, folder_name, file.content_hash, file.filename)
+    file_path, thumbnail_path = create_image_upload_paths(
+        db, bt_number, segment_id, folder_name, file.content_hash, file.filename
+    )
 
     # ------------------------------------------------------------------------------------------------------------------
-    # Check if files already exist 
+    # Check if files already exist
     blob_status = check_gcs_blobs_existence(bucket_name, file_path, thumbnail_path)
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Prepare the upload file-content
     try:
-        if file.content_type == 'application/pdf':
+        if file.content_type == "application/pdf":
             thumbnail_image_bytes = generate_pdf_thumbnail(file.content)
             file_data_bytes = file.content
-        elif file.content_type in ['image/png', 'image/jpeg', 'image/jpg']:
+        elif file.content_type in ["image/png", "image/jpeg", "image/jpg"]:
             thumbnail_image_bytes = generate_image_thumbnail(file.content)
             file_data_bytes = resize_image(file.content, file.content_type)
         else:
@@ -176,7 +171,9 @@ async def upload_file_to_gcs(
         thumbnail_url = await upload_thumbnail_image(thumbnail_image_bytes, bucket_name, thumbnail_path, blob_status)
         logger.info(f"Thumbnail image uploaded successfully: {thumbnail_url}")
 
-        full_size_url = await upload_full_size_file(file_data_bytes, file.content_type, bucket_name, file_path, blob_status)
+        full_size_url = await upload_full_size_file(
+            file_data_bytes, file.content_type, bucket_name, file_path, blob_status
+        )
         logger.info(f"Full-size file uploaded successfully: {full_size_url}")
     except Exception as e:
         raise Exception(f"Failed to upload file to GCS: {e}")

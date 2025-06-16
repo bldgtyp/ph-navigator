@@ -12,11 +12,11 @@ class AirTableTableSchema(BaseModel):
     id: int
     name: str
     at_ref: str
-    parent_base_id: int
+    parent_base_id: str
 
     class Config:
         from_attributes = True
-        from_orm = True
+        orm_mode = True
 
 
 # ---------------------------------------------------------------------------------------

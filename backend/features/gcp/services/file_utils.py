@@ -1,16 +1,16 @@
 # -*- Python Version: 3.11 -*-
 
-import io
 import hashlib
+import io
 import logging
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import UploadFile
 from PIL import Image
 
-
 logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class FileContent:
@@ -47,7 +47,7 @@ def valid_upload_file_type(file_type: str, valid_extensions: list[str], content_
 def valid_file_size(file_content_bytes: bytes, max_size_mb: int = 5) -> bool:
     """Check if file is within the size limit."""
     logger.info(f"validate_file_size({len(file_content_bytes)=}, {max_size_mb=})")
-    
+
     max_size_bytes = max_size_mb * 1024 * 1024  # Convert MB to bytes
     file_size = len(file_content_bytes)
     if file_size > max_size_bytes:

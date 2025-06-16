@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from features.assembly.services.segment import get_segment_by_id
-from features.gcp.services.gcs_utils import delete_file_from_gcs, FileDeleteFailedException
+from features.gcp.services.gcs_utils import FileDeleteFailedException, delete_file_from_gcs
 
 logger = logging.getLogger(__name__)
 

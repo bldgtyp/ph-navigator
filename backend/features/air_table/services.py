@@ -1,8 +1,5 @@
 # -*- Python Version: 3.11 -*-
 
-# import asyncio
-# import aiohttp
-
 from logging import getLogger
 
 import requests
@@ -15,6 +12,7 @@ from db_entities.airtable.at_table import AirTableTable
 from db_entities.assembly import Material
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
+from features.app.schema import AirTableTableUpdateSchema
 
 logger = getLogger(__name__)
 
@@ -22,10 +20,11 @@ logger = getLogger(__name__)
 class TableNotFoundException(Exception):
     """Custom exception for missing table in AirTable."""
 
-    def __init__(self, table_name: str):
-        self.table_name = table_name
-        logger.error(f"Table {table_name} not found in AirTable.")
-        super().__init__(f"Table {table_name} not found in AirTable.")
+    def __init__(self, table_identifier: str):
+        self.table_name = table_identifier
+        self.message = f"Table {table_identifier} not found in AirTable."
+        logger.error(self.message)
+        super().__init__(self.message)
 
 
 class DownloadError(Exception):
@@ -36,13 +35,45 @@ class DownloadError(Exception):
         super().__init__(f"DownloadError: Failed to download from URL: {url} | {message}")
 
 
-def get_airtable_base_ref(db: Session, bt_number: str) -> str:
+# ---------------------------------------------------------------------------------------
+# -- Database Access Functions
+
+
+def get_project_airtable_base_ref(db: Session, bt_number: str) -> str:
     """Get the AirTable Base Ref by the project-BT-number."""
     project = get_project_by_bt_number(db, bt_number)
     return project.airtable_base.id
 
 
-def get_airtable_table_ref(db: Session, bt_number: str, table_name: str) -> str:
+def get_project_airtable_base(db: Session, bt_number: str) -> AirTableBase:
+    """Get the AirTable Base object by the project-BT-number."""
+    logger.info(f"get_airtable_base(bt_number={bt_number})")
+
+    # -- Find the Project
+    project = get_project_by_bt_number(db, bt_number)
+
+    # -- Return the AirTableBase object
+    if not project.airtable_base:
+        raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
+
+    return project.airtable_base
+
+
+def get_all_project_tables(db: Session, bt_number: str) -> list[AirTableTable]:
+    """Get all AirTable Tables for a given project-BT-number."""
+    logger.info(f"get_all_project_tables(bt_number={bt_number})")
+
+    # -- Find the Project
+    project = get_project_by_bt_number(db, bt_number)
+
+    # -- Return the AirTableBase tables
+    if not project.airtable_base:
+        raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
+
+    return project.airtable_base.tables
+
+
+def get_airtable_table_ref_by_name(db: Session, bt_number: str, table_name: str) -> str:
     """Get the AirTable Table Ref given a project-BT-number and table name."""
 
     # -- Find the Project
@@ -61,6 +92,28 @@ def get_airtable_table_ref(db: Session, bt_number: str, table_name: str) -> str:
         raise TableNotFoundException(table_name)
 
     return table.at_ref
+
+
+def get_airtable_table_by_id(db: Session, bt_number: str, table_id: int) -> AirTableTable:
+    """Get the AirTable Table object by its ID."""
+    logger.info(f"get_airtable_table_by_id(bt_number={bt_number}, table_id={table_id})")
+
+    # -- Find the Project
+    project = get_project_by_bt_number(db, bt_number)
+
+    # -- Find the Table
+    table = (
+        db.query(AirTableTable)
+        .filter(
+            AirTableTable.parent_base_id == project.airtable_base.id,
+            AirTableTable.id == table_id,
+        )
+        .first()
+    )
+    if not table:
+        raise TableNotFoundException(str(table_id))
+
+    return table
 
 
 def download_hbjson_file(url: str) -> dict:
@@ -95,25 +148,6 @@ def download_epw_file(url: str) -> str:
         raise DownloadError(url, str(e))
 
 
-def get_base_table_schemas(base: Base) -> list[Table]:
-    """Get a list of all the Base's pyAirtable Table objects."""
-    logger.info(f"validate_access(base={base})")
-
-    try:
-        # -- Get the tables in the base
-        tables = base.tables()
-        logger.info(f"Tables in the base: [{len(tables)}]")
-
-        # -- Check if the base is empty
-        if not tables:
-            raise ValueError("The AirTable base is empty.")
-    except Exception as e:
-        logger.error(f"Failed to validate access: {e}")
-        raise
-
-    return tables
-
-
 def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> None:
     """Add the tables to the AirTableBase object."""
     logger.info(f"add_tables_to_base(base={base.id}, tables=[{len(tables)}])")
@@ -132,6 +166,29 @@ def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> 
         base.tables.append(new_table)
 
     return None
+
+
+def update_airtable_table(db: Session, bt_number: str, table_data: AirTableTableUpdateSchema) -> None:
+    """Update the AirTable Table data in the database."""
+    logger.info(f"update_airtable_table(bt_number={bt_number}, table_data={table_data})")
+    # -- Find the Project
+    project = get_project_by_bt_number(db, bt_number)
+    if not project.airtable_base:
+        raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
+    
+    # -- Find the Table
+    table = get_airtable_table_by_id(db, bt_number, table_data.id)
+    
+    # -- Update the table data
+    table.name = table_data.name
+    table.at_ref = table_data.at_ref
+    table.parent_base_id = table_data.parent_base_id
+    db.commit()
+    db.refresh(table)
+
+
+# ---------------------------------------------------------------------------------------
+# -- AirTable Remote Access Functions (Require API Key)
 
 
 # TODO: Make the AirTable call async....
@@ -159,3 +216,23 @@ def get_all_material_from_airtable() -> list[Material]:
     #         # AirTable returns data in a specific format, typically under a 'records' key
     #         records = data.get('records', [])
     #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in records]
+
+
+def get_base_table_schemas_from_airtable(base: Base) -> list[Table]:
+    """Get a list of all the Base's pyAirtable Table objects."""
+    logger.info(f"validate_access(base={base})")
+
+    try:
+        # -- Get the tables in the base
+        tables = base.tables()
+        logger.info(f"Tables in the base: [{len(tables)}]")
+
+        # -- Check if the base is empty
+        if not tables:
+            raise ValueError("The AirTable base is empty.")
+    except Exception as e:
+        logger.error(f"Failed to validate access: {e}")
+        raise
+
+    return tables
+

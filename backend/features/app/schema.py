@@ -27,3 +27,10 @@ class ProjectSchema(BaseModel):
     class Config:
         from_attributes = True
         orm_mode = True
+
+
+class AirTableTableUpdateSchema(BaseModel):
+    id: int
+    name: str
+    at_ref: str
+    parent_base_id: str

@@ -15,9 +15,11 @@ if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.app.project import Project
 
+
 class AssemblyOrientation(Enum):
     FIRST_LAYER_OUTSIDE = "first_layer_outside"  # Index 0 is outside
-    LAST_LAYER_OUTSIDE = "last_layer_outside"   # Last index is outside
+    LAST_LAYER_OUTSIDE = "last_layer_outside"  # Last index is outside
+
 
 class Assembly(Base):
     __tablename__ = "assemblies"
@@ -47,29 +49,29 @@ class Assembly(Base):
     def is_steel_stud_assembly(self) -> bool:
         """Check if the assembly contains a steel stud layer."""
         return any([l.is_steel_stud_layer for l in self.layers])
-    
+
     @property
     def outside_layer(self) -> Layer | None:
         """Get the layer that's considered the outside of the assembly."""
         if not self.layers:
             return None
-            
+
         if self.orientation == AssemblyOrientation.FIRST_LAYER_OUTSIDE.value:
             return self.layers[0]
         else:
             return self.layers[-1]
-            
+
     @property
     def inside_layer(self) -> Layer | None:
         """Get the layer that's considered the inside of the assembly."""
         if not self.layers:
             return None
-            
+
         if self.orientation == AssemblyOrientation.FIRST_LAYER_OUTSIDE.value:
             return self.layers[-1]
         else:
             return self.layers[0]
-    
+
     @property
     def layers_outside_to_inside(self) -> list[Layer]:
         """Get layers ordered from outside to inside."""
@@ -78,14 +80,14 @@ class Assembly(Base):
         else:
             return list(reversed(self.layers))
 
-    @property     
+    @property
     def layers_inside_to_outside(self) -> list[Layer]:
         """Get layers ordered from inside to outside."""
         if self.orientation == AssemblyOrientation.FIRST_LAYER_OUTSIDE.value:
             return list(reversed(self.layers))
         else:
             return self.layers  # Already in inside-to-outside order
-    
+
     def flip_orientation(self):
         """Flip which side of the assembly is considered outside."""
         if self.orientation == AssemblyOrientation.FIRST_LAYER_OUTSIDE.value:

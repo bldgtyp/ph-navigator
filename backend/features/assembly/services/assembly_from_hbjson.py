@@ -308,4 +308,3 @@ def create_assembly_from_hb_construction(
     logger.info(f"Created / Updated Assembly: {assembly.name} with {len(assembly.layers)} layers.")
 
     return assembly
-

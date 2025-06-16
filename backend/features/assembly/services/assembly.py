@@ -174,26 +174,25 @@ def flip_assembly_layers(db: Session, assembly: Assembly) -> Assembly:
 
     if not assembly.layers:
         return assembly
-    
+
     # First, explicitly set new order values for all layers in reverse
     total_layers = len(assembly.layers)
     for layer in assembly.layers:
         # Calculate new reversed order
         layer.order = total_layers - layer.order - 1
-    
+
     # Force flush to make sure order changes are in the database
     db.flush()
-    
+
     # Explicitly reorder the assembly.layers collection based on the new order values
     assembly.layers.sort(key=lambda l: l.order)
-    
+
     # Commit the changes to the database
     db.commit()
-    
+
     # Refresh DB objects
     db.refresh(assembly)
     for layer in assembly.layers:
         db.refresh(layer)
 
     return assembly
-
