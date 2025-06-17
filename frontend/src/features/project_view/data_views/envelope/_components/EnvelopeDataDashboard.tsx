@@ -8,7 +8,7 @@ import { Box } from '@mui/material';
 import { MaterialsProvider } from '../_contexts/MaterialsContext';
 
 import DataViewPage from '../../_components/DataViewPage';
-import ContentBlock from '../../_components/ContentBlock';
+import ContentBlocksContainer from '../../_components/ContentBlocks.Container';
 import DataDashboardTabBar from '../../_components/DataDashboardTabBar';
 
 const EnvelopeDataDashboard: React.FC = () => {
@@ -45,9 +45,9 @@ const EnvelopeDataDashboard: React.FC = () => {
                 />
 
                 <DataViewPage>
-                    <ContentBlock>
+                    <ContentBlocksContainer>
                         <Outlet />
-                    </ContentBlock>
+                    </ContentBlocksContainer>
                 </DataViewPage>
             </Box>
         </MaterialsProvider>

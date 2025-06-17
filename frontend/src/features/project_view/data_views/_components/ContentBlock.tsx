@@ -7,12 +7,9 @@ const ContentBlock: React.FC<any> = props => {
             sx={{
                 outline: '1px solid #E0E0E0',
                 borderRadius: '8px',
-                padding: '0px',
-                marginLeft: '6%',
-                marginRight: '6%',
-                marginTop: '35px',
-                marginBottom: '35px',
-                overflow: 'hidden',
+                paddingBottom: '10px',
+                marginBottom: '20px',
+                // overflow: 'hidden',
             }}
         >
             {props.children}

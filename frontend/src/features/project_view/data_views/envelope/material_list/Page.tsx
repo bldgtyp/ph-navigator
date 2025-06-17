@@ -10,10 +10,11 @@ import { useMaterials } from '../_contexts/MaterialsContext';
 import { getWithAlert } from '../../../../../api/getWithAlert';
 
 import LoadingModal from '../../_components/LoadingModal';
-import ContentBlockHeader from '../../_components/ContentBlockHeader';
+import ContentBlockHeader from '../../_components/ContentBlock.Header';
 
 import { AssemblyType } from '../_types/Assembly';
 import MaterialListItem from './ListItem';
+import ContentBlock from '../../_components/ContentBlock';
 
 const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = props => {
     return (
@@ -58,14 +59,14 @@ const MaterialListPage: React.FC = () => {
     }, [projectId]);
 
     return (
-        <>
+        <ContentBlock>
             <ContentBlockHeader text={'Project Materials'} />
             <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
 
             {assemblies.map(assembly => (
                 <MaterialListContainer key={assembly.id} assembly={assembly} />
             ))}
-        </>
+        </ContentBlock>
     );
 };
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import DataViewPage from '../../_components/DataViewPage';
-import ContentBlock from '../../_components/ContentBlock';
+import ContentBlocksContainer from '../../_components/ContentBlocks.Container';
 import DataDashboardTabBar from '../../_components/DataDashboardTabBar';
 
 const EquipmentDataDashboard: React.FC = () => {
@@ -39,9 +39,9 @@ const EquipmentDataDashboard: React.FC = () => {
         <>
             <DataDashboardTabBar tabs={tabs} activeTab={activeTab} onTabChange={tabNumber => setActiveTab(tabNumber)} />
             <DataViewPage>
-                <ContentBlock>
+                <ContentBlocksContainer>
                     <Outlet />
-                </ContentBlock>
+                </ContentBlocksContainer>
             </DataViewPage>
         </>
     );

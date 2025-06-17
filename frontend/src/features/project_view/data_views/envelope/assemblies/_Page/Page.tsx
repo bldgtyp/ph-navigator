@@ -11,13 +11,14 @@ import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 import { patchWithAlert } from '../../../../../../api/patchWithAlert';
 
 import LoadingModal from '../../../_components/LoadingModal';
-import ContentBlockHeader from '../../../_components/ContentBlockHeader';
+import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import { AssemblyType } from '../../_types/Assembly';
 import { AssemblySelector } from './Assembly.Selector';
 import { AssemblyView } from './Assembly.View';
 import { fetchAndCacheMaterials } from '../../_contexts/MaterialsContext.Utility';
 import { headerButtons } from './HeaderButtons';
 import { postFileWithAlert } from '../../../../../../api/postFileWithAlert';
+import ContentBlock from '../../../_components/ContentBlock';
 
 const AssembliesPage: React.FC = () => {
     const userContext = useContext(UserContext);
@@ -317,7 +318,7 @@ const AssembliesPage: React.FC = () => {
     };
 
     return (
-        <>
+        <ContentBlock>
             <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
 
             <ContentBlockHeader
@@ -363,7 +364,7 @@ const AssembliesPage: React.FC = () => {
                 style={{ display: 'none' }}
                 onChange={handleFileSelected}
             />
-        </>
+        </ContentBlock>
     );
 };
 

@@ -2,11 +2,12 @@ import { useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
 import StyledDataGrid from '../../../_styles/DataGrid';
 import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
-import ContentBlockHeader from '../../../_components/ContentBlockHeader';
+import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
 import useLoadDataGridFromAirTable from '../../../../model_viewer/_hooks/useLoadDataGridFromAirTable';
 import { DHWTankRecord } from '../../types/HotWaterTanks';
 import tableFields from './HotWaterTanks.TableFields';
+import ContentBlock from '../../../_components/ContentBlock';
 
 // Create the columns object based on tableFields and then
 // create an Array with a default single row, with all '-' cells.
@@ -23,7 +24,7 @@ const HotWaterTanksDataGrid: React.FC = () => {
     // --------------------------------------------------------------------------
     // Render the component
     return (
-        <>
+        <ContentBlock>
             {' '}
             <LoadingModal showModal={showModal} />
             <ContentBlockHeader text="Hot Water Tanks" />
@@ -40,7 +41,7 @@ const HotWaterTanksDataGrid: React.FC = () => {
                     checkboxSelection
                 />
             </Box>
-        </>
+        </ContentBlock>
     );
 };
 

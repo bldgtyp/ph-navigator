@@ -6,7 +6,7 @@ import { getWithAlert } from '../../../../../api/getWithAlert';
 import { AirTableRecordType } from '../../../../types/AirTableRecordType';
 import DataViewPage from '../../_components/DataViewPage';
 import CertificationStatus from './CertificationStatus';
-import ContentBlock from '../../_components/ContentBlock';
+import ContentBlocksContainer from '../../_components/ContentBlocks.Container';
 
 function flattenData(d: AirTableRecordType[]): any {
     const flatData: Record<string, string | undefined> = {};
@@ -51,9 +51,9 @@ const ProjectCertification: React.FC = () => {
                 </Modal>
             ) : null}
             <DataViewPage>
-                <ContentBlock>
+                <ContentBlocksContainer>
                     <CertificationStatus statusData={certStatusData} />
-                </ContentBlock>
+                </ContentBlocksContainer>
             </DataViewPage>
         </>
     );
