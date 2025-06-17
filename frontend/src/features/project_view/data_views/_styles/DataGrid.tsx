@@ -131,10 +131,11 @@ const _StyledDataGrid = styled(DataGrid)(({ theme }) => ({
         boxShadow: 'inset 0 0 0.05em 0.02em red, 0 0 0.4em 0.01em red',
         backgroundColor: 'red',
         '&::after': {
+            position: 'absolute',
             content: '"?"',
             color: 'white',
-            position: 'relative',
-            top: '-20%',
+            left: '25%',
+            top: '-75%',
             fontWeight: 'bold',
         },
     },
