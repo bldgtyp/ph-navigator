@@ -19,7 +19,7 @@ const ProjectContainer: React.FC = () => {
         const path = location.pathname;
         if (path.includes('/certification')) return 0;
         if (path.includes('/window-data')) return 1;
-        if (path.includes('/assembly-data')) return 2;
+        if (path.includes('/envelope-data')) return 2;
         if (path.includes('/equipment-data')) return 3;
         if (path.includes('/model')) return 4;
         return 0; // Default to certification if path doesn't match any tab

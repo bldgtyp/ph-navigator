@@ -29,8 +29,8 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabC
             icon: <DoorSlidingOutlinedIcon fontSize="small" />,
         },
         {
-            label: 'Assemblies',
-            path: `/project/${projectId}/assembly-data`,
+            label: 'Envelope',
+            path: `/project/${projectId}/envelope-data`,
             icon: <LayersOutlinedIcon fontSize="small" />,
         },
         {
