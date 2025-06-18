@@ -1,0 +1,250 @@
+[
+    {
+        "category": "Doors",
+        "item": "Exterior doors",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Possibly locked to prevent unwanted entry during test. Ensure emergency exit point available"
+    },
+    {
+        "category": "Doors",
+        "item": "Interior doors",
+        "leaveOpen": "X",
+        "seal": "",
+        "turnOffOrClose": "",
+        "comments": "Open, but secured to prevent slamming"
+    },
+    {
+        "category": "Doors",
+        "item": "Keyholes",
+        "leaveOpen": "X",
+        "seal": "",
+        "turnOffOrClose": "",
+        "comments": "No action. Can leave key in place"
+    },
+    {
+        "category": "Doors",
+        "item": "Cellar door to an unheated basement / basement corridor / staircase",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Doors open, if rooms heated, other wise closed"
+    },
+    {
+        "category": "Doors",
+        "item": "Flaps / doors / hatches to unheated building areas (garage, storage rooms)",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Possibly locked to prevent unwanted entry during test"
+    },
+    {
+        "category": "Doors",
+        "item": "Hatches to storage space under roof (particularly in cape-cod style houses)",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close if possible, or else leave as is"
+    },
+    {
+        "category": "Doors",
+        "item": "Pet Door (Flap)",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close if possible, or else leave as is"
+    },
+    {
+        "category": "Doors",
+        "item": "Letterbox / Slot",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Leave closed"
+    },
+    {
+        "category": "Doors",
+        "item": "Pull-down Attic Door",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Doors open, if attic is heated and a habitable space, otherwise closed"
+    },
+    {
+        "category": "Doors",
+        "item": "Wardrobe & Cupboard doors",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Leave closed"
+    },
+    {
+        "category": "Fireplaces",
+        "item": "Fireplaces in the heated building area, room air dependent ",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Ensure fire extinguished, remove ash"
+    },
+    {
+        "category": "Fireplaces",
+        "item": "Fireplace in the heated building area (not room air dependent) ",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Ensure fire extinguished, remove ash, close off supply air if possible"
+    },
+    {
+        "category": "Fireplaces",
+        "item": "Ventilation for combustion air in the boiler room/fuel storage",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close if possible, or else leave open"
+    },
+    {
+        "category": "Fireplaces",
+        "item": "Opening of a ventilated cavity of a chimney in the heated building space",
+        "leaveOpen": "X",
+        "seal": "",
+        "turnOffOrClose": "",
+        "comments": "Close if possible, or else leave open"
+    },
+    {
+        "category": "Fireplaces",
+        "item": "Tiled stove/ built-in oven /auxiliary cooker - room air independent",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Ensure fire extinguished, remove ash. Doors/hatches closed"
+    },
+    {
+        "category": "Fireplaces",
+        "item": "Tiled stove/ built-in oven /auxiliary cooker or similar - room air dependent",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Ensure fire extinguished, remove ash, close supply air if possible"
+    },
+    {
+        "category": "Mechanical",
+        "item": "Central vacuum cleaner system",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Turn off, close room sockets"
+    },
+    {
+        "category": "Mechanical",
+        "item": "Kitchen Extractor hood",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Stopped. "
+    },
+    {
+        "category": "Mechanical",
+        "item": "Laundry dryer in heated part of building with exhaust towards outside",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close if possible, or else leave as is. "
+    },
+    {
+        "category": "Spaces",
+        "item": "Cover plates of installation ducts with pumps/installation in heated space ",
+        "leaveOpen": "X",
+        "seal": "",
+        "turnOffOrClose": "",
+        "comments": "Leave as is"
+    },
+    {
+        "category": "Spaces",
+        "item": "Empty conduits to unheated building areas (e.g. for later assembly of solar systems) ",
+        "leaveOpen": "X",
+        "seal": "",
+        "turnOffOrClose": "",
+        "comments": "Leave as is"
+    },
+    {
+        "category": "Spaces",
+        "item": "Laundry chute to unheated part of building ",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close if possible, or else leave as is"
+    },
+    {
+        "category": "Spaces",
+        "item": "Suspended ceiling",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Leave as is"
+    },
+    {
+        "category": "Ventilation",
+        "item": "Duct ventilation outlets in heated building area ",
+        "leaveOpen": "",
+        "seal": "X",
+        "turnOffOrClose": "",
+        "comments": "Normally once only at the machine - seal the inlet and outlet to outside. However, sometimes sealing on a room by room basis is a more viable option if the inlet/outlet of the unit are not accessible. A note in the test record is required in any case as to how the ventilation system was sealed"
+    },
+    {
+        "category": "Ventilation",
+        "item": "Earth-to-air heat exchanger (supply air ventilation system)",
+        "leaveOpen": "",
+        "seal": "X",
+        "turnOffOrClose": "",
+        "comments": ""
+    },
+    {
+        "category": "Ventilation",
+        "item": "Fresh air openings (for mechanical extract air system) ",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close, no action"
+    },
+    {
+        "category": "Ventilation",
+        "item": "Supply/extract air outlets (supply/extractventilation system) ",
+        "leaveOpen": "",
+        "seal": "X",
+        "turnOffOrClose": "",
+        "comments": ""
+    },
+    {
+        "category": "Windows",
+        "item": "Ventilator on windows/skylights",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close if possible, or else leave as is"
+    },
+    {
+        "category": "Windows",
+        "item": "Missing window handle",
+        "leaveOpen": "",
+        "seal": "X",
+        "turnOffOrClose": "",
+        "comments": "Seal, note in test documentation "
+    },
+    {
+        "category": "Windows",
+        "item": "Roller shutter belt feed through ",
+        "leaveOpen": "X",
+        "seal": "",
+        "turnOffOrClose": "",
+        "comments": "Leave as is"
+    },
+    {
+        "category": "Windows",
+        "item": "Windows in unheated rooms ",
+        "leaveOpen": "",
+        "seal": "",
+        "turnOffOrClose": "X",
+        "comments": "Close"
+    }
+]

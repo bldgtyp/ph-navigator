@@ -1,19 +1,6 @@
 import { Box, Grid, Stack, TextField, Typography } from '@mui/material';
 import { subTitleStyle } from './BlowerDoorTest.Style';
-
-const FormNameStyle = {
-    fontSize: '0.9rem',
-    fontWeight: '700',
-    justifySelf: 'right',
-    height: '100%',
-    p: 1,
-};
-
-const FormValueSx = {
-    pr: 1,
-    alignItems: 'center',
-    display: 'flex',
-};
+import { FormNameStyle, FormValueSx } from './BuildingData.Styles';
 
 const BuildingDataFormItem: React.FC<{ name: string; value: number }> = ({ name, value }) => {
     return (

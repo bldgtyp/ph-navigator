@@ -20,6 +20,12 @@ export const ulStyle = {
     lineHeight: '1.75',
 };
 
+export const CheckBoxLiStyle = { p: '4px', m: 0 };
+
+export const CheckBoxLiTextStyle = { fontSize: '0.80em', lineHeight: 1.5 };
+
+export const CheckBoxListStyle = { m: 2 };
+
 export const sideBarStyle = { m: 3, mt: 8, fontSize: '0.75rem', lineHeight: '2' };
 
 export const sidebarItemStyle = {
