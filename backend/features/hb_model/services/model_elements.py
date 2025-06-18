@@ -41,7 +41,7 @@ def any_dict(d: dict[Any, Any]) -> dict[Any, Any]:
     return d
 
 
-async def get_faces_from_model(hb_model: Model) -> list:
+def get_faces_from_model(hb_model: Model) -> list:
     """Return a list of all the Faces from a Project's Honeybee-Model."""
     logger.info(f"get_faces_from_model({hb_model.display_name})")
 
@@ -81,7 +81,7 @@ async def get_faces_from_model(hb_model: Model) -> list:
     return face_dicts
 
 
-async def get_spaces_from_model(hb_model: Model) -> list:
+def get_spaces_from_model(hb_model: Model) -> list:
     """Return a list of all the Spaces from a Project's Honeybee-Model."""
     logger.info(f"get_spaces_from_model({hb_model.display_name})")
 
@@ -102,7 +102,7 @@ async def get_spaces_from_model(hb_model: Model) -> list:
     return spaces
 
 
-async def get_sun_path_from_model(epw_object: epw.EPW) -> SunPathAndCompassDTOSchema:
+def get_sun_path_from_model(epw_object: epw.EPW) -> SunPathAndCompassDTOSchema:
     """Return a list of all the Spaces from a Project's Honeybee-Model."""
     logger.info(f"get_sun_path_from_model({epw_object.location.city})")
 
@@ -133,7 +133,7 @@ async def get_sun_path_from_model(epw_object: epw.EPW) -> SunPathAndCompassDTOSc
     return sp
 
 
-async def get_hot_water_systems_from_model(
+def get_hot_water_systems_from_model(
     hb_model: Model,
 ) -> list[PhHotWaterSystemSchema]:
     """Return a list of all the PH Hot-Water Systems from a Project's Honeybee-Model."""
@@ -156,7 +156,7 @@ async def get_hot_water_systems_from_model(
     return hw_system_DTOs
 
 
-async def get_ventilation_systems_from_model(
+def get_ventilation_systems_from_model(
     hb_model: Model,
 ) -> list[PhVentilationSystemSchema]:
     """Return a list of all the PH Ventilation Systems from a Project's Honeybee-Model."""
@@ -216,7 +216,7 @@ def interpret_input_from_face_vertices(
     return vertices, face_collector
 
 
-async def get_shading_elements_from_model(hb_model: Model) -> list[ShadeGroupSchema]:
+def get_shading_elements_from_model(hb_model: Model) -> list[ShadeGroupSchema]:
     """Return a list of all the Shading Element Groups from a Project's Honeybee-Model."""
     logger.info(f"get_shading_elements_from_model({hb_model.display_name})")
 

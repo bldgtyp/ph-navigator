@@ -83,7 +83,7 @@ def find_hbjson_file_url(db: Session, bt_number: str) -> str:
         raise Exception(e)
 
 
-async def load_hb_model(db: Session, bt_number: str) -> Model:
+def load_hb_model(db: Session, bt_number: str) -> Model:
     """Return a Honeybee-Model object for the specified Project"""
     logger.info(f"get_model({bt_number=})")
 

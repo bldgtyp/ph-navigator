@@ -75,7 +75,7 @@ def find_epw_file_url(db: Session, bt_number: str) -> str:
         raise Exception(e)
 
 
-async def load_epw_object(db: Session, bt_number: str) -> EPW:
+def load_epw_object(db: Session, bt_number: str) -> EPW:
     """Return a Ladybug-EPW object for the specified Project."""
     logger.info(f"load_epw_object({bt_number=})")
 
