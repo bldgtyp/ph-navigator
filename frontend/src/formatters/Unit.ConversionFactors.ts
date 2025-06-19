@@ -1,13 +1,21 @@
 export type Unit =
     | 'mm'
     | 'in'
+    | 'm2'
+    | 'ft2'
+    | 'm3'
+    | 'ft3'
     | 'w/mk'
     | 'btu/hr-ft-F'
     | 'hr-ft2-F/btu-in'
     | 'kg/m3'
     | 'lb/ft3'
     | 'J/kg-K'
-    | 'Btu/lb-F';
+    | 'Btu/lb-F'
+    | 'm3_hr_m2'
+    | 'cfm_ft2'
+    | 'm3_hr'
+    | 'cfm';
 
 type ConversionFunction = (v: number) => number;
 
@@ -27,6 +35,24 @@ export const CONVERSION_FACTORS: ConversionMap = {
         mm: (v: number) => v * 25.4,
         in: (v: number) => v,
     },
+    // Area
+    m2: {
+        m2: (v: number) => v,
+        ft2: (v: number) => v * 10.763910417,
+    },
+    ft2: {
+        m2: (v: number) => v / 10.763910417,
+        ft2: (v: number) => v,
+    },
+    // Volume
+    m3: {
+        m3: (v: number) => v,
+        ft3: (v: number) => v * 35.314666721,
+    },
+    ft3: {
+        m3: (v: number) => v / 35.314666721,
+        ft3: (v: number) => v,
+    },
     // Thermal Conductivity
     'w/mk': {
         'w/mk': (v: number) => v,
@@ -43,7 +69,7 @@ export const CONVERSION_FACTORS: ConversionMap = {
         'btu/hr-ft-F': (v: number) => v / (12 * 0.577789236),
         'hr-ft2-F/btu-in': (v: number) => v,
     },
-    // Desity
+    // Density
     'kg/m3': {
         'kg/m3': (v: number) => v,
         'lb/ft3': (v: number) => v * 0.06242796,
@@ -60,5 +86,23 @@ export const CONVERSION_FACTORS: ConversionMap = {
     'Btu/lb-F': {
         'J/kg-K': (v: number) => v / 0.0002388458966275,
         'Btu/lb-F': (v: number) => v,
+    },
+    // Air Infiltration
+    m3_hr_m2: {
+        m3_hr_m2: (v: number) => v,
+        cfm_ft2: (v: number) => v * 0.054680665,
+    },
+    cfm_ft2: {
+        m3_hr_m2: (v: number) => v / 0.054680665,
+        cfm_ft2: (v: number) => v,
+    },
+    // Volume Flow Rate
+    m3_hr: {
+        m3_hr: (v: number) => v,
+        cfm: (v: number) => v * 0.588577779,
+    },
+    cfm: {
+        m3_hr: (v: number) => v / 0.588577779,
+        cfm: (v: number) => v,
     },
 };

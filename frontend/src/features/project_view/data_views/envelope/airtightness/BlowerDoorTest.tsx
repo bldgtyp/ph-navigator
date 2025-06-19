@@ -31,7 +31,7 @@ import {
     sideBarStyle,
     sidebarItemStyle,
     sidebarItemSX,
-} from './BlowerDoorTest.Style';
+} from './BlowerDoorTest.Styles';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
 import TABLE_DATA from './opening_configuration.json';
@@ -108,7 +108,10 @@ const PreparingForTheTest: React.FC = () => {
                     Wind-speed below 13.4-mph [6 m/s] (if measured), otherwise below 3 on the Beaufort scale (ie: a
                     gentle breeze).
                 </CheckBoxLi>
-                <CheckBoxLi>Building height [ft] of the building x inside/outside delta-T [deg-F] below 85.</CheckBoxLi>
+                <CheckBoxLi>
+                    Building height [ft] x inside-to-outside temperature difference [deg-F] is below
+                    <strong> 85.0</strong>
+                </CheckBoxLi>
             </List>
         </Box>
     );
@@ -130,7 +133,7 @@ const RunningTheTest: React.FC = () => {
                 <li>
                     Configure the blower door fan direction to <strong>pressurize</strong> the building
                 </li>
-                <li>Baseline pressure below 5 Pa over a 30 second average.</li>
+                <li>Baseline pressure shall be below 5 Pa over a 30 second average.</li>
                 <li>
                     Starting pressure to be larger of: 10Pa or 5x the baseline pressure. ie: if the baseline is 3 Pa,
                     the starting pressure will be 5 x 3Pa = 15 Pa.
