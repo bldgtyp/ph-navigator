@@ -1,8 +1,8 @@
 import React from 'react';
 import ContentBlockHeader from '../../_components/ContentBlock.Header';
 import ContentBlock from '../../_components/ContentBlock';
-import BlowerDoorTesting from './BlowerDoorTest';
-import BuildingData from './BuildingData';
+import BlowerDoorTesting from './_components/BlowerDoorTest';
+import BuildingData from './_components/BuildingData';
 
 const AirtightnessPage: React.FC = () => {
     return (

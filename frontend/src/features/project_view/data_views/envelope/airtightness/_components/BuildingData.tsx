@@ -3,27 +3,10 @@ import { subTitleStyle } from './BlowerDoorTest.Styles';
 import { FormNameStyle, FormValueSx } from './BuildingData.Styles';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getWithAlert } from '../../../../../api/getWithAlert';
-import LoadingModal from '../../_components/LoadingModal';
-import { useUnitConversion } from '../../../_hooks/useUnitConversion';
-
-interface AirtightnessDataType {
-    floor_area_m2: number;
-    envelope_area_m2: number;
-    net_volume_m3: number;
-    n_50_ACH: number;
-    q_50_m3_hr_m2: number;
-    air_leakage_m3_hr: number;
-}
-
-const defaultAirtightnessData: AirtightnessDataType = {
-    floor_area_m2: 0,
-    envelope_area_m2: 0,
-    net_volume_m3: 0,
-    n_50_ACH: 0,
-    q_50_m3_hr_m2: 0,
-    air_leakage_m3_hr: 0,
-};
+import { getWithAlert } from '../../../../../../api/getWithAlert';
+import LoadingModal from '../../../_components/LoadingModal';
+import { useUnitConversion } from '../../../../_hooks/useUnitConversion';
+import { AirtightnessDataType, defaultAirtightnessData } from './BuildingData.Types';
 
 const BuildingDataFormItem: React.FC<{ name: string; unit: string; value: string }> = ({ name, unit, value }) => {
     return (
@@ -42,7 +25,7 @@ const BuildingDataFormItem: React.FC<{ name: string; unit: string; value: string
 
 const BuildingData: React.FC = () => {
     const { projectId } = useParams();
-    const { valueInCurrentUnitSystemWithDecimal, valueInSIUnits, unitSystem } = useUnitConversion();
+    const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion();
     const [isLoadingAirtightnessData, setIsLoadingAirtightnessData] = useState(false);
     const [airtightnessData, setAirtightnessData] = useState(defaultAirtightnessData);
 

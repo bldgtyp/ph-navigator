@@ -1,17 +1,9 @@
-import './_styles/pdf-checklist.css';
-import React from 'react';
 import {
     Box,
-    Card,
     Checkbox,
-    Divider,
-    Grid,
     Link,
     List,
-    ListItem,
-    ListItemIcon,
     Paper,
-    Stack,
     Table,
     TableBody,
     TableCell,
@@ -21,63 +13,12 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import {
-    CheckBoxListStyle,
-    CheckBoxLiTextStyle,
-    CheckBoxLiStyle,
-    titleStyle,
-    subTitleStyle,
-    ulStyle,
-    sideBarStyle,
-    sidebarItemStyle,
-    sidebarItemSX,
-} from './BlowerDoorTest.Styles';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-
-import TABLE_DATA from './opening_configuration.json';
+import { CheckBoxListStyle, titleStyle, subTitleStyle, ulStyle } from './BlowerDoorTest.Styles';
+import TABLE_DATA from '../_assets/opening_configuration.json';
 import { calloutStyle } from './BuildingData.Styles';
-import DownloadPdfButton from './BlowerDoorTest.DownloadBtn';
+import CheckBoxLi from './CheckBoxLi';
 
-const BlowerDoorTestingSidebar: React.FC = () => {
-    return (
-        <Card sx={sideBarStyle}>
-            <Stack sx={{ p: 2 }}>
-                <DownloadPdfButton targetElementId="checklist" filename="project-checklist.pdf" />
-                <Link style={sidebarItemStyle} sx={sidebarItemSX} href="#preparing">
-                    1. Preparing for the Test
-                </Link>
-                <Link style={sidebarItemStyle} sx={sidebarItemSX} href="#running">
-                    2. Running the Blower Door Test
-                </Link>
-                <Link style={sidebarItemStyle} sx={sidebarItemSX} href="#identifying">
-                    3. Identifying and Addressing Leaks
-                </Link>
-                <Link style={sidebarItemStyle} sx={sidebarItemSX} href="#reporting">
-                    4. Reporting Results
-                </Link>
-                <Link style={sidebarItemStyle} sx={sidebarItemSX} href="#references">
-                    5. Helpful References
-                </Link>
-                <Link style={sidebarItemStyle} sx={sidebarItemSX} href="#openings-table">
-                    6. Allowed Opening Configurations:
-                </Link>
-            </Stack>
-        </Card>
-    );
-};
-
-const CheckBoxLi: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    return (
-        <ListItem sx={CheckBoxLiStyle}>
-            <ListItemIcon sx={{ minWidth: 24 }}>
-                <CheckBoxOutlineBlankIcon fontSize="small" />
-            </ListItemIcon>
-            <Typography sx={CheckBoxLiTextStyle}>{children}</Typography>
-        </ListItem>
-    );
-};
-
-const PreparingForTheTest: React.FC = () => {
+export const PreparingForTheTest: React.FC = () => {
     return (
         <Box id="preparing">
             <Typography variant="h4" sx={titleStyle}>
@@ -117,7 +58,7 @@ const PreparingForTheTest: React.FC = () => {
     );
 };
 
-const RunningTheTest: React.FC = () => {
+export const RunningTheTest: React.FC = () => {
     return (
         <Box id="running">
             <Typography variant="h4" sx={titleStyle}>
@@ -165,7 +106,7 @@ const RunningTheTest: React.FC = () => {
     );
 };
 
-const FindingLeaks: React.FC = () => {
+export const FindingLeaks: React.FC = () => {
     return (
         <Box id="identifying">
             <Typography variant="h4" sx={titleStyle}>
@@ -206,7 +147,7 @@ const FindingLeaks: React.FC = () => {
     );
 };
 
-const ReportingResults: React.FC = () => {
+export const ReportingResults: React.FC = () => {
     return (
         <Box id="reporting">
             <Typography variant="h4" sx={titleStyle}>
@@ -262,7 +203,7 @@ const ReportingResults: React.FC = () => {
     );
 };
 
-const HelpfulReferences: React.FC = () => {
+export const HelpfulReferences: React.FC = () => {
     return (
         <Box id="references" className="pdf-no-print">
             <Typography variant="h4" sx={titleStyle}>
@@ -289,7 +230,7 @@ const HelpfulReferences: React.FC = () => {
     );
 };
 
-const SealingTable: React.FC = () => {
+export const SealingTable: React.FC = () => {
     return (
         <Box id="openings-table" className="pdf-no-print">
             <Typography variant="h4" sx={titleStyle}>
@@ -332,36 +273,3 @@ const SealingTable: React.FC = () => {
         </Box>
     );
 };
-
-const BlowerDoorTesting: React.FC = () => {
-    return (
-        <>
-            <Grid container spacing={2}>
-                <Grid size={3}>
-                    <BlowerDoorTestingSidebar />
-                </Grid>
-
-                <Grid size={9} id="checklist">
-                    <PreparingForTheTest />
-
-                    <Divider variant="middle" />
-                    <RunningTheTest />
-
-                    <Divider variant="middle" />
-                    <FindingLeaks />
-
-                    <Divider variant="middle" />
-                    <ReportingResults />
-
-                    <Divider variant="middle" />
-                    <HelpfulReferences />
-
-                    <Divider variant="middle" />
-                    <SealingTable />
-                </Grid>
-            </Grid>
-        </>
-    );
-};
-
-export default BlowerDoorTesting;
