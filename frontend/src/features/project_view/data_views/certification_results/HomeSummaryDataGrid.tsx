@@ -8,10 +8,10 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import '../../_styles/HomeSummaryTable.css';
-import { generateDefaultRow } from '../../_components/DataGridFunctions';
-import LoadingModal from '../../_components/LoadingModal';
-import useLoadDataGridFromAirTable from '../../../model_viewer/_hooks/useLoadDataGridFromAirTable';
-import ValueAsSentenceCase from '../../../../../formatters/ValueAsSentenceCase';
+import { generateDefaultRow } from '../_components/DataGridFunctions';
+import LoadingModal from '../_components/LoadingModal';
+import useLoadDataGridFromAirTable from '../../model_viewer/_hooks/useLoadDataGridFromAirTable';
+import ValueAsSentenceCase from '../../../../formatters/ValueAsSentenceCase';
 import React from 'react';
 
 // ----------------------------------------------------------------------------

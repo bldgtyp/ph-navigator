@@ -1,4 +1,5 @@
 export interface AirTableRecordType {
     id: string;
-    fields: { FIELD_NAME?: string; SECTION?: string; VALUE?: string };
+    fields: { [key: string]: any };
+    createdTime: string;
 }

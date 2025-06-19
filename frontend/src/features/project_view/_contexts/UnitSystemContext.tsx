@@ -42,7 +42,7 @@ export const UnitSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 // Custom hook to use the context
 export const useUnitSystem = () => {
     const context = useContext(UnitSystemContext);
-    if (context === undefined) {
+    if (context === null || context === undefined) {
         throw new Error('useUnitSystem must be used within a UnitSystemProvider');
     }
     return context;

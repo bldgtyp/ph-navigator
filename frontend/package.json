@@ -21,6 +21,7 @@
         "html2canvas": "^1.4.1",
         "html2pdf.js": "^0.10.3",
         "jspdf": "^3.0.1",
+        "markdown-to-jsx": "^7.7.7",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-router-dom": "^7.3.0",

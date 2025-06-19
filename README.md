@@ -28,7 +28,6 @@
 
 ## Pages:
 
-- [ ] Airtightness / Blower Door test
 - [ ] Ventilation Balancing
 - [ ] Project Photographs
 

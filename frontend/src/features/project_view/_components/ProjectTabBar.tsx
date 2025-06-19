@@ -19,8 +19,8 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabC
 
     const tabs = [
         {
-            label: 'Certification',
-            path: `/project/${projectId}/certification`,
+            label: 'Status',
+            path: `/project/${projectId}/status`,
             icon: <WorkspacePremiumOutlinedIcon fontSize="small" />,
         },
         {

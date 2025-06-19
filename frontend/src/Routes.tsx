@@ -8,7 +8,7 @@ import Account from './features/auth/_components/Account';
 import Projects from './features/project_browser/_components/Projects';
 import ProjectContainer from './features/project_view/_components/ProjectContainer';
 import Settings from './features/project_browser/_components/Settings';
-import ProjectCertification from './features/project_view/data_views/certification/components/Certification';
+import ProjectStatus from './features/project_view/data_views/project_status/Page';
 import WindowDataDashboard from './features/project_view/data_views/windows/components/WindowDataDashboard';
 import EnvelopeDataDashboard from './features/project_view/data_views/envelope/_components/EnvelopeDataDashboard';
 import EquipmentDataDashboard from './features/project_view/data_views/equipment/components/EquipmentDataDashboard';
@@ -39,8 +39,8 @@ const AppRoutes: React.FC = () => (
         </Route>
 
         <Route path="/project/:projectId" element={<ProjectContainer />}>
-            <Route index element={<ProjectCertification />} />
-            <Route path="certification" element={<ProjectCertification />} />
+            <Route index element={<ProjectStatus />} />
+            <Route path="status" element={<ProjectStatus />} />
 
             <Route path="window-data" element={<WindowDataDashboard />}>
                 <Route index element={<Navigate to="window-glazing-types" replace />} />
