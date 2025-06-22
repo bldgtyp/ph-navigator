@@ -2,7 +2,6 @@ import { Box, Modal } from '@mui/material';
 import DataViewPage from '../_components/DataViewPage';
 import ContentBlocksContainer from '../_components/ContentBlocks.Container';
 import ProjectStatusTimeline from './_components/ProjectStatusTimeline';
-import ProjectStatusDetailsTable from './_components/ProjectStatusDetailsTable';
 import { ProjectStatusDataProvider, useProjectStatusData } from './_contexts/ProjectDataContext';
 import LoadingModal from '../_components/LoadingModal';
 

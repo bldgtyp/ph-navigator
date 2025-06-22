@@ -1,5 +1,3 @@
-import { borderTopWidth } from 'html2canvas/dist/types/css/property-descriptors/border-width';
-
 export const timelineStyleSx = {
     // Make the Completed Step Connector Blue
     '& .MuiStepConnector-vertical.Mui-completed > span': {
