@@ -73,27 +73,23 @@ export const ProjectStatusDataProvider: React.FC<{ children: React.ReactNode }> 
     // Fetch the Project Status Data
     useEffect(() => {
         const fetchProjectStatusData = async () => {
-            const response: AirTableRecordType[] | null = await getWithAlert(`air_table/config/${projectId}`);
-
-            if (response) {
-                setStatusData(extractFieldData(response));
-            } else {
-                console.log(`Failed to download Project-Status Data for project: {projectId}`);
+            setShowModal(true);
+            try {
+                const response: AirTableRecordType[] | null = await getWithAlert(`air_table/config/${projectId}`);
+                if (response) {
+                    setStatusData(extractFieldData(response));
+                }
+            } catch (error) {
+                const msg = `Failed to fetch project data. Please try again later. ${error}`;
+                alert(msg);
+                console.error(msg);
+                return;
+            } finally {
+                setShowModal(false);
             }
         };
 
-        try {
-            setShowModal(true);
-            console.log(`showModal 1=${showModal}`);
-            fetchProjectStatusData();
-        } catch (error) {
-            const msg = `Failed to fetch project data. Please try again later. ${error}`;
-            alert(msg);
-            console.error(msg);
-        } finally {
-            setShowModal(false);
-            console.log(`showModal 3=${showModal}`);
-        }
+        fetchProjectStatusData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 

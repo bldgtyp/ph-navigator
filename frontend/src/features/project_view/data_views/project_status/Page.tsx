@@ -4,6 +4,7 @@ import ContentBlocksContainer from '../_components/ContentBlocks.Container';
 import ProjectStatusTimeline from './_components/ProjectStatusTimeline';
 import ProjectStatusDetailsTable from './_components/ProjectStatusDetailsTable';
 import { ProjectStatusDataProvider, useProjectStatusData } from './_contexts/ProjectDataContext';
+import LoadingModal from '../_components/LoadingModal';
 
 const ProjectStatusContent: React.FC = () => {
     const { showModal } = useProjectStatusData();
@@ -15,6 +16,7 @@ const ProjectStatusContent: React.FC = () => {
                     <Box className="modal-box-loading">Loading Project Data...</Box>
                 </Modal>
             ) : null}
+            <LoadingModal showModal={showModal} />
             <ProjectStatusTimeline />
             {/* <ProjectStatusDetailsTable /> */}
         </Box>
