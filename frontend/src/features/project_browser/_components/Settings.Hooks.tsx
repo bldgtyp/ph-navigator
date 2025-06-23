@@ -36,11 +36,14 @@ export const useProjectSettingsHooks = () => {
                     setProjectSettingsData(projectSettingsData);
                     setProjectSettingsFormData(projectSettingsData); // Initialize form data
                 }
-                const airTableTables = await getWithAlert<AirTableTableType[]>(
-                    `project/get-project-airtable-table-identifiers/${projectId}`
-                );
-                if (airTableTables) {
-                    setAirTableData(airTableTables);
+
+                if (projectSettingsData?.airtable_base_id !== null) {
+                    const airTableTables = await getWithAlert<AirTableTableType[]>(
+                        `project/get-project-airtable-table-identifiers/${projectId}`
+                    );
+                    if (airTableTables) {
+                        setAirTableData(airTableTables);
+                    }
                 }
             } catch (error) {
                 alert('Error loading project data. Please try again later.');

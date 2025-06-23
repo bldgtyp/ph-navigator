@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 from config import limiter
 from database import get_db
 from db_entities.app.user import User
-from features.app.schema import ProjectCreateSchema, ProjectSchema, AirTableTableUpdateSchema
 from features.air_table.schema import AirTableTableSchema
+from features.air_table.services import get_all_project_tables, update_airtable_table
+from features.app.schema import AirTableTableUpdateSchema, ProjectCreateSchema, ProjectSchema
 from features.app.services import (
     ProjectAlreadyExistsException,
     create_new_project,
@@ -18,7 +19,6 @@ from features.app.services import (
     update_project_settings,
 )
 from features.auth.services import get_current_active_user
-from features.air_table.services import get_all_project_tables, update_airtable_table
 
 router = APIRouter(
     prefix="/project",
@@ -123,11 +123,11 @@ def get_project_airtable_table_identifiers(
 
 @router.patch("/update-airtable-tables-identifiers/{bt_number}", response_model=list[AirTableTableSchema])
 def update_airtable_tables_identifiers(
-     request: Request, bt_number: str, table_records: list[AirTableTableUpdateSchema], db: Session = Depends(get_db)
+    request: Request, bt_number: str, table_records: list[AirTableTableUpdateSchema], db: Session = Depends(get_db)
 ) -> list[AirTableTableSchema]:
     """Update the AirTable Table Identifiers/Refs for a given project."""
     logger.info(f"project/update_airtable_tables_identifiers({bt_number=}, {len(table_records)=})")
-    
+
     try:
         for table_record in table_records:
             update_airtable_table(db, bt_number, table_record)
@@ -136,4 +136,3 @@ def update_airtable_tables_identifiers(
         msg = f"Failed to update AirTable tables identifiers for '{bt_number}': {e}"
         logger.error(msg)
         raise HTTPException(status_code=500, detail=msg)
-    

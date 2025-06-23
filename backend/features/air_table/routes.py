@@ -3,20 +3,18 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pyairtable import Api, Table
+from pyairtable import Api
 from pyairtable.api.types import RecordDict
 from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from db_entities.airtable.at_base import AirTableBase
 from db_entities.app.project import Project
 from features.air_table.schema import AddAirTableBaseRequest
 from features.air_table.services import (
-    add_tables_to_base,
-    get_project_airtable_base_ref,
+    connect_airtable_base_to_project,
     get_airtable_table_ref_by_name,
-    get_base_table_schemas_from_airtable,
+    get_project_airtable_base_ref,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -100,62 +98,39 @@ async def get_project_air_table_records_from_table(
     return table.all()
 
 
-# TODO: Return Pydantic Object
 @router.post("/connect-AT-base-to-project", status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
-async def connect_at_base_to_project(
-    request: AddAirTableBaseRequest,
+async def connect_at_base_to_project_route(
+    request: Request,
+    add_at_base_request: AddAirTableBaseRequest,
     db: Session = Depends(get_db),
 ):
     """Connect an AirTable Base to a Project."""
-    logger.info(f"air_table/connect_at_base_to_project({request=})")
+    logger.info(f"air_table/connect_at_base_to_project_route({add_at_base_request=})")
 
-    # Get the Project
-    project = db.query(Project).filter_by(bt_number=request.bt_number).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project {request.bt_number} not found.",
-        )
-
-    # Validate the AirTable Base
     try:
-        # -- Get the AirTable base
-        api = Api(request.airtable_base_api_key)
-        at_base = api.base(request.airtable_base_ref)
-        logger.info(f"New AirTable base info: {at_base}")
+        db_base = connect_airtable_base_to_project(
+            db,
+            add_at_base_request.bt_number,
+            add_at_base_request.airtable_base_api_key,
+            add_at_base_request.airtable_base_ref,
+        )
+        db.commit()
 
-        tables: list[Table] = get_base_table_schemas_from_airtable(at_base)
-        logger.info(f"Tables in the AirTable base: [{len(tables)}]")
+        return {
+            "message": "AirTable base connected successfully.",
+            "base_id": db_base.id,
+        }
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception as e:
+        db.rollback()
+        logger.exception("Unexpected error connecting AirTable base")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to connect to AirTable base: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}",
         )
-
-    # Check if the base already exists in the database
-    existing_base = db.query(AirTableBase).filter_by(id=at_base.id).first()
-    if existing_base:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This AirTable base is already connected.",
-        )
-
-    # Create and Save the new AirTable-Base to the database
-    new_base = AirTableBase(id=at_base.id)
-    new_base.airtable_access_token = request.airtable_base_api_key
-    db.add(new_base)
-    db.commit()
-    db.refresh(new_base)
-
-    # Create the new AirTable-Tables and add them to the Base
-    add_tables_to_base(db, new_base, tables)
-    db.refresh(new_base)
-
-    # Connect the AirTable base to the Project
-    project.airtable_base = new_base
-    db.commit()
-    db.refresh(project)
-
-    return {"message": "AirTable base connected successfully.", "base_id": new_base.id}
-

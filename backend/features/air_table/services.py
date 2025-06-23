@@ -10,9 +10,9 @@ from config import settings
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.assembly import Material
+from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
-from features.app.schema import AirTableTableUpdateSchema
 
 logger = getLogger(__name__)
 
@@ -45,18 +45,14 @@ def get_project_airtable_base_ref(db: Session, bt_number: str) -> str:
     return project.airtable_base.id
 
 
-def get_project_airtable_base(db: Session, bt_number: str) -> AirTableBase:
+def get_project_airtable_base(db: Session, bt_number: str) -> AirTableBase | None:
     """Get the AirTable Base object by the project-BT-number."""
     logger.info(f"get_airtable_base(bt_number={bt_number})")
 
-    # -- Find the Project
-    project = get_project_by_bt_number(db, bt_number)
-
-    # -- Return the AirTableBase object
-    if not project.airtable_base:
-        raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
-
-    return project.airtable_base
+    if project := get_project_by_bt_number(db, bt_number):
+        return project.airtable_base
+    else:
+        return None
 
 
 def get_all_project_tables(db: Session, bt_number: str) -> list[AirTableTable]:
@@ -159,6 +155,9 @@ def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> 
             at_ref=table.id,
             parent_base_id=base.id,
         )
+        logger.info(
+            f"Adding new table: {new_table.name} ({new_table.id=}, {new_table.at_ref=}, {new_table.parent_base_id=})"
+        )
         db.add(new_table)
         db.commit()
         db.refresh(new_table)
@@ -168,6 +167,20 @@ def add_tables_to_base(db: Session, base: AirTableBase, tables: list[Table]) -> 
     return None
 
 
+def remove_all_tables_from_base(db: Session, base: AirTableBase) -> None:
+    """Remove all tables from the AirTableBase object."""
+    logger.info(f"remove_all_tables_from_base(base={base.id})")
+
+    # -- Remove all tables from the base
+    for table in base.tables:
+        logger.info(f"Removing table: {table.name} ({table.id=}, {table.at_ref=}, {table.parent_base_id=})")
+        db.delete(table)
+
+    # -- Clear the tables list in the base
+    base.tables.clear()
+    db.commit()
+
+
 def update_airtable_table(db: Session, bt_number: str, table_data: AirTableTableUpdateSchema) -> None:
     """Update the AirTable Table data in the database."""
     logger.info(f"update_airtable_table(bt_number={bt_number}, table_data={table_data})")
@@ -175,10 +188,10 @@ def update_airtable_table(db: Session, bt_number: str, table_data: AirTableTable
     project = get_project_by_bt_number(db, bt_number)
     if not project.airtable_base:
         raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
-    
+
     # -- Find the Table
     table = get_airtable_table_by_id(db, bt_number, table_data.id)
-    
+
     # -- Update the table data
     table.name = table_data.name
     table.at_ref = table_data.at_ref
@@ -218,9 +231,22 @@ def get_all_material_from_airtable() -> list[Material]:
     #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in records]
 
 
+def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:
+    """Get the AirTable Base object from the API key and base reference."""
+    logger.info(f"get_base_from_airtable(airtable_base_api_key=..., airtable_base_ref={airtable_base_ref})")
+
+    try:
+        api = Api(airtable_base_api_key)
+        return api.base(airtable_base_ref)
+    except ValueError:
+        raise ValueError(f"Invalid AirTable API key")
+    except Exception as e:
+        raise ValueError(f"Failed to connect to AirTable: {str(e)}")
+
+
 def get_base_table_schemas_from_airtable(base: Base) -> list[Table]:
     """Get a list of all the Base's pyAirtable Table objects."""
-    logger.info(f"validate_access(base={base})")
+    logger.info(f"get_base_table_schemas_from_airtable(base={base})")
 
     try:
         # -- Get the tables in the base
@@ -236,3 +262,35 @@ def get_base_table_schemas_from_airtable(base: Base) -> list[Table]:
 
     return tables
 
+
+def connect_airtable_base_to_project(
+    db: Session, bt_number: str, airtable_api_key: str, airtable_base_ref: str
+) -> AirTableBase:
+    """Connect an AirTable base to a project."""
+    logger.info(
+        f"connect_airtable_base_to_project(bt_number={bt_number}, airtable_api_key=..., airtable_base_ref={airtable_base_ref})"
+    )
+
+    # Get project
+    project = get_project_by_bt_number(db, bt_number)
+
+    # Get AirTable data
+    at_base = get_base_from_airtable(airtable_api_key, airtable_base_ref)
+    at_tables = get_base_table_schemas_from_airtable(at_base)
+
+    # Set up database AirTable base
+    db_base = get_project_airtable_base(db, bt_number)
+    if db_base:
+        remove_all_tables_from_base(db, db_base)
+    else:
+        db_base = AirTableBase(id=at_base.id)
+        db_base.airtable_access_token = airtable_api_key
+        db.add(db_base)
+
+    # Connect to project
+    project.airtable_base = db_base
+
+    # Create tables
+    add_tables_to_base(db, db_base, at_tables)
+
+    return db_base

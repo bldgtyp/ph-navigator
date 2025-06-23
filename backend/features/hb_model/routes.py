@@ -101,9 +101,7 @@ def get_ventilation_systems(
 
 @router.get("/{bt_number}/shading_elements", response_model=list[ShadeGroupSchema])
 @limiter.limit("5/minute")
-def get_shading_elements(
-    request: Request, bt_number: str, db: Session = Depends(get_db)
-) -> list[ShadeGroupSchema]:
+def get_shading_elements(request: Request, bt_number: str, db: Session = Depends(get_db)) -> list[ShadeGroupSchema]:
     """Return a list of all the Shading Elements from a Project's Honeybee-Model."""
     logger.info(f"get_shading_elements({bt_number=})")
 

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from db_entities.app.project import Project
 
-from ...air_table.services import download_epw_file, get_project_airtable_base_ref, get_airtable_table_ref_by_name
+from ...air_table.services import download_epw_file, get_airtable_table_ref_by_name, get_project_airtable_base_ref
 from ..cache import LimitedCache
 
 logger = getLogger(__name__)

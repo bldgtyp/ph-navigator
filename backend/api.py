@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from features.air_table.routes import router as air_table_router
+from features.airtightness.routes import router as airtightness_router
 from features.app.routes import router as project_router
 from features.assembly.routes.assembly import router as assembly
 from features.assembly.routes.layer import router as layer
@@ -10,7 +11,6 @@ from features.auth.routes import router as auth_router
 from features.gcp.routes import router as gcp
 from features.hb_model.routes import router as hb_model_router
 from features.project_browser.routes import router as project_browser_router
-from features.airtightness.routes import router as airtightness_router  
 
 
 def register_routes(app: FastAPI):

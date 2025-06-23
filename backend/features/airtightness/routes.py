@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
-from features.hb_model.services.hb_model import load_hb_model
-from features.airtightness.services import get_model_airtightness_data
 from features.airtightness.schemas import AirTightnessDataResponse
+from features.airtightness.services import get_model_airtightness_data
+from features.hb_model.services.hb_model import load_hb_model
 
 router = APIRouter(
     prefix="/airtightness",

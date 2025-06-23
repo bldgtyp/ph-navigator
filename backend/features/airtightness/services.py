@@ -2,17 +2,18 @@
 
 import logging
 
-from honeybee_ph.space import Space
 from honeybee.model import Model
-from PHX.from_HBJSON.cleanup import merge_infiltrations, _get_room_exposed_face_area
+from honeybee_ph.space import Space
+from PHX.from_HBJSON.cleanup import _get_room_exposed_face_area, merge_infiltrations
 from PHX.from_HBJSON.create_variant import get_infiltration_at_50Pa
 
 logger = logging.getLogger(__name__)
 
+
 def get_model_airtightness_data(_hb_model: Model) -> dict:
     """Calculates airtightness data for a Honeybee model."""
     logger.info(f"get_model_airtightness_data({_hb_model.display_name=})")
-    
+
     # Figure out what the effective whole-model infiltration rate is.
     hb_infiltration = merge_infiltrations(list(_hb_model.rooms))
 
