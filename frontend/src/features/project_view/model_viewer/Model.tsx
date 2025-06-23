@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Dialog } from '@mui/material';
-import MoonLoader from 'react-spinners/MoonLoader';
+import { CircularProgress, Dialog, Stack, Typography } from '@mui/material';
 
 import { SceneSetup } from './scene_setup/SceneSetup';
 import { get3DModelData } from '../../../api/get3DModelData';
@@ -79,21 +78,24 @@ const Model: React.FC<ModelProps> = ({ world, showModel }) => {
         <>
             {isLoading && (
                 <Dialog className="model-loading" open={isLoading}>
-                    <div className="model-loading">
-                        <div>Please wait while the model is loaded.</div>
-                        <div>For large models this may take some time to download.</div>
-                        <MoonLoader
-                            color="#1976d2"
-                            cssOverride={{
-                                display: 'block',
-                                margin: '0 auto',
-                                padding: '8px',
-                            }}
-                            size="25px"
-                            aria-label="Loading Spinner"
-                            data-testid="loader"
-                        />
-                    </div>
+                    <Stack
+                        className="model-loading"
+                        p={2}
+                        sx={{
+                            minWidth: '400px',
+                            minHeight: '200px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                            gap: 2,
+                        }}
+                    >
+                        <Typography>Please wait while the model is loaded.</Typography>
+                        <CircularProgress size={40} />
+                        <Typography>For large models this may take some time to download.</Typography>
+                    </Stack>
                 </Dialog>
             )}
         </>

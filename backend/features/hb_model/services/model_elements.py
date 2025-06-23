@@ -3,6 +3,7 @@
 from collections import defaultdict
 from logging import getLogger
 from typing import Any, Iterable
+from pydantic import ValidationError
 
 from honeybee import face, room, shade
 from honeybee.model import Model
@@ -47,24 +48,29 @@ def get_faces_from_model(hb_model: Model) -> list:
 
     hb_faces: list[face.Face] = hb_model.faces
 
-    # -- Note: Add the Mesh3D to each to the Faces before returning
     face_dicts: list[FaceSchema] = []
     for hb_face in hb_faces:
+        # -- Get the HB-Energy Construction and extra attributes
+        # -- It may not be an AirBoundary or other Construction without materials, so guard against that.
+        try:
+            hb_face_energy_prop: FaceEnergyProperties = getattr(hb_face.properties, "energy")
+            construction = OpaqueConstructionSchema(**any_dict(hb_face_energy_prop.construction.to_dict()))
+        except ValidationError as e:
+            logger.warning(f"Face {hb_face.display_name} construction '{hb_face_energy_prop.construction.display_name}' cannot be handled properly. Skipping.")
+            continue
+        
         face_DTO = FaceSchema(**any_dict(hb_face.to_dict()))
 
-        # -- Get the extra Geometry attributes
+        # -- Note: Add the Mesh3D to each to the Faces
         face_DTO.geometry.mesh = Mesh3DSchema(**hb_face.punched_geometry.triangulated_mesh3d.to_dict())
         face_DTO.geometry.area = hb_face.punched_geometry.area
 
-        # -- Get the HB-Energy Construction and extra attributes
-        hb_face_energy_prop: FaceEnergyProperties = getattr(hb_face.properties, "energy")
-        construction = OpaqueConstructionSchema(**any_dict(hb_face_energy_prop.construction.to_dict()))
+        # -- Assign the Construction and its attributes
         face_DTO.properties.energy.construction = construction
-
         face_DTO.properties.energy.construction.r_factor = getattr(hb_face_energy_prop.construction, "r_factor", 0.0)
         face_DTO.properties.energy.construction.u_factor = getattr(hb_face_energy_prop.construction, "u_factor", 0.0)
-
-        # -- Get the Aperture data
+    
+        # -- Get any additional Aperture data
         for aperture_DTO, hb_aperture in zip(face_DTO.apertures or [], hb_face.apertures or []):
             # -- Aperture Mesh Geometry
             aperture_DTO.geometry.mesh = Mesh3DSchema(**hb_aperture.geometry.triangulated_mesh3d.to_dict())
