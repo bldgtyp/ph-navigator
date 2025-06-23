@@ -9,7 +9,7 @@ import { TooltipHeader } from '../../../_components/TooltipHeader';
 // Define the table columns and rows to display
 const tableFields = [
     {
-        field: 'ID_NUMBER',
+        field: 'DISPLAY_NAME',
         headerName: 'ID',
         flex: 1,
         renderCell: (params: any) => TooltipWithInfo(params),

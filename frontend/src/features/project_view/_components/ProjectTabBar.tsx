@@ -56,13 +56,14 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabC
     const tabHeight = 40;
 
     return (
-        <Box id="project-tab-bar" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box id="project-tab-bar" position="sticky" sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
                 value={activeTabNumber}
                 onChange={handleTabChange}
                 indicatorColor="primary"
                 textColor="primary"
                 sx={{
+                    position: 'sticky',
                     minHeight: tabHeight,
                     height: tabHeight,
                 }}
@@ -74,6 +75,7 @@ const ProjectTabBar: React.FC<propsType> = ({ projectId, activeTabNumber, onTabC
                         icon={tab.icon}
                         iconPosition="start"
                         sx={{
+                            position: 'sticky',
                             minHeight: tabHeight,
                             height: tabHeight,
                             paddingRight: 2,

@@ -38,7 +38,7 @@ const tableFields = [
                 title: "Do we have a PDF data-sheet with the product's performance values? Yes/No",
             }),
     },
-    { field: 'DESCRIPTION', headerName: 'Type', flex: 1 },
+    { field: 'TYPE', headerName: 'Type', flex: 1 },
     { field: 'MANUFACTURER', headerName: 'Manuf.', flex: 1 },
     { field: 'MODEL', headerName: 'Model', flex: 1 },
     { field: 'ZONE', headerName: 'Zone', flex: 1 },

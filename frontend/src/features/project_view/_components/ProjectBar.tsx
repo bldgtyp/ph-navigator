@@ -29,17 +29,24 @@ const ProjectBarLink: React.FC<propsType> = ({ url, displayText }) => {
 
 const ProjectBar: React.FC<ProjectType> = ({ name, phius_dropbox_url, airtable_base_url }) => {
     return (
-        <AppBar id="project-bar" position="sticky">
+        <AppBar id="project-bar" position="sticky" sx={{ top: '30px' }}>
             <Toolbar>
                 <Typography variant="h5" sx={{ flexGrow: 1 }}>
                     {name}
                 </Typography>
                 <UnitSystemToggle />
-                <ProjectBarLink
-                    url="https://www.phius.org/certifications/projects/certification-review-queue"
-                    displayText="Phius Queue"
-                />
-                <ProjectBarLink url={phius_dropbox_url} displayText="Phius Dropbox" />
+                {phius_dropbox_url ? (
+                    <>
+                        <ProjectBarLink
+                            url="https://www.phius.org/certifications/projects/certification-review-queue"
+                            displayText="Phius Queue"
+                        />
+                        <ProjectBarLink url={phius_dropbox_url} displayText="Phius Dropbox" />
+                    </>
+                ) : (
+                    ''
+                )}
+
                 <ProjectBarLink url={airtable_base_url} displayText="AirTable" />
             </Toolbar>
         </AppBar>
