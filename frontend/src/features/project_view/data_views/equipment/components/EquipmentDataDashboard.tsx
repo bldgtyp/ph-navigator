@@ -11,8 +11,8 @@ const EquipmentDataDashboard: React.FC = () => {
         { label: 'Pumps', path: 'pumps' },
         { label: 'Tanks', path: 'dhw-tanks' },
         { label: 'Fans', path: 'fans' },
-        { label: 'Lighting', path: 'lighting' },
         { label: 'Appliances', path: 'appliances' },
+        // { label: 'Lighting', path: 'lighting' },
     ];
 
     // Determine active tab from URL path
@@ -22,8 +22,8 @@ const EquipmentDataDashboard: React.FC = () => {
         if (path.includes('/pumps')) return 1;
         if (path.includes('/dhw-tanks')) return 2;
         if (path.includes('/fans')) return 3;
-        if (path.includes('/lighting')) return 4;
-        if (path.includes('/appliances')) return 5;
+        if (path.includes('/appliances')) return 4;
+        // if (path.includes('/lighting')) return 4;
         return 0; // Default
     };
 
