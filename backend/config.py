@@ -21,6 +21,7 @@ class Settings(BaseSettings):
         "https://bldgtyp.github.io",
         "https://ph-dash-frontend.onrender.com",
         "https://ph-dash-0cye.onrender.com",
+        "https://www.ph-nav.com",
     ]
     AIRTABLE_MATERIAL_BASE_ID: str = "appvuwBhK0he4PbVi"
     AIRTABLE_MATERIAL_TABLE_ID: str = "tbl6GnWtkPX0OALMu"
