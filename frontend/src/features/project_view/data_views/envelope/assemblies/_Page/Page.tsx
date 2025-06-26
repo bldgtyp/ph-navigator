@@ -13,7 +13,7 @@ import { patchWithAlert } from '../../../../../../api/patchWithAlert';
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import { AssemblyType } from '../../_types/Assembly';
-import { AssemblyButtons } from './Assembly.Buttons';
+import AssemblyButtons from './Assembly.Buttons';
 import { AssemblyView } from './Assembly.View';
 import { fetchAndCacheMaterials } from '../../_contexts/MaterialsContext.Utility';
 import { headerButtons } from './HeaderButtons';
@@ -86,20 +86,16 @@ const AssembliesPage: React.FC = () => {
         }
     };
 
-    const handleDeleteAssembly = async () => {
-        console.log('handleDeleteAssembly', selectedAssemblyId);
-        if (!selectedAssemblyId) {
-            console.error('No assembly selected to delete.');
-            return;
-        }
+    const handleDeleteAssembly = async (assemblyId: number) => {
+        console.log(`handleDeleteAssembly(${assemblyId})`);
 
         try {
-            const confirmed = window.confirm('Are you sure you want to delete this assembly?');
+            const confirmed = window.confirm('Are you sure you want to delete the Assembly?');
             if (!confirmed) return;
 
-            await deleteWithAlert(`assembly/delete-assembly/${selectedAssemblyId}`, null, {});
+            await deleteWithAlert(`assembly/delete-assembly/${assemblyId}`, null, {});
 
-            console.log(`Assembly ${selectedAssemblyId} deleted successfully.`);
+            console.log(`Assembly ${assemblyId} deleted successfully.`);
 
             // Fetch updated assemblies and update the state
             const updatedAssemblies = await fetchAssemblies();
@@ -111,7 +107,7 @@ const AssembliesPage: React.FC = () => {
                 setSelectedAssemblyId(null);
             }
         } catch (error) {
-            console.error('Failed to delete assembly:', error);
+            console.error(`Failed to delete Assembly ${assemblyId}:`, error);
         }
     };
 
@@ -305,6 +301,24 @@ const AssembliesPage: React.FC = () => {
         }
     };
 
+    const handleDuplicateAssembly = async (assemblyId: number) => {
+        console.log(`handleDuplicateAssembly(${assemblyId})`);
+
+        try {
+            setIsRefreshing(true);
+            const response = await postWithAlert<AssemblyType>(`assembly/duplicate-assembly/${assemblyId}`);
+            if (response) {
+                setSelectedAssemblyId(response.id);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        } finally {
+            await fetchAssemblies();
+            setIsRefreshing(false);
+        }
+    };
+
     return (
         <ContentBlock>
             <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
@@ -314,8 +328,6 @@ const AssembliesPage: React.FC = () => {
                 buttons={
                     userContext.user
                         ? headerButtons(
-                              handleAddAssembly,
-                              handleDeleteAssembly,
                               handleRefreshMaterials,
                               handleUploadConstructions,
                               handleDownloadConstructions,
@@ -330,15 +342,18 @@ const AssembliesPage: React.FC = () => {
                     <AssemblySidebar
                         assemblies={assemblies}
                         selectedAssemblyId={selectedAssemblyId}
-                        handleAssemblyChange={handleAssemblyChange}
+                        onAssemblyChange={handleAssemblyChange}
+                        onAddAssembly={handleAddAssembly}
+                        onDeleteAssembly={handleDeleteAssembly}
                     />
                 </Grid>
                 <Grid size={10} sx={{ borderLeft: '1px solid #ccc' }}>
                     <AssemblyButtons
                         selectedAssemblyId={selectedAssemblyId}
-                        handleNameChange={handleNameChange}
-                        handleFlipOrientation={handleFlipOrientation}
-                        handleFlipLayers={handleFlipLayers}
+                        onNameChange={handleNameChange}
+                        onFlipOrientation={handleFlipOrientation}
+                        onFlipLayers={handleFlipLayers}
+                        onDuplicateAssembly={handleDuplicateAssembly}
                     />
                     {isLoadingAssemblies && <p>Loading...</p>}
                     {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}

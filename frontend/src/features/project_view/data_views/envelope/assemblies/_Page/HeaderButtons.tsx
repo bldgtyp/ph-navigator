@@ -2,9 +2,8 @@ import { Button, Tooltip, IconButton } from '@mui/material';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 
-type HeaderButtonId = '+' | '-' | 'refresh' | 'upload' | 'download';
+type HeaderButtonId = 'refresh' | 'upload' | 'download';
 
 interface HeaderButtonProps {
     id: HeaderButtonId;
@@ -15,8 +14,6 @@ interface HeaderButtonProps {
 }
 
 const hoverText = {
-    '+': 'Add a new Assembly.',
-    '-': 'Delete the current Assembly.',
     refresh: 'Reload the materials from the AirTable database.',
     upload: 'Upload an HBJSON file containing one or more HB-Constructions. These will be added to the set of assemblies and will OVERWRITE any existing Assemblies with the same name.',
     download: 'Download an HBJSON file all of the HB-Constructions or the project.',
@@ -62,29 +59,12 @@ const HeaderIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler
 };
 
 export function headerButtons(
-    handleAddAssembly: () => Promise<void>,
-    handleDeleteAssembly: () => Promise<void>,
     handleRefreshMaterials: () => Promise<void>,
     handleUploadConstructions: () => Promise<void>,
     handleDownloadConstructions: () => Promise<void>,
     loading: boolean = false
 ): React.ReactElement[] {
     return [
-        <HeaderTextIconButton
-            key={'+'}
-            id={'+'}
-            text={'+ Add New Assembly'}
-            handler={handleAddAssembly}
-            loading={loading}
-        />,
-        <HeaderTextIconButton
-            key={'-'}
-            id={'-'}
-            text={'Delete Assembly'}
-            icon={<DeleteForeverRoundedIcon />}
-            handler={handleDeleteAssembly}
-            loading={loading}
-        />,
         <HeaderTextIconButton
             key={'refresh'}
             id={'refresh'}

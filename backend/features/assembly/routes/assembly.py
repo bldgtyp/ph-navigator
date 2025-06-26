@@ -18,6 +18,7 @@ from features.assembly.services.assembly import (
     get_all_project_assemblies,
     get_assembly_by_id,
     update_assembly_name,
+    duplicate_assembly,
 )
 from features.assembly.services.assembly_from_hbjson import (
     MaterialNotFoundException,
@@ -199,3 +200,17 @@ def flip_assembly_layers_route(assembly_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to flip assembly layers")
+
+
+@router.post("/duplicate-assembly/{assembly_id}", response_model=AssemblySchema)
+def duplicate_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> AssemblySchema:
+    """Duplicate an Assembly."""
+    logger.info(f"assembly/duplicate_assembly_route({assembly_id=})")
+
+    try:
+        assembly = get_assembly_by_id(db, assembly_id)
+        duplicated_assembly = duplicate_assembly(db, assembly)
+        return AssemblySchema.from_orm(duplicated_assembly)
+    except Exception as e:
+        logger.error(f"Failed to duplicate assembly {assembly_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to duplicate assembly")

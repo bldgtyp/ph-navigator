@@ -5,6 +5,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from db_entities.assembly import Layer
+from features.assembly.services.segment import stage_duplicate_segment
 
 logger = logging.getLogger(__name__)
 
@@ -72,3 +73,30 @@ def delete_layer(db: Session, layer_id: int) -> None:
     layer = get_layer_by_id(db, layer_id)
     db.delete(layer)
     db.commit()
+
+
+def stage_duplicate_layer(db: Session, layer: Layer, new_assembly_id: int) -> Layer:
+    """Duplicate a layer without committing."""
+    new_layer = Layer(
+        thickness_mm=layer.thickness_mm,
+        order=layer.order,
+        assembly_id=new_assembly_id,  # Use the passed assembly ID
+    )
+    db.add(new_layer)
+    db.flush()  # Get ID but don't commit
+    
+    # Duplicate segments without committing
+    for segment in layer.segments:
+        stage_duplicate_segment(db, segment, new_layer.id)
+    
+    return new_layer
+
+def duplicate_layer(db: Session, layer: Layer) -> Layer:
+    """Duplicate a layer, along with all its segments and return the new layer."""
+    logger.info(f"duplicate_layer({layer.id=})")
+
+    new_layer = stage_duplicate_layer(db, layer, layer.assembly_id)
+    db.commit()
+    db.refresh(new_layer)
+    return new_layer
+

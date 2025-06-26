@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from db_entities.assembly import Segment
 from db_entities.assembly.segment import SpecificationStatus
-from features.assembly.services.layer import get_layer_by_id
 from features.assembly.services.material import get_material_by_id
 
 logger = logging.getLogger(__name__)
@@ -43,19 +42,16 @@ def create_new_segment(db: Session, layer_id: int, material_id: str, width_mm: f
     """Create a new segment in the database."""
     logger.info(f"Adding segment to layer {layer_id} with material {material_id}, width {width_mm}, order {order}")
 
-    layer = get_layer_by_id(db, layer_id)
-    material = get_material_by_id(db, material_id)
-
     # Shift the order of any existing segments
     db.query(Segment).filter(
-        Segment.layer_id == layer.id,
+        Segment.layer_id == layer_id,
         Segment.order >= order,  # Shift only segments at or after the insertion point
     ).update({"order": Segment.order + 1}, synchronize_session="fetch")
 
     # Create the new LayerSegment and Add it to the database
     new_segment = Segment(
-        layer_id=layer.id,
-        material_id=material.id,
+        layer_id=layer_id,
+        material_id=material_id,
         width_mm=width_mm,
         order=order,
     )
@@ -171,3 +167,28 @@ def delete_segment(db: Session, segment_id: int) -> Segment:
     db.commit()
 
     return seg
+
+
+def stage_duplicate_segment(db: Session, segment: Segment, new_layer_id: int) -> Segment:
+    """Duplicate a segment without committing."""
+    new_segment = Segment(
+        layer_id=new_layer_id,  # Use the passed layer ID
+        material_id=segment.material_id,
+        width_mm=segment.width_mm,
+        order=segment.order,
+        steel_stud_spacing_mm=segment.steel_stud_spacing_mm,
+        is_continuous_insulation=segment.is_continuous_insulation,
+    )
+    db.add(new_segment)
+    return new_segment
+
+
+def duplicate_segment(db: Session, segment: Segment) -> Segment:
+    """Duplicate a segment and return the new segment."""
+    logger.info(f"duplicate_segment{segment.id=}")
+    
+    new_segment = stage_duplicate_segment(db, segment, segment.layer_id)
+    db.commit()
+    db.refresh(new_segment)
+    return new_segment
+

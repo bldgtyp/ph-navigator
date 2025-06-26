@@ -81,7 +81,7 @@ def create_test_project(
             hashed_password=TEST_PASSWORD,
         )
         project = create_new_project(db=session, name="Test Project", bt_number="1234", owner_id=user.id)
-        assembly = create_new_empty_assembly_on_project(db=session, name="Test Assembly", project_id=project.id)
+        assembly = create_new_empty_assembly_on_project(db=session, name="Test Assembly", bt_number=project.bt_number)
         layer = create_new_layer(thickness_mm=50.0)
         assembly, layer = append_layer_to_assembly(db=session, assembly_id=assembly.id, layer=layer)
         material = create_new_material(

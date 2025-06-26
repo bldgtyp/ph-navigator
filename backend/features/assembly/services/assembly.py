@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from db_entities.app import Project
 from db_entities.assembly import Assembly, Layer, Segment
-from features.app.services import get_project_by_bt_number, get_project_by_id
+from features.app.services import get_project_by_bt_number
+from features.assembly.services.layer import stage_duplicate_layer
 from features.assembly.services.material import get_default_material
 
 logger = logging.getLogger(__name__)
@@ -47,12 +48,12 @@ def get_all_project_assemblies(db: Session, bt_number: str) -> list[Assembly]:
 def create_new_empty_assembly_on_project(
     db: Session,
     name: str,
-    project_id: int,
+    bt_number: str,
 ) -> Assembly:
     """Add a new assembly on the Project."""
-    logger.info(f"create_new_assembly_in_db({name=}, {project_id=})")
+    logger.info(f"create_new_empty_assembly_on_project({name=}, {bt_number=})")
 
-    project = get_project_by_id(db, project_id)
+    project = get_project_by_bt_number(db, bt_number)
     new_assembly = Assembly(name=name, project_id=project.id)
     db.add(new_assembly)
     db.commit()
@@ -196,3 +197,26 @@ def flip_assembly_layers(db: Session, assembly: Assembly) -> Assembly:
         db.refresh(layer)
 
     return assembly
+
+
+def duplicate_assembly(db: Session, assembly: Assembly) -> Assembly:
+    """Duplicate an Assembly and its Layers."""
+    logger.info(f"duplicate_assembly({assembly.name=})")
+
+    duplicated_assembly = Assembly(
+        name=f"{assembly.name} (Copy)",
+        project_id=assembly.project_id
+    )
+    db.add(duplicated_assembly)
+    db.flush()  # Get the ID without committing
+    
+    # Duplicate all layers
+    for layer in assembly.layers:
+        # Use non-committing version of duplicate_layer
+        stage_duplicate_layer(db, layer, duplicated_assembly.id)
+    
+    # Commit only once at the end
+    db.commit()
+    db.refresh(duplicated_assembly)
+    return duplicated_assembly
+

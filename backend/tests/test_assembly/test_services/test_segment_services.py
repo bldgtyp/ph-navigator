@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from db_entities.assembly.segment import SpecificationStatus
+from db_entities.app import Project
 from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
@@ -24,8 +25,8 @@ from features.assembly.services.segment import (
 
 def test_create_new_segment_in_db(session: Session, create_test_project):
     # Create a mock Project / Assembly / Layer / Material
-    project = create_test_project(db=session, username="user1", project_name="Project 1")
-    assembly = create_new_empty_assembly_on_project(db=session, name="A New Assembly", project_id=project.id)
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    assembly = create_new_empty_assembly_on_project(db=session, name="A New Assembly", bt_number=project.bt_number)
     layer = create_new_layer(thickness_mm=50.0)
     assembly, layer = append_layer_to_assembly(db=session, assembly_id=assembly.id, layer=layer)
     material = create_new_material(

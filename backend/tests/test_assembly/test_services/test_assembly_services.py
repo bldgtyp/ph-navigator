@@ -58,7 +58,7 @@ def test_create_new_empty_assembly(session, create_test_project):
     assert len(project.assemblies) == 1  # Initial assembly created by default
 
     # Create a new assembly
-    new_assembly = create_new_empty_assembly_on_project(session, "New Assembly", 1)
+    new_assembly = create_new_empty_assembly_on_project(session, "New Assembly", "1234")
 
     # Check if the assembly is created correctly
     assert len(project.assemblies) == 2

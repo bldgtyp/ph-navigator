@@ -1,63 +1,43 @@
 import React, { useState, useContext } from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 
+const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: string }> = ({
+    onClick,
+    text,
+    hoverText = '',
+}) => {
+    return (
+        <Tooltip title={hoverText} placement="top" arrow>
+            <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
+                onClick={onClick}
+            >
+                {text}
+            </Button>
+        </Tooltip>
+    );
+};
+
 interface AssemblyButtonProps {
     selectedAssemblyId: number | null;
-    handleNameChange: (assemblyId: number, newName: string) => void;
-    handleFlipOrientation: (assemblyId: number) => void;
-    handleFlipLayers: (assemblyId: number) => void;
+    onNameChange: (assemblyId: number, newName: string) => void;
+    onFlipOrientation: (assemblyId: number) => void;
+    onFlipLayers: (assemblyId: number) => void;
+    onDuplicateAssembly: (assemblyId: number) => void;
 }
 
-const ChangeNameButton: React.FC<{ openModal: () => void }> = ({ openModal }) => {
-    return (
-        <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
-            onClick={openModal}
-        >
-            Change Name
-        </Button>
-    );
-};
-
-const FlipOrientationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
-    return (
-        <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
-            onClick={onClick}
-        >
-            Flip Orientation
-        </Button>
-    );
-};
-
-const FlipLayersButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
-    return (
-        <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
-            onClick={onClick}
-        >
-            Flip Layers
-        </Button>
-    );
-};
-
-export const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
+const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
     selectedAssemblyId,
-    handleNameChange,
-    handleFlipOrientation,
-    handleFlipLayers,
+    onNameChange,
+    onFlipOrientation,
+    onFlipLayers,
+    onDuplicateAssembly,
 }) => {
     const userContext = useContext(UserContext);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,28 +47,47 @@ export const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
 
     const handleSubmitNameChange = (newName: string) => {
         if (selectedAssemblyId) {
-            handleNameChange(selectedAssemblyId, newName);
+            onNameChange(selectedAssemblyId, newName);
         }
     };
 
     const handleSubmitFlipOrientation = () => {
         if (selectedAssemblyId) {
-            handleFlipOrientation(selectedAssemblyId);
+            onFlipOrientation(selectedAssemblyId);
         }
     };
 
     const handleSubmitFlipLayers = () => {
         if (selectedAssemblyId) {
-            handleFlipLayers(selectedAssemblyId);
+            onFlipLayers(selectedAssemblyId);
         }
     };
 
-    return (
+    const handleDuplicateAssembly = () => {
+        if (selectedAssemblyId) {
+            onDuplicateAssembly(selectedAssemblyId);
+        }
+    };
+
+    return userContext.user ? (
         <Box sx={{ display: 'flex', alignItems: 'top', justifyContent: 'right', gap: 2, marginBottom: 2 }}>
-            {userContext.user ? <ChangeNameButton openModal={openModal} /> : null}
             <ChangeNameModal open={isModalOpen} onClose={closeModal} onSubmit={handleSubmitNameChange} />
-            {userContext.user ? <FlipOrientationButton onClick={handleSubmitFlipOrientation} /> : null}
-            {userContext.user ? <FlipLayersButton onClick={handleSubmitFlipLayers} /> : null}
+            <AssemblyButton onClick={openModal} text="Change Name" />
+            <AssemblyButton
+                onClick={handleSubmitFlipOrientation}
+                text="Flip Orientation"
+                hoverText="Flip the interior/exterior orientation."
+            />
+            <AssemblyButton
+                onClick={handleSubmitFlipLayers}
+                text="Flip Layers"
+                hoverText="Reverse the layers from inside to outside."
+            />
+            <AssemblyButton onClick={handleDuplicateAssembly} text="Duplicate Assembly" />
         </Box>
+    ) : (
+        <></>
     );
 };
+
+export default AssemblyButtons;
