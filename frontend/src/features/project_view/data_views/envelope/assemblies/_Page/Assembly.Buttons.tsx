@@ -1,15 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { Box, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
+import { Box, Button } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-
-import { AssemblyType } from '../../_types/Assembly';
 import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 
-interface AssemblySelectorProps {
-    assemblies: AssemblyType[];
+interface AssemblyButtonProps {
     selectedAssemblyId: number | null;
-    handleAssemblyChange: (event: SelectChangeEvent<number>) => void;
     handleNameChange: (assemblyId: number, newName: string) => void;
     handleFlipOrientation: (assemblyId: number) => void;
     handleFlipLayers: (assemblyId: number) => void;
@@ -57,10 +53,8 @@ const FlipLayersButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     );
 };
 
-export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
-    assemblies,
+export const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
     selectedAssemblyId,
-    handleAssemblyChange,
     handleNameChange,
     handleFlipOrientation,
     handleFlipLayers,
@@ -89,28 +83,8 @@ export const AssemblySelector: React.FC<AssemblySelectorProps> = ({
         }
     };
 
-    // Create a sorted copy of the assemblies array
-    const sortedAssemblies = [...assemblies].sort((a, b) => a.name.localeCompare(b.name));
-
     return (
-        <Box sx={{ display: 'flex', alignItems: 'top', gap: 2, marginBottom: 2 }}>
-            <FormControl className="assembly-selector" fullWidth sx={{ marginBottom: 2 }}>
-                <InputLabel id="assembly-select-label">Select Assembly</InputLabel>
-                <Select
-                    size="medium"
-                    labelId="assembly-select-label"
-                    value={selectedAssemblyId || ''}
-                    onChange={handleAssemblyChange}
-                    label="Select Assembly"
-                >
-                    {sortedAssemblies.map((assembly: any) => (
-                        <MenuItem key={assembly.id} value={assembly.id}>
-                            {assembly.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-
+        <Box sx={{ display: 'flex', alignItems: 'top', justifyContent: 'right', gap: 2, marginBottom: 2 }}>
             {userContext.user ? <ChangeNameButton openModal={openModal} /> : null}
             <ChangeNameModal open={isModalOpen} onClose={closeModal} onSubmit={handleSubmitNameChange} />
             {userContext.user ? <FlipOrientationButton onClick={handleSubmitFlipOrientation} /> : null}

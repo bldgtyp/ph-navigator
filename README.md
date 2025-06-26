@@ -14,11 +14,14 @@
 
 ## Material List:
 
+- [ ] Move to a new 'Photos' section
 - [ ] Add 'download' button to pdf/png file viewer
 - [ ] PDF full-view looks a little odd... clean up a little.
 
 ## Assemblies (UI):
 
+- [ ] Sidebar listing of all assemblies
+- [ ] Duplicate Assembly Button
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths?
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
@@ -29,7 +32,7 @@
 ## Pages:
 
 - [ ] Ventilation Balancing
-- [ ] Project Photographs
+- [ ] Project Photographs / Datasheets
 
 ## 3D Model:
 

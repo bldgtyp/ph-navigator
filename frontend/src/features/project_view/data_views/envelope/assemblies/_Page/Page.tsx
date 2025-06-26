@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useContext, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, SelectChangeEvent } from '@mui/material';
+import { Grid } from '@mui/material';
 
 import { useMaterials } from '../../_contexts/MaterialsContext';
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
@@ -13,12 +13,13 @@ import { patchWithAlert } from '../../../../../../api/patchWithAlert';
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import { AssemblyType } from '../../_types/Assembly';
-import { AssemblySelector } from './Assembly.Selector';
+import { AssemblyButtons } from './Assembly.Buttons';
 import { AssemblyView } from './Assembly.View';
 import { fetchAndCacheMaterials } from '../../_contexts/MaterialsContext.Utility';
 import { headerButtons } from './HeaderButtons';
 import { postFileWithAlert } from '../../../../../../api/postFileWithAlert';
 import ContentBlock from '../../../_components/ContentBlock';
+import AssemblySidebar from './Assembly.Sidebar';
 
 const AssembliesPage: React.FC = () => {
     const userContext = useContext(UserContext);
@@ -63,10 +64,9 @@ const AssembliesPage: React.FC = () => {
         return assemblies.find(assembly => assembly.id === selectedAssemblyId) || null;
     }, [assemblies, selectedAssemblyId]);
 
-    const handleAssemblyChange = async (event: SelectChangeEvent<number>) => {
-        console.log('handleAssemblyChange', event.target.value);
-        const newSelectedAssemblyId = event.target.value as number;
-        setSelectedAssemblyId(newSelectedAssemblyId);
+    const handleAssemblyChange = async (assemblyId: number) => {
+        console.log('handleAssemblyChange', assemblyId);
+        setSelectedAssemblyId(assemblyId);
         await fetchAssemblies();
     };
 
@@ -129,11 +129,7 @@ const AssembliesPage: React.FC = () => {
             setAssemblies(updatedAssemblies);
 
             // Ensure the selected assembly is updated
-            handleAssemblyChange({
-                target: {
-                    value: assemblyId,
-                },
-            } as SelectChangeEvent<number>);
+            handleAssemblyChange(assemblyId);
         } catch (error) {
             console.error('Failed to update assembly name:', error);
         }
@@ -276,11 +272,7 @@ const AssembliesPage: React.FC = () => {
             setAssemblies(updatedAssemblies);
 
             // Ensure the selected assembly is updated
-            handleAssemblyChange({
-                target: {
-                    value: assemblyId,
-                },
-            } as SelectChangeEvent<number>);
+            handleAssemblyChange(assemblyId);
         } catch (error) {
             console.error('Failed to update assembly name:', error);
         }
@@ -307,11 +299,7 @@ const AssembliesPage: React.FC = () => {
             setAssemblies(updatedAssemblies);
 
             // Ensure the selected assembly is updated
-            handleAssemblyChange({
-                target: {
-                    value: assemblyId,
-                },
-            } as SelectChangeEvent<number>);
+            handleAssemblyChange(assemblyId);
         } catch (error) {
             console.error('Failed to update assembly layers:', error);
         }
@@ -337,24 +325,31 @@ const AssembliesPage: React.FC = () => {
                 }
             />
 
-            <Box sx={{ margin: 2 }}>
-                <AssemblySelector
-                    assemblies={assemblies}
-                    selectedAssemblyId={selectedAssemblyId}
-                    handleAssemblyChange={handleAssemblyChange}
-                    handleNameChange={handleNameChange}
-                    handleFlipOrientation={handleFlipOrientation}
-                    handleFlipLayers={handleFlipLayers} // Assuming flip layers is the same as flip orientation
-                />
-                {isLoadingAssemblies && <p>Loading...</p>}
-                {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}
-                {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length === 0 && (
-                    <p>No layers found.</p>
-                )}
-                {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length > 0 && (
-                    <AssemblyView assembly={selectedAssembly} />
-                )}
-            </Box>
+            <Grid container spacing={1} sx={{ margin: 2 }}>
+                <Grid size={2}>
+                    <AssemblySidebar
+                        assemblies={assemblies}
+                        selectedAssemblyId={selectedAssemblyId}
+                        handleAssemblyChange={handleAssemblyChange}
+                    />
+                </Grid>
+                <Grid size={10} sx={{ borderLeft: '1px solid #ccc' }}>
+                    <AssemblyButtons
+                        selectedAssemblyId={selectedAssemblyId}
+                        handleNameChange={handleNameChange}
+                        handleFlipOrientation={handleFlipOrientation}
+                        handleFlipLayers={handleFlipLayers}
+                    />
+                    {isLoadingAssemblies && <p>Loading...</p>}
+                    {!isLoadingAssemblies && selectedAssembly === null && <p>No assemblies available.</p>}
+                    {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length === 0 && (
+                        <p>No layers found.</p>
+                    )}
+                    {!isLoadingAssemblies && selectedAssembly && selectedAssembly.layers.length > 0 && (
+                        <AssemblyView assembly={selectedAssembly} />
+                    )}
+                </Grid>
+            </Grid>
 
             {/* File Upload Dialog */}
             <input
