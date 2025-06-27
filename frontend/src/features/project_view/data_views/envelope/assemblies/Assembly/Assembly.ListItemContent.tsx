@@ -59,7 +59,7 @@ const EditNameButton: React.FC<{ assembly: AssemblyType; onEdit: (id: number, na
     onEdit,
 }) => {
     return (
-        <Tooltip className="edit-assembly-name-button" title="Edit Assembly Name" placement="right" arrow>
+        <Tooltip className="edit-assembly-name-button" title="Assembly Name" placement="right" arrow>
             <IconButton
                 size="small"
                 onClick={e => {

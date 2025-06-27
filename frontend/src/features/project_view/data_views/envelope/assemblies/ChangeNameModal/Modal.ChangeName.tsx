@@ -11,7 +11,6 @@ interface ChangeNameModalProps {
 const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ assemblyName, open, onClose, onSubmit }) => {
     const [newName, setNewName] = useState(assemblyName);
 
-    // Reset the name when the modal opens with a different assembly
     useEffect(() => {
         setNewName(assemblyName);
     }, [assemblyName, open]);
@@ -25,24 +24,33 @@ const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ assemblyName, open, o
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
             handleSubmit();
         }
     };
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-            <DialogTitle>Change Assembly Name</DialogTitle>
+            <DialogTitle>Assembly Name</DialogTitle>
             <DialogContent>
-                <TextField
-                    autoFocus
-                    margin="dense"
-                    label="New Assembly Name"
-                    type="text"
-                    fullWidth
-                    value={newName}
-                    onChange={e => setNewName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                />
+                <form
+                    onSubmit={e => {
+                        e.preventDefault();
+                        handleSubmit();
+                    }}
+                >
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Assembly Name"
+                        type="text"
+                        fullWidth
+                        defaultValue={newName}
+                        onChange={e => setNewName(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                    />
+                </form>
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} color="secondary">
