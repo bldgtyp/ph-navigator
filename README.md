@@ -20,8 +20,6 @@
 
 ## Assemblies (UI):
 
-- [ ] Sidebar listing of all assemblies
-- [ ] Duplicate Assembly Button
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths?
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
