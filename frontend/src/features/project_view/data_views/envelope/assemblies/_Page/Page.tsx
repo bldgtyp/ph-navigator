@@ -345,12 +345,12 @@ const AssembliesPage: React.FC = () => {
                         onAssemblyChange={handleAssemblyChange}
                         onAddAssembly={handleAddAssembly}
                         onDeleteAssembly={handleDeleteAssembly}
+                        onNameChange={handleNameChange}
                     />
                 </Grid>
                 <Grid size={10} sx={{ borderLeft: '1px solid #ccc' }}>
                     <AssemblyButtons
                         selectedAssemblyId={selectedAssemblyId}
-                        onNameChange={handleNameChange}
                         onFlipOrientation={handleFlipOrientation}
                         onFlipLayers={handleFlipLayers}
                         onDuplicateAssembly={handleDuplicateAssembly}

@@ -1,8 +1,7 @@
-import React, { useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import { Box, Button, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 
 const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: string }> = ({
     onClick,
@@ -26,7 +25,6 @@ const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: 
 
 interface AssemblyButtonProps {
     selectedAssemblyId: number | null;
-    onNameChange: (assemblyId: number, newName: string) => void;
     onFlipOrientation: (assemblyId: number) => void;
     onFlipLayers: (assemblyId: number) => void;
     onDuplicateAssembly: (assemblyId: number) => void;
@@ -34,22 +32,11 @@ interface AssemblyButtonProps {
 
 const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
     selectedAssemblyId,
-    onNameChange,
     onFlipOrientation,
     onFlipLayers,
     onDuplicateAssembly,
 }) => {
     const userContext = useContext(UserContext);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
-
-    const handleSubmitNameChange = (newName: string) => {
-        if (selectedAssemblyId) {
-            onNameChange(selectedAssemblyId, newName);
-        }
-    };
 
     const handleSubmitFlipOrientation = () => {
         if (selectedAssemblyId) {
@@ -71,8 +58,6 @@ const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
 
     return userContext.user ? (
         <Box sx={{ display: 'flex', alignItems: 'top', justifyContent: 'right', gap: 2, marginBottom: 2 }}>
-            <ChangeNameModal open={isModalOpen} onClose={closeModal} onSubmit={handleSubmitNameChange} />
-            <AssemblyButton onClick={openModal} text="Change Name" />
             <AssemblyButton
                 onClick={handleSubmitFlipOrientation}
                 text="Flip Orientation"

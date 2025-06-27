@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button } from '@mui/material';
 
 interface ChangeNameModalProps {
+    assemblyName: string;
     open: boolean;
     onClose: () => void;
     onSubmit: (newName: string) => void;
 }
 
-const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ open, onClose, onSubmit }) => {
-    const [newName, setNewName] = useState('');
+const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ assemblyName, open, onClose, onSubmit }) => {
+    const [newName, setNewName] = useState(assemblyName);
 
     const handleSubmit = () => {
         onSubmit(newName);
-        setNewName(''); // Clear the input field
-        onClose(); // Close the modal
+        setNewName(newName);
+        onClose();
     };
 
     return (
@@ -26,7 +27,7 @@ const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ open, onClose, onSubm
                     label="New Assembly Name"
                     type="text"
                     fullWidth
-                    value={newName}
+                    defaultValue={assemblyName}
                     onChange={e => setNewName(e.target.value)}
                 />
             </DialogContent>

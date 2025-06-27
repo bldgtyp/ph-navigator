@@ -1,8 +1,10 @@
-import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Tooltip } from '@mui/material';
+import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/material';
 import { AssemblyType } from '../../_types/Assembly';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-import RemoveCircleOutlineOutlinedIcon from '@mui/icons-material/RemoveCircleOutlineOutlined';
+import ModeEditOutlinedIcon from '@mui/icons-material/ModeEditOutlined';
+import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
+import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 
 const AddAssemblyButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     return (
@@ -26,6 +28,7 @@ interface AssemblySelectorProps {
     onAssemblyChange: (assemblyId: number) => void;
     onAddAssembly: () => void;
     onDeleteAssembly: (assemblyId: number) => void;
+    onNameChange: (assemblyId: number, newName: string) => void; // Add this prop
 }
 
 const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
@@ -34,14 +37,30 @@ const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
     onAssemblyChange,
     onAddAssembly,
     onDeleteAssembly,
+    onNameChange,
 }) => {
     const userContext = useContext(UserContext);
+
+    // For the Name Change Modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [assemblyId, setAssemblyId] = useState<number>(0);
+    const [assemblyName, setAssemblyName] = useState<string>('');
+    const handleNameChangeModalOpen = () => setIsModalOpen(true);
+    const handleNameChangeModalClose = () => setIsModalOpen(false);
 
     // Create a sorted copy of the assemblies array
     const sortedAssemblies = [...assemblies].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
         <>
+            <ChangeNameModal
+                assemblyName={assemblyName}
+                open={isModalOpen}
+                onClose={handleNameChangeModalClose}
+                onSubmit={value => {
+                    onNameChange(assemblyId, value);
+                }}
+            />
             {userContext.user ? <AddAssemblyButton onClick={onAddAssembly} /> : null}
 
             <List dense>
@@ -59,34 +78,63 @@ const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
                                 wordWrap: 'break-word',
                             }}
                         >
-                            <ListItemText
-                                key={assembly.id}
-                                slotProps={{
-                                    primary: {
-                                        sx: {
-                                            wordBreak: 'break-word',
-                                            whiteSpace: 'normal',
-                                            overflow: 'hidden',
+                            <Stack direction="row" alignItems="center" width="100%">
+                                <ListItemText
+                                    key={assembly.id}
+                                    slotProps={{
+                                        primary: {
+                                            sx: {
+                                                wordBreak: 'break-word',
+                                                whiteSpace: 'normal',
+                                                overflow: 'hidden',
+                                            },
                                         },
-                                    },
-                                }}
-                                primary={assembly.name}
-                                sx={{ width: '100%' }}
-                            />
-                        </ListItemButton>
-
-                        {userContext.user ? (
-                            <Tooltip className="delete-assembly-button" title="Delete Assembly" placement="right" arrow>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => {
-                                        onDeleteAssembly(assembly.id);
                                     }}
-                                >
-                                    <RemoveCircleOutlineOutlinedIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                        ) : null}
+                                    primary={assembly.name}
+                                    sx={{ width: '100%' }}
+                                />
+
+                                {userContext.user && (
+                                    <>
+                                        <Tooltip
+                                            className="edit-assembly-name-button"
+                                            title="Edit Assembly Name"
+                                            placement="right"
+                                            arrow
+                                        >
+                                            <IconButton
+                                                size="small"
+                                                onClick={e => {
+                                                    e.preventDefault();
+                                                    setAssemblyName(assembly.name);
+                                                    setAssemblyId(assembly.id);
+                                                    handleNameChangeModalOpen();
+                                                }}
+                                            >
+                                                <ModeEditOutlinedIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        <Tooltip
+                                            className="delete-assembly-button"
+                                            title="Delete Assembly"
+                                            placement="right"
+                                            arrow
+                                        >
+                                            <IconButton
+                                                size="small"
+                                                onClick={e => {
+                                                    e.preventDefault();
+                                                    onDeleteAssembly(assembly.id);
+                                                }}
+                                            >
+                                                <ClearOutlinedIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </>
+                                )}
+                            </Stack>
+                        </ListItemButton>
                     </ListItem>
                 ))}
             </List>
