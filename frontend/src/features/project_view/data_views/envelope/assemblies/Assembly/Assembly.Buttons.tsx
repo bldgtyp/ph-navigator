@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Box, Button, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
+import { AssemblyButtonProps } from './Assembly.Buttons.Types';
 
 const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: string }> = ({
     onClick,
@@ -22,13 +23,6 @@ const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: 
         </Tooltip>
     );
 };
-
-interface AssemblyButtonProps {
-    selectedAssemblyId: number | null;
-    onFlipOrientation: (assemblyId: number) => void;
-    onFlipLayers: (assemblyId: number) => void;
-    onDuplicateAssembly: (assemblyId: number) => void;
-}
 
 const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
     selectedAssemblyId,

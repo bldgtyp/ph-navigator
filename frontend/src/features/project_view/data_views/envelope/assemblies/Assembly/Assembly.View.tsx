@@ -9,7 +9,7 @@ import Layer from '../Layer/Layer';
 import { LayerType } from '../../_types/Layer';
 import { AssemblyType } from '../../_types/Assembly';
 
-export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
+const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
     const [layers, setLayers] = useState(assembly.layers);
 
     useEffect(() => {
@@ -97,3 +97,5 @@ export const AssemblyView: React.FC<{ assembly: AssemblyType }> = ({ assembly })
         </Box>
     );
 };
+
+export default AssemblyView;
