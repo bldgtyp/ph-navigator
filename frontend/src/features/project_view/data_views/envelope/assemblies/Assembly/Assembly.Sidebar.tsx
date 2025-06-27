@@ -4,17 +4,14 @@ import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 import AssemblyListHeader from './Assembly.ListHeader';
 import AssemblyListItemContent from './Assembly.ListItemContent';
-import { AssemblySelectorProps } from './Assembly.Sidebar.Types';
+import { useAssembly } from '../_contexts/Assembly.Context';
+import { useLoadAssemblies } from '../_contexts/Assembly.Hooks';
 
-const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
-    assemblies,
-    selectedAssemblyId,
-    onAssemblyChange,
-    onAddAssembly,
-    onDeleteAssembly,
-    onNameChange,
-}) => {
+const AssemblySidebar: React.FC = () => {
     const userContext = useContext(UserContext);
+    const assemblyContext = useAssembly();
+    const { handleAssemblyChange, handleAddAssembly, handleDeleteAssembly, handleNameChange } = useLoadAssemblies();
+
     const [nameChangeModal, setNameChangeModal] = useState({
         isOpen: false,
         assemblyId: 0,
@@ -22,7 +19,7 @@ const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
     });
 
     // Create a sorted copy of the assemblies array
-    const sortedAssemblies = [...assemblies].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedAssemblies = [...assemblyContext.assemblies].sort((a, b) => a.name.localeCompare(b.name));
 
     // Modal handling functions
     const openNameChangeModal = (id: number, name: string) => {
@@ -34,7 +31,7 @@ const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
     };
 
     const handleNameSubmit = (newName: string) => {
-        onNameChange(nameChangeModal.assemblyId, newName);
+        handleNameChange(nameChangeModal.assemblyId, newName);
         closeNameChangeModal();
     };
 
@@ -47,18 +44,18 @@ const AssemblySidebar: React.FC<AssemblySelectorProps> = ({
                 onSubmit={handleNameSubmit}
             />
 
-            <AssemblyListHeader showAddButton={!!userContext.user} onAddAssembly={onAddAssembly} />
+            <AssemblyListHeader showAddButton={!!userContext.user} onAddAssembly={handleAddAssembly} />
 
             <List dense>
                 {sortedAssemblies.map(assembly => (
                     <ListItem key={assembly.id} component="div" disablePadding>
                         <AssemblyListItemContent
                             assembly={assembly}
-                            isSelected={selectedAssemblyId === assembly.id}
+                            isSelected={assemblyContext.selectedAssemblyId === assembly.id}
                             showControls={!!userContext.user}
-                            onSelect={onAssemblyChange}
+                            onSelect={handleAssemblyChange}
                             onEditName={openNameChangeModal}
-                            onDelete={onDeleteAssembly}
+                            onDelete={handleDeleteAssembly}
                         />
                     </ListItem>
                 ))}

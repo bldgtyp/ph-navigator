@@ -2,7 +2,8 @@ import React, { useContext } from 'react';
 import { Box, Button, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-import { AssemblyButtonProps } from './Assembly.Buttons.Types';
+import { useAssembly } from '../_contexts/Assembly.Context';
+import { useLoadAssemblies } from '../_contexts/Assembly.Hooks';
 
 const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: string }> = ({
     onClick,
@@ -24,45 +25,27 @@ const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: 
     );
 };
 
-const AssemblyButtons: React.FC<AssemblyButtonProps> = ({
-    selectedAssemblyId,
-    onFlipOrientation,
-    onFlipLayers,
-    onDuplicateAssembly,
-}) => {
+const AssemblyButtons: React.FC = () => {
     const userContext = useContext(UserContext);
-
-    const handleSubmitFlipOrientation = () => {
-        if (selectedAssemblyId) {
-            onFlipOrientation(selectedAssemblyId);
-        }
-    };
-
-    const handleSubmitFlipLayers = () => {
-        if (selectedAssemblyId) {
-            onFlipLayers(selectedAssemblyId);
-        }
-    };
-
-    const handleDuplicateAssembly = () => {
-        if (selectedAssemblyId) {
-            onDuplicateAssembly(selectedAssemblyId);
-        }
-    };
+    const assemblyContext = useAssembly();
+    const { handleFlipOrientation, handleFlipLayers, handleDuplicateAssembly } = useLoadAssemblies();
 
     return userContext.user ? (
         <Box sx={{ display: 'flex', alignItems: 'top', justifyContent: 'right', gap: 2, marginBottom: 2 }}>
             <AssemblyButton
-                onClick={handleSubmitFlipOrientation}
+                onClick={() => handleFlipOrientation(assemblyContext.selectedAssemblyId)}
                 text="Flip Orientation"
                 hoverText="Flip the interior/exterior orientation."
             />
             <AssemblyButton
-                onClick={handleSubmitFlipLayers}
+                onClick={() => handleFlipLayers(assemblyContext.selectedAssemblyId)}
                 text="Flip Layers"
                 hoverText="Reverse the layers from inside to outside."
             />
-            <AssemblyButton onClick={handleDuplicateAssembly} text="Duplicate Assembly" />
+            <AssemblyButton
+                onClick={() => handleDuplicateAssembly(assemblyContext.selectedAssemblyId)}
+                text="Duplicate Assembly"
+            />
         </Box>
     ) : (
         <></>
