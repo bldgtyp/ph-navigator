@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button } from '@mui/material';
+import { useAssemblySidebar } from '../Assembly/Sidebar/Sidebar.Context';
 
-interface ChangeNameModalProps {
-    assemblyName: string;
-    open: boolean;
-    onClose: () => void;
-    onSubmit: (newName: string) => void;
-}
-
-const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ assemblyName, open, onClose, onSubmit }) => {
-    const [newName, setNewName] = useState(assemblyName);
+const ChangeNameModal: React.FC = () => {
+    const { nameChangeModal, closeNameChangeModal, handleNameSubmit } = useAssemblySidebar();
+    const [newName, setNewName] = useState(nameChangeModal.assemblyName);
 
     useEffect(() => {
-        setNewName(assemblyName);
-    }, [assemblyName, open]);
+        setNewName(nameChangeModal.assemblyName);
+    }, [nameChangeModal.assemblyName, nameChangeModal.isOpen]);
 
     const handleSubmit = () => {
         if (newName.trim()) {
-            onSubmit(newName.trim());
+            handleNameSubmit(newName.trim());
         }
-        onClose();
+        closeNameChangeModal();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -31,7 +26,7 @@ const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ assemblyName, open, o
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+        <Dialog open={nameChangeModal.isOpen} onClose={closeNameChangeModal} fullWidth maxWidth="xs">
             <DialogTitle>Assembly Name</DialogTitle>
             <DialogContent>
                 <form
@@ -53,10 +48,14 @@ const ChangeNameModal: React.FC<ChangeNameModalProps> = ({ assemblyName, open, o
                 </form>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose} color="secondary">
+                <Button onClick={closeNameChangeModal} color="secondary">
                     Cancel
                 </Button>
-                <Button onClick={handleSubmit} color="primary" disabled={!newName.trim() || newName === assemblyName}>
+                <Button
+                    onClick={handleSubmit}
+                    color="primary"
+                    disabled={!newName.trim() || newName === nameChangeModal.assemblyName}
+                >
                     Save
                 </Button>
             </DialogActions>

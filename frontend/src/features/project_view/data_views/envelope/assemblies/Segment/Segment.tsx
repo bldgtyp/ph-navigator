@@ -3,7 +3,7 @@ import { Box, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 
-import ModalLayerSegment from '../SegmentPropertiesModal/LayerSegmentProperties';
+import SegmentPropertiesModal from '../SegmentPropertiesModal/LayerSegmentProperties';
 import { SegmentType } from '../../_types/Segment';
 import { useLayerSegmentHooks } from './Segment.Hooks';
 
@@ -45,7 +45,7 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
             </svg>
 
             {/* Modal for input */}
-            <ModalLayerSegment
+            <SegmentPropertiesModal
                 isModalOpen={hooks.isModalOpen}
                 segmentId={segment.id}
                 materialId={hooks.materialID}

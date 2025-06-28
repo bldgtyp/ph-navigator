@@ -3,26 +3,23 @@ import { Grid } from '@mui/material';
 
 import { useMaterials } from '../../_contexts/MaterialsContext';
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-import { AssemblyProvider, useAssembly } from '../_contexts/Assembly.Context';
+import { AssemblyProvider, useAssemblyContext } from '../Assembly/Assembly.Context';
+import { AssemblySidebarProvider } from '../Assembly/Sidebar/Sidebar.Context';
 
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import ContentBlock from '../../../_components/ContentBlock';
 import { headerButtons } from './HeaderButtons';
-import AssemblyButtons from '../Assembly/Assembly.Buttons';
-import AssemblyView from '../Assembly/Assembly.View';
-import AssemblySidebar from '../Assembly/Assembly.Sidebar';
-import { useLoadAssemblies } from '../_contexts/Assembly.Hooks';
+import AssemblyEditButtons from '../Assembly/Assembly.EditButtons';
+import Assembly from '../Assembly/Assembly';
+import AssemblySidebar from '../Assembly/Sidebar/Sidebar';
 import { AssemblyType } from '../../_types/Assembly';
 
-type AssemblyDetailProps = {
-    selectedAssembly: AssemblyType | null;
-    isLoading: boolean;
-};
-
 // Component to render the appropriate content based on loading state and data availability
-const AssemblyDetail: React.FC<AssemblyDetailProps> = ({ selectedAssembly, isLoading }) => {
-    if (isLoading) {
+const AssemblyView: React.FC<{ selectedAssembly: AssemblyType | null }> = ({ selectedAssembly }) => {
+    const assemblyContext = useAssemblyContext();
+
+    if (assemblyContext.isLoadingAssemblies) {
         return <p>Loading...</p>;
     }
 
@@ -34,12 +31,12 @@ const AssemblyDetail: React.FC<AssemblyDetailProps> = ({ selectedAssembly, isLoa
         return <p>No layers found.</p>;
     }
 
-    return <AssemblyView assembly={selectedAssembly} />;
+    return <Assembly assembly={selectedAssembly} />;
 };
 
 const AssemblyContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
-    const assemblyContext = useAssembly();
+    const assemblyContext = useAssemblyContext();
     const materialContext = useMaterials();
     const {
         selectedAssembly,
@@ -47,7 +44,7 @@ const AssemblyContentBlock: React.FC = () => {
         handleUploadConstructions,
         handleDownloadConstructions,
         handleFileSelected,
-    } = useLoadAssemblies();
+    } = useAssemblyContext();
 
     const headerButtonsConfig = userContext.user
         ? headerButtons(
@@ -75,11 +72,8 @@ const AssemblyContentBlock: React.FC = () => {
 
                 {/* Main Content Column */}
                 <Grid size={10} sx={{ borderLeft: '1px solid #ccc' }}>
-                    <AssemblyButtons />
-                    <AssemblyDetail
-                        selectedAssembly={selectedAssembly}
-                        isLoading={assemblyContext.isLoadingAssemblies}
-                    />
+                    <AssemblyEditButtons />
+                    <AssemblyView selectedAssembly={selectedAssembly} />
                 </Grid>
             </Grid>
 
@@ -97,11 +91,13 @@ const AssemblyContentBlock: React.FC = () => {
 
 const AssembliesPage: React.FC = () => {
     return (
-        <AssemblyProvider>
-            <ContentBlock>
-                <AssemblyContentBlock />
-            </ContentBlock>
-        </AssemblyProvider>
+        <ContentBlock>
+            <AssemblyProvider>
+                <AssemblySidebarProvider>
+                    <AssemblyContentBlock />
+                </AssemblySidebarProvider>
+            </AssemblyProvider>
+        </ContentBlock>
     );
 };
 

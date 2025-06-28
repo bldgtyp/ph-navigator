@@ -2,8 +2,7 @@ import React, { useContext } from 'react';
 import { Box, Button, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-import { useAssembly } from '../_contexts/Assembly.Context';
-import { useLoadAssemblies } from '../_contexts/Assembly.Hooks';
+import { useAssemblyContext } from './Assembly.Context';
 
 const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: string }> = ({
     onClick,
@@ -25,25 +24,24 @@ const AssemblyButton: React.FC<{ onClick: () => void; text: string; hoverText?: 
     );
 };
 
-const AssemblyButtons: React.FC = () => {
+const AssemblyEditButtons: React.FC = () => {
     const userContext = useContext(UserContext);
-    const assemblyContext = useAssembly();
-    const { handleFlipOrientation, handleFlipLayers, handleDuplicateAssembly } = useLoadAssemblies();
+    const assemblyContext = useAssemblyContext();
 
     return userContext.user ? (
         <Box sx={{ display: 'flex', alignItems: 'top', justifyContent: 'right', gap: 2, marginBottom: 2 }}>
             <AssemblyButton
-                onClick={() => handleFlipOrientation(assemblyContext.selectedAssemblyId)}
+                onClick={() => assemblyContext.handleFlipOrientation(assemblyContext.selectedAssemblyId)}
                 text="Flip Orientation"
                 hoverText="Flip the interior/exterior orientation."
             />
             <AssemblyButton
-                onClick={() => handleFlipLayers(assemblyContext.selectedAssemblyId)}
+                onClick={() => assemblyContext.handleFlipLayers(assemblyContext.selectedAssemblyId)}
                 text="Flip Layers"
                 hoverText="Reverse the layers from inside to outside."
             />
             <AssemblyButton
-                onClick={() => handleDuplicateAssembly(assemblyContext.selectedAssemblyId)}
+                onClick={() => assemblyContext.handleDuplicateAssembly(assemblyContext.selectedAssemblyId)}
                 text="Duplicate Assembly"
             />
         </Box>
@@ -52,4 +50,4 @@ const AssemblyButtons: React.FC = () => {
     );
 };
 
-export default AssemblyButtons;
+export default AssemblyEditButtons;

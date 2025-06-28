@@ -1,16 +1,28 @@
+import React, { createContext, useContext, useRef, useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAssembly } from './Assembly.Context';
+
 import { getWithAlert } from '../../../../../../api/getWithAlert';
-import { useEffect, useMemo } from 'react';
-import { AssemblyType } from '../../_types/Assembly';
 import { postWithAlert } from '../../../../../../api/postWithAlert';
 import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 import { patchWithAlert } from '../../../../../../api/patchWithAlert';
-import { useMaterials } from '../../_contexts/MaterialsContext';
 import { postFileWithAlert } from '../../../../../../api/postFileWithAlert';
 import { fetchAndCacheMaterials } from '../../_contexts/MaterialsContext.Utility';
 
-interface UseLoadAssembliesReturn {
+import { AssemblyType } from '../../_types/Assembly';
+import { useMaterials } from '../../_contexts/MaterialsContext';
+
+export interface AssemblyContextType {
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
+    isRefreshing: boolean;
+    setIsRefreshing: React.Dispatch<React.SetStateAction<boolean>>;
+    refreshMessage: string | null;
+    setRefreshMessage: React.Dispatch<React.SetStateAction<string | null>>;
+    isLoadingAssemblies: boolean;
+    setIsLoadingAssemblies: React.Dispatch<React.SetStateAction<boolean>>;
+    assemblies: AssemblyType[];
+    setAssemblies: React.Dispatch<React.SetStateAction<AssemblyType[]>>;
+    selectedAssemblyId: number | null;
+    setSelectedAssemblyId: React.Dispatch<React.SetStateAction<number | null>>;
     selectedAssembly: AssemblyType | null;
     handleAssemblyChange: (assemblyId: number) => Promise<void>;
     handleAddAssembly: () => Promise<void>;
@@ -25,32 +37,40 @@ interface UseLoadAssembliesReturn {
     handleDuplicateAssembly: (assemblyId: number | null) => Promise<void>;
 }
 
-export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
+const AssemblyContext = createContext<AssemblyContextType | undefined>(undefined);
+
+export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { projectId } = useParams();
-    const assemblyContext = useAssembly();
     const materialContext = useMaterials();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+    const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
+    const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
+    const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
 
     const fetchAssemblies = async () => {
         console.log('fetchAssemblies', projectId);
         try {
             const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
-            assemblyContext.setAssemblies(response ?? []);
+            setAssemblies(response ?? []);
             return response ?? [];
         } catch (error) {
             console.error('Failed to fetch assemblies:', error);
             return [];
         } finally {
-            assemblyContext.setIsLoadingAssemblies(false);
+            setIsLoadingAssemblies(false);
         }
     };
 
     useEffect(() => {
+        console.log('useLoadAssemblies useEffect called', projectId);
         const initializeAssemblies = async () => {
             const fetchedAssemblies = await fetchAssemblies();
             if (fetchedAssemblies.length > 0) {
-                assemblyContext.setSelectedAssemblyId(fetchedAssemblies[0].id); // Set the first assembly as selected
+                setSelectedAssemblyId(fetchedAssemblies[0].id); // Set the first assembly as selected
             } else {
-                assemblyContext.setSelectedAssemblyId(null); // No assemblies available
+                setSelectedAssemblyId(null); // No assemblies available
             }
         };
 
@@ -59,12 +79,12 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
     }, [projectId]);
 
     const selectedAssembly = useMemo(() => {
-        return assemblyContext.assemblies.find(assembly => assembly.id === assemblyContext.selectedAssemblyId) || null;
-    }, [assemblyContext.assemblies, assemblyContext.selectedAssemblyId]);
+        return assemblies.find(assembly => assembly.id === selectedAssemblyId) || null;
+    }, [assemblies, selectedAssemblyId]);
 
     const handleAssemblyChange = async (assemblyId: number) => {
         console.log('handleAssemblyChange', assemblyId);
-        assemblyContext.setSelectedAssemblyId(assemblyId);
+        setSelectedAssemblyId(assemblyId);
         await fetchAssemblies();
     };
 
@@ -77,7 +97,7 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
                 const newAssembly = response;
                 console.log(`Assembly added successfully: ${newAssembly.id}`);
                 const updatedAssemblies = await fetchAssemblies();
-                assemblyContext.setSelectedAssemblyId(newAssembly.id);
+                setSelectedAssemblyId(newAssembly.id);
             }
         } catch (error) {
             console.error('Failed to add assembly:', error);
@@ -100,9 +120,9 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
 
             // Select the first assembly in the updated list, or set to null if none remain
             if (updatedAssemblies.length > 0) {
-                assemblyContext.setSelectedAssemblyId(updatedAssemblies[0].id);
+                setSelectedAssemblyId(updatedAssemblies[0].id);
             } else {
-                assemblyContext.setSelectedAssemblyId(null);
+                setSelectedAssemblyId(null);
             }
         } catch (error) {
             console.error(`Failed to delete Assembly ${assemblyId}:`, error);
@@ -117,10 +137,10 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
             });
 
             // Update the assemblies state
-            const updatedAssemblies = assemblyContext.assemblies.map(assembly =>
+            const updatedAssemblies = assemblies.map(assembly =>
                 assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
             );
-            assemblyContext.setAssemblies(updatedAssemblies);
+            setAssemblies(updatedAssemblies);
 
             // Ensure the selected assembly is updated
             handleAssemblyChange(assemblyId);
@@ -131,33 +151,33 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
 
     const handleRefreshMaterials = async () => {
         console.log('handleRefreshMaterials');
-        assemblyContext.setIsRefreshing(true);
-        assemblyContext.setRefreshMessage(null);
+        setIsRefreshing(true);
+        setRefreshMessage(null);
         try {
             await getWithAlert('assembly/refresh-db-materials-from-air-table');
             const fetchedMaterials = await fetchAndCacheMaterials();
             materialContext.setMaterials(fetchedMaterials);
-            assemblyContext.setRefreshMessage('Materials refreshed successfully!');
+            setRefreshMessage('Materials refreshed successfully!');
         } catch (error) {
-            assemblyContext.setRefreshMessage('Error loading Material Data. Please try again later.');
+            setRefreshMessage('Error loading Material Data. Please try again later.');
             console.error('Error loading Material Data:', error);
         } finally {
-            assemblyContext.setIsRefreshing(false);
+            setIsRefreshing(false);
         }
     };
 
     const handleUploadConstructions = async () => {
         console.log('handleUploadConstructions');
-        if (assemblyContext.fileInputRef.current) {
-            assemblyContext.fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
         }
-        assemblyContext.fileInputRef.current?.click();
+        fileInputRef.current?.click();
     };
 
     const handleDownloadConstructions = async () => {
         console.log('handleDownloadConstructions');
         try {
-            assemblyContext.setIsRefreshing(true); // Show loading state
+            setIsRefreshing(true); // Show loading state
 
             // Download the HBJSON data
             console.log(`Downloading Construction HBJSON for project: ${projectId}`);
@@ -202,7 +222,7 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
             console.error('Failed to download constructions:', error);
             alert(`Failed to download: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
-            assemblyContext.setIsRefreshing(false); // Hide loading state
+            setIsRefreshing(false); // Hide loading state
         }
     };
 
@@ -219,7 +239,7 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
 
         try {
             // Show loading state
-            assemblyContext.setIsRefreshing(true);
+            setIsRefreshing(true);
 
             // Upload the file
             console.log('Uploading file...');
@@ -236,12 +256,12 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
             await fetchAssemblies();
 
             // Reset the file input so the same file can be selected again
-            if (assemblyContext.fileInputRef.current) {
-                assemblyContext.fileInputRef.current.value = '';
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
             }
 
             // Hide loading state
-            assemblyContext.setIsRefreshing(false);
+            setIsRefreshing(false);
         }
     };
 
@@ -265,10 +285,10 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
             }
 
             // Update the assemblies state
-            const updatedAssemblies = assemblyContext.assemblies.map(assembly =>
+            const updatedAssemblies = assemblies.map(assembly =>
                 assembly.id === assemblyId ? { ...updatedAssembly } : assembly
             );
-            assemblyContext.setAssemblies(updatedAssemblies);
+            setAssemblies(updatedAssemblies);
 
             // Ensure the selected assembly is updated
             handleAssemblyChange(assemblyId);
@@ -297,10 +317,10 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
             }
 
             // Update the assemblies state
-            const updatedAssemblies = assemblyContext.assemblies.map(assembly =>
+            const updatedAssemblies = assemblies.map(assembly =>
                 assembly.id === assemblyId ? { ...updatedAssembly } : assembly
             );
-            assemblyContext.setAssemblies(updatedAssemblies);
+            setAssemblies(updatedAssemblies);
 
             // Ensure the selected assembly is updated
             handleAssemblyChange(assemblyId);
@@ -318,32 +338,57 @@ export const useLoadAssemblies = (): UseLoadAssembliesReturn => {
                 return;
             }
 
-            assemblyContext.setIsRefreshing(true);
+            setIsRefreshing(true);
             const response = await postWithAlert<AssemblyType>(`assembly/duplicate-assembly/${assemblyId}`);
             if (response) {
-                assemblyContext.setSelectedAssemblyId(response.id);
+                setSelectedAssemblyId(response.id);
             }
         } catch (error) {
             console.error('Error:', error);
             throw error;
         } finally {
             await fetchAssemblies();
-            assemblyContext.setIsRefreshing(false);
+            setIsRefreshing(false);
         }
     };
 
-    return {
-        selectedAssembly,
-        handleAssemblyChange,
-        handleAddAssembly,
-        handleDeleteAssembly,
-        handleNameChange,
-        handleRefreshMaterials,
-        handleUploadConstructions,
-        handleDownloadConstructions,
-        handleFileSelected,
-        handleFlipOrientation,
-        handleFlipLayers,
-        handleDuplicateAssembly,
-    };
+    return (
+        <AssemblyContext.Provider
+            value={{
+                fileInputRef,
+                isRefreshing,
+                setIsRefreshing,
+                refreshMessage,
+                setRefreshMessage,
+                isLoadingAssemblies,
+                setIsLoadingAssemblies,
+                assemblies,
+                setAssemblies,
+                selectedAssemblyId,
+                setSelectedAssemblyId,
+                selectedAssembly,
+                handleAssemblyChange,
+                handleAddAssembly,
+                handleDeleteAssembly,
+                handleNameChange,
+                handleRefreshMaterials,
+                handleUploadConstructions,
+                handleDownloadConstructions,
+                handleFileSelected,
+                handleFlipOrientation,
+                handleFlipLayers,
+                handleDuplicateAssembly,
+            }}
+        >
+            {children}
+        </AssemblyContext.Provider>
+    );
+};
+
+export const useAssemblyContext = (): AssemblyContextType => {
+    const context = useContext(AssemblyContext);
+    if (!context) {
+        throw new Error('useAssembly must be used within an AssemblyProvider');
+    }
+    return context;
 };

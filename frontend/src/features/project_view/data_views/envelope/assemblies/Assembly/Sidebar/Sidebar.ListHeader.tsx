@@ -1,12 +1,14 @@
 import { Button, Tooltip } from '@mui/material';
+import { useContext } from 'react';
+import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
 interface AssemblyListHeaderProps {
-    showAddButton: boolean;
     onAddAssembly: () => void;
 }
 
-const AssemblyListHeader: React.FC<AssemblyListHeaderProps> = ({ showAddButton, onAddAssembly }) => {
-    if (!showAddButton) return null;
+const AssemblyListHeader: React.FC<AssemblyListHeaderProps> = ({ onAddAssembly }) => {
+    const userContext = useContext(UserContext);
+    if (!userContext.user) return null;
 
     return (
         <Tooltip title="Add a new Assembly to the Project" placement="top" arrow>

@@ -230,7 +230,7 @@ const DeleteButton: React.FC<DeleteButtonProps> = props => {
     return null;
 };
 
-const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = props => {
+const SegmentPropertiesModal: React.FC<LayerSegmentWidthModalProps> = props => {
     const { isLoadingMaterials, materials } = useMaterials();
     const userContext = useContext(UserContext);
 
@@ -319,4 +319,4 @@ const ModalLayerSegment: React.FC<LayerSegmentWidthModalProps> = props => {
     );
 };
 
-export default ModalLayerSegment;
+export default SegmentPropertiesModal;
