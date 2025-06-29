@@ -3,35 +3,36 @@ import { datasheetRequired } from '../../data_views/_components/CheckboxForDatas
 import { getWithAlert } from '../../../../api/getWithAlert';
 
 /**
+ * Interface for the AirTable record structure
+ */
+interface AirTableRecord<T> {
+    id: string;
+    createdTime: string;
+    fields: T;
+}
+
+/**
+ * Interface for the hook return value
+ */
+interface LoadDataGridResult {
+    showModal: boolean;
+    rowData: Array<Record<string, any>>;
+}
+
+/**
  * Custom hook to load data grid rows from an AirTable API endpoint.
  *
  * @template T - The type of the fields in the AirTable record.
  * @param {Array<any>} defaultRow - The default row data to use when no data is fetched.
  * @param {string} page - The page identifier for the AirTable API endpoint.
  * @param {string} [projectId] - The optional project ID used to fetch data from the AirTable API.
- * @returns {{ showModal: boolean; rowData: any[] }} - An object containing:
- *   - `showModal`: A boolean indicating whether a loading modal should be displayed.
- *   - `rowData`: An array of row data fetched from the AirTable API or the default row data.
- *
- * @description
- * This hook fetches data from an AirTable API endpoint based on the provided `projectId` and `page`.
- * It sets a loading modal (`showModal`) to true while fetching data and hides it once the data is loaded.
- * If no data is fetched, the `defaultRow` is used as the row data.
- *
- * @example
- * const { showModal, rowData } = useLoadDataGridFromAirTable<MyFieldsType>([], "myPage", "12345");
+ * @returns {LoadDataGridResult} - An object containing showModal and rowData
  */
 function useLoadDataGridFromAirTable<T>(
-    defaultRow: Array<any>,
+    defaultRow: Array<Record<string, any>>,
     page: string,
     projectId?: string
-): { showModal: boolean; rowData: any[] } {
-    type AirTableRecord = {
-        id: string;
-        createdTime: string;
-        fields: T;
-    };
-
+): LoadDataGridResult {
     const [showModal, setShowModal] = useState(false);
     const [rowData, setRowData] = useState<Array<any>>(defaultRow);
 
@@ -46,21 +47,27 @@ function useLoadDataGridFromAirTable<T>(
         }, 1000);
 
         const fetchProjectData = async () => {
-            const records: AirTableRecord[] | null = await getWithAlert<AirTableRecord[] | null>(
+            const records: AirTableRecord<T>[] | null = await getWithAlert<AirTableRecord<T>[] | null>(
                 `air_table/${projectId}/${page}`
             );
 
-            // Use the AirTable record data as the row-data
-            // Add the record ID as the row-ID
-            const newRows: Record<string, any>[] = records
-                ? records.map(item => {
-                      item = datasheetRequired(item);
-                      return { id: item.id, ...item.fields };
-                  })
-                : [];
+            if (records && records.length > 0) {
+                // Use the AirTable record data as the row-data
+                // Add the record ID as the row-ID
+                const newRows: Record<string, any>[] = records.map(item => {
+                    item = datasheetRequired(item);
+                    return { id: item.id, ...item.fields };
+                });
 
-            newRows.length > 0 ? setRowData(newRows) : setRowData(defaultRow);
+                // Always sort the newRows Alphabetically by the 'DISPLAY_NAME' field, if it exists
+                if (newRows[0]?.DISPLAY_NAME !== undefined) {
+                    newRows.sort((a, b) => a.DISPLAY_NAME.localeCompare(b.DISPLAY_NAME));
+                }
 
+                setRowData(newRows);
+            } else {
+                setRowData(defaultRow);
+            }
             // Cancel the Model timer when the loading is done.
             clearTimeout(timerId);
             setShowModal(false);

@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import { Box } from '@mui/material';
 import StyledDataGrid from '../../../_styles/DataGrid';
 import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
