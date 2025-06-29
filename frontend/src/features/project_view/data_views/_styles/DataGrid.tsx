@@ -4,6 +4,7 @@ import React from 'react';
 import { DataGridProps } from '@mui/x-data-grid';
 import { styled } from '@mui/material/styles';
 import { DataGrid } from '@mui/x-data-grid';
+import { Box } from '@mui/material';
 
 const _StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     border: 0,
@@ -14,9 +15,11 @@ const _StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     '& .MuiDataGrid-virtualScrollerContent': {
         paddingBottom: '16px',
         transform: 'translate(0, 16px)', // Fix the vertical scrollbar position
+        overflowY: 'hidden', // Disable vertical scrolling
     },
     '& .MuiDataGrid-virtualScroller': {
-        overflow: 'auto',
+        overflowY: 'hidden', // Disable vertical scrolling
+        overflowX: 'auto', // Enable horizontal scrolling
     },
     '& .MuiDataGrid-columnsContainer': {
         backgroundColor: theme.palette.mode === 'light' ? '#fafafa' : '#1d1d1d',
@@ -41,6 +44,20 @@ const _StyledDataGrid = styled(DataGrid)(({ theme }) => ({
         display: 'flex',
         alignItems: 'center',
         padding: '8px',
+    },
+    // Only apply horizontal scroll behavior to the cells after the 'checkbox' column
+    '& .MuiDataGrid-cell:not([data-field="__check__"])': {
+        overflowX: 'auto',
+        whiteSpace: 'nowrap',
+        textOverflow: 'clip',
+        minWidth: 0,
+        '&::-webkit-scrollbar': {
+            height: '1px', // Thin scrollbar
+        },
+        '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(1, 113, 250, 0.53)',
+            borderRadius: '1px',
+        },
     },
     '& .MuiDataGrid-columnHeaders': {
         height: '40px', // Reduce header height
@@ -151,18 +168,27 @@ const _StyledDataGrid = styled(DataGrid)(({ theme }) => ({
 // Create a wrapper component to set default props
 const StyledDataGrid: React.FC<DataGridProps> = props => {
     return (
-        <_StyledDataGrid
-            rowHeight={40}
-            initialState={{
-                pagination: {
-                    paginationModel: { page: 0, pageSize: 10 },
-                },
+        <Box
+            className="datagrid-container"
+            sx={{
+                overflowX: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
             }}
-            pageSizeOptions={[10, 50, 100]}
-            scrollbarSize={16}
-            checkboxSelection
-            {...props} // Allow overriding defaults
-        />
+        >
+            <_StyledDataGrid
+                rowHeight={40}
+                initialState={{
+                    pagination: {
+                        paginationModel: { page: 0, pageSize: 10 },
+                    },
+                }}
+                pageSizeOptions={[10, 50, 100]}
+                scrollbarSize={16}
+                checkboxSelection
+                {...props} // Allow overriding defaults
+            />
+        </Box>
     );
 };
 

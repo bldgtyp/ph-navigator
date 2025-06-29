@@ -4,6 +4,7 @@ import { LinkIconWithDefault } from '../../../_components/LinkIconWithDefault';
 import { TooltipWithInfo } from '../../../_components/TooltipWithInfo';
 import { TooltipWithComment } from '../../../_components/TooltipWithComment';
 import { TooltipHeader } from '../../../_components/TooltipHeader';
+import { ImageView } from '../../../_components/ImageView';
 
 // ----------------------------------------------------------------------------
 // Define the table columns and rows to display
@@ -36,6 +37,17 @@ const tableFields = [
             TooltipHeader({
                 params,
                 title: "Do we have a PDF data-sheet with the product's performance values? Yes/No",
+            }),
+    },
+    {
+        field: 'PHOTOS',
+        headerName: 'Photos',
+        flex: 1,
+        renderCell: (params: any) => ImageView(params),
+        renderHeader: (params: any) =>
+            TooltipHeader({
+                params,
+                title: 'Site Photos of the Equipment Installed.',
             }),
     },
     { field: 'WATTS', headerName: 'Watts', flex: 1 },

@@ -41,12 +41,9 @@ const WindowUnitDataGrid: React.FC = () => {
     // Render the component
     return (
         <ContentBlock>
-            {' '}
             <LoadingModal showModal={showModal} />
             <ContentBlockHeader text="Window & Door Unit Types" />
-            <Box>
-                <StyledDataGrid rows={rowData} columns={adjustedColumns} />
-            </Box>
+            <StyledDataGrid rows={rowData} columns={adjustedColumns} />
         </ContentBlock>
     );
 };

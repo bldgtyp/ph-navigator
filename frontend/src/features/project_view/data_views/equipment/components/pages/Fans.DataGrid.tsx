@@ -25,22 +25,9 @@ const FanDataGrid: React.FC = () => {
     // Render the component
     return (
         <ContentBlock>
-            {' '}
             <LoadingModal showModal={showModal} />
             <ContentBlockHeader text="Fans" />
-            <Box>
-                <StyledDataGrid
-                    rows={rowData}
-                    columns={columns}
-                    initialState={{
-                        pagination: {
-                            paginationModel: { page: 0, pageSize: 10 },
-                        },
-                    }}
-                    pageSizeOptions={[10, 100]}
-                    checkboxSelection
-                />
-            </Box>
+            <StyledDataGrid rows={rowData} columns={columns} />
         </ContentBlock>
     );
 };
