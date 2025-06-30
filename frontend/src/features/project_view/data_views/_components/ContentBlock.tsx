@@ -1,17 +1,9 @@
 import { Box } from '@mui/material';
+import { contentBlockStyle } from '../_styles/ContentBlock.Style';
 
 const ContentBlock: React.FC<any> = props => {
     return (
-        <Box
-            className="content-block"
-            sx={{
-                outline: '1px solid #E0E0E0',
-                borderRadius: '8px',
-                paddingBottom: '10px',
-                marginBottom: '20px',
-                // overflow: 'hidden',
-            }}
-        >
+        <Box className="content-block" sx={contentBlockStyle}>
             {props.children}
         </Box>
     );

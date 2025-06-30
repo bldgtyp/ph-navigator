@@ -10,21 +10,22 @@ import ProjectContainer from './features/project_view/_components/ProjectContain
 import Settings from './features/project_browser/_components/Settings';
 import ProjectStatus from './features/project_view/data_views/project_status/Page';
 import WindowDataDashboard from './features/project_view/data_views/windows/components/WindowDataDashboard';
-import EnvelopeDataDashboard from './features/project_view/data_views/certification_results/envelope/_components/EnvelopeDataDashboard';
-import EquipmentDataDashboard from './features/project_view/data_views/equipment/components/EquipmentDataDashboard';
+import EnvelopeDataDashboard from './features/project_view/data_views/envelope/EnvelopeDataDashboard';
+import EquipmentDataDashboard from './features/project_view/data_views/equipment/EquipmentDataDashboard';
 import Viewer from './features/project_view/model_viewer/Viewer';
 import WindowUnitDataGrid from './features/project_view/data_views/windows/components/pages/WindowUnit.DataGrid';
 import FrameTypesDataGrid from './features/project_view/data_views/windows/components/pages/Frames.DataGrid';
 import GlazingTypesDataGrid from './features/project_view/data_views/windows/components/pages/Glazing.DataGrid';
-import MaterialListPage from './features/project_view/data_views/certification_results/envelope/material_list/Page';
-import AssembliesPage from './features/project_view/data_views/certification_results/envelope/assemblies/_Page/Page';
-import ErvDataGrid from './features/project_view/data_views/equipment/components/pages/Ervs.DataGrid';
-import PumpDataGrid from './features/project_view/data_views/equipment/components/pages/Pumps.DataGrid';
-import HotWaterTankDataGrid from './features/project_view/data_views/equipment/components/pages/HotWaterTanks.DataGrid';
-import FanDataGrid from './features/project_view/data_views/equipment/components/pages/Fans.DataGrid';
-import LightingDataGrid from './features/project_view/data_views/equipment/components/pages/Lighting.DataGrid';
-import AppliancesDataGrid from './features/project_view/data_views/equipment/components/pages/Appliances.DataGrid';
-import AirtightnessPage from './features/project_view/data_views/certification_results/envelope/airtightness/Page';
+import MaterialListPage from './features/project_view/data_views/envelope/material_list/Page';
+import AssembliesPage from './features/project_view/data_views/envelope/assemblies/_Page/Page';
+import ErvDataGrid from './features/project_view/data_views/equipment/pages/ERVs/Ervs.DataGrid';
+import PumpDataGrid from './features/project_view/data_views/equipment/pages/Pumps/Pumps.DataGrid';
+import HotWaterTankDataGrid from './features/project_view/data_views/equipment/pages/HotWaterTanks/HotWaterTanks.DataGrid';
+import FanDataGrid from './features/project_view/data_views/equipment/pages/Fans/Fans.DataGrid';
+import LightingDataGrid from './features/project_view/data_views/equipment/pages/Lighting/Lighting.DataGrid';
+import AppliancesDataGrid from './features/project_view/data_views/equipment/pages/Appliances/Appliances.DataGrid';
+import AirtightnessPage from './features/project_view/data_views/envelope/airtightness/Page';
+import EnvelopeSitePhotosPage from './features/project_view/data_views/envelope/site_photos/Page';
 
 const AppRoutes: React.FC = () => (
     <Routes>
@@ -54,6 +55,7 @@ const AppRoutes: React.FC = () => (
                 <Route path="material-layers" element={<MaterialListPage />} />
                 <Route path="assemblies" element={<AssembliesPage />} />
                 <Route path="airtightness" element={<AirtightnessPage />} />
+                <Route path="site-photos" element={<EnvelopeSitePhotosPage />} />
             </Route>
 
             <Route path="equipment-data" element={<EquipmentDataDashboard />}>

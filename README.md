@@ -14,7 +14,6 @@
 
 ## Material List:
 
-- [ ] Move to a new 'Photos' section
 - [ ] Add 'download' button to pdf/png file viewer
 - [ ] PDF full-view looks a little odd... clean up a little.
 
@@ -26,11 +25,19 @@
 - [ ] Display Material Legend
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
+- [ ] Delete Image
+- [ ] Delete Datasheet
+
+## Windows:
+
+- [ ] Window Frame Builder
+- [ ] Window Unit Builder
+- [ ] Window Frame Database (AirTable?)
+- [ ] Window Glazing Database (AirTable?)
 
 ## Pages:
 
 - [ ] Ventilation Balancing
-- [ ] Project Photographs / Datasheets
 
 ## 3D Model:
 
