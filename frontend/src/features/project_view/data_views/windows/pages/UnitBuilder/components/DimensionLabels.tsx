@@ -1,6 +1,5 @@
-// Update DimensionLabels.tsx
 import React from 'react';
-import { Box, Typography, Divider } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 interface DimensionLabelsProps {
     rowHeights: number[];
@@ -15,25 +14,27 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
     labelSpacing = 10,
     units = 'mm',
 }) => {
-    // Calculate cumulative positions for labels
-    const calculatePositions = (sizes: number[]) => {
+    // Calculate positions for grid lines and segment sizes
+    const calculateSegments = (sizes: number[]) => {
         const positions: number[] = [];
+        const segments: number[] = [];
         let current = 0;
 
         // Start position
         positions.push(0);
 
-        // Accumulate positions for each grid line
+        // Calculate positions and segments
         for (const size of sizes) {
+            segments.push(size); // Store the actual size between points
             current += size;
             positions.push(current);
         }
 
-        return positions;
+        return { positions, segments };
     };
 
-    const columnPositions = calculatePositions(columnWidths);
-    const rowPositions = calculatePositions(rowHeights);
+    const { positions: columnPositions, segments: columnSegments } = calculateSegments(columnWidths);
+    const { positions: rowPositions, segments: rowSegments } = calculateSegments(rowHeights);
 
     const totalWidth = columnPositions[columnPositions.length - 1];
     const totalHeight = rowPositions[rowPositions.length - 1];
@@ -42,6 +43,7 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
         <>
             {/* Vertical dimension lines (left side) */}
             <Box
+                id="dimensions-left"
                 sx={{
                     position: 'absolute',
                     top: 0,
@@ -53,9 +55,10 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                     alignItems: 'flex-end',
                 }}
             >
+                {/* Grid line positions */}
                 {rowPositions.map((position, index) => (
                     <Box
-                        key={`row-label-${index}`}
+                        key={`row-position-${index}`}
                         sx={{
                             position: 'absolute',
                             top: `${position}px`,
@@ -66,9 +69,6 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                             height: '20px',
                         }}
                     >
-                        <Typography variant="caption" sx={{ mr: 1 }}>
-                            {position} {index === rowPositions.length - 1 ? units : ''}
-                        </Typography>
                         <Box
                             sx={{
                                 width: labelSpacing,
@@ -79,12 +79,32 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                     </Box>
                 ))}
 
+                {/* Segment measurements (between grid lines) */}
+                {rowSegments.map((height, index) => (
+                    <Box
+                        key={`row-segment-${index}`}
+                        sx={{
+                            position: 'absolute',
+                            top: `${rowPositions[index] + height / 2}px`,
+                            right: labelSpacing + 5,
+                            transform: 'translateY(-50%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            height: '20px',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ mr: 1 }}>
+                            {height} {units}
+                        </Typography>
+                    </Box>
+                ))}
+
                 {/* Total height label */}
                 <Box
                     sx={{
                         position: 'absolute',
                         top: '50%',
-                        right: labelSpacing * 3,
+                        right: labelSpacing * 4.5,
                         transform: 'translateY(-50%) rotate(-90deg)',
                         transformOrigin: 'right center',
                         display: 'flex',
@@ -99,6 +119,7 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
 
             {/* Horizontal dimension lines (bottom) */}
             <Box
+                id="dimensions-bottom"
                 sx={{
                     position: 'absolute',
                     left: 0,
@@ -108,9 +129,10 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                     display: 'flex',
                 }}
             >
+                {/* Grid line positions */}
                 {columnPositions.map((position, index) => (
                     <Box
-                        key={`col-label-${index}`}
+                        key={`col-position-${index}`}
                         sx={{
                             position: 'absolute',
                             left: `${position}px`,
@@ -128,8 +150,25 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                                 bgcolor: 'grey.500',
                             }}
                         />
-                        <Typography variant="caption" sx={{ mt: 1 }}>
-                            {position} {index === columnPositions.length - 1 ? units : ''}
+                    </Box>
+                ))}
+
+                {/* Segment measurements (between grid lines) */}
+                {columnSegments.map((width, index) => (
+                    <Box
+                        key={`col-segment-${index}`}
+                        sx={{
+                            position: 'absolute',
+                            left: `${columnPositions[index] + width / 2}px`,
+                            top: labelSpacing + 5,
+                            transform: 'translateX(-50%)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Typography variant="caption">
+                            {width} {units}
                         </Typography>
                     </Box>
                 ))}
@@ -139,7 +178,7 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                     sx={{
                         position: 'absolute',
                         left: '50%',
-                        bottom: 0,
+                        bottom: -labelSpacing * 2,
                         transform: 'translateX(-50%)',
                         display: 'flex',
                         alignItems: 'center',

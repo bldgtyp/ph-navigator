@@ -61,7 +61,11 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
                                     onBlur={() => setEditingCol(null)}
                                     onKeyDown={e => e.key === 'Enter' && setEditingCol(null)}
                                     sx={{ width: '70px' }}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    slotProps={{
+                                        input: {
+                                            style: { textAlign: 'center' },
+                                        },
+                                    }}
                                 />
                             ) : (
                                 <>
@@ -101,7 +105,11 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
                                     onBlur={() => setEditingRow(null)}
                                     onKeyDown={e => e.key === 'Enter' && setEditingRow(null)}
                                     sx={{ width: '70px' }}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    slotProps={{
+                                        input: {
+                                            style: { textAlign: 'center' },
+                                        },
+                                    }}
                                 />
                             ) : (
                                 <>

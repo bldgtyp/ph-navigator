@@ -23,8 +23,8 @@ const WindowGrid: React.FC<WindowGridProps> = ({ gridData, isPositionOccupied, a
             sx={{
                 position: 'relative',
                 // Add padding for dimension labels
-                pl: 6,
-                pb: 6,
+                pl: 10,
+                pb: 10,
                 pt: 1,
                 pr: 1,
                 mt: 4, // Additional margin at top for future enhancements
