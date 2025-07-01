@@ -79,6 +79,31 @@ export const useWindowGrid = () => {
         [gridData.columnWidths, gridData.rowHeights]
     );
 
+    // Grid Sizing
+    const updateColumnWidth = useCallback(
+        (index: number, newWidth: number) => {
+            if (index < 0 || index >= gridData.columnWidths.length) return;
+
+            setGridData(prev => ({
+                ...prev,
+                columnWidths: prev.columnWidths.map((width, i) => (i === index ? newWidth : width)),
+            }));
+        },
+        [gridData.columnWidths]
+    );
+
+    const updateRowHeight = useCallback(
+        (index: number, newHeight: number) => {
+            if (index < 0 || index >= gridData.rowHeights.length) return;
+
+            setGridData(prev => ({
+                ...prev,
+                rowHeights: prev.rowHeights.map((height, i) => (i === index ? newHeight : height)),
+            }));
+        },
+        [gridData.rowHeights]
+    );
+
     return {
         gridData,
         isPositionOccupied,
@@ -86,5 +111,7 @@ export const useWindowGrid = () => {
         addColumn,
         addSash,
         getCellSize,
+        updateColumnWidth,
+        updateRowHeight,
     };
 };
