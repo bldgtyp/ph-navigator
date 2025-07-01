@@ -5,8 +5,8 @@ import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
 import useLoadDataGridFromAirTable from '../../../../model_viewer/_hooks/useLoadDataGridFromAirTable';
 import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
-import tableFields from './Frames.TableFields';
-import { FrameTypesRecord } from '../../types/Frames';
+import tableFields from './WindowUnit.TableFields';
+import { WindowUnitTypesRecord } from './WindowUnits.Types';
 import ContentBlock from '../../../_components/ContentBlock';
 
 // Create the columns object based on tableFields and then
@@ -15,29 +15,36 @@ import ContentBlock from '../../../_components/ContentBlock';
 const columns = generateGridColumns(tableFields);
 const defaultRow = generateDefaultRow(tableFields);
 
-const FrameTypesDataGrid: React.FC = () => {
+const WindowUnitDataGrid: React.FC = () => {
     // Load in the table data from the Database
     const { projectId } = useParams();
-    const { showModal, rowData } = useLoadDataGridFromAirTable<FrameTypesRecord>(
+    const { showModal, rowData } = useLoadDataGridFromAirTable<WindowUnitTypesRecord>(
         defaultRow,
-        'WINDOW_FRAME_TYPES',
+        'window_units',
         projectId
     );
 
     // --------------------------------------------------------------------------
     // Update columns dynamically when rowData changes
-    const adjustedColumns = useDynamicColumns(columns, rowData, ['DISPLAY_NAME', 'OPERATION', 'LOCATION']);
+    const adjustedColumns = useDynamicColumns(columns, rowData, [
+        'DISPLAY_NAME',
+        'OPERATION',
+        'GLAZING_NAME',
+        'FRAME ELEMENT NAME: LEFT',
+        'FRAME ELEMENT NAME: RIGHT',
+        'FRAME ELEMENT NAME: TOP',
+        'FRAME ELEMENT NAME: BOTTOM',
+    ]);
 
-    // Set the column state to the adjusted columns
     // --------------------------------------------------------------------------
     // Render the component
     return (
         <ContentBlock>
             <LoadingModal showModal={showModal} />
-            <ContentBlockHeader text="Window & Door Frames" />
+            <ContentBlockHeader text="Window & Door Unit Types" />
             <StyledDataGrid rows={rowData} columns={adjustedColumns} />
         </ContentBlock>
     );
 };
 
-export default FrameTypesDataGrid;
+export default WindowUnitDataGrid;

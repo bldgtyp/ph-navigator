@@ -9,13 +9,14 @@ import Projects from './features/project_browser/_components/Projects';
 import ProjectContainer from './features/project_view/_components/ProjectContainer';
 import Settings from './features/project_browser/_components/Settings';
 import ProjectStatus from './features/project_view/data_views/project_status/Page';
-import WindowDataDashboard from './features/project_view/data_views/windows/components/WindowDataDashboard';
+import WindowDataDashboard from './features/project_view/data_views/windows/WindowDataDashboard';
 import EnvelopeDataDashboard from './features/project_view/data_views/envelope/EnvelopeDataDashboard';
 import EquipmentDataDashboard from './features/project_view/data_views/equipment/EquipmentDataDashboard';
 import Viewer from './features/project_view/model_viewer/Viewer';
-import WindowUnitDataGrid from './features/project_view/data_views/windows/components/pages/WindowUnit.DataGrid';
-import FrameTypesDataGrid from './features/project_view/data_views/windows/components/pages/Frames.DataGrid';
-import GlazingTypesDataGrid from './features/project_view/data_views/windows/components/pages/Glazing.DataGrid';
+import WindowUnitDataGrid from './features/project_view/data_views/windows/pages/Units/WindowUnit.DataGrid';
+import FrameTypesDataGrid from './features/project_view/data_views/windows/pages/Frames/Frames.DataGrid';
+import GlazingTypesDataGrid from './features/project_view/data_views/windows/pages/Glazing/Glazing.DataGrid';
+import WindowUnits from './features/project_view/data_views/windows/pages/UnitBuilder/Page';
 import MaterialListPage from './features/project_view/data_views/envelope/material_list/Page';
 import AssembliesPage from './features/project_view/data_views/envelope/assemblies/_Page/Page';
 import ErvDataGrid from './features/project_view/data_views/equipment/pages/ERVs/Ervs.DataGrid';
@@ -48,6 +49,7 @@ const AppRoutes: React.FC = () => (
                 <Route path="window-glazing-types" element={<GlazingTypesDataGrid />} />
                 <Route path="window-frame-types" element={<FrameTypesDataGrid />} />
                 <Route path="window-unit-type" element={<WindowUnitDataGrid />} />
+                <Route path="window-unit-builder" element={<WindowUnits />} />
             </Route>
 
             <Route path="envelope-data" element={<EnvelopeDataDashboard />}>

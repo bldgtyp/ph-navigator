@@ -1,3 +1,4 @@
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import StyledDataGrid from '../../../_styles/DataGrid';
 import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
@@ -5,8 +6,8 @@ import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
 import useLoadDataGridFromAirTable from '../../../../model_viewer/_hooks/useLoadDataGridFromAirTable';
 import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
-import tableFields from './WindowUnit.TableFields';
-import { WindowUnitTypesRecord } from '../../types/WindowUnits';
+import tableFields from './Glazing.TableFields';
+import { GlazingTypesRecord } from './Glazing.Types';
 import ContentBlock from '../../../_components/ContentBlock';
 
 // Create the columns object based on tableFields and then
@@ -15,36 +16,29 @@ import ContentBlock from '../../../_components/ContentBlock';
 const columns = generateGridColumns(tableFields);
 const defaultRow = generateDefaultRow(tableFields);
 
-const WindowUnitDataGrid: React.FC = () => {
+const GlazingTypesDataGrid: React.FC = () => {
+    // --------------------------------------------------------------------------
     // Load in the table data from the Database
     const { projectId } = useParams();
-    const { showModal, rowData } = useLoadDataGridFromAirTable<WindowUnitTypesRecord>(
+    const { showModal, rowData } = useLoadDataGridFromAirTable<GlazingTypesRecord>(
         defaultRow,
-        'window_units',
+        'WINDOW_GLAZING_TYPES',
         projectId
     );
 
     // --------------------------------------------------------------------------
     // Update columns dynamically when rowData changes
-    const adjustedColumns = useDynamicColumns(columns, rowData, [
-        'DISPLAY_NAME',
-        'OPERATION',
-        'GLAZING_NAME',
-        'FRAME ELEMENT NAME: LEFT',
-        'FRAME ELEMENT NAME: RIGHT',
-        'FRAME ELEMENT NAME: TOP',
-        'FRAME ELEMENT NAME: BOTTOM',
-    ]);
+    const adjustedColumns = useDynamicColumns(columns, rowData, ['DISPLAY_NAME']);
 
     // --------------------------------------------------------------------------
     // Render the component
     return (
         <ContentBlock>
             <LoadingModal showModal={showModal} />
-            <ContentBlockHeader text="Window & Door Unit Types" />
+            <ContentBlockHeader text="Window & Door Glazing Types" />
             <StyledDataGrid rows={rowData} columns={adjustedColumns} />
         </ContentBlock>
     );
 };
 
-export default WindowUnitDataGrid;
+export default GlazingTypesDataGrid;
