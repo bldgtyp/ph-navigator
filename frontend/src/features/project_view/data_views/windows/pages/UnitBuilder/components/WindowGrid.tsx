@@ -10,9 +10,18 @@ interface WindowGridProps {
     isPositionOccupied: (row: number, col: number) => boolean;
     addSash: (row: number, col: number) => void;
     getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
+    updateColumnWidth: (index: number, value: number) => void;
+    updateRowHeight: (index: number, value: number) => void;
 }
 
-const WindowGrid: React.FC<WindowGridProps> = ({ gridData, isPositionOccupied, addSash, getCellSize }) => {
+const WindowGrid: React.FC<WindowGridProps> = ({
+    gridData,
+    isPositionOccupied,
+    addSash,
+    getCellSize,
+    updateColumnWidth,
+    updateRowHeight,
+}) => {
     // Calculate total grid dimensions for the container
     const totalWidth = gridData.columnWidths.reduce((sum, width) => sum + width, 0);
     const totalHeight = gridData.rowHeights.reduce((sum, height) => sum + height, 0);
@@ -22,12 +31,11 @@ const WindowGrid: React.FC<WindowGridProps> = ({ gridData, isPositionOccupied, a
             className="window-grid-outer-container"
             sx={{
                 position: 'relative',
-                // Add padding for dimension labels
-                pl: 10,
-                pb: 10,
+                pl: 6,
+                pb: 6,
                 pt: 1,
                 pr: 1,
-                mt: 4, // Additional margin at top for future enhancements
+                mt: 4,
             }}
         >
             <Box
@@ -68,7 +76,12 @@ const WindowGrid: React.FC<WindowGridProps> = ({ gridData, isPositionOccupied, a
                 />
 
                 {/* Dimension labels */}
-                <DimensionLabels rowHeights={gridData.rowHeights} columnWidths={gridData.columnWidths} />
+                <DimensionLabels
+                    rowHeights={gridData.rowHeights}
+                    columnWidths={gridData.columnWidths}
+                    onColumnWidthChange={updateColumnWidth}
+                    onRowHeightChange={updateRowHeight}
+                />
             </Box>
         </Box>
     );

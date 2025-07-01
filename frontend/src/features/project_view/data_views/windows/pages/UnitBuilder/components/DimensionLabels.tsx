@@ -1,11 +1,13 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, TextField, ClickAwayListener } from '@mui/material';
 
 interface DimensionLabelsProps {
     rowHeights: number[];
     columnWidths: number[];
     labelSpacing?: number;
     units?: string;
+    onColumnWidthChange: (index: number, value: number) => void;
+    onRowHeightChange: (index: number, value: number) => void;
 }
 
 const DimensionLabels: React.FC<DimensionLabelsProps> = ({
@@ -13,7 +15,13 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
     columnWidths,
     labelSpacing = 10,
     units = 'mm',
+    onColumnWidthChange,
+    onRowHeightChange,
 }) => {
+    const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+    const [editingColIndex, setEditingColIndex] = useState<number | null>(null);
+    const [editingValue, setEditingValue] = useState<string>('');
+
     // Calculate positions for grid lines and segment sizes
     const calculateSegments = (sizes: number[]) => {
         const positions: number[] = [];
@@ -38,6 +46,35 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
 
     const totalWidth = columnPositions[columnPositions.length - 1];
     const totalHeight = rowPositions[rowPositions.length - 1];
+
+    const handleEditStart = (type: 'row' | 'column', index: number, value: number) => {
+        if (type === 'row') {
+            setEditingRowIndex(index);
+        } else {
+            setEditingColIndex(index);
+        }
+        setEditingValue(value.toString());
+    };
+
+    const handleEditConfirm = () => {
+        const value = parseInt(editingValue, 10);
+
+        if (!isNaN(value) && value > 0) {
+            if (editingRowIndex !== null) {
+                onRowHeightChange(editingRowIndex, value);
+                setEditingRowIndex(null);
+            }
+
+            if (editingColIndex !== null) {
+                onColumnWidthChange(editingColIndex, value);
+                setEditingColIndex(null);
+            }
+        }
+
+        // Reset the editing state regardless of whether the value was valid
+        setEditingRowIndex(null);
+        setEditingColIndex(null);
+    };
 
     return (
         <>
@@ -93,9 +130,50 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                             height: '20px',
                         }}
                     >
-                        <Typography variant="caption" sx={{ mr: 1 }}>
-                            {height} {units}
-                        </Typography>
+                        {editingRowIndex === index ? (
+                            <ClickAwayListener onClickAway={handleEditConfirm}>
+                                <TextField
+                                    size="small"
+                                    autoFocus
+                                    value={editingValue}
+                                    onChange={e => setEditingValue(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleEditConfirm()}
+                                    variant="outlined"
+                                    sx={{
+                                        width: '80px',
+                                        '& .MuiInputBase-input': {
+                                            py: 0.5,
+                                            px: 1,
+                                            fontSize: '0.75rem',
+                                            textAlign: 'right',
+                                        },
+                                    }}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {units}
+                                            </Typography>
+                                        ),
+                                    }}
+                                />
+                            </ClickAwayListener>
+                        ) : (
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    mr: 1,
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(0,0,0,0.05)',
+                                        borderRadius: 1,
+                                        px: 0.5,
+                                    },
+                                }}
+                                onClick={() => handleEditStart('row', index, height)}
+                            >
+                                {height} {units}
+                            </Typography>
+                        )}
                     </Box>
                 ))}
 
@@ -167,9 +245,49 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                             alignItems: 'center',
                         }}
                     >
-                        <Typography variant="caption">
-                            {width} {units}
-                        </Typography>
+                        {editingColIndex === index ? (
+                            <ClickAwayListener onClickAway={handleEditConfirm}>
+                                <TextField
+                                    size="small"
+                                    autoFocus
+                                    value={editingValue}
+                                    onChange={e => setEditingValue(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleEditConfirm()}
+                                    variant="outlined"
+                                    sx={{
+                                        width: '80px',
+                                        '& .MuiInputBase-input': {
+                                            py: 0.5,
+                                            px: 1,
+                                            fontSize: '0.75rem',
+                                            textAlign: 'center',
+                                        },
+                                    }}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {units}
+                                            </Typography>
+                                        ),
+                                    }}
+                                />
+                            </ClickAwayListener>
+                        ) : (
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(0,0,0,0.05)',
+                                        borderRadius: 1,
+                                        px: 0.5,
+                                    },
+                                }}
+                                onClick={() => handleEditStart('column', index, width)}
+                            >
+                                {width} {units}
+                            </Typography>
+                        )}
                     </Box>
                 ))}
 
