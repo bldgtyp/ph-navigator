@@ -24,6 +24,7 @@ from database import Base
 from db_entities.airtable import *
 from db_entities.app import *
 from db_entities.assembly import *
+from db_entities.aperture import *
 
 target_metadata = Base.metadata
 

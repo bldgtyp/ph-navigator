@@ -1,0 +1,19 @@
+# -*- Python Version: 3.11 -*-
+
+from __future__ import annotations  # Enables forward references
+
+from pydantic import BaseModel
+
+from features.aperture.schemas.aperture_element import ApertureElementSchema
+
+
+class ApertureSchema(BaseModel):
+    """Base schema for Aperture."""
+
+    id: int
+    row_heights_mm: list[float]
+    column_widths_mm: list[float]
+    elements: list[ApertureElementSchema]
+
+    class Config:
+        orm_mode = True
