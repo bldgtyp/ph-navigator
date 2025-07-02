@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ApertureType } from '../UnitBuilder/types';
 import { getWithAlert } from '../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';
@@ -8,6 +8,7 @@ interface AperturesContextType {
     setIsLoadingApertures: React.Dispatch<React.SetStateAction<boolean>>;
     apertures: ApertureType[];
     setApertures: React.Dispatch<React.SetStateAction<ApertureType[]>>;
+    selectedAperture: ApertureType | null;
     selectedApertureId: number | null;
     setSelectedApertureId: React.Dispatch<React.SetStateAction<number | null>>;
     handleNameChange: (id: any, newName: string) => void;
@@ -24,37 +25,47 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [apertures, setApertures] = useState<ApertureType[]>([]);
     const [selectedApertureId, setSelectedApertureId] = useState<number | null>(null);
 
-    useEffect(() => {
-        async function loadProjectData() {
-            try {
-                // Check if cached data exists and is not expired
-                const cachedData = localStorage.getItem('Apertures');
-                const cachedExpiry = localStorage.getItem('Apertures_expiry');
+    const selectedAperture = useMemo(() => {
+        return apertures.find(aperture => aperture.id === selectedApertureId) || null;
+    }, [apertures, selectedApertureId]);
 
-                if (cachedData && cachedExpiry && Date.now() < parseInt(cachedExpiry)) {
-                    setApertures(JSON.parse(cachedData));
-                } else {
-                    // Fetch and cache Apertures if no valid cache exists
-                    const fetchedApertures = await getWithAlert<ApertureType[]>(`aperture/get-apertures/${projectId}`);
-                    if (!fetchedApertures) {
-                        throw new Error('No Apertures data found');
-                    }
-                    setApertures(fetchedApertures);
-                }
-            } catch (error) {
-                alert('Error loading Apertures Data. Please try again later.');
-                console.error('Error loading Apertures Data:', error);
-            } finally {
-                setIsLoadingApertures(false);
-            }
+    const fetchApertures = async () => {
+        console.log(`fetchApertures(), projectId=${projectId}`);
+        try {
+            const fetchedApertures = await getWithAlert<ApertureType[]>(`aperture/get-apertures/${projectId}`);
+            setApertures(fetchedApertures ?? []);
+            return fetchedApertures ?? [];
+        } catch (error) {
+            const msg = `Error loading Apertures Data ${error}`;
+            console.error(msg);
+            alert(msg);
+            return [];
+        } finally {
+            setIsLoadingApertures(false);
         }
+    };
 
-        loadProjectData();
+    useEffect(() => {
+        const initializeApertures = async () => {
+            const fetchedApertures = await fetchApertures();
+            if (fetchedApertures.length > 0) {
+                setSelectedApertureId(fetchedApertures[0].id); // Set the first aperture as selected
+            } else {
+                setSelectedApertureId(null); // No apertures available
+            }
+        };
+
+        initializeApertures();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 
-    const handleNameChange = () => {};
+    const handleApertureChange = async (apertureId: number) => {
+        console.log(`handleApertureChange() to apertureId=${apertureId}`);
+        setSelectedApertureId(apertureId);
+        await fetchApertures();
+    };
 
-    const handleApertureChange = () => {};
+    const handleNameChange = () => {};
 
     const handleAddAperture = () => {};
 
@@ -67,6 +78,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 setIsLoadingApertures,
                 apertures,
                 setApertures,
+                selectedAperture,
                 selectedApertureId,
                 setSelectedApertureId,
                 handleNameChange,

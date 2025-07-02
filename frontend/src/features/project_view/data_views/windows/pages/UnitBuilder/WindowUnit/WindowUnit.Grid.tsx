@@ -3,9 +3,10 @@ import { Box } from '@mui/material';
 import GridCell from './GridCell';
 import GridLines from './GridLines';
 import DimensionLabels from './DimensionLabels';
-import { WindowGridData } from '../types';
+import { ApertureType, WindowGridData } from '../types';
 
 interface WindowGridProps {
+    selectedAperture: ApertureType | null;
     gridData: WindowGridData;
     isPositionOccupied: (row: number, col: number) => boolean;
     addSash: (row: number, col: number) => void;
@@ -17,6 +18,7 @@ interface WindowGridProps {
 }
 
 const WindowUnitGrid: React.FC<WindowGridProps> = ({
+    selectedAperture,
     gridData,
     isPositionOccupied,
     addSash,

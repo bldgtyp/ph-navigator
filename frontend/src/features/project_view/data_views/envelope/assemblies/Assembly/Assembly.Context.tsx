@@ -50,13 +50,15 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
 
     const fetchAssemblies = async () => {
-        console.log('fetchAssemblies', projectId);
+        console.log(`fetchAssemblies(), projectId=${projectId}`);
         try {
             const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
             setAssemblies(response ?? []);
             return response ?? [];
         } catch (error) {
-            console.error('Failed to fetch assemblies:', error);
+            const msg = `Failed to fetch assemblies: ${error}`;
+            console.error(msg);
+            alert(msg);
             return [];
         } finally {
             setIsLoadingAssemblies(false);

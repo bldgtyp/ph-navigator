@@ -69,9 +69,9 @@ export interface WindowGridProps {
 }
 
 export interface ApertureElementType {
+    id: number;
     col_span: number;
     column_number: number;
-    id: number;
     row_number: number;
     row_span: number;
 }

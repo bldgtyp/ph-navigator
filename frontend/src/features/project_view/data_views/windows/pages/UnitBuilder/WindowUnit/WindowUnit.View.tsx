@@ -22,8 +22,8 @@ const WindowUnitView: React.FC = () => {
         mergeSelectedCells,
     } = useWindowGrid();
 
-    const { isLoadingApertures, setIsLoadingApertures, apertures, setApertures } = useApertures();
-    console.log('apertures', apertures);
+    const { selectedAperture, apertures } = useApertures();
+    console.log('WindowUnitView > apertures=', apertures);
 
     return (
         <Box>
@@ -56,6 +56,7 @@ const WindowUnitView: React.FC = () => {
             </Box>
 
             <WindowUnitGrid
+                selectedAperture={selectedAperture}
                 gridData={gridData}
                 isPositionOccupied={isPositionOccupied}
                 addSash={addSash}
