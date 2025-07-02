@@ -40,10 +40,20 @@ export interface VerticalDimensionLinesProps {
     onRowHeightChange: (index: number, value: number) => void;
 }
 export interface GridCellProps {
-    cell: GridCellData;
+    cell: {
+        id: string;
+        row: number;
+        col: number;
+        rowSpan: number;
+        colSpan: number;
+        sash?: { id: string };
+    };
     width: number;
     height: number;
+    isSelected: boolean;
+    onToggleSelect: (cellId: string) => void;
 }
+
 export interface SashProps {
     height: number;
     width: number;

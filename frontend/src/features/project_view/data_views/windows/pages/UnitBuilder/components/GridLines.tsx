@@ -17,10 +17,12 @@ const GridLines: React.FC<GridLinesProps> = ({ rowHeights, columnWidths, isPosit
                 width: '100%',
                 height: '100%',
                 zIndex: 2,
+                pointerEvents: 'none',
             }}
         >
             {rowHeights.map((_, rowIndex) =>
                 columnWidths.map((_, colIndex) => {
+                    // Only render grid lines for empty cells
                     if (isPositionOccupied(rowIndex, colIndex)) {
                         return null;
                     }
@@ -37,9 +39,11 @@ const GridLines: React.FC<GridLinesProps> = ({ rowHeights, columnWidths, isPosit
                                 position: 'relative',
                                 width: '100%',
                                 height: '100%',
+                                pointerEvents: 'none',
                             }}
                         >
                             <Button
+                                className="add-cell-button"
                                 variant="outlined"
                                 size="small"
                                 sx={{
@@ -48,8 +52,12 @@ const GridLines: React.FC<GridLinesProps> = ({ rowHeights, columnWidths, isPosit
                                     left: '50%',
                                     transform: 'translate(-50%, -50%)',
                                     zIndex: 3,
+                                    pointerEvents: 'auto',
                                 }}
-                                onClick={() => addSash(rowIndex, colIndex)}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    addSash(rowIndex, colIndex);
+                                }}
                             >
                                 +
                             </Button>

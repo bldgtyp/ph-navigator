@@ -3,7 +3,18 @@ import { Box } from '@mui/material';
 import GridCell from './GridCell';
 import GridLines from './GridLines';
 import DimensionLabels from './DimensionLabels';
-import { WindowGridProps } from './types';
+import { WindowGridData } from './types';
+
+interface WindowGridProps {
+    gridData: WindowGridData;
+    isPositionOccupied: (row: number, col: number) => boolean;
+    addSash: (row: number, col: number) => void;
+    getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
+    updateColumnWidth: (index: number, value: number) => void;
+    updateRowHeight: (index: number, value: number) => void;
+    selectedCells: string[];
+    toggleCellSelection: (cellId: string) => void;
+}
 
 const WindowGrid: React.FC<WindowGridProps> = ({
     gridData,
@@ -12,6 +23,8 @@ const WindowGrid: React.FC<WindowGridProps> = ({
     getCellSize,
     updateColumnWidth,
     updateRowHeight,
+    selectedCells,
+    toggleCellSelection,
 }) => {
     // Calculate total grid dimensions for the container
     const totalWidth = gridData.columnWidths.reduce((sum, width) => sum + width, 0);
@@ -33,9 +46,9 @@ const WindowGrid: React.FC<WindowGridProps> = ({
                 className="window-cells-container"
                 sx={{
                     position: 'relative',
-                    border: '1px solid #ccc',
                     width: `${totalWidth}px`,
                     height: `${totalHeight}px`,
+                    border: '1px solid #ccc',
                 }}
             >
                 {/* Main grid with cells */}
@@ -54,11 +67,20 @@ const WindowGrid: React.FC<WindowGridProps> = ({
                 >
                     {Array.from(gridData.cells.values()).map(cell => {
                         const { width, height } = getCellSize(cell.row, cell.col, cell.rowSpan, cell.colSpan);
-                        return <GridCell key={cell.id} cell={cell} width={width} height={height} />;
+                        return (
+                            <GridCell
+                                key={cell.id}
+                                cell={cell}
+                                width={width}
+                                height={height}
+                                isSelected={selectedCells.includes(cell.id)}
+                                onToggleSelect={toggleCellSelection}
+                            />
+                        );
                     })}
                 </Box>
 
-                {/* Grid lines overlay */}
+                {/* Grid lines overlay - only show for empty cells */}
                 <GridLines
                     rowHeights={gridData.rowHeights}
                     columnWidths={gridData.columnWidths}
