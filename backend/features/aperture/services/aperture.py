@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from db_entities.aperture import Aperture
+from db_entities.aperture.aperture_element import ApertureElement
 from features.app.services import get_project_by_bt_number
 
 logger = logging.getLogger(__name__)
@@ -14,3 +15,105 @@ def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
     project = get_project_by_bt_number(db, bt_number)
     apertures = db.query(Aperture).filter(Aperture.project_id == project.id).all()
     return apertures
+
+def get_aperture_by_id(db: Session, aperture_id: int) -> Aperture:
+    logger.info(f"get_aperture_by_id({aperture_id})")
+    
+    aperture = db.query(Aperture).filter(Aperture.id == aperture_id).first()
+    if not aperture:
+        raise ValueError(f"Aperture with ID {aperture_id} not found.")
+    
+    return aperture
+
+def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 100.0) -> Aperture:
+    """Add a new row to the aperture grid with specified height.
+    
+    Args:
+        db: Database session
+        aperture_id: ID of the aperture to modify
+        row_height: Height of the new row in mm (default: 100.0)
+        
+    Returns:
+        Updated aperture object
+        
+    Raises:
+        ValueError: If aperture not found
+    """
+    logger.info(f"add_row_to_aperture({aperture_id}, row_height_mm={row_height_mm})")
+    
+    try:
+        # Get the aperture (this will raise ValueError if not found)
+        aperture = get_aperture_by_id(db, aperture_id)
+        
+        # Calculate the new row index
+        new_row_index = len(aperture.row_heights_mm)
+        
+        # Create a new list (this will be detected as a change)
+        aperture.row_heights_mm = aperture.row_heights_mm + [row_height_mm]
+        
+        # Create a new element for each column in the new row
+        for col_index in range(len(aperture.column_widths_mm)):
+            new_element = ApertureElement(
+                aperture=aperture,
+                row_number=new_row_index,
+                column_number=col_index,
+                row_span=1,
+                col_span=1,
+            )
+            db.add(new_element)
+        
+        # Commit the transaction
+        db.commit()
+        
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding row to aperture {aperture_id}: {str(e)}")
+        raise
+
+def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float = 100.00) -> Aperture:
+    """Add a new column to the aperture grid with specified width.
+
+    Args:
+        db: Database session
+        aperture_id: ID of the aperture to modify
+        column_width_mm: Width of the new column in mm (default: 100.00)
+
+    Returns:
+        Updated aperture object
+
+    Raises:
+        ValueError: If aperture not found
+    """
+    logger.info(f"add_column_to_aperture({aperture_id}, column_width_mm={column_width_mm})")
+
+    try:
+        # Get the aperture (this will raise ValueError if not found)
+        aperture = get_aperture_by_id(db, aperture_id)
+
+        # Calculate the new column index
+        new_col_index = len(aperture.column_widths_mm)
+
+        # Create a new list (this will be detected as a change)
+        aperture.column_widths_mm = aperture.column_widths_mm + [column_width_mm]
+
+        # Create a new element for each row in the new column
+        for row_index in range(len(aperture.row_heights_mm)):
+            new_element = ApertureElement(
+                aperture=aperture,
+                row_number=row_index,
+                column_number=new_col_index,
+                row_span=1,
+                col_span=1,
+            )
+            db.add(new_element)
+
+        # Commit the transaction
+        db.commit()
+
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding column to aperture {aperture_id}: {str(e)}")
+        raise
+

@@ -1,36 +1,23 @@
 import React from 'react';
 import { Box } from '@mui/material';
+
+import { useApertures } from '../../_contexts/ApertureContext';
+
 import GridCell from './GridCell';
-import GridLines from './GridLines';
 import DimensionLabels from './DimensionLabels';
-import { ApertureType, WindowGridData } from '../types';
+import { useWindowGrid } from '../hooks/useWindowGrid';
 
-interface WindowGridProps {
-    selectedAperture: ApertureType | null;
-    gridData: WindowGridData;
-    isPositionOccupied: (row: number, col: number) => boolean;
-    addSash: (row: number, col: number) => void;
-    getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
-    updateColumnWidth: (index: number, value: number) => void;
-    updateRowHeight: (index: number, value: number) => void;
-    selectedCells: string[];
-    toggleCellSelection: (cellId: string) => void;
-}
+const WindowUnitGrid: React.FC = () => {
+    const { getCellSize, updateColumnWidth, updateRowHeight } = useWindowGrid();
+    const { activeAperture } = useApertures();
 
-const WindowUnitGrid: React.FC<WindowGridProps> = ({
-    selectedAperture,
-    gridData,
-    isPositionOccupied,
-    addSash,
-    getCellSize,
-    updateColumnWidth,
-    updateRowHeight,
-    selectedCells,
-    toggleCellSelection,
-}) => {
+    if (!activeAperture) {
+        return <Box sx={{ p: 2 }}>No aperture selected</Box>;
+    }
+
     // Calculate total grid dimensions for the container
-    const totalWidth = gridData.columnWidths.reduce((sum, width) => sum + width, 0);
-    const totalHeight = gridData.rowHeights.reduce((sum, height) => sum + height, 0);
+    const totalWidth = activeAperture.column_widths_mm.reduce((sum, width) => sum + width, 0);
+    const totalHeight = activeAperture.row_heights_mm.reduce((sum, height) => sum + height, 0);
 
     return (
         <Box
@@ -58,8 +45,8 @@ const WindowUnitGrid: React.FC<WindowGridProps> = ({
                     className="window-cells"
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: gridData.columnWidths.map(w => `${w}px`).join(' '),
-                        gridTemplateRows: gridData.rowHeights.map(h => `${h}px`).join(' '),
+                        gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w}px`).join(' '),
+                        gridTemplateRows: activeAperture.row_heights_mm.map(h => `${h}px`).join(' '),
                         gap: 0,
                         position: 'relative',
                         zIndex: 1,
@@ -67,33 +54,29 @@ const WindowUnitGrid: React.FC<WindowGridProps> = ({
                         height: '100%',
                     }}
                 >
-                    {Array.from(gridData.cells.values()).map(cell => {
-                        const { width, height } = getCellSize(cell.row, cell.col, cell.rowSpan, cell.colSpan);
+                    {Array.from(activeAperture.elements.values()).map(element => {
+                        const { width, height } = getCellSize(
+                            element.row_number,
+                            element.column_number,
+                            element.row_span,
+                            element.col_span
+                        );
                         return (
                             <GridCell
-                                key={cell.id}
-                                cell={cell}
+                                key={element.id}
+                                element={element}
                                 width={width}
                                 height={height}
-                                isSelected={selectedCells.includes(cell.id)}
-                                onToggleSelect={toggleCellSelection}
+                                // isSelected={selectedCells.includes(element.id)}
+                                // onToggleSelect={toggleCellSelection}
                             />
                         );
                     })}
                 </Box>
 
-                {/* Grid lines overlay - only show for empty cells */}
-                <GridLines
-                    rowHeights={gridData.rowHeights}
-                    columnWidths={gridData.columnWidths}
-                    isPositionOccupied={isPositionOccupied}
-                    addSash={addSash}
-                />
-
-                {/* Dimension labels */}
                 <DimensionLabels
-                    rowHeights={gridData.rowHeights}
-                    columnWidths={gridData.columnWidths}
+                    rowHeights={activeAperture.row_heights_mm}
+                    columnWidths={activeAperture.column_widths_mm}
                     onColumnWidthChange={updateColumnWidth}
                     onRowHeightChange={updateRowHeight}
                 />

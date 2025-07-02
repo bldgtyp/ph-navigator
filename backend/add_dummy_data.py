@@ -12,6 +12,7 @@ from database import Base, SessionLocal, engine
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.aperture.aperture import Aperture
+from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.app.project import Project
 from db_entities.app.user import User
 from db_entities.assembly.assembly import Assembly
@@ -246,12 +247,29 @@ def add_dummy_apertures(db: Session) -> None:
 
     aperture_1 = Aperture(
         name="Aperture 1",
-        row_heights_mm=[100, 200, 300],
-        column_widths_mm=[400, 500, 600],
+        row_heights_mm=[100],
+        column_widths_mm=[100],
         project=project_1
     )
-
     db.add(aperture_1)
+
+    aperture_element_1 = ApertureElement(
+        aperture=aperture_1,
+        row_number=0, column_number=0, row_span=1, col_span=1)
+    db.add(aperture_element_1)
+
+    aperture_2 = Aperture(
+        name="Aperture 2",
+        row_heights_mm=[100],
+        column_widths_mm=[100, 200],
+        project=project_1
+    )
+    db.add(aperture_2)
+    aperture_element_2 = ApertureElement(
+        aperture=aperture_2,
+        row_number=0, column_number=0, row_span=1, col_span=1)
+    db.add(aperture_element_2)
+
     db.commit()
 
 if __name__ == "__main__":

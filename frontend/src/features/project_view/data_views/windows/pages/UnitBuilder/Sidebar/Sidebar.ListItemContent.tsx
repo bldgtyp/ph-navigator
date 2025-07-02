@@ -15,10 +15,14 @@ const ApertureListItemContent: React.FC<{ aperture: ApertureType; isSelected: bo
     isSelected,
 }) => {
     const userContext = useContext(UserContext);
-    const { handleApertureChange } = useApertures();
+    const { handleSetActiveApertureById } = useApertures();
 
     return (
-        <ListItemButton selected={isSelected} onClick={() => handleApertureChange(aperture.id)} sx={listItemButtonSx}>
+        <ListItemButton
+            selected={isSelected}
+            onClick={() => handleSetActiveApertureById(aperture.id)}
+            sx={listItemButtonSx}
+        >
             <Stack direction="row" alignItems="center" width="100%">
                 <ListItemText primary={aperture.name} slotProps={listItemTextSlopProps} sx={listItemTextSx} />
                 {userContext.user && (

@@ -9,7 +9,7 @@ from config import limiter
 from database import get_db
 
 from features.aperture.schemas import ApertureSchema
-from features.aperture.services.aperture import get_apertures_by_project_bt
+from features.aperture.services.aperture import add_column_to_aperture, get_aperture_by_id, get_apertures_by_project_bt, add_row_to_aperture
 
 router = APIRouter(
     prefix="/aperture",
@@ -29,3 +29,42 @@ def get_project_apertures_route(request: Request, bt_number: str, db: Session = 
         msg = f"Error retrieving apertures for project {bt_number=}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)  
+
+@router.get("/get-aperture/{aperture_id}", response_model=ApertureSchema)
+def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+    logger.info(f"get_aperture({aperture_id})")
+    
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        return ApertureSchema.from_orm(aperture)
+    except ValueError as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+    except Exception as e:
+        msg = f"Error retrieving aperture with ID {aperture_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+@router.patch("/add-row/{aperture_id}", response_model=ApertureSchema)
+def add_row_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+    logger.info(f"add_row_to_aperture({aperture_id=})")
+
+    try:
+        return ApertureSchema.from_orm(add_row_to_aperture(db, aperture_id))
+    except Exception as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+
+@router.patch("/add-column/{aperture_id}", response_model=ApertureSchema)
+def add_column_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+    logger.info(f"add_column_to_aperture({aperture_id=})")
+
+    try:
+        return ApertureSchema.from_orm(add_column_to_aperture(db, aperture_id))
+    except Exception as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+

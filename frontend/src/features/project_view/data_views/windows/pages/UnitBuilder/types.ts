@@ -40,11 +40,9 @@ export interface VerticalDimensionLinesProps {
     onRowHeightChange: (index: number, value: number) => void;
 }
 export interface GridCellProps {
-    cell: GridCellData;
+    element: ApertureElementType;
     width: number;
     height: number;
-    isSelected: boolean;
-    onToggleSelect: (cellId: string) => void;
 }
 
 export interface SashProps {
@@ -83,3 +81,19 @@ export interface ApertureType {
     row_heights_mm: number[];
     elements: ApertureElementType[];
 }
+
+export const defaultAperture = {
+    id: 0,
+    name: 'default',
+    column_widths_mm: [100],
+    row_heights_mm: [100],
+    elements: [
+        {
+            id: 0,
+            col_span: 1,
+            column_number: 1,
+            row_number: 1,
+            row_span: 1,
+        },
+    ],
+};
