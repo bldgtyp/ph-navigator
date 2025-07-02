@@ -1,9 +1,5 @@
 import React from 'react';
-
-interface SashProps {
-    height: number;
-    width: number;
-}
+import { SashProps } from './types';
 
 const Sash: React.FC<SashProps> = ({ height, width }) => {
     return (

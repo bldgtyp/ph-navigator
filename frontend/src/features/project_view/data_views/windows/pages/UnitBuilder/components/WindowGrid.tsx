@@ -3,16 +3,7 @@ import { Box } from '@mui/material';
 import GridCell from './GridCell';
 import GridLines from './GridLines';
 import DimensionLabels from './DimensionLabels';
-import { WindowGridData } from './types';
-
-interface WindowGridProps {
-    gridData: WindowGridData;
-    isPositionOccupied: (row: number, col: number) => boolean;
-    addSash: (row: number, col: number) => void;
-    getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
-    updateColumnWidth: (index: number, value: number) => void;
-    updateRowHeight: (index: number, value: number) => void;
-}
+import { WindowGridProps } from './types';
 
 const WindowGrid: React.FC<WindowGridProps> = ({
     gridData,

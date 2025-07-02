@@ -18,3 +18,49 @@ export interface WindowGridData {
     columnWidths: number[];
     cells: Map<string, GridCellData>;
 }
+
+export interface DimensionLabelsProps {
+    rowHeights: number[];
+    columnWidths: number[];
+    labelSpacing?: number;
+    units?: string;
+    onColumnWidthChange: (index: number, value: number) => void;
+    onRowHeightChange: (index: number, value: number) => void;
+}
+
+export interface HorizontalDimensionLinesProps {
+    columnWidths: number[];
+    units: string;
+    onColumnWidthChange: (index: number, value: number) => void;
+}
+
+export interface VerticalDimensionLinesProps {
+    rowHeights: number[];
+    units: string;
+    onRowHeightChange: (index: number, value: number) => void;
+}
+export interface GridCellProps {
+    cell: GridCellData;
+    width: number;
+    height: number;
+}
+export interface SashProps {
+    height: number;
+    width: number;
+}
+
+export interface GridLinesProps {
+    rowHeights: number[];
+    columnWidths: number[];
+    isPositionOccupied: (row: number, col: number) => boolean;
+    addSash: (row: number, col: number) => void;
+}
+
+export interface WindowGridProps {
+    gridData: WindowGridData;
+    isPositionOccupied: (row: number, col: number) => boolean;
+    addSash: (row: number, col: number) => void;
+    getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
+    updateColumnWidth: (index: number, value: number) => void;
+    updateRowHeight: (index: number, value: number) => void;
+}

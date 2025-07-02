@@ -1,12 +1,6 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
-
-interface GridLinesProps {
-    rowHeights: number[];
-    columnWidths: number[];
-    isPositionOccupied: (row: number, col: number) => boolean;
-    addSash: (row: number, col: number) => void;
-}
+import { GridLinesProps } from './types';
 
 const GridLines: React.FC<GridLinesProps> = ({ rowHeights, columnWidths, isPositionOccupied, addSash }) => {
     return (
