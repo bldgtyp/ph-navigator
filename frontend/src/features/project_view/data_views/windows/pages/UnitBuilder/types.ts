@@ -27,6 +27,7 @@ export interface DimensionLabelsProps {
     onColumnWidthChange: (index: number, value: number) => void;
     onRowHeightChange: (index: number, value: number) => void;
     handleDeleteColumn: (index: number) => void;
+    handleDeleteRow: (index: number) => void;
 }
 
 export interface HorizontalDimensionLinesProps {
@@ -40,6 +41,7 @@ export interface VerticalDimensionLinesProps {
     rowHeights: number[];
     units: string;
     onRowHeightChange: (index: number, value: number) => void;
+    handleDeleteRow: (index: number) => void;
 }
 export interface GridCellProps {
     element: ApertureElementType;

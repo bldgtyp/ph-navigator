@@ -9,13 +9,14 @@ from config import limiter
 from database import get_db
 
 from features.aperture.schemas import ApertureSchema
-from features.aperture.schemas.aperture import ColumnDeleteRequest
+from features.aperture.schemas.aperture import ColumnDeleteRequest, RowDeleteRequest
 from features.aperture.services.aperture import (
     add_column_to_aperture,
     get_aperture_by_id,
     get_apertures_by_project_bt,
     add_row_to_aperture,
     delete_column_from_aperture,
+    delete_row_from_aperture,
     LastColumnException,
 )
 
@@ -83,6 +84,22 @@ def add_column_to_aperture_route(request: Request, aperture_id: int, db: Session
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
 
+@router.delete("/delete-row/{aperture_id}", response_model=ApertureSchema)
+def delete_row_on_aperture_route(
+    request: Request, delete_request: RowDeleteRequest, aperture_id: int, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"delete_row_on_aperture({aperture_id=}, {delete_request=})")
+
+    try:
+        return ApertureSchema.from_orm(delete_row_from_aperture(db, aperture_id, delete_request.row_number))
+    except LastColumnException as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except Exception as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+
+
 @router.delete("/delete-column/{aperture_id}", response_model=ApertureSchema)
 def delete_column_on_aperture_route(
     request: Request, delete_request: ColumnDeleteRequest, aperture_id: int, db: Session = Depends(get_db)
@@ -92,8 +109,9 @@ def delete_column_on_aperture_route(
     try:
         return ApertureSchema.from_orm(delete_column_from_aperture(db, aperture_id, delete_request.column_number))
     except LastColumnException as e:
-        raise HTTPException(status_code=status.HTTP_200_OK, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
         msg = str(e)
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+

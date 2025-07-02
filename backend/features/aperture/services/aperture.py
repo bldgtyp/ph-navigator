@@ -130,10 +130,48 @@ def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float
         raise
 
 
+def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> Aperture:
+    logger.info(f"delete_row_from_aperture({aperture_id=}, {row_number=})")
+
+    try:
+        # Get the aperture (this will raise ValueError if not found)
+        aperture = get_aperture_by_id(db, aperture_id)
+
+        # Check if the row number is valid
+        if row_number < 0 or row_number >= len(aperture.row_heights_mm):
+            raise ValueError(f"Invalid row number {row_number} for aperture {aperture_id}")
+
+        # If this is the last row, raise an exception
+        if len(aperture.row_heights_mm) == 1:
+            raise LastColumnException(row_number, aperture_id)
+
+        # Remove the row height (Copy array to ensure SQLAlchemy detects the change)
+        new_heights = aperture.row_heights_mm.copy()
+        new_heights.pop(row_number)
+        aperture.row_heights_mm = new_heights
+
+        # Remove all elements in the deleted row
+        db.query(ApertureElement).filter(
+            ApertureElement.aperture_id == aperture_id, ApertureElement.row_number == row_number
+        ).delete()
+
+        # Shift the row-number of any ApertureElements with row-number>the delete target
+        db.query(ApertureElement).filter(
+            ApertureElement.aperture_id == aperture_id, ApertureElement.row_number > row_number
+        ).update({ApertureElement.row_number: ApertureElement.row_number - 1}, synchronize_session=False)
+
+        # Commit the transaction
+        db.commit()
+
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting row from aperture {aperture_id}: {str(e)}")
+        raise
+
+
 def delete_column_from_aperture(db: Session, aperture_id: int, column_number: int) -> Aperture:
     logger.info(f"delete_column_from_aperture({aperture_id=}, {column_number=})")
-
-    # TODO: Need to move all 'later' columns back 1
 
     try:
         # Get the aperture (this will raise ValueError if not found)
@@ -146,7 +184,7 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         # If this is the last column, raise an exception
         if len(aperture.column_widths_mm) == 1:
             raise LastColumnException(column_number, aperture_id)
-
+        
         # Remove the column width (Copy array to ensure SQLAlchemy detects the change)
         new_widths = aperture.column_widths_mm.copy()
         new_widths.pop(column_number)
@@ -157,6 +195,11 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
             ApertureElement.aperture_id == aperture_id, ApertureElement.column_number == column_number
         ).delete()
 
+        # Shift the col-number of any ApertureElements with col-number>the delete target
+        db.query(ApertureElement).filter(
+            ApertureElement.aperture_id == aperture_id, ApertureElement.column_number > column_number
+        ).update({ApertureElement.column_number: ApertureElement.column_number - 1}, synchronize_session=False)
+
         # Commit the transaction
         db.commit()
 
@@ -165,3 +208,4 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         db.rollback()
         logger.error(f"Error deleting column from aperture {aperture_id}: {str(e)}")
         raise
+

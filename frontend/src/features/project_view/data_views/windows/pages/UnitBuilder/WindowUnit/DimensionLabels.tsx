@@ -23,7 +23,12 @@ const calculateSegments = (sizes: number[]) => {
     return { positions, segments };
 };
 
-const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeights, units, onRowHeightChange }) => {
+const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({
+    rowHeights,
+    units,
+    onRowHeightChange,
+    handleDeleteRow,
+}) => {
     const labelSpacing = 10;
     const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
     const [editingValue, setEditingValue] = useState<string>('');
@@ -91,6 +96,7 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
             {/* Segment measurements (between grid lines) */}
             {rowSegments.map((height, index) => (
                 <Box
+                    className="row-segment-dimension"
                     key={`row-segment-${index}`}
                     sx={{
                         position: 'absolute',
@@ -102,6 +108,14 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
                         height: '20px',
                     }}
                 >
+                    <IconButton
+                        className="delete-row-button"
+                        onClick={e => {
+                            handleDeleteRow(index);
+                        }}
+                    >
+                        <RemoveCircleTwoToneIcon fontSize="small" />
+                    </IconButton>
                     {editingRowIndex === index ? (
                         <ClickAwayListener onClickAway={handleEditConfirm}>
                             <TextField
@@ -337,10 +351,16 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
     onColumnWidthChange,
     onRowHeightChange,
     handleDeleteColumn,
+    handleDeleteRow,
 }) => {
     return (
         <>
-            <VerticalDimensionLines rowHeights={rowHeights} units={units} onRowHeightChange={onRowHeightChange} />
+            <VerticalDimensionLines
+                rowHeights={rowHeights}
+                units={units}
+                onRowHeightChange={onRowHeightChange}
+                handleDeleteRow={handleDeleteRow}
+            />
 
             <HorizontalDimensionLines
                 columnWidths={columnWidths}

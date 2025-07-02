@@ -20,6 +20,7 @@ interface AperturesContextType {
     handleDeleteAperture: (id: any) => void;
     handleUpdateAperture: (aperture: ApertureType) => void;
     handleAddRow: () => void;
+    handleDeleteRow: (index: number) => void;
     handleAddColumn: () => void;
     handleDeleteColumn: (index: number) => void;
 }
@@ -115,6 +116,33 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture]);
 
+    const handleDeleteRow = useCallback(
+        async (rowNumber: number) => {
+            if (!activeAperture) return;
+
+            try {
+                setIsLoadingApertures(true);
+                const updatedAperture = await deleteWithAlert<ApertureType>(
+                    `aperture/delete-row/${activeAperture.id}`,
+                    null,
+                    { row_number: rowNumber }
+                );
+                if (updatedAperture) {
+                    handleUpdateAperture(updatedAperture);
+                    handleSetActiveAperture(updatedAperture);
+                }
+            } catch (error) {
+                const msg = `Error deleting row: ${error}`;
+                console.error(msg);
+                alert(msg);
+            } finally {
+                setIsLoadingApertures(false);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [activeAperture]
+    );
+
     const handleAddColumn = useCallback(async () => {
         if (!activeAperture) return;
 
@@ -136,7 +164,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, [activeAperture]);
 
     const handleDeleteColumn = useCallback(
-        async (index: number) => {
+        async (colNumber: number) => {
             if (!activeAperture) return;
 
             try {
@@ -144,7 +172,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 const updatedAperture = await deleteWithAlert<ApertureType>(
                     `aperture/delete-column/${activeAperture.id}`,
                     null,
-                    { column_number: index }
+                    { column_number: colNumber }
                 );
                 if (updatedAperture) {
                     handleUpdateAperture(updatedAperture);
@@ -179,6 +207,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 handleDeleteAperture,
                 handleUpdateAperture,
                 handleAddRow,
+                handleDeleteRow,
                 handleAddColumn,
                 handleDeleteColumn,
             }}
