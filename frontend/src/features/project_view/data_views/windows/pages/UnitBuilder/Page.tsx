@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Box, Button, Tooltip } from '@mui/material';
 import ContentBlock from '../../../_components/ContentBlock';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
 import WindowGrid from './components/WindowGrid';
 import { useWindowGrid } from './hooks/useWindowGrid';
-import { getWithAlert } from '../../../../../../api/getWithAlert';
-import { useParams } from 'react-router-dom';
-import { ApertureType } from './types';
+import { AperturesProvider, useApertures } from '../_contexts/ApertureContext';
 
 const WindowUnitDisplay: React.FC = () => {
     const {
@@ -25,41 +23,8 @@ const WindowUnitDisplay: React.FC = () => {
         mergeSelectedCells,
     } = useWindowGrid();
 
-    const { projectId } = useParams();
-    const [apertures, setApertures] = React.useState<ApertureType[]>([]);
-    const [selectedApertureId, setSelectedApertureId] = React.useState<string | null>(null);
-    const [isLoadingApertures, setIsLoadingApertures] = React.useState<boolean>(false);
-
-    const fetchApertures = async () => {
-        console.log('fetchApertures', projectId);
-        setIsLoadingApertures(true);
-        try {
-            const response = await getWithAlert<ApertureType[]>(`aperture/get-apertures/${projectId}`);
-            console.log('Fetched apertures:', response);
-            setApertures(response ?? []);
-            return response ?? [];
-        } catch (error) {
-            console.error('Failed to fetch apertures:', error);
-            return [];
-        } finally {
-            setIsLoadingApertures(false);
-        }
-    };
-
-    useEffect(() => {
-        console.log('useEffect called', projectId);
-        const initializeApertures = async () => {
-            const fetchedApertures = await fetchApertures();
-            if (fetchedApertures.length > 0) {
-                setSelectedApertureId(fetchedApertures[0].id); // Set the first aperture as selected
-            } else {
-                setSelectedApertureId(null); // No apertures available
-            }
-        };
-
-        initializeApertures();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectId]);
+    const { isLoadingApertures, setIsLoadingApertures, apertures, setApertures } = useApertures();
+    console.log('apertures', apertures);
 
     return (
         <Box>
@@ -107,13 +72,15 @@ const WindowUnitDisplay: React.FC = () => {
 
 const WindowUnits: React.FC = () => {
     return (
-        <ContentBlock>
-            <LoadingModal showModal={false} />
-            <ContentBlockHeader text="Window & Door Builder" />
-            <Box p={2}>
-                <WindowUnitDisplay />
-            </Box>
-        </ContentBlock>
+        <AperturesProvider>
+            <ContentBlock>
+                <LoadingModal showModal={false} />
+                <ContentBlockHeader text="Window & Door Builder" />
+                <Box p={2}>
+                    <WindowUnitDisplay />
+                </Box>
+            </ContentBlock>
+        </AperturesProvider>
     );
 };
 
