@@ -1,21 +1,23 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ApertureType } from '../UnitBuilder/types';
-import { getWithAlert } from '../../../../../../api/getWithAlert';
+import { ApertureType } from '../types';
+import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';
-import { patchWithAlert } from '../../../../../../api/patchWithAlert';
-import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
+import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
+import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
 
 interface AperturesContextType {
     isLoadingApertures: boolean;
     setIsLoadingApertures: React.Dispatch<React.SetStateAction<boolean>>;
+    // Aperture Collection
     apertures: ApertureType[];
     setApertures: React.Dispatch<React.SetStateAction<ApertureType[]>>;
     selectedApertureId: number | null;
     activeAperture: ApertureType | null;
     setSelectedApertureId: React.Dispatch<React.SetStateAction<number | null>>;
-    handleNameChange: (id: any, newName: string) => void;
     handleSetActiveApertureById: (id: any) => void;
     handleSetActiveAperture: (aperture: ApertureType) => void;
+    // Sizing
+    handleNameChange: (id: any, newName: string) => void;
     handleAddAperture: () => void;
     handleDeleteAperture: (id: any) => void;
     handleUpdateAperture: (aperture: ApertureType) => void;
@@ -23,6 +25,10 @@ interface AperturesContextType {
     handleDeleteRow: (index: number) => void;
     handleAddColumn: () => void;
     handleDeleteColumn: (index: number) => void;
+    // Sizing
+    getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
+    updateColumnWidth: (index: number, newWidth: number) => void;
+    updateRowHeight: (index: number, newHeight: number) => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -67,6 +73,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 
+    // Active Aperture
+
     const handleSetActiveApertureById = async (apertureId: number) => {
         // Used when the user selects an aperture from a list or dropdown
         console.log(`handleSetActiveApertureById() to apertureId=${apertureId}`);
@@ -89,6 +97,9 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Update an aperture's values in the 'apertures' state collection
         setApertures(prevApertures => prevApertures.map(a => (a.id === aperture.id ? { ...a, ...aperture } : a)));
     };
+
+    // ----------------------------------------------------------------------------------
+    // Edit Aperture and Element Grid
 
     const handleNameChange = () => {};
 
@@ -190,6 +201,43 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         [activeAperture]
     );
 
+    // ----------------------------------------------------------------------------------
+    // Grid Sizing
+
+    const getCellSize = useCallback(
+        (row: number, col: number, rowSpan: number, colSpan: number) => {
+            if (!activeAperture) return { width: 0, height: 0 };
+            const width = activeAperture?.column_widths_mm.slice(col, col + colSpan).reduce((sum, w) => sum + w, 0);
+            const height = activeAperture?.row_heights_mm.slice(row, row + rowSpan).reduce((sum, h) => sum + h, 0);
+            return { width, height };
+        },
+        [activeAperture]
+    );
+
+    const updateColumnWidth = useCallback(
+        (index: number, newWidth: number) => {
+            // if (index < 0 || index >= gridData.columnWidths.length) return;
+            // setGridData(prev => ({
+            //     ...prev,
+            //     columnWidths: prev.columnWidths.map((width, i) => (i === index ? newWidth : width)),
+            // }));
+        },
+        []
+        // [selectedAperture?.column_widths_mm]
+    );
+
+    const updateRowHeight = useCallback(
+        (index: number, newHeight: number) => {
+            // if (index < 0 || index >= selectedAperture.row_heights_mm.length) return;
+            // setGridData(prev => ({
+            //     ...prev,
+            //     rowHeights: prev.rowHeights.map((height, i) => (i === index ? newHeight : height)),
+            // }));
+        },
+        []
+        // [selectedAperture?.row_heights_mm]
+    );
+
     return (
         <AperturesContext.Provider
             value={{
@@ -210,6 +258,9 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 handleDeleteRow,
                 handleAddColumn,
                 handleDeleteColumn,
+                getCellSize,
+                updateColumnWidth,
+                updateRowHeight,
             }}
         >
             {children}

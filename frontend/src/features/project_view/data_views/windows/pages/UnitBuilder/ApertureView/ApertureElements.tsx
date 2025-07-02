@@ -1,15 +1,14 @@
 import React from 'react';
 import { Box } from '@mui/material';
 
-import { useApertures } from '../../_contexts/ApertureContext';
+import { useApertures } from './Aperture.Context';
 
-import GridCell from './GridCell';
-import DimensionLabels from './DimensionLabels';
-import { useWindowGrid } from '../hooks/useWindowGrid';
+import ApertureElementContainer from './ApertureElement.Container';
+import VerticalDimensionLines from './Dimensions/Dimensions.Vertical';
+import HorizontalDimensionLines from './Dimensions/Dimensions.Horizontal';
 
-const WindowUnitGrid: React.FC = () => {
-    const { getCellSize, updateColumnWidth, updateRowHeight } = useWindowGrid();
-    const { activeAperture, handleDeleteColumn, handleDeleteRow } = useApertures();
+const ApertureElements: React.FC = () => {
+    const { activeAperture, getCellSize, updateColumnWidth, updateRowHeight } = useApertures();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -21,7 +20,7 @@ const WindowUnitGrid: React.FC = () => {
 
     return (
         <Box
-            className="window-grid-outer-container"
+            className="aperture-elements"
             sx={{
                 position: 'relative',
                 pl: 6,
@@ -32,7 +31,7 @@ const WindowUnitGrid: React.FC = () => {
             }}
         >
             <Box
-                className="window-cells-container"
+                className="aperture-elements-grid"
                 sx={{
                     position: 'relative',
                     width: `${totalWidth}px`,
@@ -42,7 +41,7 @@ const WindowUnitGrid: React.FC = () => {
             >
                 {/* Main grid with cells */}
                 <Box
-                    className="window-cells"
+                    className="aperture-elements-grid-cells"
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w}px`).join(' '),
@@ -62,7 +61,7 @@ const WindowUnitGrid: React.FC = () => {
                             element.col_span
                         );
                         return (
-                            <GridCell
+                            <ApertureElementContainer
                                 key={element.id}
                                 element={element}
                                 width={width}
@@ -74,17 +73,19 @@ const WindowUnitGrid: React.FC = () => {
                     })}
                 </Box>
 
-                <DimensionLabels
+                <VerticalDimensionLines
                     rowHeights={activeAperture.row_heights_mm}
-                    columnWidths={activeAperture.column_widths_mm}
-                    onColumnWidthChange={updateColumnWidth}
+                    units={'mm'}
                     onRowHeightChange={updateRowHeight}
-                    handleDeleteColumn={handleDeleteColumn}
-                    handleDeleteRow={handleDeleteRow}
+                />
+                <HorizontalDimensionLines
+                    columnWidths={activeAperture.column_widths_mm}
+                    units={'mm'}
+                    onColumnWidthChange={updateColumnWidth}
                 />
             </Box>
         </Box>
     );
 };
 
-export default WindowUnitGrid;
+export default ApertureElements;

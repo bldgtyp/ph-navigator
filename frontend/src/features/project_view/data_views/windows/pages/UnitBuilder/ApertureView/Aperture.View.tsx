@@ -1,20 +1,20 @@
 import React from 'react';
 import { Box, Button, Tooltip } from '@mui/material';
 
-import { useApertures } from '../../_contexts/ApertureContext';
+import { useApertures } from './Aperture.Context';
 
-import WindowUnitGrid from './WindowUnit.Grid';
+import ApertureElements from './ApertureElements';
 
-const WindowUnitView: React.FC = () => {
+const ApertureView: React.FC = () => {
     const { handleAddRow, handleAddColumn } = useApertures();
 
     return (
-        <Box>
+        <Box className="aperture-view">
             <Box mb={2} display="flex" alignItems="center" flexWrap="wrap" gap={1}>
-                <Button variant="contained" onClick={handleAddColumn}>
+                <Button id="add-column-button" variant="contained" onClick={handleAddColumn}>
                     Add Column
                 </Button>
-                <Button variant="contained" onClick={handleAddRow}>
+                <Button id="add-row-button" variant="contained" onClick={handleAddRow}>
                     Add Row
                 </Button>
 
@@ -38,9 +38,9 @@ const WindowUnitView: React.FC = () => {
                 )} */}
             </Box>
 
-            <WindowUnitGrid />
+            <ApertureElements />
         </Box>
     );
 };
 
-export default WindowUnitView;
+export default ApertureView;

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-import { useApertures } from '../../_contexts/ApertureContext';
+import { useApertures } from '../ApertureView/Aperture.Context';
 import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
 
 import { ApertureType, GridCellData, WindowGridData, defaultAperture } from '../types';
@@ -11,41 +11,41 @@ export const useWindowGrid = () => {
     const { activeAperture, setIsLoadingApertures, handleSetActiveAperture, handleUpdateAperture } = useApertures();
     const [selectedCells, setSelectedCells] = useState<number[]>([]);
 
-    const getCellSize = useCallback(
-        (row: number, col: number, rowSpan: number, colSpan: number) => {
-            if (!activeAperture) return { width: 0, height: 0 };
-            const width = activeAperture?.column_widths_mm.slice(col, col + colSpan).reduce((sum, w) => sum + w, 0);
-            const height = activeAperture?.row_heights_mm.slice(row, row + rowSpan).reduce((sum, h) => sum + h, 0);
-            return { width, height };
-        },
-        [activeAperture]
-    );
+    // const getCellSize = useCallback(
+    //     (row: number, col: number, rowSpan: number, colSpan: number) => {
+    //         if (!activeAperture) return { width: 0, height: 0 };
+    //         const width = activeAperture?.column_widths_mm.slice(col, col + colSpan).reduce((sum, w) => sum + w, 0);
+    //         const height = activeAperture?.row_heights_mm.slice(row, row + rowSpan).reduce((sum, h) => sum + h, 0);
+    //         return { width, height };
+    //     },
+    //     [activeAperture]
+    // );
 
-    // ----------------------------------------------------------------------------------
-    // Grid Sizing
-    const updateColumnWidth = useCallback(
-        (index: number, newWidth: number) => {
-            // if (index < 0 || index >= gridData.columnWidths.length) return;
-            // setGridData(prev => ({
-            //     ...prev,
-            //     columnWidths: prev.columnWidths.map((width, i) => (i === index ? newWidth : width)),
-            // }));
-        },
-        []
-        // [selectedAperture?.column_widths_mm]
-    );
+    // // ----------------------------------------------------------------------------------
+    // // Grid Sizing
+    // const updateColumnWidth = useCallback(
+    //     (index: number, newWidth: number) => {
+    //         // if (index < 0 || index >= gridData.columnWidths.length) return;
+    //         // setGridData(prev => ({
+    //         //     ...prev,
+    //         //     columnWidths: prev.columnWidths.map((width, i) => (i === index ? newWidth : width)),
+    //         // }));
+    //     },
+    //     []
+    //     // [selectedAperture?.column_widths_mm]
+    // );
 
-    const updateRowHeight = useCallback(
-        (index: number, newHeight: number) => {
-            // if (index < 0 || index >= selectedAperture.row_heights_mm.length) return;
-            // setGridData(prev => ({
-            //     ...prev,
-            //     rowHeights: prev.rowHeights.map((height, i) => (i === index ? newHeight : height)),
-            // }));
-        },
-        []
-        // [selectedAperture?.row_heights_mm]
-    );
+    // const updateRowHeight = useCallback(
+    //     (index: number, newHeight: number) => {
+    //         // if (index < 0 || index >= selectedAperture.row_heights_mm.length) return;
+    //         // setGridData(prev => ({
+    //         //     ...prev,
+    //         //     rowHeights: prev.rowHeights.map((height, i) => (i === index ? newHeight : height)),
+    //         // }));
+    //     },
+    //     []
+    //     // [selectedAperture?.row_heights_mm]
+    // );
 
     // ----------------------------------------------------------------------------------
     // Cell Selection
@@ -178,9 +178,9 @@ export const useWindowGrid = () => {
     // }, [gridData.cells, selectedCells, clearSelection]);
 
     return {
-        getCellSize,
-        updateColumnWidth,
-        updateRowHeight,
+        // getCellSize,
+        // updateColumnWidth,
+        // updateRowHeight,
         selectedCells,
     };
 };

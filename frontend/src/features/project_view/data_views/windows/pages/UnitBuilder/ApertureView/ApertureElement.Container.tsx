@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import Sash from './Sash';
+import ApertureElementSVG from './ApertureElement.SVG';
 import { GridCellProps } from '../types';
 
-const GridCell: React.FC<GridCellProps> = ({ element, width, height }) => {
+const ApertureElementContainer: React.FC<GridCellProps> = ({ element, width, height }) => {
     return (
         <Box
             // className={`window-cell ${isSelected ? 'selected' : ''}`}
@@ -23,9 +23,9 @@ const GridCell: React.FC<GridCellProps> = ({ element, width, height }) => {
                 // },
             }}
         >
-            <Sash height={height} width={width} />
+            <ApertureElementSVG height={height} width={width} />
         </Box>
     );
 };
 
-export default GridCell;
+export default ApertureElementContainer;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { useApertures } from '../../_contexts/ApertureContext';
+import { useApertures } from '../ApertureView/Aperture.Context';
 
 export interface ApertureSidebarContextType {
     nameChangeModal: {

@@ -4,16 +4,18 @@ import { IconButton, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/m
 import ModeEditOutlinedIcon from '@mui/icons-material/ModeEditOutlined';
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 
-import { useApertures } from '../../_contexts/ApertureContext';
+import { useApertures } from '../ApertureView/Aperture.Context';
 import { useApertureSidebar } from './Sidebar.Context';
 
 import { ApertureType } from '../types';
 import { listItemButtonSx, listItemTextSlopProps, listItemTextSx } from './Sidebar.ListItemContent.Styles';
 
-const ApertureListItemContent: React.FC<{ aperture: ApertureType; isSelected: boolean }> = ({
-    aperture,
-    isSelected,
-}) => {
+interface ApertureListItemContentProps {
+    aperture: ApertureType;
+    isSelected: boolean;
+}
+
+const ApertureListItemContent: React.FC<ApertureListItemContentProps> = ({ aperture, isSelected }) => {
     const userContext = useContext(UserContext);
     const { handleSetActiveApertureById } = useApertures();
 

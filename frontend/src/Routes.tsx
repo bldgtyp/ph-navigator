@@ -16,7 +16,7 @@ import Viewer from './features/project_view/model_viewer/Viewer';
 import WindowUnitDataGrid from './features/project_view/data_views/windows/pages/Units/WindowUnit.DataGrid';
 import FrameTypesDataGrid from './features/project_view/data_views/windows/pages/Frames/Frames.DataGrid';
 import GlazingTypesDataGrid from './features/project_view/data_views/windows/pages/Glazing/Glazing.DataGrid';
-import WindowUnits from './features/project_view/data_views/windows/pages/UnitBuilder/Page';
+import ApertureTypesPage from './features/project_view/data_views/windows/pages/UnitBuilder/Page';
 import MaterialListPage from './features/project_view/data_views/envelope/material_list/Page';
 import AssembliesPage from './features/project_view/data_views/envelope/assemblies/_Page/Page';
 import ErvDataGrid from './features/project_view/data_views/equipment/pages/ERVs/Ervs.DataGrid';
@@ -49,7 +49,7 @@ const AppRoutes: React.FC = () => (
                 <Route path="window-glazing-types" element={<GlazingTypesDataGrid />} />
                 <Route path="window-frame-types" element={<FrameTypesDataGrid />} />
                 <Route path="window-unit-type" element={<WindowUnitDataGrid />} />
-                <Route path="window-unit-builder" element={<WindowUnits />} />
+                <Route path="window-unit-builder" element={<ApertureTypesPage />} />
             </Route>
 
             <Route path="envelope-data" element={<EnvelopeDataDashboard />}>

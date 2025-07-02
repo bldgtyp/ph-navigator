@@ -1,28 +1,25 @@
 import { List, ListItem } from '@mui/material';
 
-import { useApertures } from '../../_contexts/ApertureContext';
+import { useApertures } from '../ApertureView/Aperture.Context';
 
 import ApertureListItemContent from './Sidebar.ListItemContent';
 import ApertureListHeader from './Sidebar.ListHeader';
 import ChangeNameModal from '../ChangeNameModal/Modal.ChangeName';
 
-const ApertureSidebar: React.FC = () => {
-    const apertureContext = useApertures();
+const ApertureTypesSidebar: React.FC = () => {
+    const { apertures, handleAddAperture, selectedApertureId } = useApertures();
 
     // Create a sorted copy of the apertures array
-    const sortedApertures = [...apertureContext.apertures].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedApertures = [...apertures].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
         <>
             <ChangeNameModal />
-            <ApertureListHeader onAddAperture={apertureContext.handleAddAperture} />
+            <ApertureListHeader onAddAperture={handleAddAperture} />
             <List dense>
                 {sortedApertures.map(aperture => (
                     <ListItem key={aperture.id} component="div" disablePadding>
-                        <ApertureListItemContent
-                            aperture={aperture}
-                            isSelected={apertureContext.selectedApertureId === aperture.id}
-                        />
+                        <ApertureListItemContent aperture={aperture} isSelected={selectedApertureId === aperture.id} />
                     </ListItem>
                 ))}
             </List>
@@ -30,4 +27,4 @@ const ApertureSidebar: React.FC = () => {
     );
 };
 
-export default ApertureSidebar;
+export default ApertureTypesSidebar;
