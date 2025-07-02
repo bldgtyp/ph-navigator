@@ -18,3 +18,7 @@ class ApertureSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ColumnDeleteRequest(BaseModel):
+    column_number: int

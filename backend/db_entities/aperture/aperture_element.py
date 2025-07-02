@@ -6,6 +6,7 @@ from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
+
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.aperture.aperture import Aperture

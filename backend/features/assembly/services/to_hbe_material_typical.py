@@ -130,7 +130,7 @@ def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMaterial:
 
     new_material_ = base_material.duplicate()
     new_material_.display_name = create_hybrid_hbe_material_name(division_grid)
-    new_material_.identifier = clean_and_id_ep_string('HybridEnergyMaterial')
+    new_material_.identifier = clean_and_id_ep_string("HybridEnergyMaterial")
     new_material_.conductivity = division_grid.get_equivalent_conductivity()
     # TODO: eq density
     # TODO: eq spec-heat

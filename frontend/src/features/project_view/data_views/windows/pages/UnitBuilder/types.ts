@@ -26,12 +26,14 @@ export interface DimensionLabelsProps {
     units?: string;
     onColumnWidthChange: (index: number, value: number) => void;
     onRowHeightChange: (index: number, value: number) => void;
+    handleDeleteColumn: (index: number) => void;
 }
 
 export interface HorizontalDimensionLinesProps {
     columnWidths: number[];
     units: string;
     onColumnWidthChange: (index: number, value: number) => void;
+    handleDeleteColumn: (index: number) => void;
 }
 
 export interface VerticalDimensionLinesProps {

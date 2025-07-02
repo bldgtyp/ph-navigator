@@ -9,48 +9,59 @@ from features.app.services import get_project_by_bt_number
 
 logger = logging.getLogger(__name__)
 
+
+class LastColumnException(Exception):
+    """Exception raised when trying to delete the only column in an aperture."""
+
+    def __init__(self, column_number: int, aperture_number: int):
+        logger.error(f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}.")
+        super().__init__(f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}.")
+
+
 def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
     logger.info(f"get_apertures_by_project_bt({bt_number})")
-    
+
     project = get_project_by_bt_number(db, bt_number)
     apertures = db.query(Aperture).filter(Aperture.project_id == project.id).all()
     return apertures
 
+
 def get_aperture_by_id(db: Session, aperture_id: int) -> Aperture:
     logger.info(f"get_aperture_by_id({aperture_id})")
-    
+
     aperture = db.query(Aperture).filter(Aperture.id == aperture_id).first()
     if not aperture:
         raise ValueError(f"Aperture with ID {aperture_id} not found.")
-    
+
     return aperture
+
 
 def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 100.0) -> Aperture:
     """Add a new row to the aperture grid with specified height.
-    
+
     Args:
         db: Database session
         aperture_id: ID of the aperture to modify
         row_height: Height of the new row in mm (default: 100.0)
-        
+
     Returns:
         Updated aperture object
-        
+
     Raises:
         ValueError: If aperture not found
     """
     logger.info(f"add_row_to_aperture({aperture_id}, row_height_mm={row_height_mm})")
-    
+
     try:
         # Get the aperture (this will raise ValueError if not found)
         aperture = get_aperture_by_id(db, aperture_id)
-        
+
         # Calculate the new row index
         new_row_index = len(aperture.row_heights_mm)
-        
+
         # Create a new list (this will be detected as a change)
         aperture.row_heights_mm = aperture.row_heights_mm + [row_height_mm]
-        
+
         # Create a new element for each column in the new row
         for col_index in range(len(aperture.column_widths_mm)):
             new_element = ApertureElement(
@@ -61,15 +72,16 @@ def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 10
                 col_span=1,
             )
             db.add(new_element)
-        
+
         # Commit the transaction
         db.commit()
-        
+
         return aperture
     except Exception as e:
         db.rollback()
         logger.error(f"Error adding row to aperture {aperture_id}: {str(e)}")
         raise
+
 
 def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float = 100.00) -> Aperture:
     """Add a new column to the aperture grid with specified width.
@@ -117,3 +129,39 @@ def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float
         logger.error(f"Error adding column to aperture {aperture_id}: {str(e)}")
         raise
 
+
+def delete_column_from_aperture(db: Session, aperture_id: int, column_number: int) -> Aperture:
+    logger.info(f"delete_column_from_aperture({aperture_id=}, {column_number=})")
+
+    # TODO: Need to move all 'later' columns back 1
+
+    try:
+        # Get the aperture (this will raise ValueError if not found)
+        aperture = get_aperture_by_id(db, aperture_id)
+
+        # Check if the column number is valid
+        if column_number < 0 or column_number >= len(aperture.column_widths_mm):
+            raise ValueError(f"Invalid column number {column_number} for aperture {aperture_id}")
+
+        # If this is the last column, raise an exception
+        if len(aperture.column_widths_mm) == 1:
+            raise LastColumnException(column_number, aperture_id)
+
+        # Remove the column width (Copy array to ensure SQLAlchemy detects the change)
+        new_widths = aperture.column_widths_mm.copy()
+        new_widths.pop(column_number)
+        aperture.column_widths_mm = new_widths
+
+        # Remove all elements in the deleted column
+        db.query(ApertureElement).filter(
+            ApertureElement.aperture_id == aperture_id, ApertureElement.column_number == column_number
+        ).delete()
+
+        # Commit the transaction
+        db.commit()
+
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting column from aperture {aperture_id}: {str(e)}")
+        raise

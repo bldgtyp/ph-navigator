@@ -3,6 +3,7 @@ import { ApertureType } from '../UnitBuilder/types';
 import { getWithAlert } from '../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';
 import { patchWithAlert } from '../../../../../../api/patchWithAlert';
+import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 
 interface AperturesContextType {
     isLoadingApertures: boolean;
@@ -20,6 +21,7 @@ interface AperturesContextType {
     handleUpdateAperture: (aperture: ApertureType) => void;
     handleAddRow: () => void;
     handleAddColumn: () => void;
+    handleDeleteColumn: (index: number) => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -133,6 +135,33 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture]);
 
+    const handleDeleteColumn = useCallback(
+        async (index: number) => {
+            if (!activeAperture) return;
+
+            try {
+                setIsLoadingApertures(true);
+                const updatedAperture = await deleteWithAlert<ApertureType>(
+                    `aperture/delete-column/${activeAperture.id}`,
+                    null,
+                    { column_number: index }
+                );
+                if (updatedAperture) {
+                    handleUpdateAperture(updatedAperture);
+                    handleSetActiveAperture(updatedAperture);
+                }
+            } catch (error) {
+                const msg = `Error deleting column: ${error}`;
+                console.error(msg);
+                alert(msg);
+            } finally {
+                setIsLoadingApertures(false);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [activeAperture]
+    );
+
     return (
         <AperturesContext.Provider
             value={{
@@ -151,6 +180,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 handleUpdateAperture,
                 handleAddRow,
                 handleAddColumn,
+                handleDeleteColumn,
             }}
         >
             {children}

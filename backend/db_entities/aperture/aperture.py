@@ -7,9 +7,11 @@ from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
 from db_entities.aperture.aperture_element import ApertureElement
+
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.app.project import Project
+
 
 class Aperture(Base):
     __tablename__ = "apertures"

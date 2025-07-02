@@ -9,7 +9,7 @@ import { useWindowGrid } from '../hooks/useWindowGrid';
 
 const WindowUnitGrid: React.FC = () => {
     const { getCellSize, updateColumnWidth, updateRowHeight } = useWindowGrid();
-    const { activeAperture } = useApertures();
+    const { activeAperture, handleDeleteColumn } = useApertures();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -79,6 +79,7 @@ const WindowUnitGrid: React.FC = () => {
                     columnWidths={activeAperture.column_widths_mm}
                     onColumnWidthChange={updateColumnWidth}
                     onRowHeightChange={updateRowHeight}
+                    handleDeleteColumn={handleDeleteColumn}
                 />
             </Box>
         </Box>

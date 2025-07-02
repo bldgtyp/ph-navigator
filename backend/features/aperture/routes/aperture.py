@@ -9,7 +9,15 @@ from config import limiter
 from database import get_db
 
 from features.aperture.schemas import ApertureSchema
-from features.aperture.services.aperture import add_column_to_aperture, get_aperture_by_id, get_apertures_by_project_bt, add_row_to_aperture
+from features.aperture.schemas.aperture import ColumnDeleteRequest
+from features.aperture.services.aperture import (
+    add_column_to_aperture,
+    get_aperture_by_id,
+    get_apertures_by_project_bt,
+    add_row_to_aperture,
+    delete_column_from_aperture,
+    LastColumnException,
+)
 
 router = APIRouter(
     prefix="/aperture",
@@ -18,22 +26,26 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
+
 @router.get("/get-apertures/{bt_number}", response_model=list[ApertureSchema])
-def get_project_apertures_route(request: Request, bt_number: str, db: Session = Depends(get_db)) -> list[ApertureSchema]:
+def get_project_apertures_route(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> list[ApertureSchema]:
     logger.info(f"get_project_apertures_route({bt_number})")
-    
+
     try:
         apertures = get_apertures_by_project_bt(db, bt_number)
         return [ApertureSchema.from_orm(aperture) for aperture in apertures]
     except Exception as e:
         msg = f"Error retrieving apertures for project {bt_number=}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)  
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
 
 @router.get("/get-aperture/{aperture_id}", response_model=ApertureSchema)
 def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"get_aperture({aperture_id})")
-    
+
     try:
         aperture = get_aperture_by_id(db, aperture_id)
         return ApertureSchema.from_orm(aperture)
@@ -46,6 +58,7 @@ def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
+
 @router.patch("/add-row/{aperture_id}", response_model=ApertureSchema)
 def add_row_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"add_row_to_aperture({aperture_id=})")
@@ -57,8 +70,9 @@ def add_row_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)) -
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
+
 @router.patch("/add-column/{aperture_id}", response_model=ApertureSchema)
-def add_column_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+def add_column_to_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"add_column_to_aperture({aperture_id=})")
 
     try:
@@ -68,3 +82,18 @@ def add_column_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
+
+@router.delete("/delete-column/{aperture_id}", response_model=ApertureSchema)
+def delete_column_on_aperture_route(
+    request: Request, delete_request: ColumnDeleteRequest, aperture_id: int, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"delete_column_on_aperture({aperture_id=}, {delete_request=})")
+
+    try:
+        return ApertureSchema.from_orm(delete_column_from_aperture(db, aperture_id, delete_request.column_number))
+    except LastColumnException as e:
+        raise HTTPException(status_code=status.HTTP_200_OK, detail=str(e))
+    except Exception as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)

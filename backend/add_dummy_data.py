@@ -245,32 +245,19 @@ def add_dummy_assembly(db: Session) -> None:
 def add_dummy_apertures(db: Session) -> None:
     project_1 = db.query(Project).filter(Project.id == 1).first()
 
-    aperture_1 = Aperture(
-        name="Aperture 1",
-        row_heights_mm=[100],
-        column_widths_mm=[100],
-        project=project_1
-    )
+    aperture_1 = Aperture(name="Aperture 1", row_heights_mm=[100], column_widths_mm=[100], project=project_1)
     db.add(aperture_1)
 
-    aperture_element_1 = ApertureElement(
-        aperture=aperture_1,
-        row_number=0, column_number=0, row_span=1, col_span=1)
+    aperture_element_1 = ApertureElement(aperture=aperture_1, row_number=0, column_number=0, row_span=1, col_span=1)
     db.add(aperture_element_1)
 
-    aperture_2 = Aperture(
-        name="Aperture 2",
-        row_heights_mm=[100],
-        column_widths_mm=[100, 200],
-        project=project_1
-    )
+    aperture_2 = Aperture(name="Aperture 2", row_heights_mm=[100], column_widths_mm=[100, 200], project=project_1)
     db.add(aperture_2)
-    aperture_element_2 = ApertureElement(
-        aperture=aperture_2,
-        row_number=0, column_number=0, row_span=1, col_span=1)
+    aperture_element_2 = ApertureElement(aperture=aperture_2, row_number=0, column_number=0, row_span=1, col_span=1)
     db.add(aperture_element_2)
 
     db.commit()
+
 
 if __name__ == "__main__":
     # -- Drop all existing tables so we start fresh

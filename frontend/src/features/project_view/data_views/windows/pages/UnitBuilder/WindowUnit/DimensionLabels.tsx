@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, ClickAwayListener } from '@mui/material';
+import { Box, Typography, TextField, ClickAwayListener, IconButton } from '@mui/material';
+import RemoveCircleTwoToneIcon from '@mui/icons-material/RemoveCircleTwoTone';
+
 import { DimensionLabelsProps, HorizontalDimensionLinesProps, VerticalDimensionLinesProps } from '../types';
 
 // Calculate positions for grid lines and segment sizes
@@ -173,6 +175,7 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
     columnWidths,
     units,
     onColumnWidthChange,
+    handleDeleteColumn,
 }) => {
     const labelSpacing = 10;
     const [editingValue, setEditingValue] = useState<string>('');
@@ -239,6 +242,7 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
             {/* Segment measurements (between grid lines) */}
             {columnSegments.map((width, index) => (
                 <Box
+                    className="col-segment-dimension"
                     key={`col-segment-${index}`}
                     sx={{
                         position: 'absolute',
@@ -250,6 +254,14 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
                         alignItems: 'center',
                     }}
                 >
+                    <IconButton
+                        className="delete-column-button"
+                        onClick={e => {
+                            handleDeleteColumn(index);
+                        }}
+                    >
+                        <RemoveCircleTwoToneIcon fontSize="small" />
+                    </IconButton>
                     {editingColIndex === index ? (
                         <ClickAwayListener onClickAway={handleEditConfirm}>
                             <TextField
@@ -324,6 +336,7 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
     units = 'mm',
     onColumnWidthChange,
     onRowHeightChange,
+    handleDeleteColumn,
 }) => {
     return (
         <>
@@ -333,6 +346,7 @@ const DimensionLabels: React.FC<DimensionLabelsProps> = ({
                 columnWidths={columnWidths}
                 units={units}
                 onColumnWidthChange={onColumnWidthChange}
+                handleDeleteColumn={handleDeleteColumn}
             />
         </>
     );
