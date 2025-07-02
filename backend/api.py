@@ -11,6 +11,7 @@ from features.auth.routes import router as auth_router
 from features.gcp.routes import router as gcp
 from features.hb_model.routes import router as hb_model_router
 from features.project_browser.routes import router as project_browser_router
+from features.aperture.routes.aperture import router as aperture_router
 
 
 def register_routes(app: FastAPI):
@@ -25,3 +26,4 @@ def register_routes(app: FastAPI):
     app.include_router(assembly)
     app.include_router(gcp)
     app.include_router(airtightness_router)
+    app.include_router(aperture_router)
