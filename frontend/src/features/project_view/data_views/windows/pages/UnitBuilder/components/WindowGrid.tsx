@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import GridCell from './GridCell';
 import GridLines from './GridLines';
 import DimensionLabels from './DimensionLabels';
-import { WindowGridData } from './types';
+import { WindowGridData } from '../types';
 
 interface WindowGridProps {
     gridData: WindowGridData;

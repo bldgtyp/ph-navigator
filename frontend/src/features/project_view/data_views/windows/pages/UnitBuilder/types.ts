@@ -67,3 +67,18 @@ export interface WindowGridProps {
     updateColumnWidth: (index: number, value: number) => void;
     updateRowHeight: (index: number, value: number) => void;
 }
+
+export interface ApertureElementType {
+    col_span: number;
+    column_number: number;
+    id: number;
+    row_number: number;
+    row_span: number;
+}
+
+export interface ApertureType {
+    id: string;
+    column_widths_mm: number[];
+    row_heights_mm: number[];
+    elements: ApertureElementType[];
+}

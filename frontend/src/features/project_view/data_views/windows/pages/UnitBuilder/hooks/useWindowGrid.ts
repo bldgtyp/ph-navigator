@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { GridCellData, WindowGridData } from '../components/types';
+import { GridCellData, WindowGridData } from '../types';
 
 const createCellId = (row: number, col: number) => `${row}-${col}`;
 

@@ -1,8 +1,8 @@
 """Add Aperture
 
-Revision ID: ddb558791da6
+Revision ID: 8315a8164db8
 Revises: ac7703c5800f
-Create Date: 2025-07-02 11:19:35.135058
+Create Date: 2025-07-02 12:23:03.837161
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ddb558791da6'
+revision: str = '8315a8164db8'
 down_revision: Union[str, None] = 'ac7703c5800f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,8 +24,8 @@ def upgrade() -> None:
     op.create_table('apertures',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
-    sa.Column('row_heights_mm', sa.Float(), nullable=False),
-    sa.Column('column_widths_mm', sa.Float(), nullable=False),
+    sa.Column('row_heights_mm', sa.ARRAY(sa.Float()), nullable=False),
+    sa.Column('column_widths_mm', sa.ARRAY(sa.Float()), nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
     sa.PrimaryKeyConstraint('id')

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, ClickAwayListener } from '@mui/material';
-import { DimensionLabelsProps, HorizontalDimensionLinesProps, VerticalDimensionLinesProps } from './types';
+import { DimensionLabelsProps, HorizontalDimensionLinesProps, VerticalDimensionLinesProps } from '../types';
 
 // Calculate positions for grid lines and segment sizes
 const calculateSegments = (sizes: number[]) => {

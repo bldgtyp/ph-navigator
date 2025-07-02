@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from config import limiter
 from database import get_db
+
 from features.aperture.schemas import ApertureSchema
+from features.aperture.services.aperture import get_apertures_by_project_bt
 
 router = APIRouter(
     prefix="/aperture",
@@ -21,7 +23,8 @@ def get_project_apertures_route(request: Request, bt_number: str, db: Session = 
     logger.info(f"get_project_apertures_route({bt_number})")
     
     try:
-        return []
+        apertures = get_apertures_by_project_bt(db, bt_number)
+        return [ApertureSchema.from_orm(aperture) for aperture in apertures]
     except Exception as e:
         msg = f"Error retrieving apertures for project {bt_number=}: {e}"
         logger.error(msg)

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import Sash from './Sash';
-import { GridCellProps } from './types';
+import { GridCellProps } from '../types';
 
 const GridCell: React.FC<GridCellProps> = ({ cell, width, height, isSelected, onToggleSelect }) => {
     return (

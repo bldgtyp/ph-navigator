@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
-import { GridLinesProps } from './types';
+import { GridLinesProps } from '../types';
 
 const GridLines: React.FC<GridLinesProps> = ({ rowHeights, columnWidths, isPositionOccupied, addSash }) => {
     return (
