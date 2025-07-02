@@ -40,14 +40,7 @@ export interface VerticalDimensionLinesProps {
     onRowHeightChange: (index: number, value: number) => void;
 }
 export interface GridCellProps {
-    cell: {
-        id: string;
-        row: number;
-        col: number;
-        rowSpan: number;
-        colSpan: number;
-        sash?: { id: string };
-    };
+    cell: GridCellData;
     width: number;
     height: number;
     isSelected: boolean;
