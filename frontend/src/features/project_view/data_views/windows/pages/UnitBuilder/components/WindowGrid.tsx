@@ -33,9 +33,9 @@ const WindowGrid: React.FC<WindowGridProps> = ({
                 className="window-cells-container"
                 sx={{
                     position: 'relative',
+                    border: '1px solid #ccc',
                     width: `${totalWidth}px`,
                     height: `${totalHeight}px`,
-                    border: '1px solid #ccc',
                 }}
             >
                 {/* Main grid with cells */}
