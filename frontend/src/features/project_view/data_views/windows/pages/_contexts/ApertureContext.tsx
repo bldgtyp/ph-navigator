@@ -8,6 +8,12 @@ interface AperturesContextType {
     setIsLoadingApertures: React.Dispatch<React.SetStateAction<boolean>>;
     apertures: ApertureType[];
     setApertures: React.Dispatch<React.SetStateAction<ApertureType[]>>;
+    selectedApertureId: number | null;
+    setSelectedApertureId: React.Dispatch<React.SetStateAction<number | null>>;
+    handleNameChange: (id: any, newName: string) => void;
+    handleApertureChange: (id: any) => void;
+    handleAddAperture: () => void;
+    handleDeleteAperture: (id: any) => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -16,6 +22,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const { projectId } = useParams();
     const [isLoadingApertures, setIsLoadingApertures] = useState<boolean>(true);
     const [apertures, setApertures] = useState<ApertureType[]>([]);
+    const [selectedApertureId, setSelectedApertureId] = useState<number | null>(null);
 
     useEffect(() => {
         async function loadProjectData() {
@@ -45,8 +52,29 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         loadProjectData();
     }, [projectId]);
 
+    const handleNameChange = () => {};
+
+    const handleApertureChange = () => {};
+
+    const handleAddAperture = () => {};
+
+    const handleDeleteAperture = () => {};
+
     return (
-        <AperturesContext.Provider value={{ isLoadingApertures, setIsLoadingApertures, apertures, setApertures }}>
+        <AperturesContext.Provider
+            value={{
+                isLoadingApertures,
+                setIsLoadingApertures,
+                apertures,
+                setApertures,
+                selectedApertureId,
+                setSelectedApertureId,
+                handleNameChange,
+                handleApertureChange,
+                handleAddAperture,
+                handleDeleteAperture,
+            }}
+        >
             {children}
         </AperturesContext.Provider>
     );

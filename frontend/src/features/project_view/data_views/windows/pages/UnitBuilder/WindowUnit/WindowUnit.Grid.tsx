@@ -16,7 +16,7 @@ interface WindowGridProps {
     toggleCellSelection: (cellId: string) => void;
 }
 
-const WindowGrid: React.FC<WindowGridProps> = ({
+const WindowUnitGrid: React.FC<WindowGridProps> = ({
     gridData,
     isPositionOccupied,
     addSash,
@@ -100,4 +100,4 @@ const WindowGrid: React.FC<WindowGridProps> = ({
     );
 };
 
-export default WindowGrid;
+export default WindowUnitGrid;

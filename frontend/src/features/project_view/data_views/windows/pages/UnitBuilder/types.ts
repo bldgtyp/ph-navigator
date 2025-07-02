@@ -77,7 +77,8 @@ export interface ApertureElementType {
 }
 
 export interface ApertureType {
-    id: string;
+    id: number;
+    name: string;
     column_widths_mm: number[];
     row_heights_mm: number[];
     elements: ApertureElementType[];

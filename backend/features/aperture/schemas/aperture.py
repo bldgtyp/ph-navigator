@@ -11,6 +11,7 @@ class ApertureSchema(BaseModel):
     """Base schema for Aperture."""
 
     id: int
+    name: str
     row_heights_mm: list[float]
     column_widths_mm: list[float]
     elements: list[ApertureElementSchema]

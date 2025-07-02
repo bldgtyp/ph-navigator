@@ -1,85 +1,37 @@
 import React from 'react';
-import { Box, Button, Tooltip } from '@mui/material';
+import { Grid } from '@mui/material';
+
+import { AperturesProvider } from '../_contexts/ApertureContext';
+import { ApertureSidebarProvider } from './Sidebar/Sidebar.Context';
+
 import ContentBlock from '../../../_components/ContentBlock';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
-import WindowGrid from './components/WindowGrid';
-import { useWindowGrid } from './hooks/useWindowGrid';
-import { AperturesProvider, useApertures } from '../_contexts/ApertureContext';
-
-const WindowUnitDisplay: React.FC = () => {
-    const {
-        gridData,
-        isPositionOccupied,
-        addRow,
-        addColumn,
-        addSash,
-        getCellSize,
-        updateColumnWidth,
-        updateRowHeight,
-        selectedCells,
-        toggleCellSelection,
-        clearSelection,
-        mergeSelectedCells,
-    } = useWindowGrid();
-
-    const { isLoadingApertures, setIsLoadingApertures, apertures, setApertures } = useApertures();
-    console.log('apertures', apertures);
-
-    return (
-        <Box>
-            <Box mb={2} display="flex" alignItems="center" flexWrap="wrap" gap={1}>
-                <Button variant="contained" onClick={addColumn}>
-                    Add Column
-                </Button>
-                <Button variant="contained" onClick={addRow}>
-                    Add Row
-                </Button>
-
-                <Tooltip title={selectedCells.length <= 1 ? 'Select multiple adjacent cells to merge' : ''}>
-                    <span>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={mergeSelectedCells}
-                            disabled={selectedCells.length <= 1}
-                        >
-                            Merge Selected ({selectedCells.length})
-                        </Button>
-                    </span>
-                </Tooltip>
-
-                {selectedCells.length > 0 && (
-                    <Button variant="outlined" onClick={clearSelection}>
-                        Clear Selection
-                    </Button>
-                )}
-            </Box>
-
-            <WindowGrid
-                gridData={gridData}
-                isPositionOccupied={isPositionOccupied}
-                addSash={addSash}
-                getCellSize={getCellSize}
-                updateColumnWidth={updateColumnWidth}
-                updateRowHeight={updateRowHeight}
-                selectedCells={selectedCells}
-                toggleCellSelection={toggleCellSelection}
-            />
-        </Box>
-    );
-};
+import ApertureSidebar from './Sidebar/Sidebar';
+import WindowUnitView from './WindowUnit/WindowUnit.View';
 
 const WindowUnits: React.FC = () => {
     return (
         <AperturesProvider>
-            <ContentBlock>
-                <LoadingModal showModal={false} />
-                <ContentBlockHeader text="Window & Door Builder" />
-                <Box p={2}>
-                    <WindowUnitDisplay />
-                </Box>
-            </ContentBlock>
+            <ApertureSidebarProvider>
+                <ContentBlock>
+                    <LoadingModal showModal={false} />
+
+                    <ContentBlockHeader text="Window & Door Builder" />
+
+                    <Grid container spacing={1} sx={{ margin: 2 }}>
+                        {/* Sidebar Column */}
+                        <Grid size={2}>
+                            <ApertureSidebar />
+                        </Grid>
+
+                        {/* Main Window Unit View */}
+                        <Grid p={2} size={10} sx={{ borderLeft: '1px solid #ccc' }}>
+                            <WindowUnitView />
+                        </Grid>
+                    </Grid>
+                </ContentBlock>
+            </ApertureSidebarProvider>
         </AperturesProvider>
     );
 };
