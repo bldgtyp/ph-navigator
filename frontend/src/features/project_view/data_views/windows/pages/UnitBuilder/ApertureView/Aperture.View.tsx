@@ -6,7 +6,7 @@ import { useApertures } from './Aperture.Context';
 import ApertureElements from './ApertureElements';
 
 const ApertureView: React.FC = () => {
-    const { handleAddRow, handleAddColumn } = useApertures();
+    const { handleAddRow, handleAddColumn, selectedCells, mergeSelectedCells, clearSelection } = useApertures();
 
     return (
         <Box className="aperture-view">
@@ -18,7 +18,7 @@ const ApertureView: React.FC = () => {
                     Add Row
                 </Button>
 
-                {/* <Tooltip title={selectedCells.length <= 1 ? 'Select multiple adjacent cells to merge' : ''}>
+                <Tooltip title={selectedCells.length <= 1 ? 'Select multiple adjacent cells to merge' : ''}>
                     <span>
                         <Button
                             variant="contained"
@@ -35,7 +35,7 @@ const ApertureView: React.FC = () => {
                     <Button variant="outlined" onClick={clearSelection}>
                         Clear Selection
                     </Button>
-                )} */}
+                )}
             </Box>
 
             <ApertureElements />

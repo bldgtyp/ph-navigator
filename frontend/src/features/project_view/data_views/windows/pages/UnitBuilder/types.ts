@@ -43,6 +43,8 @@ export interface GridCellProps {
     element: ApertureElementType;
     width: number;
     height: number;
+    isSelected: boolean;
+    onToggleSelect: (id: number) => void;
 }
 
 export interface SashProps {

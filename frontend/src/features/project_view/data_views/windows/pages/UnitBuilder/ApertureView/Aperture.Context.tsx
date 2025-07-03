@@ -1,10 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ApertureType } from '../types';
+import { ApertureElementType, ApertureType } from '../types';
 import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';
 import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../api/postWithAlert';
+
+function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
+    return aperture.elements.find(element => element.id === elementId);
+}
 
 interface AperturesContextType {
     isLoadingApertures: boolean;
@@ -30,6 +34,11 @@ interface AperturesContextType {
     getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
     updateColumnWidth: (apertureId: number, columnIndex: number, newWidthMM: number) => void;
     updateRowHeight: (apertureId: number, rowIndex: number, newHeightMM: number) => void;
+    // Selection
+    selectedCells: number[];
+    toggleCellSelection: (cellId: number) => void;
+    clearSelection: () => void;
+    mergeSelectedCells: () => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -40,6 +49,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [apertures, setApertures] = useState<ApertureType[]>([]);
     const [selectedApertureId, setSelectedApertureId] = useState<number | null>(null);
     const [activeAperture, setActiveAperture] = useState<ApertureType | null>(null);
+    const [selectedCells, setSelectedApertureElements] = useState<number[]>([]);
 
     const fetchApertures = async () => {
         console.log(`fetchApertures(), projectId=${projectId}`);
@@ -326,6 +336,70 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         [apertures]
     );
 
+    // ----------------------------------------------------------------------------------
+    // Cell Selection
+    const toggleCellSelection = useCallback(
+        (elementId: number) => {
+            setSelectedApertureElements(prev => {
+                if (!activeAperture) {
+                    return [];
+                } else if (prev.includes(elementId)) {
+                    // Deselect if already selected
+                    return prev.filter(id => id !== elementId);
+                } else {
+                    // Only allow selecting adjacent ApertureElement (ApertureElement that share an edge)
+                    if (prev.length === 0) {
+                        // First selection is always valid
+                        return [elementId];
+                    }
+
+                    // Check if this ApertureElement is adjacent to any selected ApertureElement
+                    const element = getApertureElementById(activeAperture, elementId);
+                    if (!element) return prev;
+
+                    // Check adjacency with any selected ApertureElement
+                    for (const selectedId of prev) {
+                        const selectedCell = getApertureElementById(activeAperture, selectedId);
+                        if (!selectedCell) continue;
+
+                        // Check if cells are adjacent (share an edge)
+                        const isAdjacent =
+                            // Horizontally adjacent
+                            (element.row_number === selectedCell.row_number &&
+                                (Math.abs(element.column_number - selectedCell.column_number) === 1 ||
+                                    Math.abs(element.column_number + element.col_span - selectedCell.column_number) ===
+                                        0 ||
+                                    Math.abs(
+                                        element.column_number - (selectedCell.column_number + selectedCell.col_span)
+                                    ) === 0)) ||
+                            // Vertically adjacent
+                            (element.column_number === selectedCell.column_number &&
+                                (Math.abs(element.row_number - selectedCell.row_number) === 1 ||
+                                    Math.abs(element.row_number + element.row_span - selectedCell.row_number) === 0 ||
+                                    Math.abs(element.row_number - (selectedCell.row_number + selectedCell.row_span)) ===
+                                        0));
+
+                        if (isAdjacent) {
+                            return [...prev, elementId];
+                        }
+                    }
+
+                    // If we get here, the cell isn't adjacent to any selected cell
+                    return prev;
+                }
+            });
+        },
+        [activeAperture]
+    );
+
+    const clearSelection = useCallback(() => {
+        setSelectedApertureElements([]);
+    }, []);
+
+    const mergeSelectedCells = () => {
+        console.log('mergeSelectedCells()');
+    };
+
     return (
         <AperturesContext.Provider
             value={{
@@ -349,6 +423,10 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 getCellSize,
                 updateColumnWidth,
                 updateRowHeight,
+                selectedCells,
+                toggleCellSelection,
+                clearSelection,
+                mergeSelectedCells,
             }}
         >
             {children}
