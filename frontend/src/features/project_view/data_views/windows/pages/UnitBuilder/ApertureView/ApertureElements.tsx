@@ -4,8 +4,8 @@ import { Box } from '@mui/material';
 import { useApertures } from './Aperture.Context';
 
 import ApertureElementContainer from './ApertureElement.Container';
-import VerticalDimensionLines from './Dimensions/Dimensions.Vertical';
-import HorizontalDimensionLines from './Dimensions/Dimensions.Horizontal';
+import VerticalDimensionLines from '../Dimensions/Dimensions.Vertical';
+import HorizontalDimensionLines from '../Dimensions/Dimensions.Horizontal';
 
 const ApertureElements: React.FC = () => {
     const { activeAperture, getCellSize, updateColumnWidth, updateRowHeight } = useApertures();

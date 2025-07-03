@@ -2,21 +2,25 @@ import React, { useState } from 'react';
 import { Box, Typography, TextField, ClickAwayListener, IconButton } from '@mui/material';
 import RemoveCircleTwoToneIcon from '@mui/icons-material/RemoveCircleTwoTone';
 
-import { VerticalDimensionLinesProps } from '../../types';
-import { useApertures } from '../Aperture.Context';
+import { HorizontalDimensionLinesProps } from '../types';
+import { useApertures } from '../ApertureView/Aperture.Context';
 import { calculateSegments } from './calcSegments';
 
-const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeights, units, onRowHeightChange }) => {
+const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
+    columnWidths,
+    units,
+    onColumnWidthChange,
+}) => {
     const labelSpacing = 10;
-    const { handleDeleteRow } = useApertures();
-    const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+    const { handleDeleteColumn } = useApertures();
     const [editingValue, setEditingValue] = useState<string>('');
+    const [editingColIndex, setEditingColIndex] = useState<number | null>(null);
 
-    const { positions: rowPositions, segments: rowSegments } = calculateSegments(rowHeights);
-    const totalHeight = rowPositions[rowPositions.length - 1];
+    const { positions: columnPositions, segments: columnSegments } = calculateSegments(columnWidths);
+    const totalWidth = columnPositions[columnPositions.length - 1];
 
     const handleEditStart = (index: number, value: number) => {
-        setEditingRowIndex(index);
+        setEditingColIndex(index);
         setEditingValue(value.toString());
     };
 
@@ -24,48 +28,46 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
         const value = parseInt(editingValue, 10);
 
         if (!isNaN(value) && value > 0) {
-            if (editingRowIndex !== null) {
-                onRowHeightChange(editingRowIndex, value);
-                setEditingRowIndex(null);
+            if (editingColIndex !== null) {
+                onColumnWidthChange(editingColIndex, value);
+                setEditingColIndex(null);
             }
         }
 
         // Reset the editing state regardless of whether the value was valid
-        setEditingRowIndex(null);
+        setEditingColIndex(null);
     };
 
     return (
         <Box
-            id="dimensions-left"
+            id="dimensions-bottom"
             sx={{
                 position: 'absolute',
-                top: 0,
-                left: -labelSpacing * 5,
-                height: '100%',
-                width: labelSpacing * 4,
+                left: 0,
+                top: '100%',
+                width: '100%',
+                height: labelSpacing * 4,
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
             }}
         >
             {/* Grid line positions */}
-            {rowPositions.map((position, index) => (
+            {columnPositions.map((position, index) => (
                 <Box
-                    key={`row-position-${index}`}
+                    key={`col-position-${index}`}
                     sx={{
                         position: 'absolute',
-                        top: `${position}px`,
-                        right: 0,
-                        transform: 'translateY(-50%)',
+                        left: `${position}px`,
+                        top: 0,
+                        transform: 'translateX(-50%)',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        height: '20px',
                     }}
                 >
                     <Box
                         sx={{
-                            width: labelSpacing,
-                            height: '1px',
+                            height: labelSpacing,
+                            width: '1px',
                             bgcolor: 'grey.500',
                         }}
                     />
@@ -73,29 +75,29 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
             ))}
 
             {/* Segment measurements (between grid lines) */}
-            {rowSegments.map((height, index) => (
+            {columnSegments.map((width, index) => (
                 <Box
-                    className="row-segment-dimension"
-                    key={`row-segment-${index}`}
+                    className="col-segment-dimension"
+                    key={`col-segment-${index}`}
                     sx={{
                         position: 'absolute',
-                        top: `${rowPositions[index] + height / 2}px`,
-                        right: labelSpacing + 5,
-                        transform: 'translateY(-50%)',
+                        left: `${columnPositions[index] + width / 2}px`,
+                        top: labelSpacing + 5,
+                        transform: 'translateX(-50%)',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        height: '20px',
                     }}
                 >
                     <IconButton
-                        className="delete-row-button"
+                        className="delete-column-button"
                         onClick={e => {
-                            handleDeleteRow(index);
+                            handleDeleteColumn(index);
                         }}
                     >
                         <RemoveCircleTwoToneIcon fontSize="small" />
                     </IconButton>
-                    {editingRowIndex === index ? (
+                    {editingColIndex === index ? (
                         <ClickAwayListener onClickAway={handleEditConfirm}>
                             <TextField
                                 size="small"
@@ -110,11 +112,14 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
                                         py: 0.5,
                                         px: 1,
                                         fontSize: '0.75rem',
-                                        textAlign: 'right',
+                                        textAlign: 'center',
                                     },
                                 }}
                                 slotProps={{
                                     input: {
+                                        onFocus: event => {
+                                            event.target.select();
+                                        },
                                         endAdornment: (
                                             <Typography variant="caption" color="text.secondary">
                                                 {units}
@@ -128,7 +133,6 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
                         <Typography
                             variant="caption"
                             sx={{
-                                mr: 1,
                                 cursor: 'pointer',
                                 '&:hover': {
                                     bgcolor: 'rgba(0,0,0,0.05)',
@@ -136,32 +140,32 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ rowHeig
                                     px: 0.5,
                                 },
                             }}
-                            onClick={() => handleEditStart(index, height)}
+                            onClick={() => handleEditStart(index, width)}
                         >
-                            {height} {units}
+                            {width} {units}
                         </Typography>
                     )}
                 </Box>
             ))}
 
-            {/* Total height label */}
+            {/* Total width label */}
             <Box
                 sx={{
                     position: 'absolute',
-                    top: '50%',
-                    right: labelSpacing * 4.5,
-                    transform: 'translateY(-50%) rotate(-90deg)',
-                    transformOrigin: 'right center',
+                    left: '50%',
+                    bottom: -labelSpacing * 2,
+                    transform: 'translateX(-50%)',
                     display: 'flex',
                     alignItems: 'center',
+                    mt: 3,
                 }}
             >
-                <Typography variant="body2" fontWeight="bold" sx={{ whiteSpace: 'nowrap' }}>
-                    Total: {totalHeight} {units}
+                <Typography variant="body2" fontWeight="bold">
+                    Total: {totalWidth} {units}
                 </Typography>
             </Box>
         </Box>
     );
 };
 
-export default VerticalDimensionLines;
+export default HorizontalDimensionLines;
