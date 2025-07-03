@@ -3,12 +3,15 @@ import { Box } from '@mui/material';
 
 import ApertureElementSVG from './ApertureElement.SVG';
 import { GridCellProps } from '../types';
+import { useApertures } from './Aperture.Context';
 
-const ApertureElementContainer: React.FC<GridCellProps> = ({ element, width, height, isSelected, onToggleSelect }) => {
+const ApertureElementContainer: React.FC<GridCellProps> = ({ element, width, height, isSelected }) => {
+    const { toggleApertureElementSelection } = useApertures();
+
     return (
         <Box
             className={`window-cell ${isSelected ? 'selected' : ''}`}
-            onClick={() => onToggleSelect(element.id)}
+            onClick={() => toggleApertureElementSelection(element.id)}
             sx={{
                 gridRowStart: element.row_number + 1,
                 gridRowEnd: element.row_number + 1 + element.row_span,

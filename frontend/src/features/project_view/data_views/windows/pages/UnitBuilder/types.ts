@@ -44,7 +44,6 @@ export interface GridCellProps {
     width: number;
     height: number;
     isSelected: boolean;
-    onToggleSelect: (id: number) => void;
 }
 
 export interface SashProps {
