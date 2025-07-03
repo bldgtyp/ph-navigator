@@ -28,8 +28,8 @@ interface AperturesContextType {
     handleDeleteColumn: (index: number) => void;
     // Sizing
     getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
-    updateColumnWidth: (index: number, newWidth: number) => void;
-    updateRowHeight: (index: number, newHeight: number) => void;
+    updateColumnWidth: (apertureId: number, columnIndex: number, newWidthMM: number) => void;
+    updateRowHeight: (apertureId: number, rowIndex: number, newHeightMM: number) => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -273,27 +273,55 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     const updateColumnWidth = useCallback(
-        (index: number, newWidth: number) => {
-            // if (index < 0 || index >= gridData.columnWidths.length) return;
-            // setGridData(prev => ({
-            //     ...prev,
-            //     columnWidths: prev.columnWidths.map((width, i) => (i === index ? newWidth : width)),
-            // }));
+        async (apertureId: number, columnIndex: number, newWidthMM: number) => {
+            console.log(`updateColumnWidth(${apertureId}, ${columnIndex}, ${newWidthMM})`);
+            try {
+                const updatedAperture = await patchWithAlert<ApertureType>(
+                    `aperture/update-column-width/${apertureId}`,
+                    null,
+                    {
+                        column_index: columnIndex,
+                        new_width_mm: newWidthMM,
+                    }
+                );
+
+                if (updatedAperture) {
+                    console.log(`Aperture Column Updated successfully: ${updatedAperture.id}`);
+                    const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                    setApertures(updatedApertures);
+                    handleSetActiveAperture(updatedAperture);
+                }
+            } catch (error) {
+                console.error('Failed to update aperture column width:', error);
+            }
         },
-        []
-        // [selectedAperture?.column_widths_mm]
+        [apertures]
     );
 
     const updateRowHeight = useCallback(
-        (index: number, newHeight: number) => {
-            // if (index < 0 || index >= selectedAperture.row_heights_mm.length) return;
-            // setGridData(prev => ({
-            //     ...prev,
-            //     rowHeights: prev.rowHeights.map((height, i) => (i === index ? newHeight : height)),
-            // }));
+        async (apertureId: number, rowIndex: number, newHeightMM: number) => {
+            console.log(`updateRowHeight(${apertureId}, ${rowIndex}, ${newHeightMM})`);
+            try {
+                const updatedAperture = await patchWithAlert<ApertureType>(
+                    `aperture/update-row-height/${apertureId}`,
+                    null,
+                    {
+                        row_index: rowIndex,
+                        new_height_mm: newHeightMM,
+                    }
+                );
+
+                if (updatedAperture) {
+                    console.log(`Aperture Row Updated successfully: ${updatedAperture.id}`);
+                    const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                    setApertures(updatedApertures);
+                    handleSetActiveAperture(updatedAperture);
+                }
+            } catch (error) {
+                console.error('Failed to update aperture column width:', error);
+            }
         },
-        []
-        // [selectedAperture?.row_heights_mm]
+        [apertures]
     );
 
     return (

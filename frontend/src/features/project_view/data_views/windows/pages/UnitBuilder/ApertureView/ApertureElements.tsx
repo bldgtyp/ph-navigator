@@ -76,12 +76,12 @@ const ApertureElements: React.FC = () => {
                 <VerticalDimensionLines
                     rowHeights={activeAperture.row_heights_mm}
                     units={'mm'}
-                    onRowHeightChange={updateRowHeight}
+                    onRowHeightChange={(index, value) => updateRowHeight(activeAperture.id, index, value)}
                 />
                 <HorizontalDimensionLines
                     columnWidths={activeAperture.column_widths_mm}
                     units={'mm'}
-                    onColumnWidthChange={updateColumnWidth}
+                    onColumnWidthChange={(index, value) => updateColumnWidth(activeAperture.id, index, value)}
                 />
             </Box>
         </Box>

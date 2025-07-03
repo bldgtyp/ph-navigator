@@ -184,7 +184,7 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
 
 
 def delete_column_from_aperture(db: Session, aperture_id: int, column_number: int) -> Aperture:
-    """"Delete a column from the aperture grid."""
+    """ "Delete a column from the aperture grid."""
     logger.info(f"delete_column_from_aperture({aperture_id=}, {column_number=})")
 
     try:
@@ -251,6 +251,42 @@ def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Apertu
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating aperture name {aperture_id}: {str(e)}")
+        raise
+
+
+def update_aperture_column_width(db: Session, aperture_id: int, column_index: int, new_width_mm: float) -> Aperture:
+    """Update the width of a specific column in an aperture."""
+    logger.info(
+        f"update_aperture_column_width({aperture_id}, column_index={column_index}, new_width_mm={new_width_mm})"
+    )
+
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        col_widths = aperture.column_widths_mm.copy()
+        col_widths[column_index] = new_width_mm
+        aperture.column_widths_mm = col_widths
+        db.commit()
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture column width {aperture_id}: {str(e)}")
+        raise
+
+
+def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, new_height_mm: float) -> Aperture:
+    """Update the height of a specific row in an aperture."""
+    logger.info(f"update_aperture_row_height({aperture_id}, row_index={row_index}, new_height_mm={new_height_mm})")
+
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        row_heights = aperture.row_heights_mm.copy()
+        row_heights[row_index] = new_height_mm
+        aperture.row_heights_mm = row_heights
+        db.commit()
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture row height {aperture_id}: {str(e)}")
         raise
 
 

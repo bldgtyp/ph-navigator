@@ -27,5 +27,16 @@ class ColumnDeleteRequest(BaseModel):
 class RowDeleteRequest(BaseModel):
     row_number: int
 
+
 class UpdateNameRequest(BaseModel):
     new_name: str
+
+
+class UpdateColumnWidthRequest(BaseModel):
+    column_index: int
+    new_width_mm: float
+
+
+class UpdateRowHeightRequest(BaseModel):
+    row_index: int
+    new_height_mm: float

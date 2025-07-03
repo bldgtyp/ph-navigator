@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 from config import limiter
 from database import get_db
 from features.aperture.schemas import ApertureSchema
-from features.aperture.schemas.aperture import ColumnDeleteRequest, RowDeleteRequest, UpdateNameRequest
+from features.aperture.schemas.aperture import (
+    ColumnDeleteRequest,
+    RowDeleteRequest,
+    UpdateColumnWidthRequest,
+    UpdateNameRequest,
+    UpdateRowHeightRequest,
+)
 from features.aperture.services.aperture import (
     LastColumnException,
     LastRowException,
@@ -21,7 +27,9 @@ from features.aperture.services.aperture import (
     delete_row_from_aperture,
     get_aperture_by_id,
     get_apertures_by_project_bt,
+    update_aperture_column_width,
     update_aperture_name,
+    update_aperture_row_height,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -90,6 +98,40 @@ def update_aperture_name_route(
         return ApertureSchema.from_orm(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture name for ID {aperture_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+@router.patch("/update-column-width/{aperture_id}", response_model=ApertureSchema)
+def update_aperture_column_width_route(
+    request: Request, aperture_id: int, update_request: UpdateColumnWidthRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"update_aperture_column_width_route({aperture_id=}, {update_request=})")
+
+    try:
+        updated_aperture = update_aperture_column_width(
+            db, aperture_id, update_request.column_index, update_request.new_width_mm
+        )
+        return ApertureSchema.from_orm(updated_aperture)
+    except Exception as e:
+        msg = f"Failed to update aperture column width for ID {aperture_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+@router.patch("/update-row-height/{aperture_id}", response_model=ApertureSchema)
+def update_aperture_row_height_route(
+    request: Request, aperture_id: int, update_request: UpdateRowHeightRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"update_aperture_row_height_route({aperture_id=}, {update_request=})")
+
+    try:
+        updated_aperture = update_aperture_row_height(
+            db, aperture_id, update_request.row_index, update_request.new_height_mm
+        )
+        return ApertureSchema.from_orm(updated_aperture)
+    except Exception as e:
+        msg = f"Failed to update aperture row height for ID {aperture_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
