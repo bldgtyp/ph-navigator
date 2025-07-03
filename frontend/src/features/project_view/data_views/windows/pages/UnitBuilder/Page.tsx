@@ -31,7 +31,7 @@ const ApertureTypesContentBlock: React.FC = () => {
                 {/* Main Window Unit View */}
                 <Grid p={2} size={10} sx={{ borderLeft: '1px solid #ccc' }}>
                     <Box className="aperture-view">
-                        {userContext ? <ApertureEditButtons /> : null}
+                        {userContext.user ? <ApertureEditButtons /> : null}
                         <ApertureElements />
                     </Box>
                 </Grid>
