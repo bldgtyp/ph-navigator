@@ -12,6 +12,9 @@ import { DimensionLabel, DimensionEditable } from './Dimension.Label';
 import { useDimensions } from './Dimensions.Context';
 
 const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onColumnWidthChange }) => {
+    const labelWidth = 40;
+    const gridlineTickGap = 5;
+
     const userContext = useContext(UserContext);
     const { units, editingColIndex, handleEditColStart, handleEditColConfirm } = useDimensions();
     const { activeAperture, handleDeleteColumn } = useApertures();
@@ -29,9 +32,9 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onC
             sx={{
                 position: 'absolute',
                 left: 0,
-                top: '100%',
+                top: `calc(100% + ${gridlineTickGap}px)`,
                 width: '100%',
-                height: 40,
+                height: labelWidth,
                 display: 'flex',
             }}
         >
@@ -71,19 +74,19 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onC
 
             {/* Total width label */}
             {/* <Box
-                sx={{
-                    position: 'absolute',
-                    left: '50%',
-                    bottom: -labelSpacing * 2,
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    mt: 3,
-                }}
+            sx={{
+                position: 'absolute',
+                left: '50%',
+                bottom: -labelSpacing * 2,
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                mt: 3,
+            }}
             >
-                <Typography variant="body2" fontWeight="bold">
-                    Total: {totalWidth} {units}
-                </Typography>
+            <Typography variant="body2" fontWeight="bold">
+                Total: {totalWidth} {units}
+            </Typography>
             </Box> */}
         </Box>
     );

@@ -1,16 +1,19 @@
-import React from 'react';
-import { Grid } from '@mui/material';
+import React, { useContext } from 'react';
+import { Box, Grid } from '@mui/material';
 
 import { AperturesProvider, useApertures } from './ApertureView/Aperture.Context';
 import { ApertureSidebarProvider } from './Sidebar/Sidebar.Context';
+import { UserContext } from '../../../../../auth/_contexts/UserContext';
 
 import ContentBlock from '../../../_components/ContentBlock';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
 import ApertureTypesSidebar from './Sidebar/Sidebar';
-import ApertureView from './ApertureView/Aperture.View';
+import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
+import ApertureElements from './ApertureView/ApertureElements';
 
 const ApertureTypesContentBlock: React.FC = () => {
+    const userContext = useContext(UserContext);
     const { activeAperture } = useApertures();
 
     return (
@@ -27,7 +30,10 @@ const ApertureTypesContentBlock: React.FC = () => {
 
                 {/* Main Window Unit View */}
                 <Grid p={2} size={10} sx={{ borderLeft: '1px solid #ccc' }}>
-                    <ApertureView />
+                    <Box className="aperture-view">
+                        {userContext ? <ApertureEditButtons /> : null}
+                        <ApertureElements />
+                    </Box>
                 </Grid>
             </Grid>
         </ContentBlock>

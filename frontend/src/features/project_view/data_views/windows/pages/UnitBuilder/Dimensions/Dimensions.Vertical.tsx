@@ -12,6 +12,9 @@ import GridLineTick from './GridLineTick';
 import { DimensionEditable, DimensionLabel } from './Dimension.Label';
 
 const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHeightChange }) => {
+    const labelWidth = 40;
+    const gridlineTickGap = 5;
+
     const userContext = useContext(UserContext);
     const { units, editingRowIndex, handleEditRowStart, handleEditRowConfirm } = useDimensions();
     const { activeAperture, handleDeleteRow } = useApertures();
@@ -19,9 +22,6 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
     if (!activeAperture) {
         return null;
     }
-
-    const labelWidth = 40;
-    const gridlineTickGap = 5;
 
     const { positions: rowPositions, segments: rowSegments } = calculateSegments(activeAperture.row_heights_mm);
     const totalHeight = rowPositions[rowPositions.length - 1];
