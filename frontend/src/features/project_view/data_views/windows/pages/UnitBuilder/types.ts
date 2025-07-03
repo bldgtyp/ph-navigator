@@ -29,14 +29,10 @@ export interface DimensionLabelsProps {
 }
 
 export interface HorizontalDimensionLinesProps {
-    columnWidths: number[];
-    units: string;
     onColumnWidthChange: (index: number, value: number) => void;
 }
 
 export interface VerticalDimensionLinesProps {
-    rowHeights: number[];
-    units: string;
     onRowHeightChange: (index: number, value: number) => void;
 }
 export interface GridCellProps {

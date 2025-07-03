@@ -1,42 +1,27 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, ClickAwayListener, IconButton } from '@mui/material';
-import RemoveCircleTwoToneIcon from '@mui/icons-material/RemoveCircleTwoTone';
+import React, { useContext, useState } from 'react';
+import { Box } from '@mui/material';
+
+import { useApertures } from '../ApertureView/Aperture.Context';
+import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
 import { HorizontalDimensionLinesProps } from '../types';
-import { useApertures } from '../ApertureView/Aperture.Context';
 import { calculateSegments } from './calcSegments';
+import GridLineTick from './GridLineTick';
+import DeleteButton from './DeleteButton';
+import { DimensionLabel, DimensionEditable } from './Dimension.Label';
+import { useDimensions } from './Dimensions.Context';
 
-const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
-    columnWidths,
-    units,
-    onColumnWidthChange,
-}) => {
-    const labelSpacing = 10;
-    const { handleDeleteColumn } = useApertures();
-    const [editingValue, setEditingValue] = useState<string>('');
-    const [editingColIndex, setEditingColIndex] = useState<number | null>(null);
+const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onColumnWidthChange }) => {
+    const userContext = useContext(UserContext);
+    const { units, editingColIndex, handleEditColStart, handleEditColConfirm } = useDimensions();
+    const { activeAperture, handleDeleteColumn } = useApertures();
 
-    const { positions: columnPositions, segments: columnSegments } = calculateSegments(columnWidths);
+    if (!activeAperture) {
+        return null;
+    }
+
+    const { positions: columnPositions, segments: columnSegments } = calculateSegments(activeAperture.column_widths_mm);
     const totalWidth = columnPositions[columnPositions.length - 1];
-
-    const handleEditStart = (index: number, value: number) => {
-        setEditingColIndex(index);
-        setEditingValue(value.toString());
-    };
-
-    const handleEditConfirm = () => {
-        const value = parseInt(editingValue, 10);
-
-        if (!isNaN(value) && value > 0) {
-            if (editingColIndex !== null) {
-                onColumnWidthChange(editingColIndex, value);
-                setEditingColIndex(null);
-            }
-        }
-
-        // Reset the editing state regardless of whether the value was valid
-        setEditingColIndex(null);
-    };
 
     return (
         <Box
@@ -46,32 +31,13 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
                 left: 0,
                 top: '100%',
                 width: '100%',
-                height: labelSpacing * 4,
+                height: 40,
                 display: 'flex',
             }}
         >
             {/* Grid line positions */}
-            {columnPositions.map((position, index) => (
-                <Box
-                    key={`col-position-${index}`}
-                    sx={{
-                        position: 'absolute',
-                        left: `${position}px`,
-                        top: 0,
-                        transform: 'translateX(-50%)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                    }}
-                >
-                    <Box
-                        sx={{
-                            height: labelSpacing,
-                            width: '1px',
-                            bgcolor: 'grey.500',
-                        }}
-                    />
-                </Box>
+            {columnPositions.map((location, index) => (
+                <GridLineTick key={`col-gridline-tick-${index}`} orientation="horizontal" location={location} />
             ))}
 
             {/* Segment measurements (between grid lines) */}
@@ -82,74 +48,29 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
                     sx={{
                         position: 'absolute',
                         left: `${columnPositions[index] + width / 2}px`,
-                        top: labelSpacing + 5,
+                        top: 10,
                         transform: 'translateX(-50%)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                     }}
                 >
-                    <IconButton
-                        className="delete-column-button"
-                        onClick={e => {
-                            handleDeleteColumn(index);
-                        }}
-                    >
-                        <RemoveCircleTwoToneIcon fontSize="small" />
-                    </IconButton>
-                    {editingColIndex === index ? (
-                        <ClickAwayListener onClickAway={handleEditConfirm}>
-                            <TextField
-                                size="small"
-                                autoFocus
-                                value={editingValue}
-                                onChange={e => setEditingValue(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleEditConfirm()}
-                                variant="outlined"
-                                sx={{
-                                    width: '80px',
-                                    '& .MuiInputBase-input': {
-                                        py: 0.5,
-                                        px: 1,
-                                        fontSize: '0.75rem',
-                                        textAlign: 'center',
-                                    },
-                                }}
-                                slotProps={{
-                                    input: {
-                                        onFocus: event => {
-                                            event.target.select();
-                                        },
-                                        endAdornment: (
-                                            <Typography variant="caption" color="text.secondary">
-                                                {units}
-                                            </Typography>
-                                        ),
-                                    },
-                                }}
-                            />
-                        </ClickAwayListener>
+                    {editingColIndex === index && userContext.user ? (
+                        <DimensionEditable handleEditConfirm={() => handleEditColConfirm(onColumnWidthChange)} />
                     ) : (
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                cursor: 'pointer',
-                                '&:hover': {
-                                    bgcolor: 'rgba(0,0,0,0.05)',
-                                    borderRadius: 1,
-                                    px: 0.5,
-                                },
-                            }}
-                            onClick={() => handleEditStart(index, width)}
-                        >
-                            {width} {units}
-                        </Typography>
+                        <DimensionLabel
+                            handleEditStart={handleEditColStart}
+                            index={index}
+                            value={width}
+                            orientation="horizontal"
+                        />
                     )}
+                    <DeleteButton index={index} handleDelete={handleDeleteColumn} />
                 </Box>
             ))}
 
             {/* Total width label */}
-            <Box
+            {/* <Box
                 sx={{
                     position: 'absolute',
                     left: '50%',
@@ -163,7 +84,7 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
                 <Typography variant="body2" fontWeight="bold">
                     Total: {totalWidth} {units}
                 </Typography>
-            </Box>
+            </Box> */}
         </Box>
     );
 };

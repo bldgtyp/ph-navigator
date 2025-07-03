@@ -30,10 +30,10 @@ from features.aperture.services.aperture import (
     get_aperture_by_id,
     get_apertures_by_project_bt,
     merge_aperture_elements,
+    split_aperture_element,
     update_aperture_column_width,
     update_aperture_name,
     update_aperture_row_height,
-    split_aperture_element,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -200,6 +200,7 @@ def split_aperture_element_route(
         msg = f"Error splitting element: {str(e)}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
 
 @router.delete("/delete-aperture/{aperture_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> None:

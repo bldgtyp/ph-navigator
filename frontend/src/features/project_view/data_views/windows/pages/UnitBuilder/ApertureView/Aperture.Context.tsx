@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ApertureElementType, ApertureType } from '../types';
 import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';

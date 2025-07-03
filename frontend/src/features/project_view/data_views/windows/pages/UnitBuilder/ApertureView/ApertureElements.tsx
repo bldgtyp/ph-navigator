@@ -2,6 +2,7 @@ import React from 'react';
 import { Box } from '@mui/material';
 
 import { useApertures } from './Aperture.Context';
+import { DimensionsProvider } from '../Dimensions/Dimensions.Context';
 
 import ApertureElementContainer from './ApertureElement.Container';
 import VerticalDimensionLines from '../Dimensions/Dimensions.Vertical';
@@ -24,7 +25,7 @@ const ApertureElements: React.FC = () => {
             className="aperture-elements"
             sx={{
                 position: 'relative',
-                pl: 6,
+                pl: 12,
                 pb: 6,
                 pt: 1,
                 pr: 1,
@@ -72,17 +73,14 @@ const ApertureElements: React.FC = () => {
                         );
                     })}
                 </Box>
-
-                <VerticalDimensionLines
-                    rowHeights={activeAperture.row_heights_mm}
-                    units={'mm'}
-                    onRowHeightChange={(index, value) => updateRowHeight(activeAperture.id, index, value)}
-                />
-                <HorizontalDimensionLines
-                    columnWidths={activeAperture.column_widths_mm}
-                    units={'mm'}
-                    onColumnWidthChange={(index, value) => updateColumnWidth(activeAperture.id, index, value)}
-                />
+                <DimensionsProvider>
+                    <VerticalDimensionLines
+                        onRowHeightChange={(index, value) => updateRowHeight(activeAperture.id, index, value)}
+                    />
+                    <HorizontalDimensionLines
+                        onColumnWidthChange={(index, value) => updateColumnWidth(activeAperture.id, index, value)}
+                    />
+                </DimensionsProvider>
             </Box>
         </Box>
     );
