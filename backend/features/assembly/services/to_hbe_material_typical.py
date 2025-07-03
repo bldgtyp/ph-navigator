@@ -3,7 +3,7 @@
 import logging
 from collections import OrderedDict
 
-from honeybee.typing import clean_ep_string, clean_and_id_ep_string
+from honeybee.typing import clean_and_id_ep_string, clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
 from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhColor, PhDivisionGrid
 from honeybee_energy_ref.document_ref import DocumentReference

@@ -23,5 +23,9 @@ class ApertureSchema(BaseModel):
 class ColumnDeleteRequest(BaseModel):
     column_number: int
 
+
 class RowDeleteRequest(BaseModel):
     row_number: int
+
+class UpdateNameRequest(BaseModel):
+    new_name: str

@@ -3,8 +3,10 @@
 import logging
 
 from sqlalchemy.orm import Session
+
 from db_entities.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
+from db_entities.app.project import Project
 from features.app.services import get_project_by_bt_number
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,16 @@ class LastColumnException(Exception):
         super().__init__(f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}.")
 
 
+class LastRowException(Exception):
+    """Exception raised when trying to delete the only row in an aperture."""
+
+    def __init__(self, row_number: int, aperture_number: int):
+        logger.error(f"Cannot delete Row-{row_number}. It is the last row in Aperture-{aperture_number}.")
+        super().__init__(f"Cannot delete Row-{row_number}. It is the last row in Aperture-{aperture_number}.")
+
+
 def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
+    """Retrieve all apertures associated with a specific project."""
     logger.info(f"get_apertures_by_project_bt({bt_number})")
 
     project = get_project_by_bt_number(db, bt_number)
@@ -27,6 +38,7 @@ def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
 
 
 def get_aperture_by_id(db: Session, aperture_id: int) -> Aperture:
+    """Retrieve an aperture by its DB-ID Number."""
     logger.info(f"get_aperture_by_id({aperture_id})")
 
     aperture = db.query(Aperture).filter(Aperture.id == aperture_id).first()
@@ -131,6 +143,7 @@ def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float
 
 
 def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> Aperture:
+    """Delete a row from the aperture grid."""
     logger.info(f"delete_row_from_aperture({aperture_id=}, {row_number=})")
 
     try:
@@ -171,6 +184,7 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
 
 
 def delete_column_from_aperture(db: Session, aperture_id: int, column_number: int) -> Aperture:
+    """"Delete a column from the aperture grid."""
     logger.info(f"delete_column_from_aperture({aperture_id=}, {column_number=})")
 
     try:
@@ -184,7 +198,7 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         # If this is the last column, raise an exception
         if len(aperture.column_widths_mm) == 1:
             raise LastColumnException(column_number, aperture_id)
-        
+
         # Remove the column width (Copy array to ensure SQLAlchemy detects the change)
         new_widths = aperture.column_widths_mm.copy()
         new_widths.pop(column_number)
@@ -209,3 +223,46 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         logger.error(f"Error deleting column from aperture {aperture_id}: {str(e)}")
         raise
 
+
+def add_new_aperture_on_project(db: Session, project: Project) -> Aperture:
+    """Add a new default aperture to the specified project."""
+    logger.info(f"add_new_aperture_on_project({project.id})")
+
+    try:
+        new_aperture = Aperture.default(project=project)
+        db.add(new_aperture)
+        db.commit()
+        return new_aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding new aperture on project {project.id}: {str(e)}")
+        raise
+
+
+def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Aperture:
+    """Update the name of an existing aperture."""
+    logger.info(f"update_aperture_name({aperture_id}, new_name={new_name})")
+
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        aperture.name = new_name
+        db.commit()
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture name {aperture_id}: {str(e)}")
+        raise
+
+
+def delete_aperture(db: Session, aperture_id: int) -> None:
+    """Delete an aperture and all its elements from the database."""
+    logger.info(f"delete_aperture({aperture_id})")
+
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        db.delete(aperture)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting aperture {aperture_id}: {str(e)}")
+        raise

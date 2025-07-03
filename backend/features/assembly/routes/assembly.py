@@ -13,12 +13,12 @@ from features.assembly.schemas.assembly import AssemblySchema, UpdateAssemblyNam
 from features.assembly.services.assembly import (
     create_new_default_assembly_on_project,
     delete_assembly,
+    duplicate_assembly,
     flip_assembly_layers,
     flip_assembly_orientation,
     get_all_project_assemblies,
     get_assembly_by_id,
     update_assembly_name,
-    duplicate_assembly,
 )
 from features.assembly.services.assembly_from_hbjson import (
     MaterialNotFoundException,

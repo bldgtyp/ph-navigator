@@ -3,7 +3,6 @@
 from collections import defaultdict
 from logging import getLogger
 from typing import Any, Iterable
-from pydantic import ValidationError
 
 from honeybee import face, room, shade
 from honeybee.model import Model
@@ -18,6 +17,7 @@ from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d.pointvector import Point2D
 from ladybug_geometry.geometry3d.mesh import Mesh3D
 from ladybug_geometry.geometry3d.pointvector import Point3D
+from pydantic import ValidationError
 
 from ..schemas.honeybee.face import FaceSchema
 from ..schemas.honeybee.shade import ShadeGroupSchema, ShadeSchema

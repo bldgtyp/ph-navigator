@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, Integer, String, ARRAY
+from sqlalchemy import ARRAY, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
@@ -31,3 +31,21 @@ class Aperture(Base):
         back_populates="aperture",
         cascade="all, delete-orphan",
     )
+
+    @classmethod
+    def default(cls, project: "Project") -> "Aperture":
+        """Create a default aperture with one row and one column."""
+        new_aperture = Aperture(
+            name="Unnamed Aperture",
+            project=project,
+            row_heights_mm=[100.0],
+            column_widths_mm=[100.0],
+        )
+        ApertureElement(
+            row_number=0,
+            column_number=0,
+            row_span=1,
+            col_span=1,
+            aperture=new_aperture,
+        )
+        return new_aperture

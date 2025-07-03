@@ -3,8 +3,8 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from db_entities.assembly.segment import SpecificationStatus
 from db_entities.app import Project
+from db_entities.assembly.segment import SpecificationStatus
 from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material

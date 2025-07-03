@@ -4,6 +4,7 @@ import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';
 import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
+import { postWithAlert } from '../../../../../../../api/postWithAlert';
 
 interface AperturesContextType {
     isLoadingApertures: boolean;
@@ -73,6 +74,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 
+    // ----------------------------------------------------------------------------------
     // Active Aperture
 
     const handleSetActiveApertureById = async (apertureId: number) => {
@@ -101,11 +103,67 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // ----------------------------------------------------------------------------------
     // Edit Aperture and Element Grid
 
-    const handleNameChange = () => {};
+    const handleNameChange = async (apertureId: number, newName: string) => {
+        console.log(`handleNameChange(${apertureId}, ${newName})`);
+        try {
+            await patchWithAlert(`aperture/update-aperture-name/${apertureId}`, null, {
+                new_name: newName,
+            });
 
-    const handleAddAperture = () => {};
+            // Update the apertures state
+            const updatedApertures = apertures.map(a => (a.id === apertureId ? { ...a, name: newName } : a));
+            setApertures(updatedApertures);
 
-    const handleDeleteAperture = () => {};
+            // Ensure the selected aperture is showing
+            handleSetActiveApertureById(apertureId);
+        } catch (error) {
+            console.error('Failed to update aperture name:', error);
+        }
+    };
+
+    const handleAddAperture = async () => {
+        console.log(`handleAddAperture()`);
+        try {
+            const newAperture = await postWithAlert<ApertureType>(
+                `aperture/create-new-aperture-on-project/${projectId}`
+            );
+
+            if (newAperture) {
+                console.log(`Aperture added successfully: ${newAperture.id}`);
+                const fetchedApertures = await fetchApertures();
+                setApertures(fetchedApertures);
+                handleSetActiveAperture(newAperture);
+            }
+        } catch (error) {
+            console.error('Failed to add aperture:', error);
+        }
+    };
+
+    const handleDeleteAperture = async (apertureId: number) => {
+        console.log(`handleDeleteAperture(${apertureId})`);
+
+        try {
+            const confirmed = window.confirm('Are you sure you want to delete the Aperture?');
+            if (!confirmed) return;
+
+            await deleteWithAlert(`aperture/delete-aperture/${apertureId}`, null, {});
+
+            console.log(`Aperture ${apertureId} deleted successfully.`);
+
+            // Fetch updated apertures and update the state
+            const fetchedApertures = await fetchApertures();
+            setApertures(fetchedApertures);
+
+            // Select the first aperture in the updated list, or set to null if none remain
+            if (fetchedApertures.length > 0) {
+                handleSetActiveAperture(fetchedApertures[0]);
+            } else {
+                setSelectedApertureId(null);
+            }
+        } catch (error) {
+            console.error(`Failed to delete Aperture ${apertureId}:`, error);
+        }
+    };
 
     const handleAddRow = useCallback(async () => {
         if (!activeAperture) return;

@@ -38,7 +38,7 @@ const ChangeNameModal: React.FC = () => {
                     <TextField
                         autoFocus
                         margin="dense"
-                        label="aperture Name"
+                        label="Aperture Name"
                         type="text"
                         fullWidth
                         defaultValue={newName}
