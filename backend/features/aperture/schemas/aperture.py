@@ -44,3 +44,6 @@ class UpdateRowHeightRequest(BaseModel):
 
 class MergeApertureElementsRequest(BaseModel):
     aperture_element_ids: list[int]
+
+class SplitApertureElementRequest(BaseModel):
+    aperture_element_id: int

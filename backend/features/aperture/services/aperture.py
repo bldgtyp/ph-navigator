@@ -373,6 +373,44 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
         raise
 
 
+def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Aperture:
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        # TODO: implement splitting logic
+        element = db.query(ApertureElement).filter(ApertureElement.id == element_id, ApertureElement.aperture_id == aperture_id).first()
+        if not element:
+            raise ValueError(f"ApertureElement with ID {element_id} not found in Aperture {aperture_id}")
+        
+        # Only split if the Aperture Element has a row_span or col_span > 1
+        if element.row_span <= 1 and element.col_span <= 1:
+            raise ValueError(f"ApertureElement {element_id} cannot be split as it has no span.")
+        
+        # Create new elements based on the current element's position and span
+        new_elements = []
+        for r in range(element.row_span):
+            for c in range(element.col_span):
+                new_element = ApertureElement(
+                    aperture_id=aperture_id,
+                    row_number=element.row_number + r,
+                    column_number=element.column_number + c,
+                    row_span=1,
+                    col_span=1,
+                )
+                new_elements.append(new_element)
+        # Add the new elements to the session
+        db.add_all(new_elements)
+        db.commit()
+        
+        # Delete the original element
+        db.delete(element)
+        db.commit()
+
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting aperture {aperture_id}: {str(e)}")
+        raise
+
 def delete_aperture(db: Session, aperture_id: int) -> None:
     """Delete an aperture and all its elements from the database."""
     logger.info(f"delete_aperture({aperture_id})")

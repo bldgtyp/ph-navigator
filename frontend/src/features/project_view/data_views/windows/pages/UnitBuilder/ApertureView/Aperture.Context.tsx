@@ -39,6 +39,7 @@ interface AperturesContextType {
     toggleApertureElementSelection: (cellId: number) => void;
     clearApertureElementIdSelection: () => void;
     mergeSelectedApertureElements: () => void;
+    splitSelectedApertureElement: () => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -425,6 +426,38 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture, apertures, selectedApertureElementIds]);
 
+    const splitSelectedApertureElement = useCallback(async () => {
+        console.log(`splitSelectedApertureElement()`);
+        try {
+            if (!activeAperture) {
+                return null;
+            }
+
+            if (selectedApertureElementIds.length !== 1) {
+                console.warn('You can only split one Aperture Element at a time.');
+                return;
+            }
+
+            const updatedAperture = await patchWithAlert<ApertureType>(
+                `aperture/split-aperture-element/${activeAperture.id}`,
+                null,
+                { aperture_element_id: selectedApertureElementIds[0] }
+            );
+
+            if (updatedAperture) {
+                console.log(`Aperture Element successfully split: ${updatedAperture.id}`);
+                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                setApertures(updatedApertures);
+                handleSetActiveAperture(updatedAperture);
+            }
+        } catch (error) {
+            console.error('Failed to split aperture element:', error);
+        } finally {
+            clearApertureElementIdSelection();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeAperture, apertures, selectedApertureElementIds]);
+
     return (
         <AperturesContext.Provider
             value={{
@@ -452,6 +485,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 toggleApertureElementSelection,
                 clearApertureElementIdSelection,
                 mergeSelectedApertureElements,
+                splitSelectedApertureElement,
             }}
         >
             {children}

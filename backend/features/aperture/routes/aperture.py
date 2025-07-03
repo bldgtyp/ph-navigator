@@ -13,6 +13,7 @@ from features.aperture.schemas.aperture import (
     ColumnDeleteRequest,
     MergeApertureElementsRequest,
     RowDeleteRequest,
+    SplitApertureElementRequest,
     UpdateColumnWidthRequest,
     UpdateNameRequest,
     UpdateRowHeightRequest,
@@ -32,6 +33,7 @@ from features.aperture.services.aperture import (
     update_aperture_column_width,
     update_aperture_name,
     update_aperture_row_height,
+    split_aperture_element,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -180,6 +182,24 @@ def merge_aperture_elements_route(
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
+
+@router.patch("/split-aperture-element/{aperture_id}", response_model=ApertureSchema)
+def split_aperture_element_route(
+    request: Request, aperture_id: int, update_request: SplitApertureElementRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"split_aperture_element_route({aperture_id=}, {update_request=})")
+
+    try:
+        aperture = split_aperture_element(db, aperture_id, update_request.aperture_element_id)
+        return ApertureSchema.from_orm(aperture)
+    except ValueError as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+    except Exception as e:
+        msg = f"Error splitting element: {str(e)}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 @router.delete("/delete-aperture/{aperture_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> None:

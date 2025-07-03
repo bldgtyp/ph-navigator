@@ -12,6 +12,7 @@ const ApertureView: React.FC = () => {
         selectedApertureElementIds,
         mergeSelectedApertureElements,
         clearApertureElementIdSelection,
+        splitSelectedApertureElement,
     } = useApertures();
 
     return (
@@ -25,7 +26,7 @@ const ApertureView: React.FC = () => {
                 </Button>
 
                 <Tooltip
-                    title={selectedApertureElementIds.length <= 1 ? 'Select multiple adjacent cells to merge' : ''}
+                    title={selectedApertureElementIds.length <= 1 ? 'Select multiple Aperture-Elements to merge' : ''}
                 >
                     <span>
                         <Button
@@ -35,6 +36,19 @@ const ApertureView: React.FC = () => {
                             disabled={selectedApertureElementIds.length <= 1}
                         >
                             Merge Selected ({selectedApertureElementIds.length})
+                        </Button>
+                    </span>
+                </Tooltip>
+
+                <Tooltip title={selectedApertureElementIds.length !== 1 ? 'Select one Aperture-Element to split' : ''}>
+                    <span>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={splitSelectedApertureElement}
+                            disabled={selectedApertureElementIds.length !== 1}
+                        >
+                            Split Selected
                         </Button>
                     </span>
                 </Tooltip>
