@@ -11,6 +11,7 @@ from database import get_db
 from features.aperture.schemas import ApertureSchema
 from features.aperture.schemas.aperture import (
     ColumnDeleteRequest,
+    MergeApertureElementsRequest,
     RowDeleteRequest,
     UpdateColumnWidthRequest,
     UpdateNameRequest,
@@ -27,6 +28,7 @@ from features.aperture.services.aperture import (
     delete_row_from_aperture,
     get_aperture_by_id,
     get_apertures_by_project_bt,
+    merge_aperture_elements,
     update_aperture_column_width,
     update_aperture_name,
     update_aperture_row_height,
@@ -158,6 +160,25 @@ def add_column_to_aperture_route(request: Request, aperture_id: int, db: Session
         msg = str(e)
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+
+
+@router.patch("/merge-aperture-elements/{aperture_id}", response_model=ApertureSchema)
+def merge_aperture_elements_route(
+    request: Request, aperture_id: int, update_request: MergeApertureElementsRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"merge_elements_route({aperture_id=}, {update_request=})")
+
+    try:
+        aperture = merge_aperture_elements(db, aperture_id, update_request.aperture_element_ids)
+        return ApertureSchema.from_orm(aperture)
+    except ValueError as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+    except Exception as e:
+        msg = f"Error merging elements: {str(e)}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete("/delete-aperture/{aperture_id}", status_code=status.HTTP_204_NO_CONTENT)

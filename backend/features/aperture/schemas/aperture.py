@@ -40,3 +40,7 @@ class UpdateColumnWidthRequest(BaseModel):
 class UpdateRowHeightRequest(BaseModel):
     row_index: int
     new_height_mm: float
+
+
+class MergeApertureElementsRequest(BaseModel):
+    aperture_element_ids: list[int]

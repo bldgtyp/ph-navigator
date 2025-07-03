@@ -35,10 +35,10 @@ interface AperturesContextType {
     updateColumnWidth: (apertureId: number, columnIndex: number, newWidthMM: number) => void;
     updateRowHeight: (apertureId: number, rowIndex: number, newHeightMM: number) => void;
     // Selection
-    selectedCells: number[];
-    toggleCellSelection: (cellId: number) => void;
-    clearSelection: () => void;
-    mergeSelectedCells: () => void;
+    selectedApertureElementIds: number[];
+    toggleApertureElementSelection: (cellId: number) => void;
+    clearApertureElementIdSelection: () => void;
+    mergeSelectedApertureElements: () => void;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -49,7 +49,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [apertures, setApertures] = useState<ApertureType[]>([]);
     const [selectedApertureId, setSelectedApertureId] = useState<number | null>(null);
     const [activeAperture, setActiveAperture] = useState<ApertureType | null>(null);
-    const [selectedCells, setSelectedApertureElements] = useState<number[]>([]);
+    const [selectedApertureElementIds, setSelectedApertureElementsIds] = useState<number[]>([]);
 
     const fetchApertures = async () => {
         console.log(`fetchApertures(), projectId=${projectId}`);
@@ -338,9 +338,9 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // ----------------------------------------------------------------------------------
     // Cell Selection
-    const toggleCellSelection = useCallback(
+    const toggleApertureElementSelection = useCallback(
         (elementId: number) => {
-            setSelectedApertureElements(prev => {
+            setSelectedApertureElementsIds(prev => {
                 if (!activeAperture) {
                     return [];
                 } else if (prev.includes(elementId)) {
@@ -392,13 +392,38 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         [activeAperture]
     );
 
-    const clearSelection = useCallback(() => {
-        setSelectedApertureElements([]);
+    const clearApertureElementIdSelection = useCallback(() => {
+        setSelectedApertureElementsIds([]);
     }, []);
 
-    const mergeSelectedCells = () => {
-        console.log('mergeSelectedCells()');
-    };
+    const mergeSelectedApertureElements = useCallback(async () => {
+        console.log(`updateRowHeight()`);
+        try {
+            if (!activeAperture) {
+                return null;
+            }
+
+            const updatedAperture = await patchWithAlert<ApertureType>(
+                `aperture/merge-aperture-elements/${activeAperture.id}`,
+                null,
+                {
+                    aperture_element_ids: selectedApertureElementIds,
+                }
+            );
+
+            if (updatedAperture) {
+                console.log(`Aperture Elements successfully merged: ${updatedAperture.id}`);
+                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                setApertures(updatedApertures);
+                handleSetActiveAperture(updatedAperture);
+            }
+        } catch (error) {
+            console.error('Failed to merge aperture elements:', error);
+        } finally {
+            clearApertureElementIdSelection();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeAperture, apertures, selectedApertureElementIds]);
 
     return (
         <AperturesContext.Provider
@@ -423,10 +448,10 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 getCellSize,
                 updateColumnWidth,
                 updateRowHeight,
-                selectedCells,
-                toggleCellSelection,
-                clearSelection,
-                mergeSelectedCells,
+                selectedApertureElementIds,
+                toggleApertureElementSelection,
+                clearApertureElementIdSelection,
+                mergeSelectedApertureElements,
             }}
         >
             {children}

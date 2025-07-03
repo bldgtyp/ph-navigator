@@ -290,6 +290,86 @@ def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, ne
         raise
 
 
+def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int]) -> Aperture:
+    """Merge multiple ApertureElements into a single element that spans their combined area.
+    
+    Args:
+        db: Database session
+        aperture_id: ID of the aperture containing the elements
+        element_ids: List of element IDs to merge
+        
+    Returns:
+        Updated aperture object
+        
+    Raises:
+        ValueError: If elements don't form a complete rectangle or other validation issues
+    """
+    logger.info(f"merge_aperture_elements({aperture_id}, {element_ids})")
+    
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        
+        if len(element_ids) <= 1:
+            logger.warning("Cannot merge fewer than 2 elements")
+            return aperture
+            
+        # Query all elements to be merged
+        elements_to_merge = db.query(ApertureElement).filter(
+            ApertureElement.aperture_id == aperture_id,
+            ApertureElement.id.in_(element_ids)
+        ).all()
+        
+        if len(elements_to_merge) != len(element_ids):
+            raise ValueError(f"Not all requested elements were found. Found {len(elements_to_merge)} of {len(element_ids)}")
+        
+        # Calculate the boundaries of the merged element
+        min_row = min(elem.row_number for elem in elements_to_merge)
+        min_col = min(elem.column_number for elem in elements_to_merge)
+        max_row = max(elem.row_number + elem.row_span - 1 for elem in elements_to_merge)
+        max_col = max(elem.column_number + elem.col_span - 1 for elem in elements_to_merge)
+        
+        # Check if the selection forms a complete rectangle (no gaps)
+        for r in range(min_row, max_row + 1):
+            for c in range(min_col, max_col + 1):
+                # Check if each position in the rectangle is covered by a selected element
+                position_covered = any(
+                    (e.row_number <= r < e.row_number + e.row_span) and 
+                    (e.column_number <= c < e.column_number + e.col_span)
+                    for e in elements_to_merge
+                )
+                
+                if not position_covered:
+                    raise ValueError(f"Elements do not form a complete rectangle. Gap at position ({r}, {c})")
+        
+        # Calculate dimensions of new merged element
+        row_span = max_row - min_row + 1
+        col_span = max_col - min_col + 1
+        
+        # Create a new merged element
+        new_element = ApertureElement(
+            aperture_id=aperture_id,
+            row_number=min_row,
+            column_number=min_col,
+            row_span=row_span,
+            col_span=col_span,
+        )
+        
+        # Delete the original elements
+        for element in elements_to_merge:
+            db.delete(element)
+        
+        # Add the new merged element
+        db.add(new_element)
+        
+        db.commit()
+        
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error merging aperture elements for aperture {aperture_id}: {str(e)}")
+        raise
+
+
 def delete_aperture(db: Session, aperture_id: int) -> None:
     """Delete an aperture and all its elements from the database."""
     logger.info(f"delete_aperture({aperture_id})")

@@ -8,8 +8,14 @@ import VerticalDimensionLines from '../Dimensions/Dimensions.Vertical';
 import HorizontalDimensionLines from '../Dimensions/Dimensions.Horizontal';
 
 const ApertureElements: React.FC = () => {
-    const { activeAperture, getCellSize, updateColumnWidth, updateRowHeight, selectedCells, toggleCellSelection } =
-        useApertures();
+    const {
+        activeAperture,
+        getCellSize,
+        updateColumnWidth,
+        updateRowHeight,
+        selectedApertureElementIds: selectedCells,
+        toggleApertureElementSelection: toggleCellSelection,
+    } = useApertures();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
