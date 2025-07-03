@@ -33,7 +33,7 @@ def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
     logger.info(f"get_apertures_by_project_bt({bt_number})")
 
     project = get_project_by_bt_number(db, bt_number)
-    apertures = db.query(Aperture).filter(Aperture.project_id == project.id).all()
+    apertures = db.query(Aperture).filter(Aperture.project_id == project.id).order_by(Aperture.name.asc()).all()
     return apertures
 
 
