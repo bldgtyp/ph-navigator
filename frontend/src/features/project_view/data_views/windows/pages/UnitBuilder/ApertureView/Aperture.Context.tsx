@@ -1,10 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { ApertureElementType, ApertureType } from '../types';
-import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { useParams } from 'react-router-dom';
+
+import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../api/postWithAlert';
+
+import { ApertureElementType, ApertureType } from '../types';
 
 function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
     return aperture.elements.find(element => element.id === elementId);

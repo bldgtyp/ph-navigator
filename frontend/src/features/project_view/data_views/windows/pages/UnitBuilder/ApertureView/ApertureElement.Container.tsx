@@ -1,16 +1,17 @@
 import React from 'react';
 import { Box } from '@mui/material';
 
+import { useApertures } from './Aperture.Context';
+
 import ApertureElementSVG from './ApertureElement.SVG';
 import { GridCellProps } from '../types';
-import { useApertures } from './Aperture.Context';
 
 const ApertureElementContainer: React.FC<GridCellProps> = ({ element, width, height, isSelected }) => {
     const { toggleApertureElementSelection } = useApertures();
 
     return (
         <Box
-            className={`window-cell ${isSelected ? 'selected' : ''}`}
+            className={`aperture-element ${isSelected ? 'selected' : ''}`}
             onClick={() => toggleApertureElementSelection(element.id)}
             sx={{
                 gridRowStart: element.row_number + 1,

@@ -8,9 +8,50 @@ import ApertureElementContainer from './ApertureElement.Container';
 import VerticalDimensionLines from '../Dimensions/Dimensions.Vertical';
 import HorizontalDimensionLines from '../Dimensions/Dimensions.Horizontal';
 
+const ApertureElementsDisplay: React.FC = () => {
+    const { activeAperture, getCellSize, selectedApertureElementIds } = useApertures();
+
+    if (!activeAperture) {
+        return <Box sx={{ p: 2 }}>No aperture selected</Box>;
+    }
+
+    return (
+        <Box
+            className="aperture-elements-display"
+            sx={{
+                display: 'grid',
+                gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w}px`).join(' '),
+                gridTemplateRows: activeAperture.row_heights_mm.map(h => `${h}px`).join(' '),
+                gap: 0,
+                position: 'relative',
+                zIndex: 1,
+                width: '100%',
+                height: '100%',
+            }}
+        >
+            {Array.from(activeAperture.elements.values()).map(element => {
+                const { width, height } = getCellSize(
+                    element.row_number,
+                    element.column_number,
+                    element.row_span,
+                    element.col_span
+                );
+                return (
+                    <ApertureElementContainer
+                        key={element.id}
+                        element={element}
+                        width={width}
+                        height={height}
+                        isSelected={selectedApertureElementIds.includes(element.id)}
+                    />
+                );
+            })}
+        </Box>
+    );
+};
+
 const ApertureElements: React.FC = () => {
-    const { activeAperture, getCellSize, updateColumnWidth, updateRowHeight, selectedApertureElementIds } =
-        useApertures();
+    const { activeAperture, updateColumnWidth, updateRowHeight } = useApertures();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -22,7 +63,7 @@ const ApertureElements: React.FC = () => {
 
     return (
         <Box
-            className="aperture-elements"
+            className="aperture-elements-container"
             sx={{
                 position: 'relative',
                 pl: 12,
@@ -33,7 +74,7 @@ const ApertureElements: React.FC = () => {
             }}
         >
             <Box
-                className="aperture-elements-grid"
+                className="aperture-elements-display-container"
                 sx={{
                     position: 'relative',
                     width: `${totalWidth}px`,
@@ -41,38 +82,7 @@ const ApertureElements: React.FC = () => {
                     border: '1px solid #ccc',
                 }}
             >
-                {/* Main grid with cells */}
-                <Box
-                    className="aperture-elements-grid-cells"
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w}px`).join(' '),
-                        gridTemplateRows: activeAperture.row_heights_mm.map(h => `${h}px`).join(' '),
-                        gap: 0,
-                        position: 'relative',
-                        zIndex: 1,
-                        width: '100%',
-                        height: '100%',
-                    }}
-                >
-                    {Array.from(activeAperture.elements.values()).map(element => {
-                        const { width, height } = getCellSize(
-                            element.row_number,
-                            element.column_number,
-                            element.row_span,
-                            element.col_span
-                        );
-                        return (
-                            <ApertureElementContainer
-                                key={element.id}
-                                element={element}
-                                width={width}
-                                height={height}
-                                isSelected={selectedApertureElementIds.includes(element.id)}
-                            />
-                        );
-                    })}
-                </Box>
+                <ApertureElementsDisplay />
                 <DimensionsProvider>
                     <VerticalDimensionLines
                         onRowHeightChange={(index, value) => updateRowHeight(activeAperture.id, index, value)}
