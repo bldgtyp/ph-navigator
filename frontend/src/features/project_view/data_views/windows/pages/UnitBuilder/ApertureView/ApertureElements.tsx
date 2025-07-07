@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 
 import { useApertures } from './Aperture.Context';
 import { DimensionsProvider } from '../Dimensions/Dimensions.Context';
@@ -62,8 +62,9 @@ const ApertureElements: React.FC = () => {
     const totalHeight = activeAperture.row_heights_mm.reduce((sum, height) => sum + height, 0);
 
     return (
-        <Box
+        <Stack
             className="aperture-elements-container"
+            spacing={2}
             sx={{
                 position: 'relative',
                 pl: 12,
@@ -92,7 +93,7 @@ const ApertureElements: React.FC = () => {
                     />
                 </DimensionsProvider>
             </Box>
-        </Box>
+        </Stack>
     );
 };
 

@@ -11,6 +11,7 @@ import LoadingModal from '../../../_components/LoadingModal';
 import ApertureTypesSidebar from './Sidebar/Sidebar';
 import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
 import ApertureElements from './ApertureView/ApertureElements';
+import ApertureElementsTable from './ApertureView/Aperture.Table';
 
 const ApertureTypesContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
@@ -24,15 +25,16 @@ const ApertureTypesContentBlock: React.FC = () => {
 
             <Grid container spacing={1} sx={{ margin: 2 }}>
                 {/* Sidebar Column */}
-                <Grid size={2}>
+                <Grid size={3}>
                     <ApertureTypesSidebar />
                 </Grid>
 
                 {/* Main Window Unit View */}
-                <Grid p={2} size={10} sx={{ borderLeft: '1px solid #ccc' }}>
+                <Grid p={2} size={9} sx={{ borderLeft: '1px solid #ccc' }}>
                     <Box className="aperture-view">
                         {userContext.user ? <ApertureEditButtons /> : null}
                         <ApertureElements />
+                        <ApertureElementsTable />
                     </Box>
                 </Grid>
             </Grid>

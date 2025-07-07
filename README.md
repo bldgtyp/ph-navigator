@@ -15,29 +15,35 @@
 ## Material List:
 
 - [ ] Add 'download' button to pdf/png file viewer
-- [ ] PDF full-view looks a little odd... clean up a little.
+- [ ] PDF full-view looks a very odd... clean up.
+- [ ] Materials should have URL link(s) option
+- [ ] Delete Image
+- [ ] Delete Datasheet
+- [ ] Multiple Datasheets?
 
 ## Assemblies (UI):
 
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths?
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
-- [ ] Display Material Legend
+- [ ] Display Material Legend with key material info (conductivity)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
-- [ ] Delete Image
-- [ ] Delete Datasheet
+
+## Ventilation Commissioning Page
+
+- [ ] Ventilation Balancing
+- [ ] Add instructions
+- [ ] Add note about form SIGNED
 
 ## Windows:
 
-- [ ] Window Frame Builder
-- [ ] Window Unit Builder
+- [ ] Scale window unit geometry
 - [ ] Window Frame Database (AirTable?)
 - [ ] Window Glazing Database (AirTable?)
-
-## Pages:
-
-- [ ] Ventilation Balancing
+- [ ] Assign frames (frame DB elements)
+- [ ] Assign glass (glass DB elements)
+- [ ] Attribute reporting (& assignment) table
 
 ## 3D Model:
 

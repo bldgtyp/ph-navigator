@@ -1,2 +1,4 @@
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
+from db_entities.aperture.aperture_frame import ApertureElementFrame
+from db_entities.aperture.aperture_glazing import ApertureElementGlazing
