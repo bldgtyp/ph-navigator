@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class ApertureElementGlazingSchema(BaseModel):
     """Base schema for Aperture Element Glazing."""
 
-    id: int
+    id: str
     name: str = "Unnamed Glazing"
     u_value_w_m2k: float
     g_value: float

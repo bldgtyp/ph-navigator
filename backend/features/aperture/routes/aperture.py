@@ -18,6 +18,7 @@ from features.aperture.schemas.aperture import (
     UpdateNameRequest,
     UpdateRowHeightRequest,
 )
+from features.aperture.schemas.frame import ApertureElementFrameSchema
 from features.aperture.services.aperture import (
     LastColumnException,
     LastRowException,

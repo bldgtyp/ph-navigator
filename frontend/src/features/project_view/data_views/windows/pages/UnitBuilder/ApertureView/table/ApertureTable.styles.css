@@ -34,3 +34,30 @@
     background-color: #f5f5f5;
     font-weight: bold;
 }
+
+/* Frame selector specific styles */
+.table-row .MuiAutocomplete-root {
+    background-color: transparent;
+}
+
+.table-row .MuiOutlinedInput-root {
+    background-color: #ffffff;
+    border-radius: 4px;
+}
+
+.table-row:hover .MuiOutlinedInput-root {
+    background-color: #ffffff;
+}
+
+/* Autocomplete dropdown styling */
+.MuiAutocomplete-listbox {
+    max-height: 200px;
+}
+
+.MuiAutocomplete-option {
+    padding: 8px 12px;
+}
+
+.MuiAutocomplete-option:hover {
+    background-color: #f5f5f5;
+}

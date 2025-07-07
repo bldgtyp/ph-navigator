@@ -3,18 +3,25 @@
 from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel
-
+from pyairtable.api.types import RecordDict
 
 class ApertureElementFrameSchema(BaseModel):
     """Base schema for Aperture Element Frame."""
 
-    id: int
+    id: str
     name: str = "Unnamed Frame"
     width_mm: float
     u_value_w_m2k: float
 
     class Config:
         orm_mode = True
+    @classmethod
+    def fromAirTableRecordDict(cls, record: RecordDict) -> ApertureElementFrameSchema:
+        """Create an ApertureElementFrameSchema instance from an AirTable RecordDict with 'fields' and 'id'."""
+        d = {}
+        d = d | record["fields"]
+        d["id"] = record["id"]  # Add the ID to the fields
+        return cls(**{k.lower(): v for k, v in d.items()})  # Create an instance of the schema
 
 
 class ApertureElementFramesSchema(BaseModel):

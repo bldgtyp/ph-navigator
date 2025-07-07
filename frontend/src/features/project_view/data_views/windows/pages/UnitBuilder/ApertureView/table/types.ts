@@ -15,6 +15,10 @@ export interface FrameRowProps extends TableRowProps {
 export interface TableGroupProps {
     element: ApertureElementType;
     isSelected: boolean;
+    onFrameChange?: (
+        framePosition: 'top' | 'right' | 'bottom' | 'left',
+        frame: ApertureElementFrameType | null
+    ) => void;
 }
 
 export interface TableHeaderCellProps {

@@ -9,10 +9,12 @@ from sqlalchemy.orm import Session
 from config import settings
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
+from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.assembly import Material
 from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
+from features.aperture.schemas.frame import ApertureElementFrameSchema
 
 logger = getLogger(__name__)
 
@@ -204,7 +206,6 @@ def update_airtable_table(db: Session, bt_number: str, table_data: AirTableTable
 # -- AirTable Remote Access Functions (Require API Key)
 
 
-# TODO: Make the AirTable call async....
 def get_all_material_from_airtable() -> list[Material]:
     """Get all of the materials from AirTable and return them as a list of Material objects."""
     logger.info(f"get_all_material_from_airtable()")
@@ -217,6 +218,7 @@ def get_all_material_from_airtable() -> list[Material]:
 
     return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
+    # TODO: Make the AirTable call async....
     #  Use aiohttp directly since PyAirTable doesn't have async support
     # async with aiohttp.ClientSession() as session:
     #     url = f"https://api.airtable.com/v0/{settings.AIRTABLE_MATERIAL_BASE_ID}/{settings.AIRTABLE_MATERIAL_TABLE_ID}"
@@ -229,6 +231,19 @@ def get_all_material_from_airtable() -> list[Material]:
     #         # AirTable returns data in a specific format, typically under a 'records' key
     #         records = data.get('records', [])
     #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in records]
+
+
+def get_all_frames_from_airtable() -> list[ApertureElementFrame]:
+    """Get all of the frames from AirTable and return them as a list of ApertureElementFrame objects."""
+    logger.info(f"get_all_frames_from_airtable()")
+
+    api = Api(settings.AIRTABLE_FRAME_GET_TOKEN)
+    table = api.table(
+        settings.AIRTABLE_FRAME_BASE_ID,
+        settings.AIRTABLE_FRAME_TABLE_ID,
+    )
+
+    return [ApertureElementFrame(**ApertureElementFrameSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
 
 def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:

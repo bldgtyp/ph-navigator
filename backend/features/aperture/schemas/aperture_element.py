@@ -5,8 +5,8 @@ from __future__ import annotations  # Enables forward references
 from pydantic import BaseModel
 
 
-from features.aperture.schemas.aperture_element_frame import ApertureElementFramesSchema
-from features.aperture.schemas.aperture_glazing import ApertureElementGlazingSchema
+from features.aperture.schemas.frame import ApertureElementFramesSchema
+from features.aperture.schemas.glazing import ApertureElementGlazingSchema
 
 
 class ApertureElementSchema(BaseModel):

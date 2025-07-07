@@ -26,11 +26,11 @@ class ApertureElement(Base):
 
     # Foreign Keys
     aperture_id: Mapped[int] = MappedColumn(Integer, ForeignKey("apertures.id"), nullable=False)
-    glazing_id: Mapped[int | None] = MappedColumn(Integer, ForeignKey("aperture_element_glazing.id"), nullable=True)
-    frame_top_id: Mapped[int | None] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
-    frame_right_id: Mapped[int | None] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
-    frame_bottom_id: Mapped[int | None] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
-    frame_left_id: Mapped[int | None] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    glazing_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_glazing.id"), nullable=True)
+    frame_top_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_right_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_bottom_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_left_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
 
     # Relationships
     aperture: Mapped["Aperture"] = relationship("Aperture", back_populates="elements")
@@ -64,3 +64,13 @@ class ApertureElement(Base):
             "bottom": self.frame_bottom,
             "left": self.frame_left,
         }
+    
+    @property
+    def frame_ids(self) -> list[str | None]:
+        """Return a list with all of the frame IDs."""
+        return [
+            self.frame_top_id,
+            self.frame_right_id,
+            self.frame_bottom_id,
+            self.frame_left_id,
+        ]

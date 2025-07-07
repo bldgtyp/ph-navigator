@@ -1,6 +1,9 @@
 import React from 'react';
 import { TableCell } from './TableCells';
+import { FrameSelector } from './FrameSelector';
 import { GlazingRowProps, FrameRowProps } from './types';
+import { ApertureElementFrameType } from '../../types';
+import { useApertureElementFrames } from '../Aperture.Frame.Context';
 
 export const GlazingRow: React.FC<GlazingRowProps & { rowIndex: number }> = ({ name, glazing, rowIndex }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
@@ -11,23 +14,29 @@ export const GlazingRow: React.FC<GlazingRowProps & { rowIndex: number }> = ({ n
                 <span>{name}:</span>
             </TableCell>
             <TableCell size={5} className={rowClass}>
-                <span>{glazing?.name || '–'}</span>
+                <span>{glazing?.name || '-'}</span>
             </TableCell>
             <TableCell size={2} className={rowClass}>
-                <span>{glazing?.u_value_w_m2k || '–'}</span>
+                <span>{glazing?.u_value_w_m2k || '-'}</span>
             </TableCell>
             <TableCell size={2} className={rowClass}>
-                <span>–</span>
+                <span>-</span>
             </TableCell>
             <TableCell size={1} className={rowClass}>
-                <span>{glazing?.g_value || '–'}</span>
+                <span>{glazing?.g_value || '-'}</span>
             </TableCell>
         </>
     );
 };
 
-export const FrameRow: React.FC<FrameRowProps & { rowIndex: number }> = ({ name, frame, rowIndex }) => {
+export const FrameRow: React.FC<
+    FrameRowProps & {
+        rowIndex: number;
+        onFrameChange?: (frame: ApertureElementFrameType | null) => void;
+    }
+> = ({ name, frame, rowIndex, onFrameChange }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
+    const { frames, isLoading } = useApertureElementFrames();
 
     return (
         <>
@@ -35,7 +44,13 @@ export const FrameRow: React.FC<FrameRowProps & { rowIndex: number }> = ({ name,
                 <span>{name}:</span>
             </TableCell>
             <TableCell size={5} className={rowClass}>
-                <span>{frame?.name || '–'}</span>
+                <FrameSelector
+                    selectedFrame={frame}
+                    frameOptions={frames}
+                    onFrameChange={onFrameChange || (() => {})}
+                    isLoading={isLoading}
+                    placeholder={`Select ${name.toLowerCase()}`}
+                />
             </TableCell>
             <TableCell size={2} className={rowClass}>
                 <span>{frame?.u_value_w_m2k || '–'}</span>

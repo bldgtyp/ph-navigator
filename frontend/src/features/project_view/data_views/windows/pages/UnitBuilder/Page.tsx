@@ -12,16 +12,21 @@ import ApertureTypesSidebar from './Sidebar/Sidebar';
 import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
 import ApertureElements from './ApertureView/ApertureElements';
 import ApertureElementsTable from './ApertureView/Aperture.Table';
+import { ApertureElementFrameProvider, useApertureElementFrames } from './ApertureView/Aperture.Frame.Context';
+import { headerButtons } from './ApertureView/Aperture.HeaderButtons';
 
 const ApertureTypesContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
     const { activeAperture } = useApertures();
+    const { isLoading, handleRefreshFrames } = useApertureElementFrames();
+
+    const headerButtonsConfig = userContext.user ? headerButtons(handleRefreshFrames, isLoading) : [];
 
     return (
         <ContentBlock id="aperture-types">
             <LoadingModal showModal={false} />
 
-            <ContentBlockHeader text={`Window / Door Type [${activeAperture?.name}]`} />
+            <ContentBlockHeader text={`Window / Door Type [${activeAperture?.name}]`} buttons={headerButtonsConfig} />
 
             <Grid container spacing={1} sx={{ margin: 2 }}>
                 {/* Sidebar Column */}
@@ -46,7 +51,9 @@ const ApertureTypesPage: React.FC = () => {
     return (
         <AperturesProvider>
             <ApertureSidebarProvider>
-                <ApertureTypesContentBlock />
+                <ApertureElementFrameProvider>
+                    <ApertureTypesContentBlock />
+                </ApertureElementFrameProvider>
             </ApertureSidebarProvider>
         </AperturesProvider>
     );
