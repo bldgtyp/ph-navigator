@@ -1,43 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { getWithAlert } from '../../../../../../../api/getWithAlert';
-import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
-import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
-import { postWithAlert } from '../../../../../../../api/postWithAlert';
-
 import { ApertureElementType, ApertureType } from '../types';
 import { FramePosition } from './table/types';
+import { ApertureService } from './services/apertureService';
 
 function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
     return aperture.elements.find(element => element.id === elementId);
 }
-
-const updateApertureElementFrameType = async (params: {
-    apertureId: number;
-    elementId: number;
-    framePosition: FramePosition;
-    frameId: number | null;
-}) => {
-    if (!params.frameId) {
-        return null;
-    }
-
-    try {
-        const response = await patchWithAlert<ApertureType>(`aperture/update-frame/${params.apertureId}`, null, {
-            element_id: params.elementId,
-            side: params.framePosition,
-            frame_id: params.frameId,
-        });
-        if (!response) {
-            throw new Error('Failed to update aperture element frame.');
-        }
-        return response;
-    } catch (error) {
-        console.error('Error updating aperture element frame:', error);
-        throw error;
-    }
-};
 
 interface AperturesContextType {
     isLoadingApertures: boolean;
@@ -90,8 +60,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const fetchApertures = async () => {
         console.log(`fetchApertures(), projectId=${projectId}`);
         try {
-            const fetchedApertures = await getWithAlert<ApertureType[]>(`aperture/get-apertures/${projectId}`);
-            return fetchedApertures ?? [];
+            const fetchedApertures = await ApertureService.fetchAperturesByProject(projectId!);
+            return fetchedApertures;
         } catch (error) {
             const msg = `Error loading Apertures Data ${error}`;
             console.error(msg);
@@ -154,9 +124,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const handleNameChange = async (apertureId: number, newName: string) => {
         console.log(`handleNameChange(${apertureId}, ${newName})`);
         try {
-            await patchWithAlert(`aperture/update-aperture-name/${apertureId}`, null, {
-                new_name: newName,
-            });
+            await ApertureService.updateApertureName(apertureId, newName);
 
             // Update the apertures state
             const updatedApertures = apertures.map(a => (a.id === apertureId ? { ...a, name: newName } : a));
@@ -166,24 +134,22 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             handleSetActiveApertureById(apertureId);
         } catch (error) {
             console.error('Failed to update aperture name:', error);
+            alert('Failed to update aperture name. Please try again.');
         }
     };
 
     const handleAddAperture = async () => {
         console.log(`handleAddAperture()`);
         try {
-            const newAperture = await postWithAlert<ApertureType>(
-                `aperture/create-new-aperture-on-project/${projectId}`
-            );
+            const newAperture = await ApertureService.createAperture(projectId!);
 
-            if (newAperture) {
-                console.log(`Aperture added successfully: ${newAperture.id}`);
-                const fetchedApertures = await fetchApertures();
-                setApertures(fetchedApertures);
-                handleSetActiveAperture(newAperture);
-            }
+            console.log(`Aperture added successfully: ${newAperture.id}`);
+            const fetchedApertures = await fetchApertures();
+            setApertures(fetchedApertures);
+            handleSetActiveAperture(newAperture);
         } catch (error) {
             console.error('Failed to add aperture:', error);
+            alert('Failed to add aperture. Please try again.');
         }
     };
 
@@ -194,7 +160,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const confirmed = window.confirm('Are you sure you want to delete the Aperture?');
             if (!confirmed) return;
 
-            await deleteWithAlert(`aperture/delete-aperture/${apertureId}`, null, {});
+            await ApertureService.deleteAperture(apertureId);
 
             console.log(`Aperture ${apertureId} deleted successfully.`);
 
@@ -210,6 +176,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             }
         } catch (error) {
             console.error(`Failed to delete Aperture ${apertureId}:`, error);
+            alert('Failed to delete aperture. Please try again.');
         }
     };
 
@@ -218,19 +185,15 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         try {
             setIsLoadingApertures(true);
-            const updatedAperture = await patchWithAlert<ApertureType>(`aperture/add-row/${activeAperture.id}`);
-            if (updatedAperture) {
-                handleUpdateAperture(updatedAperture);
-                handleSetActiveAperture(updatedAperture);
-            }
+            const updatedAperture = await ApertureService.addRow(activeAperture.id);
+            handleUpdateAperture(updatedAperture);
+            handleSetActiveAperture(updatedAperture);
         } catch (error) {
-            const msg = `Error adding row: ${error}`;
-            console.error(msg);
-            alert(msg);
+            console.error('Error adding row:', error);
+            alert('Failed to add row. Please try again.');
         } finally {
             setIsLoadingApertures(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture]);
 
     const handleDeleteRow = useCallback(
@@ -239,24 +202,16 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             try {
                 setIsLoadingApertures(true);
-                const updatedAperture = await deleteWithAlert<ApertureType>(
-                    `aperture/delete-row/${activeAperture.id}`,
-                    null,
-                    { row_number: rowNumber }
-                );
-                if (updatedAperture) {
-                    handleUpdateAperture(updatedAperture);
-                    handleSetActiveAperture(updatedAperture);
-                }
+                const updatedAperture = await ApertureService.deleteRow(activeAperture.id, rowNumber);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
             } catch (error) {
-                const msg = `Error deleting row: ${error}`;
-                console.error(msg);
-                alert(msg);
+                console.error('Error deleting row:', error);
+                alert('Failed to delete row. Please try again.');
             } finally {
                 setIsLoadingApertures(false);
             }
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [activeAperture]
     );
 
@@ -265,19 +220,15 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         try {
             setIsLoadingApertures(true);
-            const updatedAperture = await patchWithAlert<ApertureType>(`aperture/add-column/${activeAperture.id}`);
-            if (updatedAperture) {
-                handleUpdateAperture(updatedAperture);
-                handleSetActiveAperture(updatedAperture);
-            }
+            const updatedAperture = await ApertureService.addColumn(activeAperture.id);
+            handleUpdateAperture(updatedAperture);
+            handleSetActiveAperture(updatedAperture);
         } catch (error) {
-            const msg = `Error adding row: ${error}`;
-            console.error(msg);
-            alert(msg);
+            console.error('Error adding column:', error);
+            alert('Failed to add column. Please try again.');
         } finally {
             setIsLoadingApertures(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture]);
 
     const handleDeleteColumn = useCallback(
@@ -286,24 +237,16 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             try {
                 setIsLoadingApertures(true);
-                const updatedAperture = await deleteWithAlert<ApertureType>(
-                    `aperture/delete-column/${activeAperture.id}`,
-                    null,
-                    { column_number: colNumber }
-                );
-                if (updatedAperture) {
-                    handleUpdateAperture(updatedAperture);
-                    handleSetActiveAperture(updatedAperture);
-                }
+                const updatedAperture = await ApertureService.deleteColumn(activeAperture.id, colNumber);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
             } catch (error) {
-                const msg = `Error deleting column: ${error}`;
-                console.error(msg);
-                alert(msg);
+                console.error('Error deleting column:', error);
+                alert('Failed to delete column. Please try again.');
             } finally {
                 setIsLoadingApertures(false);
             }
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [activeAperture]
     );
 
@@ -324,23 +267,15 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         async (apertureId: number, columnIndex: number, newWidthMM: number) => {
             console.log(`updateColumnWidth(${apertureId}, ${columnIndex}, ${newWidthMM})`);
             try {
-                const updatedAperture = await patchWithAlert<ApertureType>(
-                    `aperture/update-column-width/${apertureId}`,
-                    null,
-                    {
-                        column_index: columnIndex,
-                        new_width_mm: newWidthMM,
-                    }
-                );
+                const updatedAperture = await ApertureService.updateColumnWidth(apertureId, columnIndex, newWidthMM);
 
-                if (updatedAperture) {
-                    console.log(`Aperture Column Updated successfully: ${updatedAperture.id}`);
-                    const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
-                    setApertures(updatedApertures);
-                    handleSetActiveAperture(updatedAperture);
-                }
+                console.log(`Aperture Column Updated successfully: ${updatedAperture.id}`);
+                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                setApertures(updatedApertures);
+                handleSetActiveAperture(updatedAperture);
             } catch (error) {
                 console.error('Failed to update aperture column width:', error);
+                alert('Failed to update column width. Please try again.');
             }
         },
         [apertures]
@@ -350,23 +285,15 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         async (apertureId: number, rowIndex: number, newHeightMM: number) => {
             console.log(`updateRowHeight(${apertureId}, ${rowIndex}, ${newHeightMM})`);
             try {
-                const updatedAperture = await patchWithAlert<ApertureType>(
-                    `aperture/update-row-height/${apertureId}`,
-                    null,
-                    {
-                        row_index: rowIndex,
-                        new_height_mm: newHeightMM,
-                    }
-                );
+                const updatedAperture = await ApertureService.updateRowHeight(apertureId, rowIndex, newHeightMM);
 
-                if (updatedAperture) {
-                    console.log(`Aperture Row Updated successfully: ${updatedAperture.id}`);
-                    const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
-                    setApertures(updatedApertures);
-                    handleSetActiveAperture(updatedAperture);
-                }
+                console.log(`Aperture Row Updated successfully: ${updatedAperture.id}`);
+                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                setApertures(updatedApertures);
+                handleSetActiveAperture(updatedAperture);
             } catch (error) {
-                console.error('Failed to update aperture column width:', error);
+                console.error('Failed to update aperture row height:', error);
+                alert('Failed to update row height. Please try again.');
             }
         },
         [apertures]
@@ -382,10 +309,13 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             framePosition: FramePosition;
             frameId: number | null;
         }) => {
-            const updatedAperture = await updateApertureElementFrameType(params);
-            if (updatedAperture) {
+            try {
+                const updatedAperture = await ApertureService.updateElementFrame(params);
                 handleUpdateAperture(updatedAperture);
                 handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Failed to update aperture element frame:', error);
+                alert('Failed to update frame. Please try again.');
             }
         },
         []
@@ -453,64 +383,54 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, []);
 
     const mergeSelectedApertureElements = useCallback(async () => {
-        console.log(`updateRowHeight()`);
+        console.log(`mergeSelectedApertureElements()`);
         try {
             if (!activeAperture) {
-                return null;
+                return;
             }
 
-            const updatedAperture = await patchWithAlert<ApertureType>(
-                `aperture/merge-aperture-elements/${activeAperture.id}`,
-                null,
-                {
-                    aperture_element_ids: selectedApertureElementIds,
-                }
-            );
+            const updatedAperture = await ApertureService.mergeElements(activeAperture.id, selectedApertureElementIds);
 
-            if (updatedAperture) {
-                console.log(`Aperture Elements successfully merged: ${updatedAperture.id}`);
-                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
-                setApertures(updatedApertures);
-                handleSetActiveAperture(updatedAperture);
-            }
+            console.log(`Aperture Elements successfully merged: ${updatedAperture.id}`);
+            const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+            setApertures(updatedApertures);
+            handleSetActiveAperture(updatedAperture);
         } catch (error) {
             console.error('Failed to merge aperture elements:', error);
+            alert('Failed to merge elements. Please try again.');
         } finally {
             clearApertureElementIdSelection();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture, apertures, selectedApertureElementIds]);
 
     const splitSelectedApertureElement = useCallback(async () => {
         console.log(`splitSelectedApertureElement()`);
         try {
             if (!activeAperture) {
-                return null;
+                return;
             }
 
             if (selectedApertureElementIds.length !== 1) {
                 console.warn('You can only split one Aperture Element at a time.');
+                alert('You can only split one Aperture Element at a time.');
                 return;
             }
 
-            const updatedAperture = await patchWithAlert<ApertureType>(
-                `aperture/split-aperture-element/${activeAperture.id}`,
-                null,
-                { aperture_element_id: selectedApertureElementIds[0] }
+            const updatedAperture = await ApertureService.splitElement(
+                activeAperture.id,
+                selectedApertureElementIds[0]
             );
 
-            if (updatedAperture) {
-                console.log(`Aperture Element successfully split: ${updatedAperture.id}`);
-                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
-                setApertures(updatedApertures);
-                handleSetActiveAperture(updatedAperture);
-            }
+            console.log(`Aperture Element successfully split: ${updatedAperture.id}`);
+            const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+            setApertures(updatedApertures);
+            handleSetActiveAperture(updatedAperture);
         } catch (error) {
             console.error('Failed to split aperture element:', error);
+            alert('Failed to split element. Please try again.');
         } finally {
             clearApertureElementIdSelection();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAperture, apertures, selectedApertureElementIds]);
 
     return (
