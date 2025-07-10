@@ -18,17 +18,19 @@ const hoverText = {
 const HeaderTextIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler, loading }) => {
     return (
         <Tooltip title={hoverText[id]} placement="top" arrow>
-            <Button
-                className="header-button"
-                variant="outlined"
-                color="inherit"
-                size="small"
-                onClick={handler}
-                disabled={loading}
-                startIcon={icon}
-            >
-                {loading ? 'Loading....' : text}
-            </Button>
+            <span>
+                <Button
+                    className="header-button"
+                    variant="outlined"
+                    color="inherit"
+                    size="small"
+                    onClick={handler}
+                    disabled={loading}
+                    startIcon={icon}
+                >
+                    {loading ? 'Loading....' : text}
+                </Button>
+            </span>
         </Tooltip>
     );
 };

@@ -9,15 +9,17 @@ const ApertureListHeader: React.FC<{ onAddAperture: () => void }> = ({ onAddAper
 
     return (
         <Tooltip title="Add a new Aperture to the Project" placement="top" arrow>
-            <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                sx={{ marginBottom: 2, minWidth: '120px', width: '100%', color: 'inherit' }}
-                onClick={onAddAperture}
-            >
-                + Add New Aperture
-            </Button>
+            <span>
+                <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    sx={{ marginBottom: 2, minWidth: '120px', width: '100%', color: 'inherit' }}
+                    onClick={onAddAperture}
+                >
+                    + Add New Aperture
+                </Button>
+            </span>
         </Tooltip>
     );
 };

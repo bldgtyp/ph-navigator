@@ -39,15 +39,17 @@ const EditNameButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
 
     return (
         <Tooltip className="edit-aperture-name-button" title="Aperture Name" placement="right" arrow>
-            <IconButton
-                size="small"
-                onClick={e => {
-                    e.preventDefault();
-                    openNameChangeModal(aperture.id, aperture.name);
-                }}
-            >
-                <ModeEditOutlinedIcon fontSize="small" />
-            </IconButton>
+            <span>
+                <IconButton
+                    size="small"
+                    onClick={e => {
+                        e.preventDefault();
+                        openNameChangeModal(aperture.id, aperture.name);
+                    }}
+                >
+                    <ModeEditOutlinedIcon fontSize="small" />
+                </IconButton>
+            </span>
         </Tooltip>
     );
 };
@@ -57,15 +59,17 @@ const DeleteButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
 
     return (
         <Tooltip className="delete-aperture-button" title="Delete Aperture" placement="right" arrow>
-            <IconButton
-                size="small"
-                onClick={e => {
-                    e.preventDefault();
-                    handleDeleteAperture(aperture.id);
-                }}
-            >
-                <ClearOutlinedIcon fontSize="small" />
-            </IconButton>
+            <span>
+                <IconButton
+                    size="small"
+                    onClick={e => {
+                        e.preventDefault();
+                        handleDeleteAperture(aperture.id);
+                    }}
+                >
+                    <ClearOutlinedIcon fontSize="small" />
+                </IconButton>
+            </span>
         </Tooltip>
     );
 };

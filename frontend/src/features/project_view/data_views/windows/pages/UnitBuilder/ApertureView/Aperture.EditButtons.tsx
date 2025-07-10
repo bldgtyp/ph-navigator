@@ -10,16 +10,18 @@ const ApertureEditButton: React.FC<{ onClick: () => void; text: string; hoverTex
 }) => {
     return (
         <Tooltip title={hoverText} placement="top" arrow>
-            <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
-                onClick={onClick}
-                disabled={disabled}
-            >
-                {text}
-            </Button>
+            <span>
+                <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
+                    onClick={onClick}
+                    disabled={disabled}
+                >
+                    {text}
+                </Button>
+            </span>
         </Tooltip>
     );
 };
