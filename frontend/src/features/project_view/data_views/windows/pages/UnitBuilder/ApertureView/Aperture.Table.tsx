@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { useApertures } from './Aperture.Context';
 import { ApertureElementTableGroup } from './table/ApertureElementTableGroup';
 import { ApertureElementFrameType } from '../types';
+import { updateApertureElementFrame } from './Aperture.Frame.Context';
 
 const ApertureElementsTable: React.FC = () => {
     const { activeAperture, selectedApertureElementIds } = useApertures();
@@ -18,10 +19,16 @@ const ApertureElementsTable: React.FC = () => {
     ) => {
         // TODO: Implement API call to update the frame
         console.log(`Updating element ${elementId}, ${framePosition} frame to:`, frame);
+        if (!frame) {
+            return null;
+        }
 
-        // For now, just log the change. You'll need to implement the actual API call here
-        // Example API call structure:
-        // updateElementFrame(elementId, framePosition, frame?.id || null);
+        updateApertureElementFrame({
+            apertureId: activeAperture.id,
+            elementId: elementId,
+            framePosition: framePosition,
+            frameId: frame.id,
+        });
     };
 
     return (

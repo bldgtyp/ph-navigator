@@ -14,11 +14,11 @@ from features.aperture.schemas.aperture import (
     MergeApertureElementsRequest,
     RowDeleteRequest,
     SplitApertureElementRequest,
+    UpdateApertureFrameRequest,
     UpdateColumnWidthRequest,
     UpdateNameRequest,
     UpdateRowHeightRequest,
 )
-from features.aperture.schemas.frame import ApertureElementFrameSchema
 from features.aperture.services.aperture import (
     LastColumnException,
     LastRowException,
@@ -33,6 +33,7 @@ from features.aperture.services.aperture import (
     merge_aperture_elements,
     split_aperture_element,
     update_aperture_column_width,
+    update_aperture_element_frame,
     update_aperture_name,
     update_aperture_row_height,
 )
@@ -137,6 +138,23 @@ def update_aperture_row_height_route(
         return ApertureSchema.from_orm(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture row height for ID {aperture_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+@router.patch("/update-frame/{aperture_id}", response_model=ApertureSchema)
+def update_frame_route(
+    request: Request, aperture_id: int, update_request: UpdateApertureFrameRequest, db: Session = Depends(get_db)
+):
+    logger.info(f"update_frame_route({aperture_id=}, {update_request=})")
+
+    try:
+        updated_aperture = update_aperture_element_frame(
+            db, update_request.element_id, update_request.side, update_request.frame_id
+        )
+        return ApertureSchema.from_orm(updated_aperture)
+    except Exception as e:
+        msg = f"Failed to update aperture frame for ID {aperture_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 

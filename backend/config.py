@@ -27,9 +27,9 @@ class Settings(BaseSettings):
     AIRTABLE_MATERIAL_TABLE_ID: str = "tbl6GnWtkPX0OALMu"
     AIRTABLE_MATERIAL_GET_TOKEN: str = "__token__"
 
-    AIRTABLE_FRAME_BASE_ID: str = "applZMqlNTg2Oldiq" 
+    AIRTABLE_FRAME_BASE_ID: str = "applZMqlNTg2Oldiq"
     AIRTABLE_FRAME_TABLE_ID: str = "tbllusBTIP0x50vEf"
-    AIRTABLE_FRAME_GET_TOKEN: str = "__token__" 
+    AIRTABLE_FRAME_GET_TOKEN: str = "__token__"
 
     # Encryption key for AirTable PAT Tokens
     # To generate a fresh key: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, MappedColumn
 
 from database import Base
 
+
 class ApertureElementFrame(Base):
     __tablename__ = "aperture_element_frame"
 
@@ -12,4 +13,3 @@ class ApertureElementFrame(Base):
     name: Mapped[str] = MappedColumn(String(255), nullable=False, default="Unnamed Frame")
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False, default=100.0)
     u_value_w_m2k: Mapped[float] = MappedColumn(Float, nullable=False, default=1.0)
-

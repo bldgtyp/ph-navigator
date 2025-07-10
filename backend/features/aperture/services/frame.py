@@ -127,7 +127,8 @@ def purge_unused_frames(db: Session) -> None:
 
     # Get all ApertureElement IDs that use this frame type
     aperture_element_frame_ids = {
-        frame_id for aperture_element in db.query(ApertureElement).all()
+        frame_id
+        for aperture_element in db.query(ApertureElement).all()
         for frame_id in aperture_element.frame_ids
         if frame_id is not None
     }

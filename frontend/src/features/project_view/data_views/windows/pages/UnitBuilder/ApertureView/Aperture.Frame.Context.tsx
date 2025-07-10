@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getWithAlert } from '../../../../../../../api/getWithAlert';
 import { ApertureElementFrameType } from '../types';
+import { patchWithAlert } from '../../../../../../../api/patchWithAlert';
 
 const cacheKey = 'frames';
 const cacheExpiryKey = 'frames_expiry';
@@ -19,6 +20,13 @@ interface ApertureElementFrameContextType {
     frames: ApertureElementFrameType[];
     setFrames: React.Dispatch<React.SetStateAction<ApertureElementFrameType[]>>;
     handleRefreshFrames: () => Promise<void>;
+}
+
+interface updateApertureElementFrameProps {
+    apertureId: number;
+    elementId: number;
+    framePosition: 'top' | 'right' | 'bottom' | 'left';
+    frameId: number;
 }
 
 export const fetchAndCacheFrames = async (): Promise<ApertureElementFrameType[]> => {
@@ -55,6 +63,20 @@ export const refreshFramesFromAirTable = async (): Promise<ApertureElementFrameT
         return frames;
     } catch (error) {
         console.error('Error Refreshing Frames from AirTable:', error);
+        throw error;
+    }
+};
+
+export const updateApertureElementFrame = async (params: updateApertureElementFrameProps) => {
+    try {
+        const response = await patchWithAlert(`aperture/update-frame/${params.apertureId}`, null, {
+            element_id: params.elementId,
+            side: params.framePosition,
+            frame_id: params.frameId,
+        });
+        return response;
+    } catch (error) {
+        console.error('Error updating aperture element frame:', error);
         throw error;
     }
 };

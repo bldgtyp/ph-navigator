@@ -4,9 +4,11 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from db_entities.aperture import Aperture
-from db_entities.aperture.aperture_element import ApertureElement
+from db_entities.aperture import Aperture, ApertureElement
 from db_entities.app.project import Project
+from features.aperture.schemas.aperture import FrameSide
+from features.aperture.services.aperture_element import get_aperture_element_by_id
+from features.aperture.services.frame import get_frame_by_id
 from features.app.services import get_project_by_bt_number
 
 logger = logging.getLogger(__name__)
@@ -287,6 +289,52 @@ def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, ne
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating aperture row height {aperture_id}: {str(e)}")
+        raise
+
+
+def update_aperture_element_frame(db: Session, element_id: int, side: str, frame_id: str) -> Aperture:
+    """Update the frame for a specific side of an aperture element.
+
+    Args:
+        db: Database session
+        element_id: ID of the aperture element to update
+        side: Side of the element ('top', 'right', 'bottom', 'left')
+        frame_id: ID of the frame to assign
+
+    Returns:
+        Updated aperture object
+
+    Raises:
+        ValueError: If element, frame not found or invalid side
+    """
+    logger.info(f"update_aperture_element_frame({element_id=}, {side=}, {frame_id=})")
+
+    try:
+        # Validate and normalize the side
+        try:
+            frame_side = FrameSide(side.lower())
+            side_attr = f"frame_{frame_side.value}_id"
+        except ValueError:
+            raise ValueError(f"Invalid frame side: {side}. Must be one of: {[s.value for s in FrameSide]}")
+
+        # Get the element (this will raise ValueError if not found)
+        element = get_aperture_element_by_id(db, element_id)
+
+        # Get the frame to validate it exists (this will raise ValueError if not found)
+        frame = get_frame_by_id(db, frame_id)
+
+        # Update the specific frame side on the ELEMENT, not the aperture
+        setattr(element, side_attr, frame.id)
+
+        # Commit the changes
+        db.commit()
+
+        # Return the parent aperture
+        return get_aperture_by_id(db, element.aperture_id)
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture element frame {element_id=} | {side=} | {frame_id=}: {str(e)}")
         raise
 
 

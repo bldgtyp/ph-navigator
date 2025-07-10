@@ -6,9 +6,9 @@ from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
-
 from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.aperture.aperture_glazing import ApertureElementGlazing
+
 if TYPE_CHECKING:
     # Backwards relationships only
     from db_entities.aperture.aperture import Aperture
@@ -64,7 +64,7 @@ class ApertureElement(Base):
             "bottom": self.frame_bottom,
             "left": self.frame_left,
         }
-    
+
     @property
     def frame_ids(self) -> list[str | None]:
         """Return a list with all of the frame IDs."""

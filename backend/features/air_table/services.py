@@ -11,10 +11,10 @@ from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.assembly import Material
+from features.aperture.schemas.frame import ApertureElementFrameSchema
 from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
-from features.aperture.schemas.frame import ApertureElementFrameSchema
 
 logger = getLogger(__name__)
 
@@ -243,7 +243,10 @@ def get_all_frames_from_airtable() -> list[ApertureElementFrame]:
         settings.AIRTABLE_FRAME_TABLE_ID,
     )
 
-    return [ApertureElementFrame(**ApertureElementFrameSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
+    return [
+        ApertureElementFrame(**ApertureElementFrameSchema.fromAirTableRecordDict(record).dict())
+        for record in table.all()
+    ]
 
 
 def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:

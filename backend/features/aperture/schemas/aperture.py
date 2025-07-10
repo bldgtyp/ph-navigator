@@ -2,9 +2,12 @@
 
 from __future__ import annotations  # Enables forward references
 
+from enum import Enum
+
 from pydantic import BaseModel
 
 from features.aperture.schemas.aperture_element import ApertureElementSchema
+from features.aperture.schemas.frame import ApertureElementFrameSchema
 
 
 class ApertureSchema(BaseModel):
@@ -40,6 +43,19 @@ class UpdateColumnWidthRequest(BaseModel):
 class UpdateRowHeightRequest(BaseModel):
     row_index: int
     new_height_mm: float
+
+
+class FrameSide(str, Enum):
+    TOP = "top"
+    RIGHT = "right"
+    BOTTOM = "bottom"
+    LEFT = "left"
+
+
+class UpdateApertureFrameRequest(BaseModel):
+    element_id: int
+    side: FrameSide
+    frame_id: str
 
 
 class MergeApertureElementsRequest(BaseModel):
