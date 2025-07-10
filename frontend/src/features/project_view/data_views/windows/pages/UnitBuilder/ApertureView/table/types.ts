@@ -1,4 +1,6 @@
-import { ApertureElementFrameType, ApertureElementGlazingType, ApertureElementType } from '../../types';
+import { ApertureElementFrameType, ApertureElementGlazingType, ApertureElementType, ApertureType } from '../../types';
+
+export type FramePosition = 'top' | 'right' | 'bottom' | 'left';
 
 export interface TableRowProps {
     name: string;
@@ -6,19 +8,20 @@ export interface TableRowProps {
 
 export interface GlazingRowProps extends TableRowProps {
     glazing: ApertureElementGlazingType | null;
+    rowIndex: number;
 }
 
-export interface FrameRowProps extends TableRowProps {
-    frame: ApertureElementFrameType | null;
+export interface FrameRowProps {
+    rowIndex: number;
+    aperture: ApertureType;
+    element: ApertureElementType;
+    position: FramePosition;
 }
 
 export interface TableGroupProps {
+    aperture: ApertureType;
     element: ApertureElementType;
     isSelected: boolean;
-    onFrameChange?: (
-        framePosition: 'top' | 'right' | 'bottom' | 'left',
-        frame: ApertureElementFrameType | null
-    ) => void;
 }
 
 export interface TableHeaderCellProps {
@@ -30,4 +33,12 @@ export interface TableCellProps {
     children: React.ReactNode;
     size: number;
     className?: string;
+}
+
+export interface FrameSelectorProps {
+    aperture: ApertureType;
+    element: ApertureElementType;
+    selectedFrame: ApertureElementFrameType | null;
+    isLoading?: boolean;
+    position: FramePosition;
 }

@@ -1,45 +1,46 @@
 import React, { useContext } from 'react';
 import { FormControl, Autocomplete, TextField } from '@mui/material';
 import { UserContext } from '../../../../../../../auth/_contexts/UserContext';
-import { ApertureElementFrameType } from '../../types';
-import { useApertureElementFrames } from '../Aperture.Frame.Context';
-
-interface FrameSelectorProps {
-    selectedFrame: ApertureElementFrameType | null;
-    frameOptions: ApertureElementFrameType[];
-    onFrameChange: (frame: ApertureElementFrameType | null) => void;
-    isLoading?: boolean;
-    placeholder?: string;
-}
+import { useApertures } from '../Aperture.Context';
+import { FrameSelectorProps } from './types';
+import { useFrameTypes } from '../FrameTypes.Context';
 
 export const FrameSelector: React.FC<FrameSelectorProps> = ({
+    aperture,
+    element,
     selectedFrame,
-    frameOptions,
-    onFrameChange,
     isLoading = false,
-    placeholder = 'Select frame',
+    position,
 }) => {
     const userContext = useContext(UserContext);
-    const { frames } = useApertureElementFrames();
+    const { frameTypes } = useFrameTypes();
+    const { handleUpdateApertureElementFrame } = useApertures();
+    const placeholderText = `Select ${position.toLowerCase()} frame`;
 
     if (!userContext.user) {
-        // Show read-only display for non-logged-in users
         return <span>{selectedFrame?.name || '-'}</span>;
     }
 
     return (
         <FormControl fullWidth size="small">
             <Autocomplete
-                options={frameOptions}
+                options={frameTypes}
                 getOptionLabel={option => option.name}
                 value={selectedFrame}
-                onChange={(event, newValue) => onFrameChange(newValue)}
+                onChange={(event, newValue) =>
+                    handleUpdateApertureElementFrame({
+                        apertureId: aperture.id,
+                        elementId: element.id,
+                        framePosition: position,
+                        frameId: newValue ? newValue.id : null,
+                    })
+                }
                 loading={isLoading}
                 size="small"
                 renderInput={params => (
                     <TextField
                         {...params}
-                        placeholder={placeholder}
+                        placeholder={placeholderText}
                         variant="outlined"
                         size="small"
                         sx={{

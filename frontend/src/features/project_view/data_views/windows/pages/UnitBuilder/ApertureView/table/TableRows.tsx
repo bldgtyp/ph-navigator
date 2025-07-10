@@ -2,10 +2,9 @@ import React from 'react';
 import { TableCell } from './TableCells';
 import { FrameSelector } from './FrameSelector';
 import { GlazingRowProps, FrameRowProps } from './types';
-import { ApertureElementFrameType } from '../../types';
-import { useApertureElementFrames } from '../Aperture.Frame.Context';
+import { useFrameTypes } from '../FrameTypes.Context';
 
-export const GlazingRow: React.FC<GlazingRowProps & { rowIndex: number }> = ({ name, glazing, rowIndex }) => {
+export const GlazingRow: React.FC<GlazingRowProps> = ({ name, glazing, rowIndex }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
 
     return (
@@ -29,37 +28,32 @@ export const GlazingRow: React.FC<GlazingRowProps & { rowIndex: number }> = ({ n
     );
 };
 
-export const FrameRow: React.FC<
-    FrameRowProps & {
-        rowIndex: number;
-        onFrameChange?: (frame: ApertureElementFrameType | null) => void;
-    }
-> = ({ name, frame, rowIndex, onFrameChange }) => {
+export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex, position }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
-    const { frames, isLoading } = useApertureElementFrames();
+    const { isLoading } = useFrameTypes();
 
     return (
         <>
             <TableCell size={2} className={rowClass}>
-                <span>{name}:</span>
+                <span>{`${position} Frame:`}</span>
             </TableCell>
             <TableCell size={5} className={rowClass}>
                 <FrameSelector
-                    selectedFrame={frame}
-                    frameOptions={frames}
-                    onFrameChange={onFrameChange || (() => {})}
+                    aperture={aperture}
+                    element={element}
+                    selectedFrame={element.frames[position]}
                     isLoading={isLoading}
-                    placeholder={`Select ${name.toLowerCase()}`}
+                    position={position}
                 />
             </TableCell>
             <TableCell size={2} className={rowClass}>
-                <span>{frame?.u_value_w_m2k || '–'}</span>
+                <span>{element.frames[position]?.u_value_w_m2k || '-'}</span>
             </TableCell>
             <TableCell size={2} className={rowClass}>
-                <span>{frame?.width_mm || '–'}</span>
+                <span>{element.frames[position]?.width_mm || '-'}</span>
             </TableCell>
             <TableCell size={1} className={rowClass}>
-                <span>–</span>
+                <span>-</span>
             </TableCell>
         </>
     );

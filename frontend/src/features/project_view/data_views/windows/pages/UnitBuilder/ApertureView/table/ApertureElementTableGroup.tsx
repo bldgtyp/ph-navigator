@@ -3,7 +3,6 @@ import { Box, Grid } from '@mui/material';
 import { TableGroupProps } from './types';
 import { TableHeader } from './TableHeader';
 import { GlazingRow, FrameRow } from './TableRows';
-import { ApertureElementFrameType } from '../../types';
 import './ApertureTable.styles.css';
 
 const GroupTitle: React.FC<{ title: string }> = ({ title }) => {
@@ -14,17 +13,8 @@ const GroupTitle: React.FC<{ title: string }> = ({ title }) => {
     );
 };
 
-export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ element, isSelected, onFrameChange }) => {
+export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture, element, isSelected }) => {
     const groupTitle = element.name || `Element ${element.id}`;
-
-    const handleFrameChange = (
-        framePosition: 'top' | 'right' | 'bottom' | 'left',
-        frame: ApertureElementFrameType | null
-    ) => {
-        if (onFrameChange) {
-            onFrameChange(framePosition, frame);
-        }
-    };
 
     return (
         <Box
@@ -62,30 +52,10 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ element, 
                 }}
             >
                 <GlazingRow name="Glazing" glazing={element.glazing} rowIndex={0} />
-                <FrameRow
-                    name="Top Frame"
-                    frame={element.frames.top}
-                    rowIndex={1}
-                    onFrameChange={frame => handleFrameChange('top', frame)}
-                />
-                <FrameRow
-                    name="Right Frame"
-                    frame={element.frames.right}
-                    rowIndex={2}
-                    onFrameChange={frame => handleFrameChange('right', frame)}
-                />
-                <FrameRow
-                    name="Bottom Frame"
-                    frame={element.frames.bottom}
-                    rowIndex={3}
-                    onFrameChange={frame => handleFrameChange('bottom', frame)}
-                />
-                <FrameRow
-                    name="Left Frame"
-                    frame={element.frames.left}
-                    rowIndex={4}
-                    onFrameChange={frame => handleFrameChange('left', frame)}
-                />
+                <FrameRow rowIndex={1} aperture={aperture} element={element} position="top" />
+                <FrameRow rowIndex={2} aperture={aperture} element={element} position="right" />
+                <FrameRow rowIndex={3} aperture={aperture} element={element} position="bottom" />
+                <FrameRow rowIndex={4} aperture={aperture} element={element} position="left" />
             </Grid>
         </Box>
     );

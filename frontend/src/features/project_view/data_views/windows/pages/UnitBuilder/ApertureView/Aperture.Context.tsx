@@ -7,10 +7,37 @@ import { deleteWithAlert } from '../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../api/postWithAlert';
 
 import { ApertureElementType, ApertureType } from '../types';
+import { FramePosition } from './table/types';
 
 function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
     return aperture.elements.find(element => element.id === elementId);
 }
+
+const updateApertureElementFrameType = async (params: {
+    apertureId: number;
+    elementId: number;
+    framePosition: FramePosition;
+    frameId: number | null;
+}) => {
+    if (!params.frameId) {
+        return null;
+    }
+
+    try {
+        const response = await patchWithAlert<ApertureType>(`aperture/update-frame/${params.apertureId}`, null, {
+            element_id: params.elementId,
+            side: params.framePosition,
+            frame_id: params.frameId,
+        });
+        if (!response) {
+            throw new Error('Failed to update aperture element frame.');
+        }
+        return response;
+    } catch (error) {
+        console.error('Error updating aperture element frame:', error);
+        throw error;
+    }
+};
 
 interface AperturesContextType {
     isLoadingApertures: boolean;
@@ -42,6 +69,12 @@ interface AperturesContextType {
     clearApertureElementIdSelection: () => void;
     mergeSelectedApertureElements: () => void;
     splitSelectedApertureElement: () => void;
+    handleUpdateApertureElementFrame: (params: {
+        apertureId: number;
+        elementId: number;
+        framePosition: FramePosition;
+        frameId: number | null;
+    }) => Promise<void>;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -340,7 +373,27 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     // ----------------------------------------------------------------------------------
+    // Frame-Type and Glass-Type
+
+    const handleUpdateApertureElementFrame = useCallback(
+        async (params: {
+            apertureId: number;
+            elementId: number;
+            framePosition: FramePosition;
+            frameId: number | null;
+        }) => {
+            const updatedAperture = await updateApertureElementFrameType(params);
+            if (updatedAperture) {
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
+            }
+        },
+        []
+    );
+
+    // ----------------------------------------------------------------------------------
     // Cell Selection
+
     const toggleApertureElementSelection = useCallback(
         (elementId: number) => {
             setSelectedApertureElementsIds(prev => {
@@ -488,6 +541,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 clearApertureElementIdSelection,
                 mergeSelectedApertureElements,
                 splitSelectedApertureElement,
+                handleUpdateApertureElementFrame,
             }}
         >
             {children}

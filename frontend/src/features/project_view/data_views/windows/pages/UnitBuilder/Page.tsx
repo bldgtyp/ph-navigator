@@ -12,13 +12,13 @@ import ApertureTypesSidebar from './Sidebar/Sidebar';
 import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
 import ApertureElements from './ApertureView/ApertureElements';
 import ApertureElementsTable from './ApertureView/Aperture.Table';
-import { ApertureElementFrameProvider, useApertureElementFrames } from './ApertureView/Aperture.Frame.Context';
+import { FrameTypesProvider, useFrameTypes } from './ApertureView/FrameTypes.Context';
 import { headerButtons } from './ApertureView/Aperture.HeaderButtons';
 
 const ApertureTypesContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
     const { activeAperture } = useApertures();
-    const { isLoading, handleRefreshFrames } = useApertureElementFrames();
+    const { isLoading, handleRefreshFrameTypes: handleRefreshFrames } = useFrameTypes();
 
     const headerButtonsConfig = userContext.user ? headerButtons(handleRefreshFrames, isLoading) : [];
 
@@ -51,9 +51,9 @@ const ApertureTypesPage: React.FC = () => {
     return (
         <AperturesProvider>
             <ApertureSidebarProvider>
-                <ApertureElementFrameProvider>
+                <FrameTypesProvider>
                     <ApertureTypesContentBlock />
-                </ApertureElementFrameProvider>
+                </FrameTypesProvider>
             </ApertureSidebarProvider>
         </AperturesProvider>
     );
