@@ -1,5 +1,5 @@
 import React from 'react';
-import { SashProps } from '../types';
+import { SashProps } from '../../types';
 
 const ApertureElementSVG: React.FC<SashProps> = ({ height, width }) => {
     return (

@@ -3,7 +3,7 @@ import { patchWithAlert } from '../../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../../api/postWithAlert';
 import { ApertureType } from '../../types';
-import { FramePosition } from '../table/types';
+import { FramePosition } from '../../ElementsTable/types';
 
 /**
  * Service layer for aperture-related API calls

@@ -10,9 +10,9 @@ import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
 import ApertureTypesSidebar from './Sidebar/Sidebar';
 import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
-import ApertureElements from './ApertureView/ApertureElements';
-import ApertureElementsTable from './ApertureView/Aperture.Table';
-import { FrameTypesProvider, useFrameTypes } from './ApertureView/FrameTypes.Context';
+import ApertureElements from './ApertureView/ElementsView/ApertureElements';
+import ApertureElementsTable from './ElementsTable/ElementsTable';
+import { FrameTypesProvider, useFrameTypes } from './ElementsTable/FrameType.Context';
 import { headerButtons } from './ApertureView/Aperture.HeaderButtons';
 
 const ApertureTypesContentBlock: React.FC = () => {

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box } from '@mui/material';
 
-import { useApertures } from './Aperture.Context';
+import { useApertures } from '../Aperture.Context';
 
 import ApertureElementSVG from './ApertureElement.SVG';
-import { GridCellProps } from '../types';
+import { GridCellProps } from '../../types';
 
 const ApertureElementContainer: React.FC<GridCellProps> = ({ element, width, height, isSelected }) => {
     const { toggleApertureElementSelection } = useApertures();

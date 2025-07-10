@@ -1,12 +1,12 @@
 import React from 'react';
 import { Box, Stack } from '@mui/material';
 
-import { useApertures } from './Aperture.Context';
-import { DimensionsProvider } from '../Dimensions/Dimensions.Context';
+import { useApertures } from '../Aperture.Context';
+import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
 
 import ApertureElementContainer from './ApertureElement.Container';
-import VerticalDimensionLines from '../Dimensions/Dimensions.Vertical';
-import HorizontalDimensionLines from '../Dimensions/Dimensions.Horizontal';
+import VerticalDimensionLines from '../../Dimensions/Dimensions.Vertical';
+import HorizontalDimensionLines from '../../Dimensions/Dimensions.Horizontal';
 
 const ApertureElementsDisplay: React.FC = () => {
     const { activeAperture, getCellSize, selectedApertureElementIds } = useApertures();

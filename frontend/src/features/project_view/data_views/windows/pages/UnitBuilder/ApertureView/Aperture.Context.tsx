@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { useParams } from 'react-router-dom';
 
 import { ApertureElementType, ApertureType } from '../types';
-import { FramePosition } from './table/types';
+import { FramePosition } from '../ElementsTable/types';
 import { ApertureService } from './services/apertureService';
 
 function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
@@ -401,7 +401,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             clearApertureElementIdSelection();
         }
-    }, [activeAperture, apertures, selectedApertureElementIds]);
+    }, [activeAperture, apertures, selectedApertureElementIds, clearApertureElementIdSelection]);
 
     const splitSelectedApertureElement = useCallback(async () => {
         console.log(`splitSelectedApertureElement()`);
@@ -431,7 +431,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             clearApertureElementIdSelection();
         }
-    }, [activeAperture, apertures, selectedApertureElementIds]);
+    }, [activeAperture, apertures, selectedApertureElementIds, clearApertureElementIdSelection]);
 
     return (
         <AperturesContext.Provider

@@ -1,4 +1,4 @@
-import { ApertureElementFrameType, ApertureElementGlazingType, ApertureElementType, ApertureType } from '../../types';
+import { ApertureElementFrameType, ApertureElementGlazingType, ApertureElementType, ApertureType } from '../types';
 
 export type FramePosition = 'top' | 'right' | 'bottom' | 'left';
 

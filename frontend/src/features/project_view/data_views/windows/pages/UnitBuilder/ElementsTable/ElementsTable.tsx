@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import { useApertures } from './Aperture.Context';
-import { ApertureElementTableGroup } from './table/ApertureElementTableGroup';
+import { useApertures } from '../ApertureView/Aperture.Context';
+import { ApertureElementTableGroup } from './ElementTableGroup';
 
 const ApertureElementsTable: React.FC = () => {
     const { activeAperture, selectedApertureElementIds } = useApertures();
