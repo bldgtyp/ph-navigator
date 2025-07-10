@@ -1,4 +1,3 @@
-import React from 'react';
 import { TableHeaderCell } from './TableCells';
 
 export const TableHeader: React.FC = () => {

@@ -1,8 +1,8 @@
-import React from 'react';
+import { useFrameTypes } from './FrameType.Context';
+
 import { TableCell } from './TableCells';
 import { FrameSelector } from './FrameTypeSelector';
 import { GlazingRowProps, FrameRowProps } from './types';
-import { useFrameTypes } from './FrameType.Context';
 
 export const GlazingRow: React.FC<GlazingRowProps> = ({ name, glazing, rowIndex }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;

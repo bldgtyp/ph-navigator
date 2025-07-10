@@ -1,12 +1,9 @@
-import { Button, Tooltip } from '@mui/material';
 import { useContext } from 'react';
+import { Button, Tooltip } from '@mui/material';
+
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
-interface ApertureListHeaderProps {
-    onAddAperture: () => void;
-}
-
-const ApertureListHeader: React.FC<ApertureListHeaderProps> = ({ onAddAperture }) => {
+const ApertureListHeader: React.FC<{ onAddAperture: () => void }> = ({ onAddAperture }) => {
     const userContext = useContext(UserContext);
     if (!userContext.user) return null;
 

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+
 import { ApertureElementFrameType } from '../types';
 import { FrameTypeService } from './services/frameTypeService';
 

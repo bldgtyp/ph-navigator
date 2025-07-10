@@ -1,15 +1,15 @@
-import React, { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { Box } from '@mui/material';
 
 import { useApertures } from '../ApertureView/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
+import { useDimensions } from './Dimensions.Context';
 
-import { HorizontalDimensionLinesProps } from '../types';
 import { calculateSegments } from './calcSegments';
 import GridLineTick from './GridLineTick';
 import DeleteButton from './DeleteButton';
 import { DimensionLabel, DimensionEditable } from './Dimension.Label';
-import { useDimensions } from './Dimensions.Context';
+import { HorizontalDimensionLinesProps } from '../types';
 
 const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onColumnWidthChange }) => {
     const labelWidth = 40;

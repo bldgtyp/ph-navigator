@@ -1,9 +1,11 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { FormControl, Autocomplete, TextField } from '@mui/material';
+
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
-import { useApertures } from '../ApertureView/Aperture.Context';
-import { FrameSelectorProps } from './types';
 import { useFrameTypes } from './FrameType.Context';
+import { useApertures } from '../ApertureView/Aperture.Context';
+
+import { FrameSelectorProps } from './types';
 
 export const FrameSelector: React.FC<FrameSelectorProps> = ({
     aperture,

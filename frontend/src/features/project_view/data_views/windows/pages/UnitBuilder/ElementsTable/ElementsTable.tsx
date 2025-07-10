@@ -1,6 +1,7 @@
-import React from 'react';
 import { Box } from '@mui/material';
+
 import { useApertures } from '../ApertureView/Aperture.Context';
+
 import { ApertureElementTableGroup } from './ElementTableGroup';
 
 const ApertureElementsTable: React.FC = () => {

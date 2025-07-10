@@ -1,9 +1,10 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { Box, Grid } from '@mui/material';
 
+import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { AperturesProvider, useApertures } from './ApertureView/Aperture.Context';
 import { ApertureSidebarProvider } from './Sidebar/Sidebar.Context';
-import { UserContext } from '../../../../../auth/_contexts/UserContext';
+import { FrameTypesProvider, useFrameTypes } from './ElementsTable/FrameType.Context';
 
 import ContentBlock from '../../../_components/ContentBlock';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
@@ -12,7 +13,6 @@ import ApertureTypesSidebar from './Sidebar/Sidebar';
 import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
 import ApertureElements from './ApertureView/ElementsView/ApertureElements';
 import ApertureElementsTable from './ElementsTable/ElementsTable';
-import { FrameTypesProvider, useFrameTypes } from './ElementsTable/FrameType.Context';
 import { headerButtons } from './ApertureView/Aperture.HeaderButtons';
 
 const ApertureTypesContentBlock: React.FC = () => {

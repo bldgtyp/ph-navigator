@@ -1,15 +1,15 @@
-import React, { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { Box } from '@mui/material';
 
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { useApertures } from '../ApertureView/Aperture.Context';
 import { useDimensions } from './Dimensions.Context';
 
-import { VerticalDimensionLinesProps } from '../types';
 import { calculateSegments } from './calcSegments';
 import DeleteButton from './DeleteButton';
 import GridLineTick from './GridLineTick';
 import { DimensionEditable, DimensionLabel } from './Dimension.Label';
+import { VerticalDimensionLinesProps } from '../types';
 
 const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHeightChange }) => {
     const labelWidth = 40;

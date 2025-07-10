@@ -1,7 +1,7 @@
+import { useContext } from 'react';
 import { IconButton } from '@mui/material';
 import RemoveCircleTwoToneIcon from '@mui/icons-material/RemoveCircleTwoTone';
 
-import { useContext } from 'react';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
 const DeleteButton: React.FC<{ index: number; handleDelete: (index: number) => void }> = ({ index, handleDelete }) => {

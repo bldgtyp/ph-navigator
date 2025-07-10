@@ -7,13 +7,9 @@ import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 import { useApertures } from '../ApertureView/Aperture.Context';
 import { useApertureSidebar } from './Sidebar.Context';
 
+import { listItemButtonSx, listItemTextSlopProps, listItemTextSx } from './styles';
 import { ApertureType } from '../types';
-import { listItemButtonSx, listItemTextSlopProps, listItemTextSx } from './Sidebar.ListItemContent.Styles';
-
-interface ApertureListItemContentProps {
-    aperture: ApertureType;
-    isSelected: boolean;
-}
+import { ApertureListItemContentProps } from './types';
 
 const ApertureListItemContent: React.FC<ApertureListItemContentProps> = ({ aperture, isSelected }) => {
     const userContext = useContext(UserContext);

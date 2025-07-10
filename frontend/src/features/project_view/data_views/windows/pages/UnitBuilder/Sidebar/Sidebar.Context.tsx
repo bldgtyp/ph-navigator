@@ -1,23 +1,8 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
+
 import { useApertures } from '../ApertureView/Aperture.Context';
 
-export interface ApertureSidebarContextType {
-    nameChangeModal: {
-        isOpen: boolean;
-        apertureId: number;
-        apertureName: string;
-    };
-    setNameChangeModal: React.Dispatch<
-        React.SetStateAction<{
-            isOpen: boolean;
-            apertureId: number;
-            apertureName: string;
-        }>
-    >;
-    openNameChangeModal: (id: any, name: string) => void;
-    closeNameChangeModal: () => void;
-    handleNameSubmit: (newName: string) => void;
-}
+import { ApertureSidebarContextType } from './types';
 
 const ApertureSidebarContext = createContext<ApertureSidebarContextType | undefined>(undefined);
 

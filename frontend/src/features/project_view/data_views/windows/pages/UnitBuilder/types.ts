@@ -35,17 +35,6 @@ export interface HorizontalDimensionLinesProps {
 export interface VerticalDimensionLinesProps {
     onRowHeightChange: (index: number, value: number) => void;
 }
-export interface GridCellProps {
-    element: ApertureElementType;
-    width: number;
-    height: number;
-    isSelected: boolean;
-}
-
-export interface SashProps {
-    height: number;
-    width: number;
-}
 
 export interface GridLinesProps {
     rowHeights: number[];

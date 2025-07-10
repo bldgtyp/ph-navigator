@@ -1,5 +1,5 @@
-import React from 'react';
 import { Grid } from '@mui/material';
+
 import { TableCellProps, TableHeaderCellProps } from './types';
 
 export const TableCell: React.FC<TableCellProps> = ({ children, size, className }) => {

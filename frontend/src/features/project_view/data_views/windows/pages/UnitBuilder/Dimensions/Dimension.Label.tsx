@@ -1,5 +1,5 @@
-import React from 'react';
 import { ClickAwayListener, TextField, Typography } from '@mui/material';
+
 import { useDimensions } from './Dimensions.Context';
 
 export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, orientation }) => {

@@ -1,9 +1,9 @@
-import React from 'react';
+import './styles.css';
 import { Box, Grid } from '@mui/material';
-import { TableGroupProps } from './types';
+
 import { TableHeader } from './TableHeader';
 import { GlazingRow, FrameRow } from './TableRows';
-import './ApertureTable.styles.css';
+import { TableGroupProps } from './types';
 
 const GroupTitle: React.FC<{ title: string }> = ({ title }) => {
     return (
