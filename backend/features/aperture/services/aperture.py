@@ -58,13 +58,13 @@ def get_aperture_by_child_element_id(db: Session, element_id: int) -> Aperture:
     return get_aperture_by_id(db, element.aperture_id)
 
 
-def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 100.0) -> Aperture:
+def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 1_000.0) -> Aperture:
     """Add a new row to the aperture grid with specified height.
 
     Args:
         db: Database session
         aperture_id: ID of the aperture to modify
-        row_height: Height of the new row in mm (default: 100.0)
+        row_height: Height of the new row in mm (default: 1000.0)
 
     Returns:
         Updated aperture object
@@ -105,13 +105,13 @@ def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 10
         raise
 
 
-def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float = 100.00) -> Aperture:
+def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float = 1_000.0) -> Aperture:
     """Add a new column to the aperture grid with specified width.
 
     Args:
         db: Database session
         aperture_id: ID of the aperture to modify
-        column_width_mm: Width of the new column in mm (default: 100.00)
+        column_width_mm: Width of the new column in mm (default: 1000.00)
 
     Returns:
         Updated aperture object

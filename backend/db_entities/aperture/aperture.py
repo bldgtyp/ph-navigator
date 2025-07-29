@@ -18,8 +18,8 @@ class Aperture(Base):
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
     name: Mapped[str] = MappedColumn(String)
-    row_heights_mm: Mapped[list[float]] = MappedColumn(ARRAY(Float), default=lambda: [100], nullable=False)
-    column_widths_mm: Mapped[list[float]] = MappedColumn(ARRAY(Float), default=lambda: [100], nullable=False)
+    row_heights_mm: Mapped[list[float]] = MappedColumn(ARRAY(Float), default=lambda: [1_000.0], nullable=False)
+    column_widths_mm: Mapped[list[float]] = MappedColumn(ARRAY(Float), default=lambda: [1_000.0], nullable=False)
 
     # Foreign Keys
     project_id: Mapped[int] = MappedColumn(Integer, ForeignKey("projects.id"), nullable=False)
@@ -38,8 +38,8 @@ class Aperture(Base):
         new_aperture = Aperture(
             name="Unnamed Aperture",
             project=project,
-            row_heights_mm=[100.0],
-            column_widths_mm=[100.0],
+            row_heights_mm=[1_000.0],
+            column_widths_mm=[1_000.0],
         )
         ApertureElement(
             row_number=0,
