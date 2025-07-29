@@ -43,8 +43,8 @@ def upgrade() -> None:
 
     # Add name column as nullable first, then populate and set NOT NULL
     op.add_column("aperture_elements", sa.Column("name", sa.String(length=255), nullable=True))
-    op.execute("UPDATE aperture_elements SET name = 'Unnamed Aperture-Element' WHERE name IS NULL")
-    op.alter_column("aperture_elements", "name", nullable=False, server_default="Unnamed Aperture-Element")
+    op.execute("UPDATE aperture_elements SET name = 'Unnamed' WHERE name IS NULL")
+    op.alter_column("aperture_elements", "name", nullable=False, server_default="Unnamed")
 
     op.add_column("aperture_elements", sa.Column("glazing_id", sa.String(), nullable=True))
     op.add_column("aperture_elements", sa.Column("frame_top_id", sa.String(), nullable=True))

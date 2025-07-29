@@ -10,8 +10,10 @@ from config import settings
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.aperture.aperture_frame import ApertureElementFrame
+from db_entities.aperture.aperture_glazing import ApertureElementGlazing
 from db_entities.assembly import Material
 from features.aperture.schemas.frame import ApertureElementFrameSchema
+from features.aperture.schemas.glazing import ApertureElementGlazingSchema
 from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
@@ -237,14 +239,30 @@ def get_all_frames_from_airtable() -> list[ApertureElementFrame]:
     """Get all of the frames from AirTable and return them as a list of ApertureElementFrame objects."""
     logger.info(f"get_all_frames_from_airtable()")
 
-    api = Api(settings.AIRTABLE_FRAME_GET_TOKEN)
+    api = Api(settings.AIRTABLE_APERTURE_DATA_GET_TOKEN)
     table = api.table(
-        settings.AIRTABLE_FRAME_BASE_ID,
-        settings.AIRTABLE_FRAME_TABLE_ID,
+        settings.AIRTABLE_APERTURE_DATA_BASE_ID,
+        settings.AIRTABLE_FRAME_DATA_TABLE_ID,
     )
 
     return [
         ApertureElementFrame(**ApertureElementFrameSchema.fromAirTableRecordDict(record).dict())
+        for record in table.all()
+    ]
+
+
+def get_all_glazings_from_airtable() -> list[ApertureElementGlazing]:
+    """Get all of the glazings from AirTable and return them as a list of ApertureElementGlazing objects."""
+    logger.info(f"get_all_glazings_from_airtable()")
+
+    api = Api(settings.AIRTABLE_APERTURE_DATA_GET_TOKEN)
+    table = api.table(
+        settings.AIRTABLE_APERTURE_DATA_BASE_ID,
+        settings.AIRTABLE_GLAZING_DATA_TABLE_ID,
+    )
+
+    return [
+        ApertureElementGlazing(**ApertureElementGlazingSchema.fromAirTableRecordDict(record).dict())
         for record in table.all()
     ]
 

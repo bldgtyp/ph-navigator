@@ -4,6 +4,7 @@ from features.air_table.routes import router as air_table_router
 from features.airtightness.routes import router as airtightness_router
 from features.aperture.routes.aperture import router as aperture_router
 from features.aperture.routes.frame import router as frame_router
+from features.aperture.routes.glazing import router as glazing_router
 from features.app.routes import router as project_router
 from features.assembly.routes.assembly import router as assembly
 from features.assembly.routes.layer import router as layer
@@ -29,4 +30,4 @@ def register_routes(app: FastAPI):
     app.include_router(airtightness_router)
     app.include_router(aperture_router)
     app.include_router(frame_router)
-    app.include_router(frame_router)
+    app.include_router(glazing_router)

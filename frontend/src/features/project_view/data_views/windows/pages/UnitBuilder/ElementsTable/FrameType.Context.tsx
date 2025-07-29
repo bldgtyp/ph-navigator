@@ -4,8 +4,8 @@ import { ApertureElementFrameType } from '../types';
 import { FrameTypeService } from './services/frameTypeService';
 
 interface FrameTypesContextType {
-    isLoading: boolean;
-    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    isLoadingFrameTypes: boolean;
+    setIsLoadingFrameTypes: React.Dispatch<React.SetStateAction<boolean>>;
     frameTypes: ApertureElementFrameType[];
     setFrameTypes: React.Dispatch<React.SetStateAction<ApertureElementFrameType[]>>;
     handleRefreshFrameTypes: () => Promise<void>;
@@ -14,20 +14,20 @@ interface FrameTypesContextType {
 const FrameTypesContext = createContext<FrameTypesContextType | undefined>(undefined);
 
 export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isLoadingFrameTypes, setIsLoadingFrameTypes] = useState<boolean>(true);
     const [frameTypes, setFrameTypes] = useState<ApertureElementFrameType[]>([]);
 
     useEffect(() => {
         const loadFrameTypes = async () => {
             try {
-                setIsLoading(true);
+                setIsLoadingFrameTypes(true);
                 const frameTypesData = await FrameTypeService.loadFrameTypes();
                 setFrameTypes(frameTypesData);
             } catch (error) {
                 console.error('Error loading frame types:', error);
                 alert('Error loading frame data. Please try again later.');
             } finally {
-                setIsLoading(false);
+                setIsLoadingFrameTypes(false);
             }
         };
 
@@ -36,7 +36,7 @@ export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const handleRefreshFrameTypes = async () => {
         try {
-            setIsLoading(true);
+            setIsLoadingFrameTypes(true);
             const { frameTypes: refreshedFrameTypes, refreshInfo } =
                 await FrameTypeService.refreshFrameTypesFromAirTable();
 
@@ -50,15 +50,15 @@ export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             console.error('Error refreshing frame types:', error);
             alert('Error refreshing frame data. Please try again later.');
         } finally {
-            setIsLoading(false);
+            setIsLoadingFrameTypes(false);
         }
     };
 
     return (
         <FrameTypesContext.Provider
             value={{
-                isLoading,
-                setIsLoading,
+                isLoadingFrameTypes,
+                setIsLoadingFrameTypes,
                 frameTypes,
                 setFrameTypes,
                 handleRefreshFrameTypes,

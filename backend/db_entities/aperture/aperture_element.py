@@ -18,7 +18,7 @@ class ApertureElement(Base):
     __tablename__ = "aperture_elements"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
-    name: Mapped[str] = MappedColumn(String(255), nullable=False, default="Unnamed Aperture-Element")
+    name: Mapped[str] = MappedColumn(String(255), nullable=False, default="Unnamed")
     row_number: Mapped[int] = MappedColumn(Integer, default=1, nullable=False)
     column_number: Mapped[int] = MappedColumn(Integer, default=1, nullable=False)
     row_span: Mapped[int] = MappedColumn(Integer, default=1, nullable=False)

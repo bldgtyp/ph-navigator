@@ -12,7 +12,7 @@ class ApertureElementSchema(BaseModel):
     """Base schema for Aperture Element."""
 
     id: int
-    name: str | None = "Unnamed Aperture-Element"
+    name: str | None = "Unnamed"
     row_number: int
     column_number: int
     row_span: int = 1

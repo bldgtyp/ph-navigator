@@ -30,7 +30,7 @@ export const GlazingRow: React.FC<GlazingRowProps> = ({ name, glazing, rowIndex 
 
 export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex, position }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
-    const { isLoading } = useFrameTypes();
+    const { isLoadingFrameTypes } = useFrameTypes();
 
     return (
         <>
@@ -42,7 +42,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
                     aperture={aperture}
                     element={element}
                     selectedFrame={element.frames[position]}
-                    isLoading={isLoading}
+                    isLoading={isLoadingFrameTypes}
                     position={position}
                 />
             </TableCell>

@@ -4,7 +4,8 @@ import { Box, Grid } from '@mui/material';
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { AperturesProvider, useApertures } from './ApertureView/Aperture.Context';
 import { ApertureSidebarProvider } from './Sidebar/Sidebar.Context';
-import { FrameTypesProvider, useFrameTypes } from './ElementsTable/FrameType.Context';
+import { FrameTypesProvider } from './ElementsTable/FrameType.Context';
+import { GlazingTypesProvider } from './ElementsTable/GlazingTypes.Context';
 
 import ContentBlock from '../../../_components/ContentBlock';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
@@ -13,14 +14,13 @@ import ApertureTypesSidebar from './Sidebar/Sidebar';
 import ApertureEditButtons from './ApertureView/Aperture.EditButtons';
 import ApertureElements from './ApertureView/ElementsView/ApertureElements';
 import ApertureElementsTable from './ElementsTable/ElementsTable';
-import { headerButtons } from './ApertureView/Aperture.HeaderButtons';
+import { useHeaderButtons } from './ApertureView/Aperture.HeaderButtons';
 
 const ApertureTypesContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
     const { activeAperture } = useApertures();
-    const { isLoading, handleRefreshFrameTypes: handleRefreshFrames } = useFrameTypes();
-
-    const headerButtonsConfig = userContext.user ? headerButtons(handleRefreshFrames, isLoading) : [];
+    const headerButtons = useHeaderButtons(); // Always call the hook
+    const headerButtonsConfig = userContext.user ? headerButtons : []; // Then conditionally use the result
 
     return (
         <ContentBlock id="aperture-types">
@@ -52,7 +52,9 @@ const ApertureTypesPage: React.FC = () => {
         <AperturesProvider>
             <ApertureSidebarProvider>
                 <FrameTypesProvider>
-                    <ApertureTypesContentBlock />
+                    <GlazingTypesProvider>
+                        <ApertureTypesContentBlock />
+                    </GlazingTypesProvider>
                 </FrameTypesProvider>
             </ApertureSidebarProvider>
         </AperturesProvider>

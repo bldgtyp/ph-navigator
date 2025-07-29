@@ -1,7 +1,9 @@
 import { Button, Tooltip } from '@mui/material';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+import { useFrameTypes } from '../ElementsTable/FrameType.Context';
+import { useGlazingTypes } from '../ElementsTable/GlazingTypes.Context';
 
-type HeaderButtonId = 'refresh';
+type HeaderButtonId = 'refresh_frames' | 'refresh_glazings';
 
 interface HeaderButtonProps {
     id: HeaderButtonId;
@@ -12,7 +14,8 @@ interface HeaderButtonProps {
 }
 
 const hoverText = {
-    refresh: 'Reload the frames from the AirTable database.',
+    refresh_frames: 'Reload the frame-types from the AirTable database.',
+    refresh_glazings: 'Reload the glazing-types from the AirTable database.',
 };
 
 const HeaderTextIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, handler, loading }) => {
@@ -35,18 +38,26 @@ const HeaderTextIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, han
     );
 };
 
-export function headerButtons(
-    handleRefreshFrames: () => Promise<void>,
-    loading: boolean = false
-): React.ReactElement[] {
+export function useHeaderButtons(): React.ReactElement[] {
+    const { isLoadingFrameTypes, handleRefreshFrameTypes } = useFrameTypes();
+    const { isLoadingGlazingTypes, handleRefreshGlazingTypes } = useGlazingTypes();
+
     return [
         <HeaderTextIconButton
-            key={'refresh'}
-            id={'refresh'}
-            text={'Refresh Frames From AirTable'}
+            key={'refresh_frames'}
+            id={'refresh_frames'}
+            text={'Refresh Frame-Types From AirTable'}
             icon={<RefreshRoundedIcon />}
-            handler={handleRefreshFrames}
-            loading={loading}
+            handler={handleRefreshFrameTypes}
+            loading={isLoadingFrameTypes}
+        />,
+        <HeaderTextIconButton
+            key={'refresh_glazings'}
+            id={'refresh_glazings'}
+            text={'Refresh Glazing-Types From AirTable'}
+            icon={<RefreshRoundedIcon />}
+            handler={handleRefreshGlazingTypes}
+            loading={isLoadingGlazingTypes}
         />,
     ];
 }

@@ -14,27 +14,27 @@ logger = logging.getLogger(__name__)
 class FrameNotFoundException(Exception):
     """Custom exception for missing Frame."""
 
-    def __init__(self, material_id: str):
-        logger.error(f"{self.__class__.__name__}: Frame {material_id} not found.")
-        self.material_id = material_id
-        self.message = f"Frame(s) not found in the database: {material_id}"
+    def __init__(self, frame_id: str):
+        logger.error(f"{self.__class__.__name__}: Frame {frame_id} not found.")
+        self.frame_id = frame_id
+        self.message = f"Frame(s) not found in the database: {frame_id}"
         super().__init__(self.message)
 
 
 class DeleteNonExistentFrameException(Exception):
     """Custom exception for attempting to delete a non-existent Frame."""
 
-    def __init__(self, material_id: str):
-        logger.error(f"Attempted to delete non-existent Frame {material_id}.")
-        super().__init__(f"Attempted to delete non-existent Frame {material_id}.")
+    def __init__(self, frame_id: str):
+        logger.error(f"Attempted to delete non-existent Frame {frame_id}.")
+        super().__init__(f"Attempted to delete non-existent Frame {frame_id}.")
 
 
-class NoMaterialsException(Exception):
-    """Custom exception for when no materials are found."""
+class NoframesException(Exception):
+    """Custom exception for when no frames are found."""
 
-    def __init__(self, material_type: str):
-        logger.error(f"No materials found for type: {material_type}.")
-        super().__init__(f"No materials found for type: {material_type}.")
+    def __init__(self, frame_type: str):
+        logger.error(f"No frames found for type: {frame_type}.")
+        super().__init__(f"No frames found for type: {frame_type}.")
 
 
 def get_frame_by_id(db: Session, frame_id: str) -> ApertureElementFrame:
@@ -59,17 +59,17 @@ def create_new_frame(
     """Add a new frame to the database."""
     logger.info(f"Adding new frame with name: {name}")
 
-    new_material = ApertureElementFrame(
+    new_frame = ApertureElementFrame(
         id=id,
         name=name,
         width_mm=width_mm,
         u_value_w_m2k=u_value_w_m2k,
     )
-    db.add(new_material)
+    db.add(new_frame)
     db.commit()
-    db.refresh(new_material)
+    db.refresh(new_frame)
 
-    return new_material
+    return new_frame
 
 
 def update_frame(
