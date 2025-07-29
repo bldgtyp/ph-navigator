@@ -45,7 +45,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
     return (
         <>
             <TableCell size={2} className={rowClass}>
-                <span>{`${position} Frame:`}</span>
+                {`${position.charAt(0).toUpperCase()}${position.slice(1).toLowerCase()} Frame:`}
             </TableCell>
             <TableCell size={5} className={rowClass}>
                 <FrameSelector
