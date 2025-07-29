@@ -72,6 +72,7 @@ const ApertureElements: React.FC = () => {
                 pt: 1,
                 pr: 1,
                 mt: 4,
+                overflow: 'hidden', // Clip grid content that exceeds bounds
             }}
         >
             <Box
