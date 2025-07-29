@@ -4,6 +4,7 @@ import { useApertures } from '../Aperture.Context';
 import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
 
 import ApertureElementContainer from './ApertureElement.Container';
+import ElementLabelsOverlay from './ElementLabelsOverlay';
 import VerticalDimensionLines from '../../Dimensions/Dimensions.Vertical';
 import HorizontalDimensionLines from '../../Dimensions/Dimensions.Horizontal';
 
@@ -83,6 +84,7 @@ const ApertureElements: React.FC = () => {
                 }}
             >
                 <ApertureElementsDisplay />
+                <ElementLabelsOverlay />
                 <DimensionsProvider>
                     <VerticalDimensionLines
                         onRowHeightChange={(index, value) => updateRowHeight(activeAperture.id, index, value)}
