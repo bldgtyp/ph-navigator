@@ -3,6 +3,7 @@ import { Box, Grid } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { AperturesProvider, useApertures } from './ApertureView/Aperture.Context';
+import { ZoomProvider } from './ApertureView/Zoom.Context';
 import { ApertureSidebarProvider } from './Sidebar/Sidebar.Context';
 import { FrameTypesProvider } from './ElementsTable/FrameType.Context';
 import { GlazingTypesProvider } from './ElementsTable/GlazingTypes.Context';
@@ -50,13 +51,15 @@ const ApertureTypesContentBlock: React.FC = () => {
 const ApertureTypesPage: React.FC = () => {
     return (
         <AperturesProvider>
-            <ApertureSidebarProvider>
-                <FrameTypesProvider>
-                    <GlazingTypesProvider>
-                        <ApertureTypesContentBlock />
-                    </GlazingTypesProvider>
-                </FrameTypesProvider>
-            </ApertureSidebarProvider>
+            <ZoomProvider initialScale={0.5} minScale={0.1} maxScale={3.0} zoomStep={0.1}>
+                <ApertureSidebarProvider>
+                    <FrameTypesProvider>
+                        <GlazingTypesProvider>
+                            <ApertureTypesContentBlock />
+                        </GlazingTypesProvider>
+                    </FrameTypesProvider>
+                </ApertureSidebarProvider>
+            </ZoomProvider>
         </AperturesProvider>
     );
 };

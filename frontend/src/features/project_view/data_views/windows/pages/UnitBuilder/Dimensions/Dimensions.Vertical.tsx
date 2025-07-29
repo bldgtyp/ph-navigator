@@ -11,7 +11,7 @@ import GridLineTick from './GridLineTick';
 import { DimensionEditable, DimensionLabel } from './Dimension.Label';
 import { VerticalDimensionLinesProps } from '../types';
 
-const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHeightChange }) => {
+const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHeightChange, scaleFactor = 1 }) => {
     const labelWidth = 40;
     const gridlineTickGap = 5;
 
@@ -23,7 +23,9 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
         return null;
     }
 
-    const { positions: rowPositions, segments: rowSegments } = calculateSegments(activeAperture.row_heights_mm);
+    const { positions: rowPositions, segments: rowSegments } = calculateSegments(
+        activeAperture.row_heights_mm.map(h => h * scaleFactor)
+    );
     const totalHeight = rowPositions[rowPositions.length - 1];
 
     return (
@@ -33,7 +35,7 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
                 position: 'absolute',
                 top: 0,
                 left: -labelWidth - gridlineTickGap,
-                height: '100%',
+                height: `${totalHeight}px`,
                 width: labelWidth,
                 display: 'flex',
                 flexDirection: 'column',
@@ -68,7 +70,7 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
                         <DimensionLabel
                             handleEditStart={handleEditRowStart}
                             index={index}
-                            value={height}
+                            value={activeAperture.row_heights_mm[index]}
                             orientation="vertical"
                         />
                     )}

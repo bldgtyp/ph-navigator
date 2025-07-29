@@ -11,7 +11,10 @@ import DeleteButton from './DeleteButton';
 import { DimensionLabel, DimensionEditable } from './Dimension.Label';
 import { HorizontalDimensionLinesProps } from '../types';
 
-const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onColumnWidthChange }) => {
+const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
+    onColumnWidthChange,
+    scaleFactor = 1,
+}) => {
     const labelWidth = 40;
     const gridlineTickGap = 5;
 
@@ -23,7 +26,9 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onC
         return null;
     }
 
-    const { positions: columnPositions, segments: columnSegments } = calculateSegments(activeAperture.column_widths_mm);
+    const { positions: columnPositions, segments: columnSegments } = calculateSegments(
+        activeAperture.column_widths_mm.map(w => w * scaleFactor)
+    );
     const totalWidth = columnPositions[columnPositions.length - 1];
 
     return (
@@ -64,7 +69,7 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({ onC
                         <DimensionLabel
                             handleEditStart={handleEditColStart}
                             index={index}
-                            value={width}
+                            value={activeAperture.column_widths_mm[index]}
                             orientation="horizontal"
                         />
                     )}

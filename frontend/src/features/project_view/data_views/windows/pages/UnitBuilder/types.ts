@@ -30,10 +30,12 @@ export interface DimensionLabelsProps {
 
 export interface HorizontalDimensionLinesProps {
     onColumnWidthChange: (index: number, value: number) => void;
+    scaleFactor?: number;
 }
 
 export interface VerticalDimensionLinesProps {
     onRowHeightChange: (index: number, value: number) => void;
+    scaleFactor?: number;
 }
 
 export interface GridLinesProps {

@@ -1,6 +1,7 @@
-import { Box, Stack } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 
 import { useApertures } from '../Aperture.Context';
+import { useZoom } from '../Zoom.Context';
 import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
 
 import ApertureElementContainer from './ApertureElement.Container';
@@ -10,6 +11,7 @@ import HorizontalDimensionLines from '../../Dimensions/Dimensions.Horizontal';
 
 const ApertureElementsDisplay: React.FC = () => {
     const { activeAperture, getCellSize, selectedApertureElementIds } = useApertures();
+    const { scaleFactor } = useZoom();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -20,8 +22,8 @@ const ApertureElementsDisplay: React.FC = () => {
             className="aperture-elements-display"
             sx={{
                 display: 'grid',
-                gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w}px`).join(' '),
-                gridTemplateRows: activeAperture.row_heights_mm.map(h => `${h}px`).join(' '),
+                gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w * scaleFactor}px`).join(' '),
+                gridTemplateRows: activeAperture.row_heights_mm.map(h => `${h * scaleFactor}px`).join(' '),
                 gap: 0,
                 position: 'relative',
                 zIndex: 1,
@@ -40,8 +42,8 @@ const ApertureElementsDisplay: React.FC = () => {
                     <ApertureElementContainer
                         key={element.id}
                         element={element}
-                        width={width}
-                        height={height}
+                        width={width * scaleFactor}
+                        height={height * scaleFactor}
                         isSelected={selectedApertureElementIds.includes(element.id)}
                     />
                 );
@@ -52,14 +54,17 @@ const ApertureElementsDisplay: React.FC = () => {
 
 const ApertureElements: React.FC = () => {
     const { activeAperture, updateColumnWidth, updateRowHeight } = useApertures();
+    const { scaleFactor, getScaleLabel } = useZoom();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
     }
 
-    // Calculate total grid dimensions for the container
-    const totalWidth = activeAperture.column_widths_mm.reduce((sum, width) => sum + width, 0);
-    const totalHeight = activeAperture.row_heights_mm.reduce((sum, height) => sum + height, 0);
+    // Calculate total grid dimensions for the container (with scaling applied)
+    const totalWidthMM = activeAperture.column_widths_mm.reduce((sum, width) => sum + width, 0);
+    const totalHeightMM = activeAperture.row_heights_mm.reduce((sum, height) => sum + height, 0);
+    const scaledWidth = totalWidthMM * scaleFactor;
+    const scaledHeight = totalHeightMM * scaleFactor;
 
     return (
         <Stack
@@ -68,20 +73,26 @@ const ApertureElements: React.FC = () => {
             sx={{
                 position: 'relative',
                 pl: 12,
-                pb: 6,
+                pb: 8,
                 pt: 1,
                 pr: 1,
                 mt: 4,
-                overflow: 'hidden', // Clip grid content that exceeds bounds
+                overflow: 'hidden', // Clip Aperture SVG content that exceeds bounds
             }}
         >
+            {/* Scale indicator */}
+            <Typography variant="caption" sx={{ alignSelf: 'flex-end', color: 'text.secondary' }}>
+                Scale: {getScaleLabel()} | {totalWidthMM}mm x {totalHeightMM}mm
+            </Typography>
+
             <Box
                 className="aperture-elements-display-container"
                 sx={{
                     position: 'relative',
-                    width: `${totalWidth}px`,
-                    height: `${totalHeight}px`,
+                    width: `${scaledWidth}px`,
+                    height: `${scaledHeight}px`,
                     border: '1px solid #ccc',
+                    // overflow: 'hidden', // Clip content that exceeds container bounds
                 }}
             >
                 <ApertureElementsDisplay />
@@ -89,9 +100,11 @@ const ApertureElements: React.FC = () => {
                 <DimensionsProvider>
                     <VerticalDimensionLines
                         onRowHeightChange={(index, value) => updateRowHeight(activeAperture.id, index, value)}
+                        scaleFactor={scaleFactor}
                     />
                     <HorizontalDimensionLines
                         onColumnWidthChange={(index, value) => updateColumnWidth(activeAperture.id, index, value)}
+                        scaleFactor={scaleFactor}
                     />
                 </DimensionsProvider>
             </Box>

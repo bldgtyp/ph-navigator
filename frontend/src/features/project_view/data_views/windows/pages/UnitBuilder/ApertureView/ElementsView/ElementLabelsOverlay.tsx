@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 import { Box, ClickAwayListener, TextField, Typography } from '@mui/material';
 
 import { useApertures } from '../Aperture.Context';
+import { useZoom } from '../Zoom.Context';
 import { UserContext } from '../../../../../../../auth/_contexts/UserContext';
 
 const ElementLabelEditable: React.FC<{
@@ -158,6 +159,7 @@ const ElementLabel: React.FC<{
 
 const ElementLabelsOverlay: React.FC = () => {
     const { activeAperture, getCellSize } = useApertures();
+    const { scaleFactor } = useZoom();
 
     if (!activeAperture) {
         return null;
@@ -188,10 +190,10 @@ const ElementLabelsOverlay: React.FC = () => {
                     <ElementLabel
                         key={`label-${element.id}`}
                         element={element}
-                        width={width}
-                        height={height}
-                        columnWidths={activeAperture.column_widths_mm}
-                        rowHeights={activeAperture.row_heights_mm}
+                        width={width * scaleFactor}
+                        height={height * scaleFactor}
+                        columnWidths={activeAperture.column_widths_mm.map(w => w * scaleFactor)}
+                        rowHeights={activeAperture.row_heights_mm.map(h => h * scaleFactor)}
                     />
                 );
             })}
