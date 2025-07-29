@@ -13,14 +13,20 @@ const ApertureElementsTable: React.FC = () => {
 
     return (
         <Box className="aperture-elements-table-container" sx={{ mt: 4 }}>
-            {Array.from(activeAperture.elements.values()).map(element => (
-                <ApertureElementTableGroup
-                    key={element.id}
-                    aperture={activeAperture}
-                    element={element}
-                    isSelected={selectedApertureElementIds.includes(element.id)}
-                />
-            ))}
+            {Array.from(activeAperture.elements.values())
+                .sort((a, b) => {
+                    const nameA = a.name || `Element ${a.id}`;
+                    const nameB = b.name || `Element ${b.id}`;
+                    return nameA.localeCompare(nameB);
+                })
+                .map(element => (
+                    <ApertureElementTableGroup
+                        key={element.id}
+                        aperture={activeAperture}
+                        element={element}
+                        isSelected={selectedApertureElementIds.includes(element.id)}
+                    />
+                ))}
         </Box>
     );
 };
