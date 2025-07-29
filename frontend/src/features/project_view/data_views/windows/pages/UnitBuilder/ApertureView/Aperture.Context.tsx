@@ -45,6 +45,7 @@ interface AperturesContextType {
         framePosition: FramePosition;
         frameId: number | null;
     }) => Promise<void>;
+    updateApertureElementName: (elementId: number, newName: string) => Promise<void>;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -433,6 +434,33 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     }, [activeAperture, apertures, selectedApertureElementIds, clearApertureElementIdSelection]);
 
+    // ----------------------------------------------------------------------------------
+    // Aperture Element Name
+
+    const updateApertureElementName = useCallback(
+        async (elementId: number, newName: string) => {
+            console.log(`updateApertureElementName()`);
+            try {
+                if (!activeAperture) {
+                    return;
+                }
+
+                const updatedAperture = await ApertureService.updateElementName(elementId, newName);
+
+                console.log(`Aperture Element successfully updated: ${updatedAperture.id}`);
+                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
+                setApertures(updatedApertures);
+                handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Failed to update aperture element:', error);
+                alert('Failed to update element. Please try again.');
+            } finally {
+                clearApertureElementIdSelection();
+            }
+        },
+        [activeAperture, apertures, clearApertureElementIdSelection]
+    );
+
     return (
         <AperturesContext.Provider
             value={{
@@ -462,6 +490,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 mergeSelectedApertureElements,
                 splitSelectedApertureElement,
                 handleUpdateApertureElementFrame,
+                updateApertureElementName,
             }}
         >
             {children}

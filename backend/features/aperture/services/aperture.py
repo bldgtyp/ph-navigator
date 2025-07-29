@@ -32,7 +32,7 @@ class LastRowException(Exception):
 
 def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
     """Retrieve all apertures associated with a specific project."""
-    logger.info(f"get_apertures_by_project_bt({bt_number})")
+    logger.info(f"get_apertures_by_project_bt({bt_number=})")
 
     project = get_project_by_bt_number(db, bt_number)
     apertures = db.query(Aperture).filter(Aperture.project_id == project.id).order_by(Aperture.name.asc()).all()
@@ -41,11 +41,26 @@ def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
 
 def get_aperture_by_id(db: Session, aperture_id: int) -> Aperture:
     """Retrieve an aperture by its DB-ID Number."""
-    logger.info(f"get_aperture_by_id({aperture_id})")
+    logger.info(f"get_aperture_by_id({aperture_id=})")
 
     aperture = db.query(Aperture).filter(Aperture.id == aperture_id).first()
     if not aperture:
         raise ValueError(f"Aperture with ID {aperture_id} not found.")
+
+    return aperture
+
+
+def get_aperture_by_child_element_id(db: Session, element_id: int) -> Aperture:
+    """Retrieve the aperture that contains a specific ApertureElement by its ID."""
+    logger.info(f"get_aperture_by_child_element_id({element_id=})")
+
+    element = get_aperture_element_by_id(db, element_id)
+    if not element:
+        raise ValueError(f"ApertureElement with ID {element_id} not found.")
+
+    aperture = db.query(Aperture).filter(Aperture.id == element.aperture_id).first()
+    if not aperture:
+        raise ValueError(f"Aperture with ID {element.aperture_id} not found.")
 
     return aperture
 
@@ -64,7 +79,7 @@ def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 10
     Raises:
         ValueError: If aperture not found
     """
-    logger.info(f"add_row_to_aperture({aperture_id}, row_height_mm={row_height_mm})")
+    logger.info(f"add_row_to_aperture({aperture_id=}, {row_height_mm=})")
 
     try:
         # Get the aperture (this will raise ValueError if not found)
@@ -111,7 +126,7 @@ def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float
     Raises:
         ValueError: If aperture not found
     """
-    logger.info(f"add_column_to_aperture({aperture_id}, column_width_mm={column_width_mm})")
+    logger.info(f"add_column_to_aperture({aperture_id=}, {column_width_mm=})")
 
     try:
         # Get the aperture (this will raise ValueError if not found)
@@ -228,7 +243,7 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
 
 def add_new_aperture_on_project(db: Session, project: Project) -> Aperture:
     """Add a new default aperture to the specified project."""
-    logger.info(f"add_new_aperture_on_project({project.id})")
+    logger.info(f"add_new_aperture_on_project({project.id=})")
 
     try:
         new_aperture = Aperture.default(project=project)
@@ -243,7 +258,7 @@ def add_new_aperture_on_project(db: Session, project: Project) -> Aperture:
 
 def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Aperture:
     """Update the name of an existing aperture."""
-    logger.info(f"update_aperture_name({aperture_id}, new_name={new_name})")
+    logger.info(f"update_aperture_name({aperture_id=}, {new_name=})")
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
@@ -259,7 +274,7 @@ def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Apertu
 def update_aperture_column_width(db: Session, aperture_id: int, column_index: int, new_width_mm: float) -> Aperture:
     """Update the width of a specific column in an aperture."""
     logger.info(
-        f"update_aperture_column_width({aperture_id}, column_index={column_index}, new_width_mm={new_width_mm})"
+        f"update_aperture_column_width({aperture_id=}, {column_index=}, {new_width_mm=})"
     )
 
     try:
@@ -277,7 +292,7 @@ def update_aperture_column_width(db: Session, aperture_id: int, column_index: in
 
 def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, new_height_mm: float) -> Aperture:
     """Update the height of a specific row in an aperture."""
-    logger.info(f"update_aperture_row_height({aperture_id}, row_index={row_index}, new_height_mm={new_height_mm})")
+    logger.info(f"update_aperture_row_height({aperture_id=}, {row_index=}, {new_height_mm=})")
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
@@ -352,7 +367,7 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
     Raises:
         ValueError: If elements don't form a complete rectangle or other validation issues
     """
-    logger.info(f"merge_aperture_elements({aperture_id}, {element_ids})")
+    logger.info(f"merge_aperture_elements({aperture_id=}, {element_ids=})")
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
@@ -422,6 +437,9 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
 
 
 def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Aperture:
+    """Split an ApertureElement into multiple elements based on its row_span and col_span."""
+    logger.info(f"split_aperture_element({aperture_id=}, {element_id=})")
+
     try:
         aperture = get_aperture_by_id(db, aperture_id)
         # TODO: implement splitting logic
@@ -461,6 +479,22 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
     except Exception as e:
         db.rollback()
         logger.error(f"Error deleting aperture {aperture_id}: {str(e)}")
+        raise
+
+
+def update_aperture_element_name(db: Session, element_id: int, new_name: str) -> Aperture:
+    """Update the name of an aperture element by its ID."""
+    logger.info(f"update_aperture_element_name({element_id=}, {new_name=})")
+    
+    try:
+        element = get_aperture_element_by_id(db, element_id)
+        aperture = get_aperture_by_child_element_id(db, element.id)
+        element.name = new_name
+        db.commit()
+        return aperture
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture element name {element_id=} to {new_name=}: {str(e)}")
         raise
 
 

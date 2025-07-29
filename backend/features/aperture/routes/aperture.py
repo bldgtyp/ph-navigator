@@ -1,7 +1,6 @@
-# -*- Python Version: 3.11 -*-
+# -*- Python Version: 3.11 -*-https://www.dropbox.com/home
 
 import logging
-from http.client import HTTPResponse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
@@ -18,6 +17,7 @@ from features.aperture.schemas.aperture import (
     UpdateColumnWidthRequest,
     UpdateNameRequest,
     UpdateRowHeightRequest,
+    UpdateApertureElementNameRequest,
 )
 from features.aperture.services.aperture import (
     LastColumnException,
@@ -36,6 +36,7 @@ from features.aperture.services.aperture import (
     update_aperture_element_frame,
     update_aperture_name,
     update_aperture_row_height,
+    update_aperture_element_name,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -160,7 +161,7 @@ def update_frame_route(
 
 
 @router.patch("/add-row/{aperture_id}", response_model=ApertureSchema)
-def add_row_to_aperture_route(aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+def add_row_to_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"add_row_to_aperture({aperture_id=})")
 
     try:
@@ -217,6 +218,21 @@ def split_aperture_element_route(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
     except Exception as e:
         msg = f"Error splitting element: {str(e)}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+@router.patch("/update-aperture-element-name/{element_id}", response_model=ApertureSchema)
+def update_aperture_element_name_route(
+    request: Request, element_id: int, update_request: UpdateApertureElementNameRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"update_aperture_element_name_route({element_id=}, {update_request.aperture_element_name=})")
+
+    try:
+        updated_aperture = update_aperture_element_name(db, element_id, update_request.aperture_element_name)
+        return ApertureSchema.from_orm(updated_aperture)
+    except Exception as e:
+        msg = f"Failed to update aperture element name for ID {element_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 

@@ -64,3 +64,8 @@ class MergeApertureElementsRequest(BaseModel):
 
 class SplitApertureElementRequest(BaseModel):
     aperture_element_id: int
+
+
+class UpdateApertureElementNameRequest(BaseModel):
+    aperture_element_name: str
+

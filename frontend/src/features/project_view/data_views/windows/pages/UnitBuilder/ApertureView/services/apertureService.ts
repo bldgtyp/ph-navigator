@@ -219,4 +219,21 @@ export class ApertureService {
             throw new Error(`Failed to split element: ${error}`);
         }
     }
+
+    static async updateElementName(elementId: number, elementName: string): Promise<ApertureType> {
+        try {
+            const updatedAperture = await patchWithAlert<ApertureType>(
+                `aperture/update-aperture-element-name/${elementId}`,
+                null,
+                { aperture_element_name: elementName }
+            );
+            if (!updatedAperture) {
+                throw new Error('Failed to update element name - no response received');
+            }
+            return updatedAperture;
+        } catch (error) {
+            console.error('Error updating element name:', error);
+            throw new Error(`Failed to update element name: ${error}`);
+        }
+    }
 }
