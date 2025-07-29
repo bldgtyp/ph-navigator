@@ -5,6 +5,8 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import { useFrameTypes } from '../ElementsTable/FrameType.Context';
 import { useGlazingTypes } from '../ElementsTable/GlazingTypes.Context';
 import { useZoom } from './Zoom.Context';
+import { useContext } from 'react';
+import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
 type HeaderButtonId = 'refresh_frames' | 'refresh_glazings' | 'zoom_in' | 'zoom_out';
 
@@ -45,6 +47,7 @@ const HeaderTextIconButton: React.FC<HeaderButtonProps> = ({ id, text, icon, han
 };
 
 export function useHeaderButtons(): React.ReactElement[] {
+    const userContext = useContext(UserContext);
     const { isLoadingFrameTypes, handleRefreshFrameTypes } = useFrameTypes();
     const { isLoadingGlazingTypes, handleRefreshGlazingTypes } = useGlazingTypes();
     const { zoomIn, zoomOut, scaleFactor, getScaleLabel } = useZoom();
@@ -53,7 +56,7 @@ export function useHeaderButtons(): React.ReactElement[] {
     const isZoomInDisabled = scaleFactor >= 5.0;
     const isZoomOutDisabled = scaleFactor <= 0.1;
 
-    return [
+    const scale_buttons = [
         <HeaderTextIconButton
             key={'zoom_out'}
             id={'zoom_out'}
@@ -70,6 +73,8 @@ export function useHeaderButtons(): React.ReactElement[] {
             handler={zoomIn}
             disabled={isZoomInDisabled}
         />,
+    ];
+    const refreshButtons = [
         <HeaderTextIconButton
             key={'refresh_frames'}
             id={'refresh_frames'}
@@ -87,4 +92,6 @@ export function useHeaderButtons(): React.ReactElement[] {
             loading={isLoadingGlazingTypes}
         />,
     ];
+
+    return userContext.user ? [...refreshButtons, ...scale_buttons] : [...scale_buttons];
 }

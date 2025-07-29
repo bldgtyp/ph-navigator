@@ -21,13 +21,12 @@ const ApertureTypesContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
     const { activeAperture } = useApertures();
     const headerButtons = useHeaderButtons(); // Always call the hook
-    const headerButtonsConfig = userContext.user ? headerButtons : []; // Then conditionally use the result
 
     return (
         <ContentBlock id="aperture-types">
             <LoadingModal showModal={false} />
 
-            <ContentBlockHeader text={`Window / Door Type [${activeAperture?.name}]`} buttons={headerButtonsConfig} />
+            <ContentBlockHeader text={`Window / Door Type [${activeAperture?.name}]`} buttons={headerButtons} />
 
             <Grid container spacing={1} sx={{ margin: 2 }}>
                 {/* Sidebar Column */}
