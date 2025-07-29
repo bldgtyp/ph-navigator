@@ -53,8 +53,8 @@ export function useHeaderButtons(): React.ReactElement[] {
     const { zoomIn, zoomOut, scaleFactor, getScaleLabel } = useZoom();
 
     // Calculate if zoom buttons should be disabled based on scale limits
-    const isZoomInDisabled = scaleFactor >= 5.0;
-    const isZoomOutDisabled = scaleFactor <= 0.1;
+    const isZoomInDisabled = scaleFactor >= 1.0;
+    const isZoomOutDisabled = scaleFactor <= 0.05;
 
     const scale_buttons = [
         <HeaderTextIconButton

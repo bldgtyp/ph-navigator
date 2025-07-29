@@ -50,7 +50,7 @@ const ApertureTypesContentBlock: React.FC = () => {
 const ApertureTypesPage: React.FC = () => {
     return (
         <AperturesProvider>
-            <ZoomProvider initialScale={0.5} minScale={0.1} maxScale={3.0} zoomStep={0.1}>
+            <ZoomProvider>
                 <ApertureSidebarProvider>
                     <FrameTypesProvider>
                         <GlazingTypesProvider>
