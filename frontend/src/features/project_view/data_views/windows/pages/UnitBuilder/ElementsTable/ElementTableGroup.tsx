@@ -150,7 +150,12 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
                     columnGap: '0px',
                 }}
             >
-                <GlazingRow name="Glazing" glazing={currentElement.glazing} rowIndex={0} />
+                <GlazingRow
+                    rowIndex={0}
+                    aperture={aperture}
+                    element={currentElement}
+                    glazing={currentElement.glazing}
+                />
                 <FrameRow rowIndex={1} aperture={aperture} element={currentElement} position="top" />
                 <FrameRow rowIndex={2} aperture={aperture} element={currentElement} position="right" />
                 <FrameRow rowIndex={3} aperture={aperture} element={currentElement} position="bottom" />

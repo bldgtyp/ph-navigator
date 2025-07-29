@@ -15,6 +15,7 @@ from features.aperture.schemas.aperture import (
     SplitApertureElementRequest,
     UpdateApertureFrameRequest,
     UpdateColumnWidthRequest,
+    UpdateGlazingRequest,
     UpdateNameRequest,
     UpdateRowHeightRequest,
     UpdateApertureElementNameRequest,
@@ -37,6 +38,7 @@ from features.aperture.services.aperture import (
     update_aperture_name,
     update_aperture_row_height,
     update_aperture_element_name,
+    update_aperture_glazing,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -105,6 +107,21 @@ def update_aperture_name_route(
         return ApertureSchema.from_orm(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture name for ID {aperture_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+@router.patch("/update-glazing/{element_id}", response_model=ApertureSchema)
+def update_aperture_glazing_route(
+    request: Request, element_id: int, update_request: UpdateGlazingRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    logger.info(f"update_aperture_glazing_route({element_id=}, {update_request=})")
+
+    try:
+        updated_aperture = update_aperture_glazing(db, element_id, update_request.glazing_id)
+        return ApertureSchema.from_orm(updated_aperture)
+    except Exception as e:
+        msg = f"Failed to update aperture glazing for ID {element_id=} to {update_request.glazing_id=}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 

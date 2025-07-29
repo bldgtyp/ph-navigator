@@ -34,6 +34,8 @@ class RowDeleteRequest(BaseModel):
 class UpdateNameRequest(BaseModel):
     new_name: str
 
+class UpdateGlazingRequest(BaseModel):
+    glazing_id: str
 
 class UpdateColumnWidthRequest(BaseModel):
     column_index: int

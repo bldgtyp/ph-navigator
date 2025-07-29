@@ -55,14 +55,7 @@ def get_aperture_by_child_element_id(db: Session, element_id: int) -> Aperture:
     logger.info(f"get_aperture_by_child_element_id({element_id=})")
 
     element = get_aperture_element_by_id(db, element_id)
-    if not element:
-        raise ValueError(f"ApertureElement with ID {element_id} not found.")
-
-    aperture = db.query(Aperture).filter(Aperture.id == element.aperture_id).first()
-    if not aperture:
-        raise ValueError(f"Aperture with ID {element.aperture_id} not found.")
-
-    return aperture
+    return get_aperture_by_id(db, element.aperture_id)
 
 
 def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 100.0) -> Aperture:
@@ -268,6 +261,21 @@ def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Apertu
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating aperture name {aperture_id}: {str(e)}")
+        raise
+
+
+def update_aperture_glazing(db: Session, element_id: int, glazing_id: str) -> Aperture:
+    """Update the glazing of an aperture."""
+    logger.info(f"update_aperture_glazing({element_id=}, {glazing_id=})")
+
+    try:
+        element = get_aperture_element_by_id(db, element_id)
+        element.glazing_id = glazing_id
+        db.commit()
+        return get_aperture_by_child_element_id(db, element.id)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture glazing {element_id}: {str(e)}")
         raise
 
 

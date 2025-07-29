@@ -2,13 +2,11 @@ import { ApertureElementFrameType, ApertureElementGlazingType, ApertureElementTy
 
 export type FramePosition = 'top' | 'right' | 'bottom' | 'left';
 
-export interface TableRowProps {
-    name: string;
-}
-
-export interface GlazingRowProps extends TableRowProps {
-    glazing: ApertureElementGlazingType | null;
+export interface GlazingRowProps {
     rowIndex: number;
+    aperture: ApertureType;
+    element: ApertureElementType;
+    glazing: ApertureElementGlazingType | null;
 }
 
 export interface FrameRowProps {
@@ -41,4 +39,11 @@ export interface FrameSelectorProps {
     selectedFrame: ApertureElementFrameType | null;
     isLoading?: boolean;
     position: FramePosition;
+}
+
+export interface GlazingSelectorProps {
+    aperture: ApertureType;
+    element: ApertureElementType;
+    selectedGlazing: ApertureElementGlazingType | null;
+    isLoading?: boolean;
 }

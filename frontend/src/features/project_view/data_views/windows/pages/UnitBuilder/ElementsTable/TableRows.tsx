@@ -1,28 +1,38 @@
 import { useFrameTypes } from './FrameType.Context';
+import { useGlazingTypes } from './GlazingTypes.Context';
 
 import { TableCell } from './TableCells';
 import { FrameSelector } from './FrameTypeSelector';
+import { GlazingSelector } from './GlazingTypeSelector';
 import { GlazingRowProps, FrameRowProps } from './types';
 
-export const GlazingRow: React.FC<GlazingRowProps> = ({ name, glazing, rowIndex }) => {
+export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIndex }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
+    const { isLoadingGlazingTypes } = useGlazingTypes();
 
     return (
         <>
             <TableCell size={2} className={rowClass}>
-                <span>{name}:</span>
+                <span>Glazing:</span>
+                {/* <span>{name}:</span> */}
             </TableCell>
             <TableCell size={5} className={rowClass}>
-                <span>{glazing?.name || '-'}</span>
+                {/* <span>{glazing?.name || '-'}</span> */}
+                <GlazingSelector
+                    aperture={aperture}
+                    element={element}
+                    selectedGlazing={element.glazing}
+                    isLoading={isLoadingGlazingTypes}
+                />
             </TableCell>
             <TableCell size={2} className={rowClass}>
-                <span>{glazing?.u_value_w_m2k || '-'}</span>
+                <span>{element.glazing?.u_value_w_m2k || '-'}</span>
             </TableCell>
             <TableCell size={2} className={rowClass}>
                 <span>-</span>
             </TableCell>
             <TableCell size={1} className={rowClass}>
-                <span>{glazing?.g_value || '-'}</span>
+                <span>{element.glazing?.g_value || '-'}</span>
             </TableCell>
         </>
     );

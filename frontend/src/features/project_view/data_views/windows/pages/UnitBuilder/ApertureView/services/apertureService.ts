@@ -183,6 +183,26 @@ export class ApertureService {
         }
     }
 
+    // Glazing Operations
+    static async updateElementGlazing(params: { elementId: number; glazingId: number | null }): Promise<ApertureType> {
+        if (params.glazingId === null) {
+            throw new Error('Glazing ID is required');
+        }
+
+        try {
+            const response = await patchWithAlert<ApertureType>(`aperture/update-glazing/${params.elementId}`, null, {
+                glazing_id: params.glazingId,
+            });
+            if (!response) {
+                throw new Error('Failed to update aperture element glazing - no response received');
+            }
+            return response;
+        } catch (error) {
+            console.error('Error updating aperture element glazing:', error);
+            throw new Error(`Failed to update aperture element glazing: ${error}`);
+        }
+    }
+
     // Element Operations
     static async mergeElements(apertureId: number, elementIds: number[]): Promise<ApertureType> {
         try {

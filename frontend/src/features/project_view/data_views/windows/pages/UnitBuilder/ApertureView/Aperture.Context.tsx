@@ -46,6 +46,7 @@ interface AperturesContextType {
         frameId: number | null;
     }) => Promise<void>;
     updateApertureElementName: (elementId: number, newName: string) => Promise<void>;
+    handleUpdateApertureElementGlazing: (params: { elementId: number; glazingId: number | null }) => Promise<void>;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -322,6 +323,20 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         []
     );
 
+    const handleUpdateApertureElementGlazing = useCallback(
+        async (params: { elementId: number; glazingId: number | null }) => {
+            try {
+                const updatedAperture = await ApertureService.updateElementGlazing(params);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Failed to update aperture element glazing:', error);
+                alert('Failed to update glazing. Please try again.');
+            }
+        },
+        []
+    );
+
     // ----------------------------------------------------------------------------------
     // Cell Selection
 
@@ -491,6 +506,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 splitSelectedApertureElement,
                 handleUpdateApertureElementFrame,
                 updateApertureElementName,
+                handleUpdateApertureElementGlazing,
             }}
         >
             {children}
