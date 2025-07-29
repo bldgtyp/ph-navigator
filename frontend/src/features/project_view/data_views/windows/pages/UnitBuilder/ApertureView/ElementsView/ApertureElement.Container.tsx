@@ -1,12 +1,14 @@
 import { Box } from '@mui/material';
 
 import { useApertures } from '../Aperture.Context';
+import { useZoom } from '../Zoom.Context';
 
 import ApertureElementSVG from './ApertureElement.SVG';
 import { ApertureElementContainerProps } from './types';
 
 const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({ element, width, height, isSelected }) => {
     const { toggleApertureElementSelection } = useApertures();
+    const { scaleFactor } = useZoom();
 
     return (
         <Box
@@ -27,7 +29,7 @@ const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({ ele
                 },
             }}
         >
-            <ApertureElementSVG height={height} width={width} />
+            <ApertureElementSVG height={height} width={width} element={element} scaleFactor={scaleFactor} />
         </Box>
     );
 };
