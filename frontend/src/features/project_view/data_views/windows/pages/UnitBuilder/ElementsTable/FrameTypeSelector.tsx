@@ -26,7 +26,7 @@ export const FrameSelector: React.FC<FrameSelectorProps> = ({
     return (
         <FormControl fullWidth size="small">
             <Autocomplete
-                options={frameTypes}
+                options={[...frameTypes].sort((a, b) => a.name.localeCompare(b.name))}
                 getOptionLabel={option => option.name}
                 value={selectedFrame}
                 onChange={(event, newValue) =>

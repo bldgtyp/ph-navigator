@@ -25,7 +25,7 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
     return (
         <FormControl fullWidth size="small">
             <Autocomplete
-                options={glazingTypes}
+                options={[...glazingTypes].sort((a, b) => a.name.localeCompare(b.name))}
                 getOptionLabel={option => option.name}
                 value={selectedGlazing}
                 onChange={(event, newValue) =>
