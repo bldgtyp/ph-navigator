@@ -1,26 +1,33 @@
 import { createContext, useContext, useState } from 'react';
 
+import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 import { DimensionsContextType } from './types';
 
 const DimensionsContext = createContext<DimensionsContextType | undefined>(undefined);
 
 export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const units = 'mm';
+    const { unitSystem, valueInCurrentUnitSystemWithDecimal, valueInSIUnits } = useUnitConversion();
+    const units = unitSystem === 'SI' ? 'mm' : 'in';
+
     const [editingColIndex, setEditingColIndex] = useState<number | null>(null);
     const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
     const [editingValue, setEditingValue] = useState<string>('');
 
     const handleEditColStart = (index: number, value: number) => {
         setEditingColIndex(index);
-        setEditingValue(value.toString());
+        // Convert the SI value to current unit system for editing
+        const displayValue = valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 2);
+        setEditingValue(displayValue);
     };
 
     const handleEditColConfirm = (onColumnWidthChange: (index: number, value: number) => void) => {
-        const value = parseInt(editingValue, 10);
+        const value = parseFloat(editingValue);
 
         if (!isNaN(value) && value > 0) {
             if (editingColIndex !== null) {
-                onColumnWidthChange(editingColIndex, value);
+                // Convert the entered value back to SI units (mm) for storage
+                const siValue = valueInSIUnits(value, 'mm', 'in');
+                onColumnWidthChange(editingColIndex, siValue);
                 setEditingColIndex(null);
             }
         }
@@ -31,15 +38,19 @@ export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const handleEditRowStart = (index: number, value: number) => {
         setEditingRowIndex(index);
-        setEditingValue(value.toString());
+        // Convert the SI value to current unit system for editing
+        const displayValue = valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 2);
+        setEditingValue(displayValue);
     };
 
     const handleEditRowConfirm = (onRowHeightChange: (index: number, value: number) => void) => {
-        const value = parseInt(editingValue, 10);
+        const value = parseFloat(editingValue);
 
         if (!isNaN(value) && value > 0) {
             if (editingRowIndex !== null) {
-                onRowHeightChange(editingRowIndex, value);
+                // Convert the entered value back to SI units (mm) for storage
+                const siValue = valueInSIUnits(value, 'mm', 'in');
+                onRowHeightChange(editingRowIndex, siValue);
                 setEditingRowIndex(null);
             }
         }

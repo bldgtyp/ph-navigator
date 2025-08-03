@@ -1,9 +1,14 @@
 import { ClickAwayListener, TextField, Typography } from '@mui/material';
 
+import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 import { useDimensions } from './Dimensions.Context';
 
 export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, orientation }) => {
     const { units } = useDimensions();
+    const { valueInCurrentUnitSystemWithDecimal } = useUnitConversion();
+
+    // Convert the SI value (mm) to current unit system for display
+    const displayValue = parseFloat(valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 1));
 
     return (
         <Typography
@@ -20,14 +25,13 @@ export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, o
             }}
             onClick={() => handleEditStart(index, value)}
         >
-            {value} {units}
+            {displayValue} {units}
         </Typography>
     );
 };
 
 export const DimensionEditable: React.FC<any> = ({ handleEditConfirm }) => {
-    const units = 'mm';
-    const { editingValue, setEditingValue } = useDimensions();
+    const { units, editingValue, setEditingValue } = useDimensions();
 
     return (
         <ClickAwayListener onClickAway={handleEditConfirm}>
