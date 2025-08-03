@@ -100,6 +100,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const handleSetActiveApertureById = async (apertureId: number) => {
         // Used when the user selects an aperture from a list or dropdown
         console.log(`handleSetActiveApertureById() to apertureId=${apertureId}`);
+        setSelectedApertureElementsIds([]);
         setSelectedApertureId(apertureId);
         const aperture = apertures.find(a => a.id === apertureId);
         if (aperture) {
@@ -111,6 +112,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const handleSetActiveAperture = async (aperture: ApertureType) => {
         console.log(`handleSetActiveAperture() to apertureId=${aperture.id}`);
+        setSelectedApertureElementsIds([]);
         setActiveAperture(aperture);
         setSelectedApertureId(aperture.id);
     };
