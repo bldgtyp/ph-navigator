@@ -21,7 +21,7 @@ interface ZoomProviderProps {
 
 export const ZoomProvider: React.FC<ZoomProviderProps> = ({
     children,
-    initialScale = 0.2,
+    initialScale = 0.1,
     minScale = 0.05,
     maxScale = 1.0,
     zoomStep = 0.05,
