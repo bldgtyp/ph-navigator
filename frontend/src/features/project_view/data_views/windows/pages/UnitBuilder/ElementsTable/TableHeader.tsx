@@ -7,19 +7,21 @@ export const TableHeader: React.FC = () => {
     return (
         <>
             <TableHeaderCell size={2}>
-                <span>Element</span>
+                <span style={{ whiteSpace: 'pre-line' }}>Element{'\n'}&nbsp;</span>
             </TableHeaderCell>
             <TableHeaderCell size={5}>
-                <span>Name</span>
+                <span style={{ whiteSpace: 'pre-line' }}>Name{'\n'}&nbsp;</span>
             </TableHeaderCell>
             <TableHeaderCell size={2}>
-                <span>{`U-Value\n${unitSystem === 'SI' ? '[W/mk]' : '[Btu/hr-ft2-F]'}`}</span>
+                <span
+                    style={{ whiteSpace: 'pre-line' }}
+                >{`U-Value\n${unitSystem === 'SI' ? '[W/mk]' : '[Btu/hr-ft2-F]'}`}</span>
             </TableHeaderCell>
             <TableHeaderCell size={2}>
-                <span>{`Width\n${unitSystem === 'SI' ? '[mm]' : '[in]'}`}</span>
+                <span style={{ whiteSpace: 'pre-line' }}>{`Width\n${unitSystem === 'SI' ? '[mm]' : '[in]'}`}</span>
             </TableHeaderCell>
             <TableHeaderCell size={1}>
-                <span>g-Value</span>
+                <span style={{ whiteSpace: 'pre-line' }}>g-Value{'\n'}&nbsp;</span>
             </TableHeaderCell>
         </>
     );
