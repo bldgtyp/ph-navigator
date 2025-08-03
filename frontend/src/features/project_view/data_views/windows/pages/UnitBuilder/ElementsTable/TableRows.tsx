@@ -18,7 +18,7 @@ export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIn
                 <span>Glazing:</span>
                 {/* <span>{name}:</span> */}
             </TableCell>
-            <TableCell size={5} className={rowClass}>
+            <TableCell size={6} className={rowClass}>
                 {/* <span>{glazing?.name || '-'}</span> */}
                 <GlazingSelector
                     aperture={aperture}
@@ -37,7 +37,7 @@ export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIn
                     )}
                 </span>
             </TableCell>
-            <TableCell size={2} className={rowClass}>
+            <TableCell size={1} className={rowClass}>
                 <span>-</span>
             </TableCell>
             <TableCell size={1} className={rowClass}>
@@ -57,7 +57,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
             <TableCell size={2} className={rowClass}>
                 {`${position.charAt(0).toUpperCase()}${position.slice(1).toLowerCase()} Frame:`}
             </TableCell>
-            <TableCell size={5} className={rowClass}>
+            <TableCell size={6} className={rowClass}>
                 <FrameSelector
                     aperture={aperture}
                     element={element}
@@ -76,7 +76,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
                     )}
                 </span>
             </TableCell>
-            <TableCell size={2} className={rowClass}>
+            <TableCell size={1} className={rowClass}>
                 <span>
                     {valueInCurrentUnitSystemWithDecimal(
                         element.frames[position]?.width_mm,
