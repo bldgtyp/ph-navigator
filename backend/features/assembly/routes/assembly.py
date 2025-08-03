@@ -144,7 +144,7 @@ def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> No
 def get_project_assemblies_as_hbjson_object_route(
     request: Request,
     bt_number: str,
-    offset: int = Query(0, description="The offset for the test function"),
+    offset: int = Query(0, description="The offset for the function"),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Get all of the Project's Assemblies as Honeybee JSON.

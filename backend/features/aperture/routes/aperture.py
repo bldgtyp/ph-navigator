@@ -2,7 +2,8 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from config import limiter
@@ -29,6 +30,7 @@ from features.aperture.services.aperture import (
     delete_aperture,
     delete_column_from_aperture,
     delete_row_from_aperture,
+    get_all_project_apertures_as_json_string,
     get_aperture_by_id,
     get_apertures_by_project_bt,
     merge_aperture_elements,
@@ -50,6 +52,7 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
+# @limiter.limit("10/minute")
 @router.get("/get-apertures/{bt_number}", response_model=list[ApertureSchema])
 def get_project_apertures_route(
     request: Request, bt_number: str, db: Session = Depends(get_db)
@@ -65,6 +68,37 @@ def get_project_apertures_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("10/minute")
+@router.get("/get-apertures-as-json/{bt_number}")
+def get_project_apertures_as_json_route(
+    request: Request,
+    bt_number: str,
+    offset: int = Query(0, description="The offset for the function"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Get all of the Project's Apertures as a single JSON Object.
+
+    The format will follow the HBJSON Dump Objects, which outputs a single object:
+
+    apertures = {
+        "Aperture 1": {....},
+        "Aperture 2": {....},
+        ...
+    }
+    """
+    logger.info(f"aperture/get_project_apertures_as_json_route({bt_number=}, {offset=})")
+
+    apertures_json = get_all_project_apertures_as_json_string(db, bt_number)
+
+    return JSONResponse(
+        content={
+            "apertures": apertures_json,
+        },
+        status_code=200,
+    )
+
+
+# @limiter.limit("1/second")
 @router.get("/get-aperture/{aperture_id}", response_model=ApertureSchema)
 def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"get_aperture({aperture_id})")
@@ -82,6 +116,7 @@ def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.post("/create-new-aperture-on-project/{bt_number}", response_model=ApertureSchema)
 def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"add_aperture_route({bt_number=})")
@@ -96,6 +131,7 @@ def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(g
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/update-aperture-name/{aperture_id}", response_model=ApertureSchema)
 def update_aperture_name_route(
     request: Request, aperture_id: int, update_request: UpdateNameRequest, db: Session = Depends(get_db)
@@ -111,6 +147,7 @@ def update_aperture_name_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/update-glazing/{element_id}", response_model=ApertureSchema)
 def update_aperture_glazing_route(
     request: Request, element_id: int, update_request: UpdateGlazingRequest, db: Session = Depends(get_db)
@@ -126,6 +163,7 @@ def update_aperture_glazing_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/update-column-width/{aperture_id}", response_model=ApertureSchema)
 def update_aperture_column_width_route(
     request: Request, aperture_id: int, update_request: UpdateColumnWidthRequest, db: Session = Depends(get_db)
@@ -143,6 +181,7 @@ def update_aperture_column_width_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/update-row-height/{aperture_id}", response_model=ApertureSchema)
 def update_aperture_row_height_route(
     request: Request, aperture_id: int, update_request: UpdateRowHeightRequest, db: Session = Depends(get_db)
@@ -160,6 +199,7 @@ def update_aperture_row_height_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/update-frame/{aperture_id}", response_model=ApertureSchema)
 def update_frame_route(
     request: Request, aperture_id: int, update_request: UpdateApertureFrameRequest, db: Session = Depends(get_db)
@@ -177,6 +217,7 @@ def update_frame_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/add-row/{aperture_id}", response_model=ApertureSchema)
 def add_row_to_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"add_row_to_aperture({aperture_id=})")
@@ -189,6 +230,7 @@ def add_row_to_aperture_route(request: Request, aperture_id: int, db: Session = 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/add-column/{aperture_id}", response_model=ApertureSchema)
 def add_column_to_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     logger.info(f"add_column_to_aperture({aperture_id=})")
@@ -201,6 +243,7 @@ def add_column_to_aperture_route(request: Request, aperture_id: int, db: Session
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/merge-aperture-elements/{aperture_id}", response_model=ApertureSchema)
 def merge_aperture_elements_route(
     request: Request, aperture_id: int, update_request: MergeApertureElementsRequest, db: Session = Depends(get_db)
@@ -220,6 +263,7 @@ def merge_aperture_elements_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/split-aperture-element/{aperture_id}", response_model=ApertureSchema)
 def split_aperture_element_route(
     request: Request, aperture_id: int, update_request: SplitApertureElementRequest, db: Session = Depends(get_db)
@@ -239,6 +283,7 @@ def split_aperture_element_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.patch("/update-aperture-element-name/{element_id}", response_model=ApertureSchema)
 def update_aperture_element_name_route(
     request: Request, element_id: int, update_request: UpdateApertureElementNameRequest, db: Session = Depends(get_db)
@@ -254,6 +299,7 @@ def update_aperture_element_name_route(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.delete("/delete-aperture/{aperture_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> None:
     logger.info(f"delete_aperture_route({aperture_id=})")
@@ -267,6 +313,7 @@ def delete_aperture_route(request: Request, aperture_id: int, db: Session = Depe
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.delete("/delete-row/{aperture_id}", response_model=ApertureSchema)
 def delete_row_on_aperture_route(
     request: Request, delete_request: RowDeleteRequest, aperture_id: int, db: Session = Depends(get_db)
@@ -283,6 +330,7 @@ def delete_row_on_aperture_route(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
 
+# @limiter.limit("1/second")
 @router.delete("/delete-column/{aperture_id}", response_model=ApertureSchema)
 def delete_column_on_aperture_route(
     request: Request, delete_request: ColumnDeleteRequest, aperture_id: int, db: Session = Depends(get_db)

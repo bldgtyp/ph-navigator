@@ -1,5 +1,6 @@
 # -*- Python Version: 3.11 -*-
 
+import json
 import logging
 
 from sqlalchemy.orm import Session
@@ -10,6 +11,7 @@ from features.aperture.schemas.aperture import FrameSide
 from features.aperture.services.aperture_element import get_aperture_element_by_id
 from features.aperture.services.frame import get_frame_by_id
 from features.app.services import get_project_by_bt_number
+from features.aperture.schemas import ApertureSchema
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,24 @@ def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
     project = get_project_by_bt_number(db, bt_number)
     apertures = db.query(Aperture).filter(Aperture.project_id == project.id).order_by(Aperture.name.asc()).all()
     return apertures
+
+
+def get_all_project_apertures_as_json_string(db: Session, bt_number: str) -> str:
+    """Return all of the Project's Apertures as a single JSON object string.
+
+    The returned JSON object will be structured as follows, with each aperture's name as the key:
+
+    return {
+        "Aperture 1": {....},
+        "Aperture 2": {....},
+        ...
+    }
+    """
+    logger.info(f"get_all_project_apertures_as_json_string({bt_number=})")
+
+    apertures = get_apertures_by_project_bt(db, bt_number)
+    apertures = [ApertureSchema.from_orm(aperture) for aperture in apertures]
+    return json.dumps({aperture.name: aperture.dict() for aperture in apertures})
 
 
 def get_aperture_by_id(db: Session, aperture_id: int) -> Aperture:

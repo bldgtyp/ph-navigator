@@ -17,3 +17,7 @@ class ApertureSchema(BaseModel):
     face_type: str = "Aperture"
     boundary_condition: BoundaryConditionSchema
     properties: AperturePropertiesSchema
+
+    class Config:
+        """Pydantic Config."""
+        orm_mode = True
