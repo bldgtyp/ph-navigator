@@ -7,7 +7,6 @@ from enum import Enum
 from pydantic import BaseModel
 
 from features.aperture.schemas.aperture_element import ApertureElementSchema
-from features.aperture.schemas.frame import ApertureElementFrameSchema
 
 
 class ApertureSchema(BaseModel):
@@ -57,7 +56,7 @@ class FrameSide(str, Enum):
 class UpdateApertureFrameRequest(BaseModel):
     element_id: int
     side: FrameSide
-    frame_id: str
+    frame_type_id: str
 
 
 class MergeApertureElementsRequest(BaseModel):

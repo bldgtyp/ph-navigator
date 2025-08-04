@@ -5,14 +5,15 @@ from __future__ import annotations  # Enables forward references
 from pyairtable.api.types import RecordDict
 from pydantic import BaseModel
 
+from features.aperture.schemas.frame_type import FrameTypeSchema
+
 
 class ApertureElementFrameSchema(BaseModel):
     """Base schema for Aperture Element Frame."""
 
     id: str
     name: str = "Unnamed Frame"
-    width_mm: float
-    u_value_w_m2k: float
+    frame_type: FrameTypeSchema | None = None
 
     class Config:
         orm_mode = True
@@ -29,10 +30,10 @@ class ApertureElementFrameSchema(BaseModel):
 class ApertureElementFramesSchema(BaseModel):
     """Base schema for Aperture Element Frames Collection."""
 
-    top: ApertureElementFrameSchema | None = None
-    right: ApertureElementFrameSchema | None = None
-    bottom: ApertureElementFrameSchema | None = None
-    left: ApertureElementFrameSchema | None = None
+    top: ApertureElementFrameSchema
+    right: ApertureElementFrameSchema
+    bottom: ApertureElementFrameSchema
+    left: ApertureElementFrameSchema
 
     class Config:
         orm_mode = True

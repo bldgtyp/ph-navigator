@@ -161,18 +161,22 @@ export class ApertureService {
         apertureId: number;
         elementId: number;
         framePosition: FramePosition;
-        frameId: number | null;
+        frameTypeId: string | null;
     }): Promise<ApertureType> {
-        if (!params.frameId) {
+        if (!params.frameTypeId) {
             throw new Error('Frame ID is required');
         }
 
         try {
-            const response = await patchWithAlert<ApertureType>(`aperture/update-frame/${params.apertureId}`, null, {
-                element_id: params.elementId,
-                side: params.framePosition,
-                frame_id: params.frameId,
-            });
+            const response = await patchWithAlert<ApertureType>(
+                `aperture/update-frame-type/${params.apertureId}`,
+                null,
+                {
+                    element_id: params.elementId,
+                    side: params.framePosition,
+                    frame_type_id: params.frameTypeId,
+                }
+            );
             if (!response) {
                 throw new Error('Failed to update aperture element frame - no response received');
             }
@@ -190,9 +194,13 @@ export class ApertureService {
         }
 
         try {
-            const response = await patchWithAlert<ApertureType>(`aperture/update-glazing/${params.elementId}`, null, {
-                glazing_id: params.glazingId,
-            });
+            const response = await patchWithAlert<ApertureType>(
+                `aperture/update-glazing-type/${params.elementId}`,
+                null,
+                {
+                    glazing_id: params.glazingId,
+                }
+            );
             if (!response) {
                 throw new Error('Failed to update aperture element glazing - no response received');
             }

@@ -26,31 +26,31 @@ class ApertureElement(Base):
 
     # Foreign Keys
     aperture_id: Mapped[int] = MappedColumn(Integer, ForeignKey("apertures.id"), nullable=False)
-    glazing_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_glazing.id"), nullable=True)
-    frame_top_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
-    frame_right_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
-    frame_bottom_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
-    frame_left_id: Mapped[str | None] = MappedColumn(String, ForeignKey("aperture_element_frame.id"), nullable=True)
+    glazing_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_glazing.id"), nullable=True)
+    frame_top_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_right_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_bottom_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_left_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
 
     # Relationships
     aperture: Mapped["Aperture"] = relationship("Aperture", back_populates="elements")
-    glazing: Mapped["ApertureElementGlazing | None"] = relationship(
+    glazing: Mapped["ApertureElementGlazing"] = relationship(
         "ApertureElementGlazing",
         foreign_keys=[glazing_id],
     )
-    frame_top: Mapped["ApertureElementFrame | None"] = relationship(
+    frame_top: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_top_id],
     )
-    frame_right: Mapped["ApertureElementFrame | None"] = relationship(
+    frame_right: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_right_id],
     )
-    frame_bottom: Mapped["ApertureElementFrame | None"] = relationship(
+    frame_bottom: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_bottom_id],
     )
-    frame_left: Mapped["ApertureElementFrame | None"] = relationship(
+    frame_left: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_left_id],
     )
@@ -66,7 +66,7 @@ class ApertureElement(Base):
         }
 
     @property
-    def frame_ids(self) -> list[str | None]:
+    def frame_ids(self) -> list[int]:
         """Return a list with all of the frame IDs."""
         return [
             self.frame_top_id,

@@ -1,5 +1,5 @@
 import { getWithAlert } from '../../../../../../../../api/getWithAlert';
-import { ApertureElementFrameType } from '../../types';
+import { ApertureFrameType } from '../../types';
 
 const CACHE_KEY = 'frames';
 const CACHE_EXPIRY_KEY = 'frames_expiry';
@@ -7,9 +7,9 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 interface RefreshResponseType {
     message: string;
-    frames_number_added: number;
-    frames_number_updated: number;
-    frame_total_count: number;
+    types_added: number;
+    types_updated: number;
+    types_total_count: number;
 }
 
 /**
@@ -20,9 +20,9 @@ export class FrameTypeService {
     /**
      * Fetch frame types from the API and cache them locally
      */
-    static async fetchAndCacheFrameTypes(): Promise<ApertureElementFrameType[]> {
+    static async fetchAndCacheFrameTypes(): Promise<ApertureFrameType[]> {
         try {
-            const frames = await getWithAlert<ApertureElementFrameType[]>('aperture/get-frames');
+            const frames = await getWithAlert<ApertureFrameType[]>('aperture/get-frame-types');
             const frameData = frames || [];
 
             // Cache the data to local storage with expiry
@@ -40,12 +40,12 @@ export class FrameTypeService {
      * Refresh frame types from AirTable and cache the results
      */
     static async refreshFrameTypesFromAirTable(): Promise<{
-        frameTypes: ApertureElementFrameType[];
+        frameTypes: ApertureFrameType[];
         refreshInfo: RefreshResponseType;
     }> {
         try {
             // Refresh the frames from AirTable into the Database
-            const response = await getWithAlert<RefreshResponseType>('aperture/refresh-db-frames-from-air-table');
+            const response = await getWithAlert<RefreshResponseType>('aperture/refresh-db-frame-types-from-air-table');
 
             if (!response) {
                 throw new Error('No response received from AirTable refresh');
@@ -67,7 +67,7 @@ export class FrameTypeService {
     /**
      * Get cached frame types if they exist and are not expired
      */
-    static getCachedFrameTypes(): ApertureElementFrameType[] | null {
+    static getCachedFrameTypes(): ApertureFrameType[] | null {
         try {
             const cachedData = localStorage.getItem(CACHE_KEY);
             const cachedExpiry = localStorage.getItem(CACHE_EXPIRY_KEY);
@@ -103,7 +103,7 @@ export class FrameTypeService {
      * Load frame types with caching strategy
      * First tries cache, then fetches from API if needed
      */
-    static async loadFrameTypes(): Promise<ApertureElementFrameType[]> {
+    static async loadFrameTypes(): Promise<ApertureFrameType[]> {
         // Try to get from cache first
         const cachedFrameTypes = this.getCachedFrameTypes();
 

@@ -10,17 +10,17 @@ import { FrameSelectorProps } from './types';
 export const FrameSelector: React.FC<FrameSelectorProps> = ({
     aperture,
     element,
-    selectedFrame,
+    selectedFrameType,
     isLoading = false,
     position,
 }) => {
     const userContext = useContext(UserContext);
     const { frameTypes } = useFrameTypes();
-    const { handleUpdateApertureElementFrame } = useApertures();
+    const { handleUpdateApertureElementFrameType } = useApertures();
     const placeholderText = `Select ${position.toLowerCase()} frame`;
 
     if (!userContext.user) {
-        return <span>{selectedFrame?.name || '-'}</span>;
+        return <span>{selectedFrameType?.name || '-'}</span>;
     }
 
     return (
@@ -28,13 +28,13 @@ export const FrameSelector: React.FC<FrameSelectorProps> = ({
             <Autocomplete
                 options={[...frameTypes].sort((a, b) => a.name.localeCompare(b.name))}
                 getOptionLabel={option => option.name}
-                value={selectedFrame}
+                value={selectedFrameType}
                 onChange={(event, newValue) =>
-                    handleUpdateApertureElementFrame({
+                    handleUpdateApertureElementFrameType({
                         apertureId: aperture.id,
                         elementId: element.id,
                         framePosition: position,
-                        frameId: newValue ? newValue.id : null,
+                        frameTypeId: newValue ? newValue.id : null,
                     })
                 }
                 loading={isLoading}

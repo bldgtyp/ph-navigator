@@ -5,11 +5,12 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from db_entities.aperture import Aperture, ApertureElement
+from db_entities.aperture import Aperture, ApertureElement, ApertureElementFrame
 from db_entities.app.project import Project
 from features.aperture.schemas.aperture import FrameSide
 from features.aperture.services.aperture_element import get_aperture_element_by_id
-from features.aperture.services.frame import get_frame_by_id
+from features.aperture.services.frame_type import get_frame_type_by_id
+from features.aperture.services.glazing_type import get_glazing_type_by_id
 from features.app.services import get_project_by_bt_number
 from features.aperture.schemas import ApertureSchema
 
@@ -284,18 +285,19 @@ def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Apertu
         raise
 
 
-def update_aperture_glazing(db: Session, element_id: int, glazing_id: str) -> Aperture:
-    """Update the glazing of an aperture."""
-    logger.info(f"update_aperture_glazing({element_id=}, {glazing_id=})")
+def update_aperture_glazing_type(db: Session, element_id: int, glazing_type_id: str) -> Aperture:
+    """Update the glazing-type of an aperture."""
+    logger.info(f"update_aperture_glazing_type({element_id=}, {glazing_type_id=})")
 
     try:
         element = get_aperture_element_by_id(db, element_id)
-        element.glazing_id = glazing_id
+        glazing_type = get_glazing_type_by_id(db, glazing_type_id)
+        element.glazing.glazing_type_id = glazing_type.id
         db.commit()
         return get_aperture_by_child_element_id(db, element.id)
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating aperture glazing {element_id}: {str(e)}")
+        logger.error(f"Error updating aperture glazing-type {element_id}: {str(e)}")
         raise
 
 
@@ -335,14 +337,14 @@ def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, ne
         raise
 
 
-def update_aperture_element_frame(db: Session, element_id: int, side: str, frame_id: str) -> Aperture:
+def update_aperture_element_frame_type(db: Session, element_id: int, side: str, frame_type_id: str) -> Aperture:
     """Update the frame for a specific side of an aperture element.
 
     Args:
         db: Database session
         element_id: ID of the aperture element to update
         side: Side of the element ('top', 'right', 'bottom', 'left')
-        frame_id: ID of the frame to assign
+        frame_type_id: ID of the frame to assign
 
     Returns:
         Updated aperture object
@@ -350,13 +352,13 @@ def update_aperture_element_frame(db: Session, element_id: int, side: str, frame
     Raises:
         ValueError: If element, frame not found or invalid side
     """
-    logger.info(f"update_aperture_element_frame({element_id=}, {side=}, {frame_id=})")
+    logger.info(f"update_aperture_element_frame({element_id=}, {side=}, {frame_type_id=})")
 
     try:
         # Validate and normalize the side
         try:
             frame_side = FrameSide(side.lower())
-            side_attr = f"frame_{frame_side.value}_id"
+            side_attr = f"frame_{frame_side.value}"
         except ValueError:
             raise ValueError(f"Invalid frame side: {side}. Must be one of: {[s.value for s in FrameSide]}")
 
@@ -364,10 +366,11 @@ def update_aperture_element_frame(db: Session, element_id: int, side: str, frame
         element = get_aperture_element_by_id(db, element_id)
 
         # Get the frame to validate it exists (this will raise ValueError if not found)
-        frame = get_frame_by_id(db, frame_id)
+        frame_type = get_frame_type_by_id(db, frame_type_id)
 
         # Update the specific frame side on the ELEMENT, not the aperture
-        setattr(element, side_attr, frame.id)
+        element_frame: ApertureElementFrame = getattr(element, side_attr)
+        setattr(element_frame, "frame_type", frame_type)
 
         # Commit the changes
         db.commit()
@@ -377,7 +380,7 @@ def update_aperture_element_frame(db: Session, element_id: int, side: str, frame
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating aperture element frame {element_id=} | {side=} | {frame_id=}: {str(e)}")
+        logger.error(f"Error updating aperture element frame {element_id=} | {side=} | {frame_type_id=}: {str(e)}")
         raise
 
 

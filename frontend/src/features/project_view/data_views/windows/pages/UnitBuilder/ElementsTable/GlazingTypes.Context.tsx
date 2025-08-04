@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import { ApertureElementGlazingType } from '../types';
+import { ApertureGlazingType } from '../types';
 import { GlazingTypeService } from './services/glazingTypeService';
 
 interface GlazingTypesContextType {
     isLoadingGlazingTypes: boolean;
     setIsLoadingGlazingTypes: React.Dispatch<React.SetStateAction<boolean>>;
-    glazingTypes: ApertureElementGlazingType[];
-    setGlazingTypes: React.Dispatch<React.SetStateAction<ApertureElementGlazingType[]>>;
+    glazingTypes: ApertureGlazingType[];
+    setGlazingTypes: React.Dispatch<React.SetStateAction<ApertureGlazingType[]>>;
     handleRefreshGlazingTypes: () => Promise<void>;
 }
 
@@ -15,7 +15,7 @@ const GlazingTypesContext = createContext<GlazingTypesContextType | undefined>(u
 
 export const GlazingTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isLoadingGlazingTypes, setIsLoadingGlazingTypes] = useState<boolean>(true);
-    const [glazingTypes, setGlazingTypes] = useState<ApertureElementGlazingType[]>([]);
+    const [glazingTypes, setGlazingTypes] = useState<ApertureGlazingType[]>([]);
 
     useEffect(() => {
         const loadGlazingTypes = async () => {
@@ -44,7 +44,7 @@ export const GlazingTypesProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
             // Show success message to user
             alert(
-                `Glazing types refreshed successfully: ${refreshInfo.glazings_number_added} added, ${refreshInfo.glazings_number_updated} updated. Total glazings: ${refreshInfo.glazing_total_count}`
+                `Glazing types refreshed successfully: ${refreshInfo.types_added} added, ${refreshInfo.types_updated} updated. Total glazings: ${refreshInfo.types_total_count}`
             );
         } catch (error) {
             console.error('Error refreshing glazing types:', error);

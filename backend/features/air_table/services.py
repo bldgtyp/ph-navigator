@@ -9,11 +9,11 @@ from sqlalchemy.orm import Session
 from config import settings
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
-from db_entities.aperture.aperture_frame import ApertureElementFrame
-from db_entities.aperture.aperture_glazing import ApertureElementGlazing
+from db_entities.aperture.frame_type import ApertureFrameType
+from db_entities.aperture.glazing_type import ApertureGlazingType
+from features.aperture.schemas.glazing_type import GlazingTypeSchema
+from features.aperture.schemas.frame_type import FrameTypeSchema
 from db_entities.assembly import Material
-from features.aperture.schemas.frame import ApertureElementFrameSchema
-from features.aperture.schemas.glazing import ApertureElementGlazingSchema
 from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
@@ -235,9 +235,9 @@ def get_all_material_from_airtable() -> list[Material]:
     #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in records]
 
 
-def get_all_frames_from_airtable() -> list[ApertureElementFrame]:
-    """Get all of the frames from AirTable and return them as a list of ApertureElementFrame objects."""
-    logger.info(f"get_all_frames_from_airtable()")
+def get_all_frame_types_from_airtable() -> list[ApertureFrameType]:
+    """Get all of the frames from AirTable and return them as a list of ApertureElementFrameType objects."""
+    logger.info(f"get_all_frame_types_from_airtable()")
 
     api = Api(settings.AIRTABLE_APERTURE_DATA_GET_TOKEN)
     table = api.table(
@@ -246,13 +246,13 @@ def get_all_frames_from_airtable() -> list[ApertureElementFrame]:
     )
 
     return [
-        ApertureElementFrame(**ApertureElementFrameSchema.fromAirTableRecordDict(record).dict())
+        ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).dict())
         for record in table.all()
     ]
 
 
-def get_all_glazings_from_airtable() -> list[ApertureElementGlazing]:
-    """Get all of the glazings from AirTable and return them as a list of ApertureElementGlazing objects."""
+def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
+    """Get all of the glazings from AirTable and return them as a list of ApertureElementGlazingType objects."""
     logger.info(f"get_all_glazings_from_airtable()")
 
     api = Api(settings.AIRTABLE_APERTURE_DATA_GET_TOKEN)
@@ -262,7 +262,7 @@ def get_all_glazings_from_airtable() -> list[ApertureElementGlazing]:
     )
 
     return [
-        ApertureElementGlazing(**ApertureElementGlazingSchema.fromAirTableRecordDict(record).dict())
+        ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).dict())
         for record in table.all()
     ]
 

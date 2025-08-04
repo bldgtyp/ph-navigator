@@ -94,82 +94,6 @@ CREATE TABLE public.alembic_version (
 ALTER TABLE public.alembic_version OWNER TO ph_navigator_user;
 
 --
--- Name: aperture_elements; Type: TABLE; Schema: public; Owner: ph_navigator_user
---
-
-CREATE TABLE public.aperture_elements (
-    id integer NOT NULL,
-    row_number integer NOT NULL,
-    column_number integer NOT NULL,
-    row_span integer NOT NULL,
-    col_span integer NOT NULL,
-    aperture_id integer NOT NULL,
-    name character varying(255)
-);
-
-
-ALTER TABLE public.aperture_elements OWNER TO ph_navigator_user;
-
---
--- Name: aperture_elements_id_seq; Type: SEQUENCE; Schema: public; Owner: ph_navigator_user
---
-
-CREATE SEQUENCE public.aperture_elements_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.aperture_elements_id_seq OWNER TO ph_navigator_user;
-
---
--- Name: aperture_elements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ph_navigator_user
---
-
-ALTER SEQUENCE public.aperture_elements_id_seq OWNED BY public.aperture_elements.id;
-
-
---
--- Name: apertures; Type: TABLE; Schema: public; Owner: ph_navigator_user
---
-
-CREATE TABLE public.apertures (
-    id integer NOT NULL,
-    name character varying NOT NULL,
-    row_heights_mm double precision[] NOT NULL,
-    column_widths_mm double precision[] NOT NULL,
-    project_id integer NOT NULL
-);
-
-
-ALTER TABLE public.apertures OWNER TO ph_navigator_user;
-
---
--- Name: apertures_id_seq; Type: SEQUENCE; Schema: public; Owner: ph_navigator_user
---
-
-CREATE SEQUENCE public.apertures_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.apertures_id_seq OWNER TO ph_navigator_user;
-
---
--- Name: apertures_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ph_navigator_user
---
-
-ALTER SEQUENCE public.apertures_id_seq OWNED BY public.apertures.id;
-
-
---
 -- Name: assemblies; Type: TABLE; Schema: public; Owner: ph_navigator_user
 --
 
@@ -469,20 +393,6 @@ ALTER TABLE ONLY public.airtable_tables ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- Name: aperture_elements id; Type: DEFAULT; Schema: public; Owner: ph_navigator_user
---
-
-ALTER TABLE ONLY public.aperture_elements ALTER COLUMN id SET DEFAULT nextval('public.aperture_elements_id_seq'::regclass);
-
-
---
--- Name: apertures id; Type: DEFAULT; Schema: public; Owner: ph_navigator_user
---
-
-ALTER TABLE ONLY public.apertures ALTER COLUMN id SET DEFAULT nextval('public.apertures_id_seq'::regclass);
-
-
---
 -- Name: assemblies id; Type: DEFAULT; Schema: public; Owner: ph_navigator_user
 --
 
@@ -593,30 +503,7 @@ COPY public.airtable_tables (id, name, at_ref, parent_base_id) FROM stdin;
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
-02ac5b18c6a2
-\.
-
-
---
--- Data for Name: aperture_elements; Type: TABLE DATA; Schema: public; Owner: ph_navigator_user
---
-
-COPY public.aperture_elements (id, row_number, column_number, row_span, col_span, aperture_id, name) FROM stdin;
-358	0	0	1	1	1	\N
-367	0	1	1	1	2	\N
-368	1	1	1	1	2	\N
-366	1	0	1	1	2	test
-220	0	0	1	1	2	\N
-\.
-
-
---
--- Data for Name: apertures; Type: TABLE DATA; Schema: public; Owner: ph_navigator_user
---
-
-COPY public.apertures (id, name, row_heights_mm, column_widths_mm, project_id) FROM stdin;
-2	Aperture 1	{200,100}	{150,100}	1
-1	Aperture 2	{300}	{200}	1
+ac7703c5800f
 \.
 
 
@@ -724,20 +611,6 @@ SELECT pg_catalog.setval('public.airtable_tables_id_seq', 38, true);
 
 
 --
--- Name: aperture_elements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ph_navigator_user
---
-
-SELECT pg_catalog.setval('public.aperture_elements_id_seq', 368, true);
-
-
---
--- Name: apertures_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ph_navigator_user
---
-
-SELECT pg_catalog.setval('public.apertures_id_seq', 9, true);
-
-
---
 -- Name: assemblies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ph_navigator_user
 --
 
@@ -808,22 +681,6 @@ ALTER TABLE ONLY public.airtable_tables
 
 ALTER TABLE ONLY public.alembic_version
     ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
-
-
---
--- Name: aperture_elements aperture_elements_pkey; Type: CONSTRAINT; Schema: public; Owner: ph_navigator_user
---
-
-ALTER TABLE ONLY public.aperture_elements
-    ADD CONSTRAINT aperture_elements_pkey PRIMARY KEY (id);
-
-
---
--- Name: apertures apertures_pkey; Type: CONSTRAINT; Schema: public; Owner: ph_navigator_user
---
-
-ALTER TABLE ONLY public.apertures
-    ADD CONSTRAINT apertures_pkey PRIMARY KEY (id);
 
 
 --
@@ -927,20 +784,6 @@ CREATE INDEX ix_airtable_tables_name ON public.airtable_tables USING btree (name
 
 
 --
--- Name: ix_aperture_elements_id; Type: INDEX; Schema: public; Owner: ph_navigator_user
---
-
-CREATE INDEX ix_aperture_elements_id ON public.aperture_elements USING btree (id);
-
-
---
--- Name: ix_apertures_id; Type: INDEX; Schema: public; Owner: ph_navigator_user
---
-
-CREATE INDEX ix_apertures_id ON public.apertures USING btree (id);
-
-
---
 -- Name: ix_assembly_layers_id; Type: INDEX; Schema: public; Owner: ph_navigator_user
 --
 
@@ -1030,22 +873,6 @@ CREATE UNIQUE INDEX ix_users_username ON public.users USING btree (username);
 
 ALTER TABLE ONLY public.airtable_tables
     ADD CONSTRAINT airtable_tables_parent_base_id_fkey FOREIGN KEY (parent_base_id) REFERENCES public.airtable_bases(id);
-
-
---
--- Name: aperture_elements aperture_elements_aperture_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ph_navigator_user
---
-
-ALTER TABLE ONLY public.aperture_elements
-    ADD CONSTRAINT aperture_elements_aperture_id_fkey FOREIGN KEY (aperture_id) REFERENCES public.apertures(id);
-
-
---
--- Name: apertures apertures_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ph_navigator_user
---
-
-ALTER TABLE ONLY public.apertures
-    ADD CONSTRAINT apertures_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id);
 
 
 --

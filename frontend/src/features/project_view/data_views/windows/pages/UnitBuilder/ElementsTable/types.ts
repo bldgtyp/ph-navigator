@@ -1,4 +1,10 @@
-import { ApertureElementFrameType, ApertureElementGlazingType, ApertureElementType, ApertureType } from '../types';
+import {
+    ApertureFrameType,
+    ApertureElementGlazing,
+    ApertureGlazingType,
+    ApertureElementType,
+    ApertureType,
+} from '../types';
 
 export type FramePosition = 'top' | 'right' | 'bottom' | 'left';
 
@@ -6,7 +12,7 @@ export interface GlazingRowProps {
     rowIndex: number;
     aperture: ApertureType;
     element: ApertureElementType;
-    glazing: ApertureElementGlazingType | null;
+    glazing: ApertureElementGlazing | null;
 }
 
 export interface FrameRowProps {
@@ -36,14 +42,13 @@ export interface TableCellProps {
 export interface FrameSelectorProps {
     aperture: ApertureType;
     element: ApertureElementType;
-    selectedFrame: ApertureElementFrameType | null;
+    selectedFrameType: ApertureFrameType;
     isLoading?: boolean;
     position: FramePosition;
 }
 
 export interface GlazingSelectorProps {
-    aperture: ApertureType;
     element: ApertureElementType;
-    selectedGlazing: ApertureElementGlazingType | null;
+    selectedGlazingType: ApertureGlazingType;
     isLoading?: boolean;
 }

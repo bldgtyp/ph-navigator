@@ -39,11 +39,11 @@ interface AperturesContextType {
     clearApertureElementIdSelection: () => void;
     mergeSelectedApertureElements: () => void;
     splitSelectedApertureElement: () => void;
-    handleUpdateApertureElementFrame: (params: {
+    handleUpdateApertureElementFrameType: (params: {
         apertureId: number;
         elementId: number;
         framePosition: FramePosition;
-        frameId: number | null;
+        frameTypeId: string | null;
     }) => Promise<void>;
     updateApertureElementName: (elementId: number, newName: string) => Promise<void>;
     handleUpdateApertureElementGlazing: (params: { elementId: number; glazingId: number | null }) => Promise<void>;
@@ -306,12 +306,12 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // ----------------------------------------------------------------------------------
     // Frame-Type and Glass-Type
 
-    const handleUpdateApertureElementFrame = useCallback(
+    const handleUpdateApertureElementFrameType = useCallback(
         async (params: {
             apertureId: number;
             elementId: number;
             framePosition: FramePosition;
-            frameId: number | null;
+            frameTypeId: string | null;
         }) => {
             try {
                 const updatedAperture = await ApertureService.updateElementFrame(params);
@@ -506,7 +506,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 clearApertureElementIdSelection,
                 mergeSelectedApertureElements,
                 splitSelectedApertureElement,
-                handleUpdateApertureElementFrame,
+                handleUpdateApertureElementFrameType,
                 updateApertureElementName,
                 handleUpdateApertureElementGlazing,
             }}

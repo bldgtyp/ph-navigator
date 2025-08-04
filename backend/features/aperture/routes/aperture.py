@@ -36,11 +36,11 @@ from features.aperture.services.aperture import (
     merge_aperture_elements,
     split_aperture_element,
     update_aperture_column_width,
-    update_aperture_element_frame,
+    update_aperture_element_frame_type,
     update_aperture_name,
     update_aperture_row_height,
     update_aperture_element_name,
-    update_aperture_glazing,
+    update_aperture_glazing_type,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -148,14 +148,14 @@ def update_aperture_name_route(
 
 
 # @limiter.limit("1/second")
-@router.patch("/update-glazing/{element_id}", response_model=ApertureSchema)
-def update_aperture_glazing_route(
+@router.patch("/update-glazing-type/{element_id}", response_model=ApertureSchema)
+def update_aperture_glazing_type_route(
     request: Request, element_id: int, update_request: UpdateGlazingRequest, db: Session = Depends(get_db)
 ) -> ApertureSchema:
     logger.info(f"update_aperture_glazing_route({element_id=}, {update_request=})")
 
     try:
-        updated_aperture = update_aperture_glazing(db, element_id, update_request.glazing_id)
+        updated_aperture = update_aperture_glazing_type(db, element_id, update_request.glazing_id)
         return ApertureSchema.from_orm(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture glazing for ID {element_id=} to {update_request.glazing_id=}: {e}"
@@ -200,15 +200,15 @@ def update_aperture_row_height_route(
 
 
 # @limiter.limit("1/second")
-@router.patch("/update-frame/{aperture_id}", response_model=ApertureSchema)
-def update_frame_route(
+@router.patch("/update-frame-type/{aperture_id}", response_model=ApertureSchema)
+def update_frame_type_route(
     request: Request, aperture_id: int, update_request: UpdateApertureFrameRequest, db: Session = Depends(get_db)
 ):
-    logger.info(f"update_frame_route({aperture_id=}, {update_request=})")
+    logger.info(f"update_frame_type_route({aperture_id=}, {update_request=})")
 
     try:
-        updated_aperture = update_aperture_element_frame(
-            db, update_request.element_id, update_request.side, update_request.frame_id
+        updated_aperture = update_aperture_element_frame_type(
+            db, update_request.element_id, update_request.side, update_request.frame_type_id
         )
         return ApertureSchema.from_orm(updated_aperture)
     except Exception as e:

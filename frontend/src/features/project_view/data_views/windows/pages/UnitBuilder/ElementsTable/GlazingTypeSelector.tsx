@@ -8,9 +8,8 @@ import { useApertures } from '../ApertureView/Aperture.Context';
 import { GlazingSelectorProps } from './types';
 
 export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
-    aperture,
     element,
-    selectedGlazing,
+    selectedGlazingType,
     isLoading = false,
 }) => {
     const userContext = useContext(UserContext);
@@ -19,7 +18,7 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
     const placeholderText = `Glazing type...`;
 
     if (!userContext.user) {
-        return <span>{selectedGlazing?.name || '-'}</span>;
+        return <span>{selectedGlazingType.name || '-'}</span>;
     }
 
     return (
@@ -27,7 +26,7 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
             <Autocomplete
                 options={[...glazingTypes].sort((a, b) => a.name.localeCompare(b.name))}
                 getOptionLabel={option => option.name}
-                value={selectedGlazing}
+                value={selectedGlazingType}
                 onChange={(event, newValue) =>
                     handleUpdateApertureElementGlazing({
                         elementId: element.id,
@@ -57,7 +56,7 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
                     <li {...props} key={option.id}>
                         <div>
                             <div style={{ fontWeight: 'bold' }}>{option.name}</div>
-                            <div style={{ fontSize: '0.8em', color: '#666' }}>
+                            <div style={{ fontSize: '0.7em', color: '#666' }}>
                                 U-Value: {option.u_value_w_m2k}, g-Value: {option.g_value}
                             </div>
                         </div>

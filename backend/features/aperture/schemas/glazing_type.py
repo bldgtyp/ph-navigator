@@ -6,8 +6,8 @@ from pyairtable.api.types import RecordDict
 from pydantic import BaseModel
 
 
-class ApertureElementGlazingSchema(BaseModel):
-    """Base schema for Aperture Element Glazing."""
+class GlazingTypeSchema(BaseModel):
+    """Base schema for Glazing Type."""
 
     id: str
     name: str = "Unnamed Glazing"
@@ -18,8 +18,8 @@ class ApertureElementGlazingSchema(BaseModel):
         orm_mode = True
 
     @classmethod
-    def fromAirTableRecordDict(cls, record: RecordDict) -> ApertureElementGlazingSchema:
-        """Create an ApertureElementGlazingSchema instance from an AirTable RecordDict with 'fields' and 'id'."""
+    def fromAirTableRecordDict(cls, record: RecordDict) -> GlazingTypeSchema:
+        """Create a GlazingType instance from an AirTable RecordDict with 'fields' and 'id'."""
         d = {}
         d = d | record["fields"]
         d["id"] = record["id"]  # Add the ID to the fields

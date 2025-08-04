@@ -54,25 +54,37 @@ export interface WindowGridProps {
     updateRowHeight: (index: number, value: number) => void;
 }
 
-export interface ApertureElementGlazingType {
+export interface ApertureFrameType {
+    id: string;
+    name: string;
+    width_mm: number;
+    u_value_w_m2k: number;
+}
+
+export interface ApertureElementFrame {
+    id: number;
+    name: string;
+    frame_type: ApertureFrameType;
+}
+
+export interface ApertureElementFrames {
+    top: ApertureElementFrame;
+    right: ApertureElementFrame;
+    bottom: ApertureElementFrame;
+    left: ApertureElementFrame;
+}
+
+export interface ApertureGlazingType {
     id: number;
     name: string;
     u_value_w_m2k: number;
     g_value: number;
 }
 
-export interface ApertureElementFrameType {
+export interface ApertureElementGlazing {
     id: number;
     name: string;
-    width_mm: number;
-    u_value_w_m2k: number;
-}
-
-export interface ApertureElementFramesType {
-    top: ApertureElementFrameType | null;
-    right: ApertureElementFrameType | null;
-    bottom: ApertureElementFrameType | null;
-    left: ApertureElementFrameType | null;
+    glazing_type: ApertureGlazingType;
 }
 
 export interface ApertureElementType {
@@ -82,8 +94,8 @@ export interface ApertureElementType {
     column_number: number;
     row_number: number;
     row_span: number;
-    frames: ApertureElementFramesType;
-    glazing: ApertureElementGlazingType | null;
+    frames: ApertureElementFrames;
+    glazing: ApertureElementGlazing;
 }
 
 export interface ApertureType {

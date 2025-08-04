@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import { ApertureElementFrameType } from '../types';
+import { ApertureFrameType } from '../types';
 import { FrameTypeService } from './services/frameTypeService';
 
 interface FrameTypesContextType {
     isLoadingFrameTypes: boolean;
     setIsLoadingFrameTypes: React.Dispatch<React.SetStateAction<boolean>>;
-    frameTypes: ApertureElementFrameType[];
-    setFrameTypes: React.Dispatch<React.SetStateAction<ApertureElementFrameType[]>>;
+    frameTypes: ApertureFrameType[];
+    setFrameTypes: React.Dispatch<React.SetStateAction<ApertureFrameType[]>>;
     handleRefreshFrameTypes: () => Promise<void>;
 }
 
@@ -15,7 +15,7 @@ const FrameTypesContext = createContext<FrameTypesContextType | undefined>(undef
 
 export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isLoadingFrameTypes, setIsLoadingFrameTypes] = useState<boolean>(true);
-    const [frameTypes, setFrameTypes] = useState<ApertureElementFrameType[]>([]);
+    const [frameTypes, setFrameTypes] = useState<ApertureFrameType[]>([]);
 
     useEffect(() => {
         const loadFrameTypes = async () => {
@@ -44,7 +44,7 @@ export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
             // Show success message to user
             alert(
-                `Frame types refreshed successfully: ${refreshInfo.frames_number_added} added, ${refreshInfo.frames_number_updated} updated. Total frames: ${refreshInfo.frame_total_count}`
+                `Frame types refreshed successfully: ${refreshInfo.types_added} added, ${refreshInfo.types_updated} updated. Total frames: ${refreshInfo.types_total_count}`
             );
         } catch (error) {
             console.error('Error refreshing frame types:', error);

@@ -1,5 +1,5 @@
 import { getWithAlert } from '../../../../../../../../api/getWithAlert';
-import { ApertureElementGlazingType } from '../../types';
+import { ApertureGlazingType } from '../../types';
 
 const CACHE_KEY = 'glazings';
 const CACHE_EXPIRY_KEY = 'glazings_expiry';
@@ -7,9 +7,9 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 interface RefreshResponseType {
     message: string;
-    glazings_number_added: number;
-    glazings_number_updated: number;
-    glazing_total_count: number;
+    types_added: number;
+    types_updated: number;
+    types_total_count: number;
 }
 
 /**
@@ -20,16 +20,16 @@ export class GlazingTypeService {
     /**
      * Fetch glazing types from the API and cache them locally
      */
-    static async fetchAndCacheGlazingTypes(): Promise<ApertureElementGlazingType[]> {
+    static async fetchAndCacheGlazingTypes(): Promise<ApertureGlazingType[]> {
         try {
-            const glazings = await getWithAlert<ApertureElementGlazingType[]>('aperture/get-glazings');
-            const glazingData = glazings || [];
+            const glazingTypes = await getWithAlert<ApertureGlazingType[]>('aperture/get-glazing-types');
+            const glazingTypeData = glazingTypes || [];
 
             // Cache the data to local storage with expiry
-            localStorage.setItem(CACHE_KEY, JSON.stringify(glazingData));
+            localStorage.setItem(CACHE_KEY, JSON.stringify(glazingTypeData));
             localStorage.setItem(CACHE_EXPIRY_KEY, (Date.now() + CACHE_DURATION).toString());
 
-            return glazingData;
+            return glazingTypeData;
         } catch (error) {
             console.error('Error fetching and caching glazing types:', error);
             throw new Error(`Failed to fetch glazing types: ${error}`);
@@ -40,12 +40,14 @@ export class GlazingTypeService {
      * Refresh glazing types from AirTable and cache the results
      */
     static async refreshGlazingTypesFromAirTable(): Promise<{
-        glazingTypes: ApertureElementGlazingType[];
+        glazingTypes: ApertureGlazingType[];
         refreshInfo: RefreshResponseType;
     }> {
         try {
             // Refresh the glazings from AirTable into the Database
-            const response = await getWithAlert<RefreshResponseType>('aperture/refresh-db-glazings-from-air-table');
+            const response = await getWithAlert<RefreshResponseType>(
+                'aperture/refresh-db-glazing-types-from-air-table'
+            );
 
             if (!response) {
                 throw new Error('No response received from AirTable refresh');
@@ -67,7 +69,7 @@ export class GlazingTypeService {
     /**
      * Get cached glazing types if they exist and are not expired
      */
-    static getCachedGlazingTypes(): ApertureElementGlazingType[] | null {
+    static getCachedGlazingTypes(): ApertureGlazingType[] | null {
         try {
             const cachedData = localStorage.getItem(CACHE_KEY);
             const cachedExpiry = localStorage.getItem(CACHE_EXPIRY_KEY);
@@ -103,7 +105,7 @@ export class GlazingTypeService {
      * Load glazing types with caching strategy
      * First tries cache, then fetches from API if needed
      */
-    static async loadGlazingTypes(): Promise<ApertureElementGlazingType[]> {
+    static async loadGlazingTypes(): Promise<ApertureGlazingType[]> {
         // Try to get from cache first
         const cachedGlazingTypes = this.getCachedGlazingTypes();
 

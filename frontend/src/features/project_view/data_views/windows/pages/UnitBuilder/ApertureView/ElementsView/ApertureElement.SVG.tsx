@@ -3,10 +3,10 @@ import { ApertureElementSVGProps } from './types';
 const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({ height, width, element, scaleFactor }) => {
     // Get frame widths from element data, with 100mm default if null
     const defaultFrameWidth = 100; // mm
-    const topFrameWidth = element.frames.top?.width_mm ?? defaultFrameWidth;
-    const rightFrameWidth = element.frames.right?.width_mm ?? defaultFrameWidth;
-    const bottomFrameWidth = element.frames.bottom?.width_mm ?? defaultFrameWidth;
-    const leftFrameWidth = element.frames.left?.width_mm ?? defaultFrameWidth;
+    const topFrameWidth = element.frames.top.frame_type.width_mm ?? defaultFrameWidth;
+    const rightFrameWidth = element.frames.right.frame_type.width_mm ?? defaultFrameWidth;
+    const bottomFrameWidth = element.frames.bottom.frame_type.width_mm ?? defaultFrameWidth;
+    const leftFrameWidth = element.frames.left.frame_type.width_mm ?? defaultFrameWidth;
 
     // Apply scale factor to frame widths
     const scaledTopFrame = topFrameWidth * scaleFactor;

@@ -4,8 +4,8 @@ from __future__ import annotations  # Enables forward references
 
 from pydantic import BaseModel
 
-from features.aperture.schemas.frame import ApertureElementFramesSchema
-from features.aperture.schemas.glazing import ApertureElementGlazingSchema
+from features.aperture.schemas.aperture_element_frame import ApertureElementFramesSchema
+from features.aperture.schemas.aperture_element_glazing import ApertureElementGlazingSchema
 
 
 class ApertureElementSchema(BaseModel):
@@ -17,7 +17,7 @@ class ApertureElementSchema(BaseModel):
     column_number: int
     row_span: int = 1
     col_span: int = 1
-    glazing: ApertureElementGlazingSchema | None = None
+    glazing: ApertureElementGlazingSchema
     frames: ApertureElementFramesSchema
 
     class Config:

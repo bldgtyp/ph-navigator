@@ -21,16 +21,15 @@ export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIn
             <TableCell size={6} className={rowClass}>
                 {/* <span>{glazing?.name || '-'}</span> */}
                 <GlazingSelector
-                    aperture={aperture}
                     element={element}
-                    selectedGlazing={element.glazing}
+                    selectedGlazingType={element.glazing.glazing_type}
                     isLoading={isLoadingGlazingTypes}
                 />
             </TableCell>
             <TableCell size={2} className={rowClass}>
                 <span>
                     {valueInCurrentUnitSystemWithDecimal(
-                        element.glazing?.u_value_w_m2k,
+                        element.glazing.glazing_type.u_value_w_m2k,
                         'w/m2k',
                         'btu/hr-ft2-F',
                         unitSystem === 'SI' ? 3 : 3
@@ -41,7 +40,7 @@ export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIn
                 <span>-</span>
             </TableCell>
             <TableCell size={1} className={rowClass}>
-                <span>{element.glazing?.g_value || '-'}</span>
+                <span>{element.glazing.glazing_type.g_value || '-'}</span>
             </TableCell>
         </>
     );
@@ -61,7 +60,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
                 <FrameSelector
                     aperture={aperture}
                     element={element}
-                    selectedFrame={element.frames[position]}
+                    selectedFrameType={element.frames[position].frame_type}
                     isLoading={isLoadingFrameTypes}
                     position={position}
                 />
@@ -69,7 +68,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
             <TableCell size={2} className={rowClass}>
                 <span>
                     {valueInCurrentUnitSystemWithDecimal(
-                        element.frames[position]?.u_value_w_m2k,
+                        element.frames[position].frame_type.u_value_w_m2k,
                         'w/m2k',
                         'btu/hr-ft2-F',
                         unitSystem === 'SI' ? 3 : 3
@@ -79,7 +78,7 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
             <TableCell size={1} className={rowClass}>
                 <span>
                     {valueInCurrentUnitSystemWithDecimal(
-                        element.frames[position]?.width_mm,
+                        element.frames[position].frame_type.width_mm,
                         'mm',
                         'in',
                         unitSystem === 'SI' ? 1 : 1
