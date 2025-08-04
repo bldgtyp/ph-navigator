@@ -69,11 +69,4 @@ class Aperture(Base):
             row_heights_mm=[1_000.0],
             column_widths_mm=[1_000.0],
         )
-        ApertureElement(
-            row_number=0,
-            column_number=0,
-            row_span=1,
-            col_span=1,
-            aperture=new_aperture,
-        )
         return new_aperture

@@ -47,6 +47,23 @@ def get_frame_type_by_id(db: Session, frame_id: str) -> ApertureFrameType:
     raise FrameTypeNotFoundException(frame_id)
 
 
+def get_default_frame_type(db: Session) -> ApertureFrameType:
+    """Get the default frame type from the database."""
+    logger.info("get_default_frame_type()")
+
+    # Search for the name=Default
+    default_frame = db.query(ApertureFrameType).filter_by(name="Default").first()
+    if default_frame:
+        return default_frame
+
+    # If not found, return the first frame type
+    first_frame = db.query(ApertureFrameType).first()
+    if first_frame:
+        return first_frame
+
+    raise NoFrameTypesException("Default Frame Type")
+
+
 def create_new_frame_type(
     db: Session,
     id: str,

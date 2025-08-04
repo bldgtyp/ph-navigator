@@ -37,22 +37,32 @@ class ApertureElement(Base):
     glazing: Mapped["ApertureElementGlazing"] = relationship(
         "ApertureElementGlazing",
         foreign_keys=[glazing_id],
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
     frame_top: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_top_id],
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
     frame_right: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_right_id],
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
     frame_bottom: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_bottom_id],
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
     frame_left: Mapped["ApertureElementFrame"] = relationship(
         "ApertureElementFrame",
         foreign_keys=[frame_left_id],
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
 
     @property

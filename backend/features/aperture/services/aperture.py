@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from db_entities.aperture import Aperture, ApertureElement, ApertureElementFrame
 from db_entities.app.project import Project
 from features.aperture.schemas.aperture import FrameSide
-from features.aperture.services.aperture_element import get_aperture_element_by_id
+from features.aperture.services.aperture_element import create_aperture_element, get_aperture_element_by_id
 from features.aperture.services.frame_type import get_frame_type_by_id
 from features.aperture.services.glazing_type import get_glazing_type_by_id
 from features.app.services import get_project_by_bt_number
@@ -107,12 +107,11 @@ def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 1_
 
         # Create a new element for each column in the new row
         for col_index in range(len(aperture.column_widths_mm)):
-            new_element = ApertureElement(
-                aperture=aperture,
+            new_element = create_aperture_element(
+                db=db,
+                aperture_id=aperture.id,
                 row_number=new_row_index,
                 column_number=col_index,
-                row_span=1,
-                col_span=1,
             )
             db.add(new_element)
 
@@ -154,16 +153,14 @@ def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float
 
         # Create a new element for each row in the new column
         for row_index in range(len(aperture.row_heights_mm)):
-            new_element = ApertureElement(
-                aperture=aperture,
+            create_aperture_element(
+                db=db,
+                aperture_id=aperture.id,
                 row_number=row_index,
                 column_number=new_col_index,
-                row_span=1,
-                col_span=1,
             )
-            db.add(new_element)
 
-        # Commit the transaction
+        # Commit the entire transaction
         db.commit()
 
         return aperture
@@ -195,9 +192,11 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
         aperture.row_heights_mm = new_heights
 
         # Remove all elements in the deleted row
-        db.query(ApertureElement).filter(
+        elements_to_delete = db.query(ApertureElement).filter(
             ApertureElement.aperture_id == aperture_id, ApertureElement.row_number == row_number
-        ).delete()
+        ).all()
+        for element in elements_to_delete:
+            db.delete(element)
 
         # Shift the row-number of any ApertureElements with row-number>the delete target
         db.query(ApertureElement).filter(
@@ -236,9 +235,11 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         aperture.column_widths_mm = new_widths
 
         # Remove all elements in the deleted column
-        db.query(ApertureElement).filter(
+        elements_to_delete = db.query(ApertureElement).filter(
             ApertureElement.aperture_id == aperture_id, ApertureElement.column_number == column_number
-        ).delete()
+        ).all()
+        for element in elements_to_delete:
+            db.delete(element)
 
         # Shift the col-number of any ApertureElements with col-number>the delete target
         db.query(ApertureElement).filter(
@@ -263,6 +264,17 @@ def add_new_aperture_on_project(db: Session, project: Project) -> Aperture:
         new_aperture = Aperture.default(project=project)
         db.add(new_aperture)
         db.commit()
+        db.refresh(new_aperture)
+
+        create_aperture_element(
+            db=db,
+            aperture_id=new_aperture.id,
+            row_number=0,
+            column_number=0,
+        )
+        db.commit()
+        db.refresh(new_aperture)
+
         return new_aperture
     except Exception as e:
         db.rollback()
@@ -443,8 +455,9 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
         col_span = max_col - min_col + 1
 
         # Create a new merged element
-        new_element = ApertureElement(
-            aperture_id=aperture_id,
+        new_element = create_aperture_element(
+            db=db,
+            aperture_id=aperture.id,
             row_number=min_row,
             column_number=min_col,
             row_span=row_span,
@@ -490,7 +503,8 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
         new_elements = []
         for r in range(element.row_span):
             for c in range(element.col_span):
-                new_element = ApertureElement(
+                new_element = create_aperture_element(
+                    db=db,
                     aperture_id=aperture_id,
                     row_number=element.row_number + r,
                     column_number=element.column_number + c,
@@ -498,6 +512,7 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
                     col_span=1,
                 )
                 new_elements.append(new_element)
+        
         # Add the new elements to the session
         db.add_all(new_elements)
         db.commit()
