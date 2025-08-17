@@ -4,6 +4,9 @@ import { Outlet } from 'react-router-dom';
 import DataViewPage from '../_components/DataViewPage';
 import ContentBlocksContainer from '../_components/ContentBlocks.Container';
 import DataDashboardTabBar from '../_components/DataDashboardTabBar';
+import { AperturesProvider } from './pages/UnitBuilder/ApertureView/Aperture.Context';
+import { FrameTypesProvider } from './pages/UnitBuilder/ElementsTable/FrameType.Context';
+import { GlazingTypesProvider } from './pages/UnitBuilder/ElementsTable/GlazingTypes.Context';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [
@@ -34,11 +37,17 @@ const WindowDataDashboard: React.FC = () => {
     return (
         <>
             <DataDashboardTabBar tabs={tabs} activeTab={activeTab} onTabChange={tabNumber => setActiveTab(tabNumber)} />
-            <DataViewPage>
-                <ContentBlocksContainer>
-                    <Outlet />
-                </ContentBlocksContainer>
-            </DataViewPage>
+            <AperturesProvider>
+                <FrameTypesProvider>
+                    <GlazingTypesProvider>
+                        <DataViewPage>
+                            <ContentBlocksContainer>
+                                <Outlet />
+                            </ContentBlocksContainer>
+                        </DataViewPage>
+                    </GlazingTypesProvider>
+                </FrameTypesProvider>
+            </AperturesProvider>
         </>
     );
 };
