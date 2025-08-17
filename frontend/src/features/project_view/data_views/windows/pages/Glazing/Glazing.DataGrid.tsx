@@ -59,7 +59,6 @@ const GlazingTypesDataGrid: React.FC = () => {
         'u_value_w_m2k',
         'g_value',
         'comments',
-        'link',
     ]);
 
     // --------------------------------------------------------------------------

@@ -67,7 +67,6 @@ const FrameTypesDataGrid: React.FC = () => {
         'width_mm',
         'psi_g_w_mk',
         'comments',
-        'link',
     ]);
 
     // --------------------------------------------------------------------------
