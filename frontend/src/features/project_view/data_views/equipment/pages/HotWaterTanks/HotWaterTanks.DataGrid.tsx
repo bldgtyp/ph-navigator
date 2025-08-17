@@ -3,7 +3,7 @@ import StyledDataGrid from '../../../_styles/DataGrid';
 import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import LoadingModal from '../../../_components/LoadingModal';
-import useLoadDataGridFromAirTable from '../../../../model_viewer/_hooks/useLoadDataGridFromAirTable';
+import useLoadDataGridFromAirTable from '../../../_hooks/useLoadDataGridFromAirTable';
 import { DHWTankRecord } from './HotWaterTanks.Types';
 import tableFields from './HotWaterTanks.TableFields';
 import ContentBlock from '../../../_components/ContentBlock';

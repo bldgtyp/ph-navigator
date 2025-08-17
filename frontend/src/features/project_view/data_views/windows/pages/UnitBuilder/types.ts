@@ -59,6 +59,17 @@ export interface ApertureFrameType {
     name: string;
     width_mm: number;
     u_value_w_m2k: number;
+    psi_g_w_mk: number;
+    manufacturer: string | null;
+    brand: string | null;
+    use: string | null;
+    operation: string | null;
+    location: string | null;
+    mull_type: string | null;
+    source: string | null;
+    datasheet_url: string | null;
+    link: string | null;
+    comments: string | null;
 }
 
 export interface ApertureElementFrame {
@@ -75,10 +86,16 @@ export interface ApertureElementFrames {
 }
 
 export interface ApertureGlazingType {
-    id: number;
+    id: string;
     name: string;
     u_value_w_m2k: number;
     g_value: number;
+    manufacturer: string | null;
+    brand: string | null;
+    source: string | null;
+    datasheet_url: string | null;
+    link: string | null;
+    comments: string | null;
 }
 
 export interface ApertureElementGlazing {

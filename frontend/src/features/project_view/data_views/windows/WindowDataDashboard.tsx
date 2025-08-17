@@ -10,19 +10,17 @@ import { GlazingTypesProvider } from './_contexts/GlazingTypes.Context';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [
+        { label: 'Unit Builder', path: 'window-unit-types' },
         { label: 'Glazing Types', path: 'window-glazing-types' },
         { label: 'Frame Types', path: 'window-frame-types' },
-        { label: 'Unit Types', path: 'window-unit-type' },
-        { label: 'Unit Builder', path: 'window-unit-builder' },
     ];
 
     // Determine active tab from URL path
     const getActiveTabFromPath = () => {
         const path = location.pathname;
-        if (path.includes('/window-glazing-types')) return 0;
-        if (path.includes('/window-frame-types')) return 1;
-        if (path.includes('/window-unit-type')) return 2;
-        if (path.includes('/window-unit-builder')) return 3;
+        if (path.includes('/window-unit-types')) return 0;
+        if (path.includes('/window-glazing-types')) return 1;
+        if (path.includes('/window-frame-types')) return 2;
         return 0; // Default
     };
 

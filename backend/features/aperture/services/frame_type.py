@@ -67,9 +67,20 @@ def get_default_frame_type(db: Session) -> ApertureFrameType:
 def create_new_frame_type(
     db: Session,
     id: str,
-    name: str,
-    width_mm: float,
-    u_value_w_m2k: float,
+    name: str = "unnamed",
+    width_mm: float = 100.0,
+    u_value_w_m2k: float = 1.0,
+    psi_g_w_mk: float = 0.04,
+    manufacturer: str | None = None,
+    brand: str | None = None,
+    use: str | None = None,
+    operation: str | None = None,
+    location: str | None = None,
+    mull_type: str | None = None,
+    source: str | None = None,
+    datasheet_url: str | None = None,
+    link: str | None = None,
+    comments: str | None = None,
     *args: Any,
     **kwargs: Any,
 ) -> ApertureFrameType:
@@ -81,6 +92,17 @@ def create_new_frame_type(
         name=name,
         width_mm=width_mm,
         u_value_w_m2k=u_value_w_m2k,
+        psi_g_w_mk=psi_g_w_mk,
+        manufacturer=manufacturer,
+        brand=brand,
+        use=use,
+        operation=operation,
+        location=location,
+        mull_type=mull_type,
+        source=source,
+        datasheet_url=datasheet_url,
+        link=link,
+        comments=comments,
     )
     db.add(new_frame)
     db.commit()
@@ -92,9 +114,20 @@ def create_new_frame_type(
 def update_frame_type(
     db: Session,
     id: str,
-    name: str,
-    width_mm: float,
-    u_value_w_m2k: float,
+    name: str = "unnamed",
+    width_mm: float = 100.0,
+    u_value_w_m2k: float = 1.0,
+    psi_g_w_mk: float = 0.04,
+    manufacturer: str | None = None,
+    brand: str | None = None,
+    use: str | None = None,
+    operation: str | None = None,
+    location: str | None = None,
+    mull_type: str | None = None,
+    source: str | None = None,
+    datasheet_url: str | None = None,
+    link: str | None = None,
+    comments: str | None = None,
     *args: Any,
     **kwargs: Any,
 ) -> ApertureFrameType:
@@ -106,6 +139,17 @@ def update_frame_type(
     frame.name = name
     frame.width_mm = width_mm
     frame.u_value_w_m2k = u_value_w_m2k
+    frame.psi_g_w_mk = psi_g_w_mk
+    frame.manufacturer = manufacturer
+    frame.brand = brand
+    frame.use = use
+    frame.operation = operation
+    frame.location = location
+    frame.mull_type = mull_type
+    frame.source = source
+    frame.datasheet_url = datasheet_url
+    frame.link = link
+    frame.comments = comments
 
     db.commit()
     db.refresh(frame)

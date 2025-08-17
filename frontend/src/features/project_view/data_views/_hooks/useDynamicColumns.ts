@@ -29,7 +29,7 @@ export const useDynamicColumns = (initialColumns: GridColDef[], rowData: any[], 
                 const columnIndex = updatedColumns.findIndex(col => col.field === columnToResize);
 
                 if (columnIndex !== -1) {
-                    updatedColumns[columnIndex].minWidth = Math.max(25, maxContentLength * 9); // Adjust multiplier as needed
+                    updatedColumns[columnIndex].minWidth = Math.max(25, maxContentLength * 10); // Adjust multiplier as needed
                 }
             });
 

@@ -30,7 +30,7 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
                 onChange={(event, newValue) =>
                     handleUpdateApertureElementGlazing({
                         elementId: element.id,
-                        glazingId: newValue ? newValue.id : null,
+                        glazingTypeId: newValue ? newValue.id : null,
                     })
                 }
                 loading={isLoading}

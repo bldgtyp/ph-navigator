@@ -73,6 +73,12 @@ def create_new_glazing_type(
     name: str,
     u_value_w_m2k: float,
     g_value: float,
+    manufacturer: str | None,
+    brand: str | None,
+    source: str | None,
+    datasheet_url: str | None,
+    link: str | None,
+    comments: str | None,
     *args: Any,
     **kwargs: Any,
 ) -> ApertureGlazingType:
@@ -84,6 +90,12 @@ def create_new_glazing_type(
         name=name,
         u_value_w_m2k=u_value_w_m2k,
         g_value=g_value,
+        manufacturer=manufacturer,
+        brand=brand,
+        source=source,
+        datasheet_url=datasheet_url,
+        link=link,
+        comments=comments,
     )
     db.add(new_glazing)
     db.commit()
@@ -98,6 +110,12 @@ def update_glazing_type(
     name: str,
     u_value_w_m2k: float,
     g_value: float,
+    manufacturer: str | None,
+    brand: str | None,
+    source: str | None,
+    datasheet_url: str | None,
+    link: str | None,
+    comments: str | None,
     *args: Any,
     **kwargs: Any,
 ) -> ApertureGlazingType:
@@ -109,6 +127,12 @@ def update_glazing_type(
     glazing.name = name
     glazing.u_value_w_m2k = u_value_w_m2k
     glazing.g_value = g_value
+    glazing.manufacturer = manufacturer
+    glazing.brand = brand
+    glazing.source = source
+    glazing.datasheet_url = datasheet_url
+    glazing.link = link
+    glazing.comments = comments
 
     db.commit()
     db.refresh(glazing)

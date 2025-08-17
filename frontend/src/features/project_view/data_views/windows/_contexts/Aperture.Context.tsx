@@ -46,7 +46,7 @@ interface AperturesContextType {
         frameTypeId: string | null;
     }) => Promise<void>;
     updateApertureElementName: (elementId: number, newName: string) => Promise<void>;
-    handleUpdateApertureElementGlazing: (params: { elementId: number; glazingId: number | null }) => Promise<void>;
+    handleUpdateApertureElementGlazing: (params: { elementId: number; glazingTypeId: string | null }) => Promise<void>;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -326,7 +326,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     const handleUpdateApertureElementGlazing = useCallback(
-        async (params: { elementId: number; glazingId: number | null }) => {
+        async (params: { elementId: number; glazingTypeId: string | null }) => {
             try {
                 const updatedAperture = await ApertureService.updateElementGlazing(params);
                 handleUpdateAperture(updatedAperture);

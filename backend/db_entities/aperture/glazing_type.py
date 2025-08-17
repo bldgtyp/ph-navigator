@@ -19,6 +19,12 @@ class ApertureGlazingType(Base):
     name: Mapped[str] = MappedColumn(String(255), nullable=False, default="Unnamed Glazing Type")
     u_value_w_m2k: Mapped[float] = MappedColumn(Float, nullable=False, default=1.0)
     g_value: Mapped[float] = MappedColumn(Float, nullable=False, default=0.5)
+    manufacturer: Mapped[str | None] = MappedColumn(String(255), nullable=True)
+    brand: Mapped[str | None] = MappedColumn(String(255), nullable=True)
+    source: Mapped[str | None] = MappedColumn(String(255), nullable=True)
+    datasheet_url: Mapped[str | None] = MappedColumn(String, nullable=True)
+    link: Mapped[str | None] = MappedColumn(String, nullable=True)
+    comments: Mapped[str | None] = MappedColumn(String, nullable=True)
 
     # Relationships
     element_glazings: Mapped[list["ApertureElementGlazing"]] = relationship(

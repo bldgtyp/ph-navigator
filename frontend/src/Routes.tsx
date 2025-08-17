@@ -13,7 +13,6 @@ import WindowDataDashboard from './features/project_view/data_views/windows/Wind
 import EnvelopeDataDashboard from './features/project_view/data_views/envelope/EnvelopeDataDashboard';
 import EquipmentDataDashboard from './features/project_view/data_views/equipment/EquipmentDataDashboard';
 import Viewer from './features/project_view/model_viewer/Viewer';
-import WindowUnitDataGrid from './features/project_view/data_views/windows/pages/Units/WindowUnit.DataGrid';
 import FrameTypesDataGrid from './features/project_view/data_views/windows/pages/Frames/Frames.DataGrid';
 import GlazingTypesDataGrid from './features/project_view/data_views/windows/pages/Glazing/Glazing.DataGrid';
 import ApertureTypesPage from './features/project_view/data_views/windows/pages/UnitBuilder/Page';
@@ -45,11 +44,10 @@ const AppRoutes: React.FC = () => (
             <Route path="status" element={<ProjectStatus />} />
 
             <Route path="window-data" element={<WindowDataDashboard />}>
-                <Route index element={<Navigate to="window-glazing-types" replace />} />
+                <Route index element={<Navigate to="window-unit-types" replace />} />
+                <Route path="window-unit-types" element={<ApertureTypesPage />} />
                 <Route path="window-glazing-types" element={<GlazingTypesDataGrid />} />
                 <Route path="window-frame-types" element={<FrameTypesDataGrid />} />
-                <Route path="window-unit-type" element={<WindowUnitDataGrid />} />
-                <Route path="window-unit-builder" element={<ApertureTypesPage />} />
             </Route>
 
             <Route path="envelope-data" element={<EnvelopeDataDashboard />}>

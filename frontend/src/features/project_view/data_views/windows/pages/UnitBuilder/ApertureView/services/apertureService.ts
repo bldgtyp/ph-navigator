@@ -188,8 +188,11 @@ export class ApertureService {
     }
 
     // Glazing Operations
-    static async updateElementGlazing(params: { elementId: number; glazingId: number | null }): Promise<ApertureType> {
-        if (params.glazingId === null) {
+    static async updateElementGlazing(params: {
+        elementId: number;
+        glazingTypeId: string | null;
+    }): Promise<ApertureType> {
+        if (params.glazingTypeId === null) {
             throw new Error('Glazing ID is required');
         }
 
@@ -198,7 +201,7 @@ export class ApertureService {
                 `aperture/update-glazing-type/${params.elementId}`,
                 null,
                 {
-                    glazing_id: params.glazingId,
+                    glazing_id: params.glazingTypeId,
                 }
             );
             if (!response) {

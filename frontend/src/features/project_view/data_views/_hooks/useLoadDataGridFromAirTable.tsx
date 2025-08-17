@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { datasheetRequired } from '../../data_views/_components/CheckboxForDatasheet';
+import { datasheetRequired } from '../_components/CheckboxForDatasheet';
 import { getWithAlert } from '../../../../api/getWithAlert';
 
 /**
