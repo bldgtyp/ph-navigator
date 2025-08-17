@@ -8,7 +8,7 @@ import LoadingModal from '../../../_components/LoadingModal';
 import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import ContentBlock from '../../../_components/ContentBlock';
-import tableFields from './Glazing.TableFields';
+import tableFields from './GlazingTypes.TableFields';
 import StyledDataGrid from '../../../_styles/DataGrid';
 import { ApertureType } from '../UnitBuilder/types';
 

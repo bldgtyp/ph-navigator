@@ -6,7 +6,7 @@ import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
 
 import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
-import tableFields from './Frames.TableFields';
+import tableFields from './FrameTypes.TableFields';
 import ContentBlock from '../../../_components/ContentBlock';
 import { ApertureType } from '../UnitBuilder/types';
 import StyledDataGrid from '../../../_styles/DataGrid';

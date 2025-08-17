@@ -10,7 +10,7 @@ import { GlazingTypesProvider } from './_contexts/GlazingTypes.Context';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [
-        { label: 'Unit Builder', path: 'window-unit-types' },
+        { label: 'Unit Types', path: 'window-unit-types' },
         { label: 'Glazing Types', path: 'window-glazing-types' },
         { label: 'Frame Types', path: 'window-frame-types' },
     ];

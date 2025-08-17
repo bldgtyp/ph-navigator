@@ -13,8 +13,8 @@ import WindowDataDashboard from './features/project_view/data_views/windows/Wind
 import EnvelopeDataDashboard from './features/project_view/data_views/envelope/EnvelopeDataDashboard';
 import EquipmentDataDashboard from './features/project_view/data_views/equipment/EquipmentDataDashboard';
 import Viewer from './features/project_view/model_viewer/Viewer';
-import FrameTypesDataGrid from './features/project_view/data_views/windows/pages/Frames/Frames.DataGrid';
-import GlazingTypesDataGrid from './features/project_view/data_views/windows/pages/Glazing/Glazing.DataGrid';
+import FrameTypesDataGrid from './features/project_view/data_views/windows/pages/FrameTypes/FrameTypes.DataGrid';
+import GlazingTypesDataGrid from './features/project_view/data_views/windows/pages/GlazingTypes/GlazingTypes.DataGrid';
 import ApertureTypesPage from './features/project_view/data_views/windows/pages/UnitBuilder/Page';
 import MaterialListPage from './features/project_view/data_views/envelope/material_list/Page';
 import AssembliesPage from './features/project_view/data_views/envelope/assemblies/_Page/Page';
