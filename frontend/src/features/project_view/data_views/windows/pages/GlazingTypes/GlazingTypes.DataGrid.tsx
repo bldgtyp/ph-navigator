@@ -1,22 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
 import { useApertures } from '../../_contexts/Aperture.Context';
 import { useGlazingTypes } from '../../_contexts/GlazingTypes.Context';
 
-import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
+import { generateDefaultRow } from '../../../_components/DataGridFunctions';
 import LoadingModal from '../../../_components/LoadingModal';
-import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import ContentBlock from '../../../_components/ContentBlock';
-import tableFields from './GlazingTypes.TableFields';
+import { useGlazingColumns } from './GlazingTypes.TableFields';
 import StyledDataGrid from '../../../_styles/DataGrid';
 import { ApertureType } from '../UnitBuilder/types';
-
-// Create the columns object based on tableFields and then
-// create an Array with a default single row, with all '-' cells.
-// This will display while the data is being fetched
-const columns = generateGridColumns(tableFields);
-const defaultRow = generateDefaultRow(tableFields);
+import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
 
 // Collect unique Glazing-Type IDs from the ApertureElements
 const collectUniqueGlazingTypeIds = (apertures: ApertureType[]): Set<string> => {
@@ -34,22 +28,28 @@ const collectUniqueGlazingTypeIds = (apertures: ApertureType[]): Set<string> => 
 const GlazingTypesDataGrid: React.FC = () => {
     const { apertures } = useApertures();
     const { glazingTypes } = useGlazingTypes();
-    const [showModal, setShowModal] = useState(true);
+
+    // ------------------------------------------------------------------------
+    // Build columns (dynamic headers / unit formatting) inside component
+    const columns = useGlazingColumns();
+    const defaultRow = useMemo(() => generateDefaultRow(columns), [columns]);
 
     // ------------------------------------------------------------------------
     // Load in the table data from the Database
-    const glazingData = useMemo(() => {
-        if (!apertures.length || !glazingTypes.length) return defaultRow;
-
+    const { glazingData, isLoaded } = useMemo(() => {
+        if (!apertures.length || !glazingTypes.length) {
+            return { glazingData: defaultRow, isLoaded: false };
+        }
         const uniqueIds = collectUniqueGlazingTypeIds(apertures);
-        if (uniqueIds.size === 0) return defaultRow;
-
-        setShowModal(false);
-        return glazingTypes
+        if (uniqueIds.size === 0) {
+            return { glazingData: defaultRow, isLoaded: false };
+        }
+        const data = glazingTypes
             .filter(gt => uniqueIds.has(gt.id))
-            .slice() // copy before sort
+            .slice()
             .sort((a, b) => a.name.localeCompare(b.name));
-    }, [apertures, glazingTypes]);
+        return { glazingData: data, isLoaded: true };
+    }, [apertures, glazingTypes, defaultRow]);
 
     // ------------------------------------------------------------------------
     // Update columns dynamically when rowData changes
@@ -61,11 +61,11 @@ const GlazingTypesDataGrid: React.FC = () => {
         'comments',
     ]);
 
-    // --------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Render the component
     return (
         <ContentBlock>
-            <LoadingModal showModal={showModal} />
+            <LoadingModal showModal={!isLoaded} />
             <ContentBlockHeader text="Window & Door Glazing-Types" />
             <StyledDataGrid rows={glazingData} columns={adjustedColumns} />
         </ContentBlock>

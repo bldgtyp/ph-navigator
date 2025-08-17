@@ -1,15 +1,12 @@
 export interface GlazingTypesFields {
-    DISPLAY_NAME: string;
-    ZONE: string;
-    MANUFACTURER: string;
-    MODEL: string;
-    'G-VALUE [%]': number;
-    'U-VALUE [BTU/HR-FT2-F]': number;
-    LINK: string;
-    DATA_SHEET: string;
-    SPECIFICATION: boolean;
-    NOTES: string;
-    FLAG: string;
+    name: string;
+    manufacturer: string;
+    brand: string;
+    g_value: number;
+    u_value_w_m2k: number;
+    link: string;
+    datasheet_url: string;
+    comments: string;
 }
 
 export interface GlazingTypesRecord {

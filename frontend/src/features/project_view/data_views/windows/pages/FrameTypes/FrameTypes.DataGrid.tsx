@@ -4,19 +4,13 @@ import { useApertures } from '../../_contexts/Aperture.Context';
 import { useFrameTypes } from '../../_contexts/FrameType.Context';
 import { useDynamicColumns } from '../../../_hooks/useDynamicColumns';
 
-import { generateGridColumns, generateDefaultRow } from '../../../_components/DataGridFunctions';
+import { generateDefaultRow } from '../../../_components/DataGridFunctions';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
-import tableFields from './FrameTypes.TableFields';
+import { useFrameTypeColumns } from './FrameTypes.TableFields';
 import ContentBlock from '../../../_components/ContentBlock';
 import { ApertureType } from '../UnitBuilder/types';
 import StyledDataGrid from '../../../_styles/DataGrid';
 import LoadingModal from '../../../_components/LoadingModal';
-
-// Create the columns object based on tableFields and then
-// create an Array with a default single row, with all '-' cells.
-// This will display while the data is being fetched
-const columns = generateGridColumns(tableFields);
-const defaultRow = generateDefaultRow(tableFields);
 
 // Collect unique Frame-Type IDs from the ApertureElements
 const collectUniqueFrameTypeIds = (apertures: ApertureType[]): Set<string> => {
@@ -38,22 +32,26 @@ const collectUniqueFrameTypeIds = (apertures: ApertureType[]): Set<string> => {
 const FrameTypesDataGrid: React.FC = () => {
     const { apertures } = useApertures();
     const { frameTypes } = useFrameTypes();
-    const [showModal, setShowModal] = useState(true);
+
+    // ------------------------------------------------------------------------
+    // Build columns (dynamic headers / unit formatting) inside component
+    const columns = useFrameTypeColumns();
+    const defaultRow = useMemo(() => generateDefaultRow(columns), [columns]);
 
     // ------------------------------------------------------------------------
     // Load in the table data from the Database
-    const frameData = useMemo(() => {
-        if (!apertures.length || !frameTypes.length) return defaultRow;
+    const { frameData, isLoaded } = useMemo(() => {
+        if (!apertures.length || !frameTypes.length) return { frameData: defaultRow, isLoaded: false };
 
         const uniqueIds = collectUniqueFrameTypeIds(apertures);
-        if (uniqueIds.size === 0) return defaultRow;
+        if (uniqueIds.size === 0) return { frameData: defaultRow, isLoaded: false };
 
-        setShowModal(false);
-        return frameTypes
+        const data = frameTypes
             .filter(ft => uniqueIds.has(ft.id))
             .slice() // copy before sort
             .sort((a, b) => a.name.localeCompare(b.name));
-    }, [apertures, frameTypes]);
+        return { frameData: data, isLoaded: true };
+    }, [apertures, frameTypes, defaultRow]);
 
     // ------------------------------------------------------------------------
     // Update columns dynamically when frameData changes
@@ -73,7 +71,7 @@ const FrameTypesDataGrid: React.FC = () => {
     // Render the component
     return (
         <ContentBlock>
-            <LoadingModal showModal={showModal} />
+            <LoadingModal showModal={!isLoaded} />
             <ContentBlockHeader text="Window & Door Frame-Types" />
             <StyledDataGrid rows={frameData} columns={adjustedColumns} />
         </ContentBlock>

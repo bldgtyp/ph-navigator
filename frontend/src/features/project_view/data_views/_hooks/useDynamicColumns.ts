@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { GridColDef } from '@mui/x-data-grid';
 
 function getMaxContentLengthForColumn(rowData: any[], columnField: string): number {
@@ -16,28 +16,31 @@ function getMaxContentLengthForColumn(rowData: any[], columnField: string): numb
 }
 
 export const useDynamicColumns = (initialColumns: GridColDef[], rowData: any[], columnsToResize: string[]) => {
-    const [columnsState, setColumnsState] = useState(initialColumns);
+    return useMemo(() => {
+        if (!rowData || rowData.length === 0) return initialColumns;
 
-    useEffect(() => {
-        if (rowData.length > 0) {
-            // Create a copy of the initial columns
-            const updatedColumns = [...initialColumns];
+        // Clone columns (shallow) so we don't mutate caller's array/objects
+        const updatedColumns: GridColDef[] = initialColumns.map(col => ({ ...col }));
 
-            // Update the minWidth for each column in columnsToResize
-            columnsToResize.forEach(columnToResize => {
-                const maxContentLength = getMaxContentLengthForColumn(rowData, columnToResize);
-                const columnIndex = updatedColumns.findIndex(col => col.field === columnToResize);
+        const CHAR_PX = 8; // average monospace-ish char width heuristic
+        const H_PADDING = 24; // extra padding for cell & sort icon space
 
-                if (columnIndex !== -1) {
-                    updatedColumns[columnIndex].minWidth = Math.max(25, maxContentLength * 10); // Adjust multiplier as needed
-                }
-            });
+        columnsToResize.forEach(field => {
+            const idx = updatedColumns.findIndex(c => c.field === field);
+            if (idx === -1) return;
 
-            // Update state once after processing all columns
-            setColumnsState(updatedColumns);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rowData]);
+            const col = updatedColumns[idx];
+            const contentLen = getMaxContentLengthForColumn(rowData, field);
+            const headerLen = typeof col.headerName === 'string' ? col.headerName.length : 0;
 
-    return columnsState;
+            const logicalLen = Math.max(contentLen, headerLen);
+            const newMinWidth = Math.max(25, logicalLen * CHAR_PX + H_PADDING);
+
+            if (col.minWidth !== newMinWidth) {
+                col.minWidth = newMinWidth;
+            }
+        });
+
+        return updatedColumns;
+    }, [initialColumns, rowData, columnsToResize]);
 };

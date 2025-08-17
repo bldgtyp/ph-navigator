@@ -36,16 +36,21 @@ export function useUnitConversion() {
         ipUnit: Unit,
         decimal: number
     ): string {
-        if (value === null || value === undefined) {
-            return '-';
-        }
+        // Handle nullish
+        if (value === null || value === undefined) return '-';
 
-        const newValue = convertValue(value, siUnit, unitSystem === 'SI' ? siUnit : ipUnit);
-        if (decimal === null) {
-            return newValue.toString();
-        } else {
-            return newValue.toFixed(decimal);
-        }
+        // Coerce to number early
+        const numericInput = typeof value === 'number' ? value : Number(value);
+        if (Number.isNaN(numericInput)) return '-';
+
+        // Perform conversion; guard if convertValue returns non-number
+        const converted = convertValue(numericInput, siUnit, unitSystem === 'SI' ? siUnit : ipUnit) as unknown;
+        const num = typeof converted === 'number' ? converted : Number(converted);
+        if (Number.isNaN(num)) return '-';
+
+        // Decimal places
+        if (decimal === null || Number.isNaN(decimal)) return String(num);
+        return Number(num).toFixed(decimal);
     }
 
     /**
