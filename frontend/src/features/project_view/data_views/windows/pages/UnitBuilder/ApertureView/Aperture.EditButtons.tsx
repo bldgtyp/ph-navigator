@@ -1,6 +1,6 @@
 import { Box, Button, Tooltip } from '@mui/material';
 
-import { useApertures } from './Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 
 const ApertureEditButton: React.FC<{ onClick: () => void; text: string; hoverText?: string; disabled?: boolean }> = ({
     onClick,

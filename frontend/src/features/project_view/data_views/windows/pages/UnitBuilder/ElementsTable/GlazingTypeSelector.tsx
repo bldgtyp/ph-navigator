@@ -2,8 +2,8 @@ import { useContext } from 'react';
 import { FormControl, Autocomplete, TextField } from '@mui/material';
 
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
-import { useGlazingTypes } from './GlazingTypes.Context';
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useGlazingTypes } from '../../../_contexts/GlazingTypes.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 
 import { GlazingSelectorProps } from './types';
 

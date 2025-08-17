@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import { ApertureFrameType } from '../types';
-import { FrameTypeService } from './services/frameTypeService';
+import { ApertureFrameType } from '../pages/UnitBuilder/types';
+import { FrameTypeService } from '../pages/UnitBuilder/ElementsTable/services/frameTypeService';
 
 interface FrameTypesContextType {
     isLoadingFrameTypes: boolean;

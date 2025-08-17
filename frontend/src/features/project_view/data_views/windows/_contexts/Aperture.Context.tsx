@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { ApertureElementType, ApertureType } from '../types';
-import { FramePosition } from '../ElementsTable/types';
-import { ApertureService } from './services/apertureService';
+import { ApertureElementType, ApertureType } from '../pages/UnitBuilder/types';
+import { FramePosition } from '../pages/UnitBuilder/ElementsTable/types';
+import { ApertureService } from '../pages/UnitBuilder/ApertureView/services/apertureService';
 
 function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
     return aperture.elements.find(element => element.id === elementId);

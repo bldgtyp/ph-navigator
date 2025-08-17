@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Box } from '@mui/material';
 
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { useDimensions } from './Dimensions.Context';
 

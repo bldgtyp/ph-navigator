@@ -1,6 +1,6 @@
 import { List, ListItem } from '@mui/material';
 
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 
 import ApertureListItemContent from './Sidebar.ListItemContent';
 import ApertureListHeader from './Sidebar.ListHeader';

@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { Box, Grid } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
-import { useApertures } from './ApertureView/Aperture.Context';
+import { useApertures } from '../../_contexts/Aperture.Context';
 import { ZoomProvider } from './ApertureView/Zoom.Context';
 import { ApertureSidebarProvider } from './Sidebar/Sidebar.Context';
 

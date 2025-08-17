@@ -5,7 +5,7 @@ import { Box, ClickAwayListener, Grid, TextField, Typography } from '@mui/materi
 import { TableHeader } from './TableHeader';
 import { GlazingRow, FrameRow } from './TableRows';
 import { TableGroupProps } from './types';
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
 const GroupTitle: React.FC<{ handleEditStart: () => void; title: string }> = ({ handleEditStart, title }) => {

@@ -4,9 +4,9 @@ import { Outlet } from 'react-router-dom';
 import DataViewPage from '../_components/DataViewPage';
 import ContentBlocksContainer from '../_components/ContentBlocks.Container';
 import DataDashboardTabBar from '../_components/DataDashboardTabBar';
-import { AperturesProvider } from './pages/UnitBuilder/ApertureView/Aperture.Context';
-import { FrameTypesProvider } from './pages/UnitBuilder/ElementsTable/FrameType.Context';
-import { GlazingTypesProvider } from './pages/UnitBuilder/ElementsTable/GlazingTypes.Context';
+import { AperturesProvider } from './_contexts/Aperture.Context';
+import { FrameTypesProvider } from './_contexts/FrameType.Context';
+import { GlazingTypesProvider } from './_contexts/GlazingTypes.Context';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [

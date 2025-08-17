@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { Box, ClickAwayListener, TextField, Typography } from '@mui/material';
 
-import { useApertures } from '../Aperture.Context';
+import { useApertures } from '../../../../_contexts/Aperture.Context';
 import { useZoom } from '../Zoom.Context';
 import { UserContext } from '../../../../../../../auth/_contexts/UserContext';
 

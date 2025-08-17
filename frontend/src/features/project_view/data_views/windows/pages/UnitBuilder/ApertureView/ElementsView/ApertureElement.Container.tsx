@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 
-import { useApertures } from '../Aperture.Context';
+import { useApertures } from '../../../../_contexts/Aperture.Context';
 import { useZoom } from '../Zoom.Context';
 
 import ApertureElementSVG from './ApertureElement.SVG';

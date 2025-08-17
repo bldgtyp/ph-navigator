@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { Box } from '@mui/material';
 
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 import { useDimensions } from './Dimensions.Context';
 
 import { calculateSegments } from './calcSegments';

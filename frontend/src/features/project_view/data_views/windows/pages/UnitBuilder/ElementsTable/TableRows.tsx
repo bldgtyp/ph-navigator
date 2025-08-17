@@ -1,5 +1,5 @@
-import { useFrameTypes } from './FrameType.Context';
-import { useGlazingTypes } from './GlazingTypes.Context';
+import { useFrameTypes } from '../../../_contexts/FrameType.Context';
+import { useGlazingTypes } from '../../../_contexts/GlazingTypes.Context';
 
 import { TableCell } from './TableCells';
 import { FrameSelector } from './FrameTypeSelector';

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import { ApertureGlazingType } from '../types';
-import { GlazingTypeService } from './services/glazingTypeService';
+import { ApertureGlazingType } from '../pages/UnitBuilder/types';
+import { GlazingTypeService } from '../pages/UnitBuilder/ElementsTable/services/glazingTypeService';
 
 interface GlazingTypesContextType {
     isLoadingGlazingTypes: boolean;

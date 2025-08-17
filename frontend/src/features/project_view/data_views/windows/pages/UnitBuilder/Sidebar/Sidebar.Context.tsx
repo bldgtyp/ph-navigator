@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 
 import { ApertureSidebarContextType } from './types';
 

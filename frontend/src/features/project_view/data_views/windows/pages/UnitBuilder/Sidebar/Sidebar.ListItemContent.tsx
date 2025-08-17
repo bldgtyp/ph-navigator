@@ -4,7 +4,7 @@ import { IconButton, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/m
 import ModeEditOutlinedIcon from '@mui/icons-material/ModeEditOutlined';
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 
-import { useApertures } from '../ApertureView/Aperture.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 import { useApertureSidebar } from './Sidebar.Context';
 
 import { listItemButtonSx, listItemTextSlopProps, listItemTextSx } from './styles';
