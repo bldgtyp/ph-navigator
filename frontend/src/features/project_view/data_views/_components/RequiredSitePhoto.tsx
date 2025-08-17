@@ -9,7 +9,11 @@ export interface RequiredSitePhotoProps {
 }
 
 const RequiredSitePhoto: React.FC<RequiredSitePhotoProps> = ({ number, captions, src }) => {
-    const headerBgColor = getComputedStyle(document.documentElement).getPropertyValue('--appbar-bg-color').trim();
+    // Safely read CSS var only in browser (avoids SSR / hydration mismatches) and provide fallback
+    const headerBgColor =
+        typeof window !== 'undefined'
+            ? getComputedStyle(document.documentElement).getPropertyValue('--appbar-bg-color').trim()
+            : '#f5f5f5';
 
     return (
         <Box
@@ -36,12 +40,13 @@ const RequiredSitePhoto: React.FC<RequiredSitePhotoProps> = ({ number, captions,
                     p: 3,
                 }}
             >
-                <Typography variant="body1">
-                    <List dense>
+                {/* Typography previously rendered a <p> which cannot legally contain a <ul>; use div component */}
+                <Typography variant="body1" component="div" sx={{ lineHeight: 1.3 }}>
+                    <List dense sx={{ m: 0, p: 0 }}>
                         {captions.map(cap => (
-                            <ListItem key={cap}>
-                                <ListItemIcon>
-                                    <AddAPhotoOutlinedIcon />
+                            <ListItem key={cap} sx={{ py: 0, alignItems: 'flex-start' }}>
+                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                    <AddAPhotoOutlinedIcon fontSize="small" />
                                 </ListItemIcon>
                                 <ListItemText primary={cap} />
                             </ListItem>
