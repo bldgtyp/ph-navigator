@@ -1,8 +1,8 @@
-"""add_apertures
+"""Add Apertures
 
-Revision ID: fd4af8236c7d
+Revision ID: 003cd631d956
 Revises: ac7703c5800f
-Create Date: 2025-08-04 11:07:00.321391
+Create Date: 2025-08-19 16:26:28.984166
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fd4af8236c7d'
+revision: str = '003cd631d956'
 down_revision: Union[str, None] = 'ac7703c5800f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,6 +26,17 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('width_mm', sa.Float(), nullable=False),
     sa.Column('u_value_w_m2k', sa.Float(), nullable=False),
+    sa.Column('psi_g_w_mk', sa.Float(), nullable=False),
+    sa.Column('manufacturer', sa.String(length=255), nullable=True),
+    sa.Column('brand', sa.String(length=255), nullable=True),
+    sa.Column('use', sa.String(length=255), nullable=True),
+    sa.Column('operation', sa.String(length=255), nullable=True),
+    sa.Column('location', sa.String(length=255), nullable=True),
+    sa.Column('mull_type', sa.String(length=255), nullable=True),
+    sa.Column('source', sa.String(), nullable=True),
+    sa.Column('datasheet_url', sa.String(), nullable=True),
+    sa.Column('link', sa.String(), nullable=True),
+    sa.Column('comments', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_aperture_frame_types_id'), 'aperture_frame_types', ['id'], unique=False)
@@ -34,6 +45,12 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('u_value_w_m2k', sa.Float(), nullable=False),
     sa.Column('g_value', sa.Float(), nullable=False),
+    sa.Column('manufacturer', sa.String(length=255), nullable=True),
+    sa.Column('brand', sa.String(length=255), nullable=True),
+    sa.Column('source', sa.String(length=255), nullable=True),
+    sa.Column('datasheet_url', sa.String(), nullable=True),
+    sa.Column('link', sa.String(), nullable=True),
+    sa.Column('comments', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_aperture_glazing_types_id'), 'aperture_glazing_types', ['id'], unique=False)
