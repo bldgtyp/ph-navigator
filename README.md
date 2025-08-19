@@ -38,12 +38,12 @@
 
 ## Windows:
 
-- [ ] Scale window unit geometry
-- [ ] Window Frame Database (AirTable?)
-- [ ] Window Glazing Database (AirTable?)
-- [ ] Assign frames (frame DB elements)
-- [ ] Assign glass (glass DB elements)
-- [ ] Attribute reporting (& assignment) table
+- [x] Scale window unit geometry
+- [x] Window Frame Database (AirTable)
+- [x] Window Glazing Database (AirTable)
+- [x] Assign frames (frame DB elements)
+- [x] Assign glass (glass DB elements)
+- [x] Attribute reporting (& assignment) table
 
 ## 3D Model:
 
