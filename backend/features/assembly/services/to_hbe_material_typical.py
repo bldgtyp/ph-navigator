@@ -3,7 +3,7 @@
 import logging
 from collections import OrderedDict
 
-from honeybee.typing import clean_ep_string, clean_and_id_ep_string
+from honeybee.typing import clean_and_id_ep_string, clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
 from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhColor, PhDivisionGrid
 from honeybee_energy_ref.document_ref import DocumentReference
@@ -130,7 +130,7 @@ def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMaterial:
 
     new_material_ = base_material.duplicate()
     new_material_.display_name = create_hybrid_hbe_material_name(division_grid)
-    new_material_.identifier = clean_and_id_ep_string('HybridEnergyMaterial')
+    new_material_.identifier = clean_and_id_ep_string("HybridEnergyMaterial")
     new_material_.conductivity = division_grid.get_equivalent_conductivity()
     # TODO: eq density
     # TODO: eq spec-heat

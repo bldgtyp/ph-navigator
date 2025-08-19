@@ -203,20 +203,16 @@ def duplicate_assembly(db: Session, assembly: Assembly) -> Assembly:
     """Duplicate an Assembly and its Layers."""
     logger.info(f"duplicate_assembly({assembly.name=})")
 
-    duplicated_assembly = Assembly(
-        name=f"{assembly.name} (Copy)",
-        project_id=assembly.project_id
-    )
+    duplicated_assembly = Assembly(name=f"{assembly.name} (Copy)", project_id=assembly.project_id)
     db.add(duplicated_assembly)
     db.flush()  # Get the ID without committing
-    
+
     # Duplicate all layers
     for layer in assembly.layers:
         # Use non-committing version of duplicate_layer
         stage_duplicate_layer(db, layer, duplicated_assembly.id)
-    
+
     # Commit only once at the end
     db.commit()
     db.refresh(duplicated_assembly)
     return duplicated_assembly
-

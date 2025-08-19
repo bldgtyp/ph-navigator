@@ -24,19 +24,33 @@ export function useUnitConversion() {
      * Converts a numeric value from SI units to the current unit system (SI or IP),
      * and formats the result as a string with a specified number of decimal places.
      *
-     * @param value - The numeric value to convert.
+     * @param value - The numeric value to convert or null.
      * @param siUnit - The SI unit of the value.
      * @param ipUnit - The IP unit to convert to if the current unit system is IP.
      * @param decimal - The number of decimal places to format the result. If `null`, no formatting is applied.
      * @returns The converted value as a string, formatted to the specified number of decimal places.
      */
-    function valueInCurrentUnitSystemWithDecimal(value: number, siUnit: Unit, ipUnit: Unit, decimal: number): string {
-        const newValue = convertValue(value, siUnit, unitSystem === 'SI' ? siUnit : ipUnit);
-        if (decimal === null) {
-            return newValue.toString();
-        } else {
-            return newValue.toFixed(decimal);
-        }
+    function valueInCurrentUnitSystemWithDecimal(
+        value: number | null | undefined,
+        siUnit: Unit,
+        ipUnit: Unit,
+        decimal: number
+    ): string {
+        // Handle nullish
+        if (value === null || value === undefined) return '-';
+
+        // Coerce to number early
+        const numericInput = typeof value === 'number' ? value : Number(value);
+        if (Number.isNaN(numericInput)) return '-';
+
+        // Perform conversion; guard if convertValue returns non-number
+        const converted = convertValue(numericInput, siUnit, unitSystem === 'SI' ? siUnit : ipUnit) as unknown;
+        const num = typeof converted === 'number' ? converted : Number(converted);
+        if (Number.isNaN(num)) return '-';
+
+        // Decimal places
+        if (decimal === null || Number.isNaN(decimal)) return String(num);
+        return Number(num).toFixed(decimal);
     }
 
     /**

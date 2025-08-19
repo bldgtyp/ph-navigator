@@ -186,9 +186,8 @@ def stage_duplicate_segment(db: Session, segment: Segment, new_layer_id: int) ->
 def duplicate_segment(db: Session, segment: Segment) -> Segment:
     """Duplicate a segment and return the new segment."""
     logger.info(f"duplicate_segment{segment.id=}")
-    
+
     new_segment = stage_duplicate_segment(db, segment, segment.layer_id)
     db.commit()
     db.refresh(new_segment)
     return new_segment
-

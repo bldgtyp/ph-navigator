@@ -22,6 +22,7 @@ if config.config_file_name is not None:
 # target_metadata = None
 from database import Base
 from db_entities.airtable import *
+from db_entities.aperture import *
 from db_entities.app import *
 from db_entities.assembly import *
 

@@ -68,7 +68,7 @@ export const CheckboxForDatasheet: React.FC<{ value?: { id: string; url: string;
     }
 
     if (value[0].required === true) {
-        if (value[0].url === '') {
+        if (value[0].url === '' || value[0].url === undefined || value[0].url === null) {
             return (
                 <div className="checkbox-cell">
                     <div className="checkbox-needed" />

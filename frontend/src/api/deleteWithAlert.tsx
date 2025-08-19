@@ -55,6 +55,10 @@ export async function deleteWithAlert<T>(
         if (response.status === 204) {
             // No content response - return a non-null value so calling code knows it succeeded
             return true as T; // or just return true
+        } else if (response.status === 200) {
+            // If the response is 200, parse the JSON response
+            const data: T = await response.json();
+            return data;
         } else {
             alert(`Error: ${response.status} - ${response.statusText}`);
             return null;

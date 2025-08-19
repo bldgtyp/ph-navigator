@@ -9,13 +9,13 @@ import Projects from './features/project_browser/_components/Projects';
 import ProjectContainer from './features/project_view/_components/ProjectContainer';
 import Settings from './features/project_browser/_components/Settings';
 import ProjectStatus from './features/project_view/data_views/project_status/Page';
-import WindowDataDashboard from './features/project_view/data_views/windows/components/WindowDataDashboard';
+import WindowDataDashboard from './features/project_view/data_views/windows/WindowDataDashboard';
 import EnvelopeDataDashboard from './features/project_view/data_views/envelope/EnvelopeDataDashboard';
 import EquipmentDataDashboard from './features/project_view/data_views/equipment/EquipmentDataDashboard';
 import Viewer from './features/project_view/model_viewer/Viewer';
-import WindowUnitDataGrid from './features/project_view/data_views/windows/components/pages/WindowUnit.DataGrid';
-import FrameTypesDataGrid from './features/project_view/data_views/windows/components/pages/Frames.DataGrid';
-import GlazingTypesDataGrid from './features/project_view/data_views/windows/components/pages/Glazing.DataGrid';
+import FrameTypesDataGrid from './features/project_view/data_views/windows/pages/FrameTypes/FrameTypes.DataGrid';
+import GlazingTypesDataGrid from './features/project_view/data_views/windows/pages/GlazingTypes/GlazingTypes.DataGrid';
+import ApertureTypesPage from './features/project_view/data_views/windows/pages/UnitBuilder/Page';
 import MaterialListPage from './features/project_view/data_views/envelope/material_list/Page';
 import AssembliesPage from './features/project_view/data_views/envelope/assemblies/_Page/Page';
 import ErvDataGrid from './features/project_view/data_views/equipment/pages/ERVs/Ervs.DataGrid';
@@ -44,10 +44,10 @@ const AppRoutes: React.FC = () => (
             <Route path="status" element={<ProjectStatus />} />
 
             <Route path="window-data" element={<WindowDataDashboard />}>
-                <Route index element={<Navigate to="window-glazing-types" replace />} />
+                <Route index element={<Navigate to="window-unit-types" replace />} />
+                <Route path="window-unit-types" element={<ApertureTypesPage />} />
                 <Route path="window-glazing-types" element={<GlazingTypesDataGrid />} />
                 <Route path="window-frame-types" element={<FrameTypesDataGrid />} />
-                <Route path="window-unit-type" element={<WindowUnitDataGrid />} />
             </Route>
 
             <Route path="envelope-data" element={<EnvelopeDataDashboard />}>

@@ -6,7 +6,9 @@ export type Unit =
     | 'm3'
     | 'ft3'
     | 'w/mk'
+    | 'w/m2k'
     | 'btu/hr-ft-F'
+    | 'btu/hr-ft2-F'
     | 'hr-ft2-F/btu-in'
     | 'kg/m3'
     | 'lb/ft3'
@@ -68,6 +70,15 @@ export const CONVERSION_FACTORS: ConversionMap = {
         'w/mk': (v: number) => 1 / (v * 0.577789236 * 12),
         'btu/hr-ft-F': (v: number) => v / (12 * 0.577789236),
         'hr-ft2-F/btu-in': (v: number) => v,
+    },
+    // Thermal Transmittance (U-Value)
+    'w/m2k': {
+        'w/m2k': (v: number) => v,
+        'btu/hr-ft2-F': (v: number) => v * 0.176110159,
+    },
+    'btu/hr-ft2-F': {
+        'w/m2k': (v: number) => v * 5.678264134,
+        'btu/hr-ft2-F': (v: number) => v,
     },
     // Density
     'kg/m3': {

@@ -4,6 +4,8 @@
 /dist
 /.next
 /public
+/backend
+/public
 
 # Node modules
 

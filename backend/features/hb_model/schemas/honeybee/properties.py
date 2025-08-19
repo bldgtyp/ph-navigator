@@ -13,6 +13,5 @@ from ..honeybee_energy.properties.face import FaceEnergyPropertiesSchema
 class FacePropertiesSchema(BaseModel):
     energy: FaceEnergyPropertiesSchema
 
-
 class AperturePropertiesSchema(BaseModel):
     energy: ApertureEnergyPropertiesSchema

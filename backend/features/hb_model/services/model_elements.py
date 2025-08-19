@@ -3,7 +3,6 @@
 from collections import defaultdict
 from logging import getLogger
 from typing import Any, Iterable
-from pydantic import ValidationError
 
 from honeybee import face, room, shade
 from honeybee.model import Model
@@ -18,6 +17,7 @@ from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d.pointvector import Point2D
 from ladybug_geometry.geometry3d.mesh import Mesh3D
 from ladybug_geometry.geometry3d.pointvector import Point3D
+from pydantic import ValidationError
 
 from ..schemas.honeybee.face import FaceSchema
 from ..schemas.honeybee.shade import ShadeGroupSchema, ShadeSchema
@@ -56,9 +56,11 @@ def get_faces_from_model(hb_model: Model) -> list:
             hb_face_energy_prop: FaceEnergyProperties = getattr(hb_face.properties, "energy")
             construction = OpaqueConstructionSchema(**any_dict(hb_face_energy_prop.construction.to_dict()))
         except ValidationError as e:
-            logger.warning(f"Face {hb_face.display_name} construction '{hb_face_energy_prop.construction.display_name}' cannot be handled properly. Skipping.")
+            logger.warning(
+                f"Face {hb_face.display_name} construction '{hb_face_energy_prop.construction.display_name}' cannot be handled properly. Skipping."
+            )
             continue
-        
+
         face_DTO = FaceSchema(**any_dict(hb_face.to_dict()))
 
         # -- Note: Add the Mesh3D to each to the Faces
@@ -69,7 +71,7 @@ def get_faces_from_model(hb_model: Model) -> list:
         face_DTO.properties.energy.construction = construction
         face_DTO.properties.energy.construction.r_factor = getattr(hb_face_energy_prop.construction, "r_factor", 0.0)
         face_DTO.properties.energy.construction.u_factor = getattr(hb_face_energy_prop.construction, "u_factor", 0.0)
-    
+
         # -- Get any additional Aperture data
         for aperture_DTO, hb_aperture in zip(face_DTO.apertures or [], hb_face.apertures or []):
             # -- Aperture Mesh Geometry

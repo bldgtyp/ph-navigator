@@ -84,12 +84,13 @@ def stage_duplicate_layer(db: Session, layer: Layer, new_assembly_id: int) -> La
     )
     db.add(new_layer)
     db.flush()  # Get ID but don't commit
-    
+
     # Duplicate segments without committing
     for segment in layer.segments:
         stage_duplicate_segment(db, segment, new_layer.id)
-    
+
     return new_layer
+
 
 def duplicate_layer(db: Session, layer: Layer) -> Layer:
     """Duplicate a layer, along with all its segments and return the new layer."""
@@ -99,4 +100,3 @@ def duplicate_layer(db: Session, layer: Layer) -> Layer:
     db.commit()
     db.refresh(new_layer)
     return new_layer
-

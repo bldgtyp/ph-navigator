@@ -9,3 +9,9 @@ from pydantic.main import BaseModel
 
 class BoundaryConditionSchema(BaseModel):
     type: str
+
+    def to_dict(self):
+        """Convert the schema to a dictionary."""
+        return {
+            "type": self.type,
+        }
