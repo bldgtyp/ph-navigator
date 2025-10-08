@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from config import limiter
 from database import get_db
 from features.aperture.schemas import ApertureSchema
 from features.aperture.schemas.aperture import (
@@ -30,6 +29,7 @@ from features.aperture.services.aperture import (
     delete_aperture,
     delete_column_from_aperture,
     delete_row_from_aperture,
+    duplicate_aperture,
     get_all_project_apertures_as_json_string,
     get_aperture_by_id,
     get_apertures_by_project_bt,
@@ -127,6 +127,34 @@ def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(g
         return ApertureSchema.from_orm(new_aperture)
     except Exception as e:
         msg = f"Failed to create new aperture for project {bt_number}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+# @limiter.limit("1/second")
+@router.post("/duplicate-aperture/{aperture_id}", response_model=ApertureSchema)
+def duplicate_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+    """Duplicate an existing aperture with all its elements, frames, and glazing.
+    
+    Args:
+        request: FastAPI request object
+        aperture_id: ID of the aperture to duplicate
+        db: Database session
+        
+    Returns:
+        The newly created aperture
+    """
+    logger.info(f"duplicate_aperture_route({aperture_id=})")
+
+    try:
+        duplicated_aperture = duplicate_aperture(db, aperture_id)
+        return ApertureSchema.from_orm(duplicated_aperture)
+    except ValueError as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+    except Exception as e:
+        msg = f"Failed to duplicate aperture {aperture_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 

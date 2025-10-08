@@ -8,7 +8,11 @@ from sqlalchemy.orm import Session
 from db_entities.aperture import Aperture, ApertureElement, ApertureElementFrame
 from db_entities.app.project import Project
 from features.aperture.schemas.aperture import FrameSide
-from features.aperture.services.aperture_element import create_aperture_element, get_aperture_element_by_id
+from features.aperture.services.aperture_element import (
+    create_aperture_element, 
+    duplicate_aperture_element,
+    get_aperture_element_by_id
+)
 from features.aperture.services.frame_type import get_frame_type_by_id
 from features.aperture.services.glazing_type import get_glazing_type_by_id
 from features.app.services import get_project_by_bt_number
@@ -279,6 +283,52 @@ def add_new_aperture_on_project(db: Session, project: Project) -> Aperture:
     except Exception as e:
         db.rollback()
         logger.error(f"Error adding new aperture on project {project.id}: {str(e)}")
+        raise
+
+
+def duplicate_aperture(db: Session, source_aperture_id: int) -> Aperture:
+    """Duplicate an Aperture with all its elements, frames, and glazing.
+    
+    Args:
+        db: Database session
+        source_aperture_id: ID of the aperture to duplicate
+        
+    Returns:
+        The newly created Aperture
+        
+    Raises:
+        ValueError: If source aperture not found
+    """
+    logger.info(f"duplicate_aperture(source_aperture_id={source_aperture_id})")
+    
+    try:
+        # Get source aperture
+        source_aperture = get_aperture_by_id(db, source_aperture_id)
+        
+        # Create new aperture with copied properties
+        new_aperture = Aperture(
+            name=f"{source_aperture.name} (Copy)",
+            project_id=source_aperture.project_id,
+            row_heights_mm=source_aperture.row_heights_mm.copy(),
+            column_widths_mm=source_aperture.column_widths_mm.copy(),
+        )
+        db.add(new_aperture)
+        db.flush()  # Get the ID without committing
+        
+        # Duplicate all elements
+        for source_element in source_aperture.elements:
+            duplicate_aperture_element(db, source_element, new_aperture.id)
+        
+        # Commit the entire transaction
+        db.commit()
+        db.refresh(new_aperture)
+        
+        logger.info(f"Successfully duplicated aperture {source_aperture_id} to new aperture {new_aperture.id}")
+        return new_aperture
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error duplicating aperture {source_aperture_id}: {str(e)}")
         raise
 
 

@@ -24,6 +24,7 @@ interface AperturesContextType {
     handleNameChange: (id: any, newName: string) => void;
     handleAddAperture: () => void;
     handleDeleteAperture: (id: any) => void;
+    handleDuplicateAperture: (id: any) => void;
     handleUpdateAperture: (aperture: ApertureType) => void;
     handleAddRow: () => void;
     handleDeleteRow: (index: number) => void;
@@ -181,6 +182,32 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } catch (error) {
             console.error(`Failed to delete Aperture ${apertureId}:`, error);
             alert('Failed to delete aperture. Please try again.');
+        }
+    };
+
+    const handleDuplicateAperture = async (apertureId: number) => {
+        console.log(`handleDuplicateAperture(${apertureId})`);
+
+        try {
+            setIsLoadingApertures(true);
+            const duplicatedAperture = await ApertureService.duplicateAperture(apertureId);
+
+            console.log(`Aperture duplicated successfully: ${duplicatedAperture.id}`);
+
+            // Fetch updated apertures list
+            const fetchedApertures = await fetchApertures();
+            setApertures(fetchedApertures);
+
+            // Set the new duplicated aperture as active
+            handleSetActiveAperture(duplicatedAperture);
+
+            // Show success notification
+            alert('Window unit duplicated successfully');
+        } catch (error) {
+            console.error('Failed to duplicate aperture:', error);
+            alert('Failed to duplicate aperture. Please try again.');
+        } finally {
+            setIsLoadingApertures(false);
         }
     };
 
@@ -493,6 +520,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 handleSetActiveAperture,
                 handleAddAperture,
                 handleDeleteAperture,
+                handleDuplicateAperture,
                 handleUpdateAperture,
                 handleAddRow,
                 handleDeleteRow,

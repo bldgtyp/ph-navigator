@@ -47,6 +47,19 @@ export class ApertureService {
         }
     }
 
+    static async duplicateAperture(apertureId: number): Promise<ApertureType> {
+        try {
+            const duplicatedAperture = await postWithAlert<ApertureType>(`aperture/duplicate-aperture/${apertureId}`);
+            if (!duplicatedAperture) {
+                throw new Error('Failed to duplicate aperture - no response received');
+            }
+            return duplicatedAperture;
+        } catch (error) {
+            console.error('Error duplicating aperture:', error);
+            throw new Error(`Failed to duplicate aperture: ${error}`);
+        }
+    }
+
     static async updateApertureName(apertureId: number, newName: string): Promise<void> {
         try {
             await patchWithAlert(`aperture/update-aperture-name/${apertureId}`, null, {

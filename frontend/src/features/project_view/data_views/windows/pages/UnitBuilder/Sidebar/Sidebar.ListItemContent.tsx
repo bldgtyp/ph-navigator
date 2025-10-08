@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { IconButton, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/material';
 import ModeEditOutlinedIcon from '@mui/icons-material/ModeEditOutlined';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 
 import { useApertures } from '../../../_contexts/Aperture.Context';
@@ -26,6 +27,7 @@ const ApertureListItemContent: React.FC<ApertureListItemContentProps> = ({ apert
                 {userContext.user && (
                     <>
                         <EditNameButton aperture={aperture} />
+                        <DuplicateButton aperture={aperture} />
                         <DeleteButton aperture={aperture} />
                     </>
                 )}
@@ -48,6 +50,26 @@ const EditNameButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
                     }}
                 >
                     <ModeEditOutlinedIcon fontSize="small" />
+                </IconButton>
+            </span>
+        </Tooltip>
+    );
+};
+
+const DuplicateButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
+    const { handleDuplicateAperture } = useApertures();
+
+    return (
+        <Tooltip className="duplicate-aperture-button" title="Duplicate Aperture" placement="right" arrow>
+            <span>
+                <IconButton
+                    size="small"
+                    onClick={e => {
+                        e.preventDefault();
+                        handleDuplicateAperture(aperture.id);
+                    }}
+                >
+                    <ContentCopyIcon fontSize="small" />
                 </IconButton>
             </span>
         </Tooltip>
