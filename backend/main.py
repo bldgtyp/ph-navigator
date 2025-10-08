@@ -5,8 +5,6 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from api import register_routes
 from config import settings
@@ -16,8 +14,8 @@ configure_logging()
 logger = logging.getLogger()
 
 app = FastAPI(
-    docs_url=None,  # Disable docs in production
-    redoc_url=None,  # Disable redoc in production
+    # docs_url=None,  # Disable docs in production
+    # redoc_url=None,  # Disable redoc in production
 )
 
 
