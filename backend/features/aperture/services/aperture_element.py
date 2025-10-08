@@ -52,6 +52,97 @@ def create_aperture_element_frame(db: Session) -> ApertureElementFrame:
     return frame_element
 
 
+def duplicate_aperture_element_frame(db: Session, source_frame: ApertureElementFrame) -> ApertureElementFrame:
+    """Create a duplicate of an ApertureElementFrame.
+    
+    Args:
+        db: Database session
+        source_frame: The frame to duplicate
+        
+    Returns:
+        New ApertureElementFrame instance (added to session but not committed)
+    """
+    logger.info(f"duplicate_aperture_element_frame(source_frame_id={source_frame.id})")
+    
+    new_frame = ApertureElementFrame(
+        name=source_frame.name,
+        frame_type_id=source_frame.frame_type_id
+    )
+    db.add(new_frame)
+    db.flush()  # Get ID without committing
+    
+    return new_frame
+
+
+def duplicate_aperture_element_glazing(db: Session, source_glazing: ApertureElementGlazing) -> ApertureElementGlazing:
+    """Create a duplicate of an ApertureElementGlazing.
+    
+    Args:
+        db: Database session
+        source_glazing: The glazing to duplicate
+        
+    Returns:
+        New ApertureElementGlazing instance (added to session but not committed)
+    """
+    logger.info(f"duplicate_aperture_element_glazing(source_glazing_id={source_glazing.id})")
+    
+    new_glazing = ApertureElementGlazing(
+        name=source_glazing.name,
+        glazing_type_id=source_glazing.glazing_type_id
+    )
+    db.add(new_glazing)
+    db.flush()  # Get ID without committing
+    
+    return new_glazing
+
+
+def duplicate_aperture_element(
+    db: Session, 
+    source_element: ApertureElement, 
+    new_aperture_id: int
+) -> ApertureElement:
+    """Create a duplicate of an ApertureElement with all its frames and glazing.
+    
+    Args:
+        db: Database session
+        source_element: The element to duplicate
+        new_aperture_id: ID of the new parent aperture
+        
+    Returns:
+        New ApertureElement instance (added to session but not committed)
+    """
+    logger.info(f"duplicate_aperture_element(source_element_id={source_element.id}, new_aperture_id={new_aperture_id})")
+    
+    # Duplicate all 4 frames
+    new_frame_top = duplicate_aperture_element_frame(db, source_element.frame_top)
+    new_frame_right = duplicate_aperture_element_frame(db, source_element.frame_right)
+    new_frame_bottom = duplicate_aperture_element_frame(db, source_element.frame_bottom)
+    new_frame_left = duplicate_aperture_element_frame(db, source_element.frame_left)
+    
+    # Duplicate glazing
+    new_glazing = duplicate_aperture_element_glazing(db, source_element.glazing)
+    
+    # Create new element with duplicated components
+    new_element = ApertureElement(
+        name=source_element.name,
+        row_number=source_element.row_number,
+        column_number=source_element.column_number,
+        row_span=source_element.row_span,
+        col_span=source_element.col_span,
+        aperture_id=new_aperture_id,
+        glazing=new_glazing,
+        frame_top=new_frame_top,
+        frame_right=new_frame_right,
+        frame_bottom=new_frame_bottom,
+        frame_left=new_frame_left,
+    )
+    
+    db.add(new_element)
+    db.flush()  # Get ID without committing
+    
+    return new_element
+
+
 def create_aperture_element(
     db: Session, aperture_id: int, name: str = "Unnamed", row_number: int = 1, column_number: int = 1, row_span: int = 1, col_span: int = 1
 ) -> ApertureElement:
