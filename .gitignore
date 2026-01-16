@@ -3,6 +3,9 @@ gcp-creds.json
 
 backend/alembic/db_backups/*
 
+# Claude
+.claude/
+
 # dependencies
 frontend/node_modules
 /node_modules
