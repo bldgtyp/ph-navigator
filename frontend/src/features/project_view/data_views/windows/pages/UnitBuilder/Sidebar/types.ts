@@ -13,9 +13,11 @@ export interface ApertureSidebarContextType {
             apertureName: string;
         }>
     >;
-    openNameChangeModal: (id: any, name: string) => void;
+    openNameChangeModal: (id: number, name: string) => void;
     closeNameChangeModal: () => void;
     handleNameSubmit: (newName: string) => void;
+    isSidebarOpen: boolean;
+    toggleSidebar: () => void;
 }
 
 export interface ApertureListItemContentProps {
