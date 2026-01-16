@@ -1,4 +1,4 @@
-import { List, ListItem } from '@mui/material';
+import { Box, List, ListItem } from '@mui/material';
 
 import { useApertures } from '../../../_contexts/Aperture.Context';
 
@@ -16,13 +16,24 @@ const ApertureTypesSidebar: React.FC = () => {
         <>
             <ChangeNameModal />
             <ApertureListHeader onAddAperture={handleAddAperture} />
-            <List dense>
-                {sortedApertures.map(aperture => (
-                    <ListItem key={aperture.id} component="div" disablePadding>
-                        <ApertureListItemContent aperture={aperture} isSelected={selectedApertureId === aperture.id} />
-                    </ListItem>
-                ))}
-            </List>
+            <Box
+                sx={{
+                    maxHeight: 'calc(100vh - 360px)',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                }}
+            >
+                <List dense>
+                    {sortedApertures.map(aperture => (
+                        <ListItem key={aperture.id} component="div" disablePadding>
+                            <ApertureListItemContent
+                                aperture={aperture}
+                                isSelected={selectedApertureId === aperture.id}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            </Box>
         </>
     );
 };

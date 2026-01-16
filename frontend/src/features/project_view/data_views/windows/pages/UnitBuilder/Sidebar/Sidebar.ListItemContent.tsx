@@ -1,6 +1,6 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
-import { IconButton, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/material';
+import { Box, IconButton, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/material';
 import ModeEditOutlinedIcon from '@mui/icons-material/ModeEditOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
@@ -15,21 +15,30 @@ import { ApertureListItemContentProps } from './types';
 const ApertureListItemContent: React.FC<ApertureListItemContentProps> = ({ aperture, isSelected }) => {
     const userContext = useContext(UserContext);
     const { handleSetActiveApertureById } = useApertures();
+    const [isHovered, setIsHovered] = useState(false);
 
     return (
         <ListItemButton
             selected={isSelected}
             onClick={() => handleSetActiveApertureById(aperture.id)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             sx={listItemButtonSx}
         >
             <Stack direction="row" alignItems="center" width="100%">
                 <ListItemText primary={aperture.name} slotProps={listItemTextSlopProps} sx={listItemTextSx} />
                 {userContext.user && (
-                    <>
+                    <Box
+                        display="flex"
+                        sx={{
+                            opacity: isHovered ? 1 : 0,
+                            transition: 'opacity 0.15s ease-in-out',
+                        }}
+                    >
                         <EditNameButton aperture={aperture} />
                         <DuplicateButton aperture={aperture} />
                         <DeleteButton aperture={aperture} />
-                    </>
+                    </Box>
                 )}
             </Stack>
         </ListItemButton>
@@ -40,7 +49,7 @@ const EditNameButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
     const { openNameChangeModal } = useApertureSidebar();
 
     return (
-        <Tooltip className="edit-aperture-name-button" title="Aperture Name" placement="right" arrow>
+        <Tooltip className="edit-aperture-name-button" title="Edit Name" placement="bottom" arrow>
             <span>
                 <IconButton
                     size="small"
@@ -60,7 +69,7 @@ const DuplicateButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => 
     const { handleDuplicateAperture } = useApertures();
 
     return (
-        <Tooltip className="duplicate-aperture-button" title="Duplicate Aperture" placement="right" arrow>
+        <Tooltip className="duplicate-aperture-button" title="Duplicate Aperture" placement="bottom" arrow>
             <span>
                 <IconButton
                     size="small"
@@ -80,7 +89,7 @@ const DeleteButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
     const { handleDeleteAperture } = useApertures();
 
     return (
-        <Tooltip className="delete-aperture-button" title="Delete Aperture" placement="right" arrow>
+        <Tooltip className="delete-aperture-button" title="Delete Aperture" placement="bottom" arrow>
             <span>
                 <IconButton
                     size="small"

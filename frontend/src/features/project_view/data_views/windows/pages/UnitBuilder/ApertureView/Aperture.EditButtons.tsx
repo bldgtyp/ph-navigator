@@ -15,7 +15,7 @@ const ApertureEditButton: React.FC<{ onClick: () => void; text: string; hoverTex
                     variant="outlined"
                     color="primary"
                     size="small"
-                    sx={{ marginBottom: 2, minWidth: '120px', color: 'inherit' }}
+                    sx={{ minWidth: '120px', color: 'inherit' }}
                     onClick={onClick}
                     disabled={disabled}
                 >
@@ -39,9 +39,8 @@ const ApertureEditButtons: React.FC = () => {
     return (
         <Box
             className="aperture-edit-buttons"
-            mb={2}
             display="flex"
-            justifyContent="right"
+            justifyContent="flex-start"
             alignItems="center"
             flexWrap="wrap"
             gap={1}

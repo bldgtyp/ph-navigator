@@ -3,19 +3,19 @@
 
 # Windows:
 
-1. Add swing graphic and data
-2. Ad drop down for selecting window and collapsable side drawer
-3. Add scroll to sidebar
-4. Add graphic expander
-5. Fix scale display ("0.11111111111mm")
-6. Select individual frame elements.
-7. Add an UNDO!
-8. Add product/manuf filtering
-9. Add 'inside view' vs 'outside view' rotate/spin
-10. Cron-job frame-type / glass-type autoloader from AirTable
+- [ ] Add swing graphic and data
+- [ ] Change Element blocks to be inside a scrollable container so we always see the window graphic
+- [ ] Hover over frame element shows the name / ID and highlights it. Click allows direct setting (dropdown)
+- [ ] Add graphic expander
+- [ ] Fix scale display ("0.11111111111mm")
+- [ ] Select individual frame elements.
+- [ ] Add an UNDO!
+- [ ] Add product/manuf filtering
+- [ ] Add 'inside view' vs 'outside view' rotate/spin
+- [ ] Cron-job frame-type / glass-type autoloader from AirTable
 
 # Airtightness:
 
-1. Change limit from 85 to ISO 9972 limit: 250 m·K = 1,476 ft·°F (not 85!)
+- [ ] Change limit from 85 to ISO 9972 limit: 250 m·K = 1,476 ft·°F (not 85!)
 
 - https://mail.google.com/mail/u/0/#search/bcohen%40revireo.com+roberto%40elements-air.com/FMfcgzQcqtbGZHkzTGVtdxJQprLLvdWM

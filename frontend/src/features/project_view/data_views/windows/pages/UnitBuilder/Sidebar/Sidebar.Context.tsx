@@ -12,6 +12,7 @@ export const ApertureSidebarProvider: React.FC<{ children: React.ReactNode }> = 
         apertureId: 0,
         apertureName: '',
     });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const { handleNameChange } = useApertures();
 
@@ -29,9 +30,22 @@ export const ApertureSidebarProvider: React.FC<{ children: React.ReactNode }> = 
         closeNameChangeModal();
     };
 
+    // Drawer toggle function
+    const toggleSidebar = () => {
+        setIsSidebarOpen(prev => !prev);
+    };
+
     return (
         <ApertureSidebarContext.Provider
-            value={{ nameChangeModal, setNameChangeModal, openNameChangeModal, closeNameChangeModal, handleNameSubmit }}
+            value={{
+                nameChangeModal,
+                setNameChangeModal,
+                openNameChangeModal,
+                closeNameChangeModal,
+                handleNameSubmit,
+                isSidebarOpen,
+                toggleSidebar,
+            }}
         >
             {children}
         </ApertureSidebarContext.Provider>

@@ -1,5 +1,10 @@
 # -*- Python Version: 3.11 -*-
 
+# Set test environment variables BEFORE importing any modules that depend on config
+import os
+
+os.environ.setdefault("FERNET_SECRET_KEY", "wONeDFh6szFQydAR54mE2NcXvx49PNclcovPyrTT2eM=")
+
 from typing import Callable, Generator
 
 import pytest
