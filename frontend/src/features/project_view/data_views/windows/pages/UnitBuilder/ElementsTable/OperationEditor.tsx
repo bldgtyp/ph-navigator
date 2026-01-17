@@ -1,4 +1,4 @@
-import { useContext, useCallback } from 'react';
+import { useContext, useCallback, useMemo } from 'react';
 import { FormControl, Select, MenuItem, Checkbox, FormControlLabel, Box, SelectChangeEvent } from '@mui/material';
 
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
@@ -29,7 +29,11 @@ export const OperationEditor: React.FC<OperationEditorProps> = ({ element }) => 
     const { handleUpdateApertureElementOperation } = useApertures();
 
     const currentType: OperationTypeOption = element.operation?.type || 'fixed';
-    const currentDirections: OperationDirection[] = element.operation?.directions || [];
+    const currentOperationType = element.operation?.type;
+    const currentDirections = useMemo<OperationDirection[]>(
+        () => element.operation?.directions || [],
+        [element.operation?.directions]
+    );
 
     const getDisplayLabel = (): string => {
         if (!element.operation) {
@@ -62,20 +66,20 @@ export const OperationEditor: React.FC<OperationEditorProps> = ({ element }) => 
 
     const handleDirectionToggle = useCallback(
         (direction: OperationDirection) => {
-            if (!element.operation) return;
+            if (!currentOperationType) return;
 
             const newDirections = currentDirections.includes(direction)
                 ? currentDirections.filter(d => d !== direction)
                 : [...currentDirections, direction];
 
             const newOperation: ElementOperation = {
-                type: element.operation.type,
+                type: currentOperationType,
                 directions: newDirections,
             };
 
             handleUpdateApertureElementOperation(element.id, newOperation);
         },
-        [element.id, element.operation, currentDirections, handleUpdateApertureElementOperation]
+        [element.id, currentOperationType, currentDirections, handleUpdateApertureElementOperation]
     );
 
     // Read-only view for non-authenticated users

@@ -28,19 +28,20 @@ const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({
         [element.frames, isInsideView]
     );
 
-    // Get frame widths from element data, with 100mm default if null
-    const defaultFrameWidth = 100; // mm
-    const topFrameWidth = frameData.top.frame_type.width_mm ?? defaultFrameWidth;
-    const rightFrameWidth = frameData.right.frame_type.width_mm ?? defaultFrameWidth;
-    const bottomFrameWidth = frameData.bottom.frame_type.width_mm ?? defaultFrameWidth;
-    const leftFrameWidth = frameData.left.frame_type.width_mm ?? defaultFrameWidth;
+    const scaledFrameWidths = useMemo(() => {
+        const defaultFrameWidth = 100; // mm
+        const topFrameWidth = frameData.top.frame_type.width_mm ?? defaultFrameWidth;
+        const rightFrameWidth = frameData.right.frame_type.width_mm ?? defaultFrameWidth;
+        const bottomFrameWidth = frameData.bottom.frame_type.width_mm ?? defaultFrameWidth;
+        const leftFrameWidth = frameData.left.frame_type.width_mm ?? defaultFrameWidth;
 
-    const scaledFrameWidths = {
-        top: topFrameWidth * scaleFactor,
-        right: rightFrameWidth * scaleFactor,
-        bottom: bottomFrameWidth * scaleFactor,
-        left: leftFrameWidth * scaleFactor,
-    };
+        return {
+            top: topFrameWidth * scaleFactor,
+            right: rightFrameWidth * scaleFactor,
+            bottom: bottomFrameWidth * scaleFactor,
+            left: leftFrameWidth * scaleFactor,
+        };
+    }, [frameData, scaleFactor]);
 
     const frameNames = useMemo(
         () => ({
