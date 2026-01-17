@@ -630,3 +630,40 @@ def update_aperture_element_operation(db: Session, element_id: int, operation: d
         db.rollback()
         logger.error(f"Error updating aperture element operation {element_id=}: {str(e)}")
         raise
+
+
+def update_aperture_element_assignments(
+    db: Session,
+    element_id: int,
+    operation: dict | None,
+    glazing_type_id: str,
+    frame_type_ids: dict,
+) -> Aperture:
+    """Update operation, glazing, and frame sides for an aperture element in a single transaction."""
+    logger.info(
+        "update_aperture_element_assignments(%s, %s, %s)",
+        element_id,
+        glazing_type_id,
+        frame_type_ids,
+    )
+
+    try:
+        element = get_aperture_element_by_id(db, element_id)
+
+        element.operation = operation
+
+        glazing_type = get_glazing_type_by_id(db, glazing_type_id)
+        element.glazing.glazing_type_id = glazing_type.id
+
+        for side in ("top", "right", "bottom", "left"):
+            frame_type_id = frame_type_ids[side]
+            frame_type = get_frame_type_by_id(db, frame_type_id)
+            element_frame: ApertureElementFrame = getattr(element, f"frame_{side}")
+            setattr(element_frame, "frame_type", frame_type)
+
+        db.commit()
+        return get_aperture_by_child_element_id(db, element.id)
+    except Exception as e:
+        db.rollback()
+        logger.error("Error updating element assignments %s: %s", element_id, str(e))
+        raise

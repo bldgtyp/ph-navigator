@@ -96,3 +96,9 @@ frontend/
 - Frame edges in the Window SVG expose per‑side hover tooltips via MUI `Tooltip`.
 - Hover highlight is scoped to the specific frame edge (top/right/bottom/left), not the full element.
 - Tooltip text uses the frame type name from `element.frames.<side>.frame_type.name`.
+
+## 13. Window Copy/Paste Tool
+
+- Toolbar includes a Copy/Paste tool for window elements (frames, glazing, operation).
+- Paste mode persists across aperture changes and exits on Esc or clicking outside a window element.
+- Copy/paste state lives in a dedicated context provider scoped to the Windows view.

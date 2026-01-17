@@ -8,6 +8,7 @@ import { AperturesProvider } from './_contexts/Aperture.Context';
 import { FrameTypesProvider } from './_contexts/FrameType.Context';
 import { GlazingTypesProvider } from './_contexts/GlazingTypes.Context';
 import { ManufacturerFilterProvider } from './_contexts/ManufacturerFilter.Context';
+import { CopyPasteProvider } from './pages/UnitBuilder/ApertureView/CopyPaste.Context';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [
@@ -38,15 +39,17 @@ const WindowDataDashboard: React.FC = () => {
             <DataDashboardTabBar tabs={tabs} activeTab={activeTab} onTabChange={tabNumber => setActiveTab(tabNumber)} />
             <ManufacturerFilterProvider>
                 <AperturesProvider>
-                    <FrameTypesProvider>
-                        <GlazingTypesProvider>
-                            <DataViewPage>
-                                <ContentBlocksContainer>
-                                    <Outlet />
-                                </ContentBlocksContainer>
-                            </DataViewPage>
-                        </GlazingTypesProvider>
-                    </FrameTypesProvider>
+                    <CopyPasteProvider>
+                        <FrameTypesProvider>
+                            <GlazingTypesProvider>
+                                <DataViewPage>
+                                    <ContentBlocksContainer>
+                                        <Outlet />
+                                    </ContentBlocksContainer>
+                                </DataViewPage>
+                            </GlazingTypesProvider>
+                        </FrameTypesProvider>
+                    </CopyPasteProvider>
                 </AperturesProvider>
             </ManufacturerFilterProvider>
         </>

@@ -50,8 +50,8 @@ export const PreparingForTheTest: React.FC = () => {
                     gentle breeze).
                 </CheckBoxLi>
                 <CheckBoxLi>
-                    Building height [ft] x inside-to-outside temperature difference [deg-F] is below
-                    <strong> 85.0</strong>
+                    Per ISO 9972 Building height [ft] x inside-to-outside temperature difference [deg-F] is below
+                    <strong> 1,500 ft°F [250 m°K]</strong>
                 </CheckBoxLi>
             </List>
         </Box>

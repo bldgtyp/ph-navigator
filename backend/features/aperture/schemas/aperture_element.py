@@ -38,3 +38,18 @@ class UpdateOperationRequest(BaseModel):
     """Request schema for updating element operation."""
 
     operation: OperationSchema | None = None  # None = set to fixed
+
+
+class FrameTypeIdMap(BaseModel):
+    top: str
+    right: str
+    bottom: str
+    left: str
+
+
+class UpdateElementAssignmentsRequest(BaseModel):
+    """Request schema for bulk updating element assignments."""
+
+    operation: OperationSchema | None = None
+    glazing_type_id: str
+    frame_type_ids: FrameTypeIdMap

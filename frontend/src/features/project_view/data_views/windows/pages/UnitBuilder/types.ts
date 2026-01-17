@@ -132,6 +132,17 @@ export interface ApertureType {
     elements: ApertureElementType[];
 }
 
+export interface ElementAssignmentsPayload {
+    operation: ElementOperation | null;
+    glazingTypeId: string;
+    frameTypeIds: {
+        top: string;
+        right: string;
+        bottom: string;
+        left: string;
+    };
+}
+
 export const defaultAperture = {
     id: 0,
     name: 'default',

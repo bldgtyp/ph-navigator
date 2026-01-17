@@ -3,7 +3,7 @@ import { patchWithAlert } from '../../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../../api/postWithAlert';
 
-import { ApertureType, ElementOperation } from '../../types';
+import { ApertureType, ElementAssignmentsPayload, ElementOperation } from '../../types';
 import { FramePosition } from '../../ElementsTable/types';
 
 /**
@@ -296,6 +296,30 @@ export class ApertureService {
         } catch (error) {
             console.error('Error updating element operation:', error);
             throw new Error(`Failed to update element operation: ${error}`);
+        }
+    }
+
+    static async updateElementAssignments(
+        elementId: number,
+        payload: ElementAssignmentsPayload
+    ): Promise<ApertureType> {
+        try {
+            const updatedAperture = await patchWithAlert<ApertureType>(
+                `aperture/update-element-assignments/${elementId}`,
+                null,
+                {
+                    operation: payload.operation,
+                    glazing_type_id: payload.glazingTypeId,
+                    frame_type_ids: payload.frameTypeIds,
+                }
+            );
+            if (!updatedAperture) {
+                throw new Error('Failed to update element assignments - no response received');
+            }
+            return updatedAperture;
+        } catch (error) {
+            console.error('Error updating element assignments:', error);
+            throw new Error(`Failed to update element assignments: ${error}`);
         }
     }
 }

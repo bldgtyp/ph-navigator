@@ -1,7 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { ApertureElementType, ApertureType, ElementOperation } from '../pages/UnitBuilder/types';
+import {
+    ApertureElementType,
+    ApertureType,
+    ElementAssignmentsPayload,
+    ElementOperation,
+} from '../pages/UnitBuilder/types';
 import { FramePosition } from '../pages/UnitBuilder/ElementsTable/types';
 import { ApertureService } from '../pages/UnitBuilder/ApertureView/services/apertureService';
 
@@ -49,6 +54,7 @@ interface AperturesContextType {
     updateApertureElementName: (elementId: number, newName: string) => Promise<void>;
     handleUpdateApertureElementGlazing: (params: { elementId: number; glazingTypeId: string | null }) => Promise<void>;
     handleUpdateApertureElementOperation: (elementId: number, operation: ElementOperation | null) => Promise<void>;
+    handleUpdateApertureElementAssignments: (elementId: number, payload: ElementAssignmentsPayload) => Promise<void>;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -383,6 +389,20 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         []
     );
 
+    const handleUpdateApertureElementAssignments = useCallback(
+        async (elementId: number, payload: ElementAssignmentsPayload) => {
+            try {
+                const updatedAperture = await ApertureService.updateElementAssignments(elementId, payload);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Failed to update element assignments:', error);
+                throw error;
+            }
+        },
+        []
+    );
+
     // ----------------------------------------------------------------------------------
     // Cell Selection
 
@@ -555,6 +575,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 updateApertureElementName,
                 handleUpdateApertureElementGlazing,
                 handleUpdateApertureElementOperation,
+                handleUpdateApertureElementAssignments,
             }}
         >
             {children}
