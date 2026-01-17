@@ -10,7 +10,27 @@ const ApertureSelector: React.FC = () => {
     const sortedApertures = [...apertures].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
-        <FormControl sx={{ minWidth: 200, maxWidth: 300 }} size="small">
+        <FormControl
+            sx={{
+                minWidth: 330,
+                maxWidth: 480,
+                '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'var(--outline-color)',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'var(--text-secondary-color)',
+                },
+                '& .MuiAutocomplete-inputRoot': {
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                },
+            }}
+            size="small"
+        >
             <Autocomplete
                 options={sortedApertures}
                 getOptionLabel={(option: ApertureType) => option.name}
