@@ -5,6 +5,7 @@ backend/alembic/db_backups/*
 
 # Claude
 .claude/
+CLAUDE.md
 
 # dependencies
 frontend/node_modules
