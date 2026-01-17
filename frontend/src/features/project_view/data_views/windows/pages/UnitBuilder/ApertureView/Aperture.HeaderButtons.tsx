@@ -1,14 +1,16 @@
 import { CircularProgress, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import TuneIcon from '@mui/icons-material/Tune';
 import { useFrameTypes } from '../../../_contexts/FrameType.Context';
 import { useGlazingTypes } from '../../../_contexts/GlazingTypes.Context';
 import { useContext, useMemo, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
+import { ManufacturerFilterModal } from '../ManufacturerFilterModal/Modal.ManufacturerFilter';
 
 interface HeaderActionItem {
-    id: 'refresh_frames' | 'refresh_glazings';
+    id: 'refresh_frames' | 'refresh_glazings' | 'configure_filters';
     label: string;
     helperText: string;
     icon: ReactNode;
@@ -75,9 +77,17 @@ export function useHeaderButtons(): ReactElement[] {
     const userContext = useContext(UserContext);
     const { isLoadingFrameTypes, handleRefreshFrameTypes } = useFrameTypes();
     const { isLoadingGlazingTypes, handleRefreshGlazingTypes } = useGlazingTypes();
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
     const menuItems = useMemo<HeaderActionItem[]>(
         () => [
+            {
+                id: 'configure_filters',
+                label: 'Configure manufacturer filters',
+                helperText: 'Select visible manufacturers',
+                icon: <TuneIcon fontSize="small" />,
+                handler: () => setIsFilterModalOpen(true),
+            },
             {
                 id: 'refresh_frames',
                 label: 'Refresh frame types',
@@ -98,5 +108,16 @@ export function useHeaderButtons(): ReactElement[] {
         [handleRefreshFrameTypes, handleRefreshGlazingTypes, isLoadingFrameTypes, isLoadingGlazingTypes]
     );
 
-    return userContext.user ? [<HeaderActionsMenu key="header-actions" items={menuItems} />] : [];
+    if (!userContext.user) {
+        return [];
+    }
+
+    return [
+        <HeaderActionsMenu key="header-actions" items={menuItems} />,
+        <ManufacturerFilterModal
+            key="filter-modal"
+            open={isFilterModalOpen}
+            onClose={() => setIsFilterModalOpen(false)}
+        />,
+    ];
 }

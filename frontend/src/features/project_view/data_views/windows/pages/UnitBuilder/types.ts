@@ -138,3 +138,12 @@ export const defaultAperture = {
         },
     ],
 };
+
+export interface ManufacturerFilterConfig {
+    available_frame_manufacturers: string[];
+    enabled_frame_manufacturers: string[];
+    available_glazing_manufacturers: string[];
+    enabled_glazing_manufacturers: string[];
+    used_frame_manufacturers: string[];
+    used_glazing_manufacturers: string[];
+}
