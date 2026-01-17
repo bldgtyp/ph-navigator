@@ -90,3 +90,9 @@ frontend/
 - MUI Theme extended in theme/ (palette, typography)
 - Use sx prop for one-off tweaks; styled() for reusable variants
 - Keep spacing & sizing tokens consistent (theme.spacing)
+
+## 12. Window SVG Tooltips
+
+- Frame edges in the Window SVG expose per‑side hover tooltips via MUI `Tooltip`.
+- Hover highlight is scoped to the specific frame edge (top/right/bottom/left), not the full element.
+- Tooltip text uses the frame type name from `element.frames.<side>.frame_type.name`.
