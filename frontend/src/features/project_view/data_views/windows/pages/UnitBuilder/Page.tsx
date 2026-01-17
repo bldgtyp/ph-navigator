@@ -4,6 +4,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import { useApertures } from '../../_contexts/Aperture.Context';
 import { ZoomProvider } from './ApertureView/Zoom.Context';
+import { ViewDirectionProvider } from './ApertureView/ViewDirection.Context';
 import { ApertureSidebarProvider, useApertureSidebar } from './Sidebar/Sidebar.Context';
 
 import ContentBlock from '../../../_components/ContentBlock';
@@ -38,7 +39,7 @@ const ApertureTypesContentBlock: React.FC = () => {
                 }
             />
 
-            <Box id="aperture-types-active-view-container" sx={{ display: 'flex', margin: 2 }}>
+            <Box id="aperture-types-active-view-container" sx={{ display: 'flex', margin: 2, position: 'relative' }}>
                 {/* Collapsible Sidebar - uses overflow:hidden to "cover" content when collapsing */}
                 <Box
                     id="aperture-types-sidebar"
@@ -89,9 +90,11 @@ const ApertureTypesContentBlock: React.FC = () => {
 const ApertureTypesPage: React.FC = () => {
     return (
         <ZoomProvider>
-            <ApertureSidebarProvider>
-                <ApertureTypesContentBlock />
-            </ApertureSidebarProvider>
+            <ViewDirectionProvider>
+                <ApertureSidebarProvider>
+                    <ApertureTypesContentBlock />
+                </ApertureSidebarProvider>
+            </ViewDirectionProvider>
         </ZoomProvider>
     );
 };

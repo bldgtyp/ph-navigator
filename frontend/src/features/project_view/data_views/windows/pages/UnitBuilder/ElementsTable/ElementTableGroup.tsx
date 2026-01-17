@@ -7,6 +7,7 @@ import { GlazingRow, FrameRow } from './TableRows';
 import { TableGroupProps } from './types';
 import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
+import { useViewDirection } from '../ApertureView/ViewDirection.Context';
 
 const GroupTitle: React.FC<{ handleEditStart: () => void; title: string }> = ({ handleEditStart, title }) => {
     return (
@@ -84,6 +85,7 @@ const GroupTitleEditable: React.FC<{
 export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture, element, isSelected }) => {
     const userContext = useContext(UserContext);
     const { updateApertureElementName, activeAperture } = useApertures();
+    const { isInsideView } = useViewDirection();
     const [isEditingTitle, setIsEditingTitle] = useState(false);
 
     // Get the most current element data from activeAperture to ensure we have the latest state
@@ -156,10 +158,28 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
                     element={currentElement}
                     glazing={currentElement.glazing}
                 />
-                <FrameRow rowIndex={1} aperture={aperture} element={currentElement} position="top" />
-                <FrameRow rowIndex={2} aperture={aperture} element={currentElement} position="right" />
-                <FrameRow rowIndex={3} aperture={aperture} element={currentElement} position="bottom" />
-                <FrameRow rowIndex={4} aperture={aperture} element={currentElement} position="left" />
+                <FrameRow rowIndex={1} aperture={aperture} element={currentElement} position="top" label="Top Frame:" />
+                <FrameRow
+                    rowIndex={2}
+                    aperture={aperture}
+                    element={currentElement}
+                    position={isInsideView ? 'left' : 'right'}
+                    label="Right Frame:"
+                />
+                <FrameRow
+                    rowIndex={3}
+                    aperture={aperture}
+                    element={currentElement}
+                    position="bottom"
+                    label="Bottom Frame:"
+                />
+                <FrameRow
+                    rowIndex={4}
+                    aperture={aperture}
+                    element={currentElement}
+                    position={isInsideView ? 'right' : 'left'}
+                    label="Left Frame:"
+                />
             </Grid>
         </Box>
     );

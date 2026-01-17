@@ -5,15 +5,34 @@ import { ApertureElementSVGProps } from './types';
 
 type FrameSide = 'top' | 'right' | 'bottom' | 'left';
 
-const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({ height, width, element, scaleFactor }) => {
+const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({
+    height,
+    width,
+    element,
+    scaleFactor,
+    isInsideView,
+}) => {
     const [hoveredSide, setHoveredSide] = useState<FrameSide | null>(null);
+
+    const frameData = useMemo(
+        () =>
+            isInsideView
+                ? {
+                      top: element.frames.top,
+                      right: element.frames.left,
+                      bottom: element.frames.bottom,
+                      left: element.frames.right,
+                  }
+                : element.frames,
+        [element.frames, isInsideView]
+    );
 
     // Get frame widths from element data, with 100mm default if null
     const defaultFrameWidth = 100; // mm
-    const topFrameWidth = element.frames.top.frame_type.width_mm ?? defaultFrameWidth;
-    const rightFrameWidth = element.frames.right.frame_type.width_mm ?? defaultFrameWidth;
-    const bottomFrameWidth = element.frames.bottom.frame_type.width_mm ?? defaultFrameWidth;
-    const leftFrameWidth = element.frames.left.frame_type.width_mm ?? defaultFrameWidth;
+    const topFrameWidth = frameData.top.frame_type.width_mm ?? defaultFrameWidth;
+    const rightFrameWidth = frameData.right.frame_type.width_mm ?? defaultFrameWidth;
+    const bottomFrameWidth = frameData.bottom.frame_type.width_mm ?? defaultFrameWidth;
+    const leftFrameWidth = frameData.left.frame_type.width_mm ?? defaultFrameWidth;
 
     const scaledFrameWidths = {
         top: topFrameWidth * scaleFactor,
@@ -24,12 +43,12 @@ const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({ height, width, 
 
     const frameNames = useMemo(
         () => ({
-            top: element.frames.top.frame_type.name,
-            right: element.frames.right.frame_type.name,
-            bottom: element.frames.bottom.frame_type.name,
-            left: element.frames.left.frame_type.name,
+            top: frameData.top.frame_type.name,
+            right: frameData.right.frame_type.name,
+            bottom: frameData.bottom.frame_type.name,
+            left: frameData.left.frame_type.name,
         }),
-        [element]
+        [frameData]
     );
 
     const getFill = (side: FrameSide) => (hoveredSide === side ? 'rgba(25, 118, 210, 0.1)' : '#fff');

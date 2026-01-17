@@ -2,8 +2,10 @@ import { Box, Stack } from '@mui/material';
 
 import { useApertures } from '../../../../_contexts/Aperture.Context';
 import { useZoom } from '../Zoom.Context';
+import { useViewDirection } from '../ViewDirection.Context';
 import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
 import ApertureToolbar from '../ApertureToolbar';
+import { getDisplayColumnIndex, getDisplayColumnWidths } from './viewFlipUtils';
 
 import ApertureElementContainer from './ApertureElement.Container';
 import ElementLabelsOverlay from './ElementLabelsOverlay';
@@ -13,6 +15,7 @@ import HorizontalDimensionLines from '../../Dimensions/Dimensions.Horizontal';
 const ApertureElementsDisplay: React.FC = () => {
     const { activeAperture, getCellSize, selectedApertureElementIds } = useApertures();
     const { scaleFactor } = useZoom();
+    const { isInsideView } = useViewDirection();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -23,7 +26,9 @@ const ApertureElementsDisplay: React.FC = () => {
             className="aperture-elements-display"
             sx={{
                 display: 'grid',
-                gridTemplateColumns: activeAperture.column_widths_mm.map(w => `${w * scaleFactor}px`).join(' '),
+                gridTemplateColumns: getDisplayColumnWidths(activeAperture.column_widths_mm, isInsideView)
+                    .map(w => `${w * scaleFactor}px`)
+                    .join(' '),
                 gridTemplateRows: activeAperture.row_heights_mm.map(h => `${h * scaleFactor}px`).join(' '),
                 gap: 0,
                 position: 'relative',
@@ -39,6 +44,12 @@ const ApertureElementsDisplay: React.FC = () => {
                     element.row_span,
                     element.col_span
                 );
+                const displayColumnIndex = getDisplayColumnIndex(
+                    element.column_number,
+                    element.col_span,
+                    activeAperture.column_widths_mm.length,
+                    isInsideView
+                );
                 return (
                     <ApertureElementContainer
                         key={element.id}
@@ -46,6 +57,8 @@ const ApertureElementsDisplay: React.FC = () => {
                         width={width * scaleFactor}
                         height={height * scaleFactor}
                         isSelected={selectedApertureElementIds.includes(element.id)}
+                        gridColumnStart={displayColumnIndex + 1}
+                        gridColumnEnd={displayColumnIndex + 1 + element.col_span}
                     />
                 );
             })}

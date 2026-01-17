@@ -4,11 +4,20 @@ import { useApertures } from '../../../../_contexts/Aperture.Context';
 import { useZoom } from '../Zoom.Context';
 
 import ApertureElementSVG from './ApertureElement.SVG';
+import { useViewDirection } from '../ViewDirection.Context';
 import { ApertureElementContainerProps } from './types';
 
-const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({ element, width, height, isSelected }) => {
+const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({
+    element,
+    width,
+    height,
+    isSelected,
+    gridColumnStart,
+    gridColumnEnd,
+}) => {
     const { toggleApertureElementSelection } = useApertures();
     const { scaleFactor } = useZoom();
+    const { isInsideView } = useViewDirection();
 
     return (
         <Box
@@ -17,8 +26,8 @@ const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({ ele
             sx={{
                 gridRowStart: element.row_number + 1,
                 gridRowEnd: element.row_number + 1 + element.row_span,
-                gridColumnStart: element.column_number + 1,
-                gridColumnEnd: element.column_number + 1 + element.col_span,
+                gridColumnStart: gridColumnStart ?? element.column_number + 1,
+                gridColumnEnd: gridColumnEnd ?? element.column_number + 1 + element.col_span,
                 position: 'relative',
                 cursor: 'pointer',
                 border: isSelected ? '2px solid #1976d2' : '1px solid #ddd',
@@ -29,7 +38,13 @@ const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({ ele
                 },
             }}
         >
-            <ApertureElementSVG height={height} width={width} element={element} scaleFactor={scaleFactor} />
+            <ApertureElementSVG
+                height={height}
+                width={width}
+                element={element}
+                scaleFactor={scaleFactor}
+                isInsideView={isInsideView}
+            />
         </Box>
     );
 };

@@ -5,6 +5,7 @@ export interface ApertureElementSVGProps {
     width: number;
     element: ApertureElementType;
     scaleFactor: number;
+    isInsideView: boolean;
 }
 
 export interface ApertureElementContainerProps {
@@ -12,4 +13,6 @@ export interface ApertureElementContainerProps {
     width: number;
     height: number;
     isSelected: boolean;
+    gridColumnStart?: number;
+    gridColumnEnd?: number;
 }

@@ -3,6 +3,7 @@ import type { FC, ReactNode } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import CallMergeIcon from '@mui/icons-material/CallMerge';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -10,6 +11,7 @@ import ViewColumnOutlinedIcon from '@mui/icons-material/ViewColumnOutlined';
 import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined';
 
 import { useZoom } from './Zoom.Context';
+import { useViewDirection } from './ViewDirection.Context';
 import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 
@@ -74,6 +76,7 @@ const ToolbarDivider: FC = () => {
 const ApertureToolbar: FC = () => {
     const userContext = useContext(UserContext);
     const { zoomIn, zoomOut, scaleFactor } = useZoom();
+    const { isInsideView, toggleViewDirection } = useViewDirection();
     const {
         activeAperture,
         selectedApertureElementIds,
@@ -96,6 +99,8 @@ const ApertureToolbar: FC = () => {
         : `Merge selected (${selectedApertureElementIds.length} elements)`;
     const splitTooltip = isSplitDisabled ? 'Select 1 element to split' : 'Split selected element';
     const clearTooltip = isClearDisabled ? 'Select elements to clear' : 'Clear selection';
+    const viewLabel = isInsideView ? 'View from Interior' : 'View from Exterior';
+    const viewTooltip = isInsideView ? 'Switch to exterior view' : 'Switch to interior view';
 
     return (
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -126,6 +131,31 @@ const ApertureToolbar: FC = () => {
                     disabled={isZoomOutDisabled}
                     tooltipText="Zoom out"
                 />
+                <ToolbarIconButton
+                    icon={<SwapHorizIcon fontSize="small" />}
+                    onClick={toggleViewDirection}
+                    tooltipText={viewTooltip}
+                />
+                <Box
+                    component="span"
+                    sx={{
+                        ml: 0.25,
+                        mr: 0.5,
+                        px: 0.5,
+                        py: '1px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid var(--outline-color)',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: 'var(--text-secondary-color)',
+                        lineHeight: 1.2,
+                        whiteSpace: 'nowrap',
+                        pointerEvents: 'none',
+                    }}
+                >
+                    {viewLabel}
+                </Box>
 
                 {userContext.user && (
                     <>

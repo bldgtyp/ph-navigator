@@ -20,6 +20,7 @@ export interface FrameRowProps {
     aperture: ApertureType;
     element: ApertureElementType;
     position: FramePosition;
+    label?: string;
 }
 
 export interface TableGroupProps {

@@ -46,15 +46,16 @@ export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIn
     );
 };
 
-export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex, position }) => {
+export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex, position, label }) => {
     const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
     const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion();
     const { isLoadingFrameTypes } = useFrameTypes();
+    const displayLabel = label ?? `${position.charAt(0).toUpperCase()}${position.slice(1).toLowerCase()} Frame:`;
 
     return (
         <>
             <TableCell size={2} className={rowClass}>
-                {`${position.charAt(0).toUpperCase()}${position.slice(1).toLowerCase()} Frame:`}
+                {displayLabel}
             </TableCell>
             <TableCell size={6} className={rowClass}>
                 <FrameSelector

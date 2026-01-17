@@ -3,6 +3,8 @@ import { Box, ClickAwayListener, TextField, Typography } from '@mui/material';
 
 import { useApertures } from '../../../../_contexts/Aperture.Context';
 import { useZoom } from '../Zoom.Context';
+import { useViewDirection } from '../ViewDirection.Context';
+import { getDisplayColumnIndex, getDisplayColumnWidths } from './viewFlipUtils';
 import { UserContext } from '../../../../../../../auth/_contexts/UserContext';
 
 const ElementLabelEditable: React.FC<{
@@ -66,7 +68,8 @@ const ElementLabel: React.FC<{
     height: number;
     columnWidths: number[];
     rowHeights: number[];
-}> = ({ element, width, height, columnWidths, rowHeights }) => {
+    columnIndexOverride?: number;
+}> = ({ element, width, height, columnWidths, rowHeights, columnIndexOverride }) => {
     const userContext = useContext(UserContext);
     const { updateApertureElementName } = useApertures();
     const [isEditing, setIsEditing] = useState(false);
@@ -75,7 +78,8 @@ const ElementLabel: React.FC<{
 
     // Calculate the left position by summing up column widths up to the start column
     // then adding half the element's total width
-    const leftOffsetToStart = columnWidths.slice(0, element.column_number).reduce((sum, w) => sum + w, 0);
+    const columnIndex = columnIndexOverride ?? element.column_number;
+    const leftOffsetToStart = columnWidths.slice(0, columnIndex).reduce((sum, w) => sum + w, 0);
     const leftPosition = leftOffsetToStart + width / 2;
 
     // Calculate the top position by summing up row heights up to the start row
@@ -160,6 +164,7 @@ const ElementLabel: React.FC<{
 const ElementLabelsOverlay: React.FC = () => {
     const { activeAperture, getCellSize } = useApertures();
     const { scaleFactor } = useZoom();
+    const { isInsideView } = useViewDirection();
 
     if (!activeAperture) {
         return null;
@@ -186,14 +191,27 @@ const ElementLabelsOverlay: React.FC = () => {
                     element.col_span
                 );
 
+                const displayColumnIndex = getDisplayColumnIndex(
+                    element.column_number,
+                    element.col_span,
+                    activeAperture.column_widths_mm.length,
+                    isInsideView
+                );
+
+                const displayColumnWidths = getDisplayColumnWidths(
+                    activeAperture.column_widths_mm.map(w => w * scaleFactor),
+                    isInsideView
+                );
+
                 return (
                     <ElementLabel
                         key={`label-${element.id}`}
                         element={element}
                         width={width * scaleFactor}
                         height={height * scaleFactor}
-                        columnWidths={activeAperture.column_widths_mm.map(w => w * scaleFactor)}
+                        columnWidths={displayColumnWidths}
                         rowHeights={activeAperture.row_heights_mm.map(h => h * scaleFactor)}
+                        columnIndexOverride={displayColumnIndex}
                     />
                 );
             })}
