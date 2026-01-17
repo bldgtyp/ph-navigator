@@ -3,7 +3,7 @@ import { useContext, useState } from 'react';
 import { Box, ClickAwayListener, Grid, TextField, Typography } from '@mui/material';
 
 import { TableHeader } from './TableHeader';
-import { GlazingRow, FrameRow } from './TableRows';
+import { GlazingRow, FrameRow, OperationRow } from './TableRows';
 import { TableGroupProps } from './types';
 import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
@@ -180,6 +180,7 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
                     position={isInsideView ? 'right' : 'left'}
                     label="Left Frame:"
                 />
+                <OperationRow rowIndex={5} element={currentElement} />
             </Grid>
         </Box>
     );

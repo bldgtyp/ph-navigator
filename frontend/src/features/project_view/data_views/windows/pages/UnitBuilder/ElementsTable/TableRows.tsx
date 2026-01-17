@@ -4,7 +4,8 @@ import { useGlazingTypes } from '../../../_contexts/GlazingTypes.Context';
 import { TableCell } from './TableCells';
 import { FrameSelector } from './FrameTypeSelector';
 import { GlazingSelector } from './GlazingTypeSelector';
-import { GlazingRowProps, FrameRowProps } from './types';
+import { OperationEditor } from './OperationEditor';
+import { GlazingRowProps, FrameRowProps, OperationRowProps } from './types';
 import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 
 export const GlazingRow: React.FC<GlazingRowProps> = ({ aperture, element, rowIndex }) => {
@@ -88,6 +89,21 @@ export const FrameRow: React.FC<FrameRowProps> = ({ aperture, element, rowIndex,
             </TableCell>
             <TableCell size={1} className={rowClass}>
                 <span>-</span>
+            </TableCell>
+        </>
+    );
+};
+
+export const OperationRow: React.FC<OperationRowProps> = ({ element, rowIndex }) => {
+    const rowClass = `table-row ${rowIndex % 2 === 0 ? 'row-even' : 'row-odd'}`;
+
+    return (
+        <>
+            <TableCell size={2} className={rowClass}>
+                <span>Operation:</span>
+            </TableCell>
+            <TableCell size={10} className={rowClass}>
+                <OperationEditor element={element} />
             </TableCell>
         </>
     );

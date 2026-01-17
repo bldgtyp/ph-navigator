@@ -129,6 +129,7 @@ def duplicate_aperture_element(
         column_number=source_element.column_number,
         row_span=source_element.row_span,
         col_span=source_element.col_span,
+        operation=source_element.operation,
         aperture_id=new_aperture_id,
         glazing=new_glazing,
         frame_top=new_frame_top,

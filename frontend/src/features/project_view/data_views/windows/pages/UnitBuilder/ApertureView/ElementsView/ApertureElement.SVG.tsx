@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Tooltip } from '@mui/material';
 
 import { ApertureElementSVGProps } from './types';
+import { OperationSymbol } from './OperationSymbols';
 
 type FrameSide = 'top' | 'right' | 'bottom' | 'left';
 
@@ -89,6 +90,17 @@ const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({
         },
     ];
 
+    // Calculate glazing area (inside the frames) for operation symbols
+    const glazingArea = useMemo(
+        () => ({
+            x: scaledFrameWidths.left,
+            y: scaledFrameWidths.top,
+            width: width - scaledFrameWidths.left - scaledFrameWidths.right,
+            height: height - scaledFrameWidths.top - scaledFrameWidths.bottom,
+        }),
+        [scaledFrameWidths, width, height]
+    );
+
     return (
         <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
             {frameRects.map(({ side, placement, x, y, w, h }) => (
@@ -105,6 +117,9 @@ const ApertureElementSVG: React.FC<ApertureElementSVGProps> = ({
                     />
                 </Tooltip>
             ))}
+            {element.operation && (
+                <OperationSymbol operation={element.operation} glazingArea={glazingArea} isInsideView={isInsideView} />
+            )}
         </svg>
     );
 };

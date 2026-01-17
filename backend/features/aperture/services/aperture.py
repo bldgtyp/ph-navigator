@@ -606,3 +606,27 @@ def delete_aperture(db: Session, aperture_id: int) -> None:
         db.rollback()
         logger.error(f"Error deleting aperture {aperture_id}: {str(e)}")
         raise
+
+
+def update_aperture_element_operation(db: Session, element_id: int, operation: dict | None) -> Aperture:
+    """Update the operation (swing/slide/fixed) of an aperture element.
+
+    Args:
+        db: Database session
+        element_id: ID of the aperture element to update
+        operation: Operation data dict with 'type' and 'directions', or None for fixed
+
+    Returns:
+        Updated parent aperture object
+    """
+    logger.info(f"update_aperture_element_operation({element_id=}, {operation=})")
+
+    try:
+        element = get_aperture_element_by_id(db, element_id)
+        element.operation = operation
+        db.commit()
+        return get_aperture_by_child_element_id(db, element.id)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating aperture element operation {element_id=}: {str(e)}")
+        raise

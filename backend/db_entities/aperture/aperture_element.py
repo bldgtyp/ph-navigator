@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String, JSON
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 from database import Base
@@ -23,6 +23,7 @@ class ApertureElement(Base):
     column_number: Mapped[int] = MappedColumn(Integer, default=1, nullable=False)
     row_span: Mapped[int] = MappedColumn(Integer, default=1, nullable=False)
     col_span: Mapped[int] = MappedColumn(Integer, default=1, nullable=False)
+    operation: Mapped[dict | None] = MappedColumn(JSON, nullable=True, default=None)
 
     # Foreign Keys
     aperture_id: Mapped[int] = MappedColumn(Integer, ForeignKey("apertures.id"), nullable=False)

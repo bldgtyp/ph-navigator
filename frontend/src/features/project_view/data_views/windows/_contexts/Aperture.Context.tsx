@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { ApertureElementType, ApertureType } from '../pages/UnitBuilder/types';
+import { ApertureElementType, ApertureType, ElementOperation } from '../pages/UnitBuilder/types';
 import { FramePosition } from '../pages/UnitBuilder/ElementsTable/types';
 import { ApertureService } from '../pages/UnitBuilder/ApertureView/services/apertureService';
 
@@ -48,6 +48,7 @@ interface AperturesContextType {
     }) => Promise<void>;
     updateApertureElementName: (elementId: number, newName: string) => Promise<void>;
     handleUpdateApertureElementGlazing: (params: { elementId: number; glazingTypeId: string | null }) => Promise<void>;
+    handleUpdateApertureElementOperation: (elementId: number, operation: ElementOperation | null) => Promise<void>;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -368,6 +369,20 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         []
     );
 
+    const handleUpdateApertureElementOperation = useCallback(
+        async (elementId: number, operation: ElementOperation | null) => {
+            try {
+                const updatedAperture = await ApertureService.updateElementOperation(elementId, operation);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Failed to update aperture element operation:', error);
+                alert('Failed to update operation. Please try again.');
+            }
+        },
+        []
+    );
+
     // ----------------------------------------------------------------------------------
     // Cell Selection
 
@@ -539,6 +554,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 handleUpdateApertureElementFrameType,
                 updateApertureElementName,
                 handleUpdateApertureElementGlazing,
+                handleUpdateApertureElementOperation,
             }}
         >
             {children}

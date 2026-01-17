@@ -53,3 +53,8 @@ export interface GlazingSelectorProps {
     selectedGlazingType: ApertureGlazingType;
     isLoading?: boolean;
 }
+
+export interface OperationRowProps {
+    rowIndex: number;
+    element: ApertureElementType;
+}

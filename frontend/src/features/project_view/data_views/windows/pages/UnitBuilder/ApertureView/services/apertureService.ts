@@ -3,7 +3,7 @@ import { patchWithAlert } from '../../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../../api/postWithAlert';
 
-import { ApertureType } from '../../types';
+import { ApertureType, ElementOperation } from '../../types';
 import { FramePosition } from '../../ElementsTable/types';
 
 /**
@@ -278,6 +278,24 @@ export class ApertureService {
         } catch (error) {
             console.error('Error updating element name:', error);
             throw new Error(`Failed to update element name: ${error}`);
+        }
+    }
+
+    // Operation (swing/slide/fixed) Operations
+    static async updateElementOperation(elementId: number, operation: ElementOperation | null): Promise<ApertureType> {
+        try {
+            const updatedAperture = await patchWithAlert<ApertureType>(
+                `aperture/update-element-operation/${elementId}`,
+                null,
+                { operation }
+            );
+            if (!updatedAperture) {
+                throw new Error('Failed to update element operation - no response received');
+            }
+            return updatedAperture;
+        } catch (error) {
+            console.error('Error updating element operation:', error);
+            throw new Error(`Failed to update element operation: ${error}`);
         }
     }
 }

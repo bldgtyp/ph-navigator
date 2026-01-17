@@ -104,6 +104,14 @@ export interface ApertureElementGlazing {
     glazing_type: ApertureGlazingType;
 }
 
+export type OperationType = 'swing' | 'slide';
+export type OperationDirection = 'left' | 'right' | 'up' | 'down';
+
+export interface ElementOperation {
+    type: OperationType;
+    directions: OperationDirection[];
+}
+
 export interface ApertureElementType {
     id: number;
     name: string;
@@ -113,6 +121,7 @@ export interface ApertureElementType {
     row_span: number;
     frames: ApertureElementFrames;
     glazing: ApertureElementGlazing;
+    operation: ElementOperation | null;
 }
 
 export interface ApertureType {

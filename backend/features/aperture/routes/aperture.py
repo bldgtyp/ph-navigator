@@ -20,6 +20,7 @@ from features.aperture.schemas.aperture import (
     UpdateRowHeightRequest,
     UpdateApertureElementNameRequest,
 )
+from features.aperture.schemas.aperture_element import UpdateOperationRequest
 from features.aperture.services.aperture import (
     LastColumnException,
     LastRowException,
@@ -37,6 +38,7 @@ from features.aperture.services.aperture import (
     split_aperture_element,
     update_aperture_column_width,
     update_aperture_element_frame_type,
+    update_aperture_element_operation,
     update_aperture_name,
     update_aperture_row_height,
     update_aperture_element_name,
@@ -323,6 +325,24 @@ def update_aperture_element_name_route(
         return ApertureSchema.from_orm(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture element name for ID {element_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+
+# @limiter.limit("1/second")
+@router.patch("/update-element-operation/{element_id}", response_model=ApertureSchema)
+def update_aperture_element_operation_route(
+    request: Request, element_id: int, update_request: UpdateOperationRequest, db: Session = Depends(get_db)
+) -> ApertureSchema:
+    """Update the operation (swing/slide/fixed) for a window element."""
+    logger.info(f"update_aperture_element_operation_route({element_id=}, {update_request.operation=})")
+
+    try:
+        operation_dict = update_request.operation.dict() if update_request.operation else None
+        updated_aperture = update_aperture_element_operation(db, element_id, operation_dict)
+        return ApertureSchema.from_orm(updated_aperture)
+    except Exception as e:
+        msg = f"Failed to update aperture element operation for ID {element_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
