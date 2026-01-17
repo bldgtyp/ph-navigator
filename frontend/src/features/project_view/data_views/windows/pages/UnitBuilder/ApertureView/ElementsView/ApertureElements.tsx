@@ -1,8 +1,9 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 
 import { useApertures } from '../../../../_contexts/Aperture.Context';
 import { useZoom } from '../Zoom.Context';
 import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
+import ApertureToolbar from '../ApertureToolbar';
 
 import ApertureElementContainer from './ApertureElement.Container';
 import ElementLabelsOverlay from './ElementLabelsOverlay';
@@ -54,7 +55,7 @@ const ApertureElementsDisplay: React.FC = () => {
 
 const ApertureElements: React.FC = () => {
     const { activeAperture, updateColumnWidth, updateRowHeight } = useApertures();
-    const { scaleFactor, getScaleLabel } = useZoom();
+    const { scaleFactor } = useZoom();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -69,22 +70,18 @@ const ApertureElements: React.FC = () => {
     return (
         <Stack
             className="aperture-elements-container"
-            spacing={2}
+            spacing={4}
             sx={{
                 position: 'relative',
                 pl: 12,
                 pb: 8,
-                pt: 1,
+                pt: 0.0,
                 pr: 1,
-                mt: 4,
+                mt: 0.0,
                 overflow: 'hidden', // Clip Aperture SVG content that exceeds bounds
             }}
         >
-            {/* Scale indicator */}
-            <Typography variant="caption" sx={{ alignSelf: 'flex-end', color: 'text.secondary' }}>
-                Scale: {getScaleLabel()} | {totalWidthMM}mm x {totalHeightMM}mm
-            </Typography>
-
+            <ApertureToolbar />
             <Box
                 className="aperture-elements-display-container"
                 sx={{

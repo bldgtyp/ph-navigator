@@ -4,9 +4,11 @@ import { contentBlockHeaderStyle } from '../_styles/ContentBlock.Header.Style';
 type ContentBlockHeaderProps = {
     text: string;
     buttons?: React.ReactNode[];
+    titleContent?: React.ReactNode;
+    id?: string;
 };
 
-const ContentBlockHeader: React.FC<ContentBlockHeaderProps> = ({ text, buttons = [] }) => {
+const ContentBlockHeader: React.FC<ContentBlockHeaderProps> = ({ text, buttons = [], titleContent, id }) => {
     return (
         <Stack
             className="content-block-heading"
@@ -15,9 +17,10 @@ const ContentBlockHeader: React.FC<ContentBlockHeaderProps> = ({ text, buttons =
             justifyContent="space-between"
             spacing={1}
             sx={contentBlockHeaderStyle}
+            id={id}
         >
             {/* Header Text */}
-            <h4 style={{ margin: 0 }}>{text}</h4>
+            {titleContent ?? <h4 style={{ margin: 0 }}>{text}</h4>}
 
             {/* Header Buttons */}
             <Box sx={{ display: 'flex', gap: '8px' }}>
