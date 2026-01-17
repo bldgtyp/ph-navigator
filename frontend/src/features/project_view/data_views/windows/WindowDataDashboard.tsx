@@ -7,6 +7,7 @@ import DataDashboardTabBar from '../_components/DataDashboardTabBar';
 import { AperturesProvider } from './_contexts/Aperture.Context';
 import { FrameTypesProvider } from './_contexts/FrameType.Context';
 import { GlazingTypesProvider } from './_contexts/GlazingTypes.Context';
+import { ManufacturerFilterProvider } from './_contexts/ManufacturerFilter.Context';
 
 const WindowDataDashboard: React.FC = () => {
     const tabs = [
@@ -35,17 +36,19 @@ const WindowDataDashboard: React.FC = () => {
     return (
         <>
             <DataDashboardTabBar tabs={tabs} activeTab={activeTab} onTabChange={tabNumber => setActiveTab(tabNumber)} />
-            <AperturesProvider>
-                <FrameTypesProvider>
-                    <GlazingTypesProvider>
-                        <DataViewPage>
-                            <ContentBlocksContainer>
-                                <Outlet />
-                            </ContentBlocksContainer>
-                        </DataViewPage>
-                    </GlazingTypesProvider>
-                </FrameTypesProvider>
-            </AperturesProvider>
+            <ManufacturerFilterProvider>
+                <AperturesProvider>
+                    <FrameTypesProvider>
+                        <GlazingTypesProvider>
+                            <DataViewPage>
+                                <ContentBlocksContainer>
+                                    <Outlet />
+                                </ContentBlocksContainer>
+                            </DataViewPage>
+                        </GlazingTypesProvider>
+                    </FrameTypesProvider>
+                </AperturesProvider>
+            </ManufacturerFilterProvider>
         </>
     );
 };

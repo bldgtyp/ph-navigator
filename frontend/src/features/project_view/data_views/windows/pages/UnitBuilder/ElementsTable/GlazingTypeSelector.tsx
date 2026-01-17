@@ -1,9 +1,10 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { FormControl, Autocomplete, TextField } from '@mui/material';
 
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { useGlazingTypes } from '../../../_contexts/GlazingTypes.Context';
 import { useApertures } from '../../../_contexts/Aperture.Context';
+import { useManufacturerFilters } from '../../../_contexts/ManufacturerFilter.Context';
 
 import { GlazingSelectorProps } from './types';
 
@@ -15,7 +16,21 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
     const userContext = useContext(UserContext);
     const { glazingTypes } = useGlazingTypes();
     const { handleUpdateApertureElementGlazing } = useApertures();
+    const { filterConfig, enabledGlazingManufacturers } = useManufacturerFilters();
     const placeholderText = `Glazing type...`;
+
+    const filteredGlazingTypes = useMemo(() => {
+        if (!filterConfig) {
+            return glazingTypes;
+        }
+
+        return glazingTypes.filter(glazing => {
+            if (!glazing.manufacturer) {
+                return true;
+            }
+            return enabledGlazingManufacturers.includes(glazing.manufacturer);
+        });
+    }, [glazingTypes, filterConfig, enabledGlazingManufacturers]);
 
     if (!userContext.user) {
         return <span>{selectedGlazingType.name || '-'}</span>;
@@ -24,7 +39,7 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
     return (
         <FormControl fullWidth size="small">
             <Autocomplete
-                options={[...glazingTypes].sort((a, b) => a.name.localeCompare(b.name))}
+                options={[...filteredGlazingTypes].sort((a, b) => a.name.localeCompare(b.name))}
                 getOptionLabel={option => option.name}
                 value={selectedGlazingType}
                 onChange={(event, newValue) =>

@@ -83,8 +83,10 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             if (fetchedApertures.length > 0) {
                 // Set the first aperture as selected
-                handleSetActiveApertureById(fetchedApertures[0].id);
-                setActiveAperture(fetchedApertures[0]);
+                const firstAperture = fetchedApertures[0];
+                setSelectedApertureElementsIds([]);
+                setSelectedApertureId(firstAperture.id);
+                setActiveAperture(firstAperture);
             } else {
                 setSelectedApertureId(null); // No apertures available
                 setActiveAperture(null); // No active aperture

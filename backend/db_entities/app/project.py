@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
 from database import Base
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.aperture.aperture import Aperture
+from db_entities.app.manufacturer_filter import ProjectManufacturerFilter
 from db_entities.app.relationships import project_users
 from db_entities.app.user import User
 from db_entities.assembly.assembly import Assembly
@@ -48,6 +49,11 @@ class Project(Base):
     )
     apertures: Mapped[list["Aperture"]] = relationship(
         "Aperture",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    manufacturer_filters: Mapped[list["ProjectManufacturerFilter"]] = relationship(
+        "ProjectManufacturerFilter",
         back_populates="project",
         cascade="all, delete-orphan",
     )

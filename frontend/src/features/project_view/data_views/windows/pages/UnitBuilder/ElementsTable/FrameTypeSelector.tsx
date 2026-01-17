@@ -1,9 +1,10 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { FormControl, Autocomplete, TextField } from '@mui/material';
 
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { useFrameTypes } from '../../../_contexts/FrameType.Context';
 import { useApertures } from '../../../_contexts/Aperture.Context';
+import { useManufacturerFilters } from '../../../_contexts/ManufacturerFilter.Context';
 
 import { FrameSelectorProps } from './types';
 
@@ -17,7 +18,21 @@ export const FrameSelector: React.FC<FrameSelectorProps> = ({
     const userContext = useContext(UserContext);
     const { frameTypes } = useFrameTypes();
     const { handleUpdateApertureElementFrameType } = useApertures();
+    const { filterConfig, enabledFrameManufacturers } = useManufacturerFilters();
     const placeholderText = `Select ${position.toLowerCase()} frame`;
+
+    const filteredFrameTypes = useMemo(() => {
+        if (!filterConfig) {
+            return frameTypes;
+        }
+
+        return frameTypes.filter(frame => {
+            if (!frame.manufacturer) {
+                return true;
+            }
+            return enabledFrameManufacturers.includes(frame.manufacturer);
+        });
+    }, [frameTypes, filterConfig, enabledFrameManufacturers]);
 
     if (!userContext.user) {
         return <span>{selectedFrameType?.name || '-'}</span>;
@@ -26,7 +41,7 @@ export const FrameSelector: React.FC<FrameSelectorProps> = ({
     return (
         <FormControl fullWidth size="small">
             <Autocomplete
-                options={[...frameTypes].sort((a, b) => a.name.localeCompare(b.name))}
+                options={[...filteredFrameTypes].sort((a, b) => a.name.localeCompare(b.name))}
                 getOptionLabel={option => option.name}
                 value={selectedFrameType}
                 onChange={(event, newValue) =>
