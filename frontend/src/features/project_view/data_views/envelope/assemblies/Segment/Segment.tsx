@@ -11,6 +11,7 @@ type SegmentProps = {
     segment: SegmentType;
     onAddSegment: (segment: SegmentType) => void;
     onDeleteSegment: (segmentId: number) => void;
+    onSegmentUpdated?: (segment: SegmentType) => void;
 };
 
 const AddSegmentButton: React.FC<{ onClick: () => void }> = props => {
@@ -23,7 +24,7 @@ const AddSegmentButton: React.FC<{ onClick: () => void }> = props => {
     );
 };
 
-const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegment }) => {
+const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegment, onSegmentUpdated }) => {
     const userContext = useContext(UserContext);
     const hooks = useLayerSegmentHooks(segment);
 
@@ -54,7 +55,7 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
                 steelStudSpacingMM={hooks.steelStudSpacingMM}
                 continuousInsulationChecked={hooks.continuousInsulationChecked}
                 onDeleteSegment={segmentId => hooks.handleDeleteSegment(segmentId, onDeleteSegment)}
-                onSubmit={() => hooks.handleSubmit(segment)}
+                onSubmit={() => hooks.handleSubmit(segment, onSegmentUpdated)}
                 onModalClose={hooks.handleModalClose}
             />
 

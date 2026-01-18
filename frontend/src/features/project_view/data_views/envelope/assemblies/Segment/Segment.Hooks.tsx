@@ -107,7 +107,8 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
         setIsModalOpen(false);
     };
 
-    const handleSubmit = async (segment: SegmentType) => {
+    const handleSubmit = async (segment: SegmentType, onSegmentUpdated?: (updatedSegment: SegmentType) => void) => {
+        let updatedSegment: SegmentType | null = null;
         try {
             // Update the segment width in the database if it has changed
             if (newSegmentWidthMM !== currentSegmentWidthMM) {
@@ -121,6 +122,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
 
                 if (response) {
                     setCurrentSegmentWidthMM(response.width_mm);
+                    updatedSegment = response;
                 } else {
                     console.error('Failed to update Segment-Width.');
                 }
@@ -139,6 +141,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
                 if (response) {
                     setCurrentMaterialId(response.material.id);
                     setCurrentMaterialColor(convertArgbToRgba(response.material.argb_color, '#ccc'));
+                    updatedSegment = response;
                 } else {
                     console.error('Failed to update Segment-Material.');
                 }
@@ -149,11 +152,6 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
                 newIsSteelStudChecked !== currentIsSteelStudChecked ||
                 (newIsSteelStudChecked && newSteelStudSpacingMM !== currentSteelStudSpacingMM)
             ) {
-                console.log('in here');
-                console.log(
-                    'newIsSteelStudChecked ? newSteelStudSpacing : null = ',
-                    newIsSteelStudChecked ? newSteelStudSpacingMM : null
-                );
                 const response = await patchWithAlert<SegmentType>(
                     `assembly/update-segment-steel-stud-spacing/${segment.id}`,
                     null,
@@ -165,6 +163,7 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
                 if (response) {
                     setCurrentIsSteelStudChecked(newIsSteelStudChecked);
                     setCurrentSteelStudSpacingMM(newSteelStudSpacingMM);
+                    updatedSegment = response;
                 } else {
                     console.error('Failed to update Segment-Steel-Stud.');
                 }
@@ -182,9 +181,14 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
 
                 if (response) {
                     setCurrentContinuousInsulationChecked(response.is_continuous_insulation);
+                    updatedSegment = response;
                 } else {
                     console.error('Failed to update Segment-Continuous-Insulation.');
                 }
+            }
+
+            if (updatedSegment && onSegmentUpdated) {
+                onSegmentUpdated(updatedSegment);
             }
 
             setIsSegmentHovered(false);

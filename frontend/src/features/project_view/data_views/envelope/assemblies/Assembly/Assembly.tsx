@@ -6,6 +6,7 @@ import { getWithAlert } from '../../../../../../api/getWithAlert';
 import { deleteWithAlert } from '../../../../../../api/deleteWithAlert';
 
 import Layer from '../Layer/Layer';
+import AssemblyLegend from './AssemblyLegend';
 import { LayerType } from '../../_types/Layer';
 import { AssemblyType } from '../../_types/Assembly';
 
@@ -73,6 +74,12 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
         }
     };
 
+    const handleSegmentsChange = (layerId: number, segments: LayerType['segments']) => {
+        setLayers(currentLayers => currentLayers.map(layer => (layer.id === layerId ? { ...layer, segments } : layer)));
+    };
+
+    const assemblyWithLayers = { ...assembly, layers };
+
     return (
         <Box className="assembly-container" sx={{ margin: 4 }}>
             <Box className="assembly-orientation-text">
@@ -86,6 +93,7 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
                             layer={layer}
                             onAddLayer={onAddLayerBelow}
                             onDeleteLayer={onDeleteLayer}
+                            onSegmentsChange={handleSegmentsChange}
                         />
                     );
                 })}
@@ -94,6 +102,8 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
             <Box className="assembly-orientation-text">
                 {(assembly.orientation === 'last_layer_outside' && 'exterior') || 'interior'}
             </Box>
+
+            <AssemblyLegend assembly={assemblyWithLayers} />
         </Box>
     );
 };

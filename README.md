@@ -28,7 +28,7 @@
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths?
 - [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
-- [ ] Display Material Legend with key material info (conductivity)
+- [x] Display Material Legend with key material info (conductivity)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
 - [ ] Add calculated R-Value / U-Value label

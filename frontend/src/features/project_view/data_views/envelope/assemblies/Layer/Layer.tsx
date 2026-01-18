@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { Box, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
@@ -7,6 +7,7 @@ import { useUnitConversion } from '../../../../_hooks/useUnitConversion';
 import Segment from '../Segment/Segment';
 import ModalLayerThickness from '../LayerHeightModal/LayerHeight';
 import { LayerType } from '../../_types/Layer';
+import { SegmentType } from '../../_types/Segment';
 
 import { useLayerHooks } from './Layer.Hooks';
 
@@ -14,6 +15,7 @@ interface LayerProps {
     layer: LayerType;
     onAddLayer: (layer: LayerType) => void;
     onDeleteLayer: (layerId: number) => void;
+    onSegmentsChange?: (layerId: number, segments: SegmentType[]) => void;
 }
 
 const AddLayerButton: React.FC<{ onClick: () => void }> = props => {
@@ -32,10 +34,31 @@ const AddLayerButton: React.FC<{ onClick: () => void }> = props => {
     );
 };
 
-const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
+const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer, onSegmentsChange }) => {
     const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion();
     const userContext = useContext(UserContext);
     const hooks = useLayerHooks(layer);
+
+    useEffect(() => {
+        if (onSegmentsChange) {
+            onSegmentsChange(layer.id, hooks.segments);
+        }
+    }, [hooks.segments, layer.id, onSegmentsChange]);
+
+    const handleSegmentUpdated = (updatedSegment: SegmentType) => {
+        hooks.setSegments(prevSegments =>
+            prevSegments.map(segment =>
+                segment.id === updatedSegment.id
+                    ? {
+                          ...segment,
+                          ...updatedSegment,
+                          material: updatedSegment.material ?? segment.material,
+                          material_id: updatedSegment.material?.id ?? updatedSegment.material_id,
+                      }
+                    : segment
+            )
+        );
+    };
 
     return (
         <Box className="assembly-layer">
@@ -74,6 +97,7 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer }) => {
                         segment={segment}
                         onAddSegment={segment => hooks.handleAddSegmentToRight(segment, layer)}
                         onDeleteSegment={hooks.handleDeleteSegment}
+                        onSegmentUpdated={handleSegmentUpdated}
                     />
                 ))}
             </Box>
