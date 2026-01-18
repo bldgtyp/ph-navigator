@@ -10,6 +10,7 @@ import { DIMENSION_LABEL_WIDTH_PX, EXTRA_DIMENSION_GUTTER_PX, GRIDLINE_TICK_GAP_
 import DeleteButton from './DeleteButton';
 import GridLineTick from './GridLineTick';
 import { DimensionEditable, DimensionLabel } from './Dimension.Label';
+import DimensionCenterGuide from './DimensionCenterGuide';
 import { VerticalDimensionLinesProps } from '../types';
 
 const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHeightChange, scaleFactor = 1 }) => {
@@ -48,6 +49,7 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
             {rowPositions.map((location, index) => (
                 <GridLineTick key={`row-gridline-tick-${index}`} orientation="vertical" location={location} />
             ))}
+            <DimensionCenterGuide orientation="vertical" positions={rowPositions} length={totalHeight} />
 
             {/* Segment measurements (between grid lines) */}
             {rowSegments.map((height, index) => (
@@ -62,6 +64,7 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
                         display: 'flex',
                         alignItems: 'center',
                         height: '20px',
+                        zIndex: 1,
                     }}
                 >
                     <DeleteButton index={index} handleDelete={handleDeleteRow} />

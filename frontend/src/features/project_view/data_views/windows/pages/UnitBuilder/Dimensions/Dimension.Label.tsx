@@ -17,10 +17,13 @@ export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, o
                 transform: orientation === 'vertical' ? 'rotate(-90deg)' : 'none',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
+                bgcolor: 'background.paper',
+                px: 0.5,
+                py: 0.25,
+                borderRadius: 1,
                 '&:hover': {
-                    bgcolor: 'rgba(0,0,0,0.05)',
-                    borderRadius: 1,
-                    px: 0.5,
+                    bgcolor: 'background.paper',
+                    boxShadow: 1,
                 },
             }}
             onClick={() => handleEditStart(index, value)}
@@ -44,6 +47,12 @@ export const DimensionEditable: React.FC<any> = ({ handleEditConfirm }) => {
                 variant="outlined"
                 sx={{
                     width: '80px',
+                    bgcolor: 'background.paper',
+                    borderRadius: 1,
+                    '& .MuiInputBase-root': {
+                        bgcolor: 'background.paper',
+                        borderRadius: 1,
+                    },
                     '& .MuiInputBase-input': {
                         py: 0.5,
                         px: 1,

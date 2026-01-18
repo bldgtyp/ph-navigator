@@ -8,10 +8,17 @@ import { useViewDirection } from '../ApertureView/ViewDirection.Context';
 import { getColumnOrder } from '../ApertureView/ElementsView/viewFlipUtils';
 
 import { calculateSegments } from './calcSegments';
-import { DIMENSION_LABEL_WIDTH_PX, EXTRA_DIMENSION_GUTTER_PX, GRIDLINE_TICK_GAP_PX } from './constants';
+import {
+    DIMENSION_LABEL_LINE_OFFSET_PX,
+    DIMENSION_LABEL_TOP_PX,
+    DIMENSION_LABEL_WIDTH_PX,
+    EXTRA_DIMENSION_GUTTER_PX,
+    GRIDLINE_TICK_GAP_PX,
+} from './constants';
 import GridLineTick from './GridLineTick';
 import DeleteButton from './DeleteButton';
 import { DimensionLabel, DimensionEditable } from './Dimension.Label';
+import DimensionCenterGuide from './DimensionCenterGuide';
 import { HorizontalDimensionLinesProps } from '../types';
 
 const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
@@ -21,6 +28,8 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
     const labelWidth = DIMENSION_LABEL_WIDTH_PX;
     const gridlineTickGap = GRIDLINE_TICK_GAP_PX;
     const dimensionGutter = gridlineTickGap + EXTRA_DIMENSION_GUTTER_PX;
+    const labelTop = DIMENSION_LABEL_TOP_PX;
+    const labelLineOffset = DIMENSION_LABEL_LINE_OFFSET_PX;
 
     const userContext = useContext(UserContext);
     const { units, editingColIndex, handleEditColStart, handleEditColConfirm } = useDimensions();
@@ -52,6 +61,12 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
             {columnPositions.map((location, index) => (
                 <GridLineTick key={`col-gridline-tick-${index}`} orientation="horizontal" location={location} />
             ))}
+            <DimensionCenterGuide
+                orientation="horizontal"
+                positions={columnPositions}
+                length={totalWidth}
+                lineOffsetPx={labelTop + labelLineOffset}
+            />
 
             {/* Segment measurements (between grid lines) */}
             {columnSegments.map((width, displayIndex) => {
@@ -63,11 +78,12 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
                         sx={{
                             position: 'absolute',
                             left: `${columnPositions[displayIndex] + width / 2}px`,
-                            top: 10,
+                            top: labelTop,
                             transform: 'translateX(-50%)',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
+                            zIndex: 1,
                         }}
                     >
                         {editingColIndex === actualIndex && userContext.user ? (
