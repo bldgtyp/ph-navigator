@@ -53,6 +53,22 @@ class FrameSide(str, Enum):
     LEFT = "left"
 
 
+class InsertPosition(str, Enum):
+    """Position for inserting new rows/columns."""
+    START = "start"  # Index 0 - top for rows, left for columns
+    END = "end"      # Append - bottom for rows, right for columns
+
+
+class AddRowRequest(BaseModel):
+    """Request body for adding a row."""
+    position: InsertPosition = InsertPosition.END
+
+
+class AddColumnRequest(BaseModel):
+    """Request body for adding a column."""
+    position: InsertPosition = InsertPosition.END
+
+
 class UpdateApertureFrameRequest(BaseModel):
     element_id: int
     side: FrameSide

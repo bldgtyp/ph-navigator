@@ -3,7 +3,7 @@ import { patchWithAlert } from '../../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../../api/postWithAlert';
 
-import { ApertureType, ElementAssignmentsPayload, ElementOperation } from '../../types';
+import { ApertureType, ElementAssignmentsPayload, ElementOperation, InsertPosition } from '../../types';
 import { FramePosition } from '../../ElementsTable/types';
 
 /**
@@ -72,9 +72,11 @@ export class ApertureService {
     }
 
     // Grid Operations
-    static async addRow(apertureId: number): Promise<ApertureType> {
+    static async addRow(apertureId: number, position: InsertPosition = 'end'): Promise<ApertureType> {
         try {
-            const updatedAperture = await patchWithAlert<ApertureType>(`aperture/add-row/${apertureId}`);
+            const updatedAperture = await patchWithAlert<ApertureType>(`aperture/add-row/${apertureId}`, null, {
+                position,
+            });
             if (!updatedAperture) {
                 throw new Error('Failed to add row - no response received');
             }
@@ -100,9 +102,11 @@ export class ApertureService {
         }
     }
 
-    static async addColumn(apertureId: number): Promise<ApertureType> {
+    static async addColumn(apertureId: number, position: InsertPosition = 'end'): Promise<ApertureType> {
         try {
-            const updatedAperture = await patchWithAlert<ApertureType>(`aperture/add-column/${apertureId}`);
+            const updatedAperture = await patchWithAlert<ApertureType>(`aperture/add-column/${apertureId}`, null, {
+                position,
+            });
             if (!updatedAperture) {
                 throw new Error('Failed to add column - no response received');
             }

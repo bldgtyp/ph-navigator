@@ -107,6 +107,9 @@ export interface ApertureElementGlazing {
 export type OperationType = 'swing' | 'slide';
 export type OperationDirection = 'left' | 'right' | 'up' | 'down';
 
+export type InsertPosition = 'start' | 'end';
+export type GridEdge = 'top' | 'bottom' | 'left' | 'right';
+
 export interface ElementOperation {
     type: OperationType;
     directions: OperationDirection[];

@@ -3,6 +3,8 @@ gcp-creds.json
 
 backend/alembic/db_backups/*
 
+.github/
+
 # Claude
 .claude/
 CLAUDE.md

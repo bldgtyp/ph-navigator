@@ -6,6 +6,7 @@ import {
     ApertureType,
     ElementAssignmentsPayload,
     ElementOperation,
+    InsertPosition,
 } from '../pages/UnitBuilder/types';
 import { FramePosition } from '../pages/UnitBuilder/ElementsTable/types';
 import { ApertureService } from '../pages/UnitBuilder/ApertureView/services/apertureService';
@@ -31,10 +32,12 @@ interface AperturesContextType {
     handleDeleteAperture: (id: any) => void;
     handleDuplicateAperture: (id: any) => void;
     handleUpdateAperture: (aperture: ApertureType) => void;
-    handleAddRow: () => void;
+    handleAddRow: (position?: InsertPosition) => void;
     handleDeleteRow: (index: number) => void;
-    handleAddColumn: () => void;
+    handleAddColumn: (position?: InsertPosition) => void;
     handleDeleteColumn: (index: number) => void;
+    handleAddRowAtEdge: (edge: 'top' | 'bottom') => void;
+    handleAddColumnAtEdge: (edge: 'left' | 'right') => void;
     // Sizing
     getCellSize: (row: number, col: number, rowSpan: number, colSpan: number) => { width: number; height: number };
     updateColumnWidth: (apertureId: number, columnIndex: number, newWidthMM: number) => void;
@@ -220,21 +223,24 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     };
 
-    const handleAddRow = useCallback(async () => {
-        if (!activeAperture) return;
+    const handleAddRow = useCallback(
+        async (position: InsertPosition = 'end') => {
+            if (!activeAperture) return;
 
-        try {
-            setIsLoadingApertures(true);
-            const updatedAperture = await ApertureService.addRow(activeAperture.id);
-            handleUpdateAperture(updatedAperture);
-            handleSetActiveAperture(updatedAperture);
-        } catch (error) {
-            console.error('Error adding row:', error);
-            alert('Failed to add row. Please try again.');
-        } finally {
-            setIsLoadingApertures(false);
-        }
-    }, [activeAperture]);
+            try {
+                setIsLoadingApertures(true);
+                const updatedAperture = await ApertureService.addRow(activeAperture.id, position);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Error adding row:', error);
+                alert('Failed to add row. Please try again.');
+            } finally {
+                setIsLoadingApertures(false);
+            }
+        },
+        [activeAperture]
+    );
 
     const handleDeleteRow = useCallback(
         async (rowNumber: number) => {
@@ -255,21 +261,40 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         [activeAperture]
     );
 
-    const handleAddColumn = useCallback(async () => {
-        if (!activeAperture) return;
+    const handleAddColumn = useCallback(
+        async (position: InsertPosition = 'end') => {
+            if (!activeAperture) return;
 
-        try {
-            setIsLoadingApertures(true);
-            const updatedAperture = await ApertureService.addColumn(activeAperture.id);
-            handleUpdateAperture(updatedAperture);
-            handleSetActiveAperture(updatedAperture);
-        } catch (error) {
-            console.error('Error adding column:', error);
-            alert('Failed to add column. Please try again.');
-        } finally {
-            setIsLoadingApertures(false);
-        }
-    }, [activeAperture]);
+            try {
+                setIsLoadingApertures(true);
+                const updatedAperture = await ApertureService.addColumn(activeAperture.id, position);
+                handleUpdateAperture(updatedAperture);
+                handleSetActiveAperture(updatedAperture);
+            } catch (error) {
+                console.error('Error adding column:', error);
+                alert('Failed to add column. Please try again.');
+            } finally {
+                setIsLoadingApertures(false);
+            }
+        },
+        [activeAperture]
+    );
+
+    const handleAddRowAtEdge = useCallback(
+        (edge: 'top' | 'bottom') => {
+            const position: InsertPosition = edge === 'top' ? 'start' : 'end';
+            handleAddRow(position);
+        },
+        [handleAddRow]
+    );
+
+    const handleAddColumnAtEdge = useCallback(
+        (edge: 'left' | 'right') => {
+            const position: InsertPosition = edge === 'left' ? 'start' : 'end';
+            handleAddColumn(position);
+        },
+        [handleAddColumn]
+    );
 
     const handleDeleteColumn = useCallback(
         async (colNumber: number) => {
@@ -563,6 +588,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 handleDeleteRow,
                 handleAddColumn,
                 handleDeleteColumn,
+                handleAddRowAtEdge,
+                handleAddColumnAtEdge,
                 getCellSize,
                 updateColumnWidth,
                 updateRowHeight,

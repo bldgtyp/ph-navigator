@@ -8,6 +8,7 @@ import ApertureToolbar from '../ApertureToolbar';
 import { getDisplayColumnIndex, getDisplayColumnWidths } from './viewFlipUtils';
 
 import ApertureElementContainer from './ApertureElement.Container';
+import EdgeAddButtons from './EdgeAddButtons';
 import ElementLabelsOverlay from './ElementLabelsOverlay';
 import VerticalDimensionLines from '../../Dimensions/Dimensions.Vertical';
 import HorizontalDimensionLines from '../../Dimensions/Dimensions.Horizontal';
@@ -91,7 +92,6 @@ const ApertureElements: React.FC = () => {
                 pt: 0.0,
                 pr: 1,
                 mt: 0.0,
-                overflow: 'hidden', // Clip Aperture SVG content that exceeds bounds
             }}
         >
             <ApertureToolbar />
@@ -105,6 +105,7 @@ const ApertureElements: React.FC = () => {
                     // overflow: 'hidden', // Clip content that exceeds container bounds
                 }}
             >
+                <EdgeAddButtons />
                 <ApertureElementsDisplay />
                 <ElementLabelsOverlay />
                 <DimensionsProvider>

@@ -9,8 +9,6 @@ import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import CallMergeIcon from '@mui/icons-material/CallMerge';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import ClearIcon from '@mui/icons-material/Clear';
-import ViewColumnOutlinedIcon from '@mui/icons-material/ViewColumnOutlined';
-import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined';
 
 import { useZoom } from './Zoom.Context';
 import { useViewDirection } from './ViewDirection.Context';
@@ -87,8 +85,6 @@ const ApertureToolbar: FC = () => {
         mergeSelectedApertureElements,
         splitSelectedApertureElement,
         clearApertureElementIdSelection,
-        handleAddRow,
-        handleAddColumn,
     } = useApertures();
 
     const isZoomInDisabled = scaleFactor >= 1.0;
@@ -96,7 +92,6 @@ const ApertureToolbar: FC = () => {
     const isMergeDisabled = selectedApertureElementIds.length < 2;
     const isSplitDisabled = selectedApertureElementIds.length !== 1;
     const isClearDisabled = selectedApertureElementIds.length === 0;
-    const isGridDisabled = !activeAperture;
     const isCopyDisabled = !userContext.user || !activeAperture;
 
     const mergeTooltip = isMergeDisabled
@@ -253,19 +248,6 @@ const ApertureToolbar: FC = () => {
                             onClick={clearApertureElementIdSelection}
                             disabled={isClearDisabled}
                             tooltipText={clearTooltip}
-                        />
-                        <ToolbarDivider />
-                        <ToolbarIconButton
-                            icon={<ViewColumnOutlinedIcon fontSize="small" />}
-                            onClick={handleAddColumn}
-                            disabled={isGridDisabled}
-                            tooltipText="Add column"
-                        />
-                        <ToolbarIconButton
-                            icon={<TableRowsOutlinedIcon fontSize="small" />}
-                            onClick={handleAddRow}
-                            disabled={isGridDisabled}
-                            tooltipText="Add row"
                         />
                     </>
                 )}

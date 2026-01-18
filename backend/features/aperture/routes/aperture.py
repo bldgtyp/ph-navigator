@@ -9,7 +9,10 @@ from sqlalchemy.orm import Session
 from database import get_db
 from features.aperture.schemas import ApertureSchema
 from features.aperture.schemas.aperture import (
+    AddColumnRequest,
+    AddRowRequest,
     ColumnDeleteRequest,
+    InsertPosition,
     MergeApertureElementsRequest,
     RowDeleteRequest,
     SplitApertureElementRequest,
@@ -250,11 +253,17 @@ def update_frame_type_route(
 
 # @limiter.limit("1/second")
 @router.patch("/add-row/{aperture_id}", response_model=ApertureSchema)
-def add_row_to_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
-    logger.info(f"add_row_to_aperture({aperture_id=})")
+def add_row_to_aperture_route(
+    request: Request,
+    aperture_id: int,
+    add_request: AddRowRequest | None = None,
+    db: Session = Depends(get_db),
+) -> ApertureSchema:
+    position = add_request.position if add_request else InsertPosition.END
+    logger.info(f"add_row_to_aperture({aperture_id=}, {position=})")
 
     try:
-        return ApertureSchema.from_orm(add_row_to_aperture(db, aperture_id))
+        return ApertureSchema.from_orm(add_row_to_aperture(db, aperture_id, position=position))
     except Exception as e:
         msg = str(e)
         logger.error(msg)
@@ -263,11 +272,17 @@ def add_row_to_aperture_route(request: Request, aperture_id: int, db: Session = 
 
 # @limiter.limit("1/second")
 @router.patch("/add-column/{aperture_id}", response_model=ApertureSchema)
-def add_column_to_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
-    logger.info(f"add_column_to_aperture({aperture_id=})")
+def add_column_to_aperture_route(
+    request: Request,
+    aperture_id: int,
+    add_request: AddColumnRequest | None = None,
+    db: Session = Depends(get_db),
+) -> ApertureSchema:
+    position = add_request.position if add_request else InsertPosition.END
+    logger.info(f"add_column_to_aperture({aperture_id=}, {position=})")
 
     try:
-        return ApertureSchema.from_orm(add_column_to_aperture(db, aperture_id))
+        return ApertureSchema.from_orm(add_column_to_aperture(db, aperture_id, position=position))
     except Exception as e:
         msg = str(e)
         logger.error(msg)

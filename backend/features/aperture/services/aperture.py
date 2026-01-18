@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from db_entities.aperture import Aperture, ApertureElement, ApertureElementFrame
 from db_entities.app.project import Project
-from features.aperture.schemas.aperture import FrameSide
+from features.aperture.schemas.aperture import FrameSide, InsertPosition
 from features.aperture.services.aperture_element import (
     create_aperture_element, 
     duplicate_aperture_element,
@@ -83,13 +83,19 @@ def get_aperture_by_child_element_id(db: Session, element_id: int) -> Aperture:
     return get_aperture_by_id(db, element.aperture_id)
 
 
-def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 1_000.0) -> Aperture:
+def add_row_to_aperture(
+    db: Session,
+    aperture_id: int,
+    row_height_mm: float = 1_000.0,
+    position: InsertPosition = InsertPosition.END,
+) -> Aperture:
     """Add a new row to the aperture grid with specified height.
 
     Args:
         db: Database session
         aperture_id: ID of the aperture to modify
-        row_height: Height of the new row in mm (default: 1000.0)
+        row_height_mm: Height of the new row in mm (default: 1000.0)
+        position: Where to insert the row (START=top, END=bottom)
 
     Returns:
         Updated aperture object
@@ -97,17 +103,25 @@ def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 1_
     Raises:
         ValueError: If aperture not found
     """
-    logger.info(f"add_row_to_aperture({aperture_id=}, {row_height_mm=})")
+    logger.info(f"add_row_to_aperture({aperture_id=}, {row_height_mm=}, {position=})")
 
     try:
         # Get the aperture (this will raise ValueError if not found)
         aperture = get_aperture_by_id(db, aperture_id)
 
-        # Calculate the new row index
-        new_row_index = len(aperture.row_heights_mm)
+        if position == InsertPosition.START:
+            # Insert at beginning (top)
+            new_row_index = 0
+            aperture.row_heights_mm = [row_height_mm] + aperture.row_heights_mm
 
-        # Create a new list (this will be detected as a change)
-        aperture.row_heights_mm = aperture.row_heights_mm + [row_height_mm]
+            # Shift all existing elements' row_number by +1
+            db.query(ApertureElement).filter(
+                ApertureElement.aperture_id == aperture_id
+            ).update({ApertureElement.row_number: ApertureElement.row_number + 1}, synchronize_session=False)
+        else:
+            # Append at end (bottom) - original behavior
+            new_row_index = len(aperture.row_heights_mm)
+            aperture.row_heights_mm = aperture.row_heights_mm + [row_height_mm]
 
         # Create a new element for each column in the new row
         for col_index in range(len(aperture.column_widths_mm)):
@@ -129,13 +143,19 @@ def add_row_to_aperture(db: Session, aperture_id: int, row_height_mm: float = 1_
         raise
 
 
-def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float = 1_000.0) -> Aperture:
+def add_column_to_aperture(
+    db: Session,
+    aperture_id: int,
+    column_width_mm: float = 1_000.0,
+    position: InsertPosition = InsertPosition.END,
+) -> Aperture:
     """Add a new column to the aperture grid with specified width.
 
     Args:
         db: Database session
         aperture_id: ID of the aperture to modify
         column_width_mm: Width of the new column in mm (default: 1000.00)
+        position: Where to insert the column (START=left, END=right)
 
     Returns:
         Updated aperture object
@@ -143,17 +163,25 @@ def add_column_to_aperture(db: Session, aperture_id: int, column_width_mm: float
     Raises:
         ValueError: If aperture not found
     """
-    logger.info(f"add_column_to_aperture({aperture_id=}, {column_width_mm=})")
+    logger.info(f"add_column_to_aperture({aperture_id=}, {column_width_mm=}, {position=})")
 
     try:
         # Get the aperture (this will raise ValueError if not found)
         aperture = get_aperture_by_id(db, aperture_id)
 
-        # Calculate the new column index
-        new_col_index = len(aperture.column_widths_mm)
+        if position == InsertPosition.START:
+            # Insert at beginning (left)
+            new_col_index = 0
+            aperture.column_widths_mm = [column_width_mm] + aperture.column_widths_mm
 
-        # Create a new list (this will be detected as a change)
-        aperture.column_widths_mm = aperture.column_widths_mm + [column_width_mm]
+            # Shift all existing elements' column_number by +1
+            db.query(ApertureElement).filter(
+                ApertureElement.aperture_id == aperture_id
+            ).update({ApertureElement.column_number: ApertureElement.column_number + 1}, synchronize_session=False)
+        else:
+            # Append at end (right) - original behavior
+            new_col_index = len(aperture.column_widths_mm)
+            aperture.column_widths_mm = aperture.column_widths_mm + [column_width_mm]
 
         # Create a new element for each row in the new column
         for row_index in range(len(aperture.row_heights_mm)):
