@@ -13,8 +13,8 @@ import DataDashboardTabBar from '../_components/DataDashboardTabBar';
 
 const EnvelopeDataDashboard: React.FC = () => {
     const tabs = [
-        { label: 'Materials', path: 'material-layers' },
         { label: 'Assemblies', path: 'assemblies' },
+        { label: 'Materials', path: 'material-layers' },
         { label: 'Airtightness', path: 'airtightness' },
         { label: 'Site Photos', path: 'site-photos' },
     ];
@@ -22,8 +22,8 @@ const EnvelopeDataDashboard: React.FC = () => {
     // Determine active tab from URL path
     const getActiveTabFromPath = () => {
         const path = location.pathname;
-        if (path.includes('/material-layers')) return 0;
-        if (path.includes('/assemblies')) return 1;
+        if (path.includes('/assemblies')) return 0;
+        if (path.includes('/material-layers')) return 1;
         if (path.includes('/airtightness')) return 2;
         if (path.includes('/site-photos')) return 3;
         return 0; // Default

@@ -51,7 +51,7 @@ const AppRoutes: React.FC = () => (
             </Route>
 
             <Route path="envelope-data" element={<EnvelopeDataDashboard />}>
-                <Route index element={<Navigate to="material-layers" replace />} />
+                <Route index element={<Navigate to="assemblies" replace />} />
                 <Route path="material-layers" element={<MaterialListPage />} />
                 <Route path="assemblies" element={<AssembliesPage />} />
                 <Route path="airtightness" element={<AirtightnessPage />} />

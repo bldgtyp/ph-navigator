@@ -1,6 +1,7 @@
-import { Box, Stack } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 
 import { useApertures } from '../../../../_contexts/Aperture.Context';
+import { useUnitConversion } from '../../../../../../_hooks/useUnitConversion';
 import { useZoom } from '../Zoom.Context';
 import { useViewDirection } from '../ViewDirection.Context';
 import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
@@ -69,6 +70,7 @@ const ApertureElementsDisplay: React.FC = () => {
 
 const ApertureElements: React.FC = () => {
     const { activeAperture, updateColumnWidth, updateRowHeight } = useApertures();
+    const { unitSystem, valueInCurrentUnitSystemWithDecimal } = useUnitConversion();
     const { scaleFactor } = useZoom();
 
     if (!activeAperture) {
@@ -80,6 +82,10 @@ const ApertureElements: React.FC = () => {
     const totalHeightMM = activeAperture.row_heights_mm.reduce((sum, height) => sum + height, 0);
     const scaledWidth = totalWidthMM * scaleFactor;
     const scaledHeight = totalHeightMM * scaleFactor;
+    const units = unitSystem === 'SI' ? 'mm' : 'in';
+    const totalWidthDisplay = valueInCurrentUnitSystemWithDecimal(totalWidthMM, 'mm', 'in', 1);
+    const totalHeightDisplay = valueInCurrentUnitSystemWithDecimal(totalHeightMM, 'mm', 'in', 1);
+    const totalSizeLabel = `${totalWidthDisplay} ${units} × ${totalHeightDisplay} ${units}`;
 
     return (
         <Stack
@@ -95,6 +101,20 @@ const ApertureElements: React.FC = () => {
             }}
         >
             <ApertureToolbar />
+            <Typography
+                variant="caption"
+                sx={{
+                    position: 'absolute',
+                    top: 4,
+                    left: theme => theme.spacing(12),
+                    color: 'text.secondary',
+                    fontStyle: 'italic',
+                    zIndex: 2,
+                    pointerEvents: 'none',
+                }}
+            >
+                {totalSizeLabel}
+            </Typography>
             <Box
                 className="aperture-elements-display-container"
                 sx={{

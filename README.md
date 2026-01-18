@@ -14,6 +14,8 @@
 
 ## Material List:
 
+- [x] Change so that the Assemblies are the first page, not materials
+- [ ] Fix slow google-cloud image load
 - [ ] Add 'download' button to pdf/png file viewer
 - [ ] PDF full-view looks a very odd... clean up.
 - [ ] Materials should have URL link(s) option
@@ -44,6 +46,11 @@
 - [x] Assign frames (frame DB elements)
 - [x] Assign glass (glass DB elements)
 - [x] Attribute reporting (& assignment) table
+- [ ] Change Element blocks to be inside a scrollable container so we always see the window graphic
+- [ ] Select individual frame elements allows direct setting (dropdown)
+- [ ] Double click to enter 'editing' mode? Bring up editing panel?
+- [ ] Cron-job frame-type / glass-type autoloader from AirTable
+- [ ] Add an UNDO to frame/glass assignment
 
 ## 3D Model:
 

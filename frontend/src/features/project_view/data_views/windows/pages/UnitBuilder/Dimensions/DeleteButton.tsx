@@ -9,7 +9,7 @@ const DeleteButton: React.FC<{ index: number; handleDelete: (index: number) => v
 
     return userContext.user ? (
         <IconButton
-            sx={{ p: 0 }}
+            sx={{ p: 0, color: 'rgba(0, 0, 0, 0.34)' }}
             className="delete-button"
             onClick={e => {
                 handleDelete(index);
