@@ -1,15 +1,20 @@
 import React, { useContext } from 'react';
-import { Grid } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import { useMaterials } from '../../_contexts/MaterialsContext';
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { AssemblyProvider, useAssemblyContext } from '../Assembly/Assembly.Context';
-import { AssemblySidebarProvider } from '../Assembly/Sidebar/Sidebar.Context';
+import { AssemblySidebarProvider, useAssemblySidebar } from '../Assembly/Sidebar/Sidebar.Context';
+
+const SIDEBAR_WIDTH = 260;
 
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import ContentBlock from '../../../_components/ContentBlock';
 import { headerButtons } from './HeaderButtons';
+import AssemblySelector from './AssemblySelector';
 import AssemblyEditButtons from '../Assembly/Assembly.EditButtons';
 import Assembly from '../Assembly/Assembly';
 import AssemblySidebar from '../Assembly/Sidebar/Sidebar';
@@ -38,6 +43,7 @@ const AssemblyContentBlock: React.FC = () => {
     const userContext = useContext(UserContext);
     const assemblyContext = useAssemblyContext();
     const materialContext = useMaterials();
+    const { isSidebarOpen, toggleSidebar } = useAssemblySidebar();
     const {
         selectedAssembly,
         handleRefreshMaterials,
@@ -60,22 +66,58 @@ const AssemblyContentBlock: React.FC = () => {
             <LoadingModal showModal={materialContext.isLoadingMaterials || assemblyContext.isLoadingAssemblies} />
 
             <ContentBlockHeader
-                text={`Assembly Details ${selectedAssembly ? `[ ${selectedAssembly.name} ]` : ''}`}
+                text="Assembly Details"
                 buttons={headerButtonsConfig}
+                titleContent={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <h4 style={{ margin: 0 }}>Assembly Details</h4>
+                        <AssemblySelector />
+                    </Box>
+                }
             />
 
-            <Grid container spacing={1} sx={{ margin: 2 }}>
-                {/* Sidebar Column */}
-                <Grid size={2}>
-                    <AssemblySidebar />
-                </Grid>
+            <Box id="assemblies-active-view-container" sx={{ display: 'flex', margin: 2, position: 'relative' }}>
+                {/* Collapsible Sidebar */}
+                <Box
+                    id="assemblies-sidebar"
+                    sx={{
+                        width: isSidebarOpen ? SIDEBAR_WIDTH : 0,
+                        minWidth: isSidebarOpen ? SIDEBAR_WIDTH : 0,
+                        overflow: 'hidden',
+                        transition: 'width 0.2s ease-in-out, min-width 0.2s ease-in-out',
+                        flexShrink: 0,
+                    }}
+                >
+                    <Box sx={{ width: SIDEBAR_WIDTH }}>
+                        <AssemblySidebar />
+                    </Box>
+                </Box>
 
-                {/* Main Content Column */}
-                <Grid size={10} sx={{ borderLeft: '1px solid #ccc' }}>
+                {/* Toggle Button */}
+                <Box
+                    id="assemblies-sidebar-toggle"
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        pt: 1,
+                    }}
+                >
+                    <IconButton
+                        id="assemblies-sidebar-toggle-button"
+                        onClick={toggleSidebar}
+                        size="small"
+                        title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                    >
+                        {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                    </IconButton>
+                </Box>
+
+                {/* Main Content */}
+                <Box id="assemblies-content" sx={{ flexGrow: 1, borderLeft: '1px solid #ccc', p: 2, pt: 0 }}>
                     <AssemblyEditButtons />
                     <AssemblyView selectedAssembly={selectedAssembly} />
-                </Grid>
-            </Grid>
+                </Box>
+            </Box>
 
             {/* Hidden file input for uploads */}
             <input

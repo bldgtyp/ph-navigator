@@ -31,6 +31,8 @@
 - [ ] Display Material Legend with key material info (conductivity)
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
+- [ ] Add calculated R-Value / U-Value label
+- [ ] Add total thickness label
 
 ## Ventilation Commissioning Page
 
@@ -51,6 +53,8 @@
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
+- [ ] Add window-element U-Value
+- [ ] Add window U-Value
 
 ## 3D Model:
 

@@ -17,6 +17,8 @@ export interface AssemblySidebarContextType {
     openNameChangeModal: (id: number, name: string) => void;
     closeNameChangeModal: () => void;
     handleNameSubmit: (newName: string) => void;
+    isSidebarOpen: boolean;
+    toggleSidebar: () => void;
 }
 
 const AssemblySidebarContext = createContext<AssemblySidebarContextType | undefined>(undefined);
@@ -27,8 +29,13 @@ export const AssemblySidebarProvider: React.FC<{ children: React.ReactNode }> = 
         assemblyId: 0,
         assemblyName: '',
     });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const { handleNameChange } = useAssemblyContext();
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(prev => !prev);
+    };
 
     // Modal handling functions
     const openNameChangeModal = (id: number, name: string) => {
@@ -46,7 +53,15 @@ export const AssemblySidebarProvider: React.FC<{ children: React.ReactNode }> = 
 
     return (
         <AssemblySidebarContext.Provider
-            value={{ nameChangeModal, setNameChangeModal, openNameChangeModal, closeNameChangeModal, handleNameSubmit }}
+            value={{
+                nameChangeModal,
+                setNameChangeModal,
+                openNameChangeModal,
+                closeNameChangeModal,
+                handleNameSubmit,
+                isSidebarOpen,
+                toggleSidebar,
+            }}
         >
             {children}
         </AssemblySidebarContext.Provider>

@@ -1,4 +1,4 @@
-import { List, ListItem } from '@mui/material';
+import { Box, List, ListItem } from '@mui/material';
 
 import { useAssemblyContext } from '../Assembly.Context';
 
@@ -16,16 +16,18 @@ const AssemblySidebar: React.FC = () => {
         <>
             <ChangeNameModal />
             <AssemblyListHeader onAddAssembly={assemblyContext.handleAddAssembly} />
-            <List dense>
-                {sortedAssemblies.map(assembly => (
-                    <ListItem key={assembly.id} component="div" disablePadding>
-                        <AssemblyListItemContent
-                            assembly={assembly}
-                            isSelected={assemblyContext.selectedAssemblyId === assembly.id}
-                        />
-                    </ListItem>
-                ))}
-            </List>
+            <Box sx={{ maxHeight: 'calc(100vh - 360px)', overflowY: 'auto', overflowX: 'hidden' }}>
+                <List dense>
+                    {sortedAssemblies.map(assembly => (
+                        <ListItem key={assembly.id} component="div" disablePadding>
+                            <AssemblyListItemContent
+                                assembly={assembly}
+                                isSelected={assemblyContext.selectedAssemblyId === assembly.id}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            </Box>
         </>
     );
 };
