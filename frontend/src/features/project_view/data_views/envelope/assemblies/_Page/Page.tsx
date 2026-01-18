@@ -7,17 +7,17 @@ import { useMaterials } from '../../_contexts/MaterialsContext';
 import { AssemblyProvider, useAssemblyContext } from '../Assembly/Assembly.Context';
 import { AssemblySidebarProvider, useAssemblySidebar } from '../Assembly/Sidebar/Sidebar.Context';
 
-const SIDEBAR_WIDTH = 260;
-
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import ContentBlock from '../../../_components/ContentBlock';
 import { useAssemblyHeaderButtons } from './useAssemblyHeaderButtons';
 import AssemblySelector from './AssemblySelector';
-import AssemblyEditButtons from '../Assembly/Assembly.EditButtons';
+import AssemblyToolbar from '../Assembly/AssemblyToolbar';
 import Assembly from '../Assembly/Assembly';
 import AssemblySidebar from '../Assembly/Sidebar/Sidebar';
 import { AssemblyType } from '../../_types/Assembly';
+
+const SIDEBAR_WIDTH = 260;
 
 // Component to render the appropriate content based on loading state and data availability
 const AssemblyView: React.FC<{ selectedAssembly: AssemblyType | null }> = ({ selectedAssembly }) => {
@@ -98,7 +98,7 @@ const AssemblyContentBlock: React.FC = () => {
 
                 {/* Main Content */}
                 <Box id="assemblies-content" sx={{ flexGrow: 1, borderLeft: '1px solid #ccc', p: 2, pt: 0 }}>
-                    <AssemblyEditButtons />
+                    <AssemblyToolbar />
                     <AssemblyView selectedAssembly={selectedAssembly} />
                 </Box>
             </Box>
