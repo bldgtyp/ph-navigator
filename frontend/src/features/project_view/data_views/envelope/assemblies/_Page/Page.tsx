@@ -1,10 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Box, IconButton } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import { useMaterials } from '../../_contexts/MaterialsContext';
-import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { AssemblyProvider, useAssemblyContext } from '../Assembly/Assembly.Context';
 import { AssemblySidebarProvider, useAssemblySidebar } from '../Assembly/Sidebar/Sidebar.Context';
 
@@ -13,7 +12,7 @@ const SIDEBAR_WIDTH = 260;
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
 import ContentBlock from '../../../_components/ContentBlock';
-import { headerButtons } from './HeaderButtons';
+import { useAssemblyHeaderButtons } from './useAssemblyHeaderButtons';
 import AssemblySelector from './AssemblySelector';
 import AssemblyEditButtons from '../Assembly/Assembly.EditButtons';
 import Assembly from '../Assembly/Assembly';
@@ -40,26 +39,11 @@ const AssemblyView: React.FC<{ selectedAssembly: AssemblyType | null }> = ({ sel
 };
 
 const AssemblyContentBlock: React.FC = () => {
-    const userContext = useContext(UserContext);
     const assemblyContext = useAssemblyContext();
     const materialContext = useMaterials();
     const { isSidebarOpen, toggleSidebar } = useAssemblySidebar();
-    const {
-        selectedAssembly,
-        handleRefreshMaterials,
-        handleUploadConstructions,
-        handleDownloadConstructions,
-        handleFileSelected,
-    } = useAssemblyContext();
-
-    const headerButtonsConfig = userContext.user
-        ? headerButtons(
-              handleRefreshMaterials,
-              handleUploadConstructions,
-              handleDownloadConstructions,
-              assemblyContext.isRefreshing
-          )
-        : [];
+    const { selectedAssembly, handleFileSelected } = useAssemblyContext();
+    const headerButtons = useAssemblyHeaderButtons();
 
     return (
         <>
@@ -67,7 +51,7 @@ const AssemblyContentBlock: React.FC = () => {
 
             <ContentBlockHeader
                 text="Assembly Details"
-                buttons={headerButtonsConfig}
+                buttons={headerButtons}
                 titleContent={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <h4 style={{ margin: 0 }}>Assembly Details</h4>
