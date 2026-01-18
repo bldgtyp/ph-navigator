@@ -8,6 +8,7 @@ import { useViewDirection } from '../ApertureView/ViewDirection.Context';
 import { getColumnOrder } from '../ApertureView/ElementsView/viewFlipUtils';
 
 import { calculateSegments } from './calcSegments';
+import { DIMENSION_LABEL_WIDTH_PX, EXTRA_DIMENSION_GUTTER_PX, GRIDLINE_TICK_GAP_PX } from './constants';
 import GridLineTick from './GridLineTick';
 import DeleteButton from './DeleteButton';
 import { DimensionLabel, DimensionEditable } from './Dimension.Label';
@@ -17,8 +18,9 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
     onColumnWidthChange,
     scaleFactor = 1,
 }) => {
-    const labelWidth = 40;
-    const gridlineTickGap = 5;
+    const labelWidth = DIMENSION_LABEL_WIDTH_PX;
+    const gridlineTickGap = GRIDLINE_TICK_GAP_PX;
+    const dimensionGutter = gridlineTickGap + EXTRA_DIMENSION_GUTTER_PX;
 
     const userContext = useContext(UserContext);
     const { units, editingColIndex, handleEditColStart, handleEditColConfirm } = useDimensions();
@@ -40,7 +42,7 @@ const HorizontalDimensionLines: React.FC<HorizontalDimensionLinesProps> = ({
             sx={{
                 position: 'absolute',
                 left: 0,
-                top: `calc(100% + ${gridlineTickGap}px)`,
+                top: `calc(100% + ${dimensionGutter}px)`,
                 width: '100%',
                 height: labelWidth,
                 display: 'flex',

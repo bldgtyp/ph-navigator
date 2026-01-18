@@ -6,14 +6,16 @@ import { useApertures } from '../../../_contexts/Aperture.Context';
 import { useDimensions } from './Dimensions.Context';
 
 import { calculateSegments } from './calcSegments';
+import { DIMENSION_LABEL_WIDTH_PX, EXTRA_DIMENSION_GUTTER_PX, GRIDLINE_TICK_GAP_PX } from './constants';
 import DeleteButton from './DeleteButton';
 import GridLineTick from './GridLineTick';
 import { DimensionEditable, DimensionLabel } from './Dimension.Label';
 import { VerticalDimensionLinesProps } from '../types';
 
 const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHeightChange, scaleFactor = 1 }) => {
-    const labelWidth = 40;
-    const gridlineTickGap = 5;
+    const labelWidth = DIMENSION_LABEL_WIDTH_PX;
+    const gridlineTickGap = GRIDLINE_TICK_GAP_PX;
+    const dimensionGutter = gridlineTickGap + EXTRA_DIMENSION_GUTTER_PX;
 
     const userContext = useContext(UserContext);
     const { units, editingRowIndex, handleEditRowStart, handleEditRowConfirm } = useDimensions();
@@ -34,7 +36,7 @@ const VerticalDimensionLines: React.FC<VerticalDimensionLinesProps> = ({ onRowHe
             sx={{
                 position: 'absolute',
                 top: 0,
-                left: -labelWidth - gridlineTickGap,
+                left: -labelWidth - dimensionGutter,
                 height: `${totalHeight}px`,
                 width: labelWidth,
                 display: 'flex',

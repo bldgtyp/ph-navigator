@@ -4,6 +4,7 @@ gcp-creds.json
 backend/alembic/db_backups/*
 
 .github/
+docs/plans/
 
 # Claude
 .claude/

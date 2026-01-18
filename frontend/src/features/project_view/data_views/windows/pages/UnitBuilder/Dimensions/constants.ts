@@ -1,0 +1,3 @@
+export const DIMENSION_LABEL_WIDTH_PX = 40;
+export const GRIDLINE_TICK_GAP_PX = 5;
+export const EXTRA_DIMENSION_GUTTER_PX = 20;
