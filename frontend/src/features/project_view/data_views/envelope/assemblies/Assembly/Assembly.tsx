@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 
 import { postWithAlert } from '../../../../../../api/postWithAlert';
@@ -74,9 +74,19 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
         }
     };
 
-    const handleSegmentsChange = (layerId: number, segments: LayerType['segments']) => {
-        setLayers(currentLayers => currentLayers.map(layer => (layer.id === layerId ? { ...layer, segments } : layer)));
-    };
+    const handleSegmentsChange = useCallback((layerId: number, segments: LayerType['segments']) => {
+        setLayers(currentLayers => {
+            const layerIndex = currentLayers.findIndex(layer => layer.id === layerId);
+            if (layerIndex === -1) return currentLayers;
+
+            const targetLayer = currentLayers[layerIndex];
+            if (targetLayer.segments === segments) return currentLayers;
+
+            const nextLayers = [...currentLayers];
+            nextLayers[layerIndex] = { ...targetLayer, segments };
+            return nextLayers;
+        });
+    }, []);
 
     const assemblyWithLayers = { ...assembly, layers };
 
