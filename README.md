@@ -32,7 +32,7 @@
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
 - [ ] Add calculated R-Value / U-Value label
-- [ ] Add total thickness label
+- [x] Add total thickness label
 - [ ] Material copy/paste between segments
 - [ ] Handle fasteners (view, inputs, include in R-Value calc)
   - [ ] Add to Json download? Check Honeybee-PH

@@ -17,6 +17,7 @@ import AssemblyToolbar from '../Assembly/AssemblyToolbar';
 import Assembly from '../Assembly/Assembly';
 import AssemblySidebar from '../Assembly/Sidebar/Sidebar';
 import { AssemblyType } from '../../_types/Assembly';
+import TotalThicknessLabel from './TotalThicknessLabel';
 
 const SIDEBAR_WIDTH = 260;
 
@@ -45,6 +46,7 @@ const AssemblyContentBlock: React.FC = () => {
     const { isSidebarOpen, toggleSidebar } = useAssemblySidebar();
     const { selectedAssembly, handleFileSelected } = useAssemblyContext();
     const headerButtons = useAssemblyHeaderButtons();
+    const headerButtonsWithTotal = [<TotalThicknessLabel key="assembly-total-thickness" />, ...headerButtons];
 
     return (
         <>
@@ -52,7 +54,7 @@ const AssemblyContentBlock: React.FC = () => {
 
             <ContentBlockHeader
                 text="Assembly Details"
-                buttons={headerButtons}
+                buttons={headerButtonsWithTotal}
                 titleContent={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <h4 style={{ margin: 0 }}>Assembly Details</h4>

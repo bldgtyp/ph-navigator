@@ -3,6 +3,7 @@ import { Box, Tooltip } from '@mui/material';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { useUnitConversion } from '../../../../_hooks/useUnitConversion';
+import { useAssemblyContext } from '../Assembly/Assembly.Context';
 
 import Segment from '../Segment/Segment';
 import ModalLayerThickness from '../LayerHeightModal/LayerHeight';
@@ -50,12 +51,17 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayerAbove, onAddLayerBelow, 
     const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion();
     const userContext = useContext(UserContext);
     const hooks = useLayerHooks(layer);
+    const { setLayerThicknessOverrideMm } = useAssemblyContext();
 
     useEffect(() => {
         if (onSegmentsChange) {
             onSegmentsChange(layer.id, hooks.segments);
         }
     }, [hooks.segments, layer.id, onSegmentsChange]);
+
+    useEffect(() => {
+        setLayerThicknessOverrideMm(layer.id, hooks.layerThickness.currentValue);
+    }, [layer.id, hooks.layerThickness.currentValue, setLayerThicknessOverrideMm]);
 
     const handleSegmentUpdated = (updatedSegment: SegmentType) => {
         hooks.setSegments(prevSegments =>

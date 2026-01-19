@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { getWithAlert } from '../../../../../../api/getWithAlert';
@@ -36,6 +36,9 @@ export interface AssemblyContextType {
     handleFlipOrientation: (assemblyId: number | null) => Promise<void>;
     handleFlipLayers: (assemblyId: number | null) => Promise<void>;
     handleDuplicateAssembly: (assemblyId: number | null) => Promise<void>;
+    layerThicknessOverridesMm: Record<number, number>;
+    setLayerThicknessOverrideMm: (layerId: number, thicknessMm: number) => void;
+    clearLayerThicknessOverrides: () => void;
 }
 
 const AssemblyContext = createContext<AssemblyContextType | undefined>(undefined);
@@ -50,6 +53,20 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
     const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
     const [refreshKey, setRefreshKey] = useState<number>(0);
+    const [layerThicknessOverridesMm, setLayerThicknessOverridesMm] = useState<Record<number, number>>({});
+
+    const setLayerThicknessOverride = useCallback((layerId: number, thicknessMm: number) => {
+        setLayerThicknessOverridesMm(current => {
+            if (current[layerId] === thicknessMm) {
+                return current;
+            }
+            return { ...current, [layerId]: thicknessMm };
+        });
+    }, []);
+
+    const clearLayerThicknessOverrides = useCallback(() => {
+        setLayerThicknessOverridesMm({});
+    }, []);
 
     const fetchAssemblies = async () => {
         console.log(`fetchAssemblies(), projectId=${projectId}`);
@@ -85,6 +102,10 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const selectedAssembly = useMemo(() => {
         return assemblies.find(assembly => assembly.id === selectedAssemblyId) || null;
     }, [assemblies, selectedAssemblyId]);
+
+    useEffect(() => {
+        clearLayerThicknessOverrides();
+    }, [clearLayerThicknessOverrides, selectedAssemblyId]);
 
     const handleAssemblyChange = async (assemblyId: number) => {
         console.log('handleAssemblyChange', assemblyId);
@@ -385,6 +406,9 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 handleFlipOrientation,
                 handleFlipLayers,
                 handleDuplicateAssembly,
+                layerThicknessOverridesMm,
+                setLayerThicknessOverrideMm: setLayerThicknessOverride,
+                clearLayerThicknessOverrides,
             }}
         >
             {children}
