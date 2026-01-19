@@ -9,13 +9,49 @@ import Layer from '../Layer/Layer';
 import AssemblyLegend from './AssemblyLegend';
 import { LayerType } from '../../_types/Layer';
 import { AssemblyType } from '../../_types/Assembly';
+import { useCopyPaste } from './CopyPaste.Context';
+import { useAssemblyContext } from './Assembly.Context';
 
 const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
     const [layers, setLayers] = useState(assembly.layers);
+    const { isPickMode, isPasteMode, resetPasteMode } = useCopyPaste();
+    const { refreshKey } = useAssemblyContext();
 
+    // Sync layers when assembly changes or when refreshKey increments (after paste/undo)
     useEffect(() => {
         setLayers(assembly.layers);
-    }, [assembly]);
+    }, [assembly, refreshKey]);
+
+    // Exit handlers for Esc key and click outside
+    useEffect(() => {
+        if (!isPickMode && !isPasteMode) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                resetPasteMode();
+            }
+        };
+
+        const handlePointerDown = (event: MouseEvent) => {
+            const target = event.target as HTMLElement | null;
+            // Allow clicks on segments (they have their own click handlers)
+            if (!target || target.closest('.assembly-layer-segment')) {
+                return;
+            }
+            // Exit mode on click outside segments
+            resetPasteMode();
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('mousedown', handlePointerDown, true); // Capture phase
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('mousedown', handlePointerDown, true);
+        };
+    }, [isPasteMode, isPickMode, resetPasteMode]);
 
     const insertLayerAtOrder = async (orderPosition: number) => {
         try {

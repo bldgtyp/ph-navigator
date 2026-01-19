@@ -6,6 +6,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useMaterials } from '../../_contexts/MaterialsContext';
 import { AssemblyProvider, useAssemblyContext } from '../Assembly/Assembly.Context';
 import { AssemblySidebarProvider, useAssemblySidebar } from '../Assembly/Sidebar/Sidebar.Context';
+import { CopyPasteProvider } from '../Assembly/CopyPaste.Context';
 
 import LoadingModal from '../../../_components/LoadingModal';
 import ContentBlockHeader from '../../../_components/ContentBlock.Header';
@@ -119,9 +120,11 @@ const AssembliesPage: React.FC = () => {
     return (
         <ContentBlock>
             <AssemblyProvider>
-                <AssemblySidebarProvider>
-                    <AssemblyContentBlock />
-                </AssemblySidebarProvider>
+                <CopyPasteProvider>
+                    <AssemblySidebarProvider>
+                        <AssemblyContentBlock />
+                    </AssemblySidebarProvider>
+                </CopyPasteProvider>
             </AssemblyProvider>
         </ContentBlock>
     );

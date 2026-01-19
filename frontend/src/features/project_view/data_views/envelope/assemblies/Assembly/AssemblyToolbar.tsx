@@ -1,11 +1,15 @@
 import { useContext } from 'react';
 import type { FC, ReactNode } from 'react';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box, Chip, Divider, IconButton, Tooltip } from '@mui/material';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import FlipIcon from '@mui/icons-material/Flip';
+import ColorizeIcon from '@mui/icons-material/Colorize';
+import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
+import UndoIcon from '@mui/icons-material/Undo';
 
 import { UserContext } from '../../../../../auth/_contexts/UserContext';
 import { useAssemblyContext } from './Assembly.Context';
+import { useCopyPaste } from './CopyPaste.Context';
 
 interface ToolbarIconButtonProps {
     icon: ReactNode;
@@ -55,6 +59,7 @@ const ToolbarIconButton: FC<ToolbarIconButtonProps> = ({ icon, onClick, disabled
 const AssemblyToolbar: FC = () => {
     const userContext = useContext(UserContext);
     const { selectedAssemblyId, handleFlipOrientation, handleFlipLayers } = useAssemblyContext();
+    const { isPickMode, isPasteMode, startPickMode, resetPasteMode, undoLastPaste, undoStack } = useCopyPaste();
 
     // Hide toolbar entirely for guests
     if (!userContext.user) {
@@ -69,8 +74,31 @@ const AssemblyToolbar: FC = () => {
         ? 'Select an assembly to flip layers'
         : 'Reverse layers from inside to outside';
 
+    // Copy/paste tooltip and click handler
+    const copyPasteTooltip = isPasteMode
+        ? 'Exit paste mode'
+        : isPickMode
+          ? 'Click a segment to copy material'
+          : 'Copy/Paste segment material';
+
+    const handleCopyPasteClick = () => {
+        if (isPasteMode || isPickMode) {
+            resetPasteMode();
+            return;
+        }
+        startPickMode();
+    };
+
+    // Undo tooltip
+    const undoTooltip =
+        isPickMode || isPasteMode
+            ? 'Exit paste mode to undo'
+            : undoStack.length === 0
+              ? 'No paste operations to undo'
+              : `Undo last material paste (${undoStack.length})`;
+
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1, alignItems: 'center', gap: 1 }}>
             <Box
                 sx={{
                     display: 'flex',
@@ -104,7 +132,48 @@ const AssemblyToolbar: FC = () => {
                     disabled={isDisabled}
                     tooltipText={flipLayersTooltip}
                 />
+
+                <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+                <ToolbarIconButton
+                    icon={isPasteMode ? <FormatColorFillIcon fontSize="small" /> : <ColorizeIcon fontSize="small" />}
+                    onClick={handleCopyPasteClick}
+                    disabled={isDisabled}
+                    tooltipText={copyPasteTooltip}
+                />
+                <ToolbarIconButton
+                    icon={<UndoIcon fontSize="small" />}
+                    onClick={undoLastPaste}
+                    disabled={isDisabled || undoStack.length === 0 || isPickMode || isPasteMode}
+                    tooltipText={undoTooltip}
+                />
             </Box>
+
+            {/* Mode status badges */}
+            {isPickMode && (
+                <Chip
+                    label="Pick source"
+                    size="small"
+                    sx={{
+                        backgroundColor: 'rgba(129, 199, 132, 0.18)',
+                        color: 'rgba(56, 142, 60, 1)',
+                        fontWeight: 500,
+                        fontSize: '0.75rem',
+                    }}
+                />
+            )}
+            {isPasteMode && (
+                <Chip
+                    label="Paste mode"
+                    size="small"
+                    sx={{
+                        backgroundColor: 'rgba(255, 217, 102, 0.25)',
+                        color: 'rgba(245, 124, 0, 1)',
+                        fontWeight: 500,
+                        fontSize: '0.75rem',
+                    }}
+                />
+            )}
         </Box>
     );
 };

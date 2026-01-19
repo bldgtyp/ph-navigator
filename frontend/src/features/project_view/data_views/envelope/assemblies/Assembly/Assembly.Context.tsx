@@ -24,6 +24,7 @@ export interface AssemblyContextType {
     selectedAssemblyId: number | null;
     setSelectedAssemblyId: React.Dispatch<React.SetStateAction<number | null>>;
     selectedAssembly: AssemblyType | null;
+    refreshKey: number;
     handleAssemblyChange: (assemblyId: number) => Promise<void>;
     handleAddAssembly: () => Promise<void>;
     handleDeleteAssembly: (assemblyId: number) => Promise<void>;
@@ -48,6 +49,7 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
     const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
     const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
+    const [refreshKey, setRefreshKey] = useState<number>(0);
 
     const fetchAssemblies = async () => {
         console.log(`fetchAssemblies(), projectId=${projectId}`);
@@ -88,6 +90,8 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.log('handleAssemblyChange', assemblyId);
         setSelectedAssemblyId(assemblyId);
         await fetchAssemblies();
+        // Increment refreshKey to force UI components to re-sync with new data
+        setRefreshKey(k => k + 1);
     };
 
     const handleAddAssembly = async () => {
@@ -369,6 +373,7 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 selectedAssemblyId,
                 setSelectedAssemblyId,
                 selectedAssembly,
+                refreshKey,
                 handleAssemblyChange,
                 handleAddAssembly,
                 handleDeleteAssembly,

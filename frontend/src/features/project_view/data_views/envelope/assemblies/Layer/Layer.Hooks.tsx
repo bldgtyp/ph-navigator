@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LayerType } from '../../_types/Layer';
 import { SegmentType, SpecificationStatus } from '../../_types/Segment';
 import { postWithAlert } from '../../../../../../api/postWithAlert';
@@ -13,6 +13,10 @@ export const useLayerHooks = (layer: LayerType) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLayerHovered, setIsLayerHovered] = useState(false);
     const [segments, setSegments] = useState(layer.segments);
+
+    useEffect(() => {
+        setSegments(layer.segments);
+    }, [layer.segments]);
 
     // Layer Thickness
     const [currentLayerThicknessMM, setCurrentLayerThicknessMM] = useState(layer.thickness_mm);

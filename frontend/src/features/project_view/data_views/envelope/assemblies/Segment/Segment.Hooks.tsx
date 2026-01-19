@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SegmentType } from '../../_types/Segment';
 import { convertArgbToRgba } from '../../_types/Material';
 import { patchWithAlert } from '../../../../../../api/patchWithAlert';
@@ -89,6 +89,38 @@ export const useLayerSegmentHooks = (segment: SegmentType) => {
             setNewContinuousInsulationChecked(args.checked);
         }
     );
+
+    // Sync state when segment prop changes (e.g., after paste or undo operation)
+    // Using specific primitive values as dependencies ensures the effect runs
+    // even if the segment object reference doesn't change
+    useEffect(() => {
+        const newColor = convertArgbToRgba(segment.material.argb_color);
+        setCurrentMaterialColor(newColor);
+        setNewMaterialColor(newColor);
+
+        setCurrentMaterialId(segment.material.id);
+        setNewMaterialId(segment.material.id);
+
+        setCurrentSegmentWidthMM(segment.width_mm);
+        setNewSegmentWidthMM(segment.width_mm);
+
+        const hasSteelStud = segment.steel_stud_spacing_mm !== null;
+        setCurrentIsSteelStudChecked(hasSteelStud);
+        setNewIsSteelStudChecked(hasSteelStud);
+
+        setCurrentSteelStudSpacingMM(segment.steel_stud_spacing_mm || 406.4);
+        setNewSteelStudSpacingMM(segment.steel_stud_spacing_mm || 406.4);
+
+        setCurrentContinuousInsulationChecked(segment.is_continuous_insulation);
+        setNewContinuousInsulationChecked(segment.is_continuous_insulation);
+    }, [
+        segment.id,
+        segment.material.id,
+        segment.material.argb_color,
+        segment.width_mm,
+        segment.steel_stud_spacing_mm,
+        segment.is_continuous_insulation,
+    ]);
 
     // Handlers
     const handleMouseEnter = () => setIsSegmentHovered(true);
