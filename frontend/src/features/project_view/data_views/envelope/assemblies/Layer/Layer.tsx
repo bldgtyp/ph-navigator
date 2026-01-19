@@ -13,19 +13,31 @@ import { useLayerHooks } from './Layer.Hooks';
 
 interface LayerProps {
     layer: LayerType;
-    onAddLayer: (layer: LayerType) => void;
+    onAddLayerAbove: (layer: LayerType) => void;
+    onAddLayerBelow: (layer: LayerType) => void;
     onDeleteLayer: (layerId: number) => void;
     onSegmentsChange?: (layerId: number, segments: SegmentType[]) => void;
 }
 
-const AddLayerButton: React.FC<{ onClick: () => void }> = props => {
+type AddLayerPosition = 'above' | 'below';
+
+interface AddLayerButtonProps {
+    position: AddLayerPosition;
+    onClick: () => void;
+}
+
+const AddLayerButton: React.FC<AddLayerButtonProps> = ({ position, onClick }) => {
+    const tooltipText = position === 'above' ? 'Add Layer Above' : 'Add Layer Below';
+    const className =
+        position === 'above' ? 'add-layer-button add-layer-button-above' : 'add-layer-button add-layer-button-below';
+
     return (
-        <Tooltip title="Add a New Layer" placement="bottom">
+        <Tooltip title={tooltipText} placement={position === 'above' ? 'top' : 'bottom'}>
             <button
-                className="add-layer-button"
+                className={className}
                 onClick={e => {
                     e.stopPropagation();
-                    props.onClick();
+                    onClick();
                 }}
             >
                 +
@@ -34,7 +46,7 @@ const AddLayerButton: React.FC<{ onClick: () => void }> = props => {
     );
 };
 
-const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer, onSegmentsChange }) => {
+const Layer: React.FC<LayerProps> = ({ layer, onAddLayerAbove, onAddLayerBelow, onDeleteLayer, onSegmentsChange }) => {
     const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion();
     const userContext = useContext(UserContext);
     const hooks = useLayerHooks(layer);
@@ -76,8 +88,13 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayer, onDeleteLayer, onSegme
                     unitSystem === 'SI' ? 1 : 3
                 )}
 
-                {/* Add-Layer Button */}
-                {hooks.isLayerHovered && userContext.user ? <AddLayerButton onClick={() => onAddLayer(layer)} /> : null}
+                {/* Add-Layer Buttons */}
+                {hooks.isLayerHovered && userContext.user ? (
+                    <>
+                        <AddLayerButton position="above" onClick={() => onAddLayerAbove(layer)} />
+                        <AddLayerButton position="below" onClick={() => onAddLayerBelow(layer)} />
+                    </>
+                ) : null}
             </Box>
 
             <ModalLayerThickness

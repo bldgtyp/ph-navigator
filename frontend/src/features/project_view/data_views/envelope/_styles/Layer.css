@@ -27,9 +27,7 @@
     font-size: 12px;
     font-weight: 800;
     position: absolute;
-    top: 100%;
     right: 50%;
-    transform: translateY(-50%) translateX(50%);
     background-color: #b2087c;
     color: white;
     border: none;
@@ -41,4 +39,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.add-layer-button-above {
+    top: 0;
+    transform: translateY(-50%) translateX(50%);
+}
+
+.add-layer-button-below {
+    top: 100%;
+    transform: translateY(-50%) translateX(50%);
 }

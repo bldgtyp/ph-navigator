@@ -17,40 +17,47 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
         setLayers(assembly.layers);
     }, [assembly]);
 
-    const onAddLayerBelow = async (layer: LayerType) => {
-        // Add the Layer
+    const insertLayerAtOrder = async (orderPosition: number) => {
         try {
-            // New Segment goes to the right of the current segment
-            const orderPosition = layer.order + 1;
-
-            // Call the backend API to add the new segment
+            // orderPosition already reflects the visual order shown to the user; the backend expects the same index.
             const response = await postWithAlert<LayerType>(`assembly/create-new-layer/${assembly.id}`, null, {
                 order: orderPosition,
             });
 
-            if (response) {
-                const newLayerId = response.id;
+            if (!response) {
+                return;
+            }
 
-                // Get the new Layer for display
-                try {
-                    const newLayer = await getWithAlert<LayerType>(`assembly/get-layer/${newLayerId}`, null);
-                    if (newLayer) {
-                        // Update the layers array to reflect the insertion
-                        const updatedLayers = [...layers];
-                        updatedLayers.splice(newLayer.order, 0, newLayer); // Insert the new layer
-                        updatedLayers.forEach((segment, index) => {
-                            segment.order = index; // Recalculate the order for all Layers
-                        });
-
-                        setLayers(updatedLayers);
-                    }
-                } catch (error) {
-                    console.error('Failed to get layer:', error);
+            const newLayerId = response.id;
+            try {
+                const newLayer = await getWithAlert<LayerType>(`assembly/get-layer/${newLayerId}`, null);
+                if (!newLayer) {
+                    return;
                 }
+
+                setLayers(currentLayers => {
+                    const updatedLayers = [...currentLayers];
+                    const insertIndex = Math.min(Math.max(newLayer.order, 0), updatedLayers.length);
+                    updatedLayers.splice(insertIndex, 0, newLayer);
+                    updatedLayers.forEach((segment, index) => {
+                        segment.order = index;
+                    });
+                    return updatedLayers;
+                });
+            } catch (error) {
+                console.error('Failed to get layer:', error);
             }
         } catch (error) {
-            console.error('Failed to add segment:', error);
+            console.error('Failed to add layer:', error);
         }
+    };
+
+    const onAddLayerAbove = async (layer: LayerType) => {
+        await insertLayerAtOrder(layer.order);
+    };
+
+    const onAddLayerBelow = async (layer: LayerType) => {
+        await insertLayerAtOrder(layer.order + 1);
     };
 
     const onDeleteLayer = async (layerId: number) => {
@@ -101,7 +108,8 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
                         <Layer
                             key={layer.id}
                             layer={layer}
-                            onAddLayer={onAddLayerBelow}
+                            onAddLayerAbove={onAddLayerAbove}
+                            onAddLayerBelow={onAddLayerBelow}
                             onDeleteLayer={onDeleteLayer}
                             onSegmentsChange={handleSegmentsChange}
                         />
