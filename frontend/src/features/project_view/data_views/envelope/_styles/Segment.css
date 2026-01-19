@@ -34,8 +34,6 @@
     font-weight: 800;
     position: absolute;
     top: 50%;
-    right: -20px;
-    transform: translateY(-50%) translateX(-50%);
     background-color: #b2087c;
     color: white;
     border: none;
@@ -47,4 +45,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.create-new-segment-button-right {
+    right: -20px;
+    transform: translateY(-50%) translateX(-50%);
+}
+
+.create-new-segment-button-left {
+    left: -20px;
+    transform: translateY(-50%) translateX(50%);
 }

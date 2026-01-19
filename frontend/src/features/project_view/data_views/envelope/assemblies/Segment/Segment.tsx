@@ -9,22 +9,46 @@ import { useLayerSegmentHooks } from './Segment.Hooks';
 
 type SegmentProps = {
     segment: SegmentType;
-    onAddSegment: (segment: SegmentType) => void;
+    onAddSegmentLeft: (segment: SegmentType) => void;
+    onAddSegmentRight: (segment: SegmentType) => void;
     onDeleteSegment: (segmentId: number) => void;
     onSegmentUpdated?: (segment: SegmentType) => void;
 };
 
-const AddSegmentButton: React.FC<{ onClick: () => void }> = props => {
+type SegmentPosition = 'left' | 'right';
+
+interface AddSegmentButtonProps {
+    position: SegmentPosition;
+    onClick: () => void;
+}
+
+const AddSegmentButton: React.FC<AddSegmentButtonProps> = ({ position, onClick }) => {
+    const tooltipText = position === 'left' ? 'Add Segment Before' : 'Add Segment After';
+    const className = `create-new-segment-button create-new-segment-button-${position}`;
+    const placement = position === 'left' ? 'left' : 'right';
+
     return (
-        <Tooltip title="Add a New Segment" placement="right">
-            <button className="create-new-segment-button" onClick={props.onClick}>
+        <Tooltip title={tooltipText} placement={placement}>
+            <button
+                className={className}
+                onClick={event => {
+                    event.stopPropagation();
+                    onClick();
+                }}
+            >
                 +
             </button>
         </Tooltip>
     );
 };
 
-const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegment, onSegmentUpdated }) => {
+const Segment: React.FC<SegmentProps> = ({
+    segment,
+    onAddSegmentLeft,
+    onAddSegmentRight,
+    onDeleteSegment,
+    onSegmentUpdated,
+}) => {
     const userContext = useContext(UserContext);
     const hooks = useLayerSegmentHooks(segment);
 
@@ -59,9 +83,12 @@ const Segment: React.FC<SegmentProps> = ({ segment, onAddSegment, onDeleteSegmen
                 onModalClose={hooks.handleModalClose}
             />
 
-            {/* Add Segment Button */}
+            {/* Add Segment Buttons */}
             {hooks.isSegmentHovered && userContext.user ? (
-                <AddSegmentButton onClick={() => onAddSegment(segment)} />
+                <>
+                    <AddSegmentButton position="left" onClick={() => onAddSegmentLeft(segment)} />
+                    <AddSegmentButton position="right" onClick={() => onAddSegmentRight(segment)} />
+                </>
             ) : null}
         </Box>
     );

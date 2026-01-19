@@ -112,7 +112,8 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayerAbove, onAddLayerBelow, 
                     <Segment
                         key={segment.id}
                         segment={segment}
-                        onAddSegment={segment => hooks.handleAddSegmentToRight(segment, layer)}
+                        onAddSegmentLeft={segment => hooks.handleAddSegmentToLeft(segment, layer)}
+                        onAddSegmentRight={segment => hooks.handleAddSegmentToRight(segment, layer)}
                         onDeleteSegment={hooks.handleDeleteSegment}
                         onSegmentUpdated={handleSegmentUpdated}
                     />
