@@ -30,6 +30,7 @@ from features.assembly.services.assembly_from_hbjson import (
 from features.assembly.services.material import create_new_material
 from features.assembly.services.thermal_resistance import (
     _calculate_path_area_fraction,
+    _calculate_steel_stud_equivalent_conductivity,
     _validate_assembly,
     calculate_effective_r_value,
 )
@@ -365,6 +366,7 @@ class TestSteelStudAssembly:
         - Layer 4: GWB, 13mm (homogeneous)
 
         Steel stud layers have special handling due to thermal bridging.
+        The AISI S250-21 calculation accounts for heat flow through steel studs.
         """
         create_test_project(db=session, username="user1", project_name="Project 1")
         create_test_materials(session)
@@ -373,6 +375,9 @@ class TestSteelStudAssembly:
         result = calculate_effective_r_value(assembly)
 
         assert result.is_valid is True
+
+        # Verify assembly is recognized as steel stud
+        assert assembly.is_steel_stud_assembly is True
 
         # Verify we get positive R values
         assert result.r_parallel_path_si > 0
@@ -384,6 +389,50 @@ class TestSteelStudAssembly:
 
         # U-value should be inverse of R
         assert result.u_effective_si == pytest.approx(1.0 / result.r_effective_si, rel=0.001)
+
+        # Calculate what R-value would be WITHOUT steel stud correction
+        # (using raw fiberglass conductivity 0.0449991 W/m-K)
+        r_xps = 0.076 / K_XPS  # ~2.634 m2-K/W
+        r_plywood = 0.02 / K_PLYWOOD  # ~0.167 m2-K/W
+        r_fiberglass_raw = 0.09 / K_FIBERGLASS  # ~2.0 m2-K/W (no bridging)
+        r_gwb = 0.013 / K_GWB  # ~0.077 m2-K/W
+        r_without_bridging = r_xps + r_plywood + r_fiberglass_raw + r_gwb  # ~4.88 m2-K/W
+
+        # With steel stud thermal bridging, the R-value should be LOWER
+        # because steel conducts heat much better than fiberglass insulation
+        assert result.r_effective_si < r_without_bridging, (
+            f"Steel stud R-value ({result.r_effective_si:.4f}) should be lower than "
+            f"R-value without bridging ({r_without_bridging:.4f})"
+        )
+
+    def test_steel_stud_equivalent_conductivity(self, session: Session, create_test_project):
+        """
+        Verify the steel stud equivalent conductivity calculation.
+
+        For the Test 5 assembly (XPS + Plywood + Steel stud cavity + GWB),
+        the equivalent conductivity of the stud cavity should be higher
+        than the raw fiberglass insulation conductivity due to thermal bridging.
+        """
+        create_test_project(db=session, username="user1", project_name="Project 1")
+        create_test_materials(session)
+
+        assembly = load_assembly_from_json(session, "1234", "Test 5 - Steel Stud Wall")
+
+        # Get the equivalent conductivity
+        eq_conductivity = _calculate_steel_stud_equivalent_conductivity(assembly)
+
+        # Raw fiberglass conductivity is 0.0449991 W/m-K
+        # With steel stud thermal bridging, the equivalent conductivity should be HIGHER
+        assert eq_conductivity > K_FIBERGLASS, (
+            f"Equivalent conductivity ({eq_conductivity:.6f}) should be higher than "
+            f"raw fiberglass ({K_FIBERGLASS:.6f}) due to steel thermal bridging"
+        )
+
+        # The equivalent conductivity should be in a reasonable range
+        # (typically 1.5x to 2.5x the raw insulation conductivity for steel studs)
+        assert eq_conductivity < K_FIBERGLASS * 3.0, (
+            f"Equivalent conductivity ({eq_conductivity:.6f}) is unexpectedly high"
+        )
 
 
 class TestEdgeCases:

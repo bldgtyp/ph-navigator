@@ -28,9 +28,9 @@
 - [x] Add calculated R-Value / U-Value label
 - [x] Display Material Legend with key material info (conductivity)
 - [x] Add total thickness label
+- [x] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths on different layers?
-- [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
 - [ ] Material copy/paste between segments
@@ -39,6 +39,7 @@
 - [ ] Add 'PHPP' style download button (download as CSV)
 - [ ] Handle Load Steel Stud Assemblies.
 - [ ] R-Value Label preview Does NOT work with Steel-Stud Assemblies currently
+- [ ] Consider caching/storing the total Assembly U-Value on the DB-entity to reduce server workload?
 
 ## Ventilation Commissioning Page
 
@@ -60,7 +61,9 @@
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
-- [ ] Add window-element U-Value
+- [ ] Add window-element U-Value (might refactor Uw calc?)
+- [ ] Uw Value Label doesn't respect SI | IP state.
+- [ ] Consider caching/storing the total Uw on the DB-entity to reduce server workload?
 
 ## 3D Model:
 
