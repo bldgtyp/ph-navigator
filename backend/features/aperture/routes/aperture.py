@@ -23,6 +23,7 @@ from features.aperture.schemas.aperture import (
     UpdateRowHeightRequest,
     UpdateApertureElementNameRequest,
 )
+from features.aperture.schemas.window_u_value import WindowUValueResponse
 from features.aperture.schemas.aperture_element import UpdateElementAssignmentsRequest, UpdateOperationRequest
 from features.aperture.services.aperture import (
     LastColumnException,
@@ -47,6 +48,10 @@ from features.aperture.services.aperture import (
     update_aperture_row_height,
     update_aperture_element_name,
     update_aperture_glazing_type,
+)
+from features.aperture.services.window_u_value import (
+    calculate_aperture_u_value,
+    WindowUValueResult,
 )
 from features.app.services import get_project_by_bt_number
 
@@ -436,3 +441,48 @@ def delete_column_on_aperture_route(
         msg = str(e)
         logger.error(msg)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+
+
+# @limiter.limit("1/second")
+@router.get("/get-u-value/{aperture_id}", response_model=WindowUValueResponse)
+def get_aperture_u_value_route(
+    request: Request, aperture_id: int, db: Session = Depends(get_db)
+) -> WindowUValueResponse:
+    """
+    Calculate and return the effective U-value for an aperture.
+
+    Calculates U-w per ISO 10077-1:2006 (uninstalled, excluding psi-install).
+    The calculation includes heat loss from frames, glazing, and spacer edges.
+
+    Args:
+        aperture_id: ID of the aperture to calculate U-value for
+
+    Returns:
+        WindowUValueResponse with U-value in W/m²K and calculation details
+    """
+    logger.info(f"get_aperture_u_value_route({aperture_id=})")
+
+    try:
+        aperture = get_aperture_by_id(db, aperture_id)
+        result = calculate_aperture_u_value(aperture)
+        return WindowUValueResponse(
+            u_value_w_m2k=result.u_value_w_m2k,
+            total_area_m2=result.total_area_m2,
+            glazing_area_m2=result.glazing_area_m2,
+            frame_area_m2=result.frame_area_m2,
+            heat_loss_glazing_w_k=result.heat_loss_glazing_w_k,
+            heat_loss_frame_w_k=result.heat_loss_frame_w_k,
+            heat_loss_spacer_w_k=result.heat_loss_spacer_w_k,
+            is_valid=result.is_valid,
+            warnings=result.warnings,
+            calculation_method=result.calculation_method,
+            includes_psi_install=result.includes_psi_install,
+        )
+    except ValueError as e:
+        msg = str(e)
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+    except Exception as e:
+        msg = f"Error calculating U-value for aperture {aperture_id}: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

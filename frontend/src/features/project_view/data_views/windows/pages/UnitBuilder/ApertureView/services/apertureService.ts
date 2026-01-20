@@ -3,7 +3,13 @@ import { patchWithAlert } from '../../../../../../../../api/patchWithAlert';
 import { deleteWithAlert } from '../../../../../../../../api/deleteWithAlert';
 import { postWithAlert } from '../../../../../../../../api/postWithAlert';
 
-import { ApertureType, ElementAssignmentsPayload, ElementOperation, InsertPosition } from '../../types';
+import {
+    ApertureType,
+    ElementAssignmentsPayload,
+    ElementOperation,
+    InsertPosition,
+    WindowUValueResponse,
+} from '../../types';
 import { FramePosition } from '../../ElementsTable/types';
 
 /**
@@ -324,6 +330,23 @@ export class ApertureService {
         } catch (error) {
             console.error('Error updating element assignments:', error);
             throw new Error(`Failed to update element assignments: ${error}`);
+        }
+    }
+
+    /**
+     * Fetch the effective U-value for an aperture.
+     * Calculated per ISO 10077-1:2006 (uninstalled, excluding psi-install).
+     */
+    static async fetchUValue(apertureId: number): Promise<WindowUValueResponse> {
+        try {
+            const response = await getWithAlert<WindowUValueResponse>(`aperture/get-u-value/${apertureId}`);
+            if (!response) {
+                throw new Error('Failed to fetch U-value - no response received');
+            }
+            return response;
+        } catch (error) {
+            console.error('Error fetching U-value:', error);
+            throw new Error(`Failed to fetch U-value: ${error}`);
         }
     }
 }

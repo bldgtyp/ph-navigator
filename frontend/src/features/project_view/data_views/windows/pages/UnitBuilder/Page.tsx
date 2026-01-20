@@ -15,6 +15,8 @@ import ApertureSelector from './ApertureView/ApertureSelector';
 import ApertureElements from './ApertureView/ElementsView/ApertureElements';
 import ApertureElementsTable from './ElementsTable/ElementsTable';
 import { useHeaderButtons } from './ApertureView/Aperture.HeaderButtons';
+import { useApertureUValue } from './hooks/useApertureUValue';
+import UValueLabel from './components/UValueLabel';
 
 const SIDEBAR_WIDTH = 260;
 
@@ -22,6 +24,18 @@ const ApertureTypesContentBlock: React.FC = () => {
     const { activeAperture } = useApertures();
     const { isSidebarOpen, toggleSidebar } = useApertureSidebar();
     const headerButtons = useHeaderButtons();
+    const { uValueData, loading: uValueLoading, error: uValueError } = useApertureUValue(activeAperture);
+
+    const headerButtonsWithUValue = [
+        <UValueLabel
+            key="window-u-value"
+            uValue={uValueData?.u_value_w_m2k ?? null}
+            loading={uValueLoading}
+            error={uValueError}
+            isValid={uValueData?.is_valid ?? true}
+        />,
+        ...headerButtons,
+    ];
 
     return (
         <ContentBlock id="aperture-types">
@@ -30,7 +44,7 @@ const ApertureTypesContentBlock: React.FC = () => {
             <ContentBlockHeader
                 id="aperture-types-header"
                 text={`Window / Door Type`}
-                buttons={headerButtons}
+                buttons={headerButtonsWithUValue}
                 titleContent={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <h4 style={{ margin: 0 }}>Window / Door Type</h4>

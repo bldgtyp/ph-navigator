@@ -54,13 +54,13 @@
 - [x] Assign frames (frame DB elements)
 - [x] Assign glass (glass DB elements)
 - [x] Attribute reporting (& assignment) table
+- [x] Add window U-Value
 - [ ] Change Element blocks to be inside a scrollable container so we always see the window graphic
 - [ ] Select individual frame elements allows direct setting (dropdown)
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
 - [ ] Add window-element U-Value
-- [ ] Add window U-Value
 
 ## 3D Model:
 

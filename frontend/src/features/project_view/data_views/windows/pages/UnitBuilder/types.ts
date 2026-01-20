@@ -170,3 +170,21 @@ export interface ManufacturerFilterConfig {
     used_frame_manufacturers: string[];
     used_glazing_manufacturers: string[];
 }
+
+/**
+ * Response from the window U-value calculation API.
+ * Calculated per ISO 10077-1:2006.
+ */
+export interface WindowUValueResponse {
+    u_value_w_m2k: number;
+    total_area_m2: number;
+    glazing_area_m2: number;
+    frame_area_m2: number;
+    heat_loss_glazing_w_k: number;
+    heat_loss_frame_w_k: number;
+    heat_loss_spacer_w_k: number;
+    is_valid: boolean;
+    warnings: string[];
+    calculation_method: string;
+    includes_psi_install: boolean;
+}
