@@ -51,7 +51,7 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayerAbove, onAddLayerBelow, 
     const { valueInCurrentUnitSystemWithDecimal, unitSystem } = useUnitConversion();
     const userContext = useContext(UserContext);
     const hooks = useLayerHooks(layer);
-    const { setLayerThicknessOverrideMm } = useAssemblyContext();
+    const { setLayerThicknessOverrideMm, triggerRValueRefresh } = useAssemblyContext();
 
     useEffect(() => {
         if (onSegmentsChange) {
@@ -108,7 +108,10 @@ const Layer: React.FC<LayerProps> = ({ layer, onAddLayerAbove, onAddLayerBelow, 
                 onModalClose={hooks.handleModalClose}
                 layerThickness={hooks.layerThickness.newValue}
                 onLayerThicknessChange={hooks.layerThickness.setNewValue}
-                onSubmit={() => hooks.handleSubmitChangeLayerThickness(layer)}
+                onSubmit={async () => {
+                    await hooks.handleSubmitChangeLayerThickness(layer);
+                    triggerRValueRefresh();
+                }}
                 onDeleteLayer={() => onDeleteLayer(layer.id)}
             />
 

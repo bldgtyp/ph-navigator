@@ -1,0 +1,1102 @@
+{
+  "Test 2 - Multi-Layer Homogeneous": {
+    "type": "OpaqueConstruction",
+    "identifier": "Test 2 - Multi-Layer Homogeneous",
+    "materials": [
+      {
+        "type": "EnergyMaterial",
+        "identifier": "EPS (Type I) [ 2.0 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.05,
+        "conductivity": 0.0389415,
+        "density": 0,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 174,
+              "g": 207,
+              "b": 232
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfsf66a1a64",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recjNQbv0Rhrn9F6m"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "OSB [ 0.8 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.02,
+        "conductivity": 0.129805,
+        "density": 595,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 247,
+              "g": 210,
+              "b": 125
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs92e155f0",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recwJx7zuC8gMt4KL"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "Brick (Common) [ 1.2 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.03,
+        "conductivity": 0.719986,
+        "density": 1670,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {}
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfse70d9a19",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recLvowryB5t8JCYQ"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      }
+    ],
+    "properties": {
+      "type": "OpaqueConstructionProperties",
+      "ph": {
+        "type": "OpaqueConstructionPhProperties",
+        "id_num": 0
+      },
+      "ref": {
+        "type": "_HBObjectWithReferences",
+        "identifier": "rfs7d2e44ec",
+        "document_refs": [],
+        "image_refs": [],
+        "uris": [],
+        "external_identifiers": {},
+        "ref_status": "NA",
+        "user_data": {}
+      }
+    }
+  },
+  "Test 1 - Single-Layer Homogeneous": {
+    "type": "OpaqueConstruction",
+    "identifier": "Test 1 - Single-Layer Homogeneous",
+    "materials": [
+      {
+        "type": "EnergyMaterial",
+        "identifier": "EPS (Type I) [ 7.9 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.2,
+        "conductivity": 0.0389415,
+        "density": 0,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 174,
+              "g": 207,
+              "b": 232
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfse7d3265c",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recjNQbv0Rhrn9F6m"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      }
+    ],
+    "properties": {
+      "type": "OpaqueConstructionProperties",
+      "ph": {
+        "type": "OpaqueConstructionPhProperties",
+        "id_num": 0
+      },
+      "ref": {
+        "type": "_HBObjectWithReferences",
+        "identifier": "rfs4db64c3a",
+        "document_refs": [],
+        "image_refs": [],
+        "uris": [],
+        "external_identifiers": {},
+        "ref_status": "NA",
+        "user_data": {}
+      }
+    }
+  },
+  "Test 3 - Simple Heterogeneous": {
+    "type": "OpaqueConstruction",
+    "identifier": "Test 3 - Simple Heterogeneous",
+    "materials": [
+      {
+        "type": "EnergyMaterial",
+        "identifier": "HybridEnergyMaterial_58598113",
+        "roughness": "MediumRough",
+        "thickness": 0.1,
+        "conductivity": 0.05340557142857143,
+        "density": 0,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "display_name": "EPS (Type I) [ 3.9 in] + Wood Coniferous (Softwood) [ 3.9 in]",
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [
+                0.3,
+                0.1,
+                0.3
+              ],
+              "row_heights": [
+                1
+              ],
+              "cells": [
+                {
+                  "row": 0,
+                  "column": 0,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "EPS (Type I) [ 3.9 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.1,
+                    "conductivity": 0.0389415,
+                    "density": 0,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 174,
+                          "g": 207,
+                          "b": 232
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfs37a3d85e",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recjNQbv0Rhrn9F6m"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                },
+                {
+                  "row": 0,
+                  "column": 1,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Wood Coniferous (Softwood) [ 3.9 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.1,
+                    "conductivity": 0.14019,
+                    "density": 400,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 130,
+                          "b": 0
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfs3a55871f",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recfzCbZnxFRjwT18"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                },
+                {
+                  "row": 0,
+                  "column": 2,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "EPS (Type I) [ 3.9 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.1,
+                    "conductivity": 0.0389415,
+                    "density": 0,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 174,
+                          "g": 207,
+                          "b": 232
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfs7b3435c0",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recjNQbv0Rhrn9F6m"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                }
+              ],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 174,
+              "g": 207,
+              "b": 232
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs37a3d85e",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recjNQbv0Rhrn9F6m"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      }
+    ],
+    "properties": {
+      "type": "OpaqueConstructionProperties",
+      "ph": {
+        "type": "OpaqueConstructionPhProperties",
+        "id_num": 0
+      },
+      "ref": {
+        "type": "_HBObjectWithReferences",
+        "identifier": "rfs9e72ea63",
+        "document_refs": [],
+        "image_refs": [],
+        "uris": [],
+        "external_identifiers": {},
+        "ref_status": "NA",
+        "user_data": {}
+      }
+    }
+  },
+  "Test 4 - Wood Stud Wall": {
+    "type": "OpaqueConstruction",
+    "identifier": "Test 4 - Wood Stud Wall",
+    "materials": [
+      {
+        "type": "EnergyMaterial",
+        "identifier": "Vinyl Siding [ 0.7 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.018,
+        "conductivity": 0.17,
+        "density": 1400,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {}
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfsd6abd059",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "rec1RsModWDgShJqM"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "GWB (Densglas Sheathing) [ 0.8 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.02,
+        "conductivity": 0.12807,
+        "density": 750,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 235,
+              "g": 180,
+              "b": 80
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs121682a4",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recPbx5MBHEUBx52s"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "HybridEnergyMaterial_2e7022d7",
+        "roughness": "MediumRough",
+        "thickness": 0.09,
+        "conductivity": 0.053923246875,
+        "density": 0,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "display_name": "Fiberglass Batt [ 3.5 in] + Wood Coniferous (Softwood) [ 3.5 in]",
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [
+                0.18414999999999998,
+                0.038099999999999995,
+                0.36829999999999996,
+                0.038099999999999995,
+                0.18414999999999998
+              ],
+              "row_heights": [
+                1
+              ],
+              "cells": [
+                {
+                  "row": 0,
+                  "column": 0,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Fiberglass Batt [ 3.5 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.09,
+                    "conductivity": 0.0449991,
+                    "density": 0,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 255,
+                          "b": 140
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfs0d4d7002",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recABVMLyY8dEO6rP"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                },
+                {
+                  "row": 0,
+                  "column": 1,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Wood Coniferous (Softwood) [ 3.5 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.09,
+                    "conductivity": 0.14019,
+                    "density": 400,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 130,
+                          "b": 0
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfse68fb9d4",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recfzCbZnxFRjwT18"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                },
+                {
+                  "row": 0,
+                  "column": 2,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Fiberglass Batt [ 3.5 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.09,
+                    "conductivity": 0.0449991,
+                    "density": 0,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 255,
+                          "b": 140
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfscb2dfb3d",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recABVMLyY8dEO6rP"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                },
+                {
+                  "row": 0,
+                  "column": 3,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Wood Coniferous (Softwood) [ 3.5 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.09,
+                    "conductivity": 0.14019,
+                    "density": 400,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 130,
+                          "b": 0
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfsbb40c5bb",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recfzCbZnxFRjwT18"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                },
+                {
+                  "row": 0,
+                  "column": 4,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Fiberglass Batt [ 3.5 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.09,
+                    "conductivity": 0.0449991,
+                    "density": 0,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 255,
+                          "b": 140
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfs6640f06b",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recABVMLyY8dEO6rP"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                }
+              ],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 255,
+              "g": 255,
+              "b": 140
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs0d4d7002",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recABVMLyY8dEO6rP"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "GWB (Typ) [ 0.5 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.013,
+        "conductivity": 0.16961,
+        "density": 850,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 185,
+              "g": 200,
+              "b": 195
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs0ab377c7",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "rec6z4HroOVH8TrgI"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      }
+    ],
+    "properties": {
+      "type": "OpaqueConstructionProperties",
+      "ph": {
+        "type": "OpaqueConstructionPhProperties",
+        "id_num": 0
+      },
+      "ref": {
+        "type": "_HBObjectWithReferences",
+        "identifier": "rfs8d1c46c2",
+        "document_refs": [],
+        "image_refs": [],
+        "uris": [],
+        "external_identifiers": {},
+        "ref_status": "NA",
+        "user_data": {}
+      }
+    }
+  },
+  "Test 5 - Steel Stud Wall": {
+    "type": "OpaqueConstruction",
+    "identifier": "Test 5 - Steel Stud Wall",
+    "materials": [
+      {
+        "type": "EnergyMaterial",
+        "identifier": "XPS [ 3.0 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.076,
+        "conductivity": 0.0288514,
+        "density": 40,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 232,
+              "g": 189,
+              "b": 174
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs8650aeec",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "recidOHsT0i3oFbyF"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "Plywood (USA) [ 0.8 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.02,
+        "conductivity": 0.11942,
+        "density": 470,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 148,
+              "g": 148,
+              "b": 73
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfsf4d16dac",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "rec0bboLpOoOLIvQk"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "Steel-Stud Layer [Fiberglass Batt [ 3.5 in]]",
+        "roughness": "MediumRough",
+        "thickness": 0.09,
+        "conductivity": 0.07757586720610087,
+        "density": 0,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [
+                1
+              ],
+              "row_heights": [
+                1
+              ],
+              "cells": [
+                {
+                  "row": 0,
+                  "column": 0,
+                  "material": {
+                    "type": "EnergyMaterial",
+                    "identifier": "Fiberglass Batt [ 3.5 in]",
+                    "roughness": "MediumRough",
+                    "thickness": 0.09,
+                    "conductivity": 0.0449991,
+                    "density": 0,
+                    "specific_heat": 100,
+                    "thermal_absorptance": 0.9,
+                    "solar_absorptance": 0.7,
+                    "visible_absorptance": 0.7,
+                    "properties": {
+                      "type": "EnergyMaterialProperties",
+                      "ph": {
+                        "id_num": 0,
+                        "divisions": {
+                          "column_widths": [],
+                          "row_heights": [],
+                          "cells": [],
+                          "steel_stud_spacing_mm": null
+                        },
+                        "user_data": {},
+                        "ph_color": {
+                          "a": 255,
+                          "r": 255,
+                          "g": 255,
+                          "b": 140
+                        }
+                      },
+                      "ref": {
+                        "type": "_HBObjectWithReferences",
+                        "identifier": "rfs05910e18",
+                        "document_refs": [],
+                        "image_refs": [],
+                        "uris": [],
+                        "external_identifiers": {
+                          "ph_nav": "recABVMLyY8dEO6rP"
+                        },
+                        "ref_status": "NA",
+                        "user_data": {}
+                      }
+                    }
+                  }
+                }
+              ],
+              "steel_stud_spacing_mm": 406.4
+            },
+            "user_data": {}
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfs14f68308",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {},
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      },
+      {
+        "type": "EnergyMaterial",
+        "identifier": "GWB (Typ) [ 0.5 in]",
+        "roughness": "MediumRough",
+        "thickness": 0.013,
+        "conductivity": 0.16961,
+        "density": 850,
+        "specific_heat": 100,
+        "thermal_absorptance": 0.9,
+        "solar_absorptance": 0.7,
+        "visible_absorptance": 0.7,
+        "properties": {
+          "type": "EnergyMaterialProperties",
+          "ph": {
+            "id_num": 0,
+            "divisions": {
+              "column_widths": [],
+              "row_heights": [],
+              "cells": [],
+              "steel_stud_spacing_mm": null
+            },
+            "user_data": {},
+            "ph_color": {
+              "a": 255,
+              "r": 185,
+              "g": 200,
+              "b": 195
+            }
+          },
+          "ref": {
+            "type": "_HBObjectWithReferences",
+            "identifier": "rfsc62d0015",
+            "document_refs": [],
+            "image_refs": [],
+            "uris": [],
+            "external_identifiers": {
+              "ph_nav": "rec6z4HroOVH8TrgI"
+            },
+            "ref_status": "NA",
+            "user_data": {}
+          }
+        }
+      }
+    ],
+    "properties": {
+      "type": "OpaqueConstructionProperties",
+      "ph": {
+        "type": "OpaqueConstructionPhProperties",
+        "id_num": 0
+      },
+      "ref": {
+        "type": "_HBObjectWithReferences",
+        "identifier": "rfsebc85c9c",
+        "document_refs": [],
+        "image_refs": [],
+        "uris": [],
+        "external_identifiers": {},
+        "ref_status": "NA",
+        "user_data": {}
+      }
+    }
+  }
+}

@@ -25,6 +25,9 @@ export interface AssemblyContextType {
     setSelectedAssemblyId: React.Dispatch<React.SetStateAction<number | null>>;
     selectedAssembly: AssemblyType | null;
     refreshKey: number;
+    triggerRefresh: () => void;
+    rValueRefreshKey: number;
+    triggerRValueRefresh: () => void;
     handleAssemblyChange: (assemblyId: number) => Promise<void>;
     handleAddAssembly: () => Promise<void>;
     handleDeleteAssembly: (assemblyId: number) => Promise<void>;
@@ -53,6 +56,7 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
     const [selectedAssemblyId, setSelectedAssemblyId] = useState<number | null>(null);
     const [refreshKey, setRefreshKey] = useState<number>(0);
+    const [rValueRefreshKey, setRValueRefreshKey] = useState<number>(0);
     const [layerThicknessOverridesMm, setLayerThicknessOverridesMm] = useState<Record<number, number>>({});
 
     const setLayerThicknessOverride = useCallback((layerId: number, thicknessMm: number) => {
@@ -66,6 +70,14 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const clearLayerThicknessOverrides = useCallback(() => {
         setLayerThicknessOverridesMm({});
+    }, []);
+
+    const triggerRefresh = useCallback(() => {
+        setRefreshKey(k => k + 1);
+    }, []);
+
+    const triggerRValueRefresh = useCallback(() => {
+        setRValueRefreshKey(k => k + 1);
     }, []);
 
     const fetchAssemblies = async () => {
@@ -395,6 +407,9 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setSelectedAssemblyId,
                 selectedAssembly,
                 refreshKey,
+                triggerRefresh,
+                rValueRefreshKey,
+                triggerRValueRefresh,
                 handleAssemblyChange,
                 handleAddAssembly,
                 handleDeleteAssembly,

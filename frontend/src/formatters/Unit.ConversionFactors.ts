@@ -10,6 +10,8 @@ export type Unit =
     | 'btu/hr-ft-F'
     | 'btu/hr-ft2-F'
     | 'hr-ft2-F/btu-in'
+    | 'm2k/w'
+    | 'hr-ft2-F/btu'
     | 'kg/m3'
     | 'lb/ft3'
     | 'J/kg-K'
@@ -79,6 +81,18 @@ export const CONVERSION_FACTORS: ConversionMap = {
     'btu/hr-ft2-F': {
         'w/m2k': (v: number) => v * 5.678264134,
         'btu/hr-ft2-F': (v: number) => v,
+    },
+    // Thermal Resistance (R-Value)
+    // R-value SI: m2-K/W (square meter Kelvin per Watt)
+    // R-value IP: hr-ft2-F/BTU (hour square foot Fahrenheit per BTU)
+    // Conversion: 1 m2-K/W = 5.678263337 hr-ft2-F/BTU
+    'm2k/w': {
+        'm2k/w': (v: number) => v,
+        'hr-ft2-F/btu': (v: number) => v * 5.678263337,
+    },
+    'hr-ft2-F/btu': {
+        'm2k/w': (v: number) => v / 5.678263337,
+        'hr-ft2-F/btu': (v: number) => v,
     },
     // Density
     'kg/m3': {

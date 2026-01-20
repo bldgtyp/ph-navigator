@@ -25,7 +25,9 @@ from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_multiple_hb_constructions_from_hbjson,
 )
+from features.assembly.services.thermal_resistance import calculate_effective_r_value
 from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
+from features.assembly.schemas.thermal_resistance import ThermalResistanceSchema
 
 router = APIRouter(
     prefix="/assembly",
@@ -214,3 +216,43 @@ def duplicate_assembly_route(assembly_id: int, db: Session = Depends(get_db)) ->
     except Exception as e:
         logger.error(f"Failed to duplicate assembly {assembly_id}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to duplicate assembly")
+
+
+@router.get("/thermal-resistance/{assembly_id}", response_model=ThermalResistanceSchema)
+@limiter.limit("30/minute")
+def get_assembly_thermal_resistance_route(
+    request: Request, assembly_id: int, db: Session = Depends(get_db)
+) -> ThermalResistanceSchema:
+    """
+    Calculate the effective thermal resistance (R-value) of an assembly.
+
+    Uses the Passive House method which averages the Parallel-Path and
+    Isothermal-Planes methods from ASHRAE Handbook Chapter 27.
+
+    Returns values in SI units:
+    - R-values in m2-K/W (square meter Kelvin per Watt)
+    - U-value in W/m2-K (Watts per square meter Kelvin)
+
+    Note: Surface film resistances are NOT included in the calculation.
+
+    Reference: ASHRAE Handbook - Fundamentals, Chapter 27
+    """
+    logger.info(f"assembly/get_assembly_thermal_resistance_route({assembly_id=})")
+
+    try:
+        assembly = get_assembly_by_id(db, assembly_id)
+        result = calculate_effective_r_value(assembly)
+        return ThermalResistanceSchema(
+            r_parallel_path_si=result.r_parallel_path_si,
+            r_isothermal_planes_si=result.r_isothermal_planes_si,
+            r_effective_si=result.r_effective_si,
+            u_effective_si=result.u_effective_si,
+            is_valid=result.is_valid,
+            warnings=result.warnings,
+        )
+    except Exception as e:
+        logger.error(f"Failed to calculate thermal resistance for assembly {assembly_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to calculate thermal resistance",
+        )

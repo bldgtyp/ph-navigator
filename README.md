@@ -25,17 +25,20 @@
 
 ## Assemblies (UI):
 
-- [x] HBE Conversion to include mixed materials
-  - [ ] Check what happens with uneven widths?
-- [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
+- [x] Add calculated R-Value / U-Value label
 - [x] Display Material Legend with key material info (conductivity)
+- [x] Add total thickness label
+- [x] HBE Conversion to include mixed materials
+  - [ ] Check what happens with uneven widths on different layers?
+- [ ] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
-- [ ] Add calculated R-Value / U-Value label
-- [x] Add total thickness label
 - [ ] Material copy/paste between segments
 - [ ] Handle fasteners (view, inputs, include in R-Value calc)
   - [ ] Add to Json download? Check Honeybee-PH
+- [ ] Add 'PHPP' style download button (download as CSV)
+- [ ] Handle Load Steel Stud Assemblies.
+- [ ] R-Value Label preview Does NOT work with Steel-Stud Assemblies currently
 
 ## Ventilation Commissioning Page
 

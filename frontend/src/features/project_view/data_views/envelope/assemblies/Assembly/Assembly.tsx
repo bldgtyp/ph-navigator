@@ -15,7 +15,7 @@ import { useAssemblyContext } from './Assembly.Context';
 const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
     const [layers, setLayers] = useState(assembly.layers);
     const { isPickMode, isPasteMode, resetPasteMode } = useCopyPaste();
-    const { refreshKey } = useAssemblyContext();
+    const { refreshKey, triggerRValueRefresh } = useAssemblyContext();
 
     // Sync layers when assembly changes or when refreshKey increments (after paste/undo)
     useEffect(() => {
@@ -80,6 +80,7 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
                     });
                     return updatedLayers;
                 });
+                triggerRValueRefresh();
             } catch (error) {
                 console.error('Failed to get layer:', error);
             }
@@ -111,25 +112,30 @@ const Assembly: React.FC<{ assembly: AssemblyType }> = ({ assembly }) => {
                 });
 
                 setLayers(updatedLayers);
+                triggerRValueRefresh();
             }
         } catch (error) {
             console.error('Failed to delete layer:', error);
         }
     };
 
-    const handleSegmentsChange = useCallback((layerId: number, segments: LayerType['segments']) => {
-        setLayers(currentLayers => {
-            const layerIndex = currentLayers.findIndex(layer => layer.id === layerId);
-            if (layerIndex === -1) return currentLayers;
+    const handleSegmentsChange = useCallback(
+        (layerId: number, segments: LayerType['segments']) => {
+            setLayers(currentLayers => {
+                const layerIndex = currentLayers.findIndex(layer => layer.id === layerId);
+                if (layerIndex === -1) return currentLayers;
 
-            const targetLayer = currentLayers[layerIndex];
-            if (targetLayer.segments === segments) return currentLayers;
+                const targetLayer = currentLayers[layerIndex];
+                if (targetLayer.segments === segments) return currentLayers;
 
-            const nextLayers = [...currentLayers];
-            nextLayers[layerIndex] = { ...targetLayer, segments };
-            return nextLayers;
-        });
-    }, []);
+                const nextLayers = [...currentLayers];
+                nextLayers[layerIndex] = { ...targetLayer, segments };
+                return nextLayers;
+            });
+            triggerRValueRefresh();
+        },
+        [triggerRValueRefresh]
+    );
 
     const assemblyWithLayers = { ...assembly, layers };
 

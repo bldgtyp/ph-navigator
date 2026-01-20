@@ -18,6 +18,7 @@ import Assembly from '../Assembly/Assembly';
 import AssemblySidebar from '../Assembly/Sidebar/Sidebar';
 import { AssemblyType } from '../../_types/Assembly';
 import TotalThicknessLabel from './TotalThicknessLabel';
+import EffectiveRValueLabel from './EffectiveRValueLabel';
 
 const SIDEBAR_WIDTH = 260;
 
@@ -46,7 +47,11 @@ const AssemblyContentBlock: React.FC = () => {
     const { isSidebarOpen, toggleSidebar } = useAssemblySidebar();
     const { selectedAssembly, handleFileSelected } = useAssemblyContext();
     const headerButtons = useAssemblyHeaderButtons();
-    const headerButtonsWithTotal = [<TotalThicknessLabel key="assembly-total-thickness" />, ...headerButtons];
+    const headerButtonsWithTotal = [
+        <TotalThicknessLabel key="assembly-total-thickness" />,
+        <EffectiveRValueLabel key="assembly-effective-r-value" />,
+        ...headerButtons,
+    ];
 
     return (
         <>

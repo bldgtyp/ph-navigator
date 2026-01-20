@@ -26,21 +26,29 @@ const TotalThicknessLabel: React.FC = () => {
     const unitLabel = unitSystem === 'SI' ? 'mm' : 'in';
     const formattedValue = valueInCurrentUnitSystemWithDecimal(totalThicknessMm, 'mm', 'in', decimals);
 
+    // Fixed container style to prevent layout shifts
+    const containerStyle = {
+        px: 1,
+        py: 0.25,
+        display: 'flex',
+        alignItems: 'center',
+        height: '100%',
+        minWidth: 160, // Reserve space to prevent layout shifts
+    };
+
     if (!selectedAssembly) {
-        return null;
+        return (
+            <Box id="assembly-total-thickness-label" sx={containerStyle}>
+                <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                    Total Thickness: --
+                </Typography>
+            </Box>
+        );
     }
 
     return (
         <Tooltip title="Sum of all layer thicknesses" placement="top" arrow>
-            <Box
-                sx={{
-                    px: 1,
-                    py: 0.25,
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: '100%',
-                }}
-            >
+            <Box id="assembly-total-thickness-label" sx={containerStyle}>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     Total Thickness: {formattedValue} {unitLabel}
                 </Typography>
