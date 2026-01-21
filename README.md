@@ -7,7 +7,11 @@
 - [ ] Better Landing page
 - [ ] Implement Delete Project
 
-#### (IO):
+## UI:
+
+- [ ] Force Light Theme
+
+## (IO):
 
 - [ ] Upload handles steel-stud continuous exterior insulation
 - [ ] Upload corresponding Flixo PDF
@@ -29,16 +33,16 @@
 - [x] Display Material Legend with key material info (conductivity)
 - [x] Add total thickness label
 - [x] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
+- [x] R-Value Label preview Does NOT work with Steel-Stud Assemblies currently
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths on different layers?
 - [ ] Scale properly with screen
 - [ ] Air-Cavity (automatic-thickness detection)
-- [ ] Material copy/paste between segments
+- [ ] Material copy/paste between Assemblies
 - [ ] Handle fasteners (view, inputs, include in R-Value calc)
   - [ ] Add to Json download? Check Honeybee-PH
 - [ ] Add 'PHPP' style download button (download as CSV)
-- [ ] Handle Load Steel Stud Assemblies.
-- [ ] R-Value Label preview Does NOT work with Steel-Stud Assemblies currently
+- [ ] Handle Load-from-JSON Steel Stud Assemblies.
 - [ ] Consider caching/storing the total Assembly U-Value on the DB-entity to reduce server workload?
 
 ## Ventilation Commissioning Page

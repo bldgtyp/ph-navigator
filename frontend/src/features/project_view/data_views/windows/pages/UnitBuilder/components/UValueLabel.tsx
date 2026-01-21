@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Tooltip, Typography } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 
 interface UValueLabelProps {
     uValue: number | null;
@@ -52,11 +54,32 @@ const containerStyle = {
 /**
  * Displays the window U-value with a tooltip explaining the calculation method.
  * Styled to match the assembly EffectiveRValueLabel component.
+ * Respects the SI/IP unit system toggle.
  */
 const UValueLabel: React.FC<UValueLabelProps> = ({ uValue, loading, error, isValid = true }) => {
-    const formatUValue = (value: number): string => {
-        return value.toFixed(3);
-    };
+    const { unitSystem, valueInCurrentUnitSystemWithDecimal } = useUnitConversion();
+
+    // Format display value based on unit system
+    const displayContent = useMemo(() => {
+        if (uValue === null) {
+            return null;
+        }
+
+        if (unitSystem === 'IP') {
+            // Show U-value in IP units (BTU/hr-ft²-°F)
+            const uValueIP = valueInCurrentUnitSystemWithDecimal(uValue, 'w/m2k', 'btu/hr-ft2-F', 3);
+            return {
+                value: uValueIP,
+                unit: 'BTU/hr-ft²-°F',
+            };
+        } else {
+            // Show U-value in SI units (W/m²K)
+            return {
+                value: uValue.toFixed(3),
+                unit: 'W/m²K',
+            };
+        }
+    }, [uValue, unitSystem, valueInCurrentUnitSystemWithDecimal]);
 
     // Reserve space but show nothing until value is calculated (prevents UI bounce)
     if (loading) {
@@ -64,7 +87,7 @@ const UValueLabel: React.FC<UValueLabelProps> = ({ uValue, loading, error, isVal
     }
 
     // Show nothing if error or invalid data
-    if ((error && !isValid) || uValue === null) {
+    if ((error && !isValid) || !displayContent) {
         return <Box id="window-u-value-label" sx={containerStyle} />;
     }
 
@@ -78,7 +101,7 @@ const UValueLabel: React.FC<UValueLabelProps> = ({ uValue, loading, error, isVal
                 }}
             >
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    U-w: {formatUValue(uValue)} W/m²K
+                    U-w: {displayContent.value} {displayContent.unit}
                 </Typography>
                 <InfoOutlinedIcon sx={{ ml: 0.5, fontSize: 14, color: 'text.secondary' }} />
             </Box>
