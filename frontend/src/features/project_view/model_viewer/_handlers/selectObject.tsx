@@ -6,13 +6,13 @@ import { SelectedObjectContextType } from '../_contexts/selected_object_context'
 import { HoverObjectContextType } from '../_contexts/hover_object_context';
 
 export function clearSelection(
-    SelectedObjectContext: SelectedObjectContextType,
+    selectedObjectContext: SelectedObjectContextType,
     hoverObjectContext: HoverObjectContextType
 ) {
     // Remove the selection effect from the selected object
-    setStandardMaterialFromStore(SelectedObjectContext.selectedObjectRef.current);
-    SelectedObjectContext.selectedObjectRef.current = null;
-    SelectedObjectContext.setSelectedObjectState(null);
+    setStandardMaterialFromStore(selectedObjectContext.selectedObjectRef.current);
+    selectedObjectContext.selectedObjectRef.current = null;
+    selectedObjectContext.setSelectedObjectState(null);
 
     // Remove the hover effect from the hovered object
     setStandardMaterialFromStore(hoverObjectContext.hoverObjectRef.current);
@@ -133,6 +133,17 @@ function handleOnClickMaterialChange(
 }
 
 /**
+ * Clears only the selected object state (not hover state).
+ * @param selectedObjectContext - The selected object context.
+ */
+function clearSelectedObject(selectedObjectContext: SelectedObjectContextType) {
+    setStandardMaterialFromStore(selectedObjectContext.selectedObjectRef.current);
+    unSetSelectedObject(selectedObjectContext.selectedObjectRef.current);
+    selectedObjectContext.selectedObjectRef.current = null;
+    selectedObjectContext.setSelectedObjectState(null);
+}
+
+/**
  * Handles the click event on a mesh face or group.
  *
  * @param e - The click event object.
@@ -143,19 +154,24 @@ export function handleOnClick(e: any, world: SceneSetup, selectedObjectContext: 
     e.preventDefault();
     const newMesh = getSelectedMeshFromMouseClick(e, world.camera, world.selectableObjects.children);
     if (newMesh) {
-        // The user has clicked on a selectable object, so change the material
+        // Determine the target object (parent group for spaces, or the mesh itself)
+        const targetObject =
+            newMesh.parent?.userData['type'] == 'spaceGroup' && newMesh.parent instanceof THREE.Group
+                ? newMesh.parent
+                : newMesh;
+
+        // If clicking the same object, deselect it
+        if (targetObject === selectedObjectContext.selectedObjectRef.current) {
+            world.renderer.domElement.style.cursor = 'auto';
+            clearSelectedObject(selectedObjectContext);
+            return;
+        }
+
+        // The user has clicked on a different selectable object, so change the material
         world.renderer.domElement.style.cursor = 'pointer';
         unSetSelectedObject(selectedObjectContext.selectedObjectRef.current);
-
-        if (newMesh.parent?.userData['type'] == 'spaceGroup' && newMesh.parent instanceof THREE.Group) {
-            // If the selected object is a space group, select the parent group
-            setSelectedObject(newMesh.parent);
-            handleOnClickMaterialChange(newMesh.parent, selectedObjectContext);
-        } else {
-            // If the selected object is a simple mesh surface, select the surface
-            setSelectedObject(newMesh);
-            handleOnClickMaterialChange(newMesh, selectedObjectContext);
-        }
+        setSelectedObject(targetObject);
+        handleOnClickMaterialChange(targetObject, selectedObjectContext);
     } else {
         // The user has clicked on blank space, so remove any selection effect.
         world.renderer.domElement.style.cursor = 'auto';

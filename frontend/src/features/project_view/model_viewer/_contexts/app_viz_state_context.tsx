@@ -7,13 +7,13 @@ const setAppVizStateReducer = (_appVizState: VizState, _appVizStateNumber: numbe
 };
 
 // --
-const defaultAppVizState = { appVizState: vizStates[0], dispatch: () => 0 };
+const defaultAppVizState = { appVizState: vizStates[1], dispatch: () => 1 };
 type AppVizStateContextType = { appVizState: VizState; dispatch: React.Dispatch<number> };
 export const AppVizStateContext = createContext<AppVizStateContextType>(defaultAppVizState);
 
 // --
 export function AppStateContextProvider({ children }: any) {
-    const [_appVizState, _appStateDispatch] = useReducer(setAppVizStateReducer, vizStates[0]);
+    const [_appVizState, _appStateDispatch] = useReducer(setAppVizStateReducer, vizStates[1]);
 
     return (
         <AppVizStateContext.Provider value={{ appVizState: _appVizState, dispatch: _appStateDispatch }}>

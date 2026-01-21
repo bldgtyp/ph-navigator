@@ -20,7 +20,7 @@ const icons: any[] = [
 ];
 
 const VizStateMenubar: React.FC = () => {
-    const [activeButton, setActiveButton] = useState<number | null>(null);
+    const [activeButton, setActiveButton] = useState<number>(0);
     const appStateContext = useAppVizStateContext();
 
     return (
@@ -32,11 +32,12 @@ const VizStateMenubar: React.FC = () => {
                         className={`viz-state-button ${activeButton === index ? 'active' : ''}`}
                         onClick={() => {
                             // Set the App-State based on the button clicked
-                            // Remember: The Toolbar Icon Index starts ay 0, but AppState starts at 1
+                            // Remember: The Toolbar Icon Index starts at 0, but AppState starts at 1
                             const newAppStateNumber = index + 1;
                             if (newAppStateNumber === appStateContext.appVizState.vizState) {
-                                appStateContext.dispatch(0);
-                                setActiveButton(null);
+                                // Already in this state - default back to Geometry
+                                appStateContext.dispatch(1);
+                                setActiveButton(0);
                             } else {
                                 // Set the new State 'On'
                                 appStateContext.dispatch(newAppStateNumber);
