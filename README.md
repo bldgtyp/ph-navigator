@@ -145,8 +145,10 @@
 
 #### Color by:
 
-- [ ] Boundary Condition
-- [ ] Assembly Type
+- [x] Boundary Condition
+- [x] Assembly Type
+- [x] Construction Name (Opaque)
+- [x] Construction Name (Apertures)
 - [ ] TFA Factor
 - [ ] Ventilation (sup/eta)
 

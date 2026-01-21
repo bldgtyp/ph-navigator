@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import { SceneSetup } from '../scene_setup/SceneSetup';
 import { ColorByAttribute } from '../_contexts/color_by_context';
-import { faceTypeColors, boundaryColors, ColorDefinition } from '../_constants/colorByColors';
+import {
+    faceTypeColors,
+    boundaryColors,
+    ColorDefinition,
+    createConstructionColorDef,
+} from '../_constants/colorByColors';
 
 /**
  * Stores the original material of a mesh in userData if not already stored.
@@ -98,15 +103,67 @@ export function restoreOriginalMaterials(world: SceneSetup) {
 }
 
 /**
- * Applies the appropriate color scheme based on the selected ColorBy attribute.
+ * Applies Construction Name coloring to meshes of a specific type.
+ * @param world - The SceneSetup containing building geometry.
+ * @param targetMeshType - The mesh type to color ('faceMesh' or 'apertureMeshFace').
+ * @returns Map of construction names to their color definitions for legend generation.
  */
-export function applyColorByMode(world: SceneSetup, attribute: ColorByAttribute) {
+function applyColorByConstruction(world: SceneSetup, targetMeshType: string): Map<string, ColorDefinition> {
+    const constructionColors = new Map<string, ColorDefinition>();
+
+    world.buildingGeometryMeshes.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+            const meshType = child.userData['type'];
+            storeOriginalMaterial(child);
+
+            if (meshType === targetMeshType) {
+                const constructionId = child.userData['properties']?.energy?.construction?.identifier || 'Unknown';
+
+                if (!constructionColors.has(constructionId)) {
+                    constructionColors.set(constructionId, createConstructionColorDef(constructionId));
+                }
+
+                const colorDef = constructionColors.get(constructionId)!;
+                const newMaterial = createColorByMaterial(colorDef.color);
+                child.userData['materialStore'] = newMaterial;
+                child.material = newMaterial;
+            }
+        }
+    });
+
+    return constructionColors;
+}
+
+/** Applies Construction Name coloring to opaque surfaces (Wall, RoofCeiling, Floor). */
+export function applyColorByOpaqueConstruction(world: SceneSetup): Map<string, ColorDefinition> {
+    return applyColorByConstruction(world, 'faceMesh');
+}
+
+/** Applies Construction Name coloring to apertures (windows, doors). */
+export function applyColorByApertureConstruction(world: SceneSetup): Map<string, ColorDefinition> {
+    return applyColorByConstruction(world, 'apertureMeshFace');
+}
+
+/**
+ * Applies the appropriate color scheme based on the selected ColorBy attribute.
+ * Returns a Map of construction colors for dynamic legend generation (for construction modes),
+ * or null for static legend modes (FaceType, Boundary).
+ */
+export function applyColorByMode(world: SceneSetup, attribute: ColorByAttribute): Map<string, ColorDefinition> | null {
+    // Restore original materials before applying new color scheme
+    // This ensures clean state when switching between color modes
+    restoreOriginalMaterials(world);
+
     switch (attribute) {
         case ColorByAttribute.FaceType:
             applyColorByFaceType(world);
-            break;
+            return null;
         case ColorByAttribute.Boundary:
             applyColorByBoundary(world);
-            break;
+            return null;
+        case ColorByAttribute.OpaqueConstruction:
+            return applyColorByOpaqueConstruction(world);
+        case ColorByAttribute.ApertureConstruction:
+            return applyColorByApertureConstruction(world);
     }
 }

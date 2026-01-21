@@ -71,3 +71,64 @@ export function getLegendItems(colorMap: Record<string, ColorDefinition>): Color
         .filter(([key]) => key !== 'default')
         .map(([, value]) => value);
 }
+
+/**
+ * Generates a high-quality hash from a string using cyrb53 algorithm.
+ * Produces well-distributed values even for similar input strings.
+ */
+function cyrb53(str: string, seed: number = 0): number {
+    let h1 = 0xdeadbeef ^ seed;
+    let h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+    h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+    h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+/**
+ * Generates a deterministic color from a string using a high-quality hash.
+ * Uses HSL color space and golden ratio distribution for visually distinct colors,
+ * even for similar input strings like "N.3.1", "N.3.2", etc.
+ */
+export function stringToColor(str: string): THREE.Color {
+    // Generate multiple hash values for better distribution
+    const hash1 = cyrb53(str, 0);
+    const hash2 = cyrb53(str, hash1);
+
+    // Use golden ratio for optimal hue distribution
+    // This ensures consecutive/similar names get spread across the color wheel
+    const goldenRatio = 0.618033988749895;
+    const baseHue = (hash1 % 1000) / 1000;
+    const hue = (baseHue + goldenRatio * (hash2 % 100)) % 1.0;
+
+    // Use different hash bits for saturation and lightness
+    const saturation = 0.55 + ((hash1 >>> 20) % 30) / 100; // 55-85%
+    const lightness = 0.4 + ((hash2 >>> 20) % 25) / 100; // 40-65%
+
+    return new THREE.Color().setHSL(hue, saturation, lightness);
+}
+
+/**
+ * Converts a THREE.Color to hex string for CSS.
+ */
+export function colorToHex(color: THREE.Color): string {
+    return '#' + color.getHexString();
+}
+
+/**
+ * Creates a ColorDefinition from a construction name.
+ */
+export function createConstructionColorDef(name: string): ColorDefinition {
+    const color = stringToColor(name);
+    return {
+        label: name,
+        color: color,
+        hex: colorToHex(color),
+    };
+}

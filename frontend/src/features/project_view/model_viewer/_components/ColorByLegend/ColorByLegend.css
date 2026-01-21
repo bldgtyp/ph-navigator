@@ -19,6 +19,7 @@
     text-shadow:
         1px 1px 2px rgba(255, 255, 255, 0.8),
         -1px -1px 2px rgba(255, 255, 255, 0.8);
+    pointer-events: auto; /* Re-enable pointer events */
 }
 
 .color-by-legend-items {
@@ -28,6 +29,7 @@
     overflow-y: auto;
     max-height: calc(100vh - 260px);
     padding-right: 8px; /* Space for scrollbar when needed */
+    pointer-events: auto; /* Re-enable pointer events for scrolling */
 }
 
 /* Custom scrollbar for long lists */

@@ -21,6 +21,16 @@ interface ViewContainerProps {
     dimensionLinesRef: React.RefObject<THREE.Group>;
 }
 
+/** Applies color mode and updates the dynamic legend items in context. */
+function applyColorModeAndUpdateLegend(
+    world: SceneSetup,
+    colorByAttribute: ReturnType<typeof useColorByContext>['colorByAttribute'],
+    setDynamicLegendItems: ReturnType<typeof useColorByContext>['setDynamicLegendItems']
+) {
+    const legendData = applyColorByMode(world, colorByAttribute);
+    setDynamicLegendItems(legendData ? Array.from(legendData.values()) : []);
+}
+
 const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionLinesRef }) => {
     const appVizStateContext = useAppVizStateContext();
     const appToolStateContext = useAppToolStateContext();
@@ -140,8 +150,11 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
         world.current.selectableObjects.add(world.current.buildingGeometryMeshes);
         world.current.selectableObjects.visible = true;
         world.current.buildingGeometryOutlines.visible = true;
-        // Apply colors based on current colorByAttribute
-        applyColorByMode(world.current, colorByContext.colorByAttribute);
+        applyColorModeAndUpdateLegend(
+            world.current,
+            colorByContext.colorByAttribute,
+            colorByContext.setDynamicLegendItems
+        );
     });
 
     // Dismount Handlers for Viz-States
@@ -263,9 +276,12 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
     // Re-apply ColorBy colors when attribute changes while in ColorBy mode
     // ------------------------------------------------------------------------
     useEffect(() => {
-        // Only re-apply colors if currently in ColorBy mode (state 7)
         if (appVizStateContext.appVizState.vizState === appVizStateTypeEnum.ColorBy) {
-            applyColorByMode(world.current, colorByContext.colorByAttribute);
+            applyColorModeAndUpdateLegend(
+                world.current,
+                colorByContext.colorByAttribute,
+                colorByContext.setDynamicLegendItems
+            );
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [colorByContext.colorByAttribute]);

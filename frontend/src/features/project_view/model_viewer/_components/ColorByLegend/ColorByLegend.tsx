@@ -23,18 +23,26 @@ function getLegendTitle(attribute: ColorByAttribute): string {
             return 'Face Type';
         case ColorByAttribute.Boundary:
             return 'Boundary';
+        case ColorByAttribute.OpaqueConstruction:
+            return 'Opaque Construction';
+        case ColorByAttribute.ApertureConstruction:
+            return 'Aperture Construction';
         default:
             return 'Legend';
     }
 }
 
 // Get legend items based on current attribute
-function getLegendItemsForAttribute(attribute: ColorByAttribute): ColorDefinition[] {
+function getLegendItemsForAttribute(attribute: ColorByAttribute, dynamicItems: ColorDefinition[]): ColorDefinition[] {
     switch (attribute) {
         case ColorByAttribute.FaceType:
             return getLegendItems(faceTypeColors);
         case ColorByAttribute.Boundary:
             return getLegendItems(boundaryColors);
+        case ColorByAttribute.OpaqueConstruction:
+        case ColorByAttribute.ApertureConstruction:
+            // Sort dynamic items alphabetically for consistency
+            return [...dynamicItems].sort((a, b) => a.label.localeCompare(b.label));
         default:
             return [];
     }
@@ -42,7 +50,7 @@ function getLegendItemsForAttribute(attribute: ColorByAttribute): ColorDefinitio
 
 export default function ColorByLegend() {
     const { appVizState } = useAppVizStateContext();
-    const { colorByAttribute } = useColorByContext();
+    const { colorByAttribute, dynamicLegendItems } = useColorByContext();
 
     // Only show legend when in ColorBy mode
     const isVisible = appVizState.vizState === appVizStateTypeEnum.ColorBy;
@@ -52,7 +60,7 @@ export default function ColorByLegend() {
     }
 
     const title = getLegendTitle(colorByAttribute);
-    const items = getLegendItemsForAttribute(colorByAttribute);
+    const items = getLegendItemsForAttribute(colorByAttribute, dynamicLegendItems);
 
     return (
         <div className="color-by-legend">

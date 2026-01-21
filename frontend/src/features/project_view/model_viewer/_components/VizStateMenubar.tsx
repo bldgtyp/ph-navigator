@@ -1,6 +1,6 @@
 import '../styles/VizStateMenubar.css';
 import { useState } from 'react';
-import { Stack, Menu, MenuItem, ListItemIcon } from '@mui/material';
+import { Stack, Menu, MenuItem, ListItemIcon, Divider } from '@mui/material';
 import { ReactComponent as Geometry } from '../icons/Geometry.svg';
 import { ReactComponent as FloorSegmentIcon } from '../icons/FloorSegments.svg';
 import { ReactComponent as DuctIcon } from '../icons/Ducts.svg';
@@ -23,6 +23,28 @@ const FaceTypeIcon = () => (
 const BoundaryIcon = () => (
     <svg width="20" height="20" viewBox="0 0 20 20">
         <circle cx="10" cy="10" r="8" fill="#40B4FF" stroke="#333" strokeWidth="1" />
+    </svg>
+);
+
+const OpaqueConstructionIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 20 20">
+        {/* Stacked layers icon representing wall assembly */}
+        <rect x="3" y="3" width="14" height="4" fill="#808080" stroke="#333" strokeWidth="0.5" />
+        <rect x="3" y="8" width="14" height="4" fill="#A0A0A0" stroke="#333" strokeWidth="0.5" />
+        <rect x="3" y="13" width="14" height="4" fill="#C0C0C0" stroke="#333" strokeWidth="0.5" />
+    </svg>
+);
+
+const ApertureConstructionIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 20 20">
+        {/* Window pane icon representing glazing */}
+        <rect x="3" y="3" width="14" height="14" fill="none" stroke="#333" strokeWidth="1.5" />
+        <line x1="10" y1="3" x2="10" y2="17" stroke="#333" strokeWidth="1" />
+        <line x1="3" y1="10" x2="17" y2="10" stroke="#333" strokeWidth="1" />
+        <rect x="4" y="4" width="5" height="5" fill="#4AB4FF" fillOpacity="0.5" />
+        <rect x="11" y="4" width="5" height="5" fill="#4AB4FF" fillOpacity="0.5" />
+        <rect x="4" y="11" width="5" height="5" fill="#4AB4FF" fillOpacity="0.5" />
+        <rect x="11" y="11" width="5" height="5" fill="#4AB4FF" fillOpacity="0.5" />
     </svg>
 );
 
@@ -109,6 +131,19 @@ const VizStateMenubar: React.FC = () => {
                         <BoundaryIcon />
                     </ListItemIcon>
                     Boundary
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => handleColorBySelect(ColorByAttribute.OpaqueConstruction)}>
+                    <ListItemIcon>
+                        <OpaqueConstructionIcon />
+                    </ListItemIcon>
+                    Opaque Constr.
+                </MenuItem>
+                <MenuItem onClick={() => handleColorBySelect(ColorByAttribute.ApertureConstruction)}>
+                    <ListItemIcon>
+                        <ApertureConstructionIcon />
+                    </ListItemIcon>
+                    Aperture Constr.
                 </MenuItem>
             </Menu>
         </Stack>
