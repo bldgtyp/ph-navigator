@@ -44,7 +44,6 @@ ph-navigator/
 
 - backend/  
   FastAPI + SQLAlchemy backend. Contains:
-
   - db_entities (ORM models)
   - features (domain modules: services, schemas, routes)
   - alembic (migrations)
@@ -52,7 +51,6 @@ ph-navigator/
 
 - frontend/  
   React + TypeScript SPA. Feature‑first structure:
-
   - src/features/... (contexts, hooks, DataGrids)
   - shared components, theming, assets
 
@@ -152,3 +150,4 @@ When asking an LLM to modify deployment or config:
 - `context/frontend.md`: High level description of the React frontend
 - `context/backend.md`: High level description of the FastAPI backend
 - `context/database.md`: High level description of the Databases used
+- `context/model-viewer.md`: High level description of the Databases used

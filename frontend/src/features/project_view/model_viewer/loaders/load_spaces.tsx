@@ -10,6 +10,8 @@ function groupFromSpace(space: hbPhSpace) {
     newGroup.userData['identifier'] = space.identifier;
     newGroup.userData['display_name'] = space.name;
     newGroup.userData['number'] = space.number;
+    newGroup.userData['quantity'] = space.quantity;
+    newGroup.userData['wufi_type'] = space.wufi_type;
     newGroup.userData['net_volume'] = space.net_volume;
     newGroup.userData['avg_clear_height'] = space.avg_clear_height;
     newGroup.userData['floor_area'] = space.floor_area;

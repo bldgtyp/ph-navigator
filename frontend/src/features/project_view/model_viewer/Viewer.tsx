@@ -12,6 +12,7 @@ import { AppStateContextProvider } from './_contexts/app_viz_state_context';
 import { AppToolStateContextProvider } from './_contexts/app_tool_state_context';
 import { SelectedObjectContextProvider } from './_contexts/selected_object_context';
 import { HoverObjectContextProvider } from './_contexts/hover_object_context';
+import ElementInfoPanel from './_components/ElementInfoPanel/ElementInfoPanel';
 
 const Viewer: React.FC<any> = () => {
     console.log('Rendering Viewer Component...');
@@ -36,6 +37,7 @@ const Viewer: React.FC<any> = () => {
                                 dimensionLinesRef={dimensionLinesRef}
                             />
                             <Model world={world} showModel={showModel} />
+                            <ElementInfoPanel />
                         </HoverObjectContextProvider>
                     </SelectedObjectContextProvider>
                     <BottomMenubar />

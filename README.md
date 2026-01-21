@@ -1,22 +1,24 @@
 # PH-Navigator (WIP)
 
+---
+
 ## Data View:
 
-#### Project Browser
+### Project Browser
 
 - [ ] Better Landing page
 - [ ] Implement Delete Project
 
-## UI:
+### UI:
 
 - [ ] Force Light Theme background
 
-## (IO):
+### (IO):
 
 - [ ] Upload handles steel-stud continuous exterior insulation
 - [ ] Upload corresponding Flixo PDF
 
-## Material List:
+### Material List:
 
 - [x] Change so that the Assemblies are the first page, not materials
 - [ ] Fix slow google-cloud image load
@@ -27,7 +29,7 @@
 - [ ] Delete Datasheet
 - [ ] Multiple Datasheets?
 
-## Assemblies (UI):
+### Assemblies (UI):
 
 - [x] Add calculated R-Value / U-Value label
 - [x] Display Material Legend with key material info (conductivity)
@@ -45,13 +47,19 @@
 - [ ] Handle Load-from-JSON Steel Stud Assemblies.
 - [ ] Consider caching/storing the total Assembly U-Value on the DB-entity to reduce server workload?
 
-## Ventilation Commissioning Page
+### Ventilation Commissioning Page
 
-- [ ] Ventilation Balancing
+- [ ] Room by room flow-rate page
+- [ ] Ventilation Balancing page
 - [ ] Add instructions
 - [ ] Add note about form SIGNED
 
-## Windows:
+### Thermal Bridges
+
+- Add TB record view page
+- Link to AirTable
+
+### Windows:
 
 - [x] Scale window unit geometry
 - [x] Window Frame Database (AirTable)
@@ -65,9 +73,11 @@
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
-- [ ] Add window-element U-Value (might refactor Uw calc?)
+- [x] Add window-element U-Value (might refactor Uw calc?)
 - [x] Uw Value Label doesn't respect SI | IP state.
-- [ ] Consider caching/storing the total Uw on the DB-entity to reduce server workload?
+- [x] Consider caching/storing the total Uw on the DB-entity to reduce server workload?
+
+---
 
 ## 3D Model:
 
