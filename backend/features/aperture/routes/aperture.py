@@ -23,7 +23,7 @@ from features.aperture.schemas.aperture import (
     UpdateRowHeightRequest,
     UpdateApertureElementNameRequest,
 )
-from features.aperture.schemas.window_u_value import WindowUValueResponse
+from features.aperture.schemas.window_u_value import ElementUValueResult, WindowUValueResponse
 from features.aperture.schemas.aperture_element import UpdateElementAssignmentsRequest, UpdateOperationRequest
 from features.aperture.services.aperture import (
     LastColumnException,
@@ -465,6 +465,19 @@ def get_aperture_u_value_route(
     try:
         aperture = get_aperture_by_id(db, aperture_id)
         result = calculate_aperture_u_value(aperture)
+
+        # Map element calculations to response format
+        element_u_values = [
+            ElementUValueResult(
+                element_id=ec.element_id,
+                u_value_w_m2k=ec.u_value_w_m2k,
+                total_area_m2=round(ec.total_area_m2, 6),
+                glazing_area_m2=round(ec.glazing_area_m2, 6),
+                frame_area_m2=round(ec.frame_area_m2, 6),
+            )
+            for ec in result.element_calculations
+        ]
+
         return WindowUValueResponse(
             u_value_w_m2k=result.u_value_w_m2k,
             total_area_m2=result.total_area_m2,
@@ -477,6 +490,7 @@ def get_aperture_u_value_route(
             warnings=result.warnings,
             calculation_method=result.calculation_method,
             includes_psi_install=result.includes_psi_install,
+            element_u_values=element_u_values,
         )
     except ValueError as e:
         msg = str(e)

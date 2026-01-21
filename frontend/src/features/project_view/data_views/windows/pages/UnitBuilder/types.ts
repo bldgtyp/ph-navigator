@@ -172,6 +172,17 @@ export interface ManufacturerFilterConfig {
 }
 
 /**
+ * Per-element U-value result from the API.
+ */
+export interface ElementUValueResult {
+    element_id: number;
+    u_value_w_m2k: number;
+    total_area_m2: number;
+    glazing_area_m2: number;
+    frame_area_m2: number;
+}
+
+/**
  * Response from the window U-value calculation API.
  * Calculated per ISO 10077-1:2006.
  */
@@ -187,4 +198,5 @@ export interface WindowUValueResponse {
     warnings: string[];
     calculation_method: string;
     includes_psi_install: boolean;
+    element_u_values: ElementUValueResult[];
 }

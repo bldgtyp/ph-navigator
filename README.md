@@ -9,7 +9,7 @@
 
 ## UI:
 
-- [ ] Force Light Theme
+- [ ] Force Light Theme background
 
 ## (IO):
 
@@ -66,7 +66,7 @@
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
 - [ ] Add window-element U-Value (might refactor Uw calc?)
-- [ ] Uw Value Label doesn't respect SI | IP state.
+- [x] Uw Value Label doesn't respect SI | IP state.
 - [ ] Consider caching/storing the total Uw on the DB-entity to reduce server workload?
 
 ## 3D Model:

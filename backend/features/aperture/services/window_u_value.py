@@ -53,6 +53,7 @@ class ElementCalculation:
     heat_loss_glazing_w_k: float
     heat_loss_frame_w_k: float
     heat_loss_spacer_w_k: float
+    u_value_w_m2k: float  # Element-specific U-value
 
 
 @dataclass
@@ -71,6 +72,7 @@ class WindowUValueResult:
     heat_loss_spacer_w_k: float
     is_valid: bool
     warnings: list[str]
+    element_calculations: list[ElementCalculation]
     calculation_method: str = "ISO 10077-1:2006"
     includes_psi_install: bool = False
 
@@ -136,6 +138,7 @@ def calculate_aperture_u_value(aperture: Aperture) -> WindowUValueResult:
         heat_loss_spacer_w_k=round(heat_loss_spacer, 6),
         is_valid=True,
         warnings=[],
+        element_calculations=element_results,
     )
 
 
@@ -238,6 +241,10 @@ def _calculate_element(
         + _side_spacer_heat_loss(frame_left, interior_height)
     )
 
+    # Calculate element-specific U-value
+    total_heat_loss = heat_loss_glazing + heat_loss_frame + heat_loss_spacer
+    element_u_value = total_heat_loss / total_area if total_area > 0 else 0.0
+
     return ElementCalculation(
         element_id=element.id,
         width_m=width_m,
@@ -249,6 +256,7 @@ def _calculate_element(
         heat_loss_glazing_w_k=heat_loss_glazing,
         heat_loss_frame_w_k=heat_loss_frame,
         heat_loss_spacer_w_k=heat_loss_spacer,
+        u_value_w_m2k=round(element_u_value, 4),
     )
 
 
@@ -372,4 +380,5 @@ def _invalid_result(warnings: list[str]) -> WindowUValueResult:
         heat_loss_spacer_w_k=0.0,
         is_valid=False,
         warnings=warnings,
+        element_calculations=[],
     )

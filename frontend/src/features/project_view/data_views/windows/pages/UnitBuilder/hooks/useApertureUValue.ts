@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ApertureType, WindowUValueResponse } from '../types';
+import { ApertureType, ElementUValueResult, WindowUValueResponse } from '../types';
 import { ApertureService } from '../ApertureView/services/apertureService';
 
 interface UseApertureUValueResult {
     uValueData: WindowUValueResponse | null;
+    elementUValues: Map<number, ElementUValueResult>;
     loading: boolean;
     error: string | null;
     refetch: () => Promise<void>;
@@ -57,8 +58,20 @@ export const useApertureUValue = (aperture: ApertureType | null): UseApertureUVa
         fetchUValue();
     }, [fetchUValue, aperture]);
 
+    // Build a Map from element_id to ElementUValueResult for efficient lookup
+    const elementUValues = useMemo(() => {
+        const map = new Map<number, ElementUValueResult>();
+        if (uValueData?.element_u_values) {
+            for (const ev of uValueData.element_u_values) {
+                map.set(ev.element_id, ev);
+            }
+        }
+        return map;
+    }, [uValueData]);
+
     return {
         uValueData,
+        elementUValues,
         loading,
         error,
         refetch: fetchUValue,

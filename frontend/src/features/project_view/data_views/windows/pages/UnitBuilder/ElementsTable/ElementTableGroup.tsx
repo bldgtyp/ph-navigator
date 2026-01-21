@@ -8,28 +8,8 @@ import { TableGroupProps } from './types';
 import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { useViewDirection } from '../ApertureView/ViewDirection.Context';
-
-const GroupTitle: React.FC<{ handleEditStart: () => void; title: string }> = ({ handleEditStart, title }) => {
-    return (
-        <Grid size={12} sx={{ fontWeight: 'bold', mb: 1 }}>
-            <Typography
-                variant="h5"
-                sx={{
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    px: 1,
-                    borderRadius: 1,
-                    '&:hover': {
-                        bgcolor: 'rgba(0,0,0,0.05)',
-                    },
-                }}
-                onClick={handleEditStart}
-            >
-                {title}
-            </Typography>
-        </Grid>
-    );
-};
+import { useApertureUValue } from '../hooks/useApertureUValue';
+import ElementUValueLabel from '../components/ElementUValueLabel';
 
 const GroupTitleEditable: React.FC<{
     title: string;
@@ -51,34 +31,32 @@ const GroupTitleEditable: React.FC<{
     };
 
     return (
-        <Grid size={12} sx={{ fontWeight: 'bold', mb: 1 }}>
-            <ClickAwayListener onClickAway={handleConfirm}>
-                <TextField
-                    size="small"
-                    autoFocus
-                    value={editingValue}
-                    onChange={e => setEditingValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    variant="outlined"
-                    sx={{
-                        width: '200px',
-                        '& .MuiInputBase-input': {
-                            py: 0.5,
-                            px: 1,
-                            fontSize: '1.5rem',
-                            fontWeight: 'bold',
+        <ClickAwayListener onClickAway={handleConfirm}>
+            <TextField
+                size="small"
+                autoFocus
+                value={editingValue}
+                onChange={e => setEditingValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                variant="outlined"
+                sx={{
+                    width: '200px',
+                    '& .MuiInputBase-input': {
+                        py: 0.5,
+                        px: 1,
+                        fontSize: '1.5rem',
+                        fontWeight: 'bold',
+                    },
+                }}
+                slotProps={{
+                    input: {
+                        onFocus: event => {
+                            event.target.select();
                         },
-                    }}
-                    slotProps={{
-                        input: {
-                            onFocus: event => {
-                                event.target.select();
-                            },
-                        },
-                    }}
-                />
-            </ClickAwayListener>
-        </Grid>
+                    },
+                }}
+            />
+        </ClickAwayListener>
     );
 };
 
@@ -88,9 +66,15 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
     const { isInsideView } = useViewDirection();
     const [isEditingTitle, setIsEditingTitle] = useState(false);
 
+    // Get element U-value data
+    const { elementUValues, loading: uValueLoading } = useApertureUValue(activeAperture);
+
     // Get the most current element data from activeAperture to ensure we have the latest state
     const currentElement = activeAperture?.elements.find(el => el.id === element.id) || element;
     const groupTitle = currentElement.name || `Element ${currentElement.id}`;
+
+    // Get U-value for this specific element
+    const elementUValue = elementUValues.get(currentElement.id);
 
     const handleEditStart = () => {
         if (userContext.user) {
@@ -135,11 +119,35 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
                     columnGap: '0px',
                 }}
             >
-                {isEditingTitle && userContext.user ? (
-                    <GroupTitleEditable title={groupTitle} onConfirm={handleEditConfirm} onCancel={handleEditCancel} />
-                ) : (
-                    <GroupTitle handleEditStart={handleEditStart} title={groupTitle} />
-                )}
+                <Grid size={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        {isEditingTitle && userContext.user ? (
+                            <GroupTitleEditable
+                                title={groupTitle}
+                                onConfirm={handleEditConfirm}
+                                onCancel={handleEditCancel}
+                            />
+                        ) : (
+                            <Typography
+                                variant="h5"
+                                sx={{
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    px: 1,
+                                    fontWeight: 'bold',
+                                    borderRadius: 1,
+                                    '&:hover': {
+                                        bgcolor: 'rgba(0,0,0,0.05)',
+                                    },
+                                }}
+                                onClick={handleEditStart}
+                            >
+                                {groupTitle}
+                            </Typography>
+                        )}
+                        <ElementUValueLabel uValue={elementUValue?.u_value_w_m2k ?? null} loading={uValueLoading} />
+                    </Box>
+                </Grid>
                 <TableHeader />
             </Grid>
 
