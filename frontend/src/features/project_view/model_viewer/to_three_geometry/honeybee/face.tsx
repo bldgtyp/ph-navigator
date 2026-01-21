@@ -47,6 +47,7 @@ export function convertHBFaceToMesh(
         energy: {
             construction: {
                 identifier: face.properties.energy.construction.identifier,
+                type: face.properties.energy.construction.type,
                 r_factor: face.properties.energy.construction.r_factor,
                 u_factor: face.properties.energy.construction.u_factor,
             },

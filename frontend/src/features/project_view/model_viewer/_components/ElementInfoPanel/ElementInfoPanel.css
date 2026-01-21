@@ -60,6 +60,20 @@
     font-size: 0.8em;
     color: var(--text-secondary-color);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.info-field-tooltip-icon {
+    font-size: 0.9em;
+    color: var(--text-secondary-color);
+    cursor: help;
+    opacity: 0.6;
+}
+
+.info-field-tooltip-icon:hover {
+    opacity: 1;
 }
 
 .info-field-value {
@@ -68,4 +82,23 @@
     text-align: right;
     word-break: break-word;
     min-width: 0;
+}
+
+/* Section styling for grouped fields */
+.info-section {
+    border-top: 1px solid var(--outline-color);
+    margin-top: 4px;
+}
+
+.info-section-header {
+    padding: 8px 16px 4px;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-section-content {
+    padding-bottom: 4px;
 }

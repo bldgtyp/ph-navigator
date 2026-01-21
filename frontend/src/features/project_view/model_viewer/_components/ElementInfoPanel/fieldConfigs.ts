@@ -5,6 +5,7 @@ import { Unit } from '../../../../../formatters/Unit.ConversionFactors';
 export type FieldConfig = {
     key: string; // Path in userData (supports dot notation for nested fields)
     label: string; // Display label
+    tooltip?: string; // Optional tooltip text shown on hover
     decimals?: number; // Decimal places for numeric values (default: 2)
     // Unit conversion configuration (if provided, value will be converted based on unit system)
     units?: {
@@ -15,9 +16,15 @@ export type FieldConfig = {
     };
 };
 
+export type SectionConfig = {
+    title: string; // Section header text
+    fields: FieldConfig[];
+};
+
 export type ElementTypeConfig = {
     title: string;
     fields: FieldConfig[];
+    sections?: SectionConfig[]; // Optional additional sections
 };
 
 export const fieldConfigs: Record<string, ElementTypeConfig> = {
@@ -35,6 +42,31 @@ export const fieldConfigs: Record<string, ElementTypeConfig> = {
                 units: { si: 'm2', ip: 'ft2', siLabel: 'm²', ipLabel: 'ft²' },
             },
         ],
+        sections: [
+            {
+                title: 'Construction',
+                fields: [
+                    { key: 'properties.energy.construction.identifier', label: 'Name' },
+                    { key: 'properties.energy.construction.type', label: 'Type' },
+                    {
+                        key: 'properties.energy.construction.u_factor',
+                        label: 'U-Factor',
+                        tooltip:
+                            'Construction U-factor including standard resistances for air films. Includes interior and exterior air film resistance.',
+                        decimals: 3,
+                        units: { si: 'w/m2k', ip: 'btu/hr-ft2-F', siLabel: 'W/m²K', ipLabel: 'Btu/hr·ft²·°F' },
+                    },
+                    {
+                        key: 'properties.energy.construction.r_factor',
+                        label: 'R-Factor',
+                        tooltip:
+                            'Construction R-factor including standard resistances for air films. Includes interior and exterior air film resistance.',
+                        decimals: 2,
+                        units: { si: 'm2k/w', ip: 'hr-ft2-F/btu', siLabel: 'm²K/W', ipLabel: 'hr·ft²·°F/Btu' },
+                    },
+                ],
+            },
+        ],
     },
     apertureMeshFace: {
         title: 'Window',
@@ -48,6 +80,23 @@ export const fieldConfigs: Record<string, ElementTypeConfig> = {
                 label: 'Area',
                 decimals: 2,
                 units: { si: 'm2', ip: 'ft2', siLabel: 'm²', ipLabel: 'ft²' },
+            },
+        ],
+        sections: [
+            {
+                title: 'Construction',
+                fields: [
+                    { key: 'properties.energy.construction.identifier', label: 'Name' },
+                    { key: 'properties.energy.construction.type', label: 'Type' },
+                    {
+                        key: 'properties.energy.construction.u_factor',
+                        label: 'U-Factor',
+                        tooltip:
+                            'Construction U-factor including standard resistances for air films. Includes interior and exterior air film resistance.',
+                        decimals: 3,
+                        units: { si: 'w/m2k', ip: 'btu/hr-ft2-F', siLabel: 'W/m²K', ipLabel: 'Btu/hr·ft²·°F' },
+                    },
+                ],
             },
         ],
     },

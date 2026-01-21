@@ -1,9 +1,22 @@
 // Side panel displaying properties of the selected 3D element
 
 import { useSelectedObjectContext } from '../../_contexts/selected_object_context';
-import { fieldConfigs } from './fieldConfigs';
+import { fieldConfigs, SectionConfig } from './fieldConfigs';
 import InfoField from './InfoField';
 import './ElementInfoPanel.css';
+
+function InfoSection({ section, userData }: { section: SectionConfig; userData: Record<string, any> }) {
+    return (
+        <div className="info-section">
+            <div className="info-section-header">{section.title}</div>
+            <div className="info-section-content">
+                {section.fields.map(fieldConfig => (
+                    <InfoField key={fieldConfig.key} config={fieldConfig} userData={userData} />
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export default function ElementInfoPanel() {
     const { selectedObjectState } = useSelectedObjectContext();
@@ -28,6 +41,9 @@ export default function ElementInfoPanel() {
                             <InfoField key={fieldConfig.key} config={fieldConfig} userData={userData} />
                         ))}
                     </div>
+                    {config.sections?.map(section => (
+                        <InfoSection key={section.title} section={section} userData={userData} />
+                    ))}
                 </>
             ) : isVisible ? (
                 <>

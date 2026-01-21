@@ -1,6 +1,7 @@
 // A single label-value row for the Element Info Panel
 
 import { useUnitConversion } from '../../../_hooks/useUnitConversion';
+import { LightTooltip } from '../../styles/styled_components/LightTooltip';
 import { FieldConfig } from './fieldConfigs';
 
 type InfoFieldProps = {
@@ -44,7 +45,14 @@ export default function InfoField({ config, userData }: InfoFieldProps) {
 
     return (
         <div className="info-field">
-            <span className="info-field-label">{config.label}</span>
+            <span className="info-field-label">
+                {config.label}
+                {config.tooltip && (
+                    <LightTooltip title={config.tooltip} placement="top">
+                        <span className="info-field-tooltip-icon">ⓘ</span>
+                    </LightTooltip>
+                )}
+            </span>
             <span className="info-field-value">{valueWithUnit}</span>
         </div>
     );

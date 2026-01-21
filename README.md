@@ -138,10 +138,10 @@
 
 #### Object Properties Panel:
 
-- [ ] Face Data - truncate names / identifiers
-- [ ] Don't like constant opening/closing.
-- [ ] Should have option to close
-- [ ] Tighten up text fields. Too much spacing
+- [x] Face Data - truncate names / identifiers
+- [x] Don't like constant opening/closing.
+- [x] Should have option to close
+- [x] Tighten up text fields. Too much spacing
 
 #### Color by:
 
