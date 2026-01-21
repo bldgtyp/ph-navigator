@@ -7,6 +7,7 @@
 from pydantic.main import BaseModel
 
 from ..ladybug_geometry.geometry3d.face3d import Face3DSchema
+from .properties.space import SpacePropertiesSchema
 
 
 class SpaceFloorSegmentSchema(BaseModel):
@@ -39,6 +40,8 @@ class SpaceSchema(BaseModel):
     name: str
     number: str
     volumes: list[SpaceVolumeSchema]
+
+    properties: SpacePropertiesSchema
 
     # -- Additional Properties
     net_volume: float = 0.0

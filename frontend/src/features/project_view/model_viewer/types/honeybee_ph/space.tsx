@@ -1,4 +1,5 @@
 import { lbtFace3D } from '../ladybug_geometry/geometry3d/face';
+import { hbPhSpaceProperties } from './properties/space';
 
 export type hbPhSpaceFloorSegment = {
     identifier: string;
@@ -31,7 +32,7 @@ export type hbPhSpace = {
     quantity: number;
     wufi_type: number;
     volumes: hbPhSpaceVolume[];
-    properties: any;
+    properties: hbPhSpaceProperties;
     net_volume: number;
     avg_clear_height: number;
     floor_area: number;

@@ -134,6 +134,34 @@ export const fieldConfigs: Record<string, ElementTypeConfig> = {
             },
             { key: 'average_floor_weighting_factor', label: 'Avg Weighting Factor', decimals: 3 },
         ],
+        sections: [
+            {
+                title: 'Ventilation',
+                fields: [
+                    {
+                        key: 'properties.ph._v_sup',
+                        label: 'Supply Air',
+                        tooltip: 'Volume flow rate of supply air into the space',
+                        decimals: 0,
+                        units: { si: 'm3_hr', ip: 'cfm', siLabel: 'm³/h', ipLabel: 'CFM' },
+                    },
+                    {
+                        key: 'properties.ph._v_eta',
+                        label: 'Extract Air',
+                        tooltip: 'Volume flow rate of extract air from the space',
+                        decimals: 0,
+                        units: { si: 'm3_hr', ip: 'cfm', siLabel: 'm³/h', ipLabel: 'CFM' },
+                    },
+                    {
+                        key: 'properties.ph._v_tran',
+                        label: 'Transfer Air',
+                        tooltip: 'Volume flow rate of transfer air through the space',
+                        decimals: 0,
+                        units: { si: 'm3_hr', ip: 'cfm', siLabel: 'm³/h', ipLabel: 'CFM' },
+                    },
+                ],
+            },
+        ],
     },
     pipeSegmentLine: {
         title: 'Pipe',

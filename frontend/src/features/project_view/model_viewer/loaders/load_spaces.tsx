@@ -17,6 +17,7 @@ function groupFromSpace(space: hbPhSpace) {
     newGroup.userData['floor_area'] = space.floor_area;
     newGroup.userData['weighted_floor_area'] = space.weighted_floor_area;
     newGroup.userData['average_floor_weighting_factor'] = space.average_floor_weighting_factor;
+    newGroup.userData['properties'] = space.properties;
     newGroup.userData['type'] = 'spaceGroup';
     return newGroup;
 }

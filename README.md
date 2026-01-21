@@ -102,6 +102,7 @@
 
 #### UI:
 
+- [ ] Disable right-mouse click (grrr.... Rhino!)
 - [ ] Sun-path:
   - [ ] Time of Day control (connect to sunlight position)
   - [ ] Add Compass with Cardinal Directions

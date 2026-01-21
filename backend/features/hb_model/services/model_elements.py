@@ -99,7 +99,16 @@ def get_spaces_from_model(hb_model: Model) -> list:
     for hb_room in hb_rooms:
         room_prop_ph: RoomPhProperties = getattr(hb_room.properties, "ph")
         for space in room_prop_ph.spaces:
-            space_DTO = SpaceSchema(**space.to_dict(include_mesh=True))
+            space_dict = space.to_dict(include_mesh=True)
+            # Convert airflow values from m³/s to m³/h (multiply by 3600)
+            # This must be done here, not in Pydantic validator, because FastAPI
+            # re-validates models during response serialization causing double conversion
+            if "properties" in space_dict and "ph" in space_dict["properties"]:
+                ph_props = space_dict["properties"]["ph"]
+                for key in ("_v_eta", "_v_sup", "_v_tran"):
+                    if key in ph_props and ph_props[key] is not None:
+                        ph_props[key] = ph_props[key] * 3600
+            space_DTO = SpaceSchema(**space_dict)
             space_DTO.net_volume = space.net_volume
             space_DTO.floor_area = space.floor_area
             space_DTO.weighted_floor_area = space.weighted_floor_area
