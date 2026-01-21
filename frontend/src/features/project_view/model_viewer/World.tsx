@@ -77,9 +77,7 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
     // Dismount Handlers for ToolStates
     // ------------------------------------------------------------------------
     addToolStateDismountHandler(1, 'clearSelectedMesh', () => {
-        // handleClearSelectedLine(selectedObjectContext)
-        // handleClearSelectedSpace(selectedObjectContext)
-        // handleClearSelectedMeshFace(selectedObjectContext)
+        clearSelection(selectedObjectContext, hoverObjectContext);
     });
     addToolStateDismountHandler(2, 'clearDims', () => {
         hoveringVertex.current = null;
