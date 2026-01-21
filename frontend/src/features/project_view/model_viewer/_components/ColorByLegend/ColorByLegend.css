@@ -1,0 +1,75 @@
+/* ColorBy Legend - Floating transparent legend on left edge */
+
+.color-by-legend {
+    position: fixed;
+    top: 150px;
+    left: 16px;
+    max-height: calc(100vh - 210px);
+    z-index: 100;
+    pointer-events: none; /* Allow clicks to pass through to model */
+}
+
+.color-by-legend-title {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-shadow:
+        1px 1px 2px rgba(255, 255, 255, 0.8),
+        -1px -1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.color-by-legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    max-height: calc(100vh - 260px);
+    padding-right: 8px; /* Space for scrollbar when needed */
+}
+
+/* Custom scrollbar for long lists */
+.color-by-legend-items::-webkit-scrollbar {
+    width: 4px;
+}
+
+.color-by-legend-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.color-by-legend-items::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.color-by-legend-items::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.color-by-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-by-legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.color-by-legend-label {
+    font-size: 0.8em;
+    color: var(--text-primary-color);
+    white-space: nowrap;
+    text-shadow:
+        1px 1px 2px rgba(255, 255, 255, 0.9),
+        -1px -1px 2px rgba(255, 255, 255, 0.9),
+        1px -1px 2px rgba(255, 255, 255, 0.9),
+        -1px 1px 2px rgba(255, 255, 255, 0.9);
+}

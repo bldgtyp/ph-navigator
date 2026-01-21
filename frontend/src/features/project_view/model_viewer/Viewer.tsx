@@ -12,7 +12,9 @@ import { AppStateContextProvider } from './_contexts/app_viz_state_context';
 import { AppToolStateContextProvider } from './_contexts/app_tool_state_context';
 import { SelectedObjectContextProvider } from './_contexts/selected_object_context';
 import { HoverObjectContextProvider } from './_contexts/hover_object_context';
+import { ColorByContextProvider } from './_contexts/color_by_context';
 import ElementInfoPanel from './_components/ElementInfoPanel/ElementInfoPanel';
+import ColorByLegend from './_components/ColorByLegend/ColorByLegend';
 
 const Viewer: React.FC<any> = () => {
     console.log('Rendering Viewer Component...');
@@ -29,18 +31,21 @@ const Viewer: React.FC<any> = () => {
         <>
             <AppStateContextProvider>
                 <AppToolStateContextProvider>
-                    <SelectedObjectContextProvider>
-                        <HoverObjectContextProvider>
-                            <World
-                                world={world}
-                                hoveringVertex={hoveringVertex}
-                                dimensionLinesRef={dimensionLinesRef}
-                            />
-                            <Model world={world} showModel={showModel} />
-                            <ElementInfoPanel />
-                        </HoverObjectContextProvider>
-                    </SelectedObjectContextProvider>
-                    <BottomMenubar />
+                    <ColorByContextProvider>
+                        <SelectedObjectContextProvider>
+                            <HoverObjectContextProvider>
+                                <World
+                                    world={world}
+                                    hoveringVertex={hoveringVertex}
+                                    dimensionLinesRef={dimensionLinesRef}
+                                />
+                                <Model world={world} showModel={showModel} />
+                                <ElementInfoPanel />
+                                <ColorByLegend />
+                            </HoverObjectContextProvider>
+                        </SelectedObjectContextProvider>
+                        <BottomMenubar />
+                    </ColorByContextProvider>
                 </AppToolStateContextProvider>
             </AppStateContextProvider>
         </>

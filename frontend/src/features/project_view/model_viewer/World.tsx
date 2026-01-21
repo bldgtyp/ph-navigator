@@ -8,9 +8,11 @@ import { useAppVizStateContext } from './_contexts/app_viz_state_context';
 import { useAppToolStateContext } from './_contexts/app_tool_state_context';
 import { useSelectedObjectContext } from './_contexts/selected_object_context';
 import { useHoverObjectContext } from './_contexts/hover_object_context';
+import { useColorByContext } from './_contexts/color_by_context';
 import { handleOnClick, handleOnMouseOver, clearSelection } from './_handlers/selectObject';
 import { measureModeOnMouseClick, measureModeOnMouseMove } from './_handlers/modeMeasurement';
-import { addVizStateMountHandler, addVizStateDismountHandler } from './states/VizState';
+import { applyColorByMode, restoreOriginalMaterials } from './_handlers/modeColorBy';
+import { addVizStateMountHandler, addVizStateDismountHandler, appVizStateTypeEnum } from './states/VizState';
 import { addToolStateEventHandler, addToolStateDismountHandler } from './states/ToolState';
 
 interface ViewContainerProps {
@@ -24,6 +26,7 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
     const appToolStateContext = useAppToolStateContext();
     const selectedObjectContext = useSelectedObjectContext();
     const hoverObjectContext = useHoverObjectContext();
+    const colorByContext = useColorByContext();
     const mountRef = useRef<HTMLDivElement | null>(null);
 
     // Setup all the Event Listener Callbacks for the different Tool-States
@@ -132,6 +135,14 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
         world.current.buildingGeometryOutlines.visible = true;
         world.current.pipeGeometry.visible = true;
     });
+    addVizStateMountHandler(7, 'showColorBy', () => {
+        world.current.buildingGeometryMeshes.visible = true;
+        world.current.selectableObjects.add(world.current.buildingGeometryMeshes);
+        world.current.selectableObjects.visible = true;
+        world.current.buildingGeometryOutlines.visible = true;
+        // Apply colors based on current colorByAttribute
+        applyColorByMode(world.current, colorByContext.colorByAttribute);
+    });
 
     // Dismount Handlers for Viz-States
     // ------------------------------------------------------------------------
@@ -178,6 +189,12 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
         world.current.clearSelectableObjectsGroup();
         world.current.buildingGeometryOutlines.visible = false;
         world.current.pipeGeometry.visible = false;
+    });
+    addVizStateDismountHandler(7, 'hideColorBy', () => {
+        restoreOriginalMaterials(world.current);
+        world.current.clearSelectableObjectsGroup();
+        world.current.buildingGeometryMeshes.visible = false;
+        world.current.buildingGeometryOutlines.visible = false;
     });
 
     // Add the Tool-State mount/un-mount and event-listeners
@@ -242,6 +259,16 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [appVizStateContext.appVizState]);
+
+    // Re-apply ColorBy colors when attribute changes while in ColorBy mode
+    // ------------------------------------------------------------------------
+    useEffect(() => {
+        // Only re-apply colors if currently in ColorBy mode (state 7)
+        if (appVizStateContext.appVizState.vizState === appVizStateTypeEnum.ColorBy) {
+            applyColorByMode(world.current, colorByContext.colorByAttribute);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [colorByContext.colorByAttribute]);
 
     // Setup the THREE Scene, Run the Animation
     // ------------------------------------------------------------------------

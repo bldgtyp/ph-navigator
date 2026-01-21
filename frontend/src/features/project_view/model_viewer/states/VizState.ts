@@ -11,6 +11,7 @@ export enum appVizStateTypeEnum {
     SunPath = 4,
     Ventilation = 5,
     HotWaterPiping = 6,
+    ColorBy = 7,
 }
 
 type EventHandlerFunction = (event: any) => void;
@@ -50,6 +51,7 @@ export const vizStates: { [key: number]: VizState } = {
     4: new VizState(appVizStateTypeEnum.SunPath),
     5: new VizState(appVizStateTypeEnum.Ventilation),
     6: new VizState(appVizStateTypeEnum.HotWaterPiping),
+    7: new VizState(appVizStateTypeEnum.ColorBy),
 };
 
 export function addVizStateEventHandler(
