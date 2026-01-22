@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { ManufacturerFilterConfig } from '../pages/UnitBuilder/types';
@@ -66,20 +66,19 @@ export const ManufacturerFilterProvider: React.FC<{ children: React.ReactNode }>
     const enabledFrameManufacturers = filterConfig?.enabled_frame_manufacturers ?? [];
     const enabledGlazingManufacturers = filterConfig?.enabled_glazing_manufacturers ?? [];
 
-    return (
-        <ManufacturerFilterContext.Provider
-            value={{
-                filterConfig,
-                enabledFrameManufacturers,
-                enabledGlazingManufacturers,
-                isLoading,
-                updateFilters,
-                refreshFilters,
-            }}
-        >
-            {children}
-        </ManufacturerFilterContext.Provider>
+    const value = useMemo(
+        () => ({
+            filterConfig,
+            enabledFrameManufacturers,
+            enabledGlazingManufacturers,
+            isLoading,
+            updateFilters,
+            refreshFilters,
+        }),
+        [filterConfig, enabledFrameManufacturers, enabledGlazingManufacturers, isLoading, updateFilters, refreshFilters]
     );
+
+    return <ManufacturerFilterContext.Provider value={value}>{children}</ManufacturerFilterContext.Provider>;
 };
 
 export const useManufacturerFilters = (): ManufacturerFilterContextType => {

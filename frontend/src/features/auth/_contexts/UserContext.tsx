@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import constants from '../../../data/constants.json';
 import { UserType, UserContextType } from '../../types/UserType';
 
@@ -42,15 +42,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [fetchUserInfo]);
 
-    const login = (access_token: string) => {
-        localStorage.setItem('token', access_token);
-        fetchUserInfo(access_token);
-    };
+    const login = useCallback(
+        (access_token: string) => {
+            localStorage.setItem('token', access_token);
+            fetchUserInfo(access_token);
+        },
+        [fetchUserInfo]
+    );
 
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem('token');
         setUser(null);
-    };
+    }, []);
 
-    return <UserContext.Provider value={{ user, login, logout }}>{children}</UserContext.Provider>;
+    const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
+
+    return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

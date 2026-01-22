@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 import { DimensionsContextType } from './types';
@@ -13,71 +13,91 @@ export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
     const [editingValue, setEditingValue] = useState<string>('');
 
-    const handleEditColStart = (index: number, value: number) => {
-        setEditingColIndex(index);
-        // Convert the SI value to current unit system for editing
-        const displayValue = valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 2);
-        setEditingValue(displayValue);
-    };
-
-    const handleEditColConfirm = (onColumnWidthChange: (index: number, value: number) => void) => {
-        const value = parseFloat(editingValue);
-
-        if (!isNaN(value) && value > 0) {
-            if (editingColIndex !== null) {
-                // Convert the entered value back to SI units (mm) for storage
-                const siValue = valueInSIUnits(value, 'mm', 'in');
-                onColumnWidthChange(editingColIndex, siValue);
-                setEditingColIndex(null);
-            }
-        }
-
-        // Reset the editing state regardless of whether the value was valid
-        setEditingColIndex(null);
-    };
-
-    const handleEditRowStart = (index: number, value: number) => {
-        setEditingRowIndex(index);
-        // Convert the SI value to current unit system for editing
-        const displayValue = valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 2);
-        setEditingValue(displayValue);
-    };
-
-    const handleEditRowConfirm = (onRowHeightChange: (index: number, value: number) => void) => {
-        const value = parseFloat(editingValue);
-
-        if (!isNaN(value) && value > 0) {
-            if (editingRowIndex !== null) {
-                // Convert the entered value back to SI units (mm) for storage
-                const siValue = valueInSIUnits(value, 'mm', 'in');
-                onRowHeightChange(editingRowIndex, siValue);
-                setEditingRowIndex(null);
-            }
-        }
-
-        // Reset the editing state regardless of whether the value was valid
-        setEditingRowIndex(null);
-    };
-
-    return (
-        <DimensionsContext.Provider
-            value={{
-                units,
-                editingColIndex,
-                setEditingColIndex,
-                editingRowIndex,
-                setEditingRowIndex,
-                editingValue,
-                setEditingValue,
-                handleEditColStart,
-                handleEditColConfirm,
-                handleEditRowStart,
-                handleEditRowConfirm,
-            }}
-        >
-            {children}
-        </DimensionsContext.Provider>
+    const handleEditColStart = useCallback(
+        (index: number, value: number) => {
+            setEditingColIndex(index);
+            // Convert the SI value to current unit system for editing
+            const displayValue = valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 2);
+            setEditingValue(displayValue);
+        },
+        [valueInCurrentUnitSystemWithDecimal]
     );
+
+    const handleEditColConfirm = useCallback(
+        (onColumnWidthChange: (index: number, value: number) => void) => {
+            const value = parseFloat(editingValue);
+
+            if (!isNaN(value) && value > 0) {
+                if (editingColIndex !== null) {
+                    // Convert the entered value back to SI units (mm) for storage
+                    const siValue = valueInSIUnits(value, 'mm', 'in');
+                    onColumnWidthChange(editingColIndex, siValue);
+                    setEditingColIndex(null);
+                }
+            }
+
+            // Reset the editing state regardless of whether the value was valid
+            setEditingColIndex(null);
+        },
+        [editingColIndex, editingValue, valueInSIUnits]
+    );
+
+    const handleEditRowStart = useCallback(
+        (index: number, value: number) => {
+            setEditingRowIndex(index);
+            // Convert the SI value to current unit system for editing
+            const displayValue = valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 2);
+            setEditingValue(displayValue);
+        },
+        [valueInCurrentUnitSystemWithDecimal]
+    );
+
+    const handleEditRowConfirm = useCallback(
+        (onRowHeightChange: (index: number, value: number) => void) => {
+            const value = parseFloat(editingValue);
+
+            if (!isNaN(value) && value > 0) {
+                if (editingRowIndex !== null) {
+                    // Convert the entered value back to SI units (mm) for storage
+                    const siValue = valueInSIUnits(value, 'mm', 'in');
+                    onRowHeightChange(editingRowIndex, siValue);
+                    setEditingRowIndex(null);
+                }
+            }
+
+            // Reset the editing state regardless of whether the value was valid
+            setEditingRowIndex(null);
+        },
+        [editingRowIndex, editingValue, valueInSIUnits]
+    );
+
+    const value = useMemo(
+        () => ({
+            units,
+            editingColIndex,
+            setEditingColIndex,
+            editingRowIndex,
+            setEditingRowIndex,
+            editingValue,
+            setEditingValue,
+            handleEditColStart,
+            handleEditColConfirm,
+            handleEditRowStart,
+            handleEditRowConfirm,
+        }),
+        [
+            units,
+            editingColIndex,
+            editingRowIndex,
+            editingValue,
+            handleEditColStart,
+            handleEditColConfirm,
+            handleEditRowStart,
+            handleEditRowConfirm,
+        ]
+    );
+
+    return <DimensionsContext.Provider value={value}>{children}</DimensionsContext.Provider>;
 };
 
 export const useDimensions = (): DimensionsContextType => {

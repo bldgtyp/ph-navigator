@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 export type UnitSystem = 'SI' | 'IP';
 
@@ -23,20 +23,21 @@ export const UnitSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, [unitSystem]);
 
     // Toggle between SI and IP
-    const toggleUnitSystem = () => {
+    const toggleUnitSystem = useCallback(() => {
         setUnitSystemState(current => (current === 'SI' ? 'IP' : 'SI'));
-    };
+    }, []);
 
     // Set unit system explicitly
-    const setUnitSystem = (system: UnitSystem) => {
+    const setUnitSystem = useCallback((system: UnitSystem) => {
         setUnitSystemState(system);
-    };
+    }, []);
 
-    return (
-        <UnitSystemContext.Provider value={{ unitSystem, setUnitSystem, toggleUnitSystem }}>
-            {children}
-        </UnitSystemContext.Provider>
+    const value = useMemo(
+        () => ({ unitSystem, setUnitSystem, toggleUnitSystem }),
+        [unitSystem, setUnitSystem, toggleUnitSystem]
     );
+
+    return <UnitSystemContext.Provider value={value}>{children}</UnitSystemContext.Provider>;
 };
 
 // Custom hook to use the context

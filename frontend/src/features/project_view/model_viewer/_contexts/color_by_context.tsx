@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import { ColorDefinition } from '../_constants/colorByColors';
 
 // ColorBy attribute enum for selecting which attribute to color by
@@ -34,13 +34,12 @@ export function ColorByContextProvider({ children }: { children: React.ReactNode
     const [colorByAttribute, setColorByAttribute] = useState<ColorByAttribute>(ColorByAttribute.FaceType);
     const [dynamicLegendItems, setDynamicLegendItems] = useState<ColorDefinition[]>([]);
 
-    return (
-        <ColorByContext.Provider
-            value={{ colorByAttribute, setColorByAttribute, dynamicLegendItems, setDynamicLegendItems }}
-        >
-            {children}
-        </ColorByContext.Provider>
+    const value = useMemo(
+        () => ({ colorByAttribute, setColorByAttribute, dynamicLegendItems, setDynamicLegendItems }),
+        [colorByAttribute, setColorByAttribute, dynamicLegendItems, setDynamicLegendItems]
     );
+
+    return <ColorByContext.Provider value={value}>{children}</ColorByContext.Provider>;
 }
 
 // Hook for consuming the context

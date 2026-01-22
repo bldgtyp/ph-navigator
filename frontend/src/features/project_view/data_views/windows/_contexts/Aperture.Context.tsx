@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -567,47 +567,77 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         [activeAperture, apertures, clearApertureElementIdSelection]
     );
 
-    return (
-        <AperturesContext.Provider
-            value={{
-                isLoadingApertures,
-                setIsLoadingApertures,
-                apertures,
-                setApertures,
-                selectedApertureId,
-                activeAperture,
-                setSelectedApertureId,
-                handleNameChange,
-                handleSetActiveApertureById,
-                handleSetActiveAperture,
-                handleAddAperture,
-                handleDeleteAperture,
-                handleDuplicateAperture,
-                handleUpdateAperture,
-                handleAddRow,
-                handleDeleteRow,
-                handleAddColumn,
-                handleDeleteColumn,
-                handleAddRowAtEdge,
-                handleAddColumnAtEdge,
-                getCellSize,
-                updateColumnWidth,
-                updateRowHeight,
-                selectedApertureElementIds,
-                toggleApertureElementSelection,
-                clearApertureElementIdSelection,
-                mergeSelectedApertureElements,
-                splitSelectedApertureElement,
-                handleUpdateApertureElementFrameType,
-                updateApertureElementName,
-                handleUpdateApertureElementGlazing,
-                handleUpdateApertureElementOperation,
-                handleUpdateApertureElementAssignments,
-            }}
-        >
-            {children}
-        </AperturesContext.Provider>
+    const value = useMemo(
+        () => ({
+            isLoadingApertures,
+            setIsLoadingApertures,
+            apertures,
+            setApertures,
+            selectedApertureId,
+            activeAperture,
+            setSelectedApertureId,
+            handleNameChange,
+            handleSetActiveApertureById,
+            handleSetActiveAperture,
+            handleAddAperture,
+            handleDeleteAperture,
+            handleDuplicateAperture,
+            handleUpdateAperture,
+            handleAddRow,
+            handleDeleteRow,
+            handleAddColumn,
+            handleDeleteColumn,
+            handleAddRowAtEdge,
+            handleAddColumnAtEdge,
+            getCellSize,
+            updateColumnWidth,
+            updateRowHeight,
+            selectedApertureElementIds,
+            toggleApertureElementSelection,
+            clearApertureElementIdSelection,
+            mergeSelectedApertureElements,
+            splitSelectedApertureElement,
+            handleUpdateApertureElementFrameType,
+            updateApertureElementName,
+            handleUpdateApertureElementGlazing,
+            handleUpdateApertureElementOperation,
+            handleUpdateApertureElementAssignments,
+        }),
+        [
+            isLoadingApertures,
+            apertures,
+            selectedApertureId,
+            activeAperture,
+            handleNameChange,
+            handleSetActiveApertureById,
+            handleSetActiveAperture,
+            handleAddAperture,
+            handleDeleteAperture,
+            handleDuplicateAperture,
+            handleUpdateAperture,
+            handleAddRow,
+            handleDeleteRow,
+            handleAddColumn,
+            handleDeleteColumn,
+            handleAddRowAtEdge,
+            handleAddColumnAtEdge,
+            getCellSize,
+            updateColumnWidth,
+            updateRowHeight,
+            selectedApertureElementIds,
+            toggleApertureElementSelection,
+            clearApertureElementIdSelection,
+            mergeSelectedApertureElements,
+            splitSelectedApertureElement,
+            handleUpdateApertureElementFrameType,
+            updateApertureElementName,
+            handleUpdateApertureElementGlazing,
+            handleUpdateApertureElementOperation,
+            handleUpdateApertureElementAssignments,
+        ]
     );
+
+    return <AperturesContext.Provider value={value}>{children}</AperturesContext.Provider>;
 };
 
 export const useApertures = (): AperturesContextType => {

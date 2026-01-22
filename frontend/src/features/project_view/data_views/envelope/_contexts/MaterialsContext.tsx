@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { MaterialType } from '../_types/Material';
 import { fetchAndCacheMaterials } from './MaterialsContext.Utility';
 
@@ -40,11 +40,12 @@ export const MaterialsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         loadProjectData();
     }, []);
 
-    return (
-        <MaterialsContext.Provider value={{ isLoadingMaterials, setIsLoadingMaterials, materials, setMaterials }}>
-            {children}
-        </MaterialsContext.Provider>
+    const value = useMemo(
+        () => ({ isLoadingMaterials, setIsLoadingMaterials, materials, setMaterials }),
+        [isLoadingMaterials, materials]
     );
+
+    return <MaterialsContext.Provider value={value}>{children}</MaterialsContext.Provider>;
 };
 
 export const useMaterials = (): MaterialsContextType => {

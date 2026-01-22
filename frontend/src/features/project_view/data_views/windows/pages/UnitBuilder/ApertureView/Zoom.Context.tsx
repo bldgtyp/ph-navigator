@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 interface ZoomContextType {
     scaleFactor: number;
@@ -28,37 +28,36 @@ export const ZoomProvider: React.FC<ZoomProviderProps> = ({
 }) => {
     const [scaleFactor, setScaleFactor] = useState<number>(initialScale);
 
-    const zoomIn = () => {
+    const zoomIn = useCallback(() => {
         setScaleFactor(prev => Math.min(prev + zoomStep, maxScale));
-    };
+    }, [zoomStep, maxScale]);
 
-    const zoomOut = () => {
+    const zoomOut = useCallback(() => {
         setScaleFactor(prev => Math.max(prev - zoomStep, minScale));
-    };
+    }, [zoomStep, minScale]);
 
-    const resetZoom = () => {
+    const resetZoom = useCallback(() => {
         setScaleFactor(initialScale);
-    };
+    }, [initialScale]);
 
-    const getScaleLabel = () => {
+    const getScaleLabel = useCallback(() => {
         const percentage = Math.round(scaleFactor * 100);
         return `${percentage}%`;
-    };
+    }, [scaleFactor]);
 
-    return (
-        <ZoomContext.Provider
-            value={{
-                scaleFactor,
-                setScaleFactor,
-                zoomIn,
-                zoomOut,
-                resetZoom,
-                getScaleLabel,
-            }}
-        >
-            {children}
-        </ZoomContext.Provider>
+    const value = useMemo(
+        () => ({
+            scaleFactor,
+            setScaleFactor,
+            zoomIn,
+            zoomOut,
+            resetZoom,
+            getScaleLabel,
+        }),
+        [scaleFactor, zoomIn, zoomOut, resetZoom, getScaleLabel]
     );
+
+    return <ZoomContext.Provider value={value}>{children}</ZoomContext.Provider>;
 };
 
 export const useZoom = (): ZoomContextType => {

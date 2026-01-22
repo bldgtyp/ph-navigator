@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { patchWithAlert } from '../../../../../../api/patchWithAlert';
 
@@ -255,25 +255,36 @@ export const CopyPasteProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     }, [undoStack, selectedAssemblyId, handleAssemblyChange]);
 
-    return (
-        <CopyPasteContext.Provider
-            value={{
-                isPickMode,
-                isPasteMode,
-                copyPayload,
-                sourceSegmentId,
-                lastPastedSegmentId,
-                undoStack,
-                startPickMode,
-                startPasteMode,
-                resetPasteMode,
-                pasteToSegment,
-                undoLastPaste,
-            }}
-        >
-            {children}
-        </CopyPasteContext.Provider>
+    const value = useMemo(
+        () => ({
+            isPickMode,
+            isPasteMode,
+            copyPayload,
+            sourceSegmentId,
+            lastPastedSegmentId,
+            undoStack,
+            startPickMode,
+            startPasteMode,
+            resetPasteMode,
+            pasteToSegment,
+            undoLastPaste,
+        }),
+        [
+            isPickMode,
+            isPasteMode,
+            copyPayload,
+            sourceSegmentId,
+            lastPastedSegmentId,
+            undoStack,
+            startPickMode,
+            startPasteMode,
+            resetPasteMode,
+            pasteToSegment,
+            undoLastPaste,
+        ]
     );
+
+    return <CopyPasteContext.Provider value={value}>{children}</CopyPasteContext.Provider>;
 };
 
 export const useCopyPaste = (): CopyPasteContextType => {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { ApertureGlazingType } from '../pages/UnitBuilder/types';
 import { GlazingTypeService } from '../pages/UnitBuilder/ElementsTable/services/glazingTypeService';
@@ -34,7 +34,7 @@ export const GlazingTypesProvider: React.FC<{ children: React.ReactNode }> = ({ 
         loadGlazingTypes();
     }, []);
 
-    const handleRefreshGlazingTypes = async () => {
+    const handleRefreshGlazingTypes = useCallback(async () => {
         try {
             setIsLoadingGlazingTypes(true);
             const { glazingTypes: refreshedGlazingTypes, refreshInfo } =
@@ -52,21 +52,20 @@ export const GlazingTypesProvider: React.FC<{ children: React.ReactNode }> = ({ 
         } finally {
             setIsLoadingGlazingTypes(false);
         }
-    };
+    }, []);
 
-    return (
-        <GlazingTypesContext.Provider
-            value={{
-                isLoadingGlazingTypes,
-                setIsLoadingGlazingTypes,
-                glazingTypes,
-                setGlazingTypes,
-                handleRefreshGlazingTypes,
-            }}
-        >
-            {children}
-        </GlazingTypesContext.Provider>
+    const value = useMemo(
+        () => ({
+            isLoadingGlazingTypes,
+            setIsLoadingGlazingTypes,
+            glazingTypes,
+            setGlazingTypes,
+            handleRefreshGlazingTypes,
+        }),
+        [isLoadingGlazingTypes, glazingTypes, handleRefreshGlazingTypes]
     );
+
+    return <GlazingTypesContext.Provider value={value}>{children}</GlazingTypesContext.Provider>;
 };
 
 export const useGlazingTypes = (): GlazingTypesContextType => {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { useApertures } from '../../../_contexts/Aperture.Context';
 
@@ -17,39 +17,41 @@ export const ApertureSidebarProvider: React.FC<{ children: React.ReactNode }> = 
     const { handleNameChange } = useApertures();
 
     // Modal handling functions
-    const openNameChangeModal = (id: number, name: string) => {
+    const openNameChangeModal = useCallback((id: number, name: string) => {
         setNameChangeModal({ isOpen: true, apertureId: id, apertureName: name });
-    };
+    }, []);
 
-    const closeNameChangeModal = () => {
+    const closeNameChangeModal = useCallback(() => {
         setNameChangeModal(prev => ({ ...prev, isOpen: false }));
-    };
+    }, []);
 
-    const handleNameSubmit = (newName: string) => {
-        handleNameChange(nameChangeModal.apertureId, newName);
-        closeNameChangeModal();
-    };
+    const handleNameSubmit = useCallback(
+        (newName: string) => {
+            handleNameChange(nameChangeModal.apertureId, newName);
+            closeNameChangeModal();
+        },
+        [handleNameChange, nameChangeModal.apertureId, closeNameChangeModal]
+    );
 
     // Drawer toggle function
-    const toggleSidebar = () => {
+    const toggleSidebar = useCallback(() => {
         setIsSidebarOpen(prev => !prev);
-    };
+    }, []);
 
-    return (
-        <ApertureSidebarContext.Provider
-            value={{
-                nameChangeModal,
-                setNameChangeModal,
-                openNameChangeModal,
-                closeNameChangeModal,
-                handleNameSubmit,
-                isSidebarOpen,
-                toggleSidebar,
-            }}
-        >
-            {children}
-        </ApertureSidebarContext.Provider>
+    const value = useMemo(
+        () => ({
+            nameChangeModal,
+            setNameChangeModal,
+            openNameChangeModal,
+            closeNameChangeModal,
+            handleNameSubmit,
+            isSidebarOpen,
+            toggleSidebar,
+        }),
+        [nameChangeModal, openNameChangeModal, closeNameChangeModal, handleNameSubmit, isSidebarOpen, toggleSidebar]
     );
+
+    return <ApertureSidebarContext.Provider value={value}>{children}</ApertureSidebarContext.Provider>;
 };
 
 export const useApertureSidebar = (): ApertureSidebarContextType => {

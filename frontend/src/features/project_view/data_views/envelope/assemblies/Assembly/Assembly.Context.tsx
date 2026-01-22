@@ -391,44 +391,68 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
     };
 
-    return (
-        <AssemblyContext.Provider
-            value={{
-                fileInputRef,
-                isRefreshing,
-                setIsRefreshing,
-                refreshMessage,
-                setRefreshMessage,
-                isLoadingAssemblies,
-                setIsLoadingAssemblies,
-                assemblies,
-                setAssemblies,
-                selectedAssemblyId,
-                setSelectedAssemblyId,
-                selectedAssembly,
-                refreshKey,
-                triggerRefresh,
-                rValueRefreshKey,
-                triggerRValueRefresh,
-                handleAssemblyChange,
-                handleAddAssembly,
-                handleDeleteAssembly,
-                handleNameChange,
-                handleRefreshMaterials,
-                handleUploadConstructions,
-                handleDownloadConstructions,
-                handleFileSelected,
-                handleFlipOrientation,
-                handleFlipLayers,
-                handleDuplicateAssembly,
-                layerThicknessOverridesMm,
-                setLayerThicknessOverrideMm: setLayerThicknessOverride,
-                clearLayerThicknessOverrides,
-            }}
-        >
-            {children}
-        </AssemblyContext.Provider>
+    const value = useMemo(
+        () => ({
+            fileInputRef,
+            isRefreshing,
+            setIsRefreshing,
+            refreshMessage,
+            setRefreshMessage,
+            isLoadingAssemblies,
+            setIsLoadingAssemblies,
+            assemblies,
+            setAssemblies,
+            selectedAssemblyId,
+            setSelectedAssemblyId,
+            selectedAssembly,
+            refreshKey,
+            triggerRefresh,
+            rValueRefreshKey,
+            triggerRValueRefresh,
+            handleAssemblyChange,
+            handleAddAssembly,
+            handleDeleteAssembly,
+            handleNameChange,
+            handleRefreshMaterials,
+            handleUploadConstructions,
+            handleDownloadConstructions,
+            handleFileSelected,
+            handleFlipOrientation,
+            handleFlipLayers,
+            handleDuplicateAssembly,
+            layerThicknessOverridesMm,
+            setLayerThicknessOverrideMm: setLayerThicknessOverride,
+            clearLayerThicknessOverrides,
+        }),
+        [
+            isRefreshing,
+            refreshMessage,
+            isLoadingAssemblies,
+            assemblies,
+            selectedAssemblyId,
+            selectedAssembly,
+            refreshKey,
+            triggerRefresh,
+            rValueRefreshKey,
+            triggerRValueRefresh,
+            handleAssemblyChange,
+            handleAddAssembly,
+            handleDeleteAssembly,
+            handleNameChange,
+            handleRefreshMaterials,
+            handleUploadConstructions,
+            handleDownloadConstructions,
+            handleFileSelected,
+            handleFlipOrientation,
+            handleFlipLayers,
+            handleDuplicateAssembly,
+            layerThicknessOverridesMm,
+            setLayerThicknessOverride,
+            clearLayerThicknessOverrides,
+        ]
     );
+
+    return <AssemblyContext.Provider value={value}>{children}</AssemblyContext.Provider>;
 };
 
 export const useAssemblyContext = (): AssemblyContextType => {

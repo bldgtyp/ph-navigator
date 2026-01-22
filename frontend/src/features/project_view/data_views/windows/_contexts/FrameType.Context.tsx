@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { ApertureFrameType } from '../pages/UnitBuilder/types';
 import { FrameTypeService } from '../pages/UnitBuilder/ElementsTable/services/frameTypeService';
@@ -34,7 +34,7 @@ export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         loadFrameTypes();
     }, []);
 
-    const handleRefreshFrameTypes = async () => {
+    const handleRefreshFrameTypes = useCallback(async () => {
         try {
             setIsLoadingFrameTypes(true);
             const { frameTypes: refreshedFrameTypes, refreshInfo } =
@@ -52,21 +52,20 @@ export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         } finally {
             setIsLoadingFrameTypes(false);
         }
-    };
+    }, []);
 
-    return (
-        <FrameTypesContext.Provider
-            value={{
-                isLoadingFrameTypes,
-                setIsLoadingFrameTypes,
-                frameTypes,
-                setFrameTypes,
-                handleRefreshFrameTypes,
-            }}
-        >
-            {children}
-        </FrameTypesContext.Provider>
+    const value = useMemo(
+        () => ({
+            isLoadingFrameTypes,
+            setIsLoadingFrameTypes,
+            frameTypes,
+            setFrameTypes,
+            handleRefreshFrameTypes,
+        }),
+        [isLoadingFrameTypes, frameTypes, handleRefreshFrameTypes]
     );
+
+    return <FrameTypesContext.Provider value={value}>{children}</FrameTypesContext.Provider>;
 };
 
 export const useFrameTypes = (): FrameTypesContextType => {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { getWithAlert } from '../../../../../api/getWithAlert';
 import { AirTableRecordType } from '../../../../types/AirTableRecordType';
@@ -93,11 +93,9 @@ export const ProjectStatusDataProvider: React.FC<{ children: React.ReactNode }> 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 
-    return (
-        <ProjectStatusDataContext.Provider value={{ projectData: statusData, showModal }}>
-            {children}
-        </ProjectStatusDataContext.Provider>
-    );
+    const value = useMemo(() => ({ projectData: statusData, showModal }), [statusData, showModal]);
+
+    return <ProjectStatusDataContext.Provider value={value}>{children}</ProjectStatusDataContext.Provider>;
 };
 
 export const useProjectStatusData = () => {

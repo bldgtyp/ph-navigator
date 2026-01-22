@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { useAssemblyContext } from '../Assembly.Context';
 
 export interface AssemblySidebarContextType {
@@ -33,39 +33,41 @@ export const AssemblySidebarProvider: React.FC<{ children: React.ReactNode }> = 
 
     const { handleNameChange } = useAssemblyContext();
 
-    const toggleSidebar = () => {
+    const toggleSidebar = useCallback(() => {
         setIsSidebarOpen(prev => !prev);
-    };
+    }, []);
 
     // Modal handling functions
-    const openNameChangeModal = (id: number, name: string) => {
+    const openNameChangeModal = useCallback((id: number, name: string) => {
         setNameChangeModal({ isOpen: true, assemblyId: id, assemblyName: name });
-    };
+    }, []);
 
-    const closeNameChangeModal = () => {
+    const closeNameChangeModal = useCallback(() => {
         setNameChangeModal(prev => ({ ...prev, isOpen: false }));
-    };
+    }, []);
 
-    const handleNameSubmit = (newName: string) => {
-        handleNameChange(nameChangeModal.assemblyId, newName);
-        closeNameChangeModal();
-    };
-
-    return (
-        <AssemblySidebarContext.Provider
-            value={{
-                nameChangeModal,
-                setNameChangeModal,
-                openNameChangeModal,
-                closeNameChangeModal,
-                handleNameSubmit,
-                isSidebarOpen,
-                toggleSidebar,
-            }}
-        >
-            {children}
-        </AssemblySidebarContext.Provider>
+    const handleNameSubmit = useCallback(
+        (newName: string) => {
+            handleNameChange(nameChangeModal.assemblyId, newName);
+            closeNameChangeModal();
+        },
+        [handleNameChange, nameChangeModal.assemblyId, closeNameChangeModal]
     );
+
+    const value = useMemo(
+        () => ({
+            nameChangeModal,
+            setNameChangeModal,
+            openNameChangeModal,
+            closeNameChangeModal,
+            handleNameSubmit,
+            isSidebarOpen,
+            toggleSidebar,
+        }),
+        [nameChangeModal, openNameChangeModal, closeNameChangeModal, handleNameSubmit, isSidebarOpen, toggleSidebar]
+    );
+
+    return <AssemblySidebarContext.Provider value={value}>{children}</AssemblySidebarContext.Provider>;
 };
 
 export const useAssemblySidebar = (): AssemblySidebarContextType => {
