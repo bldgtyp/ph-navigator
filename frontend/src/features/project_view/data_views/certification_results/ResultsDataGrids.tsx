@@ -13,8 +13,8 @@ type DataGridRow = {
 };
 
 // --------------------------------------------------------------------------
-// Define the rows and columns
-const tableFields = [
+// Define the base columns (immutable)
+const baseTableFields = [
     {
         key: 'display_name',
         field: 'display_name',
@@ -36,34 +36,35 @@ type propsType = {
 };
 
 const ResultDataGrid: React.FC<propsType> = ({ title, rowData }) => {
-    const [columns, setColumns] = useState(generateGridColumns(tableFields));
+    const [columns, setColumns] = useState(generateGridColumns(baseTableFields));
 
     // Once the data is finished downloading and props is updated...
     useEffect(() => {
         // Add in the user-determined result columns, if any
         if (rowData.length > 0) {
+            // Start with a fresh copy of base columns to avoid mutation
+            const allFields = [...baseTableFields];
+            const existingKeys = new Set(baseTableFields.map(item => item.key));
+
             for (const [newKey] of Object.entries(rowData[0])) {
-                if (newKey.includes('RESULT')) {
-                    // Make sure not to duplicate any columns
-                    const tableExistingColumnNames = tableFields.map(item => item.key);
-                    if (!tableExistingColumnNames.includes(newKey)) {
-                        tableFields.push({
-                            key: newKey,
-                            field: newKey,
-                            headerName: newKey,
-                            flex: 1,
-                            renderCell: (num: any) => {
-                                if (num.row[newKey] !== undefined) {
-                                    return <>{num.row[newKey].toLocaleString()}</>;
-                                } else {
-                                    return <></>;
-                                }
-                            },
-                        });
-                    }
+                if (newKey.includes('RESULT') && !existingKeys.has(newKey)) {
+                    allFields.push({
+                        key: newKey,
+                        field: newKey,
+                        headerName: newKey,
+                        flex: 1,
+                        renderCell: (num: any) => {
+                            if (num.row[newKey] !== undefined) {
+                                return <>{num.row[newKey].toLocaleString()}</>;
+                            } else {
+                                return <></>;
+                            }
+                        },
+                    });
+                    existingKeys.add(newKey);
                 }
             }
-            setColumns(generateGridColumns(tableFields));
+            setColumns(generateGridColumns(allFields));
         }
     }, [rowData]);
 
