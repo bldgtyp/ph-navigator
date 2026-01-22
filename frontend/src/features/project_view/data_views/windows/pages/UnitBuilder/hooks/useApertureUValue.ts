@@ -80,6 +80,7 @@ export const useApertureUValue = (aperture: ApertureType | null): UseApertureUVa
                 clearTimeout(debounceTimerRef.current);
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchUValue, aperture]);
 
     // Build a Map from element_id to ElementUValueResult for efficient lookup
