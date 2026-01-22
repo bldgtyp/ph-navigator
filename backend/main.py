@@ -3,10 +3,12 @@
 import logging
 from uuid import uuid4
 
-from api import register_routes
-from config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+
+from api import register_routes
+from config import settings
 from logs._logging_config import configure_logging
 
 configure_logging()
@@ -32,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Compress responses larger than 500 bytes
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
 # Add request IDs for better debugging
