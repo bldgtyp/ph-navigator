@@ -30,6 +30,7 @@ import logging
 from dataclasses import dataclass
 from itertools import product
 
+from db_entities.assembly import Assembly, Layer, Segment
 from honeybee_ph_utils.aisi_s250_21 import (
     STEEL_CONDUCTIVITY,
     StudSpacingInches,
@@ -37,8 +38,6 @@ from honeybee_ph_utils.aisi_s250_21 import (
     calculate_stud_cavity_effective_u_value,
 )
 from ph_units.converter import convert
-
-from db_entities.assembly import Assembly, Layer, Segment
 
 logger = logging.getLogger(__name__)
 
@@ -214,7 +213,10 @@ def _get_effective_conductivity(
     Returns:
         Conductivity in W/m-K
     """
-    if segment.steel_stud_spacing_mm is not None and steel_stud_eq_conductivity is not None:
+    if (
+        segment.steel_stud_spacing_mm is not None
+        and steel_stud_eq_conductivity is not None
+    ):
         return steel_stud_eq_conductivity
 
     return segment.material.conductivity_w_mk
@@ -240,7 +242,9 @@ def calculate_effective_r_value(assembly: Assembly) -> ThermalResistanceResult:
         ASHRAE Handbook - Fundamentals, Chapter 27
         AISI S250-21 (for steel stud thermal bridging)
     """
-    logger.info(f"calculate_effective_r_value(assembly={assembly.id}, name={assembly.name})")
+    logger.info(
+        f"calculate_effective_r_value(assembly={assembly.id}, name={assembly.name})"
+    )
 
     # Validate inputs
     warnings = _validate_assembly(assembly)
@@ -251,12 +255,18 @@ def calculate_effective_r_value(assembly: Assembly) -> ThermalResistanceResult:
     steel_stud_eq_conductivity: float | None = None
     if assembly.is_steel_stud_assembly:
         logger.info("Assembly has steel studs - calculating equivalent conductivity")
-        steel_stud_eq_conductivity = _calculate_steel_stud_equivalent_conductivity(assembly)
-        logger.info(f"Steel stud equivalent conductivity: {steel_stud_eq_conductivity:.6f} W/m-K")
+        steel_stud_eq_conductivity = _calculate_steel_stud_equivalent_conductivity(
+            assembly
+        )
+        logger.info(
+            f"Steel stud equivalent conductivity: {steel_stud_eq_conductivity:.6f} W/m-K"
+        )
 
     # Calculate using both methods
     r_parallel = _calculate_parallel_path_r_value(assembly, steel_stud_eq_conductivity)
-    r_isothermal = _calculate_isothermal_planes_r_value(assembly, steel_stud_eq_conductivity)
+    r_isothermal = _calculate_isothermal_planes_r_value(
+        assembly, steel_stud_eq_conductivity
+    )
 
     # Average the two methods (Passive House approach)
     r_effective = (r_parallel + r_isothermal) / 2.0
@@ -279,7 +289,9 @@ def calculate_effective_r_value(assembly: Assembly) -> ThermalResistanceResult:
     )
 
 
-def _calculate_parallel_path_r_value(assembly: Assembly, steel_stud_eq_conductivity: float | None) -> float:
+def _calculate_parallel_path_r_value(
+    assembly: Assembly, steel_stud_eq_conductivity: float | None
+) -> float:
     """
     PARALLEL-PATH METHOD (ASHRAE Chapter 27, Section 1.2)
 
@@ -323,7 +335,9 @@ def _calculate_parallel_path_r_value(assembly: Assembly, steel_stud_eq_conductiv
     return 1.0 / total_u if total_u > 0 else 0.0
 
 
-def _calculate_isothermal_planes_r_value(assembly: Assembly, steel_stud_eq_conductivity: float | None) -> float:
+def _calculate_isothermal_planes_r_value(
+    assembly: Assembly, steel_stud_eq_conductivity: float | None
+) -> float:
     """
     ISOTHERMAL-PLANES (SERIES) METHOD (ASHRAE Chapter 27, Section 1.2)
 
@@ -348,7 +362,9 @@ def _calculate_isothermal_planes_r_value(assembly: Assembly, steel_stud_eq_condu
         if len(layer.segments) == 1:
             # Homogeneous layer: R = d/k
             segment = layer.segments[0]
-            conductivity = _get_effective_conductivity(segment, assembly, steel_stud_eq_conductivity)
+            conductivity = _get_effective_conductivity(
+                segment, assembly, steel_stud_eq_conductivity
+            )
 
             if conductivity and conductivity > 0:
                 total_r += thickness_m / conductivity
@@ -358,7 +374,9 @@ def _calculate_isothermal_planes_r_value(assembly: Assembly, steel_stud_eq_condu
             sum_u_fraction = 0.0
 
             for segment in layer.segments:
-                conductivity = _get_effective_conductivity(segment, assembly, steel_stud_eq_conductivity)
+                conductivity = _get_effective_conductivity(
+                    segment, assembly, steel_stud_eq_conductivity
+                )
 
                 if conductivity and conductivity > 0 and total_width > 0:
                     area_fraction = segment.width_mm / total_width
@@ -371,7 +389,9 @@ def _calculate_isothermal_planes_r_value(assembly: Assembly, steel_stud_eq_condu
     return total_r
 
 
-def _sum_layer_r_values_simple(assembly: Assembly, steel_stud_eq_conductivity: float | None) -> float:
+def _sum_layer_r_values_simple(
+    assembly: Assembly, steel_stud_eq_conductivity: float | None
+) -> float:
     """Calculate total R-value for assembly with all single-segment layers (series only).
 
     Args:
@@ -384,7 +404,9 @@ def _sum_layer_r_values_simple(assembly: Assembly, steel_stud_eq_conductivity: f
     for layer in assembly.layers:
         thickness_m = layer.thickness_mm / 1000.0
         segment = layer.segments[0]
-        conductivity = _get_effective_conductivity(segment, assembly, steel_stud_eq_conductivity)
+        conductivity = _get_effective_conductivity(
+            segment, assembly, steel_stud_eq_conductivity
+        )
 
         if conductivity and conductivity > 0:
             total_r += thickness_m / conductivity
@@ -412,7 +434,9 @@ def _calculate_path_r_value(
     for layer, segment_idx in zip(assembly.layers, path):
         thickness_m = layer.thickness_mm / 1000.0
         segment = layer.segments[segment_idx]
-        conductivity = _get_effective_conductivity(segment, assembly, steel_stud_eq_conductivity)
+        conductivity = _get_effective_conductivity(
+            segment, assembly, steel_stud_eq_conductivity
+        )
 
         if conductivity and conductivity > 0:
             total_r += thickness_m / conductivity
@@ -459,13 +483,19 @@ def _validate_assembly(assembly: Assembly) -> list[str]:
 
         for j, segment in enumerate(layer.segments):
             segment_num = j + 1
-            conductivity = segment.material.conductivity_w_mk if segment.material else None
+            conductivity = (
+                segment.material.conductivity_w_mk if segment.material else None
+            )
 
             if not conductivity or conductivity <= 0:
-                warnings.append(f"Layer {layer_num}, Segment {segment_num} has invalid conductivity")
+                warnings.append(
+                    f"Layer {layer_num}, Segment {segment_num} has invalid conductivity"
+                )
 
             if segment.width_mm <= 0:
-                warnings.append(f"Layer {layer_num}, Segment {segment_num} has zero or negative width")
+                warnings.append(
+                    f"Layer {layer_num}, Segment {segment_num} has zero or negative width"
+                )
 
     return warnings
 

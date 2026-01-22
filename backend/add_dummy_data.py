@@ -6,8 +6,6 @@ import os
 
 import bcrypt
 import dotenv
-from sqlalchemy.orm import Session
-
 from database import Base, SessionLocal, engine
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
@@ -19,6 +17,7 @@ from db_entities.assembly.assembly import Assembly
 from db_entities.assembly.layer import Layer
 from db_entities.assembly.material import Material
 from db_entities.assembly.segment import Segment, SpecificationStatus
+from sqlalchemy.orm import Session
 
 dotenv.load_dotenv()
 
@@ -245,15 +244,29 @@ def add_dummy_assembly(db: Session) -> None:
 def add_dummy_apertures(db: Session) -> None:
     project_1 = db.query(Project).filter(Project.id == 1).first()
 
-    aperture_1 = Aperture(name="Aperture 1", row_heights_mm=[100], column_widths_mm=[100], project=project_1)
+    aperture_1 = Aperture(
+        name="Aperture 1",
+        row_heights_mm=[100],
+        column_widths_mm=[100],
+        project=project_1,
+    )
     db.add(aperture_1)
 
-    aperture_element_1 = ApertureElement(aperture=aperture_1, row_number=0, column_number=0, row_span=1, col_span=1)
+    aperture_element_1 = ApertureElement(
+        aperture=aperture_1, row_number=0, column_number=0, row_span=1, col_span=1
+    )
     db.add(aperture_element_1)
 
-    aperture_2 = Aperture(name="Aperture 2", row_heights_mm=[100], column_widths_mm=[100, 200], project=project_1)
+    aperture_2 = Aperture(
+        name="Aperture 2",
+        row_heights_mm=[100],
+        column_widths_mm=[100, 200],
+        project=project_1,
+    )
     db.add(aperture_2)
-    aperture_element_2 = ApertureElement(aperture=aperture_2, row_number=0, column_number=0, row_span=1, col_span=1)
+    aperture_element_2 = ApertureElement(
+        aperture=aperture_2, row_number=0, column_number=0, row_span=1, col_span=1
+    )
     db.add(aperture_element_2)
 
     db.commit()

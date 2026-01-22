@@ -43,7 +43,12 @@ class GlazingTypeSchema(BaseModel):
         d["id"] = record["id"]
 
         # Pull out the Datasheet URL
-        datasheets = [GlazingTypeDatasheetSchema(**ds) for ds in record["fields"].get("DATASHEET", [])]
+        datasheets = [
+            GlazingTypeDatasheetSchema(**ds)
+            for ds in record["fields"].get("DATASHEET", [])
+        ]
         d["datasheet_url"] = datasheets[0].url if datasheets else None
 
-        return cls(**{k.lower(): v for k, v in d.items()})  # Create an instance of the schema
+        return cls(
+            **{k.lower(): v for k, v in d.items()}
+        )  # Create an instance of the schema

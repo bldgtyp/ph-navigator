@@ -21,7 +21,9 @@ class FileContent:
     content_type: str
 
 
-def valid_upload_file_type(file_type: str, valid_extensions: list[str], content_type: str) -> bool:
+def valid_upload_file_type(
+    file_type: str, valid_extensions: list[str], content_type: str
+) -> bool:
     """Validate that the file is a supported format (ie: .PNG, .JPEG, .PDF).
 
     Args:
@@ -32,7 +34,9 @@ def valid_upload_file_type(file_type: str, valid_extensions: list[str], content_
     Returns:
         bool: True if the file is a valid image type, False otherwise
     """
-    logger.info(f"validate_image_file_type({file_type=}, {valid_extensions=}, {content_type=})")
+    logger.info(
+        f"validate_image_file_type({file_type=}, {valid_extensions=}, {content_type=})"
+    )
     VALID_CONTENT_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"]
 
     # Check file extension
@@ -51,7 +55,9 @@ def valid_file_size(file_content_bytes: bytes, max_size_mb: int = 5) -> bool:
     max_size_bytes = max_size_mb * 1024 * 1024  # Convert MB to bytes
     file_size = len(file_content_bytes)
     if file_size > max_size_bytes:
-        logger.warning(f"File size {file_size} exceeds the limit of {max_size_bytes} bytes.")
+        logger.warning(
+            f"File size {file_size} exceeds the limit of {max_size_bytes} bytes."
+        )
         return False
     return True
 
@@ -128,4 +134,6 @@ async def get_file_content(file: UploadFile) -> FileContent:
         logger.error(f"Failed to detect image format: {e}")
         content_type = file.content_type or "image/jpeg"
 
-    return FileContent(file_path.name, file_path.suffix, content, file_content_hash, content_type)
+    return FileContent(
+        file_path.name, file_path.suffix, content, file_content_hash, content_type
+    )

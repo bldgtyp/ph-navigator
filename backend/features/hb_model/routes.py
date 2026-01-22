@@ -4,11 +4,10 @@
 
 from logging import getLogger
 
-from fastapi import APIRouter, Depends, Request
-from sqlalchemy.orm import Session
-
 from config import limiter
 from database import get_db
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy.orm import Session
 
 from .schemas.honeybee.face import FaceSchema
 from .schemas.honeybee.shade import ShadeGroupSchema
@@ -87,7 +86,9 @@ def get_spaces(
 
 
 @router.get("/{bt_number}/sun_path", response_model=SunPathAndCompassDTOSchema)
-def get_sun_path(request: Request, bt_number: str, db: Session = Depends(get_db)) -> SunPathAndCompassDTOSchema:
+def get_sun_path(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> SunPathAndCompassDTOSchema:
     """Return a list of all the Sun Path from a Project's Honeybee-Model."""
     logger.info(f"get_sun_path({bt_number=})")
 
@@ -96,7 +97,9 @@ def get_sun_path(request: Request, bt_number: str, db: Session = Depends(get_db)
     return sun_path
 
 
-@router.get("/{bt_number}/hot_water_systems", response_model=list[PhHotWaterSystemSchema])
+@router.get(
+    "/{bt_number}/hot_water_systems", response_model=list[PhHotWaterSystemSchema]
+)
 @limiter.limit("5/minute")
 def get_hot_water_systems(
     request: Request,
@@ -113,7 +116,9 @@ def get_hot_water_systems(
     return hw_systems
 
 
-@router.get("/{bt_number}/ventilation_systems", response_model=list[PhVentilationSystemSchema])
+@router.get(
+    "/{bt_number}/ventilation_systems", response_model=list[PhVentilationSystemSchema]
+)
 @limiter.limit("5/minute")
 def get_ventilation_systems(
     request: Request,
@@ -123,7 +128,9 @@ def get_ventilation_systems(
     db: Session = Depends(get_db),
 ) -> list[PhVentilationSystemSchema]:
     """Return a list of all the Ventilation Systems from a Project's Honeybee-Model."""
-    logger.info(f"get_ventilation_systems({bt_number=}, {record_id=}, {force_refresh=})")
+    logger.info(
+        f"get_ventilation_systems({bt_number=}, {record_id=}, {force_refresh=})"
+    )
 
     hb_model = load_hb_model(db, bt_number, record_id, force_refresh)
     vent_systems = get_ventilation_systems_from_model(hb_model)

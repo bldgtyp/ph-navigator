@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApertureType, ElementUValueResult, WindowUValueResponse } from '../types';
 import { ApertureService } from '../ApertureView/services/apertureService';
+
+const DEBOUNCE_MS = 300;
 
 interface UseApertureUValueResult {
     uValueData: WindowUValueResponse | null;
@@ -15,6 +17,7 @@ interface UseApertureUValueResult {
  * Custom hook for fetching the effective U-value of an aperture.
  *
  * The U-value is calculated per ISO 10077-1:2006 (uninstalled, excluding psi-install).
+ * API calls are debounced by 300ms to reduce server load during rapid input changes.
  *
  * @param aperture - The aperture to fetch U-value for, or null. The hook will refetch
  *                   whenever any aperture property changes (dimensions, frames, glazing, etc.)
@@ -25,6 +28,7 @@ export const useApertureUValue = (aperture: ApertureType | null): UseApertureUVa
     const [uValueData, setUValueData] = useState<WindowUValueResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchUValue = useCallback(async () => {
         if (apertureId === null) {
@@ -53,9 +57,29 @@ export const useApertureUValue = (aperture: ApertureType | null): UseApertureUVa
         }
     }, [apertureId]);
 
-    // Refetch when aperture changes (including dimension/element changes)
+    // Debounced refetch when aperture changes
     useEffect(() => {
-        fetchUValue();
+        // Show loading state immediately for responsive UI
+        if (apertureId !== null) {
+            setLoading(true);
+        }
+
+        // Clear any pending debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        // Debounce the actual API call
+        debounceTimerRef.current = setTimeout(() => {
+            fetchUValue();
+        }, DEBOUNCE_MS);
+
+        // Cleanup on unmount or when dependencies change
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
     }, [fetchUValue, aperture]);
 
     // Build a Map from element_id to ElementUValueResult for efficient lookup

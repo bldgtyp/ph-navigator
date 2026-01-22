@@ -3,12 +3,19 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-
 from config import limiter
 from database import get_db
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
+from fastapi.responses import JSONResponse
 from features.assembly.schemas.assembly import AssemblySchema, UpdateAssemblyNameRequest
 from features.assembly.schemas.thermal_resistance import ThermalResistanceSchema
 from features.assembly.services.assembly import (
@@ -27,7 +34,10 @@ from features.assembly.services.assembly_from_hbjson import (
     get_multiple_hb_constructions_from_hbjson,
 )
 from features.assembly.services.thermal_resistance import calculate_effective_r_value
-from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
+from features.assembly.services.to_hbe_construction import (
+    get_all_project_assemblies_as_hbjson_string,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/assembly",
@@ -38,7 +48,9 @@ logger = logging.getLogger(__name__)
 
 
 @router.post(
-    "/create-new-assembly-on-project/{bt_number}", response_model=AssemblySchema, status_code=status.HTTP_201_CREATED
+    "/create-new-assembly-on-project/{bt_number}",
+    response_model=AssemblySchema,
+    status_code=status.HTTP_201_CREATED,
 )
 @limiter.limit("10/minute")
 def create_new_assembly_on_project_route(
@@ -52,10 +64,16 @@ def create_new_assembly_on_project_route(
         return AssemblySchema.from_orm(new_assembly)
     except Exception as e:
         logger.error(f"Failed to create new assembly for project {bt_number}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create new assembly")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create new assembly",
+        )
 
 
-@router.post("/add-assemblies-from-hbjson-constructions/{bt_number}", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/add-assemblies-from-hbjson-constructions/{bt_number}",
+    status_code=status.HTTP_201_CREATED,
+)
 @limiter.limit("10/minute")
 async def add_assemblies_from_hbjson_constructions_route(
     request: Request,
@@ -63,7 +81,9 @@ async def add_assemblies_from_hbjson_constructions_route(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> None:
-    logger.info(f"assembly/add_assemblies_from_hbjson_constructions_route(bt_number={bt_number})")
+    logger.info(
+        f"assembly/add_assemblies_from_hbjson_constructions_route(bt_number={bt_number})"
+    )
 
     # -- Read in the file contents as JSON
     contents = await file.read()
@@ -92,7 +112,8 @@ async def add_assemblies_from_hbjson_constructions_route(
         # Generic server error for other issues
         logger.error(f"Failed to add assemblies from HB-JSON: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to add assemblies from HB-JSON"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add assemblies from HB-JSON",
         )
 
 
@@ -109,23 +130,34 @@ def get_project_assemblies_route(
         return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
     except Exception as e:
         logger.error(f"Failed to get assemblies for project {bt_number}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve assemblies")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve assemblies",
+        )
 
 
 @router.patch("/update-assembly-name/{assembly_id}", response_model=AssemblySchema)
 @limiter.limit("10/minute")
 def update_assembly_name_route(
-    request: Request, update_request: UpdateAssemblyNameRequest, assembly_id: int, db: Session = Depends(get_db)
+    request: Request,
+    update_request: UpdateAssemblyNameRequest,
+    assembly_id: int,
+    db: Session = Depends(get_db),
 ) -> AssemblySchema:
     """Update the name of an Assembly."""
-    logger.info(f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={update_request.new_name})")
+    logger.info(
+        f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={update_request.new_name})"
+    )
 
     try:
         assembly = update_assembly_name(db, assembly_id, update_request.new_name)
         return AssemblySchema.from_orm(assembly)
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update assembly name")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update assembly name",
+        )
 
 
 @router.delete("/delete-assembly/{assembly_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -138,7 +170,10 @@ def delete_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> No
         return None
     except Exception as e:
         logger.error(f"Failed to delete {assembly_id=}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete assembly")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete assembly",
+        )
 
 
 @router.get("/get-assemblies-as-hbjson/{bt_number}")
@@ -159,7 +194,9 @@ def get_project_assemblies_as_hbjson_object_route(
         ...
     }
     """
-    logger.info(f"assembly/get_project_assemblies_as_hbjson_object_route({bt_number=}, {offset=})")
+    logger.info(
+        f"assembly/get_project_assemblies_as_hbjson_object_route({bt_number=}, {offset=})"
+    )
 
     hbe_construction_json = get_all_project_assemblies_as_hbjson_string(db, bt_number)
 
@@ -186,7 +223,8 @@ def flip_assembly_orientation_route(
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to flip assembly orientation"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to flip assembly orientation",
         )
 
 
@@ -201,11 +239,16 @@ def flip_assembly_layers_route(assembly_id: int, db: Session = Depends(get_db)):
         return AssemblySchema.from_orm(flipped_assembly)
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to flip assembly layers")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to flip assembly layers",
+        )
 
 
 @router.post("/duplicate-assembly/{assembly_id}", response_model=AssemblySchema)
-def duplicate_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> AssemblySchema:
+def duplicate_assembly_route(
+    assembly_id: int, db: Session = Depends(get_db)
+) -> AssemblySchema:
     """Duplicate an Assembly."""
     logger.info(f"assembly/duplicate_assembly_route({assembly_id=})")
 
@@ -215,7 +258,10 @@ def duplicate_assembly_route(assembly_id: int, db: Session = Depends(get_db)) ->
         return AssemblySchema.from_orm(duplicated_assembly)
     except Exception as e:
         logger.error(f"Failed to duplicate assembly {assembly_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to duplicate assembly")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to duplicate assembly",
+        )
 
 
 @router.get("/thermal-resistance/{assembly_id}", response_model=ThermalResistanceSchema)
@@ -251,7 +297,9 @@ def get_assembly_thermal_resistance_route(
             warnings=result.warnings,
         )
     except Exception as e:
-        logger.error(f"Failed to calculate thermal resistance for assembly {assembly_id}: {e}")
+        logger.error(
+            f"Failed to calculate thermal resistance for assembly {assembly_id}: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to calculate thermal resistance",

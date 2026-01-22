@@ -2,9 +2,8 @@
 
 from __future__ import annotations  # Enables forward references
 
-from pydantic import BaseModel
-
 from features.aperture.schemas.glazing_type import GlazingTypeSchema
+from pydantic import BaseModel
 
 
 class ApertureElementGlazingSchema(BaseModel):

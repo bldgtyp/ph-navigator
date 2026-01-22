@@ -2,9 +2,6 @@
 
 from typing import cast
 
-from sqlalchemy import ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
-
 from database import Base
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.aperture.aperture import Aperture
@@ -12,6 +9,8 @@ from db_entities.app.manufacturer_filter import ProjectManufacturerFilter
 from db_entities.app.relationships import project_users
 from db_entities.app.user import User
 from db_entities.assembly.assembly import Assembly
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
 
 
 class Project(Base):
@@ -21,10 +20,16 @@ class Project(Base):
     name: Mapped[str] = MappedColumn(String, index=True)
     bt_number: Mapped[str] = MappedColumn(String, index=True)
     phius_number: Mapped[str | None] = MappedColumn(String, index=True, nullable=True)
-    phius_dropbox_url: Mapped[str | None] = MappedColumn(String, index=True, nullable=True)
+    phius_dropbox_url: Mapped[str | None] = MappedColumn(
+        String, index=True, nullable=True
+    )
 
-    owner_id: Mapped[int] = MappedColumn(Integer, ForeignKey("users.id"), nullable=False)
-    airtable_base_id: Mapped[str] = MappedColumn(String, ForeignKey("airtable_bases.id"), nullable=True)
+    owner_id: Mapped[int] = MappedColumn(
+        Integer, ForeignKey("users.id"), nullable=False
+    )
+    airtable_base_id: Mapped[str] = MappedColumn(
+        String, ForeignKey("airtable_bases.id"), nullable=True
+    )
 
     # -----------------------------------------------------------------------------------
     # Relationships

@@ -2,11 +2,13 @@
 
 import logging
 
-from sqlalchemy.orm import Session
-
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from features.assembly.services.segment import get_segment_by_id
-from features.gcp.services.gcs_utils import FileDeleteFailedException, delete_file_from_gcs
+from features.gcp.services.gcs_utils import (
+    FileDeleteFailedException,
+    delete_file_from_gcs,
+)
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,8 @@ def material_datasheet_file_exists(db: Session, segment_id, content_hash) -> boo
         db.query(MaterialDatasheet)
         .filter(
             MaterialDatasheet.segment_id == segment_id,
-            MaterialDatasheet.content_hash == content_hash,  # You'd need to add this column
+            MaterialDatasheet.content_hash
+            == content_hash,  # You'd need to add this column
         )
         .first()
     )
@@ -44,14 +47,20 @@ def get_segment_datasheets(db: Session, segment_id: int) -> list[MaterialDatashe
     logger.info(f"get_segment_datasheets({segment_id=})")
 
     segment = get_segment_by_id(db, segment_id)
-    return db.query(MaterialDatasheet).filter(MaterialDatasheet.segment_id == segment.id).all()
+    return (
+        db.query(MaterialDatasheet)
+        .filter(MaterialDatasheet.segment_id == segment.id)
+        .all()
+    )
 
 
 def get_datasheet_by_id(db: Session, datasheet_id: int) -> MaterialDatasheet:
     """Get a datasheet by its ID from the database."""
     logger.info(f"get_datasheet_by_id({datasheet_id=})")
 
-    datasheet = db.query(MaterialDatasheet).filter(MaterialDatasheet.id == datasheet_id).first()
+    datasheet = (
+        db.query(MaterialDatasheet).filter(MaterialDatasheet.id == datasheet_id).first()
+    )
     if not datasheet:
         raise DatasheetNotFoundException(datasheet_id)
     return datasheet
@@ -75,7 +84,9 @@ def add_datasheet_to_segment(
     Returns:
         MaterialDatasheet: The created MaterialDatasheet object with the segment's datasheet URLs
     """
-    logger.info(f"add_datasheet_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})")
+    logger.info(
+        f"add_datasheet_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})"
+    )
 
     segment = get_segment_by_id(db, segment_id)
 

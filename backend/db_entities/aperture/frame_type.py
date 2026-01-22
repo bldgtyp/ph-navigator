@@ -2,10 +2,9 @@
 
 from typing import TYPE_CHECKING
 
+from database import Base
 from sqlalchemy import Float, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
-
-from database import Base
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -16,7 +15,9 @@ class ApertureFrameType(Base):
     __tablename__ = "aperture_frame_types"
 
     id: Mapped[str] = MappedColumn(String, primary_key=True, index=True)
-    name: Mapped[str] = MappedColumn(String(255), nullable=False, default="Unnamed Frame Type")
+    name: Mapped[str] = MappedColumn(
+        String(255), nullable=False, default="Unnamed Frame Type"
+    )
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False, default=100.0)
     u_value_w_m2k: Mapped[float] = MappedColumn(Float, nullable=False, default=1.0)
     psi_g_w_mk: Mapped[float] = MappedColumn(Float, nullable=False, default=0.04)

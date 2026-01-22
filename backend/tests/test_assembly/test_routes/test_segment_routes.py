@@ -1,15 +1,18 @@
 # -*- Python Version: 3.11 -*-
 
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
-
 from db_entities.app import Project
 from db_entities.assembly.segment import SpecificationStatus
+from fastapi.testclient import TestClient
 from features.assembly.services.material import create_new_material
+from sqlalchemy.orm import Session
 
 
-def test_create_new_segment_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_create_new_segment_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -25,8 +28,12 @@ def test_create_new_segment_route(client: TestClient, session: Session, create_t
     assert response.status_code == 201
 
 
-def test_update_segment_material_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_update_segment_material_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -57,8 +64,12 @@ def test_update_segment_material_route(client: TestClient, session: Session, cre
     assert segment.material_id == new_mat.id
 
 
-def test_update_segment_width_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_update_segment_width_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -78,8 +89,12 @@ def test_update_segment_width_route(client: TestClient, session: Session, create
     assert segment.width_mm == new_width
 
 
-def test_update_segment_steel_stud_spacing_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_update_segment_steel_stud_spacing_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -99,8 +114,12 @@ def test_update_segment_steel_stud_spacing_route(client: TestClient, session: Se
     assert segment.steel_stud_spacing_mm == new_spacing
 
 
-def test_update_segment_continuous_insulation_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_update_segment_continuous_insulation_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -119,12 +138,19 @@ def test_update_segment_continuous_insulation_route(client: TestClient, session:
     assert segment.is_continuous_insulation == True
 
 
-def test_update_segment_specification_status_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_update_segment_specification_status_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
-    assert project.assemblies[0].layers[0].segments[0].specification_status == SpecificationStatus.NA
+    assert (
+        project.assemblies[0].layers[0].segments[0].specification_status
+        == SpecificationStatus.NA
+    )
 
     segment = project.assemblies[0].layers[0].segments[0]
 
@@ -177,8 +203,12 @@ def test_update_segment_specification_status_route(client: TestClient, session: 
     assert segment.specification_status == SpecificationStatus.NA
 
 
-def test_update_segment_notes_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_update_segment_notes_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -198,8 +228,12 @@ def test_update_segment_notes_route(client: TestClient, session: Session, create
     assert segment.notes == new_notes
 
 
-def test_delete_last_segment_raises_exception_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_delete_last_segment_raises_exception_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1
@@ -214,8 +248,12 @@ def test_delete_last_segment_raises_exception_route(client: TestClient, session:
     )
 
 
-def test_delete_segment_route(client: TestClient, session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_delete_segment_route(
+    client: TestClient, session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     assert len(project.assemblies) == 1
     assert len(project.assemblies[0].layers) == 1
     assert len(project.assemblies[0].layers[0].segments) == 1

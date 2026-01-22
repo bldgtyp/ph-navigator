@@ -3,21 +3,26 @@
 import logging
 from collections import OrderedDict
 
+from db_entities.assembly import Layer, Material, Segment
+from db_entities.assembly.material_datasheet import MaterialDatasheet
+from db_entities.assembly.material_photo import MaterialPhoto
 from honeybee.typing import clean_and_id_ep_string, clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial
-from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties, PhColor, PhDivisionGrid
+from honeybee_energy_ph.properties.materials.opaque import (
+    EnergyMaterialPhProperties,
+    PhColor,
+    PhDivisionGrid,
+)
 from honeybee_energy_ref.document_ref import DocumentReference
 from honeybee_energy_ref.image_ref import ImageReference
 from honeybee_energy_ref.properties.hb_obj import _HBObjectWithReferences
 
-from db_entities.assembly import Layer, Material, Segment
-from db_entities.assembly.material_datasheet import MaterialDatasheet
-from db_entities.assembly.material_photo import MaterialPhoto
-
 logger = logging.getLogger(__name__)
 
 
-def convert_MaterialDatasheet_to_hbe_ref(material_datasheet: MaterialDatasheet) -> DocumentReference:
+def convert_MaterialDatasheet_to_hbe_ref(
+    material_datasheet: MaterialDatasheet,
+) -> DocumentReference:
     """Convert a MaterialDatasheet to a Honeybee-Energy Document-Reference."""
     logger.info(f"convert_MaterialDatasheet_to_hbe_ref({material_datasheet.id=})")
 
@@ -61,7 +66,9 @@ def get_material_name_from_segment(material: Material, thickness_m: float) -> st
     return f"{clean_ep_string(material.name)} [{thickness_m * 39.3701 : .1f} in]"
 
 
-def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float) -> EnergyMaterial:
+def convert_segment_material_to_hb_material(
+    segment: Segment, thickness_m: float
+) -> EnergyMaterial:
     """Convert a segment material to a Honeybee-Energy-Material."""
     logger.info(f"convert_segment_material_to_hb_material({segment.id=})")
 
@@ -95,7 +102,9 @@ def convert_segment_material_to_hb_material(segment: Segment, thickness_m: float
     return mat
 
 
-def build_ph_division_grid_from_segments(segments: list[Segment], layer_thickness_m: float) -> PhDivisionGrid:
+def build_ph_division_grid_from_segments(
+    segments: list[Segment], layer_thickness_m: float
+) -> PhDivisionGrid:
     """Build a Honeybee-Energy-PH PhDivisionGrid from a list of Segments."""
     logger.info(f"build_ph_division_grid_from_segments([{len(segments)}] segments)")
 
@@ -105,7 +114,9 @@ def build_ph_division_grid_from_segments(segments: list[Segment], layer_thicknes
 
     for i, segment in enumerate(segments):
         hbe_mat = convert_segment_material_to_hb_material(segment, layer_thickness_m)
-        division_grid.set_cell_material(_column_num=i, _row_num=0, _hbe_material=hbe_mat)
+        division_grid.set_cell_material(
+            _column_num=i, _row_num=0, _hbe_material=hbe_mat
+        )
 
     return division_grid
 
@@ -134,7 +145,9 @@ def create_hybrid_hbe_material(division_grid: PhDivisionGrid) -> EnergyMaterial:
     new_material_.conductivity = division_grid.get_equivalent_conductivity()
     # TODO: eq density
     # TODO: eq spec-heat
-    hbph_props = getattr(new_material_.properties, "ph")  # type: EnergyMaterialPhProperties
+    hbph_props = getattr(
+        new_material_.properties, "ph"
+    )  # type: EnergyMaterialPhProperties
     hbph_props.divisions = division_grid
     hbph_props.ph_color = getattr(base_material.properties, "ph").ph_color
     return new_material_
@@ -146,17 +159,25 @@ def convert_single_assembly_layer_to_hb_material(layer: Layer) -> EnergyMaterial
 
     if len(layer.segments) > 1:
         # If the layer has multiple segments, create a hybrid material
-        division_grid = build_ph_division_grid_from_segments(layer.segments, layer.thickness_mm / 1000)
+        division_grid = build_ph_division_grid_from_segments(
+            layer.segments, layer.thickness_mm / 1000
+        )
         hbe_material_ = create_hybrid_hbe_material(division_grid)
     else:
         # If the layer has a single segment, convert it directly
-        hbe_material_ = convert_segment_material_to_hb_material(layer.segments[0], layer.thickness_mm / 1000)
+        hbe_material_ = convert_segment_material_to_hb_material(
+            layer.segments[0], layer.thickness_mm / 1000
+        )
     return hbe_material_
 
 
-def convert_multiple_assembly_layers_to_hb_material(_layers: list[Layer]) -> list[EnergyMaterial]:
+def convert_multiple_assembly_layers_to_hb_material(
+    _layers: list[Layer],
+) -> list[EnergyMaterial]:
     """Convert multiple assembly layers into a list of Honeybee-Energy EnergyMaterials."""
-    logger.info(f"convert_multiple_assembly_layers_to_hb_material([{len(_layers)}] layers)")
+    logger.info(
+        f"convert_multiple_assembly_layers_to_hb_material([{len(_layers)}] layers)"
+    )
 
     hbe_materials_: list[EnergyMaterial] = []
     for layer in _layers:

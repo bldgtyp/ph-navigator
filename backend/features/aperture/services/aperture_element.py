@@ -2,11 +2,14 @@
 
 import logging
 
-from sqlalchemy.orm import Session
-
-from db_entities.aperture import ApertureElement, ApertureElementFrame, ApertureElementGlazing
+from db_entities.aperture import (
+    ApertureElement,
+    ApertureElementFrame,
+    ApertureElementGlazing,
+)
 from features.aperture.services.frame_type import get_default_frame_type
 from features.aperture.services.glazing_type import get_default_glazing_type
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +18,9 @@ def get_aperture_element_by_id(db: Session, aperture_id: int) -> ApertureElement
     """Retrieve an ApertureElement by its DB-ID Number."""
     logger.info(f"get_aperture_element_by_id({aperture_id})")
 
-    aperture = db.query(ApertureElement).filter(ApertureElement.id == aperture_id).first()
+    aperture = (
+        db.query(ApertureElement).filter(ApertureElement.id == aperture_id).first()
+    )
     if not aperture:
         raise ValueError(f"ApertureElement with ID {aperture_id} not found.")
 
@@ -48,7 +53,9 @@ def create_aperture_element_frame(db: Session) -> ApertureElementFrame:
     return frame_element
 
 
-def duplicate_aperture_element_frame(db: Session, source_frame: ApertureElementFrame) -> ApertureElementFrame:
+def duplicate_aperture_element_frame(
+    db: Session, source_frame: ApertureElementFrame
+) -> ApertureElementFrame:
     """Create a duplicate of an ApertureElementFrame.
 
     Args:
@@ -60,14 +67,18 @@ def duplicate_aperture_element_frame(db: Session, source_frame: ApertureElementF
     """
     logger.info(f"duplicate_aperture_element_frame(source_frame_id={source_frame.id})")
 
-    new_frame = ApertureElementFrame(name=source_frame.name, frame_type_id=source_frame.frame_type_id)
+    new_frame = ApertureElementFrame(
+        name=source_frame.name, frame_type_id=source_frame.frame_type_id
+    )
     db.add(new_frame)
     db.flush()  # Get ID without committing
 
     return new_frame
 
 
-def duplicate_aperture_element_glazing(db: Session, source_glazing: ApertureElementGlazing) -> ApertureElementGlazing:
+def duplicate_aperture_element_glazing(
+    db: Session, source_glazing: ApertureElementGlazing
+) -> ApertureElementGlazing:
     """Create a duplicate of an ApertureElementGlazing.
 
     Args:
@@ -77,16 +88,22 @@ def duplicate_aperture_element_glazing(db: Session, source_glazing: ApertureElem
     Returns:
         New ApertureElementGlazing instance (added to session but not committed)
     """
-    logger.info(f"duplicate_aperture_element_glazing(source_glazing_id={source_glazing.id})")
+    logger.info(
+        f"duplicate_aperture_element_glazing(source_glazing_id={source_glazing.id})"
+    )
 
-    new_glazing = ApertureElementGlazing(name=source_glazing.name, glazing_type_id=source_glazing.glazing_type_id)
+    new_glazing = ApertureElementGlazing(
+        name=source_glazing.name, glazing_type_id=source_glazing.glazing_type_id
+    )
     db.add(new_glazing)
     db.flush()  # Get ID without committing
 
     return new_glazing
 
 
-def duplicate_aperture_element(db: Session, source_element: ApertureElement, new_aperture_id: int) -> ApertureElement:
+def duplicate_aperture_element(
+    db: Session, source_element: ApertureElement, new_aperture_id: int
+) -> ApertureElement:
     """Create a duplicate of an ApertureElement with all its frames and glazing.
 
     Args:
@@ -97,7 +114,9 @@ def duplicate_aperture_element(db: Session, source_element: ApertureElement, new
     Returns:
         New ApertureElement instance (added to session but not committed)
     """
-    logger.info(f"duplicate_aperture_element(source_element_id={source_element.id}, new_aperture_id={new_aperture_id})")
+    logger.info(
+        f"duplicate_aperture_element(source_element_id={source_element.id}, new_aperture_id={new_aperture_id})"
+    )
 
     # Duplicate all 4 frames
     new_frame_top = duplicate_aperture_element_frame(db, source_element.frame_top)

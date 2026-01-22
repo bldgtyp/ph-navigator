@@ -3,8 +3,6 @@
 import json
 import logging
 
-from sqlalchemy.orm import Session
-
 from db_entities.aperture import Aperture, ApertureElement, ApertureElementFrame
 from db_entities.app.project import Project
 from features.aperture.schemas import ApertureSchema
@@ -17,6 +15,7 @@ from features.aperture.services.aperture_element import (
 from features.aperture.services.frame_type import get_frame_type_by_id
 from features.aperture.services.glazing_type import get_glazing_type_by_id
 from features.app.services import get_project_by_bt_number
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +24,24 @@ class LastColumnException(Exception):
     """Exception raised when trying to delete the only column in an aperture."""
 
     def __init__(self, column_number: int, aperture_number: int):
-        logger.error(f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}.")
-        super().__init__(f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}.")
+        logger.error(
+            f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}."
+        )
+        super().__init__(
+            f"Cannot delete Column-{column_number}. It is the last column in Aperture-{aperture_number}."
+        )
 
 
 class LastRowException(Exception):
     """Exception raised when trying to delete the only row in an aperture."""
 
     def __init__(self, row_number: int, aperture_number: int):
-        logger.error(f"Cannot delete Row-{row_number}. It is the last row in Aperture-{aperture_number}.")
-        super().__init__(f"Cannot delete Row-{row_number}. It is the last row in Aperture-{aperture_number}.")
+        logger.error(
+            f"Cannot delete Row-{row_number}. It is the last row in Aperture-{aperture_number}."
+        )
+        super().__init__(
+            f"Cannot delete Row-{row_number}. It is the last row in Aperture-{aperture_number}."
+        )
 
 
 def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
@@ -42,7 +49,12 @@ def get_apertures_by_project_bt(db: Session, bt_number: str) -> list[Aperture]:
     logger.info(f"get_apertures_by_project_bt({bt_number=})")
 
     project = get_project_by_bt_number(db, bt_number)
-    apertures = db.query(Aperture).filter(Aperture.project_id == project.id).order_by(Aperture.name.asc()).all()
+    apertures = (
+        db.query(Aperture)
+        .filter(Aperture.project_id == project.id)
+        .order_by(Aperture.name.asc())
+        .all()
+    )
     return apertures
 
 
@@ -115,8 +127,11 @@ def add_row_to_aperture(
             aperture.row_heights_mm = [row_height_mm] + aperture.row_heights_mm
 
             # Shift all existing elements' row_number by +1
-            db.query(ApertureElement).filter(ApertureElement.aperture_id == aperture_id).update(
-                {ApertureElement.row_number: ApertureElement.row_number + 1}, synchronize_session=False
+            db.query(ApertureElement).filter(
+                ApertureElement.aperture_id == aperture_id
+            ).update(
+                {ApertureElement.row_number: ApertureElement.row_number + 1},
+                synchronize_session=False,
             )
         else:
             # Append at end (bottom) - original behavior
@@ -163,7 +178,9 @@ def add_column_to_aperture(
     Raises:
         ValueError: If aperture not found
     """
-    logger.info(f"add_column_to_aperture({aperture_id=}, {column_width_mm=}, {position=})")
+    logger.info(
+        f"add_column_to_aperture({aperture_id=}, {column_width_mm=}, {position=})"
+    )
 
     try:
         # Get the aperture (this will raise ValueError if not found)
@@ -175,8 +192,11 @@ def add_column_to_aperture(
             aperture.column_widths_mm = [column_width_mm] + aperture.column_widths_mm
 
             # Shift all existing elements' column_number by +1
-            db.query(ApertureElement).filter(ApertureElement.aperture_id == aperture_id).update(
-                {ApertureElement.column_number: ApertureElement.column_number + 1}, synchronize_session=False
+            db.query(ApertureElement).filter(
+                ApertureElement.aperture_id == aperture_id
+            ).update(
+                {ApertureElement.column_number: ApertureElement.column_number + 1},
+                synchronize_session=False,
             )
         else:
             # Append at end (right) - original behavior
@@ -202,7 +222,9 @@ def add_column_to_aperture(
         raise
 
 
-def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> Aperture:
+def delete_row_from_aperture(
+    db: Session, aperture_id: int, row_number: int
+) -> Aperture:
     """Delete a row from the aperture grid."""
     logger.info(f"delete_row_from_aperture({aperture_id=}, {row_number=})")
 
@@ -212,7 +234,9 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
 
         # Check if the row number is valid
         if row_number < 0 or row_number >= len(aperture.row_heights_mm):
-            raise ValueError(f"Invalid row number {row_number} for aperture {aperture_id}")
+            raise ValueError(
+                f"Invalid row number {row_number} for aperture {aperture_id}"
+            )
 
         # If this is the last row, raise an exception
         if len(aperture.row_heights_mm) == 1:
@@ -226,7 +250,10 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
         # Remove all elements in the deleted row
         elements_to_delete = (
             db.query(ApertureElement)
-            .filter(ApertureElement.aperture_id == aperture_id, ApertureElement.row_number == row_number)
+            .filter(
+                ApertureElement.aperture_id == aperture_id,
+                ApertureElement.row_number == row_number,
+            )
             .all()
         )
         for element in elements_to_delete:
@@ -234,8 +261,12 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
 
         # Shift the row-number of any ApertureElements with row-number>the delete target
         db.query(ApertureElement).filter(
-            ApertureElement.aperture_id == aperture_id, ApertureElement.row_number > row_number
-        ).update({ApertureElement.row_number: ApertureElement.row_number - 1}, synchronize_session=False)
+            ApertureElement.aperture_id == aperture_id,
+            ApertureElement.row_number > row_number,
+        ).update(
+            {ApertureElement.row_number: ApertureElement.row_number - 1},
+            synchronize_session=False,
+        )
 
         # Commit the transaction
         db.commit()
@@ -247,7 +278,9 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
         raise
 
 
-def delete_column_from_aperture(db: Session, aperture_id: int, column_number: int) -> Aperture:
+def delete_column_from_aperture(
+    db: Session, aperture_id: int, column_number: int
+) -> Aperture:
     """ "Delete a column from the aperture grid."""
     logger.info(f"delete_column_from_aperture({aperture_id=}, {column_number=})")
 
@@ -257,7 +290,9 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
 
         # Check if the column number is valid
         if column_number < 0 or column_number >= len(aperture.column_widths_mm):
-            raise ValueError(f"Invalid column number {column_number} for aperture {aperture_id}")
+            raise ValueError(
+                f"Invalid column number {column_number} for aperture {aperture_id}"
+            )
 
         # If this is the last column, raise an exception
         if len(aperture.column_widths_mm) == 1:
@@ -271,7 +306,10 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         # Remove all elements in the deleted column
         elements_to_delete = (
             db.query(ApertureElement)
-            .filter(ApertureElement.aperture_id == aperture_id, ApertureElement.column_number == column_number)
+            .filter(
+                ApertureElement.aperture_id == aperture_id,
+                ApertureElement.column_number == column_number,
+            )
             .all()
         )
         for element in elements_to_delete:
@@ -279,8 +317,12 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
 
         # Shift the col-number of any ApertureElements with col-number>the delete target
         db.query(ApertureElement).filter(
-            ApertureElement.aperture_id == aperture_id, ApertureElement.column_number > column_number
-        ).update({ApertureElement.column_number: ApertureElement.column_number - 1}, synchronize_session=False)
+            ApertureElement.aperture_id == aperture_id,
+            ApertureElement.column_number > column_number,
+        ).update(
+            {ApertureElement.column_number: ApertureElement.column_number - 1},
+            synchronize_session=False,
+        )
 
         # Commit the transaction
         db.commit()
@@ -355,7 +397,9 @@ def duplicate_aperture(db: Session, source_aperture_id: int) -> Aperture:
         db.commit()
         db.refresh(new_aperture)
 
-        logger.info(f"Successfully duplicated aperture {source_aperture_id} to new aperture {new_aperture.id}")
+        logger.info(
+            f"Successfully duplicated aperture {source_aperture_id} to new aperture {new_aperture.id}"
+        )
         return new_aperture
 
     except Exception as e:
@@ -379,7 +423,9 @@ def update_aperture_name(db: Session, aperture_id: int, new_name: str) -> Apertu
         raise
 
 
-def update_aperture_glazing_type(db: Session, element_id: int, glazing_type_id: str) -> Aperture:
+def update_aperture_glazing_type(
+    db: Session, element_id: int, glazing_type_id: str
+) -> Aperture:
     """Update the glazing-type of an aperture."""
     logger.info(f"update_aperture_glazing_type({element_id=}, {glazing_type_id=})")
 
@@ -395,9 +441,13 @@ def update_aperture_glazing_type(db: Session, element_id: int, glazing_type_id: 
         raise
 
 
-def update_aperture_column_width(db: Session, aperture_id: int, column_index: int, new_width_mm: float) -> Aperture:
+def update_aperture_column_width(
+    db: Session, aperture_id: int, column_index: int, new_width_mm: float
+) -> Aperture:
     """Update the width of a specific column in an aperture."""
-    logger.info(f"update_aperture_column_width({aperture_id=}, {column_index=}, {new_width_mm=})")
+    logger.info(
+        f"update_aperture_column_width({aperture_id=}, {column_index=}, {new_width_mm=})"
+    )
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
@@ -412,9 +462,13 @@ def update_aperture_column_width(db: Session, aperture_id: int, column_index: in
         raise
 
 
-def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, new_height_mm: float) -> Aperture:
+def update_aperture_row_height(
+    db: Session, aperture_id: int, row_index: int, new_height_mm: float
+) -> Aperture:
     """Update the height of a specific row in an aperture."""
-    logger.info(f"update_aperture_row_height({aperture_id=}, {row_index=}, {new_height_mm=})")
+    logger.info(
+        f"update_aperture_row_height({aperture_id=}, {row_index=}, {new_height_mm=})"
+    )
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
@@ -429,7 +483,9 @@ def update_aperture_row_height(db: Session, aperture_id: int, row_index: int, ne
         raise
 
 
-def update_aperture_element_frame_type(db: Session, element_id: int, side: str, frame_type_id: str) -> Aperture:
+def update_aperture_element_frame_type(
+    db: Session, element_id: int, side: str, frame_type_id: str
+) -> Aperture:
     """Update the frame for a specific side of an aperture element.
 
     Args:
@@ -444,7 +500,9 @@ def update_aperture_element_frame_type(db: Session, element_id: int, side: str, 
     Raises:
         ValueError: If element, frame not found or invalid side
     """
-    logger.info(f"update_aperture_element_frame({element_id=}, {side=}, {frame_type_id=})")
+    logger.info(
+        f"update_aperture_element_frame({element_id=}, {side=}, {frame_type_id=})"
+    )
 
     try:
         # Validate and normalize the side
@@ -452,7 +510,9 @@ def update_aperture_element_frame_type(db: Session, element_id: int, side: str, 
             frame_side = FrameSide(side.lower())
             side_attr = f"frame_{frame_side.value}"
         except ValueError:
-            raise ValueError(f"Invalid frame side: {side}. Must be one of: {[s.value for s in FrameSide]}")
+            raise ValueError(
+                f"Invalid frame side: {side}. Must be one of: {[s.value for s in FrameSide]}"
+            )
 
         # Get the element (this will raise ValueError if not found)
         element = get_aperture_element_by_id(db, element_id)
@@ -472,11 +532,15 @@ def update_aperture_element_frame_type(db: Session, element_id: int, side: str, 
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating aperture element frame {element_id=} | {side=} | {frame_type_id=}: {str(e)}")
+        logger.error(
+            f"Error updating aperture element frame {element_id=} | {side=} | {frame_type_id=}: {str(e)}"
+        )
         raise
 
 
-def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int]) -> Aperture:
+def merge_aperture_elements(
+    db: Session, aperture_id: int, element_ids: list[int]
+) -> Aperture:
     """Merge multiple ApertureElements into a single element that spans their combined area.
 
     Args:
@@ -502,7 +566,10 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
         # Query all elements to be merged
         elements_to_merge = (
             db.query(ApertureElement)
-            .filter(ApertureElement.aperture_id == aperture_id, ApertureElement.id.in_(element_ids))
+            .filter(
+                ApertureElement.aperture_id == aperture_id,
+                ApertureElement.id.in_(element_ids),
+            )
             .all()
         )
 
@@ -515,7 +582,9 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
         min_row = min(elem.row_number for elem in elements_to_merge)
         min_col = min(elem.column_number for elem in elements_to_merge)
         max_row = max(elem.row_number + elem.row_span - 1 for elem in elements_to_merge)
-        max_col = max(elem.column_number + elem.col_span - 1 for elem in elements_to_merge)
+        max_col = max(
+            elem.column_number + elem.col_span - 1 for elem in elements_to_merge
+        )
 
         # Check if the selection forms a complete rectangle (no gaps)
         for r in range(min_row, max_row + 1):
@@ -528,7 +597,9 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
                 )
 
                 if not position_covered:
-                    raise ValueError(f"Elements do not form a complete rectangle. Gap at position ({r}, {c})")
+                    raise ValueError(
+                        f"Elements do not form a complete rectangle. Gap at position ({r}, {c})"
+                    )
 
         # Calculate dimensions of new merged element
         row_span = max_row - min_row + 1
@@ -556,7 +627,9 @@ def merge_aperture_elements(db: Session, aperture_id: int, element_ids: list[int
         return aperture
     except Exception as e:
         db.rollback()
-        logger.error(f"Error merging aperture elements for aperture {aperture_id}: {str(e)}")
+        logger.error(
+            f"Error merging aperture elements for aperture {aperture_id}: {str(e)}"
+        )
         raise
 
 
@@ -569,15 +642,22 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
         # TODO: implement splitting logic
         element = (
             db.query(ApertureElement)
-            .filter(ApertureElement.id == element_id, ApertureElement.aperture_id == aperture_id)
+            .filter(
+                ApertureElement.id == element_id,
+                ApertureElement.aperture_id == aperture_id,
+            )
             .first()
         )
         if not element:
-            raise ValueError(f"ApertureElement with ID {element_id} not found in Aperture {aperture_id}")
+            raise ValueError(
+                f"ApertureElement with ID {element_id} not found in Aperture {aperture_id}"
+            )
 
         # Only split if the Aperture Element has a row_span or col_span > 1
         if element.row_span <= 1 and element.col_span <= 1:
-            raise ValueError(f"ApertureElement {element_id} cannot be split as it has no span.")
+            raise ValueError(
+                f"ApertureElement {element_id} cannot be split as it has no span."
+            )
 
         # Create new elements based on the current element's position and span
         new_elements = []
@@ -608,7 +688,9 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
         raise
 
 
-def update_aperture_element_name(db: Session, element_id: int, new_name: str) -> Aperture:
+def update_aperture_element_name(
+    db: Session, element_id: int, new_name: str
+) -> Aperture:
     """Update the name of an aperture element by its ID."""
     logger.info(f"update_aperture_element_name({element_id=}, {new_name=})")
 
@@ -620,7 +702,9 @@ def update_aperture_element_name(db: Session, element_id: int, new_name: str) ->
         return aperture
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating aperture element name {element_id=} to {new_name=}: {str(e)}")
+        logger.error(
+            f"Error updating aperture element name {element_id=} to {new_name=}: {str(e)}"
+        )
         raise
 
 
@@ -638,7 +722,9 @@ def delete_aperture(db: Session, aperture_id: int) -> None:
         raise
 
 
-def update_aperture_element_operation(db: Session, element_id: int, operation: dict | None) -> Aperture:
+def update_aperture_element_operation(
+    db: Session, element_id: int, operation: dict | None
+) -> Aperture:
     """Update the operation (swing/slide/fixed) of an aperture element.
 
     Args:
@@ -658,7 +744,9 @@ def update_aperture_element_operation(db: Session, element_id: int, operation: d
         return get_aperture_by_child_element_id(db, element.id)
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating aperture element operation {element_id=}: {str(e)}")
+        logger.error(
+            f"Error updating aperture element operation {element_id=}: {str(e)}"
+        )
         raise
 
 

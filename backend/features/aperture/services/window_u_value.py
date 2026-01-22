@@ -19,6 +19,7 @@ Corner Handling:
     receiving half of its adjacent corner areas.
 """
 
+import hashlib
 import logging
 from dataclasses import dataclass
 
@@ -26,8 +27,59 @@ from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.aperture.frame_type import ApertureFrameType
+from features.hb_model.cache import LimitedCache
 
 logger = logging.getLogger(__name__)
+
+# Content-addressable cache for U-value results
+# Key is a hash of all calculation inputs; no explicit invalidation needed
+_U_VALUE_CACHE: LimitedCache["WindowUValueResult"] = LimitedCache(max_size=50)
+
+
+def _generate_u_value_cache_key(aperture: Aperture) -> str:
+    """Generate a content-addressable cache key from all U-value calculation inputs.
+
+    The key is a hash of all values that affect the calculation result:
+    - Aperture dimensions (row_heights_mm, column_widths_mm)
+    - Element positions and spans
+    - Frame properties (width, U-value, psi-g) for each side
+    - Glazing U-value
+
+    When any input changes, the hash changes automatically - no explicit invalidation needed.
+    """
+    hasher = hashlib.sha256()
+
+    # Aperture dimensions
+    hasher.update(f"rows:{aperture.row_heights_mm}".encode())
+    hasher.update(f"cols:{aperture.column_widths_mm}".encode())
+
+    # Sort elements by position for consistent ordering
+    sorted_elements = sorted(
+        aperture.elements, key=lambda e: (e.row_number, e.column_number)
+    )
+
+    for element in sorted_elements:
+        hasher.update(f"elem:{element.row_number},{element.column_number}".encode())
+        hasher.update(f"span:{element.row_span},{element.col_span}".encode())
+
+        # Frame properties for each side
+        for side in ["top", "right", "bottom", "left"]:
+            frame = getattr(element, f"frame_{side}")
+            if frame and frame.frame_type:
+                ft = frame.frame_type
+                hasher.update(
+                    f"f_{side}:{ft.width_mm},{ft.u_value_w_m2k},{ft.psi_g_w_mk}".encode()
+                )
+            else:
+                hasher.update(f"f_{side}:None".encode())
+
+        # Glazing properties
+        if element.glazing and element.glazing.glazing_type:
+            hasher.update(f"glz:{element.glazing.glazing_type.u_value_w_m2k}".encode())
+        else:
+            hasher.update(b"glz:None")
+
+    return hasher.hexdigest()[:16]  # Use first 16 chars of hash
 
 
 @dataclass
@@ -81,6 +133,9 @@ def calculate_aperture_u_value(aperture: Aperture) -> WindowUValueResult:
     """
     Calculate the effective U-value for an entire aperture (window/door).
 
+    Uses content-addressable caching: the cache key is derived from all calculation
+    inputs, so when any input changes, the key changes automatically.
+
     Args:
         aperture: The Aperture entity with elements, frames, and glazing loaded
 
@@ -90,7 +145,16 @@ def calculate_aperture_u_value(aperture: Aperture) -> WindowUValueResult:
     Reference:
         ISO 10077-1:2006, Equation 1
     """
-    logger.info(f"calculate_aperture_u_value(aperture_id={aperture.id}, name={aperture.name})")
+    logger.info(
+        f"calculate_aperture_u_value(aperture_id={aperture.id}, name={aperture.name})"
+    )
+
+    # Check cache first
+    cache_key = _generate_u_value_cache_key(aperture)
+    cached_result = _U_VALUE_CACHE[cache_key]
+    if cached_result is not None:
+        logger.info(f"Cache hit for aperture {aperture.id} (key={cache_key[:8]}...)")
+        return cached_result
 
     # Validate inputs
     warnings = _validate_aperture(aperture)
@@ -128,7 +192,7 @@ def calculate_aperture_u_value(aperture: Aperture) -> WindowUValueResult:
         f"A_frame={frame_area:.4f} m²"
     )
 
-    return WindowUValueResult(
+    result = WindowUValueResult(
         u_value_w_m2k=round(u_value, 4),
         total_area_m2=round(total_area, 6),
         glazing_area_m2=round(glazing_area, 6),
@@ -140,6 +204,12 @@ def calculate_aperture_u_value(aperture: Aperture) -> WindowUValueResult:
         warnings=[],
         element_calculations=element_results,
     )
+
+    # Store in cache
+    _U_VALUE_CACHE[cache_key] = result
+    logger.info(f"Cached U-value for aperture {aperture.id} (key={cache_key[:8]}...)")
+
+    return result
 
 
 def _get_element_width_m(aperture: Aperture, element: ApertureElement) -> float:
@@ -196,7 +266,12 @@ def _calculate_element(
     frame_left = _get_frame_data(element.frame_left)
 
     # Explicit None checks for type narrowing (Pylance doesn't narrow with `all()`)
-    if frame_top is None or frame_right is None or frame_bottom is None or frame_left is None:
+    if (
+        frame_top is None
+        or frame_right is None
+        or frame_bottom is None
+        or frame_left is None
+    ):
         logger.warning(f"Element {element.id} missing frame data, skipping")
         return None
 
@@ -211,7 +286,9 @@ def _calculate_element(
     interior_height = height_m - frame_top.width_m - frame_bottom.width_m
 
     if interior_width <= 0 or interior_height <= 0:
-        logger.warning(f"Element {element.id} has non-positive glazing dimensions, skipping")
+        logger.warning(
+            f"Element {element.id} has non-positive glazing dimensions, skipping"
+        )
         return None
 
     # Areas in m²
@@ -363,7 +440,9 @@ def _validate_aperture(aperture: Aperture) -> list[str]:
             if frame is None:
                 warnings.append(f"Element {element.id} has no {side} frame assigned")
             elif frame.frame_type is None:
-                warnings.append(f"Element {element.id} {side} frame has no type assigned")
+                warnings.append(
+                    f"Element {element.id} {side} frame has no type assigned"
+                )
 
     return warnings
 

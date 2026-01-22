@@ -4,9 +4,8 @@ from __future__ import annotations  # Enables forward references
 
 from enum import Enum
 
-from pydantic import BaseModel
-
 from features.aperture.schemas.aperture_element import ApertureElementSchema
+from pydantic import BaseModel
 
 
 class ApertureSchema(BaseModel):

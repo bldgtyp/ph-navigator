@@ -8,8 +8,12 @@ from pydantic import BaseModel, Field
 class ProjectCreateSchema(BaseModel):
     name: str = Field(..., description="The name of the project.")
     bt_number: str = Field(..., description="The BuildingType number of the project.")
-    phius_number: str | None = Field(None, description="The PHIUS number of the project.")
-    phius_dropbox_url: str | None = Field(None, description="The PHIUS Dropbox URL of the project.")
+    phius_number: str | None = Field(
+        None, description="The PHIUS number of the project."
+    )
+    phius_dropbox_url: str | None = Field(
+        None, description="The PHIUS Dropbox URL of the project."
+    )
 
 
 class ProjectSchema(BaseModel):

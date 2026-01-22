@@ -3,11 +3,10 @@
 import logging
 from typing import Any
 
-from sqlalchemy.orm import Session
-
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_glazing import ApertureElementGlazing
 from db_entities.aperture.glazing_type import ApertureGlazingType
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +139,9 @@ def update_glazing_type(
     return glazing
 
 
-def add_glazing_types(db: Session, glazing_types: list[ApertureGlazingType]) -> tuple[int, int]:
+def add_glazing_types(
+    db: Session, glazing_types: list[ApertureGlazingType]
+) -> tuple[int, int]:
     """Add (or update) glazings from AirTable to the database."""
     logger.info(f"add_glazing_types(glazings={len(glazing_types)}-glazings)")
 
@@ -177,7 +178,9 @@ def purge_unused_glazing_types(db: Session) -> None:
     }
 
     # Find glazing types that are not used by any segments
-    unused_glazing_type_ids = existing_glazing_type_ids - aperture_element_glazing_type_ids
+    unused_glazing_type_ids = (
+        existing_glazing_type_ids - aperture_element_glazing_type_ids
+    )
 
     # Delete unused glazing types
     for glazing_type_id in unused_glazing_type_ids:

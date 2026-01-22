@@ -2,16 +2,18 @@
 
 import logging
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-
 from config import limiter
 from database import get_db
 from db_entities.aperture.glazing_type import ApertureGlazingType
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from features.air_table.services import get_all_glazing_types_from_airtable
 from features.aperture.schemas.glazing_type import GlazingTypeSchema
-from features.aperture.services.glazing_type import add_glazing_types, purge_unused_glazing_types
+from features.aperture.services.glazing_type import (
+    add_glazing_types,
+    purge_unused_glazing_types,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/aperture",
@@ -54,7 +56,9 @@ def refresh_db_glazing_types_from_air_table_route(
     )
 
 
-@router.get("/load-all-glazing-types-from-airtable", response_model=list[GlazingTypeSchema])
+@router.get(
+    "/load-all-glazing-types-from-airtable", response_model=list[GlazingTypeSchema]
+)
 def load_all_glazing_types_from_airtable_route(
     db: Session = Depends(get_db),
 ) -> list[GlazingTypeSchema]:

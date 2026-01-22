@@ -2,14 +2,13 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
-
 from config import limiter
 from database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from features.airtightness.schemas import AirTightnessDataResponse
 from features.airtightness.services import get_model_airtightness_data
 from features.hb_model.services.hb_model import load_hb_model
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/airtightness",
@@ -19,7 +18,9 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.get("/get-airtightness-data/{bt_number}", response_model=AirTightnessDataResponse)
+@router.get(
+    "/get-airtightness-data/{bt_number}", response_model=AirTightnessDataResponse
+)
 def get_airtightness_data(
     request: Request,
     bt_number: str,
@@ -35,4 +36,6 @@ def get_airtightness_data(
     except Exception as e:
         msg = f"Error fetching airtightness data for project {bt_number}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
