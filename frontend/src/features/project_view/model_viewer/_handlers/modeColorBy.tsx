@@ -21,12 +21,13 @@ function storeOriginalMaterial(mesh: THREE.Mesh) {
 
 /**
  * Creates a new material with the specified color for ColorBy mode.
+ * Uses MeshBasicMaterial to ignore scene lighting, ensuring colors
+ * appear flat and match legend swatches exactly.
  */
-function createColorByMaterial(color: THREE.Color): THREE.MeshStandardMaterial {
-    return new THREE.MeshStandardMaterial({
+function createColorByMaterial(color: THREE.Color): THREE.MeshBasicMaterial {
+    return new THREE.MeshBasicMaterial({
         color: color,
         side: THREE.DoubleSide,
-        flatShading: true,
     });
 }
 
