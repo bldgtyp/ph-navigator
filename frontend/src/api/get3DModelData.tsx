@@ -7,7 +7,20 @@ import { hbPhHvacVentilationSystem } from '../features/project_view/model_viewer
 import { hbShadeGroup } from '../features/project_view/model_viewer/types/honeybee/shade';
 
 /**
+ * Combined response type from the model_data endpoint.
+ */
+interface CombinedModelData {
+    faces: hbFace[];
+    spaces: hbPhSpace[];
+    sun_path: lbtSunPathAndCompass | null;
+    hot_water_systems: hbPhHvacHotWaterSystem[];
+    ventilation_systems: hbPhHvacVentilationSystem[];
+    shading_elements: hbShadeGroup[];
+}
+
+/**
  * Fetches the 3D-Model data for a specified project.
+ * Uses a single combined endpoint to reduce HTTP round trips from 6 to 1.
  * @param projectId - The ID of the project.
  * @param recordId - Optional AirTable record ID for a specific model version. If null, loads the latest model.
  * @param forceRefresh - If true, bypass cache and re-download from AirTable.
@@ -17,28 +30,27 @@ import { hbShadeGroup } from '../features/project_view/model_viewer/types/honeyb
  */
 export async function get3DModelData(projectId: string, recordId: string | null = null, forceRefresh: boolean = false) {
     try {
-        // TODO: this should be done automatically on the server when any model data is accessed
-        // const routeLoadModel = `${projectId}/load_hb_model`;
-        // const modelData = await fetchWithAlert<hbFace[]>(routeLoadModel);
-        // if (!modelData) { return null }
-
         // Build params object with record_id and force_refresh if provided
         const params: Record<string, string> = {};
         if (recordId) params.record_id = recordId;
         if (forceRefresh) params.force_refresh = 'true';
 
-        // Fetch all model data in parallel for faster loading
-        const [facesData, spacesData, sunPathData, hotWaterSystemData, ventilationSystemData, shadingElementsData] =
-            await Promise.all([
-                getWithAlert<hbFace[]>(`hb_model/${projectId}/faces`, null, params),
-                getWithAlert<hbPhSpace[]>(`hb_model/${projectId}/spaces`, null, params),
-                getWithAlert<lbtSunPathAndCompass[]>(`hb_model/${projectId}/sun_path`),
-                getWithAlert<hbPhHvacHotWaterSystem[]>(`hb_model/${projectId}/hot_water_systems`, null, params),
-                getWithAlert<hbPhHvacVentilationSystem[]>(`hb_model/${projectId}/ventilation_systems`, null, params),
-                getWithAlert<hbShadeGroup[]>(`hb_model/${projectId}/shading_elements`, null, params),
-            ]);
+        // Fetch all model data in a single request
+        const combinedData = await getWithAlert<CombinedModelData>(`hb_model/${projectId}/model_data`, null, params);
 
-        return { facesData, spacesData, sunPathData, hotWaterSystemData, ventilationSystemData, shadingElementsData };
+        if (!combinedData) {
+            return null;
+        }
+
+        // Map the combined response to the expected return format
+        return {
+            facesData: combinedData.faces,
+            spacesData: combinedData.spaces,
+            sunPathData: combinedData.sun_path,
+            hotWaterSystemData: combinedData.hot_water_systems,
+            ventilationSystemData: combinedData.ventilation_systems,
+            shadingElementsData: combinedData.shading_elements,
+        };
     } catch (error) {
         console.error(error);
         return null;
