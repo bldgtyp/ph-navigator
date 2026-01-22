@@ -3,6 +3,9 @@
 from logging import getLogger
 
 import requests
+from pyairtable import Api, Base, Table
+from sqlalchemy.orm import Session
+
 from config import settings
 from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
@@ -14,8 +17,6 @@ from features.aperture.schemas.glazing_type import GlazingTypeSchema
 from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
-from pyairtable import Api, Base, Table
-from sqlalchemy.orm import Session
 
 logger = getLogger(__name__)
 
@@ -35,9 +36,7 @@ class DownloadError(Exception):
 
     def __init__(self, url: str, message: str):
         logger.error(f"DownloadError: Failed to download from URL: {url} | {message}")
-        super().__init__(
-            f"DownloadError: Failed to download from URL: {url} | {message}"
-        )
+        super().__init__(f"DownloadError: Failed to download from URL: {url} | {message}")
 
 
 # ---------------------------------------------------------------------------------------
@@ -69,9 +68,7 @@ def get_all_project_tables(db: Session, bt_number: str) -> list[AirTableTable]:
 
     # -- Return the AirTableBase tables
     if not project.airtable_base:
-        raise ValueError(
-            f"No AirTable Base found for project with BT number: {bt_number}"
-        )
+        raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
 
     return project.airtable_base.tables
 
@@ -97,9 +94,7 @@ def get_airtable_table_ref_by_name(db: Session, bt_number: str, table_name: str)
     return table.at_ref
 
 
-def get_airtable_table_by_id(
-    db: Session, bt_number: str, table_id: int
-) -> AirTableTable:
+def get_airtable_table_by_id(db: Session, bt_number: str, table_id: int) -> AirTableTable:
     """Get the AirTable Table object by its ID."""
     logger.info(f"get_airtable_table_by_id(bt_number={bt_number}, table_id={table_id})")
 
@@ -126,7 +121,7 @@ def download_hbjson_file(url: str) -> dict:
     logger.info(f"download_hbjson_file(url={url[0:25]}...)")
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=(5, 30))  # 5s connect, 30s read
         response.raise_for_status()  # Raise an exception for HTTP errors
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to download {url}: {e}")
@@ -139,7 +134,7 @@ def download_epw_file(url: str) -> str:
     logger.info(f"download_epw_file(url={url[0:25]}...)")
     try:
         # -- Download the EPW File
-        response = requests.get(url)
+        response = requests.get(url, timeout=(5, 30))  # 5s connect, 30s read
         response.raise_for_status()  # Raise an exception for HTTP errors
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to download {url}: {e}")
@@ -182,9 +177,7 @@ def remove_all_tables_from_base(db: Session, base: AirTableBase) -> None:
 
     # -- Remove all tables from the base
     for table in base.tables:
-        logger.info(
-            f"Removing table: {table.name} ({table.id=}, {table.at_ref=}, {table.parent_base_id=})"
-        )
+        logger.info(f"Removing table: {table.name} ({table.id=}, {table.at_ref=}, {table.parent_base_id=})")
         db.delete(table)
 
     # -- Clear the tables list in the base
@@ -192,19 +185,13 @@ def remove_all_tables_from_base(db: Session, base: AirTableBase) -> None:
     db.commit()
 
 
-def update_airtable_table(
-    db: Session, bt_number: str, table_data: AirTableTableUpdateSchema
-) -> None:
+def update_airtable_table(db: Session, bt_number: str, table_data: AirTableTableUpdateSchema) -> None:
     """Update the AirTable Table data in the database."""
-    logger.info(
-        f"update_airtable_table(bt_number={bt_number}, table_data={table_data})"
-    )
+    logger.info(f"update_airtable_table(bt_number={bt_number}, table_data={table_data})")
     # -- Find the Project
     project = get_project_by_bt_number(db, bt_number)
     if not project.airtable_base:
-        raise ValueError(
-            f"No AirTable Base found for project with BT number: {bt_number}"
-        )
+        raise ValueError(f"No AirTable Base found for project with BT number: {bt_number}")
 
     # -- Find the Table
     table = get_airtable_table_by_id(db, bt_number, table_data.id)
@@ -231,10 +218,7 @@ def get_all_material_from_airtable() -> list[Material]:
         settings.AIRTABLE_MATERIAL_TABLE_ID,
     )
 
-    return [
-        Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict())
-        for record in table.all()
-    ]
+    return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
     # TODO: Make the AirTable call async....
     #  Use aiohttp directly since PyAirTable doesn't have async support
@@ -261,10 +245,7 @@ def get_all_frame_types_from_airtable() -> list[ApertureFrameType]:
         settings.AIRTABLE_FRAME_DATA_TABLE_ID,
     )
 
-    return [
-        ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).dict())
-        for record in table.all()
-    ]
+    return [ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
 
 def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
@@ -277,17 +258,12 @@ def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
         settings.AIRTABLE_GLAZING_DATA_TABLE_ID,
     )
 
-    return [
-        ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).dict())
-        for record in table.all()
-    ]
+    return [ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
 
 def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:
     """Get the AirTable Base object from the API key and base reference."""
-    logger.info(
-        f"get_base_from_airtable(airtable_base_api_key=..., airtable_base_ref={airtable_base_ref})"
-    )
+    logger.info(f"get_base_from_airtable(airtable_base_api_key=..., airtable_base_ref={airtable_base_ref})")
 
     try:
         api = Api(airtable_base_api_key)
