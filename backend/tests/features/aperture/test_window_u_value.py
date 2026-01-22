@@ -27,10 +27,10 @@ from db_entities.app.project import Project
 from db_entities.app.user import User
 from features.aperture.services.window_u_value import (
     FrameData,
-    calculate_aperture_u_value,
     _calculate_element,
     _side_frame_heat_loss,
     _side_spacer_heat_loss,
+    calculate_aperture_u_value,
 )
 from features.auth.services import get_password_hash
 

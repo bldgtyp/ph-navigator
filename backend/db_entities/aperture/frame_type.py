@@ -33,6 +33,5 @@ class ApertureFrameType(Base):
 
     # Relationships
     element_frames: Mapped[list["ApertureElementFrame"]] = relationship(
-        "ApertureElementFrame", 
-        back_populates="frame_type"
+        "ApertureElementFrame", back_populates="frame_type"
     )

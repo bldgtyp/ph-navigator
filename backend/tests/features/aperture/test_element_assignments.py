@@ -3,9 +3,9 @@
 
 from sqlalchemy.orm import Session
 
+from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
-from db_entities.aperture.aperture import Aperture
 from features.aperture.services.aperture import update_aperture_element_assignments
 
 

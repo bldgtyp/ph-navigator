@@ -279,9 +279,7 @@ def calculate_effective_r_value(assembly: Assembly) -> ThermalResistanceResult:
     )
 
 
-def _calculate_parallel_path_r_value(
-    assembly: Assembly, steel_stud_eq_conductivity: float | None
-) -> float:
+def _calculate_parallel_path_r_value(assembly: Assembly, steel_stud_eq_conductivity: float | None) -> float:
     """
     PARALLEL-PATH METHOD (ASHRAE Chapter 27, Section 1.2)
 
@@ -325,9 +323,7 @@ def _calculate_parallel_path_r_value(
     return 1.0 / total_u if total_u > 0 else 0.0
 
 
-def _calculate_isothermal_planes_r_value(
-    assembly: Assembly, steel_stud_eq_conductivity: float | None
-) -> float:
+def _calculate_isothermal_planes_r_value(assembly: Assembly, steel_stud_eq_conductivity: float | None) -> float:
     """
     ISOTHERMAL-PLANES (SERIES) METHOD (ASHRAE Chapter 27, Section 1.2)
 
@@ -375,9 +371,7 @@ def _calculate_isothermal_planes_r_value(
     return total_r
 
 
-def _sum_layer_r_values_simple(
-    assembly: Assembly, steel_stud_eq_conductivity: float | None
-) -> float:
+def _sum_layer_r_values_simple(assembly: Assembly, steel_stud_eq_conductivity: float | None) -> float:
     """Calculate total R-value for assembly with all single-segment layers (series only).
 
     Args:

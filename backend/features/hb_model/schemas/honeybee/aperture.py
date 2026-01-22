@@ -20,4 +20,5 @@ class ApertureSchema(BaseModel):
 
     class Config:
         """Pydantic Config."""
+
         orm_mode = True

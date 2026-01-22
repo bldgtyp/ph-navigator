@@ -7,16 +7,16 @@ from sqlalchemy.orm import Session
 
 from db_entities.aperture import Aperture, ApertureElement, ApertureElementFrame
 from db_entities.app.project import Project
+from features.aperture.schemas import ApertureSchema
 from features.aperture.schemas.aperture import FrameSide, InsertPosition
 from features.aperture.services.aperture_element import (
-    create_aperture_element, 
+    create_aperture_element,
     duplicate_aperture_element,
-    get_aperture_element_by_id
+    get_aperture_element_by_id,
 )
 from features.aperture.services.frame_type import get_frame_type_by_id
 from features.aperture.services.glazing_type import get_glazing_type_by_id
 from features.app.services import get_project_by_bt_number
-from features.aperture.schemas import ApertureSchema
 
 logger = logging.getLogger(__name__)
 
@@ -115,9 +115,9 @@ def add_row_to_aperture(
             aperture.row_heights_mm = [row_height_mm] + aperture.row_heights_mm
 
             # Shift all existing elements' row_number by +1
-            db.query(ApertureElement).filter(
-                ApertureElement.aperture_id == aperture_id
-            ).update({ApertureElement.row_number: ApertureElement.row_number + 1}, synchronize_session=False)
+            db.query(ApertureElement).filter(ApertureElement.aperture_id == aperture_id).update(
+                {ApertureElement.row_number: ApertureElement.row_number + 1}, synchronize_session=False
+            )
         else:
             # Append at end (bottom) - original behavior
             new_row_index = len(aperture.row_heights_mm)
@@ -175,9 +175,9 @@ def add_column_to_aperture(
             aperture.column_widths_mm = [column_width_mm] + aperture.column_widths_mm
 
             # Shift all existing elements' column_number by +1
-            db.query(ApertureElement).filter(
-                ApertureElement.aperture_id == aperture_id
-            ).update({ApertureElement.column_number: ApertureElement.column_number + 1}, synchronize_session=False)
+            db.query(ApertureElement).filter(ApertureElement.aperture_id == aperture_id).update(
+                {ApertureElement.column_number: ApertureElement.column_number + 1}, synchronize_session=False
+            )
         else:
             # Append at end (right) - original behavior
             new_col_index = len(aperture.column_widths_mm)
@@ -224,9 +224,11 @@ def delete_row_from_aperture(db: Session, aperture_id: int, row_number: int) -> 
         aperture.row_heights_mm = new_heights
 
         # Remove all elements in the deleted row
-        elements_to_delete = db.query(ApertureElement).filter(
-            ApertureElement.aperture_id == aperture_id, ApertureElement.row_number == row_number
-        ).all()
+        elements_to_delete = (
+            db.query(ApertureElement)
+            .filter(ApertureElement.aperture_id == aperture_id, ApertureElement.row_number == row_number)
+            .all()
+        )
         for element in elements_to_delete:
             db.delete(element)
 
@@ -267,9 +269,11 @@ def delete_column_from_aperture(db: Session, aperture_id: int, column_number: in
         aperture.column_widths_mm = new_widths
 
         # Remove all elements in the deleted column
-        elements_to_delete = db.query(ApertureElement).filter(
-            ApertureElement.aperture_id == aperture_id, ApertureElement.column_number == column_number
-        ).all()
+        elements_to_delete = (
+            db.query(ApertureElement)
+            .filter(ApertureElement.aperture_id == aperture_id, ApertureElement.column_number == column_number)
+            .all()
+        )
         for element in elements_to_delete:
             db.delete(element)
 
@@ -316,23 +320,23 @@ def add_new_aperture_on_project(db: Session, project: Project) -> Aperture:
 
 def duplicate_aperture(db: Session, source_aperture_id: int) -> Aperture:
     """Duplicate an Aperture with all its elements, frames, and glazing.
-    
+
     Args:
         db: Database session
         source_aperture_id: ID of the aperture to duplicate
-        
+
     Returns:
         The newly created Aperture
-        
+
     Raises:
         ValueError: If source aperture not found
     """
     logger.info(f"duplicate_aperture(source_aperture_id={source_aperture_id})")
-    
+
     try:
         # Get source aperture
         source_aperture = get_aperture_by_id(db, source_aperture_id)
-        
+
         # Create new aperture with copied properties
         new_aperture = Aperture(
             name=f"{source_aperture.name} (Copy)",
@@ -342,18 +346,18 @@ def duplicate_aperture(db: Session, source_aperture_id: int) -> Aperture:
         )
         db.add(new_aperture)
         db.flush()  # Get the ID without committing
-        
+
         # Duplicate all elements
         for source_element in source_aperture.elements:
             duplicate_aperture_element(db, source_element, new_aperture.id)
-        
+
         # Commit the entire transaction
         db.commit()
         db.refresh(new_aperture)
-        
+
         logger.info(f"Successfully duplicated aperture {source_aperture_id} to new aperture {new_aperture.id}")
         return new_aperture
-        
+
     except Exception as e:
         db.rollback()
         logger.error(f"Error duplicating aperture {source_aperture_id}: {str(e)}")
@@ -393,9 +397,7 @@ def update_aperture_glazing_type(db: Session, element_id: int, glazing_type_id: 
 
 def update_aperture_column_width(db: Session, aperture_id: int, column_index: int, new_width_mm: float) -> Aperture:
     """Update the width of a specific column in an aperture."""
-    logger.info(
-        f"update_aperture_column_width({aperture_id=}, {column_index=}, {new_width_mm=})"
-    )
+    logger.info(f"update_aperture_column_width({aperture_id=}, {column_index=}, {new_width_mm=})")
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
@@ -590,7 +592,7 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
                     col_span=1,
                 )
                 new_elements.append(new_element)
-        
+
         # Add the new elements to the session
         db.add_all(new_elements)
         db.commit()
@@ -609,7 +611,7 @@ def split_aperture_element(db: Session, aperture_id: int, element_id: int) -> Ap
 def update_aperture_element_name(db: Session, element_id: int, new_name: str) -> Aperture:
     """Update the name of an aperture element by its ID."""
     logger.info(f"update_aperture_element_name({element_id=}, {new_name=})")
-    
+
     try:
         element = get_aperture_element_by_id(db, element_id)
         aperture = get_aperture_by_child_element_id(db, element.id)

@@ -11,9 +11,9 @@ from db_entities.airtable.at_base import AirTableBase
 from db_entities.airtable.at_table import AirTableTable
 from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
-from features.aperture.schemas.glazing_type import GlazingTypeSchema
-from features.aperture.schemas.frame_type import FrameTypeSchema
 from db_entities.assembly import Material
+from features.aperture.schemas.frame_type import FrameTypeSchema
+from features.aperture.schemas.glazing_type import GlazingTypeSchema
 from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
@@ -245,10 +245,7 @@ def get_all_frame_types_from_airtable() -> list[ApertureFrameType]:
         settings.AIRTABLE_FRAME_DATA_TABLE_ID,
     )
 
-    return [
-        ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).dict())
-        for record in table.all()
-    ]
+    return [ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
 
 def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
@@ -261,10 +258,7 @@ def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
         settings.AIRTABLE_GLAZING_DATA_TABLE_ID,
     )
 
-    return [
-        ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).dict())
-        for record in table.all()
-    ]
+    return [ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
 
 
 def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:

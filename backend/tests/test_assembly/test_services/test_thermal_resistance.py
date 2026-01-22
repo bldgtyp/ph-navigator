@@ -19,10 +19,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from db_entities.assembly import Assembly
-from features.assembly.services.assembly import (
-    create_new_empty_assembly_on_project,
-    get_assembly_by_id,
-)
+from features.assembly.services.assembly import create_new_empty_assembly_on_project, get_assembly_by_id
 from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_multiple_hb_constructions_from_hbjson,
@@ -430,9 +427,9 @@ class TestSteelStudAssembly:
 
         # The equivalent conductivity should be in a reasonable range
         # (typically 1.5x to 2.5x the raw insulation conductivity for steel studs)
-        assert eq_conductivity < K_FIBERGLASS * 3.0, (
-            f"Equivalent conductivity ({eq_conductivity:.6f}) is unexpectedly high"
-        )
+        assert (
+            eq_conductivity < K_FIBERGLASS * 3.0
+        ), f"Equivalent conductivity ({eq_conductivity:.6f}) is unexpectedly high"
 
 
 class TestEdgeCases:
@@ -442,9 +439,7 @@ class TestEdgeCases:
         """Assembly with no layers should return invalid result."""
         create_test_project(db=session, username="user1", project_name="Project 1")
 
-        empty_assembly = create_new_empty_assembly_on_project(
-            db=session, name="Empty Assembly", bt_number="1234"
-        )
+        empty_assembly = create_new_empty_assembly_on_project(db=session, name="Empty Assembly", bt_number="1234")
 
         result = calculate_effective_r_value(empty_assembly)
 

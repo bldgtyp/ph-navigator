@@ -56,13 +56,13 @@ def get_default_glazing_type(db: Session) -> ApertureGlazingType:
     default_glazing = db.query(ApertureGlazingType).filter_by(name="Default").first()
     if default_glazing:
         return default_glazing
-    
+
     # If not found, return the first Glazing type
     first_glazing = db.query(ApertureGlazingType).first()
     if first_glazing:
         logger.warning("No default glazing found, returning the first glazing type.")
         return first_glazing
-    
+
     # If no glazings exist, raise an exception
     raise NoGlazingTypesException("Default Glazing Type")
 

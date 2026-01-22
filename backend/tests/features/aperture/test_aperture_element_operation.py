@@ -5,10 +5,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from db_entities.aperture import Aperture
-from features.aperture.services.aperture import (
-    update_aperture_element_operation,
-    duplicate_aperture,
-)
+from features.aperture.services.aperture import duplicate_aperture, update_aperture_element_operation
 
 
 def test_update_element_operation_to_swing(test_db: Session, sample_aperture_with_elements: Aperture):

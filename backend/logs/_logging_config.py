@@ -13,7 +13,7 @@ def handle_uncaught_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
-    
+
     try:
         logger = logging.getLogger("uncaught_exception_handler")
         logger.critical(
@@ -46,11 +46,11 @@ def configure_logging():
             ),
         ],
     )
-    
+
     # Test that logging is working after basic config
     test_logger = logging.getLogger("logging_config_test")
     test_logger.info("Logging configuration completed successfully")
-    
+
     # Set up uncaught exception handler
     sys.excepthook = handle_uncaught_exception
     test_logger.info("Uncaught exception handler installed")

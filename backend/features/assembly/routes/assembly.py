@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from config import limiter
 from database import get_db
 from features.assembly.schemas.assembly import AssemblySchema, UpdateAssemblyNameRequest
+from features.assembly.schemas.thermal_resistance import ThermalResistanceSchema
 from features.assembly.services.assembly import (
     create_new_default_assembly_on_project,
     delete_assembly,
@@ -27,7 +28,6 @@ from features.assembly.services.assembly_from_hbjson import (
 )
 from features.assembly.services.thermal_resistance import calculate_effective_r_value
 from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
-from features.assembly.schemas.thermal_resistance import ThermalResistanceSchema
 
 router = APIRouter(
     prefix="/assembly",

@@ -13,8 +13,8 @@ from features.aperture.schemas.manufacturer_filter import (
 from features.aperture.services.manufacturer_filter import (
     get_all_frame_manufacturers,
     get_all_glazing_manufacturers,
-    get_project_by_bt_number,
     get_enabled_manufacturers,
+    get_project_by_bt_number,
     get_used_frame_manufacturers,
     get_used_glazing_manufacturers,
     has_any_filters,

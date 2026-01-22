@@ -11,27 +11,35 @@ from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.aperture.aperture_glazing import ApertureElementGlazing
 from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
-from db_entities.app.project import Project
 from db_entities.app.manufacturer_filter import ProjectManufacturerFilter
+from db_entities.app.project import Project
 
 logger = logging.getLogger(__name__)
 
 
 def get_all_frame_manufacturers(db: Session) -> list[str]:
     """Get all unique frame manufacturers from the database."""
-    result = db.query(distinct(ApertureFrameType.manufacturer)).filter(
-        ApertureFrameType.manufacturer.isnot(None),
-        ApertureFrameType.manufacturer != "",
-    ).all()
+    result = (
+        db.query(distinct(ApertureFrameType.manufacturer))
+        .filter(
+            ApertureFrameType.manufacturer.isnot(None),
+            ApertureFrameType.manufacturer != "",
+        )
+        .all()
+    )
     return sorted([r[0] for r in result])
 
 
 def get_all_glazing_manufacturers(db: Session) -> list[str]:
     """Get all unique glazing manufacturers from the database."""
-    result = db.query(distinct(ApertureGlazingType.manufacturer)).filter(
-        ApertureGlazingType.manufacturer.isnot(None),
-        ApertureGlazingType.manufacturer != "",
-    ).all()
+    result = (
+        db.query(distinct(ApertureGlazingType.manufacturer))
+        .filter(
+            ApertureGlazingType.manufacturer.isnot(None),
+            ApertureGlazingType.manufacturer != "",
+        )
+        .all()
+    )
     return sorted([r[0] for r in result])
 
 

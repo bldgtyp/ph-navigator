@@ -28,6 +28,5 @@ class ApertureGlazingType(Base):
 
     # Relationships
     element_glazings: Mapped[list["ApertureElementGlazing"]] = relationship(
-        "ApertureElementGlazing",
-        back_populates="glazing_type"
+        "ApertureElementGlazing", back_populates="glazing_type"
     )

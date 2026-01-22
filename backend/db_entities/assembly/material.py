@@ -47,15 +47,15 @@ class Material(Base):
 
         if not self.argb_color:
             return [int(value) for value in self.default_argb_color.split(",")]
-        
+
         argb_color = self.argb_color.strip()
         argb_color = argb_color.replace("(", "").replace(")", "")
         argb_colors = [int(value) for value in argb_color.split(",")]
         if len(argb_colors) != 4:
             return [int(value) for value in self.default_argb_color.split(",")]
-        
+
         return argb_colors
-    
+
     @property
     def color_a(self) -> int:
         """Get the alpha channel of the ARGB color."""
@@ -75,4 +75,3 @@ class Material(Base):
     def color_b(self) -> int:
         """Get the blue channel of the ARGB color."""
         return self.argb_list[3]
-

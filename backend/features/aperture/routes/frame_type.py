@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 from config import limiter
 from database import get_db
 from db_entities.aperture.frame_type import ApertureFrameType
+from features.air_table.services import get_all_frame_types_from_airtable
 from features.aperture.schemas.frame_type import FrameTypeSchema
 from features.aperture.services.frame_type import add_frame_types, purge_unused_frame_types
-from features.air_table.services import get_all_frame_types_from_airtable
 
 router = APIRouter(
     prefix="/aperture",

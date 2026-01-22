@@ -45,12 +45,11 @@ class FrameTypeSchema(BaseModel):
         d = d | record["fields"]
 
         # Add the ID to the fields
-        d["id"] = record["id"]  
-        
+        d["id"] = record["id"]
+
         # Pull out the Datasheet URL
-        datasheets = [FrameTypeDatasheetSchema(**ds) for ds in record['fields'].get("DATASHEET", [])]
+        datasheets = [FrameTypeDatasheetSchema(**ds) for ds in record["fields"].get("DATASHEET", [])]
         d["datasheet_url"] = datasheets[0].url if datasheets else None
 
         # Return an instance of the schema
-        return cls(**{k.lower(): v for k, v in d.items()})  
-        
+        return cls(**{k.lower(): v for k, v in d.items()})

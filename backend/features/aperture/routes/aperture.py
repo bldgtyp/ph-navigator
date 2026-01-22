@@ -16,15 +16,15 @@ from features.aperture.schemas.aperture import (
     MergeApertureElementsRequest,
     RowDeleteRequest,
     SplitApertureElementRequest,
+    UpdateApertureElementNameRequest,
     UpdateApertureFrameRequest,
     UpdateColumnWidthRequest,
     UpdateGlazingRequest,
     UpdateNameRequest,
     UpdateRowHeightRequest,
-    UpdateApertureElementNameRequest,
 )
-from features.aperture.schemas.window_u_value import ElementUValueResult, WindowUValueResponse
 from features.aperture.schemas.aperture_element import UpdateElementAssignmentsRequest, UpdateOperationRequest
+from features.aperture.schemas.window_u_value import ElementUValueResult, WindowUValueResponse
 from features.aperture.services.aperture import (
     LastColumnException,
     LastRowException,
@@ -41,18 +41,15 @@ from features.aperture.services.aperture import (
     merge_aperture_elements,
     split_aperture_element,
     update_aperture_column_width,
-    update_aperture_element_frame_type,
-    update_aperture_element_operation,
     update_aperture_element_assignments,
+    update_aperture_element_frame_type,
+    update_aperture_element_name,
+    update_aperture_element_operation,
+    update_aperture_glazing_type,
     update_aperture_name,
     update_aperture_row_height,
-    update_aperture_element_name,
-    update_aperture_glazing_type,
 )
-from features.aperture.services.window_u_value import (
-    calculate_aperture_u_value,
-    WindowUValueResult,
-)
+from features.aperture.services.window_u_value import WindowUValueResult, calculate_aperture_u_value
 from features.app.services import get_project_by_bt_number
 
 router = APIRouter(
@@ -146,12 +143,12 @@ def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(g
 @router.post("/duplicate-aperture/{aperture_id}", response_model=ApertureSchema)
 def duplicate_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
     """Duplicate an existing aperture with all its elements, frames, and glazing.
-    
+
     Args:
         request: FastAPI request object
         aperture_id: ID of the aperture to duplicate
         db: Database session
-        
+
     Returns:
         The newly created aperture
     """
