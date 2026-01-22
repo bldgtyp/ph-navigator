@@ -189,4 +189,59 @@ export const fieldConfigs: Record<string, ElementTypeConfig> = {
             },
         ],
     },
+    spaceFloorSegmentMeshFace: {
+        title: 'Interior Floor',
+        fields: [
+            { key: 'display_name', label: 'Space' },
+            { key: 'number', label: 'Number' },
+            {
+                key: 'weighting_factor',
+                label: 'Weight',
+                tooltip: 'Floor area weighting factor for Passive House calculations. 1.0 = fully conditioned space.',
+                decimals: 2,
+            },
+            {
+                key: 'floor_area',
+                label: 'Floor Area',
+                tooltip: 'Gross floor area of this floor segment',
+                decimals: 2,
+                units: { si: 'm2', ip: 'ft2', siLabel: 'm²', ipLabel: 'ft²' },
+            },
+            {
+                key: 'weighted_floor_area',
+                label: 'Weighted Area',
+                tooltip: 'Floor area multiplied by weighting factor. Used for Passive House TFA calculations.',
+                decimals: 2,
+                units: { si: 'm2', ip: 'ft2', siLabel: 'm²', ipLabel: 'ft²' },
+            },
+        ],
+        sections: [
+            {
+                title: 'Ventilation',
+                fields: [
+                    {
+                        key: '_v_sup',
+                        label: 'Supply Air',
+                        tooltip: 'Volume flow rate of supply air into the space',
+                        decimals: 0,
+                        units: { si: 'm3_hr', ip: 'cfm', siLabel: 'm³/h', ipLabel: 'CFM' },
+                    },
+                    {
+                        key: '_v_eta',
+                        label: 'Extract Air',
+                        tooltip: 'Volume flow rate of extract air from the space',
+                        decimals: 0,
+                        units: { si: 'm3_hr', ip: 'cfm', siLabel: 'm³/h', ipLabel: 'CFM' },
+                    },
+                    {
+                        key: '_v_tran',
+                        label: 'Transfer Air',
+                        tooltip: 'Volume flow rate of transfer air through the space',
+                        decimals: 0,
+                        units: { si: 'm3_hr', ip: 'cfm', siLabel: 'm³/h', ipLabel: 'CFM' },
+                    },
+                ],
+            },
+        ],
+    },
 };

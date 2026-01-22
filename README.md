@@ -126,8 +126,6 @@
 
 #### Color by:
 
-- [x] Ventilation (sup/eta)
-- [ ] TFA Factor
 - [ ] Fix color/lighting
 
 #### Search Panel:

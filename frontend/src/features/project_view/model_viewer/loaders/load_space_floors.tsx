@@ -52,6 +52,9 @@ export function loadSpaceFloors(world: React.RefObject<SceneSetup>, hbPHSpaces: 
                 geom.mesh.userData['number'] = space.number;
                 geom.mesh.userData['weighted_floor_area'] = segment.weighted_floor_area;
                 geom.mesh.userData['floor_area'] = segment.floor_area;
+                geom.mesh.userData['_v_sup'] = space.properties.ph._v_sup;
+                geom.mesh.userData['_v_eta'] = space.properties.ph._v_eta;
+                geom.mesh.userData['_v_tran'] = space.properties.ph._v_tran;
 
                 geom.wireframe.material = appMaterials.wireframe;
                 geom.wireframe.userData['type'] = 'spaceFloorSegmentMeshFaceWireframe';
