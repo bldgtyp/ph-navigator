@@ -30,6 +30,7 @@
 
 ### Assemblies (UI):
 
+- [ ] Add a 'loading' state
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths on different layers?
 - [ ] Scale properly with screen
@@ -55,14 +56,13 @@
 
 ### Windows:
 
+- [ ] Add a 'loading' state
 - [ ] Change Element blocks to be inside a scrollable container so we always see the window graphic
 - [ ] Select individual frame elements allows direct setting (dropdown)
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
-- [x] Add window-element U-Value (might refactor Uw calc?)
-- [x] Uw Value Label doesn't respect SI | IP state.
-- [x] Consider caching/storing the total Uw on the DB-entity to reduce server workload?
+- [ ] U-w is still REALLY slow to load for some reason?
 
 ---
 
@@ -70,6 +70,7 @@
 
 #### Get Geometry:
 
+- [ ] Consider Browser caching?
 - [ ] Thermal Bridge Edges
 - [ ] Winter / Summer Window Radiation Grid and Legend
 - [ ] Add persistent North arrow someplace (for non-shading views)
