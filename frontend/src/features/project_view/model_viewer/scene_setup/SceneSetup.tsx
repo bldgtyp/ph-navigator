@@ -54,7 +54,7 @@ export class SceneSetup {
         // -- Geometry Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio * 2); // Improves line quality
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
 
         // -- Scene Composer
         this.composer = new EffectComposer(this.renderer);
