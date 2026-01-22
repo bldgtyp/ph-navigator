@@ -2,9 +2,9 @@
 
 .color-by-legend {
     position: fixed;
-    top: 150px;
-    left: 16px;
-    max-height: calc(100vh - 210px);
+    top: 220px;
+    left: 25px;
+    max-height: calc(100vh - 260px);
     z-index: 100;
     pointer-events: none; /* Allow clicks to pass through to model */
 }
@@ -27,7 +27,7 @@
     flex-direction: column;
     gap: 4px;
     overflow-y: auto;
-    max-height: calc(100vh - 260px);
+    max-height: calc(100vh - 300px);
     padding-right: 8px; /* Space for scrollbar when needed */
     pointer-events: auto; /* Re-enable pointer events for scrolling */
 }

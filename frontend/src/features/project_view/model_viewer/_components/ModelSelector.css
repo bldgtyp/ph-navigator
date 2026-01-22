@@ -1,0 +1,39 @@
+.model-selector {
+    position: fixed;
+    top: 150px;
+    left: 20px;
+    z-index: 100;
+}
+
+.model-selector-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    color: #333;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.15s ease;
+}
+
+.model-selector-button:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.model-selector-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.model-selector-label {
+    font-weight: 500;
+}
+
+.model-selector-arrow {
+    opacity: 0.3;
+}

@@ -13,8 +13,10 @@ import { AppToolStateContextProvider } from './_contexts/app_tool_state_context'
 import { SelectedObjectContextProvider } from './_contexts/selected_object_context';
 import { HoverObjectContextProvider } from './_contexts/hover_object_context';
 import { ColorByContextProvider } from './_contexts/color_by_context';
+import { SelectedModelContextProvider } from './_contexts/selected_model_context';
 import ElementInfoPanel from './_components/ElementInfoPanel/ElementInfoPanel';
 import ColorByLegend from './_components/ColorByLegend/ColorByLegend';
+import ModelSelector from './_components/ModelSelector';
 
 const Viewer: React.FC<any> = () => {
     console.log('Rendering Viewer Component...');
@@ -29,25 +31,28 @@ const Viewer: React.FC<any> = () => {
 
     return (
         <>
-            <AppStateContextProvider>
-                <AppToolStateContextProvider>
-                    <ColorByContextProvider>
-                        <SelectedObjectContextProvider>
-                            <HoverObjectContextProvider>
-                                <World
-                                    world={world}
-                                    hoveringVertex={hoveringVertex}
-                                    dimensionLinesRef={dimensionLinesRef}
-                                />
-                                <Model world={world} showModel={showModel} />
-                                <ElementInfoPanel />
-                                <ColorByLegend />
-                            </HoverObjectContextProvider>
-                        </SelectedObjectContextProvider>
-                        <BottomMenubar />
-                    </ColorByContextProvider>
-                </AppToolStateContextProvider>
-            </AppStateContextProvider>
+            <SelectedModelContextProvider>
+                <AppStateContextProvider>
+                    <AppToolStateContextProvider>
+                        <ColorByContextProvider>
+                            <SelectedObjectContextProvider>
+                                <HoverObjectContextProvider>
+                                    <World
+                                        world={world}
+                                        hoveringVertex={hoveringVertex}
+                                        dimensionLinesRef={dimensionLinesRef}
+                                    />
+                                    <Model world={world} showModel={showModel} />
+                                    <ModelSelector />
+                                    <ElementInfoPanel />
+                                    <ColorByLegend />
+                                </HoverObjectContextProvider>
+                            </SelectedObjectContextProvider>
+                            <BottomMenubar />
+                        </ColorByContextProvider>
+                    </AppToolStateContextProvider>
+                </AppStateContextProvider>
+            </SelectedModelContextProvider>
         </>
     );
 };

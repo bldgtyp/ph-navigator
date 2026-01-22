@@ -124,10 +124,6 @@
 - [ ] LMB select in negative space to de-select
 - [ ] Add 'escape' to clear surface select
 
-#### Color by:
-
-- [ ] Fix color/lighting
-
 #### Search Panel:
 
 - [ ] Select Similar to current selection
@@ -139,7 +135,6 @@
 #### NavBar:
 
 - [ ] Add EPW file data source. Location in upper right (map link)
-- [ ] Add model refresh button
 
 #### Comments
 

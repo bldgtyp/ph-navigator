@@ -6,6 +6,8 @@ import { CircularProgress, Dialog, Stack, Typography } from '@mui/material';
 
 import { SceneSetup } from './scene_setup/SceneSetup';
 import { get3DModelData } from '../../../api/get3DModelData';
+import { getAvailableModels } from '../../../api/getAvailableModels';
+import { useSelectedModelContext } from './_contexts/selected_model_context';
 import { loadModelFaces } from './loaders/load_faces';
 import { loadSpaces } from './loaders/load_spaces';
 import { loadSpaceFloors } from './loaders/load_space_floors';
@@ -40,15 +42,38 @@ type ModelProps = {
 const Model: React.FC<ModelProps> = ({ world, showModel }) => {
     const { projectId } = useParams();
     const [isLoading, setIsLoading] = useState(true);
+    const { selectedModelId, setAvailableModels, setIsLoadingModels, forceRefresh, clearRefresh } =
+        useSelectedModelContext();
+
+    // Fetch available models when projectId changes or on force refresh
+    // ------------------------------------------------------------------------
+    useEffect(() => {
+        async function fetchAvailableModels() {
+            if (!projectId) return;
+
+            setIsLoadingModels(true);
+            try {
+                const models = await getAvailableModels(projectId);
+                if (models) {
+                    setAvailableModels(models);
+                }
+            } catch (error) {
+                console.error('Error fetching available models:', error);
+            } finally {
+                setIsLoadingModels(false);
+            }
+        }
+
+        fetchAvailableModels();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [projectId, forceRefresh]);
 
     // Load the Model-Elements from the Server based on: team-id / project-id / model-id
     // ------------------------------------------------------------------------
     useEffect(() => {
-        async function loadModelDataIntoWorld(projectId: string) {
-            console.log('Loading Model Data into World...');
-
+        async function loadModelDataIntoWorld(projectId: string, recordId: string | null, shouldForceRefresh: boolean) {
             try {
-                const modelData = await get3DModelData(projectId);
+                const modelData = await get3DModelData(projectId, recordId, shouldForceRefresh);
                 if (modelData === null) {
                     return;
                 }
@@ -63,16 +88,21 @@ const Model: React.FC<ModelProps> = ({ world, showModel }) => {
                 alert(`Error loading model data: ${error}`);
             } finally {
                 setIsLoading(false);
+                // Clear the force refresh flag after loading
+                if (shouldForceRefresh) {
+                    clearRefresh();
+                }
             }
         }
 
         world.current.reset();
+        setIsLoading(true);
         if (showModel === true && projectId !== undefined) {
-            loadModelDataIntoWorld(projectId);
+            loadModelDataIntoWorld(projectId, selectedModelId, forceRefresh);
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectId, showModel]);
+    }, [projectId, showModel, selectedModelId, forceRefresh]);
 
     return (
         <>
