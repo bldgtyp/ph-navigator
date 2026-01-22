@@ -80,7 +80,7 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setRValueRefreshKey(k => k + 1);
     }, []);
 
-    const fetchAssemblies = async () => {
+    const fetchAssemblies = useCallback(async () => {
         console.log(`fetchAssemblies(), projectId=${projectId}`);
         try {
             const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
@@ -94,7 +94,7 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         } finally {
             setIsLoadingAssemblies(false);
         }
-    };
+    }, [projectId]);
 
     useEffect(() => {
         console.log('useLoadAssemblies useEffect called', projectId);
@@ -119,15 +119,18 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         clearLayerThicknessOverrides();
     }, [clearLayerThicknessOverrides, selectedAssemblyId]);
 
-    const handleAssemblyChange = async (assemblyId: number) => {
-        console.log('handleAssemblyChange', assemblyId);
-        setSelectedAssemblyId(assemblyId);
-        await fetchAssemblies();
-        // Increment refreshKey to force UI components to re-sync with new data
-        setRefreshKey(k => k + 1);
-    };
+    const handleAssemblyChange = useCallback(
+        async (assemblyId: number) => {
+            console.log('handleAssemblyChange', assemblyId);
+            setSelectedAssemblyId(assemblyId);
+            await fetchAssemblies();
+            // Increment refreshKey to force UI components to re-sync with new data
+            setRefreshKey(k => k + 1);
+        },
+        [fetchAssemblies]
+    );
 
-    const handleAddAssembly = async () => {
+    const handleAddAssembly = useCallback(async () => {
         console.log('handleAddAssembly');
         try {
             const response = await postWithAlert<AssemblyType>(`assembly/create-new-assembly-on-project/${projectId}`);
@@ -135,60 +138,69 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             if (response) {
                 const newAssembly = response;
                 console.log(`Assembly added successfully: ${newAssembly.id}`);
-                const updatedAssemblies = await fetchAssemblies();
+                await fetchAssemblies();
                 setSelectedAssemblyId(newAssembly.id);
             }
         } catch (error) {
             console.error('Failed to add assembly:', error);
         }
-    };
+    }, [projectId, fetchAssemblies]);
 
-    const handleDeleteAssembly = async (assemblyId: number) => {
-        console.log(`handleDeleteAssembly(${assemblyId})`);
+    const handleDeleteAssembly = useCallback(
+        async (assemblyId: number) => {
+            console.log(`handleDeleteAssembly(${assemblyId})`);
 
-        try {
-            const confirmed = window.confirm('Are you sure you want to delete the Assembly?');
-            if (!confirmed) return;
+            try {
+                const confirmed = window.confirm('Are you sure you want to delete the Assembly?');
+                if (!confirmed) return;
 
-            await deleteWithAlert(`assembly/delete-assembly/${assemblyId}`, null, {});
+                await deleteWithAlert(`assembly/delete-assembly/${assemblyId}`, null, {});
 
-            console.log(`Assembly ${assemblyId} deleted successfully.`);
+                console.log(`Assembly ${assemblyId} deleted successfully.`);
 
-            // Fetch updated assemblies and update the state
-            const updatedAssemblies = await fetchAssemblies();
+                // Fetch updated assemblies and update the state
+                const updatedAssemblies = await fetchAssemblies();
 
-            // Select the first assembly in the updated list, or set to null if none remain
-            if (updatedAssemblies.length > 0) {
-                setSelectedAssemblyId(updatedAssemblies[0].id);
-            } else {
-                setSelectedAssemblyId(null);
+                // Select the first assembly in the updated list, or set to null if none remain
+                if (updatedAssemblies.length > 0) {
+                    setSelectedAssemblyId(updatedAssemblies[0].id);
+                } else {
+                    setSelectedAssemblyId(null);
+                }
+            } catch (error) {
+                console.error(`Failed to delete Assembly ${assemblyId}:`, error);
             }
-        } catch (error) {
-            console.error(`Failed to delete Assembly ${assemblyId}:`, error);
-        }
-    };
+        },
+        [fetchAssemblies]
+    );
 
-    const handleNameChange = async (assemblyId: number, newName: string) => {
-        console.log('handleNameChange', assemblyId, newName);
-        try {
-            await patchWithAlert(`assembly/update-assembly-name/${assemblyId}`, null, {
-                new_name: newName,
-            });
+    const handleNameChange = useCallback(
+        async (assemblyId: number, newName: string) => {
+            console.log('handleNameChange', assemblyId, newName);
+            try {
+                await patchWithAlert(`assembly/update-assembly-name/${assemblyId}`, null, {
+                    new_name: newName,
+                });
 
-            // Update the assemblies state
-            const updatedAssemblies = assemblies.map(assembly =>
-                assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
-            );
-            setAssemblies(updatedAssemblies);
+                // Update the assemblies state
+                setAssemblies(currentAssemblies =>
+                    currentAssemblies.map(assembly =>
+                        assembly.id === assemblyId ? { ...assembly, name: newName } : assembly
+                    )
+                );
 
-            // Ensure the selected assembly is updated
-            handleAssemblyChange(assemblyId);
-        } catch (error) {
-            console.error('Failed to update assembly name:', error);
-        }
-    };
+                // Ensure the selected assembly is updated
+                setSelectedAssemblyId(assemblyId);
+                await fetchAssemblies();
+                setRefreshKey(k => k + 1);
+            } catch (error) {
+                console.error('Failed to update assembly name:', error);
+            }
+        },
+        [fetchAssemblies]
+    );
 
-    const handleRefreshMaterials = async () => {
+    const handleRefreshMaterials = useCallback(async () => {
         console.log('handleRefreshMaterials');
         setIsRefreshing(true);
         setRefreshMessage(null);
@@ -203,17 +215,17 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         } finally {
             setIsRefreshing(false);
         }
-    };
+    }, [materialContext]);
 
-    const handleUploadConstructions = async () => {
+    const handleUploadConstructions = useCallback(async () => {
         console.log('handleUploadConstructions');
         if (fileInputRef.current) {
             fileInputRef.current.value = ''; // Reset before opening to ensure onChange fires
         }
         fileInputRef.current?.click();
-    };
+    }, []);
 
-    const handleDownloadConstructions = async () => {
+    const handleDownloadConstructions = useCallback(async () => {
         console.log('handleDownloadConstructions');
         try {
             setIsRefreshing(true); // Show loading state
@@ -263,133 +275,147 @@ export const AssemblyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         } finally {
             setIsRefreshing(false); // Hide loading state
         }
-    };
+    }, [projectId]);
 
-    const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        console.log('handleFileSelected');
-        const file = event.target.files?.[0];
-        if (!file) return;
-        console.log('Selected file:', file);
-        // Validate file extension
-        if (!(file.name.toLowerCase().endsWith('.hbjson') || file.name.toLowerCase().endsWith('.json'))) {
-            alert('Please select a valid .hbjson or .json file');
-            return;
-        }
-
-        try {
-            // Show loading state
-            setIsRefreshing(true);
-
-            // Upload the file
-            console.log('Uploading file...');
-            const response = await postFileWithAlert<any>(
-                `assembly/add-assemblies-from-hbjson-constructions/${projectId}`,
-                null,
-                file
-            );
-        } catch (error) {
-            console.error('API error:', error);
-            throw error;
-        } finally {
-            // Refresh Assemblies to show the newly added ones
-            await fetchAssemblies();
-
-            // Reset the file input so the same file can be selected again
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-
-            // Hide loading state
-            setIsRefreshing(false);
-        }
-    };
-
-    const handleFlipOrientation = async (assemblyId: number | null) => {
-        console.log('handleFlipOrientation', assemblyId);
-        try {
-            if (!assemblyId) {
-                console.error('No assembly selected for flipping orientation');
+    const handleFileSelected = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            console.log('handleFileSelected');
+            const file = event.target.files?.[0];
+            if (!file) return;
+            console.log('Selected file:', file);
+            // Validate file extension
+            if (!(file.name.toLowerCase().endsWith('.hbjson') || file.name.toLowerCase().endsWith('.json'))) {
+                alert('Please select a valid .hbjson or .json file');
                 return;
             }
 
-            const updatedAssembly = await patchWithAlert<AssemblyType>(
-                `assembly/flip-assembly-orientation/${assemblyId}`,
-                null,
-                {}
-            );
+            try {
+                // Show loading state
+                setIsRefreshing(true);
 
-            if (!updatedAssembly) {
-                console.error('Failed to flip assembly orientation: No data returned');
-                return;
+                // Upload the file
+                console.log('Uploading file...');
+                await postFileWithAlert<any>(
+                    `assembly/add-assemblies-from-hbjson-constructions/${projectId}`,
+                    null,
+                    file
+                );
+            } catch (error) {
+                console.error('API error:', error);
+                throw error;
+            } finally {
+                // Refresh Assemblies to show the newly added ones
+                await fetchAssemblies();
+
+                // Reset the file input so the same file can be selected again
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+
+                // Hide loading state
+                setIsRefreshing(false);
             }
+        },
+        [projectId, fetchAssemblies]
+    );
 
-            // Update the assemblies state
-            const updatedAssemblies = assemblies.map(assembly =>
-                assembly.id === assemblyId ? { ...updatedAssembly } : assembly
-            );
-            setAssemblies(updatedAssemblies);
+    const handleFlipOrientation = useCallback(
+        async (assemblyId: number | null) => {
+            console.log('handleFlipOrientation', assemblyId);
+            try {
+                if (!assemblyId) {
+                    console.error('No assembly selected for flipping orientation');
+                    return;
+                }
 
-            // Ensure the selected assembly is updated
-            handleAssemblyChange(assemblyId);
-        } catch (error) {
-            console.error('Failed to update assembly name:', error);
-        }
-    };
+                const updatedAssembly = await patchWithAlert<AssemblyType>(
+                    `assembly/flip-assembly-orientation/${assemblyId}`,
+                    null,
+                    {}
+                );
 
-    const handleFlipLayers = async (assemblyId: number | null) => {
-        console.log('handleFlipLayers', assemblyId);
-        try {
-            if (!assemblyId) {
-                console.error('No assembly selected for flipping layers');
-                return;
+                if (!updatedAssembly) {
+                    console.error('Failed to flip assembly orientation: No data returned');
+                    return;
+                }
+
+                // Update the assemblies state
+                setAssemblies(currentAssemblies =>
+                    currentAssemblies.map(assembly => (assembly.id === assemblyId ? { ...updatedAssembly } : assembly))
+                );
+
+                // Ensure the selected assembly is updated
+                setSelectedAssemblyId(assemblyId);
+                await fetchAssemblies();
+                setRefreshKey(k => k + 1);
+            } catch (error) {
+                console.error('Failed to update assembly name:', error);
             }
+        },
+        [fetchAssemblies]
+    );
 
-            const updatedAssembly = await patchWithAlert<AssemblyType>(
-                `assembly/flip-assembly-layers/${assemblyId}`,
-                null,
-                {}
-            );
+    const handleFlipLayers = useCallback(
+        async (assemblyId: number | null) => {
+            console.log('handleFlipLayers', assemblyId);
+            try {
+                if (!assemblyId) {
+                    console.error('No assembly selected for flipping layers');
+                    return;
+                }
 
-            if (!updatedAssembly) {
-                console.error('Failed to flip assembly layers: No data returned');
-                return;
+                const updatedAssembly = await patchWithAlert<AssemblyType>(
+                    `assembly/flip-assembly-layers/${assemblyId}`,
+                    null,
+                    {}
+                );
+
+                if (!updatedAssembly) {
+                    console.error('Failed to flip assembly layers: No data returned');
+                    return;
+                }
+
+                // Update the assemblies state
+                setAssemblies(currentAssemblies =>
+                    currentAssemblies.map(assembly => (assembly.id === assemblyId ? { ...updatedAssembly } : assembly))
+                );
+
+                // Ensure the selected assembly is updated
+                setSelectedAssemblyId(assemblyId);
+                await fetchAssemblies();
+                setRefreshKey(k => k + 1);
+            } catch (error) {
+                console.error('Failed to update assembly layers:', error);
             }
+        },
+        [fetchAssemblies]
+    );
 
-            // Update the assemblies state
-            const updatedAssemblies = assemblies.map(assembly =>
-                assembly.id === assemblyId ? { ...updatedAssembly } : assembly
-            );
-            setAssemblies(updatedAssemblies);
+    const handleDuplicateAssembly = useCallback(
+        async (assemblyId: number | null) => {
+            console.log(`handleDuplicateAssembly(${assemblyId})`);
 
-            // Ensure the selected assembly is updated
-            handleAssemblyChange(assemblyId);
-        } catch (error) {
-            console.error('Failed to update assembly layers:', error);
-        }
-    };
+            try {
+                if (!assemblyId) {
+                    console.error('No assembly selected for duplication');
+                    return;
+                }
 
-    const handleDuplicateAssembly = async (assemblyId: number | null) => {
-        console.log(`handleDuplicateAssembly(${assemblyId})`);
-
-        try {
-            if (!assemblyId) {
-                console.error('No assembly selected for duplication');
-                return;
+                setIsRefreshing(true);
+                const response = await postWithAlert<AssemblyType>(`assembly/duplicate-assembly/${assemblyId}`);
+                if (response) {
+                    setSelectedAssemblyId(response.id);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            } finally {
+                await fetchAssemblies();
+                setIsRefreshing(false);
             }
-
-            setIsRefreshing(true);
-            const response = await postWithAlert<AssemblyType>(`assembly/duplicate-assembly/${assemblyId}`);
-            if (response) {
-                setSelectedAssemblyId(response.id);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            throw error;
-        } finally {
-            await fetchAssemblies();
-            setIsRefreshing(false);
-        }
-    };
+        },
+        [fetchAssemblies]
+    );
 
     const value = useMemo(
         () => ({

@@ -70,7 +70,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [activeAperture, setActiveAperture] = useState<ApertureType | null>(null);
     const [selectedApertureElementIds, setSelectedApertureElementsIds] = useState<number[]>([]);
 
-    const fetchApertures = async () => {
+    const fetchApertures = useCallback(async () => {
         console.log(`fetchApertures(), projectId=${projectId}`);
         try {
             const fetchedApertures = await ApertureService.fetchAperturesByProject(projectId!);
@@ -83,7 +83,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             setIsLoadingApertures(false);
         }
-    };
+    }, [projectId]);
 
     useEffect(() => {
         const initializeApertures = async () => {
@@ -110,52 +110,58 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // ----------------------------------------------------------------------------------
     // Active Aperture
 
-    const handleSetActiveApertureById = async (apertureId: number) => {
-        // Used when the user selects an aperture from a list or dropdown
-        console.log(`handleSetActiveApertureById() to apertureId=${apertureId}`);
-        setSelectedApertureElementsIds([]);
-        setSelectedApertureId(apertureId);
-        const aperture = apertures.find(a => a.id === apertureId);
-        if (aperture) {
-            setActiveAperture(aperture);
-        } else {
-            console.warn(`Aperture with id ${apertureId} not found in current apertures.`);
-        }
-    };
+    const handleSetActiveApertureById = useCallback(
+        async (apertureId: number) => {
+            // Used when the user selects an aperture from a list or dropdown
+            console.log(`handleSetActiveApertureById() to apertureId=${apertureId}`);
+            setSelectedApertureElementsIds([]);
+            setSelectedApertureId(apertureId);
+            const aperture = apertures.find(a => a.id === apertureId);
+            if (aperture) {
+                setActiveAperture(aperture);
+            } else {
+                console.warn(`Aperture with id ${apertureId} not found in current apertures.`);
+            }
+        },
+        [apertures]
+    );
 
-    const handleSetActiveAperture = async (aperture: ApertureType) => {
+    const handleSetActiveAperture = useCallback(async (aperture: ApertureType) => {
         console.log(`handleSetActiveAperture() to apertureId=${aperture.id}`);
         setSelectedApertureElementsIds([]);
         setActiveAperture(aperture);
         setSelectedApertureId(aperture.id);
-    };
+    }, []);
 
-    const handleUpdateAperture = async (aperture: ApertureType) => {
+    const handleUpdateAperture = useCallback(async (aperture: ApertureType) => {
         // Update an aperture's values in the 'apertures' state collection
         setApertures(prevApertures => prevApertures.map(a => (a.id === aperture.id ? { ...a, ...aperture } : a)));
-    };
+    }, []);
 
     // ----------------------------------------------------------------------------------
     // Edit Aperture and Element Grid
 
-    const handleNameChange = async (apertureId: number, newName: string) => {
-        console.log(`handleNameChange(${apertureId}, ${newName})`);
-        try {
-            await ApertureService.updateApertureName(apertureId, newName);
+    const handleNameChange = useCallback(
+        async (apertureId: number, newName: string) => {
+            console.log(`handleNameChange(${apertureId}, ${newName})`);
+            try {
+                await ApertureService.updateApertureName(apertureId, newName);
 
-            // Update the apertures state
-            const updatedApertures = apertures.map(a => (a.id === apertureId ? { ...a, name: newName } : a));
-            setApertures(updatedApertures);
+                // Update the apertures state
+                const updatedApertures = apertures.map(a => (a.id === apertureId ? { ...a, name: newName } : a));
+                setApertures(updatedApertures);
 
-            // Ensure the selected aperture is showing
-            handleSetActiveApertureById(apertureId);
-        } catch (error) {
-            console.error('Failed to update aperture name:', error);
-            alert('Failed to update aperture name. Please try again.');
-        }
-    };
+                // Ensure the selected aperture is showing
+                handleSetActiveApertureById(apertureId);
+            } catch (error) {
+                console.error('Failed to update aperture name:', error);
+                alert('Failed to update aperture name. Please try again.');
+            }
+        },
+        [apertures, handleSetActiveApertureById]
+    );
 
-    const handleAddAperture = async () => {
+    const handleAddAperture = useCallback(async () => {
         console.log(`handleAddAperture()`);
         try {
             const newAperture = await ApertureService.createAperture(projectId!);
@@ -168,60 +174,66 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.error('Failed to add aperture:', error);
             alert('Failed to add aperture. Please try again.');
         }
-    };
+    }, [projectId, fetchApertures, handleSetActiveAperture]);
 
-    const handleDeleteAperture = async (apertureId: number) => {
-        console.log(`handleDeleteAperture(${apertureId})`);
+    const handleDeleteAperture = useCallback(
+        async (apertureId: number) => {
+            console.log(`handleDeleteAperture(${apertureId})`);
 
-        try {
-            const confirmed = window.confirm('Are you sure you want to delete the Aperture?');
-            if (!confirmed) return;
+            try {
+                const confirmed = window.confirm('Are you sure you want to delete the Aperture?');
+                if (!confirmed) return;
 
-            await ApertureService.deleteAperture(apertureId);
+                await ApertureService.deleteAperture(apertureId);
 
-            console.log(`Aperture ${apertureId} deleted successfully.`);
+                console.log(`Aperture ${apertureId} deleted successfully.`);
 
-            // Fetch updated apertures and update the state
-            const fetchedApertures = await fetchApertures();
-            setApertures(fetchedApertures);
+                // Fetch updated apertures and update the state
+                const fetchedApertures = await fetchApertures();
+                setApertures(fetchedApertures);
 
-            // Select the first aperture in the updated list, or set to null if none remain
-            if (fetchedApertures.length > 0) {
-                handleSetActiveAperture(fetchedApertures[0]);
-            } else {
-                setSelectedApertureId(null);
+                // Select the first aperture in the updated list, or set to null if none remain
+                if (fetchedApertures.length > 0) {
+                    handleSetActiveAperture(fetchedApertures[0]);
+                } else {
+                    setSelectedApertureId(null);
+                }
+            } catch (error) {
+                console.error(`Failed to delete Aperture ${apertureId}:`, error);
+                alert('Failed to delete aperture. Please try again.');
             }
-        } catch (error) {
-            console.error(`Failed to delete Aperture ${apertureId}:`, error);
-            alert('Failed to delete aperture. Please try again.');
-        }
-    };
+        },
+        [fetchApertures, handleSetActiveAperture]
+    );
 
-    const handleDuplicateAperture = async (apertureId: number) => {
-        console.log(`handleDuplicateAperture(${apertureId})`);
+    const handleDuplicateAperture = useCallback(
+        async (apertureId: number) => {
+            console.log(`handleDuplicateAperture(${apertureId})`);
 
-        try {
-            setIsLoadingApertures(true);
-            const duplicatedAperture = await ApertureService.duplicateAperture(apertureId);
+            try {
+                setIsLoadingApertures(true);
+                const duplicatedAperture = await ApertureService.duplicateAperture(apertureId);
 
-            console.log(`Aperture duplicated successfully: ${duplicatedAperture.id}`);
+                console.log(`Aperture duplicated successfully: ${duplicatedAperture.id}`);
 
-            // Fetch updated apertures list
-            const fetchedApertures = await fetchApertures();
-            setApertures(fetchedApertures);
+                // Fetch updated apertures list
+                const fetchedApertures = await fetchApertures();
+                setApertures(fetchedApertures);
 
-            // Set the new duplicated aperture as active
-            handleSetActiveAperture(duplicatedAperture);
+                // Set the new duplicated aperture as active
+                handleSetActiveAperture(duplicatedAperture);
 
-            // Show success notification
-            alert('Window unit duplicated successfully');
-        } catch (error) {
-            console.error('Failed to duplicate aperture:', error);
-            alert('Failed to duplicate aperture. Please try again.');
-        } finally {
-            setIsLoadingApertures(false);
-        }
-    };
+                // Show success notification
+                alert('Window unit duplicated successfully');
+            } catch (error) {
+                console.error('Failed to duplicate aperture:', error);
+                alert('Failed to duplicate aperture. Please try again.');
+            } finally {
+                setIsLoadingApertures(false);
+            }
+        },
+        [fetchApertures, handleSetActiveAperture]
+    );
 
     const handleAddRow = useCallback(
         async (position: InsertPosition = 'end') => {
@@ -239,7 +251,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 setIsLoadingApertures(false);
             }
         },
-        [activeAperture]
+        [activeAperture, handleUpdateAperture, handleSetActiveAperture]
     );
 
     const handleDeleteRow = useCallback(
@@ -258,7 +270,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 setIsLoadingApertures(false);
             }
         },
-        [activeAperture]
+        [activeAperture, handleUpdateAperture, handleSetActiveAperture]
     );
 
     const handleAddColumn = useCallback(
@@ -277,7 +289,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 setIsLoadingApertures(false);
             }
         },
-        [activeAperture]
+        [activeAperture, handleUpdateAperture, handleSetActiveAperture]
     );
 
     const handleAddRowAtEdge = useCallback(
@@ -312,7 +324,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 setIsLoadingApertures(false);
             }
         },
-        [activeAperture]
+        [activeAperture, handleUpdateAperture, handleSetActiveAperture]
     );
 
     // ----------------------------------------------------------------------------------
@@ -343,7 +355,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 alert('Failed to update column width. Please try again.');
             }
         },
-        [apertures]
+        [apertures, handleSetActiveAperture]
     );
 
     const updateRowHeight = useCallback(
@@ -361,7 +373,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 alert('Failed to update row height. Please try again.');
             }
         },
-        [apertures]
+        [apertures, handleSetActiveAperture]
     );
 
     // ----------------------------------------------------------------------------------
@@ -383,7 +395,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 alert('Failed to update frame. Please try again.');
             }
         },
-        []
+        [handleUpdateAperture, handleSetActiveAperture]
     );
 
     const handleUpdateApertureElementGlazing = useCallback(
@@ -397,7 +409,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 alert('Failed to update glazing. Please try again.');
             }
         },
-        []
+        [handleUpdateAperture, handleSetActiveAperture]
     );
 
     const handleUpdateApertureElementOperation = useCallback(
@@ -411,7 +423,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 alert('Failed to update operation. Please try again.');
             }
         },
-        []
+        [handleUpdateAperture, handleSetActiveAperture]
     );
 
     const handleUpdateApertureElementAssignments = useCallback(
@@ -425,7 +437,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 throw error;
             }
         },
-        []
+        [handleUpdateAperture, handleSetActiveAperture]
     );
 
     // ----------------------------------------------------------------------------------
@@ -508,7 +520,13 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             clearApertureElementIdSelection();
         }
-    }, [activeAperture, apertures, selectedApertureElementIds, clearApertureElementIdSelection]);
+    }, [
+        activeAperture,
+        apertures,
+        selectedApertureElementIds,
+        clearApertureElementIdSelection,
+        handleSetActiveAperture,
+    ]);
 
     const splitSelectedApertureElement = useCallback(async () => {
         console.log(`splitSelectedApertureElement()`);
@@ -538,7 +556,13 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             clearApertureElementIdSelection();
         }
-    }, [activeAperture, apertures, selectedApertureElementIds, clearApertureElementIdSelection]);
+    }, [
+        activeAperture,
+        apertures,
+        selectedApertureElementIds,
+        clearApertureElementIdSelection,
+        handleSetActiveAperture,
+    ]);
 
     // ----------------------------------------------------------------------------------
     // Aperture Element Name
@@ -564,7 +588,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 clearApertureElementIdSelection();
             }
         },
-        [activeAperture, apertures, clearApertureElementIdSelection]
+        [activeAperture, apertures, clearApertureElementIdSelection, handleSetActiveAperture]
     );
 
     const value = useMemo(

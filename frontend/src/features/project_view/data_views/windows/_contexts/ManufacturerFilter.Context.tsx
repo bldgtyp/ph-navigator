@@ -63,19 +63,16 @@ export const ManufacturerFilterProvider: React.FC<{ children: React.ReactNode }>
         await loadFilters();
     }, [projectId, loadFilters]);
 
-    const enabledFrameManufacturers = filterConfig?.enabled_frame_manufacturers ?? [];
-    const enabledGlazingManufacturers = filterConfig?.enabled_glazing_manufacturers ?? [];
-
     const value = useMemo(
         () => ({
             filterConfig,
-            enabledFrameManufacturers,
-            enabledGlazingManufacturers,
+            enabledFrameManufacturers: filterConfig?.enabled_frame_manufacturers ?? [],
+            enabledGlazingManufacturers: filterConfig?.enabled_glazing_manufacturers ?? [],
             isLoading,
             updateFilters,
             refreshFilters,
         }),
-        [filterConfig, enabledFrameManufacturers, enabledGlazingManufacturers, isLoading, updateFilters, refreshFilters]
+        [filterConfig, isLoading, updateFilters, refreshFilters]
     );
 
     return <ManufacturerFilterContext.Provider value={value}>{children}</ManufacturerFilterContext.Provider>;

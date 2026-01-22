@@ -13,27 +13,36 @@ export const UserContext = createContext<UserContextType>(defaultUserContext);
 export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserType | null>(null);
 
-    const fetchUserInfo = useCallback(async (token: string) => {
-        const API_BASE_URL = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
-        try {
-            console.log(
-                'UserContext | useEffect | Fetching user info with Access Token:',
-                token.substring(0, 10) + '...'
-            );
-            const response = await fetch(`${API_BASE_URL}auth/user`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setUser(data);
-            } else {
-                logout(); // Clear token if fetching user info fails
-            }
-        } catch (error) {
-            logout(); // Clear token if an error occurs
-        }
+    // Define logout first so it can be used in fetchUserInfo
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        setUser(null);
     }, []);
+
+    const fetchUserInfo = useCallback(
+        async (token: string) => {
+            const API_BASE_URL = process.env.REACT_APP_API_URL || constants.RENDER_API_BASE_URL;
+            try {
+                console.log(
+                    'UserContext | useEffect | Fetching user info with Access Token:',
+                    token.substring(0, 10) + '...'
+                );
+                const response = await fetch(`${API_BASE_URL}auth/user`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data);
+                } else {
+                    logout(); // Clear token if fetching user info fails
+                }
+            } catch (error) {
+                logout(); // Clear token if an error occurs
+            }
+        },
+        [logout]
+    );
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -49,11 +58,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         },
         [fetchUserInfo]
     );
-
-    const logout = useCallback(() => {
-        localStorage.removeItem('token');
-        setUser(null);
-    }, []);
 
     const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
 
