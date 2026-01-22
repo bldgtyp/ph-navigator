@@ -48,6 +48,28 @@ const ApertureConstructionIcon = () => (
     </svg>
 );
 
+const VentilationAirflowIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 20 20">
+        {/* Airflow arrows representing ventilation - supply (blue) and extract (red) */}
+        <path
+            d="M4 10 L10 10 L8 7 M10 10 L8 13"
+            fill="none"
+            stroke="#8CCEFE"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M16 10 L10 10 L12 7 M10 10 L12 13"
+            fill="none"
+            stroke="#FE8C8C"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
 const icons: any[] = [
     <Geometry key={1} title="Exterior Surfaces" />,
     <FloorSegmentIcon key={2} title="Interior Floors" />,
@@ -144,6 +166,13 @@ const VizStateMenubar: React.FC = () => {
                         <ApertureConstructionIcon />
                     </ListItemIcon>
                     Aperture Constr.
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => handleColorBySelect(ColorByAttribute.VentilationAirflow)}>
+                    <ListItemIcon>
+                        <VentilationAirflowIcon />
+                    </ListItemIcon>
+                    Ventilation Airflow
                 </MenuItem>
             </Menu>
         </Stack>

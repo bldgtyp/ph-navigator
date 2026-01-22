@@ -3,7 +3,13 @@
 import { useAppVizStateContext } from '../../_contexts/app_viz_state_context';
 import { useColorByContext, ColorByAttribute } from '../../_contexts/color_by_context';
 import { appVizStateTypeEnum } from '../../states/VizState';
-import { faceTypeColors, boundaryColors, getLegendItems, ColorDefinition } from '../../_constants/colorByColors';
+import {
+    faceTypeColors,
+    boundaryColors,
+    ventilationAirflowColors,
+    getLegendItems,
+    ColorDefinition,
+} from '../../_constants/colorByColors';
 import './ColorByLegend.css';
 
 // Legend item component - renders a single color swatch with label
@@ -27,6 +33,8 @@ function getLegendTitle(attribute: ColorByAttribute): string {
             return 'Opaque Construction';
         case ColorByAttribute.ApertureConstruction:
             return 'Aperture Construction';
+        case ColorByAttribute.VentilationAirflow:
+            return 'Ventilation Airflow';
         default:
             return 'Legend';
     }
@@ -39,6 +47,8 @@ function getLegendItemsForAttribute(attribute: ColorByAttribute, dynamicItems: C
             return getLegendItems(faceTypeColors);
         case ColorByAttribute.Boundary:
             return getLegendItems(boundaryColors);
+        case ColorByAttribute.VentilationAirflow:
+            return getLegendItems(ventilationAirflowColors);
         case ColorByAttribute.OpaqueConstruction:
         case ColorByAttribute.ApertureConstruction:
             // Sort dynamic items alphabetically for consistency

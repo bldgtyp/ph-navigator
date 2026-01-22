@@ -8,10 +8,10 @@ import { useAppVizStateContext } from './_contexts/app_viz_state_context';
 import { useAppToolStateContext } from './_contexts/app_tool_state_context';
 import { useSelectedObjectContext } from './_contexts/selected_object_context';
 import { useHoverObjectContext } from './_contexts/hover_object_context';
-import { useColorByContext } from './_contexts/color_by_context';
+import { useColorByContext, ColorByAttribute } from './_contexts/color_by_context';
 import { handleOnClick, handleOnMouseOver, clearSelection } from './_handlers/selectObject';
 import { measureModeOnMouseClick, measureModeOnMouseMove } from './_handlers/modeMeasurement';
-import { applyColorByMode, restoreOriginalMaterials } from './_handlers/modeColorBy';
+import { applyColorByMode, restoreOriginalMaterials, restoreSpaceOriginalMaterials } from './_handlers/modeColorBy';
 import { addVizStateMountHandler, addVizStateDismountHandler, appVizStateTypeEnum } from './states/VizState';
 import { addToolStateEventHandler, addToolStateDismountHandler } from './states/ToolState';
 
@@ -29,6 +29,30 @@ function applyColorModeAndUpdateLegend(
 ) {
     const legendData = applyColorByMode(world, colorByAttribute);
     setDynamicLegendItems(legendData ? Array.from(legendData.values()) : []);
+}
+
+/** Configures geometry visibility for ColorBy mode based on the selected attribute. */
+function setColorByGeometryVisibility(world: SceneSetup, colorByAttribute: ColorByAttribute) {
+    const isVentilationMode = colorByAttribute === ColorByAttribute.VentilationAirflow;
+
+    if (isVentilationMode) {
+        // Show space geometry for ventilation airflow mode
+        world.buildingGeometryMeshes.visible = false;
+        world.spaceGeometryMeshes.visible = true;
+        world.spaceGeometryOutlines.visible = true;
+        world.buildingGeometryOutlines.visible = true; // Keep building outline for context
+        world.clearSelectableObjectsGroup();
+        world.selectableObjects.add(world.spaceGeometryMeshes);
+    } else {
+        // Show building geometry for other modes
+        world.spaceGeometryMeshes.visible = false;
+        world.spaceGeometryOutlines.visible = false;
+        world.buildingGeometryMeshes.visible = true;
+        world.buildingGeometryOutlines.visible = true;
+        world.clearSelectableObjectsGroup();
+        world.selectableObjects.add(world.buildingGeometryMeshes);
+    }
+    world.selectableObjects.visible = true;
 }
 
 const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionLinesRef }) => {
@@ -146,10 +170,7 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
         world.current.pipeGeometry.visible = true;
     });
     addVizStateMountHandler(7, 'showColorBy', () => {
-        world.current.buildingGeometryMeshes.visible = true;
-        world.current.selectableObjects.add(world.current.buildingGeometryMeshes);
-        world.current.selectableObjects.visible = true;
-        world.current.buildingGeometryOutlines.visible = true;
+        setColorByGeometryVisibility(world.current, colorByContext.colorByAttribute);
         applyColorModeAndUpdateLegend(
             world.current,
             colorByContext.colorByAttribute,
@@ -205,9 +226,12 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
     });
     addVizStateDismountHandler(7, 'hideColorBy', () => {
         restoreOriginalMaterials(world.current);
+        restoreSpaceOriginalMaterials(world.current);
         world.current.clearSelectableObjectsGroup();
         world.current.buildingGeometryMeshes.visible = false;
         world.current.buildingGeometryOutlines.visible = false;
+        world.current.spaceGeometryMeshes.visible = false;
+        world.current.spaceGeometryOutlines.visible = false;
     });
 
     // Add the Tool-State mount/un-mount and event-listeners
@@ -277,6 +301,7 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
     // ------------------------------------------------------------------------
     useEffect(() => {
         if (appVizStateContext.appVizState.vizState === appVizStateTypeEnum.ColorBy) {
+            setColorByGeometryVisibility(world.current, colorByContext.colorByAttribute);
             applyColorModeAndUpdateLegend(
                 world.current,
                 colorByContext.colorByAttribute,

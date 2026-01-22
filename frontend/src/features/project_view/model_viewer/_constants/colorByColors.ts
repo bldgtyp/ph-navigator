@@ -65,6 +65,35 @@ export const boundaryColors: Record<string, ColorDefinition> = {
     },
 };
 
+// Ventilation Airflow color definitions
+export const ventilationAirflowColors: Record<string, ColorDefinition> = {
+    SupplyOnly: {
+        label: 'Supply Only',
+        color: new THREE.Color(140 / 255, 206 / 255, 254 / 255),
+        hex: '#8CCEFE',
+    },
+    ExtractOnly: {
+        label: 'Extract Only',
+        color: new THREE.Color(254 / 255, 140 / 255, 140 / 255),
+        hex: '#FE8C8C',
+    },
+    SupplyAndExtract: {
+        label: 'Supply & Extract',
+        color: new THREE.Color(232 / 255, 140 / 255, 248 / 255),
+        hex: '#E88CF8',
+    },
+    NoVentilation: {
+        label: 'No Ventilation',
+        color: new THREE.Color(200 / 255, 200 / 255, 200 / 255),
+        hex: '#C8C8C8',
+    },
+    default: {
+        label: 'Unknown',
+        color: new THREE.Color(200 / 255, 200 / 255, 200 / 255),
+        hex: '#C8C8C8',
+    },
+};
+
 // Helper to get legend items for a color map (excludes 'default' from legend display)
 export function getLegendItems(colorMap: Record<string, ColorDefinition>): ColorDefinition[] {
     return Object.entries(colorMap)

@@ -20,7 +20,6 @@
 
 ### Material List:
 
-- [x] Change so that the Assemblies are the first page, not materials
 - [ ] Fix slow google-cloud image load
 - [ ] Add 'download' button to pdf/png file viewer
 - [ ] PDF full-view looks a very odd... clean up.
@@ -31,11 +30,6 @@
 
 ### Assemblies (UI):
 
-- [x] Add calculated R-Value / U-Value label
-- [x] Display Material Legend with key material info (conductivity)
-- [x] Add total thickness label
-- [x] Add Pagination (offset) to get_assemblies_as_hb_json() endpoint
-- [x] R-Value Label preview Does NOT work with Steel-Stud Assemblies currently
 - [x] HBE Conversion to include mixed materials
   - [ ] Check what happens with uneven widths on different layers?
 - [ ] Scale properly with screen
@@ -61,13 +55,6 @@
 
 ### Windows:
 
-- [x] Scale window unit geometry
-- [x] Window Frame Database (AirTable)
-- [x] Window Glazing Database (AirTable)
-- [x] Assign frames (frame DB elements)
-- [x] Assign glass (glass DB elements)
-- [x] Attribute reporting (& assignment) table
-- [x] Add window U-Value
 - [ ] Change Element blocks to be inside a scrollable container so we always see the window graphic
 - [ ] Select individual frame elements allows direct setting (dropdown)
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
@@ -137,21 +124,11 @@
 - [ ] LMB select in negative space to de-select
 - [ ] Add 'escape' to clear surface select
 
-#### Object Properties Panel:
-
-- [x] Face Data - truncate names / identifiers
-- [x] Don't like constant opening/closing.
-- [x] Should have option to close
-- [x] Tighten up text fields. Too much spacing
-
 #### Color by:
 
-- [x] Boundary Condition
-- [x] Assembly Type
-- [x] Construction Name (Opaque)
-- [x] Construction Name (Apertures)
+- [x] Ventilation (sup/eta)
 - [ ] TFA Factor
-- [ ] Ventilation (sup/eta)
+- [ ] Fix color/lighting
 
 #### Search Panel:
 
