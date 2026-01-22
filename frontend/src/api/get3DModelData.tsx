@@ -27,24 +27,16 @@ export async function get3DModelData(projectId: string, recordId: string | null 
         if (recordId) params.record_id = recordId;
         if (forceRefresh) params.force_refresh = 'true';
 
-        const facesData = await getWithAlert<hbFace[]>(`hb_model/${projectId}/faces`, null, params);
-        const spacesData = await getWithAlert<hbPhSpace[]>(`hb_model/${projectId}/spaces`, null, params);
-        const sunPathData = await getWithAlert<lbtSunPathAndCompass[]>(`hb_model/${projectId}/sun_path`);
-        const hotWaterSystemData = await getWithAlert<hbPhHvacHotWaterSystem[]>(
-            `hb_model/${projectId}/hot_water_systems`,
-            null,
-            params
-        );
-        const ventilationSystemData = await getWithAlert<hbPhHvacVentilationSystem[]>(
-            `hb_model/${projectId}/ventilation_systems`,
-            null,
-            params
-        );
-        const shadingElementsData = await getWithAlert<hbShadeGroup[]>(
-            `hb_model/${projectId}/shading_elements`,
-            null,
-            params
-        );
+        // Fetch all model data in parallel for faster loading
+        const [facesData, spacesData, sunPathData, hotWaterSystemData, ventilationSystemData, shadingElementsData] =
+            await Promise.all([
+                getWithAlert<hbFace[]>(`hb_model/${projectId}/faces`, null, params),
+                getWithAlert<hbPhSpace[]>(`hb_model/${projectId}/spaces`, null, params),
+                getWithAlert<lbtSunPathAndCompass[]>(`hb_model/${projectId}/sun_path`),
+                getWithAlert<hbPhHvacHotWaterSystem[]>(`hb_model/${projectId}/hot_water_systems`, null, params),
+                getWithAlert<hbPhHvacVentilationSystem[]>(`hb_model/${projectId}/ventilation_systems`, null, params),
+                getWithAlert<hbShadeGroup[]>(`hb_model/${projectId}/shading_elements`, null, params),
+            ]);
 
         return { facesData, spacesData, sunPathData, hotWaterSystemData, ventilationSystemData, shadingElementsData };
     } catch (error) {
