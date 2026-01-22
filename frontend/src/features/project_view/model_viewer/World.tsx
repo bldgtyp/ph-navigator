@@ -11,7 +11,12 @@ import { useHoverObjectContext } from './_contexts/hover_object_context';
 import { useColorByContext, ColorByAttribute } from './_contexts/color_by_context';
 import { handleOnClick, handleOnMouseOver, clearSelection } from './_handlers/selectObject';
 import { measureModeOnMouseClick, measureModeOnMouseMove } from './_handlers/modeMeasurement';
-import { applyColorByMode, restoreOriginalMaterials, restoreSpaceOriginalMaterials } from './_handlers/modeColorBy';
+import {
+    applyColorByMode,
+    restoreOriginalMaterials,
+    restoreSpaceOriginalMaterials,
+    restoreFloorOriginalMaterials,
+} from './_handlers/modeColorBy';
 import { addVizStateMountHandler, addVizStateDismountHandler, appVizStateTypeEnum } from './states/VizState';
 import { addToolStateEventHandler, addToolStateDismountHandler } from './states/ToolState';
 
@@ -34,22 +39,32 @@ function applyColorModeAndUpdateLegend(
 /** Configures geometry visibility for ColorBy mode based on the selected attribute. */
 function setColorByGeometryVisibility(world: SceneSetup, colorByAttribute: ColorByAttribute) {
     const isVentilationMode = colorByAttribute === ColorByAttribute.VentilationAirflow;
+    const isFloorWeightingMode = colorByAttribute === ColorByAttribute.FloorWeightingFactor;
+
+    // Hide all geometry types first
+    world.buildingGeometryMeshes.visible = false;
+    world.spaceGeometryMeshes.visible = false;
+    world.spaceGeometryOutlines.visible = false;
+    world.spaceFloorGeometryMeshes.visible = false;
+    world.spaceFloorGeometryOutlines.visible = false;
+    world.clearSelectableObjectsGroup();
 
     if (isVentilationMode) {
         // Show space geometry for ventilation airflow mode
-        world.buildingGeometryMeshes.visible = false;
         world.spaceGeometryMeshes.visible = true;
         world.spaceGeometryOutlines.visible = true;
         world.buildingGeometryOutlines.visible = true; // Keep building outline for context
-        world.clearSelectableObjectsGroup();
         world.selectableObjects.add(world.spaceGeometryMeshes);
+    } else if (isFloorWeightingMode) {
+        // Show floor geometry for floor weighting factor mode
+        world.spaceFloorGeometryMeshes.visible = true;
+        world.spaceFloorGeometryOutlines.visible = true;
+        world.buildingGeometryOutlines.visible = true; // Keep building outline for context
+        world.selectableObjects.add(world.spaceFloorGeometryMeshes);
     } else {
-        // Show building geometry for other modes
-        world.spaceGeometryMeshes.visible = false;
-        world.spaceGeometryOutlines.visible = false;
+        // Show building geometry for other modes (FaceType, Boundary, Construction)
         world.buildingGeometryMeshes.visible = true;
         world.buildingGeometryOutlines.visible = true;
-        world.clearSelectableObjectsGroup();
         world.selectableObjects.add(world.buildingGeometryMeshes);
     }
     world.selectableObjects.visible = true;
@@ -227,11 +242,14 @@ const World: React.FC<ViewContainerProps> = ({ world, hoveringVertex, dimensionL
     addVizStateDismountHandler(7, 'hideColorBy', () => {
         restoreOriginalMaterials(world.current);
         restoreSpaceOriginalMaterials(world.current);
+        restoreFloorOriginalMaterials(world.current);
         world.current.clearSelectableObjectsGroup();
         world.current.buildingGeometryMeshes.visible = false;
         world.current.buildingGeometryOutlines.visible = false;
         world.current.spaceGeometryMeshes.visible = false;
         world.current.spaceGeometryOutlines.visible = false;
+        world.current.spaceFloorGeometryMeshes.visible = false;
+        world.current.spaceFloorGeometryOutlines.visible = false;
     });
 
     // Add the Tool-State mount/un-mount and event-listeners

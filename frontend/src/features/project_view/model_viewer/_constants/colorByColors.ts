@@ -94,6 +94,40 @@ export const ventilationAirflowColors: Record<string, ColorDefinition> = {
     },
 };
 
+// Floor Weighting Factor color definitions
+export const floorWeightingFactorColors: Record<string, ColorDefinition> = {
+    FullyTreated: {
+        label: 'Fully Treated (1.0)',
+        color: new THREE.Color(245 / 255, 228 / 255, 112 / 255),
+        hex: '#F5E470',
+    },
+    SemiConditioned: {
+        label: 'Semi-Conditioned (0.5–0.6)',
+        color: new THREE.Color(177 / 255, 147 / 255, 79 / 255),
+        hex: '#B1934F',
+    },
+    PartiallyTreated: {
+        label: 'Partially Treated (0.3–0.5)',
+        color: new THREE.Color(185 / 255, 233 / 255, 138 / 255),
+        hex: '#B9E98A',
+    },
+    MinimallyTreated: {
+        label: 'Minimally Treated (0.0–0.3)',
+        color: new THREE.Color(136 / 255, 226 / 255, 239 / 255),
+        hex: '#88E2EF',
+    },
+    NonTreated: {
+        label: 'Non-Treated (0.0)',
+        color: new THREE.Color(238 / 255, 0 / 255, 255 / 255),
+        hex: '#EE00FF',
+    },
+    default: {
+        label: 'Unknown',
+        color: new THREE.Color(200 / 255, 200 / 255, 200 / 255),
+        hex: '#C8C8C8',
+    },
+};
+
 // Helper to get legend items for a color map (excludes 'default' from legend display)
 export function getLegendItems(colorMap: Record<string, ColorDefinition>): ColorDefinition[] {
     return Object.entries(colorMap)

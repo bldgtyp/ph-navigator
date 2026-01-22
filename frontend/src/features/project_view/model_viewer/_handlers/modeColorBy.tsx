@@ -5,6 +5,7 @@ import {
     faceTypeColors,
     boundaryColors,
     ventilationAirflowColors,
+    floorWeightingFactorColors,
     ColorDefinition,
     createConstructionColorDef,
 } from '../_constants/colorByColors';
@@ -121,6 +122,53 @@ export function restoreSpaceOriginalMaterials(world: SceneSetup) {
 }
 
 /**
+ * Restores the original materials to all floor geometry meshes.
+ * This should be called when exiting ColorBy mode or switching sub-modes.
+ */
+export function restoreFloorOriginalMaterials(world: SceneSetup) {
+    world.spaceFloorGeometryMeshes.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+            const originalMaterial = child.userData['colorByOriginalMaterial'];
+            if (originalMaterial) {
+                child.material = originalMaterial;
+                child.userData['materialStore'] = originalMaterial;
+            }
+        }
+    });
+}
+
+/**
+ * Determines the weighting factor category from a numeric value.
+ */
+function getWeightingFactorCategory(wf: number | null | undefined): string {
+    if (wf === null || wf === undefined) return 'default';
+    if (wf === 1.0 || wf > 0.6) return 'FullyTreated';
+    if (wf > 0.5 && wf <= 0.6) return 'SemiConditioned';
+    if (wf > 0.3 && wf <= 0.5) return 'PartiallyTreated';
+    if (wf > 0.0 && wf <= 0.3) return 'MinimallyTreated';
+    if (wf === 0.0) return 'NonTreated';
+    return 'default';
+}
+
+/**
+ * Applies Floor Weighting Factor coloring to floor segment meshes.
+ * Colors each floor segment based on its weighting factor value.
+ */
+export function applyColorByFloorWeightingFactor(world: SceneSetup): void {
+    world.spaceFloorGeometryMeshes.traverse(child => {
+        if (child instanceof THREE.Mesh && child.userData['type'] === 'spaceFloorSegmentMeshFace') {
+            storeOriginalMaterial(child);
+            const wf = child.userData['weighting_factor'];
+            const category = getWeightingFactorCategory(wf);
+            const colorDef = floorWeightingFactorColors[category] || floorWeightingFactorColors['default'];
+            const newMaterial = createColorByMaterial(colorDef.color);
+            child.userData['materialStore'] = newMaterial;
+            child.material = newMaterial;
+        }
+    });
+}
+
+/**
  * Determines the ventilation category based on supply and extract air values.
  */
 function getVentilationCategory(vSup: number | null, vEta: number | null): string {
@@ -205,13 +253,14 @@ export function applyColorByApertureConstruction(world: SceneSetup): Map<string,
 /**
  * Applies the appropriate color scheme based on the selected ColorBy attribute.
  * Returns a Map of construction colors for dynamic legend generation (for construction modes),
- * or null for static legend modes (FaceType, Boundary, VentilationAirflow).
+ * or null for static legend modes (FaceType, Boundary, VentilationAirflow, FloorWeightingFactor).
  */
 export function applyColorByMode(world: SceneSetup, attribute: ColorByAttribute): Map<string, ColorDefinition> | null {
     // Restore original materials before applying new color scheme
     // This ensures clean state when switching between color modes
     restoreOriginalMaterials(world);
     restoreSpaceOriginalMaterials(world);
+    restoreFloorOriginalMaterials(world);
 
     switch (attribute) {
         case ColorByAttribute.FaceType:
@@ -226,6 +275,9 @@ export function applyColorByMode(world: SceneSetup, attribute: ColorByAttribute)
             return applyColorByApertureConstruction(world);
         case ColorByAttribute.VentilationAirflow:
             applyColorByVentilationAirflow(world);
+            return null;
+        case ColorByAttribute.FloorWeightingFactor:
+            applyColorByFloorWeightingFactor(world);
             return null;
     }
 }

@@ -8,6 +8,7 @@ export enum ColorByAttribute {
     OpaqueConstruction = 'opaqueConstruction',
     ApertureConstruction = 'apertureConstruction',
     VentilationAirflow = 'ventilationAirflow',
+    FloorWeightingFactor = 'floorWeightingFactor',
 }
 
 // Context type definition

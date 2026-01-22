@@ -70,6 +70,16 @@ const VentilationAirflowIcon = () => (
     </svg>
 );
 
+const FloorWeightingFactorIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 20 20">
+        {/* Floor grid with varying colors representing weighting factors */}
+        <rect x="2" y="2" width="7" height="7" fill="#F5E470" stroke="#666" strokeWidth="0.5" />
+        <rect x="11" y="2" width="7" height="7" fill="#B9E98A" stroke="#666" strokeWidth="0.5" />
+        <rect x="2" y="11" width="7" height="7" fill="#88E2EF" stroke="#666" strokeWidth="0.5" />
+        <rect x="11" y="11" width="7" height="7" fill="#EE00FF" stroke="#666" strokeWidth="0.5" />
+    </svg>
+);
+
 const icons: any[] = [
     <Geometry key={1} title="Exterior Surfaces" />,
     <FloorSegmentIcon key={2} title="Interior Floors" />,
@@ -173,6 +183,12 @@ const VizStateMenubar: React.FC = () => {
                         <VentilationAirflowIcon />
                     </ListItemIcon>
                     Ventilation Airflow
+                </MenuItem>
+                <MenuItem onClick={() => handleColorBySelect(ColorByAttribute.FloorWeightingFactor)}>
+                    <ListItemIcon>
+                        <FloorWeightingFactorIcon />
+                    </ListItemIcon>
+                    Floor Weighting Factor
                 </MenuItem>
             </Menu>
         </Stack>

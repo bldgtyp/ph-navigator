@@ -7,6 +7,7 @@ import {
     faceTypeColors,
     boundaryColors,
     ventilationAirflowColors,
+    floorWeightingFactorColors,
     getLegendItems,
     ColorDefinition,
 } from '../../_constants/colorByColors';
@@ -35,6 +36,8 @@ function getLegendTitle(attribute: ColorByAttribute): string {
             return 'Aperture Construction';
         case ColorByAttribute.VentilationAirflow:
             return 'Ventilation Airflow';
+        case ColorByAttribute.FloorWeightingFactor:
+            return 'Floor Weighting Factor';
         default:
             return 'Legend';
     }
@@ -49,6 +52,8 @@ function getLegendItemsForAttribute(attribute: ColorByAttribute, dynamicItems: C
             return getLegendItems(boundaryColors);
         case ColorByAttribute.VentilationAirflow:
             return getLegendItems(ventilationAirflowColors);
+        case ColorByAttribute.FloorWeightingFactor:
+            return getLegendItems(floorWeightingFactorColors);
         case ColorByAttribute.OpaqueConstruction:
         case ColorByAttribute.ApertureConstruction:
             // Sort dynamic items alphabetically for consistency
