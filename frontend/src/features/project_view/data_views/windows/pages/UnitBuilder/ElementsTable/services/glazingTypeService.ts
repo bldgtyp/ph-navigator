@@ -53,6 +53,9 @@ export class GlazingTypeService {
                 throw new Error('No response received from AirTable refresh');
             }
 
+            // Clear existing cache before fetching new data
+            this.clearCache();
+
             // Load the updated glazings from the database and cache them
             const glazingTypes = await this.fetchAndCacheGlazingTypes();
 

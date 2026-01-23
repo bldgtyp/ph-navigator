@@ -51,6 +51,9 @@ export class FrameTypeService {
                 throw new Error('No response received from AirTable refresh');
             }
 
+            // Clear existing cache before fetching new data
+            this.clearCache();
+
             // Load the updated frames from the database and cache them
             const frameTypes = await this.fetchAndCacheFrameTypes();
 

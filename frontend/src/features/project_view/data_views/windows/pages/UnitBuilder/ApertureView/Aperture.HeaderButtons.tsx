@@ -18,7 +18,12 @@ interface HeaderActionItem {
     loading?: boolean;
 }
 
-const HeaderActionsMenu: React.FC<{ items: HeaderActionItem[] }> = ({ items }) => {
+interface HeaderActionsMenuProps {
+    items: HeaderActionItem[];
+    isAnyLoading: boolean;
+}
+
+const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({ items, isAnyLoading }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const isOpen = Boolean(anchorEl);
 
@@ -32,17 +37,20 @@ const HeaderActionsMenu: React.FC<{ items: HeaderActionItem[] }> = ({ items }) =
 
     return (
         <>
-            <Tooltip title="More actions" placement="top" arrow>
-                <IconButton
-                    size="small"
-                    onClick={handleOpen}
-                    aria-label="More actions"
-                    aria-controls={isOpen ? 'aperture-header-actions-menu' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={isOpen ? 'true' : undefined}
-                >
-                    <MoreHorizIcon />
-                </IconButton>
+            <Tooltip title={isAnyLoading ? 'Loading...' : 'More actions'} placement="top" arrow>
+                <span>
+                    <IconButton
+                        size="small"
+                        onClick={handleOpen}
+                        disabled={isAnyLoading}
+                        aria-label="More actions"
+                        aria-controls={isOpen ? 'aperture-header-actions-menu' : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={isOpen ? 'true' : undefined}
+                    >
+                        {isAnyLoading ? <CircularProgress size={20} /> : <MoreHorizIcon />}
+                    </IconButton>
+                </span>
             </Tooltip>
 
             <Menu
@@ -56,7 +64,7 @@ const HeaderActionsMenu: React.FC<{ items: HeaderActionItem[] }> = ({ items }) =
                 {items.map(item => (
                     <MenuItem
                         key={item.id}
-                        disabled={item.loading}
+                        disabled={isAnyLoading}
                         onClick={() => {
                             handleClose();
                             item.handler();
@@ -108,12 +116,14 @@ export function useHeaderButtons(): ReactElement[] {
         [handleRefreshFrameTypes, handleRefreshGlazingTypes, isLoadingFrameTypes, isLoadingGlazingTypes]
     );
 
+    const isAnyLoading = isLoadingFrameTypes || isLoadingGlazingTypes;
+
     if (!userContext.user) {
         return [];
     }
 
     return [
-        <HeaderActionsMenu key="header-actions" items={menuItems} />,
+        <HeaderActionsMenu key="header-actions" items={menuItems} isAnyLoading={isAnyLoading} />,
         <ManufacturerFilterModal
             key="filter-modal"
             open={isFilterModalOpen}

@@ -1,8 +1,10 @@
-import { Box, IconButton } from '@mui/material';
+import { Box, CircularProgress, IconButton } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import { useApertures } from '../../_contexts/Aperture.Context';
+import { useFrameTypes } from '../../_contexts/FrameType.Context';
+import { useGlazingTypes } from '../../_contexts/GlazingTypes.Context';
 import { ZoomProvider } from './ApertureView/Zoom.Context';
 import { ViewDirectionProvider } from './ApertureView/ViewDirection.Context';
 import { ApertureSidebarProvider, useApertureSidebar } from './Sidebar/Sidebar.Context';
@@ -23,8 +25,12 @@ const SIDEBAR_WIDTH = 260;
 const ApertureTypesContentBlock: React.FC = () => {
     const { activeAperture } = useApertures();
     const { isSidebarOpen, toggleSidebar } = useApertureSidebar();
+    const { isLoadingFrameTypes } = useFrameTypes();
+    const { isLoadingGlazingTypes } = useGlazingTypes();
     const headerButtons = useHeaderButtons();
     const { uValueData, loading: uValueLoading, error: uValueError } = useApertureUValue(activeAperture);
+
+    const isRefreshing = isLoadingFrameTypes || isLoadingGlazingTypes;
 
     const headerButtonsWithUValue = [
         <UValueLabel
@@ -40,6 +46,31 @@ const ApertureTypesContentBlock: React.FC = () => {
     return (
         <ContentBlock id="aperture-types">
             <LoadingModal showModal={false} />
+
+            {/* Loading overlay during refresh operations */}
+            {isRefreshing && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 2,
+                    }}
+                >
+                    <CircularProgress size={40} />
+                    <Box sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                        {isLoadingFrameTypes ? 'Refreshing frame types...' : 'Refreshing glazing types...'}
+                    </Box>
+                </Box>
+            )}
 
             <ContentBlockHeader
                 id="aperture-types-header"

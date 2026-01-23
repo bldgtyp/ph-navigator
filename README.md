@@ -41,6 +41,8 @@
 - [ ] Add 'PHPP' style download button (download as CSV)
 - [ ] Handle Load-from-JSON Steel Stud Assemblies.
 - [ ] Consider caching/storing the total Assembly U-Value on the DB-entity to reduce server workload?
+- [ ] Dimension input allows simple arithmetic (ie: 100/2, etc..)
+- [ ] Layer dim edit direct (like windows) not in modal window
 
 ### Ventilation Commissioning Page
 
@@ -63,6 +65,10 @@
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
 - [ ] U-w is still REALLY slow to load for some reason?
+- [ ] Dimension input allows simple arithmetic (ie: 100/2, etc..)
+- [ ] Add loading state until duplicate is done. Remove popup message window.
+- [ ] Add loading state to Refresh Glass, Refresh Frames
+- [ ] Loading state on 'Delete'
 
 ---
 
