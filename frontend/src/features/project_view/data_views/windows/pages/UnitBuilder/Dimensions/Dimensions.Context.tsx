@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
+import { evaluateSimpleExpression } from './evaluateExpression';
 import { DimensionsContextType } from './types';
 
 const DimensionsContext = createContext<DimensionsContextType | undefined>(undefined);
@@ -25,7 +26,7 @@ export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const handleEditColConfirm = useCallback(
         (onColumnWidthChange: (index: number, value: number) => void) => {
-            const value = parseFloat(editingValue);
+            const value = evaluateSimpleExpression(editingValue);
 
             if (!isNaN(value) && value > 0) {
                 if (editingColIndex !== null) {
@@ -54,7 +55,7 @@ export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const handleEditRowConfirm = useCallback(
         (onRowHeightChange: (index: number, value: number) => void) => {
-            const value = parseFloat(editingValue);
+            const value = evaluateSimpleExpression(editingValue);
 
             if (!isNaN(value) && value > 0) {
                 if (editingRowIndex !== null) {

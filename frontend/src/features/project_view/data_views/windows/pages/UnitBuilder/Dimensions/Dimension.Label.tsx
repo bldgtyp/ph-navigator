@@ -1,6 +1,7 @@
-import { ClickAwayListener, TextField, Typography } from '@mui/material';
+import { ClickAwayListener, TextField, Tooltip, Typography } from '@mui/material';
 
 import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
+import { DIMENSION_INPUT_WIDTH_PX, DIMENSION_TOOLTIP_DELAY_MS } from './constants';
 import { useDimensions } from './Dimensions.Context';
 
 export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, orientation }) => {
@@ -38,41 +39,47 @@ export const DimensionEditable: React.FC<any> = ({ handleEditConfirm }) => {
 
     return (
         <ClickAwayListener onClickAway={handleEditConfirm}>
-            <TextField
-                size="small"
-                autoFocus
-                value={editingValue}
-                onChange={e => setEditingValue(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleEditConfirm()}
-                variant="outlined"
-                sx={{
-                    width: '80px',
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    '& .MuiInputBase-root': {
+            <Tooltip
+                title="Tip: You can use expressions like 100 + 50"
+                enterDelay={DIMENSION_TOOLTIP_DELAY_MS}
+                placement="top"
+            >
+                <TextField
+                    size="small"
+                    autoFocus
+                    value={editingValue}
+                    onChange={e => setEditingValue(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleEditConfirm()}
+                    variant="outlined"
+                    sx={{
+                        width: `${DIMENSION_INPUT_WIDTH_PX}px`,
                         bgcolor: 'background.paper',
                         borderRadius: 1,
-                    },
-                    '& .MuiInputBase-input': {
-                        py: 0.5,
-                        px: 1,
-                        fontSize: '0.75rem',
-                        textAlign: 'center',
-                    },
-                }}
-                slotProps={{
-                    input: {
-                        onFocus: event => {
-                            event.target.select();
+                        '& .MuiInputBase-root': {
+                            bgcolor: 'background.paper',
+                            borderRadius: 1,
                         },
-                        endAdornment: (
-                            <Typography variant="caption" color="text.secondary">
-                                {units}
-                            </Typography>
-                        ),
-                    },
-                }}
-            />
+                        '& .MuiInputBase-input': {
+                            py: 0.5,
+                            px: 1,
+                            fontSize: '0.75rem',
+                            textAlign: 'center',
+                        },
+                    }}
+                    slotProps={{
+                        input: {
+                            onFocus: event => {
+                                event.target.select();
+                            },
+                            endAdornment: (
+                                <Typography variant="caption" color="text.secondary">
+                                    {units}
+                                </Typography>
+                            ),
+                        },
+                    }}
+                />
+            </Tooltip>
         </ClickAwayListener>
     );
 };
