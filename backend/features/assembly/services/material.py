@@ -3,8 +3,9 @@
 import logging
 from typing import Any
 
-from db_entities.assembly import Material, Segment
 from sqlalchemy.orm import Session
+
+from db_entities.assembly import Material, Segment
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +133,7 @@ def update_material(
 
 def add_materials(db: Session, materials: list[Material]) -> tuple[int, int]:
     """Add (or update) materials from AirTable to the database."""
-    logger.info(
-        f"add_airtable_material_to_db(db, materials={len(materials)} materials)"
-    )
+    logger.info(f"add_airtable_material_to_db(db, materials={len(materials)} materials)")
 
     num_materials_added = 0
     num_materials_updated = 0

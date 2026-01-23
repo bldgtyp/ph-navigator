@@ -5,15 +5,12 @@ import logging
 from pathlib import Path
 from urllib.parse import urlparse
 
-from features.assembly.services.segment import get_segment_by_id
-from features.gcp.services.file_utils import FileContent, sanitize_file_name_stem
-from features.gcp.services.image_utils import (
-    generate_image_thumbnail,
-    generate_pdf_thumbnail,
-    resize_image,
-)
 from google.cloud import storage
 from sqlalchemy.orm import Session
+
+from features.assembly.services.segment import get_segment_by_id
+from features.gcp.services.file_utils import FileContent, sanitize_file_name_stem
+from features.gcp.services.image_utils import generate_image_thumbnail, generate_pdf_thumbnail, resize_image
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +55,7 @@ def create_image_upload_paths(
     file_name: str,
 ) -> tuple[str, str]:
     """Generate the full-size and thumbnail paths for an image upload."""
-    logger.info(
-        f"get_image_upload_paths({bt_number=}, {segment_id=}, {folder_name=}, {content_hash=}, {file_name=})"
-    )
+    logger.info(f"get_image_upload_paths({bt_number=}, {segment_id=}, {folder_name=}, {content_hash=}, {file_name=})")
 
     segment = get_segment_by_id(db, segment_id)
 
@@ -69,24 +64,18 @@ def create_image_upload_paths(
     sanitized_material_name = sanitize_file_name_stem(segment.material.name)
 
     # Use the content hash in the filename
-    full_size_path = (
-        f"{bt_number}/{folder_name}/{sanitized_material_name}_{content_hash}{file_ext}"
-    )
+    full_size_path = f"{bt_number}/{folder_name}/{sanitized_material_name}_{content_hash}{file_ext}"
     thumb_path = f"{bt_number}/{folder_name}/thumbnails/{sanitized_material_name}_{content_hash}{file_ext}"
 
     return full_size_path, thumb_path
 
 
-def check_gcs_blobs_existence(
-    bucket_name: str, full_size_path: str, thumb_path: str
-) -> dict:
+def check_gcs_blobs_existence(bucket_name: str, full_size_path: str, thumb_path: str) -> dict:
     """Check if blobs already exist in Google Cloud Storage.
 
     Note: do not run this function in parallel, it will cause timeout errors when run in deployment.
     """
-    logger.info(
-        f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})"
-    )
+    logger.info(f"check_gcs_blobs_existence({bucket_name=}, {full_size_path=}, {thumb_path=})")
 
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
@@ -100,26 +89,14 @@ def check_gcs_blobs_existence(
     return {
         "full_exists": full_exists,
         "thumb_exists": thumb_exists,
-        "full_url": (
-            f"https://storage.googleapis.com/{bucket_name}/{full_size_path}"
-            if full_exists
-            else None
-        ),
-        "thumb_url": (
-            f"https://storage.googleapis.com/{bucket_name}/{thumb_path}"
-            if thumb_exists
-            else None
-        ),
+        "full_url": (f"https://storage.googleapis.com/{bucket_name}/{full_size_path}" if full_exists else None),
+        "thumb_url": (f"https://storage.googleapis.com/{bucket_name}/{thumb_path}" if thumb_exists else None),
     }
 
 
-async def upload_thumbnail_image(
-    image_bytes: bytes, bucket_name: str, thumb_path: str, blob_status: dict
-) -> str:
+async def upload_thumbnail_image(image_bytes: bytes, bucket_name: str, thumb_path: str, blob_status: dict) -> str:
     """Create and upload thumbnail if needed."""
-    logger.info(
-        f"upload_thumbnail_image({len(image_bytes)=}, {bucket_name=}, {thumb_path=})"
-    )
+    logger.info(f"upload_thumbnail_image({len(image_bytes)=}, {bucket_name=}, {thumb_path=})")
 
     if blob_status["thumb_exists"]:
         return blob_status["thumb_url"]
@@ -172,9 +149,7 @@ async def upload_file_to_gcs(
     folder_name: str,
 ) -> tuple[str, str]:
     """Upload an Image-file to Google-Cloud-Storage and return the public URLs."""
-    logger.info(
-        f"upload_file_to_gcs({bt_number=}, {segment_id=}, {file.filename=}, {bucket_name=}, {folder_name=})"
-    )
+    logger.info(f"upload_file_to_gcs({bt_number=}, {segment_id=}, {file.filename=}, {bucket_name=}, {folder_name=})")
 
     # Prepare file content and paths
     file_path, thumbnail_path = create_image_upload_paths(
@@ -202,9 +177,7 @@ async def upload_file_to_gcs(
     # ------------------------------------------------------------------------------------------------------------------
     # -- Upload file-content
     try:
-        thumbnail_url = await upload_thumbnail_image(
-            thumbnail_image_bytes, bucket_name, thumbnail_path, blob_status
-        )
+        thumbnail_url = await upload_thumbnail_image(thumbnail_image_bytes, bucket_name, thumbnail_path, blob_status)
         logger.info(f"Thumbnail image uploaded successfully: {thumbnail_url}")
 
         full_size_url = await upload_full_size_file(

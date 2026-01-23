@@ -16,11 +16,10 @@ import json
 from pathlib import Path
 
 import pytest
+from sqlalchemy.orm import Session
+
 from db_entities.assembly import Assembly
-from features.assembly.services.assembly import (
-    create_new_empty_assembly_on_project,
-    get_assembly_by_id,
-)
+from features.assembly.services.assembly import create_new_empty_assembly_on_project, get_assembly_by_id
 from features.assembly.services.assembly_from_hbjson import (
     create_assembly_from_hb_construction,
     get_multiple_hb_constructions_from_hbjson,
@@ -32,7 +31,6 @@ from features.assembly.services.thermal_resistance import (
     _validate_assembly,
     calculate_effective_r_value,
 )
-from sqlalchemy.orm import Session
 
 # Path to test fixtures
 FIXTURES_DIR = Path(__file__).parent
@@ -186,9 +184,7 @@ def create_test_materials(session: Session) -> dict:
     return materials
 
 
-def load_assembly_from_json(
-    session: Session, bt_number: str, assembly_name: str
-) -> Assembly:
+def load_assembly_from_json(session: Session, bt_number: str, assembly_name: str) -> Assembly:
     """Load a specific assembly from test_assemblies.json by name.
 
     Args:
@@ -202,13 +198,9 @@ def load_assembly_from_json(
     data = load_test_assemblies_json()
     if assembly_name not in data:
         available = list(data.keys())
-        raise ValueError(
-            f"Assembly '{assembly_name}' not found. Available: {available}"
-        )
+        raise ValueError(f"Assembly '{assembly_name}' not found. Available: {available}")
 
-    hb_constructions = get_multiple_hb_constructions_from_hbjson(
-        {assembly_name: data[assembly_name]}
-    )
+    hb_constructions = get_multiple_hb_constructions_from_hbjson({assembly_name: data[assembly_name]})
     if not hb_constructions:
         raise ValueError(f"No valid construction found for {assembly_name}")
 
@@ -248,9 +240,7 @@ class TestHomogeneousAssemblies:
         create_test_project(db=session, username="user1", project_name="Project 1")
         create_test_materials(session)
 
-        assembly = load_assembly_from_json(
-            session, "1234", "Test 1 - Single-Layer Homogeneous"
-        )
+        assembly = load_assembly_from_json(session, "1234", "Test 1 - Single-Layer Homogeneous")
         result = calculate_effective_r_value(assembly)
 
         assert result.is_valid is True
@@ -277,9 +267,7 @@ class TestHomogeneousAssemblies:
         create_test_project(db=session, username="user1", project_name="Project 1")
         create_test_materials(session)
 
-        assembly = load_assembly_from_json(
-            session, "1234", "Test 2 - Multi-Layer Homogeneous"
-        )
+        assembly = load_assembly_from_json(session, "1234", "Test 2 - Multi-Layer Homogeneous")
         result = calculate_effective_r_value(assembly)
 
         assert result.is_valid is True
@@ -317,9 +305,7 @@ class TestHeterogeneousAssemblies:
         create_test_project(db=session, username="user1", project_name="Project 1")
         create_test_materials(session)
 
-        assembly = load_assembly_from_json(
-            session, "1234", "Test 3 - Simple Heterogeneous"
-        )
+        assembly = load_assembly_from_json(session, "1234", "Test 3 - Simple Heterogeneous")
         result = calculate_effective_r_value(assembly)
 
         assert result.is_valid is True
@@ -330,9 +316,7 @@ class TestHeterogeneousAssemblies:
         assert result.r_isothermal_planes_si > 0
 
         # Effective R should be the average of both methods
-        expected_effective = (
-            result.r_parallel_path_si + result.r_isothermal_planes_si
-        ) / 2
+        expected_effective = (result.r_parallel_path_si + result.r_isothermal_planes_si) / 2
         assert result.r_effective_si == pytest.approx(expected_effective, rel=0.001)
 
     def test_wood_stud_wall(self, session: Session, create_test_project):
@@ -360,15 +344,11 @@ class TestHeterogeneousAssemblies:
         # For multi-layer assemblies with heterogeneous layers,
         # Parallel-Path typically gives slightly different result than Isothermal-Planes
         # Effective R should be the average
-        expected_effective = (
-            result.r_parallel_path_si + result.r_isothermal_planes_si
-        ) / 2
+        expected_effective = (result.r_parallel_path_si + result.r_isothermal_planes_si) / 2
         assert result.r_effective_si == pytest.approx(expected_effective, rel=0.001)
 
         # U-value should be inverse of R
-        assert result.u_effective_si == pytest.approx(
-            1.0 / result.r_effective_si, rel=0.001
-        )
+        assert result.u_effective_si == pytest.approx(1.0 / result.r_effective_si, rel=0.001)
 
 
 class TestSteelStudAssembly:
@@ -401,15 +381,11 @@ class TestSteelStudAssembly:
         assert result.r_isothermal_planes_si > 0
 
         # Effective R should be the average
-        expected_effective = (
-            result.r_parallel_path_si + result.r_isothermal_planes_si
-        ) / 2
+        expected_effective = (result.r_parallel_path_si + result.r_isothermal_planes_si) / 2
         assert result.r_effective_si == pytest.approx(expected_effective, rel=0.001)
 
         # U-value should be inverse of R
-        assert result.u_effective_si == pytest.approx(
-            1.0 / result.r_effective_si, rel=0.001
-        )
+        assert result.u_effective_si == pytest.approx(1.0 / result.r_effective_si, rel=0.001)
 
         # Calculate what R-value would be WITHOUT steel stud correction
         # (using raw fiberglass conductivity 0.0449991 W/m-K)
@@ -417,9 +393,7 @@ class TestSteelStudAssembly:
         r_plywood = 0.02 / K_PLYWOOD  # ~0.167 m2-K/W
         r_fiberglass_raw = 0.09 / K_FIBERGLASS  # ~2.0 m2-K/W (no bridging)
         r_gwb = 0.013 / K_GWB  # ~0.077 m2-K/W
-        r_without_bridging = (
-            r_xps + r_plywood + r_fiberglass_raw + r_gwb
-        )  # ~4.88 m2-K/W
+        r_without_bridging = r_xps + r_plywood + r_fiberglass_raw + r_gwb  # ~4.88 m2-K/W
 
         # With steel stud thermal bridging, the R-value should be LOWER
         # because steel conducts heat much better than fiberglass insulation
@@ -428,9 +402,7 @@ class TestSteelStudAssembly:
             f"R-value without bridging ({r_without_bridging:.4f})"
         )
 
-    def test_steel_stud_equivalent_conductivity(
-        self, session: Session, create_test_project
-    ):
+    def test_steel_stud_equivalent_conductivity(self, session: Session, create_test_project):
         """
         Verify the steel stud equivalent conductivity calculation.
 
@@ -463,15 +435,11 @@ class TestSteelStudAssembly:
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
-    def test_empty_assembly_returns_invalid(
-        self, session: Session, create_test_project
-    ):
+    def test_empty_assembly_returns_invalid(self, session: Session, create_test_project):
         """Assembly with no layers should return invalid result."""
         create_test_project(db=session, username="user1", project_name="Project 1")
 
-        empty_assembly = create_new_empty_assembly_on_project(
-            db=session, name="Empty Assembly", bt_number="1234"
-        )
+        empty_assembly = create_new_empty_assembly_on_project(db=session, name="Empty Assembly", bt_number="1234")
 
         result = calculate_effective_r_value(empty_assembly)
 
@@ -479,9 +447,7 @@ class TestEdgeCases:
         assert "no layers" in result.warnings[0].lower()
         assert result.r_effective_si == 0.0
 
-    def test_zero_thickness_layer_returns_invalid(
-        self, session: Session, create_test_project
-    ):
+    def test_zero_thickness_layer_returns_invalid(self, session: Session, create_test_project):
         """Layer with zero thickness should return invalid result."""
         create_test_project(db=session, username="user1", project_name="Project 1")
         assembly = get_assembly_by_id(session, 1)
@@ -494,13 +460,9 @@ class TestEdgeCases:
         result = calculate_effective_r_value(assembly)
 
         assert result.is_valid is False
-        assert any(
-            "zero" in w.lower() or "thickness" in w.lower() for w in result.warnings
-        )
+        assert any("zero" in w.lower() or "thickness" in w.lower() for w in result.warnings)
 
-    def test_zero_conductivity_returns_invalid(
-        self, session: Session, create_test_project
-    ):
+    def test_zero_conductivity_returns_invalid(self, session: Session, create_test_project):
         """Material with zero conductivity should return invalid result."""
         create_test_project(db=session, username="user1", project_name="Project 1")
         assembly = get_assembly_by_id(session, 1)
@@ -515,9 +477,7 @@ class TestEdgeCases:
         assert result.is_valid is False
         assert any("conductivity" in w.lower() for w in result.warnings)
 
-    def test_negative_thickness_returns_invalid(
-        self, session: Session, create_test_project
-    ):
+    def test_negative_thickness_returns_invalid(self, session: Session, create_test_project):
         """Layer with negative thickness should return invalid result."""
         create_test_project(db=session, username="user1", project_name="Project 1")
         assembly = get_assembly_by_id(session, 1)
@@ -545,9 +505,7 @@ class TestUnitConversions:
         create_test_project(db=session, username="user1", project_name="Project 1")
         create_test_materials(session)
 
-        assembly = load_assembly_from_json(
-            session, "1234", "Test 1 - Single-Layer Homogeneous"
-        )
+        assembly = load_assembly_from_json(session, "1234", "Test 1 - Single-Layer Homogeneous")
         result = calculate_effective_r_value(assembly)
 
         # Expected R in SI units
@@ -562,9 +520,7 @@ class TestUnitConversions:
 class TestInternalFunctions:
     """Test internal calculation functions directly."""
 
-    def test_path_area_fraction_single_segment_layers(
-        self, session: Session, create_test_project
-    ):
+    def test_path_area_fraction_single_segment_layers(self, session: Session, create_test_project):
         """Path area fraction for single-segment layers should be 1.0."""
         create_test_project(db=session, username="user1", project_name="Project 1")
         assembly = get_assembly_by_id(session, 1)

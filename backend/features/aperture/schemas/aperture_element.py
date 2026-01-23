@@ -4,11 +4,10 @@ from __future__ import annotations  # Enables forward references
 
 from typing import Literal
 
-from features.aperture.schemas.aperture_element_frame import ApertureElementFramesSchema
-from features.aperture.schemas.aperture_element_glazing import (
-    ApertureElementGlazingSchema,
-)
 from pydantic import BaseModel
+
+from features.aperture.schemas.aperture_element_frame import ApertureElementFramesSchema
+from features.aperture.schemas.aperture_element_glazing import ApertureElementGlazingSchema
 
 
 class OperationSchema(BaseModel):

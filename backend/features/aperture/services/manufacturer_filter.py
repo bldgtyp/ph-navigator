@@ -2,6 +2,9 @@
 
 import logging
 
+from sqlalchemy import distinct, or_
+from sqlalchemy.orm import Session
+
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_frame import ApertureElementFrame
@@ -10,8 +13,6 @@ from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
 from db_entities.app.manufacturer_filter import ProjectManufacturerFilter
 from db_entities.app.project import Project
-from sqlalchemy import distinct, or_
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +96,7 @@ def get_project_by_bt_number(db: Session, bt_number: str) -> Project | None:
     return db.query(Project).filter(Project.bt_number == bt_number).first()
 
 
-def get_enabled_manufacturers(
-    db: Session, project_id: int, filter_type: str
-) -> list[str]:
+def get_enabled_manufacturers(db: Session, project_id: int, filter_type: str) -> list[str]:
     """Get list of enabled manufacturers for a project and filter type."""
     filters = (
         db.query(ProjectManufacturerFilter)

@@ -2,10 +2,11 @@
 
 from typing import TYPE_CHECKING, cast
 
-from database import Base
-from db_entities.app.relationships import project_users
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
+
+from database import Base
+from db_entities.app.relationships import project_users
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -21,12 +22,8 @@ class User(Base):
     hashed_password: Mapped[str] = MappedColumn(String)
 
     # Relationships
-    owned_projects: Mapped[list["Project"]] = relationship(
-        "Project", back_populates="owner"
-    )
-    all_projects: Mapped[list["Project"]] = relationship(
-        "Project", secondary=project_users, back_populates="users"
-    )
+    owned_projects: Mapped[list["Project"]] = relationship("Project", back_populates="owner")
+    all_projects: Mapped[list["Project"]] = relationship("Project", secondary=project_users, back_populates="users")
 
     @property
     def owned_project_ids(self) -> list[int]:

@@ -1,12 +1,11 @@
 # -*- Python Version: 3.11 -*-
 
 import pytest
+from sqlalchemy.orm import Session
+
 from db_entities.app import Project
 from db_entities.assembly.segment import SpecificationStatus
-from features.assembly.services.assembly import (
-    append_layer_to_assembly,
-    create_new_empty_assembly_on_project,
-)
+from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
 from features.assembly.services.segment import (
@@ -22,21 +21,14 @@ from features.assembly.services.segment import (
     update_segment_steel_stud_spacing,
     update_segment_width,
 )
-from sqlalchemy.orm import Session
 
 
 def test_create_new_segment_in_db(session: Session, create_test_project):
     # Create a mock Project / Assembly / Layer / Material
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
-    assembly = create_new_empty_assembly_on_project(
-        db=session, name="A New Assembly", bt_number=project.bt_number
-    )
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    assembly = create_new_empty_assembly_on_project(db=session, name="A New Assembly", bt_number=project.bt_number)
     layer = create_new_layer(thickness_mm=50.0)
-    assembly, layer = append_layer_to_assembly(
-        db=session, assembly_id=assembly.id, layer=layer
-    )
+    assembly, layer = append_layer_to_assembly(db=session, assembly_id=assembly.id, layer=layer)
     material = create_new_material(
         db=session,
         id="a_new_material",
@@ -51,9 +43,7 @@ def test_create_new_segment_in_db(session: Session, create_test_project):
     session.commit()
 
     # Call the function to create a new segment
-    new_segment = create_new_segment(
-        layer_id=layer.id, material_id=material.id, width_mm=125.0, order=1, db=session
-    )
+    new_segment = create_new_segment(layer_id=layer.id, material_id=material.id, width_mm=125.0, order=1, db=session)
 
     # Assert that the segment is in the database
     db_segment = get_segment_by_id(session, new_segment.id)
@@ -71,20 +61,14 @@ def test_get_non_existent_segment_by_id_raises_Exception(session: Session):
 
 
 def test_update_segment_material(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
-    new_material = create_new_material(
-        db=session, id="new_material", name="New Material", category="New Category"
-    )
+    new_material = create_new_material(db=session, id="new_material", name="New Material", category="New Category")
     session.add(new_material)
     session.commit()
 
     # Update the segment's material
-    update_segment_material(
-        segment_id=existing_segment.id, material_id=new_material.id, db=session
-    )
+    update_segment_material(segment_id=existing_segment.id, material_id=new_material.id, db=session)
 
     # Fetch the updated segment
     updated_segment = get_segment_by_id(session, existing_segment.id)
@@ -92,16 +76,12 @@ def test_update_segment_material(session: Session, create_test_project):
 
 
 def test_update_segment_width(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
 
     # Update the segment's width
     new_width_mm = 150.0
-    update_segment_width(
-        segment_id=existing_segment.id, width_mm=new_width_mm, db=session
-    )
+    update_segment_width(segment_id=existing_segment.id, width_mm=new_width_mm, db=session)
     session.commit()
 
     # Fetch the updated segment
@@ -110,17 +90,13 @@ def test_update_segment_width(session: Session, create_test_project):
 
 
 def test_update_segment_steel_stud_spacing(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
 
     # --- Try with a numeric value
     # Update the segment's steel stud spacing
     new_spacing_mm = 600.0
-    update_segment_steel_stud_spacing(
-        segment_id=existing_segment.id, steel_stud_spacing_mm=new_spacing_mm, db=session
-    )
+    update_segment_steel_stud_spacing(segment_id=existing_segment.id, steel_stud_spacing_mm=new_spacing_mm, db=session)
 
     # Fetch the updated segment
     updated_segment = get_segment_by_id(session, existing_segment.id)
@@ -128,43 +104,33 @@ def test_update_segment_steel_stud_spacing(session: Session, create_test_project
 
     # --- Try with None
     new_spacing_mm = None
-    update_segment_steel_stud_spacing(
-        segment_id=existing_segment.id, steel_stud_spacing_mm=new_spacing_mm, db=session
-    )
+    update_segment_steel_stud_spacing(segment_id=existing_segment.id, steel_stud_spacing_mm=new_spacing_mm, db=session)
     # Fetch the updated segment
     updated_segment = get_segment_by_id(session, existing_segment.id)
     assert updated_segment.steel_stud_spacing_mm is None
 
 
 def test_update_segment_is_continuous_insulation(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
 
     # --- Try with True
     # Update the segment's is_continuous_insulation
-    update_segment_is_continuous_insulation(
-        segment_id=existing_segment.id, is_continuous_insulation=True, db=session
-    )
+    update_segment_is_continuous_insulation(segment_id=existing_segment.id, is_continuous_insulation=True, db=session)
 
     # Fetch the updated segment
     updated_segment = get_segment_by_id(session, existing_segment.id)
     assert updated_segment.is_continuous_insulation is True
 
     # --- Try with False
-    update_segment_is_continuous_insulation(
-        segment_id=existing_segment.id, is_continuous_insulation=False, db=session
-    )
+    update_segment_is_continuous_insulation(segment_id=existing_segment.id, is_continuous_insulation=False, db=session)
     # Fetch the updated segment
     updated_segment = get_segment_by_id(session, existing_segment.id)
     assert updated_segment.is_continuous_insulation is False
 
 
 def test_update_segment_specification_status(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
 
     # --- Try with COMPLET
@@ -196,12 +162,8 @@ def test_update_segment_specification_status(session: Session, create_test_proje
     assert updated_segment.specification_status == SpecificationStatus.NA.value
 
 
-def test_update_segment_specification_status_invalid(
-    session: Session, create_test_project
-):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_update_segment_specification_status_invalid(session: Session, create_test_project):
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
     assert existing_segment.specification_status == SpecificationStatus.NA.value
 
@@ -217,34 +179,24 @@ def test_update_segment_specification_status_invalid(
 
 
 def test_update_segment_notes(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_segment = get_segment_by_id(session, 1)
 
     # --- Try with a note
     new_notes = "This is a test note."
-    updated_segment = update_segment_notes(
-        segment_id=existing_segment.id, notes=new_notes, db=session
-    )
+    updated_segment = update_segment_notes(segment_id=existing_segment.id, notes=new_notes, db=session)
     assert updated_segment.notes == new_notes
 
     # --- Try with None
-    updated_segment = update_segment_notes(
-        segment_id=existing_segment.id, notes=None, db=session
-    )
+    updated_segment = update_segment_notes(segment_id=existing_segment.id, notes=None, db=session)
     assert updated_segment.notes is None
 
 
 def test_delete_segment(session: Session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
 
     # Add a new segment so we can delete it later
-    new_segment = create_new_segment(
-        layer_id=1, material_id="test_material", width_mm=125.0, order=1, db=session
-    )
+    new_segment = create_new_segment(layer_id=1, material_id="test_material", width_mm=125.0, order=1, db=session)
     session.add(new_segment)
     session.commit()
     session.refresh(new_segment)
@@ -266,15 +218,9 @@ def test_delete_segment(session: Session, create_test_project):
         get_segment_by_id(session, deleted_segment.id)
 
 
-def test_delete_last_layer_raises_LastSegmentInLayerException(
-    session: Session, create_test_project
-):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_delete_last_layer_raises_LastSegmentInLayerException(session: Session, create_test_project):
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
 
     # Attempt to delete the last segment in a layer
     with pytest.raises(LastSegmentInLayerException):
-        delete_segment(
-            db=session, segment_id=1
-        )  # Assuming segment with ID 1 is the last in its layer
+        delete_segment(db=session, segment_id=1)  # Assuming segment with ID 1 is the last in its layer

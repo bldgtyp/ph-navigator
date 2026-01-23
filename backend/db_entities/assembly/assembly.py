@@ -3,12 +3,13 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from database import Base
-from db_entities.assembly.layer import Layer
-from db_entities.assembly.material import Material
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
+
+from database import Base
+from db_entities.assembly.layer import Layer
+from db_entities.assembly.material import Material
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -25,9 +26,7 @@ class Assembly(Base):
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True)
     name: Mapped[str] = MappedColumn(String)
-    project_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("projects.id"), nullable=False
-    )
+    project_id: Mapped[int] = MappedColumn(Integer, ForeignKey("projects.id"), nullable=False)
     project: Mapped["Project"] = relationship("Project", back_populates="assemblies")
     layers: Mapped[list[Layer]] = relationship(
         "Layer",
@@ -36,15 +35,11 @@ class Assembly(Base):
         collection_class=ordering_list("order"),
         cascade="all, delete-orphan",
     )
-    orientation: Mapped[str] = MappedColumn(
-        String, default=AssemblyOrientation.FIRST_LAYER_OUTSIDE.value
-    )
+    orientation: Mapped[str] = MappedColumn(String, default=AssemblyOrientation.FIRST_LAYER_OUTSIDE.value)
 
     @classmethod
     def default(cls, project: "Project", material: "Material") -> "Assembly":
-        return Assembly(
-            name="Unnamed Assembly", project=project, layers=[Layer.default(material)]
-        )
+        return Assembly(name="Unnamed Assembly", project=project, layers=[Layer.default(material)])
 
     def remove_all_layers(self):
         """Remove all the existing layers from the assembly."""

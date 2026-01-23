@@ -2,16 +2,6 @@
 
 import logging
 
-from db_entities.app import Project
-from db_entities.assembly import Assembly, Layer, Segment
-from db_entities.assembly.segment import SpecificationStatus
-from features.app.services import get_project_by_bt_number
-from features.assembly.services.assembly import get_assembly_by_name
-from features.assembly.services.material import (
-    MaterialNotFoundException,
-    get_material_by_id,
-    get_material_by_name,
-)
 from honeybee import dictutil as hb_dict_util
 from honeybee_energy import dictutil as energy_dict_util
 from honeybee_energy.construction.opaque import OpaqueConstruction
@@ -19,6 +9,13 @@ from honeybee_energy.material.opaque import EnergyMaterial
 from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties
 from honeybee_energy_ref.properties.hb_obj import _HBObjectWithReferences
 from sqlalchemy.orm import Session
+
+from db_entities.app import Project
+from db_entities.assembly import Assembly, Layer, Segment
+from db_entities.assembly.segment import SpecificationStatus
+from features.app.services import get_project_by_bt_number
+from features.assembly.services.assembly import get_assembly_by_name
+from features.assembly.services.material import MaterialNotFoundException, get_material_by_id, get_material_by_name
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +30,7 @@ def get_single_hb_construction_from_hbjson(data: dict) -> OpaqueConstruction | N
         hb_objs = energy_dict_util.dict_to_object(data, False)
 
     if not isinstance(hb_objs, OpaqueConstruction):
-        logger.warning(
-            f"HB-Object provided of type: {type(hb_objs)} is not construction. Ignoring."
-        )
+        logger.warning(f"HB-Object provided of type: {type(hb_objs)} is not construction. Ignoring.")
         return None
 
     return hb_objs
@@ -62,9 +57,7 @@ def get_multiple_hb_constructions_from_hbjson(data: dict) -> list[OpaqueConstruc
 
 def get_hb_material_ref_identifier(hb_material: EnergyMaterial) -> str | None:
     """Pull out the Honeybee Material's External-Reference-Identifier, if it has one."""
-    logger.info(
-        f"get_hb_material_ref_identifier(hb_material={hb_material.display_name})"
-    )
+    logger.info(f"get_hb_material_ref_identifier(hb_material={hb_material.display_name})")
 
     hb_prop_ref: _HBObjectWithReferences | None
     if hb_prop_ref := getattr(hb_material.properties, "ref", None):
@@ -89,9 +82,7 @@ def get_energy_materials_from_hb_opaque_construction(
     hb_opaque_construction: OpaqueConstruction,
 ) -> list[EnergyMaterial]:
     """Get all EnergyMaterials from a Honeybee OpaqueConstruction."""
-    logger.info(
-        f"get_energy_materials_from_opaque_construction({hb_opaque_construction.display_name=})"
-    )
+    logger.info(f"get_energy_materials_from_opaque_construction({hb_opaque_construction.display_name=})")
 
     energy_materials: list[EnergyMaterial] = []
     for hb_mat in hb_opaque_construction.materials:
@@ -103,9 +94,7 @@ def get_energy_materials_from_hb_opaque_construction(
     return energy_materials
 
 
-def get_or_stage_new_assembly(
-    db: Session, project: Project, assembly_name: str
-) -> Assembly:
+def get_or_stage_new_assembly(db: Session, project: Project, assembly_name: str) -> Assembly:
     """Get (if it exists) or stage a new Assembly with the specified name."""
     logger.info(f"get_or_stage_new_assembly({project.id=}, {assembly_name=})")
 
@@ -200,9 +189,7 @@ def stage_create_layer_from_hb_material(
 
     Note: Changes are staged but NOT committed. Caller must commit.
     """
-    logger.info(
-        f"stage_create_layer_from_hb_material({hb_material.display_name=}, {layer_width_mm=}, {order=})"
-    )
+    logger.info(f"stage_create_layer_from_hb_material({hb_material.display_name=}, {layer_width_mm=}, {order=})")
 
     # -- Create the new Segment(s)
     segments: list[Segment] = []
@@ -219,10 +206,7 @@ def stage_create_layer_from_hb_material(
                 order=0,
             )
         )
-    elif (
-        ph_props.divisions.cell_count > 0
-        and not ph_props.divisions.is_a_steel_stud_cavity
-    ):
+    elif ph_props.divisions.cell_count > 0 and not ph_props.divisions.is_a_steel_stud_cavity:
         # --------------------------------------------------------------------------------------------------------------
         # -- Handle Typical heterogeneous layer
         for i, cell in enumerate(ph_props.divisions.cells):
@@ -268,9 +252,7 @@ def create_assembly_from_hb_construction(
     db: Session, bt_number: str, hb_opaque_construction: OpaqueConstruction
 ) -> Assembly:
     """Create an AssemblySchema from a Honeybee OpaqueConstruction."""
-    logger.info(
-        f"create_assembly_from_hb_construction({bt_number=}, {hb_opaque_construction.display_name=})"
-    )
+    logger.info(f"create_assembly_from_hb_construction({bt_number=}, {hb_opaque_construction.display_name=})")
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Get the Project
@@ -278,15 +260,11 @@ def create_assembly_from_hb_construction(
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Get (if it exists) or Stage a new Assembly
-    assembly = get_or_stage_new_assembly(
-        db, project, hb_opaque_construction.display_name
-    )
+    assembly = get_or_stage_new_assembly(db, project, hb_opaque_construction.display_name)
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Get just the EnergyMaterials from the OpaqueConstruction.
-    energy_materials = get_energy_materials_from_hb_opaque_construction(
-        hb_opaque_construction
-    )
+    energy_materials = get_energy_materials_from_hb_opaque_construction(hb_opaque_construction)
 
     # ------------------------------------------------------------------------------------------------------------------
     # -- Figure out the total Assembly width for the layers (considering the segment widths)
@@ -329,8 +307,6 @@ def create_assembly_from_hb_construction(
     db.commit()
     db.refresh(assembly)
 
-    logger.info(
-        f"Created / Updated Assembly: {assembly.name} with {len(assembly.layers)} layers."
-    )
+    logger.info(f"Created / Updated Assembly: {assembly.name} with {len(assembly.layers)} layers.")
 
     return assembly

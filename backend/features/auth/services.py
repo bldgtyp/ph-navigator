@@ -7,14 +7,15 @@ from uuid import uuid4
 
 import bcrypt
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jwt.exceptions import InvalidTokenError
+from sqlalchemy.orm import Session
+
 from config import settings
 from database import get_db
 from db_entities.app.user import User
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from features.auth.schema import TokenDataSchema
-from jwt.exceptions import InvalidTokenError
-from sqlalchemy.orm import Session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -26,9 +27,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     logger.info("verify_password()")
 
     try:
-        return bcrypt.checkpw(
-            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-        )
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
     except ValueError as e:
         return False
 
@@ -47,9 +46,7 @@ def get_user(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
 
 
-def authenticate_user(
-    db: Session, username: str, password: str
-) -> User | Literal[False]:
+def authenticate_user(db: Session, username: str, password: str) -> User | Literal[False]:
     """Authenticate a user by checking the username and password against the database."""
     logger.info(f"authenticate_user({username=}, password=****)")
 
@@ -73,9 +70,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update(
-        {"exp": expire, "iat": datetime.now(timezone.utc), "jti": str(uuid4())}
-    )
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc), "jti": str(uuid4())})
     encoded_jwt = jwt.encode(
         to_encode,
         settings.JSON_WEB_TOKEN_SECRET_KEY,
@@ -84,9 +79,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 
-def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)
-) -> User:
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)) -> User:
     """Get the current user from the JWT token."""
     logger.info("get_current_user(token=...)")
 

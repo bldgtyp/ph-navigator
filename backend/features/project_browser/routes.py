@@ -3,14 +3,15 @@
 import logging
 from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
+
 from config import limiter
 from database import get_db
 from db_entities.app.user import User
-from fastapi import APIRouter, Depends, HTTPException, Request
 from features.app.schema import ProjectSchema
 from features.app.services import get_all_projects
 from features.auth.services import get_current_active_user
-from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/project_browser",

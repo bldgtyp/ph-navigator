@@ -3,6 +3,9 @@
 
 import json
 
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_frame import ApertureElementFrame
@@ -11,10 +14,8 @@ from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
 from db_entities.app.project import Project
 from db_entities.app.user import User
-from fastapi.testclient import TestClient
 from features.auth.services import get_password_hash
 from main import app
-from sqlalchemy.orm import Session
 
 
 def _create_project(db: Session, bt_number: str) -> Project:
@@ -54,19 +55,13 @@ def _create_aperture_with_element(
     db.flush()
 
     frame_top = ApertureElementFrame(name=f"{name} Top", frame_type_id=frame_type.id)
-    frame_right = ApertureElementFrame(
-        name=f"{name} Right", frame_type_id=frame_type.id
-    )
-    frame_bottom = ApertureElementFrame(
-        name=f"{name} Bottom", frame_type_id=frame_type.id
-    )
+    frame_right = ApertureElementFrame(name=f"{name} Right", frame_type_id=frame_type.id)
+    frame_bottom = ApertureElementFrame(name=f"{name} Bottom", frame_type_id=frame_type.id)
     frame_left = ApertureElementFrame(name=f"{name} Left", frame_type_id=frame_type.id)
     db.add_all([frame_top, frame_right, frame_bottom, frame_left])
     db.flush()
 
-    glazing = ApertureElementGlazing(
-        name=f"{name} Glazing", glazing_type_id=glazing_type.id
-    )
+    glazing = ApertureElementGlazing(name=f"{name} Glazing", glazing_type_id=glazing_type.id)
     db.add(glazing)
     db.flush()
 
@@ -116,9 +111,7 @@ def test_get_apertures_as_json_route_returns_json_string(
     assert element["glazing"]["glazing_type"] is not None
 
 
-def test_get_apertures_as_json_route_empty_project(
-    client: TestClient, test_db: Session
-):
+def test_get_apertures_as_json_route_empty_project(client: TestClient, test_db: Session):
     project = _create_project(test_db, "NO_APERTURES")
 
     response = client.get(f"/aperture/get-apertures-as-json/{project.bt_number}")

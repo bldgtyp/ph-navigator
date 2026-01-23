@@ -11,6 +11,7 @@ from typing import Sequence, Union
 
 import dotenv
 import sqlalchemy as sa
+
 from alembic import op
 
 dotenv.load_dotenv()
@@ -33,9 +34,7 @@ def upgrade() -> None:
         sa.Column("airtable_token", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_airtable_bases_id"), "airtable_bases", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_airtable_bases_id"), "airtable_bases", ["id"], unique=False)
     op.create_table(
         "assembly_materials",
         sa.Column("id", sa.String(), nullable=False),
@@ -48,9 +47,7 @@ def upgrade() -> None:
         sa.Column("specific_heat_j_kgk", sa.Float(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_assembly_materials_id"), "assembly_materials", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_assembly_materials_id"), "assembly_materials", ["id"], unique=False)
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -74,15 +71,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_airtable_tables_at_ref"), "airtable_tables", ["at_ref"], unique=False
-    )
-    op.create_index(
-        op.f("ix_airtable_tables_id"), "airtable_tables", ["id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_airtable_tables_name"), "airtable_tables", ["name"], unique=False
-    )
+    op.create_index(op.f("ix_airtable_tables_at_ref"), "airtable_tables", ["at_ref"], unique=False)
+    op.create_index(op.f("ix_airtable_tables_id"), "airtable_tables", ["id"], unique=False)
+    op.create_index(op.f("ix_airtable_tables_name"), "airtable_tables", ["name"], unique=False)
     op.create_table(
         "projects",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -102,9 +93,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_projects_bt_number"), "projects", ["bt_number"], unique=False
-    )
+    op.create_index(op.f("ix_projects_bt_number"), "projects", ["bt_number"], unique=False)
     op.create_index(op.f("ix_projects_id"), "projects", ["id"], unique=False)
     op.create_index(op.f("ix_projects_name"), "projects", ["name"], unique=False)
     op.create_index(
@@ -113,9 +102,7 @@ def upgrade() -> None:
         ["phius_dropbox_url"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_projects_phius_number"), "projects", ["phius_number"], unique=False
-    )
+    op.create_index(op.f("ix_projects_phius_number"), "projects", ["phius_number"], unique=False)
     op.create_table(
         "assemblies",
         sa.Column("id", sa.Integer(), nullable=False),

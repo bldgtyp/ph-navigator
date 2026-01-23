@@ -3,6 +3,8 @@
 import json
 
 import pytest
+from sqlalchemy.orm import Session
+
 from features.assembly.services.assembly import (
     AssemblyNotFoundException,
     append_default_layer_to_assembly,
@@ -23,10 +25,7 @@ from features.assembly.services.layer import (
     delete_layer,
     get_layer_by_id,
 )
-from features.assembly.services.to_hbe_construction import (
-    get_all_project_assemblies_as_hbjson_string,
-)
-from sqlalchemy.orm import Session
+from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
 
 
 def test_get_all_project_assemblies(session: Session, create_test_project):
@@ -55,9 +54,7 @@ def test_get_non_existing_assembly_by_id(session, create_test_project):
 
 
 def test_create_new_empty_assembly(session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1  # Initial assembly created by default
 
     # Create a new assembly
@@ -71,9 +68,7 @@ def test_create_new_empty_assembly(session, create_test_project):
 
 
 def test_create_new_default_assembly(session, create_test_project):
-    project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1  # Initial assembly created by default
 
     # Create a new default assembly
@@ -108,9 +103,7 @@ def test_insert_new_layer_into_assembly(session: Session, create_test_project):
     assert len(assembly.layers) == 4  # Initial layer + 3 new layers
 
     layer_to_insert = create_new_layer(thickness_mm=100.0, order=2)
-    assembly, layer_to_insert = insert_layer_into_assembly(
-        session, assembly.id, layer_to_insert
-    )
+    assembly, layer_to_insert = insert_layer_into_assembly(session, assembly.id, layer_to_insert)
 
     # Verify the order of layers after insertion
     assert len(assembly.layers) == 5
@@ -120,9 +113,7 @@ def test_insert_new_layer_into_assembly(session: Session, create_test_project):
     assert assembly.layers[1].id == layer_1.id
 
     assert assembly.layers[2].order == 2
-    assert (
-        assembly.layers[2].id == layer_to_insert.id
-    )  # <-- This is the newly inserted layer
+    assert assembly.layers[2].id == layer_to_insert.id  # <-- This is the newly inserted layer
 
     # Layers should be shifted
     assert assembly.layers[3].order == 3
@@ -189,9 +180,7 @@ def test_insert_default_layer_into_assembly(session, create_test_project):
 
     assert len(assembly.layers) == 4  # Initial layer + 3 new layers
 
-    assembly, layer_to_insert = insert_default_layer_into_assembly(
-        session, assembly.id, 2
-    )
+    assembly, layer_to_insert = insert_default_layer_into_assembly(session, assembly.id, 2)
 
     # Verify the order of layers after insertion
     assert len(assembly.layers) == 5
@@ -201,9 +190,7 @@ def test_insert_default_layer_into_assembly(session, create_test_project):
     assert assembly.layers[1].id == layer_1.id
 
     assert assembly.layers[2].order == 2
-    assert (
-        assembly.layers[2].id == layer_to_insert.id
-    )  # <-- This is the newly inserted layer
+    assert assembly.layers[2].id == layer_to_insert.id  # <-- This is the newly inserted layer
 
     # Layers should be shifted
     assert assembly.layers[3].order == 3
@@ -324,9 +311,7 @@ def test_update_assembly_name(session, create_test_project):
     assert assembly.name == "Test Assembly"
 
     # Update the assembly name
-    updated_assembly = update_assembly_name(
-        session, assembly.id, "Updated Assembly Name"
-    )
+    updated_assembly = update_assembly_name(session, assembly.id, "Updated Assembly Name")
 
     # Verify the name is updated
     assert updated_assembly.name == "Updated Assembly Name"

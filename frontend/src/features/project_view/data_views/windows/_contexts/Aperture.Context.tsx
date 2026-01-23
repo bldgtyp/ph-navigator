@@ -15,6 +15,23 @@ function getApertureElementById(aperture: ApertureType, elementId: number): Aper
     return aperture.elements.find(element => element.id === elementId);
 }
 
+function areElementsAdjacent(element: ApertureElementType, other: ApertureElementType): boolean {
+    // Check if two elements share an edge (horizontally or vertically adjacent)
+    const horizontallyAdjacent =
+        element.row_number === other.row_number &&
+        (Math.abs(element.column_number - other.column_number) === 1 ||
+            element.column_number + element.col_span === other.column_number ||
+            other.column_number + other.col_span === element.column_number);
+
+    const verticallyAdjacent =
+        element.column_number === other.column_number &&
+        (Math.abs(element.row_number - other.row_number) === 1 ||
+            element.row_number + element.row_span === other.row_number ||
+            other.row_number + other.row_span === element.row_number);
+
+    return horizontallyAdjacent || verticallyAdjacent;
+}
+
 interface AperturesContextType {
     isLoadingApertures: boolean;
     setIsLoadingApertures: React.Dispatch<React.SetStateAction<boolean>>;
@@ -44,7 +61,7 @@ interface AperturesContextType {
     updateRowHeight: (apertureId: number, rowIndex: number, newHeightMM: number) => void;
     // Selection
     selectedApertureElementIds: number[];
-    toggleApertureElementSelection: (cellId: number) => void;
+    toggleApertureElementSelection: (cellId: number, addToSelection?: boolean) => void;
     clearApertureElementIdSelection: () => void;
     mergeSelectedApertureElements: () => void;
     splitSelectedApertureElement: () => void;
@@ -451,54 +468,38 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Cell Selection
 
     const toggleApertureElementSelection = useCallback(
-        (elementId: number) => {
+        (elementId: number, addToSelection: boolean = false) => {
             setSelectedApertureElementsIds(prev => {
                 if (!activeAperture) {
                     return [];
-                } else if (prev.includes(elementId)) {
-                    // Deselect if already selected
-                    return prev.filter(id => id !== elementId);
-                } else {
-                    // Only allow selecting adjacent ApertureElement (ApertureElement that share an edge)
-                    if (prev.length === 0) {
-                        // First selection is always valid
-                        return [elementId];
-                    }
-
-                    // Check if this ApertureElement is adjacent to any selected ApertureElement
-                    const element = getApertureElementById(activeAperture, elementId);
-                    if (!element) return prev;
-
-                    // Check adjacency with any selected ApertureElement
-                    for (const selectedId of prev) {
-                        const selectedCell = getApertureElementById(activeAperture, selectedId);
-                        if (!selectedCell) continue;
-
-                        // Check if cells are adjacent (share an edge)
-                        const isAdjacent =
-                            // Horizontally adjacent
-                            (element.row_number === selectedCell.row_number &&
-                                (Math.abs(element.column_number - selectedCell.column_number) === 1 ||
-                                    Math.abs(element.column_number + element.col_span - selectedCell.column_number) ===
-                                        0 ||
-                                    Math.abs(
-                                        element.column_number - (selectedCell.column_number + selectedCell.col_span)
-                                    ) === 0)) ||
-                            // Vertically adjacent
-                            (element.column_number === selectedCell.column_number &&
-                                (Math.abs(element.row_number - selectedCell.row_number) === 1 ||
-                                    Math.abs(element.row_number + element.row_span - selectedCell.row_number) === 0 ||
-                                    Math.abs(element.row_number - (selectedCell.row_number + selectedCell.row_span)) ===
-                                        0));
-
-                        if (isAdjacent) {
-                            return [...prev, elementId];
-                        }
-                    }
-
-                    // If we get here, the cell isn't adjacent to any selected cell
-                    return prev;
                 }
+
+                // If element is already selected, toggle it off (deselect)
+                if (prev.includes(elementId)) {
+                    return prev.filter(id => id !== elementId);
+                }
+
+                // If NOT adding to selection (no shift key), replace current selection
+                if (!addToSelection) {
+                    return [elementId];
+                }
+
+                // Adding to selection (shift key held)
+                // First selection is always valid
+                if (prev.length === 0) {
+                    return [elementId];
+                }
+
+                // Check if this element is adjacent to any selected element
+                const element = getApertureElementById(activeAperture, elementId);
+                if (!element) return prev;
+
+                const isAdjacentToSelection = prev.some(selectedId => {
+                    const selectedElement = getApertureElementById(activeAperture, selectedId);
+                    return selectedElement && areElementsAdjacent(element, selectedElement);
+                });
+
+                return isAdjacentToSelection ? [...prev, elementId] : prev;
             });
         },
         [activeAperture]

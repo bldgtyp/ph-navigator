@@ -9,6 +9,7 @@ Create Date: 2025-08-19 16:26:28.984166
 from typing import Sequence, Union
 
 import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -40,9 +41,7 @@ def upgrade() -> None:
         sa.Column("comments", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_aperture_frame_types_id"), "aperture_frame_types", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_aperture_frame_types_id"), "aperture_frame_types", ["id"], unique=False)
     op.create_table(
         "aperture_glazing_types",
         sa.Column("id", sa.String(), nullable=False),
@@ -151,9 +150,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_aperture_elements_id"), "aperture_elements", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_aperture_elements_id"), "aperture_elements", ["id"], unique=False)
     # ### end Alembic commands ###
 
 
@@ -164,17 +161,11 @@ def downgrade() -> None:
     op.drop_table("aperture_elements")
     op.drop_index(op.f("ix_apertures_id"), table_name="apertures")
     op.drop_table("apertures")
-    op.drop_index(
-        op.f("ix_aperture_element_glazing_id"), table_name="aperture_element_glazing"
-    )
+    op.drop_index(op.f("ix_aperture_element_glazing_id"), table_name="aperture_element_glazing")
     op.drop_table("aperture_element_glazing")
-    op.drop_index(
-        op.f("ix_aperture_element_frame_id"), table_name="aperture_element_frame"
-    )
+    op.drop_index(op.f("ix_aperture_element_frame_id"), table_name="aperture_element_frame")
     op.drop_table("aperture_element_frame")
-    op.drop_index(
-        op.f("ix_aperture_glazing_types_id"), table_name="aperture_glazing_types"
-    )
+    op.drop_index(op.f("ix_aperture_glazing_types_id"), table_name="aperture_glazing_types")
     op.drop_table("aperture_glazing_types")
     op.drop_index(op.f("ix_aperture_frame_types_id"), table_name="aperture_frame_types")
     op.drop_table("aperture_frame_types")

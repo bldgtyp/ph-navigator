@@ -3,9 +3,10 @@
 import logging
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.frame_type import ApertureFrameType
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -156,9 +157,7 @@ def update_frame_type(
     return frame
 
 
-def add_frame_types(
-    db: Session, frame_types: list[ApertureFrameType]
-) -> tuple[int, int]:
+def add_frame_types(db: Session, frame_types: list[ApertureFrameType]) -> tuple[int, int]:
     """Add (or update) frame-types from AirTable to the database."""
     logger.info(f"add_frame_types(db, frame_types={len(frame_types)})")
 

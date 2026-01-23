@@ -20,12 +20,14 @@ from .schemas.ladybug.sunpath import SunPathAndCompassDTOSchema
 from .schemas.model_metadata import HBModelMetadataSchema
 from .services.epw import load_epw_object
 from .services.hb_model import list_available_models, load_hb_model
-from .services.model_elements import (get_faces_from_model,
-                                      get_hot_water_systems_from_model,
-                                      get_shading_elements_from_model,
-                                      get_spaces_from_model,
-                                      get_sun_path_from_model,
-                                      get_ventilation_systems_from_model)
+from .services.model_elements import (
+    get_faces_from_model,
+    get_hot_water_systems_from_model,
+    get_shading_elements_from_model,
+    get_spaces_from_model,
+    get_sun_path_from_model,
+    get_ventilation_systems_from_model,
+)
 
 # ----------------------------------------------------------------------------------------------------------------------
 

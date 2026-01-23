@@ -2,17 +2,13 @@
 """Tests for aperture element operation (swing/slide/fixed) functionality."""
 
 import pytest
-from db_entities.aperture import Aperture
-from features.aperture.services.aperture import (
-    duplicate_aperture,
-    update_aperture_element_operation,
-)
 from sqlalchemy.orm import Session
 
+from db_entities.aperture import Aperture
+from features.aperture.services.aperture import duplicate_aperture, update_aperture_element_operation
 
-def test_update_element_operation_to_swing(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+
+def test_update_element_operation_to_swing(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test updating an element operation to swing with a direction."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -25,9 +21,7 @@ def test_update_element_operation_to_swing(
     assert updated_element.operation["directions"] == ["left"]
 
 
-def test_update_element_operation_to_slide(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+def test_update_element_operation_to_slide(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test updating an element operation to slide with a direction."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -40,9 +34,7 @@ def test_update_element_operation_to_slide(
     assert updated_element.operation["directions"] == ["right"]
 
 
-def test_update_element_operation_multiple_directions(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+def test_update_element_operation_multiple_directions(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test updating an element operation with multiple directions (tilt-turn)."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -55,9 +47,7 @@ def test_update_element_operation_multiple_directions(
     assert set(updated_element.operation["directions"]) == {"left", "up"}
 
 
-def test_update_element_operation_to_fixed(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+def test_update_element_operation_to_fixed(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test updating an element operation back to fixed (null)."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -72,9 +62,7 @@ def test_update_element_operation_to_fixed(
     assert updated_element.operation is None
 
 
-def test_element_operation_persists_after_refresh(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+def test_element_operation_persists_after_refresh(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test that element operation persists after database refresh."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -90,9 +78,7 @@ def test_element_operation_persists_after_refresh(
     assert refreshed_element.operation["directions"] == ["left"]
 
 
-def test_duplicate_aperture_copies_operation(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+def test_duplicate_aperture_copies_operation(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test that duplicating an aperture copies element operations."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -111,9 +97,7 @@ def test_duplicate_aperture_copies_operation(
     assert set(duplicated_element.operation["directions"]) == {"left", "up"}
 
 
-def test_duplicate_aperture_operation_independence(
-    test_db: Session, sample_aperture_with_elements: Aperture
-):
+def test_duplicate_aperture_operation_independence(test_db: Session, sample_aperture_with_elements: Aperture):
     """Test that duplicated aperture operation is independent from original."""
     element = sample_aperture_with_elements.elements[0]
 
@@ -127,9 +111,7 @@ def test_duplicate_aperture_operation_independence(
 
     # Modify the duplicate's operation
     duplicated_element = duplicated_aperture.elements[0]
-    update_aperture_element_operation(
-        test_db, duplicated_element.id, {"type": "slide", "directions": ["right"]}
-    )
+    update_aperture_element_operation(test_db, duplicated_element.id, {"type": "slide", "directions": ["right"]})
 
     # Verify original is unchanged
     test_db.refresh(sample_aperture_with_elements)

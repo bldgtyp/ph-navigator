@@ -2,13 +2,11 @@
 
 import logging
 
+from sqlalchemy.orm import Session
+
 from db_entities.assembly.material_photo import MaterialPhoto
 from features.assembly.services.segment import get_segment_by_id
-from features.gcp.services.gcs_utils import (
-    FileDeleteFailedException,
-    delete_file_from_gcs,
-)
-from sqlalchemy.orm import Session
+from features.gcp.services.gcs_utils import FileDeleteFailedException, delete_file_from_gcs
 
 logger = logging.getLogger(__name__)
 
@@ -77,9 +75,7 @@ def add_site_photo_to_segment(
     Returns:
         MaterialPhoto: The created MaterialPhoto object with the segment's photo URLs
     """
-    logger.info(
-        f"add_site_photo_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})"
-    )
+    logger.info(f"add_site_photo_to_segment({segment_id=}, {thumbnail_url=}, {full_size_url=})")
 
     segment = get_segment_by_id(db, segment_id)
 

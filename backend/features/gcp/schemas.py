@@ -2,9 +2,10 @@
 
 from __future__ import annotations  # Enables forward references
 
+from pydantic import BaseModel
+
 from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.assembly.schemas.material_photo import MaterialPhotoSchema
-from pydantic import BaseModel
 
 
 class SegmentSitePhotoUrlsResponse(BaseModel):

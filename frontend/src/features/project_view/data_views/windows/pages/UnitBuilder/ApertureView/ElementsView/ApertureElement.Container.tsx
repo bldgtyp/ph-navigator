@@ -42,7 +42,7 @@ const ApertureElementContainer: React.FC<ApertureElementContainerProps> = ({
             return;
         }
 
-        toggleApertureElementSelection(element.id);
+        toggleApertureElementSelection(element.id, event.shiftKey);
     };
 
     return (

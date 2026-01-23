@@ -2,11 +2,12 @@
 
 from typing import TYPE_CHECKING
 
+from sqlalchemy import JSON, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
+
 from database import Base
 from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.aperture.aperture_glazing import ApertureElementGlazing
-from sqlalchemy import JSON, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -25,24 +26,12 @@ class ApertureElement(Base):
     operation: Mapped[dict | None] = MappedColumn(JSON, nullable=True, default=None)
 
     # Foreign Keys
-    aperture_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("apertures.id"), nullable=False
-    )
-    glazing_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("aperture_element_glazing.id"), nullable=True
-    )
-    frame_top_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("aperture_element_frame.id"), nullable=True
-    )
-    frame_right_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("aperture_element_frame.id"), nullable=True
-    )
-    frame_bottom_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("aperture_element_frame.id"), nullable=True
-    )
-    frame_left_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("aperture_element_frame.id"), nullable=True
-    )
+    aperture_id: Mapped[int] = MappedColumn(Integer, ForeignKey("apertures.id"), nullable=False)
+    glazing_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_glazing.id"), nullable=True)
+    frame_top_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_right_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_bottom_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
+    frame_left_id: Mapped[int] = MappedColumn(Integer, ForeignKey("aperture_element_frame.id"), nullable=True)
 
     # Relationships
     aperture: Mapped["Aperture"] = relationship("Aperture", back_populates="elements")

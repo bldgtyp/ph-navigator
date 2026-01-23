@@ -1,6 +1,8 @@
 # -*- Python Version: 3.11 -*-
 
 import pytest
+from sqlalchemy.orm import Session
+
 from db_entities.app.project import Project
 from features.app.services import (
     ProjectAlreadyExistsException,
@@ -11,7 +13,6 @@ from features.app.services import (
     get_project_by_bt_number,
     get_project_by_id,
 )
-from sqlalchemy.orm import Session
 
 
 def test_get_project_by_bt_number_fails_on_empty_database(session: Session):
@@ -20,9 +21,7 @@ def test_get_project_by_bt_number_fails_on_empty_database(session: Session):
 
 
 def test_get_valid_project_by_bt_number_route(session: Session, create_test_project):
-    existing_project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    existing_project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
 
     pr = get_project_by_bt_number(session, existing_project.bt_number)
 
@@ -30,9 +29,7 @@ def test_get_valid_project_by_bt_number_route(session: Session, create_test_proj
 
 
 def test_get_valid_project_by_id_route(session: Session, create_test_project):
-    existing_project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    existing_project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
 
     pr = get_project_by_id(session, existing_project.id)
 
@@ -40,9 +37,7 @@ def test_get_valid_project_by_id_route(session: Session, create_test_project):
 
 
 def test_get_projects(session: Session, create_test_project):
-    existing_project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    existing_project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_user = existing_project.owner
     assert existing_project.owner_id == existing_user.id
     assert len(existing_user.owned_projects) == 1
@@ -54,9 +49,7 @@ def test_get_projects(session: Session, create_test_project):
 
 
 def test_create_new_project(session: Session, create_test_project):
-    existing_project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    existing_project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_user = existing_project.owner
     assert existing_project.owner_id == existing_user.id
     assert len(existing_user.owned_projects) == 1
@@ -75,9 +68,7 @@ def test_create_new_project(session: Session, create_test_project):
 def test_create_new_project_with_duplicate_bt_number_raises_ProjectAlreadyExistsException(
     session: Session, create_test_project
 ):
-    existing_project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    existing_project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_user = existing_project.owner
     assert existing_project.owner_id == existing_user.id
     assert len(existing_user.owned_projects) == 1
@@ -105,6 +96,4 @@ def test_create_new_user(session: Session, create_test_project):
     assert new_user.username == "new_user"
     assert new_user.email == "email"
     assert new_user.hashed_password == "hashed_password"
-    assert (
-        len(new_user.owned_projects) == 0
-    )  # New user should not have any projects yet
+    assert len(new_user.owned_projects) == 0  # New user should not have any projects yet

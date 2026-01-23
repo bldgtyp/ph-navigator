@@ -2,10 +2,11 @@
 
 from typing import TYPE_CHECKING, Any
 
-from database import Base, Session
 from honeybee.typing import clean_ep_string
 from sqlalchemy import Float, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
+
+from database import Base, Session
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -25,9 +26,7 @@ class Material(Base):
     density_kg_m3: Mapped[float | None] = MappedColumn(Float)
     specific_heat_j_kgk: Mapped[float | None] = MappedColumn(Float)
 
-    segments: Mapped[list["Segment"]] = relationship(
-        "Segment", back_populates="material"
-    )
+    segments: Mapped[list["Segment"]] = relationship("Segment", back_populates="material")
 
     @validates("name")
     def validate_name(self, key: Any, value: str) -> str:

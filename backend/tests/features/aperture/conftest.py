@@ -4,6 +4,8 @@
 from typing import Generator
 
 import pytest
+from sqlalchemy.orm import Session
+
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_frame import ApertureElementFrame
@@ -13,7 +15,6 @@ from db_entities.aperture.glazing_type import ApertureGlazingType
 from db_entities.app.project import Project
 from db_entities.app.user import User
 from features.auth.services import get_password_hash
-from sqlalchemy.orm import Session
 
 
 @pytest.fixture(scope="function")

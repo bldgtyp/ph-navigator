@@ -3,6 +3,10 @@
 import json
 
 import pytest
+from honeybee_energy.construction.opaque import OpaqueConstruction
+from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass
+from sqlalchemy.orm import Session
+
 from db_entities.app import Project
 from features.app.services import ProjectNotFoundException
 from features.assembly.services.assembly import get_assembly_by_id
@@ -11,9 +15,6 @@ from features.assembly.services.assembly_from_hbjson import (
     get_multiple_hb_constructions_from_hbjson,
 )
 from features.assembly.services.material import MaterialNotFoundException
-from honeybee_energy.construction.opaque import OpaqueConstruction
-from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass
-from sqlalchemy.orm import Session
 
 
 def test_create_assembly_from_hb_construction(session: Session, create_test_project):
@@ -61,9 +62,7 @@ def test_create_assembly_from_hb_construction_with_missing_project(session: Sess
         create_assembly_from_hb_construction(session, "4567", hbe_construction)
 
 
-def test_create_assembly_from_hb_construction_with_non_existing_material(
-    session: Session, create_test_project
-):
+def test_create_assembly_from_hb_construction_with_non_existing_material(session: Session, create_test_project):
     create_test_project(db=session, username="user1", project_name="Project 1")
     hbe_construction = OpaqueConstruction(
         identifier="Test Construction",
@@ -83,9 +82,7 @@ def test_create_assembly_from_hb_construction_with_non_existing_material(
 
 
 def test_create_assembly_with_existing_id(session: Session, create_test_project):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_assembly = get_assembly_by_id(session, 1)
     assert existing_assembly.name == "Test Assembly"
 
@@ -105,9 +102,7 @@ def test_create_assembly_with_existing_id(session: Session, create_test_project)
     assert hbe_construction.identifier == "Test Assembly"
     assert hbe_construction.display_name == "Test Assembly"
 
-    assembly = create_assembly_from_hb_construction(
-        session, project.bt_number, hbe_construction
-    )
+    assembly = create_assembly_from_hb_construction(session, project.bt_number, hbe_construction)
     assert assembly.name == "Test Assembly"
     assert assembly.project_id == project.id
     assert len(assembly.layers) == 1
@@ -119,12 +114,8 @@ def test_create_assembly_with_existing_id(session: Session, create_test_project)
     assert assembly.layers[0].segments[0].material.specific_heat_j_kgk == 999
 
 
-def test_create_assembly_from_hb_construction_with_EnergyMaterialNoMass_material(
-    session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_create_assembly_from_hb_construction_with_EnergyMaterialNoMass_material(session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     existing_assembly = get_assembly_by_id(session, 1)
     assert existing_assembly.name == "Test Assembly"
 
@@ -150,9 +141,7 @@ def test_create_assembly_from_hb_construction_with_EnergyMaterialNoMass_material
     assert hbe_construction.identifier == "New Assembly"
     assert hbe_construction.display_name == "New Assembly"
 
-    assembly = create_assembly_from_hb_construction(
-        session, project.bt_number, hbe_construction
-    )
+    assembly = create_assembly_from_hb_construction(session, project.bt_number, hbe_construction)
 
     assert assembly.name == "New Assembly"
     assert assembly.project_id == project.id
@@ -179,9 +168,7 @@ def test_get_single_hb_construction_from_hbjson():
         ],
     )
 
-    hb_constructions = get_multiple_hb_constructions_from_hbjson(
-        hbe_construction.to_dict()
-    )
+    hb_constructions = get_multiple_hb_constructions_from_hbjson(hbe_construction.to_dict())
 
     assert len(hb_constructions) == 1
     assert hb_constructions[0].identifier == "Test Construction"
@@ -221,9 +208,7 @@ def test_get_multiple_hb_constructions_from_hbjson():
     hbe_constructions_json = json.dumps(hbe_constructions)
 
     # --- Rebuild the hb_constructions from the JSON
-    rebuilt_hb_constructions = get_multiple_hb_constructions_from_hbjson(
-        json.loads(hbe_constructions_json)
-    )
+    rebuilt_hb_constructions = get_multiple_hb_constructions_from_hbjson(json.loads(hbe_constructions_json))
 
     assert len(rebuilt_hb_constructions) == 2
     assert rebuilt_hb_constructions[0].identifier == "Test Construction"

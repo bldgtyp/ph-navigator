@@ -1,11 +1,9 @@
 # -*- Python Version: 3.11 -*-
 
 import pytest
-from features.assembly.services.assembly import (
-    append_layer_to_assembly,
-    get_assembly_by_id,
-    insert_layer_into_assembly,
-)
+from sqlalchemy.orm import Session
+
+from features.assembly.services.assembly import append_layer_to_assembly, get_assembly_by_id, insert_layer_into_assembly
 from features.assembly.services.layer import (
     LastLayerAssemblyException,
     LayerNotFoundException,
@@ -15,12 +13,7 @@ from features.assembly.services.layer import (
     update_layer_thickness,
 )
 from features.assembly.services.material import get_default_material
-from features.assembly.services.segment import (
-    SegmentNotFoundException,
-    create_new_segment,
-    get_segment_by_id,
-)
-from sqlalchemy.orm import Session
+from features.assembly.services.segment import SegmentNotFoundException, create_new_segment, get_segment_by_id
 
 
 def test_get_valid_layer_by_id(session: Session, create_test_project):

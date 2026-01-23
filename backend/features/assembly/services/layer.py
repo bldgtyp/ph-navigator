@@ -2,9 +2,10 @@
 
 import logging
 
+from sqlalchemy.orm import Session
+
 from db_entities.assembly import Layer
 from features.assembly.services.segment import stage_duplicate_segment
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,8 @@ class LastLayerAssemblyException(Exception):
     """Exception raised when trying to delete the last layer in an assembly."""
 
     def __init__(self, layer_id: int, assembly_id: int):
-        logger.error(
-            f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}."
-        )
-        super().__init__(
-            f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}."
-        )
+        logger.error(f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}.")
+        super().__init__(f"Cannot delete Layer-{layer_id}. It is the last layer in Assembly-{assembly_id}.")
 
 
 def get_layer_by_id(db: Session, layer_id: int) -> Layer:
@@ -46,9 +43,7 @@ def create_new_layer(thickness_mm: float = 50.0, order: int = 0) -> Layer:
     return Layer(thickness_mm=thickness_mm, order=order)
 
 
-def update_layer_thickness(
-    db: Session, layer_id: int, new_thickness_mm: float
-) -> Layer:
+def update_layer_thickness(db: Session, layer_id: int, new_thickness_mm: float) -> Layer:
     """Update the thickness of an existing layer."""
     logger.info(f"Updating layer {layer_id} thickness to {new_thickness_mm} mm")
 
@@ -67,9 +62,7 @@ def delete_layer(db: Session, layer_id: int) -> None:
 
     layer = get_layer_by_id(db, layer_id)
     if len(layer.assembly.layers) <= 1:
-        raise LastLayerAssemblyException(
-            layer_id=layer_id, assembly_id=layer.assembly_id
-        )
+        raise LastLayerAssemblyException(layer_id=layer_id, assembly_id=layer.assembly_id)
 
     # Adjust the order of the remaining Layers in the assembly
     db.query(Layer).filter(

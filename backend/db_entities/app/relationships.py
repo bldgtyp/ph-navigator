@@ -1,7 +1,8 @@
 # -*- Python Version: 3.11 -*-
 
-from database import Base
 from sqlalchemy import Column, ForeignKey, Integer, Table
+
+from database import Base
 
 # Association table for the many-to-many relationship between Projects and Users
 project_users = Table(

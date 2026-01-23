@@ -2,11 +2,12 @@
 
 from __future__ import annotations  # Enables forward references
 
+from pydantic import BaseModel, root_validator
+
 from db_entities.assembly.segment import SpecificationStatus
 from features.assembly.schemas.material import MaterialSchema
 from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.assembly.schemas.material_photo import MaterialPhotoSchema
-from pydantic import BaseModel, root_validator
 
 
 class SegmentSchema(BaseModel):

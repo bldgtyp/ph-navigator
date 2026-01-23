@@ -2,11 +2,6 @@
 
 import logging
 
-from db_entities.assembly import Layer
-from features.assembly.services.to_hbe_material_typical import (
-    convert_multiple_assembly_layers_to_hb_material,
-    convert_single_assembly_layer_to_hb_material,
-)
 from honeybee_energy.material.opaque import EnergyMaterial
 from honeybee_energy_ph.properties.materials.opaque import EnergyMaterialPhProperties
 from honeybee_ph_utils.aisi_s250_21 import (
@@ -16,6 +11,12 @@ from honeybee_ph_utils.aisi_s250_21 import (
     calculate_stud_cavity_effective_u_value,
 )
 from ph_units.converter import convert
+
+from db_entities.assembly import Layer
+from features.assembly.services.to_hbe_material_typical import (
+    convert_multiple_assembly_layers_to_hb_material,
+    convert_single_assembly_layer_to_hb_material,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +37,7 @@ class SteelStudLayersCollection:
 
     def __str__(self) -> str:
         def layer_view(layer: EnergyMaterial, r_value: float):
-            return (
-                f"Layer: {layer.display_name} | {layer.thickness}-m | R-{r_value:.2f}"
-            )
+            return f"Layer: {layer.display_name} | {layer.thickness}-m | R-{r_value:.2f}"
 
         msg = " -" * 25 + "\n"
         msg += "SteelStudAssemblyLayers()\n"
@@ -53,9 +52,7 @@ class SteelStudLayersCollection:
             msg += layer_view(layer, self.r_IP_value_ext_sheathing)
         msg += "- stud_cavity Layer:\n"
         if self.stud_cavity_layer:
-            msg += layer_view(
-                self.stud_cavity_layer, self.r_IP_value_stud_cavity_insulation
-            )
+            msg += layer_view(self.stud_cavity_layer, self.r_IP_value_stud_cavity_insulation)
         else:
             msg += "  None\n"
         msg += "- int_sheathing Layers:\n"
@@ -109,21 +106,19 @@ class SteelStudLayersCollection:
         logger.info(f"SteelStudAssemblyLayers.from_layers([{len(layers)}] layers)")
 
         layer_groups, exterior_layer_groups = cls.sort_layers_into_groups(layers)
-        cavity_layer_hbe_material = convert_single_assembly_layer_to_hb_material(
-            layer_groups[1][0]
-        )
+        cavity_layer_hbe_material = convert_single_assembly_layer_to_hb_material(layer_groups[1][0])
         steel_stud_assembly_layers = cls(cavity_layer_hbe_material)
-        steel_stud_assembly_layers.ext_cladding = (
-            convert_multiple_assembly_layers_to_hb_material(exterior_layer_groups[0])
+        steel_stud_assembly_layers.ext_cladding = convert_multiple_assembly_layers_to_hb_material(
+            exterior_layer_groups[0]
         )
-        steel_stud_assembly_layers.ext_insulation_layers = (
-            convert_multiple_assembly_layers_to_hb_material(exterior_layer_groups[1])
+        steel_stud_assembly_layers.ext_insulation_layers = convert_multiple_assembly_layers_to_hb_material(
+            exterior_layer_groups[1]
         )
-        steel_stud_assembly_layers.ext_sheathing_layers = (
-            convert_multiple_assembly_layers_to_hb_material(exterior_layer_groups[2])
+        steel_stud_assembly_layers.ext_sheathing_layers = convert_multiple_assembly_layers_to_hb_material(
+            exterior_layer_groups[2]
         )
-        steel_stud_assembly_layers.int_sheathing_layers = (
-            convert_multiple_assembly_layers_to_hb_material(layer_groups[2])
+        steel_stud_assembly_layers.int_sheathing_layers = convert_multiple_assembly_layers_to_hb_material(
+            layer_groups[2]
         )
 
         return steel_stud_assembly_layers
@@ -156,9 +151,7 @@ class SteelStudLayersCollection:
     def r_IP_value_stud_cavity_insulation(self) -> float:
         """Get the R-value of the stud cavity insulation in IP units (hr-ft2-F/Btu)."""
         if self.stud_cavity_layer:
-            return (
-                convert(self.stud_cavity_layer.r_value, "M2-K/W", "HR-FT2-F/BTU") or 0.0
-            )
+            return convert(self.stud_cavity_layer.r_value, "M2-K/W", "HR-FT2-F/BTU") or 0.0
         return 0.0
 
     @property
@@ -188,9 +181,7 @@ def calculate_steel_stud_eq_conductivity(
     stl_stud_layers: SteelStudLayersCollection,
 ) -> float:
     """Return equivalent conductivity (W/m-K) of a steel-stud assembly's stud-cavity."""
-    logger.info(
-        f"calculate_steel_stud_eq_conductivity({stl_stud_layers.stud_cavity_layer.identifier})"
-    )
+    logger.info(f"calculate_steel_stud_eq_conductivity({stl_stud_layers.stud_cavity_layer.identifier})")
 
     # Note: all values need to be converted to 'IP' units for this calculation
     u_IP = calculate_stud_cavity_effective_u_value(
@@ -223,15 +214,11 @@ def get_steel_stud_layers_as_hb_materials(
 
     # Calc the stud-cavity equivalent thermal conductivity
     steel_stud_assembly_hbe_materials = SteelStudLayersCollection.from_layers(layers)
-    stud_layer_eq_conductivity_w_mk = calculate_steel_stud_eq_conductivity(
-        steel_stud_assembly_hbe_materials
-    )
+    stud_layer_eq_conductivity_w_mk = calculate_steel_stud_eq_conductivity(steel_stud_assembly_hbe_materials)
 
     # Build the stud layer's  Honeybee-Energy Material
     new_eq_stud_layer_material = EnergyMaterial(
-        identifier="Steel-Stud Layer ["
-        + steel_stud_assembly_hbe_materials.stud_cavity_layer.identifier
-        + "]",
+        identifier="Steel-Stud Layer [" + steel_stud_assembly_hbe_materials.stud_cavity_layer.identifier + "]",
         thickness=steel_stud_assembly_hbe_materials.stud_depth_m,
         conductivity=stud_layer_eq_conductivity_w_mk,
         density=steel_stud_assembly_hbe_materials.stud_cavity_layer.density,
@@ -239,9 +226,7 @@ def get_steel_stud_layers_as_hb_materials(
     )
 
     # Add the cavity material as a 'division', so we can pull it back out later
-    hb_prop_p: EnergyMaterialPhProperties = getattr(
-        new_eq_stud_layer_material.properties, "ph"
-    )
+    hb_prop_p: EnergyMaterialPhProperties = getattr(new_eq_stud_layer_material.properties, "ph")
     hb_prop_p.divisions.steel_stud_spacing_mm = 406.4  # 16 inches in mm
     hb_prop_p.divisions.add_new_column(1)
     hb_prop_p.divisions.add_new_row(1)

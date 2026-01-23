@@ -3,25 +3,15 @@
 import logging
 import os
 
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from sqlalchemy.orm import Session
+
 from config import limiter, settings
 from database import get_db
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    Form,
-    HTTPException,
-    Request,
-    UploadFile,
-    status,
-)
 from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.assembly.schemas.material_photo import MaterialPhotoSchema
 from features.assembly.services.segment import SegmentNotFoundException
-from features.gcp.schemas import (
-    SegmentDatasheetUrlResponse,
-    SegmentSitePhotoUrlsResponse,
-)
+from features.gcp.schemas import SegmentDatasheetUrlResponse, SegmentSitePhotoUrlsResponse
 from features.gcp.services.datasheet import (
     DatasheetNotFoundException,
     add_datasheet_to_segment,
@@ -30,11 +20,7 @@ from features.gcp.services.datasheet import (
     get_segment_datasheets,
     material_datasheet_file_exists,
 )
-from features.gcp.services.file_utils import (
-    get_file_content,
-    valid_file_size,
-    valid_upload_file_type,
-)
+from features.gcp.services.file_utils import get_file_content, valid_file_size, valid_upload_file_type
 from features.gcp.services.gcs_utils import upload_file_to_gcs
 from features.gcp.services.site_photo import (
     SitePhotoNotFoundException,
@@ -44,7 +30,6 @@ from features.gcp.services.site_photo import (
     get_site_photo_by_id,
     material_site_photo_file_exists,
 )
-from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/gcp",
@@ -66,7 +51,9 @@ class UnsupportedFileTypeException(Exception):
         content_type: str | None,
         valid_extensions: list[str],
     ):
-        self.message = f"File {filename} with type {content_type} is not supported. Only {valid_extensions} files are allowed."
+        self.message = (
+            f"File {filename} with type {content_type} is not supported. Only {valid_extensions} files are allowed."
+        )
         logger.error(self.message)
         super().__init__(self.message)
 
@@ -75,9 +62,7 @@ class SitePhotoFileAlreadyExistsException(Exception):
     """Custom exception for site photo file already existing."""
 
     def __init__(self, filename: str | None, content_type: str | None):
-        self.message = (
-            f"Site photo file {filename} with type {content_type} already exists."
-        )
+        self.message = f"Site photo file {filename} with type {content_type} already exists."
         logger.error(self.message)
         super().__init__(self.message)
 
@@ -86,9 +71,7 @@ class DatasheetFileAlreadyExistsException(Exception):
     """Custom exception for datasheet file already existing."""
 
     def __init__(self, filename: str | None, content_type: str | None):
-        self.message = (
-            f"Datasheet file {filename} with type {content_type} already exists."
-        )
+        self.message = f"Datasheet file {filename} with type {content_type} already exists."
         logger.error(self.message)
         super().__init__(self.message)
 
@@ -96,9 +79,7 @@ class DatasheetFileAlreadyExistsException(Exception):
 class FileTooLargeException(Exception):
     """Custom exception for file size exceeding the limit."""
 
-    def __init__(
-        self, filename: str | None, content_type: str | None, max_size_mb: int
-    ):
+    def __init__(self, filename: str | None, content_type: str | None, max_size_mb: int):
         self.message = f"File {filename} with type {content_type} exceeds the maximum size of {max_size_mb} MB."
         logger.error(self.message)
         super().__init__(self.message)
@@ -109,9 +90,7 @@ class FileTooLargeException(Exception):
 
 
 # TODO: pass just the segment ID, not a whole form?
-@router.post(
-    "/add-new-segment-site-photo/{bt_number}", response_model=MaterialPhotoSchema
-)
+@router.post("/add-new-segment-site-photo/{bt_number}", response_model=MaterialPhotoSchema)
 @limiter.limit("10/minute")
 async def add_new_segment_site_photo_route(
     request: Request,
@@ -121,29 +100,19 @@ async def add_new_segment_site_photo_route(
     db: Session = Depends(get_db),
 ) -> MaterialPhotoSchema | None:
     """Upload a new site photo for a segment."""
-    logger.info(
-        f"gcp/add_new_segment_site_photo_route(bt_number={bt_number}, segment_id={segment_id})"
-    )
+    logger.info(f"gcp/add_new_segment_site_photo_route(bt_number={bt_number}, segment_id={segment_id})")
     VALID_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
     try:
         file_content = await get_file_content(file)
         if material_site_photo_file_exists(db, segment_id, file_content.content_hash):
-            raise SitePhotoFileAlreadyExistsException(
-                file_content.filename, file_content.content_type
-            )
+            raise SitePhotoFileAlreadyExistsException(file_content.filename, file_content.content_type)
 
-        if not valid_upload_file_type(
-            file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type
-        ):
-            raise UnsupportedFileTypeException(
-                file_content.filename, file_content.content_type, VALID_EXTENSIONS
-            )
+        if not valid_upload_file_type(file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type):
+            raise UnsupportedFileTypeException(file_content.filename, file_content.content_type, VALID_EXTENSIONS)
 
         if not valid_file_size(file_content.content, max_size_mb=5):
-            raise FileTooLargeException(
-                file_content.filename, file_content.content_type, max_size_mb=5
-            )
+            raise FileTooLargeException(file_content.filename, file_content.content_type, max_size_mb=5)
 
         thumbnail_url, full_size_url = await upload_file_to_gcs(
             db=db,
@@ -174,9 +143,7 @@ async def add_new_segment_site_photo_route(
         raise HTTPException(status_code=500, detail=msg)
 
 
-@router.get(
-    "/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse
-)
+@router.get("/get-site-photo-urls/{segment_id}", response_model=SegmentSitePhotoUrlsResponse)
 def get_site_photo_urls_route(
     request: Request, segment_id: int, db: Session = Depends(get_db)
 ) -> SegmentSitePhotoUrlsResponse:
@@ -201,14 +168,10 @@ def get_site_photo_urls_route(
     except Exception as e:
         msg = f"Failed to retrieve site photos: {e}"
         logger.error(msg)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
-@router.delete(
-    "/delete-segment-site-photo/{photo_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/delete-segment-site-photo/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def delete_segment_site_photo_route(
     request: Request,
@@ -236,9 +199,7 @@ async def delete_segment_site_photo_route(
 
 
 # TODO: pass just the segment ID, not a whole form?
-@router.post(
-    "/add-new-segment-datasheet/{bt_number}", response_model=MaterialDatasheetSchema
-)
+@router.post("/add-new-segment-datasheet/{bt_number}", response_model=MaterialDatasheetSchema)
 @limiter.limit("10/minute")
 async def add_new_segment_datasheet_route(
     request: Request,
@@ -248,29 +209,19 @@ async def add_new_segment_datasheet_route(
     db: Session = Depends(get_db),
 ) -> MaterialDatasheetSchema:
     """Upload a new datasheet file for a segment."""
-    logger.info(
-        f"gcp/add_new_segment_datasheet_route(bt_number={bt_number}, segment_id={segment_id})"
-    )
+    logger.info(f"gcp/add_new_segment_datasheet_route(bt_number={bt_number}, segment_id={segment_id})")
     VALID_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"]
 
     try:
         file_content = await get_file_content(file)
         if material_datasheet_file_exists(db, segment_id, file_content.content_hash):
-            raise DatasheetFileAlreadyExistsException(
-                file_content.filename, file_content.content_type
-            )
+            raise DatasheetFileAlreadyExistsException(file_content.filename, file_content.content_type)
 
-        if not valid_upload_file_type(
-            file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type
-        ):
-            raise UnsupportedFileTypeException(
-                file_content.filename, file_content.content_type, VALID_EXTENSIONS
-            )
+        if not valid_upload_file_type(file_content.filename_suffix, VALID_EXTENSIONS, file_content.content_type):
+            raise UnsupportedFileTypeException(file_content.filename, file_content.content_type, VALID_EXTENSIONS)
 
         if not valid_file_size(file_content.content, max_size_mb=5):
-            raise FileTooLargeException(
-                file_content.filename, file_content.content_type, max_size_mb=5
-            )
+            raise FileTooLargeException(file_content.filename, file_content.content_type, max_size_mb=5)
 
         thumbnail_url, full_size_url = await upload_file_to_gcs(
             db=db,
@@ -298,9 +249,7 @@ async def add_new_segment_datasheet_route(
     except Exception as e:
         msg = f"Failed to upload file: {e}"
         logger.error(msg)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -333,14 +282,10 @@ async def get_segment_datasheet_urls_route(
     except Exception as e:
         msg = f"Failed to retrieve site photos: {e}"
         logger.error(msg)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
-@router.delete(
-    "/delete-segment-datasheet/{datasheet_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/delete-segment-datasheet/{datasheet_id}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def delete_segment_datasheet_route(
     request: Request,

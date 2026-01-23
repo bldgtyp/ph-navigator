@@ -2,9 +2,10 @@
 
 import logging
 
+from sqlalchemy.orm import Session
+
 from db_entities.app import Project, User
 from features.app.schema import ProjectCreateSchema
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +23,7 @@ class ProjectAlreadyExistsException(Exception):
 
     def __init__(self, bt_number: str):
         logger.error(f"Project with BuildingType Number {bt_number} already exists.")
-        super().__init__(
-            f"Project with BuildingType Number {bt_number} already exists."
-        )
+        super().__init__(f"Project with BuildingType Number {bt_number} already exists.")
 
 
 def get_all_projects(db: Session, project_ids: list[int]) -> list[Project]:
@@ -112,9 +111,7 @@ def create_new_project(
     return new_project
 
 
-def update_project_settings(
-    db: Session, project: Project, project_settings_data: ProjectCreateSchema
-) -> Project:
+def update_project_settings(db: Session, project: Project, project_settings_data: ProjectCreateSchema) -> Project:
     """Update the project settings in the database."""
     logger.info(f"update_project_settings({project.id=}, {project_settings_data=})")
 

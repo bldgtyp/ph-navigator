@@ -54,9 +54,7 @@ def _generate_u_value_cache_key(aperture: Aperture) -> str:
     hasher.update(f"cols:{aperture.column_widths_mm}".encode())
 
     # Sort elements by position for consistent ordering
-    sorted_elements = sorted(
-        aperture.elements, key=lambda e: (e.row_number, e.column_number)
-    )
+    sorted_elements = sorted(aperture.elements, key=lambda e: (e.row_number, e.column_number))
 
     for element in sorted_elements:
         hasher.update(f"elem_id:{element.id}".encode())
@@ -68,9 +66,7 @@ def _generate_u_value_cache_key(aperture: Aperture) -> str:
             frame = getattr(element, f"frame_{side}")
             if frame and frame.frame_type:
                 ft = frame.frame_type
-                hasher.update(
-                    f"f_{side}:{ft.width_mm},{ft.u_value_w_m2k},{ft.psi_g_w_mk}".encode()
-                )
+                hasher.update(f"f_{side}:{ft.width_mm},{ft.u_value_w_m2k},{ft.psi_g_w_mk}".encode())
             else:
                 hasher.update(f"f_{side}:None".encode())
 
@@ -146,9 +142,7 @@ def calculate_aperture_u_value(aperture: Aperture) -> WindowUValueResult:
     Reference:
         ISO 10077-1:2006, Equation 1
     """
-    logger.info(
-        f"calculate_aperture_u_value(aperture_id={aperture.id}, name={aperture.name})"
-    )
+    logger.info(f"calculate_aperture_u_value(aperture_id={aperture.id}, name={aperture.name})")
 
     # Check cache first
     cache_key = _generate_u_value_cache_key(aperture)
@@ -267,12 +261,7 @@ def _calculate_element(
     frame_left = _get_frame_data(element.frame_left)
 
     # Explicit None checks for type narrowing (Pylance doesn't narrow with `all()`)
-    if (
-        frame_top is None
-        or frame_right is None
-        or frame_bottom is None
-        or frame_left is None
-    ):
+    if frame_top is None or frame_right is None or frame_bottom is None or frame_left is None:
         logger.warning(f"Element {element.id} missing frame data, skipping")
         return None
 
@@ -287,9 +276,7 @@ def _calculate_element(
     interior_height = height_m - frame_top.width_m - frame_bottom.width_m
 
     if interior_width <= 0 or interior_height <= 0:
-        logger.warning(
-            f"Element {element.id} has non-positive glazing dimensions, skipping"
-        )
+        logger.warning(f"Element {element.id} has non-positive glazing dimensions, skipping")
         return None
 
     # Areas in m²
@@ -441,9 +428,7 @@ def _validate_aperture(aperture: Aperture) -> list[str]:
             if frame is None:
                 warnings.append(f"Element {element.id} has no {side} frame assigned")
             elif frame.frame_type is None:
-                warnings.append(
-                    f"Element {element.id} {side} frame has no type assigned"
-                )
+                warnings.append(f"Element {element.id} {side} frame has no type assigned")
 
     return warnings
 

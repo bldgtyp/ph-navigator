@@ -53,12 +53,8 @@ def get_faces_from_model(hb_model: Model) -> list:
         # -- Get the HB-Energy Construction and extra attributes
         # -- It may not be an AirBoundary or other Construction without materials, so guard against that.
         try:
-            hb_face_energy_prop: FaceEnergyProperties = getattr(
-                hb_face.properties, "energy"
-            )
-            construction = OpaqueConstructionSchema(
-                **any_dict(hb_face_energy_prop.construction.to_dict())
-            )
+            hb_face_energy_prop: FaceEnergyProperties = getattr(hb_face.properties, "energy")
+            construction = OpaqueConstructionSchema(**any_dict(hb_face_energy_prop.construction.to_dict()))
         except ValidationError as e:
             logger.warning(
                 f"Face {hb_face.display_name} construction '{hb_face_energy_prop.construction.display_name}' cannot be handled properly. Skipping."
@@ -68,40 +64,24 @@ def get_faces_from_model(hb_model: Model) -> list:
         face_DTO = FaceSchema(**any_dict(hb_face.to_dict()))
 
         # -- Note: Add the Mesh3D to each to the Faces
-        face_DTO.geometry.mesh = Mesh3DSchema(
-            **hb_face.punched_geometry.triangulated_mesh3d.to_dict()
-        )
+        face_DTO.geometry.mesh = Mesh3DSchema(**hb_face.punched_geometry.triangulated_mesh3d.to_dict())
         face_DTO.geometry.area = hb_face.punched_geometry.area
 
         # -- Assign the Construction and its attributes
         face_DTO.properties.energy.construction = construction
-        face_DTO.properties.energy.construction.r_factor = getattr(
-            hb_face_energy_prop.construction, "r_factor", 0.0
-        )
-        face_DTO.properties.energy.construction.u_factor = getattr(
-            hb_face_energy_prop.construction, "u_factor", 0.0
-        )
+        face_DTO.properties.energy.construction.r_factor = getattr(hb_face_energy_prop.construction, "r_factor", 0.0)
+        face_DTO.properties.energy.construction.u_factor = getattr(hb_face_energy_prop.construction, "u_factor", 0.0)
 
         # -- Get any additional Aperture data
-        for aperture_DTO, hb_aperture in zip(
-            face_DTO.apertures or [], hb_face.apertures or []
-        ):
+        for aperture_DTO, hb_aperture in zip(face_DTO.apertures or [], hb_face.apertures or []):
             # -- Aperture Mesh Geometry
-            aperture_DTO.geometry.mesh = Mesh3DSchema(
-                **hb_aperture.geometry.triangulated_mesh3d.to_dict()
-            )
+            aperture_DTO.geometry.mesh = Mesh3DSchema(**hb_aperture.geometry.triangulated_mesh3d.to_dict())
             aperture_DTO.geometry.area = hb_aperture.geometry.area
 
             # -- Aperture Construction
-            ap_construction = WindowConstructionSchema(
-                **hb_aperture.properties.energy.construction.to_dict()
-            )
-            ap_construction.r_factor = (
-                hb_aperture.properties.energy.construction.r_factor
-            )
-            ap_construction.u_factor = (
-                hb_aperture.properties.energy.construction.u_factor
-            )
+            ap_construction = WindowConstructionSchema(**hb_aperture.properties.energy.construction.to_dict())
+            ap_construction.r_factor = hb_aperture.properties.energy.construction.r_factor
+            ap_construction.u_factor = hb_aperture.properties.energy.construction.u_factor
             aperture_DTO.properties.energy.construction = ap_construction
 
         face_dicts.append(face_DTO)
@@ -133,9 +113,7 @@ def get_spaces_from_model(hb_model: Model) -> list:
             space_DTO.floor_area = space.floor_area
             space_DTO.weighted_floor_area = space.weighted_floor_area
             space_DTO.avg_clear_height = space.avg_clear_height
-            space_DTO.average_floor_weighting_factor = (
-                space.average_floor_weighting_factor
-            )
+            space_DTO.average_floor_weighting_factor = space.average_floor_weighting_factor
             spaces.append(space_DTO)
 
     return spaces
@@ -152,32 +130,21 @@ def get_sun_path_from_model(epw_object: epw.EPW) -> SunPathAndCompassDTOSchema:
     RADIUS: int = 100 * SCALE  # type: ignore # 'int' is a lie to placate the un-typed Ladybug functions...
 
     # -- Build the Ladybug SunPath and Compass
-    sun_path = Sunpath.from_location(
-        epw_object.location, NORTH, DAYLIGHT_SAVINGS_PERIOD
-    )
+    sun_path = Sunpath.from_location(epw_object.location, NORTH, DAYLIGHT_SAVINGS_PERIOD)
     compass = Compass(RADIUS, CENTER_POINT, NORTH)
 
     # -- Setup the the SunPath DTO
     sunpath_DTO = SunPathSchema()
     sunpath_DTO.hourly_analemma_polyline3d = [
-        Polyline3D(**_.to_dict())
-        for _ in sun_path.hourly_analemma_polyline3d(radius=RADIUS)
+        Polyline3D(**_.to_dict()) for _ in sun_path.hourly_analemma_polyline3d(radius=RADIUS)
     ]
-    sunpath_DTO.monthly_day_arc3d = [
-        Arc3D(**_.to_dict()) for _ in sun_path.monthly_day_arc3d(radius=RADIUS)
-    ]
+    sunpath_DTO.monthly_day_arc3d = [Arc3D(**_.to_dict()) for _ in sun_path.monthly_day_arc3d(radius=RADIUS)]
 
     # -- Setup the the Compass DTO
     compass_DTO = CompassSchema()
-    compass_DTO.all_boundary_circles = [
-        Arc2D(**_.to_dict()) for _ in compass.all_boundary_circles
-    ]
-    compass_DTO.major_azimuth_ticks = [
-        LineSegment2D(**_.to_dict()) for _ in compass.major_azimuth_ticks
-    ]
-    compass_DTO.minor_azimuth_ticks = [
-        LineSegment2D(**_.to_dict()) for _ in compass.minor_azimuth_ticks
-    ]
+    compass_DTO.all_boundary_circles = [Arc2D(**_.to_dict()) for _ in compass.all_boundary_circles]
+    compass_DTO.major_azimuth_ticks = [LineSegment2D(**_.to_dict()) for _ in compass.major_azimuth_ticks]
+    compass_DTO.minor_azimuth_ticks = [LineSegment2D(**_.to_dict()) for _ in compass.minor_azimuth_ticks]
 
     sp = SunPathAndCompassDTOSchema(sunpath=sunpath_DTO, compass=compass_DTO)
     return sp
@@ -195,16 +162,12 @@ def get_hot_water_systems_from_model(
         room_prop_phhvac: RoomPhHvacProperties = getattr(room.properties, "ph_hvac")
         if not room_prop_phhvac.hot_water_system:
             continue
-        hb_phHvac_hw_systems[room_prop_phhvac.hot_water_system.display_name] = (
-            room_prop_phhvac.hot_water_system
-        )
+        hb_phHvac_hw_systems[room_prop_phhvac.hot_water_system.display_name] = room_prop_phhvac.hot_water_system
 
     # -- Convert the Honeybee-PH-HVAC Hot-Water systems to DTOs
     hw_system_DTOs: list[PhHotWaterSystemSchema] = []
     for hw_system in hb_phHvac_hw_systems.values():
-        hw_system_DTOs.append(
-            PhHotWaterSystemSchema(**hw_system.to_dict(_include_properties=True))
-        )
+        hw_system_DTOs.append(PhHotWaterSystemSchema(**hw_system.to_dict(_include_properties=True)))
 
     logger.info(f"Returning {len(hw_system_DTOs)} Hot Water Systems.")
     return hw_system_DTOs
@@ -222,16 +185,12 @@ def get_ventilation_systems_from_model(
         room_prop_phhvac: RoomPhHvacProperties = getattr(room.properties, "ph_hvac")
         if not room_prop_phhvac.ventilation_system:
             continue
-        ventilation_systems[room_prop_phhvac.ventilation_system.display_name] = (
-            room_prop_phhvac.ventilation_system
-        )
+        ventilation_systems[room_prop_phhvac.ventilation_system.display_name] = room_prop_phhvac.ventilation_system
 
     # -- Convert the Ventilation systems to DTOs
     ventilation_system_DTOs: list[PhVentilationSystemSchema] = []
     for ventilation_system in ventilation_systems.values():
-        ventilation_system_DTOs.append(
-            PhVentilationSystemSchema(**ventilation_system.to_dict())
-        )
+        ventilation_system_DTOs.append(PhVentilationSystemSchema(**ventilation_system.to_dict()))
 
     logger.info(f"Returning {len(ventilation_system_DTOs)} Ventilation Systems.")
     return ventilation_system_DTOs
@@ -297,22 +256,14 @@ def get_shading_elements_from_model(hb_model: Model) -> list[ShadeGroupSchema]:
         shade_DTOs.append(shade_group_DTO)
 
         # -- Create a joined mesh for the shade group's faces
-        face_vertices = (
-            v
-            for shd in shade_group
-            for v in shd.geometry.triangulated_mesh3d.face_vertices
-        )
+        face_vertices = (v for shd in shade_group for v in shd.geometry.triangulated_mesh3d.face_vertices)
         vertices, face_collector = interpret_input_from_face_vertices(face_vertices)
         joined_mesh = Mesh3D(tuple(vertices), tuple(face_collector))
         number_of_shade_faces += len(joined_mesh.faces)
-        logger.debug(
-            f"  > New Mesh: {len(joined_mesh.faces)}-faces {len(joined_mesh.vertices)}-vertices"
-        )
+        logger.debug(f"  > New Mesh: {len(joined_mesh.faces)}-faces {len(joined_mesh.vertices)}-vertices")
 
         # -- Update the DTO with the new mesh
         shade_DTO.geometry.mesh = Mesh3DSchema(**joined_mesh.to_dict())
 
-    logger.info(
-        f"Returning {number_of_shade_faces} shade-surfaces in {len(shade_DTOs)} groups."
-    )
+    logger.info(f"Returning {number_of_shade_faces} shade-surfaces in {len(shade_DTOs)} groups.")
     return shade_DTOs

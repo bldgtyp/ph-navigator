@@ -1,21 +1,16 @@
 # -*- Python Version: 3.11 -*-
 
-from db_entities.app import Project
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from db_entities.app import Project
 
-def test_create_new_assembly_on_project_route(
-    client: TestClient, session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+
+def test_create_new_assembly_on_project_route(client: TestClient, session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1
 
-    response = client.post(
-        f"/assembly/create-new-assembly-on-project/{project.bt_number}"
-    )
+    response = client.post(f"/assembly/create-new-assembly-on-project/{project.bt_number}")
     assert response.status_code == 201
 
     session.refresh(project)  # Refresh the Project to get the updated assemblies
@@ -24,12 +19,8 @@ def test_create_new_assembly_on_project_route(
     assert project.assemblies[1].name == "Unnamed Assembly"
 
 
-def test_add_single_assembly_from_hbjson_construction(
-    client: TestClient, session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_add_single_assembly_from_hbjson_construction(client: TestClient, session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1
 
     response = client.post(
@@ -49,12 +40,8 @@ def test_add_single_assembly_from_hbjson_construction(
     assert "New Assembly 1" in {a.name for a in project.assemblies}
 
 
-def test_add_multiple_assemblies_from_hbjson_construction(
-    client: TestClient, session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_add_multiple_assemblies_from_hbjson_construction(client: TestClient, session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert len(project.assemblies) == 1
 
     response = client.post(
@@ -75,12 +62,8 @@ def test_add_multiple_assemblies_from_hbjson_construction(
     assert "New Assembly 2" in {a.name for a in project.assemblies}
 
 
-def test_get_project_assemblies_route(
-    client: TestClient, session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_get_project_assemblies_route(client: TestClient, session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
 
     response = client.get(f"/assembly/get-assemblies/{project.bt_number}")
     assert response.status_code == 200
@@ -88,12 +71,8 @@ def test_get_project_assemblies_route(
     assert len(response.json()) == 1  # Assuming one assembly is created by default
 
 
-def test_update_assembly_name_route(
-    client: TestClient, session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_update_assembly_name_route(client: TestClient, session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
     assert project.assemblies[0].name == "Test Assembly"
 
     response = client.patch(
@@ -117,12 +96,8 @@ def test_update_assembly_name_route(
     assert project.assemblies[0].name == "Wall_01"
 
 
-def test_delete_assembly_route(
-    client: TestClient, session: Session, create_test_project
-):
-    project: Project = create_test_project(
-        db=session, username="user1", project_name="Project 1"
-    )
+def test_delete_assembly_route(client: TestClient, session: Session, create_test_project):
+    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
 
     assert len(project.assemblies) == 1
 

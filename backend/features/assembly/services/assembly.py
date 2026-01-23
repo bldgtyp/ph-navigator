@@ -2,12 +2,13 @@
 
 import logging
 
+from sqlalchemy.orm import Session
+
 from db_entities.app import Project
 from db_entities.assembly import Assembly, Layer, Segment
 from features.app.services import get_project_by_bt_number
 from features.assembly.services.layer import stage_duplicate_layer
 from features.assembly.services.material import get_default_material
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -30,28 +31,18 @@ def get_assembly_by_id(db: Session, assembly_id: int) -> Assembly:
     return assembly
 
 
-def get_assembly_by_name(
-    db: Session, project_id: int, assembly_name: str
-) -> Assembly | None:
+def get_assembly_by_name(db: Session, project_id: int, assembly_name: str) -> Assembly | None:
     """Get an assembly by its name and project ID."""
     logger.info(f"get_assembly_by_name({assembly_name=}, {project_id=})")
 
-    return (
-        db.query(Assembly).filter_by(name=assembly_name, project_id=project_id).first()
-    )
+    return db.query(Assembly).filter_by(name=assembly_name, project_id=project_id).first()
 
 
 def get_all_project_assemblies(db: Session, bt_number: str) -> list[Assembly]:
     """Get all assemblies for a specific project by its 'bt_number'."""
     logger.info(f"get_all_project_assemblies({bt_number=})")
 
-    return (
-        db.query(Assembly)
-        .join(Project)
-        .filter(Project.bt_number == bt_number)
-        .order_by(Assembly.name.asc())
-        .all()
-    )
+    return db.query(Assembly).join(Project).filter(Project.bt_number == bt_number).order_by(Assembly.name.asc()).all()
 
 
 def create_new_empty_assembly_on_project(
@@ -83,9 +74,7 @@ def create_new_default_assembly_on_project(db: Session, bt_number: str) -> Assem
     return new_assembly
 
 
-def insert_layer_into_assembly(
-    db: Session, assembly_id: int, layer: Layer
-) -> tuple[Assembly, Layer]:
+def insert_layer_into_assembly(db: Session, assembly_id: int, layer: Layer) -> tuple[Assembly, Layer]:
     """Insert a Layer to an Assembly Layer list at a specific location."""
     logger.info(f"insert_layer_into_assembly({assembly_id=}, layer={layer.id})")
 
@@ -104,9 +93,7 @@ def insert_layer_into_assembly(
     return assembly, layer
 
 
-def append_layer_to_assembly(
-    db: Session, assembly_id: int, layer: Layer
-) -> tuple[Assembly, Layer]:
+def append_layer_to_assembly(db: Session, assembly_id: int, layer: Layer) -> tuple[Assembly, Layer]:
     """Append a Layer to the end of an Assembly Layer list."""
     logger.info(f"append_layer_to_assembly({assembly_id=}, layer={layer.id})")
 
@@ -118,9 +105,7 @@ def append_layer_to_assembly(
     return insert_layer_into_assembly(db, assembly.id, layer)
 
 
-def insert_default_layer_into_assembly(
-    db: Session, assembly_id: int, order: int
-) -> tuple[Assembly, Layer]:
+def insert_default_layer_into_assembly(db: Session, assembly_id: int, order: int) -> tuple[Assembly, Layer]:
     """Insert a default Layer to an Assembly Layer list at a specific location."""
     logger.info(f"insert_default_layer_into_assembly({assembly_id=}, {order=})")
 
@@ -133,9 +118,7 @@ def insert_default_layer_into_assembly(
     return assembly, default_layer
 
 
-def append_default_layer_to_assembly(
-    db: Session, assembly_id: int
-) -> tuple[Assembly, Layer]:
+def append_default_layer_to_assembly(db: Session, assembly_id: int) -> tuple[Assembly, Layer]:
     """Append a default Layer to the end of an Assembly Layer list."""
     logger.info(f"append_default_layer_to_assembly({assembly_id=})")
 
@@ -163,14 +146,12 @@ def delete_assembly(db: Session, assembly_id: int) -> None:
     assembly = get_assembly_by_id(db, assembly_id)
 
     # Delete all associated segments for each layer in the assembly
-    db.query(Segment).filter(
-        Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))
-    ).delete(synchronize_session="fetch")
-
-    # Delete all layers associated with the assembly
-    db.query(Layer).filter_by(assembly_id=assembly.id).delete(
+    db.query(Segment).filter(Segment.layer_id.in_(db.query(Layer.id).filter_by(assembly_id=assembly.id))).delete(
         synchronize_session="fetch"
     )
+
+    # Delete all layers associated with the assembly
+    db.query(Layer).filter_by(assembly_id=assembly.id).delete(synchronize_session="fetch")
 
     # Delete the assembly itself
     db.delete(assembly)
@@ -224,9 +205,7 @@ def duplicate_assembly(db: Session, assembly: Assembly) -> Assembly:
     """Duplicate an Assembly and its Layers."""
     logger.info(f"duplicate_assembly({assembly.name=})")
 
-    duplicated_assembly = Assembly(
-        name=f"{assembly.name} (Copy)", project_id=assembly.project_id
-    )
+    duplicated_assembly = Assembly(name=f"{assembly.name} (Copy)", project_id=assembly.project_id)
     db.add(duplicated_assembly)
     db.flush()  # Get the ID without committing
 

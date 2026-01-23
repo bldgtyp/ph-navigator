@@ -1,6 +1,8 @@
 # -*- Python Version: 3.11 -*-
 
 import pytest
+from sqlalchemy.orm import Session
+
 from db_entities.assembly import Material
 from features.assembly.services.material import (
     MaterialNotFoundException,
@@ -9,7 +11,6 @@ from features.assembly.services.material import (
     get_material_by_id,
     update_material,
 )
-from sqlalchemy.orm import Session
 
 
 def test_create_new_material_in_db(session: Session):

@@ -2,18 +2,15 @@
 
 from logging import getLogger
 
-from db_entities.app.project import Project
 from fastapi import HTTPException, status
 from honeybee.model import Model
 from PHX.from_HBJSON import read_HBJSON_file
 from pyairtable import Api
 from sqlalchemy.orm import Session
 
-from ...air_table.services import (
-    download_hbjson_file,
-    get_airtable_table_ref_by_name,
-    get_project_airtable_base_ref,
-)
+from db_entities.app.project import Project
+
+from ...air_table.services import download_hbjson_file, get_airtable_table_ref_by_name, get_project_airtable_base_ref
 from ..cache import LimitedCache
 
 logger = getLogger(__name__)
@@ -25,27 +22,21 @@ class MissingFileException(Exception):
     """Custom exception for missing HBJSON file."""
 
     def __init__(self, bt_number: str, file_type: str):
-        super().__init__(
-            f"MissingFileException: {file_type} file not found for Project ID: {bt_number}"
-        )
+        super().__init__(f"MissingFileException: {file_type} file not found for Project ID: {bt_number}")
 
 
 class RecordNotFoundException(Exception):
     """Custom exception for missing AirTable record."""
 
     def __init__(self, bt_number: str, record_id: str):
-        super().__init__(
-            f"RecordNotFoundException: Record {record_id} not found for Project ID: {bt_number}"
-        )
+        super().__init__(f"RecordNotFoundException: Record {record_id} not found for Project ID: {bt_number}")
 
 
 class HBJSONModelLoadError(Exception):
     """Custom exception for Honeybee-Model loading errors."""
 
     def __init__(self, bt_number: str, e: Exception):
-        super().__init__(
-            f"HBJSONModelLoadError: Failed to load Honeybee-Model for Project ID: {bt_number} | {e}"
-        )
+        super().__init__(f"HBJSONModelLoadError: Failed to load Honeybee-Model for Project ID: {bt_number} | {e}")
 
 
 def find_hbjson_file_url(db: Session, bt_number: str) -> str:
@@ -84,9 +75,7 @@ def find_hbjson_file_url(db: Session, bt_number: str) -> str:
 
         # Return the URL of the the most recent HBJSON file
         current_record = sorted(table_data, key=lambda x: x["fields"]["DATE"])[-1]
-        current_record_hbjson_file = current_record.get("fields", {}).get(
-            "HBJSON_FILE", ""
-        )
+        current_record_hbjson_file = current_record.get("fields", {}).get("HBJSON_FILE", "")
         if not current_record_hbjson_file:
             logger.error(f"HBJSON file not found for BT-Number: {bt_number}")
             raise MissingFileException(bt_number, "HBJSON")
@@ -152,9 +141,7 @@ def list_available_models(db: Session, bt_number: str) -> list[dict]:
         raise Exception(e)
 
 
-def find_hbjson_file_url_by_record_id(
-    db: Session, bt_number: str, record_id: str
-) -> str:
+def find_hbjson_file_url_by_record_id(db: Session, bt_number: str, record_id: str) -> str:
     """Get the HBJSON file URL for a specific AirTable record."""
     logger.info(f"find_hbjson_file_url_by_record_id({bt_number=}, {record_id=})")
 

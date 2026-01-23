@@ -2,9 +2,10 @@
 
 from typing import TYPE_CHECKING
 
-from database import Base
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship, validates
+
+from database import Base
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -20,9 +21,7 @@ class AirTableTable(Base):
     parent_base_id: Mapped[str] = MappedColumn(String, ForeignKey("airtable_bases.id"))
 
     # Relationships
-    parent_base: Mapped["AirTableBase"] = relationship(
-        "AirTableBase", back_populates="tables"
-    )
+    parent_base: Mapped["AirTableBase"] = relationship("AirTableBase", back_populates="tables")
 
     @validates("name")
     def clean_name(self, key, value: str) -> str:

@@ -2,11 +2,12 @@
 
 from typing import TYPE_CHECKING
 
-from database import Base
-from db_entities.aperture.aperture_element import ApertureElement
 from sqlalchemy import ARRAY, JSON, Float, ForeignKey, Integer, String, TypeDecorator
 from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
+
+from database import Base
+from db_entities.aperture.aperture_element import ApertureElement
 
 
 class FloatArray(TypeDecorator):
@@ -46,17 +47,11 @@ class Aperture(Base):
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
     name: Mapped[str] = MappedColumn(String)
-    row_heights_mm: Mapped[list[float]] = MappedColumn(
-        FloatArray, default=lambda: [1_000.0], nullable=False
-    )
-    column_widths_mm: Mapped[list[float]] = MappedColumn(
-        FloatArray, default=lambda: [1_000.0], nullable=False
-    )
+    row_heights_mm: Mapped[list[float]] = MappedColumn(FloatArray, default=lambda: [1_000.0], nullable=False)
+    column_widths_mm: Mapped[list[float]] = MappedColumn(FloatArray, default=lambda: [1_000.0], nullable=False)
 
     # Foreign Keys
-    project_id: Mapped[int] = MappedColumn(
-        Integer, ForeignKey("projects.id"), nullable=False
-    )
+    project_id: Mapped[int] = MappedColumn(Integer, ForeignKey("projects.id"), nullable=False)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="apertures")

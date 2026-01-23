@@ -3,19 +3,12 @@
 import json
 import logging
 
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+
 from config import limiter
 from database import get_db
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    HTTPException,
-    Query,
-    Request,
-    UploadFile,
-    status,
-)
-from fastapi.responses import JSONResponse
 from features.assembly.schemas.assembly import AssemblySchema, UpdateAssemblyNameRequest
 from features.assembly.schemas.thermal_resistance import ThermalResistanceSchema
 from features.assembly.services.assembly import (
@@ -34,10 +27,7 @@ from features.assembly.services.assembly_from_hbjson import (
     get_multiple_hb_constructions_from_hbjson,
 )
 from features.assembly.services.thermal_resistance import calculate_effective_r_value
-from features.assembly.services.to_hbe_construction import (
-    get_all_project_assemblies_as_hbjson_string,
-)
-from sqlalchemy.orm import Session
+from features.assembly.services.to_hbe_construction import get_all_project_assemblies_as_hbjson_string
 
 router = APIRouter(
     prefix="/assembly",
@@ -81,9 +71,7 @@ async def add_assemblies_from_hbjson_constructions_route(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> None:
-    logger.info(
-        f"assembly/add_assemblies_from_hbjson_constructions_route(bt_number={bt_number})"
-    )
+    logger.info(f"assembly/add_assemblies_from_hbjson_constructions_route(bt_number={bt_number})")
 
     # -- Read in the file contents as JSON
     contents = await file.read()
@@ -145,9 +133,7 @@ def update_assembly_name_route(
     db: Session = Depends(get_db),
 ) -> AssemblySchema:
     """Update the name of an Assembly."""
-    logger.info(
-        f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={update_request.new_name})"
-    )
+    logger.info(f"assembly/update_assembly_name_route(assembly_id={assembly_id}, new_name={update_request.new_name})")
 
     try:
         assembly = update_assembly_name(db, assembly_id, update_request.new_name)
@@ -194,9 +180,7 @@ def get_project_assemblies_as_hbjson_object_route(
         ...
     }
     """
-    logger.info(
-        f"assembly/get_project_assemblies_as_hbjson_object_route({bt_number=}, {offset=})"
-    )
+    logger.info(f"assembly/get_project_assemblies_as_hbjson_object_route({bt_number=}, {offset=})")
 
     hbe_construction_json = get_all_project_assemblies_as_hbjson_string(db, bt_number)
 
@@ -246,9 +230,7 @@ def flip_assembly_layers_route(assembly_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/duplicate-assembly/{assembly_id}", response_model=AssemblySchema)
-def duplicate_assembly_route(
-    assembly_id: int, db: Session = Depends(get_db)
-) -> AssemblySchema:
+def duplicate_assembly_route(assembly_id: int, db: Session = Depends(get_db)) -> AssemblySchema:
     """Duplicate an Assembly."""
     logger.info(f"assembly/duplicate_assembly_route({assembly_id=})")
 
@@ -297,9 +279,7 @@ def get_assembly_thermal_resistance_route(
             warnings=result.warnings,
         )
     except Exception as e:
-        logger.error(
-            f"Failed to calculate thermal resistance for assembly {assembly_id}: {e}"
-        )
+        logger.error(f"Failed to calculate thermal resistance for assembly {assembly_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to calculate thermal resistance",

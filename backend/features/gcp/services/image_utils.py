@@ -38,9 +38,7 @@ def resize_image(
     Returns:
         bytes: Resized image content as bytes, or original content if no resizing was needed
     """
-    logger.info(
-        f"resize_image({len(image_bytes)=}, {content_type=}, {max_width=}, {max_height=}, {quality=})"
-    )
+    logger.info(f"resize_image({len(image_bytes)=}, {content_type=}, {max_width=}, {max_height=}, {quality=})")
 
     try:
         # Open the image
@@ -71,9 +69,7 @@ def resize_image(
         img_io = io.BytesIO()
 
         # Determine format from content_type or use original format
-        format_name = (
-            content_type.split("/")[-1].upper() if content_type else image.format
-        )
+        format_name = content_type.split("/")[-1].upper() if content_type else image.format
         if format_name == "JPG":
             format_name = "JPEG"
 
@@ -84,9 +80,7 @@ def resize_image(
             image.save(img_io, format=format_name)
 
         resized_content = img_io.getvalue()
-        logger.info(
-            f"Image resized from {len(image_bytes)} bytes to {len(resized_content)} bytes"
-        )
+        logger.info(f"Image resized from {len(image_bytes)} bytes to {len(resized_content)} bytes")
 
         return resized_content
 
