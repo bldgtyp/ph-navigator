@@ -3,10 +3,16 @@ import { Box } from '@mui/material';
 import { Flipper, Flipped } from 'react-flip-toolkit';
 
 import { useApertures } from '../../../_contexts/Aperture.Context';
+import { ElementUValueResult } from '../types';
 
 import { ApertureElementTableGroup } from './ElementTableGroup';
 
-const ApertureElementsTable: React.FC = () => {
+interface ApertureElementsTableProps {
+    elementUValues: Map<number, ElementUValueResult>;
+    uValueLoading: boolean;
+}
+
+const ApertureElementsTable: React.FC<ApertureElementsTableProps> = ({ elementUValues, uValueLoading }) => {
     const { activeAperture, selectedApertureElementIds } = useApertures();
 
     // Sort elements: selected first (alphabetically), then non-selected (alphabetically)
@@ -47,6 +53,8 @@ const ApertureElementsTable: React.FC = () => {
                                 aperture={activeAperture}
                                 element={element}
                                 isSelected={selectedApertureElementIds.includes(element.id)}
+                                elementUValue={elementUValues.get(element.id)}
+                                uValueLoading={uValueLoading}
                             />
                         </div>
                     </Flipped>

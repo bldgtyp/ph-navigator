@@ -28,7 +28,12 @@ const ApertureTypesContentBlock: React.FC = () => {
     const { isLoadingFrameTypes } = useFrameTypes();
     const { isLoadingGlazingTypes } = useGlazingTypes();
     const headerButtons = useHeaderButtons();
-    const { uValueData, loading: uValueLoading, error: uValueError } = useApertureUValue(activeAperture);
+    const {
+        uValueData,
+        elementUValues,
+        loading: uValueLoading,
+        error: uValueError,
+    } = useApertureUValue(activeAperture);
 
     const isBlocking = isLoadingFrameTypes || isLoadingGlazingTypes || isLoadingApertures;
 
@@ -130,7 +135,7 @@ const ApertureTypesContentBlock: React.FC = () => {
                 <Box id="aperture-types-content" sx={{ flexGrow: 1, borderLeft: '1px solid #ccc', p: 2, pt: 0 }}>
                     <Box className="aperture-view">
                         <ApertureElements />
-                        <ApertureElementsTable />
+                        <ApertureElementsTable elementUValues={elementUValues} uValueLoading={uValueLoading} />
                     </Box>
                 </Box>
             </Box>

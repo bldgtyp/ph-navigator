@@ -8,7 +8,6 @@ import { TableGroupProps } from './types';
 import { useApertures } from '../../../_contexts/Aperture.Context';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { useViewDirection } from '../ApertureView/ViewDirection.Context';
-import { useApertureUValue } from '../hooks/useApertureUValue';
 import ElementUValueLabel from '../components/ElementUValueLabel';
 
 const GroupTitleEditable: React.FC<{
@@ -60,21 +59,21 @@ const GroupTitleEditable: React.FC<{
     );
 };
 
-export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture, element, isSelected }) => {
+export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({
+    aperture,
+    element,
+    isSelected,
+    elementUValue,
+    uValueLoading,
+}) => {
     const userContext = useContext(UserContext);
     const { updateApertureElementName, activeAperture } = useApertures();
     const { isInsideView } = useViewDirection();
     const [isEditingTitle, setIsEditingTitle] = useState(false);
 
-    // Get element U-value data
-    const { elementUValues, loading: uValueLoading } = useApertureUValue(activeAperture);
-
     // Get the most current element data from activeAperture to ensure we have the latest state
     const currentElement = activeAperture?.elements.find(el => el.id === element.id) || element;
     const groupTitle = currentElement.name || `Element ${currentElement.id}`;
-
-    // Get U-value for this specific element
-    const elementUValue = elementUValues.get(currentElement.id);
 
     const handleEditStart = () => {
         if (userContext.user) {

@@ -4,6 +4,7 @@ import {
     ApertureGlazingType,
     ApertureElementType,
     ApertureType,
+    ElementUValueResult,
 } from '../types';
 
 export type FramePosition = 'top' | 'right' | 'bottom' | 'left';
@@ -27,6 +28,8 @@ export interface TableGroupProps {
     aperture: ApertureType;
     element: ApertureElementType;
     isSelected: boolean;
+    elementUValue: ElementUValueResult | undefined;
+    uValueLoading: boolean;
 }
 
 export interface TableHeaderCellProps {

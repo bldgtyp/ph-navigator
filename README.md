@@ -59,7 +59,6 @@
 ### Windows:
 
 - [ ] Add a 'loading' state
-- [ ] Change Element blocks to be inside a scrollable container so we always see the window graphic
 - [ ] Select individual frame elements allows direct setting (dropdown)
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
