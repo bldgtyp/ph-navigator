@@ -55,6 +55,7 @@ const EditNameButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
                     size="small"
                     onClick={e => {
                         e.preventDefault();
+                        e.stopPropagation();
                         openNameChangeModal(aperture.id, aperture.name);
                     }}
                 >
@@ -66,15 +67,17 @@ const EditNameButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
 };
 
 const DuplicateButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
-    const { handleDuplicateAperture } = useApertures();
+    const { handleDuplicateAperture, isLoadingApertures } = useApertures();
 
     return (
         <Tooltip className="duplicate-aperture-button" title="Duplicate Aperture" placement="bottom" arrow>
             <span>
                 <IconButton
                     size="small"
+                    disabled={isLoadingApertures}
                     onClick={e => {
                         e.preventDefault();
+                        e.stopPropagation();
                         handleDuplicateAperture(aperture.id);
                     }}
                 >
@@ -86,15 +89,17 @@ const DuplicateButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => 
 };
 
 const DeleteButton: React.FC<{ aperture: ApertureType }> = ({ aperture }) => {
-    const { handleDeleteAperture } = useApertures();
+    const { handleDeleteAperture, isLoadingApertures } = useApertures();
 
     return (
         <Tooltip className="delete-aperture-button" title="Delete Aperture" placement="bottom" arrow>
             <span>
                 <IconButton
                     size="small"
+                    disabled={isLoadingApertures}
                     onClick={e => {
                         e.preventDefault();
+                        e.stopPropagation();
                         handleDeleteAperture(aperture.id);
                     }}
                 >

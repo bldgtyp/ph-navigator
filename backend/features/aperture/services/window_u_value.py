@@ -59,6 +59,7 @@ def _generate_u_value_cache_key(aperture: Aperture) -> str:
     )
 
     for element in sorted_elements:
+        hasher.update(f"elem_id:{element.id}".encode())
         hasher.update(f"elem:{element.row_number},{element.column_number}".encode())
         hasher.update(f"span:{element.row_span},{element.col_span}".encode())
 

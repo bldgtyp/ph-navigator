@@ -67,6 +67,7 @@ const ElementUValueLabel: React.FC<ElementUValueLabelProps> = ({ uValue, loading
     return (
         <Tooltip title={TOOLTIP_CONTENT} placement="top" arrow>
             <Box
+                id="window-element-u-value-label"
                 sx={{
                     ...containerStyle,
                     cursor: 'help',

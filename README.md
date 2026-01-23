@@ -58,12 +58,10 @@
 
 ### Windows:
 
-- [ ] Add a 'loading' state
 - [ ] Select individual frame elements allows direct setting (dropdown)
 - [ ] Double click to enter 'editing' mode? Bring up editing panel?
 - [ ] Cron-job frame-type / glass-type autoloader from AirTable
 - [ ] Add an UNDO to frame/glass assignment
-- [ ] U-w is still REALLY slow to load for some reason?
 - [ ] Add loading state until duplicate is done. Remove popup message window.
 
 ---

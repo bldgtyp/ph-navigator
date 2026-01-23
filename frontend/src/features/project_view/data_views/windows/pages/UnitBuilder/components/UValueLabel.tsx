@@ -100,7 +100,7 @@ const UValueLabel: React.FC<UValueLabelProps> = ({ uValue, loading, error, isVal
                     cursor: 'help',
                 }}
             >
-                <Typography variant="body2" sx={{ fontWeight: 500 }} id="window-element-u-value-label">
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     U-w: {displayContent.value} {displayContent.unit}
                 </Typography>
                 <InfoOutlinedIcon sx={{ ml: 0.5, fontSize: 14, color: 'text.secondary' }} />
