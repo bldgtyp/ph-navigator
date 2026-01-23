@@ -23,14 +23,22 @@ import UValueLabel from './components/UValueLabel';
 const SIDEBAR_WIDTH = 260;
 
 const ApertureTypesContentBlock: React.FC = () => {
-    const { activeAperture } = useApertures();
+    const { activeAperture, isLoadingApertures } = useApertures();
     const { isSidebarOpen, toggleSidebar } = useApertureSidebar();
     const { isLoadingFrameTypes } = useFrameTypes();
     const { isLoadingGlazingTypes } = useGlazingTypes();
     const headerButtons = useHeaderButtons();
     const { uValueData, loading: uValueLoading, error: uValueError } = useApertureUValue(activeAperture);
 
-    const isRefreshing = isLoadingFrameTypes || isLoadingGlazingTypes;
+    const isBlocking = isLoadingFrameTypes || isLoadingGlazingTypes || isLoadingApertures;
+
+    // Determine loading message based on which operation is in progress
+    const getLoadingMessage = () => {
+        if (isLoadingFrameTypes) return 'Refreshing frame types...';
+        if (isLoadingGlazingTypes) return 'Refreshing glazing types...';
+        if (isLoadingApertures) return 'Processing aperture...';
+        return 'Loading...';
+    };
 
     const headerButtonsWithUValue = [
         <UValueLabel
@@ -47,8 +55,8 @@ const ApertureTypesContentBlock: React.FC = () => {
         <ContentBlock id="aperture-types">
             <LoadingModal showModal={false} />
 
-            {/* Loading overlay during refresh operations */}
-            {isRefreshing && (
+            {/* Loading overlay during blocking operations */}
+            {isBlocking && (
                 <Box
                     sx={{
                         position: 'absolute',
@@ -66,9 +74,7 @@ const ApertureTypesContentBlock: React.FC = () => {
                     }}
                 >
                     <CircularProgress size={40} />
-                    <Box sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                        {isLoadingFrameTypes ? 'Refreshing frame types...' : 'Refreshing glazing types...'}
-                    </Box>
+                    <Box sx={{ color: 'text.secondary', fontWeight: 500 }}>{getLoadingMessage()}</Box>
                 </Box>
             )}
 

@@ -184,6 +184,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 const confirmed = window.confirm('Are you sure you want to delete the Aperture?');
                 if (!confirmed) return;
 
+                setIsLoadingApertures(true);
                 await ApertureService.deleteAperture(apertureId);
 
                 console.log(`Aperture ${apertureId} deleted successfully.`);
@@ -201,6 +202,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             } catch (error) {
                 console.error(`Failed to delete Aperture ${apertureId}:`, error);
                 alert('Failed to delete aperture. Please try again.');
+            } finally {
+                setIsLoadingApertures(false);
             }
         },
         [fetchApertures, handleSetActiveAperture]
