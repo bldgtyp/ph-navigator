@@ -58,6 +58,7 @@ export const useApertureUValue = (aperture: ApertureType | null): UseApertureUVa
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const prevApertureIdRef = useRef<number | null>(null);
 
     const fetchUValue = useCallback(async () => {
         if (apertureId === null) {
@@ -98,10 +99,20 @@ export const useApertureUValue = (aperture: ApertureType | null): UseApertureUVa
             clearTimeout(debounceTimerRef.current);
         }
 
-        // Debounce the actual API call
-        debounceTimerRef.current = setTimeout(() => {
+        // Skip debounce on initial load or when switching to a different aperture
+        // Only debounce when editing the same aperture (rapid input changes)
+        const isNewAperture = apertureId !== prevApertureIdRef.current;
+        prevApertureIdRef.current = apertureId;
+
+        if (isNewAperture) {
+            // Fetch immediately for new aperture (no delay)
             fetchUValue();
-        }, DEBOUNCE_MS);
+        } else {
+            // Debounce updates to the same aperture (prevents rapid API calls during edits)
+            debounceTimerRef.current = setTimeout(() => {
+                fetchUValue();
+            }, DEBOUNCE_MS);
+        }
 
         // Cleanup on unmount or when dependencies change
         return () => {
