@@ -42,10 +42,10 @@ const GroupTitleEditable: React.FC<{
                 sx={{
                     width: '200px',
                     '& .MuiInputBase-input': {
-                        py: 0.5,
-                        px: 1,
-                        fontSize: '1.5rem',
-                        fontWeight: 'bold',
+                        py: 0.25,
+                        px: 0.5,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
                     },
                 }}
                 slotProps={{
@@ -114,9 +114,11 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
             <Grid
                 container
                 sx={{
-                    margin: 1,
-                    rowGap: '2px',
-                    columnGap: '0px',
+                    mx: 1,
+                    mt: 0.5,
+                    mb: 0,
+                    rowGap: 0,
+                    columnGap: 0,
                 }}
             >
                 <Grid size={12}>
@@ -129,13 +131,15 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
                             />
                         ) : (
                             <Typography
-                                variant="h5"
+                                variant="subtitle1"
                                 sx={{
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
-                                    px: 1,
-                                    fontWeight: 'bold',
-                                    borderRadius: 1,
+                                    px: 0.5,
+                                    py: 0.25,
+                                    fontWeight: 600,
+                                    fontSize: '0.875rem',
+                                    borderRadius: 0.5,
                                     '&:hover': {
                                         bgcolor: 'rgba(0,0,0,0.05)',
                                     },
@@ -155,9 +159,11 @@ export const ApertureElementTableGroup: React.FC<TableGroupProps> = ({ aperture,
             <Grid
                 container
                 sx={{
-                    margin: 1,
-                    rowGap: '0px',
-                    columnGap: '0px',
+                    mx: 1,
+                    mt: 0,
+                    mb: 0.5,
+                    rowGap: 0,
+                    columnGap: 0,
                 }}
             >
                 <GlazingRow

@@ -127,10 +127,18 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     const handleSetActiveAperture = useCallback(async (aperture: ApertureType) => {
+        // Use when switching to a different aperture - clears element selection
         console.log(`handleSetActiveAperture() to apertureId=${aperture.id}`);
         setSelectedApertureElementsIds([]);
         setActiveAperture(aperture);
         setSelectedApertureId(aperture.id);
+    }, []);
+
+    const updateActiveApertureData = useCallback((aperture: ApertureType) => {
+        // Use when updating the current aperture's data - preserves element selection
+        console.log(`updateActiveApertureData() for apertureId=${aperture.id}`);
+        setActiveAperture(aperture);
+        setApertures(prevApertures => prevApertures.map(a => (a.id === aperture.id ? { ...a, ...aperture } : a)));
     }, []);
 
     const handleUpdateAperture = useCallback(async (aperture: ApertureType) => {
@@ -391,56 +399,52 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }) => {
             try {
                 const updatedAperture = await ApertureService.updateElementFrame(params);
-                handleUpdateAperture(updatedAperture);
-                handleSetActiveAperture(updatedAperture);
+                updateActiveApertureData(updatedAperture);
             } catch (error) {
                 console.error('Failed to update aperture element frame:', error);
                 alert('Failed to update frame. Please try again.');
             }
         },
-        [handleUpdateAperture, handleSetActiveAperture]
+        [updateActiveApertureData]
     );
 
     const handleUpdateApertureElementGlazing = useCallback(
         async (params: { elementId: number; glazingTypeId: string | null }) => {
             try {
                 const updatedAperture = await ApertureService.updateElementGlazing(params);
-                handleUpdateAperture(updatedAperture);
-                handleSetActiveAperture(updatedAperture);
+                updateActiveApertureData(updatedAperture);
             } catch (error) {
                 console.error('Failed to update aperture element glazing:', error);
                 alert('Failed to update glazing. Please try again.');
             }
         },
-        [handleUpdateAperture, handleSetActiveAperture]
+        [updateActiveApertureData]
     );
 
     const handleUpdateApertureElementOperation = useCallback(
         async (elementId: number, operation: ElementOperation | null) => {
             try {
                 const updatedAperture = await ApertureService.updateElementOperation(elementId, operation);
-                handleUpdateAperture(updatedAperture);
-                handleSetActiveAperture(updatedAperture);
+                updateActiveApertureData(updatedAperture);
             } catch (error) {
                 console.error('Failed to update aperture element operation:', error);
                 alert('Failed to update operation. Please try again.');
             }
         },
-        [handleUpdateAperture, handleSetActiveAperture]
+        [updateActiveApertureData]
     );
 
     const handleUpdateApertureElementAssignments = useCallback(
         async (elementId: number, payload: ElementAssignmentsPayload) => {
             try {
                 const updatedAperture = await ApertureService.updateElementAssignments(elementId, payload);
-                handleUpdateAperture(updatedAperture);
-                handleSetActiveAperture(updatedAperture);
+                updateActiveApertureData(updatedAperture);
             } catch (error) {
                 console.error('Failed to update element assignments:', error);
                 throw error;
             }
         },
-        [handleUpdateAperture, handleSetActiveAperture]
+        [updateActiveApertureData]
     );
 
     // ----------------------------------------------------------------------------------
@@ -581,17 +585,13 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 const updatedAperture = await ApertureService.updateElementName(elementId, newName);
 
                 console.log(`Aperture Element successfully updated: ${updatedAperture.id}`);
-                const updatedApertures = apertures.map(a => (a.id === updatedAperture.id ? updatedAperture : a));
-                setApertures(updatedApertures);
-                handleSetActiveAperture(updatedAperture);
+                updateActiveApertureData(updatedAperture);
             } catch (error) {
                 console.error('Failed to update aperture element:', error);
                 alert('Failed to update element. Please try again.');
-            } finally {
-                clearApertureElementIdSelection();
             }
         },
-        [activeAperture, apertures, clearApertureElementIdSelection, handleSetActiveAperture]
+        [activeAperture, updateActiveApertureData]
     );
 
     const value = useMemo(

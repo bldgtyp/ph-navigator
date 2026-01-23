@@ -58,10 +58,17 @@ export const GlazingSelector: React.FC<GlazingSelectorProps> = ({
                         size="small"
                         sx={{
                             '& .MuiOutlinedInput-root': {
-                                fontSize: '0.75rem',
-                                minHeight: 'auto',
+                                fontSize: '0.7rem',
+                                minHeight: '24px',
+                                height: '24px',
                                 '& .MuiOutlinedInput-input': {
-                                    padding: '4px 8px',
+                                    padding: '2px 6px',
+                                },
+                                '& .MuiAutocomplete-endAdornment': {
+                                    right: '4px',
+                                    '& .MuiSvgIcon-root': {
+                                        fontSize: '1rem',
+                                    },
                                 },
                             },
                         }}

@@ -89,15 +89,21 @@ export const OperationEditor: React.FC<OperationEditorProps> = ({ element }) => 
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <FormControl size="small" sx={{ minWidth: 80 }}>
+            <FormControl size="small" sx={{ minWidth: 70 }}>
                 <Select
                     value={currentType}
                     onChange={handleTypeChange}
                     size="small"
                     sx={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
+                        height: '24px',
                         '& .MuiSelect-select': {
-                            padding: '4px 8px',
+                            padding: '2px 6px',
+                            paddingRight: '24px !important',
+                        },
+                        '& .MuiSvgIcon-root': {
+                            fontSize: '1rem',
+                            right: '4px',
                         },
                     }}
                 >

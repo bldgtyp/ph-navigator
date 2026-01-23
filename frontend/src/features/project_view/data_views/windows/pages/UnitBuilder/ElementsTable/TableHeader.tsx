@@ -1,27 +1,34 @@
+import { Tooltip } from '@mui/material';
 import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 import { TableHeaderCell } from './TableCells';
 
 export const TableHeader: React.FC = () => {
     const { unitSystem } = useUnitConversion();
+    const uValueUnit = unitSystem === 'SI' ? 'W/m²K' : 'Btu/hr·ft²·F';
+    const widthUnit = unitSystem === 'SI' ? 'mm' : 'in';
 
     return (
         <>
             <TableHeaderCell size={2}>
-                <span style={{ whiteSpace: 'pre-line' }}>Element{'\n'}&nbsp;</span>
+                <span>Element</span>
             </TableHeaderCell>
             <TableHeaderCell size={6}>
-                <span style={{ whiteSpace: 'pre-line' }}>Name{'\n'}&nbsp;</span>
+                <span>Name</span>
             </TableHeaderCell>
             <TableHeaderCell size={2}>
-                <span
-                    style={{ whiteSpace: 'pre-line' }}
-                >{`U-Value\n${unitSystem === 'SI' ? '[W/m2-K]' : '[Btu/hr-ft2-F]'}`}</span>
+                <Tooltip title={`U-Value [${uValueUnit}]`} arrow placement="top">
+                    <span style={{ cursor: 'help' }}>U-Value</span>
+                </Tooltip>
             </TableHeaderCell>
             <TableHeaderCell size={1}>
-                <span style={{ whiteSpace: 'pre-line' }}>{`Width\n${unitSystem === 'SI' ? '[mm]' : '[in]'}`}</span>
+                <Tooltip title={`Width [${widthUnit}]`} arrow placement="top">
+                    <span style={{ cursor: 'help' }}>Width</span>
+                </Tooltip>
             </TableHeaderCell>
             <TableHeaderCell size={1}>
-                <span style={{ whiteSpace: 'pre-line' }}>g-Value{'\n'}&nbsp;</span>
+                <Tooltip title="Solar Heat Gain Coefficient" arrow placement="top">
+                    <span style={{ cursor: 'help' }}>g-Value</span>
+                </Tooltip>
             </TableHeaderCell>
         </>
     );
