@@ -36,14 +36,14 @@ export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, o
 
 export const DimensionEditable: React.FC<any> = ({ handleEditConfirm }) => {
     const { units, editingValue, setEditingValue } = useDimensions();
+    const inputTooltip =
+        units === 'in'
+            ? 'Tip: Use 2\' 6", 6-1/2", or expressions like 24 + 12'
+            : 'Tip: You can use expressions like 100 + 50';
 
     return (
         <ClickAwayListener onClickAway={handleEditConfirm}>
-            <Tooltip
-                title="Tip: You can use expressions like 100 + 50"
-                enterDelay={DIMENSION_TOOLTIP_DELAY_MS}
-                placement="top"
-            >
+            <Tooltip title={inputTooltip} enterDelay={DIMENSION_TOOLTIP_DELAY_MS} placement="top">
                 <TextField
                     size="small"
                     autoFocus

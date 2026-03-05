@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
-import { evaluateSimpleExpression } from './evaluateExpression';
+import { parseInput } from './parseInput';
 import { DimensionsContextType } from './types';
 
 const DimensionsContext = createContext<DimensionsContextType | undefined>(undefined);
@@ -24,23 +24,27 @@ export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         [valueInCurrentUnitSystemWithDecimal]
     );
 
+    const parseEditingValueInCurrentUnits = useCallback(() => {
+        const isIPMode = unitSystem === 'IP';
+        return parseInput(editingValue, isIPMode);
+    }, [editingValue, unitSystem]);
+
     const handleEditColConfirm = useCallback(
         (onColumnWidthChange: (index: number, value: number) => void) => {
-            const value = evaluateSimpleExpression(editingValue);
+            const value = parseEditingValueInCurrentUnits();
 
             if (!isNaN(value) && value > 0) {
                 if (editingColIndex !== null) {
                     // Convert the entered value back to SI units (mm) for storage
                     const siValue = valueInSIUnits(value, 'mm', 'in');
                     onColumnWidthChange(editingColIndex, siValue);
-                    setEditingColIndex(null);
                 }
             }
 
             // Reset the editing state regardless of whether the value was valid
             setEditingColIndex(null);
         },
-        [editingColIndex, editingValue, valueInSIUnits]
+        [editingColIndex, parseEditingValueInCurrentUnits, valueInSIUnits]
     );
 
     const handleEditRowStart = useCallback(
@@ -55,21 +59,20 @@ export const DimensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const handleEditRowConfirm = useCallback(
         (onRowHeightChange: (index: number, value: number) => void) => {
-            const value = evaluateSimpleExpression(editingValue);
+            const value = parseEditingValueInCurrentUnits();
 
             if (!isNaN(value) && value > 0) {
                 if (editingRowIndex !== null) {
                     // Convert the entered value back to SI units (mm) for storage
                     const siValue = valueInSIUnits(value, 'mm', 'in');
                     onRowHeightChange(editingRowIndex, siValue);
-                    setEditingRowIndex(null);
                 }
             }
 
             // Reset the editing state regardless of whether the value was valid
             setEditingRowIndex(null);
         },
-        [editingRowIndex, editingValue, valueInSIUnits]
+        [editingRowIndex, parseEditingValueInCurrentUnits, valueInSIUnits]
     );
 
     const value = useMemo(
