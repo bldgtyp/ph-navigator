@@ -15,7 +15,8 @@ Web-Dashboard for Passive House project data.
 | Layer            | Tech                           | Notes                                                   |
 | ---------------- | ------------------------------ | ------------------------------------------------------- |
 | Frontend         | React + TypeScript + MUI       | DataGrid heavy usage, custom hooks, context for units   |
-| State            | React Context + Hooks          | (User, UnitSystem, Apertures, FrameTypes, GlazingTypes) |
+| State (server)   | TanStack Query (React Query)   | Caching, dedup, background refetch for all API data     |
+| State (UI)       | React Context + Hooks          | User, UnitSystem, Sidebars, Zoom, ViewDirection, etc.   |
 | Backend          | FastAPI (Python 3.11)          | Services + schemas + db_entities separation             |
 | ORM              | SQLAlchemy + Alembic           | Explicit services layer mediates access                 |
 | DB (Production)  | PostgreSQL (Render.com hosted) |                                                         |

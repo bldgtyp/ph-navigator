@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { MaterialType } from '../_types/Material';
-import { fetchAndCacheMaterials } from './MaterialsContext.Utility';
+import { useMaterialsQuery } from '../_hooks/useMaterialsQuery';
 
 interface MaterialsContextType {
     isLoadingMaterials: boolean;
@@ -12,33 +12,22 @@ interface MaterialsContextType {
 const MaterialsContext = createContext<MaterialsContextType | undefined>(undefined);
 
 export const MaterialsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isLoadingMaterials, setIsLoadingMaterials] = useState<boolean>(true);
+    const { materials: queryMaterials, isLoadingMaterials: queryLoading } = useMaterialsQuery();
+
+    // Keep local state to preserve the existing interface (setMaterials, setIsLoadingMaterials)
+    // used by Assembly.Context for refresh operations. Sync from query data.
     const [materials, setMaterials] = useState<MaterialType[]>([]);
+    const [isLoadingMaterials, setIsLoadingMaterials] = useState<boolean>(true);
 
     useEffect(() => {
-        async function loadProjectData() {
-            try {
-                // Check if cached data exists and is not expired
-                const cachedData = localStorage.getItem('materials');
-                const cachedExpiry = localStorage.getItem('materials_expiry');
-
-                if (cachedData && cachedExpiry && Date.now() < parseInt(cachedExpiry)) {
-                    setMaterials(JSON.parse(cachedData));
-                } else {
-                    // Fetch and cache materials if no valid cache exists
-                    const fetchedMaterials = await fetchAndCacheMaterials();
-                    setMaterials(fetchedMaterials);
-                }
-            } catch (error) {
-                alert('Error loading Material Data. Please try again later.');
-                console.error('Error loading Material Data:', error);
-            } finally {
-                setIsLoadingMaterials(false);
-            }
+        if (queryMaterials.length > 0) {
+            setMaterials(queryMaterials);
         }
+    }, [queryMaterials]);
 
-        loadProjectData();
-    }, []);
+    useEffect(() => {
+        setIsLoadingMaterials(queryLoading);
+    }, [queryLoading]);
 
     const value = useMemo(
         () => ({ isLoadingMaterials, setIsLoadingMaterials, materials, setMaterials }),

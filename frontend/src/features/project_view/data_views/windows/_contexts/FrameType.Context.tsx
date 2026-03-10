@@ -1,68 +1,34 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { ApertureFrameType } from '../pages/UnitBuilder/types';
-import { FrameTypeService } from '../pages/UnitBuilder/ElementsTable/services/frameTypeService';
+import { useFrameTypesQuery } from '../_hooks/useFrameTypesQuery';
+import { useRefreshFrameTypesMutation } from '../_hooks/useRefreshFrameTypesMutation';
 
 interface FrameTypesContextType {
     isLoadingFrameTypes: boolean;
-    setIsLoadingFrameTypes: React.Dispatch<React.SetStateAction<boolean>>;
     frameTypes: ApertureFrameType[];
-    setFrameTypes: React.Dispatch<React.SetStateAction<ApertureFrameType[]>>;
     handleRefreshFrameTypes: () => Promise<void>;
 }
 
 const FrameTypesContext = createContext<FrameTypesContextType | undefined>(undefined);
 
 export const FrameTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isLoadingFrameTypes, setIsLoadingFrameTypes] = useState<boolean>(true);
-    const [frameTypes, setFrameTypes] = useState<ApertureFrameType[]>([]);
-
-    useEffect(() => {
-        const loadFrameTypes = async () => {
-            try {
-                setIsLoadingFrameTypes(true);
-                const frameTypesData = await FrameTypeService.loadFrameTypes();
-                setFrameTypes(frameTypesData);
-            } catch (error) {
-                console.error('Error loading frame types:', error);
-                alert('Error loading frame data. Please try again later.');
-            } finally {
-                setIsLoadingFrameTypes(false);
-            }
-        };
-
-        loadFrameTypes();
-    }, []);
+    const { frameTypes, isLoadingFrameTypes } = useFrameTypesQuery();
+    const refreshMutation = useRefreshFrameTypesMutation();
 
     const handleRefreshFrameTypes = useCallback(async () => {
-        try {
-            setIsLoadingFrameTypes(true);
-            const { frameTypes: refreshedFrameTypes, refreshInfo } =
-                await FrameTypeService.refreshFrameTypesFromAirTable();
+        await refreshMutation.mutateAsync();
+    }, [refreshMutation]);
 
-            setFrameTypes(refreshedFrameTypes);
-
-            // Show success message to user
-            alert(
-                `Frame types refreshed successfully: ${refreshInfo.types_added} added, ${refreshInfo.types_updated} updated. Total frames: ${refreshInfo.types_total_count}`
-            );
-        } catch (error) {
-            console.error('Error refreshing frame types:', error);
-            alert('Error refreshing frame data. Please try again later.');
-        } finally {
-            setIsLoadingFrameTypes(false);
-        }
-    }, []);
+    const isLoading = isLoadingFrameTypes || refreshMutation.isPending;
 
     const value = useMemo(
         () => ({
-            isLoadingFrameTypes,
-            setIsLoadingFrameTypes,
+            isLoadingFrameTypes: isLoading,
             frameTypes,
-            setFrameTypes,
             handleRefreshFrameTypes,
         }),
-        [isLoadingFrameTypes, frameTypes, handleRefreshFrameTypes]
+        [isLoading, frameTypes, handleRefreshFrameTypes]
     );
 
     return <FrameTypesContext.Provider value={value}>{children}</FrameTypesContext.Provider>;
