@@ -85,7 +85,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // --- UI state ---
     const [selectedApertureId, setSelectedApertureId] = useState<number | null>(null);
     const [activeAperture, setActiveAperture] = useState<ApertureType | null>(null);
-    const [selectedApertureElementIds, setSelectedApertureElementsIds] = useState<number[]>([]);
+    const [selectedApertureElementIds, setSelectedApertureElementIds] = useState<number[]>([]);
     const [isMutating, setIsMutating] = useState(false);
 
     // --- Helpers ---
@@ -106,7 +106,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [hasInitialized, setHasInitialized] = useState(false);
     useEffect(() => {
         if (!isLoadingApertures && !hasInitialized && apertures.length > 0) {
-            setSelectedApertureElementsIds([]);
+            setSelectedApertureElementIds([]);
             setSelectedApertureId(apertures[0].id);
             setActiveAperture(apertures[0]);
             setHasInitialized(true);
@@ -137,7 +137,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const handleSetActiveApertureById = useCallback(
         async (apertureId: number) => {
-            setSelectedApertureElementsIds([]);
+            setSelectedApertureElementIds([]);
             setSelectedApertureId(apertureId);
             const aperture = apertures.find(a => a.id === apertureId);
             if (aperture) {
@@ -148,7 +148,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     const handleSetActiveAperture = useCallback(async (aperture: ApertureType) => {
-        setSelectedApertureElementsIds([]);
+        setSelectedApertureElementIds([]);
         setActiveAperture(aperture);
         setSelectedApertureId(aperture.id);
     }, []);
@@ -333,8 +333,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const getCellSize = useCallback(
         (row: number, col: number, rowSpan: number, colSpan: number) => {
             if (!activeAperture) return { width: 0, height: 0 };
-            const width = activeAperture?.column_widths_mm.slice(col, col + colSpan).reduce((sum, w) => sum + w, 0);
-            const height = activeAperture?.row_heights_mm.slice(row, row + rowSpan).reduce((sum, h) => sum + h, 0);
+            const width = activeAperture.column_widths_mm.slice(col, col + colSpan).reduce((sum, w) => sum + w, 0);
+            const height = activeAperture.row_heights_mm.slice(row, row + rowSpan).reduce((sum, h) => sum + h, 0);
             return { width, height };
         },
         [activeAperture]
@@ -431,7 +431,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const toggleApertureElementSelection = useCallback(
         (elementId: number, addToSelection: boolean = false) => {
-            setSelectedApertureElementsIds(prev => {
+            setSelectedApertureElementIds(prev => {
                 if (!activeAperture) return [];
                 if (prev.includes(elementId)) return prev.filter(id => id !== elementId);
                 if (!addToSelection) return [elementId];
@@ -452,7 +452,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     const clearApertureElementIdSelection = useCallback(() => {
-        setSelectedApertureElementsIds([]);
+        setSelectedApertureElementIds([]);
     }, []);
 
     const mergeSelectedApertureElements = useCallback(async () => {

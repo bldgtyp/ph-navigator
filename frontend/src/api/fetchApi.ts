@@ -63,9 +63,7 @@ export async function fetchPatch<T>(endpoint: string, data: any = {}): Promise<T
 export async function fetchDelete<T>(endpoint: string, params: any = {}): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'DELETE',
-        headers: {
-            ...authHeaders(),
-        },
+        headers: authHeaders(),
         body: params && Object.keys(params).length > 0 ? JSON.stringify(params) : undefined,
     });
 
@@ -76,16 +74,15 @@ export async function fetchDelete<T>(endpoint: string, params: any = {}): Promis
 
 export async function fetchPostFile<T>(endpoint: string, file: File): Promise<T> {
     const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${token}`,
         },
-        body: (() => {
-            const fd = new FormData();
-            fd.append('file', file);
-            return fd;
-        })(),
+        body: formData,
     });
 
     if (!response.ok) await handleErrorResponse(response, endpoint);
