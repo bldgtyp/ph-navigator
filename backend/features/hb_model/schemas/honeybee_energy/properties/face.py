@@ -3,7 +3,7 @@
 
 """Pydantic Schema: honeybee_energy.properties.face.FaceEnergyProperties"""
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from ..construction.opaque import OpaqueConstructionSchema
 

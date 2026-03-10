@@ -3,7 +3,7 @@
 from __future__ import annotations  # Enables forward references
 
 from pyairtable.api.types import RecordDict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class GlazingTypeDatasheetSchema(BaseModel):
@@ -19,6 +19,8 @@ class GlazingTypeDatasheetSchema(BaseModel):
 class GlazingTypeSchema(BaseModel):
     """Base schema for Glazing Type."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str = "Unnamed Glazing"
     u_value_w_m2k: float
@@ -29,9 +31,6 @@ class GlazingTypeSchema(BaseModel):
     datasheet_url: str | None = None
     link: str | None = None
     comments: str | None = None
-
-    class Config:
-        orm_mode = True
 
     @classmethod
     def fromAirTableRecordDict(cls, record: RecordDict) -> GlazingTypeSchema:

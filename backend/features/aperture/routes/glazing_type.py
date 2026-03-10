@@ -29,7 +29,7 @@ def get_glazing_types_route(
     logger.info(f"aperture/get_glazing_types_route()")
 
     glazing_types = db.query(ApertureGlazingType).all()
-    return [GlazingTypeSchema.from_orm(glazing) for glazing in glazing_types]
+    return [GlazingTypeSchema.model_validate(glazing) for glazing in glazing_types]
 
 
 @router.get("/refresh-db-glazing-types-from-air-table")
@@ -62,4 +62,4 @@ def load_all_glazing_types_from_airtable_route(
     logger.info(f"assembly/load_all_glazing_types_from_airtable_route()")
 
     glazing_types = get_all_glazing_types_from_airtable()
-    return [GlazingTypeSchema.from_orm(glazing_type) for glazing_type in glazing_types]
+    return [GlazingTypeSchema.model_validate(glazing_type) for glazing_type in glazing_types]

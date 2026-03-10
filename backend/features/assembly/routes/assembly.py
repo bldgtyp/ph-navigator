@@ -51,7 +51,7 @@ def create_new_assembly_on_project_route(
 
     try:
         new_assembly = create_new_default_assembly_on_project(db, bt_number)
-        return AssemblySchema.from_orm(new_assembly)
+        return AssemblySchema.model_validate(new_assembly)
     except Exception as e:
         logger.error(f"Failed to create new assembly for project {bt_number}: {e}")
         raise HTTPException(
@@ -115,7 +115,7 @@ def get_project_assemblies_route(
 
     try:
         assemblies = get_all_project_assemblies(db, bt_number)
-        return [AssemblySchema.from_orm(assembly) for assembly in assemblies]
+        return [AssemblySchema.model_validate(assembly) for assembly in assemblies]
     except Exception as e:
         logger.error(f"Failed to get assemblies for project {bt_number}: {e}")
         raise HTTPException(
@@ -137,7 +137,7 @@ def update_assembly_name_route(
 
     try:
         assembly = update_assembly_name(db, assembly_id, update_request.new_name)
-        return AssemblySchema.from_orm(assembly)
+        return AssemblySchema.model_validate(assembly)
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
         raise HTTPException(
@@ -203,7 +203,7 @@ def flip_assembly_orientation_route(
     try:
         assembly = get_assembly_by_id(db, assembly_id)
         flipped_assembly = flip_assembly_orientation(db, assembly)
-        return AssemblySchema.from_orm(flipped_assembly)
+        return AssemblySchema.model_validate(flipped_assembly)
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
         raise HTTPException(
@@ -220,7 +220,7 @@ def flip_assembly_layers_route(assembly_id: int, db: Session = Depends(get_db)):
     try:
         assembly = get_assembly_by_id(db, assembly_id)
         flipped_assembly = flip_assembly_layers(db, assembly)
-        return AssemblySchema.from_orm(flipped_assembly)
+        return AssemblySchema.model_validate(flipped_assembly)
     except Exception as e:
         logger.error(f"Failed to update '{assembly_id=}' name to: '{e}'")
         raise HTTPException(
@@ -237,7 +237,7 @@ def duplicate_assembly_route(assembly_id: int, db: Session = Depends(get_db)) ->
     try:
         assembly = get_assembly_by_id(db, assembly_id)
         duplicated_assembly = duplicate_assembly(db, assembly)
-        return AssemblySchema.from_orm(duplicated_assembly)
+        return AssemblySchema.model_validate(duplicated_assembly)
     except Exception as e:
         logger.error(f"Failed to duplicate assembly {assembly_id}: {e}")
         raise HTTPException(

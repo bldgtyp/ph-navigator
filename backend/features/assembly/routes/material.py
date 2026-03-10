@@ -50,4 +50,4 @@ def load_all_materials_from_airtable_route(
     logger.info(f"assembly/load_all_materials_from_airtable_route()")
 
     materials = get_all_material_from_airtable()
-    return [MaterialSchema.from_orm(material) for material in materials]
+    return [MaterialSchema.model_validate(material) for material in materials]

@@ -33,7 +33,7 @@ def get_project_card_data_route(
 
     try:
         projects = get_all_projects(db, current_user.owned_project_ids)
-        return [ProjectSchema.from_orm(p) for p in projects]
+        return [ProjectSchema.model_validate(p) for p in projects]
     except Exception as e:
         logger.error(f"Failed to get project card data for user {current_user.id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve project data")

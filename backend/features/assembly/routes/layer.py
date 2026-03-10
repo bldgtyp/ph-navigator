@@ -38,7 +38,7 @@ def create_new_default_layer_on_assembly_route(
 
     try:
         assembly, layer = insert_default_layer_into_assembly(db, assembly_id, request.order)
-        return LayerSchema.from_orm(layer)
+        return LayerSchema.model_validate(layer)
     except Exception as e:
         logger.error(f"Error creating new layer on assembly {assembly_id=}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -51,7 +51,7 @@ def get_layer_route(layer_id: int, db: Session = Depends(get_db)) -> LayerSchema
 
     try:
         layer = get_layer_by_id(db, layer_id)
-        return LayerSchema.from_orm(layer)
+        return LayerSchema.model_validate(layer)
     except LayerNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -68,7 +68,7 @@ def update_layer_thickness_route(
 
     try:
         layer = update_layer_thickness(db, layer_id, request.thickness_mm)
-        return LayerSchema.from_orm(layer)
+        return LayerSchema.model_validate(layer)
     except Exception as e:
         logger.error(f"Error updating layer thickness: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -3,11 +3,13 @@
 from __future__ import annotations  # Enables forward references
 
 from pyairtable.api.types import RecordDict
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AirTableMaterialSchema(BaseModel):
     """Schema for Material records when they come in directly from AirTable."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     name: str = ""
@@ -18,14 +20,11 @@ class AirTableMaterialSchema(BaseModel):
     density_kg_m3: float = 0.0
     specific_heat_j_kgk: float = 100.0
 
-    @root_validator(pre=True)
-    def lowercase_keys(cls, values):
+    @model_validator(mode="before")
+    @classmethod
+    def lowercase_keys(cls, values: dict) -> dict:
         # Convert all keys to lowercase
         return {k.lower(): v for k, v in values.items()}
-
-    class Config:
-        from_attributes = True
-        orm_mode = True
 
     @classmethod
     def fromAirTableRecordDict(cls, record: RecordDict) -> AirTableMaterialSchema:
@@ -39,6 +38,8 @@ class AirTableMaterialSchema(BaseModel):
 class MaterialSchema(BaseModel):
     """Schema for Material records in the database."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str = ""
     category: str = ""
@@ -47,6 +48,3 @@ class MaterialSchema(BaseModel):
     emissivity: float = 0.0
     density_kg_m3: float = 0.0
     specific_heat_j_kgk: float = 100.0
-
-    class Config:
-        orm_mode = True

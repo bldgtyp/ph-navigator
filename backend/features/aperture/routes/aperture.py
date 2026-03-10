@@ -69,7 +69,7 @@ def get_project_apertures_route(
 
     try:
         apertures = get_apertures_by_project_bt(db, bt_number)
-        return [ApertureSchema.from_orm(aperture) for aperture in apertures]
+        return [ApertureSchema.model_validate(aperture) for aperture in apertures]
     except Exception as e:
         msg = f"Error retrieving apertures for project {bt_number=}: {e}"
         logger.error(msg)
@@ -113,7 +113,7 @@ def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends
 
     try:
         aperture = get_aperture_by_id(db, aperture_id)
-        return ApertureSchema.from_orm(aperture)
+        return ApertureSchema.model_validate(aperture)
     except ValueError as e:
         msg = str(e)
         logger.error(msg)
@@ -132,7 +132,7 @@ def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(g
     try:
         project = get_project_by_bt_number(db, bt_number)
         new_aperture = add_new_aperture_on_project(db, project)
-        return ApertureSchema.from_orm(new_aperture)
+        return ApertureSchema.model_validate(new_aperture)
     except Exception as e:
         msg = f"Failed to create new aperture for project {bt_number}: {e}"
         logger.error(msg)
@@ -156,7 +156,7 @@ def duplicate_aperture_route(request: Request, aperture_id: int, db: Session = D
 
     try:
         duplicated_aperture = duplicate_aperture(db, aperture_id)
-        return ApertureSchema.from_orm(duplicated_aperture)
+        return ApertureSchema.model_validate(duplicated_aperture)
     except ValueError as e:
         msg = str(e)
         logger.error(msg)
@@ -179,7 +179,7 @@ def update_aperture_name_route(
 
     try:
         updated_aperture = update_aperture_name(db, aperture_id, update_request.new_name)
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture name for ID {aperture_id}: {e}"
         logger.error(msg)
@@ -198,7 +198,7 @@ def update_aperture_glazing_type_route(
 
     try:
         updated_aperture = update_aperture_glazing_type(db, element_id, update_request.glazing_id)
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture glazing for ID {element_id=} to {update_request.glazing_id=}: {e}"
         logger.error(msg)
@@ -219,7 +219,7 @@ def update_aperture_column_width_route(
         updated_aperture = update_aperture_column_width(
             db, aperture_id, update_request.column_index, update_request.new_width_mm
         )
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture column width for ID {aperture_id}: {e}"
         logger.error(msg)
@@ -240,7 +240,7 @@ def update_aperture_row_height_route(
         updated_aperture = update_aperture_row_height(
             db, aperture_id, update_request.row_index, update_request.new_height_mm
         )
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture row height for ID {aperture_id}: {e}"
         logger.error(msg)
@@ -264,7 +264,7 @@ def update_frame_type_route(
             update_request.side,
             update_request.frame_type_id,
         )
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture frame for ID {aperture_id}: {e}"
         logger.error(msg)
@@ -283,7 +283,7 @@ def add_row_to_aperture_route(
     logger.info(f"add_row_to_aperture({aperture_id=}, {position=})")
 
     try:
-        return ApertureSchema.from_orm(add_row_to_aperture(db, aperture_id, position=position))
+        return ApertureSchema.model_validate(add_row_to_aperture(db, aperture_id, position=position))
     except Exception as e:
         msg = str(e)
         logger.error(msg)
@@ -302,7 +302,7 @@ def add_column_to_aperture_route(
     logger.info(f"add_column_to_aperture({aperture_id=}, {position=})")
 
     try:
-        return ApertureSchema.from_orm(add_column_to_aperture(db, aperture_id, position=position))
+        return ApertureSchema.model_validate(add_column_to_aperture(db, aperture_id, position=position))
     except Exception as e:
         msg = str(e)
         logger.error(msg)
@@ -321,7 +321,7 @@ def merge_aperture_elements_route(
 
     try:
         aperture = merge_aperture_elements(db, aperture_id, update_request.aperture_element_ids)
-        return ApertureSchema.from_orm(aperture)
+        return ApertureSchema.model_validate(aperture)
     except ValueError as e:
         msg = str(e)
         logger.error(msg)
@@ -344,7 +344,7 @@ def split_aperture_element_route(
 
     try:
         aperture = split_aperture_element(db, aperture_id, update_request.aperture_element_id)
-        return ApertureSchema.from_orm(aperture)
+        return ApertureSchema.model_validate(aperture)
     except ValueError as e:
         msg = str(e)
         logger.error(msg)
@@ -367,7 +367,7 @@ def update_aperture_element_name_route(
 
     try:
         updated_aperture = update_aperture_element_name(db, element_id, update_request.aperture_element_name)
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture element name for ID {element_id}: {e}"
         logger.error(msg)
@@ -386,9 +386,9 @@ def update_aperture_element_operation_route(
     logger.info(f"update_aperture_element_operation_route({element_id=}, {update_request.operation=})")
 
     try:
-        operation_dict = update_request.operation.dict() if update_request.operation else None
+        operation_dict = update_request.operation.model_dump() if update_request.operation else None
         updated_aperture = update_aperture_element_operation(db, element_id, operation_dict)
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture element operation for ID {element_id}: {e}"
         logger.error(msg)
@@ -407,15 +407,15 @@ def update_aperture_element_assignments_route(
     logger.info(f"update_aperture_element_assignments_route({element_id=})")
 
     try:
-        operation_dict = update_request.operation.dict() if update_request.operation else None
+        operation_dict = update_request.operation.model_dump() if update_request.operation else None
         updated_aperture = update_aperture_element_assignments(
             db,
             element_id,
             operation_dict,
             update_request.glazing_type_id,
-            update_request.frame_type_ids.dict(),
+            update_request.frame_type_ids.model_dump(),
         )
-        return ApertureSchema.from_orm(updated_aperture)
+        return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update element assignments for ID {element_id}: {e}"
         logger.error(msg)
@@ -447,7 +447,7 @@ def delete_row_on_aperture_route(
     logger.info(f"delete_row_on_aperture({aperture_id=}, {delete_request=})")
 
     try:
-        return ApertureSchema.from_orm(delete_row_from_aperture(db, aperture_id, delete_request.row_number))
+        return ApertureSchema.model_validate(delete_row_from_aperture(db, aperture_id, delete_request.row_number))
     except LastRowException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
@@ -467,7 +467,7 @@ def delete_column_on_aperture_route(
     logger.info(f"delete_column_on_aperture({aperture_id=}, {delete_request=})")
 
     try:
-        return ApertureSchema.from_orm(delete_column_from_aperture(db, aperture_id, delete_request.column_number))
+        return ApertureSchema.model_validate(delete_column_from_aperture(db, aperture_id, delete_request.column_number))
     except LastColumnException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:

@@ -29,7 +29,7 @@ def get_frame_types_route(
     logger.info(f"aperture/get_frame_types_route()")
 
     frame_types = db.query(ApertureFrameType).all()
-    return [FrameTypeSchema.from_orm(frame) for frame in frame_types]
+    return [FrameTypeSchema.model_validate(frame) for frame in frame_types]
 
 
 @router.get("/refresh-db-frame-types-from-air-table")
@@ -62,4 +62,4 @@ def load_all_frame_types_from_airtable_route(
     logger.info(f"assembly/load_all_frame_types_from_airtable_route()")
 
     frame_types = get_all_frame_types_from_airtable()
-    return [FrameTypeSchema.from_orm(frame) for frame in frame_types]
+    return [FrameTypeSchema.model_validate(frame) for frame in frame_types]

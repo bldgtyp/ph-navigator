@@ -40,7 +40,7 @@ def get_project_by_bt_number_route(
 
     try:
         project = get_project_by_bt_number(db, bt_number)
-        return ProjectSchema.from_orm(project)
+        return ProjectSchema.model_validate(project)
     except Exception as e:
         logger.error(f"Failed to get project {bt_number}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get project '{bt_number}'")
@@ -74,7 +74,7 @@ def update_project_settings_route(
 
         project = update_project_settings(db, project, project_settings_data)
 
-        return ProjectSchema.from_orm(project)
+        return ProjectSchema.model_validate(project)
     except Exception as e:
         logger.error(f"Failed to update project settings for {bt_number}: {e}")
         raise HTTPException(
@@ -106,7 +106,7 @@ def create_new_project_route(
             bt_number=new_project_data.bt_number,
             phius_number=new_project_data.phius_number,
         )
-        return ProjectSchema.from_orm(project)
+        return ProjectSchema.model_validate(project)
     except ProjectAlreadyExistsException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -128,7 +128,7 @@ def get_project_airtable_table_identifiers(
     logger.info(f"project/get_project_airtable_table_identifiers({bt_number=})")
 
     try:
-        return [AirTableTableSchema.from_orm(t) for t in get_all_project_tables(db, bt_number)]
+        return [AirTableTableSchema.model_validate(t) for t in get_all_project_tables(db, bt_number)]
     except Exception as e:
         msg = f"Failed to get project AirTable Tables for '{bt_number}': {e}"
         logger.error(msg)
@@ -151,7 +151,7 @@ def update_airtable_tables_identifiers(
     try:
         for table_record in table_records:
             update_airtable_table(db, bt_number, table_record)
-        return [AirTableTableSchema.from_orm(t) for t in get_all_project_tables(db, bt_number)]
+        return [AirTableTableSchema.model_validate(t) for t in get_all_project_tables(db, bt_number)]
     except Exception as e:
         msg = f"Failed to update AirTable tables identifiers for '{bt_number}': {e}"
         logger.error(msg)

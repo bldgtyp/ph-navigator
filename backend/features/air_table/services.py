@@ -218,7 +218,7 @@ def get_all_material_from_airtable() -> list[Material]:
         settings.AIRTABLE_MATERIAL_TABLE_ID,
     )
 
-    return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
+    return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).model_dump()) for record in table.all()]
 
     # TODO: Make the AirTable call async....
     #  Use aiohttp directly since PyAirTable doesn't have async support
@@ -232,7 +232,7 @@ def get_all_material_from_airtable() -> list[Material]:
 
     #         # AirTable returns data in a specific format, typically under a 'records' key
     #         records = data.get('records', [])
-    #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).dict()) for record in records]
+    #         return [Material(**AirTableMaterialSchema.fromAirTableRecordDict(record).model_dump()) for record in records]
 
 
 def get_all_frame_types_from_airtable() -> list[ApertureFrameType]:
@@ -245,7 +245,7 @@ def get_all_frame_types_from_airtable() -> list[ApertureFrameType]:
         settings.AIRTABLE_FRAME_DATA_TABLE_ID,
     )
 
-    return [ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
+    return [ApertureFrameType(**FrameTypeSchema.fromAirTableRecordDict(record).model_dump()) for record in table.all()]
 
 
 def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
@@ -258,7 +258,7 @@ def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
         settings.AIRTABLE_GLAZING_DATA_TABLE_ID,
     )
 
-    return [ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).dict()) for record in table.all()]
+    return [ApertureGlazingType(**GlazingTypeSchema.fromAirTableRecordDict(record).model_dump()) for record in table.all()]
 
 
 def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:

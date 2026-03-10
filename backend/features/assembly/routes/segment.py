@@ -52,7 +52,7 @@ def create_new_segment_on_layer_route(
 
     try:
         seg = create_new_segment(db, layer_id, request.material_id, request.width_mm, request.order)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error creating new segment: {e}")
         raise HTTPException(
@@ -72,7 +72,7 @@ def update_segment_material_route(
 
     try:
         seg = update_segment_material(db, segment_id, request.material_id)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment material: {e}")
         raise HTTPException(
@@ -90,7 +90,7 @@ def update_segment_width_route(
 
     try:
         seg = update_segment_width(db, segment_id, request.width_mm)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment width: {e}")
         raise HTTPException(
@@ -110,7 +110,7 @@ def update_segment_steel_stud_spacing_route(
 
     try:
         seg = update_segment_steel_stud_spacing(db, segment_id, request.steel_stud_spacing_mm)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment steel stud spacing: {e}")
         raise HTTPException(
@@ -135,7 +135,7 @@ def update_segment_is_continuous_insulation_route(
 
     try:
         seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment continuous insulation: {e}")
         raise HTTPException(
@@ -155,7 +155,7 @@ def update_segment_specification_status_route(
 
     try:
         seg = update_segment_specification_status(db, segment_id, request.specification_status)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment specification status: {e}")
         raise HTTPException(
@@ -175,7 +175,7 @@ def update_segment_notes_route(
 
     try:
         seg = update_segment_notes(db, segment_id, request.notes)
-        return SegmentSchema.from_orm(seg)
+        return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment notes: {e}")
         raise HTTPException(

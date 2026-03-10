@@ -60,8 +60,8 @@ def get_all_project_apertures_as_json_string(db: Session, bt_number: str) -> str
     logger.info(f"get_all_project_apertures_as_json_string({bt_number=})")
 
     apertures = get_apertures_by_project_bt(db, bt_number)
-    apertures = [ApertureSchema.from_orm(aperture) for aperture in apertures]
-    return json.dumps({aperture.name: aperture.dict() for aperture in apertures})
+    apertures = [ApertureSchema.model_validate(aperture) for aperture in apertures]
+    return json.dumps({aperture.name: aperture.model_dump() for aperture in apertures})
 
 
 def get_aperture_by_id(db: Session, aperture_id: int) -> Aperture:

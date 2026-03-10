@@ -3,7 +3,7 @@
 
 """Pydantic Schema: honeybee_phhvac.ventilation.PhVentilationSystem"""
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 
 class VentilatorSchema(BaseModel):

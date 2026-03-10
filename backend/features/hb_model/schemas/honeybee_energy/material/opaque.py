@@ -3,7 +3,7 @@
 
 """Pydantic Schema: honeybee_energy.material.opaque.EnergyMaterial"""
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 
 class EnergyMaterialSchema(BaseModel):

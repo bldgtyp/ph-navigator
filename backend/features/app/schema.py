@@ -2,7 +2,7 @@
 
 from __future__ import annotations  # Enables forward references
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectCreateSchema(BaseModel):
@@ -13,6 +13,8 @@ class ProjectCreateSchema(BaseModel):
 
 
 class ProjectSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     bt_number: str
@@ -23,10 +25,6 @@ class ProjectSchema(BaseModel):
     # Foreign Keys
     owner_id: int
     airtable_base_id: str | None = None
-
-    class Config:
-        from_attributes = True
-        orm_mode = True
 
 
 class AirTableTableUpdateSchema(BaseModel):

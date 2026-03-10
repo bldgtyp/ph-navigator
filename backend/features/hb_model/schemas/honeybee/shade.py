@@ -5,7 +5,7 @@
 
 from typing import Any
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from ..ladybug_geometry.geometry3d.face3d import Face3DSchema
 

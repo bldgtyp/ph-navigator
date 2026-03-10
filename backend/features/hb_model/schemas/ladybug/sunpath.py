@@ -3,7 +3,7 @@
 
 """Pydantic Schema: ladybug.sunpath.SunPath"""
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from ..ladybug_geometry.geometry3d.arc import Arc3D
 from ..ladybug_geometry.geometry3d.polyline import Polyline3D

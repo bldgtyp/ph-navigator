@@ -59,7 +59,7 @@ def user(
     logger.info(f"auth/user({current_user.id=})")
 
     try:
-        return UserSchema.from_orm(current_user)
+        return UserSchema.model_validate(current_user)
     except Exception as e:
         logger.error(f"Failed to retrieve user {current_user.id}: {e}")
         raise HTTPException(

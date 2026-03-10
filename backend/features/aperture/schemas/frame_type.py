@@ -3,7 +3,7 @@
 from __future__ import annotations  # Enables forward references
 
 from pyairtable.api.types import RecordDict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class FrameTypeDatasheetSchema(BaseModel):
@@ -18,6 +18,8 @@ class FrameTypeDatasheetSchema(BaseModel):
 
 class FrameTypeSchema(BaseModel):
     """Base schema for Aperture Element Frame Type."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     name: str = "Unnamed Frame Type"
@@ -34,9 +36,6 @@ class FrameTypeSchema(BaseModel):
     datasheet_url: str | None = None
     link: str | None = None
     comments: str | None = None
-
-    class Config:
-        orm_mode = True
 
     @classmethod
     def fromAirTableRecordDict(cls, record: RecordDict) -> FrameTypeSchema:

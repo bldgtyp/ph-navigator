@@ -3,7 +3,7 @@
 
 """Pydantic Schema: ladybug_geometry.geometry3d.mesh.Mesh3D"""
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 
 class Mesh3DSchema(BaseModel):

@@ -4,19 +4,18 @@ from __future__ import annotations  # Enables forward references
 
 from ph_units.converter import convert
 from ph_units.parser import parse_input
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from features.assembly.schemas.segment import SegmentSchema
 
 
 class LayerSchemaBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     order: int
     assembly_id: int
     thickness_mm: float
     segments: list[SegmentSchema] = []
-
-    class Config:
-        orm_mode = True
 
     @property
     def is_steel_stud_layer(self) -> bool:
@@ -40,7 +39,8 @@ class CreateLayerRequest(BaseModel):
 class UpdateLayerHeightRequest(BaseModel):
     thickness_mm: float
 
-    @validator("thickness_mm", pre=True, always=True)
+    @field_validator("thickness_mm", mode="before")
+    @classmethod
     def validate_thickness(cls, v: str | float) -> float:
         input_value, input_unit = parse_input(v)
         thickness_mm = convert(input_value, input_unit or "MM", "MM")
