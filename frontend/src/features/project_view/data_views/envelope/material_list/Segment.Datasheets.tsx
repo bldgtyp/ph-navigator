@@ -8,7 +8,7 @@ import { getWithAlert } from '../../../../../api/getWithAlert';
 import { SegmentType, SpecificationStatus } from '../_types/Segment';
 import { MaterialDatasheetType, MaterialDatasheetsType } from '../_types/Material.Datasheet';
 import ImageFullViewModal from './Image.FullViewModal';
-import ImageThumbnail from './Image.Thumbnail';
+import LazyThumbnail from './LazyThumbnail';
 import { UserContext } from '../../../../auth/_contexts/UserContext';
 import { deleteWithAlert } from '../../../../../api/deleteWithAlert';
 
@@ -159,7 +159,7 @@ const SegmentDatasheets: React.FC<DatasheetsProps> = props => {
                     </span>
                 )}
                 {datasheets.map((photo, idx) => (
-                    <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedDatasheet} />
+                    <LazyThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedDatasheet} />
                 ))}
 
                 <ImageFullViewModal

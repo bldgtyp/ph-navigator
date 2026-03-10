@@ -8,7 +8,7 @@ import { getWithAlert } from '../../../../../api/getWithAlert';
 import { SegmentType, SpecificationStatus } from '../_types/Segment';
 import { MaterialSitePhotoType, MaterialSitePhotosType } from '../_types/Material.SitePhoto';
 import ImageFullViewModal from './Image.FullViewModal';
-import ImageThumbnail from './Image.Thumbnail';
+import LazyThumbnail from './LazyThumbnail';
 import { UserContext } from '../../../../auth/_contexts/UserContext';
 import { deleteWithAlert } from '../../../../../api/deleteWithAlert';
 
@@ -159,7 +159,7 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
                     </span>
                 )}
                 {sitePhotos.map((photo, idx) => (
-                    <ImageThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />
+                    <LazyThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />
                 ))}
 
                 <ImageFullViewModal
