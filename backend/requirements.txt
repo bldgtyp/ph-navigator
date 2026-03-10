@@ -3,10 +3,8 @@ bcrypt==4.3.0
 cryptography==45.0.4
 fastapi==0.115.13
 google-cloud-storage==3.1.1
-httpx==0.28.1
-httptools==0.6.4
-honeybee-ph==1.30.10
 honeybee-ref==0.2.1
+honeybee-ph==1.30.10
 passlib==1.7.4
 PHX==1.51.5
 pillow==11.2.1
@@ -15,9 +13,6 @@ pyairtable==2.3.7
 pydantic==1.10.22
 pyjwt==2.10.1
 PyMuPDF==1.26.1
-pytest==8.4.1
-pytest-cov==6.2.1
-pytest-asyncio==1.0.0
 python-dotenv==1.1.0
 python-multipart==0.0.20
 rich==14.0.0
