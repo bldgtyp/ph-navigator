@@ -1,16 +1,16 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
 import { uploadSitePhotoFiles } from '../../../../../api/uploadSitePhotoFiles';
-import { getWithAlert } from '../../../../../api/getWithAlert';
 
 import { SegmentType, SpecificationStatus } from '../_types/Segment';
-import { MaterialSitePhotoType, MaterialSitePhotosType } from '../_types/Material.SitePhoto';
+import { MaterialSitePhotoType } from '../_types/Material.SitePhoto';
 import ImageFullViewModal from './Image.FullViewModal';
 import LazyThumbnail from './LazyThumbnail';
 import { UserContext } from '../../../../auth/_contexts/UserContext';
 import { deleteWithAlert } from '../../../../../api/deleteWithAlert';
+import { useMediaUrls } from '../_contexts/MediaUrlsContext';
 
 interface SegmentSitePhotosProps {
     segment: SegmentType;
@@ -21,27 +21,13 @@ interface SegmentSitePhotosProps {
 const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
     const userContext = useContext(UserContext);
     const { projectId } = useParams();
+    const { getSitePhotosForSegment, addSitePhoto, removeSitePhoto } = useMediaUrls();
     const [isDragOver, setIsDragOver] = useState(false);
-    const [sitePhotos, setSitePhotos] = useState<MaterialSitePhotoType[]>([]);
     const [selectedSitePhoto, setSelectedSitePhoto] = useState<MaterialSitePhotoType | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
-    useEffect(() => {
-        const fetchSitePhotoUrls = async () => {
-            console.log('Fetching site-photo-urls for segment:', props.segment.id);
-            try {
-                const response = await getWithAlert<MaterialSitePhotosType>(
-                    `gcp/get-site-photo-urls/${props.segment.id}`
-                );
-                if (response) {
-                    setSitePhotos(response.photo_urls);
-                }
-            } catch (error) {
-                console.error('Failed to fetch site-photo-urls thumbnails:', error);
-            }
-        };
-        fetchSitePhotoUrls();
-    }, [projectId, props.segment.id]);
+    // Get photos from context
+    const sitePhotos = getSitePhotosForSegment(props.segment.id);
 
     const boxStyles = useMemo(() => {
         const isDisabled = props.specificationStatus === 'na';
@@ -89,17 +75,14 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
             const newPhotoUrls: MaterialSitePhotoType[] = response.filter(
                 (res): res is MaterialSitePhotoType => res !== null
             );
-            setSitePhotos(prev => [...prev, ...newPhotoUrls]);
 
-            // Optional: Show success message
-            if (newPhotoUrls.length > 0) {
-                // You could show a success notification here
-            }
+            // Add each new photo to context
+            newPhotoUrls.forEach(photo => {
+                addSitePhoto(props.segment.id, photo);
+            });
         } catch (error) {
             console.error('Upload failed:', error);
-            // Optional: Show error message
         } finally {
-            // Hide loading state
             setIsUploading(false);
         }
     };
@@ -112,8 +95,8 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
     const handleDeletePhoto = async (photoId: number) => {
         const success = await deleteWithAlert(`gcp/delete-segment-site-photo/${photoId}`);
         if (success) {
-            // Update the local state to remove the deleted photo
-            setSitePhotos(sitePhotos.filter(photo => photo.id !== photoId));
+            // Update the context to remove the deleted photo
+            removeSitePhoto(props.segment.id, photoId);
         }
     };
 
@@ -159,7 +142,7 @@ const SegmentSitePhotos: React.FC<SegmentSitePhotosProps> = props => {
                     </span>
                 )}
                 {sitePhotos.map((photo, idx) => (
-                    <LazyThumbnail key={idx} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />
+                    <LazyThumbnail key={photo.id} image={photo} idx={idx} setSelectedImage={handleSetSelectedPhoto} />
                 ))}
 
                 <ImageFullViewModal

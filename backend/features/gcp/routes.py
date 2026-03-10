@@ -11,7 +11,7 @@ from database import get_db
 from features.assembly.schemas.material_datasheet import MaterialDatasheetSchema
 from features.assembly.schemas.material_photo import MaterialPhotoSchema
 from features.assembly.services.segment import SegmentNotFoundException
-from features.gcp.schemas import SegmentDatasheetUrlResponse, SegmentSitePhotoUrlsResponse
+from features.gcp.schemas import ProjectMediaUrlsResponse, SegmentDatasheetUrlResponse, SegmentSitePhotoUrlsResponse
 from features.gcp.services.datasheet import (
     DatasheetNotFoundException,
     add_datasheet_to_segment,
@@ -22,6 +22,11 @@ from features.gcp.services.datasheet import (
 )
 from features.gcp.services.file_utils import get_file_content, valid_file_size, valid_upload_file_type
 from features.gcp.services.gcs_utils import upload_file_to_gcs
+from features.gcp.services.project_media import (
+    ProjectNotFoundException,
+    get_project_datasheets,
+    get_project_site_photos,
+)
 from features.gcp.services.site_photo import (
     SitePhotoNotFoundException,
     add_site_photo_to_segment,
@@ -83,6 +88,60 @@ class FileTooLargeException(Exception):
         self.message = f"File {filename} with type {content_type} exceeds the maximum size of {max_size_mb} MB."
         logger.error(self.message)
         super().__init__(self.message)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# -- Batch Media URLs (Project-Level)
+
+
+@router.get("/get-project-media-urls/{bt_number}", response_model=ProjectMediaUrlsResponse)
+def get_project_media_urls_route(
+    request: Request,
+    bt_number: str,
+    db: Session = Depends(get_db),
+) -> ProjectMediaUrlsResponse:
+    """Fetch all site photo and datasheet URLs for a project in one request.
+
+    This batch endpoint reduces N+1 API calls when loading the material list page.
+    """
+    logger.info(f"gcp/get_project_media_urls_route(bt_number={bt_number})")
+
+    try:
+        site_photos_by_segment = get_project_site_photos(db, bt_number)
+        datasheets_by_segment = get_project_datasheets(db, bt_number)
+
+        return ProjectMediaUrlsResponse(
+            site_photos={
+                segment_id: [
+                    MaterialPhotoSchema(
+                        id=photo.id,
+                        segment_id=photo.segment_id,
+                        full_size_url=photo.full_size_url,
+                        thumbnail_url=photo.thumbnail_url,
+                    )
+                    for photo in photos
+                ]
+                for segment_id, photos in site_photos_by_segment.items()
+            },
+            datasheets={
+                segment_id: [
+                    MaterialDatasheetSchema(
+                        id=datasheet.id,
+                        segment_id=datasheet.segment_id,
+                        full_size_url=datasheet.full_size_url,
+                        thumbnail_url=datasheet.thumbnail_url,
+                    )
+                    for datasheet in datasheets
+                ]
+                for segment_id, datasheets in datasheets_by_segment.items()
+            },
+        )
+    except ProjectNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except Exception as e:
+        msg = f"Failed to retrieve project media URLs: {e}"
+        logger.error(msg)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
 
 import { useMaterials } from '../_contexts/MaterialsContext';
+import { MediaUrlsProvider, ProjectMediaUrlsResponse, useMediaUrls } from '../_contexts/MediaUrlsContext';
 
 import { getWithAlert } from '../../../../../api/getWithAlert';
 
@@ -27,46 +28,56 @@ const MaterialListContainer: React.FC<{ assembly: AssemblyType }> = props => {
     );
 };
 
-const MaterialListPage: React.FC = () => {
+const MaterialListContent: React.FC = () => {
     const { projectId } = useParams();
-    const { isLoadingMaterials, setMaterials } = useMaterials();
+    const { isLoadingMaterials } = useMaterials();
+    const { setMediaFromResponse, setIsLoadingMedia, isLoadingMedia } = useMediaUrls();
     const [isLoadingAssemblies, setIsLoadingAssemblies] = useState<boolean>(true);
     const [assemblies, setAssemblies] = useState<AssemblyType[]>([]);
 
-    const fetchAssemblies = async () => {
-        try {
-            const response = await getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`);
-            setAssemblies(response ?? []);
-            return response ?? [];
-        } catch (error) {
-            console.error('Failed to fetch assemblies:', error);
-            return [];
-        } finally {
-            setIsLoadingAssemblies(false);
-        }
-    };
-
     useEffect(() => {
-        const initializeAssemblies = async () => {
-            const fetchedAssemblies = await fetchAssemblies();
-            if (fetchedAssemblies) {
-                setAssemblies(fetchedAssemblies);
+        const fetchData = async () => {
+            try {
+                // Fetch assemblies and media URLs in parallel
+                const [assembliesResponse, mediaResponse] = await Promise.all([
+                    getWithAlert<AssemblyType[]>(`assembly/get-assemblies/${projectId}`),
+                    getWithAlert<ProjectMediaUrlsResponse>(`gcp/get-project-media-urls/${projectId}`),
+                ]);
+
+                setAssemblies(assembliesResponse ?? []);
+
+                if (mediaResponse) {
+                    setMediaFromResponse(mediaResponse);
+                }
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            } finally {
+                setIsLoadingAssemblies(false);
+                setIsLoadingMedia(false);
             }
         };
 
-        initializeAssemblies();
+        fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 
     return (
         <ContentBlock>
             <ContentBlockHeader text={'Project Materials'} />
-            <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies} />
+            <LoadingModal showModal={isLoadingMaterials || isLoadingAssemblies || isLoadingMedia} />
 
             {assemblies.map(assembly => (
                 <MaterialListContainer key={assembly.id} assembly={assembly} />
             ))}
         </ContentBlock>
+    );
+};
+
+const MaterialListPage: React.FC = () => {
+    return (
+        <MediaUrlsProvider>
+            <MaterialListContent />
+        </MediaUrlsProvider>
     );
 };
 
