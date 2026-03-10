@@ -1,68 +1,34 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { ApertureGlazingType } from '../pages/UnitBuilder/types';
-import { GlazingTypeService } from '../pages/UnitBuilder/ElementsTable/services/glazingTypeService';
+import { useGlazingTypesQuery } from '../_hooks/useGlazingTypesQuery';
+import { useRefreshGlazingTypesMutation } from '../_hooks/useRefreshGlazingTypesMutation';
 
 interface GlazingTypesContextType {
     isLoadingGlazingTypes: boolean;
-    setIsLoadingGlazingTypes: React.Dispatch<React.SetStateAction<boolean>>;
     glazingTypes: ApertureGlazingType[];
-    setGlazingTypes: React.Dispatch<React.SetStateAction<ApertureGlazingType[]>>;
     handleRefreshGlazingTypes: () => Promise<void>;
 }
 
 const GlazingTypesContext = createContext<GlazingTypesContextType | undefined>(undefined);
 
 export const GlazingTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isLoadingGlazingTypes, setIsLoadingGlazingTypes] = useState<boolean>(true);
-    const [glazingTypes, setGlazingTypes] = useState<ApertureGlazingType[]>([]);
-
-    useEffect(() => {
-        const loadGlazingTypes = async () => {
-            try {
-                setIsLoadingGlazingTypes(true);
-                const glazingTypesData = await GlazingTypeService.loadGlazingTypes();
-                setGlazingTypes(glazingTypesData);
-            } catch (error) {
-                console.error('Error loading glazing types:', error);
-                alert('Error loading glazing data. Please try again later.');
-            } finally {
-                setIsLoadingGlazingTypes(false);
-            }
-        };
-
-        loadGlazingTypes();
-    }, []);
+    const { glazingTypes, isLoadingGlazingTypes } = useGlazingTypesQuery();
+    const refreshMutation = useRefreshGlazingTypesMutation();
 
     const handleRefreshGlazingTypes = useCallback(async () => {
-        try {
-            setIsLoadingGlazingTypes(true);
-            const { glazingTypes: refreshedGlazingTypes, refreshInfo } =
-                await GlazingTypeService.refreshGlazingTypesFromAirTable();
+        await refreshMutation.mutateAsync();
+    }, [refreshMutation]);
 
-            setGlazingTypes(refreshedGlazingTypes);
-
-            // Show success message to user
-            alert(
-                `Glazing types refreshed successfully: ${refreshInfo.types_added} added, ${refreshInfo.types_updated} updated. Total glazings: ${refreshInfo.types_total_count}`
-            );
-        } catch (error) {
-            console.error('Error refreshing glazing types:', error);
-            alert('Error refreshing glazing data. Please try again later.');
-        } finally {
-            setIsLoadingGlazingTypes(false);
-        }
-    }, []);
+    const isLoading = isLoadingGlazingTypes || refreshMutation.isPending;
 
     const value = useMemo(
         () => ({
-            isLoadingGlazingTypes,
-            setIsLoadingGlazingTypes,
+            isLoadingGlazingTypes: isLoading,
             glazingTypes,
-            setGlazingTypes,
             handleRefreshGlazingTypes,
         }),
-        [isLoadingGlazingTypes, glazingTypes, handleRefreshGlazingTypes]
+        [isLoading, glazingTypes, handleRefreshGlazingTypes]
     );
 
     return <GlazingTypesContext.Provider value={value}>{children}</GlazingTypesContext.Provider>;
