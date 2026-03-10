@@ -1,14 +1,20 @@
 # -*- Python Version: 3.11 (Render.com) -*
 
+from db_entities.app import Project
+from features.assembly.services.assembly import (
+    create_new_default_assembly_on_project,
+    get_assembly_by_id,
+)
+from features.assembly.services.segment import update_segment_steel_stud_spacing
+from features.assembly.services.to_hbe_construction import (
+    convert_assemblies_to_hbe_constructions,
+)
 from sqlalchemy.orm import Session
 
-from db_entities.app import Project
-from features.assembly.services.assembly import create_new_default_assembly_on_project, get_assembly_by_id
-from features.assembly.services.segment import update_segment_steel_stud_spacing
-from features.assembly.services.to_hbe_construction import convert_assemblies_to_hbe_constructions
 
-
-def test_convert_one_simple_assembly_to_hbe_constructions(session: Session, create_test_project):
+def test_convert_one_simple_assembly_to_hbe_constructions(
+    session: Session, create_test_project
+):
     create_test_project(db=session, username="user1", project_name="Project 1")
     assembly = get_assembly_by_id(db=session, assembly_id=1)
     hbe_constructions = convert_assemblies_to_hbe_constructions([assembly])
@@ -21,7 +27,10 @@ def test_convert_one_simple_assembly_to_hbe_constructions(session: Session, crea
     hbe_material = hbe_construction.materials[0]
     assert assembly.layers[0].segments[0].material.name == "Test Material"
     assert hbe_material.identifier == "Test Material [ 2.0 in]"
-    assert hbe_material.conductivity == assembly.layers[0].segments[0].material.conductivity_w_mk
+    assert (
+        hbe_material.conductivity
+        == assembly.layers[0].segments[0].material.conductivity_w_mk
+    )
     assert hbe_material.thickness == assembly.layers[0].thickness_mm / 1000
 
     # TODO:
@@ -29,8 +38,12 @@ def test_convert_one_simple_assembly_to_hbe_constructions(session: Session, crea
     # assert hbe_material.specific_heat == assembly.layers[0].segments[0].material.specific_heat_j_kgk
 
 
-def test_convert_multiple_simple_assemblies_to_hbe_constructions(session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_convert_multiple_simple_assemblies_to_hbe_constructions(
+    session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
 
     # Add two more assemblies to the default starting assembly
     assembly2 = create_new_default_assembly_on_project(session, "1234")
@@ -41,11 +54,17 @@ def test_convert_multiple_simple_assemblies_to_hbe_constructions(session: Sessio
     assert len(hbe_constructions) == 3
 
 
-def test_convert_steel_stud_assembly_to_hbe_construction(session: Session, create_test_project):
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+def test_convert_steel_stud_assembly_to_hbe_construction(
+    session: Session, create_test_project
+):
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
 
     new_assembly = create_new_default_assembly_on_project(session, "1234")
-    update_segment_steel_stud_spacing(session, new_assembly.layers[0].segments[0].id, 400)
+    update_segment_steel_stud_spacing(
+        session, new_assembly.layers[0].segments[0].id, 400
+    )
 
     hbe_constructions = convert_assemblies_to_hbe_constructions([new_assembly])
 

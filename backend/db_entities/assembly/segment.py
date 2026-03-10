@@ -3,15 +3,14 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean
-from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, MappedColumn, relationship
-
 from database import Base
 from db_entities.assembly.material import Material
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
+from sqlalchemy import Boolean
+from sqlalchemy import Enum as SqlEnum
+from sqlalchemy import Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -31,9 +30,13 @@ class Segment(Base):
     id: Mapped[int] = MappedColumn(Integer, primary_key=True)
     layer_id: Mapped[int] = MappedColumn(Integer, ForeignKey("assembly_layers.id"))
     material_id: Mapped[str] = MappedColumn(String, ForeignKey("assembly_materials.id"))
-    order: Mapped[int] = MappedColumn(Integer)  # Used to maintain order within the layer
+    order: Mapped[int] = MappedColumn(
+        Integer
+    )  # Used to maintain order within the layer
     width_mm: Mapped[float] = MappedColumn(Float, nullable=False)
-    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(Float, nullable=True, default=None)
+    steel_stud_spacing_mm: Mapped[float | None] = MappedColumn(
+        Float, nullable=True, default=None
+    )
     is_continuous_insulation: Mapped[bool] = MappedColumn(
         Boolean, nullable=False, default=False
     )  # for Steel Stud wall assemblies

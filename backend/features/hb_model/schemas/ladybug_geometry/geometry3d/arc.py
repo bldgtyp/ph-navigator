@@ -3,7 +3,7 @@
 
 """Pydantic Schema: ladybug_geometry.geometry3d.arc.Arc3D"""
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from .plane import PlaneSchema
 

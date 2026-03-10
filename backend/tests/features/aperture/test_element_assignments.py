@@ -1,15 +1,16 @@
 # -*- Python Version: 3.11 -*-
 """Tests for bulk aperture element assignment updates."""
 
-from sqlalchemy.orm import Session
-
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
 from features.aperture.services.aperture import update_aperture_element_assignments
+from sqlalchemy.orm import Session
 
 
-def test_update_element_assignments(test_db: Session, sample_aperture_with_elements: Aperture):
+def test_update_element_assignments(
+    test_db: Session, sample_aperture_with_elements: Aperture
+):
     element = sample_aperture_with_elements.elements[0]
 
     new_frame_type = ApertureFrameType(

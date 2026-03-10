@@ -3,28 +3,36 @@
 # Set test environment variables BEFORE importing any modules that depend on config
 import os
 
-os.environ.setdefault("FERNET_SECRET_KEY", "wONeDFh6szFQydAR54mE2NcXvx49PNclcovPyrTT2eM=")
+os.environ.setdefault(
+    "FERNET_SECRET_KEY", "wONeDFh6szFQydAR54mE2NcXvx49PNclcovPyrTT2eM="
+)
 
 from typing import Callable, Generator
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import StaticPool, create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
 from database import Base, get_db
 from db_entities.app import Project
+from fastapi.testclient import TestClient
 from features.app.services import create_new_project, create_new_user
-from features.assembly.services.assembly import append_layer_to_assembly, create_new_empty_assembly_on_project
+from features.assembly.services.assembly import (
+    append_layer_to_assembly,
+    create_new_empty_assembly_on_project,
+)
 from features.assembly.services.layer import create_new_layer
 from features.assembly.services.material import create_new_material
 from features.assembly.services.segment import create_new_segment
 from features.auth.services import get_password_hash
 from main import app
+from sqlalchemy import StaticPool, create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 DATABASE_URL = "sqlite:///:memory:"
-testing_engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_engine)
+testing_engine = create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
+)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=testing_engine
+)
 TEST_PASSWORD = get_password_hash("12345")
 
 
@@ -78,17 +86,25 @@ def create_test_project(
     ```
     """
 
-    def _create_project(db: Session, username="test_user", project_name="Test Project", bt_number="1234") -> Project:
+    def _create_project(
+        db: Session, username="test_user", project_name="Test Project", bt_number="1234"
+    ) -> Project:
         user = create_new_user(
             db=session,
             username="test_user",
             email="test@email.com",
             hashed_password=TEST_PASSWORD,
         )
-        project = create_new_project(db=session, name="Test Project", bt_number="1234", owner_id=user.id)
-        assembly = create_new_empty_assembly_on_project(db=session, name="Test Assembly", bt_number=project.bt_number)
+        project = create_new_project(
+            db=session, name="Test Project", bt_number="1234", owner_id=user.id
+        )
+        assembly = create_new_empty_assembly_on_project(
+            db=session, name="Test Assembly", bt_number=project.bt_number
+        )
         layer = create_new_layer(thickness_mm=50.0)
-        assembly, layer = append_layer_to_assembly(db=session, assembly_id=assembly.id, layer=layer)
+        assembly, layer = append_layer_to_assembly(
+            db=session, assembly_id=assembly.id, layer=layer
+        )
         material = create_new_material(
             db=session,
             id="test_material",

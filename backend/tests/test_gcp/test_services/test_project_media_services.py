@@ -1,8 +1,6 @@
 # -*- Python Version: 3.11 -*-
 
 import pytest
-from sqlalchemy.orm import Session
-
 from db_entities.app.project import Project
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
@@ -13,11 +11,14 @@ from features.gcp.services.project_media import (
     get_project_datasheets,
     get_project_site_photos,
 )
+from sqlalchemy.orm import Session
 
 
 def test_get_project_by_bt_number(session: Session, create_test_project):
     """Test getting a project by its bt_number."""
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
 
     result = get_project_by_bt_number(session, project.bt_number)
     assert result.id == project.id
@@ -33,7 +34,9 @@ def test_get_project_by_bt_number_not_found(session: Session, create_test_projec
 
 def test_get_all_segment_ids_for_project(session: Session, create_test_project):
     """Test getting all segment IDs for a project."""
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
 
     segment_ids = get_all_segment_ids_for_project(session, project.bt_number)
 
@@ -44,7 +47,9 @@ def test_get_all_segment_ids_for_project(session: Session, create_test_project):
 
 def test_get_project_site_photos_empty(session: Session, create_test_project):
     """Test getting site photos for a project with no photos."""
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
 
     result = get_project_site_photos(session, project.bt_number)
 
@@ -53,7 +58,9 @@ def test_get_project_site_photos_empty(session: Session, create_test_project):
 
 def test_get_project_site_photos_with_data(session: Session, create_test_project):
     """Test getting site photos for a project with photos."""
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     segment = project.assemblies[0].layers[0].segments[0]
 
     # Add photos
@@ -81,7 +88,9 @@ def test_get_project_site_photos_with_data(session: Session, create_test_project
 
 def test_get_project_datasheets_empty(session: Session, create_test_project):
     """Test getting datasheets for a project with no datasheets."""
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
 
     result = get_project_datasheets(session, project.bt_number)
 
@@ -90,7 +99,9 @@ def test_get_project_datasheets_empty(session: Session, create_test_project):
 
 def test_get_project_datasheets_with_data(session: Session, create_test_project):
     """Test getting datasheets for a project with datasheets."""
-    project: Project = create_test_project(db=session, username="user1", project_name="Project 1")
+    project: Project = create_test_project(
+        db=session, username="user1", project_name="Project 1"
+    )
     segment = project.assemblies[0].layers[0].segments[0]
 
     # Add datasheets

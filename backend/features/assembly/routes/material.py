@@ -2,15 +2,13 @@
 
 import logging
 
+from database import get_db
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-
-from config import limiter
-from database import get_db
 from features.air_table.services import get_all_material_from_airtable
 from features.assembly.schemas.material import MaterialSchema
 from features.assembly.services.material import add_materials, purge_unused_materials
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/assembly",
@@ -25,7 +23,7 @@ def refresh_db_materials_from_air_table_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Load all of the records from AirTable into the Database."""
-    logger.info(f"assembly/refresh_db_materials_from_air_table_route()")
+    logger.info("assembly/refresh_db_materials_from_air_table_route()")
 
     materials = get_all_material_from_airtable()
     purge_unused_materials(db)
@@ -47,7 +45,7 @@ def load_all_materials_from_airtable_route(
     db: Session = Depends(get_db),
 ) -> list[MaterialSchema]:
     """Return all of the Materials in the database."""
-    logger.info(f"assembly/load_all_materials_from_airtable_route()")
+    logger.info("assembly/load_all_materials_from_airtable_route()")
 
     materials = get_all_material_from_airtable()
-    return [MaterialSchema.from_orm(material) for material in materials]
+    return [MaterialSchema.model_validate(material) for material in materials]

@@ -2,7 +2,7 @@
 
 """Response schema for window U-value calculation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ElementUValueResult(BaseModel):
@@ -18,6 +18,8 @@ class ElementUValueResult(BaseModel):
 class WindowUValueResponse(BaseModel):
     """Response schema for window U-value calculation per ISO 10077-1:2006."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     u_value_w_m2k: float
     total_area_m2: float
     glazing_area_m2: float
@@ -30,6 +32,3 @@ class WindowUValueResponse(BaseModel):
     calculation_method: str
     includes_psi_install: bool
     element_u_values: list[ElementUValueResult]
-
-    class Config:
-        orm_mode = True

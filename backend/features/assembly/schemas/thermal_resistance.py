@@ -7,7 +7,7 @@ These schemas define the structure of thermal resistance calculation results
 returned by the API endpoints.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ThermalResistanceSchema(BaseModel):
@@ -22,6 +22,19 @@ class ThermalResistanceSchema(BaseModel):
 
     Reference: ASHRAE Handbook - Fundamentals, Chapter 27
     """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "r_parallel_path_si": 3.42,
+                "r_isothermal_planes_si": 3.58,
+                "r_effective_si": 3.50,
+                "u_effective_si": 0.286,
+                "is_valid": True,
+                "warnings": [],
+            }
+        }
+    )
 
     r_parallel_path_si: float = Field(
         ...,
@@ -51,15 +64,3 @@ class ThermalResistanceSchema(BaseModel):
         default_factory=list,
         description="List of warning/error messages if calculation failed or had issues",
     )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "r_parallel_path_si": 3.42,
-                "r_isothermal_planes_si": 3.58,
-                "r_effective_si": 3.50,
-                "u_effective_si": 0.286,
-                "is_valid": True,
-                "warnings": [],
-            }
-        }

@@ -17,9 +17,13 @@ def get_model_airtightness_data(_hb_model: Model) -> dict:
     # Figure out what the effective whole-model infiltration rate is.
     hb_infiltration = merge_infiltrations(list(_hb_model.rooms))
 
-    spaces: list[Space] = [sp for room in _hb_model.rooms for sp in room.properties.ph.spaces]
+    spaces: list[Space] = [
+        sp for room in _hb_model.rooms for sp in room.properties.ph.spaces
+    ]
     weighted_net_floor_area_m2 = sum(sp.weighted_floor_area for sp in spaces)
-    m3h_per_m2_at_50Pa = get_infiltration_at_50Pa(hb_infiltration.flow_per_exterior_area)
+    m3h_per_m2_at_50Pa = get_infiltration_at_50Pa(
+        hb_infiltration.flow_per_exterior_area
+    )
     envelope_area_m2 = sum(_get_room_exposed_face_area(rm) for rm in _hb_model.rooms)
     total_flow_m3_hr_at_50Pa = m3h_per_m2_at_50Pa * envelope_area_m2
     net_volume_m3 = sum(sp.net_volume for sp in spaces)

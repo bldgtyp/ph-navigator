@@ -1,7 +1,7 @@
 # -*- Python Version: 3.11 -*-
 
 from cryptography.fernet import Fernet
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -37,8 +37,7 @@ class Settings(BaseSettings):
     FERNET_SECRET_KEY: str = "__fernet_key__"
     GCP_BUCKET_NAME: str = "__gcp_bucket_name__"
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()  # type: ignore

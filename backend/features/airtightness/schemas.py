@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class AirTightnessDataResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
     floor_area_m2: float
     envelope_area_m2: float
@@ -9,6 +10,3 @@ class AirTightnessDataResponse(BaseModel):
     n_50_ACH: float  # Volumetric air change rate at 50 Pa
     q_50_m3_hr_m2: float  # Air permeability rate at 50 Pa
     air_leakage_m3_hr: float  # Total air leakage at 50 Pa
-
-    class Config:
-        orm_mode = True

@@ -2,21 +2,19 @@
 
 from __future__ import annotations  # Enables forward references
 
-from honeybee.typing import clean_ep_string
-from pydantic import BaseModel, root_validator
-
 from features.assembly.schemas.layer import LayerSchema
+from honeybee.typing import clean_ep_string
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AssemblySchemaBase(BaseModel):
     """Base schema for Assembly."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     name: str
     layers: list[LayerSchema] = []
     orientation: str
-
-    class Config:
-        orm_mode = True
 
     @property
     def is_steel_stud_assembly(self) -> bool:
@@ -29,15 +27,13 @@ class AssemblySchema(AssemblySchemaBase):
 
     id: int
 
-    class Config:
-        orm_mode = True
-
 
 class UpdateAssemblyNameRequest(BaseModel):
     new_name: str
 
-    @root_validator(pre=True)
-    def check_new_name(cls, values):
+    @model_validator(mode="before")
+    @classmethod
+    def check_new_name(cls, values: dict) -> dict:
         new_name = values.get("new_name")
         if not new_name:
             raise ValueError("New name is required.")

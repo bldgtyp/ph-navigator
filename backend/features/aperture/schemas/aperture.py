@@ -4,22 +4,20 @@ from __future__ import annotations  # Enables forward references
 
 from enum import Enum
 
-from pydantic import BaseModel
-
 from features.aperture.schemas.aperture_element import ApertureElementSchema
+from pydantic import BaseModel, ConfigDict
 
 
 class ApertureSchema(BaseModel):
     """Base schema for Aperture."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     row_heights_mm: list[float]
     column_widths_mm: list[float]
     elements: list[ApertureElementSchema]
-
-    class Config:
-        orm_mode = True
 
 
 class ColumnDeleteRequest(BaseModel):

@@ -3,7 +3,7 @@
 from __future__ import annotations  # Enables forward references
 
 from pyairtable.api.types import RecordDict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class GlazingTypeDatasheetSchema(BaseModel):
@@ -19,6 +19,8 @@ class GlazingTypeDatasheetSchema(BaseModel):
 class GlazingTypeSchema(BaseModel):
     """Base schema for Glazing Type."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str = "Unnamed Glazing"
     u_value_w_m2k: float
@@ -30,9 +32,6 @@ class GlazingTypeSchema(BaseModel):
     link: str | None = None
     comments: str | None = None
 
-    class Config:
-        orm_mode = True
-
     @classmethod
     def fromAirTableRecordDict(cls, record: RecordDict) -> GlazingTypeSchema:
         """Create a GlazingType instance from an AirTable RecordDict with 'fields' and 'id'."""
@@ -43,7 +42,12 @@ class GlazingTypeSchema(BaseModel):
         d["id"] = record["id"]
 
         # Pull out the Datasheet URL
-        datasheets = [GlazingTypeDatasheetSchema(**ds) for ds in record["fields"].get("DATASHEET", [])]
+        datasheets = [
+            GlazingTypeDatasheetSchema(**ds)
+            for ds in record["fields"].get("DATASHEET", [])
+        ]
         d["datasheet_url"] = datasheets[0].url if datasheets else None
 
-        return cls(**{k.lower(): v for k, v in d.items()})  # Create an instance of the schema
+        return cls(
+            **{k.lower(): v for k, v in d.items()}
+        )  # Create an instance of the schema

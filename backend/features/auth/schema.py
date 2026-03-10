@@ -1,6 +1,6 @@
 # -*- Python Version: 3.11 -*-
 
-from pydantic import BaseModel  # , EmailStr
+from pydantic import BaseModel, ConfigDict  # , EmailStr
 
 # ---------------------------------------------------------------------------------------
 
@@ -11,15 +11,13 @@ class UserCreate(BaseModel):
 
 
 class UserSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: str | None = None
     owned_project_ids: list[int] = []
     all_project_ids: list[int] = []
-
-    class Config:
-        from_attributes = True
-        orm_mode = True
 
 
 # ---------------------------------------------------------------------------------------

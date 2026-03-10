@@ -4,7 +4,7 @@
 """Pydantic Schema: honeybee.face.Face"""
 
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from ..ladybug_geometry.geometry3d.face3d import Face3DSchema
 from .aperture import ApertureSchema

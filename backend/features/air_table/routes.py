@@ -2,14 +2,10 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pyairtable import Api
-from pyairtable.api.types import RecordDict
-from sqlalchemy.orm import Session
-
 from config import limiter
 from database import get_db
 from db_entities.app.project import Project
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from features.air_table.schema import AddAirTableBaseRequest
 from features.air_table.services import (
     connect_airtable_base_to_project,
@@ -17,6 +13,9 @@ from features.air_table.services import (
     get_project_airtable_base_ref,
 )
 from features.app.services import get_project_by_bt_number
+from pyairtable import Api
+from pyairtable.api.types import RecordDict
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/air_table",
@@ -67,7 +66,9 @@ async def get_project_air_table_records_from_table(
     request: Request, bt_number: str, at_table_name: str, db: Session = Depends(get_db)
 ) -> list[RecordDict]:
     """Return all of the records from a specified Table (name), for a specified Project (bldgtyp-number)."""
-    logger.info(f"air_table/get_project_air_table_records_from_table({bt_number=}, {at_table_name=})")
+    logger.info(
+        f"air_table/get_project_air_table_records_from_table({bt_number=}, {at_table_name=})"
+    )
 
     # Get the Project
     project = db.query(Project).filter_by(bt_number=bt_number).first()

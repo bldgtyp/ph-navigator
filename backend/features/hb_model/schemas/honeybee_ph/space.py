@@ -4,7 +4,7 @@
 """Pydantic Schema: honeybee_ph.space"""
 
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from ..ladybug_geometry.geometry3d.face3d import Face3DSchema
 from .properties.space import SpacePropertiesSchema

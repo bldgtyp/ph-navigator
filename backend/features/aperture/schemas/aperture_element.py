@@ -4,10 +4,11 @@ from __future__ import annotations  # Enables forward references
 
 from typing import Literal
 
-from pydantic import BaseModel
-
 from features.aperture.schemas.aperture_element_frame import ApertureElementFramesSchema
-from features.aperture.schemas.aperture_element_glazing import ApertureElementGlazingSchema
+from features.aperture.schemas.aperture_element_glazing import (
+    ApertureElementGlazingSchema,
+)
+from pydantic import BaseModel, ConfigDict
 
 
 class OperationSchema(BaseModel):
@@ -20,6 +21,8 @@ class OperationSchema(BaseModel):
 class ApertureElementSchema(BaseModel):
     """Base schema for Aperture Element."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str | None = "Unnamed"
     row_number: int
@@ -29,9 +32,6 @@ class ApertureElementSchema(BaseModel):
     glazing: ApertureElementGlazingSchema
     frames: ApertureElementFramesSchema
     operation: OperationSchema | None = None
-
-    class Config:
-        orm_mode = True
 
 
 class UpdateOperationRequest(BaseModel):

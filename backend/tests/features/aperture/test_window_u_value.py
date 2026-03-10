@@ -15,8 +15,6 @@ Reference: ISO 10077-1:2006, Equation 1
 """
 
 import pytest
-from sqlalchemy.orm import Session
-
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_frame import ApertureElementFrame
@@ -28,13 +26,13 @@ from db_entities.app.user import User
 from features.aperture.services.window_u_value import (
     _U_VALUE_CACHE,
     FrameData,
-    _calculate_element,
     _generate_u_value_cache_key,
     _side_frame_heat_loss,
     _side_spacer_heat_loss,
     calculate_aperture_u_value,
 )
 from features.auth.services import get_password_hash
+from sqlalchemy.orm import Session
 
 
 def create_test_aperture(
@@ -103,10 +101,18 @@ def create_test_aperture(
     for row in range(num_rows):
         for col in range(num_cols):
             # Create frames for each element
-            frame_top = ApertureElementFrame(name=f"Top_{row}_{col}", frame_type_id=frame_type.id)
-            frame_right = ApertureElementFrame(name=f"Right_{row}_{col}", frame_type_id=frame_type.id)
-            frame_bottom = ApertureElementFrame(name=f"Bottom_{row}_{col}", frame_type_id=frame_type.id)
-            frame_left = ApertureElementFrame(name=f"Left_{row}_{col}", frame_type_id=frame_type.id)
+            frame_top = ApertureElementFrame(
+                name=f"Top_{row}_{col}", frame_type_id=frame_type.id
+            )
+            frame_right = ApertureElementFrame(
+                name=f"Right_{row}_{col}", frame_type_id=frame_type.id
+            )
+            frame_bottom = ApertureElementFrame(
+                name=f"Bottom_{row}_{col}", frame_type_id=frame_type.id
+            )
+            frame_left = ApertureElementFrame(
+                name=f"Left_{row}_{col}", frame_type_id=frame_type.id
+            )
             test_db.add_all([frame_top, frame_right, frame_bottom, frame_left])
             test_db.flush()
 
@@ -202,7 +208,9 @@ class TestISOStandardWindow:
         expected_q_glazing = expected_glazing_area * 0.7  # ~0.9229 W/K
         expected_q_spacer = 2 * (1.03 + 1.28) * 0.04  # ~0.1848 W/K
 
-        assert result.heat_loss_glazing_w_k == pytest.approx(expected_q_glazing, rel=0.01)
+        assert result.heat_loss_glazing_w_k == pytest.approx(
+            expected_q_glazing, rel=0.01
+        )
         assert result.heat_loss_spacer_w_k == pytest.approx(expected_q_spacer, rel=0.01)
 
         # Check U-value (including frame heat loss with corner handling)
@@ -256,7 +264,9 @@ class TestSimpleWindows:
         expected_q_glazing = 0.64 * 1.0  # 0.64 W/K
         expected_q_spacer = 3.2 * 0.04  # 0.128 W/K
 
-        assert result.heat_loss_glazing_w_k == pytest.approx(expected_q_glazing, rel=0.01)
+        assert result.heat_loss_glazing_w_k == pytest.approx(
+            expected_q_glazing, rel=0.01
+        )
         assert result.heat_loss_spacer_w_k == pytest.approx(expected_q_spacer, rel=0.01)
 
     def test_wide_frame_window(self, test_db: Session):
@@ -300,7 +310,9 @@ class TestCornerAreaCalculation:
         # Total top frame area = 0.08 + 0.01 = 0.09 m²
 
         interior_width = 0.8
-        heat_loss = _side_frame_heat_loss(frame_top, frame_left, frame_right, interior_width)
+        heat_loss = _side_frame_heat_loss(
+            frame_top, frame_left, frame_right, interior_width
+        )
 
         # Heat loss = area × U-value
         expected_area = 0.08 + 0.01  # 0.09 m²
@@ -440,7 +452,9 @@ class TestEdgeCases:
         test_db.add(aperture)
         test_db.flush()
 
-        glazing = ApertureElementGlazing(name="Glazing", glazing_type_id=glazing_type.id)
+        glazing = ApertureElementGlazing(
+            name="Glazing", glazing_type_id=glazing_type.id
+        )
         test_db.add(glazing)
         test_db.flush()
 
