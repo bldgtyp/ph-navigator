@@ -1,8 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
 import { ManufacturerFilterConfig } from '../pages/UnitBuilder/types';
-import { ManufacturerFilterService } from '../pages/UnitBuilder/ElementsTable/services/manufacturerFilterService';
+import { queryKeys } from '../../../../../api/queryKeys';
+import { useManufacturerFilterQuery } from '../_hooks/useManufacturerFilterQuery';
+import { useUpdateManufacturerFilterMutation } from '../_hooks/useUpdateManufacturerFilterMutation';
 
 interface ManufacturerFilterContextType {
     filterConfig: ManufacturerFilterConfig | null;
@@ -16,63 +19,39 @@ interface ManufacturerFilterContextType {
 const ManufacturerFilterContext = createContext<ManufacturerFilterContextType | undefined>(undefined);
 
 export const ManufacturerFilterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Window routes use :projectId, which maps to the API's bt_number parameter.
     const { projectId } = useParams<{ projectId: string }>();
-    const [filterConfig, setFilterConfig] = useState<ManufacturerFilterConfig | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    const loadFilters = useCallback(async () => {
-        if (!projectId) return;
-
-        try {
-            setIsLoading(true);
-            const config = await ManufacturerFilterService.loadFilters(projectId);
-            setFilterConfig(config);
-        } catch (error) {
-            console.error('Error loading manufacturer filters:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [projectId]);
-
-    useEffect(() => {
-        loadFilters();
-    }, [loadFilters]);
+    const queryClient = useQueryClient();
+    const {
+        filterConfig,
+        enabledFrameManufacturers,
+        enabledGlazingManufacturers,
+        isLoading: queryLoading,
+    } = useManufacturerFilterQuery();
+    const updateMutation = useUpdateManufacturerFilterMutation();
 
     const updateFilters = useCallback(
         async (frameMfrs: string[], glazingMfrs: string[]) => {
-            if (!projectId) return;
-
-            try {
-                setIsLoading(true);
-                const updatedConfig = await ManufacturerFilterService.updateFilters(projectId, frameMfrs, glazingMfrs);
-                setFilterConfig(updatedConfig);
-            } catch (error) {
-                console.error('Error updating manufacturer filters:', error);
-                alert('Error updating filters. Please try again.');
-            } finally {
-                setIsLoading(false);
-            }
+            await updateMutation.mutateAsync({ frameMfrs, glazingMfrs });
         },
-        [projectId]
+        [updateMutation]
     );
 
     const refreshFilters = useCallback(async () => {
-        if (!projectId) return;
-        ManufacturerFilterService.clearCache(projectId);
-        await loadFilters();
-    }, [projectId, loadFilters]);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.manufacturerFilters(projectId || '') });
+    }, [queryClient, projectId]);
+
+    const isLoading = queryLoading || updateMutation.isPending;
 
     const value = useMemo(
         () => ({
             filterConfig,
-            enabledFrameManufacturers: filterConfig?.enabled_frame_manufacturers ?? [],
-            enabledGlazingManufacturers: filterConfig?.enabled_glazing_manufacturers ?? [],
+            enabledFrameManufacturers,
+            enabledGlazingManufacturers,
             isLoading,
             updateFilters,
             refreshFilters,
         }),
-        [filterConfig, isLoading, updateFilters, refreshFilters]
+        [filterConfig, enabledFrameManufacturers, enabledGlazingManufacturers, isLoading, updateFilters, refreshFilters]
     );
 
     return <ManufacturerFilterContext.Provider value={value}>{children}</ManufacturerFilterContext.Provider>;

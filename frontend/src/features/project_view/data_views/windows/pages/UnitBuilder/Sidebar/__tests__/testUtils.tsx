@@ -35,9 +35,7 @@ export const mockUser = {
 // Factory function for creating mock AperturesContext values
 export const createMockAperturesContext = (overrides = {}) => ({
     isLoadingApertures: false,
-    setIsLoadingApertures: jest.fn(),
     apertures: mockApertures,
-    setApertures: jest.fn(),
     selectedApertureId: 1,
     activeAperture: mockApertures[0],
     setSelectedApertureId: jest.fn(),
@@ -63,6 +61,10 @@ export const createMockAperturesContext = (overrides = {}) => ({
     handleUpdateApertureElementFrameType: jest.fn(),
     updateApertureElementName: jest.fn(),
     handleUpdateApertureElementGlazing: jest.fn(),
+    handleUpdateApertureElementOperation: jest.fn(),
+    handleUpdateApertureElementAssignments: jest.fn(),
+    handleAddRowAtEdge: jest.fn(),
+    handleAddColumnAtEdge: jest.fn(),
     ...overrides,
 });
 
