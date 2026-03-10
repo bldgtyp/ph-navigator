@@ -2,10 +2,9 @@
 
 from typing import TYPE_CHECKING
 
+from database import Base
 from sqlalchemy import Float, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
-
-from database import Base
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -16,7 +15,9 @@ class ApertureGlazingType(Base):
     __tablename__ = "aperture_glazing_types"
 
     id: Mapped[str] = MappedColumn(String, primary_key=True, index=True)
-    name: Mapped[str] = MappedColumn(String(255), nullable=False, default="Unnamed Glazing Type")
+    name: Mapped[str] = MappedColumn(
+        String(255), nullable=False, default="Unnamed Glazing Type"
+    )
     u_value_w_m2k: Mapped[float] = MappedColumn(Float, nullable=False, default=1.0)
     g_value: Mapped[float] = MappedColumn(Float, nullable=False, default=0.5)
     manufacturer: Mapped[str | None] = MappedColumn(String(255), nullable=True)

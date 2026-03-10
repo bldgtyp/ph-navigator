@@ -2,11 +2,10 @@
 
 import logging
 
-from sqlalchemy.orm import Session
-
 from db_entities.app.project import Project
 from db_entities.assembly.material_datasheet import MaterialDatasheet
 from db_entities.assembly.material_photo import MaterialPhoto
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,9 @@ def get_all_segment_ids_for_project(db: Session, bt_number: str) -> list[int]:
     return segment_ids
 
 
-def get_project_site_photos(db: Session, bt_number: str) -> dict[int, list[MaterialPhoto]]:
+def get_project_site_photos(
+    db: Session, bt_number: str
+) -> dict[int, list[MaterialPhoto]]:
     """Get all site photos for a project, grouped by segment ID.
 
     Args:
@@ -60,7 +61,9 @@ def get_project_site_photos(db: Session, bt_number: str) -> dict[int, list[Mater
         return {}
 
     # Batch query all photos for these segments
-    photos = db.query(MaterialPhoto).filter(MaterialPhoto.segment_id.in_(segment_ids)).all()
+    photos = (
+        db.query(MaterialPhoto).filter(MaterialPhoto.segment_id.in_(segment_ids)).all()
+    )
 
     # Group by segment_id
     result: dict[int, list[MaterialPhoto]] = {}
@@ -72,7 +75,9 @@ def get_project_site_photos(db: Session, bt_number: str) -> dict[int, list[Mater
     return result
 
 
-def get_project_datasheets(db: Session, bt_number: str) -> dict[int, list[MaterialDatasheet]]:
+def get_project_datasheets(
+    db: Session, bt_number: str
+) -> dict[int, list[MaterialDatasheet]]:
     """Get all datasheets for a project, grouped by segment ID.
 
     Args:
@@ -89,7 +94,11 @@ def get_project_datasheets(db: Session, bt_number: str) -> dict[int, list[Materi
         return {}
 
     # Batch query all datasheets for these segments
-    datasheets = db.query(MaterialDatasheet).filter(MaterialDatasheet.segment_id.in_(segment_ids)).all()
+    datasheets = (
+        db.query(MaterialDatasheet)
+        .filter(MaterialDatasheet.segment_id.in_(segment_ids))
+        .all()
+    )
 
     # Group by segment_id
     result: dict[int, list[MaterialDatasheet]] = {}

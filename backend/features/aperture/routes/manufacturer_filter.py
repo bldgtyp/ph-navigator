@@ -2,10 +2,8 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
 from database import get_db
+from fastapi import APIRouter, Depends, HTTPException
 from features.aperture.schemas.manufacturer_filter import (
     ManufacturerFilterResponseSchema,
     ManufacturerFilterUpdateSchema,
@@ -20,6 +18,7 @@ from features.aperture.services.manufacturer_filter import (
     has_any_filters,
     update_manufacturer_filters,
 )
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/aperture",
@@ -29,7 +28,9 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.get("/manufacturer-filters/{bt_number}", response_model=ManufacturerFilterResponseSchema)
+@router.get(
+    "/manufacturer-filters/{bt_number}", response_model=ManufacturerFilterResponseSchema
+)
 def get_manufacturer_filters_route(
     bt_number: str,
     db: Session = Depends(get_db),
@@ -70,7 +71,9 @@ def get_manufacturer_filters_route(
     )
 
 
-@router.patch("/manufacturer-filters/{bt_number}", response_model=ManufacturerFilterResponseSchema)
+@router.patch(
+    "/manufacturer-filters/{bt_number}", response_model=ManufacturerFilterResponseSchema
+)
 def update_manufacturer_filters_route(
     bt_number: str,
     update_data: ManufacturerFilterUpdateSchema,
@@ -89,8 +92,12 @@ def update_manufacturer_filters_route(
     used_frame = get_used_frame_manufacturers(db, project.id)
     used_glazing = get_used_glazing_manufacturers(db, project.id)
 
-    enabled_frame = sorted(set(update_data.enabled_frame_manufacturers) | set(used_frame))
-    enabled_glazing = sorted(set(update_data.enabled_glazing_manufacturers) | set(used_glazing))
+    enabled_frame = sorted(
+        set(update_data.enabled_frame_manufacturers) | set(used_frame)
+    )
+    enabled_glazing = sorted(
+        set(update_data.enabled_glazing_manufacturers) | set(used_glazing)
+    )
 
     update_manufacturer_filters(
         db,

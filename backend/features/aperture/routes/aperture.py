@@ -2,11 +2,9 @@
 
 import logging
 
+from database import get_db
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-
-from database import get_db
 from features.aperture.schemas import ApertureSchema
 from features.aperture.schemas.aperture import (
     AddColumnRequest,
@@ -23,8 +21,14 @@ from features.aperture.schemas.aperture import (
     UpdateNameRequest,
     UpdateRowHeightRequest,
 )
-from features.aperture.schemas.aperture_element import UpdateElementAssignmentsRequest, UpdateOperationRequest
-from features.aperture.schemas.window_u_value import ElementUValueResult, WindowUValueResponse
+from features.aperture.schemas.aperture_element import (
+    UpdateElementAssignmentsRequest,
+    UpdateOperationRequest,
+)
+from features.aperture.schemas.window_u_value import (
+    ElementUValueResult,
+    WindowUValueResponse,
+)
 from features.aperture.services.aperture import (
     LastColumnException,
     LastRowException,
@@ -49,8 +53,9 @@ from features.aperture.services.aperture import (
     update_aperture_name,
     update_aperture_row_height,
 )
-from features.aperture.services.window_u_value import WindowUValueResult, calculate_aperture_u_value
+from features.aperture.services.window_u_value import calculate_aperture_u_value
 from features.app.services import get_project_by_bt_number
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/aperture",
@@ -73,7 +78,9 @@ def get_project_apertures_route(
     except Exception as e:
         msg = f"Error retrieving apertures for project {bt_number=}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("10/minute")
@@ -94,7 +101,9 @@ def get_project_apertures_as_json_route(
         ...
     }
     """
-    logger.info(f"aperture/get_project_apertures_as_json_route({bt_number=}, {offset=})")
+    logger.info(
+        f"aperture/get_project_apertures_as_json_route({bt_number=}, {offset=})"
+    )
 
     apertures_json = get_all_project_apertures_as_json_string(db, bt_number)
 
@@ -108,7 +117,9 @@ def get_project_apertures_as_json_route(
 
 # @limiter.limit("1/second")
 @router.get("/get-aperture/{aperture_id}", response_model=ApertureSchema)
-def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+def get_aperture_route(
+    request: Request, aperture_id: int, db: Session = Depends(get_db)
+) -> ApertureSchema:
     logger.info(f"get_aperture({aperture_id})")
 
     try:
@@ -121,12 +132,18 @@ def get_aperture_route(request: Request, aperture_id: int, db: Session = Depends
     except Exception as e:
         msg = f"Error retrieving aperture with ID {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
-@router.post("/create-new-aperture-on-project/{bt_number}", response_model=ApertureSchema)
-def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(get_db)) -> ApertureSchema:
+@router.post(
+    "/create-new-aperture-on-project/{bt_number}", response_model=ApertureSchema
+)
+def add_aperture_route(
+    request: Request, bt_number: str, db: Session = Depends(get_db)
+) -> ApertureSchema:
     logger.info(f"add_aperture_route({bt_number=})")
 
     try:
@@ -136,12 +153,16 @@ def add_aperture_route(request: Request, bt_number: str, db: Session = Depends(g
     except Exception as e:
         msg = f"Failed to create new aperture for project {bt_number}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
 @router.post("/duplicate-aperture/{aperture_id}", response_model=ApertureSchema)
-def duplicate_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> ApertureSchema:
+def duplicate_aperture_route(
+    request: Request, aperture_id: int, db: Session = Depends(get_db)
+) -> ApertureSchema:
     """Duplicate an existing aperture with all its elements, frames, and glazing.
 
     Args:
@@ -164,7 +185,9 @@ def duplicate_aperture_route(request: Request, aperture_id: int, db: Session = D
     except Exception as e:
         msg = f"Failed to duplicate aperture {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -175,15 +198,21 @@ def update_aperture_name_route(
     update_request: UpdateNameRequest,
     db: Session = Depends(get_db),
 ) -> ApertureSchema:
-    logger.info(f"update_aperture_name_route({aperture_id=}, {update_request.new_name=})")
+    logger.info(
+        f"update_aperture_name_route({aperture_id=}, {update_request.new_name=})"
+    )
 
     try:
-        updated_aperture = update_aperture_name(db, aperture_id, update_request.new_name)
+        updated_aperture = update_aperture_name(
+            db, aperture_id, update_request.new_name
+        )
         return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture name for ID {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -197,12 +226,16 @@ def update_aperture_glazing_type_route(
     logger.info(f"update_aperture_glazing_route({element_id=}, {update_request=})")
 
     try:
-        updated_aperture = update_aperture_glazing_type(db, element_id, update_request.glazing_id)
+        updated_aperture = update_aperture_glazing_type(
+            db, element_id, update_request.glazing_id
+        )
         return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture glazing for ID {element_id=} to {update_request.glazing_id=}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -213,7 +246,9 @@ def update_aperture_column_width_route(
     update_request: UpdateColumnWidthRequest,
     db: Session = Depends(get_db),
 ) -> ApertureSchema:
-    logger.info(f"update_aperture_column_width_route({aperture_id=}, {update_request=})")
+    logger.info(
+        f"update_aperture_column_width_route({aperture_id=}, {update_request=})"
+    )
 
     try:
         updated_aperture = update_aperture_column_width(
@@ -223,7 +258,9 @@ def update_aperture_column_width_route(
     except Exception as e:
         msg = f"Failed to update aperture column width for ID {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -244,7 +281,9 @@ def update_aperture_row_height_route(
     except Exception as e:
         msg = f"Failed to update aperture row height for ID {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -268,7 +307,9 @@ def update_frame_type_route(
     except Exception as e:
         msg = f"Failed to update aperture frame for ID {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -283,7 +324,9 @@ def add_row_to_aperture_route(
     logger.info(f"add_row_to_aperture({aperture_id=}, {position=})")
 
     try:
-        return ApertureSchema.model_validate(add_row_to_aperture(db, aperture_id, position=position))
+        return ApertureSchema.model_validate(
+            add_row_to_aperture(db, aperture_id, position=position)
+        )
     except Exception as e:
         msg = str(e)
         logger.error(msg)
@@ -302,7 +345,9 @@ def add_column_to_aperture_route(
     logger.info(f"add_column_to_aperture({aperture_id=}, {position=})")
 
     try:
-        return ApertureSchema.model_validate(add_column_to_aperture(db, aperture_id, position=position))
+        return ApertureSchema.model_validate(
+            add_column_to_aperture(db, aperture_id, position=position)
+        )
     except Exception as e:
         msg = str(e)
         logger.error(msg)
@@ -320,7 +365,9 @@ def merge_aperture_elements_route(
     logger.info(f"merge_elements_route({aperture_id=}, {update_request=})")
 
     try:
-        aperture = merge_aperture_elements(db, aperture_id, update_request.aperture_element_ids)
+        aperture = merge_aperture_elements(
+            db, aperture_id, update_request.aperture_element_ids
+        )
         return ApertureSchema.model_validate(aperture)
     except ValueError as e:
         msg = str(e)
@@ -329,7 +376,9 @@ def merge_aperture_elements_route(
     except Exception as e:
         msg = f"Error merging elements: {str(e)}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -343,7 +392,9 @@ def split_aperture_element_route(
     logger.info(f"split_aperture_element_route({aperture_id=}, {update_request=})")
 
     try:
-        aperture = split_aperture_element(db, aperture_id, update_request.aperture_element_id)
+        aperture = split_aperture_element(
+            db, aperture_id, update_request.aperture_element_id
+        )
         return ApertureSchema.model_validate(aperture)
     except ValueError as e:
         msg = str(e)
@@ -352,26 +403,36 @@ def split_aperture_element_route(
     except Exception as e:
         msg = f"Error splitting element: {str(e)}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
-@router.patch("/update-aperture-element-name/{element_id}", response_model=ApertureSchema)
+@router.patch(
+    "/update-aperture-element-name/{element_id}", response_model=ApertureSchema
+)
 def update_aperture_element_name_route(
     request: Request,
     element_id: int,
     update_request: UpdateApertureElementNameRequest,
     db: Session = Depends(get_db),
 ) -> ApertureSchema:
-    logger.info(f"update_aperture_element_name_route({element_id=}, {update_request.aperture_element_name=})")
+    logger.info(
+        f"update_aperture_element_name_route({element_id=}, {update_request.aperture_element_name=})"
+    )
 
     try:
-        updated_aperture = update_aperture_element_name(db, element_id, update_request.aperture_element_name)
+        updated_aperture = update_aperture_element_name(
+            db, element_id, update_request.aperture_element_name
+        )
         return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture element name for ID {element_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -383,16 +444,24 @@ def update_aperture_element_operation_route(
     db: Session = Depends(get_db),
 ) -> ApertureSchema:
     """Update the operation (swing/slide/fixed) for a window element."""
-    logger.info(f"update_aperture_element_operation_route({element_id=}, {update_request.operation=})")
+    logger.info(
+        f"update_aperture_element_operation_route({element_id=}, {update_request.operation=})"
+    )
 
     try:
-        operation_dict = update_request.operation.model_dump() if update_request.operation else None
-        updated_aperture = update_aperture_element_operation(db, element_id, operation_dict)
+        operation_dict = (
+            update_request.operation.model_dump() if update_request.operation else None
+        )
+        updated_aperture = update_aperture_element_operation(
+            db, element_id, operation_dict
+        )
         return ApertureSchema.model_validate(updated_aperture)
     except Exception as e:
         msg = f"Failed to update aperture element operation for ID {element_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -407,7 +476,9 @@ def update_aperture_element_assignments_route(
     logger.info(f"update_aperture_element_assignments_route({element_id=})")
 
     try:
-        operation_dict = update_request.operation.model_dump() if update_request.operation else None
+        operation_dict = (
+            update_request.operation.model_dump() if update_request.operation else None
+        )
         updated_aperture = update_aperture_element_assignments(
             db,
             element_id,
@@ -419,12 +490,16 @@ def update_aperture_element_assignments_route(
     except Exception as e:
         msg = f"Failed to update element assignments for ID {element_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
 @router.delete("/delete-aperture/{aperture_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_aperture_route(request: Request, aperture_id: int, db: Session = Depends(get_db)) -> None:
+def delete_aperture_route(
+    request: Request, aperture_id: int, db: Session = Depends(get_db)
+) -> None:
     logger.info(f"delete_aperture_route({aperture_id=})")
 
     try:
@@ -433,7 +508,9 @@ def delete_aperture_route(request: Request, aperture_id: int, db: Session = Depe
     except Exception as e:
         msg = f"Failed to delete aperture with ID {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
 
 
 # @limiter.limit("1/second")
@@ -447,7 +524,9 @@ def delete_row_on_aperture_route(
     logger.info(f"delete_row_on_aperture({aperture_id=}, {delete_request=})")
 
     try:
-        return ApertureSchema.model_validate(delete_row_from_aperture(db, aperture_id, delete_request.row_number))
+        return ApertureSchema.model_validate(
+            delete_row_from_aperture(db, aperture_id, delete_request.row_number)
+        )
     except LastRowException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
@@ -467,7 +546,9 @@ def delete_column_on_aperture_route(
     logger.info(f"delete_column_on_aperture({aperture_id=}, {delete_request=})")
 
     try:
-        return ApertureSchema.model_validate(delete_column_from_aperture(db, aperture_id, delete_request.column_number))
+        return ApertureSchema.model_validate(
+            delete_column_from_aperture(db, aperture_id, delete_request.column_number)
+        )
     except LastColumnException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
@@ -532,4 +613,6 @@ def get_aperture_u_value_route(
     except Exception as e:
         msg = f"Error calculating U-value for aperture {aperture_id}: {e}"
         logger.error(msg)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )

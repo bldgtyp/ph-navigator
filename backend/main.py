@@ -3,15 +3,14 @@
 import logging
 from uuid import uuid4
 
+from api import register_routes
+from config import limiter, settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from logs._logging_config import configure_logging
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-
-from api import register_routes
-from config import limiter, settings
-from logs._logging_config import configure_logging
 
 configure_logging()
 logger = logging.getLogger()

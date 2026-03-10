@@ -2,15 +2,16 @@
 
 from typing import Annotated, Generator, Type
 
+from config import settings
 from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, declarative_base, sessionmaker
 
-from config import settings
-
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args=({"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}),
+    connect_args=(
+        {"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
+    ),
     pool_size=20,  # Increase from default 5
     max_overflow=20,  # Increase from default 10
     # pool_timeout=60,        # Increase timeout

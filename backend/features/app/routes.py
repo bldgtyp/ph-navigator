@@ -3,15 +3,17 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
-
 from config import limiter
 from database import get_db
 from db_entities.app.user import User
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from features.air_table.schema import AirTableTableSchema
 from features.air_table.services import get_all_project_tables, update_airtable_table
-from features.app.schema import AirTableTableUpdateSchema, ProjectCreateSchema, ProjectSchema
+from features.app.schema import (
+    AirTableTableUpdateSchema,
+    ProjectCreateSchema,
+    ProjectSchema,
+)
 from features.app.services import (
     ProjectAlreadyExistsException,
     create_new_project,
@@ -19,6 +21,7 @@ from features.app.services import (
     update_project_settings,
 )
 from features.auth.services import get_current_active_user
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/project",
@@ -28,7 +31,9 @@ router = APIRouter(
 logger = logging.getLogger()
 
 
-@router.get("/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK)
+@router.get(
+    "/{bt_number}", response_model=ProjectSchema, status_code=status.HTTP_200_OK
+)
 @limiter.limit("10/minute")
 def get_project_by_bt_number_route(
     request: Request,
@@ -43,7 +48,9 @@ def get_project_by_bt_number_route(
         return ProjectSchema.model_validate(project)
     except Exception as e:
         logger.error(f"Failed to get project {bt_number}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get project '{bt_number}'")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get project '{bt_number}'"
+        )
 
 
 @router.patch(
@@ -59,7 +66,9 @@ def update_project_settings_route(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ):
-    logger.info(f"project/update_project_settings_route({bt_number=}, {project_settings_data=})")
+    logger.info(
+        f"project/update_project_settings_route({bt_number=}, {project_settings_data=})"
+    )
 
     try:
         project = get_project_by_bt_number(db, bt_number)
@@ -107,14 +116,16 @@ def create_new_project_route(
             phius_number=new_project_data.phius_number,
         )
         return ProjectSchema.model_validate(project)
-    except ProjectAlreadyExistsException as e:
+    except ProjectAlreadyExistsException:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"A project with bt_number '{new_project_data.bt_number}' already exists.",
         )
     except Exception as e:
         logger.error(f"Failed to create new project: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to create new project: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create new project: {e}"
+        )
 
 
 @router.get(
@@ -128,7 +139,10 @@ def get_project_airtable_table_identifiers(
     logger.info(f"project/get_project_airtable_table_identifiers({bt_number=})")
 
     try:
-        return [AirTableTableSchema.model_validate(t) for t in get_all_project_tables(db, bt_number)]
+        return [
+            AirTableTableSchema.model_validate(t)
+            for t in get_all_project_tables(db, bt_number)
+        ]
     except Exception as e:
         msg = f"Failed to get project AirTable Tables for '{bt_number}': {e}"
         logger.error(msg)
@@ -146,12 +160,17 @@ def update_airtable_tables_identifiers(
     db: Session = Depends(get_db),
 ) -> list[AirTableTableSchema]:
     """Update the AirTable Table Identifiers/Refs for a given project."""
-    logger.info(f"project/update_airtable_tables_identifiers({bt_number=}, {len(table_records)=})")
+    logger.info(
+        f"project/update_airtable_tables_identifiers({bt_number=}, {len(table_records)=})"
+    )
 
     try:
         for table_record in table_records:
             update_airtable_table(db, bt_number, table_record)
-        return [AirTableTableSchema.model_validate(t) for t in get_all_project_tables(db, bt_number)]
+        return [
+            AirTableTableSchema.model_validate(t)
+            for t in get_all_project_tables(db, bt_number)
+        ]
     except Exception as e:
         msg = f"Failed to update AirTable tables identifiers for '{bt_number}': {e}"
         logger.error(msg)

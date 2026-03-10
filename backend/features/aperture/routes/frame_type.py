@@ -2,16 +2,17 @@
 
 import logging
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-
-from config import limiter
 from database import get_db
 from db_entities.aperture.frame_type import ApertureFrameType
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from features.air_table.services import get_all_frame_types_from_airtable
 from features.aperture.schemas.frame_type import FrameTypeSchema
-from features.aperture.services.frame_type import add_frame_types, purge_unused_frame_types
+from features.aperture.services.frame_type import (
+    add_frame_types,
+    purge_unused_frame_types,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/aperture",
@@ -26,7 +27,7 @@ def get_frame_types_route(
     db: Session = Depends(get_db),
 ) -> list[FrameTypeSchema]:
     """Return all of the frame-types in the database."""
-    logger.info(f"aperture/get_frame_types_route()")
+    logger.info("aperture/get_frame_types_route()")
 
     frame_types = db.query(ApertureFrameType).all()
     return [FrameTypeSchema.model_validate(frame) for frame in frame_types]
@@ -37,7 +38,7 @@ def refresh_db_frame_types_from_air_table_route(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Load all of the records from AirTable into the Database."""
-    logger.info(f"assembly/refresh_db_frame_types_from_air_table_route()")
+    logger.info("assembly/refresh_db_frame_types_from_air_table_route()")
 
     frame_types = get_all_frame_types_from_airtable()
     purge_unused_frame_types(db)
@@ -59,7 +60,7 @@ def load_all_frame_types_from_airtable_route(
     db: Session = Depends(get_db),
 ) -> list[FrameTypeSchema]:
     """Return all of the frame-types in the database."""
-    logger.info(f"assembly/load_all_frame_types_from_airtable_route()")
+    logger.info("assembly/load_all_frame_types_from_airtable_route()")
 
     frame_types = get_all_frame_types_from_airtable()
     return [FrameTypeSchema.model_validate(frame) for frame in frame_types]

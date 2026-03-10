@@ -2,11 +2,8 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
-from config import limiter
 from database import get_db
+from fastapi import APIRouter, Depends, HTTPException, status
 from features.assembly.schemas.segment import (
     CreateSegmentRequest,
     SegmentSchema,
@@ -28,6 +25,7 @@ from features.assembly.services.segment import (
     update_segment_steel_stud_spacing,
     update_segment_width,
 )
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/assembly",
@@ -51,7 +49,9 @@ def create_new_segment_on_layer_route(
     )
 
     try:
-        seg = create_new_segment(db, layer_id, request.material_id, request.width_mm, request.order)
+        seg = create_new_segment(
+            db, layer_id, request.material_id, request.width_mm, request.order
+        )
         return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error creating new segment: {e}")
@@ -68,7 +68,9 @@ def update_segment_material_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the Material of a Layer Segment."""
-    logger.info(f"assembly/update_segment_material_route({segment_id=}, {request.material_id=})")
+    logger.info(
+        f"assembly/update_segment_material_route({segment_id=}, {request.material_id=})"
+    )
 
     try:
         seg = update_segment_material(db, segment_id, request.material_id)
@@ -86,7 +88,9 @@ def update_segment_width_route(
     segment_id: int, request: UpdateSegmentWidthRequest, db: Session = Depends(get_db)
 ) -> SegmentSchema:
     """Update the width (mm) of a Layer Segment."""
-    logger.info(f"assembly/update_segment_width_route({segment_id=}, {request.width_mm=})")
+    logger.info(
+        f"assembly/update_segment_width_route({segment_id=}, {request.width_mm=})"
+    )
 
     try:
         seg = update_segment_width(db, segment_id, request.width_mm)
@@ -99,17 +103,23 @@ def update_segment_width_route(
         )
 
 
-@router.patch("/update-segment-steel-stud-spacing/{segment_id}", response_model=SegmentSchema)
+@router.patch(
+    "/update-segment-steel-stud-spacing/{segment_id}", response_model=SegmentSchema
+)
 def update_segment_steel_stud_spacing_route(
     segment_id: int,
     request: UpdateSegmentSteelStudSpacingRequest,
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the steel stud spacing of a Layer Segment."""
-    logger.info(f"assembly/update_segment_steel_stud_spacing_route({segment_id=}, {request.steel_stud_spacing_mm=})")
+    logger.info(
+        f"assembly/update_segment_steel_stud_spacing_route({segment_id=}, {request.steel_stud_spacing_mm=})"
+    )
 
     try:
-        seg = update_segment_steel_stud_spacing(db, segment_id, request.steel_stud_spacing_mm)
+        seg = update_segment_steel_stud_spacing(
+            db, segment_id, request.steel_stud_spacing_mm
+        )
         return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment steel stud spacing: {e}")
@@ -134,7 +144,9 @@ def update_segment_is_continuous_insulation_route(
     )
 
     try:
-        seg = update_segment_is_continuous_insulation(db, segment_id, request.is_continuous_insulation)
+        seg = update_segment_is_continuous_insulation(
+            db, segment_id, request.is_continuous_insulation
+        )
         return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment continuous insulation: {e}")
@@ -144,17 +156,23 @@ def update_segment_is_continuous_insulation_route(
         )
 
 
-@router.patch("/update-segment-specification-status/{segment_id}", response_model=SegmentSchema)
+@router.patch(
+    "/update-segment-specification-status/{segment_id}", response_model=SegmentSchema
+)
 def update_segment_specification_status_route(
     segment_id: int,
     request: UpdateSegmentSpecificationStatusRequest,
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the specification status of a Layer Segment."""
-    logger.info(f"assembly/update_segment_specification_status_route({segment_id=}, {request.specification_status=})")
+    logger.info(
+        f"assembly/update_segment_specification_status_route({segment_id=}, {request.specification_status=})"
+    )
 
     try:
-        seg = update_segment_specification_status(db, segment_id, request.specification_status)
+        seg = update_segment_specification_status(
+            db, segment_id, request.specification_status
+        )
         return SegmentSchema.model_validate(seg)
     except Exception as e:
         logger.error(f"Error updating segment specification status: {e}")
@@ -171,7 +189,9 @@ def update_segment_notes_route(
     db: Session = Depends(get_db),
 ) -> SegmentSchema:
     """Update the notes of a Layer Segment."""
-    logger.info(f"assembly/update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})...")
+    logger.info(
+        f"assembly/update_segment_notes_route({segment_id=}, notes={str(request.notes)[0:10]})..."
+    )
 
     try:
         seg = update_segment_notes(db, segment_id, request.notes)

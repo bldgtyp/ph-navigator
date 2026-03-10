@@ -1,8 +1,5 @@
 # -*- Python Version: 3.11 -*-
 
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
-
 from db_entities.aperture.aperture import Aperture
 from db_entities.aperture.aperture_element import ApertureElement
 from db_entities.aperture.aperture_frame import ApertureElementFrame
@@ -11,7 +8,9 @@ from db_entities.aperture.frame_type import ApertureFrameType
 from db_entities.aperture.glazing_type import ApertureGlazingType
 from db_entities.app.project import Project
 from db_entities.app.user import User
+from fastapi.testclient import TestClient
 from features.auth.services import get_password_hash
+from sqlalchemy.orm import Session
 
 
 def seed_project_with_used_types(session: Session) -> Project:
@@ -78,12 +77,16 @@ def seed_project_with_used_types(session: Session) -> Project:
 
     frame_top = ApertureElementFrame(name="Top Frame", frame_type_id=frame_used.id)
     frame_right = ApertureElementFrame(name="Right Frame", frame_type_id=frame_used.id)
-    frame_bottom = ApertureElementFrame(name="Bottom Frame", frame_type_id=frame_used.id)
+    frame_bottom = ApertureElementFrame(
+        name="Bottom Frame", frame_type_id=frame_used.id
+    )
     frame_left = ApertureElementFrame(name="Left Frame", frame_type_id=frame_used.id)
     session.add_all([frame_top, frame_right, frame_bottom, frame_left])
     session.flush()
 
-    glazing = ApertureElementGlazing(name="Test Glazing", glazing_type_id=glazing_used.id)
+    glazing = ApertureElementGlazing(
+        name="Test Glazing", glazing_type_id=glazing_used.id
+    )
     session.add(glazing)
     session.flush()
 
@@ -106,7 +109,9 @@ def seed_project_with_used_types(session: Session) -> Project:
     return project
 
 
-def test_get_manufacturer_filters_includes_used_and_available(client: TestClient, session: Session) -> None:
+def test_get_manufacturer_filters_includes_used_and_available(
+    client: TestClient, session: Session
+) -> None:
     project = seed_project_with_used_types(session)
 
     response = client.get(f"/aperture/manufacturer-filters/{project.bt_number}")
@@ -124,7 +129,9 @@ def test_get_manufacturer_filters_includes_used_and_available(client: TestClient
     assert payload["used_glazing_manufacturers"] == ["Guardian"]
 
 
-def test_patch_manufacturer_filters_keeps_used_enabled(client: TestClient, session: Session) -> None:
+def test_patch_manufacturer_filters_keeps_used_enabled(
+    client: TestClient, session: Session
+) -> None:
     project = seed_project_with_used_types(session)
 
     response = client.patch(

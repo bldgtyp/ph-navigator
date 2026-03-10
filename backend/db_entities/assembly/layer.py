@@ -2,13 +2,12 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, Integer
-from sqlalchemy.ext.orderinglist import ordering_list
-from sqlalchemy.orm import Mapped, MappedColumn, relationship
-
 from database import Base
 from db_entities.assembly.material import Material
 from db_entities.assembly.segment import Segment
+from sqlalchemy import Float, ForeignKey, Integer
+from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 if TYPE_CHECKING:
     # Backwards relationships only
@@ -19,7 +18,9 @@ class Layer(Base):
     __tablename__ = "assembly_layers"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
-    order: Mapped[int] = MappedColumn(Integer)  # Used to maintain layer order within the assembly
+    order: Mapped[int] = MappedColumn(
+        Integer
+    )  # Used to maintain layer order within the assembly
     thickness_mm: Mapped[float] = MappedColumn(Float, nullable=False)
 
     # Foreign Keys
@@ -37,7 +38,9 @@ class Layer(Base):
 
     @classmethod
     def default(cls, material: Material, order: int = 0) -> "Layer":
-        return Layer(order=order, thickness_mm=50.0, segments=[Segment.default(material)])
+        return Layer(
+            order=order, thickness_mm=50.0, segments=[Segment.default(material)]
+        )
 
     @property
     def is_steel_stud_layer(self) -> bool:

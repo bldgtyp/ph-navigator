@@ -6,7 +6,7 @@ google-cloud-storage==3.1.1
 honeybee-ref==0.2.1
 honeybee-ph==1.32.0
 passlib==1.7.4
-PHX==1.53.1
+PHX==1.55.0
 pillow==11.2.1
 psycopg2-binary==2.9.10
 pyairtable==2.3.7
