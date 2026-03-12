@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { UserContext } from '../../../../../../../auth/_contexts/UserContext';
-import ApertureTypesSidebar from '../Sidebar';
+import ApertureTypesSidebar, { naturalSortCompare } from '../Sidebar';
 import ApertureListItemContent from '../Sidebar.ListItemContent';
 import ApertureListHeader from '../Sidebar.ListHeader';
 import { ApertureSidebarProvider } from '../Sidebar.Context';
@@ -268,5 +268,42 @@ describe('ApertureListItemContent', () => {
             fireEvent.click(deleteButton!);
             expect(mockContext.handleDeleteAperture).toHaveBeenCalledWith(aperture.id);
         });
+    });
+});
+
+describe('naturalSortCompare', () => {
+    const sortNames = (names: string[]) => [...names].sort(naturalSortCompare);
+
+    it('sorts multi-digit numbers naturally', () => {
+        expect(sortNames(['C1', 'C10', 'C2', 'C3'])).toEqual(['C1', 'C2', 'C3', 'C10']);
+    });
+
+    it('sorts letters before numbers within the same prefix', () => {
+        expect(sortNames(['B1', 'A2', 'A1', 'B2'])).toEqual(['A1', 'A2', 'B1', 'B2']);
+    });
+
+    it('handles names with hyphens and special characters', () => {
+        expect(sortNames(['W-10', 'W-2', 'W-1', 'W-20'])).toEqual(['W-1', 'W-2', 'W-10', 'W-20']);
+    });
+
+    it('handles purely numeric names', () => {
+        expect(sortNames(['10', '2', '1', '20'])).toEqual(['1', '2', '10', '20']);
+    });
+
+    it('handles mixed letter-only and letter-number names', () => {
+        expect(sortNames(['D1', 'C', 'A', 'B2', 'B1'])).toEqual(['A', 'B1', 'B2', 'C', 'D1']);
+    });
+
+    it('handles realistic window-unit names', () => {
+        expect(sortNames(['C1', 'C2', 'C3', 'C10', 'C11', 'D1', 'D2', 'A1'])).toEqual([
+            'A1',
+            'C1',
+            'C2',
+            'C3',
+            'C10',
+            'C11',
+            'D1',
+            'D2',
+        ]);
     });
 });
