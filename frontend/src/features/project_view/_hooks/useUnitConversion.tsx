@@ -34,7 +34,7 @@ export function useUnitConversion() {
         value: number | null | undefined,
         siUnit: Unit,
         ipUnit: Unit,
-        decimal: number
+        decimal: number | { si: number; ip: number }
     ): string {
         // Handle nullish
         if (value === null || value === undefined) return '-';
@@ -48,9 +48,10 @@ export function useUnitConversion() {
         const num = typeof converted === 'number' ? converted : Number(converted);
         if (Number.isNaN(num)) return '-';
 
-        // Decimal places
-        if (decimal === null || Number.isNaN(decimal)) return String(num);
-        return Number(num).toFixed(decimal);
+        // Resolve decimal places per unit system
+        const dec = typeof decimal === 'number' ? decimal : unitSystem === 'SI' ? decimal.si : decimal.ip;
+        if (dec === null || Number.isNaN(dec)) return String(num);
+        return Number(num).toFixed(dec);
     }
 
     /**

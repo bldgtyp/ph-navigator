@@ -9,7 +9,7 @@ export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, o
     const { valueInCurrentUnitSystemWithDecimal } = useUnitConversion();
 
     // Convert the SI value (mm) to current unit system for display
-    const displayValue = parseFloat(valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', 1));
+    const displayValue = parseFloat(valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', { si: 1, ip: 2 }));
 
     return (
         <Typography
