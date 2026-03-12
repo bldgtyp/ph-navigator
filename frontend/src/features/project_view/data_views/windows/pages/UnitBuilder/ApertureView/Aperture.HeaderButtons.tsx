@@ -8,6 +8,7 @@ import { useContext, useMemo, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
 import { ManufacturerFilterModal } from '../ManufacturerFilterModal/Modal.ManufacturerFilter';
+import { DisplayUnitMenuItem } from './DisplayUnitMenuItem';
 
 interface HeaderActionItem {
     id: 'refresh_frames' | 'refresh_glazings' | 'configure_filters';
@@ -61,6 +62,7 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({ items, isAnyLoadi
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
+                <DisplayUnitMenuItem onCloseParent={handleClose} />
                 {items.map(item => (
                     <MenuItem
                         key={item.id}

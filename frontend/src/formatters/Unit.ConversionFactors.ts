@@ -2,6 +2,7 @@ export type Unit =
     | 'm'
     | 'ft'
     | 'mm'
+    | 'cm'
     | 'in'
     | 'm2'
     | 'ft2'
@@ -36,15 +37,26 @@ export const CONVERSION_FACTORS: ConversionMap = {
     m: {
         m: (v: number) => v,
         ft: (v: number) => v * 3.280839895,
+        mm: (v: number) => v * 1000,
+        cm: (v: number) => v * 100,
     },
     ft: {
         m: (v: number) => v / 3.280839895,
         ft: (v: number) => v,
+        mm: (v: number) => v * 304.8,
     },
-    // Length (millimeters/inches)
+    // Length (millimeters/inches/centimeters)
     mm: {
         mm: (v: number) => v,
         in: (v: number) => v / 25.4,
+        cm: (v: number) => v / 10,
+        m: (v: number) => v / 1000,
+        ft: (v: number) => v / 304.8,
+    },
+    cm: {
+        cm: (v: number) => v,
+        mm: (v: number) => v * 10,
+        m: (v: number) => v / 100,
     },
     in: {
         mm: (v: number) => v * 25.4,

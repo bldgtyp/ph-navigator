@@ -7,6 +7,7 @@ import { useFrameTypes } from '../../_contexts/FrameType.Context';
 import { useGlazingTypes } from '../../_contexts/GlazingTypes.Context';
 import { ZoomProvider } from './ApertureView/Zoom.Context';
 import { ViewDirectionProvider } from './ApertureView/ViewDirection.Context';
+import { DisplayUnitProvider } from './Dimensions/DisplayUnit.Context';
 import { ApertureSidebarProvider, useApertureSidebar } from './Sidebar/Sidebar.Context';
 
 import ContentBlock from '../../../_components/ContentBlock';
@@ -147,9 +148,11 @@ const ApertureTypesPage: React.FC = () => {
     return (
         <ZoomProvider>
             <ViewDirectionProvider>
-                <ApertureSidebarProvider>
-                    <ApertureTypesContentBlock />
-                </ApertureSidebarProvider>
+                <DisplayUnitProvider>
+                    <ApertureSidebarProvider>
+                        <ApertureTypesContentBlock />
+                    </ApertureSidebarProvider>
+                </DisplayUnitProvider>
             </ViewDirectionProvider>
         </ZoomProvider>
     );

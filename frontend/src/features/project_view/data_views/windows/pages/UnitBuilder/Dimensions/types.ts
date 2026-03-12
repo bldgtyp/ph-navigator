@@ -1,3 +1,7 @@
+export type SIDisplayUnit = 'mm' | 'cm' | 'm';
+export type IPDisplayUnit = 'in' | 'ft' | 'ft-in';
+export type DisplayUnit = SIDisplayUnit | IPDisplayUnit;
+
 export interface DimensionsContextType {
     units: string;
     editingColIndex: number | null;

@@ -1,15 +1,17 @@
 import { ClickAwayListener, TextField, Tooltip, Typography } from '@mui/material';
 
-import { useUnitConversion } from '../../../../../_hooks/useUnitConversion';
 import { DIMENSION_INPUT_WIDTH_PX, DIMENSION_TOOLTIP_DELAY_MS } from './constants';
 import { useDimensions } from './Dimensions.Context';
+import { useDisplayUnit } from './DisplayUnit.Context';
+import type { DisplayUnit } from './types';
 
 export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, orientation }) => {
     const { units } = useDimensions();
-    const { valueInCurrentUnitSystemWithDecimal } = useUnitConversion();
+    const { formatValue, activeDisplayUnit } = useDisplayUnit();
 
-    // Convert the SI value (mm) to current unit system for display
-    const displayValue = parseFloat(valueInCurrentUnitSystemWithDecimal(value, 'mm', 'in', { si: 1, ip: 2 }));
+    const displayValue = formatValue(value);
+    // For ft-in mode the formatted string already contains ' and " markers
+    const label = activeDisplayUnit === 'ft-in' ? displayValue : `${displayValue} ${units}`;
 
     return (
         <Typography
@@ -29,17 +31,25 @@ export const DimensionLabel: React.FC<any> = ({ handleEditStart, index, value, o
             }}
             onClick={() => handleEditStart(index, value)}
         >
-            {displayValue} {units}
+            {label}
         </Typography>
     );
 };
 
+const TOOLTIP_BY_UNIT: Record<DisplayUnit, string> = {
+    mm: 'Tip: You can use expressions like 100 + 50',
+    cm: 'Tip: You can use expressions like 10 + 5',
+    m: 'Tip: You can use expressions like 1.2 + 0.5',
+    in: 'Tip: Use 2\' 6", 6-1/2", or expressions like 24 + 12',
+    ft: 'Tip: You can use expressions like 3.5 + 1.25',
+    'ft-in': 'Tip: Use 2\' 6", 6-1/2", or expressions like 24 + 12',
+};
+
 export const DimensionEditable: React.FC<any> = ({ handleEditConfirm }) => {
     const { units, editingValue, setEditingValue } = useDimensions();
-    const inputTooltip =
-        units === 'in'
-            ? 'Tip: Use 2\' 6", 6-1/2", or expressions like 24 + 12'
-            : 'Tip: You can use expressions like 100 + 50';
+    const { activeDisplayUnit } = useDisplayUnit();
+    const inputTooltip = TOOLTIP_BY_UNIT[activeDisplayUnit];
+    const showEndAdornment = activeDisplayUnit !== 'ft-in';
 
     return (
         <ClickAwayListener onClickAway={handleEditConfirm}>
@@ -71,11 +81,11 @@ export const DimensionEditable: React.FC<any> = ({ handleEditConfirm }) => {
                             onFocus: event => {
                                 event.target.select();
                             },
-                            endAdornment: (
+                            endAdornment: showEndAdornment ? (
                                 <Typography variant="caption" color="text.secondary">
                                     {units}
                                 </Typography>
-                            ),
+                            ) : undefined,
                         },
                     }}
                 />

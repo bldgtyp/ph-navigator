@@ -1,8 +1,8 @@
 import { Box, Stack, Typography } from '@mui/material';
 
 import { useApertures } from '../../../../_contexts/Aperture.Context';
-import { useUnitConversion } from '../../../../../../_hooks/useUnitConversion';
 import { useZoom } from '../Zoom.Context';
+import { useDisplayUnit } from '../../Dimensions/DisplayUnit.Context';
 import { useViewDirection } from '../ViewDirection.Context';
 import { DimensionsProvider } from '../../Dimensions/Dimensions.Context';
 import ApertureToolbar from '../ApertureToolbar';
@@ -70,8 +70,8 @@ const ApertureElementsDisplay: React.FC = () => {
 
 const ApertureElements: React.FC = () => {
     const { activeAperture, updateColumnWidth, updateRowHeight } = useApertures();
-    const { unitSystem, valueInCurrentUnitSystemWithDecimal } = useUnitConversion();
     const { scaleFactor } = useZoom();
+    const { formatValue, displayUnitLabel, activeDisplayUnit } = useDisplayUnit();
 
     if (!activeAperture) {
         return <Box sx={{ p: 2 }}>No aperture selected</Box>;
@@ -82,10 +82,12 @@ const ApertureElements: React.FC = () => {
     const totalHeightMM = activeAperture.row_heights_mm.reduce((sum, height) => sum + height, 0);
     const scaledWidth = totalWidthMM * scaleFactor;
     const scaledHeight = totalHeightMM * scaleFactor;
-    const units = unitSystem === 'SI' ? 'mm' : 'in';
-    const totalWidthDisplay = valueInCurrentUnitSystemWithDecimal(totalWidthMM, 'mm', 'in', 1);
-    const totalHeightDisplay = valueInCurrentUnitSystemWithDecimal(totalHeightMM, 'mm', 'in', 1);
-    const totalSizeLabel = `${totalWidthDisplay} ${units} × ${totalHeightDisplay} ${units}`;
+    const totalWidthDisplay = formatValue(totalWidthMM);
+    const totalHeightDisplay = formatValue(totalHeightMM);
+    const isFtIn = activeDisplayUnit === 'ft-in';
+    const totalSizeLabel = isFtIn
+        ? `${totalWidthDisplay} × ${totalHeightDisplay}`
+        : `${totalWidthDisplay} ${displayUnitLabel} × ${totalHeightDisplay} ${displayUnitLabel}`;
 
     return (
         <Stack
