@@ -2,7 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { UserContext } from '../../../../../../../auth/_contexts/UserContext';
-import ApertureTypesSidebar, { naturalSortCompare } from '../Sidebar';
+import ApertureTypesSidebar from '../Sidebar';
+import { naturalSortCompare } from '../../../../../../../../formatters/naturalSort';
 import ApertureListItemContent from '../Sidebar.ListItemContent';
 import ApertureListHeader from '../Sidebar.ListHeader';
 import { ApertureSidebarProvider } from '../Sidebar.Context';

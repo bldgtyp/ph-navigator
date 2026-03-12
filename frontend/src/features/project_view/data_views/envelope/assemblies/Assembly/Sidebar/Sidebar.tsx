@@ -1,6 +1,7 @@
 import { Box, List, ListItem } from '@mui/material';
 
 import { useAssemblyContext } from '../Assembly.Context';
+import { naturalSortCompare } from '../../../../../../../formatters/naturalSort';
 
 import ChangeNameModal from '../../ChangeNameModal/Modal.ChangeName';
 import AssemblyListHeader from './Sidebar.ListHeader';
@@ -10,7 +11,7 @@ const AssemblySidebar: React.FC = () => {
     const assemblyContext = useAssemblyContext();
 
     // Create a sorted copy of the assemblies array
-    const sortedAssemblies = [...assemblyContext.assemblies].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedAssemblies = [...assemblyContext.assemblies].sort((a, b) => naturalSortCompare(a.name, b.name));
 
     return (
         <>
