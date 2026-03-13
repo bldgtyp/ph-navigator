@@ -12,6 +12,7 @@ import {
 import { FramePosition } from '../pages/UnitBuilder/ElementsTable/types';
 import { ApertureService } from '../pages/UnitBuilder/ApertureView/services/apertureService';
 import { queryKeys } from '../../../../../api/queryKeys';
+import { getWithAlert } from '../../../../../api/getWithAlert';
 import { useAperturesQuery } from '../_hooks/useAperturesQuery';
 
 function getApertureElementById(aperture: ApertureType, elementId: number): ApertureElementType | undefined {
@@ -71,6 +72,8 @@ interface AperturesContextType {
     handleUpdateApertureElementGlazing: (params: { elementId: number; glazingTypeId: string | null }) => Promise<void>;
     handleUpdateApertureElementOperation: (elementId: number, operation: ElementOperation | null) => Promise<void>;
     handleUpdateApertureElementAssignments: (elementId: number, payload: ElementAssignmentsPayload) => Promise<void>;
+    handleDownloadWindowConstructions: () => Promise<void>;
+    isDownloading: boolean;
 }
 
 const AperturesContext = createContext<AperturesContextType | undefined>(undefined);
@@ -87,6 +90,7 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [activeAperture, setActiveAperture] = useState<ApertureType | null>(null);
     const [selectedApertureElementIds, setSelectedApertureElementIds] = useState<number[]>([]);
     const [isMutating, setIsMutating] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     // --- Helpers ---
     const invalidateApertures = useCallback(() => {
@@ -505,6 +509,39 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         [activeAperture, updateActiveApertureData]
     );
 
+    // ----------------------------------------------------------------------------------
+    // Download Window Constructions as HBJSON
+
+    const handleDownloadWindowConstructions = useCallback(async () => {
+        try {
+            setIsDownloading(true);
+            const response = await getWithAlert<{ hb_constructions: string }>(
+                `aperture/get-window-constructions-as-hbjson/${projectId}`,
+                null
+            );
+            if (!response) return;
+
+            const data =
+                typeof response.hb_constructions === 'string'
+                    ? JSON.parse(response.hb_constructions)
+                    : response.hb_constructions;
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `project_${projectId}_window_constructions.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to download window constructions:', error);
+            alert(`Failed to download: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsDownloading(false);
+        }
+    }, [projectId]);
+
     const value = useMemo(
         () => ({
             isLoadingApertures: isLoadingApertures || isMutating,
@@ -538,6 +575,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             handleUpdateApertureElementGlazing,
             handleUpdateApertureElementOperation,
             handleUpdateApertureElementAssignments,
+            handleDownloadWindowConstructions,
+            isDownloading,
         }),
         [
             isLoadingApertures,
@@ -571,6 +610,8 @@ export const AperturesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             handleUpdateApertureElementGlazing,
             handleUpdateApertureElementOperation,
             handleUpdateApertureElementAssignments,
+            handleDownloadWindowConstructions,
+            isDownloading,
         ]
     );
 

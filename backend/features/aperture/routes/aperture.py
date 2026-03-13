@@ -53,8 +53,11 @@ from features.aperture.services.aperture import (
     update_aperture_name,
     update_aperture_row_height,
 )
+from features.aperture.services.to_hbe_window_construction import (
+    get_all_project_window_constructions_as_hbjson_string,
+)
 from features.aperture.services.window_u_value import calculate_aperture_u_value
-from features.app.services import get_project_by_bt_number
+from features.app.services import ProjectNotFoundException, get_project_by_bt_number
 from sqlalchemy.orm import Session
 
 router = APIRouter(
@@ -111,6 +114,48 @@ def get_project_apertures_as_json_route(
         content={
             "apertures": apertures_json,
         },
+        status_code=200,
+    )
+
+
+# @limiter.limit("10/minute")
+@router.get("/get-window-constructions-as-hbjson/{bt_number}")
+def get_project_window_constructions_as_hbjson_route(
+    request: Request,
+    bt_number: str,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Get all project window constructions as HB-Energy WindowConstruction JSON.
+
+    Each aperture element is converted to a WindowConstruction with an
+    EnergyWindowMaterialSimpleGlazSys material whose u_factor is the
+    element's ISO 10077-1 U-value.
+
+    The returned JSON object is structured as:
+
+    hb_constructions = {
+        "ApertureName_C0_R0": {WindowConstruction.to_dict()},
+        ...
+    }
+    """
+    logger.info(f"aperture/get_project_window_constructions_as_hbjson_route({bt_number=})")
+
+    try:
+        hbjson = get_all_project_window_constructions_as_hbjson_string(db, bt_number)
+    except ProjectNotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{bt_number}' not found.",
+        )
+    except Exception as e:
+        msg = f"Error generating window constructions HBJSON for project {bt_number=}: {e}"
+        logger.error(msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+        )
+
+    return JSONResponse(
+        content={"hb_constructions": hbjson},
         status_code=200,
     )
 

@@ -1,9 +1,11 @@
 import { CircularProgress, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import TuneIcon from '@mui/icons-material/Tune';
 import { useFrameTypes } from '../../../_contexts/FrameType.Context';
 import { useGlazingTypes } from '../../../_contexts/GlazingTypes.Context';
+import { useApertures } from '../../../_contexts/Aperture.Context';
 import { useContext, useMemo, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { UserContext } from '../../../../../../auth/_contexts/UserContext';
@@ -11,7 +13,7 @@ import { ManufacturerFilterModal } from '../ManufacturerFilterModal/Modal.Manufa
 import { DisplayUnitMenuItem } from './DisplayUnitMenuItem';
 
 interface HeaderActionItem {
-    id: 'refresh_frames' | 'refresh_glazings' | 'configure_filters';
+    id: 'refresh_frames' | 'refresh_glazings' | 'configure_filters' | 'download_hbe_window_constructions';
     label: string;
     helperText: string;
     icon: ReactNode;
@@ -87,6 +89,7 @@ export function useHeaderButtons(): ReactElement[] {
     const userContext = useContext(UserContext);
     const { isLoadingFrameTypes, handleRefreshFrameTypes } = useFrameTypes();
     const { isLoadingGlazingTypes, handleRefreshGlazingTypes } = useGlazingTypes();
+    const { handleDownloadWindowConstructions, isDownloading } = useApertures();
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
     const menuItems = useMemo<HeaderActionItem[]>(
@@ -97,6 +100,14 @@ export function useHeaderButtons(): ReactElement[] {
                 helperText: 'Select visible manufacturers',
                 icon: <TuneIcon fontSize="small" />,
                 handler: () => setIsFilterModalOpen(true),
+            },
+            {
+                id: 'download_hbe_window_constructions',
+                label: 'Download honeybee-constructions',
+                helperText: 'Export constructions as .hbjson file',
+                icon: <FileDownloadOutlinedIcon fontSize="small" />,
+                handler: handleDownloadWindowConstructions,
+                loading: isDownloading,
             },
             {
                 id: 'refresh_frames',
@@ -115,7 +126,14 @@ export function useHeaderButtons(): ReactElement[] {
                 loading: isLoadingGlazingTypes,
             },
         ],
-        [handleRefreshFrameTypes, handleRefreshGlazingTypes, isLoadingFrameTypes, isLoadingGlazingTypes]
+        [
+            handleDownloadWindowConstructions,
+            isDownloading,
+            handleRefreshFrameTypes,
+            handleRefreshGlazingTypes,
+            isLoadingFrameTypes,
+            isLoadingGlazingTypes,
+        ]
     );
 
     const isAnyLoading = isLoadingFrameTypes || isLoadingGlazingTypes;
