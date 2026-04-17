@@ -15,6 +15,7 @@ from features.app.schema import AirTableTableUpdateSchema
 from features.app.services import get_project_by_bt_number
 from features.assembly.schemas.material import AirTableMaterialSchema
 from pyairtable import Api, Base, Table
+from pyairtable.models.schema import BaseSchema
 from sqlalchemy.orm import Session
 
 logger = getLogger(__name__)
@@ -285,6 +286,31 @@ def get_all_glazing_types_from_airtable() -> list[ApertureGlazingType]:
     ]
 
 
+def _raise_for_airtable_status(status_code: int | None, error_msg: str = "") -> None:
+    """Raise a user-friendly ValueError for common AirTable HTTP error codes."""
+    if status_code == 401:
+        raise ValueError(
+            "The API key was rejected by AirTable. "
+            "Please verify that the key is correct and has not expired."
+        )
+    elif status_code == 403:
+        raise ValueError(
+            "The API key does not have permission to access this base. "
+            "Please check the key's scopes in AirTable Builder Hub."
+        )
+    elif status_code == 404:
+        raise ValueError(
+            "The Base Ref was not found. "
+            "Please double-check the AirTable Base ID (starts with 'app...')."
+        )
+    else:
+        raise ValueError(
+            f"AirTable returned an error (HTTP {status_code}). "
+            "Please verify the Base Ref and API key, then try again."
+            + (f" AirTable error: {error_msg}" if error_msg else "")
+        )
+
+
 def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -> Base:
     """Get the AirTable Base object from the API key and base reference."""
     logger.info(
@@ -293,11 +319,13 @@ def get_base_from_airtable(airtable_base_api_key: str, airtable_base_ref: str) -
 
     try:
         api = Api(airtable_base_api_key)
-        return api.base(airtable_base_ref)
     except ValueError:
-        raise ValueError("Invalid AirTable API key")
-    except Exception as e:
-        raise ValueError(f"Failed to connect to AirTable: {str(e)}")
+        raise ValueError(
+            "The API key provided does not appear to be valid. "
+            "Please check the key and try again."
+        )
+
+    return api.base(airtable_base_ref)
 
 
 def get_base_table_schemas_from_airtable(base: Base) -> list[Table]:
@@ -305,16 +333,51 @@ def get_base_table_schemas_from_airtable(base: Base) -> list[Table]:
     logger.info(f"get_base_table_schemas_from_airtable(base={base})")
 
     try:
-        # -- Get the tables in the base
         tables = base.tables()
-        logger.info(f"Tables in the base: [{len(tables)}]")
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code if e.response is not None else None
+        try:
+            error_body = e.response.json() if e.response is not None else {}
+        except Exception:
+            error_body = {}
+        error_type = error_body.get("type", "")
+        error_msg = error_body.get("message", "")
+        logger.error(
+            f"AirTable HTTP error ({status_code}): {e} | "
+            f"type={error_type} message={error_msg}"
+        )
 
-        # -- Check if the base is empty
-        if not tables:
-            raise ValueError("The AirTable base is empty.")
+        # 422 from base.tables() may be caused by the 'include=visibleFieldIds'
+        # param that pyairtable hardcodes. Retry without it before giving up.
+        if status_code == 422:
+            logger.info("Retrying metadata fetch without 'include' parameter...")
+            try:
+                url = base.meta_url("tables")
+                data = base.api.get(url)
+                tables = [
+                    Table(None, base, ts)
+                    for ts in BaseSchema.from_api(
+                        data, base.api, context=base
+                    ).tables
+                ]
+            except Exception as retry_err:
+                logger.error(f"Retry also failed: {retry_err}")
+                raise ValueError(
+                    "Failed to read table metadata from AirTable. "
+                    "The token may need to be recreated. "
+                    "Try creating a brand new Personal Access Token."
+                )
+        else:
+            _raise_for_airtable_status(status_code, error_msg)
+    except ValueError:
+        raise
     except Exception as e:
         logger.error(f"Failed to validate access: {e}")
         raise
+
+    logger.info(f"Tables in the base: [{len(tables)}]")
+    if not tables:
+        raise ValueError("The AirTable base appears to be empty (no tables found).")
 
     return tables
 

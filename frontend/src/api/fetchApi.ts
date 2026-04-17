@@ -14,6 +14,17 @@ function authHeaders(token?: string | null): Record<string, string> {
     };
 }
 
+export class ApiError extends Error {
+    constructor(
+        public readonly status: number,
+        public readonly detail: string,
+        public readonly endpoint: string
+    ) {
+        super(`HTTP error [${status}] ${detail} | ${endpoint}`);
+        this.name = 'ApiError';
+    }
+}
+
 async function handleErrorResponse(response: Response, endpoint: string): Promise<never> {
     let detail: string;
     try {
@@ -22,7 +33,7 @@ async function handleErrorResponse(response: Response, endpoint: string): Promis
     } catch {
         detail = response.statusText;
     }
-    throw new Error(`HTTP error [${response.status}] ${detail} | ${endpoint}`);
+    throw new ApiError(response.status, detail, endpoint);
 }
 
 export async function fetchGet<T>(endpoint: string, params: Record<string, string | number> = {}): Promise<T> {
