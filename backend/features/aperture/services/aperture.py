@@ -15,6 +15,7 @@ from features.aperture.services.aperture_element import (
 from features.aperture.services.frame_type import get_frame_type_by_id
 from features.aperture.services.glazing_type import get_glazing_type_by_id
 from features.app.services import get_project_by_bt_number
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -126,11 +127,16 @@ def add_row_to_aperture(
             new_row_index = 0
             aperture.row_heights_mm = [row_height_mm] + aperture.row_heights_mm
 
-            # Shift all existing elements' row_number by +1
+            # Core-level bulk updates historically did not fire
+            # SQLAlchemy's ``onupdate``, so ``last_modified`` is set
+            # explicitly here and at the three other shift sites.
             db.query(ApertureElement).filter(
                 ApertureElement.aperture_id == aperture_id
             ).update(
-                {ApertureElement.row_number: ApertureElement.row_number + 1},
+                {
+                    ApertureElement.row_number: ApertureElement.row_number + 1,
+                    ApertureElement.last_modified: func.now(),
+                },
                 synchronize_session=False,
             )
         else:
@@ -191,11 +197,14 @@ def add_column_to_aperture(
             new_col_index = 0
             aperture.column_widths_mm = [column_width_mm] + aperture.column_widths_mm
 
-            # Shift all existing elements' column_number by +1
+            # Shift all existing elements' column_number by +1.
             db.query(ApertureElement).filter(
                 ApertureElement.aperture_id == aperture_id
             ).update(
-                {ApertureElement.column_number: ApertureElement.column_number + 1},
+                {
+                    ApertureElement.column_number: ApertureElement.column_number + 1,
+                    ApertureElement.last_modified: func.now(),
+                },
                 synchronize_session=False,
             )
         else:
@@ -264,7 +273,10 @@ def delete_row_from_aperture(
             ApertureElement.aperture_id == aperture_id,
             ApertureElement.row_number > row_number,
         ).update(
-            {ApertureElement.row_number: ApertureElement.row_number - 1},
+            {
+                ApertureElement.row_number: ApertureElement.row_number - 1,
+                ApertureElement.last_modified: func.now(),
+            },
             synchronize_session=False,
         )
 
@@ -320,7 +332,10 @@ def delete_column_from_aperture(
             ApertureElement.aperture_id == aperture_id,
             ApertureElement.column_number > column_number,
         ).update(
-            {ApertureElement.column_number: ApertureElement.column_number - 1},
+            {
+                ApertureElement.column_number: ApertureElement.column_number - 1,
+                ApertureElement.last_modified: func.now(),
+            },
             synchronize_session=False,
         )
 

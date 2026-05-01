@@ -1,12 +1,13 @@
 # -*- Python Version: 3.11 -*-
 
 from database import Base
+from db_entities.aperture._mixins import LastModifiedMixin
 from db_entities.aperture.glazing_type import ApertureGlazingType
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 
-class ApertureElementGlazing(Base):
+class ApertureElementGlazing(LastModifiedMixin, Base):
     __tablename__ = "aperture_element_glazing"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)

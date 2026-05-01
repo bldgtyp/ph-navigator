@@ -2,12 +2,13 @@
 
 
 from database import Base
+from db_entities.aperture._mixins import LastModifiedMixin
 from db_entities.aperture.frame_type import ApertureFrameType
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
 
-class ApertureElementFrame(Base):
+class ApertureElementFrame(LastModifiedMixin, Base):
     __tablename__ = "aperture_element_frame"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)

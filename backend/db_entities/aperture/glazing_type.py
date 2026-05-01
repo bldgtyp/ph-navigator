@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from database import Base
+from db_entities.aperture._mixins import LastModifiedMixin
 from sqlalchemy import Float, String
 from sqlalchemy.orm import Mapped, MappedColumn, relationship
 
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from db_entities.aperture.aperture_glazing import ApertureElementGlazing
 
 
-class ApertureGlazingType(Base):
+class ApertureGlazingType(LastModifiedMixin, Base):
     __tablename__ = "aperture_glazing_types"
 
     id: Mapped[str] = MappedColumn(String, primary_key=True, index=True)

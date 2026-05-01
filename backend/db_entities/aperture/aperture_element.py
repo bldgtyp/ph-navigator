@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from database import Base
+from db_entities.aperture._mixins import LastModifiedMixin
 from db_entities.aperture.aperture_frame import ApertureElementFrame
 from db_entities.aperture.aperture_glazing import ApertureElementGlazing
 from sqlalchemy import JSON, ForeignKey, Integer, String
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from db_entities.aperture.aperture import Aperture
 
 
-class ApertureElement(Base):
+class ApertureElement(LastModifiedMixin, Base):
     __tablename__ = "aperture_elements"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, index=True)
