@@ -22,6 +22,59 @@ def test_db(session: Session) -> Generator[Session, None, None]:
     yield session
 
 
+def create_aperture_with_element(
+    db: Session,
+    project: Project,
+    name: str,
+    frame_type: ApertureFrameType,
+    glazing_type: ApertureGlazingType,
+) -> Aperture:
+    """Build an aperture with one fully-wired element (4 frames + glazing).
+
+    Lives in conftest so all aperture test modules share one helper
+    instead of redefining (and drifting) their own copies.
+    """
+    aperture = Aperture(
+        name=name,
+        project_id=project.id,
+        row_heights_mm=[1000.0],
+        column_widths_mm=[1200.0],
+    )
+    db.add(aperture)
+    db.flush()
+
+    frames = [
+        ApertureElementFrame(name=f"{name} {side}", frame_type_id=frame_type.id)
+        for side in ("Top", "Right", "Bottom", "Left")
+    ]
+    db.add_all(frames)
+    db.flush()
+
+    glazing = ApertureElementGlazing(
+        name=f"{name} Glazing", glazing_type_id=glazing_type.id
+    )
+    db.add(glazing)
+    db.flush()
+
+    element = ApertureElement(
+        name=f"{name} Element",
+        aperture_id=aperture.id,
+        row_number=1,
+        column_number=1,
+        row_span=1,
+        col_span=1,
+        frame_top_id=frames[0].id,
+        frame_right_id=frames[1].id,
+        frame_bottom_id=frames[2].id,
+        frame_left_id=frames[3].id,
+        glazing_id=glazing.id,
+    )
+    db.add(element)
+    db.commit()
+    db.refresh(aperture)
+    return aperture
+
+
 @pytest.fixture(scope="function")
 def sample_aperture_with_elements(test_db: Session) -> Aperture:
     """Create a sample aperture with elements, frames, and glazing for testing."""
