@@ -26,6 +26,7 @@ import LightingDataGrid from './features/project_view/data_views/equipment/pages
 import AppliancesDataGrid from './features/project_view/data_views/equipment/pages/Appliances/Appliances.DataGrid';
 import AirtightnessPage from './features/project_view/data_views/envelope/airtightness/Page';
 import EnvelopeSitePhotosPage from './features/project_view/data_views/envelope/site_photos/Page';
+import CatalogPocPlaceholder from './features/catalog/_components/CatalogPocPlaceholder';
 
 const AppRoutes: React.FC = () => (
     <Routes>
@@ -70,6 +71,8 @@ const AppRoutes: React.FC = () => (
 
             <Route path="model" element={<Viewer />} />
         </Route>
+
+        <Route path="/catalog-poc" element={<CatalogPocPlaceholder />} />
     </Routes>
 );
 
