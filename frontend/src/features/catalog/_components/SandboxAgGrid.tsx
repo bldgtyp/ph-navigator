@@ -33,13 +33,23 @@ type MaterialRow = {
     comments: string | null;
 };
 
-const apiBase = process.env.REACT_APP_API_URL ?? 'http://localhost:8000';
+// REACT_APP_API_URL may end with a trailing slash; strip it.
+const apiBase = (process.env.REACT_APP_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+
+// AG Grid v32+ moved several behaviors to Enterprise. The plan §3.3 spike
+// brief explicitly calls out "license clarity (especially Community vs
+// Enterprise feature boundaries)" — capture the gap visibly so it feeds
+// into grid-spike-results.md.
+const ENTERPRISE_FEATURES_REMOVED = [
+    'Row grouping (group-by category) — needs RowGroupingModule (Enterprise)',
+    'Set filter (AirTable-style multi-select on category) — Enterprise; using text filter instead',
+    'Range/cell selection — Enterprise; using row selection only',
+];
 
 const SandboxAgGrid: React.FC = () => {
     const [rows, setRows] = useState<MaterialRow[]>([]);
     const [loadMs, setLoadMs] = useState<number | null>(null);
     const [editLog, setEditLog] = useState<string[]>([]);
-    const [groupByCategory, setGroupByCategory] = useState(false);
     const gridRef = useRef<AgGridReact<MaterialRow>>(null);
 
     useEffect(() => {
@@ -53,6 +63,7 @@ const SandboxAgGrid: React.FC = () => {
             .catch(err => console.error('spike fetch failed', err));
     }, []);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const columnDefs = useMemo<ColDef<MaterialRow>[]>(
         () => [
             {
@@ -64,9 +75,7 @@ const SandboxAgGrid: React.FC = () => {
             },
             {
                 field: 'category',
-                rowGroup: groupByCategory,
-                hide: groupByCategory,
-                filter: 'agSetColumnFilter',
+                filter: 'agTextColumnFilter',
                 width: 160,
             },
             {
@@ -126,7 +135,7 @@ const SandboxAgGrid: React.FC = () => {
             { field: 'source', width: 200, editable: true },
             { field: 'comments', width: 240, editable: true, filter: 'agTextColumnFilter' },
         ],
-        [groupByCategory]
+        []
     );
 
     const defaultColDef = useMemo<ColDef>(
@@ -135,7 +144,6 @@ const SandboxAgGrid: React.FC = () => {
             resizable: true,
             filter: true,
             floatingFilter: true,
-            enableRowGroup: true,
         }),
         []
     );
@@ -172,6 +180,14 @@ const SandboxAgGrid: React.FC = () => {
         gridWrap: { flex: 1, minHeight: 400 },
         log: { fontSize: 11, color: '#444', maxHeight: 80, overflowY: 'auto', marginTop: 8, fontFamily: 'monospace' },
         button: { padding: '4px 10px', cursor: 'pointer' },
+        gap: {
+            background: '#fff8e1',
+            border: '1px solid #f0c14b',
+            padding: '6px 10px',
+            fontSize: 11,
+            color: '#5a4500',
+            borderRadius: 4,
+        },
     };
 
     return (
@@ -179,12 +195,17 @@ const SandboxAgGrid: React.FC = () => {
             <div style={styles.header}>
                 <h1 style={styles.h1}>Catalog POC — AG Grid spike (Materials, {rows.length} rows)</h1>
                 <span style={styles.meta}>{loadMs != null ? `loaded in ${loadMs.toFixed(0)} ms` : 'loading...'}</span>
-                <button style={styles.button} onClick={() => setGroupByCategory(g => !g)}>
-                    Group by category: {groupByCategory ? 'ON' : 'OFF'}
-                </button>
                 <button style={styles.button} onClick={() => gridRef.current?.api.exportDataAsCsv?.()}>
                     Export CSV
                 </button>
+            </div>
+            <div style={styles.gap}>
+                <strong>AG Grid Community gaps surfaced (Enterprise-only in v32+):</strong>
+                <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                    {ENTERPRISE_FEATURES_REMOVED.map(line => (
+                        <li key={line}>{line}</li>
+                    ))}
+                </ul>
             </div>
             <div style={styles.gridWrap}>
                 <AgGridReact<MaterialRow>
@@ -197,7 +218,6 @@ const SandboxAgGrid: React.FC = () => {
                     onGridReady={onGridReady}
                     animateRows
                     rowSelection={{ mode: 'multiRow' }}
-                    cellSelection
                     pagination={false}
                 />
             </div>
