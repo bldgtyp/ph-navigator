@@ -3,7 +3,8 @@
 Sandbox for the Native Catalog Manager, isolated per PRD §13.1.
 
 - PRD: `docs/features/2026-05-06-native-catalog-manager.md`
-- Plan: `docs/plans/2026-05-06/catalog-poc-plan.md`
+- Active phase checklist: `docs/plans/2026-05-06/airtable-parity-phases.md`
+- Baseline setup + post-gate blocks: `docs/plans/2026-05-06/catalog-poc-plan.md`
 - Branch: `poc/catalog`
 
 ## Local setup

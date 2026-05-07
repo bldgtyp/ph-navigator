@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 
 // Catalog POC placeholder route. Not linked from main nav.
-// See docs/features/2026-05-06-native-catalog-manager.md §13 and
-// docs/plans/2026-05-06/catalog-poc-plan.md.
+// See docs/features/2026-05-06-native-catalog-manager.md §13,
+// docs/plans/2026-05-06/airtable-parity-phases.md for the active slice,
+// and docs/plans/2026-05-06/catalog-poc-plan.md for setup/background.
 const CatalogPocPlaceholder: React.FC = () => {
     const [pingStatus, setPingStatus] = useState<string>('checking...');
 
@@ -17,7 +18,7 @@ const CatalogPocPlaceholder: React.FC = () => {
     return (
         <div style={{ padding: 24, fontFamily: 'monospace' }}>
             <h1>Catalog POC</h1>
-            <p>Sandbox route — see plan §3.1.</p>
+            <p>Sandbox route — active work follows the vertical-slice phase plan.</p>
             <p>Ping: {pingStatus}</p>
         </div>
     );

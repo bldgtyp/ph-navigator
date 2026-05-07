@@ -1,5 +1,6 @@
-# Catalog POC module — see docs/features/2026-05-06-native-catalog-manager.md §13
-# and docs/plans/2026-05-06/catalog-poc-plan.md.
+# Catalog POC module — see docs/features/2026-05-06-native-catalog-manager.md §13,
+# docs/plans/2026-05-06/catalog-poc-plan.md for baseline setup, and
+# docs/plans/2026-05-06/airtable-parity-phases.md for the active slice order.
 #
 # Strict no-cross-import rule (plan §3.2): nothing inside this package may
 # import from `features.<other>`, and nothing outside may import from
