@@ -27,6 +27,7 @@ import AppliancesDataGrid from './features/project_view/data_views/equipment/pag
 import AirtightnessPage from './features/project_view/data_views/envelope/airtightness/Page';
 import EnvelopeSitePhotosPage from './features/project_view/data_views/envelope/site_photos/Page';
 import CatalogPocPlaceholder from './features/catalog/_components/CatalogPocPlaceholder';
+import SandboxAgGrid from './features/catalog/_components/SandboxAgGrid';
 
 const AppRoutes: React.FC = () => (
     <Routes>
@@ -73,6 +74,7 @@ const AppRoutes: React.FC = () => (
         </Route>
 
         <Route path="/catalog-poc" element={<CatalogPocPlaceholder />} />
+        <Route path="/catalog-poc/sandbox-aggrid" element={<SandboxAgGrid />} />
     </Routes>
 );
 

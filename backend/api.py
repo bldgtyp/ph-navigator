@@ -38,5 +38,7 @@ def register_routes(app: FastAPI):
 
     if settings.CATALOG_POC_ENABLED:
         from features.catalog.routes import router as catalog_poc_router
+        from features.catalog.spike_routes import router as catalog_poc_spike_router
 
         app.include_router(catalog_poc_router)
+        app.include_router(catalog_poc_spike_router)
