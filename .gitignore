@@ -31,6 +31,11 @@ frontend/node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+.env.poc
+
+# Catalog POC — AirTable seed exports (CSVs + downloaded attachments)
+backend/features/catalog/poc_seeds/airtable_export/*
+!backend/features/catalog/poc_seeds/airtable_export/.gitkeep
 
 npm-debug.log*
 yarn-debug.log*

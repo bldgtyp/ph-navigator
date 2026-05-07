@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     FERNET_SECRET_KEY: str = "__fernet_key__"
     GCP_BUCKET_NAME: str = "__gcp_bucket_name__"
 
+    # Catalog POC (PRD §13). When false (default), the catalog routes are not
+    # mounted. Enable via .env.poc for local sandbox work on `poc/catalog`.
+    CATALOG_POC_ENABLED: bool = False
+    CATALOG_POC_DATABASE_URL: str = ""
+    CATALOG_POC_R2_ACCOUNT_ID: str = ""
+    CATALOG_POC_R2_ACCESS_KEY_ID: str = ""
+    CATALOG_POC_R2_SECRET_ACCESS_KEY: str = ""
+    CATALOG_POC_R2_BUCKET: str = "ph-data-poc"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

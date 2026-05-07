@@ -1,3 +1,4 @@
+from config import settings
 from fastapi import FastAPI
 from features.air_table.routes import router as air_table_router
 from features.airtightness.routes import router as airtightness_router
@@ -34,3 +35,8 @@ def register_routes(app: FastAPI):
     app.include_router(frame_router)
     app.include_router(glazing_router)
     app.include_router(manufacturer_filter_router)
+
+    if settings.CATALOG_POC_ENABLED:
+        from features.catalog.routes import router as catalog_poc_router
+
+        app.include_router(catalog_poc_router)
