@@ -28,6 +28,7 @@ import AirtightnessPage from './features/project_view/data_views/envelope/airtig
 import EnvelopeSitePhotosPage from './features/project_view/data_views/envelope/site_photos/Page';
 import CatalogPocPlaceholder from './features/catalog/_components/CatalogPocPlaceholder';
 import SandboxAgGrid from './features/catalog/_components/SandboxAgGrid';
+import SandboxTanStack from './features/catalog/_components/SandboxTanStack';
 
 const AppRoutes: React.FC = () => (
     <Routes>
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => (
 
         <Route path="/catalog-poc" element={<CatalogPocPlaceholder />} />
         <Route path="/catalog-poc/sandbox-aggrid" element={<SandboxAgGrid />} />
+        <Route path="/catalog-poc/sandbox-tanstack" element={<SandboxTanStack />} />
     </Routes>
 );
 
