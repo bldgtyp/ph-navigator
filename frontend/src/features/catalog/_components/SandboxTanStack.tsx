@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, ChangeEvent } from 'react';
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -18,10 +18,10 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
-// Plan §3.3 — TanStack Table v8 spike. Headless model: TanStack manages
-// state (sort/filter/group/order/resize), we render the markup ourselves.
-// Same Materials dataset and same six target behaviors as the AG Grid
-// sandbox, plus group-by which AG Grid Community can't do.
+// Catalog POC sandbox — TanStack Table v8.
+// Phase 1 (active cell, keyboard nav, single-click focus, Enter-to-edit,
+// frozen first column, ⌘C single-cell copy) lives here. Subsequent phases
+// will keep evolving this file in place per airtable-parity-phases.md §2.4.
 
 type MaterialRow = {
     name: string;
@@ -72,7 +72,7 @@ const COLUMN_LABELS: Record<string, string> = {
 };
 
 const COLUMN_WIDTHS: Record<string, number> = {
-    name: 180,
+    name: 220,
     category: 160,
     display_name: 220,
     density_kg_m3: 130,
@@ -102,7 +102,29 @@ const FIELD_ORDER: (keyof MaterialRow)[] = [
     'comments',
 ];
 
+// Phase 1.4 — frozen first column. Sticky-left so it stays visible while
+// the rest of the table scrolls horizontally. Width is the value in
+// COLUMN_WIDTHS for `name`.
+const FROZEN_COLUMN = 'name';
+
+type ActiveCell = { rowIndex: number; colId: string } | null;
 type EditingCell = { rowIndex: number; colId: string } | null;
+
+// Plain-text representation of a cell value for clipboard / display.
+// Numbers serialize as their raw string (no thousands separators, so paste
+// round-trips into Excel as numbers). Single-select pill rendering will
+// override this when 1c lands.
+const cellAsText = (value: unknown): string => {
+    if (value == null) return '';
+    if (typeof value === 'number') return String(value);
+    return String(value);
+};
+
+const cellAsDisplay = (value: unknown, isNum: boolean): string => {
+    if (value == null) return '';
+    if (isNum && typeof value === 'number') return value.toLocaleString();
+    return String(value);
+};
 
 const SandboxTanStack: React.FC = () => {
     const [rows, setRows] = useState<MaterialRow[]>([]);
@@ -113,6 +135,9 @@ const SandboxTanStack: React.FC = () => {
     const [grouping, setGrouping] = useState<GroupingState>([]);
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(FIELD_ORDER);
     const [editing, setEditing] = useState<EditingCell>(null);
+    const [activeCell, setActiveCell] = useState<ActiveCell>(null);
+
+    const tableContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const t0 = performance.now();
@@ -125,33 +150,42 @@ const SandboxTanStack: React.FC = () => {
             .catch(err => console.error('spike fetch failed', err));
     }, []);
 
-    const commitEdit = (rowIndex: number, colId: string, raw: string) => {
-        const oldValue = (rows[rowIndex] as any)[colId];
-        let newValue: any = raw;
-        if (NUMERIC_FIELDS.has(colId)) {
-            newValue = raw === '' ? null : Number(raw);
-            if (Number.isNaN(newValue)) newValue = oldValue;
-        } else if (raw === '') {
-            newValue = null;
-        }
-        if (newValue === oldValue) {
+    // commitEdit takes a *data* row index — the position in `rows`. The td
+    // render layer translates from visual position (rowModel index) to
+    // data index via rowModel[visualIdx].index before calling.
+    const commitEdit = useCallback(
+        (dataRowIdx: number, colId: string, raw: string) => {
+            const oldValue = (rows[dataRowIdx] as any)?.[colId];
+            let newValue: any = raw;
+            if (NUMERIC_FIELDS.has(colId)) {
+                newValue = raw === '' ? null : Number(raw);
+                if (Number.isNaN(newValue)) newValue = oldValue;
+            } else if (raw === '') {
+                newValue = null;
+            }
+            if (newValue !== oldValue) {
+                setRows(prev => {
+                    const copy = prev.slice();
+                    copy[dataRowIdx] = { ...copy[dataRowIdx], [colId]: newValue };
+                    return copy;
+                });
+                setEditLog(prev =>
+                    [
+                        `${new Date().toLocaleTimeString()} — row "${rows[dataRowIdx]?.name}" / col "${colId}": ${JSON.stringify(oldValue)} → ${JSON.stringify(newValue)}`,
+                        ...prev,
+                    ].slice(0, 5)
+                );
+            }
             setEditing(null);
-            return;
-        }
-        setRows(prev => {
-            const copy = prev.slice();
-            copy[rowIndex] = { ...copy[rowIndex], [colId]: newValue };
-            return copy;
-        });
-        setEditLog(prev =>
-            [
-                `${new Date().toLocaleTimeString()} — row "${rows[rowIndex].name}" / col "${colId}": ${JSON.stringify(oldValue)} → ${JSON.stringify(newValue)}`,
-                ...prev,
-            ].slice(0, 5)
-        );
-        setEditing(null);
-    };
+            // Restore focus to the table container so keyboard nav resumes.
+            tableContainerRef.current?.focus();
+        },
+        [rows]
+    );
 
+    // Column defs are *display only* — focus / editing rendering happens at
+    // the <td> level so the column memo doesn't invalidate on every keystroke
+    // and so we can index by visual row position rather than data row index.
     const columns = useMemo<ColumnDef<MaterialRow>[]>(() => {
         return FIELD_ORDER.map<ColumnDef<MaterialRow>>(field => {
             const isNum = NUMERIC_FIELDS.has(field);
@@ -164,34 +198,13 @@ const SandboxTanStack: React.FC = () => {
                 filterFn: isNum ? 'inNumberRange' : 'includesString',
                 aggregationFn: isNum ? 'mean' : undefined,
                 cell: info => {
-                    const value = info.getValue() as string | number | null;
+                    const value = info.getValue();
                     const colId = info.column.id;
-                    const rowIndex = info.row.index;
-                    const isEditing = editing?.rowIndex === rowIndex && editing.colId === colId;
-                    const isEditable = EDITABLE_FIELDS.has(colId);
                     const isComputed = COMPUTED_FIELDS.has(colId);
-
-                    if (isEditing) {
-                        return (
-                            <input
-                                autoFocus
-                                defaultValue={value == null ? '' : String(value)}
-                                onBlur={e => commitEdit(rowIndex, colId, e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                                    if (e.key === 'Escape') setEditing(null);
-                                }}
-                                style={{ width: '100%', boxSizing: 'border-box', font: 'inherit' }}
-                            />
-                        );
-                    }
-                    const display = value == null ? '' : isNum ? Number(value).toLocaleString() : String(value);
                     return (
                         <div
-                            onDoubleClick={() => isEditable && setEditing({ rowIndex, colId })}
                             style={{
                                 width: '100%',
-                                cursor: isEditable ? 'text' : 'default',
                                 fontStyle: isComputed ? 'italic' : 'normal',
                                 color: isComputed ? '#666' : 'inherit',
                                 textAlign: isNum ? 'right' : 'left',
@@ -199,16 +212,15 @@ const SandboxTanStack: React.FC = () => {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                             }}
-                            title={display}
+                            title={cellAsDisplay(value, isNum)}
                         >
-                            {display}
+                            {cellAsDisplay(value, isNum)}
                         </div>
                     );
                 },
             };
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editing, rows]);
+    }, []);
 
     const table = useReactTable({
         data: rows,
@@ -231,7 +243,6 @@ const SandboxTanStack: React.FC = () => {
 
     const { rows: rowModel } = table.getRowModel();
 
-    const tableContainerRef = useRef<HTMLDivElement>(null);
     const rowVirtualizer = useVirtualizer({
         count: rowModel.length,
         getScrollElement: () => tableContainerRef.current,
@@ -239,7 +250,123 @@ const SandboxTanStack: React.FC = () => {
         overscan: 12,
     });
 
-    // HTML5 drag handlers for column reorder.
+    // Phase 1.5 — auto-scroll the focused row into view when activeCell
+    // changes. Vertical only for now; horizontal auto-scroll is deferred
+    // (frozen-column interaction adds non-trivial offset math; flagged in
+    // weekly-notes findings).
+    useEffect(() => {
+        if (!activeCell) return;
+        rowVirtualizer.scrollToIndex(activeCell.rowIndex, { align: 'auto' });
+    }, [activeCell, rowVirtualizer]);
+
+    // Phase 1.2 — keyboard navigation. Bound to the container; ignored
+    // when an edit input is focused (input handles its own keys + stops
+    // propagation for Enter/Escape via the cell renderer).
+    const moveActive = useCallback(
+        (dr: number, dc: number) => {
+            setActiveCell(curr => {
+                if (!curr) return curr;
+                const colIdx = columnOrder.indexOf(curr.colId);
+                if (colIdx < 0) return curr;
+                const lastCol = columnOrder.length - 1;
+                const lastRow = rowModel.length - 1;
+                let newCol = colIdx + dc;
+                let newRow = curr.rowIndex + dr;
+                // Tab/Shift+Tab wrap horizontally to next/prev row.
+                if (newCol > lastCol) {
+                    newCol = 0;
+                    newRow = Math.min(lastRow, newRow + 1);
+                } else if (newCol < 0) {
+                    newCol = lastCol;
+                    newRow = Math.max(0, newRow - 1);
+                }
+                newRow = Math.max(0, Math.min(lastRow, newRow));
+                return { rowIndex: newRow, colId: columnOrder[newCol] as string };
+            });
+        },
+        [columnOrder, rowModel.length]
+    );
+
+    const handleContainerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (editing) return; // input owns its keys
+        if (!activeCell) {
+            // No focus yet — ArrowDown / ArrowRight / Enter / Tab seeds focus
+            // at the top-left.
+            if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Enter', 'Tab'].includes(e.key)) {
+                setActiveCell({ rowIndex: 0, colId: columnOrder[0] as string });
+                e.preventDefault();
+            }
+            return;
+        }
+        switch (e.key) {
+            case 'ArrowUp':
+                moveActive(-1, 0);
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                moveActive(1, 0);
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+                moveActive(0, -1);
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+                moveActive(0, 1);
+                e.preventDefault();
+                break;
+            case 'Tab':
+                moveActive(0, e.shiftKey ? -1 : 1);
+                e.preventDefault();
+                break;
+            case 'Home':
+                setActiveCell(curr => (curr ? { ...curr, colId: columnOrder[0] as string } : curr));
+                e.preventDefault();
+                break;
+            case 'End':
+                setActiveCell(curr =>
+                    curr ? { ...curr, colId: columnOrder[columnOrder.length - 1] as string } : curr
+                );
+                e.preventDefault();
+                break;
+            case 'Enter': {
+                if (EDITABLE_FIELDS.has(activeCell.colId)) {
+                    setEditing({ ...activeCell });
+                }
+                e.preventDefault();
+                break;
+            }
+            case 'Escape':
+                setActiveCell(null);
+                e.preventDefault();
+                break;
+            default:
+                break;
+        }
+    };
+
+    // Phase 1.7 — single-cell ⌘C copy. Listen for the native `copy` event so
+    // we get a real ClipboardEvent with clipboardData. Active only when a
+    // cell is focused and not editing (in which case the input owns copy).
+    // activeCell.rowIndex is a *visual position* in rowModel, so look up
+    // the underlying record via rowModel[i].original.
+    useEffect(() => {
+        const onCopy = (e: ClipboardEvent) => {
+            if (!activeCell || editing) return;
+            const sel = window.getSelection?.();
+            if (sel && sel.toString().length > 0) return;
+            const original = rowModel[activeCell.rowIndex]?.original;
+            if (!original) return;
+            const value = (original as any)[activeCell.colId];
+            e.clipboardData?.setData('text/plain', cellAsText(value));
+            e.preventDefault();
+        };
+        document.addEventListener('copy', onCopy);
+        return () => document.removeEventListener('copy', onCopy);
+    }, [activeCell, editing, rowModel]);
+
+    // HTML5 drag handlers for column reorder (kept from prior spike;
+    // Phase 5 will replace with @dnd-kit).
     const dragColRef = useRef<string | null>(null);
     const onHeaderDragStart = (id: string) => () => (dragColRef.current = id);
     const onHeaderDragOver = (e: React.DragEvent) => e.preventDefault();
@@ -262,7 +389,6 @@ const SandboxTanStack: React.FC = () => {
         const col = table.getColumn('category');
         if (!col) return [];
         return Array.from(col.getFacetedUniqueValues().keys()).sort();
-        // rows kept in deps so faceted values re-evaluate on data change.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows, table]);
 
@@ -318,18 +444,16 @@ const SandboxTanStack: React.FC = () => {
             overflow: 'auto',
             border: '1px solid #ddd',
             position: 'relative',
+            outline: 'none',
         },
         table: { borderCollapse: 'separate', borderSpacing: 0, width: 'max-content' },
         th: {
-            position: 'sticky',
-            top: 0,
             background: '#f5f5f5',
             borderBottom: '1px solid #ccc',
             borderRight: '1px solid #e0e0e0',
             padding: '4px 6px',
             textAlign: 'left',
             fontSize: 12,
-            zIndex: 1,
             userSelect: 'none',
         },
         td: {
@@ -338,6 +462,7 @@ const SandboxTanStack: React.FC = () => {
             padding: '4px 6px',
             fontSize: 12,
             verticalAlign: 'middle',
+            cursor: 'cell',
         },
         resizer: {
             position: 'absolute',
@@ -373,6 +498,15 @@ const SandboxTanStack: React.FC = () => {
 
     return (
         <div style={styles.page}>
+            {/* Inline stylesheet for hover + focus styling that's awkward to express inline. */}
+            <style>{`
+                .dt-row:hover .dt-cell { background-color: #fafafa; }
+                .dt-cell-focused { box-shadow: inset 0 0 0 2px #2563eb; background-color: #eff4fe !important; }
+                .dt-frozen { position: sticky; left: 0; z-index: 1; background-clip: padding-box; }
+                .dt-frozen-th { position: sticky; left: 0; top: 0; z-index: 3; }
+                .dt-th-sticky { position: sticky; top: 0; z-index: 2; }
+                .dt-frozen-divider { border-right: 1px solid #ccc !important; }
+            `}</style>
             <div style={styles.header}>
                 <h1 style={styles.h1}>
                     Catalog POC — TanStack spike (Materials, {filteredCount}/{rows.length} rows)
@@ -400,63 +534,78 @@ const SandboxTanStack: React.FC = () => {
                         </option>
                     ))}
                 </select>
+                <span style={{ ...styles.meta, marginLeft: 'auto' }}>
+                    {activeCell
+                        ? `focus: row ${activeCell.rowIndex + 1} / ${activeCell.colId}`
+                        : 'click any cell or press an arrow key to begin'}
+                </span>
             </div>
             <div style={styles.info}>
-                <strong>TanStack OSS coverage:</strong> sort, filter (incl. faceted multi-select on category — the AG
-                Grid Community gap), group-by, resize, drag-reorder, virtualization, inline edit — all from the
-                MIT-licensed core. No Enterprise tier.
+                <strong>Phase 1 active:</strong> click a cell to focus, arrow keys / Tab / Home / End to navigate, Enter
+                (or double-click) to edit, ⌘C copies the focused cell. Frozen `name` column. Vertical auto-scroll on
+                focus change. (Range selection, paste, undo land in later phases.)
             </div>
-            <div ref={tableContainerRef} style={styles.tableWrap}>
+            <div
+                ref={tableContainerRef}
+                style={styles.tableWrap}
+                tabIndex={0}
+                onKeyDown={handleContainerKeyDown}
+                onMouseDown={() => tableContainerRef.current?.focus()}
+            >
                 <table style={styles.table}>
                     <thead>
                         {table.getHeaderGroups().map(hg => (
                             <tr key={hg.id}>
-                                {hg.headers.map(header => (
-                                    <th
-                                        key={header.id}
-                                        style={{
-                                            ...styles.th,
-                                            width: header.getSize(),
-                                            minWidth: header.getSize(),
-                                            position: 'sticky',
-                                            top: 0,
-                                        }}
-                                        draggable
-                                        onDragStart={onHeaderDragStart(header.column.id)}
-                                        onDragOver={onHeaderDragOver}
-                                        onDrop={onHeaderDrop(header.column.id)}
-                                    >
-                                        <div
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={header.column.getToggleSortingHandler()}
+                                {hg.headers.map(header => {
+                                    const isFrozen = header.column.id === FROZEN_COLUMN;
+                                    const thClass = `${isFrozen ? 'dt-frozen-th dt-frozen-divider' : 'dt-th-sticky'}`;
+                                    return (
+                                        <th
+                                            key={header.id}
+                                            className={thClass}
+                                            style={{
+                                                ...styles.th,
+                                                width: header.getSize(),
+                                                minWidth: header.getSize(),
+                                                ...(isFrozen ? { left: 0 } : {}),
+                                            }}
+                                            draggable
+                                            onDragStart={onHeaderDragStart(header.column.id)}
+                                            onDragOver={onHeaderDragOver}
+                                            onDrop={onHeaderDrop(header.column.id)}
                                         >
-                                            {flexRender(header.column.columnDef.header, header.getContext())}
-                                            {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted() as string] ?? ''}
-                                        </div>
-                                        {header.column.getCanFilter() && header.column.id !== 'category' && (
-                                            <input
-                                                placeholder="filter..."
-                                                value={(header.column.getFilterValue() as string) ?? ''}
-                                                onChange={e => header.column.setFilterValue(e.target.value)}
-                                                onClick={e => e.stopPropagation()}
+                                            <div
+                                                style={{ cursor: 'pointer' }}
+                                                onClick={header.column.getToggleSortingHandler()}
+                                            >
+                                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                                {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted() as string] ?? ''}
+                                            </div>
+                                            {header.column.getCanFilter() && header.column.id !== 'category' && (
+                                                <input
+                                                    placeholder="filter..."
+                                                    value={(header.column.getFilterValue() as string) ?? ''}
+                                                    onChange={e => header.column.setFilterValue(e.target.value)}
+                                                    onClick={e => e.stopPropagation()}
+                                                    style={{
+                                                        width: '90%',
+                                                        marginTop: 2,
+                                                        font: 'inherit',
+                                                        fontSize: 11,
+                                                    }}
+                                                />
+                                            )}
+                                            <div
+                                                onMouseDown={header.getResizeHandler()}
+                                                onTouchStart={header.getResizeHandler()}
                                                 style={{
-                                                    width: '90%',
-                                                    marginTop: 2,
-                                                    font: 'inherit',
-                                                    fontSize: 11,
+                                                    ...styles.resizer,
+                                                    ...(header.column.getIsResizing() ? styles.resizerActive : {}),
                                                 }}
                                             />
-                                        )}
-                                        <div
-                                            onMouseDown={header.getResizeHandler()}
-                                            onTouchStart={header.getResizeHandler()}
-                                            style={{
-                                                ...styles.resizer,
-                                                ...(header.column.getIsResizing() ? styles.resizerActive : {}),
-                                            }}
-                                        />
-                                    </th>
-                                ))}
+                                        </th>
+                                    );
+                                })}
                             </tr>
                         ))}
                     </thead>
@@ -471,10 +620,11 @@ const SandboxTanStack: React.FC = () => {
                                       ? '#ffebee'
                                       : row.getIsGrouped()
                                         ? '#fafafa'
-                                        : 'transparent';
+                                        : '#ffffff';
                             return (
                                 <tr
                                     key={row.id}
+                                    className="dt-row"
                                     style={{
                                         position: 'absolute',
                                         top: 0,
@@ -485,36 +635,92 @@ const SandboxTanStack: React.FC = () => {
                                         background: rowBg,
                                     }}
                                 >
-                                    {row.getVisibleCells().map(cell => (
-                                        <td
-                                            key={cell.id}
-                                            style={{
-                                                ...styles.td,
-                                                width: cell.column.getSize(),
-                                                minWidth: cell.column.getSize(),
-                                                fontWeight: cell.getIsGrouped() ? 600 : 400,
-                                                background: cell.getIsAggregated() ? '#f0f0f0' : undefined,
-                                            }}
-                                        >
-                                            {cell.getIsGrouped() ? (
-                                                <button
-                                                    onClick={row.getToggleExpandedHandler()}
-                                                    style={{ all: 'unset', cursor: 'pointer' }}
-                                                >
-                                                    {row.getIsExpanded() ? '▼' : '▶'}{' '}
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())} (
-                                                    {row.subRows.length})
-                                                </button>
-                                            ) : cell.getIsAggregated() ? (
-                                                flexRender(
-                                                    cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
-                                                    cell.getContext()
-                                                )
-                                            ) : cell.getIsPlaceholder() ? null : (
-                                                flexRender(cell.column.columnDef.cell, cell.getContext())
-                                            )}
-                                        </td>
-                                    ))}
+                                    {row.getVisibleCells().map(cell => {
+                                        const colId = cell.column.id;
+                                        const isFrozen = colId === FROZEN_COLUMN;
+                                        const visualIdx = virtualRow.index;
+                                        const dataIdx = row.index;
+                                        const isFocused =
+                                            activeCell?.rowIndex === visualIdx && activeCell?.colId === colId;
+                                        const isEditing = editing?.rowIndex === visualIdx && editing?.colId === colId;
+                                        const isEditable = EDITABLE_FIELDS.has(colId);
+                                        const cellClass = [
+                                            'dt-cell',
+                                            isFrozen ? 'dt-frozen dt-frozen-divider' : '',
+                                            isFocused ? 'dt-cell-focused' : '',
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ');
+                                        return (
+                                            <td
+                                                key={cell.id}
+                                                className={cellClass}
+                                                style={{
+                                                    ...styles.td,
+                                                    width: cell.column.getSize(),
+                                                    minWidth: cell.column.getSize(),
+                                                    fontWeight: cell.getIsGrouped() ? 600 : 400,
+                                                    background: cell.getIsAggregated() ? '#f0f0f0' : undefined,
+                                                    ...(isFrozen ? { left: 0, background: rowBg } : {}),
+                                                }}
+                                                onClick={() => {
+                                                    if (cell.getIsGrouped() || cell.getIsAggregated()) return;
+                                                    setActiveCell({ rowIndex: visualIdx, colId });
+                                                }}
+                                                onDoubleClick={() => {
+                                                    if (cell.getIsGrouped() || cell.getIsAggregated()) return;
+                                                    if (!isEditable) return;
+                                                    setActiveCell({ rowIndex: visualIdx, colId });
+                                                    setEditing({ rowIndex: visualIdx, colId });
+                                                }}
+                                            >
+                                                {isEditing ? (
+                                                    <input
+                                                        autoFocus
+                                                        defaultValue={
+                                                            (row.original as any)?.[colId] == null
+                                                                ? ''
+                                                                : String((row.original as any)[colId])
+                                                        }
+                                                        onBlur={e => commitEdit(dataIdx, colId, e.target.value)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') {
+                                                                (e.target as HTMLInputElement).blur();
+                                                                e.stopPropagation();
+                                                            }
+                                                            if (e.key === 'Escape') {
+                                                                setEditing(null);
+                                                                tableContainerRef.current?.focus();
+                                                                e.stopPropagation();
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            width: '100%',
+                                                            boxSizing: 'border-box',
+                                                            font: 'inherit',
+                                                        }}
+                                                    />
+                                                ) : cell.getIsGrouped() ? (
+                                                    <button
+                                                        onClick={row.getToggleExpandedHandler()}
+                                                        style={{ all: 'unset', cursor: 'pointer' }}
+                                                    >
+                                                        {row.getIsExpanded() ? '▼' : '▶'}{' '}
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())} (
+                                                        {row.subRows.length})
+                                                    </button>
+                                                ) : cell.getIsAggregated() ? (
+                                                    flexRender(
+                                                        cell.column.columnDef.aggregatedCell ??
+                                                            cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )
+                                                ) : cell.getIsPlaceholder() ? null : (
+                                                    flexRender(cell.column.columnDef.cell, cell.getContext())
+                                                )}
+                                            </td>
+                                        );
+                                    })}
                                 </tr>
                             );
                         })}
@@ -523,7 +729,7 @@ const SandboxTanStack: React.FC = () => {
             </div>
             <div style={styles.log}>
                 {editLog.length === 0 ? (
-                    <em>edit log: double-click any editable cell to begin</em>
+                    <em>edit log: focus a cell and press Enter (or double-click) to edit</em>
                 ) : (
                     editLog.map((m, i) => <div key={i}>{m}</div>)
                 )}
