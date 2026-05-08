@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    AggregationFn,
     ColumnDef,
     ColumnFiltersState,
     SortingState,
@@ -43,6 +44,27 @@ import {
     matchOrCreateSingleSelectOption,
     seedSingleSelectValues,
 } from './sandboxPhase4';
+import {
+    AGGREGATION_LABELS,
+    AggregationKind,
+    FilterColumnType,
+    FilterCondition,
+    FilterOperator,
+    GroupRule,
+    OPERATOR_LABELS,
+    OPERATORS_BY_TYPE,
+    SortRule,
+    TOOLBAR_TINTS,
+    TintRoles,
+    computeAggregation,
+    defaultOperatorForType,
+    deriveTintRoles,
+    evaluateConditions,
+    getColumnTint,
+    groupConditionsByColumn,
+    newConditionId,
+    operatorNeedsValue,
+} from './sandboxPhase5';
 
 // Catalog POC sandbox — TanStack Table v8.
 // Phase 1 (active cell, keyboard nav, single-click focus, Enter-to-edit,
@@ -155,8 +177,31 @@ type FillDragState = {
 const GUTTER_WIDTH = 40;
 const AUTO_SCROLL_EDGE_PX = 30;
 const AUTO_SCROLL_STEP_PX = 10;
-const PHASE_4_BANNER =
-    'Phase 4 active: single-select pills, picker/create, and paste-aware option creation are in-memory only.';
+const PHASE_5_BANNER = 'Phase 5 active: stacked sort / filter / group with toolbar tinting (in-memory only).';
+
+type PopoverKind = 'filter' | 'sort' | 'group' | null;
+
+const FILTERABLE_FIELDS = new Set([
+    'name',
+    'category',
+    'display_name',
+    'density_kg_m3',
+    'specific_heat_capacity_J_kg_K',
+    'conductivity_w_mk',
+    'conductivity_btu_hr_ft_F',
+    'resistivity_hr_ft2_F_Btu_in',
+    'emissivity',
+    'source',
+    'comments',
+]);
+
+const GROUPABLE_FIELDS = new Set(['category', 'source']);
+
+const fieldFilterType = (fieldKey: string, fieldType: FieldType | undefined): FilterColumnType => {
+    if (fieldType === 'single_select') return 'single_select';
+    if (NUMERIC_FIELDS.has(fieldKey)) return 'number';
+    return 'text';
+};
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
@@ -445,21 +490,473 @@ const SingleSelectEditor: React.FC<SingleSelectEditorProps> = ({ onCancel, onCom
     );
 };
 
+type Phase5ToolbarProps = {
+    activePopover: PopoverKind;
+    setActivePopover: (kind: PopoverKind) => void;
+    filterConditions: FilterCondition[];
+    setFilterConditions: React.Dispatch<React.SetStateAction<FilterCondition[]>>;
+    sorting: SortingState;
+    setSorting: React.Dispatch<React.SetStateAction<SortingState>>;
+    groupRules: GroupRule[];
+    setGroupRules: React.Dispatch<React.SetStateAction<GroupRule[]>>;
+    fieldDefs: Record<string, FieldDef>;
+};
+
+const toolbarButtonStyle = (active: boolean, tint: string, label: string): React.CSSProperties => ({
+    padding: '4px 10px',
+    cursor: 'pointer',
+    border: `1px solid ${active ? label : '#cbd5e1'}`,
+    borderRadius: 6,
+    background: active ? tint : '#ffffff',
+    color: active ? label : '#0f172a',
+    font: 'inherit',
+    fontSize: 12,
+    fontWeight: active ? 600 : 400,
+});
+
+const popoverStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    left: 0,
+    width: 460,
+    padding: 10,
+    border: '1px solid #cbd5e1',
+    borderRadius: 8,
+    background: '#ffffff',
+    boxShadow: '0 12px 24px rgba(15, 23, 42, 0.16)',
+    zIndex: 30,
+};
+
+const Phase5Toolbar: React.FC<Phase5ToolbarProps> = ({
+    activePopover,
+    setActivePopover,
+    filterConditions,
+    setFilterConditions,
+    sorting,
+    setSorting,
+    groupRules,
+    setGroupRules,
+    fieldDefs,
+}) => {
+    const wrapRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!activePopover) return;
+        const handler = (event: MouseEvent) => {
+            if (wrapRef.current?.contains(event.target as Node)) return;
+            setActivePopover(null);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [activePopover, setActivePopover]);
+
+    const filterLabel =
+        filterConditions.length === 0
+            ? 'Filter'
+            : `Filtered by ${filterConditions.length} condition${filterConditions.length === 1 ? '' : 's'}`;
+    const sortLabel =
+        sorting.length === 0 ? 'Sort' : `Sorted by ${sorting.length} field${sorting.length === 1 ? '' : 's'}`;
+    const groupLabel =
+        groupRules.length === 0
+            ? 'Group'
+            : `Grouped by ${groupRules.length} field${groupRules.length === 1 ? '' : 's'}`;
+
+    const filterableFields = FIELD_ORDER.filter(f => FILTERABLE_FIELDS.has(f));
+    const groupableFields = FIELD_ORDER.filter(f => GROUPABLE_FIELDS.has(f));
+
+    const addFilter = () => {
+        const colId = filterableFields[0];
+        if (!colId) return;
+        const columnType = fieldFilterType(colId, fieldDefs[colId]?.fieldType);
+        setFilterConditions(prev => [
+            ...prev,
+            {
+                id: newConditionId(),
+                colId,
+                columnType,
+                operator: defaultOperatorForType(columnType),
+                value: null,
+                selected: [],
+            },
+        ]);
+    };
+
+    const updateFilter = (id: string, patch: Partial<FilterCondition>) => {
+        setFilterConditions(prev => prev.map(c => (c.id === id ? { ...c, ...patch } : c)));
+    };
+
+    const removeFilter = (id: string) => setFilterConditions(prev => prev.filter(c => c.id !== id));
+
+    const addSort = () => {
+        const colId = FIELD_ORDER.find(f => !sorting.some(s => s.id === f));
+        if (!colId) return;
+        setSorting(prev => [...prev, { id: colId, desc: false }]);
+    };
+
+    const updateSort = (index: number, patch: Partial<SortRule>) => {
+        setSorting(prev => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+    };
+
+    const removeSort = (index: number) => setSorting(prev => prev.filter((_, i) => i !== index));
+
+    const addGroup = () => {
+        const colId = groupableFields.find(f => !groupRules.some(g => g.colId === f));
+        if (!colId) return;
+        setGroupRules(prev => [...prev, { id: newConditionId(), colId, desc: false }]);
+    };
+
+    const updateGroup = (id: string, patch: Partial<GroupRule>) => {
+        setGroupRules(prev => prev.map(g => (g.id === id ? { ...g, ...patch } : g)));
+    };
+
+    const removeGroup = (id: string) => setGroupRules(prev => prev.filter(g => g.id !== id));
+
+    return (
+        <div ref={wrapRef} style={{ display: 'flex', gap: 6, position: 'relative' }}>
+            <button
+                type="button"
+                style={toolbarButtonStyle(
+                    filterConditions.length > 0,
+                    TOOLBAR_TINTS.filter.active,
+                    TOOLBAR_TINTS.filter.label
+                )}
+                onClick={() => setActivePopover(activePopover === 'filter' ? null : 'filter')}
+            >
+                {filterLabel}
+            </button>
+            <button
+                type="button"
+                style={toolbarButtonStyle(groupRules.length > 0, TOOLBAR_TINTS.group.active, TOOLBAR_TINTS.group.label)}
+                onClick={() => setActivePopover(activePopover === 'group' ? null : 'group')}
+            >
+                {groupLabel}
+            </button>
+            <button
+                type="button"
+                style={toolbarButtonStyle(sorting.length > 0, TOOLBAR_TINTS.sort.active, TOOLBAR_TINTS.sort.label)}
+                onClick={() => setActivePopover(activePopover === 'sort' ? null : 'sort')}
+            >
+                {sortLabel}
+            </button>
+
+            {activePopover === 'filter' && (
+                <div style={popoverStyle}>
+                    <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Filter conditions (AND)</div>
+                    {filterConditions.length === 0 && (
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>No filters applied.</div>
+                    )}
+                    <div style={{ display: 'grid', gap: 6 }}>
+                        {filterConditions.map(condition => (
+                            <FilterRow
+                                key={condition.id}
+                                condition={condition}
+                                fieldDefs={fieldDefs}
+                                onChange={patch => updateFilter(condition.id, patch)}
+                                onRemove={() => removeFilter(condition.id)}
+                            />
+                        ))}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={addFilter}
+                        style={{
+                            marginTop: 8,
+                            padding: '4px 8px',
+                            border: '1px dashed #94a3b8',
+                            background: '#ffffff',
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            fontSize: 11,
+                        }}
+                    >
+                        + Add condition
+                    </button>
+                </div>
+            )}
+
+            {activePopover === 'sort' && (
+                <div style={popoverStyle}>
+                    <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Sort order</div>
+                    {sorting.length === 0 && (
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>No sort applied.</div>
+                    )}
+                    <div style={{ display: 'grid', gap: 6 }}>
+                        {sorting.map((rule, index) => (
+                            <div key={`${rule.id}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 11, color: '#94a3b8', width: 18 }}>{index + 1}.</span>
+                                <select
+                                    value={rule.id}
+                                    onChange={e => updateSort(index, { id: e.target.value })}
+                                    style={{ flex: 1, font: 'inherit', fontSize: 11 }}
+                                >
+                                    {FIELD_ORDER.map(f => (
+                                        <option key={f} value={f}>
+                                            {COLUMN_LABELS[f] ?? f}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => updateSort(index, { desc: !rule.desc })}
+                                    style={{
+                                        font: 'inherit',
+                                        fontSize: 11,
+                                        padding: '2px 8px',
+                                        borderRadius: 4,
+                                        border: '1px solid #cbd5e1',
+                                        background: '#ffffff',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {rule.desc ? '▼ desc' : '▲ asc'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => removeSort(index)}
+                                    style={{
+                                        font: 'inherit',
+                                        fontSize: 11,
+                                        padding: '2px 6px',
+                                        border: 'none',
+                                        background: 'transparent',
+                                        cursor: 'pointer',
+                                        color: '#64748b',
+                                    }}
+                                    aria-label="Remove sort"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={addSort}
+                        style={{
+                            marginTop: 8,
+                            padding: '4px 8px',
+                            border: '1px dashed #94a3b8',
+                            background: '#ffffff',
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            fontSize: 11,
+                        }}
+                    >
+                        + Add sort
+                    </button>
+                </div>
+            )}
+
+            {activePopover === 'group' && (
+                <div style={popoverStyle}>
+                    <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Group levels (max 3)</div>
+                    {groupRules.length === 0 && (
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>No grouping applied.</div>
+                    )}
+                    <div style={{ display: 'grid', gap: 6 }}>
+                        {groupRules.map((rule, index) => (
+                            <div key={rule.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 11, color: '#94a3b8', width: 18 }}>{index + 1}.</span>
+                                <select
+                                    value={rule.colId}
+                                    onChange={e => updateGroup(rule.id, { colId: e.target.value })}
+                                    style={{ flex: 1, font: 'inherit', fontSize: 11 }}
+                                >
+                                    {groupableFields.map(f => (
+                                        <option key={f} value={f}>
+                                            {COLUMN_LABELS[f] ?? f}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => updateGroup(rule.id, { desc: !rule.desc })}
+                                    style={{
+                                        font: 'inherit',
+                                        fontSize: 11,
+                                        padding: '2px 8px',
+                                        borderRadius: 4,
+                                        border: '1px solid #cbd5e1',
+                                        background: '#ffffff',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {rule.desc ? '▼ desc' : '▲ asc'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => removeGroup(rule.id)}
+                                    style={{
+                                        font: 'inherit',
+                                        fontSize: 11,
+                                        padding: '2px 6px',
+                                        border: 'none',
+                                        background: 'transparent',
+                                        cursor: 'pointer',
+                                        color: '#64748b',
+                                    }}
+                                    aria-label="Remove group level"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    {groupRules.length < 3 && (
+                        <button
+                            type="button"
+                            onClick={addGroup}
+                            style={{
+                                marginTop: 8,
+                                padding: '4px 8px',
+                                border: '1px dashed #94a3b8',
+                                background: '#ffffff',
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                                fontSize: 11,
+                            }}
+                        >
+                            + Add group level
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+type FilterRowProps = {
+    condition: FilterCondition;
+    fieldDefs: Record<string, FieldDef>;
+    onChange: (patch: Partial<FilterCondition>) => void;
+    onRemove: () => void;
+};
+
+const FilterRow: React.FC<FilterRowProps> = ({ condition, fieldDefs, onChange, onRemove }) => {
+    const operators = OPERATORS_BY_TYPE[condition.columnType];
+    const filterableFields = FIELD_ORDER.filter(f => FILTERABLE_FIELDS.has(f));
+    const singleSelectOptions = fieldDefs[condition.colId]?.config?.options ?? [];
+
+    const handleColumnChange = (colId: string) => {
+        const columnType = fieldFilterType(colId, fieldDefs[colId]?.fieldType);
+        onChange({
+            colId,
+            columnType,
+            operator: defaultOperatorForType(columnType),
+            value: null,
+            valueB: null,
+            selected: [],
+        });
+    };
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <select
+                value={condition.colId}
+                onChange={e => handleColumnChange(e.target.value)}
+                style={{ font: 'inherit', fontSize: 11, minWidth: 130 }}
+            >
+                {filterableFields.map(f => (
+                    <option key={f} value={f}>
+                        {COLUMN_LABELS[f] ?? f}
+                    </option>
+                ))}
+            </select>
+            <select
+                value={condition.operator}
+                onChange={e => onChange({ operator: e.target.value as FilterOperator, value: null, selected: [] })}
+                style={{ font: 'inherit', fontSize: 11 }}
+            >
+                {operators.map(op => (
+                    <option key={op} value={op}>
+                        {OPERATOR_LABELS[op]}
+                    </option>
+                ))}
+            </select>
+            {operatorNeedsValue(condition.operator) && condition.columnType === 'single_select' && (
+                <select
+                    multiple
+                    value={condition.selected ?? []}
+                    onChange={e =>
+                        onChange({
+                            selected: Array.from(e.target.selectedOptions).map(o => o.value),
+                        })
+                    }
+                    style={{ font: 'inherit', fontSize: 11, minWidth: 140, minHeight: 60 }}
+                >
+                    {singleSelectOptions.map(option => (
+                        <option key={option.id} value={option.id}>
+                            {option.name}
+                        </option>
+                    ))}
+                </select>
+            )}
+            {operatorNeedsValue(condition.operator) && condition.columnType === 'text' && (
+                <input
+                    value={(condition.value as string) ?? ''}
+                    onChange={e => onChange({ value: e.target.value })}
+                    placeholder="value..."
+                    style={{ font: 'inherit', fontSize: 11, padding: '2px 6px', minWidth: 120 }}
+                />
+            )}
+            {operatorNeedsValue(condition.operator) && condition.columnType === 'number' && (
+                <>
+                    <input
+                        type="number"
+                        value={condition.value == null ? '' : (condition.value as number)}
+                        onChange={e => onChange({ value: e.target.value === '' ? null : Number(e.target.value) })}
+                        style={{ font: 'inherit', fontSize: 11, padding: '2px 6px', width: 90 }}
+                    />
+                    {condition.operator === 'between' && (
+                        <input
+                            type="number"
+                            value={condition.valueB == null ? '' : condition.valueB}
+                            onChange={e => onChange({ valueB: e.target.value === '' ? null : Number(e.target.value) })}
+                            style={{ font: 'inherit', fontSize: 11, padding: '2px 6px', width: 90 }}
+                            placeholder="and..."
+                        />
+                    )}
+                </>
+            )}
+            <button
+                type="button"
+                onClick={onRemove}
+                style={{
+                    font: 'inherit',
+                    fontSize: 11,
+                    padding: '2px 6px',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                }}
+                aria-label="Remove condition"
+            >
+                ✕
+            </button>
+        </div>
+    );
+};
+
 const SandboxTanStack: React.FC = () => {
     const [rows, setRows] = useState<MaterialRow[]>([]);
     const [fieldDefs, setFieldDefs] = useState<Record<string, FieldDef>>(() => createInitialFieldDefs([]));
     const [loadMs, setLoadMs] = useState<number | null>(null);
     const [editLog, setEditLog] = useState<string[]>([]);
     const [sorting, setSorting] = useState<SortingState>([{ id: 'conductivity_w_mk', desc: false }]);
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const [grouping, setGrouping] = useState<GroupingState>([]);
+    const [filterConditions, setFilterConditions] = useState<FilterCondition[]>([]);
+    const [groupRules, setGroupRules] = useState<GroupRule[]>([]);
+    const [aggregationKinds, setAggregationKinds] = useState<Record<string, AggregationKind>>(() =>
+        Object.fromEntries(FIELD_ORDER.filter(f => NUMERIC_FIELDS.has(f)).map(f => [f, 'mean' as AggregationKind]))
+    );
+    const [activePopover, setActivePopover] = useState<PopoverKind>(null);
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(FIELD_ORDER);
     const [editing, setEditing] = useState<EditingCell>(null);
     const [activeCell, setActiveCell] = useState<ActiveCell>(null);
     const [selection, setSelection] = useState<SelectionRange>(null);
     const [selectionOrigin, setSelectionOrigin] = useState<SelectionOrigin>('cell');
     const [history, setHistory] = useState<EditHistory>({ undo: [], redo: [] });
-    const [banner, setBanner] = useState<string>(PHASE_4_BANNER);
+    const [banner, setBanner] = useState<string>(PHASE_5_BANNER);
     const [fillDrag, setFillDrag] = useState<FillDragState>(null);
 
     const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -493,7 +990,7 @@ const SandboxTanStack: React.FC = () => {
             window.clearTimeout(clearBannerTimerRef.current);
         }
         clearBannerTimerRef.current = window.setTimeout(() => {
-            setBanner(PHASE_4_BANNER);
+            setBanner(PHASE_5_BANNER);
         }, 3500);
     }, []);
 
@@ -642,12 +1139,20 @@ const SandboxTanStack: React.FC = () => {
             const isNum = NUMERIC_FIELDS.has(field);
             const fieldDef = fieldDefs[field];
             const isSingleSelect = fieldDef?.fieldType === 'single_select';
+            const aggKind: AggregationKind = aggregationKinds[field] ?? 'none';
+            const customAgg: AggregationFn<MaterialRow> | undefined =
+                aggKind === 'none'
+                    ? undefined
+                    : (_columnId, leafRows) => {
+                          const values = leafRows.map(r => r.getValue(field));
+                          return computeAggregation(aggKind, values);
+                      };
             return {
                 id: field,
                 accessorKey: field,
                 header: COLUMN_LABELS[field] ?? field,
                 size: COLUMN_WIDTHS[field] ?? 150,
-                enableGrouping: field === 'category',
+                enableGrouping: GROUPABLE_FIELDS.has(field),
                 sortUndefined: 'last',
                 sortingFn: isSingleSelect
                     ? (rowA, rowB, columnId) =>
@@ -663,16 +1168,19 @@ const SandboxTanStack: React.FC = () => {
                                 getCellText(columnId, rowA.getValue(columnId)),
                                 getCellText(columnId, rowB.getValue(columnId))
                             ),
-                filterFn: isSingleSelect
-                    ? (row, columnId, filterValue: string[] | undefined) => {
-                          if (!filterValue || filterValue.length === 0) return true;
-                          const value = row.getValue(columnId);
-                          return value != null && filterValue.includes(String(value));
-                      }
-                    : isNum
-                      ? 'inNumberRange'
-                      : 'includesString',
-                aggregationFn: isNum ? 'mean' : undefined,
+                filterFn: (row, columnId, filterValue: FilterCondition[] | undefined) => {
+                    if (!filterValue || filterValue.length === 0) return true;
+                    return evaluateConditions(filterValue, row.getValue(columnId));
+                },
+                aggregationFn: customAgg,
+                aggregatedCell: ({ getValue }) => {
+                    const value = getValue();
+                    return (
+                        <span style={{ fontSize: 11, color: '#475569' }}>
+                            {AGGREGATION_LABELS[aggKind]}: {value == null ? '—' : String(value)}
+                        </span>
+                    );
+                },
                 cell: info => {
                     const value = info.getValue();
                     const colId = info.column.id;
@@ -705,16 +1213,32 @@ const SandboxTanStack: React.FC = () => {
                 },
             };
         });
-    }, [fieldDefs, getCellDisplay, getCellText]);
+    }, [aggregationKinds, fieldDefs, getCellDisplay, getCellText]);
+
+    const grouping = useMemo<GroupingState>(() => groupRules.map(rule => rule.colId), [groupRules]);
+    const columnFilters = useMemo<ColumnFiltersState>(() => {
+        const grouped = groupConditionsByColumn(filterConditions);
+        return Object.entries(grouped).map(([colId, conditions]) => ({ id: colId, value: conditions }));
+    }, [filterConditions]);
+
+    // Group sorting: TanStack sorts grouped rows by the grouping column itself,
+    // so we prepend group columns (with their direction) to the explicit sort
+    // rules. Explicit sort entries on grouped columns override.
+    const effectiveSorting = useMemo<SortingState>(() => {
+        const explicit = new Set(sorting.map(s => s.id));
+        const grouped: SortingState = groupRules
+            .filter(rule => !explicit.has(rule.colId))
+            .map(rule => ({ id: rule.colId, desc: rule.desc }));
+        return [...grouped, ...sorting];
+    }, [sorting, groupRules]);
 
     const table = useReactTable({
         data: rows,
         columns,
-        state: { sorting, columnFilters, grouping, columnOrder },
+        state: { sorting: effectiveSorting, columnFilters, grouping, columnOrder },
         onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        onGroupingChange: setGrouping,
         onColumnOrderChange: setColumnOrder,
+        enableMultiSort: true,
         columnResizeMode: 'onChange',
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -1415,19 +1939,15 @@ const SandboxTanStack: React.FC = () => {
         dragColRef.current = null;
     };
 
-    const facetedCategories = useMemo(() => {
-        const col = table.getColumn('category');
-        if (!col) return [];
-        const visibleValues = new Set(Array.from(col.getFacetedUniqueValues().keys()).map(value => String(value)));
-        return categoryOptions.filter(option => visibleValues.size === 0 || visibleValues.has(option.id));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryOptions, rows, table]);
-
-    const setCategoryFilter = (selected: string[]) => {
-        const col = table.getColumn('category');
-        if (!col) return;
-        col.setFilterValue(selected.length === 0 ? undefined : selected);
-    };
+    const tintRoles = useMemo<TintRoles>(
+        () =>
+            deriveTintRoles({
+                filterColumns: filterConditions.map(c => c.colId),
+                sortColumns: sorting.map(s => s.id),
+                groupColumns: groupRules.map(g => g.colId),
+            }),
+        [filterConditions, sorting, groupRules]
+    );
 
     const exportCsv = () => {
         const visibleCols = table.getVisibleLeafColumns();
@@ -1560,9 +2080,17 @@ const SandboxTanStack: React.FC = () => {
                     Catalog POC — TanStack spike (Materials, {filteredCount}/{rows.length} rows)
                 </h1>
                 <span style={styles.meta}>{loadMs != null ? `loaded in ${loadMs.toFixed(0)} ms` : 'loading...'}</span>
-                <button style={styles.button} onClick={() => setGrouping(g => (g.length ? [] : ['category']))}>
-                    Group by category: {grouping.length ? 'ON' : 'OFF'}
-                </button>
+                <Phase5Toolbar
+                    activePopover={activePopover}
+                    setActivePopover={setActivePopover}
+                    filterConditions={filterConditions}
+                    setFilterConditions={setFilterConditions}
+                    sorting={sorting}
+                    setSorting={setSorting}
+                    groupRules={groupRules}
+                    setGroupRules={setGroupRules}
+                    fieldDefs={fieldDefs}
+                />
                 <button style={styles.button} onClick={performUndo} disabled={history.undo.length === 0}>
                     Undo
                 </button>
@@ -1572,22 +2100,6 @@ const SandboxTanStack: React.FC = () => {
                 <button style={styles.button} onClick={exportCsv}>
                     Export CSV
                 </button>
-                <span style={styles.meta}>filter category:</span>
-                <select
-                    multiple
-                    size={1}
-                    style={{ font: 'inherit', minWidth: 140 }}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-                        const selected = Array.from(e.target.selectedOptions).map(o => o.value);
-                        setCategoryFilter(selected);
-                    }}
-                >
-                    {facetedCategories.map(c => (
-                        <option key={c.id} value={c.id}>
-                            {c.name}
-                        </option>
-                    ))}
-                </select>
                 <span style={{ ...styles.meta, marginLeft: 'auto' }}>
                     {selectionSummary
                         ? `selection: ${selectionSummary}${activeCell ? ` | focus row ${activeCell.rowIndex + 1} / ${activeCell.colId}` : ''}`
@@ -1597,7 +2109,7 @@ const SandboxTanStack: React.FC = () => {
                 </span>
             </div>
             <div style={styles.info}>
-                <strong>Phase 4 active:</strong> {banner}
+                <strong>Phase 5 active:</strong> {banner}
             </div>
             <div
                 ref={tableContainerRef}
@@ -1625,6 +2137,10 @@ const SandboxTanStack: React.FC = () => {
                                         normalizedSelection != null &&
                                         colIndex >= normalizedSelection.leftCol &&
                                         colIndex <= normalizedSelection.rightCol;
+                                    const headerTint = getColumnTint(tintRoles, header.column.id, 'header');
+                                    const sortIndex = sorting.findIndex(s => s.id === header.column.id);
+                                    const isNumericCol = NUMERIC_FIELDS.has(header.column.id);
+                                    const aggKindHere: AggregationKind = aggregationKinds[header.column.id] ?? 'none';
                                     return (
                                         <th
                                             key={header.id}
@@ -1633,7 +2149,9 @@ const SandboxTanStack: React.FC = () => {
                                                 ...styles.th,
                                                 width: header.getSize(),
                                                 minWidth: header.getSize(),
-                                                background: isColumnSelected ? '#dbeafe' : styles.th.background,
+                                                background: isColumnSelected
+                                                    ? '#dbeafe'
+                                                    : (headerTint ?? styles.th.background),
                                                 ...(isFrozen ? { left: GUTTER_WIDTH } : {}),
                                             }}
                                             draggable
@@ -1661,25 +2179,52 @@ const SandboxTanStack: React.FC = () => {
                                                 }}
                                             />
                                             <div
-                                                style={{ cursor: 'pointer' }}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                }}
                                                 onClick={header.column.getToggleSortingHandler()}
+                                                title="Click to sort, shift-click to add to multi-sort"
                                             >
-                                                {flexRender(header.column.columnDef.header, header.getContext())}
-                                                {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted() as string] ?? ''}
+                                                <span style={{ flex: 1 }}>
+                                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                                </span>
+                                                {sortIndex >= 0 && (
+                                                    <span style={{ fontSize: 10, color: '#c2410c' }}>
+                                                        {sorting[sortIndex].desc ? '▼' : '▲'}
+                                                        {sorting.length > 1 ? sortIndex + 1 : ''}
+                                                    </span>
+                                                )}
                                             </div>
-                                            {header.column.getCanFilter() && header.column.id !== 'category' && (
-                                                <input
-                                                    placeholder="filter..."
-                                                    value={(header.column.getFilterValue() as string) ?? ''}
-                                                    onChange={e => header.column.setFilterValue(e.target.value)}
+                                            {isNumericCol && (
+                                                <select
+                                                    value={aggKindHere}
                                                     onClick={e => e.stopPropagation()}
+                                                    onChange={e =>
+                                                        setAggregationKinds(prev => ({
+                                                            ...prev,
+                                                            [header.column.id]: e.target.value as AggregationKind,
+                                                        }))
+                                                    }
                                                     style={{
-                                                        width: '90%',
                                                         marginTop: 2,
+                                                        fontSize: 10,
                                                         font: 'inherit',
-                                                        fontSize: 11,
+                                                        width: '100%',
+                                                        background: 'transparent',
+                                                        border: '1px dashed rgba(148,163,184,0.5)',
+                                                        borderRadius: 4,
                                                     }}
-                                                />
+                                                    title="Column summary"
+                                                >
+                                                    {(Object.keys(AGGREGATION_LABELS) as AggregationKind[]).map(k => (
+                                                        <option key={k} value={k}>
+                                                            ∑ {AGGREGATION_LABELS[k]}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             )}
                                             <div
                                                 onMouseDown={header.getResizeHandler()}
@@ -1808,6 +2353,7 @@ const SandboxTanStack: React.FC = () => {
                                         ]
                                             .filter(Boolean)
                                             .join(' ');
+                                        const bodyTint = getColumnTint(tintRoles, colId, 'body');
                                         return (
                                             <td
                                                 key={cell.id}
@@ -1825,7 +2371,7 @@ const SandboxTanStack: React.FC = () => {
                                                           ? '#dbeafe'
                                                           : cell.getIsAggregated()
                                                             ? '#f0f0f0'
-                                                            : undefined,
+                                                            : (bodyTint ?? undefined),
                                                     boxShadow: [
                                                         isTopEdge ? 'inset 0 2px 0 #2563eb' : '',
                                                         isBottomEdge ? 'inset 0 -2px 0 #2563eb' : '',
@@ -1839,7 +2385,7 @@ const SandboxTanStack: React.FC = () => {
                                                         ? {
                                                               position: 'sticky',
                                                               left: GUTTER_WIDTH,
-                                                              background: isSelected ? '#dbeafe' : rowBg,
+                                                              background: isSelected ? '#dbeafe' : (bodyTint ?? rowBg),
                                                           }
                                                         : {}),
                                                     ...(isEditing ? { zIndex: 20, overflow: 'visible' } : {}),
