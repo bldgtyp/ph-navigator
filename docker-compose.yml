@@ -1,0 +1,25 @@
+# Local-dev ecosystem for PH-Navigator V2.
+# Backend and frontend run on the host (faster reloads); only services
+# that need a daemon live here. See context/environment-setup.md §9.
+
+services:
+  db:
+    image: postgres:16
+    container_name: phn-v2-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ph_navigator_v2}
+      POSTGRES_USER: ${POSTGRES_USER:-phn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-phn_local_only}
+    volumes:
+      - phn_v2_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-phn}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  phn_v2_postgres_data:

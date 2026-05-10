@@ -1,0 +1,60 @@
+# ─── macOS ───
+.DS_Store
+
+# ─── Editors ───
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ─── Python (backend) ───
+backend/.venv/
+backend/.env
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/.mypy_cache/
+backend/.coverage
+backend/_coverage_html/
+backend/htmlcov/
+backend/dist/
+backend/build/
+backend/*.egg-info/
+
+# ─── Node (frontend) ───
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.*.local
+frontend/coverage/
+frontend/.vite/
+
+# ─── Local-only ops state ───
+*.log
+*.sqlite
+*.sqlite3
+
+# ─── Playwright / browser test artifacts ───
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# ─── Secrets ───
+# Never commit any .env (template lives at .env.example)
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# ─── Docker volumes (only if exported as files) ───
+postgres_data/
+
+# ─── Build output ───
+*.tsbuildinfo

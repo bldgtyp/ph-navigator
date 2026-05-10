@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(webapp-testing)",
+      "Bash(make:*)",
+      "Bash(uv:*)",
+      "Bash(uvx:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)"
+    ]
+  }
+}

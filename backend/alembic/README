@@ -1,0 +1,9 @@
+Generic single-database configuration with an async dialect-compatible engine.
+
+Migrations live in `versions/`. Generate a new one with:
+
+    cd backend && uv run alembic revision --autogenerate -m "describe the change"
+
+Apply with:
+
+    cd backend && uv run alembic upgrade head
