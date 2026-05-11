@@ -8,8 +8,8 @@ SCOPE: Detailed enumeration of every UI surface, interaction, data
        structure, and edge case in PH-Navigator V1's Window-Builder
        (a.k.a. UnitBuilder), including the Frame Types and Glazing
        Types catalog views that live alongside it.
-RELATED: docs/plans/architecture-prd.md (V2 architecture PRD),
-         docs/plans/user-stories.md (V2 user stories — to be expanded
+RELATED: context/PRD.md (V2 architecture PRD),
+         context/USER_STORIES.md (V2 user stories — to be expanded
          with US-Builder-Windows after this reference is in hand)
 SOURCE: frontend/src/features/project_view/data_views/windows/**,
         backend/features/aperture/**

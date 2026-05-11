@@ -1,11 +1,11 @@
-# `docs/` — feature specs and dated plans
+# `docs/` — Planning And Archives
 
-- `features/` — per-feature PRDs and design docs. As V2 features land,
-  spec docs that we want LLM agents to keep loading on every session
-  should be moved to `context/`. Feature docs that capture history but
-  aren't agent-targeted stay here.
-- `plans/<YYYY-MM-DD>/…` — dated planning docs. Add `DATE` and `TIME`
-  headers at the top of each file (per `CLAUDE.md`).
+- `plans/<YYYY-MM-DD>/...` — transient planning, reviews, phasing, and
+  implementation notes. Add `DATE` and `TIME` headers.
+- `REMOVED.md` — routing note for planning docs removed from active
+  context.
 
-The initial PRD set was authored under `docs/features/` in V1 and lives
-in `context/` for V2 (`architecture-prd.md`, `tech-stack.md`, etc.).
+Stable product, architecture, UI, stack, table, and glossary reference
+docs live in `context/`. If a doc should be loaded as durable project
+context after the work is complete, move it to `context/`; otherwise
+leave it in `docs/plans/`.

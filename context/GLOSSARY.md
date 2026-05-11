@@ -1,8 +1,9 @@
 # Ubiquitous Language
 
-> Extracted from the PH-Navigator V2 PRD set (`docs/plans/architecture-prd.md`,
-> `ui-ux.md`, `user-stories.md`) on 2026-05-10. This is the canonical
-> vocabulary for design discussions, code, API names, and docs. When a
+> Extracted from the PH-Navigator V2 PRD set (`context/PRD.md`,
+> `context/UI_UX.md`, `context/USER_STORIES.md`) on 2026-05-10.
+> This is the canonical vocabulary for design discussions, code, API
+> names, and docs. When a
 > term here conflicts with a term elsewhere, this file wins — fix the
 > other one.
 

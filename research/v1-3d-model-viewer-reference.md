@@ -11,14 +11,14 @@ SCOPE: Detailed enumeration of every backend route, schema, service,
        V1's 3D Model Viewer (the HBJSON-driven Three.js scene under
        `frontend/.../model_viewer/` and its
        `backend/features/hb_model/` server).
-RELATED: docs/plans/architecture-prd.md (V2 architecture PRD —
+RELATED: context/PRD.md (V2 architecture PRD —
          §11.4 covers the R3F rewrite, §10.5 covers HBJSON file
          storage),
          research/v1-assembly-builder-reference.md (sibling V1
          reference, same template),
          research/v1-window-builder-reference.md (sibling V1
          reference, same template),
-         docs/plans/user-stories.md (V2 user stories — US-Viewer to be
+         context/USER_STORIES.md (V2 user stories — US-Viewer to be
          expanded with this reference in hand)
 SOURCE: backend/features/hb_model/**,
         frontend/src/features/project_view/model_viewer/**,

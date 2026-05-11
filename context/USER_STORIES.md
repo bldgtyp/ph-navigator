@@ -1,15 +1,15 @@
-[[title](https://)](https://)---
+---
 DATE: 2026-05-10
 TIME: -
 STATUS: DRAFT — populated incrementally as Ed and Claude walk through
-        each feature. Companion to docs/plans/architecture-prd.md
-        (architecture PRD) and docs/plans/ui-ux.md (UI/UX narrative).
+        each feature. Companion to context/PRD.md
+        (architecture PRD) and context/UI_UX.md (UI/UX narrative).
 AUTHOR: Ed May (with Claude)
 SCOPE: Detailed user stories for PH-Navigator V2. Each story carries
        acceptance criteria, status, priority, and cross-references to
        the PRD and UI/UX docs.
-RELATED: docs/plans/architecture-prd.md (architecture PRD),
-         docs/plans/ui-ux.md (UI/UX narrative)
+RELATED: context/PRD.md (architecture PRD),
+         context/UI_UX.md (UI/UX narrative)
 ---
 
 # PH-Navigator V2 — User Stories
@@ -99,7 +99,7 @@ Ed doesn't override.
    logs `action='sign_out'`.
 
 ### UI/UX ref
-See `docs/plans/ui-ux.md` §2.1 *Sign-in page*
+See `context/UI_UX.md` §2.1 *Sign-in page*
 and §1.6 *Session-expiry modal* (new).
 
 ---
@@ -613,8 +613,8 @@ links.
   `[Airtightness](##airtightness)` linking to other tabs in the
   project) is v1.1+.
 - **No per-item attachments in v1** (per Q-STATUS-5 resolved).
-  Description Markdown can link to R2 URLs from assets uploaded
-  elsewhere (Site Photos, datasheets, etc.).
+  Description Markdown can link to stable PHN asset download routes for files
+  uploaded elsewhere (Site Photos, datasheets, etc.).
 - **Reorder:** drag-and-drop with up / down keyboard fallback
   for accessibility. Fractional `order_index` makes reorder a
   one-row update, not a renumber.
@@ -849,7 +849,7 @@ v1.
 - **Q-STATUS-4 (deletable items):** yes, fully deletable
   via `⋯ → Delete item`.
 - **Q-STATUS-5 (per-item attachments):** out of v1.
-  Description Markdown can link to R2 URLs from assets
+  Description Markdown can link to stable PHN asset download routes for files
   uploaded elsewhere.
 - **Q-STATUS-6 (empty-state UX):** see Q-LANDDEFAULT-1 in
   US-3. Three CTAs as captured in criterion 2.
@@ -1684,7 +1684,7 @@ None — all US-WIN-5 questions resolved 2026-05-10.
 2026-05-10)
 **PRD ref:** §6.2 (`tables.window_types`), §10.4 (glossary)
 **V1 ref:** §10 (full ISO 10077-1 calc + display components)
-**Convention reference:** `context/glossary.md` — Thermal
+**Convention reference:** `context/GLOSSARY.md` — Thermal
 performance section. **U-Value (no films) only**, never
 "U-Factor." Same policy as envelope (US-ENV-10) and the
 Model-tab info panel (US-VIEW-6).
@@ -1711,7 +1711,7 @@ Model-tab info panel (US-VIEW-6).
    composite U-Value).
 
 3. **Label text — per active unit system, no films
-   convention** (matches `context/glossary.md` + US-ENV-10):
+   convention** (matches `context/GLOSSARY.md` + US-ENV-10):
    - IP: `Window U-Value: 0.21` (2 decimals, BTU/(hr·ft²·°F))
    - SI: `Window U-Value: 1.20 W/m²K` (2 decimals)
    - Per-element renders same format with smaller font.
@@ -1809,7 +1809,7 @@ None outstanding.
 
 ### Cross-references
 
-- **`context/glossary.md`** — Thermal performance section;
+- **`context/GLOSSARY.md`** — Thermal performance section;
   drives the U-Value-only label + tooltip text.
 - **Q-ENV-4 resolution** — sibling envelope decision; same
   policy applies here.
@@ -2947,7 +2947,7 @@ Pydantic models are written.
   boundary, downstream of PHN. Captured in US-ENV-12 (HBJSON
   export) acceptance criteria.
 
-  **Documented in:** `context/glossary.md` (created
+  **Documented in:** `context/GLOSSARY.md` (created
   2026-05-10 — Thermal performance section). PRD §14.1
   (migration script) carries the one-time HBJSON-delta note
   for re-imported V1 steel-stud assemblies.
@@ -4289,7 +4289,7 @@ on 2026-05-10 after Q-ENV-4 resolution unblocked this story)
 **V1 ref:** §5.5 (full thermal-resistance service), §11.2
 (EffectiveRValueLabel), §13.5 (surface-film divergence —
 resolved per Q-ENV-4)
-**Convention reference:** `context/glossary.md` — Thermal
+**Convention reference:** `context/GLOSSARY.md` — Thermal
 performance section. V2 shows only U-Value / R-Value (no
 films); never U-Factor / R-Factor.
 
@@ -4439,7 +4439,7 @@ None outstanding.
   R_SI=0` policy for the steel-stud equivalent-conductivity
   written into HBJSON. See Q-ENV-4 resolution for the V1 bug
   fix this corrects.
-- **`context/glossary.md` — Thermal performance section** —
+- **`context/GLOSSARY.md` — Thermal performance section** —
   authoritative definitions of U-Value / U-Factor / R-Value /
   R-Factor and the rationale for PHN's policy.
 
@@ -4527,7 +4527,7 @@ explicitly out of scope), §10.4 (glossary)
 **V1 ref:** §4.1 (HBJSON routes), §5.7 (export service),
 §11.3 (header overflow menu — surface placement), §13.5
 (surface-film divergence — resolved per Q-ENV-4)
-**Convention reference:** `context/glossary.md` — Thermal
+**Convention reference:** `context/GLOSSARY.md` — Thermal
 performance section (no surface films anywhere in PHN's data;
 downstream tools add them at simulation time).
 
@@ -4600,7 +4600,7 @@ MVP per Ed 2026-05-10:
      matches the V2 data model.)
 
 4. **No surface films emitted anywhere** (per Q-ENV-4
-   resolution + `context/glossary.md`):
+   resolution + `context/GLOSSARY.md`):
    - Per-material `r_value` values are computed with films
      excluded — matches Honeybee's `EnergyMaterial.r_value`
      "excluding air films" convention exactly.
@@ -4612,7 +4612,7 @@ MVP per Ed 2026-05-10:
      to_hbe_material_steel_stud.py:27-28, 207-208`), which
      caused films to be double-counted when downstream
      consumers re-applied their own films. V2 drops these
-     constants. See `context/glossary.md` (Thermal performance
+     constants. See `context/GLOSSARY.md` (Thermal performance
      section, V1→V2 behavioral change subsection).
    - Downstream consumers (Honeybee → `u_factor`, WUFI,
      PHPP, EnergyPlus) add films **once** at the construction
@@ -4686,7 +4686,7 @@ None outstanding.
 
 ### Cross-references
 
-- **`context/glossary.md` — Thermal performance section.**
+- **`context/GLOSSARY.md` — Thermal performance section.**
   Authoritative source for the no-films policy and the
   steel-stud V1→V2 behavioral change.
 - **Q-ENV-4 resolution.** Drives criterion 4 (no films
@@ -5093,7 +5093,7 @@ needs follow-up edit), §11.4.2 (`project_hbjson_files`)
   cfm50/sf.** Resolved: **iCFA per honeybee_ph's
   `interior_conditioned_floor_area`** convention. This matches
   Phius's expected variable and is already exposed in the
-  HBJSON model. Document in `context/glossary.md` with a
+  HBJSON model. Document in `context/GLOSSARY.md` with a
   short note on what's excluded (unconditioned, exterior).
   Other definitions (gross, ground-only, code-specific
   variants) deferred to v1.1+ gated by concrete user request.
@@ -6327,7 +6327,7 @@ HBJSON write-back to builder tables)
 (authoritative V1 enumeration — 17 sections covering routes,
 schemas, services, scene setup, viz states, tool states,
 color-by modes, loaders, UI components, cross-cutting concerns)
-**Convention reference:** `context/glossary.md` — Thermal
+**Convention reference:** `context/GLOSSARY.md` — Thermal
 performance section (U-values exclude films; the viewer
 surfaces them in the info panel verbatim from HBJSON, so
 labels match)
@@ -6665,9 +6665,9 @@ upload a file, which doesn't match the workflow.
      MB cap gives 2× headroom.
    - Default `display_name` = the original filename minus
      extension. User can rename before/after upload.
-   - **Content-hash dedup:** server computes
-     `content_hash_sha256` on receipt. If an existing
-     non-deleted file in this project has the same hash,
+   - **Content-hash dedup:** client/agent computes
+     `content_hash_sha256` before requesting the upload intent.
+     If an existing non-deleted file in this project has the same hash,
      the upload is rejected with toast: *"This file matches
      an existing upload ({existing.display_name}). Switch
      to it instead?"* with a `[Switch]` button. Avoids
@@ -7339,7 +7339,7 @@ conversion at display)
 
    | Type | Title | Fields | Section |
    |---|---|---|---|
-   | `faceMesh` | "Opaque Surface" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Value (with the `context/glossary.md` convention applied — see criterion 7), R-Value |
+   | `faceMesh` | "Opaque Surface" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Value (with the `context/GLOSSARY.md` convention applied — see criterion 7), R-Value |
    | `apertureMeshFace` | "Window" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Value (no R-Value per V1) |
    | `spaceGroup` | "Interior Space" | Name, ID, Number, Quantity, WUFI Type, Floor Area, Weighted Area, Net Volume, Avg Height, Avg Weighting Factor | "Ventilation": Supply Air, Extract Air, Transfer Air (m³/s SI → CFM IP per PRD §11.5) |
    | `spaceFloorSegmentMeshFace` | "Interior Floor" | Space, Number, Weight, Floor Area, Weighted Area | "Ventilation": Supply, Extract, Transfer Air |
@@ -7352,7 +7352,7 @@ conversion at display)
    the absence of a config means the panel renders
    empty / hidden, which is the safe default.
 
-7. **U-Value / R-Value labels respect `context/glossary.md`
+7. **U-Value / R-Value labels respect `context/GLOSSARY.md`
    convention.** Per the Thermal performance section
    (created 2026-05-10 as part of Q-ENV-4 resolution):
    - Labels read "U-Value" and "R-Value" (NOT "U-Factor" /
@@ -7397,7 +7397,7 @@ None outstanding.
 ### Cross-references
 - **V1 ref §13.4** — `ElementInfoPanel/` + `fieldConfigs.ts`
   layout.
-- **`context/glossary.md`** — Thermal performance section;
+- **`context/GLOSSARY.md`** — Thermal performance section;
   drives the U-Value / R-Value label + tooltip text.
 - **PRD §11.5** — IP/SI conversion at display; m³/s SI on
   wire.
@@ -7558,7 +7558,7 @@ None outstanding.
 - **PRD §11.5** — SI canonical drives criterion 1.
 - **PRD §10.3** — MCP tool surface; per-feature endpoints
   remain live for MCP.
-- **`context/glossary.md`** — U-Value / R-Value labels
+- **`context/GLOSSARY.md`** — U-Value / R-Value labels
   shipped by Pydantic schemas match the convention
   (criterion 4).
 - **NEW-LLM-API-1** — drives the per-feature endpoint
@@ -8056,7 +8056,7 @@ to the per-story sections above.
 | ~~Q-STATUS-2~~ | ~~US-Status~~ | ~~Multiple templates (Phius vs PHI vs design-only)?~~ | **Resolved 2026-05-10:** single basic cert-type-agnostic template in V2 v1. Multi-template support defers to v1.1+ if a real need surfaces |
 | ~~Q-STATUS-3~~ | ~~US-Status~~ | ~~Does `in_progress` state belong in the enum?~~ | **Resolved 2026-05-10:** drop `in_progress`. States are `todo / done / na`. Current-step is a computed visual (first non-done item in `order_index` order) |
 | ~~Q-STATUS-4~~ | ~~US-Status~~ | ~~Items deletable or only state-toggleable?~~ | **Resolved 2026-05-10:** fully deletable via `⋯ → Delete item`. Soft-delete; undelete is admin-only (mirrors US-1.4 project-delete) |
-| ~~Q-STATUS-5~~ | ~~US-Status~~ | ~~Per-item attachments (photos, PDFs)?~~ | **Resolved 2026-05-10:** out of v1. Description Markdown can link to R2 URLs from assets uploaded elsewhere. Per-item attachment UI defers to v1.1+ |
+| ~~Q-STATUS-5~~ | ~~US-Status~~ | ~~Per-item attachments (photos, PDFs)?~~ | **Resolved 2026-05-10, asset wording revised 2026-05-11:** out of v1. Description Markdown can link to stable PHN asset download routes for files uploaded elsewhere. Per-item attachment UI defers to v1.1+ |
 | ~~Q-STATUS-6~~ | ~~US-Status~~ | ~~Empty-state UX for brand-new project?~~ | **Resolved 2026-05-10 (via Q-LANDDEFAULT-1):** centered card with 3 CTAs — "Apply BLDGTYP default template" (primary) / "+ Add custom item" (secondary) / "Skip to Envelope" (link) |
 | ~~Q-STATUS-7~~ | ~~US-Status~~ | ~~`completion_date` editing — auto-populate or always-editable?~~ | **Resolved 2026-05-10:** auto-populate to today on `done` flip; user-editable thereafter (so they can backdate). Clearing to null supported via the edit form |
 | Q-LOG-1 | C-1 | Log retention? | keep forever |
@@ -8099,7 +8099,7 @@ to the per-story sections above.
 | ~~Q-ENV-2~~ | ~~US-Builder-Envelope~~ | ~~Photos/datasheets segment-scoped or material-scoped?~~ | **Resolved 2026-05-10:** **split by what they document** — datasheets at project-material level (per-product, one per project), site photos at segment level (per-installation-slot). Introduces `tables.project_materials[]` table; segments reference by `project_material_id`. See US-Builder-Envelope architectural Q-ENV-2 for full model + auto-management rules |
 | ~~Q-ENV-2.1~~ | ~~US-Builder-Envelope~~ | ~~Should datasheets eventually move to catalog tier (defaultable + per-project override)?~~ | **Resolved 2026-05-10: NO.** Datasheets never live in the catalog, not even as defaults. Catalog carries specs only (modeling-relevant fields); the QA submittal must come from the project team on the project. See auto-memory `qa_principle_per_project_datasheets.md` |
 | ~~Q-ENV-3~~ | ~~US-Builder-Envelope~~ | ~~Default material on segment / assembly create?~~ | **Resolved 2026-05-10:** initial state `project_material_id: null` (with Save-time validation, mirrors Q-WIN-3) **+** dashed-outline / blank-fill canvas rendering **+** R-/U-value label "unfinished" marker **+** TWEAK: once any material is picked in the active assembly, that becomes the session-default for new add-segment / add-layer (Zustand store `lastPickedMaterialByAssembly`, per-assembly key, session-only) |
-| ~~Q-ENV-4~~ | ~~US-Builder-Envelope~~ | ~~Steel-stud surface-film divergence (V1 ref §13.5) + Honeybee U-Factor vs U-Value convention~~ | **Resolved 2026-05-10** after source audit of Honeybee + PHN-V1. Honeybee convention is explicit: `r_value`/`u_value` exclude films, `r_factor`/`u_factor` include them (simple EN 673 / ISO 10292, NOT direction-dependent). **V2 policy: PHN shows only U-Value / R-Value (no films); never U-Factor/R-Factor.** ASHRAE-convention U-Factor is direction-dependent, but PHN constructions are direction-free — downstream tools add films at sim time. V1 HBJSON steel-stud bug (R_SE=0.17/R_SI=0.68 baked into cavity equivalent) fixed in US-ENV-12: cavity equivalent uses R_SE=0/R_SI=0 everywhere. Documented in `context/glossary.md` (created 2026-05-10). Unblocks US-ENV-10 |
+| ~~Q-ENV-4~~ | ~~US-Builder-Envelope~~ | ~~Steel-stud surface-film divergence (V1 ref §13.5) + Honeybee U-Factor vs U-Value convention~~ | **Resolved 2026-05-10** after source audit of Honeybee + PHN-V1. Honeybee convention is explicit: `r_value`/`u_value` exclude films, `r_factor`/`u_factor` include them (simple EN 673 / ISO 10292, NOT direction-dependent). **V2 policy: PHN shows only U-Value / R-Value (no films); never U-Factor/R-Factor.** ASHRAE-convention U-Factor is direction-dependent, but PHN constructions are direction-free — downstream tools add films at sim time. V1 HBJSON steel-stud bug (R_SE=0.17/R_SI=0.68 baked into cavity equivalent) fixed in US-ENV-12: cavity equivalent uses R_SE=0/R_SI=0 everywhere. Documented in `context/GLOSSARY.md` (created 2026-05-10). Unblocks US-ENV-10 |
 | ~~Q-ENV-5~~ | ~~US-Builder-Envelope~~ | ~~Multi-row PhDivisionGrid (V1 ref §13.11)?~~ | **Resolved 2026-05-10:** defer to v1.1+; single-row only in V2 v1. Rare in BLDGTYP practice (hybrid assemblies model via multi-layer single-row stacks). Original lean had a structured-error on HBJSON import for multi-row data — now moot since HBJSON construction import was dropped from V2 v1 (US-ENV-12). v1.1+ candidate gated by concrete user request |
 | ~~Q-ENV-6~~ | ~~US-Builder-Envelope~~ | ~~Per-project material filter (V1 ref §13.2 has none)?~~ | **Resolved 2026-05-10:** (a) no filter in V2 v1. Material catalogs are smaller and not vendor-keyed; picker's category grouping + search are sufficient. Re-eval at ~150–200 catalog materials; v1.1+ replacement would mirror US-WIN-8 `material_filters` table |
 | ~~Q-ENV-7~~ | ~~US-Builder-Envelope~~ | ~~Envelope sub-tabs or flat?~~ | **Resolved 2026-05-10:** keep V1 sub-tab structure (Assemblies / Specifications / Airtightness / Site Photos). Confirmed via Ed's review — see Q-ENV-2 for the restructured Specifications model |
@@ -8127,7 +8127,7 @@ to the per-story sections above.
 | ~~Q-ENV-13.2~~ | ~~US-ENV-13~~ | ~~Bulk operations across material cards?~~ | **Resolved 2026-05-10:** defer to v1.1+; not in MVP. Per-material primary already collapses N→1 (one card per product), so bulk-set's value drops vs V1's per-use rows |
 | ~~Q-ENV-13.3~~ | ~~US-ENV-13~~ | ~~Per-segment site-photo zone disabled when material's spec-status is N/A?~~ | **Resolved 2026-05-10:** disabled when material's `specification_status === 'na'`. Matches V1 semantics, avoids photo waste on placeholders. Workaround: bump material to `pending` if `na` segment legitimately needs documentation |
 | ~~Q-ENV-14.1~~ | ~~US-ENV-14~~ | ~~Which HBJSON drives the Airtightness calc?~~ | **Resolved 2026-05-10:** (c) explicitly pinned via the Airtightness page UI (`project_airtightness.hbjson_file_id`); reproducible, decoupled from Model-tab state |
-| ~~Q-ENV-14.2~~ | ~~US-ENV-14~~ | ~~Floor-area definition (iCFA / gross / etc.) for Phius CORE cfm50/sf?~~ | **Resolved 2026-05-10:** iCFA per honeybee_ph's `interior_conditioned_floor_area`; document convention in `context/glossary.md`; other definitions v1.1+ gated by concrete user request |
+| ~~Q-ENV-14.2~~ | ~~US-ENV-14~~ | ~~Floor-area definition (iCFA / gross / etc.) for Phius CORE cfm50/sf?~~ | **Resolved 2026-05-10:** iCFA per honeybee_ph's `interior_conditioned_floor_area`; document convention in `context/GLOSSARY.md`; other definitions v1.1+ gated by concrete user request |
 | ~~Q-ENV-14.3~~ | ~~US-ENV-14~~ | ~~Auto-roll-forward `project_airtightness.hbjson_file_id` on new upload?~~ | **Resolved 2026-05-10:** no — keep pinned. Surface a "newer HBJSON available" banner with explicit `[Re-pin]` action. Audit-trail discipline preserved |
 | ~~Q-ENV-14.4~~ | ~~US-ENV-14~~ | ~~Multiple airtightness tests per project (mid-construction + final, per-zone)?~~ | **Resolved 2026-05-10:** defer multi-test to v1.1+; one row per project in V2 v1. Schema extends additively (`test_id` keying) when needed |
 | ~~Q-ENV-15.1~~ | ~~US-ENV-15~~ | ~~Assembly type — name-parse or explicit `assembly.type` field?~~ | **Resolved 2026-05-10:** explicit `assembly.type` enum (`'wall' \| 'floor' \| 'roof' \| 'other'`); name-based auto-detect on create, user-editable via `⋯` menu thereafter. Adds field to `assembly` shape (PRD §6.2 amendment) |

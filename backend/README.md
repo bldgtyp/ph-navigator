@@ -1,7 +1,7 @@
 # Backend — PH-Navigator V2
 
 FastAPI service for versioned project documents. Currently a scaffold —
-real route surface lands during feature work (see `docs/plans/user-stories.md`).
+real route surface lands during feature work (see `context/USER_STORIES.md`).
 
 ## Run
 
@@ -24,4 +24,4 @@ Or from the repo root: `make backend`, `make test-backend`.
 - `scripts/` — one-shot utilities
 - `tests/` — pytest suite
 
-See `context/environment-setup.md` for the full env contract.
+See `context/ENVIRONMENT.md` for the full env contract.

@@ -14,10 +14,10 @@ SCOPE: The shared `<DataTable>` React component used by the catalog
        pipeline, field-definition registry, lessons-for-build, parity
        feature matrix, open questions.
 RELATED:
-  - docs/plans/architecture-prd.md (architecture PRD; §11.3 anchors here)
-  - docs/plans/tech-stack.md (stack pin)
-  - docs/plans/ui-ux.md (§1 DataTable interaction model)
-  - docs/plans/user-stories.md
+  - context/PRD.md (architecture PRD; §11.3 anchors here)
+  - context/TECH_STACK.md (stack pin)
+  - context/UI_UX.md (§1 DataTable interaction model)
+  - context/USER_STORIES.md
   - research/poc-plans/grid-spike-results.md (TanStack vs AG Grid)
   - research/poc-plans/airtable-wishlist.md (parity wishlist)
   - research/poc-plans/airtable-parity-phases.md (vertical-slice phases)
@@ -831,7 +831,7 @@ the persistence work block.
 ## 8. Catalog manager — table-specific notes
 
 The catalog manager is the first consumer (`/catalog/{slug}` —
-PRD §11.1, ui-ux §2.3). v1 ships three catalogs: Materials,
+PRD §11.1, `context/UI_UX.md` §2.3). v1 ships three catalogs: Materials,
 Window-Frame Elements, Window-Glazing.
 
 ### 8.1 Reference dataset — Materials

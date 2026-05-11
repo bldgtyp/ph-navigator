@@ -6,7 +6,7 @@ layer. The catalog stays relational (curated starting library). V1
 sibling, not a migration in place.
 
 **Status:** planning / scaffold. No feature code yet. See
-`docs/plans/architecture-prd.md` for the full PRD.
+`context/PRD.md` for the canonical PRD.
 
 ## Quickstart (one-time)
 
@@ -47,10 +47,10 @@ See `Makefile` (`make help`) for the full recipe list.
 |---|---|
 | `backend/` | FastAPI server, raw SQL repositories, Alembic migrations |
 | `frontend/` | Vite + React + TypeScript app |
-| `context/` | **Read this first.** LLM-targeted docs + full PRD set |
+| `context/` | **Read this first.** Canonical PRD and stable reference docs |
 | `research/` | POC artifacts from V1's catalog spike (precedent only — not on import path) |
-| `docs/features/` | Per-feature planning docs added during V2 development |
-| `docs/plans/` | Dated planning docs |
+| `docs/plans/` | Dated reviews, phasing, and in-progress plans |
+| `docs/REMOVED.md` | Removed / archived planning-doc routing |
 | `Makefile` | Discoverability layer — every command an agent needs |
 | `docker-compose.yml` | Postgres (local dev only) |
 | `CLAUDE.md` / `AGENTS.md` | Agent rules — Python via `uv` only, etc. |
@@ -67,4 +67,4 @@ See `Makefile` (`make help`) for the full recipe list.
 5. **Testing UIs:** Playwright MCP (`mcp__plugin_playwright_playwright__*`)
    is available; use it to drive the frontend in a browser.
 
-Full rules: `CLAUDE.md`, `AGENTS.md`, `context/environment-setup.md` §2.4.
+Full rules: `CLAUDE.md`, `AGENTS.md`, `context/ENVIRONMENT.md`.

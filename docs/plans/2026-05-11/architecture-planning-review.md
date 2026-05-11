@@ -1,15 +1,15 @@
 ---
 DATE: 2026-05-11
 TIME: -
-STATUS: Draft review
+STATUS: Historical review — decisions reconciled into `context/`
 AUTHOR: Codex
 SCOPE: Critique of PH-Navigator V2 architecture PRD, tech-stack note, UX plan, table-view plan, user stories, and scaffold alignment before feature implementation.
 RELATED:
-  - docs/plans/architecture-prd.md
-  - docs/plans/tech-stack.md
-  - docs/plans/user-stories.md
-  - docs/plans/ui-ux.md
-  - docs/plans/table-view.md
+  - context/PRD.md
+  - context/TECH_STACK.md
+  - context/USER_STORIES.md
+  - context/UI_UX.md
+  - context/DATA_TABLE.md
 ---
 
 # PH-Navigator V2 Architecture Planning Review
@@ -93,7 +93,7 @@ Original finding: the Save model was strong, but draft semantics had several unr
 Decision: V2 v1 uses one canonical server-side draft per `(version_id, user_id)`. Browser and MCP writes from the same editor share that draft. All user/agent document writes go through the draft; saved version bodies mutate only through explicit Save or Save As. V1 does not attempt merge UI. Conflicts preserve the draft and offer reload / Save As / discard / diff as appropriate.
 
 Docs updated 2026-05-11:
-- Added `docs/plans/2026-05-11/draft-save-state-machine.md`.
+- Folded the draft/save state-machine decision into `context/PRD.md` §8.
 - PRD §8.3 now includes `base_version_etag`, `draft_etag`, and `updated_via`.
 - PRD §8.5 now defines draft ETag, version ETag, locked-version, second-tab, and Save As behavior.
 - PRD §9.4/§9.5 now removes normal whole-body/table saved-document PUTs; writes go through draft endpoints.
@@ -217,15 +217,15 @@ Recommendation: add an ops-readiness plan before first deploy. This can be short
 - The architecture PRD should be the source of truth, but late decisions are not folded back consistently.
 - The open-question list includes resolved items and stale questions; split it into `Resolved`, `Must decide before implementation`, and `Can decide during feature work`.
 - The user-stories doc is too large to be the active execution plan. Keep it as a story corpus, then create a short MVP sequence doc.
-- `context/` is currently only a small routing shell, while the PRD commits to substantial LLM-targeted docs. Create those incrementally with the first slice, not after feature sprawl.
-- Move superseded drafts and predecessor docs clearly out of the active reading path, or keep one routing table explaining their status.
+- ~~`context/` is currently only a small routing shell, while the PRD commits to substantial LLM-targeted docs.~~ **Resolved 2026-05-11:** canonical reference docs moved to `context/`; generated implementation docs will be added only as code lands.
+- ~~Move superseded drafts and predecessor docs clearly out of the active reading path, or keep one routing table explaining their status.~~ **Resolved 2026-05-11:** superseded docs removed from active context and routed through `docs/REMOVED.md`.
 
 ## Recommended pre-implementation gates
 
 1. Reconcile stale docs: public viewer routing, raw SQL persistence, and MCP auth/token model were resolved 2026-05-11.
 2. Write remaining decision docs:
    - `public-access-threat-model.md`
-   - ~~`draft-save-state-machine.md`~~ completed 2026-05-11
+   - ~~`draft-save-state-machine.md`~~ folded into `context/PRD.md` §8 on 2026-05-11
    - `asset-storage-and-api.md`
 3. Create an MVP vertical-slice plan that stops before domain-heavy Windows/Envelope canvases.
 4. Defer fixture budgets/indexing work until post-MVP or until real-project latency makes it necessary.

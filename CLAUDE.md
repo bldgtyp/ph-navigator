@@ -10,27 +10,25 @@ data model with versioned, immutable-by-discipline saves. V1
 ## Status
 
 **Planning / scaffold.** No feature code yet. The `context/` folder
-holds the full PRD set; the `research/` folder holds POC artifacts
-from V1's catalog spike as precedent.
+holds the canonical reference docs; `docs/plans/` holds transient
+reviews / phasing; `research/` holds POC artifacts from V1's catalog
+spike as precedent.
 
 ## Project Structure
 
 - `/backend` — FastAPI server, raw SQL repositories, Alembic migrations
 - `/frontend` — Vite + React + TypeScript app
-- `/context` — **Read this first.** PRD set + LLM-targeted reference docs
+- `/context` — **Read this first.** Canonical PRD + stable reference docs
 - `/research` — POC artifacts kept as precedent (NOT on the import path)
-- `/docs` — per-feature planning docs + dated plans
+- `/docs` — dated plans, reviews, and removed-doc routing
 
 Start here in `context/`:
-- `architecture-prd.md` — the V2 architecture PRD
-- `environment-setup.md` — how this dev env is set up (you are reading
-  its CLAUDE.md offspring)
-- `tech-stack.md` — pinned stack decisions
-- `ui-ux.md` — UI narrative
-- `user-stories.md` — feature-by-feature user stories
-- `table-view.md` — the shared `<DataTable>` contract
-- `v1-*-reference.md` — V1 feature catalogs (source for V2 user-story drafting)
-- `project-versioning-predecessor.md` — archived predecessor to the PRD
+- `README.md` — reading order and doc routing
+- `ENVIRONMENT.md` — how this dev environment is set up
+- `PRD.md` — canonical V2 architecture PRD
+- `TECH_STACK.md` — pinned stack decisions
+- `GLOSSARY.md` — canonical product/domain vocabulary
+- `USER_STORIES.md`, `UI_UX.md`, `DATA_TABLE.md` — load on demand
 
 ## Python — ALWAYS use `uv`
 
@@ -100,11 +98,12 @@ interactive verification.
 
 ## Planning
 
-- All planning docs are Markdown (`.md`) under `docs/plans/<YYYY-MM-DD>/…`.
+- Durable description docs live in `context/`.
+- In-progress plans, reviews, and implementation phasing live under
+  `docs/plans/<YYYY-MM-DD>/...`.
 - When generating a plan, add `DATE` and `TIME` headers at the top.
-- Feature specs (PRDs, larger refs) live under `docs/features/`. Anything
-  meant to ride along forever as agent context should be moved to
-  `context/`.
+- Removed / superseded planning material is routed through
+  `docs/REMOVED.md`.
 
 ## New Code
 

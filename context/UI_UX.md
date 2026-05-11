@@ -3,8 +3,8 @@ DATE: 2026-05-10
 TIME: -
 STATUS: DRAFT — narrative UI/UX descriptions, populated incrementally
         alongside the user-stories doc. Companion to
-        docs/plans/architecture-prd.md (architecture PRD) and
-        docs/plans/user-stories.md (user stories).
+        context/PRD.md (architecture PRD) and
+        context/USER_STORIES.md (user stories).
         Designed to be handed off to Claude Design (or another visual
         designer) for actual screen design once content is stable.
 AUTHOR: Ed May (with Claude)
@@ -12,8 +12,8 @@ SCOPE: Narrative descriptions of every UI page and flow in PH-Navigator
        V2. Describes layout, content, behavior, and interaction patterns
        in plain language — no pixel-level decisions. Reference, not
        prescription.
-RELATED: docs/plans/architecture-prd.md (architecture PRD),
-         docs/plans/user-stories.md (user stories)
+RELATED: context/PRD.md (architecture PRD),
+         context/USER_STORIES.md (user stories)
 ---
 
 # PH-Navigator V2 — UI / UX Narrative
@@ -186,7 +186,7 @@ flexibility lives in code, not runtime").
 The interaction model below is the user-facing contract — what the
 table feels like to use. The full component contract, library
 choices, write pipeline, and lessons-learned live in
-`docs/plans/table-view.md`. This subsection is
+`context/DATA_TABLE.md`. This subsection is
 the UI/UX-level summary that other pages reference.
 
 **Density and chrome.** 32 px row height, 1 px dividers, hover
@@ -241,7 +241,7 @@ operates per **gesture** — one ⌘Z reverts an entire paste, fill, or
 row-insert, not one cell at a time. POC bound: 8 entries, in-memory.
 Production conflict semantics (what happens when undo collides with
 a remote edit, with a refetch, or with a version switch) are open
-(see table-view doc §11.2).
+(see `context/DATA_TABLE.md` §11.2).
 
 **Sort, filter, group, hide — toolbar-owned.** A toolbar above the
 table holds five buttons:
@@ -311,7 +311,7 @@ post-extraction lane.
 **Out of scope for v1.** Linked-record / relation cells; per-user
 non-contiguous selection; OR mode in filter; fill-handle pattern
 detection; comments / @mentions / presence cursors; mobile / phone
-optimization; dark-mode tint palette. See table-view doc §9.4.
+optimization; dark-mode tint palette. See `context/DATA_TABLE.md` §9.4.
 
 ---
 
@@ -420,9 +420,9 @@ appears at all.
 **(Detailed in a later story — US-Catalog. Placeholder.)**
 
 The dashboard's "Catalogs ▾" dropdown navigates to one of these pages.
-The page renders a single `<DataTable>` (see §1.7 and the table-view
-feature doc) over the catalog rows, framed by chrome that's specific
-to catalogs:
+The page renders a single `<DataTable>` (see §1.7 and
+`context/DATA_TABLE.md`) over the catalog rows, framed by chrome that's
+specific to catalogs:
 
 - Page header with the catalog's display name, the active version
   (read-only banner if viewing a historical version), a version

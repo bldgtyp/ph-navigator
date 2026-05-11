@@ -2,7 +2,7 @@
 
 Vite + React 19 + TypeScript. Currently a scaffold — real surfaces
 (sign-in, dashboard, project view, catalog, model viewer) land during
-feature work (see `docs/plans/user-stories.md` and `docs/plans/ui-ux.md`).
+feature work (see `context/USER_STORIES.md` and `context/UI_UX.md`).
 
 ## Run
 

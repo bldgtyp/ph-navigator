@@ -15,20 +15,22 @@ fresh-start build.
 ## Status
 
 **Planning / scaffold.** No feature code yet. See `context/` for the
-full PRD set and `research/` for POC artifacts from V1's catalog spike.
+canonical reference docs, `docs/plans/` for transient reviews / phasing,
+and `research/` for POC artifacts from V1's catalog spike.
 
 ## Project Structure
 
 - `/backend` — FastAPI server, raw SQL repositories, Alembic migrations
 - `/frontend` — Vite + React + TypeScript app
-- `/context` — **Read this first.** PRD set + LLM-targeted docs
+- `/context` — **Read this first.** Canonical PRD + stable reference docs
 - `/research` — POC artifacts kept as precedent (NOT on the import path)
-- `/docs` — per-feature planning docs + dated plans
+- `/docs` — dated plans, reviews, and removed-doc routing
 
 Start here in `context/`:
-- `architecture-prd.md`, `environment-setup.md`, `tech-stack.md`,
-  `ui-ux.md`, `user-stories.md`, `table-view.md`,
-  `v1-*-reference.md`, `project-versioning-predecessor.md`
+- `README.md`, `ENVIRONMENT.md`, `PRD.md`, `TECH_STACK.md`,
+  `GLOSSARY.md`
+- Load `USER_STORIES.md`, `UI_UX.md`, and `DATA_TABLE.md` on demand
+  when the task touches stories, UX, or table behavior.
 
 ## Python — ALWAYS use `uv`
 
@@ -78,8 +80,10 @@ real browser during development.
 
 ## Planning
 
-- Markdown under `docs/plans/<YYYY-MM-DD>/…`.
-- DATE/TIME headers at the top.
+- Durable description docs live in `context/`.
+- In-progress plans, reviews, and implementation phasing live under
+  `docs/plans/<YYYY-MM-DD>/...`.
+- DATE/TIME headers at the top of new plans.
 
 ## New Code
 

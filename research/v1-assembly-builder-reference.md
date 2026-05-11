@@ -8,8 +8,8 @@ SCOPE: Detailed enumeration of every UI surface, interaction, data
        structure, and edge case in PH-Navigator V1's Assembly-Builder
        (the visual layer/segment composer + per-segment Material List
        view) and its supporting backend.
-RELATED: docs/plans/architecture-prd.md (V2 architecture PRD),
-         docs/plans/user-stories.md (V2 user stories — to be expanded
+RELATED: context/PRD.md (V2 architecture PRD),
+         context/USER_STORIES.md (V2 user stories — to be expanded
          with US-Builder-Envelope after this reference is in hand),
          research/v1-window-builder-reference.md (sibling reference
          for the Window-Builder, written in the same template)

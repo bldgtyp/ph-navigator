@@ -1,7 +1,5 @@
 # Environment (PHN-V2) — agent quick-card
 
-Full reference: `context/environment-setup.md`.
-
 ## Python: ALWAYS uv
 
 - `uv run <cmd>` — run a command in the project venv

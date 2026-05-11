@@ -1,16 +1,18 @@
 ---
 DATE: 2026-05-09
 TIME: -
-STATUS: DRAFT — initial PRD for PH-Navigator V2. Supersedes the
-        project-versioning.md draft and significantly reshapes the
-        2026-05-06-native-catalog-manager.md PRD. PH-Nav-V1 continues to
+STATUS: CANONICAL PRD — current source of truth for PH-Navigator V2
+        architecture and product direction. Supersedes the original
+        project-side versioning draft and significantly reshapes the
+        2026-05-06 native catalog-manager PRD. PH-Nav-V1 continues to
         run; V2 develops in parallel.
 AUTHOR: Ed May (with Claude)
 SCOPE: Foundational architecture for PH-Navigator V2 — a JSON-document /
        file-format-style rewrite of the project layer, with the catalog
        remaining a relational "starting library." Rebuild, not refactor.
-RELATED: docs/plans/project-versioning-predecessor.md (predecessor —
-         archived for history; this PRD takes its place),
+RELATED: context/TECH_STACK.md, context/UI_UX.md, context/USER_STORIES.md,
+         context/DATA_TABLE.md, context/GLOSSARY.md,
+         docs/REMOVED.md (archived predecessor / removed-doc routing),
          research/poc-plans/2026-05-06-native-catalog-manager.md
          (catalog manager PRD — substantially reshaped by the bookshelf
          decision; superseded by this doc, kept as research record),
@@ -373,7 +375,7 @@ user_action_log (
     action       TEXT NOT NULL,
                  -- 'login', 'login_failed', 'project_create',
                  -- 'version_save', 'hbjson_upload', 'catalog_record_*',
-                 -- ... (full enum in user-stories §C-1)
+                 -- ... (full enum in `context/USER_STORIES.md` §C-1)
     project_id   UUID REFERENCES projects(id),
     target_type  TEXT,
     target_id    TEXT,
@@ -989,7 +991,8 @@ Properties:
   is rejected with `unguarded_array_patch`. MCP helpers should prefer
   higher-level table/row tools that generate safe patches.
 
-Full state-machine reference: `docs/plans/2026-05-11/draft-save-state-machine.md`.
+The draft/save state machine is consolidated here in §§8.3–8.6. The
+former standalone decision note is archived in `docs/REMOVED.md`.
 
 ### 8.4 Diff
 
@@ -1027,6 +1030,21 @@ Per §4, single-user-at-a-time editing. Implementation:
 
 This is sufficient for two-person sequential workflow; no document
 locks or merge UI needed in v1.
+
+### 8.6 Draft / save acceptance tests
+
+MVP backend tests must cover:
+
+- first patch lazily creates a draft;
+- draft ETag mismatch returns 409 and preserves the stored draft;
+- Save deletes the draft and updates the version body;
+- Save against a locked version returns 409;
+- Save As from a locked version succeeds;
+- stale Save returns 409 and preserves the draft;
+- unguarded array patch returns 400;
+- guarded stale-index patch fails closed;
+- MCP token patch uses the issuer's `(version_id, user_id)` draft;
+- session-cookie and MCP writers conflict through the same ETag rules.
 
 ## 9. API surface
 
@@ -1178,6 +1196,9 @@ PATCH  /api/v1/projects/{pid}/assets/{aid}                      rename/edit
 DELETE /api/v1/projects/{pid}/assets/{aid}                      soft delete if
                                                                   not actively
                                                                   referenced
+GET    /api/v1/projects/{pid}/assets/{aid}/download             stable PHN route;
+                                                                  redirects to
+                                                                  signed R2 URL
 GET    /api/v1/projects/{pid}/assets/{aid}/url                  signed GET URL +
                                                                   expires_at
 POST   /api/v1/projects/{pid}/assets/{aid}/attach               JSON-Patch attach
@@ -1197,6 +1218,11 @@ size and MIME rules before signing. The signed URL is short-lived
 `complete-upload` confirms the object exists in R2, records `r2_etag`,
 sets `upload_status = 'uploaded'`, and writes an action-log event. Failed
 or abandoned pending rows are GC candidates.
+
+`download` is the stable link to place in rendered Markdown or UI anchors;
+it performs access checks, then redirects to a short-lived signed R2 URL.
+`url` is for clients that need the signed URL JSON envelope directly
+(viewer fetches, MCP tools, and batch download flows).
 
 `attach` and `detach` are convenience wrappers around the draft JSON-Patch
 API. They require `project:write` plus `asset:write`, obey the same ETag
@@ -1343,19 +1369,22 @@ writes, and project asset attach flows are MCP-callable in v1.
 
 ### 10.4 Documentation `context/` (LLM-targeted)
 
-Mirroring V1's `context/` pattern, V2 ships:
+`context/` is the stable reference layer. It should stay tight:
+canonical product/architecture docs live here; dated working plans and
+implementation phasing stay under `docs/plans/`.
+
+Current hand-written docs:
 
 ```
 context/
-├── app.md                          high-level architecture
-├── data-model.md                   the JSON document shape, walked through
-├── tables.md                       per-table schema reference
-├── operations.md                   what edits are valid; invariants
-├── api.md                          REST API surface reference
-├── mcp.md                          MCP tool reference
-├── llm-cookbook.md                 recipes for common LLM tasks
-├── error-codes.md                  every error code, what it means, how to recover
-├── glossary.md                     PH-domain terms used in the data model
+├── README.md                       reading order and doc routing
+├── ENVIRONMENT.md                  local environment / command card
+├── PRD.md                          this canonical PRD
+├── TECH_STACK.md                   stack and persistence decisions
+├── DATA_TABLE.md                   shared <DataTable> component contract
+├── UI_UX.md                        UI narrative companion
+├── USER_STORIES.md                 detailed story corpus / acceptance criteria
+├── GLOSSARY.md                     canonical PHN-V2 terms
 └── schemas/
     ├── project-document-v1.json    JSON Schema (auto-generated)
     ├── material-v1.json
@@ -1363,9 +1392,14 @@ context/
     └── ...
 ```
 
-These are not optional; treat them as a deliverable in the same way as
-code. CI verifies schemas are in sync with Pydantic models (regenerate
-on every PR).
+Planned generated / implementation-adjacent docs, added only when the
+corresponding code exists: `api.md`, `mcp.md`, `operations.md`,
+`error-codes.md`, `llm-cookbook.md`, and schema files under
+`context/schemas/`.
+
+These docs are deliverables in the same way as code. CI should verify
+generated schemas are in sync with Pydantic models once schema
+generation exists.
 
 ### 10.5 Schema versioning — open-old-projects safety
 
@@ -2104,25 +2138,15 @@ acceptance, but each shapes a downstream decision:
 
 ## 19. Next steps
 
-1. **Walk this PRD with John.** Validate the bookshelf model and
-   save/version mental model before code lands.
-2. **Resolve §17 open questions** in priority: 1, 2, 8, 10 first
-   (data-model-shaping); 3, 6, 7, 9 later (UX scope).
-3. **Stand up `ph-navigator-v2/` skeleton** — fresh sibling folder
-   (or repo, per §17 #13); FastAPI app, Alembic, Vite frontend,
-   Docker Compose, smoke test. `/api/v1/health` route. No business
-   logic yet.
+1. **Finish pre-implementation doc cleanup.** Keep `context/` as the
+   canonical description set and `docs/plans/` as transient planning.
+2. **Split §17 open questions** into resolved, must-decide before
+   implementation, and can-decide during feature work.
+3. **Create a short MVP vertical-slice plan** before implementation
+   phasing. It should sequence auth/dashboard/project create,
+   `ProjectDocumentV1`, one editable table, draft/Save/Save As/lock,
+   public read-only mode, JSON schema/download, and one catalog pick.
 4. **Define `ProjectDocumentV1` Pydantic model** — the contract
    everything else hangs from. Ship with golden-file tests.
-5. **Schema endpoint and `context/` skeleton** — get the LLM-friendly
-   docs in place before the API surface grows.
-6. **Walk individual user stories from this PRD's `§4 Users & access`
-   into detailed UI/flow specs.** Sequence: project CRUD →
-   assemblies CRUD → version save/load → catalog manager →
-   window-types → rooms → equipment tables → diff → MCP →
-   public viewer.
-7. **Update `2026-05-06-native-catalog-manager.md`** with a status note
-   pointing here, and revise its data model to match §7's bookshelf
-   schema (versions stay; project-side pinning goes).
-8. **Archive `project-versioning.md`** with a status note pointing
-   here.
+5. **Add generated schema docs and API/MCP docs as code lands.** Do not
+   create empty context stubs that future agents have to load.

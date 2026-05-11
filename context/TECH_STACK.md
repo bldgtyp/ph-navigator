@@ -7,11 +7,11 @@ TIME: 10:20 EDT
 
 Record current technical-stack and code-style decisions for PH-Navigator V2, based on:
 
-- `docs/plans/architecture-prd.md`
-- `docs/plans/user-stories.md`
-- `docs/plans/table-view.md` (catalog-POC outcome)
+- `context/PRD.md`
+- `context/USER_STORIES.md`
+- `context/DATA_TABLE.md` (catalog-POC outcome)
 - `research/v1-window-builder-reference.md`
-- `docs/plans/ui-ux.md`
+- `context/UI_UX.md`
 - `research/poc-plans/grid-spike-results.md` (TanStack vs AG Grid decision)
 - `research/poc-plans/poc-lessons-for-real-build.md`
 - Honeybee Schema Pydantic V2 migration commit: <https://github.com/ladybug-tools/honeybee-schema/commit/f1b6fdfa5750177f969a5b952e01560f3f9b4dd4>
@@ -173,7 +173,7 @@ Use TanStack Query for server-owned state. Use Zustand for local interaction sta
 ## Table-View Decision
 
 Validated by the catalog POC (week 0 → gate 2026-05-07). Detail in
-`docs/plans/table-view.md`. Summary here:
+`context/DATA_TABLE.md`. Summary here:
 
 **Pick: TanStack Table v8 (MIT, headless) + `@tanstack/react-virtual`
 + shadcn-table primitives.**
@@ -192,7 +192,7 @@ Tradeoffs accepted (TanStack is headless):
 - We own the markup, styling, a11y. Acceptable because schema-driven
   rendering needed full control anyway.
 - More LOC inside `<DataTable>` than an AG Grid wrapper would have
-  needed. Budget reflects this (see table-view doc §12).
+  needed. Budget reflects this (see `context/DATA_TABLE.md` §12).
 
 Library pins:
 
@@ -215,7 +215,7 @@ Not added by default:
   auto-scroll, in one selection-controller hook with `select` and
   `fill` modes. Validated under virtualization in the POC.
 
-Component contract — see table-view doc §4. Three architectural
+Component contract — see `context/DATA_TABLE.md` §4. Three architectural
 pillars to inherit from the POC:
 
 1. **One write primitive (`CellWrite[]` → `WriteOp`)** for inline
