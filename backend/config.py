@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(
-        default="postgresql+psycopg://phn:phn_local_only@localhost:5432/ph_navigator_v2"
+        default="postgresql://phn:phn_local_only@localhost:5432/ph_navigator_v2"
     )
 
     # Object storage (R2)

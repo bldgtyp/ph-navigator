@@ -18,8 +18,8 @@ Or from the repo root: `make backend`, `make test-backend`.
 
 - `main.py` — FastAPI app + middleware
 - `config.py` — Pydantic Settings (the only `os.getenv` surface)
-- `database.py` — SQLAlchemy engine + declarative Base
-- `alembic/` — Alembic migrations (use `make makemigration name=foo`)
+- `database.py` — raw psycopg connection pool helpers
+- `alembic/` — Alembic migrations (manual revisions; no ORM autogenerate)
 - `features/` — per-feature modules (added during build)
 - `scripts/` — one-shot utilities
 - `tests/` — pytest suite

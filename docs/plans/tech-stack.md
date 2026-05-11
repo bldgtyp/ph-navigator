@@ -15,7 +15,7 @@ Record current technical-stack and code-style decisions for PH-Navigator V2, bas
 - `research/poc-plans/grid-spike-results.md` (TanStack vs AG Grid decision)
 - `research/poc-plans/poc-lessons-for-real-build.md`
 - Honeybee Schema Pydantic V2 migration commit: <https://github.com/ladybug-tools/honeybee-schema/commit/f1b6fdfa5750177f969a5b952e01560f3f9b4dd4>
-- Michael Kennedy's Raw+DC article: <https://mkennedy.codes/posts/raw-dc-the-orm-pattern-of-2026/>
+- Michael Kennedy's Raw+DC article (reviewed 2026-05-11): <https://mkennedy.codes/posts/raw-dc-the-orm-pattern-of-2026/>
 
 This is a decision note, not the full implementation plan.
 
@@ -61,9 +61,11 @@ The strongest backend architecture is:
 4. Pydantic models validate project documents, table slices, catalog records, and API payloads.
 5. Alembic owns schema changes.
 
-## ORM Decision
+## Persistence Decision
 
-Lean: drop the ORM entity layer for V2.
+Decision confirmed 2026-05-11: drop the ORM entity layer for V2. Use
+raw parameterized SQL through narrow repository modules, `psycopg` v3
+for database access, and Pydantic v2 models as the typed boundary.
 
 The V2 model is already not a classic ORM fit:
 
@@ -71,6 +73,12 @@ The V2 model is already not a classic ORM fit:
 - catalog values are copied into project documents rather than live-joined;
 - most per-project tables are Pydantic tables inside `project_versions.body`;
 - API/MCP/LLM usefulness depends on explicit schemas and predictable JSON, not object graphs.
+
+Michael Kennedy's Raw+DC argument maps well to PHN, with one adaptation:
+PHN should use **Raw SQL + Pydantic** rather than Raw SQL + dataclasses.
+Pydantic already owns API payloads, JSON-document validation, table
+slices, repository returns, and MCP results. Adding dataclasses would
+create a second typed model layer without adding much value.
 
 A raw-SQL repository layer fits this better than SQLAlchemy ORM entities. It keeps the persistence boundary visible and prevents a second domain model from competing with the Pydantic document model.
 
@@ -124,9 +132,16 @@ Tradeoffs:
 | SQLAlchemy Core | Good SQL builder; no entity layer; works with Alembic | Still adds SQLAlchemy concepts when plain SQL may be clearer |
 | Raw SQL + Pydantic | Explicit; low dependency surface; AI-friendly; maps cleanly to document-version architecture | Requires discipline around row mapping, transaction helpers, and test coverage |
 
-Decision: use raw SQL + Pydantic unless a specific slice proves SQLAlchemy Core is materially cleaner. Do not add SQLAlchemy ORM models by default.
+Decision: use plain string SQL in repository modules. Do not add
+SQLAlchemy ORM models, SQLAlchemy Core query composition, or repository
+abstractions that hide the SQL being run.
 
-Open detail: choose the driver during scaffold. Current lean is `psycopg` v3 with a connection pool, not `psycopg2-binary`, because V2 is a fresh build and should start on the current driver.
+Driver: `psycopg` v3 with `psycopg_pool`. V2 starts synchronous unless
+load testing or long-running I/O proves async is necessary.
+
+Alembic remains for migrations. Alembic may use SQLAlchemy internally,
+but application code does not use SQLAlchemy ORM/Core for persistence.
+Migrations are manual revisions; no autogenerate from ORM metadata.
 
 ## Frontend Decision
 
@@ -250,17 +265,15 @@ Frontend:
 - Keep unit conversion in focused frontend helpers with typed quantity names.
 - Prefer shadcn/ui primitives and lucide icons.
 
-## Decisions To Fold Back Into PRD
+## Decisions Folded Back Into PRD / Scaffold
 
-1. Replace `SQLAlchemy + Alembic` in the stack table with `raw SQL + Alembic + Postgres`.
-2. Add a short backend persistence subsection explaining repository modules and Pydantic row/document boundaries.
-3. Add `psycopg` v3 as the preferred Postgres driver, pending scaffold validation.
+1. Replaced `SQLAlchemy + Alembic` in the PRD stack table with `raw SQL + psycopg + Alembic + Postgres`.
+2. Added a backend persistence subsection explaining repository modules and Pydantic row/document boundaries.
+3. Added `psycopg` v3 + `psycopg_pool` as the scaffold database driver.
 4. Confirm React version during scaffold. React 19 is fine if the shadcn/R3F/TanStack combination is clean at install time; otherwise pin React 18 for compatibility.
 5. Decide whether to generate TypeScript API types from OpenAPI early. Lean yes, but keep the generated client thin.
 
 ## Open Questions
 
-1. Should raw SQL be plain string SQL in repository modules, or should V2 use SQLAlchemy Core for query composition while still avoiding ORM entities?
-2. Do we want synchronous FastAPI endpoints with a pooled sync Postgres driver, or async endpoints with `asyncpg` / async psycopg? Lean sync unless load testing or long-running IO says otherwise.
-3. Should the V2 repo enforce generated OpenAPI client/types in CI from day 1?
-4. Should document/table Pydantic models live under `features/project/document/` only, or in a shared `schemas/` package consumed by REST and MCP?
+1. Should the V2 repo enforce generated OpenAPI client/types in CI from day 1?
+2. Should document/table Pydantic models live under `features/project/document/` only, or in a shared `schemas/` package consumed by REST and MCP?

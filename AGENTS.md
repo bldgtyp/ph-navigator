@@ -19,7 +19,7 @@ full PRD set and `research/` for POC artifacts from V1's catalog spike.
 
 ## Project Structure
 
-- `/backend` — FastAPI server, SQLAlchemy models, Alembic migrations
+- `/backend` — FastAPI server, raw SQL repositories, Alembic migrations
 - `/frontend` — Vite + React + TypeScript app
 - `/context` — **Read this first.** PRD set + LLM-targeted docs
 - `/research` — POC artifacts kept as precedent (NOT on the import path)
@@ -40,6 +40,9 @@ Start here in `context/`:
 - Python 3.11 (pinned by `.python-version`).
 - Pydantic v2 only.
 - Calculations + data manipulation live in the backend.
+- Persistence is raw parameterized SQL through narrow repository
+  modules. No SQLAlchemy ORM/Core in app code; Alembic may use
+  SQLAlchemy internally for migrations only.
 
 ## Node — npm only
 

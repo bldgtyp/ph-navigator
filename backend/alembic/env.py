@@ -1,30 +1,42 @@
-"""Alembic environment — wires migrations to Settings + SQLAlchemy Base.
+"""Alembic environment for raw-SQL app persistence.
 
 The first real migration lands during feature work. Until then this
 env is a no-op so `alembic upgrade head` is a safe smoke step.
+
+PHN-V2 app code uses raw psycopg SQL, not SQLAlchemy ORM models.
+Alembic still uses SQLAlchemy internally to run migrations. There is no
+declarative metadata target and no autogenerate from ORM models.
 """
 from __future__ import annotations
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
 from config import settings
-from database import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+
+
+def _alembic_url() -> str:
+    """Return a SQLAlchemy-compatible URL for Alembic's migration engine."""
+    if settings.database_url.startswith("postgresql://"):
+        return settings.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return settings.database_url
+
+
+config.set_main_option("sqlalchemy.url", _alembic_url())
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = None
 
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=_alembic_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

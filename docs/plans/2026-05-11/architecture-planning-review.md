@@ -24,43 +24,46 @@ Do not start feature implementation until the decision seams below are resolved 
 
 ## Findings
 
-### F1. Public-readable project UUIDs are the largest security/product decision, and the plan under-specifies its consequences.
+### F1. Public-readable project UUIDs are the largest security/product decision. Route/auth model resolved 2026-05-11; guardrails still needed.
 
 PRD §4 makes every `/projects/{id}/...` route public-readable and treats the UUID as the share token. Non-logged-in viewers can browse all versions and download project JSON, table JSON, and HBJSON. Revocation requires soft-deleting the project.
 
 This is simple and internally consistent, but it is not a small access-model choice. It means any forwarded URL, browser-history leak, analytics/referrer leak, screenshot, email thread, or copied certifier link grants indefinite read access until the project is deleted. Because project JSON includes certification-relevant data and object references, this should be treated as a deliberate business/security acceptance, not just a convenience inherited from V1.
 
-Missing decisions:
+Decision recorded 2026-05-11:
+- V2 v1 uses normal `/projects/{id}/...` URLs for public read access.
+- There are no share tokens, no `/v/{token}` routes, and no approval workflow for viewing.
+- Edit ability is only possible for logged-in users, with backend write protection required on every mutating endpoint.
+
+Remaining decisions / guardrails:
 - Whether public viewers may download the full project JSON, not just browse rendered pages.
 - Whether public viewers may download HBJSON and signed asset URLs.
 - Whether project UUIDs are sufficiently unguessable and never exposed in third-party referrers.
-- Whether "soft-delete to revoke" is acceptable for active projects where the team still needs the data.
 - Whether a later ACL retrofit can preserve public project URLs without breaking old links.
 
-Recommendation: either confirm this as an explicit v1 risk acceptance with a short threat model, or restore revocable share tokens before implementation. If keeping public UUID access, add tests that all write routes require auth and that read routes never expose editor-only metadata or durable asset URLs.
+Recommendation: add a short public-access guardrail section before implementation. Tests must prove all write routes require auth and public read routes never expose editor-only metadata or long-lived asset URLs.
 
-### F2. Public-view routing is inconsistent across docs.
+### F2. Public-view routing is inconsistent across docs. Resolved 2026-05-11.
 
 The PRD says there are no `/v/{token}` routes and public viewers use the same `/projects/{id}/...` shape. The UX doc still defines a `Public viewer (/v/{token})` page and describes a separate minimal header. The stack table also mentions "opaque tokens for viewer links."
 
-This will produce the wrong routes, wrong auth middleware, and wrong UI shell if not reconciled.
+Decision: same-route public mode. Anonymous visitors use `/projects/{id}/{tab}` with auth-sensitive chrome and read-only controls. The UX doc and PRD stack table were updated to remove `/v/{token}`, viewer-link tokens, and view-link management language.
 
-Recommendation: make one source of truth. Either:
-- same-route public mode: `/projects/{id}/{tab}` with auth-sensitive chrome, or
-- separate revocable share-link mode: `/v/{token}` with a view-link table.
+### F3. Persistence stack is unresolved between SQLAlchemy ORM scaffold and raw-SQL decision. Resolved 2026-05-11.
 
-Do not keep both in planning prose.
-
-### F3. Persistence stack is unresolved between SQLAlchemy ORM scaffold and raw-SQL decision.
-
-The tech-stack note chooses raw parameterized SQL through repository modules and explicitly says no ORM entity layer. The architecture PRD stack table still says `SQLAlchemy + Alembic`, the README says `backend/` contains SQLAlchemy models, and the scaffold has `database.py` defining a SQLAlchemy `DeclarativeBase` and `SessionLocal`.
+Original finding: the tech-stack note chose raw parameterized SQL through repository modules and explicitly said no ORM entity layer, while the architecture PRD stack table still said `SQLAlchemy + Alembic`, the README said `backend/` contained SQLAlchemy models, and the scaffold had `database.py` defining a SQLAlchemy `DeclarativeBase` and `SessionLocal`.
 
 This matters because the first backend feature will establish the persistence style. If both paths remain, feature code will drift into mixed ORM/raw SQL patterns.
 
-Recommendation: resolve this before the first migration. If raw SQL is the decision:
-- keep SQLAlchemy only if Alembic needs it, or use Alembic with explicit SQL migrations and a `psycopg` pool;
-- remove `DeclarativeBase` language from docs/scaffold or mark it migration-only;
-- add repository conventions: transaction boundary, row mapping helper, JSONB validation point, error mapping, and test pattern.
+Decision: lock V2 to raw parameterized SQL through `psycopg` v3 repository modules, with Pydantic models as the typed boundary. No SQLAlchemy ORM/Core in app code. Alembic may use SQLAlchemy internally for migrations only, with manual migration revisions rather than ORM autogenerate.
+
+Docs and scaffold updated 2026-05-11:
+- PRD stack table and persistence subsection now say raw SQL + Pydantic.
+- README / AGENTS / CLAUDE / backend README no longer describe SQLAlchemy models.
+- `backend/database.py` now exposes a psycopg connection pool and transaction helper.
+- Alembic has no declarative metadata target.
+
+Remaining implementation detail for the first repository slice: define row-mapping helper conventions, JSONB validation points, error mapping, and transaction test patterns.
 
 ### F4. MCP auth and LLM asset APIs are contradictory.
 
@@ -206,7 +209,7 @@ Recommendation: add an ops-readiness plan before first deploy. This can be short
 
 ## Recommended pre-implementation gates
 
-1. Reconcile stale docs: public viewer routing, auth/token model, raw SQL vs SQLAlchemy, README/scaffold wording.
+1. Reconcile stale docs: auth/token model. Public viewer routing and raw SQL persistence were resolved 2026-05-11.
 2. Write three decision docs:
    - `public-access-threat-model.md`
    - `draft-save-state-machine.md`

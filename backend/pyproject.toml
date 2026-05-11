@@ -8,9 +8,11 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
+    # Alembic uses SQLAlchemy internally for migrations. App code does
+    # not use SQLAlchemy ORM/Core for persistence.
     "sqlalchemy>=2.0",
     "alembic>=1.13",
-    "psycopg[binary]>=3.2",
+    "psycopg[binary,pool]>=3.2",
     "cryptography>=43",
     "python-jose[cryptography]>=3.3",
     "passlib[bcrypt]>=1.7",
@@ -47,6 +49,7 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+explicit_package_bases = true
 
 [build-system]
 requires = ["hatchling"]

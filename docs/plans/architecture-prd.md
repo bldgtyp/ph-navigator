@@ -111,6 +111,15 @@ writes behind the editor session token.
 This matches V1's existing pattern (frontend/backend separation of
 read vs write) and is much simpler than a per-share-token model.
 
+**Decision confirmed 2026-05-11:** V2 v1 intentionally uses the
+normal project URL as the public read route. There are no special
+view-only URLs, no share-token rows, and no approval workflow for
+viewing. Logged-in editor state only changes which controls and write
+endpoints are available. This is an accepted product/security tradeoff:
+project URLs should be treated as durable read-capability links, and
+implementation must make write protection server-side, not merely a
+frontend affordance.
+
 - **Editors:** Ed May, John Mitchell. Authenticated users with edit
   rights on all projects. No per-project ACL in V2 v1 (two-person
   firm).
@@ -1504,7 +1513,8 @@ ambiguity.
 |---|---|
 | Backend language | Python 3.11+ |
 | Backend framework | FastAPI |
-| ORM / DB | SQLAlchemy + Alembic, Postgres 16 |
+| DB access | Raw parameterized SQL via `psycopg` v3 repositories; no ORM entity layer |
+| DB / migrations | Postgres 16 + Alembic manual migrations |
 | Validation | Pydantic v2 |
 | Object storage | Cloudflare R2 |
 | Frontend build | **Vite** (V1's CRA / `react-scripts` is dead-end) |
@@ -1516,18 +1526,50 @@ ambiguity.
 | 3D viewer | **`three` + `@react-three/fiber` + `@react-three/drei` + `@react-three/postprocessing`** |
 | JSON-Patch | `fast-json-patch` (frontend) + `jsonpatch` (backend) |
 | Units conversion (frontend only) | TBD — see Q-UNITS-2 (port `PH_units` / `convert-units` / per-quantity helpers) |
-| Auth | Session auth (cookies) for editors; opaque tokens for viewer links |
+| Auth | Session auth (cookies) for editors; public read access on normal project URLs |
 | Hosting | Render.com (backend service, managed Postgres, frontend static site) |
 | Local dev | Docker Compose (Postgres + backend + frontend dev server) |
 | MCP transport | stdio + HTTP/SSE (FastAPI route) |
 | Testing | pytest (backend), Playwright (E2E), Vitest (frontend unit) |
+
+### 12.1 Persistence pattern — raw SQL + Pydantic
+
+**Decision confirmed 2026-05-11:** V2 uses a Raw+DC-inspired
+persistence pattern adapted to PHN's Pydantic-heavy backend:
+repository modules issue raw parameterized SQL through `psycopg` v3,
+then map rows into Pydantic models or simple scalars at the data-access
+boundary. There is no SQLAlchemy ORM entity layer and no SQLAlchemy
+Core query-composition layer in application code.
+
+Why this fits PHN-V2:
+- The authoritative project model is already a Pydantic-validated JSON
+  document, not a graph of mutable ORM entities.
+- Raw SQL keeps JSONB, locking, ETag, and migration boundaries explicit.
+- Pydantic remains the typed contract for API payloads, project
+  documents, table slices, catalog rows, repository returns, and MCP
+  results.
+- Plain SQL is easier for LLM-assisted maintenance than a specialized
+  ORM abstraction, provided every query is parameterized and tested.
+
+Hard rules:
+- Repository functions own SQL strings and accept primitive IDs or typed
+  request objects.
+- All SQL with user input is parameterized. No f-string or concatenated
+  SQL with user-controlled values.
+- Repository functions return Pydantic models, typed row DTOs, or
+  scalars. Raw driver rows do not leak into services/routes.
+- Services own workflow invariants and transaction boundaries for
+  multi-step operations such as draft patch, Save, Save As, catalog
+  refresh, and asset attach.
+- Alembic remains the schema-migration tool, but migrations are manual.
+  There is no ORM metadata target and no autogenerate from models.
 
 V2 explicitly drops from V1's stack: CRA / `react-scripts`, MUI / MUI-X
 DataGrid, AG Grid, react-flip-toolkit, html2canvas / html2pdf / jspdf
 (replaced by server-side PDF if/when needed). These were V1
 accumulations; standardizing the V2 stack keeps the surface coherent.
 
-### 12.1 Folder / repo layout
+### 12.2 Folder / repo layout
 
 V2 lives in a brand-new sibling folder to V1 — fresh start, no shared
 code:
@@ -1753,10 +1795,10 @@ acceptance, but each shapes a downstream decision:
 5. **MCP transport** — stdio only, HTTP/SSE only, or both? Lean: both,
    stdio for local Claude Desktop / Code, HTTP/SSE for hosted use
    (e.g. claude.ai integration).
-6. **View link granularity** — per-project link (sees all versions) vs.
-   per-version link. Lean: per-project, since the use case is
-   sharing a project with a certifier or client who wants to see
-   the history.
+6. ~~**View link granularity** — per-project link (sees all versions)
+   vs. per-version link.~~ **Resolved 2026-05-11:** no separate view
+   links exist. Normal `/projects/{id}/...` routes are public-readable.
+   A public visitor who has the project URL can view the project.
 7. **Diff UI scope in v1** — full visual side-by-side, or structured
    text "summary of changes" only? Lean: structured-text v1, visual
    side-by-side as v1.1.
@@ -1778,7 +1820,7 @@ acceptance, but each shapes a downstream decision:
 12. **Draft GC age threshold** — drafts untouched for >30 days are
     deleted (§8.3). Confirm 30 days is reasonable; alert thresholds
     (e.g. "your draft is 14 days old — Save or discard?") tunable.
-13. **Repo split: one repo or two?** §12.1 leans separate Git repos.
+13. **Repo split: one repo or two?** §12.2 leans separate Git repos.
     Confirm before V2 scaffolding starts.
 14. **R3F migration of V1 viewer code** — port loaders 1:1 first, then
     refactor color-by handling, or rebuild loaders idiomatically as
@@ -1796,9 +1838,10 @@ acceptance, but each shapes a downstream decision:
     the upload UI strongly prompt for this (so cert submits get
     paired model + builder data), or leave it loose? Lean: prompt
     on upload but allow blank.
-18. **View-link access to HBJSON files** — public viewers see the
-    HBJSON list and can view / download. Confirm. Alternative: hide
-    HBJSON from public links by default; per-link toggle.
+18. **Public access to HBJSON downloads** — public viewers can reach
+    the normal project route and see read-only project data. Confirm
+    whether that also includes HBJSON file download and signed asset
+    URLs, or only in-browser viewing.
 19. **HBJSON parsing in the browser** — at 5–20 MB JSON parse +
     geometry build, the viewer load may take seconds. Acceptable for
     v1 with a clear loading state; optimize (worker thread, server

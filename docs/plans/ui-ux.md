@@ -62,9 +62,11 @@ empty-state art, animation specifics. Those land in the design pass.
 
 ## 1. Common elements
 
-### 1.1 Top header (signed-in app)
+### 1.1 Top header
 
-Present on every authenticated page except the public viewer (§3.6).
+Present on signed-in app pages and anonymous project reads. Anonymous
+visitors use the same project workspace routes in read-only mode
+(§2.11).
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
@@ -110,8 +112,7 @@ build 2026-05-10.42") and a link to the changelog. No marketing.
 Used for:
 - Confirmation of high-stakes actions (Delete project, Discard
   changes).
-- Forms that don't justify a full page (New project, Save As, View
-  link revoke).
+- Forms that don't justify a full page (New project, Save As).
 - Conflict-resolution dialogs (409 on Save).
 
 shadcn `Dialog` primitives. Always dismissible by Esc and clicking
@@ -293,10 +294,10 @@ to new options, and reports the new options in a single toast:
 the paste rolls back the cell writes **and** the new options
 together.
 
-**Locked / read-only mode.** When the open version is locked, on a
-public view link, or under a permission boundary, the table renders
-in read-only mode: no toolbar mutations except sort/filter/group on
-the user's local view, no inline edits, no paste/fill/undo, no
+**Locked / read-only mode.** When the open version is locked, the
+visitor is anonymous, or another permission boundary applies, the table
+renders in read-only mode: no toolbar mutations except sort/filter/group
+on the user's local view, no inline edits, no paste/fill/undo, no
 row-add. Edit affordances are hidden, not disabled-with-tooltip.
 
 **A11y baseline.** `tabIndex={0}` container with bubbled key
@@ -385,7 +386,7 @@ Row click anywhere except the pin / row-menu opens the project.
 **Row menu (`⋯`) actions:**
 - Open
 - Pin / Unpin
-- Copy view link (later — not MVP)
+- Copy project URL (later — not MVP)
 - Delete (greyed-out / hidden until US-1.4 ships)
 
 **Empty state:** if user owns no projects, show a centered card with
@@ -698,8 +699,8 @@ Windows tab.
 - Active row highlighted.
 - Hover reveals `Edit name (✏) · Duplicate (📑) · Delete (✕)`
   icons (logged-in editor on unlocked version only).
-- All edit affordances hidden when version is locked or on a
-  public view-link.
+- All edit affordances hidden when version is locked or when the
+  visitor is anonymous.
 
 **Right side — active assembly content (US-ENV-3, 4):**
 
@@ -802,7 +803,7 @@ Windows tab.
 - **Delete Segment** at bottom-left, red. Disabled with tooltip
   "A layer must have at least one segment" when only one
   segment in the layer remains.
-- All inputs read-only on locked versions / view links.
+- All inputs read-only on locked versions / anonymous public reads.
 
 **Assembly Toolbar (US-ENV-8 / US-ENV-9):**
 
@@ -991,7 +992,7 @@ picked yet:
 **(Detailed in US-ENV-14.)**
 
 Project-level airtightness page. Shareable with the construction
-team via view-links. Auto-extracts envelope volume + envelope
+team via normal project URLs. Auto-extracts envelope volume + envelope
 area + iCFA from the most recent HBJSON upload (cached on the
 `project_hbjson_files` row at upload time, never recomputed on
 page load); accepts the contractor's blower-door test inputs;
@@ -1028,9 +1029,9 @@ computes and displays ACH50, n50, and cfm50/sf-envelope.
 is project-level — not tied to a specific version of the energy
 model. Switching versions will not change what's shown here."*
 
-**Editor / view-link behavior:** editors see editable inputs
+**Editor / public-read behavior:** editors see editable inputs
 regardless of version-lock state (the data is project-level,
-not version-locked). View-link viewers see the page read-only —
+not version-locked). Anonymous viewers see the page read-only —
 but they DO see the page, since contractor-share is the primary
 use case per Ed's framing.
 
@@ -1042,7 +1043,7 @@ Contractor-facing reorganization of the same per-segment site
 photos that the Specifications sub-tab manages — grouped by
 **assembly type** (Walls / Floors / Roofs / Other) instead of by
 material. Same data, different presentation. Useful for sharing
-with the trades team via a view-link: "all the wall photos in
+with the trades team via the normal project URL: "all the wall photos in
 one place," etc.
 
 **Layout sketch:**
@@ -1104,25 +1105,29 @@ modal (or dedicated route — TBD when walked) with:
 - Edit metadata (name, bt_number, client, phius_number,
   phius_dropbox_url).
 - Transfer ownership (post-MVP UI; data model supports).
-- Manage view links (US-ViewLinks).
 - Delete project (gated to v1.1, US-1.4).
 
-### 2.11 Public viewer (`/v/{token}`)
+### 2.11 Anonymous public read (`/projects/{id}/{tab}`)
 
-**Purpose:** Anyone with the link views the project read-only.
+**Purpose:** Anyone with the normal project URL views the project
+read-only. There is no separate public URL, no `/v/{token}` route, and
+no view-link management surface.
 
-**Header:** minimal — PH-Nav logo (no link, or links to a "What is
-PH-Navigator?" public page), "Read-only" badge, the project name.
-**No sign-in needed; no edit affordances anywhere.**
+**Header:** same project-workspace shell, rendered in anonymous
+read-only mode. The header shows a "Read-only" pill next to the
+project/version label. A sign-in affordance may appear in the account
+area; edit controls do not render unless the visitor is logged in as an
+editor.
 
 **Layout:** Same project landing page as the editor view, but:
 - No `Save` / Save As buttons.
 - No row-action menus that lead to write actions.
-- Versions tab: switching active is allowed (changes which version is
-  rendered for that viewer session); lock/rename/delete are hidden.
-- 3D Viewer tab: viewing allowed; Upload HBJSON button hidden.
-- Settings tab: hidden entirely.
-- Catalogs: not accessible from this view.
+- Version dropdown remains available for opening other versions;
+  lock/rename/delete/default-version actions are hidden.
+- Model tab viewing is allowed; Upload HBJSON is hidden.
+- Project settings menu is hidden.
+- Catalog manager routes require editor auth and are not part of the
+  anonymous project workspace.
 
 ---
 
@@ -1184,7 +1189,7 @@ Consistent visual language for state across the app:
 | Locked version | Padlock icon next to version name | Project header, Versions list |
 | Submitted | Document-with-checkmark icon | Versions list |
 | Closed | Folded-document icon | Versions list |
-| Read-only (public view) | "Read-only" pill in header | Public viewer header |
+| Read-only (anonymous public read) | "Read-only" pill in header | Project workspace header |
 
 ---
 
@@ -1201,7 +1206,7 @@ back to a user-story open question.
 | UX-Q4 | Save status indicator — dot, text, or both? | dot + tooltip text |
 | UX-Q5 | Catalogs nav — header dropdown (lean) or top-level page route? | header dropdown |
 | UX-Q6 | Empty-state primary action — single button or guided onboarding? | single button |
-| UX-Q7 | Public viewer header — "Read-only" pill or banner? | pill in header |
+| ~~UX-Q7~~ | ~~Public viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
 
 ---
 
@@ -1237,4 +1242,4 @@ content review.
 | Equipment tab (`/projects/{id}/equipment`) | Placeholder | MVP |
 | Model tab (`/projects/{id}/model`) | Placeholder | MVP |
 | Project settings (overflow menu) | Placeholder | MVP (minus delete) |
-| Public viewer (`/v/{token}`) | Drafted (high-level) | MVP |
+| Anonymous public read (`/projects/{id}/{tab}`) | Drafted (high-level) | MVP |

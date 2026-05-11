@@ -45,7 +45,7 @@ See `Makefile` (`make help`) for the full recipe list.
 
 | Path | Purpose |
 |---|---|
-| `backend/` | FastAPI server, SQLAlchemy models, Alembic migrations |
+| `backend/` | FastAPI server, raw SQL repositories, Alembic migrations |
 | `frontend/` | Vite + React + TypeScript app |
 | `context/` | **Read this first.** LLM-targeted docs + full PRD set |
 | `research/` | POC artifacts from V1's catalog spike (precedent only — not on import path) |

@@ -56,8 +56,8 @@ db-reset: ## Destroy and recreate the Postgres volume (DANGER — local only)
 migrate: ## Apply Alembic migrations to head
 	cd backend && uv run alembic upgrade head
 
-makemigration: ## Generate new Alembic migration ('make makemigration name=add_foo')
-	cd backend && uv run alembic revision --autogenerate -m "$(name)"
+makemigration: ## Generate new empty Alembic migration ('make makemigration name=add_foo')
+	cd backend && uv run alembic revision -m "$(name)"
 
 # ─────────────── tests + quality ───────────────
 
@@ -83,7 +83,7 @@ format: ## Auto-format code
 # ─────────────── misc ───────────────
 
 smoke: ## Verify the box is wired up (run after `make setup`)
-	cd backend && uv run python -c "import fastapi, sqlalchemy, pydantic; print('backend ok')"
+	cd backend && uv run python -c "import fastapi, psycopg, pydantic; print('backend ok')"
 	cd frontend && node -e "console.log('frontend ok')"
 	docker compose ps db
 

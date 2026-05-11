@@ -15,7 +15,7 @@ from V1's catalog spike as precedent.
 
 ## Project Structure
 
-- `/backend` — FastAPI server, SQLAlchemy models, Alembic migrations
+- `/backend` — FastAPI server, raw SQL repositories, Alembic migrations
 - `/frontend` — Vite + React + TypeScript app
 - `/context` — **Read this first.** PRD set + LLM-targeted reference docs
 - `/research` — POC artifacts kept as precedent (NOT on the import path)
@@ -48,6 +48,9 @@ Start here in `context/`:
   `.model_validate()`, `.model_dump()` — no v1 syntax.
 - All calculations and data manipulation live in the backend. Frontend is
   display + user-interaction only.
+- Persistence is raw parameterized SQL through narrow repository modules.
+  No SQLAlchemy ORM/Core in app code; Alembic may use SQLAlchemy
+  internally for migrations only.
 
 ## Node — npm only
 

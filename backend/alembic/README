@@ -1,8 +1,12 @@
-Generic single-database configuration with an async dialect-compatible engine.
+Single-database Alembic configuration.
 
-Migrations live in `versions/`. Generate a new one with:
+PHN-V2 app code uses raw psycopg SQL and Pydantic models, not
+SQLAlchemy ORM models. Alembic still uses SQLAlchemy internally to run
+migrations, but there is no ORM metadata target.
 
-    cd backend && uv run alembic revision --autogenerate -m "describe the change"
+Migrations live in `versions/`. Generate a new manual revision with:
+
+    cd backend && uv run alembic revision -m "describe the change"
 
 Apply with:
 
