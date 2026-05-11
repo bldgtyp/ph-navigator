@@ -192,8 +192,8 @@ adding MVP cost. See US-1.5 for the user-facing framing.
 │  - Diff view        │        │  └────────────────────────────┘  │
 │  - View-only mode   │        │                                   │
 └─────────────────────┘        │  ┌────────────────────────────┐  │
-                               │  │ MCP server (optional       │  │
-┌─────────────────────┐        │  │ surface, same auth model)  │  │
+                               │  │ MCP server (v1, read/write │  │
+┌─────────────────────┐        │  │ project-scoped tokens)     │  │
 │  LLM clients        │ ──────▶│  └────────────────────────────┘  │
 │  (Claude Code/      │        └─────────────┬─────────────────────┘
 │   Desktop, etc.)    │                      │
@@ -288,6 +288,42 @@ projects (
     created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at         TIMESTAMPTZ
 )
+
+-- MCP/API bearer tokens for LLM clients. Required in V2 v1 because
+-- MCP is read/write capable from day 1. Tokens are issued by an
+-- authenticated editor, shown once, stored only as a hash, and
+-- revocable from Project Settings. Public project readability does
+-- NOT imply anonymous MCP access.
+mcp_tokens (
+    id              UUID PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id),
+                    -- editor who issued the token; actions performed
+                    -- with the token are attributed to this user
+    project_id      UUID NOT NULL REFERENCES projects(id),
+                    -- v1 tokens are project-scoped. All-project /
+                    -- workspace-scoped tokens defer until there is a
+                    -- concrete agent workflow that needs them.
+    name            TEXT NOT NULL,
+                    -- user-facing label, e.g. "Claude Desktop - Foo"
+    token_prefix    TEXT NOT NULL,
+                    -- first 8-12 chars for UI identification only
+    token_hash      TEXT NOT NULL UNIQUE,
+                    -- hash of the full token; plaintext is never
+                    -- stored after initial issue
+    scopes          TEXT[] NOT NULL DEFAULT ARRAY['project:read', 'project:write'],
+                    -- allowed values in v1:
+                    -- 'project:read' | 'project:write' | 'asset:read' |
+                    -- 'asset:write'. Catalog writes are not included.
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_used_at    TIMESTAMPTZ,
+    expires_at      TIMESTAMPTZ,
+                    -- nullable in v1; UI should encourage expiry but
+                    -- not require it for local Claude workflows
+    revoked_at      TIMESTAMPTZ,
+    revoked_by      INTEGER REFERENCES users(id)
+)
+CREATE INDEX ON mcp_tokens (project_id) WHERE revoked_at IS NULL;
+CREATE INDEX ON mcp_tokens (user_id) WHERE revoked_at IS NULL;
 
 -- Project-level lifecycle / certification milestone tracker.
 -- Lives outside the project document body intentionally: status is
@@ -391,12 +427,15 @@ catalog_audit_log
 
 Object-storage pointers:
 ```
-material_assets (id, kind, url, label, uploaded_by, uploaded_at)
-                -- referenced from the project document by id
-project_hbjson_files (id, project_id, label, file_key, file_size_bytes,
-                      project_version_id?, uploaded_at, uploaded_by, ...)
-                -- HBJSON model uploads for the 3D viewer; full schema in §11.4.2.
-                -- Independent of project_versions.
+project_assets (id, project_id, asset_kind, object_key, content_hash_sha256,
+                content_type, size_bytes, original_filename, display_name,
+                upload_status, uploaded_by, uploaded_at, deleted_at, ...)
+                -- canonical row for every R2-backed upload.
+                -- Referenced from the project document by id.
+project_hbjson_files (id, project_id, asset_id, label, notes,
+                      project_version_id?, extraction_status, ...)
+                -- HBJSON viewer/extraction metadata only; the file lives
+                -- in project_assets. Independent of project_versions.
 ```
 
 ### 6.2 Project document — JSONB shape
@@ -453,7 +492,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "argb_color": "(255,220,230,240)",
         "specification_status": "complete",       // 'complete' | 'pending' | 'na' — moved from segment (Q-ENV-2)
         "notes": null,                            // per-product notes — moved from segment (Q-ENV-2)
-        "datasheet_asset_ids": ["mat_asset_..."], // QA submittal — project-only, never in catalog (Q-ENV-2.1)
+        "datasheet_asset_ids": ["asset_..."],     // QA submittal — project-only, never in catalog (Q-ENV-2.1)
         "catalog_origin": {
           "catalog_table": "materials",
           "catalog_record_id": "rec123abc",
@@ -573,8 +612,8 @@ Properties of the document shape:
 - **Asset URLs by reference.** Datasheets, site photos, and
   thermal-bridge simulation files stay in object storage; the
   document holds asset ids that the API resolves to signed URLs
-  at read time. Asset endpoints are designed to be LLM-callable
-  from day 1 (§10).
+  at read time through the `project_assets` backbone (§6.5).
+  Asset endpoints are designed to be LLM-callable from day 1 (§10).
 - **Tables, not entity tree.** The top level is `tables.{
   assemblies, project_materials, window_types, rooms,
   thermal_bridges, equipment, manufacturer_filters, ... }`.
@@ -616,6 +655,115 @@ For tables with a corresponding global catalog (fans, pumps, ERVs), the
 "add row" UI offers two paths: pick from catalog (copies values in) or
 hand-enter (no catalog_origin). Identical to how Material works for
 Assembly Segments.
+
+### 6.4 Query / index / reporting posture for MVP
+
+Decision confirmed 2026-05-11: defer document-side query/index/reporting
+infrastructure for MVP.
+
+V2 v1 does **not** add generated columns, GIN indexes, sidecar search
+tables, relational shadows of project document tables, cross-project
+reporting, or precomputed catalog-drift indexes. The saved
+`project_versions.body` JSONB document remains the project data source of
+truth, and MVP reads are scoped to one project/version at a time.
+
+MVP query behavior:
+
+- Dashboard metadata, status state, action logs, HBJSON files, assets,
+  users, tokens, and catalog records are normal relational tables because
+  they are platform metadata or global data, not project-document table
+  shadows.
+- Project table screens read from the saved document or the active draft,
+  then slice/filter/sort through Pydantic/application code for the current
+  project/version.
+- Diff summaries, catalog drift checks, asset usage/orphan detection, and
+  downloads are computed on demand for the current project/version. They
+  are not pre-indexed in MVP.
+- Cross-project questions such as "which projects use Walltite ECO?" stay
+  out of scope until a real workflow needs them.
+
+Revisit after MVP if one of these happens: typical project JSON exceeds
+~5 MB, table-slice or draft-save latency becomes noticeable in manual
+testing, catalog drift checks feel slow on real projects, or a recurring
+cross-project reporting workflow appears. At that point, add measured
+fixture budgets before choosing generated columns, GIN indexes, or a
+sidecar search table.
+
+### 6.5 Asset backbone
+
+Decision confirmed 2026-05-11: use one generic project asset backbone
+for every uploaded file. Feature-specific file surfaces attach metadata
+to that backbone; they do not invent separate upload/download paths.
+
+Canonical storage table:
+
+```sql
+project_assets (
+    id                    TEXT PRIMARY KEY,
+                          -- server-generated asset_<ULID>
+    project_id            UUID NOT NULL REFERENCES projects(id),
+    asset_kind            TEXT NOT NULL,
+                          -- v1: 'datasheet' | 'site_photo' | 'hbjson'
+                          -- future: 'simulation_file' | 'export_bundle' |
+                          -- 'other'
+    object_key            TEXT NOT NULL UNIQUE,
+                          -- R2 key, e.g.
+                          -- projects/{project_id}/assets/{asset_id}/file.pdf
+    original_filename     TEXT NOT NULL,
+    display_name          TEXT NOT NULL,
+    content_type          TEXT NOT NULL,
+    size_bytes            BIGINT NOT NULL,
+    content_hash_sha256   TEXT NOT NULL,
+    r2_etag               TEXT,
+    upload_status         TEXT NOT NULL DEFAULT 'pending',
+                          -- 'pending' | 'uploaded' | 'failed'
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by            INTEGER NOT NULL REFERENCES users(id),
+    uploaded_at           TIMESTAMPTZ,
+    deleted_at            TIMESTAMPTZ,
+    deleted_by            INTEGER REFERENCES users(id),
+    metadata              JSONB NOT NULL DEFAULT '{}'::jsonb
+)
+CREATE INDEX ON project_assets (project_id, asset_kind)
+  WHERE deleted_at IS NULL AND upload_status = 'uploaded';
+CREATE INDEX ON project_assets (project_id, content_hash_sha256)
+  WHERE deleted_at IS NULL;
+```
+
+Rules:
+
+- Uploaded file bytes are immutable. New file content means a new
+  `project_assets` row and a new R2 object.
+- Project documents store only asset ids, e.g.
+  `project_materials[].datasheet_asset_ids[]`,
+  `assembly.segments[].photo_asset_ids[]`, and future
+  `thermal_bridges[].simulation_file_asset_ids[]`.
+- HBJSON files use the same `project_assets` row with
+  `asset_kind = 'hbjson'`; `project_hbjson_files` is a subtype
+  metadata table keyed to `asset_id` for viewer labels, notes, optional
+  `project_version_id`, and cached geometry/extraction fields (§11.4.2).
+- Uploads are direct-to-R2 through short-lived signed PUT URLs. The API
+  creates a pending asset row, returns the signed upload URL, and marks
+  the asset `uploaded` after the client/agent completes the upload.
+- Downloads are short-lived signed GET URLs. APIs never expose R2
+  credentials or durable public object URLs.
+- Public viewers may resolve signed download/view URLs for assets that
+  are referenced by public project surfaces. They cannot create, rename,
+  attach, detach, or delete assets.
+- MCP tokens require `asset:read` to resolve signed download URLs and
+  `asset:write` to create upload intents, complete uploads, or attach /
+  detach assets through draft JSON-Patch operations.
+- Content-hash dedup is advisory in MVP: if an uploaded file's
+  `(project_id, asset_kind, content_hash_sha256)` already exists, the
+  API returns the existing asset plus a `duplicate_of` warning instead
+  of silently creating a second active asset.
+- "Delete" in a material/photo UI first means **detach from the active
+  draft** by removing the asset id from the relevant array. The asset
+  row remains available to older saved versions and other references.
+- Asset hard purge is a background GC concern. A file can be purged only
+  when it is soft-deleted or failed/pending-expired **and** no saved
+  version or active draft references its asset id. Default retention for
+  purge candidates is 90 days.
 
 ## 7. Catalog (bookshelf model)
 
@@ -720,85 +868,38 @@ catalog" gesture:
 A "show me everything that's diverged from catalog" report lives in the
 catalog manager view of a project.
 
-### 7.5 Catalog-schema migration — core commitment
+### 7.5 Catalog-schema migration — post-MVP goal
 
-**The hard guarantee:** when the catalog's row schema evolves
-(field added, removed, renamed, or re-typed), every existing
-project's `catalog_origin` snapshot must continue to refresh
-cleanly. No release of PHN-V2 ships if it breaks
-refresh-from-catalog for any prior catalog schema.
+Decision revised 2026-05-11: defer catalog-schema migration tooling
+from MVP. Keep it as a post-MVP architectural goal.
 
-This is the catalog-side mirror of §10.5 (project-side schema
-versioning). Both are non-negotiable from day 1. Resolved
-questions Q-WIN-11.2 and Q-ENV-11.2 deferred the *implementation
-details* of renamed-field handling to this design while
-explicitly NOT punting the commitment.
+The intended future guarantee is still valid: when a catalog's row
+schema evolves after launch (field added, removed, renamed, split,
+merged, or re-typed), old project snapshots should continue to
+refresh-from-catalog cleanly. That future subsystem will likely mirror
+the project-document migration discipline in §10.5: forward-only shims,
+golden fixtures, renamed-field metadata, and a corpus drill before a
+catalog schema bump.
 
-Mechanisms (all in place from day 1, even when only one catalog
-schema exists):
+MVP does **not** ship:
 
-1. **`catalog_schema_version` integer per catalog table.** Set at
-   row write time. Pinned to `catalog_origin.catalog_schema_version`
-   on the project's snapshot when the user picks. Frozen on the
-   project document until the user explicitly refreshes from
-   catalog.
-2. **Forward-only catalog-shim chain.** Pure functions, one per
-   catalog version step (`upgrade_materials_v1_to_v2.py`,
-   `upgrade_frames_v3_to_v4.py`, …). When refresh-from-catalog
-   compares the project's pinned snapshot against the current
-   catalog row, the project's snapshot is run through the
-   applicable shim chain *first*, so the diff sees both sides at
-   the current schema. The original snapshot in the document is
-   not mutated unless the user accepts the refresh.
-3. **Renamed-field handling in the diff modal.** When a catalog
-   shim renames a field (e.g. `u_value_w_m2k` →
-   `u_value_filmless_w_m2k`), the diff modal in
-   `RefreshFromCatalogDialog` must:
-   (a) recognize the rename via the shim's metadata so the field
-       does not appear as "removed + added";
-   (b) align the project's old-name value with the catalog's
-       new-name value on a single diff row labeled with both
-       names;
-   (c) preserve the user's value if they had overridden it.
-4. **Removed-field handling.** When a catalog shim drops a field,
-   the project's value is preserved as a hand-entered override
-   in the project document. The diff modal flags it as "no
-   longer in catalog — keeping your value." User can clear if
-   they want.
-5. **Added-field handling.** When a catalog adds a new field, the
-   project's snapshot has no value for it. Refresh-from-catalog
-   surfaces it as "new field in catalog: X = Y. Add to your
-   project? [Yes / No]."
-6. **Re-typed-field handling.** A re-type (e.g. string → enum) is
-   treated as remove + add (the conservative path); the shim
-   provides a best-effort coercion default. Diff modal flags
-   with a warning so the user reviews.
-7. **Golden-file corpus for catalog schemas.**
-   `tests/catalog_schema/fixtures/materials/v1/*.json`,
-   `materials/v2/*.json`, … CI runs every fixture through every
-   applicable shim chain on every PR. New shims must produce
-   identical results to prior CI runs and round-trip through
-   Pydantic validation.
-8. **Production-corpus drill before bumping a catalog schema.**
-   Before merging a new `catalog_schema_version`, a CI job
-   simulates refresh-from-catalog for every live project's
-   pinned `catalog_origin` snapshots in a staging corpus. Any
-   failure blocks the merge.
-9. **Deprecation marker on `catalog_schema_version`, never
-   removal.** Old shims are kept indefinitely. Same rationale as
-   §10.5: no upside to dropping support, only risk.
+- catalog-row shim chains;
+- catalog-schema golden-file corpora;
+- production-corpus refresh drills;
+- renamed-field diff metadata;
+- added/removed/re-typed-field migration UI.
 
-**Ownership note.** The catalog-side migration tooling is owned
-by the same code that owns project-side migration (§10.5). The
-two share infrastructure (golden-fixture runner, CI drill, shim
-test harness) and the same "forward-only, lazy, original-row-
-preserved" discipline.
+MVP does preserve a cheap future hook:
 
-**This commitment is fully in scope for V2 v1**, even though
-catalog schemas are not expected to evolve in v1 itself. Pinning
-`catalog_schema_version` at every pick from day 1 means we never
-need a backfill pass later — every snapshot already carries its
-version.
+- Catalog row APIs and copied `catalog_origin` payloads include
+  `catalog_schema_version: 1`.
+- Refresh-from-catalog compares only current MVP field names.
+- Catalog schema changes before post-MVP migration tooling exists are
+  treated as code/data migration events that require manual planning.
+
+This keeps the MVP catalog scope proportional to three v1 catalogs
+(Materials, Window-Frame Elements, Window-Glazing) while avoiding a
+future backfill if catalog schemas later need formal migration support.
 
 ## 8. Save / version model
 
@@ -845,11 +946,17 @@ any." Versions are the unit of state.
 
 ```sql
 project_version_drafts (
-    version_id      UUID NOT NULL REFERENCES project_versions(id),
-    user_id         INTEGER NOT NULL REFERENCES users(id),
-    body            JSONB NOT NULL,         -- WIP document
-    schema_version  INTEGER NOT NULL,
-    last_patched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    version_id          UUID NOT NULL REFERENCES project_versions(id),
+    user_id             INTEGER NOT NULL REFERENCES users(id),
+    body                JSONB NOT NULL,     -- WIP document
+    schema_version      INTEGER NOT NULL,
+    base_version_etag   TEXT NOT NULL,
+                         -- saved version etag when the draft was created
+    draft_etag          TEXT NOT NULL,
+                         -- changes on every accepted draft mutation
+    last_patched_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_via         TEXT NOT NULL DEFAULT 'browser',
+                         -- 'browser' | 'mcp'
     PRIMARY KEY (version_id, user_id)
 )
 ```
@@ -857,9 +964,10 @@ project_version_drafts (
 Properties:
 - One draft per `(version_id, user_id)`. Different users editing the
   same version each have their own draft (rare in practice; single-user
-  expectation per §4).
-- Frontend posts JSON-Patch ops (debounced) → backend applies to the
-  draft body. Server is authoritative.
+  expectation per §4). Browser edits and MCP edits issued by the same
+  editor token share the same draft for the same version.
+- Frontend and MCP post JSON-Patch ops → backend applies to the draft
+  body. Server is authoritative.
 - Drafts are **not** versions: they don't appear in version lists or
   the diff `from`/`to` selectors.
 - Save: server reads draft body → writes to version body in one
@@ -873,6 +981,15 @@ Properties:
 - Frontend on load: GET draft for active version. If draft exists and
   differs from version body, show recovery prompt. User chooses
   restore (load draft) or discard (delete draft, load version body).
+- Opening a project does not create a draft row. The first accepted
+  mutation creates the draft lazily from the saved version body and
+  records `base_version_etag`.
+- Table/entity JSON-Patch operations must be guarded with stable-id
+  `test` ops before mutating array positions. Unguarded array mutation
+  is rejected with `unguarded_array_patch`. MCP helpers should prefer
+  higher-level table/row tools that generate safe patches.
+
+Full state-machine reference: `docs/plans/2026-05-11/draft-save-state-machine.md`.
 
 ### 8.4 Diff
 
@@ -891,19 +1008,25 @@ a per-table changed-row list with field-level deltas.
 
 Per §4, single-user-at-a-time editing. Implementation:
 
-- **Draft writes:** patches send `If-Match: <draft_etag>`. Mismatch → 409,
-  frontend prompts reload (very rare; only happens if the same user has
-  the version open in two tabs).
+- **Draft writes:** patches send `If-Match: <draft_etag>` when a draft
+  exists, and `If-Match-Version: <version_body_etag>` when creating a
+  draft. Mismatch → 409. Client reloads the draft or discards local
+  queued edits; v1 does not merge.
 - **Save / Save As:** sends `If-Match: <version_body_etag>` taken at draft
   open. Mismatch (someone else saved over the version while this user
-  was drafting) → 409 with conflict resolution UI: keep my draft as
-  Save As / discard my draft / show diff.
+  was drafting) → 409 for Save. Save As remains allowed because it does
+  not overwrite the source version. Conflict UI: keep my draft as Save
+  As / discard my draft / show diff.
 - A second tab opening the same active version sees the draft from the
   first tab and shows an "open in another tab" advisory; goes read-only
-  unless the user explicitly takes over.
+  unless the user explicitly takes over. This is a UX advisory, not a
+  server lock; ETags are the real protection.
+- Locked versions reject draft patch and Save with `409 version_locked`.
+  Save As from a locked version is allowed and creates a new unlocked
+  copy unless the user explicitly chooses locked.
 
 This is sufficient for two-person sequential workflow; no document
-locks needed.
+locks or merge UI needed in v1.
 
 ## 9. API surface
 
@@ -967,12 +1090,14 @@ DELETE /api/v1/projects/{pid}/versions/{vid}                   soft delete
 ```
 GET    /api/v1/projects/{pid}/versions/{vid}/document                full JSON
                                                                      (current saved body)
-PUT    /api/v1/projects/{pid}/versions/{vid}/document                whole-body Save
-                                                                     (replaces version body)
 GET    /api/v1/projects/{pid}/versions/{vid}/document/tables/{name}  one table slice
-PUT    /api/v1/projects/{pid}/versions/{vid}/document/tables/{name}  replace one table
-                                                                     (single-table Save)
 ```
+
+Saved document endpoints are read-only in the normal editor/API
+surface. User and MCP writes go through the draft endpoints below; the
+saved version body changes only via `draft/save` or `draft/save-as`.
+Import/admin scripts may call internal service functions, but there is
+no public whole-body `PUT /document` Save in v1.
 
 ### 9.5 Drafts (autosave / crash recovery)
 
@@ -981,6 +1106,8 @@ GET    /api/v1/projects/{pid}/versions/{vid}/draft                   current use
                                                                      body (404 if none)
 PATCH  /api/v1/projects/{pid}/versions/{vid}/draft                   apply JSON-Patch ops
                                                                      to draft body
+PUT    /api/v1/projects/{pid}/versions/{vid}/draft/tables/{name}      replace one table
+                                                                     in the draft
 DELETE /api/v1/projects/{pid}/versions/{vid}/draft                   discard draft
 POST   /api/v1/projects/{pid}/versions/{vid}/draft/save              flush draft → version
                                                                      body (the "Save" gesture)
@@ -991,6 +1118,8 @@ POST   /api/v1/projects/{pid}/versions/{vid}/draft/save-as           flush draft
 ```
 
 All writes accept `Idempotency-Key` header.
+Draft writes additionally use `If-Match` / `If-Match-Version` ETags as
+defined in §8.5 and the state-machine note.
 
 ### 9.6 Diff
 
@@ -1031,13 +1160,58 @@ the editor session token, and the frontend gates edit affordances
 by auth state. There is nothing to manage at the view-link level
 because view-links don't exist as a separate concept.
 
-### 9.10 HBJSON files
+### 9.10 Assets
+
+Generic asset endpoints are the only upload/download backbone. Domain
+routes may wrap them, but they do not store independent object keys.
+
+```
+GET    /api/v1/projects/{pid}/assets?kind=<asset_kind>          list metadata
+POST   /api/v1/projects/{pid}/assets/upload-intent              create pending
+                                                                  asset row and
+                                                                  signed PUT URL
+POST   /api/v1/projects/{pid}/assets/{aid}/complete-upload      verify object,
+                                                                  mark uploaded
+GET    /api/v1/projects/{pid}/assets/{aid}                      metadata
+PATCH  /api/v1/projects/{pid}/assets/{aid}                      rename/edit
+                                                                  display metadata
+DELETE /api/v1/projects/{pid}/assets/{aid}                      soft delete if
+                                                                  not actively
+                                                                  referenced
+GET    /api/v1/projects/{pid}/assets/{aid}/url                  signed GET URL +
+                                                                  expires_at
+POST   /api/v1/projects/{pid}/assets/{aid}/attach               JSON-Patch attach
+                                                                  into current
+                                                                  user's draft
+POST   /api/v1/projects/{pid}/assets/{aid}/detach               JSON-Patch detach
+                                                                  from current
+                                                                  user's draft
+```
+
+`upload-intent` body includes `asset_kind`, `original_filename`,
+`content_type`, `size_bytes`, `content_hash_sha256`, and optional
+`display_name` / feature metadata. The backend validates kind-specific
+size and MIME rules before signing. The signed URL is short-lived
+(minutes, not hours) and scoped to the exact R2 object key.
+
+`complete-upload` confirms the object exists in R2, records `r2_etag`,
+sets `upload_status = 'uploaded'`, and writes an action-log event. Failed
+or abandoned pending rows are GC candidates.
+
+`attach` and `detach` are convenience wrappers around the draft JSON-Patch
+API. They require `project:write` plus `asset:write`, obey the same ETag
+rules as other draft writes, and only mutate asset-id arrays in the
+project document. They do not mutate saved versions directly.
+
+### 9.11 HBJSON files
 
 ```
 GET    /api/v1/projects/{pid}/hbjson-files                   list (metadata only)
-POST   /api/v1/projects/{pid}/hbjson-files                   upload (multipart)
-                                                             body: file + label + notes
-                                                             + optional project_version_id
+POST   /api/v1/projects/{pid}/hbjson-files                   create HBJSON metadata
+                                                             from uploaded asset_id
+                                                             + label/notes +
+                                                             optional
+                                                             project_version_id
 GET    /api/v1/projects/{pid}/hbjson-files/{fid}             metadata
 PATCH  /api/v1/projects/{pid}/hbjson-files/{fid}             rename, edit notes,
                                                              link/unlink project_version_id
@@ -1050,12 +1224,14 @@ GET    /api/v1/projects/{pid}/hbjson-files/{fid}/url         JSON: signed R2 URL
                                                              to fetch directly)
 ```
 
-Uploads stream to R2; metadata row is created in the same request.
-Max file size cap (50 MB by default — open question §17 #15). HBJSON
-schema version, if discoverable from the file, is stored in the
-metadata row.
+HBJSON bytes are uploaded through the generic asset endpoints with
+`asset_kind = 'hbjson'`. The `POST /hbjson-files` route links an
+uploaded asset to the viewer metadata row and starts HBJSON summary
+extraction. Max file size cap is 50 MB by default (open question
+§17 #15). HBJSON schema version, if discoverable from the file, is
+stored in the metadata row.
 
-### 9.11 Schemas
+### 9.12 Schemas
 
 ```
 GET /api/v1/schemas/project-document/v1.json
@@ -1097,20 +1273,32 @@ start is cheap.
 
 ### 10.3 MCP server
 
-Ships in v1. Lives at `backend/features/mcp/`. Thin wrapper around the
-REST API; same auth (Bearer token from PHN editor session).
+Ships in v1 and is **read/write capable from day 1**. Lives at
+`backend/features/mcp/`. Thin wrapper around the REST API; it uses the
+same service layer and `require_project_access(project_id,
+mode='view'|'edit')` dependency as REST routes.
+
+MCP auth is **not anonymous**, even though normal project URLs are
+public-readable in the browser. MCP clients authenticate with
+project-scoped bearer tokens from `mcp_tokens` (§6.1). Tokens are issued
+by logged-in editors, shown once, stored hashed, revocable, and
+audit-logged. A token with `project:write` scope can mutate only its
+own `project_id`; a token with read-only scopes cannot call mutating
+tools. All tool calls are attributed to the issuing editor.
 
 Tool surface (initial):
 
 ```
-list_projects()                      → [{id, name, bt_number, ...}]
+list_projects()                      → token-visible projects
+                                        (v1 project-scoped token returns one)
 get_project(project_id)              → metadata + version list
 list_versions(project_id)            → [{id, name, kind, locked, ...}]
 get_document(project_id, version_id) → full project JSON
 update_document(project_id, version_id, json_patch)
-                                     → applies JSON-Patch, returns new etag
+                                     → applies JSON-Patch to current draft,
+                                       returns new draft etag
 replace_table(project_id, version_id, table_name, rows)
-                                     → replace one table wholesale
+                                     → replace one table in the draft
 query_table(project_id, version_id, table_name, filter_expr)
                                      → filtered subset of one table
 diff_versions(project_id, from_version_id, to_version_id)
@@ -1119,6 +1307,10 @@ list_catalog(table)                  → catalog browse
 get_catalog_record(table, record_id) → record + version list
 create_version(project_id, source_version_id, name, kind?)
                                      → save-as-new
+save_draft(project_id, version_id)   → flush token owner's draft to version
+discard_draft(project_id, version_id)
+                                     → discard token owner's draft
+update_project(project_id, patch)    → edit relational project metadata
 download_project_json(project_id, version_id)
                                      → project JSON (via signed URL or inline)
 download_table_json(project_id, version_id, table_name)
@@ -1127,16 +1319,27 @@ list_hbjson_files(project_id)        → metadata only (file list)
 get_hbjson_file_url(project_id, hbjson_file_id)
                                      → signed R2 URL + expires_at
                                        (LLM can fetch the body itself if needed)
+create_asset_upload_intent(project_id, asset_kind, filename, content_type,
+                           size_bytes, content_hash)
+                                     → asset id + signed PUT URL + expires_at
+complete_asset_upload(project_id, asset_id)
+                                     → uploaded asset metadata
+get_asset_url(project_id, asset_id)  → signed GET URL + expires_at
+attach_asset(project_id, version_id, asset_id, target_path)
+                                     → JSON-Patch attach into token owner's draft
+detach_asset(project_id, version_id, asset_id, target_path)
+                                     → JSON-Patch detach from token owner's draft
 ```
 
 Tools return Pydantic-validated structured results. Errors surface as
 MCP error responses with the same machine-readable codes as the REST
 API.
 
-Not included in v1 (defer): catalog writes via MCP (read-only catalog
-through MCP for now; writes through the web UI). HBJSON uploads via
-MCP (frontend upload only in v1; the file size and binary nature
-make MCP a poor fit).
+Not included in v1 (defer): catalog writes via MCP. Catalog browsing is
+read-only through MCP; catalog edits stay in the web UI/admin surface
+until there is a concrete agent workflow and review policy for changing
+the global library. All project-document writes, project metadata
+writes, and project asset attach flows are MCP-callable in v1.
 
 ### 10.4 Documentation `context/` (LLM-targeted)
 
@@ -1260,13 +1463,20 @@ Editing flow:
 1. User opens a version → frontend GETs document body and any existing
    draft. If draft exists and differs from body, prompt restore /
    discard.
-2. Each edit appends a JSON-Patch op to a frontend queue.
+2. Each edit appends a guarded JSON-Patch op to a frontend queue.
 3. Queue flushes on debounce (~500ms) as a batched PATCH against
    `/api/v1/.../draft`. Backend applies to draft.
 4. **No autosave to the version body.** Save / Save As are explicit
    gestures (§8.2).
 5. `beforeunload` fires a warning if the draft is dirty (unsaved patch
    ops in the queue or draft differs from version body).
+
+If a write receives 401 because the session expired, the frontend
+freezes the local patch queue and re-authenticates in place. After
+re-auth it refetches version/draft ETags. Queued patches are retried
+only if both ETags still match; otherwise the user chooses reload
+draft / keep local edits as a new draft attempt / discard. V1 never
+blindly replays stale queued patches.
 
 For BLDGTYP scale (50–500 KB documents), patch-based draft sync is
 sub-100ms latency.
@@ -1315,19 +1525,20 @@ HBJSON files are 5–20 MB each, with multiple revisions per project
 expected over a project's life. They go in object storage, not
 Postgres JSONB:
 
-- **Storage:** Cloudflare R2 (same bucket as material photos and
-  datasheets, distinct key prefix `hbjson/`).
-- **DB record:** metadata-only; body lives at the URL.
+- **Storage:** Cloudflare R2 through the generic `project_assets`
+  backbone (§6.5), with `asset_kind = 'hbjson'`.
+- **DB records:** `project_assets` owns object metadata and signed URL
+  generation; `project_hbjson_files` owns viewer-specific metadata and
+  cached geometry/extraction fields.
 
 ```sql
 project_hbjson_files (
     id                  UUID PRIMARY KEY,
     project_id          UUID NOT NULL REFERENCES projects(id),
+    asset_id            TEXT NOT NULL UNIQUE REFERENCES project_assets(id),
     label               TEXT NOT NULL,
                         -- e.g. "Initial massing", "Round 1 Submit Model"
     notes               TEXT,
-    file_key            TEXT NOT NULL,    -- R2 object key
-    file_size_bytes     BIGINT NOT NULL,
     hbjson_schema_version  TEXT,          -- if discoverable from the file
     -- Optional, hand-entered: which project version was this generated
     -- against? Informational; no enforced relationship.
@@ -1344,13 +1555,15 @@ Properties:
   version does not own HBJSON files; an HBJSON file optionally records
   which project version it was sourced against (hand-entered metadata).
 - HBJSON files are **immutable after upload.** They arrive complete
-  from the modeling tool. New revision = new upload, separate row.
+  from the modeling tool. New revision = new `project_assets` row and
+  separate `project_hbjson_files` row.
 - Not included in project document JSON downloads. The "download
   project JSON" endpoint returns the builder/table data only. HBJSON
   files have their own download endpoints (§9.11) and a
   `Content-Disposition: attachment` direct link via signed R2 URL.
 - Soft-delete only. Deleting a project soft-deletes all its HBJSON
-  rows; R2 objects are GC'd by a periodic sweep.
+  rows and related assets; R2 objects are GC'd by a periodic sweep once
+  retention and reference checks pass (§6.5).
 
 #### 11.4.3 Tech stack
 
@@ -1655,10 +1868,12 @@ AirTable-bound project is migrated.
   backend's `require_project_access(mode='view')` dependency
   passes trivially. Writes return 401. See §4 for the full access
   model.
-- **MCP auth** — Bearer token tied to a long-lived API key (not the
-  60-min interactive session). Issued from the editor UI ("Connect
-  MCP" → token; copy into MCP client config). Revocable. Stored
-  hashed; recorded in `mcp_tokens` (table TBD with first MCP work).
+- **MCP auth** — project-scoped bearer tokens stored in
+  `mcp_tokens` (§6.1). Issued by logged-in editors from Project
+  Settings, shown once, stored hashed, revocable, and audit-logged.
+  v1 tokens can carry `project:read`, `project:write`, `asset:read`,
+  and `asset:write` scopes. Public browser read access does not create
+  anonymous MCP access.
 
 No anonymous editor auth. No per-table or per-version permissions
 in v1.
@@ -1715,15 +1930,16 @@ Approach:
   (§8.5) and single-user expectation. Worth a stress test before v1.
 - **Document size growth.** Ed's largest projects need profiling. If a
   project exceeds ~5 MB JSONB, draft-sync latency becomes noticeable.
-  Mitigation: per-table PUT (§9.4) for single-table Save, and
-  per-table draft scoping if needed in v1.1.
+  Mitigation: per-table draft replacement (§9.5), table-slice reads,
+  and per-table draft scoping if needed in v1.1.
 - **Schema migration discipline.** A bad `v1 → v2` shim corrupts every
   document on read. Mitigation: shims are pure functions, fully unit
   tested with golden files; CI fails if a shim's roundtrip is not
   idempotent on a corpus of real document fixtures.
-- **LLM scope creep.** "Just one more MCP tool" is tempting. Hold the
-  v1 surface to §10.3; add tools only when a concrete user task
-  demands them.
+- **LLM write safety.** MCP is intentionally read/write capable in v1,
+  so token scope, audit logging, idempotency, and structured errors are
+  part of the MVP, not hardening polish. Hold the tool surface to §10.3;
+  add tools only when a concrete user task demands them.
 - **Catalog drift confusion.** The bookshelf model is a deliberate UX
   choice, but it differs from architects' AirTable mental model
   ("change the catalog, every project sees it"). Refresh-from-catalog
@@ -1762,8 +1978,9 @@ Approach:
   and is blocked from all writes (frontend hides edit affordances;
   backend rejects write requests with 401).
 - Claude Desktop can connect to the MCP server, list a project, fetch
-  its document, run a JSON-Patch update, and have the change appear
-  in the editor on next reload.
+  its document, run a JSON-Patch update against a token-scoped project,
+  save the draft, and have the change appear in the editor on next
+  reload.
 - A user can upload an HBJSON file to a project, see it in the file
   list, and view it in the 3D viewer. Uploading a second HBJSON
   preserves the first; both are independently viewable.
@@ -1788,10 +2005,12 @@ acceptance, but each shapes a downstream decision:
    layer. Project-level overrides happen in the project document via
    the user editing copied values. Full roster of v1 + future
    catalogs in §7.0.
-4. **Asset deletion semantics** — when a photo is removed from a
+4. ~~**Asset deletion semantics** — when a photo is removed from a
    document, do we hard-delete the R2 object, or only the document
-   pointer? Lean: only the document pointer; periodic GC sweep
-   identifies orphaned assets across all versions.
+   pointer?~~ **Resolved 2026-05-11:** detach from the active draft
+   first. The asset row remains available to older saved versions and
+   other references. Hard purge is a 90-day GC path only after reference
+   checks across saved versions and active drafts (§6.5).
 5. **MCP transport** — stdio only, HTTP/SSE only, or both? Lean: both,
    stdio for local Claude Desktop / Code, HTTP/SSE for hosted use
    (e.g. claude.ai integration).
@@ -1831,7 +2050,7 @@ acceptance, but each shapes a downstream decision:
     this. Mitigations if needed: chunked / resumable upload (tus.io
     or signed-URL multipart), or simply raise the cap.
 16. **HBJSON storage cost.** ~10 MB × ~10 files/project × ~50 projects
-    = ~5 GB lifetime. Trivial on R2; track via `file_size_bytes` for
+    = ~5 GB lifetime. Trivial on R2; track via `project_assets.size_bytes` for
     visibility.
 17. **HBJSON ↔ project_version linkage** — the schema offers an
     optional `project_version_id` on `project_hbjson_files`. Should

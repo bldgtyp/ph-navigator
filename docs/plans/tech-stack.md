@@ -40,6 +40,7 @@ Use a boring, explicit stack:
 | 3D viewer | three + React Three Fiber + drei + react-three/postprocessing |
 | Object storage | Cloudflare R2 |
 | Testing | pytest, Vitest, Playwright |
+| MCP auth | Project-scoped bearer tokens stored hashed in `mcp_tokens` |
 
 ## Backend Decision
 
@@ -60,6 +61,11 @@ The strongest backend architecture is:
 3. Repository modules perform database reads/writes.
 4. Pydantic models validate project documents, table slices, catalog records, and API payloads.
 5. Alembic owns schema changes.
+
+MCP is part of the v1 backend surface, not a later integration. It is
+read/write capable from day 1, but it wraps the same services as REST.
+Human browser writes use session cookies; MCP writes use project-scoped
+bearer tokens with explicit scopes and audit logging.
 
 ## Persistence Decision
 

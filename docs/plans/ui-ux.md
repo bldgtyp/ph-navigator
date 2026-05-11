@@ -936,7 +936,7 @@ per-segment site-photo zones):
   per-file failure, a Sonner error toast lists the failed
   filenames (V2 cleanup vs V1's `console.error` + per-file
   `alert()`). Successful uploads append to the relevant array
-  via JSON-Patch.
+  via the generic asset upload flow plus a draft JSON-Patch attach.
 - Loading overlay during upload.
 
 **Click a thumbnail → ImageFullViewModal:**
@@ -944,9 +944,11 @@ per-segment site-photo zones):
 - Single full-size image OR PDF iframe view (`#toolbar=0`
   hides the browser toolbar).
 - "Delete Image" / "Delete Datasheet" button confirms via
-  shadcn `Dialog` (replaces V1 `window.confirm`) and removes
-  the asset from the appropriate array (project_material's
-  datasheet array OR segment's photo array).
+  shadcn `Dialog` (replaces V1 `window.confirm`) and detaches
+  the asset from the appropriate array in the active draft
+  (project_material's datasheet array OR segment's photo array).
+  The uploaded asset remains available to older saved versions
+  and is only purged by the backend GC path when unreferenced.
 
 **Click the material name → inline rename** (and the QA bar's
 `⋯ → "Edit material values…"` opens the full-field editor in an
@@ -1104,6 +1106,7 @@ Reached via the project header `⋯` → "Project settings". Opens a
 modal (or dedicated route — TBD when walked) with:
 - Edit metadata (name, bt_number, client, phius_number,
   phius_dropbox_url).
+- MCP tokens for this project (issue / list / revoke).
 - Transfer ownership (post-MVP UI; data model supports).
 - Delete project (gated to v1.1, US-1.4).
 

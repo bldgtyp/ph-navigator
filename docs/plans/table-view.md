@@ -465,10 +465,12 @@ One stack entry per gesture (paste, fill, single edit, row-add, row-
 delete), not one per changed cell. Matches user expectation; keeps the
 history small and predictable.
 
-**L6.3 — Bounded in-memory history is POC-only; production needs
-explicit conflict rules.** Decide before shipping: what invalidates
-local history; what happens on 409 / websocket invalidation; whether
-undo replays local optimistic-only or issues compensating writes.
+**L6.3 — Bounded in-memory history is local-only in production.**
+Resolved 2026-05-11: undo is invalidated by version switch, server
+refetch, draft ETag mismatch, Save / Save As / Discard, or MCP/other-tab
+draft changes. On 409, roll back the optimistic local op, clear undo,
+and prompt reload / conflict action. V1 does not issue compensating
+PATCH undo after a conflict.
 
 **L6.4 — Auto-added overflow rows belong inside the paste op.** Row
 append + cell writes are one transaction. A single ⌘Z removes the
@@ -744,19 +746,20 @@ calls (PATCH on cells, POST on rows, PATCH on field-defs).
 - `apply(op)` and `revert(op)` are pure functions over `(rows,
   fieldDefs)`.
 - ⌘Z / ⌘⇧Z bind on the table container; gated when a cell is editing.
-- POC bound: 8 entries, in-memory, cleared on reload. **For
-  production**, conflict semantics must be specified before shipping
-  (L6.3 — see §11.2 below).
+- POC bound: 8 entries, in-memory, cleared on reload. Production uses
+  the same local-only stack and clears it on any server conflict or
+  draft reload (L6.3).
 
 ### 6.3 Optimistic write + 409 conflict
 
-Open design item (L6.3, PRD §6.2 / §8.5):
-- On 409, the local op is rolled back and a toast surfaces the
-  conflict with a "Reload" affordance. Concrete UX TBD.
-- Undo of a previously-applied op fires a new PATCH with the `before`
-  values. If a remote edit moved the cell since, a 409 returns and
-  the undo is cancelled with toast: *"Cell changed since you last
-  edited; undo cancelled."*
+Resolved 2026-05-11 (PRD §8.5 and draft-save state-machine note):
+- On 409, the local op is rolled back, undo stack is cleared, and the
+  UI shows a conflict prompt with reload / Save As / discard options
+  depending on the error code.
+- Undo is local-only. If the draft has changed remotely or the table
+  refetches from the server, undo is disabled until new local edits
+  build a new stack.
+- V1 does not fire compensating PATCH undo after a conflict.
 
 ---
 
@@ -979,12 +982,12 @@ or qualified-yes; no qualification reads as "doesn't work".
 
 ### 11.2 Open for post-gate work
 
-- **Production undo conflict semantics (L6.3).** What invalidates
-  local history (refetch, websocket invalidation, version switch)?
-  Does undo replay locally, or fire compensating PATCHes? UX of
-  undo-after-conflict.
-- **Optimistic write + 409 UX.** Full design — toast vs banner vs
-  modal; auto-reload vs explicit-reload.
+- ~~**Production undo conflict semantics (L6.3).**~~ Resolved
+  2026-05-11: local-only undo; clear on version switch, refetch,
+  ETag mismatch, Save / Save As / Discard, MCP/other-tab draft change.
+- ~~**Optimistic write + 409 UX.**~~ Resolved at policy level
+  2026-05-11: rollback optimistic op, clear undo, prompt user. Exact
+  modal copy lands with the first draft/save implementation.
 - **Horizontal auto-scroll on focus change.** Vertical works via
   `rowVirtualizer.scrollToIndex`; horizontal needs frozen-column
   width offset math.

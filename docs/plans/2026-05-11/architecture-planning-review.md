@@ -65,67 +65,80 @@ Docs and scaffold updated 2026-05-11:
 
 Remaining implementation detail for the first repository slice: define row-mapping helper conventions, JSONB validation points, error mapping, and transaction test patterns.
 
-### F4. MCP auth and LLM asset APIs are contradictory.
+### F4. MCP auth and LLM asset APIs are contradictory. Resolved 2026-05-11.
 
-PRD §10.3 says the v1 MCP server ships and uses "Bearer token from PHN editor session." PRD §13 says MCP uses a long-lived API key, stored hashed in `mcp_tokens`, with the table TBD. User stories later mark LLM-friendly asset upload/download as post-parity but "core workflow," with open questions about bearer-token scope.
+Original finding: PRD §10.3 said the v1 MCP server ships and uses "Bearer token from PHN editor session." PRD §13 said MCP uses a long-lived API key, stored hashed in `mcp_tokens`, with the table TBD. User stories later marked LLM-friendly asset upload/download as post-parity but "core workflow," with open questions about bearer-token scope.
 
 This is a security-sensitive ambiguity. Long-lived tokens, session cookies, project-scoped service tokens, and MCP stdio credentials have different threat models.
 
-Recommendation: split the decision:
-- v1 human editor auth: session cookie only.
-- v1 MCP auth: either deferred entirely, or implemented with a minimal `mcp_tokens` table from day 1.
-- asset upload/download API: design endpoint shape now, but decide whether write-capable service tokens are v1 or v1.1.
+Decision: MCP is read/write capable in V2 v1. Human editor auth remains session-cookie based. MCP auth uses project-scoped bearer tokens in `mcp_tokens`, issued by logged-in editors from Project Settings, shown once, stored hashed, revocable, scoped, and audit-logged. Public browser read access does not imply anonymous MCP access.
 
-If MCP ships in v1, define token scope, expiration, rotation, audit events, and whether public-readable projects are visible to unauthenticated MCP callers. Do not leave the token table TBD while claiming MCP is a v1 success criterion.
+Docs updated 2026-05-11:
+- PRD §6.1 now includes the `mcp_tokens` table.
+- PRD §10.3 defines read/write MCP tools and project-scoped token auth.
+- PRD §13 distinguishes session-cookie browser auth from MCP bearer-token auth.
+- User stories now move MCP token management and LLM-friendly asset/project writes into V2 v1 scope.
 
-### F5. Server-side drafts need a sharper conflict and data-loss model.
+Remaining implementation detail: exact token plaintext format, token-hash algorithm, default expiry recommendation, and rate limiting belong in the first auth/security implementation plan.
 
-The Save model is strong, but draft semantics have several unresolved edge cases:
+### F5. Server-side drafts need a sharper conflict and data-loss model. Resolved 2026-05-11.
+
+Original finding: the Save model was strong, but draft semantics had several unresolved edge cases:
 - one draft per `(version_id, user_id)` conflicts with "single active session per user" and "second tab read-only unless takeover";
 - session expiry retries unsynced patch queues after re-auth, but it is unclear what happens if the version changed during the expired interval;
 - table-view undo conflict semantics are still open;
 - a `PUT /document` whole-body Save exists alongside draft-save, which may bypass draft conflict checks unless tightly constrained;
 - the plan does not define JSON-Patch validation against stable IDs versus array indices.
 
-Recommendation: before feature code, write a draft/save state-machine decision doc with exact transitions for: first open, second tab, takeover, session expiry, 409 on draft patch, 409 on Save, Save As from stale draft, locked-version Save, and unsynced queue retry. JSON-Patch should be constrained to stable-ID addressed operations where possible, or array-index patch fragility needs explicit mitigation.
+Decision: V2 v1 uses one canonical server-side draft per `(version_id, user_id)`. Browser and MCP writes from the same editor share that draft. All user/agent document writes go through the draft; saved version bodies mutate only through explicit Save or Save As. V1 does not attempt merge UI. Conflicts preserve the draft and offer reload / Save As / discard / diff as appropriate.
 
-### F6. Document JSONB is the right source of truth, but query/index/reporting needs are deferred too broadly.
+Docs updated 2026-05-11:
+- Added `docs/plans/2026-05-11/draft-save-state-machine.md`.
+- PRD §8.3 now includes `base_version_etag`, `draft_etag`, and `updated_via`.
+- PRD §8.5 now defines draft ETag, version ETag, locked-version, second-tab, and Save As behavior.
+- PRD §9.4/§9.5 now removes normal whole-body/table saved-document PUTs; writes go through draft endpoints.
+- Table-view doc now resolves production undo conflict policy as local-only undo cleared on conflicts/refetch/version switch.
+
+Remaining implementation detail: exact ETag hash format and modal copy can land with the first draft/save implementation.
+
+### F6. Document JSONB is the right source of truth, but query/index/reporting needs are deferred too broadly. Resolved 2026-05-11.
 
 The PRD defers cross-project queries and keeps project-scoped tables entirely inside JSONB. That is reasonable for MVP, but several v1 surfaces already need query-like behavior: dashboard last modified, status state, catalog drift report, diff summaries, asset usage/orphan detection, public downloads, and possibly certifier-facing QA reports.
 
-Missing planning:
-- Which JSONB fields need generated columns, GIN indexes, or sidecar search/index tables.
-- How catalog drift is computed efficiently across all copied entries in a project.
-- Whether large table slices should be fetched independently rather than reading the whole document on every tab.
-- What "largest realistic project" means for rows, assemblies, photos, HBJSON count, and JSONB size.
+Decision: keep query/index/reporting infrastructure deferred for MVP. V2 v1 does not add generated columns, GIN indexes, sidecar search/index tables, relational shadows of project-document tables, or precomputed catalog-drift indexes.
 
-Recommendation: add a performance budget and fixture-sizing plan before implementation. Create synthetic small / typical / large project documents and measure: fetch, Pydantic validation, draft patch, Save, diff, table-slice read, and JSON download.
+Docs updated 2026-05-11:
+- PRD §6.4 now states the MVP posture explicitly.
+- Project table screens read from the saved document or active draft, then slice/filter/sort in application code for the current project/version.
+- Dashboard metadata, status, action logs, HBJSON files, assets, users, tokens, and catalogs remain relational because they are platform metadata or global data, not project-document table shadows.
+- Diff summaries, catalog drift checks, asset usage/orphan detection, and downloads are computed on demand for the current project/version.
+- Fixture budgets and indexing choices are post-MVP unless real project size or latency makes them necessary.
 
-### F7. Catalog schema migration commitment is stronger than the initial catalog scope can support unless it gets its own implementation lane.
+### F7. Catalog schema migration commitment is stronger than the initial catalog scope can support unless it gets its own implementation lane. Resolved 2026-05-11.
 
-The PRD makes catalog-schema migration a non-negotiable v1 commitment with shim chains, golden fixtures, production-corpus drills, and renamed-field diff behavior. That discipline is good, but it is a full subsystem. It may be overbuilt relative to three v1 catalogs unless implemented as a narrow foundation.
+Original finding: the PRD made catalog-schema migration a non-negotiable v1 commitment with shim chains, golden fixtures, production-corpus drills, and renamed-field diff behavior. That discipline is good, but it is a full subsystem and overbuilt for the MVP's three catalogs.
 
-Recommendation: keep the commitment but define the smallest shippable skeleton:
-- `catalog_schema_version` stored at pick time;
-- one no-op v1 shim harness;
-- golden fixtures for each v1 catalog;
-- refresh diff metadata shape that can express renamed/added/removed fields later.
+Decision: defer catalog-schema migration tooling for MVP and keep it as a post-MVP architectural goal.
 
-Defer production-corpus CI drills until there is a real schema bump, unless staging snapshots are already in place.
+Docs updated 2026-05-11:
+- PRD §7.5 now says MVP does not ship catalog-row shim chains, catalog-schema golden fixtures, production-corpus refresh drills, renamed-field diff metadata, or added/removed/re-typed-field migration UI.
+- MVP still stores `catalog_schema_version: 1` in catalog row APIs and copied `catalog_origin` payloads as a cheap future hook.
+- Refresh-from-catalog in MVP compares current MVP field names only.
+- Catalog schema changes before post-MVP migration tooling exists are treated as code/data migration events requiring manual planning.
 
-### F8. Asset model is scattered across material assets, HBJSON-specific routes, and future generic asset APIs.
+### F8. Asset model is scattered across material assets, HBJSON-specific routes, and future generic asset APIs. Resolved 2026-05-11.
 
 Architecture references `material_assets`, HBJSON-specific tables/routes, project JSON asset IDs, signed R2 URLs, orphan GC, and future generic `/assets` endpoints. The story stub correctly identifies a need for consistent LLM-callable asset APIs, but it is post-parity while the MVP already depends on datasheets, site photos, thermal-bridge files, and HBJSON uploads.
 
-Recommendation: define one asset backbone before implementing any specific asset feature:
-- generic `project_assets` table with `asset_kind`, `file_key`, `content_hash`, size, MIME, uploaded_by, deleted_at;
-- usage references in project documents by asset ID;
-- HBJSON metadata as either an asset subtype table or typed metadata row;
-- signed upload/download policy;
-- orphan detection across all project versions and drafts;
-- R2 lifecycle/GC job behavior.
+Decision: define one generic `project_assets` backbone before implementing specific file features.
 
-This will avoid four nearly-identical upload/download paths.
+Docs updated 2026-05-11:
+- PRD §6.5 now defines `project_assets` as the canonical R2-backed upload table for datasheets, site photos, HBJSON, and future simulation/export files.
+- Project documents reference uploaded files only by `asset_id`.
+- HBJSON now uses `project_assets(asset_kind='hbjson')` for bytes and a `project_hbjson_files` subtype table for viewer labels, notes, optional `project_version_id`, and cached extraction metadata.
+- PRD §9.10 defines generic signed upload/download, attach, detach, and GC behavior.
+- PRD §9.11 keeps HBJSON routes as domain wrappers over the asset backbone, not a separate upload system.
+- Delete from a material/photo UI means detach from the active draft first; hard purge is a 90-day GC path only after reference checks across saved versions and active drafts.
 
 ### F9. UX plan is rich but does not yet establish the first vertical slice.
 
@@ -209,13 +222,13 @@ Recommendation: add an ops-readiness plan before first deploy. This can be short
 
 ## Recommended pre-implementation gates
 
-1. Reconcile stale docs: auth/token model. Public viewer routing and raw SQL persistence were resolved 2026-05-11.
-2. Write three decision docs:
+1. Reconcile stale docs: public viewer routing, raw SQL persistence, and MCP auth/token model were resolved 2026-05-11.
+2. Write remaining decision docs:
    - `public-access-threat-model.md`
-   - `draft-save-state-machine.md`
+   - ~~`draft-save-state-machine.md`~~ completed 2026-05-11
    - `asset-storage-and-api.md`
 3. Create an MVP vertical-slice plan that stops before domain-heavy Windows/Envelope canvases.
-4. Build fixture budgets: small / typical / large project JSON and HBJSON files.
+4. Defer fixture budgets/indexing work until post-MVP or until real-project latency makes it necessary.
 5. Add CI gates for schema generation, Pydantic validation fixtures, backend tests, frontend tests, Playwright smoke, lint, and formatting.
 
 ## Bottom line

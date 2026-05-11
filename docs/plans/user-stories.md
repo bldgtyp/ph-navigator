@@ -803,16 +803,14 @@ v1.
 
 12. **No attachments in v1** (per Q-STATUS-5 resolved).
     Users who want to link a photo or PDF write a Markdown
-    link to the asset's R2 URL (uploaded elsewhere — Site
-    Photos / datasheets / HBJSON files).
+    link to an asset download URL exposed by the asset API
+    (uploaded elsewhere — Site Photos / datasheets / HBJSON files).
 
 13. **Permissions:**
     - **Editors:** full add / edit / delete / reorder /
       state-toggle access.
-    - **View-link visitors:** read-only. Can see the
+    - **Anonymous public viewers:** read-only. Can see the
       timeline; cannot mutate.
-    - **No anonymous access** (standard project-workspace
-      auth gate).
 
 14. **Locked-version handling: N/A.** `project_status_items`
     is relational, **not bound to project document
@@ -2546,12 +2544,12 @@ None outstanding.
   entry pinned at v5 does not, regardless of the v3/v4 history.
 - **Q-WIN-11.2: Renamed-field handling in the diff dialog —
   deferred to schema-migration design.**
-  **Resolved:** specific dialog rendering for renamed fields
-  (e.g. strikethrough old name + new name side-by-side) is walked
-  during the catalog-schema-migration design pass. **NOT punted —
-  a core commitment, not a backlog stub.** See sidebar below.
+  **Revised 2026-05-11:** catalog-schema migration tooling is
+  deferred from MVP and kept as a post-MVP goal. MVP refresh
+  compares current MVP field names only and stores
+  `catalog_schema_version: 1` as a future hook. See sidebar below.
 
-### Sidebar — catalog-schema migration is a core feature (per Ed, 2026-05-10)
+### Sidebar — catalog-schema migration is a post-MVP goal (revised 2026-05-11)
 
 PRD §10.5 commits to **project-document** schema versioning
 (forward-only shims, golden-file corpus, read-safe-mode
@@ -2563,50 +2561,23 @@ distinct from the row-level catalog_*_versions in PRD §7.2;
 that's "Skyline 2024 spec vs 2026 spec" not "we renamed
 `psi_g_w_mk` to `psi_glazing_w_mk`").
 
-Ed's directive (2026-05-10): **backwards compatibility and
-catalog-schema migration tooling are core features**, on par
-with PRD §10.5's project-document story. Not a v1.1 backlog
-item.
+Revision (2026-05-11): catalog-schema migration tooling is
+deferred from MVP and kept as a post-MVP architectural goal.
 
-Concretely, this means at minimum:
+MVP does not ship catalog-row shim chains, catalog-schema
+golden fixtures, production-corpus refresh drills, renamed-field
+diff metadata, or added/removed/re-typed-field migration UI.
 
-1. **Catalog schemas are versioned** — `schema_version` on each
-   catalog table's Pydantic model, mirrored on each
-   `catalog_*_versions` row when material values are persisted.
-2. **Forward-only upgrade shims for catalog rows** — when a
-   column is renamed / split / merged, a pure-function shim
-   migrates `schema_version: N → N+1` lazily on read, same
-   pattern as PRD §10.5 (1)–(2).
-3. **Golden-file corpus for catalog rows** — every prior catalog
-   schema_version's representative rows must round-trip through
-   the shim chain in CI (mirror of PRD §10.5 (4)).
-4. **Inlined-catalog-data in project documents migrates too.**
-   The frame / glazing values copied into `body.tables.window_types[
-   ].elements[].frames.{...}` carry their catalog schema version
-   stamp at copy-time; project-document shims also call the
-   catalog-row shim chain when reading old document bodies that
-   contain old inlined frame / glazing values. (Two shim chains
-   compose.)
-5. **Refresh-from-catalog diff handles renames** — when the
-   catalog row's current schema is N and the inlined copy is at
-   N-1, the diff modal first runs the inlined copy through the
-   shim chain to N, *then* diffs. Renamed fields collapse to a
-   single row; the modal can show both names ("Ψ-glazing
-   (formerly `psi_g_w_mk`)") if the shim records the rename.
-6. **Catalog-API responses always serialize at current schema
-   version**, never at a stored older one.
-
-**Action item — DONE 2026-05-10:** PRD §7.5 added committing
-catalog-schema migration on parity with project-document
-migration. Pinning of `catalog_origin.catalog_schema_version`
-at every pick from day 1 means no backfill pass is ever
-needed. Renamed-field handling in `RefreshFromCatalogDialog`
-walks through the new shim chain.
+MVP does preserve a cheap future hook: catalog row APIs and
+copied `catalog_origin` payloads include
+`catalog_schema_version: 1`. Refresh-from-catalog compares only
+current MVP field names. Any catalog schema change before the
+post-MVP migration subsystem exists is a code/data migration
+event that requires manual planning.
 
 ### Open questions
-None — all US-WIN-11 questions resolved 2026-05-10. Catalog
-schema migration is a follow-up PRD edit, not a US-WIN-11
-question.
+None for MVP — catalog-schema migration is tracked as a
+post-MVP goal in PRD §7.5.
 
 ---
 
@@ -2794,7 +2765,7 @@ Pydantic models are written.
           "emissivity": 0.9,
           "argb_color": "(255,220,230,240)",
           "specification_status": "complete",       // 'complete'|'missing'|'question'|'na'
-          "datasheet_asset_ids": ["mat_asset_..."],  // <-- per-material
+          "datasheet_asset_ids": ["asset_..."],      // <-- per-material
           "notes": null,
           "catalog_origin": {                        // null if hand-entered
             "catalog_table": "materials",
@@ -4521,17 +4492,12 @@ purged (V1 ref §13.9); V2 is bookshelf
 6. **Read-only on locked versions / for anonymous viewers.** Drift badges
    still show; refresh dialog unavailable.
 7. **All changes flow through the draft buffer.**
-8. **Catalog-schema migration** (PRD §7.5). The catalog-schema
-   migration commitment applies equally to Materials — when a
-   Material catalog column is renamed / split / merged, the
-   diff dialog first runs the project's pinned snapshot through
-   the catalog-row shim chain to the current schema, then
-   diffs. Per PRD §7.5: pinned `catalog_origin.catalog_schema_version`
-   at every pick from day 1; renamed fields collapse to a
-   single diff row labeled with both names; removed fields
-   preserve the project's value as a hand-entered override;
-   added fields surface a "new field — add to your project?"
-   prompt. **This is a core feature in V2 v1, not v1.1+.**
+8. **Catalog-schema migration deferred from MVP** (PRD §7.5).
+   Materials store `catalog_schema_version: 1` in copied
+   `catalog_origin` payloads as a future hook, but MVP
+   refresh-from-catalog compares current MVP field names only.
+   Catalog-row shim chains, renamed-field metadata, golden
+   fixtures, and production-corpus drills are post-MVP.
 
 ### Resolved questions (2026-05-10)
 
@@ -4540,16 +4506,14 @@ purged (V1 ref §13.9); V2 is bookshelf
   current_version_id`. Intermediate non-current versions don't
   trigger.
 - **Q-ENV-11.2: Renamed-field handling in diff.** **Resolved
-  (mirrors Q-WIN-11.2):** spec landed in PRD §7.5
-  (catalog-schema migration). Renamed fields collapse to a
-  single diff row labeled with both names ("Ψ-glazing
-  (formerly `psi_g_w_mk`)"); removed fields preserve the
-  project's value as a hand-entered override; added fields
-  prompt the user. Core feature in V2 v1, not v1.1+.
+  (revised 2026-05-11):** catalog-schema migration tooling is
+  deferred from MVP and kept as a post-MVP goal. MVP stores
+  `catalog_schema_version: 1` but does not ship renamed-field
+  diff handling.
 
 ### Open questions
-None — all US-ENV-11 questions resolved 2026-05-10. Catalog
-schema migration is the same follow-up PRD edit as US-WIN-11.
+None for MVP — catalog-schema migration is tracked as a
+post-MVP goal in PRD §7.5.
 
 ---
 
@@ -5231,7 +5195,7 @@ storage shape and upload primitive
      organized by assembly type once uploaded."*
    - Primary CTA: **[Go to Specifications]** (linkable
      button — same data, different view).
-   - View-link visitors see the empty-state card without
+   - Anonymous public viewers see the empty-state card without
      CTA (just the explanatory text). Avoids dead links to
      editor-only surfaces.
 
@@ -6595,8 +6559,9 @@ additions** based on Ed's signaled priority.
 
 **Status:** Draft · **Priority:** MVP — gates all other
 US-VIEW-* (nothing can render without a file)
-**PRD ref:** §11.4.2 (`project_hbjson_files` table), §3
-(non-goals — viewer-only)
+**PRD ref:** §6.5 (`project_assets` backbone), §11.4.2
+(`project_hbjson_files` subtype table), §3 (non-goals —
+viewer-only)
 **V1 ref:** `2026-05-10-v1-3D-model-viewer-reference.md` §2.1
 (`/hb_model/{bt_number}/models` route), §13.3
 (`ModelSelector.tsx`), §14.4 (process-local cache — replaced
@@ -6615,20 +6580,20 @@ table-view surface; it's a custom uploader + picker
 
 ### Data model
 
-**New table** — adds to PRD §11.4.2 (currently a sketch in the
-PRD):
+HBJSON uses the generic asset backbone from PRD §6.5 plus a
+viewer-specific subtype table. File bytes and R2 metadata live in
+`project_assets`; viewer labels, notes, optional version provenance,
+and cached geometry summaries live in `project_hbjson_files`.
 
 ```sql
 CREATE TABLE project_hbjson_files (
   id                      UUID PRIMARY KEY,
   project_id              UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  r2_object_key           TEXT NOT NULL,            -- e.g. "projects/{project_id}/hbjson/{file_id}.hbjson"
-  r2_etag                 TEXT NOT NULL,            -- for ETag-based cache validation
-  size_bytes              BIGINT NOT NULL,
-  content_hash_sha256     TEXT NOT NULL,            -- for dedup detection
+  asset_id                TEXT NOT NULL UNIQUE REFERENCES project_assets(id),
+                                                    -- project_assets.asset_kind = 'hbjson'
   display_name            TEXT NOT NULL,            -- user-supplied or default to original filename
   notes                   TEXT,                     -- optional user-supplied note ("Round 2 model after slab change")
-  uploaded_by_user_id     UUID NOT NULL REFERENCES users(id),
+  uploaded_by_user_id     INTEGER NOT NULL REFERENCES users(id),
   uploaded_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   -- Geometry summary cached at upload time (also used by US-ENV-14 Airtightness)
@@ -6644,6 +6609,11 @@ CREATE TABLE project_hbjson_files (
 
 CREATE INDEX project_hbjson_files_project_id_idx ON project_hbjson_files (project_id) WHERE deleted_at IS NULL;
 ```
+
+`project_assets` supplies `object_key`, `r2_etag`, `size_bytes`,
+`content_hash_sha256`, `content_type`, signed URL generation, soft
+delete, and GC behavior for HBJSON exactly as it does for datasheets and
+site photos.
 
 **Why per-project, not per-version:** confirmed 2026-05-10
 (US-Viewer architectural decision 2). HBJSONs are uploaded
@@ -6708,11 +6678,13 @@ upload a file, which doesn't match the workflow.
      reloads.
 
 4. **R2 storage path:**
-   - Object key:
-     `projects/{project_id}/hbjson/{file_id}.hbjson`
-   - Content-type: `application/json`
-   - `r2_etag` and `size_bytes` captured from the R2
-     upload response.
+   - Created through the generic asset upload-intent endpoint
+     with `asset_kind = 'hbjson'`.
+   - Object key follows the asset backbone convention:
+     `projects/{project_id}/assets/{asset_id}/{safe_filename}`.
+   - Content-type: `application/json`.
+   - `r2_etag`, `size_bytes`, and `content_hash_sha256` are captured
+     on the `project_assets` row during upload completion.
 
 5. **Geometry summary extraction** (runs server-side after
    upload finishes):
@@ -6789,12 +6761,12 @@ upload a file, which doesn't match the workflow.
 11. **Permissions:**
     - **Editors:** full read + upload + rename + edit
       notes + delete.
-    - **View-link visitors:** read only. Can pick which
+    - **Anonymous public viewers:** read only. Can pick which
       file to view; cannot upload / rename / delete. The
       dropdown's upload zone is hidden; `⋯` menus on
       rows are hidden.
-    - **No anonymous access** (handled by the standard
-      auth gate on the project workspace).
+    - Signed URLs are short-lived and are resolved through the
+      standard public read route; raw R2 object keys are never exposed.
 
 12. **Locked-version handling:** **N/A** — HBJSON files
     are NOT bound to project document versions
@@ -6813,8 +6785,13 @@ upload a file, which doesn't match the workflow.
 14. **MCP-friendliness** (per NEW-LLM-API-1):
     - `GET /projects/{id}/hbjson-files` — list endpoint;
       same shape the dropdown consumes.
-    - `POST /projects/{id}/hbjson-files` — upload endpoint;
-      content-hash dedup applies.
+    - `POST /projects/{id}/assets/upload-intent` with
+      `asset_kind='hbjson'` — returns signed PUT URL.
+    - `POST /projects/{id}/assets/{asset_id}/complete-upload` —
+      marks the uploaded asset complete.
+    - `POST /projects/{id}/hbjson-files` — links the uploaded asset
+      into the HBJSON viewer metadata table; content-hash dedup applies
+      at the asset layer.
     - `GET /projects/{id}/hbjson-files/{file_id}/download` —
       returns signed R2 URL.
     - `DELETE /projects/{id}/hbjson-files/{file_id}` —
@@ -7629,10 +7606,9 @@ placement
     after the 2026-05-10 PRD §4 update. Project URLs are
     public-readable; to "revoke access" the project is
     soft-deleted (US-1.4). No share-link surface in V2 v1.
-  - **MCP token management** — deferred to v1.1+ per
-    Q-SET-5 resolved. NEW-LLM-API-1 commits to MCP
-    callability from day 1, but the auth-token-issuance
-    UI lands when MCP tools actually ship.
+  - **MCP token management** — included in V2 v1 per
+    Q-SET-5 revised 2026-05-11. Tokens are project-scoped,
+    read/write capable, and issued/revoked from this modal.
 - **Edits bypass the draft buffer.** Project-level metadata
   is relational (not document-versioned), so saves are
   direct PATCH calls to `/api/v1/projects/{id}`. No
@@ -7714,14 +7690,25 @@ placement
      downloaded HBJSON / JSON files on the user's disk
      keep their original filenames.
 
-9. **MCP token management — section deferred to v1.1+**
-   (per Q-SET-5 resolved). Not rendered in V2 v1's modal.
-   When NEW-LLM-API-1's MCP-tool callability surface
-   ships, this modal grows a "MCP tokens" section
-   (issue / list / revoke project-scoped tokens). v1
-   ships with no UI for this; admin script can issue
-   tokens as a temporary workaround if a v1.x agentic
-   workflow needs one.
+9. **MCP token management — V2 v1**
+   (Q-SET-5 revised 2026-05-11). Render a compact
+   **MCP tokens** section below project metadata:
+   - Existing active tokens list: label, token prefix,
+     scopes, created date, last used date, optional expiry,
+     and **Revoke** button.
+   - **Create token** action opens an inline form:
+     token label, scopes (`project:read`, `project:write`,
+     `asset:read`, `asset:write`), optional expiry.
+     Default scopes: all four v1 scopes.
+   - Created token plaintext is shown exactly once in a
+     copy field; after the dialog closes, only prefix/hash
+     remain server-side.
+   - Tokens are project-scoped. They can read/write only this
+     project, never all projects.
+   - Revocation is immediate. Existing MCP calls fail on the
+     next request with a structured auth error.
+   - Issue/revoke actions write `mcp_token_issue` /
+     `mcp_token_revoke` events to `user_action_log`.
 
 10. **Project delete — NOT in this modal** (per Q-SET-3
     resolved). The dashboard's per-row `⋯` menu is the
@@ -7776,9 +7763,10 @@ placement
   exists because view-links don't exist as a concept
   after the PRD §4 access-model update. To revoke
   access, soft-delete the project (US-1.4).
-- **Q-SET-5: MCP token management?** Resolved: defer to
-  v1.1+. When NEW-LLM-API-1's MCP tools ship, the
-  Settings modal grows a tokens section.
+- **Q-SET-5: MCP token management?** Revised 2026-05-11:
+  include in V2 v1. MCP is read/write capable from day 1,
+  so Project Settings issues/lists/revokes project-scoped
+  bearer tokens.
 - **Q-SET-6: Rename side-effects?** Resolved: none.
   Rename is display-only. URLs use UUID; old downloaded
   files keep their original names.
@@ -7941,23 +7929,22 @@ per Q-ENV-2) lets us guarantee 1:1 coverage.
   project header `⋯` menu (per Q-ENV-11 pattern). Per-row "↓"
   button on each material card for individual download.
 
-**Cross-references.** Implies stable, predictable URLs on
-`mat_asset_*` rows. Couples with NEW-LLM-API-1 (LLM-friendly
+**Cross-references.** Implies stable asset IDs and signed download URLs
+through `project_assets`. Couples with NEW-LLM-API-1 (LLM-friendly
 asset endpoints).
 
-### NEW-LLM-API-1 — LLM-friendly upload / download API for assets
+### NEW-LLM-API-1 — LLM-friendly read/write MCP + asset API
 
-**Status:** Stub (post-parity, cross-cutting — not envelope-only)
-· **Priority:** Core workflow
-**Source:** Ed feedback 2026-05-10
+**Status:** V2 v1 scope (cross-cutting — not envelope-only)
+· **Priority:** MVP infrastructure
+**Source:** Ed feedback 2026-05-10; day-1 read/write decision
+confirmed 2026-05-11.
 
-**Story.** As an LLM agent assisting a CPHC, I need to be able
-to **upload** a datasheet PDF (or batch of PDFs) into a project's
-`project_materials[*].datasheet_asset_ids` slot, and **download**
-existing datasheets for review / re-upload — through a clean,
-documented HTTP / tool-callable API. The same applies to other
-assets (site photos on segments, HBJSON files, eventually catalog
-asset blobs).
+**Story.** As an LLM agent assisting a CPHC, I need authenticated,
+project-scoped **read/write** access to PH-Navigator from day 1: fetch
+documents, apply JSON-Patch edits to drafts, save/save-as, upload
+datasheet PDFs or batches, attach assets to the right project-document
+paths, and download existing assets for review / re-upload.
 
 **Why this matters.** Datasheet ingest is the highest-volume
 manual workflow on a project. An LLM that can:
@@ -7973,35 +7960,63 @@ from day one — not retrofit it later.
 
 **Design constraints (capture early so V2 v1 endpoints don't
 paint us into a corner):**
-- **Stable, semantically meaningful IDs.** `mat_asset_<ULID>` —
-  not opaque hashes. Tool calls reference IDs; if IDs are
-  stable, agents can plan multi-step flows.
+- **One asset backbone.** All uploaded files are `project_assets`
+  rows (PRD §6.5). Datasheets, photos, HBJSON, future simulation
+  files, and export bundles share signed upload/download, dedup,
+  soft-delete, and GC behavior.
+- **Stable asset IDs plus explicit kind.** Tool calls reference stable
+  `asset_id` values; agents determine meaning from `asset_kind`, not
+  from an overloaded id prefix.
 - **Consistent endpoint shape across asset types.**
-  `POST /projects/{id}/assets` (returns `mat_asset_*` ID + signed
-  upload URL); `GET /projects/{id}/assets/{asset_id}` (signed
-  download URL); same shape for datasheet / photo / HBJSON.
+  `POST /projects/{id}/assets/upload-intent` returns `asset_id` +
+  signed PUT URL; `POST /projects/{id}/assets/{asset_id}/complete-upload`
+  marks upload complete; `GET /projects/{id}/assets/{asset_id}/url`
+  returns a signed download URL. The same shape covers datasheet,
+  site photo, and HBJSON bytes.
 - **Clear MIME / type discrimination.** `asset_kind` enum
   (`datasheet | site_photo | hbjson | …`) so an agent inspecting
   a project's assets can filter without guessing.
 - **Idempotent uploads** — agents retry; we should not get duplicate
-  rows on retry. Match by `(project_id, content_hash)`.
+  active rows on retry. Match by
+  `(project_id, asset_kind, content_hash_sha256)` and return
+  `duplicate_of` metadata when appropriate.
 - **Bulk endpoints.** `POST /projects/{id}/assets/bulk` for batch
   uploads; `GET /projects/{id}/assets?kind=datasheet` for batch
   reads. Avoids N round-trips for an agent doing 30 datasheets.
+- **Attach/detach through drafts.** `attach_asset` and `detach_asset`
+  are convenience wrappers over draft JSON-Patch. Removing an asset
+  from a material/photo UI detaches the reference from the active draft;
+  hard purge waits for GC after saved-version and active-draft reference
+  checks.
 - **OpenAPI spec served at `/openapi.json`** (FastAPI gives us
   this for free) — let any LLM tool (Claude / Anthropic API tool
   use, OpenAI function-calling, etc.) auto-discover the endpoints
   without bespoke docs.
-- **Auth model that works for service tokens** (project-scoped
-  bearer tokens an agent can carry), not just session cookies.
+- **Project-scoped bearer tokens** issued from Project Settings.
+  Tokens are shown once, stored hashed, revocable, audit-logged,
+  and scoped to one project. v1 scopes:
+  `project:read`, `project:write`, `asset:read`, `asset:write`.
+- **MCP is never anonymous.** Public browser read access to
+  `/projects/{id}/...` does not grant unauthenticated tool access.
+- **Tool surface wraps the same REST/service layer.** No separate
+  LLM-only business rules. MCP tools call the same validation,
+  access checks, JSON-Patch, idempotency, and audit paths as the
+  web UI.
+- **Write path goes through drafts.** LLM JSON-Patch edits target
+  the token owner's draft; `save_draft` explicitly flushes to the
+  version body. Save against locked/stale versions returns the
+  same structured 409s as the web UI.
 
-**Open design questions (queued):**
-- Where do bearer tokens live? Per-user, per-project, or
-  per-agent-context (rotating)?
-- LLM-callable endpoints SHOULD be a strict subset of the
-  human-driven endpoints (no "LLM-only API surface" — too easy
-  to drift). Confirm.
-- Surface this constraint in PRD §4 / §5 (API design principles)?
+**Resolved design decisions (2026-05-11):**
+- Bearer tokens live in `mcp_tokens` (PRD §6.1).
+- v1 tokens are per-user and per-project. The issuing editor owns
+  the token; every write is attributed to that user.
+- Project Settings is the v1 token UI: issue, list, revoke.
+- MCP tools are read/write capable in v1, but catalog writes are
+  excluded. Catalog browse is read-only through MCP until a concrete
+  global-library edit workflow and review policy exist.
+- LLM-callable write endpoints are wrappers around human-driven
+  endpoints/services, not a separate business surface.
 
 **Cross-references.** NEW-DATASHEET-1 (bulk download) and
 NEW-DATASHEET-1's per-row download both ride on this API. Future
@@ -8079,7 +8094,7 @@ to the per-story sections above.
 | ~~Q-WIN-9.2~~ | ~~US-WIN-9~~ | ~~Canvas zoom persistence?~~ | **Resolved 2026-05-10:** per-user preference (`userPreferencesStore.window_builder_canvas_zoom`). Discrete steps; mirrors envelope canvas (Q-ENV-4.1) |
 | ~~Q-WIN-10.1~~ | ~~US-WIN-10~~ | ~~Add parens to `evaluateExpression`?~~ | **Resolved 2026-05-10:** yes — V1 ref §18 flagged the absence as a papercut; V2 v1 adds standard-precedence + parens. ~50 LOC recursive-descent parser inline (no library) |
 | ~~Q-WIN-11.1~~ | ~~US-WIN-11~~ | ~~Drift compared to what (current_version vs any newer)?~~ | **Resolved 2026-05-10:** only `current_version_id` triggers drift |
-| ~~Q-WIN-11.2~~ | ~~US-WIN-11~~ | ~~Renamed-field handling in diff dialog?~~ | **Resolved 2026-05-10:** spec landed in PRD §7.5 (catalog-schema migration). `catalog_origin.catalog_schema_version` pinned at pick time; shim chain runs on refresh-from-catalog; renamed fields collapse to a single diff row labeled with both names; removed/added/re-typed all have explicit handling. Core feature in V2 v1, not v1.1+ |
+| ~~Q-WIN-11.2~~ | ~~US-WIN-11~~ | ~~Renamed-field handling in diff dialog?~~ | **Revised 2026-05-11:** catalog-schema migration tooling deferred from MVP and kept as post-MVP goal in PRD §7.5. MVP stores `catalog_schema_version: 1`; no shim chain or renamed-field diff handling in v1 |
 | ~~Q-ENV-1~~ | ~~US-Builder-Envelope~~ | ~~PRD §6.2 sketch missing layer thickness, steel-stud spacing, orientation enum?~~ | **Resolved 2026-05-10:** PRD §6.2 is illustrative only; missing fields (`assembly.orientation`, `layer.thickness_mm`, `segment.steel_stud_spacing_mm`) confirmed must be added; specifics decided during code-writing |
 | ~~Q-ENV-2~~ | ~~US-Builder-Envelope~~ | ~~Photos/datasheets segment-scoped or material-scoped?~~ | **Resolved 2026-05-10:** **split by what they document** — datasheets at project-material level (per-product, one per project), site photos at segment level (per-installation-slot). Introduces `tables.project_materials[]` table; segments reference by `project_material_id`. See US-Builder-Envelope architectural Q-ENV-2 for full model + auto-management rules |
 | ~~Q-ENV-2.1~~ | ~~US-Builder-Envelope~~ | ~~Should datasheets eventually move to catalog tier (defaultable + per-project override)?~~ | **Resolved 2026-05-10: NO.** Datasheets never live in the catalog, not even as defaults. Catalog carries specs only (modeling-relevant fields); the QA submittal must come from the project team on the project. See auto-memory `qa_principle_per_project_datasheets.md` |
@@ -8107,7 +8122,7 @@ to the per-story sections above.
 | ~~Q-ENV-7.2~~ | ~~US-ENV-7~~ | ~~Promote hand-entered material into catalog?~~ | **Resolved 2026-05-10:** deferred to v1.1+ (mirrors Q-WIN-4.4) |
 | ~~Q-ENV-7.3~~ | ~~US-ENV-7~~ | ~~Picker shows existing project-materials separately from catalog rows?~~ | **Resolved 2026-05-10:** yes — "In this project" section above "From catalog"; duplicates in catalog tagged "Already in this project" so de-dup is explicit |
 | ~~Q-ENV-11.1~~ | ~~US-ENV-11~~ | ~~Drift compared to what?~~ | **Resolved 2026-05-10:** only `current_version_id` (mirrors Q-WIN-11.1) |
-| ~~Q-ENV-11.2~~ | ~~US-ENV-11~~ | ~~Renamed-field handling in diff?~~ | **Resolved 2026-05-10:** spec landed in PRD §7.5 (mirrors Q-WIN-11.2). Same shim-chain treatment for materials |
+| ~~Q-ENV-11.2~~ | ~~US-ENV-11~~ | ~~Renamed-field handling in diff?~~ | **Revised 2026-05-11:** catalog-schema migration tooling deferred from MVP and kept as post-MVP goal in PRD §7.5. MVP stores `catalog_schema_version: 1`; no shim chain or renamed-field diff handling in v1 |
 | ~~Q-ENV-13.1~~ | ~~US-ENV-13~~ | ~~Per-row drift surface in Specifications tab?~~ | **Resolved 2026-05-10 (revised after Q-ENV-2):** drift surfaces at the **material card** header (not per-segment-row); drift is a property of the project_material's catalog_origin |
 | ~~Q-ENV-13.2~~ | ~~US-ENV-13~~ | ~~Bulk operations across material cards?~~ | **Resolved 2026-05-10:** defer to v1.1+; not in MVP. Per-material primary already collapses N→1 (one card per product), so bulk-set's value drops vs V1's per-use rows |
 | ~~Q-ENV-13.3~~ | ~~US-ENV-13~~ | ~~Per-segment site-photo zone disabled when material's spec-status is N/A?~~ | **Resolved 2026-05-10:** disabled when material's `specification_status === 'na'`. Matches V1 semantics, avoids photo waste on placeholders. Workaround: bump material to `pending` if `na` segment legitimately needs documentation |
@@ -8148,6 +8163,6 @@ to the per-story sections above.
 | ~~Q-SET-2~~ | ~~US-Settings~~ | ~~Is `bt_number` editable post-create?~~ | **Resolved 2026-05-10:** yes, editable subject to uniqueness check (excluding soft-deleted projects' freed numbers per Q-CREATE-2) |
 | ~~Q-SET-3~~ | ~~US-Settings~~ | ~~Where does project delete live — dashboard only or also Settings modal?~~ | **Resolved 2026-05-10 (redirect):** dashboard only (US-1.4). Not in Settings modal. Rare, high-stakes action; pairs with dashboard's project-list context |
 | ~~Q-SET-4~~ | ~~US-Settings~~ | ~~View-link management?~~ | **Moot 2026-05-10:** no view-link management surface exists. PRD §4 (updated 2026-05-10) made project URLs public-readable; no per-share tokens; to revoke access, soft-delete the project (US-1.4) |
-| ~~Q-SET-5~~ | ~~US-Settings~~ | ~~MCP token management?~~ | **Resolved 2026-05-10:** defer to v1.1+. When NEW-LLM-API-1's MCP tools actually ship, Settings modal grows a tokens section |
+| ~~Q-SET-5~~ | ~~US-Settings~~ | ~~MCP token management?~~ | **Revised 2026-05-11:** include in V2 v1. Project Settings issues/lists/revokes project-scoped read/write MCP bearer tokens because MCP ships read/write capable from day 1 |
 | ~~Q-SET-6~~ | ~~US-Settings~~ | ~~Rename side-effects?~~ | **Resolved 2026-05-10:** none. Rename is display-only. URLs use UUID; old downloaded files keep their original names |
 | ~~Q-SET-7~~ | ~~US-Settings~~ | ~~Save flow — explicit Save / Cancel or auto-save on blur?~~ | **Resolved 2026-05-10:** explicit Save / Cancel. Edits bypass the draft buffer (relational, not document-versioned); single `PATCH` on Save |
