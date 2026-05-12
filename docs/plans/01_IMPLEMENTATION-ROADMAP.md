@@ -100,7 +100,7 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | AFK after seed credentials are agreed |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Editor signs in and lands on an empty dashboard. |
 | References | `context/technical-requirements/stack-auth-migration.md`; `context/user-stories/00-foundation-shell.md`; `context/technical-requirements/api.md`. |
 | Includes | Users/session schema; password hashing; seed user command; login/logout/session API; dashboard shell; auth guard; request IDs and structured errors. |
@@ -119,7 +119,7 @@ Resolve these at the named slice, not all up front:
 | Includes | Project and initial version metadata; owner dashboard query; project create/list/open API; access-check dependency; shell header, tab bar, version dropdown placeholder, settings menu placeholder; public read route with edit controls hidden; first staging deploy (Render) for backend + frontend so subsequent slices can be verified end-to-end against a real environment. |
 | Tests | `bt_number` uniqueness; project create/list/open contracts; view vs edit access dependency; public write rejection for one representative mutating route. |
 | Browser check | Create project from dashboard, open Status tab, copy URL into signed-out context, confirm read-only shell. Re-run the same happy path against the staging URL. |
-| Lessons | Record URL/access assumptions, shell navigation choices, and any deploy/staging friction. |
+| Lessons | Record URL/access assumptions, shell navigation choices, deploy/staging friction, proxy-aware client-IP handling, JSON application-log setup, and the first `require_project_access(project_id, mode)` implementation. |
 
 ### TB-03 - Status Tab Lifecycle
 
@@ -132,7 +132,7 @@ Resolve these at the named slice, not all up front:
 | Includes | `project_status_items` relational table; apply default template; add/edit/reorder/delete item workflow as scoped for v1; current-step visual; read-only public display. |
 | Tests | State enum and completion-date rules; default template creation; reorder/delete behavior; API tests for non-trivial transitions. |
 | Browser check | Apply default template, mark an item done, edit completion date, delete one item, reload, confirm public viewer can read but not edit. |
-| Lessons | Record why Status stays relational and outside `ProjectDocumentV1`. |
+| Lessons | Record why Status stays relational and outside `ProjectDocumentV1`; before editable status work ships, confirm the in-place session-expiry/device-collision modal pattern is present or explicitly split into a blocking auth follow-up. |
 
 ### TB-04 - Minimal Project Document And Rooms Draft
 
@@ -145,7 +145,7 @@ Resolve these at the named slice, not all up front:
 | Includes | `ProjectDocumentV1` minimal body with empty tables; Rooms and single-select option structures; draft row created on first edit; table-slice read; guarded draft patch; minimal Equipment -> Rooms UI using the shared DataTable path. |
 | Tests | Pydantic document validation; golden empty document; guarded patch rules; Rooms row validation; single-select duplicate/missing-option rules. |
 | Browser check | Add a room, edit floor level and building zone options, reload, restore draft, confirm row remains in draft. |
-| Lessons | Record document-shape decisions and any DataTable scope cut made to keep the slice thin. |
+| Lessons | Record document-shape decisions and any DataTable scope cut made to keep the slice thin; verify `expires_at`/keepalive behavior before relying on long-lived editable draft state. |
 
 ### TB-04b - MCP Read-Only Tracer
 
@@ -184,7 +184,7 @@ Resolve these at the named slice, not all up front:
 | Includes | Same-editor tab coordination; stale ETag handling; dirty-draft warning; restore/discard prompt; read-safe-mode fallback for older or invalid schema bodies. |
 | Tests | Same-editor disjoint edit path; same-scope stale conflict; schema fallback raw-body download; draft age metadata if present. |
 | Browser check | Open two tabs to one project, edit in one, verify the other handles stale state without silent overwrite. |
-| Lessons | Record UX tradeoffs around force-reload vs merge. |
+| Lessons | Record UX tradeoffs around force-reload vs merge, and revisit session-row locking/touch behavior under same-editor multi-tab traffic. |
 
 ### TB-07 - Catalog Manager Tracer
 
@@ -360,7 +360,7 @@ Resolve these at the named slice, not all up front:
 | Slice | Status | Last updated | Verification evidence |
 |---|---|---|---|
 | TB-00 | Complete | 2026-05-12 11:58 EDT | `make smoke`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed with live `/api/v1` health/version and no console warnings/errors. |
-| TB-01 | Not started | 2026-05-12 | - |
+| TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
 | TB-02 | Not started | 2026-05-12 | - |
 | TB-03 | Not started | 2026-05-12 | - |
 | TB-04 | Not started | 2026-05-12 | - |
@@ -412,4 +412,18 @@ What did not work: Initial local Docker daemon was not running, so Postgres-depe
 What worked: Keep V2 on a separate Postgres 16 container and volume, published on host port 5433 (`phn-v2-postgres`, `5433->5432`), while V1 keeps `ph-navigator-postgres` on host port 5432. Backend route contracts passed, DB smoke passed, Alembic baseline applied, frontend service-status fetch passed, production build passed, CLI Playwright E2E passed after exact locator fix, and the in-app Browser verified the rendered status page against live backend data with no console warnings/errors.
 Verification: `make smoke`; `make migrate`; `docker ps` showed `phn-v2-postgres` on `5433->5432` and `ph-navigator-postgres` on `5432->5432`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser at `http://127.0.0.1:5173/` showed `ok`, `ph-navigator-v2`, `tb-00`, `v1`, and `0.1.0`; Refresh re-fetched successfully.
 Follow-up: Real staging/production Postgres credentials are deferred to TB-02 deploy setup. TB-01 should only add local seed-user credentials and auth/session secrets needed for sign-in development.
+```
+
+### TB-01
+
+```text
+Slice: TB-01
+Date: 2026-05-12
+What changed: Added users/sessions/action-log schema, Argon2id password hashing, seed-user CLI, login/session/logout API, request-id and structured-error envelopes, mutating-route Origin checks, frontend sign-in route, protected empty dashboard shell, and auth E2E coverage.
+Why: Editors need a real server-side session boundary before project creation, project shells, and write routes land.
+What we tried: Auth repository/API tests, frontend guard tests, local migration, dev-user seeding, CLI Playwright E2E, and in-app browser verification.
+What did not work: Logging failed sign-ins inside a transaction that raised immediately rolled back the audit row; fixed by committing the failed-login action before raising the structured 401. Backend auth tests truncate the local auth tables, so `make seed-dev-user` must run after backend tests before browser/E2E sign-in checks. The root `next=/` redirect looped back to sign-in after login until the sign-in handler normalized root to `/dashboard`. Follow-up review also found an unknown-email timing oracle, an unversioned `/api/health` leftover, optional DB-backed auth tests, an unsafe seed-user script, dead TB-00 frontend status client code, and a concurrent-login race against the one-active-session partial unique index.
+What worked: Argon2id via `argon2-cffi`, raw SQL repositories, a partial unique index for one active session per user, `X-Request-ID` response propagation, generic failed-login copy, HTTP-only session cookies, and a narrow dashboard shell with disabled New Project placeholder. Follow-up cleanup kept login verification outside the write transaction, verifies a valid dummy Argon2id hash for unknown users, removed the unversioned health route, guarded local seed-user reset, locked the user row during login session swaps, removed dead TB-00 frontend client code, and aligned tests/router usage with local helpers. Final docs pass corrected the canonical docs to actual implementation names/settings (`phn_session`, `make seed-dev-user`, Argon2 parameters, CORS origins, UUID auth tables, migration/index names) and separated implemented TB-01 ops from Phase 0 targets still owned by later slices.
+Verification: `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/` showed `/sign-in?next=%2F`, signed in as `ed@example.com`, rendered `/dashboard` with `Ed May` and `No projects yet`, preserved the session on dashboard reload, and redirected a signed-out protected dashboard request back to sign-in.
+Follow-up: TB-02 can reuse the auth dependency and dashboard shell; project creation should add real dashboard data and replace the disabled New Project button. TB-02 owns proxy-aware client IP, JSON app logs, and the first project access-check seam. TB-03/TB-04 must not ship editable state without the in-place re-auth/modal behavior, and TB-06 should revisit session-row locking under same-editor multi-tab traffic. Keep future docs passes focused on correcting source-of-truth values after implementation, not restating obvious diffs.
 ```

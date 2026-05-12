@@ -18,6 +18,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7",
     "boto3>=1.35",
     "jsonpatch>=1.33",
+    "argon2-cffi>=25.1.0",
 ]
 
 [dependency-groups]

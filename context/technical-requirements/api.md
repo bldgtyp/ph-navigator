@@ -37,6 +37,36 @@ All endpoints live under a versioned prefix: `/api/v1/...`. Hard rules:
 This costs ~zero on day 1 (just a router prefix) and saves real pain
 later.
 
+### 9.2a Auth
+
+```
+POST   /api/v1/auth/login       email/password sign-in; sets HTTP-only
+                                session cookie
+GET    /api/v1/auth/session     current editor session; slides expiry
+POST   /api/v1/auth/logout      invalidates current session and clears cookie
+```
+
+Login failures return the generic `invalid_credentials` structured
+error. Session failures distinguish `not_authenticated`,
+`session_expired`, and `session_invalidated` so the frontend can choose
+the correct re-auth modal copy. All mutating auth routes still pass the
+same Origin policy as later project writes.
+
+TB-01 implementation details:
+
+- Session cookie name: `phn_session`.
+- Cookie flags: `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` is off
+  only for local/test environments and on otherwise.
+- Session lifetime: 60-minute sliding expiry. `/auth/session` returns
+  the current user and `expires_at`.
+- Every API response includes `X-Request-ID`; callers may send one or
+  let the backend generate it.
+- Mutating browser requests under `/api/` require an `Origin` matching
+  the configured CORS origins.
+- The frontend currently uses a route-level auth guard for the empty
+  dashboard. The in-place re-auth modal remains required before the
+  first editable project surface ships.
+
 ### 9.2 Projects
 
 ```

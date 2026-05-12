@@ -1,44 +1,83 @@
-export type HealthResponse = {
-  status: "ok";
-  service: string;
-  phase: string;
-  api_version: string;
+export type User = {
+  id: string;
+  email: string;
+  display_name: string;
 };
 
-export type VersionResponse = {
-  service: string;
-  app_version: string;
-  api_version: string;
-  environment: string;
-  git_sha: string | null;
+export type AuthSession = {
+  user: User;
+  expires_at: string;
 };
 
-export type ServiceStatus = {
-  health: HealthResponse;
-  version: VersionResponse;
+export type ApiError = {
+  error_code: string;
+  message: string;
+  request_id: string;
+  details: Record<string, unknown>;
 };
 
 export function getApiBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL ?? "";
 }
 
-export function apiUrl(path: string, apiBaseUrl = getApiBaseUrl()): string {
+function apiUrl(path: string, apiBaseUrl = getApiBaseUrl()): string {
   return `${apiBaseUrl}${path}`;
 }
 
-async function fetchJson<T>(path: string, signal: AbortSignal): Promise<T> {
-  const response = await fetch(apiUrl(path), { signal });
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+function requestId(): string {
+  const browserCrypto = globalThis.crypto;
+  if (browserCrypto?.randomUUID) {
+    return browserCrypto.randomUUID();
   }
+  if (browserCrypto?.getRandomValues) {
+    const values = new Uint32Array(4);
+    browserCrypto.getRandomValues(values);
+    return `req-${Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("")}`;
+  }
+  return `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function fetchJson<T>(
+  path: string,
+  options: RequestInit & { signal?: AbortSignal } = {},
+): Promise<T> {
+  const headers = new Headers(options.headers);
+  headers.set("X-Request-ID", requestId());
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(apiUrl(path), {
+    ...options,
+    headers,
+    credentials: "include",
+  });
+  if (!response.ok) {
+    let apiError: ApiError | null = null;
+    try {
+      apiError = (await response.json()) as ApiError;
+    } catch {
+      apiError = null;
+    }
+    throw new Error(
+      apiError?.message ?? `Request failed: ${response.status} ${response.statusText}`,
+    );
+  }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
-export async function fetchServiceStatus(signal: AbortSignal): Promise<ServiceStatus> {
-  const [health, version] = await Promise.all([
-    fetchJson<HealthResponse>("/api/v1/health", signal),
-    fetchJson<VersionResponse>("/api/v1/version", signal),
-  ]);
+export async function fetchCurrentSession(signal?: AbortSignal): Promise<AuthSession> {
+  return fetchJson<AuthSession>("/api/v1/auth/session", { signal });
+}
 
-  return { health, version };
+export async function signIn(email: string, password: string): Promise<AuthSession> {
+  return fetchJson<AuthSession>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function signOut(): Promise<void> {
+  await fetchJson<void>("/api/v1/auth/logout", { method: "POST" });
 }

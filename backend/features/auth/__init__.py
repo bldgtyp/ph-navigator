@@ -1,0 +1,1 @@
+"""Editor authentication feature."""

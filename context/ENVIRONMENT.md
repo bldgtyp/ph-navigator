@@ -26,6 +26,26 @@
 - `backend/.env` (gitignored) — copy from `backend/.env.example`
 - `frontend/.env.local` (gitignored) — copy from `frontend/.env.example`
 - No second `.env`. No `.env.poc`. No overlays.
+- Local backend defaults:
+  - `DATABASE_URL=postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2`
+  - `SESSION_COOKIE_NAME=phn_session`
+  - `SESSION_LIFETIME_MINUTES=60`
+  - `PASSWORD_ARGON2_TIME_COST=3`
+  - `PASSWORD_ARGON2_MEMORY_COST=65536`
+  - `PASSWORD_ARGON2_PARALLELISM=4`
+  - `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000`
+  - `FERNET_SECRET_KEY` is reserved for future at-rest field
+    encryption; TB-01 session cookies are opaque DB row pointers, not
+    signed/encrypted payload cookies.
+
+## Local auth seed
+
+- `make seed-dev-user` creates/resets local editor
+  `ed@example.com` / `password` with display name `Ed May`.
+- The seed script refuses to run outside local environments
+  (`development`, `test`, `local`).
+- Backend auth tests truncate auth tables. Run `make seed-dev-user`
+  after backend tests and before browser/E2E sign-in checks.
 
 ## Make recipes
 
@@ -33,6 +53,7 @@
 - `make dev` — start Postgres; prints how to launch backend + frontend
 - `make backend`, `make frontend`
 - `make test`, `make lint`, `make format`, `make migrate`, `make smoke`
+- `make seed-dev-user` — seed the local editor account for browser/E2E auth
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).

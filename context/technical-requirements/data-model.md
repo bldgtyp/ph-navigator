@@ -16,19 +16,18 @@ do not make it part of default startup context.
 
 ```sql
 users (
-    id                 INTEGER PRIMARY KEY,
-    email              TEXT NOT NULL UNIQUE,
-    name               TEXT NOT NULL,
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email              TEXT NOT NULL,
+                       -- unique lower(email), enforced by
+                       -- `uq_users_email_lower`
+    display_name       TEXT NOT NULL,
     password_hash      TEXT NOT NULL,
-                       -- Argon2id hash. Parameters are pinned in
-                       -- backend Settings; bcrypt cost >= 12 is the
-                       -- only allowed fallback if Argon2id creates
-                       -- install friction during scaffold.
-    units_preference   TEXT NOT NULL DEFAULT 'SI',
-                       -- 'IP' | 'SI'; toggled from the project header,
-                       -- applies wherever values render
+                       -- Argon2id hash. TB-01 settings:
+                       -- time_cost=3, memory_cost=65536,
+                       -- parallelism=4.
+    is_active          BOOLEAN NOT NULL DEFAULT true,
     created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deactivated_at     TIMESTAMPTZ
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 )
 
 -- Server-side sessions. Required for single-active-session-per-user
@@ -38,24 +37,24 @@ sessions (
     id              UUID PRIMARY KEY,
                     -- cryptographically random UUIDv4 referenced by
                     -- the session cookie
-    user_id         INTEGER NOT NULL REFERENCES users(id),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
                     -- updated on every authenticated request; expiry
                     -- is computed as last_seen_at + 60 min
+    expires_at      TIMESTAMPTZ NOT NULL,
     invalidated_at  TIMESTAMPTZ,
                     -- NULL = active. Set when the session ends:
                     -- explicit sign-out, idle timeout, or
                     -- superseded_by_new_login.
-    invalidated_reason  TEXT,
+    invalidation_reason  TEXT,
                     -- 'sign_out' | 'idle_timeout' |
                     -- 'superseded_by_new_login' | 'admin_revoked'
-    ip_address      INET,
+    ip_address      TEXT,
     user_agent      TEXT
 )
-CREATE UNIQUE INDEX sessions_one_active_per_user
+CREATE UNIQUE INDEX uq_sessions_one_active_per_user
     ON sessions (user_id) WHERE invalidated_at IS NULL;
-CREATE INDEX ON sessions (last_seen_at) WHERE invalidated_at IS NULL;
 
 projects (
     id                 UUID PRIMARY KEY,
@@ -74,7 +73,7 @@ projects (
                        -- remain deferred in v1.
     phius_number       TEXT,
     phius_dropbox_url  TEXT,
-    owner_id           INTEGER NOT NULL REFERENCES users(id),
+    owner_id           UUID NOT NULL REFERENCES users(id),
                        -- dashboard-organization concept, not ACL.
                        -- Transferable post-MVP.
     active_version_id  UUID REFERENCES project_versions(id),
@@ -97,7 +96,7 @@ ALTER TABLE projects ADD CONSTRAINT projects_cert_programs_allowed
 -- NOT imply anonymous MCP access.
 mcp_tokens (
     id              UUID PRIMARY KEY,
-    user_id         INTEGER NOT NULL REFERENCES users(id),
+    user_id         UUID NOT NULL REFERENCES users(id),
                     -- editor who issued the token; actions performed
                     -- with the token are attributed to this user
     project_id      UUID NOT NULL REFERENCES projects(id),
@@ -121,7 +120,7 @@ mcp_tokens (
                     -- nullable in v1; UI should encourage expiry but
                     -- not require it for local Claude workflows
     revoked_at      TIMESTAMPTZ,
-    revoked_by      INTEGER REFERENCES users(id)
+    revoked_by      UUID REFERENCES users(id)
 )
 CREATE INDEX ON mcp_tokens (project_id) WHERE revoked_at IS NULL;
 CREATE INDEX ON mcp_tokens (user_id) WHERE revoked_at IS NULL;
@@ -145,9 +144,9 @@ project_status_items (
     description     TEXT,
                     -- markdown allowed; in-app anchor links v1.1+
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_by      INTEGER REFERENCES users(id),
+    created_by      UUID REFERENCES users(id),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by      INTEGER REFERENCES users(id),
+    updated_by      UUID REFERENCES users(id),
     deleted_at      TIMESTAMPTZ
 )
 CREATE INDEX ON project_status_items (project_id, order_index)
@@ -156,7 +155,7 @@ CREATE INDEX ON project_status_items (project_id, order_index)
 -- Per-user dashboard preferences. Pinning and ordering are personal,
 -- so they live here rather than on `projects`.
 user_project_preferences (
-    user_id     INTEGER NOT NULL REFERENCES users(id),
+    user_id     UUID NOT NULL REFERENCES users(id),
     project_id  UUID NOT NULL REFERENCES projects(id),
     pinned      BOOLEAN NOT NULL DEFAULT FALSE,
     pin_order   INTEGER,
@@ -169,24 +168,22 @@ user_project_preferences (
 -- per US-C1. Append-only; queryable by SQL in v1 (no UI surface).
 user_action_log (
     id           BIGSERIAL PRIMARY KEY,
-    user_id      INTEGER REFERENCES users(id),
-                 -- nullable for failed logins before user lookup
     action       TEXT NOT NULL,
-                 -- 'login', 'login_failed', 'project_create',
-                 -- 'version_save', 'hbjson_upload', 'catalog_record_*',
-                 -- ... (full enum in
-                 -- `context/user-stories/50-settings-ops-llm.md` §C-1)
-    project_id   UUID REFERENCES projects(id),
-    target_type  TEXT,
-    target_id    TEXT,
-    metadata     JSONB,
-    ip_address   INET,
+                 -- 'login', 'login_failed',
+                 -- 'session_invalidated_by_new_login', 'sign_out'.
+                 -- Project/version/catalog actions will extend this
+                 -- table or its `details` JSONB as those slices land.
+    user_id      UUID REFERENCES users(id) ON DELETE SET NULL,
+                 -- nullable for failed logins before user lookup
+    email        TEXT,
+    session_id   UUID,
+    ip_address   TEXT,
     user_agent   TEXT,
-    at           TIMESTAMPTZ NOT NULL DEFAULT now()
+    details      JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 )
-CREATE INDEX ON user_action_log (user_id, at DESC);
-CREATE INDEX ON user_action_log (project_id, at DESC);
-CREATE INDEX ON user_action_log (action, at DESC);
+CREATE INDEX ix_user_action_log_created_at
+    ON user_action_log (created_at);
 
 project_versions (
     id                UUID PRIMARY KEY,
@@ -207,9 +204,9 @@ project_versions (
                       -- the version-save service when the body is
                       -- inserted or overwritten
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_by        INTEGER REFERENCES users(id),
+    created_by        UUID REFERENCES users(id),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by        INTEGER REFERENCES users(id),
+    updated_by        UUID REFERENCES users(id),
     UNIQUE (project_id, name)
 )
 CREATE INDEX ON project_versions (project_id, created_at);
@@ -539,10 +536,10 @@ project_assets (
     upload_status         TEXT NOT NULL DEFAULT 'pending',
                           -- 'pending' | 'uploaded' | 'failed'
     created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_by            INTEGER NOT NULL REFERENCES users(id),
+    created_by            UUID NOT NULL REFERENCES users(id),
     uploaded_at           TIMESTAMPTZ,
     deleted_at            TIMESTAMPTZ,
-    deleted_by            INTEGER REFERENCES users(id),
+    deleted_by            UUID REFERENCES users(id),
     metadata              JSONB NOT NULL DEFAULT '{}'::jsonb
 )
 CREATE INDEX ON project_assets (project_id, asset_kind)

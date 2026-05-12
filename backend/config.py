@@ -23,8 +23,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     git_sha: str = ""
-    session_secret_key: str = Field(default="dev-insecure-change-me")
     session_lifetime_minutes: int = 60
+    session_cookie_name: str = "phn_session"
+    password_argon2_time_cost: int = 3
+    password_argon2_memory_cost: int = 65536
+    password_argon2_parallelism: int = 4
 
     # Database
     database_url: str = Field(default="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2")
@@ -36,15 +39,24 @@ class Settings(BaseSettings):
     r2_bucket: str = "ph-navigator-v2-dev"
     r2_endpoint_url: str = ""
 
-    # Crypto
+    # Future at-rest field encryption. Not used by TB-01 session cookies,
+    # which are opaque pointers to rows in the sessions table.
     fernet_secret_key: str = ""
 
     # CORS — comma-separated origins in env, list at use site
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
 
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cors_origins_set(self) -> frozenset[str]:
+        return frozenset(self.cors_origins_list)
+
+    @property
+    def session_cookie_secure(self) -> bool:
+        return self.environment not in {"development", "test", "local"}
 
 
 settings = Settings()

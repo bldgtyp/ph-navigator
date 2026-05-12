@@ -6,7 +6,7 @@
 
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
         migrate makemigration test test-backend test-frontend \
-        lint format smoke e2e e2e-report clean
+        lint format smoke seed-dev-user e2e e2e-report clean
 
 help: ## Show available recipes
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / \
@@ -90,6 +90,9 @@ smoke: db-up ## Verify the box is wired up (run after `make setup`)
 	cd backend && uv run python -m scripts.check_db
 	cd frontend && node -e "console.log('frontend ok')"
 	docker compose ps db
+
+seed-dev-user: migrate ## Create/reset the default local editor login
+	cd backend && uv run python -m scripts.seed_user --email ed@example.com --display-name "Ed May" --password "password"
 
 clean: ## Remove caches and build artifacts (does NOT touch .venv or node_modules)
 	find . -type d -name __pycache__ -exec rm -rf {} +

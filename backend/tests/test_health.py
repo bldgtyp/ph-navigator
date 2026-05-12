@@ -18,6 +18,12 @@ def test_health_returns_ok() -> None:
     assert payload["api_version"] == "v1"
 
 
+def test_unversioned_health_route_does_not_exist() -> None:
+    client = TestClient(app)
+    response = client.get("/api/health")
+    assert response.status_code == 404
+
+
 def test_version_returns_version_metadata() -> None:
     client = TestClient(app)
     response = client.get("/api/v1/version")
