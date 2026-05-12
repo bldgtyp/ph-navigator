@@ -31,6 +31,9 @@ slices that can be built, tested, and verified in the browser.
 - If a slice looks larger than one focused day, split it before starting.
 - When a slice lands, update its checkbox, verification notes, and the
   Lessons Learned section at the bottom of this file.
+- Each slice's `References` row lists the load-bearing context docs for
+  that slice. Read those before starting; the frontmatter `RELATED:` list
+  covers always-useful docs (PRD, TECH_STACK, ENVIRONMENT, USER_STORIES).
 - From TB-02 onward, the browser-check happy path must also pass on
   staging, not only on local dev.
 
@@ -86,6 +89,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK; repo-split resolved as one repo for MVP scaffold |
 | Status | [x] Complete |
 | Goal | Backend, DB, and frontend boot; the browser can display backend health/version. |
+| References | `context/ENVIRONMENT.md`; `context/TECH_STACK.md`. |
 | Includes | Minimal repo scaffold; Docker Postgres path; backend settings; Alembic baseline; `/api/v1/health` and `/api/v1/version`; frontend route that reads and displays service status; initial Make recipes for setup/dev/smoke; CI workflow (GitHub Actions) running lint + tests + build on push and PR, no deploy yet. |
 | Tests | Backend health/version contract; DB connectivity smoke; frontend service-status fetch only if state is non-trivial. |
 | Browser check | Start dev stack, open the frontend, see live backend health/version from `/api/v1`. |
@@ -98,6 +102,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK after seed credentials are agreed |
 | Status | [ ] Not started |
 | Goal | Editor signs in and lands on an empty dashboard. |
+| References | `context/technical-requirements/stack-auth-migration.md`; `context/user-stories/00-foundation-shell.md`; `context/technical-requirements/api.md`. |
 | Includes | Users/session schema; password hashing; seed user command; login/logout/session API; dashboard shell; auth guard; request IDs and structured errors. |
 | Tests | Password/session rules; single-active-session behavior; auth dependency; login/logout API. |
 | Browser check | Sign in as seed editor, refresh, remain signed in, sign out, protected dashboard redirects to sign-in. |
@@ -110,6 +115,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL for staging URL and deploy credentials; otherwise AFK |
 | Status | [ ] Not started |
 | Goal | Editor creates a project, opens `/projects/{id}/status`, and sees the workspace shell; the same shell is reachable on staging. |
+| References | `context/user-stories/00-foundation-shell.md`; `context/technical-requirements/api.md`; `context/technical-requirements/data-model.md`; `context/UI_UX.md`. |
 | Includes | Project and initial version metadata; owner dashboard query; project create/list/open API; access-check dependency; shell header, tab bar, version dropdown placeholder, settings menu placeholder; public read route with edit controls hidden; first staging deploy (Render) for backend + frontend so subsequent slices can be verified end-to-end against a real environment. |
 | Tests | `bt_number` uniqueness; project create/list/open contracts; view vs edit access dependency; public write rejection for one representative mutating route. |
 | Browser check | Create project from dashboard, open Status tab, copy URL into signed-out context, confirm read-only shell. Re-run the same happy path against the staging URL. |
@@ -122,6 +128,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Status tab has the default cert-agnostic tracker and editable item state. |
+| References | `context/user-stories/00-foundation-shell.md` (Status tab); `context/technical-requirements/data-model.md` (relational tables). |
 | Includes | `project_status_items` relational table; apply default template; add/edit/reorder/delete item workflow as scoped for v1; current-step visual; read-only public display. |
 | Tests | State enum and completion-date rules; default template creation; reorder/delete behavior; API tests for non-trivial transitions. |
 | Browser check | Apply default template, mark an item done, edit completion date, delete one item, reload, confirm public viewer can read but not edit. |
@@ -134,6 +141,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | First project-document edit path works through Rooms without version-save polish. Not user-visible on its own: drafts created here have no terminal action until TB-05 ships Save/Discard. |
+| References | `context/technical-requirements/data-model.md` (ProjectDocumentV1); `context/technical-requirements/save-versioning.md` (draft lifecycle); `context/technical-requirements/data-table.md`; `context/user-stories/30-tables-equipment.md` (Rooms). |
 | Includes | `ProjectDocumentV1` minimal body with empty tables; Rooms and single-select option structures; draft row created on first edit; table-slice read; guarded draft patch; minimal Equipment -> Rooms UI using the shared DataTable path. |
 | Tests | Pydantic document validation; golden empty document; guarded patch rules; Rooms row validation; single-select duplicate/missing-option rules. |
 | Browser check | Add a room, edit floor level and building zone options, reload, restore draft, confirm row remains in draft. |
@@ -146,6 +154,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL for MCP transport decision and local client setup |
 | Status | [ ] Not started |
 | Goal | Claude can authenticate via MCP and read project + draft state through a real local client. De-risks transport, token, and access-check choices before TB-05 introduces version semantics. |
+| References | `context/technical-requirements/llm-mcp-schema.md`; `context/user-stories/50-settings-ops-llm.md`; `context/technical-requirements/api.md` (shared access-check). |
 | Includes | MCP server scaffold with chosen transport(s); token schema and hashing; project-scoped read-only scopes; list/get tools for projects, status items, and document slices; shared access-check dependency reuse; structured MCP error shape. |
 | Tests | Token scope validation and revocation; read-only enforcement (write attempt is rejected, not silently no-op); MCP and REST share the access-check dependency; targeted tool I/O contract tests. |
 | Browser check | Run MCP list/get against a project from a local MCP client; cross-check that the same data appears in the browser dashboard for the same user. |
@@ -158,6 +167,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL for version-name uniqueness and diff scope confirmation |
 | Status | [ ] Not started |
 | Goal | File-app-style version workflow is usable on the Rooms slice. |
+| References | `context/technical-requirements/save-versioning.md`; `context/technical-requirements/api.md` (version endpoints, ETag); `context/user-stories/00-foundation-shell.md` (version dropdown). |
 | Includes | Save, Save As, Discard, Lock; version dropdown behavior; denormalized save metadata; project JSON download; Rooms table JSON download; structured diff endpoint with v1 UI stub; locked-version read-only behavior. |
 | Tests | Save/version service; ETag conflicts; locked-version write rejection; JSON round-trip validation; table download validation; draft discard and restore paths. |
 | Browser check | Edit Rooms draft, Save, Save As, lock old version, try blocked edit, download project JSON and Rooms JSON, open diff stub. |
@@ -170,6 +180,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Basic concurrency rules are visible before more editors are built on top. |
+| References | `context/technical-requirements/save-versioning.md` (stale-draft + ETag rules); `context/user-stories/00-foundation-shell.md`. |
 | Includes | Same-editor tab coordination; stale ETag handling; dirty-draft warning; restore/discard prompt; read-safe-mode fallback for older or invalid schema bodies. |
 | Tests | Same-editor disjoint edit path; same-scope stale conflict; schema fallback raw-body download; draft age metadata if present. |
 | Browser check | Open two tabs to one project, edit in one, verify the other handles stale state without silent overwrite. |
@@ -182,6 +193,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | One catalog can be managed in the app and read by downstream pickers. |
+| References | `context/technical-requirements/data-model.md` (catalogs / bookshelf copy); `context/user-stories/10-windows.md` (downstream picker shape). |
 | Includes | Relational catalog schema for the first envelope/window catalog row type; catalog list/create/edit/deactivate API; dashboard Catalogs entry; catalog table UI; `catalog_schema_version: 1` hook only, no migration tooling. |
 | Tests | Catalog validation; active/inactive filtering; bookshelf copy metadata shape; no live project mutation when catalog row changes. |
 | Browser check | Add/edit/deactivate one catalog row, refresh, confirm the row appears in picker-ready API output. |
@@ -194,6 +206,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Windows proves the bookshelf model against a non-Rooms project table. |
+| References | `context/user-stories/10-windows.md`; `context/technical-requirements/data-model.md` (bookshelf copy, `catalog_origin`). |
 | Includes | Window Types table/document shape; frame/glazing pick from catalog; field-level `catalog_origin`; Save/reload through existing draft/version system; minimal Windows UI. |
 | Tests | Catalog copy does not live-join; local override tracking; basic window-type validation; targeted units parser tests if dimension input ships here. |
 | Browser check | Pick frame/glazing into a Window Type, edit a local field, Save, reload, confirm origin and override state. |
@@ -206,6 +219,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Explicit catalog drift review works for one Window Type field group. |
+| References | `context/user-stories/10-windows.md` (refresh-from-catalog); `context/technical-requirements/data-model.md` (drift / override rules). |
 | Includes | Drift detection; per-entry refresh dialog; Review all report with per-entry action only; no bulk auto-apply. |
 | Tests | Drift detection; Keep mine vs Update from catalog; override persistence. |
 | Browser check | Change a source catalog row, open project Window Type, review drift, update one field, keep one local override. |
@@ -218,6 +232,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Envelope tab can create one assembly with layers and segments, even before material picking. |
+| References | `context/user-stories/20-envelope.md`; `context/technical-requirements/data-model.md` (assemblies/layers/segments); `context/UI_UX.md` (canvas). |
 | Includes | Assemblies document shape; assembly sidebar; header; canvas with layer/segment layout; add/edit/delete layer and segment; locked/public read-only states. |
 | Tests | Assembly/layer/segment validation; at-least-one layer/segment guards; UI state tests only if canvas state becomes complex. |
 | Browser check | Create wall assembly, add layers and segments, edit thickness, reload draft/save, confirm read-only public view. |
@@ -230,6 +245,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | One assembly segment can pick a material and show backend-owned effective R/U values. |
+| References | `context/user-stories/20-envelope.md` (material pick + R/U); `context/technical-requirements/data-model.md` (project materials, overrides). |
 | Includes | Project Materials de-dup; material bookshelf picker; local material overrides; backend effective R/U calculation service; stale/loading/error display in the assembly header. |
 | Tests | Project-material de-dup; local override rules; R/U calculation fixtures; no frontend recomputation of domain values. |
 | Browser check | Pick material into segment, edit a copied value, confirm R/U updates and persists through Save/reload. |
@@ -242,6 +258,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL if R2 credentials or local object-storage substitute are missing |
 | Status | [ ] Not started |
 | Goal | Datasheets and photos attach to project materials/segments through the generic asset backbone. |
+| References | `context/user-stories/20-envelope.md` (Specifications sub-tab); `context/technical-requirements/data-model.md` (`project_assets`); `context/technical-requirements/api.md` (signed URL / upload). |
 | Includes | `project_assets`; upload metadata; signed URL or local dev substitute; Specifications sub-tab; per-material datasheet/spec status; per-segment photos; detach semantics. |
 | Tests | Asset metadata validation; attach/detach reference behavior; signed URL permission/scope; no hard-delete on detach. |
 | Browser check | Upload datasheet and site photo, attach them, reload, view as public reader, detach without deleting older references. |
@@ -254,6 +271,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Envelope data can be exported without implying HBJSON import. |
+| References | `context/user-stories/20-envelope.md` (export boundary); `context/technical-requirements/api.md` (export endpoint shape). |
 | Includes | Construction JSON/HBJSON construction export endpoint; download UI; validation against current document; clear separation from Model-tab HBJSON viewer uploads. |
 | Tests | Export validates against fixtures; R/U conventions shared with TB-11; no import path mutates builder tables. |
 | Browser check | Build one wall assembly, download construction export, validate it via backend test/fixture path. |
@@ -266,6 +284,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL for file-size cap confirmation if real project files exceed 50 MB |
 | Status | [ ] Not started |
 | Goal | Model tab can upload, list, select, and delete HBJSON files. |
+| References | `context/user-stories/40-model-viewer.md` (file picker, upload UX); `context/technical-requirements/data-model.md` (`project_hbjson_files`); `context/technical-requirements/api.md` (upload/list/delete). |
 | Includes | `project_hbjson_files`; asset metadata integration; active-file selection; upload/list/delete API; Model tab file picker; optional prompt to associate with a project version. |
 | Tests | Upload validation; file-size/type checks; active-file selection; public read vs editor write permissions. |
 | Browser check | Upload two HBJSON files, switch active file, delete one if unreferenced, confirm public user can download/view metadata but not upload. |
@@ -278,6 +297,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Uploaded HBJSON renders as an interactive, nonblank 3D scene. |
+| References | `context/user-stories/40-model-viewer.md`; `context/technical-requirements/frontend-viewer-units.md` (SI canonical values, conversion). |
 | Includes | Backend `/model_data` extraction; SI canonical values; R3F canvas; camera/lighting/orbit controls; loading/error states; basic select. |
 | Tests | Model extraction fixtures; SI unit conversion; frontend viewer state only where non-trivial; Playwright screenshot/canvas nonblank check. |
 | Browser check | Upload HBJSON, load scene, orbit/pan/zoom, select an element, verify no blank canvas on desktop and mobile-ish viewport; record parse-time and first-paint numbers against a real-sized project file as a baseline for later slices. |
@@ -290,6 +310,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK, with design review if visual choices feel uncertain |
 | Status | [ ] Not started |
 | Goal | Model viewer reaches MVP parity for core inspection workflows. |
+| References | `context/user-stories/40-model-viewer.md` (viz/measure/color-by/info); `context/technical-requirements/frontend-viewer-units.md`; `context/UI_UX.md`. |
 | Includes | Viz state machine; Select/Measure tools; color-by modes and legend; element info panel; display-unit conversion. |
 | Tests | Viewer state machine; unit format/parse helpers; color grouping logic; targeted browser checks for tool modes. |
 | Browser check | Switch viz mode, color by construction, measure a distance, select an element, inspect converted fields. |
@@ -302,6 +323,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK (MCP transport, tokens, and read tools landed in TB-04b) |
 | Status | [ ] Not started |
 | Goal | Claude can patch a draft, save it through the version system, and the browser reflects the change under an edit lease. |
+| References | `context/technical-requirements/llm-mcp-schema.md` (write tools, scopes); `context/technical-requirements/save-versioning.md` (ETag, save service); `context/user-stories/50-settings-ops-llm.md` (edit lease UX). |
 | Includes | Write-scope tools (patch/save) extending TB-04b's MCP surface; ETag rules shared with REST; MCP/browser edit lease indicator; audit logging for MCP writes. |
 | Tests | Write scope rejected for read-only tokens; MCP and REST share ETag rules; edit lease freezes browser write controls; audit row is written. |
 | Browser check | Run MCP edit against Rooms or Status, observe browser lease/freeze, reload, confirm saved change appears. |
@@ -314,6 +336,7 @@ Resolve these at the named slice, not all up front:
 | Type | AFK |
 | Status | [ ] Not started |
 | Goal | Equipment tab has Rooms, ERVs, Fans, and v1 placeholders for Thermal Bridges/Pumps. |
+| References | `context/user-stories/30-tables-equipment.md`; `context/technical-requirements/data-model.md` (ERV/Fan tables, Rooms reference); `context/technical-requirements/data-table.md`. |
 | Includes | ERV and Fan document tables; Rooms referential link to ERV; placeholder Thermal Bridges and Pumps routes/views; shared DataTable reuse; JSON download for each full table. |
 | Tests | ERV/Fan validation; name/number uniqueness; Rooms reference handling when ERV is deleted; table slice downloads. |
 | Browser check | Add ERV, assign it to a room, add fan, Save/reload, confirm placeholders route and public read-only state. |
@@ -326,6 +349,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL for real V1 project selection and any production credential cut-over |
 | Status | [ ] Not started |
 | Goal | MVP can run a full smoke on staging with one imported V1 project. |
+| References | `context/user-stories/90-open-questions.md`; `context/ENVIRONMENT.md`; `context/PRD.md` (MVP scope/exit criteria). |
 | Includes | Final smoke script; OpenAPI/schema docs generated from code; one V1 import script path; performance/bundle sanity against the TB-15 baseline; unresolved question triage; docs cleanup. |
 | Tests | Full `make test`, lint/format gates, Playwright e2e smoke, import fixture validation, public read/write-negative smoke. |
 | Browser check | On staging, sign in, open seed project, import/open one V1 project, edit/save one table, upload/view HBJSON, verify public read-only URL. |
