@@ -31,6 +31,8 @@ slices that can be built, tested, and verified in the browser.
 - If a slice looks larger than one focused day, split it before starting.
 - When a slice lands, update its checkbox, verification notes, and the
   Lessons Learned section at the bottom of this file.
+- From TB-02 onward, the browser-check happy path must also pass on
+  staging, not only on local dev.
 
 ## Verification Budget
 
@@ -66,12 +68,14 @@ Resolve these at the named slice, not all up front:
 |---|---|---|
 | Repo split: one repo or two | TB-00 | Confirm before scaffold starts |
 | Generated OpenAPI/TS client in CI from day 1 | TB-02 or TB-04 | Lean yes, keep client thin |
+| V2 staging URL | TB-02 | Render staging from TB-02; custom domain post-MVP |
+| `ProjectDocumentV1` schema evolution policy | TB-04 | Saved/locked versions immutable; drafts may up-migrate on schema bump; `schema_version` is the explicit signal |
+| MCP transport | TB-04b | Both stdio and HTTP/SSE |
 | Project version name uniqueness | TB-05 | Enforce unique per project |
 | Diff UI scope | TB-05 | Structured text summary in v1 |
 | Draft GC threshold and warning timing | TB-05 | 30-day GC; warnings can tune later |
-| MCP transport | TB-17 | Both stdio and HTTP/SSE |
+| Multi-editor concurrency scope | TB-06 | MVP supports single-active-editor per project; cross-editor conflict UX deferred to v1.1 |
 | HBJSON file-size cap | TB-14 | Start with 50 MB unless real files exceed it |
-| V2 staging URL | TB-19 | Render staging, custom domain post-MVP |
 
 ## Tracer-Bullet Slices
 
@@ -82,7 +86,7 @@ Resolve these at the named slice, not all up front:
 | Type | HITL for repo-split confirmation; otherwise AFK |
 | Status | [ ] Not started |
 | Goal | Backend, DB, and frontend boot; the browser can display backend health/version. |
-| Includes | Minimal repo scaffold; Docker Postgres path; backend settings; Alembic baseline; `/api/v1/health` and `/api/v1/version`; frontend route that reads and displays service status; initial Make recipes for setup/dev/smoke. |
+| Includes | Minimal repo scaffold; Docker Postgres path; backend settings; Alembic baseline; `/api/v1/health` and `/api/v1/version`; frontend route that reads and displays service status; initial Make recipes for setup/dev/smoke; CI workflow (GitHub Actions) running lint + tests + build on push and PR, no deploy yet. |
 | Tests | Backend health/version contract; DB connectivity smoke; frontend service-status fetch only if state is non-trivial. |
 | Browser check | Start dev stack, open the frontend, see live backend health/version from `/api/v1`. |
 | Lessons | Record scaffold choices, tooling friction, and any command naming that did not work. |
@@ -103,13 +107,13 @@ Resolve these at the named slice, not all up front:
 
 | Field | Plan |
 |---|---|
-| Type | AFK |
+| Type | HITL for staging URL and deploy credentials; otherwise AFK |
 | Status | [ ] Not started |
-| Goal | Editor creates a project, opens `/projects/{id}/status`, and sees the workspace shell. |
-| Includes | Project and initial version metadata; owner dashboard query; project create/list/open API; access-check dependency; shell header, tab bar, version dropdown placeholder, settings menu placeholder; public read route with edit controls hidden. |
+| Goal | Editor creates a project, opens `/projects/{id}/status`, and sees the workspace shell; the same shell is reachable on staging. |
+| Includes | Project and initial version metadata; owner dashboard query; project create/list/open API; access-check dependency; shell header, tab bar, version dropdown placeholder, settings menu placeholder; public read route with edit controls hidden; first staging deploy (Render) for backend + frontend so subsequent slices can be verified end-to-end against a real environment. |
 | Tests | `bt_number` uniqueness; project create/list/open contracts; view vs edit access dependency; public write rejection for one representative mutating route. |
-| Browser check | Create project from dashboard, open Status tab, copy URL into signed-out context, confirm read-only shell. |
-| Lessons | Record URL/access assumptions and any shell navigation choices. |
+| Browser check | Create project from dashboard, open Status tab, copy URL into signed-out context, confirm read-only shell. Re-run the same happy path against the staging URL. |
+| Lessons | Record URL/access assumptions, shell navigation choices, and any deploy/staging friction. |
 
 ### TB-03 - Status Tab Lifecycle
 
@@ -129,11 +133,23 @@ Resolve these at the named slice, not all up front:
 |---|---|
 | Type | AFK |
 | Status | [ ] Not started |
-| Goal | First project-document edit path works through Rooms without version-save polish. |
+| Goal | First project-document edit path works through Rooms without version-save polish. Not user-visible on its own: drafts created here have no terminal action until TB-05 ships Save/Discard. |
 | Includes | `ProjectDocumentV1` minimal body with empty tables; Rooms and single-select option structures; draft row created on first edit; table-slice read; guarded draft patch; minimal Equipment -> Rooms UI using the shared DataTable path. |
 | Tests | Pydantic document validation; golden empty document; guarded patch rules; Rooms row validation; single-select duplicate/missing-option rules. |
 | Browser check | Add a room, edit floor level and building zone options, reload, restore draft, confirm row remains in draft. |
 | Lessons | Record document-shape decisions and any DataTable scope cut made to keep the slice thin. |
+
+### TB-04b - MCP Read-Only Tracer
+
+| Field | Plan |
+|---|---|
+| Type | HITL for MCP transport decision and local client setup |
+| Status | [ ] Not started |
+| Goal | Claude can authenticate via MCP and read project + draft state through a real local client. De-risks transport, token, and access-check choices before TB-05 introduces version semantics. |
+| Includes | MCP server scaffold with chosen transport(s); token schema and hashing; project-scoped read-only scopes; list/get tools for projects, status items, and document slices; shared access-check dependency reuse; structured MCP error shape. |
+| Tests | Token scope validation and revocation; read-only enforcement (write attempt is rejected, not silently no-op); MCP and REST share the access-check dependency; targeted tool I/O contract tests. |
+| Browser check | Run MCP list/get against a project from a local MCP client; cross-check that the same data appears in the browser dashboard for the same user. |
+| Lessons | Record MCP transport and ergonomics decisions, and what was deliberately deferred to the write-path slice (TB-17). |
 
 ### TB-05 - Save, Save As, Lock, Diff Stub, Downloads
 
