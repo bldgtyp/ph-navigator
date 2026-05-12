@@ -113,7 +113,7 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | HITL for staging URL and deploy credentials; otherwise AFK |
-| Status | [ ] Not started |
+| Status | [~] Local implementation complete; staging deploy HITL pending |
 | Goal | Editor creates a project, opens `/projects/{id}/status`, and sees the workspace shell; the same shell is reachable on staging. |
 | References | `context/user-stories/00-foundation-shell.md`; `context/technical-requirements/api.md`; `context/technical-requirements/data-model.md`; `context/UI_UX.md`. |
 | Includes | Project and initial version metadata; owner dashboard query; project create/list/open API; access-check dependency; shell header, tab bar, version dropdown placeholder, settings menu placeholder; public read route with edit controls hidden; first staging deploy (Render) for backend + frontend so subsequent slices can be verified end-to-end against a real environment. |
@@ -361,7 +361,7 @@ Resolve these at the named slice, not all up front:
 |---|---|---|---|
 | TB-00 | Complete | 2026-05-12 11:58 EDT | `make smoke`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed with live `/api/v1` health/version and no console warnings/errors. |
 | TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
-| TB-02 | Not started | 2026-05-12 | - |
+| TB-02 | In progress | 2026-05-12 14:45 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging URL/deploy credentials still HITL, so staging happy path is not verified yet. |
 | TB-03 | Not started | 2026-05-12 | - |
 | TB-04 | Not started | 2026-05-12 | - |
 | TB-04b | Not started | 2026-05-12 | - |
@@ -426,4 +426,18 @@ What did not work: Logging failed sign-ins inside a transaction that raised imme
 What worked: Argon2id via `argon2-cffi`, raw SQL repositories, a partial unique index for one active session per user, `X-Request-ID` response propagation, generic failed-login copy, HTTP-only session cookies, and a narrow dashboard shell with disabled New Project placeholder. Follow-up cleanup kept login verification outside the write transaction, verifies a valid dummy Argon2id hash for unknown users, removed the unversioned health route, guarded local seed-user reset, locked the user row during login session swaps, removed dead TB-00 frontend client code, and aligned tests/router usage with local helpers. Final docs pass corrected the canonical docs to actual implementation names/settings (`phn_session`, `make seed-dev-user`, Argon2 parameters, CORS origins, UUID auth tables, migration/index names) and separated implemented TB-01 ops from Phase 0 targets still owned by later slices.
 Verification: `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/` showed `/sign-in?next=%2F`, signed in as `ed@example.com`, rendered `/dashboard` with `Ed May` and `No projects yet`, preserved the session on dashboard reload, and redirected a signed-out protected dashboard request back to sign-in.
 Follow-up: TB-02 can reuse the auth dependency and dashboard shell; project creation should add real dashboard data and replace the disabled New Project button. TB-02 owns proxy-aware client IP, JSON app logs, and the first project access-check seam. TB-03/TB-04 must not ship editable state without the in-place re-auth/modal behavior, and TB-06 should revisit session-row locking under same-editor multi-tab traffic. Keep future docs passes focused on correcting source-of-truth values after implementation, not restating obvious diffs.
+```
+
+### TB-02
+
+```text
+Slice: TB-02
+Date: 2026-05-12
+What changed: Added `projects` and `project_versions` schema, initial "Working" version creation with an empty `ProjectDocumentV1` skeleton, dashboard project list/create, BT-number availability checks, project detail/version metadata, a first `require_project_access(project_id, mode)` seam, and a public read-only project shell with edit controls hidden.
+Why: Editors need a real project shell before Status items, document drafts, version-save behavior, catalogs, and model uploads can land.
+What we tried: Raw-SQL repository/API tests, frontend route/state tests, local migration, CLI Playwright E2E, and an attempted in-app Browser MCP check.
+What did not work: The first backend response model leaked an internal `owner_id` column from the detail query; fixed by narrowing the repository projection. Playwright strict locators treated `PHI` as ambiguous with `Phius`, and the BT-number text check matched both the title and metadata; fixed by exact checkbox and metadata assertions. The in-app Playwright MCP browser was locked by an existing `mcp-chrome` profile, so browser verification used CLI Playwright only. Staging deploy was not attempted because the Render URL/credentials remain HITL.
+What worked: Keeping ownership as a dashboard filter only, while public project reads go through the same access seam and return `access_mode='viewer'` when unauthenticated. The initial document skeleton is created once with project metadata and empty arrays, and the project shell can remain mostly placeholder UI while still proving routing, header, tabs, active version metadata, and public read-only behavior.
+Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e` at `http://127.0.0.1:5173/` created a project, opened `/projects/{id}/status`, and confirmed a fresh browser context saw the public read-only shell.
+Follow-up: Complete the staging deploy/happy path once Render credentials and URL are available. TB-03 can build Status items on the existing project shell and access seam. Before adding more server-owned project state, introduce the TanStack Query provider / `useQuery` path from `context/TECH_STACK.md` or explicitly keep the TB-02 manual `useEffect` loading as a short-lived tracer. Proxy-aware client IP and JSON application logs are still not materially implemented beyond the existing request-id/error envelope and should be handled with staging/ops setup rather than assumed complete.
 ```
