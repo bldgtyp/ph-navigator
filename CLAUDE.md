@@ -28,7 +28,9 @@ Start here in `context/`:
 - `PRD.md` — canonical V2 architecture PRD
 - `TECH_STACK.md` — pinned stack decisions
 - `GLOSSARY.md` — canonical product/domain vocabulary
-- `USER_STORIES.md`, `UI_UX.md`, `DATA_TABLE.md` — load on demand
+- `USER_STORIES.md` — story/phasing router; load the relevant
+  `context/user-stories/*.md` file on demand
+- `UI_UX.md`, `DATA_TABLE.md` — load on demand for UX/table work
 
 ## Python — ALWAYS use `uv`
 

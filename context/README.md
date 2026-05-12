@@ -17,7 +17,9 @@ Read these first:
 
 Load these only when the task touches the relevant surface:
 
-- `USER_STORIES.md` — detailed story corpus and acceptance criteria.
+- `USER_STORIES.md` — routing document for story files and phasing.
+- `user-stories/*.md` — canonical story bodies; load only the file for
+  the active phase / feature cluster.
 - `UI_UX.md` — UI narrative and page / flow descriptions.
 - `DATA_TABLE.md` — shared `<DataTable>` component contract.
 

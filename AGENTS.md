@@ -29,8 +29,10 @@ and `research/` for POC artifacts from V1's catalog spike.
 Start here in `context/`:
 - `README.md`, `ENVIRONMENT.md`, `PRD.md`, `TECH_STACK.md`,
   `GLOSSARY.md`
-- Load `USER_STORIES.md`, `UI_UX.md`, and `DATA_TABLE.md` on demand
-  when the task touches stories, UX, or table behavior.
+- Load `USER_STORIES.md` on demand as the story/phasing router, then
+  load only the relevant `context/user-stories/*.md` file for the
+  active phase or feature cluster. Load `UI_UX.md` and `DATA_TABLE.md`
+  on demand when the task touches UX or table behavior.
 
 ## Python — ALWAYS use `uv`
 

@@ -269,6 +269,8 @@ Frontend:
 - Zustand owns local interaction state.
 - Column definitions are code-defined per table, not user-authored runtime schema.
 - Keep unit conversion in focused frontend helpers with typed quantity names.
+  Use V1 unit-converter/context and Window Builder dimension parser files
+  as research templates; verify conversion factors before reuse.
 - Prefer shadcn/ui primitives and lucide icons.
 
 ## Decisions Folded Back Into PRD / Scaffold

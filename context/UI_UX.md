@@ -64,13 +64,13 @@ empty-state art, animation specifics. Those land in the design pass.
 
 ### 1.1 Top header
 
-Present on signed-in app pages and anonymous project reads. Anonymous
-visitors use the same project workspace routes in read-only mode
+Present on signed-in app pages and Viewer project reads. Viewers
+use the same project workspace routes in read-only mode
 (§2.11).
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│ [PH-Nav]  Project Foo › Builder                Catalogs ▾   Ed ▾  │
+│ [PH-Nav]  Project Foo › Status                 Catalogs ▾   Ed ▾  │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -78,7 +78,7 @@ visitors use the same project workspace routes in read-only mode
   Clicking returns to `/dashboard`.
 - **Adjacent right of logo:** breadcrumb context. Examples:
   - On `/dashboard` → just shows the logo (no breadcrumb).
-  - On `/projects/{id}` → "Project Foo › Builder" (or the active tab).
+  - On `/projects/{id}` → "Project Foo › Status" (or the active tab).
   - On `/catalog/materials` → "Catalogs › Materials".
   - Each breadcrumb segment is a link to the corresponding page.
 - **Center-right:** "Catalogs ▾" dropdown. Opens a small menu listing
@@ -295,7 +295,7 @@ the paste rolls back the cell writes **and** the new options
 together.
 
 **Locked / read-only mode.** When the open version is locked, the
-visitor is anonymous, or another permission boundary applies, the table
+visitor is a Viewer, or another permission boundary applies, the table
 renders in read-only mode: no toolbar mutations except sort/filter/group
 on the user's local view, no inline edits, no paste/fill/undo, no
 row-add. Edit affordances are hidden, not disabled-with-tooltip.
@@ -408,7 +408,7 @@ appears at all.
   - **Phius number** — optional.
 - Buttons: Cancel, Create project (primary, disabled when name is
   empty or BT number is empty / unchecked / not-available).
-- On submit, redirects to `/projects/{new_id}/builder`.
+- On submit, redirects to `/projects/{new_id}/status`.
 - On race-condition 409 (`error_code='bt_number_taken'`), inline
   error appears on the BT number field; user picks a different one
   and retries.
@@ -700,7 +700,7 @@ Windows tab.
 - Hover reveals `Edit name (✏) · Duplicate (📑) · Delete (✕)`
   icons (logged-in editor on unlocked version only).
 - All edit affordances hidden when version is locked or when the
-  visitor is anonymous.
+  visitor is a Viewer.
 
 **Right side — active assembly content (US-ENV-3, 4):**
 
@@ -803,7 +803,7 @@ Windows tab.
 - **Delete Segment** at bottom-left, red. Disabled with tooltip
   "A layer must have at least one segment" when only one
   segment in the layer remains.
-- All inputs read-only on locked versions / anonymous public reads.
+- All inputs read-only on locked versions / Viewer reads.
 
 **Assembly Toolbar (US-ENV-8 / US-ENV-9):**
 
@@ -959,9 +959,9 @@ canvas's segment modal → Detach to a new material."*
 
 **Visibility rule** (V1-aligned, applied at card level):
 
-- Public viewers see only material cards whose
+- Viewers see only material cards whose
   `specification_status != 'na'`. The "Unused materials"
-  section is also hidden from public viewers. The Specifications
+  section is also hidden from Viewers. The Specifications
   tab is most useful as a "what's pending / what's documented"
   view; n/a cards are noise for external readers.
 
@@ -971,7 +971,7 @@ canvas's segment modal → Detach to a new material."*
 - Drag-and-drop hidden; thumbnails still viewable.
 - Per-image / per-datasheet delete hidden.
 - Inline editors disabled.
-- Material cards still render (so a public viewer / locked-
+- Material cards still render (so a Viewer / locked-
   submit reader can see the documented set).
 
 **Empty state** — when a brand-new project has no materials
@@ -1033,7 +1033,7 @@ model. Switching versions will not change what's shown here."*
 
 **Editor / public-read behavior:** editors see editable inputs
 regardless of version-lock state (the data is project-level,
-not version-locked). Anonymous viewers see the page read-only —
+not version-locked). Viewers see the page read-only —
 but they DO see the page, since contractor-share is the primary
 use case per Ed's framing.
 
@@ -1078,7 +1078,7 @@ one place," etc.
   user-editable thereafter).
 - **Editable here too** — drag-and-drop upload writes to the
   same `segment.photo_asset_ids[]` arrays as Specifications.
-- **View-link viewers** see this page populated and organized
+- **Viewers** see this page populated and organized
   for trades-crew use — the primary motivation for the tab's
   existence.
 
@@ -1110,13 +1110,13 @@ modal (or dedicated route — TBD when walked) with:
 - Transfer ownership (post-MVP UI; data model supports).
 - Delete project (gated to v1.1, US-1.4).
 
-### 2.11 Anonymous public read (`/projects/{id}/{tab}`)
+### 2.11 Viewer public read (`/projects/{id}/{tab}`)
 
 **Purpose:** Anyone with the normal project URL views the project
 read-only. There is no separate public URL, no `/v/{token}` route, and
-no view-link management surface.
+no public link management surface.
 
-**Header:** same project-workspace shell, rendered in anonymous
+**Header:** same project-workspace shell, rendered in Viewer
 read-only mode. The header shows a "Read-only" pill next to the
 project/version label. A sign-in affordance may appear in the account
 area; edit controls do not render unless the visitor is logged in as an
@@ -1130,7 +1130,7 @@ editor.
 - Model tab viewing is allowed; Upload HBJSON is hidden.
 - Project settings menu is hidden.
 - Catalog manager routes require editor auth and are not part of the
-  anonymous project workspace.
+  Viewer project workspace.
 
 ---
 
@@ -1152,7 +1152,7 @@ editor.
 3. User clicks "Create project".
 4. Backend INSERTs project row + initial "Working" version + sets
    active_version_id.
-5. Frontend redirects to `/projects/{new_id}` (Builder tab default).
+5. Frontend redirects to `/projects/{new_id}` (Status tab default).
 
 ### 3.3 Pin / reorder projects (US-1.1)
 
@@ -1174,9 +1174,9 @@ editor.
 
 ### 3.5 Open project → switch tab (US-3)
 
-- Click a project row → land on `/projects/{id}/builder`.
-- Click "3D Viewer" in the tab bar → URL becomes
-  `/projects/{id}/viewer`; back/forward buttons work.
+- Click a project row → land on `/projects/{id}/status`.
+- Click "Model" in the tab bar → URL becomes
+  `/projects/{id}/model`; back/forward buttons work.
 
 ---
 
@@ -1192,7 +1192,7 @@ Consistent visual language for state across the app:
 | Locked version | Padlock icon next to version name | Project header, Versions list |
 | Submitted | Document-with-checkmark icon | Versions list |
 | Closed | Folded-document icon | Versions list |
-| Read-only (anonymous public read) | "Read-only" pill in header | Project workspace header |
+| Read-only (Viewer public read) | "Read-only" pill in header | Project workspace header |
 
 ---
 
@@ -1209,7 +1209,7 @@ back to a user-story open question.
 | UX-Q4 | Save status indicator — dot, text, or both? | dot + tooltip text |
 | UX-Q5 | Catalogs nav — header dropdown (lean) or top-level page route? | header dropdown |
 | UX-Q6 | Empty-state primary action — single button or guided onboarding? | single button |
-| ~~UX-Q7~~ | ~~Public viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
+| ~~UX-Q7~~ | ~~Viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
 
 ---
 
@@ -1245,4 +1245,4 @@ content review.
 | Equipment tab (`/projects/{id}/equipment`) | Placeholder | MVP |
 | Model tab (`/projects/{id}/model`) | Placeholder | MVP |
 | Project settings (overflow menu) | Placeholder | MVP (minus delete) |
-| Anonymous public read (`/projects/{id}/{tab}`) | Drafted (high-level) | MVP |
+| Viewer public read (`/projects/{id}/{tab}`) | Drafted (high-level) | MVP |

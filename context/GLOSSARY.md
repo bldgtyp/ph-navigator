@@ -45,7 +45,7 @@
 | **Material**          | A physical product with thermal properties (conductivity, density, etc.); lives in the Catalog           | Product, substance (when ambiguous, qualify it)    |
 | **Datasheet**         | A per-project QA submittal PDF attached to a Project Material; **never lives in the Catalog**             | Spec sheet (only if it's literally the PDF)        |
 | **Window Type**       | A named window family defined by a row × column grid of Window Elements                                   | Window family, fenestration type                   |
-| **Window Element**    | One pane/cell within a Window Type, carrying inlined Frame and Glazing data                               | Sash, lite (lite is sometimes specifically glass)  |
+| **Window Element**    | One pane/cell within a Window Type, carrying inlined per-side Frame data (`top/right/bottom/left`) and Glazing data | Sash, lite (lite is sometimes specifically glass)  |
 | **Frame Type**        | A frame product (jamb, head, sill, mullion) with U-value, psi-install, etc.; catalogged                   | Profile, frame product                             |
 | **Glazing Type**      | A glazing assembly (IGU spec) with U-value, SHGC, etc.; catalogged                                        | Glass, IGU (unless literally referring to the IGU) |
 | **Thermal Bridge**    | A linear envelope discontinuity carrying a psi-value, optional simulation file, and length                | TB, junction (junction is the geometric thing)     |
@@ -91,7 +91,7 @@
 - A **Project document** contains **Tables**: `assemblies`, `project_materials`, `window_types`, `rooms`, `thermal_bridges`, `equipment`, `manufacturer_filters`.
 - An **Assembly** has ordered **Layers**; each Layer has **Segments**; each Segment references a **Project Material** by id.
 - A **Project Material** is the Project's copy of a Catalog **Material**, linked back via **catalog_origin**.
-- A **Window Type** is a grid of **Window Elements**, each inlining a **Frame Type** and **Glazing Type** (no `project_frame_types` table — frames are inlined, unlike Materials).
+- A **Window Type** is a grid of **Window Elements**, each inlining four side-specific **Frame Type** values and one **Glazing Type** (no `project_frame_types` table — frames are inlined, unlike Materials).
 - **Catalog entries** have **Catalog versions**; Picking copies values in. A Project never references a Catalog version live.
 - **HBJSON** files are independent of Versions and never feed Builder tables.
 

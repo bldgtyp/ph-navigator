@@ -130,7 +130,7 @@ frontend affordance.
   owner sees the project on their personal dashboard. Either editor
   can edit any project they can reach. Ownership is transferable
   (data model supports; transfer UI post-MVP).
-- **Non-logged-in viewers:** anyone with a project URL. Read-only,
+- **Viewers:** anyone with a project URL. Read-only,
   no auth required. Can browse the project workspace (Status,
   Windows, Envelope, Equipment, Model tabs), browse versions,
   download project JSON, download table JSON, view uploaded
@@ -140,7 +140,7 @@ frontend affordance.
 - **No anonymous editing.** Auth required for any write — REST,
   MCP, or otherwise.
 - **No project-level permissions** beyond "editor / non-editor." A
-  non-logged-in viewer can reach every version of a project they
+  Viewer can reach every version of a project they
   have the URL for. Sensitive projects should not be created at all
   (or should be deleted) — there's no per-URL visibility gate.
 - **Revocation model:** to "revoke access" to a project, the
@@ -236,6 +236,10 @@ users (
     email              TEXT NOT NULL UNIQUE,
     name               TEXT NOT NULL,
     password_hash      TEXT NOT NULL,
+                       -- Argon2id hash. Parameters are pinned in
+                       -- backend Settings; bcrypt cost >= 12 is the
+                       -- only allowed fallback if Argon2id creates
+                       -- install friction during scaffold.
     units_preference   TEXT NOT NULL DEFAULT 'SI',
                        -- 'IP' | 'SI'; toggled from the project header,
                        -- applies wherever values render
@@ -248,7 +252,8 @@ users (
 -- looks up the row on every authenticated request.
 sessions (
     id              UUID PRIMARY KEY,
-                    -- the value referenced by the session cookie
+                    -- cryptographically random UUIDv4 referenced by
+                    -- the session cookie
     user_id         INTEGER NOT NULL REFERENCES users(id),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -264,7 +269,8 @@ sessions (
     ip_address      INET,
     user_agent      TEXT
 )
-CREATE INDEX ON sessions (user_id) WHERE invalidated_at IS NULL;
+CREATE UNIQUE INDEX sessions_one_active_per_user
+    ON sessions (user_id) WHERE invalidated_at IS NULL;
 CREATE INDEX ON sessions (last_seen_at) WHERE invalidated_at IS NULL;
 
 projects (
@@ -276,6 +282,12 @@ projects (
                        -- soft-deleted projects retain their numbers and
                        -- numbers are never reused.
     client             TEXT,
+    cert_programs      TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+                       -- zero or more target certification programs:
+                       -- 'phi' and/or 'phius'. A building may pursue both.
+                       -- Empty means no program selected yet or
+                       -- design-analysis-only; cert-specific templates
+                       -- remain deferred in v1.
     phius_number       TEXT,
     phius_dropbox_url  TEXT,
     owner_id           INTEGER NOT NULL REFERENCES users(id),
@@ -284,12 +296,15 @@ projects (
     active_version_id  UUID REFERENCES project_versions(id),
                        -- "the version the editor opens by default"
     last_saved_at      TIMESTAMPTZ,
-                       -- denormalized: max(updated_at) across versions;
-                       -- updated on every Save / Save As. Cheap reads
-                       -- for the dashboard sort + last-modified column.
+                       -- denormalized: max(project_versions.updated_at)
+                       -- across saved versions; updated only by the
+                       -- version-save service on Save / Save As.
+                       -- Draft patch does not update this field.
     created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at         TIMESTAMPTZ
 )
+ALTER TABLE projects ADD CONSTRAINT projects_cert_programs_allowed
+    CHECK (cert_programs <@ ARRAY['phi','phius']::TEXT[]);
 
 -- MCP/API bearer tokens for LLM clients. Required in V2 v1 because
 -- MCP is read/write capable from day 1. Tokens are issued by an
@@ -375,7 +390,8 @@ user_action_log (
     action       TEXT NOT NULL,
                  -- 'login', 'login_failed', 'project_create',
                  -- 'version_save', 'hbjson_upload', 'catalog_record_*',
-                 -- ... (full enum in `context/USER_STORIES.md` §C-1)
+                 -- ... (full enum in
+                 -- `context/user-stories/50-settings-ops-llm.md` §C-1)
     project_id   UUID REFERENCES projects(id),
     target_type  TEXT,
     target_id    TEXT,
@@ -403,7 +419,9 @@ project_versions (
                       -- the project document; see §6.2
     schema_version    INTEGER NOT NULL,
     body_size_bytes   INTEGER NOT NULL,
-                      -- denormalized for ops visibility
+                      -- denormalized for ops visibility; computed by
+                      -- the version-save service when the body is
+                      -- inserted or overwritten
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_by        INTEGER REFERENCES users(id),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -452,6 +470,7 @@ JSON document. Illustrative sketch (the canonical model is the
   "project": {
     "name": "PROJECT FOO",
     "bt_number": "2024-013",
+    "cert_programs": ["phi", "phius"],
     "phius_number": "PHIUS-2024-0445",
     "phius_dropbox_url": "..."
   },
@@ -500,7 +519,8 @@ JSON document. Illustrative sketch (the canonical model is the
           "catalog_record_id": "rec123abc",
           "catalog_version_id": "rec123abc_v3",
           "catalog_schema_version": 1,            // pinned at pick time (§7.5)
-          "synced_at": "2026-05-09T14:00:00Z"
+          "synced_at": "2026-05-09T14:00:00Z",
+          "local_overrides": []                   // field keys intentionally kept different from catalog (§7.4)
         }
       }
     ],
@@ -515,7 +535,12 @@ JSON document. Illustrative sketch (the canonical model is the
             "id": "winel_...",
             "row_span": [0, 0],
             "column_span": [0, 0],
-            "frame": { /* inlined; see ProjectDocumentV1 for full shape */ },
+            "frames": {
+              "top":    { /* inlined frame; see ProjectDocumentV1 */ },
+              "right":  { /* inlined frame; see ProjectDocumentV1 */ },
+              "bottom": { /* inlined frame; see ProjectDocumentV1 */ },
+              "left":   { /* inlined frame; see ProjectDocumentV1 */ }
+            },
             "glazing": { /* inlined; see ProjectDocumentV1 for full shape */ }
           }
         ]
@@ -606,10 +631,13 @@ Properties of the document shape:
 - **Stable IDs.** Every entity has a ULID-style id (`asm_…`,
   `lyr_…`, `seg_…`, `pmat_…`, `win_…`, `winel_…`, `rm_…`,
   `tb_…`, `fan_…`, `pmp_…`, `erv_…`, `opt_…`).
-  IDs are generated server-side on creation, preserved across
-  saves, and are the unit of reference for JSON-Patch operations
-  (§8.3). Stable IDs also matter for single-select option
-  references — rows hold `option_id` strings, never labels, so
+  Browser-created document rows generate final ids in the frontend
+  before optimistic display; the server validates prefix, shape, and
+  table-local uniqueness, then preserves them. Server/admin import
+  scripts may also generate ids. There is no `tmp-` id remapping phase
+  for v1 document rows. Stable IDs are the unit of reference for
+  JSON-Patch operations (§8.3). They also matter for single-select
+  option references — rows hold `option_id` strings, never labels, so
   user-driven option renames are non-destructive.
 - **Asset URLs by reference.** Datasheets, site photos, and
   thermal-bridge simulation files stay in object storage; the
@@ -630,7 +658,14 @@ Properties of the document shape:
   `<table_path>.<column_key>`. Each option carries a stable
   `id`, `label`, `color`, and `order`. **Sort follows
   `order`, not label** — reordering options reorders table data
-  (AirTable parity, POC §4.3).
+  (AirTable parity, POC §4.3). Option lifecycle is explicit:
+  rename and reorder are non-destructive; duplicate labels are
+  rejected after trim + case-insensitive comparison; delete of a
+  referenced option either clears nullable cells after confirmation or
+  is blocked for required cells until the user reassigns or merges;
+  merge rewrites source `option_id` references to the target option in
+  one semantic write op; missing option ids render as a warning and
+  block Save until cleared or reassigned.
 - **Pydantic-validated.** `ProjectDocumentV1` defines the canonical
   shape and validation rules; the server rejects malformed bodies
   on write. The sketch above is illustrative — fields may be
@@ -749,7 +784,7 @@ Rules:
   the asset `uploaded` after the client/agent completes the upload.
 - Downloads are short-lived signed GET URLs. APIs never expose R2
   credentials or durable public object URLs.
-- Public viewers may resolve signed download/view URLs for assets that
+- Viewers may resolve signed download/view URLs for assets that
   are referenced by public project surfaces. They cannot create, rename,
   attach, detach, or delete assets.
 - MCP tokens require `asset:read` to resolve signed download URLs and
@@ -804,8 +839,9 @@ document. The project from then on owns its copy. Catalog edits do not
 propagate to projects automatically.
 
 A `catalog_origin` block on each copied entry records where it came from
-(table, record id, version id, synced_at) so the **refresh-from-catalog**
-UX can show divergence and offer per-entry refresh.
+(table, record id, version id, synced_at, local_overrides) so the
+**refresh-from-catalog** UX can show catalog drift, preserve intentional
+project-specific edits, and offer per-entry refresh.
 
 ### 7.2 Catalog has versions, projects don't reference them live
 
@@ -865,10 +901,27 @@ catalog" gesture:
 - UI surfaces "the catalog now says X, your project says Y" diff.
 - User chooses: keep mine, take catalog's, edit a third value.
 - Refresh is per-entry; no bulk auto-refresh in v1.
-- Refresh updates the entry's values and `catalog_origin.synced_at`.
+- Field-level local overrides are tracked in
+  `catalog_origin.local_overrides` as field keys. Inline edits to a
+  copied catalog field add that field key to `local_overrides`.
+- In the refresh dialog, fields in `local_overrides` are tagged
+  "You edited this" and default to **Keep mine**. Other changed fields
+  default to **Take catalog**.
+- Saving the refresh dialog requires an explicit choice for every
+  changed field. It writes chosen values into the draft, updates
+  `catalog_origin.catalog_version_id` to the current catalog version,
+  sets `synced_at = now()`, and recomputes `local_overrides` as the
+  fields whose chosen project value still differs from the current
+  catalog value.
+- A copied entry is **drifted** when
+  `catalog_origin.catalog_version_id != current_version_id`. A copied
+  entry with `local_overrides.length > 0` but current
+  `catalog_version_id` is **customized**, not stale.
 
-A "show me everything that's diverged from catalog" report lives in the
-catalog manager view of a project.
+A "show me everything that's drifted or customized from catalog" report
+lives in the catalog manager view of a project. In v1, **Review all**
+opens this report with per-entry actions; it does not auto-apply
+multiple entries.
 
 ### 7.5 Catalog-schema migration — post-MVP goal
 
@@ -944,6 +997,41 @@ There is no single project-level "lifecycle state." The project's
 status is "the kind of its most recent submitted/closed version, if
 any." Versions are the unit of state.
 
+### 8.2.1 Denormalized save metadata
+
+Decision confirmed 2026-05-11: denormalized version metadata is owned
+by the service layer, not database triggers.
+
+The version-save service is the only code path allowed to insert or
+overwrite `project_versions.body`. Repository modules should expose
+specific Save / Save As helpers, not generic "update body" functions.
+
+On **Save**, one transaction:
+
+- validates draft body, lock state, and ETags;
+- overwrites `project_versions.body`;
+- sets `project_versions.schema_version`;
+- computes and sets `project_versions.body_size_bytes`;
+- sets `project_versions.updated_at` / `updated_by`;
+- sets `projects.last_saved_at` to the same timestamp;
+- deletes the server-side draft;
+- appends the action-log event.
+
+On **Save As**, one transaction:
+
+- validates draft body and ETags;
+- inserts the new `project_versions` row with computed
+  `body_size_bytes`;
+- sets the new row as `projects.active_version_id`;
+- sets `projects.last_saved_at` to the same timestamp;
+- deletes the source draft;
+- appends the action-log event.
+
+Draft patch, view-state changes, status edits, HBJSON uploads, asset
+uploads, and catalog edits do not update `projects.last_saved_at`.
+Tests must cover that Save / Save As update the denormalized fields and
+draft patch does not.
+
 ### 8.3 Server-side draft buffer (crash-recovery, not persistence)
 
 ```sql
@@ -1009,7 +1097,14 @@ a per-table changed-row list with field-level deltas.
 
 ### 8.5 Concurrency
 
-Per §4, single-user-at-a-time editing. Implementation:
+PHN is optimized for sequential editing by a tiny team, but the same
+editor may legitimately have multiple browser tabs open against one
+project. Example: Window-Frame Element catalog in one tab while the
+project Windows builder is open in another, or Rooms in one project
+workspace tab and Windows in another. V2 must support this without a
+global "takeover" lock.
+
+Implementation:
 
 - **Draft writes:** patches send `If-Match: <draft_etag>` when a draft
   exists, and `If-Match-Version: <version_body_etag>` when creating a
@@ -1020,10 +1115,45 @@ Per §4, single-user-at-a-time editing. Implementation:
   was drafting) → 409 for Save. Save As remains allowed because it does
   not overwrite the source version. Conflict UI: keep my draft as Save
   As / discard my draft / show diff.
-- A second tab opening the same active version sees the draft from the
-  first tab and shows an "open in another tab" advisory; goes read-only
-  unless the user explicitly takes over. This is a UX advisory, not a
-  server lock; ETags are the real protection.
+- **Same-editor browser tabs are allowed.** A second browser tab opening
+  the same project/version loads the same server draft and remains
+  editable. Tabs coordinate accepted browser patches and new
+  `draft_etag` values through a browser-tab channel (BroadcastChannel or
+  equivalent). If a received patch is outside the current tab's active
+  UI scope, apply it in memory and continue. If it overlaps the active
+  dirty scope, freeze that scope and show a reload/review banner; v1
+  does not attempt field-level merge.
+- **MCP/browser collision policy.** MCP mutating tools share the token
+  issuer's draft, but MCP writes acquire a short draft edit lease. While
+  the lease is active, open browser editors show an "MCP editing" visual
+  indicator and freeze write controls. After the MCP write completes,
+  the browser does not silently merge into an active editor: it shows a
+  banner offering Review changes / Reload draft. Read-only navigation
+  and viewing remain available during the lease.
+- **MCP token revocation.** Revocation blocks the token's next request.
+  A request that already passed auth may complete atomically; PHN does
+  not promise to cancel an in-flight DB transaction. Any follow-up or
+  commit step (for example `complete-upload`, `attach_asset`,
+  `save_draft`) must re-check token state and return a structured auth
+  error if revoked.
+- **Lock while a draft is open.** Locking a version is authoritative
+  immediately. Any open browser or MCP draft for that version is
+  preserved, but further draft patch and Save requests return
+  `409 version_locked`. Browser tabs downgrade to the locked-version
+  banner on the next lock-status poll, broadcast, or rejected write.
+  The user's exit paths are Save As into a new unlocked version,
+  discard, or wait for an explicit unlock.
+- **Version switch after dirty-draft Save.** When a user chooses Save in
+  the dirty-draft prompt before opening another version, the frontend
+  does not switch its current view until the target version body has
+  been fetched successfully. If Save succeeds but the target fetch
+  fails, the user remains on the saved source version in a clean state
+  with a retryable "couldn't open target version" toast.
+- **Whole-draft ETag for table replacement.** `replace_table` is not
+  table-scoped concurrency in v1. It consumes and bumps the same
+  `draft_etag` as JSON-Patch. If two clients replace unrelated tables
+  from the same base ETag, the first wins and the second receives 409.
+  The loser must refetch and retry intentionally.
 - Locked versions reject draft patch and Save with `409 version_locked`.
   Save As from a locked version is allowed and creates a new unlocked
   copy unless the user explicitly chooses locked.
@@ -1043,6 +1173,19 @@ MVP backend tests must cover:
 - stale Save returns 409 and preserves the draft;
 - unguarded array patch returns 400;
 - guarded stale-index patch fails closed;
+- same-editor browser tabs can edit disjoint UI scopes against one draft;
+- same-scope browser-tab conflicts freeze the stale tab and preserve its
+  local edits until reload/review;
+- MCP edit lease freezes browser write controls and surfaces a visual
+  indicator;
+- MCP token revocation blocks the next token request and blocks any
+  post-upload/commit step after revocation;
+- locking a version with open drafts rejects subsequent draft patch and
+  Save requests while preserving the drafts for Save As / discard;
+- dirty-draft Save before version switch does not switch the visible
+  version until the target body fetch succeeds;
+- stale `replace_table` returns 409 even when the prior accepted write
+  touched a different table;
 - MCP token patch uses the issuer's `(version_id, user_id)` draft;
 - session-cookie and MCP writers conflict through the same ETag rules.
 
@@ -1135,7 +1278,15 @@ POST   /api/v1/projects/{pid}/versions/{vid}/draft/save-as           flush draft
                                                                      kind, locked
 ```
 
-All writes accept `Idempotency-Key` header.
+All mutating REST writes accept `Idempotency-Key`. Replay semantics:
+
+- scope = `(user_id, route, key)`;
+- TTL = 24 hours from first completed response;
+- replay after completion returns the cached response body and status;
+- same key with a different body on the same route returns
+  `409 idempotency_key_reuse`;
+- in-progress duplicate requests return `409 idempotency_in_progress`.
+
 Draft writes additionally use `If-Match` / `If-Match-Version` ETags as
 defined in §8.5 and the state-machine note.
 
@@ -1168,15 +1319,15 @@ PATCH  /api/v1/catalog/{table}/{rid}/versions/{vid}         in-place edit (curre
 DELETE /api/v1/catalog/{table}/{rid}                        soft delete record
 ```
 
-### 9.9 View links
+### 9.9 Public links
 
 **Removed 2026-05-10.** Per the updated §4 access model, there are
-no per-share tokens, no `/v/{token}` routes, and no view-link
+no per-share tokens, no `/v/{token}` routes, and no public link
 create / revoke endpoints. Project URLs (`/projects/{id}/...`) are
 public-readable for all visitors; the backend gates writes behind
 the editor session token, and the frontend gates edit affordances
-by auth state. There is nothing to manage at the view-link level
-because view-links don't exist as a separate concept.
+by auth state. There is nothing to manage at the public link level
+because public links don't exist as a separate concept.
 
 ### 9.10 Assets
 
@@ -1310,7 +1461,8 @@ project-scoped bearer tokens from `mcp_tokens` (§6.1). Tokens are issued
 by logged-in editors, shown once, stored hashed, revocable, and
 audit-logged. A token with `project:write` scope can mutate only its
 own `project_id`; a token with read-only scopes cannot call mutating
-tools. All tool calls are attributed to the issuing editor.
+tools. All tool calls are attributed to the issuing editor. Mutating
+tools obey the MCP/browser edit-lease rules in §8.5.
 
 Tool surface (initial):
 
@@ -1319,14 +1471,17 @@ list_projects()                      → token-visible projects
                                         (v1 project-scoped token returns one)
 get_project(project_id)              → metadata + version list
 list_versions(project_id)            → [{id, name, kind, locked, ...}]
-get_document(project_id, version_id) → full project JSON
-update_document(project_id, version_id, json_patch)
+get_document(project_id, version_id) → full project JSON + version_body_etag
+                                       + current draft_etag if present
+update_document(project_id, version_id, json_patch, draft_etag | base_version_etag)
                                      → applies JSON-Patch to current draft,
                                        returns new draft etag
-replace_table(project_id, version_id, table_name, rows)
-                                     → replace one table in the draft
-query_table(project_id, version_id, table_name, filter_expr)
-                                     → filtered subset of one table
+replace_table(project_id, version_id, table_name, rows, draft_etag | base_version_etag)
+                                     → replace one table in the draft;
+                                       stale etag returns 409
+query_table(project_id, version_id, table_name, query)
+                                     → filtered subset of one table using
+                                       a typed query object, not expression text
 diff_versions(project_id, from_version_id, to_version_id)
                                      → structured diff
 list_catalog(table)                  → catalog browse
@@ -1357,9 +1512,72 @@ detach_asset(project_id, version_id, asset_id, target_path)
                                      → JSON-Patch detach from token owner's draft
 ```
 
-Tools return Pydantic-validated structured results. Errors surface as
-MCP error responses with the same machine-readable codes as the REST
-API.
+Tools return Pydantic-validated structured results.
+
+MCP and REST share one structured-error baseline, but V2 planning does
+not predefine an exhaustive error taxonomy. Before the first MCP write
+tool ships, the backend must have a common error envelope with at least
+`code`, `message`, `request_id`, and a coarse `recoverability` value.
+Route/tool-specific `details`, `next_action` hints, and final code names
+are defined as the implementation lands. MCP tools should return
+recoverable domain failures in this structured shape where the protocol
+allows; reserve hard protocol/runtime failures for malformed tool calls,
+unhandled server errors, or infrastructure failure.
+
+Browser behavior for MCP failures follows the same minimal rule set:
+release any MCP edit lease, preserve local browser edits, keep the
+browser from silently applying failed/partial MCP state, and surface a
+concise banner or toast with the request id when the open project/draft
+was affected.
+
+`query_table` uses a constrained Pydantic query model. It does **not**
+accept SQL-like text, JSONPath, Python expressions, or any other
+string language that could be evaluated. The query shape is intentionally
+small and LLM-friendly:
+
+```
+{
+  "query": "optional substring / fuzzy text search",
+  "where": {
+    "and": [
+      {"field": "frame_type_id", "op": "is_empty"},
+      {"field": "orientation", "op": "in", "value": ["north", "east"]}
+    ]
+  },
+  "sort": [{"field": "area_m2", "dir": "desc"}],
+  "limit": 50,
+  "offset": 0
+}
+```
+
+Supported `where` nodes are `and`, `or`, and simple field comparisons.
+Initial operators are `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, `in`,
+`contains`, `is_empty`, and `is_not_empty`. Fields are validated against
+the table schema / field registry before execution; operators are
+validated against the resolved field type; `limit` has a server-side
+default and hard maximum. Results return compact row summaries plus
+stable row targets for follow-up calls:
+
+```
+{
+  "matches": [
+    {
+      "row_id": "win_...",
+      "row_target": {
+        "type": "table_row",
+        "table_name": "windows",
+        "row_id": "win_..."
+      },
+      "summary": {"name": "W-101", "area_m2": 2.4}
+    }
+  ]
+}
+```
+
+This follows the same broad pattern observed in the Ladybug Tools MCP:
+domain-specific search tools expose explicit typed parameters, simple
+substring search, compact reusable targets, and strict input validation
+instead of arbitrary query-language strings.
 
 Not included in v1 (defer): catalog writes via MCP. Catalog browsing is
 read-only through MCP; catalog edits stay in the web UI/admin surface
@@ -1383,7 +1601,8 @@ context/
 ├── TECH_STACK.md                   stack and persistence decisions
 ├── DATA_TABLE.md                   shared <DataTable> component contract
 ├── UI_UX.md                        UI narrative companion
-├── USER_STORIES.md                 detailed story corpus / acceptance criteria
+├── USER_STORIES.md                 story routing + vertical-slice phasing map
+├── user-stories/                   split canonical story bodies
 ├── GLOSSARY.md                     canonical PHN-V2 terms
 └── schemas/
     ├── project-document-v1.json    JSON Schema (auto-generated)
@@ -1470,7 +1689,7 @@ TypeScript / React. Restricted to display + UI/UX.
   CRUD on catalog tables. Reached via the global header's
   "Catalogs ▾" dropdown.
 - **Diff view** — modal; pick two versions or version-vs-draft.
-- **Non-logged-in viewers** access the **same** project workspace
+- **Viewers** access the **same** project workspace
   URL (`/projects/{id}/...`) — there is no separate viewer URL
   shape. Frontend hides edit affordances when not authenticated;
   backend rejects writes without a session token. Non-logged-in
@@ -1730,11 +1949,29 @@ ambiguity.
 
 #### 11.5.3 Implementation notes
 
-- **TS units library — open question (Q-UNITS-2).** Options: port
-  the Python `PH_units` library to TypeScript; use a generic
-  library (`convert-units`, `js-quantities`); write thin
-  per-quantity helpers. Decided when we hit the Builder stories
-  and have a concrete list of quantities to support.
+- **TS units strategy — resolved 2026-05-11.** V2 follows the V1
+  frontend pattern but formalizes it into quantity-specific helpers.
+  Do not port the whole Python `PH_units` package and do not add a
+  generic units dependency for MVP. Create focused helpers under
+  `frontend/src/lib/units/` by quantity family (`length`, `thermal`,
+  `airflow`, `pressure`, `power`, etc. as needed). APIs should be
+  explicit, e.g. `parseLengthToMm`, `formatLengthFromMm`,
+  `formatUValueFromSI`, not "convert any unit to any unit."
+- **V1 precedent / templates.** Use these V1 files as research
+  references, not import paths:
+  - `../ph-navigator/frontend/src/formatters/Unit.Converter.ts`
+  - `../ph-navigator/frontend/src/formatters/Unit.ConversionFactors.ts`
+  - `../ph-navigator/frontend/src/features/project_view/_hooks/useUnitConversion.tsx`
+  - `../ph-navigator/frontend/src/features/project_view/_contexts/UnitSystemContext.tsx`
+  - `../ph-navigator/frontend/src/features/project_view/_components/UnitSystemToggle.tsx`
+  - `../ph-navigator/frontend/src/features/project_view/data_views/windows/pages/UnitBuilder/Dimensions/displayUnitConverter.ts`
+  - `../ph-navigator/frontend/src/features/project_view/data_views/windows/pages/UnitBuilder/Dimensions/parseInput.ts`
+  - `../ph-navigator/frontend/src/features/project_view/data_views/windows/pages/UnitBuilder/Dimensions/parseFeetInches.ts`
+  - `../ph-navigator/frontend/src/features/project_view/data_views/windows/pages/UnitBuilder/Dimensions/formatFeetInches.ts`
+  - `../ph-navigator/frontend/src/features/project_view/data_views/windows/pages/UnitBuilder/Dimensions/__tests__/`
+- **V1 conversion-factor caveat.** Reuse the V1 shape and test corpus,
+  not the V1 constants blindly. Thermal factors and reciprocal
+  quantities must be verified against fixtures before landing in V2.
 - **Schema migrations preserve units.** A field rename or shape
   change must not silently swap units. The golden-file corpus
   (§10.5) tests the round-trip; new shims are tested for unit
@@ -1772,7 +2009,7 @@ ambiguity.
 | Frontend data | TanStack Query for server state |
 | 3D viewer | **`three` + `@react-three/fiber` + `@react-three/drei` + `@react-three/postprocessing`** |
 | JSON-Patch | `fast-json-patch` (frontend) + `jsonpatch` (backend) |
-| Units conversion (frontend only) | TBD — see Q-UNITS-2 (port `PH_units` / `convert-units` / per-quantity helpers) |
+| Units conversion (frontend only) | Quantity-specific TS helpers under `frontend/src/lib/units/`; V1 unit/dimension files are research templates (§11.5.3) |
 | Auth | Session auth (cookies) for editors; public read access on normal project URLs |
 | Hosting | Render.com (backend service, managed Postgres, frontend static site) |
 | Local dev | Docker Compose (Postgres + backend + frontend dev server) |
@@ -1879,16 +2116,28 @@ AirTable-bound project is migrated.
 - **Editor login** — email + password. Server-side sessions stored in
   Postgres (`sessions` table, §6.1). HTTP-only, Secure, SameSite=Lax
   cookies referencing the session row.
+- **Password hashing** — Argon2id is the planned default, with memory,
+  time, and parallelism parameters exposed in backend Settings and
+  tested in the auth scaffold. If Argon2id causes installation friction
+  during Phase 0, bcrypt with cost >= 12 is the only accepted fallback.
+- **Browser request protection** — all mutating browser requests require
+  an allowed `Origin` header. Allowed origins are the exact production
+  frontend origin plus local dev origins; no wildcard credentialed CORS.
+  SameSite=Lax cookies are defense-in-depth, not the whole CSRF policy.
+- **CORS** — deny by default. Credentialed requests are allowed only
+  from configured frontend origins. Public read endpoints are still
+  ordinary API routes; CORS does not use `*` with credentials.
 - **Session lifetime** — 60-minute sliding expiration. Every
   authenticated request resets the expiry. Idle 60 min → session
-  invalidated; client receives 401 on next request and redirects to
-  `/sign-in?next=<current-url>`.
+  invalidated; client receives 401 on next request. Dirty editor tabs may
+  send a lightweight keepalive while unsaved local state exists.
 - **Single active session per user.** Signing in creates a new
   session and invalidates any existing sessions for the same user
   (most-recent-wins). The superseded session's row is marked
   `invalidated_at` and tagged with reason
-  `superseded_by_new_login`. The displaced device sees 401 on next
-  request.
+  `superseded_by_new_login`. A partial unique index on
+  `sessions(user_id) WHERE invalidated_at IS NULL` enforces the rule in
+  the database. The displaced device sees 401 on next request.
 - **Mid-edit session expiry** — frontend retains the in-memory
   document, opens a sign-in-again modal in place, retries the
   failed request on success. Server-side draft (§8.3) holds
@@ -1897,7 +2146,7 @@ AirTable-bound project is migrated.
 - **Password reset** — admin-only via CLI / admin script; no
   self-serve forgot-password flow in v1. Two-person internal scope.
 - **Account creation** — admin-only. No public sign-up.
-- **Non-logged-in viewer access** — no token, no session required.
+- **Viewer access** — no token, no session required.
   Project URLs (`/projects/{id}/...`) resolve for any visitor; the
   backend's `require_project_access(mode='view')` dependency
   passes trivially. Writes return 401. See §4 for the full access
@@ -1911,6 +2160,24 @@ AirTable-bound project is migrated.
 
 No anonymous editor auth. No per-table or per-version permissions
 in v1.
+
+### 13.1 Phase 0 security / ops baseline
+
+The scaffold ships with the following from day 1:
+
+- `/api/v1/health` for liveness and `/api/v1/version` for build/API
+  metadata.
+- A request-id middleware. `X-Request-ID` is accepted from the frontend
+  when present, otherwise generated by the backend. Every response and
+  structured error includes the request id.
+- JSON application logs with `request_id`, `user_id`, `project_id`, and
+  `version_id` when available.
+- A single backend structured-error module shared by REST and MCP error
+  wrappers, starting with the minimal §10.3 envelope.
+- Idempotency-key middleware with the §9.5 scope, TTL, and replay
+  semantics.
+- Auth/session migrations covering Argon2id hashes, UUIDv4 sessions, and
+  the single-active-session partial unique index.
 
 ## 14. Migration from V1
 
@@ -2026,98 +2293,85 @@ Approach:
 To resolve before implementation begins. None block this PRD's
 acceptance, but each shapes a downstream decision:
 
-1. **First version on project create** — is the initial version always
-   named "Working", or does the user pick a name? Lean: always
-   "Working", user can rename.
-2. **Locking semantics on submit/close** — auto-lock, with manual
-   unlock allowed, or hard-lock that requires save-as to escape?
-   Lean: auto-lock with manual unlock + confirm dialog.
-3. ~~**Catalog scope flags** — does V2 v1 support the `global_with_
+1. ~~**Catalog scope flags** — does V2 v1 support the `global_with_
    project_overrides` or `project_scoped` catalog scopes from the
    2026-05-06 catalog PRD?~~ **Resolved 2026-05-10:** all catalogs
    are global + bookshelf, no per-project overrides at the catalog
    layer. Project-level overrides happen in the project document via
    the user editing copied values. Full roster of v1 + future
    catalogs in §7.0.
-4. ~~**Asset deletion semantics** — when a photo is removed from a
+2. ~~**Asset deletion semantics** — when a photo is removed from a
    document, do we hard-delete the R2 object, or only the document
    pointer?~~ **Resolved 2026-05-11:** detach from the active draft
    first. The asset row remains available to older saved versions and
    other references. Hard purge is a 90-day GC path only after reference
    checks across saved versions and active drafts (§6.5).
-5. **MCP transport** — stdio only, HTTP/SSE only, or both? Lean: both,
+3. **MCP transport** — stdio only, HTTP/SSE only, or both? Lean: both,
    stdio for local Claude Desktop / Code, HTTP/SSE for hosted use
    (e.g. claude.ai integration).
-6. ~~**View link granularity** — per-project link (sees all versions)
-   vs. per-version link.~~ **Resolved 2026-05-11:** no separate view
-   links exist. Normal `/projects/{id}/...` routes are public-readable.
+4. ~~**Public link granularity** — per-project link (sees all versions)
+   vs. per-version link.~~ **Resolved 2026-05-11:** no separate
+   public links exist. Normal `/projects/{id}/...` routes are public-readable.
    A public visitor who has the project URL can view the project.
-7. **Diff UI scope in v1** — full visual side-by-side, or structured
+5. **Diff UI scope in v1** — full visual side-by-side, or structured
    text "summary of changes" only? Lean: structured-text v1, visual
    side-by-side as v1.1.
-8. **Editor session etag conflict UX** — on 409, force reload vs. show
+6. **Editor session etag conflict UX** — on 409, force reload vs. show
    merge dialog. Lean: force reload (single-user expectation; merge
    dialog is real engineering).
-9. **Refresh-from-catalog UX** — per-entry only, or also a "refresh
-   all" bulk action? Lean: per-entry only in v1; bulk is a v1.1
-   addition once the per-entry flow is bedded in.
-10. **Project-versions name uniqueness** — enforce unique within a
+7. ~~**Refresh-from-catalog UX** — per-entry only, or also a "refresh
+   all" bulk action?~~ **Resolved 2026-05-11:** per-entry refresh only
+   in v1. Review all opens the drift/customization report with
+   per-entry actions; it does not auto-apply multiple entries.
+8. **Project-versions name uniqueness** — enforce unique within a
     project (per the schema sketch) or allow duplicates? Lean:
     enforce; saves users from "which Round 1 Submit was the real
     one."
-11. **Pre-save snapshot for one-click undo** — when Save overwrites a
+9. **Pre-save snapshot for one-click undo** — when Save overwrites a
     version, do we keep a transient "pre-Save" copy server-side for a
     short window (e.g. 1 hour) so the user can undo a regretted Save?
     Lean: defer to v1.1; lock + Save As is the pattern for
     high-stakes versions in v1.
-12. **Draft GC age threshold** — drafts untouched for >30 days are
+10. **Draft GC age threshold** — drafts untouched for >30 days are
     deleted (§8.3). Confirm 30 days is reasonable; alert thresholds
     (e.g. "your draft is 14 days old — Save or discard?") tunable.
-13. **Repo split: one repo or two?** §12.2 leans separate Git repos.
+11. **Repo split: one repo or two?** §12.2 leans separate Git repos.
     Confirm before V2 scaffolding starts.
-14. **R3F migration of V1 viewer code** — port loaders 1:1 first, then
-    refactor color-by handling, or rebuild loaders idiomatically as
-    R3F components? Lean: port 1:1 (preserves verified geometry
-    behavior), then refactor incrementally once parity is reached.
-15. **HBJSON file size cap** — proposed 50 MB. Confirm against largest
+12. **HBJSON file size cap** — proposed 50 MB. Confirm against largest
     real Ed/John HBJSON exports. Multifamily projects could exceed
     this. Mitigations if needed: chunked / resumable upload (tus.io
     or signed-URL multipart), or simply raise the cap.
-16. **HBJSON storage cost.** ~10 MB × ~10 files/project × ~50 projects
+13. **HBJSON storage cost.** ~10 MB × ~10 files/project × ~50 projects
     = ~5 GB lifetime. Trivial on R2; track via `project_assets.size_bytes` for
     visibility.
-17. **HBJSON ↔ project_version linkage** — the schema offers an
+14. **HBJSON ↔ project_version linkage** — the schema offers an
     optional `project_version_id` on `project_hbjson_files`. Should
     the upload UI strongly prompt for this (so cert submits get
     paired model + builder data), or leave it loose? Lean: prompt
     on upload but allow blank.
-18. **Public access to HBJSON downloads** — public viewers can reach
-    the normal project route and see read-only project data. Confirm
-    whether that also includes HBJSON file download and signed asset
-    URLs, or only in-browser viewing.
-19. **HBJSON parsing in the browser** — at 5–20 MB JSON parse +
+15. **HBJSON parsing in the browser** — at 5–20 MB JSON parse +
     geometry build, the viewer load may take seconds. Acceptable for
     v1 with a clear loading state; optimize (worker thread, server
     pre-extracted geometry) only if user feedback warrants.
-20. ~~**Ownership semantics** (US-1 Q1).~~ **Resolved 2026-05-10:**
+16. ~~**Ownership semantics** (US-1 Q1).~~ **Resolved 2026-05-10:**
     ownership = dashboard-filter only. Strict ACL deferred. See §4.1
     for the forward-compatible access-check seam.
-21. ~~**Forgot-password flow** (US-0 Q1).~~ **Resolved 2026-05-10:**
+17. ~~**Forgot-password flow** (US-0 Q1).~~ **Resolved 2026-05-10:**
     admin reset only.
-22. ~~**Session duration / concurrency** (US-0 Q2/Q3).~~
+18. ~~**Session duration / concurrency** (US-0 Q2/Q3).~~
     **Resolved 2026-05-10:** 60-minute sliding expiration; single
     active session per user (most-recent-wins). See §13.
-23. ~~**"Last modified" definition** (US-1 Q4).~~ **Resolved
+19. ~~**"Last modified" definition** (US-1 Q4).~~ **Resolved
     2026-05-10:** denormalized `projects.last_saved_at`, updated on
     every Save / Save As.
-24. **V2 URL** — `ph-dash-frontend.onrender.com` is the existing
+20. **V2 URL** — `ph-dash-frontend.onrender.com` is the existing
     PH-Dash URL, not PHN. Pick one for V2: staging on Render
     (`ph-navigator-v2.onrender.com`) → custom domain
     (`nav.bldgtyp.com` or similar) when ready. Lean: stage on
     Render, custom domain post-MVP.
-25. **User-action-log retention** (US-C1) — keep forever vs. roll
+21. **User-action-log retention** (US-C1) — keep forever vs. roll
     off. Lean: keep forever (volume trivial).
-26. ~~**Project landing page layout** (US-3 Q1).~~ **Resolved
+22. ~~**Project landing page layout** (US-3 Q1).~~ **Resolved
     2026-05-10:** tab bar — Status / Windows / Envelope / Equipment /
     Model. Status is the default landing tab. Versions are a header
     dropdown (US-3.1), not a tab. Settings live behind the header

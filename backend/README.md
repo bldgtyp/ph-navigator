@@ -1,7 +1,8 @@
 # Backend — PH-Navigator V2
 
 FastAPI service for versioned project documents. Currently a scaffold —
-real route surface lands during feature work (see `context/USER_STORIES.md`).
+real route surface lands during feature work (see `context/USER_STORIES.md`
+and the relevant `context/user-stories/*.md` file).
 
 ## Run
 
