@@ -16,6 +16,9 @@ Record current technical-stack and code-style decisions for PH-Navigator V2, bas
 - `context/UI_UX.md`
 - `research/poc-plans/grid-spike-results.md` (TanStack vs AG Grid decision)
 - `research/poc-plans/poc-lessons-for-real-build.md`
+- BLDGTYP design system:
+  <https://github.com/bldgtyp/branding> and
+  <https://bldgtyp.github.io/branding/>
 - Honeybee Schema Pydantic V2 migration commit: <https://github.com/ladybug-tools/honeybee-schema/commit/f1b6fdfa5750177f969a5b952e01560f3f9b4dd4>
 - Michael Kennedy's Raw+DC article (reviewed 2026-05-11): <https://mkennedy.codes/posts/raw-dc-the-orm-pattern-of-2026/>
 
@@ -35,7 +38,8 @@ Use a boring, explicit stack:
 | Migrations | Alembic retained for schema migrations |
 | App document model | Pydantic-validated JSONB document versions |
 | Frontend | Vite + TypeScript + React |
-| UI kit | shadcn/ui + Tailwind |
+| UI kit | shadcn/ui + Tailwind, mapped to BLDGTYP CSS tokens where practical |
+| Design tokens | BLDGTYP `tokens.css` / `tokens.json` |
 | Server state | TanStack Query |
 | Tables | TanStack Table v8 + `@tanstack/react-virtual` + shadcn-table primitives — see Table-View section below |
 | Client/UI state | Zustand |
@@ -171,6 +175,35 @@ Zustand is the right default for client/UI state:
 - R3F viewer UI state.
 
 Use TanStack Query for server-owned state. Use Zustand for local interaction state. Avoid nested React context providers except for narrow UI composition cases.
+
+### BLDGTYP design-system integration
+
+V2 should use BLDGTYP's published design tokens as the visual source
+where practical:
+
+- `https://bldgtyp.github.io/branding/tokens/tokens.css` for CSS
+  custom properties;
+- `https://bldgtyp.github.io/branding/tokens/tokens.json` when build
+  tooling or TypeScript needs machine-readable token values;
+- `https://bldgtyp.github.io/branding/tokens/components.css` only as
+  selective reference or direct reuse for generic primitives that do not
+  conflict with shadcn/ui composition.
+
+Implementation lean:
+
+1. Load the required fonts once: Outfit and JetBrains Mono.
+2. Load/import `tokens.css` before app styles.
+3. Set `data-theme="light"` / `data-theme="dark"` on `<html>` for
+   theme-aware BLDGTYP variables.
+4. Map Tailwind/shadcn theme variables to BLDGTYP variables in the app
+   stylesheet (`--background: var(--bg-page)`, etc.) rather than
+   hard-coding a separate app palette.
+5. Use PH-Navigator-specific components for workbench surfaces
+   (builders, tables, viewer, evidence panels). Do not import the
+   branding site's marketing/content components wholesale.
+
+This keeps the implementation idiomatic to shadcn/Tailwind while
+avoiding a second, app-only visual system.
 
 ## Table-View Decision
 

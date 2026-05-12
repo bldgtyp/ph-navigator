@@ -13,7 +13,9 @@ SCOPE: Narrative descriptions of every UI page and flow in PH-Navigator
        in plain language — no pixel-level decisions. Reference, not
        prescription.
 RELATED: context/PRD.md (architecture PRD),
-         context/USER_STORIES.md (user stories)
+         context/USER_STORIES.md (user stories),
+         https://github.com/bldgtyp/branding,
+         https://bldgtyp.github.io/branding/
 ---
 
 # PH-Navigator V2 — UI / UX Narrative
@@ -23,6 +25,12 @@ RELATED: context/PRD.md (architecture PRD),
 PH-Navigator V2 is an **internal tool** for a two-person consulting
 firm. The audience is technical (architects, certified passive house
 consultants, energy modelers) and data-dense screens are welcome.
+
+Design hypothesis: PH-Navigator V2 should feel like a **technical
+workbench for Passive House project data**: quiet, precise, data-rich,
+and built for repeated use by expert users. It should preserve V1's
+domain spine without inheriting V1's generic admin-app styling.
+
 Design should optimize for:
 
 - **Clarity over polish.** Information hierarchy and discoverability
@@ -38,6 +46,75 @@ Design should optimize for:
 - **Honest density.** Tables show the data; don't hide columns behind
   hover-reveal or progressive disclosure unless the screen really
   forces it.
+- **Domain-native surfaces.** The best screens should support the
+  building object directly: assembly section, aperture diagram,
+  evidence checklist, model selection, or row-level equipment record.
+  Avoid generic dashboard/card composition when a workbench layout is
+  clearer.
+
+### V1 precedent, not prescription
+
+V1 screenshots are useful precedent for workflow shape, not final visual
+direction. Treat V1 findings with this taxonomy:
+
+- **Invariant:** product/workflow facts that carry forward unless a
+  later PRD decision supersedes them.
+- **Requirement:** behavior V2 must implement.
+- **Design hypothesis:** direction to prototype and test.
+- **Open question:** choice to keep unresolved until more V1 examples,
+  user priority, or prototype feedback clarifies it.
+
+Current V1-derived invariants:
+
+- Project workspace tabs stay: Status, Windows, Envelope, Equipment,
+  Model.
+- Status remains the default project landing surface.
+- Windows and assemblies need visual builders, not only tables.
+- Dense table views remain central for equipment, materials, and
+  catalog-like records.
+- Evidence state for datasheets, specs, and site photos is a
+  cross-cutting UX system, not a set of isolated icon cells.
+- The Model tab is a real HBJSON viewer with color-by, legends,
+  selection, inspection, model-file switching, and enough canvas area to
+  feel primary.
+
+### BLDGTYP design system
+
+PH-Navigator V2 should crib directly from the BLDGTYP brand design
+system where it helps the application feel like part of the same
+technical tool family:
+
+- Canonical reference: <https://bldgtyp.github.io/branding/>
+- Source repo: <https://github.com/bldgtyp/branding>
+- Required CSS tokens:
+  <https://bldgtyp.github.io/branding/tokens/tokens.css>
+- Optional component reference:
+  <https://bldgtyp.github.io/branding/tokens/components.css>
+- Machine-readable tokens:
+  <https://bldgtyp.github.io/branding/tokens/tokens.json>
+
+Use the published tokens for fonts, color, radius, motion, and theme
+surfaces when possible. Build PH-Navigator-specific components on
+shadcn/ui/Tailwind, but map the visual layer to BLDGTYP tokens instead
+of inventing a separate palette.
+
+Initial application guidance:
+
+- Use Outfit for readable headings/body where practical.
+- Use JetBrains Mono for labels, numeric annotations, nav triggers,
+  compact metadata, units, and technical chips.
+- Use `--accent` / `--accent-text` as the primary action/accent channel.
+- Use `--highlight` / `--highlight-text` sparingly for emphasis,
+  warnings, missing evidence, or selected technical objects. Do not let
+  magenta mean every action state.
+- Use theme-aware surfaces (`--bg-page`, `--bg-card`, `--bg-elev`,
+  `--border-subtle`, `--text-*`) for light/dark mode.
+- Consider graph-paper treatments only where they reinforce technical
+  drafting/data context: dashboard bands, data views, model/building
+  workbench panels, or empty technical states. Keep them subtle.
+- Treat `components.css` classes as reference or selectively reusable
+  pieces, not a mandate to make this app look like the public branding
+  site.
 
 ### Tech-stack constraints (from PRD §12)
 
@@ -50,13 +127,17 @@ constrain visual idioms in friendly ways:
 - shadcn/ui's primitives (button, input, dialog, tabs, table, command)
   are the building blocks.
 - Tailwind tokens (color, spacing, radius) define the look.
-- Real visual design choices (color palette, typography, spacing
-  scale) are deferred to a Claude Design pass that follows this doc.
+- Tailwind/shadcn theme tokens should be wired to the BLDGTYP CSS
+  custom properties when possible, so app components consume the same
+  source values as the design-system site.
+- Real screen composition and component design are deferred to a Claude
+  Design pass that follows this doc and the BLDGTYP design system.
 
 ### Out of scope for this doc
 
-Pixel-perfect mockups, color choices, typography, illustration,
-empty-state art, animation specifics. Those land in the design pass.
+Pixel-perfect mockups, final component variants, illustration,
+empty-state art, and animation specifics. Those land in the design pass.
+The brand-token dependency itself is in scope here.
 
 ---
 
@@ -316,6 +397,37 @@ optimization; dark-mode tint palette. See
 
 ---
 
+### 1.8 Evidence / documentation status grammar
+
+Evidence state appears across project materials, equipment rows,
+aperture/window records, site-photo pages, and certification/status
+workflows. It should read as one coherent documentation layer.
+
+Core states:
+
+| State | Meaning | Typical use |
+|---|---|---|
+| Missing | Required evidence is absent. | Datasheet/site photo/spec missing. |
+| Required | Evidence is expected but not yet evaluated. | New row or imported V1 data. |
+| Attached | One or more files are linked. | Datasheets, photos, HBJSON files. |
+| Complete | QA status accepted for this record. | Spec status, milestone done. |
+| N/A accepted | Requirement intentionally does not apply. | Spec/photo requirement waived. |
+| Linked source | Row came from a catalog or imported source. | Catalog badge, V1 import. |
+| Drifted | Copied value differs from current catalog/source. | Refresh-from-catalog flows. |
+
+Design rules:
+
+- Missing evidence must be filterable at the page/table level.
+- A missing state should link directly to the surface that resolves it:
+  upload drop zone, row detail, assembly segment, equipment record, or
+  status item.
+- Evidence badges/icons need text labels or hover/detail affordances;
+  tiny icon-only cells are not sufficient for certification QA.
+- Separate missing/required from warning/error colors. Missing evidence
+  is a work item, not necessarily an application error.
+- For Viewer/read-only mode, retain evidence visibility but hide upload,
+  delete, and status-edit affordances.
+
 ## 2. Pages — narrative
 
 ### 2.1 Sign-in page (`/sign-in`)
@@ -449,6 +561,16 @@ Dashboard click goes here.
 
 **Layout:** global header (§1.1) → project header bar → tab bar →
 tab content.
+
+For dense tabs, prefer a workbench layout instead of a dashboard layout:
+
+- left object browser/list where the tab has selectable domain objects;
+- center table, builder, or model canvas as the primary work surface;
+- right inspector/evidence panel where selection context matters;
+- compact top/bottom tool rails for mode-specific actions.
+
+White space should separate task zones. It should not appear simply
+because the screen lacks a secondary information model.
 
 #### Project header bar (below the global header)
 
@@ -625,8 +747,15 @@ Status page). Each row:
 - Title (clickable to edit)
 - Completion date (if state = done) OR free-text description
   (Markdown, may include in-app links — internal anchors v1.1+)
+- Optional next action / owner / linked work surface when a status item
+  is acting as a workflow gate.
 - Drag handle for reorder
 - `⋯` row menu: Edit, Mark done, Mark todo, Mark n/a, Delete
+
+Each milestone should read as a compact status record: state, title,
+date/description, and a direct link to the surface that resolves it
+where applicable. Avoid treating Airtightness/Site Photos links as
+small annotations; if they are gates, they need action affordance.
 
 Reference: V1 Status page screenshot supplied 2026-05-10.
 
@@ -635,6 +764,12 @@ Reference: V1 Status page screenshot supplied 2026-05-10.
 **(Detailed in US-Builder-Windows.)** Window types: shadcn-table
 of window-type rows; clicking a row opens the per-window-type
 editor (rows, columns, frames, glazings).
+
+Use the shared builder shell: object browser/list on the left, visual
+aperture editor in the center, computed U-w / dimension summary near
+the top, and inspector/details or editable breakdown table adjacent to
+the selected visual object. Catalog origins and custom overrides should
+be visible without forcing the user into a separate audit page.
 
 ### 2.7 Envelope tab (`/projects/{id}/envelope`)
 
@@ -675,9 +810,10 @@ sub-tab.
 
 #### 2.7.2 Assemblies sub-tab (`/envelope/assemblies`)
 
-**Layout:** assembly-list sidebar (left, ≈260 px, default closed)
-+ active-assembly canvas (right). Same shell pattern as the
-Windows tab.
+**Layout:** assembly-list sidebar (left, ≈260 px, default closed) and
+active-assembly canvas/workbench (right). Same shell pattern as the
+Windows tab. The assembly visual is the primary object, not a decorative
+preview.
 
 **Sidebar (US-ENV-2):**
 
@@ -730,8 +866,8 @@ Windows tab.
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
-(Reproduces V1's layout — see V1 reference screenshot supplied
-2026-05-10. Adjusted in V2 to:
+(Preserves V1's assembly object model and rough builder structure — see
+V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
 1. **Move HBJSON in/out** to the project header `⋯` overflow
    menu (per Q-ENV-11), out of this assembly-tab toolbar.
 2. **Drop the AirTable button** entirely (V2 has no AirTable
@@ -746,8 +882,8 @@ Windows tab.
   its thickness in mm (1:1 scale; matches V1).
 - Left column (35 px): thickness label in active unit (mm or in).
   Hover the label → bold + dashed-border highlight + reveal
-  small magenta `+` buttons at top edge ("Add Layer Above") and
-  bottom edge ("Add Layer Below").
+  compact `+` buttons at top edge ("Add Layer Above") and bottom edge
+  ("Add Layer Below").
 - Click the thickness label → opens **Layer Height modal** with
   unit-aware input parsing (`50 mm`, `2 in`, `2-1/2"`,
   `100 + 50`); modal has an inline **Delete Layer** action that
@@ -755,8 +891,8 @@ Windows tab.
   fix vs V1's server-exception + alert).
 - Right column: side-by-side segment SVG rectangles, colored
   from each segment's material `argb_color`.
-- Segment hover reveals magenta `+` buttons at left and right
-  edges ("Add Segment Left / Right").
+- Segment hover reveals compact `+` buttons at left and right edges
+  ("Add Segment Left / Right").
 - Click a segment → opens **Segment Properties modal** (US-ENV-6).
 
 **Segment Properties modal (US-ENV-6):**
@@ -823,6 +959,10 @@ Windows tab.
 ESC at any time exits pick / paste mode. Mousedown anywhere
 outside a segment also exits.
 
+Design note: keep selected state precise but visually lighter than V1.
+Layer orientation and inside/outside labels are core building-science
+state; they should be stable, visible, and tied to the flip actions.
+
 **Drift summary banner (US-ENV-11):**
 
 When any segment in the active assembly has drifted from the
@@ -883,7 +1023,7 @@ bottom.
 │  Datasheets                                                          │
 │  ┌─────────────────────────────────────┐                             │
 │  │  ▒▒  PDF  ▒▒                + Add    │   ← Missing state when     │
-│  └─────────────────────────────────────┘     empty: magenta border   │
+│  └─────────────────────────────────────┘     empty: missing state    │
 │                                                                      │
 │  Used in 4 segments:                                                 │
 │  ┌────────────────────────────────────────────────────────────────┐  │
@@ -913,8 +1053,8 @@ bottom.
 | Region | Content |
 |---|---|
 | **Header** | Bold material name (clickable → inline rename). Right side: 📚 Library badge when from catalog; ↻ refresh badge when drifted (click → refresh-from-catalog dialog). Sub-line: category + product data (resistivity in IP, conductivity in SI; respects active unit system). |
-| **QA bar** | Specification-status `<Select>` (four states, V1 palette). `[+ Notes]` opens an inline notes editor. `⋯` overflow: "Edit material values…" (affects all uses), "Refresh from catalog…", "Delete material" (only enabled when no segments reference it). |
-| **Datasheets** | Drag-and-drop zone for one or more datasheets (PDFs / images). "Missing" magenta-bordered empty state when status ≠ N/A; disabled when status = N/A. **One zone per material**, not per use (V2 cleanup vs V1's per-segment redundancy). |
+| **QA bar** | Specification-status `<Select>` (states follow §1.8). `[+ Notes]` opens an inline notes editor. `⋯` overflow: "Edit material values…" (affects all uses), "Refresh from catalog…", "Delete material" (only enabled when no segments reference it). |
+| **Datasheets** | Drag-and-drop zone for one or more datasheets (PDFs / images). Missing state follows the evidence/status grammar in §1.8; disabled when status = N/A. **One zone per material**, not per use (V2 cleanup vs V1's per-segment redundancy). |
 | **"Used in N segments"** | Per-segment sub-rows. Each row shows the path (`Assembly · Layer N · seg N`, click jumps to the canvas) + a per-segment site-photo drag-and-drop zone (same component as V1's site-photo container, V1 ref §12.4). `⋯` per-row: Re-pick material…, Open in canvas →, Detach to a new material…. |
 
 **Card sort order:**
@@ -1089,6 +1229,13 @@ one place," etc.
 equipment kind: Rooms (MVP), then ERVs / Pumps / Fans / etc. as
 the corresponding catalogs ship.
 
+Equipment surfaces should use dense, filterable tables with status /
+evidence badges that follow §1.8. When row detail becomes too wide for
+the grid, use a selected-row details/evidence panel rather than forcing
+long manufacturer/model/spec strings into cramped cells. Preserve fast
+scan/edit/copy behavior; avoid pagination as the primary way to manage
+project-scale tables unless performance requires it.
+
 ### 2.9 Model tab (`/projects/{id}/model`) — placeholder
 
 **(Detailed in US-Viewer.)**
@@ -1096,8 +1243,22 @@ the corresponding catalogs ship.
 Top-of-tab strip: HBJSON file picker (dropdown listing uploaded
 files with labels and dates) + "Upload new HBJSON" button.
 
-Main area: R3F canvas filling the available space. Bottom menubar
-(color-by, viz state, tool state) ports the V1 pattern.
+Main area: R3F canvas filling the available space. The viewer should be
+full-bleed or near full-bleed below the project header, with minimal
+generic page chrome. Preserve V1 viewer behavior but redesign the
+composition:
+
+- compact floating HBJSON file selector / upload affordance;
+- left legend/filter rail when color-by is active;
+- right inspector panel for selected object metadata;
+- bottom or side tool rail with grouped tools, labels on hover, and
+  keyboard-accessible controls;
+- restrained, high-contrast selection color that is distinct from table
+  focus and evidence status colors.
+
+The Model tab may carry more BLDGTYP character than ordinary tables,
+but it still needs to feel like inspecting a building model, not viewing
+a dashboard chart.
 
 ### 2.10 Project settings (overflow menu, not a tab)
 
@@ -1194,6 +1355,10 @@ Consistent visual language for state across the app:
 | Submitted | Document-with-checkmark icon | Versions list |
 | Closed | Folded-document icon | Versions list |
 | Read-only (Viewer public read) | "Read-only" pill in header | Project workspace header |
+| Evidence missing | Badge/icon + filterable status | Tables, Specifications, Site Photos |
+| Evidence attached | Badge/icon + file count/preview | Datasheets, photos, HBJSON files |
+| N/A accepted | Muted badge/state | Spec/photo requirements |
+| Catalog/source drift | Refresh/drift badge | Materials, frames, glazings, catalog-linked rows |
 
 ---
 
@@ -1211,13 +1376,16 @@ back to a user-story open question.
 | UX-Q5 | Catalogs nav — header dropdown (lean) or top-level page route? | header dropdown |
 | UX-Q6 | Empty-state primary action — single button or guided onboarding? | single button |
 | ~~UX-Q7~~ | ~~Viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
+| UX-Q8 | Builder details placement — below canvas, right inspector, or adaptive? | adaptive by surface |
+| UX-Q9 | Model toolbar placement — bottom V1 rail or left/right modeling-app rail? | open through prototype |
+| UX-Q10 | Evidence interaction model — checklist, table filters, or both? | both, via §1.8 |
 
 ---
 
 ## 6. Out-of-scope for this doc
 
-- Visual design tokens (palette, type, spacing).
-- Iconography choices.
+- Final component variants.
+- Final iconography choices.
 - Animation specifics.
 - Mobile / phone optimization.
 - Onboarding tours.

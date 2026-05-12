@@ -26,6 +26,9 @@ Load these only when the task touches the relevant surface:
   save/versioning, API, MCP/schema, frontend/viewer/units, and
   stack/auth/migration. Load only the relevant file.
 - `UI_UX.md` — UI narrative and page / flow descriptions.
+  For visual-design tasks, also load the BLDGTYP design system:
+  <https://bldgtyp.github.io/branding/> and
+  <https://github.com/bldgtyp/branding>.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `user-stories/30-tables-equipment.md` when touching table behavior.

@@ -36,6 +36,11 @@ column set, validation rules, and per-row modal contents differ.
 Per-tab stories should not re-spell the shared half. This parent
 defines the shared half. Per-table stories specialize.
 
+Tables that carry datasheet/photo/spec state must also use the
+cross-cutting evidence/status grammar in `context/UI_UX.md` §1.8.
+Evidence badges should be filterable, human-readable, and linked to
+the row/detail surface that resolves the gap.
+
 ### Acceptance criteria (the shared pattern)
 
 1. **Table primitive — TanStack Table v8** (already prototyped

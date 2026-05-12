@@ -215,8 +215,18 @@ editing. R3F's strengths line up exactly.
 - HBJSON parsing logic in the loaders.
 - Color-by attribute mappings and legend logic.
 - Tool / viz state enums and handlers (rewritten as Zustand slices).
-- The visual design and UX of the viewer (menubars, info panel,
-  legend).
+- The viewer behavior and domain vocabulary: color-by modes, legends,
+  object selection, metadata inspection, measure/select tools, and
+  model-file switching.
+
+What changes from V1:
+
+- Composition should be full-bleed or near full-bleed under the project
+  header, not a generic page panel.
+- Toolbars, legends, file picker, and inspector should be redesigned
+  around the V2 workbench shell in `context/UI_UX.md`.
+- Visual styling should use the BLDGTYP token system and avoid carrying
+  forward MUI/default-blue/magenta-as-everything semantics.
 
 The work is a **port**, not a rewrite from scratch. Rough scope: ~2
 weeks of focused frontend work assuming the loaders and color-by logic
