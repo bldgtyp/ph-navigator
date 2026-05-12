@@ -26,6 +26,7 @@ import {
   type ProjectDetail,
   type ProjectSummary,
 } from "./api";
+import { StatusTab } from "./StatusTab";
 
 type LoadState =
   | { status: "loading" }
@@ -50,7 +51,7 @@ const TAB_LABELS: Record<ProjectTab, string> = {
 };
 
 const TAB_COPY: Record<ProjectTab, string> = {
-  status: "Status tracker lands in TB-03.",
+  status: "Track this project's lifecycle milestones.",
   windows: "Window type editing lands after the catalog tracer.",
   envelope: "Envelope assemblies land after the window catalog slices.",
   equipment: "Rooms and equipment tables start with the Rooms draft slice.",
@@ -607,6 +608,10 @@ function ProjectHeaderControls({ project }: { project: ProjectDetail }) {
 }
 
 function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
+  if (tab === "status") {
+    return <StatusTab project={project} />;
+  }
+
   return (
     <section className="tab-panel" aria-labelledby={`${tab}-title`}>
       <h2 id={`${tab}-title`}>{TAB_LABELS[tab]}</h2>
@@ -626,6 +631,12 @@ function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: Project
 }
 
 function formatDate(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [yearText, monthText, dayText] = value.split("-");
+    return PROJECT_DATE_FORMATTER.format(
+      new Date(Number(yearText), Number(monthText) - 1, Number(dayText)),
+    );
+  }
   return PROJECT_DATE_FORMATTER.format(new Date(value));
 }
 

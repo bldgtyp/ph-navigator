@@ -126,13 +126,13 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | AFK |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Status tab has the default cert-agnostic tracker and editable item state. |
 | References | `context/user-stories/00-foundation-shell.md` (Status tab); `context/technical-requirements/data-model.md` (relational tables). |
 | Includes | `project_status_items` relational table; apply default template; add/edit/reorder/delete item workflow as scoped for v1; current-step visual; read-only public display. |
 | Tests | State enum and completion-date rules; default template creation; reorder/delete behavior; API tests for non-trivial transitions. |
 | Browser check | Apply default template, mark an item done, edit completion date, delete one item, reload, confirm public viewer can read but not edit. |
-| Lessons | Record why Status stays relational and outside `ProjectDocumentV1`; before editable status work ships, confirm the in-place session-expiry/device-collision modal pattern is present or explicitly split into a blocking auth follow-up. |
+| Lessons | Status stayed relational and outside `ProjectDocumentV1`; date-only completion values must parse as local calendar dates in the frontend; drag-and-drop was cut from the tracer in favor of explicit up/down controls plus keyboard movement; the in-place session-expiry/device-collision modal remains a blocking auth-hardening follow-up before production editable workflows. |
 
 ### TB-04 - Minimal Project Document And Rooms Draft
 
@@ -362,7 +362,7 @@ Resolve these at the named slice, not all up front:
 | TB-00 | Complete | 2026-05-12 11:58 EDT | `make smoke`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed with live `/api/v1` health/version and no console warnings/errors. |
 | TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
 | TB-02 | In progress | 2026-05-12 14:45 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging URL/deploy credentials still HITL, so staging happy path is not verified yet. |
-| TB-03 | Not started | 2026-05-12 | - |
+| TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
 | TB-04 | Not started | 2026-05-12 | - |
 | TB-04b | Not started | 2026-05-12 | - |
 | TB-05 | Not started | 2026-05-12 | - |
@@ -440,4 +440,18 @@ What did not work: The first backend response model leaked an internal `owner_id
 What worked: Keeping ownership as a dashboard filter only, while public project reads go through the same access seam and return `access_mode='viewer'` when unauthenticated. The initial document skeleton is created once with project metadata and empty arrays, and the project shell can remain mostly placeholder UI while still proving routing, header, tabs, active version metadata, and public read-only behavior.
 Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e` at `http://127.0.0.1:5173/` created a project, opened `/projects/{id}/status`, and confirmed a fresh browser context saw the public read-only shell.
 Follow-up: Complete the staging deploy/happy path once Render credentials and URL are available. TB-03 can build Status items on the existing project shell and access seam. Before adding more server-owned project state, introduce the TanStack Query provider / `useQuery` path from `context/TECH_STACK.md` or explicitly keep the TB-02 manual `useEffect` loading as a short-lived tracer. Proxy-aware client IP and JSON application logs are still not materially implemented beyond the existing request-id/error envelope and should be handled with staging/ops setup rather than assumed complete.
+```
+
+### TB-03
+
+```text
+Slice: TB-03
+Date: 2026-05-12
+What changed: Added relational `project_status_items`, status item REST endpoints, cert-agnostic default template application, editor/public access checks, editable Status tab UI, direct state/date writes, add/edit/delete, explicit up/down reorder controls, frontend tests, backend contract tests, and E2E browser coverage.
+Why: The project shell needs a real lifecycle tracker before the versioned project-document and Rooms draft work begins.
+What we tried: Backend migration/API tests, frontend unit tests, production build, CLI Playwright E2E, and in-app Browser verification against a live E2E-created project.
+What did not work: The first E2E check exposed a date-only rendering bug: `new Date('2026-05-01')` parsed as a UTC instant and could display as April 30 in New York. The browser check also confirmed that the unauthenticated root redirect can log an expected 401 resource error before sign-in, so console checks should be interpreted after the authenticated navigation under test. Drag-and-drop was not added in this tracer because the explicit reorder controls already prove the fractional `order_index` backend path without adding a DnD dependency.
+What worked: Keeping status relational avoided touching `ProjectDocumentV1`; the existing `require_project_access(project_id, mode)` seam cleanly produced public read-only and editor write behavior; template application is one-shot on an empty list; state `todo -> done` auto-populates `completion_date`; date-only strings now render as local calendar dates; soft delete keeps admin recovery possible.
+Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser smoke showed the populated Status tab with no console warnings/errors after sign-in/navigation.
+Follow-up: Add the in-place session-expiry/device-collision modal before considering editable workflows production-ready. If drag-and-drop remains important after a few real projects, add it as a focused UX polish pass on top of the verified `order_index` API. TB-04 can reuse the project shell, but should revisit the TB-02 note about introducing TanStack Query before more editable surfaces accumulate.
 ```

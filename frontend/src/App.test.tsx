@@ -50,6 +50,20 @@ const projectPayload = {
   ],
 };
 
+const statusItemPayload = {
+  id: "e402f85e-ce78-41f2-a16f-685ff42edfc2",
+  project_id: projectPayload.id,
+  order_index: 1,
+  title: "CAD files received",
+  state: "todo",
+  completion_date: null,
+  description: null,
+  created_at: "2026-05-12T18:00:00Z",
+  created_by: userPayload.id,
+  updated_at: "2026-05-12T18:00:00Z",
+  updated_by: userPayload.id,
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
@@ -144,7 +158,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByRole("heading", { name: "Projects" })).toBeVisible();
-    expect(screen.getByText("No projects yet")).toBeVisible();
+    expect(await screen.findByText("No projects yet")).toBeVisible();
     expect(screen.getByText("Ed May")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/auth/login",
@@ -173,6 +187,9 @@ describe("App", () => {
       if (url === `/api/v1/projects/${projectPayload.id}`) {
         return jsonResponse(projectPayload);
       }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [] });
+      }
       return jsonResponse({}, 404);
     });
 
@@ -186,8 +203,8 @@ describe("App", () => {
     expect(await screen.findByText("BT number available")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Create project" }));
 
-    expect(await screen.findByRole("heading", { name: "Status" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "West Stockbridge House" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "West Stockbridge House" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
   });
 
@@ -197,12 +214,19 @@ describe("App", () => {
       "",
       `/projects/${projectPayload.id}/status?version=${projectPayload.active_version_id}#viewer`,
     );
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({
-        ...projectPayload,
-        access_mode: "viewer",
-      }),
-    );
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return jsonResponse({
+          ...projectPayload,
+          access_mode: "viewer",
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
 
     render(<App />);
 
@@ -215,5 +239,35 @@ describe("App", () => {
         `/projects/${projectPayload.id}/status?version=${projectPayload.active_version_id}#viewer`,
       )}`,
     );
+    expect(await screen.findByText("CAD files received")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /Set CAD files received/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("applies the default status template from the empty Status tab", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items` && !init?.method) {
+        return jsonResponse({ items: [] });
+      }
+      if (
+        url === `/api/v1/projects/${projectPayload.id}/status-items/apply-default-template` &&
+        init?.method === "POST"
+      ) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Apply BLDGTYP default template" }));
+
+    expect(await screen.findByText("CAD files received")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
   });
 });

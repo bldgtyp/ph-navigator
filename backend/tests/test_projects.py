@@ -19,7 +19,8 @@ def clean_project_tables() -> Iterator[None]:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE user_action_log, sessions, project_versions, projects, users
+            TRUNCATE user_action_log, sessions, project_status_items,
+                     project_versions, projects, users
             RESTART IDENTITY CASCADE
             """
         )
@@ -27,7 +28,8 @@ def clean_project_tables() -> Iterator[None]:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE user_action_log, sessions, project_versions, projects, users
+            TRUNCATE user_action_log, sessions, project_status_items,
+                     project_versions, projects, users
             RESTART IDENTITY CASCADE
             """
         )

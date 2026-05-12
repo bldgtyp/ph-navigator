@@ -34,6 +34,27 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await expect(page).toHaveURL(/\/projects\/.+\/status/);
   await expect(page.getByRole("heading", { name: "Status" })).toBeVisible();
   await expect(page.getByText(`${btNumber} · BLDGTYP`)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Track this project's lifecycle milestones." }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Apply BLDGTYP default template" }).click();
+  await expect(page.getByText("CAD files received")).toBeVisible();
+  await expect(page.getByText("Design Model complete")).toBeVisible();
+
+  await page.getByRole("button", { name: "Set CAD files received to Done" }).click();
+  await expect(page.getByText("Done")).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit" }).first().click();
+  await page.getByLabel("Completion date").fill("2026-05-01");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(page.getByRole("button", { name: "May 1, 2026" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Move Design Model complete up" }).click();
+  await expect(page.locator(".status-title-button").first()).toHaveText("Design Model complete");
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Delete" }).last().click();
+  await expect(page.getByText("Certification Complete")).toHaveCount(0);
 
   const publicUrl = page.url();
   const publicContext = await browser.newContext();
@@ -43,6 +64,9 @@ test("editor creates a project and public viewer can open the shell", async ({ p
     await expect(publicPage.getByText("Read-only public view")).toBeVisible();
     await expect(publicPage.getByText("Edit controls hidden")).toBeVisible();
     await expect(publicPage.getByRole("heading", { name: "Status" })).toBeVisible();
+    await expect(publicPage.getByText("CAD files received")).toBeVisible();
+    await expect(publicPage.getByRole("button", { name: "Add item" })).toHaveCount(0);
+    await expect(publicPage.getByRole("button", { name: "Delete" })).toHaveCount(0);
   } finally {
     await publicContext.close();
   }

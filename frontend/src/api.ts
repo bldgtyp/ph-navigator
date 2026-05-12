@@ -47,6 +47,34 @@ export type ProjectListResponse = {
   projects: ProjectSummary[];
 };
 
+export type StatusState = "todo" | "done" | "na";
+
+export type StatusItem = {
+  id: string;
+  project_id: string;
+  order_index: number;
+  title: string;
+  state: StatusState;
+  completion_date: string | null;
+  description: string | null;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+export type StatusItemListResponse = {
+  items: StatusItem[];
+};
+
+export type StatusItemPayload = {
+  title?: string;
+  state?: StatusState;
+  completion_date?: string | null;
+  description?: string | null;
+  order_index?: number;
+};
+
 export type CreateProjectPayload = {
   name: string;
   bt_number: string;
@@ -176,4 +204,49 @@ export async function fetchProject(
   signal?: AbortSignal,
 ): Promise<ProjectDetail> {
   return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}`, { signal });
+}
+
+export async function fetchStatusItems(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<StatusItemListResponse> {
+  return fetchJson<StatusItemListResponse>(`/api/v1/projects/${projectId}/status-items`, {
+    signal,
+  });
+}
+
+export async function applyDefaultStatusTemplate(
+  projectId: string,
+): Promise<StatusItemListResponse> {
+  return fetchJson<StatusItemListResponse>(
+    `/api/v1/projects/${projectId}/status-items/apply-default-template`,
+    { method: "POST" },
+  );
+}
+
+export async function createStatusItem(
+  projectId: string,
+  payload: StatusItemPayload,
+): Promise<StatusItem> {
+  return fetchJson<StatusItem>(`/api/v1/projects/${projectId}/status-items`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateStatusItem(
+  projectId: string,
+  itemId: string,
+  payload: StatusItemPayload,
+): Promise<StatusItem> {
+  return fetchJson<StatusItem>(`/api/v1/projects/${projectId}/status-items/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteStatusItem(projectId: string, itemId: string): Promise<void> {
+  await fetchJson<void>(`/api/v1/projects/${projectId}/status-items/${itemId}`, {
+    method: "DELETE",
+  });
 }

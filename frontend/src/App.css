@@ -242,7 +242,9 @@
   padding: 0 4px;
 }
 
-.project-form input {
+.project-form input,
+.project-form select,
+.project-form textarea {
   min-height: 40px;
   border: 1px solid #bfb8a8;
   border-radius: 6px;
@@ -250,6 +252,11 @@
   color: #201f1c;
   padding: 8px 10px;
   font: inherit;
+}
+
+.project-form textarea {
+  resize: vertical;
+  line-height: 1.4;
 }
 
 .project-form .checkbox-row {
@@ -379,6 +386,224 @@
   color: #59564d;
 }
 
+.status-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.status-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.status-heading p {
+  margin-bottom: 0;
+}
+
+.status-empty {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  border: 1px solid #ebe5d8;
+  border-radius: 8px;
+  background: #fbfaf6;
+  padding: 38px 20px;
+  text-align: center;
+}
+
+.status-empty h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0;
+}
+
+.status-empty p {
+  max-width: 560px;
+  margin: 0;
+}
+
+.status-empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.status-timeline {
+  display: grid;
+  gap: 12px;
+}
+
+.status-item {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  border: 1px solid #ebe5d8;
+  border-left: 4px solid #d5d0c2;
+  border-radius: 8px;
+  background: #fffdfa;
+  padding: 14px;
+}
+
+.status-item.current {
+  border-left-color: #2f6b4f;
+  background: #fbfff9;
+}
+
+.status-rail {
+  display: flex;
+  justify-content: center;
+}
+
+.status-state-button,
+.status-state-static {
+  display: inline-grid;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0;
+  font-weight: 900;
+}
+
+.status-state-button.todo,
+.status-state-static.todo {
+  border-color: #9a9487;
+  background: #fffdfa;
+  color: #4e4a43;
+}
+
+.status-state-button.done,
+.status-state-static.done {
+  border-color: #2f6b4f;
+  background: #2f6b4f;
+  color: #fffdfa;
+}
+
+.status-state-button.na,
+.status-state-static.na {
+  border-color: #7b7569;
+  background: #ebe5d8;
+  color: #4e4a43;
+}
+
+.status-state-static {
+  border: 1px solid #9a9487;
+}
+
+.status-item-body {
+  min-width: 0;
+}
+
+.status-item-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-title-button,
+.status-item h3 {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: #201f1c;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.status-title-button {
+  min-height: auto;
+}
+
+.status-item.current .status-title-button,
+.status-item.current h3 {
+  font-size: 1.08rem;
+}
+
+.status-badge {
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.status-badge.todo {
+  background: #ede7d9;
+  color: #4e4a43;
+}
+
+.status-badge.done {
+  background: #dcede0;
+  color: #1f5138;
+}
+
+.status-badge.na {
+  background: #e9e9e5;
+  color: #4e4a43;
+}
+
+.date-pill {
+  min-height: auto;
+  border-color: #d5d0c2;
+  border-radius: 999px;
+  background: #fffdfa;
+  color: #4e4a43;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.status-description {
+  margin: 8px 0 0;
+  color: #4e4a43;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.status-description a {
+  color: #244f82;
+  font-weight: 700;
+}
+
+.status-description-empty {
+  min-height: auto;
+  margin-top: 8px;
+  border: 0;
+  background: transparent;
+  color: #68645b;
+  padding: 0;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+
+.status-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.icon-button {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+}
+
+.danger-button {
+  border-color: #8a2d22;
+  background: #8a2d22;
+}
+
 .metadata-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 180px));
@@ -474,5 +699,19 @@ button:disabled {
 
   .metadata-grid {
     grid-template-columns: 1fr;
+  }
+
+  .status-heading,
+  .status-item {
+    grid-template-columns: 1fr;
+  }
+
+  .status-heading,
+  .status-row-actions {
+    justify-content: flex-start;
+  }
+
+  .status-rail {
+    justify-content: flex-start;
   }
 }
