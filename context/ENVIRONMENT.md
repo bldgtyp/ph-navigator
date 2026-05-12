@@ -52,7 +52,8 @@
 - `make setup` — first-time install
 - `make dev` — start Postgres; prints how to launch backend + frontend
 - `make backend`, `make frontend`
-- `make test`, `make lint`, `make format`, `make migrate`, `make smoke`
+- `make test`, `make typecheck`, `make lint`, `make format`,
+  `make migrate`, `make smoke`
 - `make seed-dev-user` — seed the local editor account for browser/E2E auth
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - `make e2e-report` — open the last Playwright HTML report

@@ -92,6 +92,7 @@ def test_create_project_inserts_initial_working_version(clean_project_tables: No
             """
         ).fetchone()
 
+    assert version is not None
     assert version["body"]["schema_version"] == 1
     assert version["body"]["project"]["cert_programs"] == ["phi", "phius"]
     assert version["body"]["tables"]["rooms"] == []

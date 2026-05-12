@@ -49,7 +49,7 @@ def get_user_by_id(conn: Connection[Any], user_id: UUID) -> dict[str, Any] | Non
 
 
 def upsert_user(conn: Connection[Any], email: str, display_name: str, password_hash: str) -> dict[str, Any]:
-    return conn.execute(
+    row = conn.execute(
         """
         INSERT INTO users (email, display_name, password_hash)
         VALUES (%(email)s, %(display_name)s, %(password_hash)s)
@@ -67,6 +67,9 @@ def upsert_user(conn: Connection[Any], email: str, display_name: str, password_h
             "password_hash": password_hash,
         },
     ).fetchone()
+    if row is None:
+        raise RuntimeError("User upsert did not return a row.")
+    return row
 
 
 def invalidate_active_sessions(
@@ -101,7 +104,7 @@ def create_session(
     ip_address: str | None,
     user_agent: str | None,
 ) -> dict[str, Any]:
-    return conn.execute(
+    row = conn.execute(
         """
         INSERT INTO sessions (id, user_id, expires_at, ip_address, user_agent)
         VALUES (%(id)s, %(user_id)s, %(expires_at)s, %(ip_address)s, %(user_agent)s)
@@ -115,6 +118,9 @@ def create_session(
             "user_agent": user_agent,
         },
     ).fetchone()
+    if row is None:
+        raise RuntimeError("Session insert did not return a row.")
+    return row
 
 
 def get_session_for_update(conn: Connection[Any], session_id: UUID) -> dict[str, Any] | None:

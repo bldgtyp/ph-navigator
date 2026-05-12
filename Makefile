@@ -5,7 +5,7 @@
 # the caller's working directory. See context/environment-setup.md §6.
 
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
-        migrate makemigration test test-backend test-frontend \
+        migrate makemigration test test-backend test-frontend typecheck \
         lint format smoke seed-dev-user e2e e2e-report clean
 
 help: ## Show available recipes
@@ -68,6 +68,9 @@ test-backend:
 
 test-frontend:
 	cd frontend && npm test
+
+typecheck: ## Run backend static type checker
+	cd backend && uv run ty check
 
 e2e: ## Run Playwright end-to-end tests (frontend must be running)
 	cd frontend && npm run test:e2e

@@ -81,7 +81,8 @@ Start here in `context/`:
 - `make setup` — first-time install
 - `make dev` — bring Postgres up; prints how to launch backend + frontend
 - `make backend`, `make frontend`
-- `make test`, `make lint`, `make format`, `make migrate`, `make smoke`
+- `make test`, `make typecheck`, `make lint`, `make format`,
+  `make migrate`, `make smoke`
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - See `Makefile` for the full list (or `make help`).
 

@@ -10,10 +10,11 @@ and the relevant `context/user-stories/*.md` file).
 cd backend
 uv sync                            # first time / when uv.lock changes
 uv run uvicorn main:app --reload   # dev server on :8000
+uv run ty check                    # static types
 uv run pytest                      # tests
 ```
 
-Or from the repo root: `make backend`, `make test-backend`.
+Or from the repo root: `make backend`, `make typecheck`, `make test-backend`.
 
 ## Layout
 

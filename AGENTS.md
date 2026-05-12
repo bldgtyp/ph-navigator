@@ -71,7 +71,8 @@ Start here in `context/`:
 
 - `make setup`, `make sync`, `make dev`
 - `make backend`, `make frontend`
-- `make test`, `make lint`, `make format`, `make migrate`, `make smoke`
+- `make test`, `make typecheck`, `make lint`, `make format`,
+  `make migrate`, `make smoke`
 - `make e2e` — Playwright end-to-end
 - `make help` for the full list
 

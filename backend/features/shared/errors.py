@@ -56,7 +56,10 @@ def error_response(
     return JSONResponse(status_code=status_code, content=envelope.model_dump())
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, HTTPException):
+        raise exc
+
     detail = exc.detail
     if isinstance(detail, dict):
         error_code = str(detail.get("error_code", "http_error"))
@@ -78,7 +81,10 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     )
 
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, RequestValidationError):
+        raise exc
+
     return error_response(
         request=request,
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

@@ -37,6 +37,8 @@ jobs:
         run: uv sync --locked
       - name: Ruff
         run: uv run ruff check .
+      - name: Ty
+        run: uv run ty check
       - name: Migrate
         run: uv run alembic upgrade head
       - name: Pytest

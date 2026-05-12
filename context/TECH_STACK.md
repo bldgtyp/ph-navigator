@@ -45,7 +45,7 @@ Use a boring, explicit stack:
 | Client/UI state | Zustand |
 | 3D viewer | three + React Three Fiber + drei + react-three/postprocessing |
 | Object storage | Cloudflare R2 |
-| Testing | pytest, Vitest, Playwright |
+| Quality gates | Ty + Ruff for backend static checks; pytest, Vitest, Playwright for tests |
 | MCP auth | Project-scoped bearer tokens stored hashed in `mcp_tokens` |
 
 ## Backend Decision

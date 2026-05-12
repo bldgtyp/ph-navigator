@@ -92,6 +92,7 @@ def test_single_active_session_invalidates_previous_session(clean_auth_tables: N
 
     with connection() as conn:
         row = conn.execute("SELECT count(*) AS n FROM sessions WHERE invalidated_at IS NULL").fetchone()
+    assert row is not None
     assert row["n"] == 1
 
 
@@ -113,6 +114,7 @@ def test_parallel_login_attempts_do_not_escape_single_active_session(clean_auth_
     assert statuses == [200, 200]
     with connection() as conn:
         row = conn.execute("SELECT count(*) AS n FROM sessions WHERE invalidated_at IS NULL").fetchone()
+    assert row is not None
     assert row["n"] == 1
 
 
@@ -135,6 +137,7 @@ def test_expired_session_is_invalidated(clean_auth_tables: None) -> None:
 
     with connection() as conn:
         row = conn.execute("SELECT invalidation_reason FROM sessions WHERE invalidated_at IS NOT NULL").fetchone()
+    assert row is not None
     assert row["invalidation_reason"] == "expired"
 
 

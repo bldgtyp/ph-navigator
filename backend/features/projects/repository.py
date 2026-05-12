@@ -97,6 +97,8 @@ def insert_project_with_initial_version(
             "owner_id": owner_id,
         },
     ).fetchone()
+    if project is None:
+        raise RuntimeError("Project insert did not return a row.")
 
     version = conn.execute(
         """
@@ -118,8 +120,10 @@ def insert_project_with_initial_version(
             "user_id": owner_id,
         },
     ).fetchone()
+    if version is None:
+        raise RuntimeError("Initial project version insert did not return a row.")
 
-    return conn.execute(
+    updated_project = conn.execute(
         """
         UPDATE projects
         SET active_version_id = %(active_version_id)s,
@@ -132,3 +136,6 @@ def insert_project_with_initial_version(
         """,
         {"project_id": project["id"], "active_version_id": version["id"]},
     ).fetchone()
+    if updated_project is None:
+        raise RuntimeError("Project active-version update did not return a row.")
+    return updated_project
