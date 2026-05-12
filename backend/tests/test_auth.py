@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -209,3 +210,35 @@ def test_seed_user_refuses_non_local_environments(monkeypatch: pytest.MonkeyPatc
 
     with pytest.raises(SystemExit, match="Refusing to seed/reset"):
         seed_user.main()
+
+
+def test_seed_user_allows_staging_with_explicit_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: dict[str, str] = {}
+
+    def fake_create_or_update_user(email: str, display_name: str, password: str) -> object:
+        calls.update({"email": email, "display_name": display_name, "password": password})
+        return SimpleNamespace(email=email, id="user-id")
+
+    monkeypatch.setattr(settings, "environment", "staging")
+    monkeypatch.setattr(seed_user, "create_or_update_user", fake_create_or_update_user)
+    monkeypatch.setattr(seed_user.getpass, "getpass", lambda _: "prompted-password")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "seed_user",
+            "--email",
+            "ed@example.com",
+            "--display-name",
+            "Ed May",
+            "--allow-staging",
+        ],
+    )
+
+    seed_user.main()
+
+    assert calls == {
+        "email": "ed@example.com",
+        "display_name": "Ed May",
+        "password": "prompted-password",
+    }

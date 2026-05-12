@@ -1,4 +1,4 @@
-"""Create or reset an editor account for local development."""
+"""Create or reset an editor account for local/staging setup."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from config import settings
 from features.auth.service import create_or_update_user
 
 LOCAL_ENVIRONMENTS = {"development", "test", "local"}
+STAGING_ENVIRONMENT = "staging"
 
 
 def main() -> None:
@@ -16,11 +17,19 @@ def main() -> None:
     parser.add_argument("--email", required=True)
     parser.add_argument("--display-name", required=True)
     parser.add_argument("--password")
+    parser.add_argument(
+        "--allow-staging",
+        action="store_true",
+        help="Allow the command to run when ENVIRONMENT=staging. Production is always refused.",
+    )
     args = parser.parse_args()
 
-    if settings.environment not in LOCAL_ENVIRONMENTS:
+    can_seed = settings.environment in LOCAL_ENVIRONMENTS or (
+        settings.environment == STAGING_ENVIRONMENT and args.allow_staging
+    )
+    if not can_seed:
         raise SystemExit(
-            "Refusing to seed/reset an editor user outside local environments. "
+            "Refusing to seed/reset an editor user outside local environments without explicit staging approval. "
             f"Current ENVIRONMENT={settings.environment!r}."
         )
 
