@@ -17,6 +17,8 @@
 ## Database
 
 - `docker compose up -d db` from repo root
+- Local V2 Postgres publishes host `localhost:5433` to container `5432`
+  so V1 can keep using host `5432`.
 - `cd backend && uv run alembic upgrade head` to apply migrations
 
 ## Env files
@@ -32,6 +34,7 @@
 - `make backend`, `make frontend`
 - `make test`, `make lint`, `make format`, `make migrate`, `make smoke`
 - `make e2e` — Playwright end-to-end (frontend must be running)
+- `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).
 
 ## Browser testing (Playwright MCP)

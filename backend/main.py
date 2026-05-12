@@ -1,20 +1,20 @@
-"""PH-Navigator V2 FastAPI entrypoint — scaffold only.
+"""PH-Navigator V2 FastAPI entrypoint.
 
-The real route surface lands during feature work. This stub exists so
-`make backend` and `make smoke` succeed against a fresh clone and so
-Playwright MCP has a target to hit while the env is being verified.
+Feature routes are added incrementally by tracer-bullet slice.
 """
+
 from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
+from features.system.routes import router as system_router
 
 app = FastAPI(
     title="PH-Navigator V2",
-    version="0.1.0-scaffold",
-    description="Scaffold — feature routes added during V2 build.",
+    version=settings.app_version,
+    description="PH-Navigator V2 API.",
 )
 
 app.add_middleware(
@@ -26,6 +26,13 @@ app.add_middleware(
 )
 
 
+app.include_router(system_router)
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "ph-navigator-v2", "phase": "scaffold"}
+    """Backward-compatible scaffold health route.
+
+    New clients should use `/api/v1/health`.
+    """
+    return {"status": "ok", "service": "ph-navigator-v2", "phase": "tb-00"}

@@ -4,6 +4,7 @@ Every config value is a field here; no `os.getenv` calls anywhere
 else in the codebase. Reads from `backend/.env` in local dev and
 from process env in production (env vars win on conflict).
 """
+
 from __future__ import annotations
 
 from pydantic import Field
@@ -19,13 +20,14 @@ class Settings(BaseSettings):
     )
 
     # Auth
+    app_version: str = "0.1.0"
+    environment: str = "development"
+    git_sha: str = ""
     session_secret_key: str = Field(default="dev-insecure-change-me")
     session_lifetime_minutes: int = 60
 
     # Database
-    database_url: str = Field(
-        default="postgresql://phn:phn_local_only@localhost:5432/ph_navigator_v2"
-    )
+    database_url: str = Field(default="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2")
 
     # Object storage (R2)
     r2_account_id: str = ""

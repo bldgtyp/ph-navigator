@@ -1,34 +1,108 @@
-/**
- * App entrypoint — scaffold only.
- *
- * Real routes (sign-in, dashboard, project view, catalog, model viewer)
- * land during feature work. This placeholder exists so `make frontend`
- * serves something and Playwright MCP has a target to drive.
- */
+import { useCallback, useEffect, useState } from "react";
+import "./App.css";
+import { apiUrl, fetchServiceStatus, type ServiceStatus } from "./api";
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "ready"; data: ServiceStatus }
+  | { status: "error"; message: string };
+
 export function App() {
-  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+  const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
+
+  const loadStatus = useCallback((signal: AbortSignal) => {
+    setLoadState({ status: "loading" });
+    void fetchServiceStatus(signal)
+      .then((data) => {
+        setLoadState({ status: "ready", data });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        const message = error instanceof Error ? error.message : "Unknown backend error";
+        setLoadState({ status: "error", message });
+      });
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadStatus(controller.signal);
+    return () => controller.abort();
+  }, [loadStatus]);
+
+  const handleRefresh = () => {
+    const controller = new AbortController();
+    loadStatus(controller.signal);
+  };
 
   return (
-    <main
-      style={{
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        padding: "2rem",
-        maxWidth: "44rem",
-        margin: "0 auto",
-        lineHeight: 1.5,
-      }}
-    >
-      <h1>PH-Navigator V2</h1>
-      <p>
-        Scaffold. The real app is built incrementally per <code>docs/plans/user-stories.md</code>.
-      </p>
-      <p>
-        Backend health check:{" "}
-        <a href={`${apiBase}/api/health`} rel="noreferrer">
-          {apiBase}/api/health
-        </a>
-      </p>
+    <main className="app-shell">
+      <section className="status-page" aria-labelledby="page-title">
+        <header className="status-header">
+          <p className="eyebrow">TB-00 boot tracer</p>
+          <h1 id="page-title">PH-Navigator V2</h1>
+        </header>
+
+        <div className="status-grid">
+          <section className="status-panel" aria-live="polite">
+            <h2>Backend service</h2>
+            {loadState.status === "loading" ? <p>Checking backend status...</p> : null}
+            {loadState.status === "error" ? (
+              <div className="status-error" role="alert">
+                <strong>Backend unavailable</strong>
+                <span>{loadState.message}</span>
+              </div>
+            ) : null}
+            {loadState.status === "ready" ? (
+              <dl className="status-list">
+                <div className="status-row">
+                  <dt>Status</dt>
+                  <dd>
+                    <span className="status-badge">{loadState.data.health.status}</span>
+                  </dd>
+                </div>
+                <div className="status-row">
+                  <dt>Service</dt>
+                  <dd>{loadState.data.health.service}</dd>
+                </div>
+                <div className="status-row">
+                  <dt>Phase</dt>
+                  <dd>{loadState.data.health.phase}</dd>
+                </div>
+                <div className="status-row">
+                  <dt>API</dt>
+                  <dd>{loadState.data.version.api_version}</dd>
+                </div>
+                <div className="status-row">
+                  <dt>App version</dt>
+                  <dd>{loadState.data.version.app_version}</dd>
+                </div>
+                <div className="status-row">
+                  <dt>Environment</dt>
+                  <dd>{loadState.data.version.environment}</dd>
+                </div>
+              </dl>
+            ) : null}
+
+            <div className="status-actions">
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={loadState.status === "loading"}
+              >
+                Refresh
+              </button>
+              <a className="status-link" href={apiUrl("/api/v1/health")} rel="noreferrer">
+                Open health JSON
+              </a>
+            </div>
+          </section>
+
+          <aside className="status-panel">
+            <h2>Next slice</h2>
+            <p>TB-01 adds editor sign-in and the empty dashboard shell.</p>
+          </aside>
+        </div>
+      </section>
     </main>
   );
 }

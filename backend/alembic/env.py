@@ -7,6 +7,7 @@ PHN-V2 app code uses raw psycopg SQL, not SQLAlchemy ORM models.
 Alembic still uses SQLAlchemy internally to run migrations. There is no
 declarative metadata target and no autogenerate from ORM models.
 """
+
 from __future__ import annotations
 
 from logging.config import fileConfig

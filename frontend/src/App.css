@@ -1,0 +1,167 @@
+.app-shell {
+  min-height: 100vh;
+  background: #f6f4ee;
+  color: #201f1c;
+  font-family:
+    Outfit,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.status-page {
+  width: min(960px, calc(100vw - 40px));
+  margin: 0 auto;
+  padding: 56px 0;
+}
+
+.status-header {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #59564d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 16px;
+  align-items: start;
+}
+
+.status-panel {
+  border: 1px solid #d5d0c2;
+  border-radius: 8px;
+  background: #fffdfa;
+  padding: 20px;
+}
+
+.status-panel h2 {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.status-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 16px;
+}
+
+.status-row dt {
+  color: #68645b;
+  font-size: 0.875rem;
+}
+
+.status-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: #e7f3df;
+  color: #234719;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.status-badge::before {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.status-error {
+  border-color: #d8a09a;
+  border-radius: 6px;
+  background: #fff4f2;
+  padding: 12px;
+}
+
+.status-error strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+button,
+.status-link {
+  min-height: 38px;
+  border: 1px solid #201f1c;
+  border-radius: 6px;
+  background: #201f1c;
+  color: #fffdfa;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.status-link {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: #201f1c;
+}
+
+@media (max-width: 720px) {
+  .status-page {
+    width: min(100% - 28px, 960px);
+    padding: 32px 0;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

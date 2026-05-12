@@ -1,8 +1,5 @@
-"""Smoke test — the scaffold must answer /api/health.
+"""System-route contract tests for the TB-00 boot tracer."""
 
-Real test coverage lands during feature work. This test confirms the
-FastAPI app is wireable from a fresh clone after `make setup`.
-"""
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -12,8 +9,21 @@ from main import app
 
 def test_health_returns_ok() -> None:
     client = TestClient(app)
-    response = client.get("/api/health")
+    response = client.get("/api/v1/health")
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["service"] == "ph-navigator-v2"
+    assert payload["phase"] == "tb-00"
+    assert payload["api_version"] == "v1"
+
+
+def test_version_returns_version_metadata() -> None:
+    client = TestClient(app)
+    response = client.get("/api/v1/version")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["service"] == "ph-navigator-v2"
+    assert payload["app_version"] == "0.1.0"
+    assert payload["api_version"] == "v1"
+    assert payload["environment"] == "development"

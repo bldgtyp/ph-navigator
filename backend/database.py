@@ -5,6 +5,7 @@ own validation and typed app boundaries; there is no SQLAlchemy ORM layer.
 Alembic still uses SQLAlchemy internally for migrations, but app code
 should get database access through this module.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -53,3 +54,10 @@ def close_pool() -> None:
     if _pool is not None:
         _pool.close()
         _pool = None
+
+
+def check_connection() -> bool:
+    """Return True when the configured database accepts a simple query."""
+    with connection() as conn:
+        row = conn.execute("SELECT 1 AS ok").fetchone()
+    return bool(row and row["ok"] == 1)

@@ -66,7 +66,7 @@ Resolve these at the named slice, not all up front:
 
 | Decision | Needed by | Current lean |
 |---|---|---|
-| Repo split: one repo or two | TB-00 | Confirm before scaffold starts |
+| Repo split: one repo or two | TB-00 | One repo for MVP scaffold: `backend/` + `frontend/` in this checkout |
 | Generated OpenAPI/TS client in CI from day 1 | TB-02 or TB-04 | Lean yes, keep client thin |
 | V2 staging URL | TB-02 | Render staging from TB-02; custom domain post-MVP |
 | `ProjectDocumentV1` schema evolution policy | TB-04 | Saved/locked versions immutable; drafts may up-migrate on schema bump; `schema_version` is the explicit signal |
@@ -83,8 +83,8 @@ Resolve these at the named slice, not all up front:
 
 | Field | Plan |
 |---|---|
-| Type | HITL for repo-split confirmation; otherwise AFK |
-| Status | [ ] Not started |
+| Type | AFK; repo-split resolved as one repo for MVP scaffold |
+| Status | [x] Complete |
 | Goal | Backend, DB, and frontend boot; the browser can display backend health/version. |
 | Includes | Minimal repo scaffold; Docker Postgres path; backend settings; Alembic baseline; `/api/v1/health` and `/api/v1/version`; frontend route that reads and displays service status; initial Make recipes for setup/dev/smoke; CI workflow (GitHub Actions) running lint + tests + build on push and PR, no deploy yet. |
 | Tests | Backend health/version contract; DB connectivity smoke; frontend service-status fetch only if state is non-trivial. |
@@ -335,7 +335,7 @@ Resolve these at the named slice, not all up front:
 
 | Slice | Status | Last updated | Verification evidence |
 |---|---|---|---|
-| TB-00 | Not started | 2026-05-12 | - |
+| TB-00 | Complete | 2026-05-12 11:58 EDT | `make smoke`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed with live `/api/v1` health/version and no console warnings/errors. |
 | TB-01 | Not started | 2026-05-12 | - |
 | TB-02 | Not started | 2026-05-12 | - |
 | TB-03 | Not started | 2026-05-12 | - |
@@ -378,4 +378,14 @@ Follow-up:
 
 ### TB-00
 
-- Pending.
+```text
+Slice: TB-00
+Date: 2026-05-12
+What changed: Added versioned `/api/v1/health` and `/api/v1/version`, frontend live service-status screen, backend DB connectivity script, Alembic baseline revision, CI workflow, and a committed npm lockfile for CI.
+Why: TB-00 needs a real backend/frontend tracer before auth and project shells land.
+What we tried: Backend lint/tests, frontend lint/unit/build, local dev servers, in-app Browser verification, `uv run alembic upgrade head`, `make smoke`, and CLI Playwright E2E.
+What did not work: Initial local Docker daemon was not running, so Postgres-dependent Alembic and `make smoke` failed. After Docker started, V1's `ph-navigator-postgres` already occupied host port 5432. CLI Playwright initially could not launch because its Chromium binary was not installed locally, then exposed an ambiguous `getByText("tb-00")` locator. Local `npm install` warned that Node 20.18.0 is below one dependency's preferred `20.19+`/`22.13+` engine floor.
+What worked: Keep V2 on a separate Postgres 16 container and volume, published on host port 5433 (`phn-v2-postgres`, `5433->5432`), while V1 keeps `ph-navigator-postgres` on host port 5432. Backend route contracts passed, DB smoke passed, Alembic baseline applied, frontend service-status fetch passed, production build passed, CLI Playwright E2E passed after exact locator fix, and the in-app Browser verified the rendered status page against live backend data with no console warnings/errors.
+Verification: `make smoke`; `make migrate`; `docker ps` showed `phn-v2-postgres` on `5433->5432` and `ph-navigator-postgres` on `5432->5432`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser at `http://127.0.0.1:5173/` showed `ok`, `ph-navigator-v2`, `tb-00`, `v1`, and `0.1.0`; Refresh re-fetched successfully.
+Follow-up: Real staging/production Postgres credentials are deferred to TB-02 deploy setup. TB-01 should only add local seed-user credentials and auth/session secrets needed for sign-in development.
+```

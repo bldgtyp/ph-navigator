@@ -6,7 +6,7 @@
 
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
         migrate makemigration test test-backend test-frontend \
-        lint format smoke e2e clean
+        lint format smoke e2e e2e-report clean
 
 help: ## Show available recipes
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / \
@@ -72,6 +72,9 @@ test-frontend:
 e2e: ## Run Playwright end-to-end tests (frontend must be running)
 	cd frontend && npm run test:e2e
 
+e2e-report: ## Open the last Playwright HTML report
+	cd frontend && npm exec -- playwright show-report
+
 lint: ## Run linters (ruff + eslint)
 	cd backend && uvx ruff check .
 	cd frontend && npm run lint
@@ -82,8 +85,9 @@ format: ## Auto-format code
 
 # ─────────────── misc ───────────────
 
-smoke: ## Verify the box is wired up (run after `make setup`)
+smoke: db-up ## Verify the box is wired up (run after `make setup`)
 	cd backend && uv run python -c "import fastapi, psycopg, pydantic; print('backend ok')"
+	cd backend && uv run python -m scripts.check_db
 	cd frontend && node -e "console.log('frontend ok')"
 	docker compose ps db
 
