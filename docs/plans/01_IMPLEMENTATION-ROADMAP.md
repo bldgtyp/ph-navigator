@@ -71,7 +71,7 @@ Resolve these at the named slice, not all up front:
 |---|---|---|
 | Repo split: one repo or two | TB-00 | One repo for MVP scaffold: `backend/` + `frontend/` in this checkout |
 | Generated OpenAPI/TS client in CI from day 1 | TB-02 or TB-04 | Lean yes, keep client thin |
-| V2 staging URL | TB-02 | Render staging from TB-02; custom domain post-MVP |
+| V2 staging URL | TB-02 | Render staging is live: frontend `https://ph-navigator-v2-staging.onrender.com`, API `https://ph-navigator-v2.onrender.com`; custom domain post-MVP |
 | `ProjectDocumentV1` schema evolution policy | TB-04 | Saved/locked versions immutable; drafts may up-migrate on schema bump; `schema_version` is the explicit signal |
 | MCP transport | TB-04b | Both stdio and HTTP/SSE |
 | Project version name uniqueness | TB-05 | Enforce unique per project |

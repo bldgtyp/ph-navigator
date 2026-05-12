@@ -42,12 +42,62 @@
   subdomains, must set `SESSION_COOKIE_SAMESITE=none` with HTTPS so the
   browser stores the API session cookie.
 
+## Render staging
+
+Current staging runs inside the existing Render `PH-Navigator` project
+under the `Staging` environment.
+
+- Static frontend service: `ph-navigator-v2-staging`
+  - URL: `https://ph-navigator-v2-staging.onrender.com`
+  - Root directory: `frontend`
+  - Build command: `npm ci && npm run build`
+  - Publish directory: `dist`
+  - Rewrite rule: `/*` -> `/index.html` with action `Rewrite`
+  - Env: `VITE_API_BASE_URL=https://ph-navigator-v2.onrender.com`
+- Backend web service: `ph-navigator-v2-api-staging`
+  - URL: `https://ph-navigator-v2.onrender.com`
+  - Root directory: `backend`
+  - Build command: `pip install uv && uv sync --frozen --no-dev`
+  - Start command:
+    `uv run alembic upgrade head && uv run uvicorn main:app --host 0.0.0.0 --port $PORT`
+  - Env:
+    - `ENVIRONMENT=staging`
+    - `APP_VERSION=0.1.0`
+    - `DATABASE_URL=<Render internal database URL>`
+    - `CORS_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
+    - `SESSION_COOKIE_NAME=phn_session`
+    - `SESSION_LIFETIME_MINUTES=60`
+    - `SESSION_COOKIE_SAMESITE=none`
+    - `FERNET_SECRET_KEY=<generated Fernet key>`
+- Postgres service: `ph-navigator-v2-staging-db`
+  - Database: `ph_navigator_v2`
+  - Runtime: PostgreSQL 16
+  - Region: Ohio (US East)
+  - Free instance expires on 2026-06-11 unless upgraded.
+
+Do not copy Render database credentials into `backend/.env` for normal
+local development. Local dev should keep using Docker Postgres. For a
+one-time staging seed/reset from a local shell, temporarily export the
+Render external database URL and staging environment:
+
+```bash
+cd backend
+export DATABASE_URL='<Render External Database URL>'
+export ENVIRONMENT=staging
+uv run python -m scripts.seed_user --email ed@example.com --display-name "Ed May" --allow-staging
+unset DATABASE_URL ENVIRONMENT
+```
+
+Let the seed script prompt for the password. If a temporary staging app
+password was shared in chat or another durable channel, rotate it.
+
 ## Local auth seed
 
 - `make seed-dev-user` creates/resets local editor
   `ed@example.com` / `password` with display name `Ed May`.
 - The seed script refuses to run outside local environments
-  (`development`, `test`, `local`).
+  (`development`, `test`, `local`) unless `--allow-staging` is used
+  with `ENVIRONMENT=staging`.
 - Backend auth tests truncate auth tables. Run `make seed-dev-user`
   after backend tests and before browser/E2E sign-in checks.
 
