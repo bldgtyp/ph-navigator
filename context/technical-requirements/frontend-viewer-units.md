@@ -1,7 +1,9 @@
 ---
 DATE: 2026-05-12
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from context/PRD.md to keep startup context small.
-RELATED: context/PRD.md §11, context/UI_UX.md, context/DATA_TABLE.md, context/user-stories/40-model-viewer.md
+RELATED: context/PRD.md §11, context/UI_UX.md,
+         context/technical-requirements/data-table.md,
+         context/user-stories/40-model-viewer.md
 ---
 
 # PH-Navigator V2 — Frontend / Viewer / Units Requirements
@@ -86,6 +88,9 @@ POC's `phase_5` shadcn-table component (toolbar with sort/filter/group,
 multi-select, copy) is the right base. Per-table columns are declared
 in TS (not user-configurable) — schema flexibility lives in code, not
 runtime.
+
+Detailed table contract lives in
+`context/technical-requirements/data-table.md`.
 
 ### 11.4 3D viewer — React Three Fiber
 

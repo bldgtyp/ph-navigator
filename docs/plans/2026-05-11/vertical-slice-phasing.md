@@ -7,7 +7,8 @@ AUTHOR: Ed May (with Codex)
 SCOPE: MVP implementation sequencing for PH-Navigator V2. Use this as
        the execution-level companion to `context/USER_STORIES.md`.
 RELATED: context/USER_STORIES.md, context/user-stories/,
-         context/PRD.md, context/UI_UX.md, context/DATA_TABLE.md
+         context/PRD.md, context/UI_UX.md,
+         context/technical-requirements/data-table.md
 ---
 
 # PH-Navigator V2 — Vertical-Slice Phasing

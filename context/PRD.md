@@ -16,9 +16,10 @@ RELATED: context/TECHNICAL_REQUIREMENTS.md,
          context/technical-requirements/api.md,
          context/technical-requirements/llm-mcp-schema.md,
          context/technical-requirements/frontend-viewer-units.md,
+         context/technical-requirements/data-table.md,
          context/technical-requirements/stack-auth-migration.md,
          context/TECH_STACK.md, context/UI_UX.md, context/USER_STORIES.md,
-         context/DATA_TABLE.md, context/GLOSSARY.md,
+         context/GLOSSARY.md,
          docs/REMOVED.md (archived predecessor / removed-doc routing),
          research/poc-plans/2026-05-06-native-catalog-manager.md
          (catalog manager PRD — substantially reshaped by the bookshelf
@@ -583,7 +584,7 @@ Document body, server-side draft, and in-memory document rules live in
 
 Table display posture lives in
 `context/technical-requirements/frontend-viewer-units.md` §11.3 and
-`context/DATA_TABLE.md`.
+`context/technical-requirements/data-table.md`.
 
 ### 11.4 3D viewer — React Three Fiber
 

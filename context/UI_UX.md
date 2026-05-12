@@ -186,7 +186,7 @@ flexibility lives in code, not runtime").
 The interaction model below is the user-facing contract — what the
 table feels like to use. The full component contract, library
 choices, write pipeline, and lessons-learned live in
-`context/DATA_TABLE.md`. This subsection is
+`context/technical-requirements/data-table.md`. This subsection is
 the UI/UX-level summary that other pages reference.
 
 **Density and chrome.** 32 px row height, 1 px dividers, hover
@@ -239,9 +239,9 @@ mismatch. ⌘D fills down, ⌘R fills right. Pattern detection (1, 2, 3
 **Undo / redo.** ⌘Z and ⌘⇧Z revert / replay user actions. Undo
 operates per **gesture** — one ⌘Z reverts an entire paste, fill, or
 row-insert, not one cell at a time. POC bound: 8 entries, in-memory.
-Production conflict semantics (what happens when undo collides with
-a remote edit, with a refetch, or with a version switch) are open
-(see `context/DATA_TABLE.md` §11.2).
+Production undo is local-only; version switches, refetches, ETag
+mismatches, Save / Save As / Discard, and MCP/other-tab draft changes
+clear the undo stack (see `context/technical-requirements/data-table.md`).
 
 **Sort, filter, group, hide — toolbar-owned.** A toolbar above the
 table holds five buttons:
@@ -311,7 +311,8 @@ post-extraction lane.
 **Out of scope for v1.** Linked-record / relation cells; per-user
 non-contiguous selection; OR mode in filter; fill-handle pattern
 detection; comments / @mentions / presence cursors; mobile / phone
-optimization; dark-mode tint palette. See `context/DATA_TABLE.md` §9.4.
+optimization; dark-mode tint palette. See
+`context/technical-requirements/data-table.md`.
 
 ---
 
@@ -421,8 +422,8 @@ appears at all.
 
 The dashboard's "Catalogs ▾" dropdown navigates to one of these pages.
 The page renders a single `<DataTable>` (see §1.7 and
-`context/DATA_TABLE.md`) over the catalog rows, framed by chrome that's
-specific to catalogs:
+`context/technical-requirements/data-table.md`) over the catalog rows,
+framed by chrome that's specific to catalogs:
 
 - Page header with the catalog's display name, the active version
   (read-only banner if viewing a historical version), a version

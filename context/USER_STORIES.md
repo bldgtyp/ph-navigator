@@ -3,7 +3,8 @@ DATE: 2026-05-11
 STATUS: Routing document. Canonical story bodies live in context/user-stories/.
 AUTHOR: Ed May (with Claude)
 SCOPE: User-story map, vertical-slice phasing, and pointers to split story files.
-RELATED: context/PRD.md, context/UI_UX.md, context/DATA_TABLE.md
+RELATED: context/PRD.md, context/UI_UX.md,
+         context/technical-requirements/data-table.md
 ---
 
 # PH-Navigator V2 — User Stories
@@ -37,8 +38,8 @@ through end-to-end.
 |---|---|---|---|
 | 0. Scaffold + environment | Repo boots consistently: backend, frontend, DB, migrations, health/version, structured errors/logging, seed user/project. | `00-foundation-shell.md`, `50-settings-ops-llm.md`, `context/ENVIRONMENT.md`, `context/TECH_STACK.md` | `make setup`, `make smoke`, sign in as seed user, see empty dashboard. |
 | 1. Project shell + Status | Create/open a project, land on Status, edit project metadata/status rows, exercise public read-only shell. | `00-foundation-shell.md`, `context/UI_UX.md` | Create project -> `/projects/{id}/status`; apply default Status template; open same URL as Viewer. |
-| 2. First document-edit slice | Implement `ProjectDocumentV1`, draft buffer, ETags, Save/Save As/Discard/Lock, JSON downloads, and one editable table (Rooms) using the shared DataTable path. | `30-tables-equipment.md`, `00-foundation-shell.md`, `context/DATA_TABLE.md`, `context/PRD.md` §8-10 | Add/edit Rooms, reload with draft restore, Save, Save As, lock, public read, project/table JSON download. |
-| 3. Catalog + Windows slice | Prove bookshelf catalog pick + project-document copy with Window Types, frame/glazing pick, basic grid/canvas, and refresh-from-catalog. | `10-windows.md`, `00-foundation-shell.md`, `context/DATA_TABLE.md` | Add catalog frame/glazing in one tab; pick into a Window Type in another; save and reload. |
+| 2. First document-edit slice | Implement `ProjectDocumentV1`, draft buffer, ETags, Save/Save As/Discard/Lock, JSON downloads, and one editable table (Rooms) using the shared DataTable path. | `30-tables-equipment.md`, `00-foundation-shell.md`, `context/technical-requirements/data-table.md`, `context/PRD.md` §8-10 | Add/edit Rooms, reload with draft restore, Save, Save As, lock, public read, project/table JSON download. |
+| 3. Catalog + Windows slice | Prove bookshelf catalog pick + project-document copy with Window Types, frame/glazing pick, basic grid/canvas, and refresh-from-catalog. | `10-windows.md`, `00-foundation-shell.md`, `context/technical-requirements/data-table.md` | Add catalog frame/glazing in one tab; pick into a Window Type in another; save and reload. |
 | 4. Envelope + assets slice | Implement Assemblies, Project Materials, Specifications, datasheet/photo asset attach, effective R/U display, and envelope export. | `20-envelope.md`, `50-settings-ops-llm.md` | Build one wall assembly, pick material, attach datasheet/photo, verify Viewer read-only cards, download construction JSON/HBJSON export. |
 | 5. Model viewer slice | Upload HBJSON, parse/model-data endpoint, render R3F Model tab, file picker, color/viz/tool basics. | `40-model-viewer.md`, `50-settings-ops-llm.md` | Upload two HBJSONs, switch active file, see nonblank interactive 3D scene, use basic select/measure/color-by. |
 | 6. MCP + mechanical completion | Harden MCP read/write, asset ingestion, ERV/Fans tables, placeholders for pumps/TB, concurrency edge cases, audit trail. | `30-tables-equipment.md`, `50-settings-ops-llm.md`, `00-foundation-shell.md` | Claude/MCP uploads a datasheet and attaches it; browser shows MCP edit lease; ERV/Fan rows save and reload. |
@@ -48,7 +49,8 @@ through end-to-end.
 
 - Start with this file plus `context/README.md` for orientation.
 - Load only the story file for the active phase, plus any referenced
-  shared docs (`PRD`, `UI_UX`, `DATA_TABLE`, `TECH_STACK`).
+  shared docs (`PRD`, `UI_UX`,
+  `technical-requirements/data-table.md`, `TECH_STACK`).
 - Use `90-open-questions.md` when resolving questions; do not let
   resolved historical Q rows drive implementation against newer story
   text.

@@ -36,6 +36,23 @@ PRD so the save model is not split across peer documents.
 
 Current source of truth: `context/PRD.md` §§8.3-8.6 and §9.5.
 
+### `context/DATA_TABLE.md`
+
+Removed from active top-level context 2026-05-12.
+
+Reason: the file was mostly a consolidated catalog-POC/table-view
+record. Current table requirements now belong in the technical
+requirements layer, while user-facing interaction details and story
+acceptance criteria belong in the UI/UX and user-story docs.
+
+Current source of truth:
+`context/technical-requirements/data-table.md`,
+`context/UI_UX.md` §1.7, and
+`context/user-stories/30-tables-equipment.md`.
+
+Historical sources remain under `research/poc-plans/` and
+`research/poc-sandbox/`.
+
 ## Relocated Stable Docs
 
 These are still active, but moved out of `docs/plans/` and into
@@ -45,7 +62,7 @@ These are still active, but moved out of `docs/plans/` and into
 |---|---|
 | `docs/plans/architecture-prd.md` | `context/PRD.md` |
 | `docs/plans/tech-stack.md` | `context/TECH_STACK.md` |
-| `docs/plans/table-view.md` | `context/DATA_TABLE.md` |
+| `docs/plans/table-view.md` | Removed 2026-05-12; current contract in `context/technical-requirements/data-table.md` |
 | `docs/plans/ui-ux.md` | `context/UI_UX.md` |
 | `docs/plans/user-stories.md` | `context/USER_STORIES.md` |
 | `context/UBIQUITOUS_LANGUAGE.md` | `context/GLOSSARY.md` |

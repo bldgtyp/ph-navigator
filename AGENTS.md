@@ -31,8 +31,9 @@ Start here in `context/`:
   `GLOSSARY.md`
 - Load `USER_STORIES.md` on demand as the story/phasing router, then
   load only the relevant `context/user-stories/*.md` file for the
-  active phase or feature cluster. Load `UI_UX.md` and `DATA_TABLE.md`
-  on demand when the task touches UX or table behavior.
+  active phase or feature cluster. Load `UI_UX.md` on demand when the
+  task touches UX, and `context/technical-requirements/data-table.md`
+  on demand when the task touches table behavior.
 
 ## Python — ALWAYS use `uv`
 

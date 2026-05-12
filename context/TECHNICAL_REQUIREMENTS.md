@@ -2,7 +2,7 @@
 DATE: 2026-05-12
 STATUS: CANONICAL ROUTER — technical requirements split out of context/PRD.md.
 RELATED: context/PRD.md, context/TECH_STACK.md, context/UI_UX.md,
-         context/DATA_TABLE.md, context/USER_STORIES.md
+         context/USER_STORIES.md
 ---
 
 # PH-Navigator V2 — Technical Requirements Router
@@ -31,6 +31,9 @@ load only the file that matches the active implementation surface.
 - `technical-requirements/frontend-viewer-units.md` — app surfaces,
   editor state, table display posture, R3F HBJSON viewer, and SI/IP unit
   conversion rules.
+- `technical-requirements/data-table.md` — shared `<DataTable>`
+  implementation contract: field registry, clipboard, write pipeline,
+  view state, accessibility, and deferred table features.
 - `technical-requirements/stack-auth-migration.md` — stack/deployment,
   raw-SQL persistence pattern, repo layout, auth/session baseline, and V1
   migration plan.

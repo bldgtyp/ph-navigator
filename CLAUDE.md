@@ -30,7 +30,9 @@ Start here in `context/`:
 - `GLOSSARY.md` — canonical product/domain vocabulary
 - `USER_STORIES.md` — story/phasing router; load the relevant
   `context/user-stories/*.md` file on demand
-- `UI_UX.md`, `DATA_TABLE.md` — load on demand for UX/table work
+- `UI_UX.md` — load on demand for UX work
+- `technical-requirements/data-table.md` — load on demand for table
+  behavior and `<DataTable>` implementation work
 
 ## Python — ALWAYS use `uv`
 

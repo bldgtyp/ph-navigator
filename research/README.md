@@ -20,10 +20,10 @@ working copy so V2 can be developed without reaching across repos.
 
 - **Precedent.** Read `poc-sandbox/SandboxTanStack.tsx` and the phase
   helpers when designing the real `<DataTable>` (see
-  `context/DATA_TABLE.md`). The lessons file
+  `context/technical-requirements/data-table.md`). The lessons file
   (`poc-plans/poc-lessons-for-real-build.md`) is the canonical list
-  of 25 design rules; `context/DATA_TABLE.md` §3 already cross-refs
-  them.
+  of 25 design rules and is summarized in the current data-table
+  requirements file.
 - **Test scaffolding.** `poc-tests/sandboxPhase{3,4,5}.test.ts` show
   the level of unit coverage that landed for paste, fill, undo, view
   state. New `<DataTable>` extraction should at minimum preserve the
@@ -41,4 +41,6 @@ working copy so V2 can be developed without reaching across repos.
 
 ## Original V1 locations (for archeological lookup)
 
-See the per-file `V1 origin` column in `context/DATA_TABLE.md` §13.
+Use the table-view POC files in this folder and `git log` for the
+removed top-level `context/DATA_TABLE.md` if deeper archaeology is
+needed.

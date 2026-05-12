@@ -189,7 +189,6 @@ context/
 ├── TECHNICAL_REQUIREMENTS.md       router for detailed contracts
 ├── technical-requirements/         on-demand technical contracts
 ├── TECH_STACK.md                   stack and persistence decisions
-├── DATA_TABLE.md                   shared <DataTable> component contract
 ├── UI_UX.md                        UI narrative companion
 ├── USER_STORIES.md                 story routing + vertical-slice phasing map
 ├── user-stories/                   split canonical story bodies

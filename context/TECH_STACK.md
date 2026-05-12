@@ -10,7 +10,8 @@ Record current technical-stack and code-style decisions for PH-Navigator V2, bas
 - `context/PRD.md`
 - `context/TECHNICAL_REQUIREMENTS.md`
 - `context/USER_STORIES.md`
-- `context/DATA_TABLE.md` (catalog-POC outcome)
+- `context/technical-requirements/data-table.md` (catalog-POC outcome,
+  current implementation contract)
 - `research/v1-window-builder-reference.md`
 - `context/UI_UX.md`
 - `research/poc-plans/grid-spike-results.md` (TanStack vs AG Grid decision)
@@ -173,8 +174,9 @@ Use TanStack Query for server-owned state. Use Zustand for local interaction sta
 
 ## Table-View Decision
 
-Validated by the catalog POC (week 0 → gate 2026-05-07). Detail in
-`context/DATA_TABLE.md`. Summary here:
+Validated by the catalog POC (week 0 → gate 2026-05-07). Current
+implementation detail lives in
+`context/technical-requirements/data-table.md`. Summary here:
 
 **Pick: TanStack Table v8 (MIT, headless) + `@tanstack/react-virtual`
 + shadcn-table primitives.**
@@ -193,7 +195,7 @@ Tradeoffs accepted (TanStack is headless):
 - We own the markup, styling, a11y. Acceptable because schema-driven
   rendering needed full control anyway.
 - More LOC inside `<DataTable>` than an AG Grid wrapper would have
-  needed. Budget reflects this (see `context/DATA_TABLE.md` §12).
+  needed. Budget reflects this in the data-table extraction order.
 
 Library pins:
 
@@ -216,7 +218,8 @@ Not added by default:
   auto-scroll, in one selection-controller hook with `select` and
   `fill` modes. Validated under virtualization in the POC.
 
-Component contract — see `context/DATA_TABLE.md` §4. Three architectural
+Component contract — see
+`context/technical-requirements/data-table.md`. Three architectural
 pillars to inherit from the POC:
 
 1. **One write primitive (`CellWrite[]` → `WriteOp`)** for inline
