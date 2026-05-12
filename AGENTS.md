@@ -34,6 +34,8 @@ Start here in `context/`:
   active phase or feature cluster. Load `UI_UX.md` on demand when the
   task touches UX, and `context/technical-requirements/data-table.md`
   on demand when the task touches table behavior.
+- Load `CODING_STANDARDS.md` on demand when adding or reviewing backend
+  feature code.
 
 ## Python — ALWAYS use `uv`
 
@@ -48,6 +50,10 @@ Start here in `context/`:
 - Persistence is raw parameterized SQL through narrow repository
   modules. No SQLAlchemy ORM/Core in app code; Alembic may use
   SQLAlchemy internally for migrations only.
+- Backend feature code follows `context/CODING_STANDARDS.md`: keep
+  `routes.py`, `models.py`, `service.py`, and `repository.py` separate
+  for every feature, preserve strict typing, split large modules, and
+  document the why behind behavior.
 
 ## Node — npm only
 

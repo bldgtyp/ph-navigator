@@ -29,6 +29,8 @@ Load these only when the task touches the relevant surface:
   For visual-design tasks, also load the BLDGTYP design system:
   <https://bldgtyp.github.io/branding/> and
   <https://github.com/bldgtyp/branding>.
+- `CODING_STANDARDS.md` — backend Python engineering standards,
+  layer boundaries, typing, module-size, documentation, and quality gates.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `user-stories/30-tables-equipment.md` when touching table behavior.

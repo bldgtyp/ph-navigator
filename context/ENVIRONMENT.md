@@ -59,6 +59,13 @@
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).
 
+## Coding standards
+
+- Canonical standards: `context/CODING_STANDARDS.md`.
+- Backend work must preserve the routes / models / services /
+  repositories split and pass `ruff`, `ty check`, and `pytest` through
+  `uv` or the Makefile.
+
 ## Browser testing (Playwright MCP)
 
 Project-scoped MCP server registered in `.mcp.json`. Use

@@ -11,6 +11,7 @@ cd backend
 uv sync                            # first time / when uv.lock changes
 uv run uvicorn main:app --reload   # dev server on :8000
 uv run ty check                    # static types
+uv run ruff check .                # lint
 uv run pytest                      # tests
 ```
 
@@ -26,4 +27,6 @@ Or from the repo root: `make backend`, `make typecheck`, `make test-backend`.
 - `scripts/` — one-shot utilities
 - `tests/` — pytest suite
 
-See `context/ENVIRONMENT.md` for the full env contract.
+See `context/ENVIRONMENT.md` for the full env contract and
+`context/CODING_STANDARDS.md` for the backend layer, typing, module-size,
+documentation, and quality-gate standard.

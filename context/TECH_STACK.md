@@ -101,15 +101,16 @@ backend/
   features/
     project/
       routes.py
+      models.py
       service.py
       repository.py
       document/
         v1.py
     catalog/
       routes.py
+      models.py
       service.py
       repository.py
-      schemas.py
   db/
     connection.py
     migrations/   # Alembic
@@ -147,6 +148,11 @@ Tradeoffs:
 Decision: use plain string SQL in repository modules. Do not add
 SQLAlchemy ORM models, SQLAlchemy Core query composition, or repository
 abstractions that hide the SQL being run.
+
+Backend feature code must follow `context/CODING_STANDARDS.md`: every
+feature keeps predictable `routes.py`, `models.py`, `service.py`, and
+`repository.py` layers; strict typing is required; modules are split
+before they become too large to review.
 
 Driver: `psycopg` v3 with `psycopg_pool`. V2 starts synchronous unless
 load testing or long-running I/O proves async is necessary.
@@ -290,7 +296,7 @@ The PRD's deliberate separation between project-document data and uploaded HBJSO
 Backend:
 
 - Keep calculations and document validation in the backend.
-- Prefer small feature modules with `routes.py`, `service.py`, `repository.py`, and `schemas.py`.
+- Prefer small feature modules with `routes.py`, `models.py`, `service.py`, and `repository.py`.
 - Use Pydantic v2 models as the explicit boundary for API payloads, document bodies, table slices, and repository returns.
 - Keep SQL close to the repository function that owns it unless reuse becomes real.
 - Use transactions around save/version/draft operations.

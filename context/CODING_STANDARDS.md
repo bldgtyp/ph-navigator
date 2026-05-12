@@ -81,8 +81,8 @@ Optional modules are allowed when they make a boundary clearer:
 
 ### Typing Standard
 
-- Backend code is strict typed. `mypy strict = true` is the baseline, not an
-  aspirational setting.
+- Backend code is strictly typed. The active checker is `ty check`; tighten
+  checker settings as `ty` exposes stable strictness controls.
 - New public functions must have explicit argument and return types.
 - Avoid `Any`; when unavoidable at a boundary, localize it and validate into a
   typed Pydantic model or narrow Python type quickly.
@@ -144,7 +144,7 @@ Required local checks before considering backend work complete:
 ```bash
 cd backend
 uv run ruff check .
-uv run mypy .
+uv run ty check
 uv run pytest
 ```
 
@@ -159,7 +159,7 @@ make test
 Current enforced controls live in `backend/pyproject.toml`:
 
 - Ruff for import order and baseline linting.
-- Mypy strict mode.
+- Static typechecking with `ty check`.
 - Pytest with backend coverage reporting.
 
 Near-term controls to add as the backend grows:
@@ -183,4 +183,4 @@ For every backend feature or change:
 - Are module/function sizes still reviewable?
 - Do docstrings explain the important why behind policy, invariants, or
   non-obvious behavior?
-- Did `ruff`, `mypy`, and `pytest` pass through `uv` or the Makefile?
+- Did `ruff`, `ty check`, and `pytest` pass through `uv` or the Makefile?
