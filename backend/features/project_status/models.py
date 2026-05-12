@@ -46,8 +46,7 @@ class StatusItemCreateRequest(BaseModel):
     @classmethod
     def strip_required_title(cls, value: object) -> object:
         if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
+            return value.strip()
         return value
 
     @field_validator("description", mode="before")
@@ -72,8 +71,7 @@ class StatusItemUpdateRequest(BaseModel):
     @classmethod
     def strip_required_title(cls, value: object) -> object:
         if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
+            return value.strip()
         return value
 
     @field_validator("description", mode="before")

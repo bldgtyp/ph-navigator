@@ -174,6 +174,27 @@ def test_create_done_item_gets_completion_date_and_can_be_backdated(clean_status
     assert updated.json()["completion_date"] == yesterday
 
 
+def test_update_rejects_blank_title(clean_status_tables: None) -> None:
+    client = signed_in_client()
+    project_id = create_project(client)
+    created = client.post(
+        f"/api/v1/projects/{project_id}/status-items",
+        headers={"Origin": ORIGIN},
+        json={"title": "CAD files received"},
+    )
+    item_id = created.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/projects/{project_id}/status-items/{item_id}",
+        headers={"Origin": ORIGIN},
+        json={"title": "   "},
+    )
+
+    assert response.status_code == 422
+    listed = client.get(f"/api/v1/projects/{project_id}/status-items")
+    assert listed.json()["items"][0]["title"] == "CAD files received"
+
+
 def test_reorder_and_soft_delete_status_item(clean_status_tables: None) -> None:
     client = signed_in_client()
     project_id = create_project(client)

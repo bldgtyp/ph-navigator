@@ -211,3 +211,15 @@ TB-03 lands its declared scope cleanly: the relational `project_status_items` ta
 The most important issues are (1) the frontend's continued drift from the prescribed feature-first / TanStack-Query layout — already flagged in TB-02's lesson log and now compounded by a 543-line `StatusTab.tsx` — and (2) the latent NULL-title 500 in `StatusItemUpdateRequest`. Both are cheap to fix and worth doing before TB-04 builds another editable surface on top of the same patterns. Description Markdown is a deliberate-looking scope cut that should be acknowledged in the lesson log to avoid downstream surprise.
 
 No security or performance defects that would block proceeding to TB-04.
+
+## Disposition (2026-05-12)
+
+| Finding | Disposition | Reason |
+|---|---|---|
+| H2 blank PATCH title | Fix now | Runtime 500 risk against `title NOT NULL`; add 422 regression coverage. |
+| M1 schema-doc mismatch | Fix now | Cheap source-of-truth cleanup; migration/data-model nullability is intentional for `ON DELETE SET NULL`. |
+| H3 Markdown renderer | Document now, defer code | MVP shipped safe external-link rendering only; richer allow-listed Markdown can wait until descriptions need it. |
+| H1, M4, M5, M6 frontend structure/test drift | TB-03.5 | Worth correcting before TB-04 document editing, but too broad to reopen TB-03 as a defect fix. |
+| M2 status audit log | Defer | Useful once TB-04/TB-05 defines the edit/version audit vocabulary. |
+| M3 concurrency control | TB-06 | Direct-write status is acceptable for MVP sequential editing; ETag discipline belongs with draft/version work. |
+| L1-L7 | Defer/opportunistic | Notes and polish items; none block TB-03 correctness. |

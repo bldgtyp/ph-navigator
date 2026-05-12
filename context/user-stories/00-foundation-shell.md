@@ -910,9 +910,10 @@ CREATE TABLE project_status_items (
                     -- Markdown with hyperlinks; in-app anchor links v1.1+
     deleted_at      TIMESTAMPTZ,        -- soft delete
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_by      UUID NOT NULL REFERENCES users(id),
+    created_by      UUID REFERENCES users(id) ON DELETE SET NULL,
+                    -- nullable so user deletion preserves project status history
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by      UUID NOT NULL REFERENCES users(id)
+    updated_by      UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE INDEX project_status_items_project_id_order_idx

@@ -132,7 +132,20 @@ Resolve these at the named slice, not all up front:
 | Includes | `project_status_items` relational table; apply default template; add/edit/reorder/delete item workflow as scoped for v1; current-step visual; read-only public display. |
 | Tests | State enum and completion-date rules; default template creation; reorder/delete behavior; API tests for non-trivial transitions. |
 | Browser check | Apply default template, mark an item done, edit completion date, delete one item, reload, confirm public viewer can read but not edit. |
-| Lessons | Status stayed relational and outside `ProjectDocumentV1`; date-only completion values must parse as local calendar dates in the frontend; drag-and-drop was cut from the tracer in favor of explicit up/down controls plus keyboard movement; the in-place session-expiry/device-collision modal remains a blocking auth-hardening follow-up before production editable workflows. |
+| Lessons | Status stayed relational and outside `ProjectDocumentV1`; date-only completion values must parse as local calendar dates in the frontend; drag-and-drop was cut from the tracer in favor of explicit up/down controls plus keyboard movement; description Markdown shipped as a v1 scope cut with only sanitized external links rendered; the in-place session-expiry/device-collision modal remains a blocking auth-hardening follow-up before production editable workflows. |
+
+### TB-03.5 - Frontend Server-State Structure
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Align the frontend with the feature-first/TanStack Query shape before TB-04 adds document-editing server state. |
+| References | `context/CODING_STANDARDS.md` (frontend shape/server state); `context/TECH_STACK.md`; `docs/plans/2026-05-12/tb-03-code-review.md` (H1/M4/M5/M6). |
+| Includes | `QueryClientProvider` and query defaults; feature-local API/types/hooks for project shell and project status; split `StatusTab` into route, components, and shared helpers; shared local-calendar date formatter; pure helper tests for status state cycle, order-index movement, and date-only formatting. |
+| Tests | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; targeted browser smoke for dashboard -> Status tab load and template display. |
+| Browser check | Open a project Status tab as editor and public viewer after the split; confirm the existing status happy path still renders with no console warnings/errors. |
+| Lessons | Record whether Query provider and feature modules are sufficient before repeating the pattern for Rooms/DataTable in TB-04. |
 
 ### TB-04 - Minimal Project Document And Rooms Draft
 
@@ -363,6 +376,7 @@ Resolve these at the named slice, not all up front:
 | TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
 | TB-02 | Complete | 2026-05-12 17:13 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging Render deploy verified at `https://ph-navigator-v2-staging.onrender.com`: sign in as seeded editor, create `Staging Smoke Test`, open `/projects/e5365d5e-a2b0-4059-9c7a-a212600a0574/status`, sign out, reopen the project URL, and confirm read-only public shell with edit controls hidden. |
 | TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
+| TB-03.5 | Not started | 2026-05-12 | Frontend structure follow-up recorded from TB-03 review; no implementation yet. |
 | TB-04 | Not started | 2026-05-12 | - |
 | TB-04b | Not started | 2026-05-12 | - |
 | TB-05 | Not started | 2026-05-12 | - |
@@ -453,5 +467,5 @@ What we tried: Backend migration/API tests, frontend unit tests, production buil
 What did not work: The first E2E check exposed a date-only rendering bug: `new Date('2026-05-01')` parsed as a UTC instant and could display as April 30 in New York. The browser check also confirmed that the unauthenticated root redirect can log an expected 401 resource error before sign-in, so console checks should be interpreted after the authenticated navigation under test. Drag-and-drop was not added in this tracer because the explicit reorder controls already prove the fractional `order_index` backend path without adding a DnD dependency.
 What worked: Keeping status relational avoided touching `ProjectDocumentV1`; the existing `require_project_access(project_id, mode)` seam cleanly produced public read-only and editor write behavior; template application is one-shot on an empty list; state `todo -> done` auto-populates `completion_date`; date-only strings now render as local calendar dates; soft delete keeps admin recovery possible.
 Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser smoke showed the populated Status tab with no console warnings/errors after sign-in/navigation.
-Follow-up: Add the in-place session-expiry/device-collision modal before considering editable workflows production-ready. If drag-and-drop remains important after a few real projects, add it as a focused UX polish pass on top of the verified `order_index` API. TB-04 can reuse the project shell, but should revisit the TB-02 note about introducing TanStack Query before more editable surfaces accumulate.
+Follow-up: Add the in-place session-expiry/device-collision modal before considering editable workflows production-ready. If drag-and-drop remains important after a few real projects, add it as a focused UX polish pass on top of the verified `order_index` API. Description Markdown intentionally shipped with only sanitized external-link rendering; add an allow-listed Markdown renderer when richer notes become necessary. TB-03.5 should introduce TanStack Query and feature-first frontend modules before TB-04 adds Rooms/DataTable server state.
 ```

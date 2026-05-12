@@ -519,7 +519,12 @@ function renderDescription(description: string): ReactNode[] {
       parts.push(description.slice(lastIndex, match.index));
     }
     parts.push(
-      <a key={`${match[2]}-${match.index}`} href={match[2]} target="_blank" rel="noreferrer">
+      <a
+        key={`${match[2]}-${match.index}`}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {match[1]}
       </a>,
     );
