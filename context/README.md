@@ -9,7 +9,7 @@ under `docs/plans/`.
 Read these first:
 
 1. `ENVIRONMENT.md` — command / environment card.
-2. `PRD.md` — canonical product and architecture PRD.
+2. `PRD.md` — concise product and high-level architecture PRD.
 3. `TECH_STACK.md` — stack and persistence decisions.
 4. `GLOSSARY.md` — canonical terms when naming is ambiguous.
 
@@ -20,6 +20,11 @@ Load these only when the task touches the relevant surface:
 - `USER_STORIES.md` — routing document for story files and phasing.
 - `user-stories/*.md` — canonical story bodies; load only the file for
   the active phase / feature cluster.
+- `TECHNICAL_REQUIREMENTS.md` — router for implementation-level
+  requirements split out of the PRD.
+- `technical-requirements/*.md` — detailed contracts for data model,
+  save/versioning, API, MCP/schema, frontend/viewer/units, and
+  stack/auth/migration. Load only the relevant file.
 - `UI_UX.md` — UI narrative and page / flow descriptions.
 - `DATA_TABLE.md` — shared `<DataTable>` component contract.
 

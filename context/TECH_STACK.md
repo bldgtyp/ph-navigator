@@ -8,6 +8,7 @@ TIME: 10:20 EDT
 Record current technical-stack and code-style decisions for PH-Navigator V2, based on:
 
 - `context/PRD.md`
+- `context/TECHNICAL_REQUIREMENTS.md`
 - `context/USER_STORIES.md`
 - `context/DATA_TABLE.md` (catalog-POC outcome)
 - `research/v1-window-builder-reference.md`
