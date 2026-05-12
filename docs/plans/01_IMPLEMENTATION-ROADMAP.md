@@ -280,7 +280,7 @@ Resolve these at the named slice, not all up front:
 | Goal | Uploaded HBJSON renders as an interactive, nonblank 3D scene. |
 | Includes | Backend `/model_data` extraction; SI canonical values; R3F canvas; camera/lighting/orbit controls; loading/error states; basic select. |
 | Tests | Model extraction fixtures; SI unit conversion; frontend viewer state only where non-trivial; Playwright screenshot/canvas nonblank check. |
-| Browser check | Upload HBJSON, load scene, orbit/pan/zoom, select an element, verify no blank canvas on desktop and mobile-ish viewport. |
+| Browser check | Upload HBJSON, load scene, orbit/pan/zoom, select an element, verify no blank canvas on desktop and mobile-ish viewport; record parse-time and first-paint numbers against a real-sized project file as a baseline for later slices. |
 | Lessons | Record parser performance and any geometry compromises. |
 
 ### TB-16 - Viewer Viz, Measure, Color-By, Info Panel
@@ -295,17 +295,17 @@ Resolve these at the named slice, not all up front:
 | Browser check | Switch viz mode, color by construction, measure a distance, select an element, inspect converted fields. |
 | Lessons | Record V1 parity decisions and any viewer controls deferred. |
 
-### TB-17 - MCP Project Read/Write Tracer
+### TB-17 - MCP Write Path And Edit Lease
 
 | Field | Plan |
 |---|---|
-| Type | HITL for MCP transport decision and local client setup |
+| Type | AFK (MCP transport, tokens, and read tools landed in TB-04b) |
 | Status | [ ] Not started |
-| Goal | Claude can read a project, patch a draft, save it, and the browser reflects the change. |
-| Includes | MCP token schema and hashing; project-scoped scopes; tools for list/get/patch/save; shared access dependency; structured MCP errors; audit logging; MCP/browser edit lease indicator. |
-| Tests | Token scope and revocation; MCP and REST share ETag rules; edit lease freezes browser write controls; audit row is written. |
+| Goal | Claude can patch a draft, save it through the version system, and the browser reflects the change under an edit lease. |
+| Includes | Write-scope tools (patch/save) extending TB-04b's MCP surface; ETag rules shared with REST; MCP/browser edit lease indicator; audit logging for MCP writes. |
+| Tests | Write scope rejected for read-only tokens; MCP and REST share ETag rules; edit lease freezes browser write controls; audit row is written. |
 | Browser check | Run MCP edit against Rooms or Status, observe browser lease/freeze, reload, confirm saved change appears. |
-| Lessons | Record MCP tool boundaries and any prompt/tool ergonomics issues. |
+| Lessons | Record write-path tool boundaries, lease UX, and any prompt/tool ergonomics issues uncovered in real use. |
 
 ### TB-18 - Mechanical Tables Completion
 
@@ -323,10 +323,10 @@ Resolve these at the named slice, not all up front:
 
 | Field | Plan |
 |---|---|
-| Type | HITL for staging URL, real V1 project selection, and deployment credentials |
+| Type | HITL for real V1 project selection and any production credential cut-over |
 | Status | [ ] Not started |
 | Goal | MVP can run a full smoke on staging with one imported V1 project. |
-| Includes | Staging deploy; final smoke script; OpenAPI/schema docs generated from code; one V1 import script path; performance/bundle sanity; unresolved question triage; docs cleanup. |
+| Includes | Final smoke script; OpenAPI/schema docs generated from code; one V1 import script path; performance/bundle sanity against the TB-15 baseline; unresolved question triage; docs cleanup. |
 | Tests | Full `make test`, lint/format gates, Playwright e2e smoke, import fixture validation, public read/write-negative smoke. |
 | Browser check | On staging, sign in, open seed project, import/open one V1 project, edit/save one table, upload/view HBJSON, verify public read-only URL. |
 | Lessons | Record deployment friction, import assumptions, and remaining post-MVP work. |
@@ -340,6 +340,7 @@ Resolve these at the named slice, not all up front:
 | TB-02 | Not started | 2026-05-12 | - |
 | TB-03 | Not started | 2026-05-12 | - |
 | TB-04 | Not started | 2026-05-12 | - |
+| TB-04b | Not started | 2026-05-12 | - |
 | TB-05 | Not started | 2026-05-12 | - |
 | TB-06 | Not started | 2026-05-12 | - |
 | TB-07 | Not started | 2026-05-12 | - |
