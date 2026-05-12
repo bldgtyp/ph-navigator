@@ -13,42 +13,6 @@ VersionKind = Literal["working", "submitted", "closed", "snapshot"]
 AccessMode = Literal["editor", "viewer"]
 
 
-class EmptyEquipmentTables(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    fans: list[dict[str, object]] = Field(default_factory=list)
-    pumps: list[dict[str, object]] = Field(default_factory=list)
-    ervs: list[dict[str, object]] = Field(default_factory=list)
-
-
-class ProjectDocumentProject(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    name: str
-    bt_number: str
-    cert_programs: list[CertificationProgram] = Field(default_factory=list)
-    phius_number: str | None = None
-    phius_dropbox_url: str | None = None
-
-
-class ProjectDocumentTables(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    assemblies: list[dict[str, object]] = Field(default_factory=list)
-    window_types: list[dict[str, object]] = Field(default_factory=list)
-    rooms: list[dict[str, object]] = Field(default_factory=list)
-    equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
-    manufacturer_filters: list[dict[str, object]] = Field(default_factory=list)
-
-
-class ProjectDocumentV1(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    schema_version: Literal[1] = 1
-    project: ProjectDocumentProject
-    tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
-
-
 class CreateProjectRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

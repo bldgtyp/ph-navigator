@@ -8,7 +8,8 @@ from uuid import UUID
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from features.projects.models import CreateProjectRequest, ProjectDocumentV1
+from features.project_document.document import ProjectDocumentV1
+from features.projects.models import CreateProjectRequest
 
 
 def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:

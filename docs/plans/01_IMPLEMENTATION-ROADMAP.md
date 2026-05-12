@@ -152,13 +152,13 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | AFK |
-| Status | [ ] Not started |
+| Status | [ ] Local implementation complete; staging verification pending |
 | Goal | First project-document edit path works through Rooms without version-save polish. Not user-visible on its own: drafts created here have no terminal action until TB-05 ships Save/Discard. |
 | References | `context/technical-requirements/data-model.md` (ProjectDocumentV1); `context/technical-requirements/save-versioning.md` (draft lifecycle); `context/technical-requirements/data-table.md`; `context/user-stories/30-tables-equipment.md` (Rooms). |
-| Includes | `ProjectDocumentV1` minimal body with empty tables; Rooms and single-select option structures; draft row created on first edit; table-slice read; guarded draft patch; minimal Equipment -> Rooms UI using the shared DataTable path. |
+| Includes | `ProjectDocumentV1` minimal body with empty tables; Rooms and single-select option structures; draft row created on first edit; table-slice read; guarded draft patch; minimal Equipment -> Rooms UI using a temporary table-render stub. |
 | Tests | Pydantic document validation; golden empty document; guarded patch rules; Rooms row validation; single-select duplicate/missing-option rules. |
 | Browser check | Add a room, edit floor level and building zone options, reload, restore draft, confirm row remains in draft. |
-| Lessons | Record document-shape decisions and any DataTable scope cut made to keep the slice thin; verify `expires_at`/keepalive behavior before relying on long-lived editable draft state. |
+| Lessons | Document validation now owns Rooms and project-defined option integrity; the first Rooms write uses an ETag-guarded whole-table replacement into `project_version_drafts`; Rooms REST routes are version-scoped and draft-scoped per `api.md`; `TablePrimitiveStub` is intentionally not the canonical `<DataTable>` from `data-table.md`; verify `expires_at`/keepalive behavior before relying on long-lived editable draft state. |
 
 ### TB-04b - MCP Read-Only Tracer
 
@@ -377,7 +377,7 @@ Resolve these at the named slice, not all up front:
 | TB-02 | Complete | 2026-05-12 17:13 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging Render deploy verified at `https://ph-navigator-v2-staging.onrender.com`: sign in as seeded editor, create `Staging Smoke Test`, open `/projects/e5365d5e-a2b0-4059-9c7a-a212600a0574/status`, sign out, reopen the project URL, and confirm read-only public shell with edit controls hidden. |
 | TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
 | TB-03.5 | Complete | 2026-05-12 18:08 EDT | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke at `http://127.0.0.1:5173/dashboard` -> `/projects/114b7e10-05d6-41d1-acae-981dcb346e2f/status` verified dashboard and editor Status tab after simplify cleanup, with no console errors. Earlier smoke also verified public read-only Status tab, sign-in transition to editor controls, and populated default template. |
-| TB-04 | Not started | 2026-05-12 | - |
+| TB-04 | Local complete; staging pending | 2026-05-12 19:20 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 tests); `cd frontend && npm run build`; `make e2e` against fresh local API `:8001` via Vite proxy `:5173` passed for Status plus Rooms draft add/reload. Staging verification not run in this pass. |
 | TB-04b | Not started | 2026-05-12 | - |
 | TB-05 | Not started | 2026-05-12 | - |
 | TB-06 | Not started | 2026-05-12 | - |
@@ -482,4 +482,18 @@ What did not work: The first browser smoke after the file move showed stale Vite
 What worked: Feature-local hooks plus shared query keys are enough for current auth/project/status server state. Feature-owned route/component files keep `App.tsx` and `app/router.tsx` small enough to serve as composition surfaces. Invalidating project queries on sign-in and removing project queries on sign-out fixes auth-boundary access-mode transitions without avoidable post-sign-out 401 refetches. Status mutations can update the cached list from returned rows instead of paying for `PATCH/DELETE + GET list` on every edit. Keeping the BT-number availability check as a debounced query preserved cancellation/stale response handling without turning the debounce itself into server-state logic.
 Verification: `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke verified public read-only Status tab, sign-in transition to editor controls, populated default template, and no console errors after Vite restart.
 Follow-up: TB-04 can reuse the feature-local API/types/hooks/routes/components shape for Rooms/DataTable. Future auth-sensitive feature queries should either use access-mode-aware keys or participate in the auth-boundary refresh/clear policy; otherwise public caches can survive editor login.
+```
+
+### TB-04
+
+```text
+Slice: TB-04
+Date: 2026-05-12
+What changed: Added the `project_version_drafts` table, strict `ProjectDocumentV1` Rooms/single-select validation, version-scoped Rooms saved/draft table APIs, feature-owned Equipment/Rooms frontend, a temporary `TablePrimitiveStub`, targeted backend/frontend tests, and e2e coverage for add-room/reload draft restore. Follow-up cleanup moved document schema types into `features/project_document/document.py`, made Rooms option lists required for replace writes, and added Rooms query invalidation on auth-boundary changes.
+Why: Rooms are the first versioned project-document edit path and need to prove lazy draft creation before TB-05 adds Save/Discard/version actions.
+What we tried: Backend migration/API tests, frontend unit tests, local e2e through Status plus Rooms, and an in-app browser smoke attempt.
+What did not work: The existing local `:8000` backend process was stale and returned 404 for `/document/rooms`; verification used a fresh API on `:8001`. Running the frontend cross-origin on `:5174` failed CORS, and running with `VITE_API_BASE_URL` cross-origin made local e2e cookie scope diverge from the Vite proxy path. The in-app Browser workflow hit a tool limitation filling the email input, so CLI Playwright is the accepted browser evidence for this pass.
+What worked: Keep local browser verification same-origin through the Vite `/api` proxy, now overridable with `VITE_API_PROXY_TARGET`. The first accepted Rooms write creates a user/version draft from the saved version, guarded by `If-Match-Version`; later writes use `If-Match` on `draft_etag`. Rooms rows reference option ids, while creating floor/zone labels creates the options in the same semantic write. Keeping the temporary table renderer named `TablePrimitiveStub` reserves the canonical `DataTable` name for the later TanStack/keyboard/paste implementation.
+Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e` with fresh API `:8001` proxied through Vite `:5173`.
+Follow-up: Staging verification is still pending. TB-05 should add Save/Discard and version-body persistence, plus a real dirty/save indicator. TB-06 should revisit same-editor tab coordination with draft ETags. Before long-lived editable drafts matter, add or explicitly defer `expires_at`/keepalive/stale-warning behavior.
 ```

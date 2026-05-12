@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from features.auth.routes import router as auth_router
+from features.project_document.routes import router as project_document_router
 from features.project_status.routes import router as project_status_router
 from features.projects.routes import router as projects_router
 from features.shared.errors import http_exception_handler, validation_exception_handler
@@ -37,5 +38,6 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.include_router(auth_router)
 app.include_router(projects_router)
+app.include_router(project_document_router)
 app.include_router(project_status_router)
 app.include_router(system_router)

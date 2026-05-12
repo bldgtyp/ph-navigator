@@ -12,6 +12,7 @@ from database import connection, transaction
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.project_document.document import ProjectDocumentProject, ProjectDocumentV1
 from features.projects import repository
 from features.projects.models import (
     AccessMode,
@@ -19,8 +20,6 @@ from features.projects.models import (
     BtNumberConflict,
     CreateProjectRequest,
     ProjectDetail,
-    ProjectDocumentProject,
-    ProjectDocumentV1,
     ProjectListResponse,
     ProjectSummary,
     ProjectVersionPublic,

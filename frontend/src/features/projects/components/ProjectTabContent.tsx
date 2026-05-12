@@ -1,3 +1,4 @@
+import { EquipmentTab } from "../../equipment/routes/EquipmentTab";
 import { StatusTab } from "../../project_status/routes/StatusTab";
 import { TAB_COPY, TAB_LABELS, type ProjectTab } from "../lib";
 import type { ProjectDetail } from "../types";
@@ -5,6 +6,10 @@ import type { ProjectDetail } from "../types";
 export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
   if (tab === "status") {
     return <StatusTab project={project} />;
+  }
+
+  if (tab === "equipment") {
+    return <EquipmentTab project={project} />;
   }
 
   return (

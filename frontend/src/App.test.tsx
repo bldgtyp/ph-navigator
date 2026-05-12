@@ -64,6 +64,19 @@ const statusItemPayload = {
   updated_by: userPayload.id,
 };
 
+const roomsSlicePayload = {
+  project_id: projectPayload.id,
+  version_id: projectPayload.active_version_id,
+  source: "version",
+  version_etag: "version-etag",
+  draft_etag: null,
+  rooms: [],
+  single_select_options: {
+    "rooms.floor_level": [],
+    "rooms.building_zone": [],
+  },
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
@@ -302,5 +315,50 @@ describe("App", () => {
 
     expect(await screen.findByText("CAD files received")).toBeVisible();
     expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
+  });
+
+  test("adds a room through the Equipment tab draft path", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
+    const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === roomsUrl && init?.method !== "PUT") {
+        return jsonResponse(roomsSlicePayload);
+      }
+      if (url === roomsUrl && init?.method === "PUT") {
+        const saved = JSON.parse(String(init.body));
+        return jsonResponse({
+          ...roomsSlicePayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          rooms: saved.rooms,
+          single_select_options: saved.single_select_options,
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Equipment" })).toBeVisible();
+    await user.click(await screen.findByRole("button", { name: "Add room" }));
+    await user.type(screen.getByLabelText("Number"), "101");
+    await user.type(screen.getByLabelText("Name"), "Living Room");
+    await user.type(screen.getByLabelText("Floor level"), "Ground");
+    await user.type(screen.getByLabelText("Building zone"), "Residential");
+    await user.click(screen.getByRole("button", { name: "Save room" }));
+
+    expect(await screen.findByText("Unsaved Rooms draft restored")).toBeVisible();
+    expect(screen.getByText("Living Room")).toBeVisible();
+    expect(screen.getByText("Ground")).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith(
+      roomsUrl,
+      expect.objectContaining({
+        method: "PUT",
+        headers: expect.any(Headers),
+      }),
+    );
   });
 });

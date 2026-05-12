@@ -386,7 +386,8 @@
   color: #59564d;
 }
 
-.status-panel {
+.status-panel,
+.equipment-panel {
   display: grid;
   gap: 18px;
 }
@@ -422,6 +423,99 @@
 .status-empty p {
   max-width: 560px;
   margin: 0;
+}
+
+.subtabbar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  border-bottom: 1px solid #ebe5d8;
+  padding-bottom: 8px;
+}
+
+.subtabbar button {
+  min-height: 34px;
+  border-color: #bfb8a8;
+  background: #fffdfa;
+  color: #4e4a43;
+  white-space: nowrap;
+}
+
+.subtabbar button.active {
+  border-color: #201f1c;
+  background: #201f1c;
+  color: #fffdfa;
+}
+
+.draft-banner {
+  margin: 0;
+  border: 1px solid #c9b563;
+  border-radius: 6px;
+  background: #fff8d8;
+  color: #4d4211;
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+.data-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #ebe5d8;
+  border-radius: 8px;
+}
+
+.data-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: #fffdfa;
+}
+
+.data-table th,
+.data-table td {
+  border-bottom: 1px solid #ebe5d8;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.data-table th {
+  color: #68645b;
+  font-size: 0.75rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.data-table tbody tr {
+  cursor: pointer;
+}
+
+.data-table tbody tr:hover,
+.data-table tbody tr:focus {
+  background: #f6f4ee;
+  outline: none;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table-empty {
+  border: 1px solid #ebe5d8;
+  border-radius: 8px;
+  background: #fbfaf6;
+  padding: 28px;
+  color: #59564d;
+  text-align: center;
+}
+
+.room-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.room-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .status-empty-actions {

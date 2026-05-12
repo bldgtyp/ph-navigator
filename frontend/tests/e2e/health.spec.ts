@@ -9,19 +9,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
-  let btNumber = "";
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const candidate = String(1000 + Math.floor(Math.random() * 9000));
-    const response = await page.request.get(
-      `/api/v1/projects/check-bt-number?value=${encodeURIComponent(candidate)}`,
-    );
-    const body = (await response.json()) as { available: boolean };
-    if (body.available) {
-      btNumber = candidate;
-      break;
-    }
-  }
-  expect(btNumber).not.toBe("");
+  const btNumber = `e2e-${Date.now().toString().slice(-8)}`;
 
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByLabel("Project name").fill(`E2E Project ${btNumber}`);
@@ -55,12 +43,28 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Delete" }).last().click();
   await expect(page.getByText("Certification Complete")).toHaveCount(0);
+  const publicStatusUrl = page.url();
 
-  const publicUrl = page.url();
+  await page.getByRole("link", { name: "Equipment" }).click();
+  await expect(page.getByRole("heading", { name: "Equipment" })).toBeVisible();
+  await page.getByRole("button", { name: "Add room" }).click();
+  await page.getByLabel("Number").fill("101");
+  await page.getByLabel("Name").fill("Living Room");
+  await page.getByLabel("Floor level").fill("Ground");
+  await page.getByLabel("Building zone").fill("Residential");
+  await page.getByLabel("People").fill("2");
+  await page.getByRole("button", { name: "Save room" }).click();
+  await expect(page.getByText("Unsaved Rooms draft restored")).toBeVisible();
+  await expect(page.getByText("Living Room")).toBeVisible();
+  await expect(page.getByText("Ground")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Unsaved Rooms draft restored")).toBeVisible();
+  await expect(page.getByText("Living Room")).toBeVisible();
+
   const publicContext = await browser.newContext();
   try {
     const publicPage = await publicContext.newPage();
-    await publicPage.goto(publicUrl);
+    await publicPage.goto(publicStatusUrl);
     await expect(publicPage.getByText("Read-only public view")).toBeVisible();
     await expect(publicPage.getByText("Edit controls hidden")).toBeVisible();
     await expect(publicPage.getByRole("heading", { name: "Status" })).toBeVisible();
