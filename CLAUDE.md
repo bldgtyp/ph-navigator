@@ -33,8 +33,8 @@ Start here in `context/`:
 - `UI_UX.md` — load on demand for UX work
 - `technical-requirements/data-table.md` — load on demand for table
   behavior and `<DataTable>` implementation work
-- `CODING_STANDARDS.md` — load on demand for backend feature code and
-  review work
+- `CODING_STANDARDS.md` — load on demand for backend or frontend feature
+  code and review work
 
 ## Python — ALWAYS use `uv`
 
@@ -66,6 +66,10 @@ Start here in `context/`:
 - Frontend project root: `frontend/`.
 - NOT yarn, NOT pnpm.
 - Run Prettier (`npm run format`) after frontend changes.
+- Frontend feature code follows `context/CODING_STANDARDS.md`: keep
+  feature-first organization, keep `App.tsx` as provider/router
+  composition, use TanStack Query for server state, and split large
+  component files.
 
 ## Database
 

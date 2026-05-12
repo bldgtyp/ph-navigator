@@ -35,7 +35,7 @@ Start here in `context/`:
   task touches UX, and `context/technical-requirements/data-table.md`
   on demand when the task touches table behavior.
 - Load `CODING_STANDARDS.md` on demand when adding or reviewing backend
-  feature code.
+  or frontend feature code.
 
 ## Python — ALWAYS use `uv`
 
@@ -60,6 +60,10 @@ Start here in `context/`:
 - `npm install`, `npm run dev`, `npm test`, `npm run build`.
 - Frontend root: `frontend/`. NOT yarn, NOT pnpm.
 - Run Prettier (`npm run format`) after frontend changes.
+- Frontend feature code follows `context/CODING_STANDARDS.md`: keep
+  feature-first organization, keep `App.tsx` as provider/router
+  composition, use TanStack Query for server state, and split large
+  component files.
 
 ## Database
 

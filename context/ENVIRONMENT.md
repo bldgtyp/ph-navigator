@@ -65,6 +65,9 @@
 - Backend work must preserve the routes / models / services /
   repositories split and pass `ruff`, `ty check`, and `pytest` through
   `uv` or the Makefile.
+- Frontend work must preserve feature-first organization, use TanStack
+  Query for server state, and pass `build`, tests, lint, and format
+  checks through `npm` or the Makefile.
 
 ## Browser testing (Playwright MCP)
 

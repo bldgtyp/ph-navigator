@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-12
 STATUS: CANONICAL ENGINEERING STANDARD
-RELATED: context/ENVIRONMENT.md, context/TECH_STACK.md, backend/README.md
+RELATED: context/ENVIRONMENT.md, context/TECH_STACK.md, backend/README.md, frontend/package.json
 ---
 
 # PH-Navigator V2 Coding Standards
@@ -95,9 +95,9 @@ Optional modules are allowed when they make a boundary clearer:
 
 Soft limits:
 
-- `150` lines: review whether the module still has one clear responsibility.
-- `200` lines: split unless the file is mostly declarative schemas.
-- `300` lines: not acceptable for feature code without a written exception in
+- `300` lines: review whether the module still has one clear responsibility.
+- `600` lines: split unless the file is mostly declarative schemas.
+- `1000` lines: not acceptable for feature code without a written exception in
   the relevant plan/review doc.
 
 Function limits:
@@ -184,3 +184,193 @@ For every backend feature or change:
 - Do docstrings explain the important why behind policy, invariants, or
   non-obvious behavior?
 - Did `ruff`, `ty check`, and `pytest` pass through `uv` or the Makefile?
+
+## Frontend TypeScript
+
+### Goals
+
+- Make the React app predictable by feature area, not by file-growth history.
+- Keep `App.tsx` and route files as composition surfaces, not feature
+  containers.
+- Keep server state in TanStack Query so loading, caching, invalidation,
+  retries, and request deduplication are handled consistently.
+- Keep component files small enough that UI, data hooks, types, and helpers can
+  be reviewed independently.
+- Preserve the backend/frontend boundary: backend owns calculations and data
+  manipulation; frontend displays, collects user intent, manages UI state, and
+  converts units for presentation/input.
+
+### Required Frontend Shape
+
+New frontend code should be organized by feature first:
+
+```text
+frontend/src/
+  app/
+    App.tsx              # providers and top-level app composition only
+    router.tsx           # route tree and redirects
+    providers.tsx        # QueryClientProvider, router wrappers, global providers
+    query-client.ts      # TanStack Query defaults
+  shared/
+    api/
+      client.ts          # fetch wrapper, request id, credentials, error envelope
+      errors.ts
+    ui/                  # reusable non-domain components
+    lib/                 # generic helpers such as dates or formatting
+  features/
+    <feature>/
+      api.ts             # endpoint functions for this feature
+      hooks.ts           # TanStack Query hooks and mutations
+      types.ts           # feature-local API/domain types
+      routes/            # route-level page components
+      components/        # presentational and workflow components
+      stores/            # Zustand slices only when state crosses components
+```
+
+Small features still get this shape when they touch server state or route-level
+UI. A feature may start with only `api.ts`, `hooks.ts`, `types.ts`, and one
+route component, but it should not hide feature behavior in `App.tsx`.
+
+Avoid generic catch-all folders such as `utils/` and `components/` at the app
+root. Shared code belongs under `shared/` only when at least two features
+actually use it.
+
+### App And Routing Boundaries
+
+`App.tsx`:
+
+- Wires app-wide providers and the top-level router.
+- Does not fetch feature data, own forms, define feature tabs, or render full
+  page bodies.
+- Should stay small enough to understand the app shell at a glance.
+
+`router.tsx` or route modules:
+
+- Own URL patterns, redirects, route guards, and route-level lazy loading.
+- May compose route pages from feature modules.
+- Should not contain feature business logic, API payload shaping, or table
+  column definitions.
+
+Feature route components:
+
+- Compose the page layout for a feature surface.
+- Call feature hooks for server state.
+- Pass typed data and event handlers into smaller components.
+- Avoid defining nested components inline. Extract them to sibling files when
+  they have their own state, markup branch, or test surface.
+
+### Server State, UI State, And Effects
+
+TanStack Query owns server state:
+
+- session lookups;
+- project lists and project details;
+- document, draft, version, asset, and catalog loads;
+- mutations such as sign-in, sign-out, project creation, draft patching,
+  save, save-as, upload, and delete;
+- cache invalidation after mutations.
+
+Use feature hooks such as `useSessionQuery`, `useProjectsQuery`,
+`useProjectQuery`, `useCreateProjectMutation`, and `useSignInMutation` rather
+than hand-rolled `useEffect` / `useState` loading unions.
+
+`useEffect` is for true side effects only:
+
+- browser or third-party subscriptions;
+- timers and debounced UI-only work;
+- focus/scroll/measurement behavior;
+- imperative viewer or DOM integration that cannot be expressed declaratively.
+
+Do not use `useEffect` for ordinary content loading or API mutation lifecycle.
+That belongs in TanStack Query. Debounced server validation should still be
+wrapped by a query or mutation hook so cancellation, stale responses, and error
+state are centralized.
+
+Zustand owns cross-component client/UI state:
+
+- active version and tab/workbench selection;
+- dirty state and queued JSON-Patch operations;
+- table view state that is user intent, not TanStack internal state;
+- R3F viewer mode, selection, visibility, and color-by state.
+
+Local `useState` is fine for narrow component-local state such as form fields,
+open/closed modal state, transient input text, and hover/focus details.
+
+### TypeScript And API Types
+
+- TypeScript strict mode is required.
+- Keep types close to the feature that owns them. Move to `shared/` only after
+  real reuse exists.
+- Do not let page components define API payload shapes inline.
+- Prefer generated or mechanically verified API types once OpenAPI generation
+  is adopted; until then, keep hand-written endpoint types in feature `types.ts`
+  files and reconcile them with backend Pydantic models during API changes.
+- Keep TanStack Query keys typed and colocated with feature hooks.
+- Store physical quantities from the backend in SI. Unit conversion helpers
+  live in focused frontend modules by quantity family.
+
+### Component Size And Splitting
+
+Soft limits:
+
+- `200` lines: review whether a component file still has one responsibility.
+- `300` lines: split route/page components into sections, forms, hooks, or
+  helpers unless the file is mostly declarative table columns.
+- `500` lines: not acceptable for feature UI without a written exception in the
+  relevant plan/review doc.
+
+Preferred split direction:
+
+- Split route pages from presentational components.
+- Split forms into a component plus a payload-building helper when submission
+  logic grows.
+- Split query/mutation hooks from route/page files.
+- Split feature constants such as tab registries, route builders, and table
+  column definitions into typed feature modules.
+- Split expensive derived data into memoized helpers or hooks with primitive
+  dependencies.
+
+### Frontend Controls
+
+Required local checks before considering frontend work complete:
+
+```bash
+cd frontend
+npm run build
+npm test
+npm run lint
+npm run format:check
+```
+
+Repo-level equivalents may be used when available:
+
+```bash
+make typecheck
+make test-frontend
+make lint
+```
+
+Near-term controls to add as the frontend grows:
+
+- Size check for route/component files using the limits above.
+- Boundary check: `app/App.tsx` does not import feature API functions directly.
+- Boundary check: route files use feature hooks instead of raw `fetch`.
+- Query check: server data loading uses TanStack Query, not manual
+  `useEffect` fetch blocks.
+- Type check: API payload/response types live in feature `types.ts` or generated
+  API type modules, not page components.
+
+### Frontend Review Checklist
+
+For every frontend feature or change:
+
+- Is the code organized under the owning `features/<feature>/` package?
+- Does `App.tsx` remain provider/router composition only?
+- Does server data use TanStack Query hooks and mutations?
+- Are `useEffect` blocks limited to true side effects?
+- Is cross-component UI state in Zustand only when local state is insufficient?
+- Are API types, route helpers, tab registries, and payload builders outside
+  page component files?
+- Are component files still small enough to review?
+- Did `build`, frontend tests, lint, and format checks pass through `npm` or the
+  Makefile?
