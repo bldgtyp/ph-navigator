@@ -30,6 +30,7 @@
   - `DATABASE_URL=postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2`
   - `SESSION_COOKIE_NAME=phn_session`
   - `SESSION_LIFETIME_MINUTES=60`
+  - `SESSION_COOKIE_SAMESITE=lax`
   - `PASSWORD_ARGON2_TIME_COST=3`
   - `PASSWORD_ARGON2_MEMORY_COST=65536`
   - `PASSWORD_ARGON2_PARALLELISM=4`
@@ -37,6 +38,9 @@
   - `FERNET_SECRET_KEY` is reserved for future at-rest field
     encryption; TB-01 session cookies are opaque DB row pointers, not
     signed/encrypted payload cookies.
+- Split-origin staging, such as separate Render frontend/backend
+  subdomains, must set `SESSION_COOKIE_SAMESITE=none` with HTTPS so the
+  browser stores the API session cookie.
 
 ## Local auth seed
 

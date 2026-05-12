@@ -55,8 +55,10 @@ same Origin policy as later project writes.
 TB-01 implementation details:
 
 - Session cookie name: `phn_session`.
-- Cookie flags: `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` is off
-  only for local/test environments and on otherwise.
+- Cookie flags: `HttpOnly`, `Path=/`, configurable
+  `SESSION_COOKIE_SAMESITE` defaulting to `lax`; `Secure` is off only
+  for local/test environments and on otherwise. Split-origin staging
+  deployments set `SESSION_COOKIE_SAMESITE=none`.
 - Session lifetime: 60-minute sliding expiry. `/auth/session` returns
   the current user and `expires_at`.
 - Every API response includes `X-Request-ID`; callers may send one or

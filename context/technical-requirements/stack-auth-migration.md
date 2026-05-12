@@ -133,8 +133,9 @@ AirTable-bound project is migrated.
 ## 13. Auth
 
 - **Editor login** — email + password. Server-side sessions stored in
-  Postgres (`sessions` table, §6.1). HTTP-only, Secure, SameSite=Lax
-  cookies referencing the session row.
+  Postgres (`sessions` table, §6.1). HTTP-only, Secure cookies
+  referencing the session row. `SESSION_COOKIE_SAMESITE` defaults to
+  `lax`; split-origin staging deployments use `none`.
 - **Password hashing** — Argon2id is the planned default, with memory,
   time, and parallelism parameters exposed in backend Settings and
   tested in the auth scaffold. If Argon2id causes installation friction
@@ -142,7 +143,7 @@ AirTable-bound project is migrated.
 - **Browser request protection** — all mutating browser requests require
   an allowed `Origin` header. Allowed origins are the exact production
   frontend origin plus local dev origins; no wildcard credentialed CORS.
-  SameSite=Lax cookies are defense-in-depth, not the whole CSRF policy.
+  SameSite cookies are defense-in-depth, not the whole CSRF policy.
 - **CORS** — deny by default. Credentialed requests are allowed only
   from configured frontend origins. Public read endpoints are still
   ordinary API routes; CORS does not use `*` with credentials.
@@ -192,8 +193,9 @@ settings:
   `uq_users_email_lower`, and partial unique index
   `uq_sessions_one_active_per_user` on
   `sessions(user_id) WHERE invalidated_at IS NULL`.
-- Cookie: `phn_session`; `HttpOnly`, `SameSite=Lax`, `Path=/`;
-  `Secure` is disabled only for `development`, `test`, and `local`.
+- Cookie: `phn_session`; `HttpOnly`, `Path=/`;
+  `SESSION_COOKIE_SAMESITE=lax` by default; `Secure` is disabled only
+  for `development`, `test`, and `local`.
 - Settings: `SESSION_LIFETIME_MINUTES=60`,
   `PASSWORD_ARGON2_TIME_COST=3`,
   `PASSWORD_ARGON2_MEMORY_COST=65536`,

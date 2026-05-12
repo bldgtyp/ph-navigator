@@ -6,14 +6,16 @@ import sys
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
+from fastapi import Response
 from fastapi.testclient import TestClient
 
 from config import settings
 from database import connection, transaction
 from features.auth.passwords import hash_password, verify_password
-from features.auth.service import create_or_update_user
+from features.auth.service import create_or_update_user, now_utc, session_expires_at, set_session_cookie
 from main import app
 from scripts import seed_user
 
@@ -50,6 +52,7 @@ def test_login_session_and_logout_flow(clean_auth_tables: None) -> None:
     assert login.headers["X-Request-ID"] == "test-login"
     assert "phn_session=" in login.headers["set-cookie"]
     assert "HttpOnly" in login.headers["set-cookie"]
+    assert "SameSite=lax" in login.headers["set-cookie"]
     assert login.json()["user"]["email"] == "ed@example.com"
 
     session = client.get("/api/v1/auth/session")
@@ -62,6 +65,17 @@ def test_login_session_and_logout_flow(clean_auth_tables: None) -> None:
     after_logout = client.get("/api/v1/auth/session")
     assert after_logout.status_code == 401
     assert after_logout.json()["error_code"] == "not_authenticated"
+
+
+def test_session_cookie_samesite_is_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "session_cookie_samesite", "none")
+    monkeypatch.setattr(settings, "environment", "staging")
+
+    response = Response()
+    set_session_cookie(response, uuid4(), session_expires_at(now_utc()))
+
+    assert "SameSite=none" in response.headers["set-cookie"]
+    assert "Secure" in response.headers["set-cookie"]
 
 
 def test_single_active_session_invalidates_previous_session(clean_auth_tables: None) -> None:

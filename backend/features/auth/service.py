@@ -51,7 +51,7 @@ def set_session_cookie(response: Response, session_id: UUID, expires_at: datetim
         expires=expires_at,
         httponly=True,
         secure=settings.session_cookie_secure,
-        samesite="lax",
+        samesite=settings.session_cookie_samesite,
         path="/",
     )
 
@@ -61,7 +61,7 @@ def clear_session_cookie(response: Response) -> None:
         key=settings.session_cookie_name,
         httponly=True,
         secure=settings.session_cookie_secure,
-        samesite="lax",
+        samesite=settings.session_cookie_samesite,
         path="/",
     )
 

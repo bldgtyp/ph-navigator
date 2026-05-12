@@ -7,6 +7,8 @@ from process env in production (env vars win on conflict).
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,6 +27,7 @@ class Settings(BaseSettings):
     git_sha: str = ""
     session_lifetime_minutes: int = 60
     session_cookie_name: str = "phn_session"
+    session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     password_argon2_time_cost: int = 3
     password_argon2_memory_cost: int = 65536
     password_argon2_parallelism: int = 4
