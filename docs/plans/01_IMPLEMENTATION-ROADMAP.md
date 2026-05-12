@@ -139,13 +139,13 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | AFK |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Align the frontend with the feature-first/TanStack Query shape before TB-04 adds document-editing server state. |
 | References | `context/CODING_STANDARDS.md` (frontend shape/server state); `context/TECH_STACK.md`; `docs/plans/2026-05-12/tb-03-code-review.md` (H1/M4/M5/M6). |
 | Includes | `QueryClientProvider` and query defaults; feature-local API/types/hooks for project shell and project status; split `StatusTab` into route, components, and shared helpers; shared local-calendar date formatter; pure helper tests for status state cycle, order-index movement, and date-only formatting. |
 | Tests | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; targeted browser smoke for dashboard -> Status tab load and template display. |
 | Browser check | Open a project Status tab as editor and public viewer after the split; confirm the existing status happy path still renders with no console warnings/errors. |
-| Lessons | Record whether Query provider and feature modules are sufficient before repeating the pattern for Rooms/DataTable in TB-04. |
+| Lessons | Query provider and feature modules are sufficient for project/status server state; route/page bodies also need feature ownership, not just feature-local API/hooks; auth boundary changes must refresh or clear project queries so public viewer cache does not survive sign-in/sign-out. |
 
 ### TB-04 - Minimal Project Document And Rooms Draft
 
@@ -376,7 +376,7 @@ Resolve these at the named slice, not all up front:
 | TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
 | TB-02 | Complete | 2026-05-12 17:13 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging Render deploy verified at `https://ph-navigator-v2-staging.onrender.com`: sign in as seeded editor, create `Staging Smoke Test`, open `/projects/e5365d5e-a2b0-4059-9c7a-a212600a0574/status`, sign out, reopen the project URL, and confirm read-only public shell with edit controls hidden. |
 | TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
-| TB-03.5 | Not started | 2026-05-12 | Frontend structure follow-up recorded from TB-03 review; no implementation yet. |
+| TB-03.5 | Complete | 2026-05-12 18:08 EDT | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke at `http://127.0.0.1:5173/dashboard` -> `/projects/114b7e10-05d6-41d1-acae-981dcb346e2f/status` verified dashboard and editor Status tab after simplify cleanup, with no console errors. Earlier smoke also verified public read-only Status tab, sign-in transition to editor controls, and populated default template. |
 | TB-04 | Not started | 2026-05-12 | - |
 | TB-04b | Not started | 2026-05-12 | - |
 | TB-05 | Not started | 2026-05-12 | - |
@@ -468,4 +468,18 @@ What did not work: The first E2E check exposed a date-only rendering bug: `new D
 What worked: Keeping status relational avoided touching `ProjectDocumentV1`; the existing `require_project_access(project_id, mode)` seam cleanly produced public read-only and editor write behavior; template application is one-shot on an empty list; state `todo -> done` auto-populates `completion_date`; date-only strings now render as local calendar dates; soft delete keeps admin recovery possible.
 Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser smoke showed the populated Status tab with no console warnings/errors after sign-in/navigation.
 Follow-up: Add the in-place session-expiry/device-collision modal before considering editable workflows production-ready. If drag-and-drop remains important after a few real projects, add it as a focused UX polish pass on top of the verified `order_index` API. Description Markdown intentionally shipped with only sanitized external-link rendering; add an allow-listed Markdown renderer when richer notes become necessary. TB-03.5 should introduce TanStack Query and feature-first frontend modules before TB-04 adds Rooms/DataTable server state.
+```
+
+### TB-03.5
+
+```text
+Slice: TB-03.5
+Date: 2026-05-12
+What changed: Added `QueryClientProvider` and query defaults, moved app routing/composition under `frontend/src/app/`, added `app/router.tsx`, split auth/projects/status API calls and types into feature modules, moved auth/project route bodies and project shell components into feature-owned route/component files, moved shared fetch/error/modal handling to `shared/`, moved local-calendar date formatting to `shared/lib/dates.ts`, split the Status tab into route/components/helpers, and added pure helper tests for status state cycling, order-index movement, and date-only formatting.
+Why: TB-04 will add document-editing server state, so the TB-02/TB-03 manual `useEffect` fetch pattern needed to stop before another editable surface copied it.
+What we tried: Straight feature-first refactor, TanStack Query hooks for session/project/project-list/status-item loads and mutations, local browser smoke across public and editor views, and frontend lint/format/test/build gates.
+What did not work: The first browser smoke after the file move showed stale Vite hot-reload console errors, so Vite was restarted before accepting browser evidence. The first auth-query cut also kept a public `ProjectDetail` cache after sign-in, leaving the project shell in viewer mode even though login succeeded.
+What worked: Feature-local hooks plus shared query keys are enough for current auth/project/status server state. Feature-owned route/component files keep `App.tsx` and `app/router.tsx` small enough to serve as composition surfaces. Invalidating project queries on sign-in and removing project queries on sign-out fixes auth-boundary access-mode transitions without avoidable post-sign-out 401 refetches. Status mutations can update the cached list from returned rows instead of paying for `PATCH/DELETE + GET list` on every edit. Keeping the BT-number availability check as a debounced query preserved cancellation/stale response handling without turning the debounce itself into server-state logic.
+Verification: `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke verified public read-only Status tab, sign-in transition to editor controls, populated default template, and no console errors after Vite restart.
+Follow-up: TB-04 can reuse the feature-local API/types/hooks/routes/components shape for Rooms/DataTable. Future auth-sensitive feature queries should either use access-mode-aware keys or participate in the auth-boundary refresh/clear policy; otherwise public caches can survive editor login.
 ```

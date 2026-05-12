@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { App } from "./App";
+import { App } from "./app/App";
 
 const fetchMock = vi.fn();
 
@@ -243,6 +243,39 @@ describe("App", () => {
     expect(
       screen.queryByRole("button", { name: /Set CAD files received/ }),
     ).not.toBeInTheDocument();
+  });
+
+  test("refetches project access after signing in from a public project URL", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    let projectFetchCount = 0;
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        projectFetchCount += 1;
+        return jsonResponse({
+          ...projectPayload,
+          access_mode: projectFetchCount === 1 ? "viewer" : "editor",
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      if (url === "/api/v1/auth/login") return sessionResponse();
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("Read-only public view")).toBeVisible();
+    await user.click(screen.getByRole("link", { name: "Sign in" }));
+    await user.type(await screen.findByLabelText("Email"), "ed@example.com");
+    await user.type(screen.getByLabelText("Password"), "password");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("Editor")).toBeVisible();
+    expect(screen.queryByText("Read-only public view")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
   });
 
   test("applies the default status template from the empty Status tab", async () => {
