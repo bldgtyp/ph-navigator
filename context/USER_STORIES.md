@@ -34,6 +34,9 @@ and enough UI to manually exercise the workflow on day one of that
 phase. Avoid building large isolated subsystems that cannot be clicked
 through end-to-end.
 
+Active execution tracker:
+`docs/plans/2026-05-12/implementation-roadmap.md`.
+
 | Phase | Goal | Stories / docs to load | Manual verification target |
 |---|---|---|---|
 | 0. Scaffold + environment | Repo boots consistently: backend, frontend, DB, migrations, health/version, structured errors/logging, seed user/project. | `00-foundation-shell.md`, `50-settings-ops-llm.md`, `context/ENVIRONMENT.md`, `context/TECH_STACK.md` | `make setup`, `make smoke`, sign in as seed user, see empty dashboard. |
