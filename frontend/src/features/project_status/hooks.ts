@@ -85,8 +85,9 @@ function upsertStatusItem(
 function removeStatusItem(
   current: StatusItemListResponse | undefined,
   itemId: string,
-): StatusItemListResponse {
-  return {
-    items: current?.items.filter((item) => item.id !== itemId) ?? [],
-  };
+): StatusItemListResponse | undefined {
+  if (!current) return current;
+  const nextItems = current.items.filter((item) => item.id !== itemId);
+  if (nextItems.length === current.items.length) return current;
+  return { items: nextItems };
 }

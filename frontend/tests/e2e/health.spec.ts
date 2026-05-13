@@ -42,8 +42,8 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await page.getByRole("button", { name: "Move Design Model complete up" }).click();
   await expect(page.locator(".status-title-button").first()).toHaveText("Design Model complete");
 
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Delete" }).last().click();
+  await page.getByRole("button", { name: "Delete item" }).click();
   await expect(page.getByText("Certification Complete")).toHaveCount(0);
   const publicStatusUrl = page.url();
 

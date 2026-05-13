@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { formatProjectDate } from "../../shared/lib/dates";
-import { nextStatusState, orderIndexForMove } from "./lib";
+import { nextStatusState, orderIndexForDrop, orderIndexForMove } from "./lib";
 import type { StatusItem } from "./types";
 
 function item(id: string, orderIndex: number): StatusItem {
@@ -40,6 +40,17 @@ describe("project status helpers", () => {
     expect(orderIndexForMove(items, "c", 1)).toBeNull();
     expect(orderIndexForMove(items, "b", -1)).toBe(0);
     expect(orderIndexForMove(items, "b", 1)).toBe(4);
+  });
+
+  test("computes fractional order indexes for drag drops", () => {
+    const items = [item("a", 1), item("b", 2), item("c", 3), item("d", 4)];
+
+    expect(orderIndexForDrop(items, "a", "c", "after")).toBe(3.5);
+    expect(orderIndexForDrop(items, "d", "b", "before")).toBe(1.5);
+    expect(orderIndexForDrop(items, "b", "a", "after")).toBeNull();
+    expect(orderIndexForDrop(items, "b", "c", "before")).toBeNull();
+    expect(orderIndexForDrop(items, "b", "b", "before")).toBeNull();
+    expect(orderIndexForDrop(items, "missing", "b", "before")).toBeNull();
   });
 
   test("formats date-only strings as local calendar dates", () => {

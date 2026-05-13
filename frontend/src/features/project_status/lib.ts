@@ -49,8 +49,34 @@ export function orderIndexForMove(
   reordered.splice(targetIndex, 0, item);
   const before = reordered[targetIndex - 1]?.order_index;
   const after = reordered[targetIndex + 1]?.order_index;
+  return orderIndexBetween(before, after);
+}
+
+export function orderIndexForDrop(
+  items: StatusItem[],
+  draggedItemId: string,
+  targetItemId: string,
+  placement: "before" | "after",
+): number | null {
+  if (draggedItemId === targetItemId) return null;
+  const draggedItem = items.find((item) => item.id === draggedItemId);
+  if (!draggedItem) return null;
+
+  const withoutDragged = items.filter((item) => item.id !== draggedItemId);
+  const targetIndex = withoutDragged.findIndex((item) => item.id === targetItemId);
+  if (targetIndex < 0) return null;
+
+  const insertIndex = placement === "before" ? targetIndex : targetIndex + 1;
+  const before = withoutDragged[insertIndex - 1]?.order_index;
+  const after = withoutDragged[insertIndex]?.order_index;
+  const nextOrder = orderIndexBetween(before, after);
+  if (nextOrder === draggedItem.order_index) return null;
+  return nextOrder;
+}
+
+function orderIndexBetween(before: number | undefined, after: number | undefined): number {
   if (before === undefined && after === undefined) return 1;
-  if (before === undefined) return (after ?? item.order_index) - 1;
+  if (before === undefined) return (after ?? 1) - 1;
   if (after === undefined) return before + 1;
   return (before + after) / 2;
 }

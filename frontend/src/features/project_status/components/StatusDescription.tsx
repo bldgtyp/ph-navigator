@@ -1,31 +1,50 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+
+const STATUS_MARKDOWN_ELEMENTS = ["p", "br", "strong", "em", "code", "a"];
+const STATUS_MARKDOWN_PROTOCOLS = ["http", "https"];
+const STATUS_EXTERNAL_HREF_PATTERN = new RegExp(
+  `^(${STATUS_MARKDOWN_PROTOCOLS.join("|")}):\\/\\/`,
+  "i",
+);
 
 export function StatusDescription({ description }: { description: string }) {
-  return <p className="status-description">{renderDescription(description)}</p>;
+  return (
+    <div className="status-description">
+      <ReactMarkdown
+        skipHtml
+        unwrapDisallowed
+        allowedElements={STATUS_MARKDOWN_ELEMENTS}
+        rehypePlugins={[[rehypeSanitize, statusMarkdownSchema]]}
+        components={{
+          a: StatusExternalLink,
+        }}
+      >
+        {description}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
-function renderDescription(description: string): ReactNode[] {
-  const parts: ReactNode[] = [];
-  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
-  let lastIndex = 0;
-  for (const match of description.matchAll(linkPattern)) {
-    if (match.index > lastIndex) {
-      parts.push(description.slice(lastIndex, match.index));
-    }
-    parts.push(
-      <a
-        key={`${match[2]}-${match.index}`}
-        href={match[2]}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {match[1]}
-      </a>,
-    );
-    lastIndex = match.index + match[0].length;
+const statusMarkdownSchema = {
+  // Keep this allow-list fully explicit; status descriptions are shared to public viewers.
+  tagNames: STATUS_MARKDOWN_ELEMENTS,
+  attributes: {
+    a: ["href", "title"],
+  },
+  protocols: {
+    href: STATUS_MARKDOWN_PROTOCOLS,
+  },
+};
+
+function StatusExternalLink({ href, children, ...props }: ComponentPropsWithoutRef<"a">) {
+  if (!href || !STATUS_EXTERNAL_HREF_PATTERN.test(href)) {
+    return <>{children}</>;
   }
-  if (lastIndex < description.length) {
-    parts.push(description.slice(lastIndex));
-  }
-  return parts;
+  return (
+    <a {...props} href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  );
 }

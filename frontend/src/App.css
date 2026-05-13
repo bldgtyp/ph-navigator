@@ -950,7 +950,18 @@ button:disabled {
 
 .status-rail {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1;
 }
 
 .status-state-button,
@@ -1072,7 +1083,24 @@ button:disabled {
 
 .status-description {
   margin: 8px 0 0;
+}
+
+.status-description p {
+  margin: 0 0 8px;
   white-space: pre-wrap;
+}
+
+.status-description p:last-child {
+  margin-bottom: 0;
+}
+
+.status-description code {
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-elev);
+  padding: 1px 4px;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
 }
 
 .status-description a {
@@ -1097,6 +1125,64 @@ button:disabled {
   background: transparent;
   color: var(--highlight-text);
   transform: none;
+}
+
+.field-group {
+  display: grid;
+  gap: 6px;
+}
+
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.segmented-control {
+  display: inline-flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  overflow: hidden;
+}
+
+.segmented-control button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  padding: 5px 10px;
+  font-size: 0.76rem;
+}
+
+.segmented-control button.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.markdown-preview {
+  min-height: 112px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  padding: 10px 12px;
+}
+
+.empty-preview {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.confirm-dialog-body {
+  display: grid;
+  gap: 18px;
+}
+
+.confirm-dialog-body p {
+  margin: 0;
+  color: var(--text-secondary);
 }
 
 .icon-button {

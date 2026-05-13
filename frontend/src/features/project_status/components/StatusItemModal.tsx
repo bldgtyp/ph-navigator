@@ -3,6 +3,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { isStatusState, STATUS_STATE_OPTIONS } from "../lib";
 import type { StatusItem, StatusItemPayload, StatusState } from "../types";
+import { StatusDescription } from "./StatusDescription";
 
 export function StatusItemModal({
   title,
@@ -19,6 +20,7 @@ export function StatusItemModal({
   const [state, setState] = useState<StatusState>(item?.state ?? "todo");
   const [completionDate, setCompletionDate] = useState(item?.completion_date ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
+  const [descriptionMode, setDescriptionMode] = useState<"edit" | "preview">("edit");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,14 +75,44 @@ export function StatusItemModal({
             onChange={(event) => setCompletionDate(event.target.value)}
           />
         </label>
-        <label>
-          <span>Description</span>
-          <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            rows={5}
-          />
-        </label>
+        <div className="field-group">
+          <div className="field-label-row">
+            <span>Description</span>
+            <div className="segmented-control" aria-label="Description mode">
+              <button
+                type="button"
+                className={descriptionMode === "edit" ? "active" : ""}
+                aria-pressed={descriptionMode === "edit"}
+                onClick={() => setDescriptionMode("edit")}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className={descriptionMode === "preview" ? "active" : ""}
+                aria-pressed={descriptionMode === "preview"}
+                onClick={() => setDescriptionMode("preview")}
+              >
+                Preview
+              </button>
+            </div>
+          </div>
+          {descriptionMode === "edit" ? (
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={5}
+            />
+          ) : (
+            <div className="markdown-preview">
+              {description.trim() ? (
+                <StatusDescription description={description} />
+              ) : (
+                <p className="empty-preview">No description.</p>
+              )}
+            </div>
+          )}
+        </div>
         {error ? (
           <p className="form-error" role="alert">
             {error}

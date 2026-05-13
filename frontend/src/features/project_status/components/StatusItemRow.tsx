@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import type { DragEvent, KeyboardEvent } from "react";
 import { formatProjectDate } from "../../../shared/lib/dates";
 import { nextStatusState, stateSymbol, STATUS_STATE_LABELS } from "../lib";
 import type { StatusItem } from "../types";
@@ -14,6 +14,7 @@ export function StatusItemRow({
   onEdit,
   onDelete,
   onMove,
+  onDrop,
 }: {
   item: StatusItem;
   isCurrent: boolean;
@@ -24,6 +25,7 @@ export function StatusItemRow({
   onEdit: () => void;
   onDelete: () => void;
   onMove: (direction: -1 | 1) => void;
+  onDrop: (draggedItemId: string, placement: "before" | "after") => void;
 }) {
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (!event.altKey) return;
@@ -37,13 +39,41 @@ export function StatusItemRow({
     }
   };
 
+  const handleDragStart = (event: DragEvent<HTMLElement>) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", item.id);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
+    if (!isEditor) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    if (!isEditor) return;
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const placement = event.clientY < bounds.top + bounds.height / 2 ? "before" : "after";
+    onDrop(event.dataTransfer.getData("text/plain"), placement);
+  };
+
   return (
     <article
       className={`status-item ${isCurrent ? "current" : ""}`}
       tabIndex={isEditor ? 0 : undefined}
+      draggable={isEditor}
       onKeyDown={handleKeyDown}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div className="status-rail">
+        {isEditor ? (
+          <span className="drag-handle" aria-label={`Drag ${item.title} to reorder`}>
+            ::
+          </span>
+        ) : null}
         {isEditor ? (
           <button
             type="button"

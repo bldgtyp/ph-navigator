@@ -2,6 +2,7 @@ import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
 import { StatusEmptyState } from "../components/StatusEmptyState";
+import { StatusDeleteDialog } from "../components/StatusDeleteDialog";
 import { StatusItemModal } from "../components/StatusItemModal";
 import { StatusItemRow } from "../components/StatusItemRow";
 import {
@@ -11,7 +12,7 @@ import {
   useStatusItemsQuery,
   useUpdateStatusItemMutation,
 } from "../hooks";
-import { nextStatusState, orderIndexForMove } from "../lib";
+import { nextStatusState, orderIndexForDrop, orderIndexForMove } from "../lib";
 import type { StatusItem, StatusItemPayload } from "../types";
 
 export function StatusTab({ project }: { project: ProjectDetail }) {
@@ -21,6 +22,8 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
   const updateMutation = useUpdateStatusItemMutation(project.id);
   const deleteMutation = useDeleteStatusItemMutation(project.id);
   const [editingItem, setEditingItem] = useState<StatusItem | null>(null);
+  const [deletingItem, setDeletingItem] = useState<StatusItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const isEditor = project.access_mode === "editor";
@@ -50,10 +53,14 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
   };
 
   const deleteItem = (item: StatusItem) => {
-    if (!window.confirm(`Delete "${item.title}"?`)) return;
     setActionError(null);
+    setDeleteError(null);
     deleteMutation.mutate(item.id, {
-      onError: (error) => setActionError(errorMessage(error, "Could not delete item.")),
+      onSuccess: () => {
+        setDeletingItem(null);
+        setDeleteError(null);
+      },
+      onError: (error) => setDeleteError(errorMessage(error, "Could not delete item.")),
     });
   };
 
@@ -62,6 +69,20 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
     const nextOrder = orderIndexForMove(items, item.id, direction);
     if (nextOrder === null) return;
     void patchItem(item.id, { order_index: nextOrder }).catch((error: unknown) => {
+      setActionError(errorMessage(error, "Could not reorder item."));
+    });
+  };
+
+  const dropItem = (
+    draggedItemId: string,
+    targetItem: StatusItem,
+    placement: "before" | "after",
+  ) => {
+    if (!draggedItemId) return;
+    const items = itemsQuery.data ?? [];
+    const nextOrder = orderIndexForDrop(items, draggedItemId, targetItem.id, placement);
+    if (nextOrder === null) return;
+    void patchItem(draggedItemId, { order_index: nextOrder }).catch((error: unknown) => {
       setActionError(errorMessage(error, "Could not reorder item."));
     });
   };
@@ -92,7 +113,7 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
       <div className="status-heading">
         <div>
           <h2 id="status-title">Status</h2>
-          <p>Track this project's lifecycle milestones.</p>
+          {items.length > 0 ? <p>Track this project's lifecycle milestones.</p> : null}
         </div>
         {isEditor && items.length > 0 ? (
           <button type="button" onClick={() => setIsAdding(true)}>
@@ -124,8 +145,9 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
               canMoveDown={index < items.length - 1}
               onCycleState={() => cycleState(item)}
               onEdit={() => setEditingItem(item)}
-              onDelete={() => deleteItem(item)}
+              onDelete={() => setDeletingItem(item)}
               onMove={(direction) => moveItem(item, direction)}
+              onDrop={(draggedItemId, placement) => dropItem(draggedItemId, item, placement)}
             />
           ))}
         </div>
@@ -143,6 +165,18 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
           item={editingItem}
           onCancel={() => setEditingItem(null)}
           onSubmit={(payload) => patchItem(editingItem.id, payload)}
+        />
+      ) : null}
+      {deletingItem ? (
+        <StatusDeleteDialog
+          item={deletingItem}
+          error={deleteError}
+          isDeleting={deleteMutation.isPending}
+          onCancel={() => {
+            setDeletingItem(null);
+            setDeleteError(null);
+          }}
+          onConfirm={() => deleteItem(deletingItem)}
         />
       ) : null}
     </section>
