@@ -96,34 +96,34 @@ ALTER TABLE projects ADD CONSTRAINT projects_cert_programs_allowed
 -- NOT imply anonymous MCP access.
 mcp_tokens (
     id              UUID PRIMARY KEY,
-    user_id         UUID NOT NULL REFERENCES users(id),
+    issued_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     -- editor who issued the token; actions performed
                     -- with the token are attributed to this user
-    project_id      UUID NOT NULL REFERENCES projects(id),
+    project_id      UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
                     -- v1 tokens are project-scoped. All-project /
                     -- workspace-scoped tokens defer until there is a
                     -- concrete agent workflow that needs them.
-    name            TEXT NOT NULL,
+    label           TEXT NOT NULL,
                     -- user-facing label, e.g. "Claude Desktop - Foo"
     token_prefix    TEXT NOT NULL,
-                    -- first 8-12 chars for UI identification only
+                    -- first 16 chars for UI identification only
     token_hash      TEXT NOT NULL UNIQUE,
                     -- hash of the full token; plaintext is never
                     -- stored after initial issue
-    scopes          TEXT[] NOT NULL DEFAULT ARRAY['project:read', 'project:write'],
+    scopes          TEXT[] NOT NULL DEFAULT ARRAY['project:read'],
                     -- allowed values in v1:
                     -- 'project:read' | 'project:write' | 'asset:read' |
                     -- 'asset:write'. Catalog writes are not included.
+                    -- `project:write` extends `project:read`; write-only
+                    -- project tokens are rejected.
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_used_at    TIMESTAMPTZ,
     expires_at      TIMESTAMPTZ,
                     -- nullable in v1; UI should encourage expiry but
                     -- not require it for local Claude workflows
-    revoked_at      TIMESTAMPTZ,
-    revoked_by      UUID REFERENCES users(id)
+    revoked_at      TIMESTAMPTZ
 )
-CREATE INDEX ON mcp_tokens (project_id) WHERE revoked_at IS NULL;
-CREATE INDEX ON mcp_tokens (user_id) WHERE revoked_at IS NULL;
+CREATE INDEX ON mcp_tokens (project_id, created_at) WHERE revoked_at IS NULL;
 
 -- Project-level lifecycle / certification milestone tracker.
 -- Lives outside the project document body intentionally: status is

@@ -772,9 +772,11 @@ acceptance, but each shapes a downstream decision:
    first. The asset row remains available to older saved versions and
    other references. Hard purge is a 90-day GC path only after reference
    checks across saved versions and active drafts (§6.5).
-3. **MCP transport** — stdio only, HTTP/SSE only, or both? Lean: both,
-   stdio for local Claude Desktop / Code, HTTP/SSE for hosted use
-   (e.g. claude.ai integration).
+3. ~~**MCP transport** — stdio only, HTTP/SSE only, or both?~~
+   **Resolved 2026-05-12:** Streamable HTTP is mounted at `/mcp`, and
+   stdio is available for local Claude Desktop / Code via
+   `PHN_MCP_TOKEN`. Legacy SSE is deferred unless a concrete client
+   requires it.
 4. ~~**Public link granularity** — per-project link (sees all versions)
    vs. per-version link.~~ **Resolved 2026-05-11:** no separate
    public links exist. Normal `/projects/{id}/...` routes are public-readable.
