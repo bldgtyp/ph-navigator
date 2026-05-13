@@ -186,7 +186,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Projects" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "My Projects" })).toBeVisible();
     expect(window.location.pathname).toBe("/dashboard");
   });
 
@@ -204,7 +204,7 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Password"), "password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("heading", { name: "Projects" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "My Projects" })).toBeVisible();
     expect(await screen.findByText("No projects yet")).toBeVisible();
     expect(screen.getByText("Ed May")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -279,7 +279,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Read-only public view")).toBeVisible();
+    expect(await screen.findByText("Read-only")).toBeVisible();
     expect(screen.getByText("Edit controls hidden")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
@@ -402,7 +402,7 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Project format recovery" })).toBeVisible();
-    expect(screen.getByText("Read-only public view")).toBeVisible();
+    expect(screen.getByText("Read-only")).toBeVisible();
     expect(screen.getByRole("link", { name: "Download raw project JSON" })).toBeVisible();
     expect(screen.queryByText("Saved schema")).not.toBeInTheDocument();
     expect(screen.queryByText("schema-safe")).not.toBeInTheDocument();
@@ -433,7 +433,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Read-only public view")).toBeVisible();
+    expect(await screen.findByText("Read-only")).toBeVisible();
     await user.click(screen.getByRole("link", { name: "Sign in" }));
     await user.type(await screen.findByLabelText("Email"), "ed@example.com");
     await user.type(screen.getByLabelText("Password"), "password");
@@ -442,6 +442,26 @@ describe("App", () => {
     expect(await screen.findByText("Editor")).toBeVisible();
     expect(screen.queryByText("Read-only public view")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
+  });
+
+  test("routes the Catalogs dropdown to the live catalog placeholders", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", "/dashboard");
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByText("Catalogs"));
+    await user.click(screen.getByRole("link", { name: "Materials" }));
+
+    expect(await screen.findByRole("heading", { name: "Materials" })).toBeVisible();
+    expect(screen.getByText("Catalog manager pending")).toBeVisible();
+    expect(window.location.pathname).toBe("/catalog/materials");
   });
 
   test("applies the default status template from the empty Status tab", async () => {

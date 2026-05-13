@@ -121,6 +121,19 @@ def test_dashboard_list_is_filtered_to_owner(clean_project_tables: None) -> None
     assert [project["bt_number"] for project in projects] == ["2426"]
 
 
+def test_dashboard_list_is_ordered_by_bt_number_desc(clean_project_tables: None) -> None:
+    client = signed_in_client()
+    client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2425"))
+    client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2427"))
+    client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2426"))
+
+    response = client.get("/api/v1/projects")
+
+    assert response.status_code == 200
+    projects = response.json()["projects"]
+    assert [project["bt_number"] for project in projects] == ["2427", "2426", "2425"]
+
+
 def test_bt_number_uniqueness_and_check_endpoint(clean_project_tables: None) -> None:
     client = signed_in_client()
     created = client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2426"))

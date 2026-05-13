@@ -235,6 +235,10 @@ Avoid generic catch-all folders such as `utils/` and `components/` at the app
 root. Shared code belongs under `shared/` only when at least two features
 actually use it.
 
+Shared UI components should stay domain-neutral. App-shell components may
+accept typed slots or children, but feature registries, route builders, and
+menus such as Catalogs belong under the owning `features/<feature>/` package.
+
 ### App And Routing Boundaries
 
 `App.tsx`:

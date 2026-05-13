@@ -228,18 +228,22 @@ generation exists.
 saved must remain openable forever. No release of PHN-V2 ships if it
 breaks reads of any prior document `schema_version`.
 
-Mechanisms — all in place from day 1, even when there is only one
-schema version:
+MVP contract: user data remains recoverable even when the current app
+cannot validate a saved document. Full forward migration behavior is
+post-MVP until a real `ProjectDocumentV2` exists.
+
+Mechanisms:
 
 1. **`schema_version` integer in every document body.** Set at save
-   time. Frozen on the row from then on.
-2. **Forward-only upgrade shims.** Pure functions, one per version
-   step: `upgrade_v1_to_v2.py`, `upgrade_v2_to_v3.py`, ... On read, if
-   `body.schema_version < CURRENT`, apply shims in sequence and return
-   the upgraded view. **The original row is not mutated.** Lazy
-   migration — only when the user explicitly Saves does the new body
-   land at `CURRENT`.
-3. **Read-safe-mode fallback.** If a shim raises during read, or if the
+   time. Frozen on the row from then on. In MVP this is metadata for
+   strict validation and future migrations.
+2. **Raw recovery download.** Project JSON download returns the raw
+   saved body for the selected version, including bodies the current app
+   cannot validate. This is the MVP safety valve.
+3. **Typed surfaces fail closed.** Table reads/writes and draft writes
+   remain current-schema validation-gated. Invalid or unsupported bodies
+   are recoverable, not editable.
+4. **Document-level read-safe aid.** If a shim raises during read, or if the
    migrated body fails current-schema validation, document-level API
    reads still return a response: `{ schema_version: N,
    schema_version_unsupported: true, body: <raw> }`. In Phase 1 this
@@ -247,21 +251,27 @@ schema version:
    typed table reads/writes remain validation-gated. The frontend
    renders a read-only "this project version is from an older format
    we couldn't fully migrate — please contact admin" view that **still
-   permits JSON download**. Users never lose access to their data
-   because of a code bug.
-4. **Golden-file corpus.** `tests/document_schema/fixtures/v1/*.json`,
+   permits JSON download**. This is useful in Phase 1 but is not the
+   full schema-migration product guarantee.
+5. **Forward-only upgrade shims (post-MVP).** Pure functions, one per
+   version step: `upgrade_v1_to_v2.py`, `upgrade_v2_to_v3.py`, ... On
+   read, if `body.schema_version < CURRENT`, apply shims in sequence
+   and return the upgraded view. **The original row is not mutated.**
+   Lazy migration — only when the user explicitly Saves does the new
+   body land at `CURRENT`.
+6. **Golden-file corpus (post-MVP).** `tests/document_schema/fixtures/v1/*.json`,
    `v2/*.json`, etc. CI runs every fixture through every applicable
    shim chain on every PR. New shims must produce identical results
    to the previous CI run on the same corpus, and round-trip through
    Pydantic validation.
-5. **Production-corpus drill before bumping schema_version.** Before
+7. **Production-corpus drill before bumping schema_version (post-MVP).** Before
    merging a new `CURRENT`, a CI job runs the new shim against every
    live project body in a staging snapshot. Any failure blocks the
    merge.
-6. **Deprecation marker on schema_version, never removal.** A version
+8. **Deprecation marker on schema_version, never removal (post-MVP).** A version
    N's shims are kept indefinitely. We do not "drop support for old
    schema versions" — there's no upside, only risk.
-7. **Pydantic models per schema version.** `ProjectDocumentV1`,
+9. **Pydantic models per schema version (post-MVP).** `ProjectDocumentV1`,
    `ProjectDocumentV2`, ..., living side-by-side. Code that reads
    "current" pins to the latest; code that handles raw old bodies
    uses the matching version model.

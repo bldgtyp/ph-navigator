@@ -21,7 +21,7 @@ def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[
         FROM projects
         WHERE owner_id = %(owner_id)s
           AND deleted_at IS NULL
-        ORDER BY created_at DESC
+        ORDER BY bt_number DESC
         """,
         {"owner_id": owner_id},
     ).fetchall()

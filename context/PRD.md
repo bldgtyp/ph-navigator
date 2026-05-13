@@ -731,9 +731,12 @@ lives in `context/technical-requirements/stack-auth-migration.md` §14.1.
   cannot be modified once locked.
 - Browser-close warning fires when draft is dirty; reopening the
   project surfaces an unsaved-draft restore prompt.
-- Opening a project document with an older `schema_version` succeeds
-  via the upgrade-shim chain; if any shim raises, read-safe-mode
-  surfaces a downloadable raw body without losing data.
+- MVP recovery guarantee: project JSON download returns the raw saved
+  body for the selected version even when the current app cannot
+  validate that body as `ProjectDocumentV1`; typed editing may fail
+  closed for invalid or unsupported document shapes. Full forward
+  upgrade shims and "older documents load successfully" behavior are
+  post-MVP schema-evolution hardening.
 - All API routes are served under `/api/v1/`; OpenAPI is published at
   `/api/v1/openapi.json`.
 - Diff between two versions returns correct structured deltas.

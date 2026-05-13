@@ -472,35 +472,34 @@ Top header (§1.1) on top.
 1. **Page heading bar.**
    - Left: "My Projects" heading.
    - Right: "+ New project" primary button.
-2. **Pinned projects section** (if any).
-   - Section heading: "Pinned" with a small pin icon.
-   - List of pinned projects — visually distinct from unpinned (e.g.
-     subtle background tint, or top-of-list with a divider below).
-   - Drag handle on each row, used to reorder within the pinned set.
+2. **Pinned projects section** (deferred).
+   - Do not render pin or drag controls until
+     `user_project_preferences` persistence/API exists.
+   - Once shipped, show pinned projects above All projects in
+     per-user order, visually distinct from unpinned rows.
 3. **All projects section.**
    - Section heading: "All projects" with the count ("12 projects").
    - Sorted by `bt_number` **descending** (largest number first;
      newest projects at the top).
-   - Same row layout as pinned, minus the drag handle.
+   - Uses the row layout below.
 
 **Row layout (each project):**
 
 | Column | Content | Width |
 |---|---|---|
-| Pin / drag | Pin icon (toggle) + drag handle (pinned only) | narrow |
 | BT number | `2024-013` | narrow, monospace |
 | Project name | `Project Foo` (clickable; opens project) | flex |
 | Client | `Acme Architects` | flex |
 | Last modified | "2 hours ago" (hover for exact timestamp) | narrow |
-| Row menu | `⋯` action menu | narrow |
+| Row menu | `⋯` action menu (deferred until real actions ship) | narrow |
 
-Row click anywhere except the pin / row-menu opens the project.
+Row click opens the project. When pin and row-menu controls ship, clicks
+on those controls do not open the row.
 
 **Row menu (`⋯`) actions:**
-- Open
-- Pin / Unpin
-- Copy project URL (later — not MVP)
-- Delete (greyed-out / hidden until US-1.4 ships)
+- Deferred until real actions ship; do not render inert menus.
+- Later actions: Open, Pin / Unpin, Copy project URL, Delete
+  (greyed-out / hidden until US-1.4 ships).
 
 **Empty state:** if user owns no projects, show a centered card with
 a one-line message and "+ New project" button. No pinned section

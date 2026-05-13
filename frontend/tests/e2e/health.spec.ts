@@ -9,11 +9,11 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await page.getByLabel("Password").fill(process.env.E2E_PASSWORD ?? "password");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "My Projects", exact: true })).toBeVisible();
 
   const btNumber = `e2e-${Date.now().toString().slice(-8)}`;
 
-  await page.getByRole("button", { name: "New project" }).click();
+  await page.getByRole("button", { name: "Create new project" }).click();
   await page.getByLabel("Project name").fill(`E2E Project ${btNumber}`);
   await page.getByLabel("BT number").fill(btNumber);
   await page.getByLabel("Client").fill("BLDGTYP");
@@ -107,7 +107,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   try {
     const publicPage = await publicContext.newPage();
     await publicPage.goto(publicStatusUrl);
-    await expect(publicPage.getByText("Read-only public view")).toBeVisible();
+    await expect(publicPage.getByText("Read-only")).toBeVisible();
     await expect(publicPage.getByText("Edit controls hidden")).toBeVisible();
     await expect(publicPage.getByRole("heading", { name: "Status" })).toBeVisible();
     await expect(publicPage.getByText("CAD files received")).toBeVisible();
@@ -126,7 +126,7 @@ test("same-editor Rooms tabs freeze stale active edits", async ({ page, context 
   await expect(page).toHaveURL(/\/dashboard/);
 
   const btNumber = `tabs-${Date.now().toString().slice(-8)}`;
-  await page.getByRole("button", { name: "New project" }).click();
+  await page.getByRole("button", { name: "Create new project" }).click();
   await page.getByLabel("Project name").fill(`Tab Conflict ${btNumber}`);
   await page.getByLabel("BT number").fill(btNumber);
   await page.getByLabel("Client").fill("BLDGTYP");

@@ -241,9 +241,9 @@ a:focus-visible {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 28px;
+  gap: 22px;
   min-height: 64px;
   border-bottom: 1px solid var(--border-subtle);
   background: color-mix(in oklab, var(--bg-page) 88%, transparent);
@@ -271,8 +271,48 @@ a:focus-visible {
   margin-left: 10px;
 }
 
+.breadcrumbs {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  overflow: hidden;
+}
+
+.breadcrumb-segment {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb-segment + .breadcrumb-segment::before {
+  content: "›";
+  color: var(--text-muted);
+}
+
+.breadcrumb-segment a,
+.breadcrumb-segment {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb-segment a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.breadcrumb-segment a:hover {
+  color: var(--accent-text);
+}
+
 .topnav a,
-.text-link {
+.text-link,
+.catalog-menu summary,
+.account-menu summary {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -282,15 +322,58 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
+.catalog-menu,
+.account-menu {
+  position: relative;
+}
+
+.catalog-menu summary,
+.account-menu summary {
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.catalog-menu summary::-webkit-details-marker,
+.account-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.catalog-menu-panel,
+.account-menu-panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 12px);
+  right: 0;
+  display: grid;
+  min-width: 220px;
+  gap: 4px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  padding: 8px;
+  box-shadow: var(--phn-shadow);
+}
+
+.catalog-menu-panel a {
+  border-radius: var(--phn-radius);
+  padding: 10px;
+}
+
+.catalog-menu-panel a:hover {
+  background: var(--bg-elev);
+  color: var(--accent-text);
+}
+
+.account-menu-panel {
+  min-width: 120px;
+}
+
 .text-link {
   color: var(--highlight-text);
   text-decoration: underline;
   text-decoration-style: dotted;
   text-underline-offset: 3px;
-}
-
-.topnav a[aria-disabled="true"] {
-  cursor: default;
 }
 
 .user-menu {
@@ -426,6 +509,33 @@ a:focus-visible {
   overflow: hidden;
 }
 
+.dashboard-sections {
+  display: grid;
+  gap: 18px;
+}
+
+.project-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.project-section-heading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.project-section-heading span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .project-list-heading,
 .project-row {
   display: grid;
@@ -454,6 +564,10 @@ a:focus-visible {
 .project-row {
   color: var(--text-primary);
   text-decoration: none;
+}
+
+.project-number {
+  font-family: var(--font-mono);
 }
 
 .project-row + .project-row {
@@ -510,8 +624,7 @@ a:focus-visible {
 }
 
 .form-error,
-.draft-banner,
-.read-only-banner {
+.draft-banner {
   margin: 0;
   border: 1px solid;
   border-radius: var(--phn-radius);
@@ -526,8 +639,7 @@ a:focus-visible {
   color: var(--phn-danger);
 }
 
-.draft-banner,
-.read-only-banner {
+.draft-banner {
   border-color: var(--phn-warning);
   background: var(--phn-warning-bg);
   color: var(--phn-warning);
@@ -674,6 +786,25 @@ button:disabled {
   font-family: var(--font-mono);
   font-size: 0.82rem;
   letter-spacing: 0.04em;
+}
+
+.project-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.read-only-pill {
+  border: 1px solid var(--phn-warning);
+  border-radius: 999px;
+  background: var(--phn-warning-bg);
+  color: var(--phn-warning);
+  padding: 4px 9px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .tabbar {
@@ -1014,6 +1145,17 @@ button:disabled {
 .diff-table ul {
   margin: 8px 0 0;
   padding-left: 20px;
+}
+
+.catalog-placeholder {
+  display: grid;
+  gap: 14px;
+}
+
+.catalog-roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 @media (max-width: 760px) {

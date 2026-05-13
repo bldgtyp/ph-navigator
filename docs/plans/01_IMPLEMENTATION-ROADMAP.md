@@ -135,25 +135,25 @@ historical tracer-bullet ledger and evidence trail.
 | Browser check | Edit Rooms, confirm header detects draft, Save/Discard works, lock/read-only states remain clear. |
 | Lessons | Document chrome state is owned by `features/project_document`: the header reads `/draft` summary for dirty state and save ETags, while table-specific downloads live with the table surface. Rooms writes invalidate the document summary instead of being queried by the header. |
 
-### P1-03 - Read-Safe-Mode Completion
+### P1-03 - MVP Document Recovery Scope
 
 | Field | Plan |
 |---|---|
-| Type | HITL for acceptance-scope decision if full fallback is larger than expected |
-| Status | [~] In review |
-| Goal | Close or explicitly re-scope the older/invalid document recovery story. |
+| Type | HITL scope decision recorded; implementation aid in review |
+| Status | [x] Complete |
+| Goal | Define MVP recovery behavior for invalid or unsupported project documents. |
 | References | `context/user-stories/00-foundation-shell.md` (US-Errors-SchemaFallback); `context/technical-requirements/llm-mcp-schema.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`. |
-| Includes | Decide full read-safe envelope vs download-only recovery; implement or document the accepted Phase 1 behavior; ensure raw JSON remains recoverable; include the `/draft` summary endpoint in the invalid/unsupported document check. |
-| Tests | Invalid/unsupported saved body test; frontend recovery-state test if UI lands. |
-| Browser check | Opening an invalid/unsupported version renders a recoverable read-only path or the roadmap records the explicit deferral. |
-| Lessons | Phase 1 implements the full document-level read-safe envelope now: `/document` and editor `/draft` summary return `schema_version_unsupported: true` with raw body diagnostics when saved/draft validation fails; table reads and writes remain strict so invalid JSON is recoverable but not editable. |
+| Includes | MVP guarantee: raw project JSON remains downloadable; typed table reads/writes fail closed when the saved/draft body cannot validate. Full schema-upgrade shims, golden fixtures, MCP read-safe behavior, and polished recovery UX are deferred until real schema evolution exists. Current Phase 1 implementation may keep the document-level read-safe envelope as a helpful recovery aid, but it is not the MVP contract. |
+| Tests | Invalid/unsupported saved body download and strict table-read failure; recovery-state tests only where the aid exists. |
+| Browser check | Opening an invalid/unsupported version never traps the user without raw JSON recovery; full older-schema workspace behavior is explicitly deferred. |
+| Lessons | MVP protects data, not editability: invalid/unsupported documents must keep raw Project JSON recoverable, while typed editing may fail closed. The current `/document` and editor `/draft` envelope plus recovery panel can ship as a Phase 1 aid, but forward upgrade shims, golden schema corpus, MCP read-safe behavior, and production recovery polish are post-MVP hardening. |
 
 ### P1-04 - BLDGTYP Design-System Foundation
 
 | Field | Plan |
 |---|---|
 | Type | AFK; design review if the visual direction is uncertain |
-| Status | [~] In review |
+| Status | [x] Complete |
 | Goal | Move the Phase 1 app from scaffold styling to the BLDGTYP V2 product language. |
 | References | `context/UI_UX.md`; BLDGTYP branding tokens; `context/technical-requirements/stack-auth-migration.md`. |
 | Includes | Tailwind/shadcn token alignment; fonts; shared app primitives for buttons, dialogs, popovers, toasts, tabs, table chrome, badges, banners, and empty states; project shell polish. |
@@ -166,13 +166,13 @@ historical tracer-bullet ledger and evidence trail.
 | Field | Plan |
 |---|---|
 | Type | HITL only if pin/reorder is re-scoped |
-| Status | [ ] Not started |
+| Status | [~] In progress |
 | Goal | Finish the Phase 1 shell stories enough that later tabs land inside a stable frame. |
 | References | `context/user-stories/00-foundation-shell.md`; `context/UI_UX.md`; `context/technical-requirements/api.md`. |
 | Includes | Dashboard row metadata; New Project modal polish; Catalogs dropdown routing without full catalog management; workspace header, breadcrumbs, tab routing, Viewer/read-only separation; no AirTable affordance. |
 | Tests | Project create/list/open contracts; frontend route/header behavior; write rejection for Viewer/public mode. |
 | Browser check | Sign in, create/open project, navigate tabs, return dashboard, reopen same URL as Viewer on local and staging. |
-| Lessons | Record any dashboard pin/reorder or shell-scope deferrals. |
+| Lessons | First P1-05 pass added live Catalogs dropdown routing for Materials, Window-Frame Elements, and Window-Glazing placeholder routes; context-aware workspace breadcrumbs; dashboard `My Projects` / `All projects` row metadata with relative last-modified timestamps and `bt_number DESC` backend ordering; empty-dashboard New Project CTA reuse; and Viewer header read-only pill instead of a full-width banner. Pin/reorder remains deferred because the `user_project_preferences` persistence table/API does not exist yet; pin/menu controls should stay absent until they have real semantics. Project-shell account identity still renders as `Editor` until a later shell/auth cleanup decides whether public project routes should also probe `/auth/session`. |
 
 ### P1-06 - Status Tab Full MVP
 
@@ -595,9 +595,9 @@ re-scoped in this roadmap.
 | P1 | P1-00 | Complete | 2026-05-13 11:20 EDT | Baseline matrix recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md`; local checks rerun; TB-06 staging blocker tracked as G-01 until staging credentials are available or staging is re-seeded. |
 | P1 | P1-01 | Complete | 2026-05-13 11:39 EDT | Backend project-document service split; registered Rooms table contract added; unsupported table names fail through registry for REST and MCP; simplify cleanup moved body-size calculation to document helpers, made registry diff order deterministic, shared MCP HTTP error mapping, avoided full-document dump/validation on unchanged Rooms replacements, and removed duplicate saved-version loading from draft diff. Verified with `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (46 passed). |
 | P1 | P1-02 | Complete | 2026-05-13 | Added document draft summary API and project-document frontend version chrome; project header no longer imports Equipment/Rooms state; Rooms JSON moved to Equipment/Rooms. Verified with backend/frontend tests, build, and local E2E. |
-| P1 | P1-03 | In review | 2026-05-13 | Implemented document-level read-safe envelope and frontend recovery panel. Verified with `make lint`; `make typecheck`; `make test` (backend 50 passed, frontend 23 passed); `cd frontend && npm run build`; browser Playwright recovery check at `http://127.0.0.1:5173/projects/.../equipment` with intercepted unsupported-schema `/draft` response. |
-| P1 | P1-04 | In review | 2026-05-13 | BLDGTYP token/font foundation and class-based app primitives landed for current Phase 1 scaffold surfaces. Follow-up review/simplify addressed theme-aware graph paper, light-only `color-scheme`, token stylesheet load order, active font weights, visible `/ v2` markup, read-safe link reuse, status-empty grid layout, icon-button sizing, and narrowed primary button cascade. Verified with `cd frontend && npm run format:check`; `cd frontend && npm run lint`; `cd frontend && npm test` (23 passed); `cd frontend && npm run build`; `cd frontend && npm run test:e2e` (2 passed). Browser screenshots captured for sign-in, dashboard, project shell/Status, Equipment/Rooms, and version popover/dialog at desktop plus narrow-tablet where applicable; Settings is deferred to P1-07 because that UI does not exist yet. |
-| P1 | P1-05 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-03 | Complete | 2026-05-13 | Approved closed after MVP re-scope around raw JSON recovery plus strict typed editing failure. Current implementation keeps document-level read-safe envelope/recovery panel as an aid, not a full schema-migration contract. Verified with `make lint`; `make typecheck`; `make test` (backend 50 passed, frontend 23 passed); `cd frontend && npm run build`; browser Playwright recovery check at `http://127.0.0.1:5173/projects/.../equipment` with intercepted unsupported-schema `/draft` response. |
+| P1 | P1-04 | Complete | 2026-05-13 | BLDGTYP token/font foundation and class-based app primitives landed for current Phase 1 scaffold surfaces. Follow-up review/simplify addressed theme-aware graph paper, light-only `color-scheme`, token stylesheet load order, active font weights, visible `/ v2` markup, read-safe link reuse, status-empty grid layout, icon-button sizing, and narrowed primary button cascade. Verified with `cd frontend && npm run format:check`; `cd frontend && npm run lint`; `cd frontend && npm test` (23 passed); `cd frontend && npm run build`; `cd frontend && npm run test:e2e` (2 passed). Browser screenshots captured for sign-in, dashboard, project shell/Status, Equipment/Rooms, and version popover/dialog at desktop plus narrow-tablet where applicable; Settings is deferred to P1-07 because that UI does not exist yet. Accepted on Render.com by Ed on 2026-05-13: GUI and styling look great. |
+| P1 | P1-05 | In progress | 2026-05-13 | First shell-completion pass: Catalogs dropdown routes to placeholder catalog pages; topbar breadcrumbs render on catalog and project routes; dashboard rows show section/count, BT number, project, client, relative last-modified, and backend list ordering now follows documented `bt_number DESC`; Viewer and read-safe Viewer shell use a compact Read-only pill. Review follow-up fixed schema-doc numbering, removed inert dashboard pin/menu placeholders until real semantics exist, tightened empty-dashboard a11y, split backend ordering coverage, and made the catalog-route test less brittle. Simplify cleanup moved catalog registry/menu ownership into the Catalogs feature, kept `WorkspaceTopbar` layout-only with nav/account slots, centralized catalog path use, removed stale topbar/banner CSS, computed dashboard relative-date `now` once per render, and replaced brittle E2E `.page-heading` scoping with the header button's accessible name. Verified with `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (51 passed); `cd frontend && npm run format:check`; `cd frontend && npm run lint`; `cd frontend && npm test` (24 passed); `cd frontend && npm run build`; `cd frontend && npm run test:e2e` (2 passed). Browser plugin reached sign-in but could not type into `input[type=email]`; Playwright fallback captured dashboard, Catalogs, editor shell, and Viewer shell screenshots at `127.0.0.1:5173`. Pin/reorder remains deferred pending `user_project_preferences` persistence/API. |
 | P1 | P1-06 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
 | P1 | P1-07 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
 | P1 | P1-08 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; DataTable extraction gate required before TB-07 unless explicitly re-scoped. |
@@ -788,7 +788,7 @@ What changed: Added a document-level draft summary response at `GET /api/v1/proj
 Why: Save, Save As, Discard, Diff, Lock/Unlock, and dirty/clean indicators are document-version actions. The header should not need to know whether Rooms, Windows, or another future table caused the current draft.
 What worked: The summary can stay small and table-neutral while deriving dirty table names from registered table contracts. Header Save now uses the document summary's `version_etag`; table-specific downloads stay in table UI. The existing E2E Rooms lifecycle still covers the browser path once the Rooms JSON link lives in Equipment instead of the header. Follow-up review fixed option-only Rooms dirty/diff visibility, remote-tab summary invalidation, the API-spec drift for `/draft`, and the temporary hardcoded Rooms table-query invalidation key.
 Verification: `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check features/project_document tests/test_project_document.py`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (49 passed after follow-up review amendments); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (21 passed); `cd frontend && npm run build`; `make seed-dev-user`; local `cd frontend && npm run test:e2e` (2 passed) against FastAPI `:8000` and Vite `:5173`.
-Follow-up: P1-03 remains the read-safe-mode completion slice, including the `/draft` summary endpoint. P1-04/P1-05/P1-11 own the remaining UI polish: modal prompts instead of `window.confirm`, component splitting, dirty-switch workflow, beforeunload/session-expiry handling, and future lock/edit-lease signals.
+Follow-up: P1-03 re-scopes MVP recovery around raw Project JSON access and strict typed-surface failure, with the `/draft` read-safe envelope retained as a Phase 1 aid. P1-04/P1-05/P1-11 own the remaining UI polish: modal prompts instead of `window.confirm`, component splitting, dirty-switch workflow, beforeunload/session-expiry handling, and future lock/edit-lease signals.
 ```
 
 ### P1-03
@@ -796,9 +796,9 @@ Follow-up: P1-03 remains the read-safe-mode completion slice, including the `/dr
 ```text
 Slice: P1-03
 Date: 2026-05-13
-What changed: Implemented Phase 1 read-safe-mode instead of downgrading to download-only recovery. `GET /document` and editor `GET /draft` now return a `schema_version_unsupported: true` envelope with raw body, saved/current schema, request id, validation diagnostics, and `schema_validation_failed_after_migration` when the saved or draft body cannot validate as the current project-document schema. The project shell renders a read-only recovery panel with Project JSON download, editor diagnostics, and version switching; normal table reads/writes remain validation-gated.
-Why: Raw JSON download was recoverable but not enough for the documented workspace-level schema-fallback story. The shell needs to avoid broken tabs before more project-document tables ship.
-What worked: Keep strict table contracts for typed table surfaces, but make document-level reads safe. The editor shell can reuse the `/draft` summary query to detect unsupported bodies; public viewer fallback uses the `/document` read-safe response. The backend logs the structured read-safe error code while still returning HTTP 200 for recovery envelopes.
+What changed: Re-scoped MVP recovery around data preservation instead of full schema-evolution behavior. The hard MVP contract is: raw Project JSON remains downloadable, and typed table reads/writes fail closed when the saved/draft body cannot validate. Current Phase 1 also returns a `schema_version_unsupported: true` envelope from `GET /document` and editor `GET /draft`, and the project shell renders a recovery panel, but that is a helpful aid rather than the full older-schema migration/read-safe workspace contract.
+Why: Before `ProjectDocumentV2` exists, full upgrade-shim infrastructure and production recovery UX are premature. MVP should guarantee that user data is not lost without promising old documents remain editable or fully migratable.
+What worked: Keep strict table contracts for typed table surfaces while preserving raw-body recovery at document-level surfaces. The editor shell can reuse the `/draft` summary query to detect unsupported bodies; public viewer fallback uses the `/document` read-safe response. The backend logs the structured read-safe error code while still returning HTTP 200 for recovery envelopes.
 Verification: `make lint`; `make typecheck`; `make test` (backend 50 passed, frontend 23 passed); `cd frontend && npm run build`; browser Playwright check against Vite `:5173` with intercepted unsupported-schema project/draft responses confirmed the recovery panel, raw JSON CTA, diagnostics, and no Save button.
-Follow-up: Future schema-version slices still need real forward-only upgrade shims and golden fixture corpora. MCP read-safe behavior should be revisited when TB-17 adds draft writes and schema migration is no longer V1-only. If public viewer document bodies become large, replace the current `/document` read-safe probe with a lightweight read-safety/status signal.
+Follow-up: Future schema-version slices still need real forward-only upgrade shims and golden fixture corpora before "older documents load successfully" becomes a product guarantee. MCP read-safe behavior should be revisited when TB-17 adds draft writes and schema migration is no longer V1-only. If public viewer document bodies become large, replace the current `/document` read-safe probe with a lightweight read-safety/status signal.
 ```

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
+import { CatalogMenu } from "../../catalogs/components/CatalogMenu";
+import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { NewProjectModal } from "../components/NewProjectModal";
@@ -24,21 +25,23 @@ export function Dashboard({ session }: { session: AuthSession }) {
 
   return (
     <main className="workspace-shell">
-      <WorkspaceTopbar>
-        <>
-          <span>{session.user.display_name}</span>
-          <button type="button" className="text-button" onClick={handleSignOut}>
-            Sign out
-          </button>
-        </>
-      </WorkspaceTopbar>
+      <WorkspaceTopbar
+        primaryNav={<CatalogMenu />}
+        accountSlot={
+          <TopbarAccountMenu label={session.user.display_name} onSignOut={handleSignOut} />
+        }
+      />
       <section className="dashboard-page" aria-labelledby="dashboard-title">
         <div className="page-heading">
           <div>
             <p className="eyebrow">Dashboard</p>
-            <h1 id="dashboard-title">Projects</h1>
+            <h1 id="dashboard-title">My Projects</h1>
           </div>
-          <button type="button" onClick={() => setIsCreateOpen(true)}>
+          <button
+            type="button"
+            aria-label="Create new project"
+            onClick={() => setIsCreateOpen(true)}
+          >
             New project
           </button>
         </div>
@@ -46,6 +49,7 @@ export function Dashboard({ session }: { session: AuthSession }) {
           isLoading={projectsQuery.isLoading}
           error={projectsQuery.error}
           projects={projectsQuery.data ?? []}
+          onCreateProject={() => setIsCreateOpen(true)}
         />
       </section>
       {isCreateOpen ? (

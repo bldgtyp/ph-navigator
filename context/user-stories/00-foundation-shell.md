@@ -124,8 +124,9 @@ and §1.6 *Session-expiry modal* (new).
 
 ## US-1 — Dashboard: list of my projects
 
-**Status:** Confirmed (2026-05-10)
-**Priority:** MVP (with Delete deferred — see US-1.4)
+**Status:** Confirmed (2026-05-10; Phase 1 subset implemented 2026-05-13)
+**Priority:** MVP for owned-project list/create/open and metadata; pin/reorder
+deferred until `user_project_preferences` exists
 **PRD ref:** §4, §6.1, §11.1
 
 ### Story
@@ -139,20 +140,19 @@ and §1.6 *Session-expiry modal* (new).
    editor do not appear (see Q1).
 3. Each row shows: project number (`bt_number`), project name,
    client (new field — see PRD update), last-modified date.
-4. Pinned projects appear at the top in a distinct section, in user-
-   defined order. Unpinned projects appear below, sorted by
-   last-modified descending by default (see Q3).
-5. The user can pin / unpin a project from the row action menu.
-6. The user can drag-reorder pinned projects within the pinned
-   section.
-7. Pin state and order are **per-user** (Ed's pins are independent
-   of John's; even if they someday share access — see Q1).
-8. The user can click a project row to open its landing page (US-3).
-9. The user can click "New project" to create a project (US-1.3).
-10. Each row carries a row-action menu (`⋯`) including Pin/Unpin,
-    Open, and Delete (Delete is greyed-out / hidden until US-1.4
-    ships).
-11. The dashboard top nav header (consistent across the app) carries
+4. Phase 1 rows appear in an "All projects" section sorted by
+   `bt_number` descending (see Q3).
+5. Pin/reorder controls do not render until the
+   `user_project_preferences` persistence/API exists; once implemented,
+   pinned projects appear at the top in user-defined order.
+6. Future pin state and order are **per-user** (Ed's pins are
+   independent of John's; even if they someday share access — see Q1).
+7. The user can click a project row to open its landing page (US-3).
+8. The user can click "New project" to create a project (US-1.3).
+9. Future row-action menus include Pin/Unpin, Open, and Delete
+   (Delete is greyed-out / hidden until US-1.4 ships). Phase 1 keeps
+   the menu absent until actions have real semantics.
+10. The dashboard top nav header (consistent across the app) carries
     the PH-Nav logo (clicking returns to dashboard, but already there
     is a no-op), the user's name with a sign-out option, and links
     to the catalog manager(s) (US-2).
@@ -191,7 +191,7 @@ None — all US-1 questions resolved 2026-05-10.
 ### Sub-stories
 
 #### US-1.1 — Pin and reorder projects
-**Status:** Draft · **Priority:** MVP
+**Status:** Deferred · **Priority:** post-Phase-1 unless explicitly re-scoped
 
 > As an editor, I want to pin frequently-active projects to the top of
 > my dashboard and reorder them so that they're always one click away.
@@ -799,8 +799,8 @@ Each tab is its own user story; specced when we walk it.
 
 ## US-Errors-SchemaFallback — Older document read-safe mode
 
-**Status:** Draft
-**Priority:** MVP
+**Status:** Re-scoped for MVP
+**Priority:** MVP data-recovery subset; full read-safe workspace is post-MVP hardening
 **PRD ref:** §10.5 (schema versioning), §16 (success criteria)
 **UI/UX ref:** §1.4 (toasts), §4 (state indicators)
 
@@ -810,6 +810,19 @@ Each tab is its own user story; specced when we walk it.
 > fully migrate that document shape.
 
 ### Acceptance criteria
+MVP acceptance:
+
+1. Raw project JSON remains downloadable for any saved version, even
+   when the current app cannot validate that body as
+   `ProjectDocumentV{CURRENT}`.
+2. Typed table reads/writes and draft writes fail closed for invalid or
+   unsupported bodies; PHN does not attempt partial editing of unknown
+   document shapes.
+3. The user is never trapped without a recovery path to the raw saved
+   project JSON.
+
+Post-MVP hardening:
+
 1. If a schema upgrade shim raises, or if the upgraded body fails
    `ProjectDocumentV{CURRENT}` validation, the API returns
    `schema_version_unsupported: true` with the raw body per PRD §10.5.
