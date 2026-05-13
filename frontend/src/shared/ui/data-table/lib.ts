@@ -1,4 +1,14 @@
-import type { CellCoord, CellRange, DataTableColumnDef, FilterCondition, SortRule } from "./types";
+import type {
+  CellCoord,
+  CellRange,
+  CellWrite,
+  DataTableColumnDef,
+  FieldDef,
+  FieldOption,
+  FilterCondition,
+  SortRule,
+} from "./types";
+import { generatedId } from "../../lib/ids";
 
 export type NormalizedRange = {
   rowStart: number;
@@ -76,9 +86,11 @@ export function clampRange(range: CellRange, rowCount: number, columnCount: numb
 export function rangeToTsv<TRow>(
   rows: TRow[],
   columns: DataTableColumnDef<TRow>[],
+  fieldDefs: FieldDef[],
   range: CellRange,
 ): string {
   const normalized = normalizeRange(range);
+  const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
   const lines: string[] = [];
   for (let rowIndex = normalized.rowStart; rowIndex <= normalized.rowEnd; rowIndex += 1) {
     const row = rows[rowIndex];
@@ -89,7 +101,12 @@ export function rangeToTsv<TRow>(
       columnIndex <= normalized.columnEnd;
       columnIndex += 1
     ) {
-      values.push(formatClipboardValue(columns[columnIndex]?.accessor(row)));
+      values.push(
+        formatClipboardCellValue(
+          columns[columnIndex]?.accessor(row),
+          fieldDefForColumn(columns[columnIndex], fieldDefsByKey),
+        ),
+      );
     }
     lines.push(values.join("\t"));
   }
@@ -99,15 +116,20 @@ export function rangeToTsv<TRow>(
 export function rangeToHtml<TRow>(
   rows: TRow[],
   columns: DataTableColumnDef<TRow>[],
+  fieldDefs: FieldDef[],
   range: CellRange,
 ): string {
   const normalized = normalizeRange(range);
+  const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
   const body = rows
     .slice(normalized.rowStart, normalized.rowEnd + 1)
     .map((row) => {
       const cells = columns
         .slice(normalized.columnStart, normalized.columnEnd + 1)
-        .map((column) => `<td>${escapeHtml(formatClipboardValue(column.accessor(row)))}</td>`)
+        .map(
+          (column) =>
+            `<td>${escapeHtml(formatClipboardCellValue(column.accessor(row), fieldDefForColumn(column, fieldDefsByKey)))}</td>`,
+        )
         .join("");
       return `<tr>${cells}</tr>`;
     })
@@ -164,16 +186,23 @@ export function planPaste({
 export function applyTextFilters<TRow>(
   rows: TRow[],
   columns: DataTableColumnDef<TRow>[],
+  fieldDefs: FieldDef[],
   filters: FilterCondition[],
 ): TRow[] {
   const activeFilters = filters.filter((filter) => filter.fieldKey);
   if (activeFilters.length === 0) return rows;
   const columnsByFieldKey = fieldKeyColumnMap(columns);
+  const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
   return rows.filter((row) =>
     activeFilters.every((filter) => {
       const column = columnsByFieldKey.get(filter.fieldKey);
       if (!column) return true;
-      const value = formatClipboardValue(column.accessor(row)).trim().toLowerCase();
+      const value = formatClipboardCellValue(
+        column.accessor(row),
+        fieldDefForColumn(column, fieldDefsByKey),
+      )
+        .trim()
+        .toLowerCase();
       const expected = (filter.value ?? "").trim().toLowerCase();
       if (filter.operator === "is_empty") return value === "";
       if (!expected) return true;
@@ -186,21 +215,29 @@ export function applyTextFilters<TRow>(
 export function sortRows<TRow>(
   rows: TRow[],
   columns: DataTableColumnDef<TRow>[],
+  fieldDefs: FieldDef[],
   sortRules: SortRule[],
 ): TRow[] {
   if (sortRules.length === 0) return rows;
   const columnsByFieldKey = fieldKeyColumnMap(columns);
+  const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
   const sorted = [...rows];
   sorted.sort((left, right) => {
     for (const rule of sortRules) {
       const column = columnsByFieldKey.get(rule.fieldKey);
       if (!column) continue;
-      const leftValue = formatClipboardValue(column.accessor(left));
-      const rightValue = formatClipboardValue(column.accessor(right));
-      const result = leftValue.localeCompare(rightValue, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
+      const fieldDef = fieldDefForColumn(column, fieldDefsByKey);
+      const result =
+        fieldDef?.field_type === "single_select"
+          ? compareSingleSelectValues(column.accessor(left), column.accessor(right), fieldDef)
+          : formatClipboardValue(column.accessor(left)).localeCompare(
+              formatClipboardValue(column.accessor(right)),
+              undefined,
+              {
+                numeric: true,
+                sensitivity: "base",
+              },
+            );
       if (result !== 0) return rule.direction === "asc" ? result : -result;
     }
     return 0;
@@ -208,11 +245,187 @@ export function sortRows<TRow>(
   return sorted;
 }
 
+export type CoercePasteResult =
+  | {
+      ok: true;
+      writes: CellWrite[];
+      newOptions: Record<string, FieldOption[]>;
+    }
+  | {
+      ok: false;
+      errors: { rowIndex: number; columnIndex: number; raw: string; message: string }[];
+    };
+
+export function coercePasteWrites<TRow>({
+  plannedWrites,
+  rows,
+  columns,
+  fieldDefs,
+  getRowId,
+}: {
+  plannedWrites: { rowIndex: number; columnIndex: number; raw: string }[];
+  rows: TRow[];
+  columns: DataTableColumnDef<TRow>[];
+  fieldDefs: FieldDef[];
+  getRowId: (row: TRow) => string;
+}): CoercePasteResult {
+  const errors: { rowIndex: number; columnIndex: number; raw: string; message: string }[] = [];
+  const writes: CellWrite[] = [];
+  const optionsByField = new Map(
+    fieldDefs.map((fieldDef) => [fieldDef.field_key, [...(fieldDef.options ?? [])]]),
+  );
+  const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
+  const newOptions: Record<string, FieldOption[]> = {};
+
+  for (const plannedWrite of plannedWrites) {
+    const row = rows[plannedWrite.rowIndex];
+    const column = columns[plannedWrite.columnIndex];
+    if (!row || !column) continue;
+    const fieldDef = fieldDefForColumn(column, fieldDefsByKey);
+    const coerced = coercePasteValue(plannedWrite.raw, fieldDef, () => {
+      const options = optionsByField.get(column.fieldKey) ?? [];
+      optionsByField.set(column.fieldKey, options);
+      return options;
+    });
+    if (!coerced.ok) {
+      errors.push({ ...plannedWrite, message: coerced.message });
+      continue;
+    }
+    writes.push({ rowId: getRowId(row), fieldKey: column.fieldKey, value: coerced.value });
+    if (coerced.created) {
+      newOptions[column.fieldKey] = [...(newOptions[column.fieldKey] ?? []), coerced.created];
+    }
+  }
+
+  return errors.length ? { ok: false, errors } : { ok: true, writes, newOptions };
+}
+
 export function formatClipboardValue(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value);
+}
+
+export function formatClipboardCellValue(value: unknown, fieldDef: FieldDef | undefined): string {
+  if (fieldDef?.field_type !== "single_select") return formatClipboardValue(value);
+  if (value === null || value === undefined || value === "") return "";
+  const option = fieldDef.options?.find((candidate) => candidate.id === value);
+  return option?.label ?? "";
+}
+
+export function formatDisplayCellValue(value: unknown, fieldDef: FieldDef | undefined): string {
+  if (fieldDef?.field_type !== "single_select") return formatClipboardValue(value);
+  if (value === null || value === undefined || value === "") return "";
+  const option = singleSelectOption(value, fieldDef);
+  return option?.label ?? "Missing option";
+}
+
+export function singleSelectOption(
+  value: unknown,
+  fieldDef: FieldDef | undefined,
+): FieldOption | undefined {
+  if (fieldDef?.field_type !== "single_select" || typeof value !== "string") return undefined;
+  return fieldDef.options?.find((candidate) => candidate.id === value);
+}
+
+function coercePasteValue(
+  raw: string,
+  fieldDef: FieldDef | undefined,
+  optionsForField: () => FieldOption[],
+): { ok: true; value: unknown; created?: FieldOption } | { ok: false; message: string } {
+  const trimmed = raw.trim();
+  if (fieldDef?.field_type === "number") {
+    if (!trimmed) return { ok: true, value: null };
+    const value = Number(trimmed);
+    return Number.isFinite(value)
+      ? { ok: true, value }
+      : { ok: false, message: "Expected a number." };
+  }
+  if (fieldDef?.field_type === "single_select") {
+    if (!trimmed) return { ok: true, value: null };
+    const options = optionsForField();
+    const existing = findFieldOptionByLabel(options, trimmed);
+    if (existing) return { ok: true, value: existing.id };
+    const created = createFieldOption(trimmed, options);
+    options.push(created);
+    return { ok: true, value: created.id, created };
+  }
+  return { ok: true, value: raw };
+}
+
+function compareSingleSelectValues(left: unknown, right: unknown, fieldDef: FieldDef): number {
+  const leftRank = optionSortRank(left, fieldDef);
+  const rightRank = optionSortRank(right, fieldDef);
+  if (leftRank !== rightRank) return leftRank - rightRank;
+  return formatClipboardCellValue(left, fieldDef).localeCompare(
+    formatClipboardCellValue(right, fieldDef),
+    undefined,
+    {
+      numeric: true,
+      sensitivity: "base",
+    },
+  );
+}
+
+function optionSortRank(value: unknown, fieldDef: FieldDef): number {
+  if (value === null || value === undefined || value === "") return Number.POSITIVE_INFINITY;
+  const option = singleSelectOption(value, fieldDef);
+  // Missing option ids sort before explicit blanks so corrupt refs stay visible.
+  return option?.order ?? Number.MAX_SAFE_INTEGER;
+}
+
+function fieldDefForColumn<TRow>(
+  column: DataTableColumnDef<TRow> | undefined,
+  fieldDefsByKey: Map<string, FieldDef>,
+): FieldDef | undefined {
+  if (!column) return undefined;
+  return fieldDefsByKey.get(column.fieldKey);
+}
+
+function fieldKeyFieldDefMap(fieldDefs: FieldDef[]): Map<string, FieldDef> {
+  return new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef]));
+}
+
+export function findFieldOptionByLabel(
+  options: FieldOption[],
+  rawLabel: string,
+): FieldOption | undefined {
+  const label = normalizeOptionLabel(rawLabel);
+  return options.find((option) => normalizeOptionLabel(option.label) === label);
+}
+
+export function hasDuplicateFieldOptionLabels(options: FieldOption[]): boolean {
+  const labels = new Set<string>();
+  for (const option of options) {
+    const label = normalizeOptionLabel(option.label);
+    if (!label) continue;
+    if (labels.has(label)) return true;
+    labels.add(label);
+  }
+  return false;
+}
+
+export function createFieldOption(rawLabel: string, existingOptions: FieldOption[]): FieldOption {
+  return {
+    id: generatedId("opt"),
+    label: rawLabel.trim(),
+    color: nextOptionColor(existingOptions.length),
+    order: nextOptionOrder(existingOptions),
+  };
+}
+
+function normalizeOptionLabel(label: string): string {
+  return label.trim().toLocaleLowerCase();
+}
+
+function nextOptionColor(index: number): string {
+  const colors = ["#3b82f6", "#10b981", "#a16207", "#7c3aed", "#0f766e", "#be123c"];
+  return colors[index % colors.length] ?? "#6b7280";
+}
+
+function nextOptionOrder(options: FieldOption[]): number {
+  return options.length ? Math.max(...options.map((option) => option.order)) + 1 : 0;
 }
 
 function fieldKeyColumnMap<TRow>(

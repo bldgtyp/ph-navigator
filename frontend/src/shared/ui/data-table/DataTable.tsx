@@ -3,7 +3,8 @@ import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tan
 import {
   applyTextFilters,
   clampRange,
-  formatClipboardValue,
+  coercePasteWrites,
+  formatDisplayCellValue,
   isCellInNormalizedRange,
   moveActiveCell,
   normalizeRange,
@@ -23,6 +24,7 @@ export function DataTable<TRow>({
   view,
   onViewChange,
   onWrite,
+  renderHeaderActions,
   readOnly = false,
   density = "compact",
   emptyMessage,
@@ -37,14 +39,19 @@ export function DataTable<TRow>({
     const remainder = columnDefs.filter((column) => !view.columnOrder.includes(column.id));
     return [...ordered, ...remainder].filter((column) => !hidden.has(column.id));
   }, [columnDefs, view.columnOrder, view.hiddenColumns]);
+  const fieldDefByKey = useMemo(
+    () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
+    [fieldDefs],
+  );
   const filteredRows = useMemo(
     () =>
       sortRows(
-        applyTextFilters(rows, visibleColumnDefs, view.filter),
+        applyTextFilters(rows, visibleColumnDefs, fieldDefs, view.filter),
         visibleColumnDefs,
+        fieldDefs,
         view.sort,
       ),
-    [rows, visibleColumnDefs, view.filter, view.sort],
+    [rows, visibleColumnDefs, fieldDefs, view.filter, view.sort],
   );
   const [activeCell, setActiveCell] = useState<CellCoord>({ rowIndex: 0, columnIndex: 0 });
   const [selection, setSelection] = useState<CellRange | null>(null);
@@ -57,9 +64,10 @@ export function DataTable<TRow>({
         header: column.header,
         accessorFn: column.accessor,
         cell: ({ row }) =>
-          column.render?.(row.original) ?? formatClipboardValue(column.accessor(row.original)),
+          column.render?.(row.original) ??
+          formatDisplayCellValue(column.accessor(row.original), fieldDefByKey.get(column.fieldKey)),
       })),
-    [visibleColumnDefs],
+    [fieldDefByKey, visibleColumnDefs],
   );
 
   const table = useReactTable<TRow>({
@@ -86,7 +94,7 @@ export function DataTable<TRow>({
     if (event.defaultPrevented) return;
     if (isCommandShortcut(event) && event.key.toLowerCase() === "c") {
       event.preventDefault();
-      void copySelection(filteredRows, visibleColumnDefs, activeRange);
+      void copySelection(filteredRows, visibleColumnDefs, fieldDefs, activeRange);
       return;
     }
     if (isCommandShortcut(event) && event.key.toLowerCase() === "v") {
@@ -96,6 +104,7 @@ export function DataTable<TRow>({
         activeRange,
         filteredRows,
         visibleColumnDefs,
+        fieldDefs,
         getRowId,
         onWrite,
         setAnnounce,
@@ -183,6 +192,15 @@ export function DataTable<TRow>({
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </button>
+                      {column
+                        ? renderHeaderActions?.(
+                            fieldDefByKey.get(column.fieldKey) ?? {
+                              field_key: column.fieldKey,
+                              field_type: "text",
+                              display_name: column.header,
+                            },
+                          )
+                        : null}
                     </th>
                   );
                 })}
@@ -261,10 +279,11 @@ export function DataTable<TRow>({
 async function copySelection<TRow>(
   rows: TRow[],
   columns: DataTableProps<TRow>["columnDefs"],
+  fieldDefs: DataTableProps<TRow>["fieldDefs"],
   range: CellRange,
 ) {
-  const tsv = rangeToTsv(rows, columns, range);
-  const html = rangeToHtml(rows, columns, range);
+  const tsv = rangeToTsv(rows, columns, fieldDefs, range);
+  const html = rangeToHtml(rows, columns, fieldDefs, range);
   if ("ClipboardItem" in window && navigator.clipboard?.write) {
     await navigator.clipboard.write([
       new ClipboardItem({
@@ -293,6 +312,7 @@ async function pasteIntoSelection<TRow>(
   range: CellRange,
   rows: TRow[],
   columns: DataTableProps<TRow>["columnDefs"],
+  fieldDefs: DataTableProps<TRow>["fieldDefs"],
   getRowId: (row: TRow) => string,
   onWrite: DataTableProps<TRow>["onWrite"],
   setAnnounce: (message: string) => void,
@@ -317,16 +337,27 @@ async function pasteIntoSelection<TRow>(
     setAnnounce(`Clipboard has ${plan.columnsOverflow} more columns. Extra columns dropped.`);
     return;
   }
+  const coerced = coercePasteWrites({
+    plannedWrites: plan.writes,
+    rows,
+    columns,
+    fieldDefs,
+    getRowId,
+  });
+  if (!coerced.ok) {
+    const first = coerced.errors[0];
+    setAnnounce(
+      first
+        ? `Paste blocked at row ${first.rowIndex + 1}, column ${first.columnIndex + 1}: ${first.message}`
+        : "Paste blocked.",
+    );
+    return;
+  }
   await onWrite({
     kind: "paste",
-    writes: plan.writes.flatMap((write) => {
-      const row = rows[write.rowIndex];
-      const column = columns[write.columnIndex];
-      if (!row || !column) return [];
-      return [{ rowId: getRowId(row), fieldKey: column.fieldKey, value: write.raw }];
-    }),
+    writes: coerced.writes,
     rowsInserted: [],
-    newOptions: {},
+    newOptions: coerced.newOptions,
   });
   setAnnounce(`${plan.writes.length} cells pasted.`);
 }

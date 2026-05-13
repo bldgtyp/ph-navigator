@@ -1,9 +1,6 @@
-export type SingleSelectOption = {
-  id: string;
-  label: string;
-  color: string;
-  order: number;
-};
+import type { FieldOption } from "../../shared/ui/data-table";
+
+export type SingleSelectOption = FieldOption;
 
 export type RoomRow = {
   id: string;

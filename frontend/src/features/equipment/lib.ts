@@ -7,13 +7,15 @@ import type {
 } from "./types";
 import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY } from "./types";
 import { ApiRequestError } from "../../shared/api/client";
+import type { FieldOption } from "../../shared/ui/data-table";
+import {
+  createFieldOption,
+  findFieldOptionByLabel,
+  formatDisplayCellValue,
+} from "../../shared/ui/data-table/lib";
+import { generatedId } from "../../shared/lib/ids";
 
-const OPTION_COLORS = ["#3b82f6", "#10b981", "#a16207", "#7c3aed", "#0f766e", "#be123c"];
-
-export function generatedId(prefix: "rm" | "opt"): string {
-  const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-  return `${prefix}_${random.replace(/[^A-Za-z0-9]/g, "")}`;
-}
+type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
 export function emptyRoom(): RoomRow {
   return {
@@ -32,8 +34,12 @@ export function emptyRoom(): RoomRow {
 }
 
 export function optionLabel(options: SingleSelectOption[], optionId: string | null): string {
-  if (!optionId) return "";
-  return options.find((option) => option.id === optionId)?.label ?? "Missing option";
+  return formatDisplayCellValue(optionId, {
+    field_key: "single_select_option",
+    field_type: "single_select",
+    display_name: "Single select option",
+    options,
+  });
 }
 
 export function sortedRooms(rooms: RoomRow[]): RoomRow[] {
@@ -75,6 +81,86 @@ export function deleteRoomPayload(current: RoomsSlice, roomId: string): RoomsRep
     rooms: current.rooms.filter((room) => room.id !== roomId),
     single_select_options: cloneOptions(current),
   };
+}
+
+export function roomsPayloadFromCellWrites(
+  current: RoomsSlice,
+  writes: RoomCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+): RoomsReplacePayload {
+  const options = cloneOptions(current);
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    if (!isRoomOptionKey(fieldKey)) continue;
+    options[fieldKey] = normalizeOptionOrders([...options[fieldKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, RoomCellWrite[]>());
+  const rooms = current.rooms.map((room) =>
+    applyWritesToRoom(room, writesByRowId.get(room.id) ?? []),
+  );
+  return { rooms: sortedRooms(rooms), single_select_options: options };
+}
+
+export function replaceRoomOptionsPayload(
+  current: RoomsSlice,
+  key: RoomOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): RoomsReplacePayload {
+  const options = cloneOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.rooms
+      .map((room) => roomValueForOptionKey(room, key))
+      .filter((optionId): optionId is string => optionId !== null && !nextOptionIds.has(optionId)),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const rooms = current.rooms.map((room) => {
+    const currentOptionId = roomValueForOptionKey(room, key);
+    if (!currentOptionId || !(currentOptionId in replacements)) return room;
+    return { ...room, [roomFieldForOptionKey(key)]: replacements[currentOptionId] };
+  });
+  return { rooms: sortedRooms(rooms), single_select_options: options };
+}
+
+export function optionReferenceCounts(
+  rooms: RoomRow[],
+  key: RoomOptionKey,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const room of rooms) {
+    const optionId = roomValueForOptionKey(room, key);
+    if (!optionId) continue;
+    counts[optionId] = (counts[optionId] ?? 0) + 1;
+  }
+  return counts;
+}
+
+export function missingOptionReferences(
+  rooms: RoomRow[],
+  key: RoomOptionKey,
+  options: SingleSelectOption[],
+): string[] {
+  const optionIds = new Set(options.map((option) => option.id));
+  return rooms
+    .map((room) => roomValueForOptionKey(room, key))
+    .filter((optionId): optionId is string => optionId !== null && !optionIds.has(optionId));
+}
+
+export function normalizeOptionOrders(options: SingleSelectOption[]): SingleSelectOption[] {
+  return options.map((option, index) => ({ ...option, label: option.label.trim(), order: index }));
 }
 
 export function duplicateRoomNumber(rooms: RoomRow[], room: RoomRow): boolean {
@@ -119,6 +205,57 @@ function cloneOptions(current: RoomsSlice): RoomsReplacePayload["single_select_o
   };
 }
 
+function applyWritesToRoom(room: RoomRow, writes: RoomCellWrite[]): RoomRow {
+  if (writes.length === 0) return room;
+  let next = room;
+  for (const write of writes) {
+    next = applyWriteToRoom(next, write.fieldKey, write.value);
+  }
+  return {
+    ...next,
+    number: next.number.trim(),
+    name: next.name.trim(),
+    num_people: Math.max(0, Math.trunc(next.num_people || 0)),
+    num_bedrooms: Math.max(0, Math.trunc(next.num_bedrooms || 0)),
+    icfa_factor: clamp(next.icfa_factor || 0, 0, 1),
+  };
+}
+
+function applyWriteToRoom(room: RoomRow, fieldKey: string, value: unknown): RoomRow {
+  if (fieldKey === "number" && typeof value === "string") return { ...room, number: value };
+  if (fieldKey === "name" && typeof value === "string") return { ...room, name: value };
+  if (fieldKey === "num_people" && typeof value === "number") return { ...room, num_people: value };
+  if (fieldKey === "num_bedrooms" && typeof value === "number") {
+    return { ...room, num_bedrooms: value };
+  }
+  if (fieldKey === "icfa_factor" && typeof value === "number") {
+    return { ...room, icfa_factor: value };
+  }
+  if (fieldKey === ROOM_FLOOR_LEVEL_KEY && isNullableOptionId(value)) {
+    return { ...room, floor_level: value };
+  }
+  if (fieldKey === ROOM_BUILDING_ZONE_KEY && isNullableOptionId(value)) {
+    return { ...room, building_zone: value };
+  }
+  return room;
+}
+
+function isNullableOptionId(value: unknown): value is string | null {
+  return value === null || (typeof value === "string" && value.startsWith("opt_"));
+}
+
+function isRoomOptionKey(key: string): key is RoomOptionKey {
+  return key === ROOM_FLOOR_LEVEL_KEY || key === ROOM_BUILDING_ZONE_KEY;
+}
+
+function roomFieldForOptionKey(key: RoomOptionKey): "floor_level" | "building_zone" {
+  return key === ROOM_FLOOR_LEVEL_KEY ? "floor_level" : "building_zone";
+}
+
+function roomValueForOptionKey(room: RoomRow, key: RoomOptionKey): string | null {
+  return room[roomFieldForOptionKey(key)];
+}
+
 function upsertOption(
   options: RoomsReplacePayload["single_select_options"],
   key: RoomOptionKey,
@@ -126,16 +263,9 @@ function upsertOption(
 ): string | null {
   const label = rawLabel.trim();
   if (!label) return null;
-  const existing = options[key].find(
-    (option) => option.label.trim().toLocaleLowerCase() === label.toLocaleLowerCase(),
-  );
+  const existing = findFieldOptionByLabel(options[key], label);
   if (existing) return existing.id;
-  const nextOption: SingleSelectOption = {
-    id: generatedId("opt"),
-    label,
-    color: OPTION_COLORS[options[key].length % OPTION_COLORS.length] ?? "#6b7280",
-    order: options[key].length,
-  };
+  const nextOption: SingleSelectOption = createFieldOption(label, options[key]);
   options[key] = [...options[key], nextOption];
   return nextOption.id;
 }

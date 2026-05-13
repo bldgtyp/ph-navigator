@@ -5,9 +5,11 @@ import {
   emptyRoom,
   isDraftStaleError,
   isInvalidProjectDocumentError,
+  replaceRoomOptionsPayload,
   nextRoomsPayload,
   optionLabel,
   remoteSliceChangesActiveRoom,
+  roomsPayloadFromCellWrites,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
 import type { RoomsSlice } from "./types";
@@ -155,5 +157,74 @@ describe("equipment room helpers", () => {
         { ...room, floor_level: "opt_ground" },
       ),
     ).toBe(true);
+  });
+
+  test("applies paste writes and created options in one Rooms payload", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [{ ...emptyRoom(), id: "rm_1", number: "101", name: "Living" }],
+    };
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [
+        { rowId: "rm_1", fieldKey: "rooms.floor_level", value: "opt_ground" },
+        { rowId: "rm_1", fieldKey: "num_people", value: 3 },
+      ],
+      {
+        "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
+      },
+    );
+
+    expect(payload.rooms[0]?.floor_level).toBe("opt_ground");
+    expect(payload.rooms[0]?.num_people).toBe(3);
+    expect(payload.single_select_options["rooms.floor_level"]).toEqual([
+      { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+    ]);
+  });
+
+  test("renames, reorders, and deletes options with reference replacement", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        { ...emptyRoom(), id: "rm_1", number: "101", name: "Living", floor_level: "opt_ground" },
+      ],
+      single_select_options: {
+        "rooms.floor_level": [
+          { id: "opt_basement", label: "Basement", color: "#6b7280", order: 0 },
+          { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 1 },
+        ],
+        "rooms.building_zone": [],
+      },
+    };
+
+    const payload = replaceRoomOptionsPayload(
+      current,
+      "rooms.floor_level",
+      [{ id: "opt_basement", label: "Cellar", color: "#10b981", order: 0 }],
+      { opt_ground: "opt_basement" },
+    );
+
+    expect(payload.rooms[0]?.floor_level).toBe("opt_basement");
+    expect(payload.single_select_options["rooms.floor_level"]).toEqual([
+      { id: "opt_basement", label: "Cellar", color: "#10b981", order: 0 },
+    ]);
+  });
+
+  test("rejects deleting a referenced option without an explicit replacement decision", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        { ...emptyRoom(), id: "rm_1", number: "101", name: "Living", floor_level: "opt_ground" },
+      ],
+      single_select_options: {
+        "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
+        "rooms.building_zone": [],
+      },
+    };
+
+    expect(() => replaceRoomOptionsPayload(current, "rooms.floor_level", [])).toThrow(
+      "Missing replacement for referenced rooms.floor_level option opt_ground.",
+    );
   });
 });

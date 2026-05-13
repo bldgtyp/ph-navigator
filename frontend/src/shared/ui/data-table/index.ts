@@ -5,6 +5,7 @@ export type {
   DataTableColumnDef,
   DataTableProps,
   FieldDef,
+  FieldOption,
   FilterCondition,
   GroupRule,
   SortRule,

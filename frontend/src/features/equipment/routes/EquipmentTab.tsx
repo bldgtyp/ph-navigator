@@ -13,8 +13,17 @@ import {
   isInvalidProjectDocumentError,
   nextRoomsPayload,
   remoteSliceChangesActiveRoom,
+  replaceRoomOptionsPayload,
+  roomsPayloadFromCellWrites,
 } from "../lib";
-import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
+import type { WriteOp } from "../../../shared/ui/data-table";
+import {
+  ROOMS_TABLE_NAME,
+  type RoomOptionKey,
+  type RoomRow,
+  type RoomsSlice,
+  type SingleSelectOption,
+} from "../types";
 
 type RoomModalState = { mode: "add" } | { mode: "edit"; room: RoomRow };
 
@@ -132,6 +141,50 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     );
   };
 
+  const handleTableWrite = (op: WriteOp) => {
+    if (!canEdit || op.kind !== "paste") return;
+    setActionError(null);
+    replaceRoomsMutation.mutate(
+      {
+        current: roomsSlice,
+        payload: roomsPayloadFromCellWrites(roomsSlice, op.writes, op.newOptions),
+      },
+      {
+        onError: async (error) => {
+          if (isDraftStaleError(error)) {
+            await handleStaleDraftConflict(ACTIVE_ROOM_CONFLICT_MESSAGE);
+            return;
+          }
+          setActionError(errorMessage(error, "Could not paste rooms table values."));
+        },
+      },
+    );
+  };
+
+  const saveOptions = (
+    fieldKey: RoomOptionKey,
+    options: SingleSelectOption[],
+    replacements: Record<string, string | null> = {},
+  ) => {
+    if (!canEdit) return;
+    setActionError(null);
+    replaceRoomsMutation.mutate(
+      {
+        current: roomsSlice,
+        payload: replaceRoomOptionsPayload(roomsSlice, fieldKey, options, replacements),
+      },
+      {
+        onError: async (error) => {
+          if (isDraftStaleError(error)) {
+            await handleStaleDraftConflict(ACTIVE_ROOM_CONFLICT_MESSAGE);
+            return;
+          }
+          setActionError(errorMessage(error, "Could not update room options."));
+        },
+      },
+    );
+  };
+
   return (
     <section className="tab-panel equipment-panel" aria-labelledby="equipment-title">
       <div className="status-heading">
@@ -199,6 +252,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
         view={roomsTableView}
         onViewChange={setRoomsTableView}
+        onWrite={handleTableWrite}
+        onSaveOptions={saveOptions}
       />
       {roomModal?.mode === "edit" && isEditor && !isLocked ? (
         <div className="room-actions">

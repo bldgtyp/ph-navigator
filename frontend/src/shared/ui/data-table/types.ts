@@ -15,6 +15,14 @@ export type FieldDef = {
   read_only?: boolean;
   required?: boolean;
   description?: string;
+  options?: FieldOption[];
+};
+
+export type FieldOption = {
+  id: string;
+  label: string;
+  color: string;
+  order: number;
 };
 
 export type DataTableColumnDef<TRow> = {
@@ -66,7 +74,7 @@ export type WriteOp =
       kind: "paste";
       writes: CellWrite[];
       rowsInserted: unknown[];
-      newOptions: Record<string, unknown[]>;
+      newOptions: Record<string, FieldOption[]>;
     }
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: unknown[] }
@@ -91,6 +99,7 @@ export type DataTableProps<TRow> = {
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onWrite?: (op: WriteOp) => void | Promise<void>;
+  renderHeaderActions?: (field: FieldDef) => ReactNode;
   readOnly?: boolean;
   density?: "compact" | "comfortable";
   emptyMessage: string;
