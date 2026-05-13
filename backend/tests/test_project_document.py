@@ -246,6 +246,61 @@ def test_rooms_replace_noop_does_not_create_draft(clean_document_tables: None) -
     assert draft is None
 
 
+def test_draft_summary_reports_clean_and_dirty_document_state(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    clean = client.get(draft_url(project_id, version_id))
+
+    assert clean.status_code == 200
+    assert clean.json()["source"] == "version"
+    assert clean.json()["draft_etag"] is None
+    assert clean.json()["dirty_tables"] == []
+    assert clean.json()["last_patched_at"] is None
+    assert clean.json()["is_locked"] is False
+    assert clean.json()["can_edit"] is True
+
+    create_rooms_draft(client, project_id, version_id)
+    dirty = client.get(draft_url(project_id, version_id))
+
+    assert dirty.status_code == 200
+    assert dirty.json()["source"] == "draft"
+    assert dirty.json()["draft_etag"]
+    assert dirty.json()["dirty_tables"] == ["rooms"]
+    assert dirty.json()["last_patched_at"]
+    assert dirty.json()["is_locked"] is False
+    assert dirty.json()["can_edit"] is True
+
+
+def test_draft_summary_reports_locked_state_with_preserved_draft(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    create_rooms_draft(client, project_id, version_id)
+
+    locked = client.patch(
+        version_url(project_id, version_id),
+        headers={"Origin": ORIGIN},
+        json={"locked": True},
+    )
+    assert locked.status_code == 200
+
+    summary = client.get(draft_url(project_id, version_id))
+
+    assert summary.status_code == 200
+    assert summary.json()["source"] == "draft"
+    assert summary.json()["dirty_tables"] == ["rooms"]
+    assert summary.json()["is_locked"] is True
+    assert summary.json()["can_edit"] is False
+
+
 def test_rooms_replace_requires_current_draft_etag(clean_document_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -601,4 +656,41 @@ def test_diff_reports_room_field_changes(clean_document_tables: None) -> None:
     rooms_diff = diff.json()["tables"][0]
     assert rooms_diff["table"] == "rooms"
     assert rooms_diff["change_count"] > 0
-    assert "rooms[rm_living]" in rooms_diff["changed_paths"]
+    assert "rooms.rooms[rm_living]" in rooms_diff["changed_paths"]
+
+
+def test_draft_summary_and_diff_include_rooms_option_only_changes(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+
+    updated = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json={
+            "rooms": [],
+            "single_select_options": {
+                "rooms.floor_level": [
+                    {"id": "opt_ground", "label": "Grade", "color": "#3b82f6", "order": 0}
+                ],
+                "rooms.building_zone": [],
+            },
+        },
+    )
+    assert updated.status_code == 200
+
+    summary = client.get(draft_url(project_id, version_id))
+    assert summary.status_code == 200
+    assert summary.json()["source"] == "draft"
+    assert summary.json()["dirty_tables"] == ["rooms"]
+
+    diff = client.get(f"/api/v1/projects/{project_id}/diff?from={version_id}&to=draft")
+    assert diff.status_code == 200
+    rooms_diff = diff.json()["tables"][0]
+    assert rooms_diff["table"] == "rooms"
+    assert rooms_diff["change_count"] > 0
+    assert "rooms.single_select_options.rooms.floor_level[opt_ground]" in rooms_diff["changed_paths"]

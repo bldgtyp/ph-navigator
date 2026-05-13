@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { useRoomsSliceQuery } from "../../equipment/hooks";
-import { projectDownloadUrl, tableDownloadUrl } from "../api";
+import { usePatchVersionMutation } from "../../projects/hooks";
+import type { ProjectDetail } from "../../projects/types";
+import { projectDownloadUrl } from "../api";
 import {
   useDiffQuery,
   useDiscardDraftMutation,
-  usePatchVersionMutation,
+  useDraftSummaryQuery,
   useSaveDraftAsMutation,
   useSaveDraftMutation,
 } from "../hooks";
-import type { ProjectDetail } from "../types";
 
 const DRAFT_DIFF_TARGET = "draft";
-const ROOMS_TABLE_NAME = "rooms";
 type SaveAsVersionKind = "working" | "submitted" | "closed";
 
 const SAVE_AS_VERSION_KINDS: Array<{ value: SaveAsVersionKind; label: string }> = [
@@ -23,7 +22,7 @@ const SAVE_AS_VERSION_KINDS: Array<{ value: SaveAsVersionKind; label: string }> 
 ];
 const LOCKED_SAVE_AS_KINDS = new Set<SaveAsVersionKind>(["submitted", "closed"]);
 
-export function ProjectHeaderControls({
+export function VersionControls({
   project,
   defaultVersionId,
   onOpenVersion,
@@ -42,10 +41,10 @@ export function ProjectHeaderControls({
   const activeVersion = project.active_version;
   const activeVersionId = activeVersion?.id ?? null;
   const isEditor = project.access_mode === "editor";
-  const roomsQuery = useRoomsSliceQuery(project.id, activeVersionId, project.access_mode, isEditor);
-  const roomsSlice = roomsQuery.data;
-  const hasDraft = roomsSlice?.source === "draft";
-  const isLocked = activeVersion?.locked ?? false;
+  const draftSummaryQuery = useDraftSummaryQuery(project.id, activeVersionId, isEditor);
+  const draftSummary = draftSummaryQuery.data;
+  const isLocked = draftSummary?.is_locked ?? activeVersion?.locked ?? false;
+  const hasDraft = draftSummary?.source === "draft";
   const saveMutation = useSaveDraftMutation(project.id, activeVersionId);
   const saveAsMutation = useSaveDraftAsMutation(project.id, activeVersionId);
   const discardMutation = useDiscardDraftMutation(project.id, activeVersionId);
@@ -57,7 +56,7 @@ export function ProjectHeaderControls({
     diffOpen && Boolean(activeVersionId),
   );
 
-  if (project.access_mode === "viewer") {
+  if (!isEditor) {
     return (
       <div className="shell-controls viewer-controls">
         <span>Edit controls hidden</span>
@@ -83,9 +82,9 @@ export function ProjectHeaderControls({
   };
 
   const save = async () => {
-    if (!roomsSlice || !activeVersionId) return;
+    if (!draftSummary || !activeVersionId) return;
     await runHeaderAction("Could not save draft.", async () => {
-      await saveMutation.mutateAsync({ versionEtag: roomsSlice.version_etag });
+      await saveMutation.mutateAsync({ versionEtag: draftSummary.version_etag });
     });
   };
 
@@ -106,7 +105,7 @@ export function ProjectHeaderControls({
   };
 
   const discard = async () => {
-    if (!activeVersionId || !window.confirm("Discard the current Rooms draft?")) return;
+    if (!activeVersionId || !window.confirm("Discard the current document draft?")) return;
     await runHeaderAction("Could not discard draft.", async () => {
       await discardMutation.mutateAsync();
     });
@@ -117,6 +116,7 @@ export function ProjectHeaderControls({
     if (isLocked && !window.confirm("Unlock this version and allow edits?")) return;
     await runHeaderAction("Could not update version lock.", async () => {
       await patchVersionMutation.mutateAsync({ versionId: activeVersionId, locked: !isLocked });
+      await draftSummaryQuery.refetch();
     });
   };
 
@@ -132,6 +132,7 @@ export function ProjectHeaderControls({
   };
 
   const busy =
+    draftSummaryQuery.isLoading ||
     saveMutation.isPending ||
     saveAsMutation.isPending ||
     discardMutation.isPending ||
@@ -149,7 +150,7 @@ export function ProjectHeaderControls({
           {isLocked ? " · Locked" : ""}
         </button>
         <span className={hasDraft ? "save-state dirty" : "save-state"}>
-          {hasDraft ? "Unsaved" : "Clean"}
+          {draftSummaryQuery.isLoading ? "Checking..." : hasDraft ? "Unsaved" : "Clean"}
         </span>
         {isLocked ? (
           <button
@@ -160,7 +161,7 @@ export function ProjectHeaderControls({
             Save As
           </button>
         ) : (
-          <button type="button" onClick={save} disabled={!hasDraft || !roomsSlice || busy}>
+          <button type="button" onClick={save} disabled={!hasDraft || !draftSummary || busy}>
             Save
           </button>
         )}
@@ -191,20 +192,12 @@ export function ProjectHeaderControls({
           {isLocked ? "Unlock" : "Lock"}
         </button>
         {activeVersionId ? (
-          <>
-            <a
-              className="secondary-button download-link"
-              href={projectDownloadUrl(project.id, activeVersionId)}
-            >
-              Project JSON
-            </a>
-            <a
-              className="secondary-button download-link"
-              href={tableDownloadUrl(project.id, activeVersionId, ROOMS_TABLE_NAME)}
-            >
-              Rooms JSON
-            </a>
-          </>
+          <a
+            className="secondary-button download-link"
+            href={projectDownloadUrl(project.id, activeVersionId)}
+          >
+            Project JSON
+          </a>
         ) : null}
         <button
           type="button"

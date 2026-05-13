@@ -32,6 +32,9 @@ TypeScript / React. Restricted to display + UI/UX.
     project name + bt_number + client (left); version dropdown
     (US-3.1, *not* a tab — always-visible chrome) + save status +
     Save / Save-As / `⋯` menu + IP/SI units toggle (right).
+    Document/version chrome is owned by `features/project_document`
+    and reads document-level draft summary state; table-specific
+    actions such as table JSON downloads live with the table surface.
 - **Catalog manager** (`/catalog/{slug}`) — separate top-level area;
   CRUD on catalog tables. Reached via the global header's
   "Catalogs ▾" dropdown.

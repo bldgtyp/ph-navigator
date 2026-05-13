@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { roomsQueryKeys } from "../equipment/hooks";
+import { projectDocumentTableQueryKeys } from "../project_document/hooks";
 import { projectQueryKeys } from "../projects/query-keys";
 import { fetchCurrentSession, signIn, signOut } from "./api";
 
@@ -22,7 +22,7 @@ export function useSignInMutation() {
     onSuccess: (session) => {
       queryClient.setQueryData(authQueryKeys.session, session);
       queryClient.invalidateQueries({ queryKey: projectQueryKeys.all });
-      queryClient.invalidateQueries({ queryKey: roomsQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: projectDocumentTableQueryKeys.all });
     },
   });
 }
@@ -34,7 +34,7 @@ export function useSignOutMutation() {
     onSettled: () => {
       queryClient.removeQueries({ queryKey: authQueryKeys.session });
       queryClient.removeQueries({ queryKey: projectQueryKeys.all });
-      queryClient.removeQueries({ queryKey: roomsQueryKeys.all });
+      queryClient.removeQueries({ queryKey: projectDocumentTableQueryKeys.all });
     },
   });
 }

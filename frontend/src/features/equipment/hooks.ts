@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "../project_document/hooks";
 import { fetchRoomsSlice, replaceRoomsSlice } from "./api";
-import type { RoomsReplacePayload, RoomsSlice } from "./types";
+import { ROOMS_TABLE_NAME, type RoomsReplacePayload, type RoomsSlice } from "./types";
 
 const ROOMS_DRAFT_CHANNEL = "phn-rooms-draft-v1";
 
@@ -19,8 +20,8 @@ type RoomsSliceVersionGuard = {
 };
 
 export const roomsQueryKeys = {
-  all: ["rooms"] as const,
-  project: (projectId: string) => [...roomsQueryKeys.all, "project", projectId] as const,
+  all: (projectId: string) => projectDocumentTableQueryKeys.table(projectId, ROOMS_TABLE_NAME),
+  project: (projectId: string) => roomsQueryKeys.all(projectId),
   slice: (projectId: string, versionId: string, accessMode: "editor" | "viewer") =>
     [...roomsQueryKeys.project(projectId), "slice", versionId, accessMode] as const,
 };
@@ -54,6 +55,9 @@ export function useReplaceRoomsSliceMutation(
     },
     onSuccess: (slice, variables) => {
       queryClient.setQueryData(roomsQueryKeys.slice(projectId, slice.version_id, "editor"), slice);
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
+      });
       if (
         slice.source !== variables.current.source ||
         slice.draft_etag !== variables.current.draft_etag
@@ -96,9 +100,15 @@ export function useRoomsDraftBroadcast(
       const current = queryClient.getQueryData<RoomsSlice>(queryKey);
       if (current && !matchesVersionGuard(current, message.previous)) {
         void queryClient.invalidateQueries({ queryKey });
+        void queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(projectId, versionId),
+        });
         return;
       }
       queryClient.setQueryData(queryKey, message.slice);
+      void queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.draftSummary(projectId, versionId),
+      });
       onRemoteSliceRef.current(message.slice);
     };
 

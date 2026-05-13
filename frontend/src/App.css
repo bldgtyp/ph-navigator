@@ -502,6 +502,14 @@
   margin-bottom: 0;
 }
 
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .status-empty {
   display: grid;
   justify-items: center;

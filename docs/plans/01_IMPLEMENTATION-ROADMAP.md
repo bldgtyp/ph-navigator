@@ -127,13 +127,13 @@ historical tracer-bullet ledger and evidence trail.
 | Field | Plan |
 |---|---|
 | Type | AFK |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Make project header/version chrome table-neutral. |
 | References | `context/user-stories/00-foundation-shell.md`; `context/technical-requirements/save-versioning.md`; `context/technical-requirements/frontend-viewer-units.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`. |
 | Includes | Document-level draft summary state; table-neutral Save, Save As, Discard, Lock/Unlock, diff, and dirty/clean indicators; remove direct Rooms/Equipment coupling from project shell controls. |
 | Tests | Backend draft-summary behavior; frontend header states for clean, dirty, locked, Viewer, and public read. |
 | Browser check | Edit Rooms, confirm header detects draft, Save/Discard works, lock/read-only states remain clear. |
-| Lessons | Record the table-neutral document chrome contract. |
+| Lessons | Document chrome state is owned by `features/project_document`: the header reads `/draft` summary for dirty state and save ETags, while table-specific downloads live with the table surface. Rooms writes invalidate the document summary instead of being queried by the header. |
 
 ### P1-03 - Read-Safe-Mode Completion
 
@@ -143,7 +143,7 @@ historical tracer-bullet ledger and evidence trail.
 | Status | [ ] Not started |
 | Goal | Close or explicitly re-scope the older/invalid document recovery story. |
 | References | `context/user-stories/00-foundation-shell.md` (US-Errors-SchemaFallback); `context/technical-requirements/llm-mcp-schema.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`. |
-| Includes | Decide full read-safe envelope vs download-only recovery; implement or document the accepted Phase 1 behavior; ensure raw JSON remains recoverable. |
+| Includes | Decide full read-safe envelope vs download-only recovery; implement or document the accepted Phase 1 behavior; ensure raw JSON remains recoverable; include the `/draft` summary endpoint in the invalid/unsupported document check. |
 | Tests | Invalid/unsupported saved body test; frontend recovery-state test if UI lands. |
 | Browser check | Opening an invalid/unsupported version renders a recoverable read-only path or the roadmap records the explicit deferral. |
 | Lessons | Record the schema-fallback decision before broader document tables ship. |
@@ -594,7 +594,7 @@ re-scoped in this roadmap.
 | 01 | TB-06 | Local complete; staging pending | 2026-05-13 10:51 EDT | Previous TB-06 local evidence still stands. P1-00 rerun and current staging blocker are recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md` G-01. |
 | P1 | P1-00 | Complete | 2026-05-13 11:20 EDT | Baseline matrix recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md`; local checks rerun; TB-06 staging blocker tracked as G-01 until staging credentials are available or staging is re-seeded. |
 | P1 | P1-01 | Complete | 2026-05-13 11:39 EDT | Backend project-document service split; registered Rooms table contract added; unsupported table names fail through registry for REST and MCP; simplify cleanup moved body-size calculation to document helpers, made registry diff order deterministic, shared MCP HTTP error mapping, avoided full-document dump/validation on unchanged Rooms replacements, and removed duplicate saved-version loading from draft diff. Verified with `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (46 passed). |
-| P1 | P1-02 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
+| P1 | P1-02 | Complete | 2026-05-13 | Added document draft summary API and project-document frontend version chrome; project header no longer imports Equipment/Rooms state; Rooms JSON moved to Equipment/Rooms. Verified with backend/frontend tests, build, and local E2E. |
 | P1 | P1-03 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
 | P1 | P1-04 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
 | P1 | P1-05 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
@@ -777,4 +777,16 @@ What did not work: The first split left a registry/Rooms circular import and typ
 What worked: Keep route URLs and Rooms response shape stable, parse replace payloads inside the registered contract, and make unsupported names fail before payload parsing. Downloads, diff, MCP `get_table`, and draft replacement now use table contracts instead of route/service branches. Follow-up code review confirmed remaining findings are later-slice concerns; simplify pulled in the small body-size ownership, deterministic-order, MCP error-mapping, Rooms no-op/diff extraction, and duplicate-load cleanups.
 Verification: `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (46 passed). Focused preflight also ran `cd backend && uv run pytest tests/test_project_document.py tests/test_mcp.py` (21 passed).
 Follow-up: P1-02 should build document/header summary state on top of this boundary. The next editable project-document table should add a table contract under `features/project_document/tables/` and register it, not add new generic route branches. `RegisteredTableResponse = RoomsSliceResponse` remains intentionally deferred until OpenAPI/schema strategy or a second table makes the response-model decision concrete.
+```
+
+### P1-02
+
+```text
+Slice: P1-02
+Date: 2026-05-13
+What changed: Added a document-level draft summary response at `GET /api/v1/projects/{project_id}/versions/{version_id}/draft`, with source, version/draft ETags, dirty table names, last patched time, lock state, and editability. Moved version chrome into `frontend/src/features/project_document/`, removed the header's Rooms query dependency, and made Rooms writes invalidate the document summary. Project JSON remains document chrome; Rooms JSON moved to the Equipment/Rooms table surface.
+Why: Save, Save As, Discard, Diff, Lock/Unlock, and dirty/clean indicators are document-version actions. The header should not need to know whether Rooms, Windows, or another future table caused the current draft.
+What worked: The summary can stay small and table-neutral while deriving dirty table names from registered table contracts. Header Save now uses the document summary's `version_etag`; table-specific downloads stay in table UI. The existing E2E Rooms lifecycle still covers the browser path once the Rooms JSON link lives in Equipment instead of the header. Follow-up review fixed option-only Rooms dirty/diff visibility, remote-tab summary invalidation, the API-spec drift for `/draft`, and the temporary hardcoded Rooms table-query invalidation key.
+Verification: `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check features/project_document tests/test_project_document.py`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (49 passed after follow-up review amendments); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (21 passed); `cd frontend && npm run build`; `make seed-dev-user`; local `cd frontend && npm run test:e2e` (2 passed) against FastAPI `:8000` and Vite `:5173`.
+Follow-up: P1-03 remains the read-safe-mode completion slice, including the `/draft` summary endpoint. P1-04/P1-05/P1-11 own the remaining UI polish: modal prompts instead of `window.confirm`, component splitting, dirty-switch workflow, beforeunload/session-expiry handling, and future lock/edit-lease signals.
 ```

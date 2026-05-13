@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -24,6 +25,20 @@ class ProjectDocumentView(BaseModel):
     version_etag: str
     draft_etag: str | None
     body: ProjectDocumentV1
+
+
+class ProjectDraftSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    version_etag: str
+    draft_etag: str | None
+    dirty_tables: list[str]
+    last_patched_at: datetime | None
+    is_locked: bool
+    can_edit: bool
 
 
 class SaveDraftResponse(BaseModel):

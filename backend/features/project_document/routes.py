@@ -12,12 +12,14 @@ from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     DiscardDraftResponse,
     ProjectDiffResponse,
+    ProjectDraftSummary,
     SaveAsDraftRequest,
     SaveDraftResponse,
     VersionPatchRequest,
 )
 from features.project_document.service import (
     discard_draft,
+    get_draft_summary,
     get_draft_table_slice,
     get_project_diff,
     get_raw_saved_document,
@@ -70,6 +72,14 @@ def get_draft_table(
     access: ProjectEditAccess,
 ) -> Any:
     return get_draft_table_slice(version_id, table_name, access)
+
+
+@router.get("/draft", response_model=ProjectDraftSummary)
+def get_draft_status(
+    version_id: UUID,
+    access: ProjectEditAccess,
+) -> ProjectDraftSummary:
+    return get_draft_summary(version_id, access)
 
 
 @router.put("/draft/tables/{table_name}", response_model=RegisteredTableResponse)

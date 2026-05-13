@@ -32,29 +32,6 @@ export type ProjectDetail = ProjectSummary & {
   access_mode: "editor" | "viewer";
 };
 
-export type SaveDraftResponse = {
-  project_id: string;
-  version: ProjectVersion;
-  version_etag: string;
-};
-
-export type SaveAsPayload = {
-  name: string;
-  kind: ProjectVersion["kind"];
-  locked: boolean;
-};
-
-export type DiffSummary = {
-  project_id: string;
-  from_version_id: string;
-  to_version_id: string;
-  tables: Array<{
-    table: string;
-    change_count: number;
-    changed_paths: string[];
-  }>;
-};
-
 export type ProjectListResponse = {
   projects: ProjectSummary[];
 };

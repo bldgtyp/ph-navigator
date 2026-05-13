@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
-import { projectDownloadUrl } from "../../projects/api";
+import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomModal } from "../components/RoomModal";
 import { RoomsTable } from "../components/RoomsTable";
@@ -13,7 +13,7 @@ import {
   nextRoomsPayload,
   remoteSliceChangesActiveRoom,
 } from "../lib";
-import type { RoomRow, RoomsSlice } from "../types";
+import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 
 type RoomModalState = { mode: "add" } | { mode: "edit"; room: RoomRow };
 
@@ -137,11 +137,21 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           <h2 id="equipment-title">Equipment</h2>
           <p>Rooms are the PHN-first source of truth for downstream HBJSON.</p>
         </div>
-        {canEdit ? (
-          <button type="button" onClick={() => setRoomModal({ mode: "add" })}>
-            Add room
-          </button>
-        ) : null}
+        <div className="table-actions">
+          {activeVersionId ? (
+            <a
+              className="secondary-button download-link"
+              href={tableDownloadUrl(project.id, activeVersionId, ROOMS_TABLE_NAME)}
+            >
+              Rooms JSON
+            </a>
+          ) : null}
+          {canEdit ? (
+            <button type="button" onClick={() => setRoomModal({ mode: "add" })}>
+              Add room
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="subtabbar" aria-label="Equipment tables">
         <button type="button" className="active">

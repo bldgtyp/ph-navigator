@@ -94,11 +94,21 @@ def extract_room_rows(body: ProjectDocumentV1) -> list[object]:
     return [room.model_dump(mode="json") for room in body.tables.rooms]
 
 
+def extract_rooms_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
+    return {
+        "rooms": extract_room_rows(body),
+        "single_select_options": {
+            key: [option.model_dump(mode="json") for option in body.single_select_options.get(key, [])]
+            for key in ROOM_OPTION_KEYS
+        },
+    }
+
+
 rooms_contract = TableContract(
     name=ROOMS_TABLE_NAME,
     replace_request_model=RoomsSliceReplaceRequest,
     build_response=rooms_response,
     apply_replace=apply_rooms_replace,
     extract_rows=extract_room_rows,
-    extract_diff_value=extract_room_rows,
+    extract_diff_value=extract_rooms_diff_value,
 )

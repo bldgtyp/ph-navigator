@@ -77,6 +77,18 @@ const roomsSlicePayload = {
   },
 };
 
+const draftSummaryPayload = {
+  project_id: projectPayload.id,
+  version_id: projectPayload.active_version_id,
+  source: "version",
+  version_etag: "version-etag",
+  draft_etag: null,
+  dirty_tables: [],
+  last_patched_at: null,
+  is_locked: false,
+  can_edit: true,
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
@@ -103,6 +115,13 @@ function apiErrorResponse(status: number, errorCode: string, message: string) {
     },
     status,
   );
+}
+
+function draftSummaryUrl(
+  projectId = projectPayload.id,
+  versionId = projectPayload.active_version_id,
+) {
+  return `/api/v1/projects/${projectId}/versions/${versionId}/draft`;
 }
 
 beforeEach(() => {
@@ -187,6 +206,7 @@ describe("App", () => {
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      const draftUrl = draftSummaryUrl();
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") {
         const calls = fetchMock.mock.calls.filter(([path]) => String(path) === "/api/v1/projects");
@@ -200,6 +220,7 @@ describe("App", () => {
       if (url === `/api/v1/projects/${projectPayload.id}`) {
         return jsonResponse(projectPayload);
       }
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
       if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
         return jsonResponse({ items: [] });
       }
@@ -258,12 +279,68 @@ describe("App", () => {
     ).not.toBeInTheDocument();
   });
 
+  test("renders table-neutral editor header states", async () => {
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("Clean")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "Rooms JSON" })).not.toBeInTheDocument();
+  });
+
+  test("renders locked editor header as Save As only", async () => {
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const lockedProject = {
+      ...projectPayload,
+      active_version: { ...projectPayload.active_version, locked: true },
+      versions: [{ ...projectPayload.versions[0], locked: true }],
+    };
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(lockedProject);
+      if (url === draftUrl) {
+        return jsonResponse({
+          ...draftSummaryPayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          dirty_tables: ["rooms"],
+          is_locked: true,
+          can_edit: false,
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("button", { name: "Working · Locked" })).toBeVisible();
+    expect(await screen.findByText("Unsaved")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save As" })).toBeVisible();
+  });
+
   test("refetches project access after signing in from a public project URL", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
     let projectFetchCount = 0;
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      const draftUrl = draftSummaryUrl();
       if (url === `/api/v1/projects/${projectPayload.id}`) {
         projectFetchCount += 1;
         return jsonResponse({
@@ -274,6 +351,7 @@ describe("App", () => {
       if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
         return jsonResponse({ items: [statusItemPayload] });
       }
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
       if (url === "/api/v1/auth/login") return sessionResponse();
       return jsonResponse({}, 404);
     });
@@ -296,7 +374,9 @@ describe("App", () => {
     window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+      const draftUrl = draftSummaryUrl();
       if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
       if (url === `/api/v1/projects/${projectPayload.id}/status-items` && !init?.method) {
         return jsonResponse({ items: [] });
       }
@@ -321,9 +401,26 @@ describe("App", () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
     const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
+    const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) {
+        const roomWriteCount = fetchMock.mock.calls.filter(
+          ([path, options]) => String(path) === roomsUrl && options?.method === "PUT",
+        ).length;
+        return jsonResponse(
+          roomWriteCount > 0
+            ? {
+                ...draftSummaryPayload,
+                source: "draft",
+                draft_etag: "draft-etag",
+                dirty_tables: ["rooms"],
+                last_patched_at: "2026-05-12T18:05:00Z",
+              }
+            : draftSummaryPayload,
+        );
+      }
       if (url === roomsUrl && init?.method !== "PUT") {
         return jsonResponse(roomsSlicePayload);
       }
@@ -351,6 +448,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Save room" }));
 
     expect(await screen.findByText("Unsaved Rooms draft restored")).toBeVisible();
+    expect(await screen.findByText("Unsaved")).toBeVisible();
     expect(screen.getByText("Living Room")).toBeVisible();
     expect(screen.getByText("Ground")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(

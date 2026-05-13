@@ -2,7 +2,7 @@ import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-r
 import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
 import { WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
-import { ProjectHeaderControls } from "../components/ProjectHeaderControls";
+import { VersionControls } from "../../project_document/components/VersionControls";
 import { ProjectTabContent } from "../components/ProjectTabContent";
 import { useProjectQuery } from "../hooks";
 import { isProjectTab, PROJECT_TABS, projectStatusPath, projectTabPath, TAB_LABELS } from "../lib";
@@ -80,7 +80,7 @@ export function ProjectShell() {
               {project.client ? ` · ${project.client}` : ""}
             </p>
           </div>
-          <ProjectHeaderControls
+          <VersionControls
             project={openProject}
             defaultVersionId={project.active_version_id}
             onOpenVersion={openVersionById}

@@ -124,7 +124,10 @@ the registry rather than a route-local special case.
 
 ```
 GET    /api/v1/projects/{pid}/versions/{vid}/draft                   current user's draft
-                                                                     body (404 if none)
+                                                                     summary: source,
+                                                                     ETags, dirty tables,
+                                                                     lock/edit state
+                                                                     (200 even when clean)
 PATCH  /api/v1/projects/{pid}/versions/{vid}/draft                   apply JSON-Patch ops
                                                                      to draft body
 PUT    /api/v1/projects/{pid}/versions/{vid}/draft/tables/{name}      replace one table

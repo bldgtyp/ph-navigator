@@ -9,6 +9,7 @@ from features.project_document.downloads import table_download_body
 from features.project_document.drafts import discard_draft, replace_table_slice, save_draft, save_draft_as
 from features.project_document.store import (
     get_current_document_view,
+    get_draft_summary,
     get_draft_table_slice,
     get_raw_saved_document,
     get_saved_and_current_document_view,
@@ -22,6 +23,7 @@ __all__ = [
     "discard_draft",
     "document_etag",
     "get_current_document_view",
+    "get_draft_summary",
     "get_draft_table_slice",
     "get_project_diff",
     "get_raw_saved_document",
