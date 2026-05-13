@@ -1,9 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
+import { projectDocumentQueryKeys } from "../../project_document/hooks";
 import type { ProjectDetail } from "../../projects/types";
+import { projectQueryKeys } from "../../projects/query-keys";
 import { RoomModal } from "../components/RoomModal";
 import { RoomsTable } from "../components/RoomsTable";
 import { useReplaceRoomsSliceMutation, useRoomsDraftBroadcast, useRoomsSliceQuery } from "../hooks";
@@ -13,6 +16,7 @@ import {
   firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
+  isVersionLockedError,
   nextRoomsPayload,
   remoteSliceChangesActiveRoom,
   replaceRoomOptionsPayload,
@@ -29,23 +33,30 @@ import {
 } from "../types";
 
 type RoomModalState = { mode: "add" } | { mode: "edit"; room: RoomRow };
+type EditBlocker =
+  | { kind: "draft-conflict"; message: string }
+  | { kind: "version-locked"; message: string };
 
 const ACTIVE_ROOM_CONFLICT_MESSAGE =
   "Rooms draft changed in another tab. Reload draft before saving this room.";
 const DELETE_CONFLICT_MESSAGE =
   "Rooms draft changed in another tab. Reload draft before deleting rooms.";
+const VERSION_LOCKED_MESSAGE =
+  "This version was locked elsewhere. Local edits are preserved here; use Save As in the header or discard the draft.";
 
 export function EquipmentTab({ project }: { project: ProjectDetail }) {
+  const queryClient = useQueryClient();
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
   const [roomsTableView, setRoomsTableView] = useState(emptyViewState);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [draftConflictReason, setDraftConflictReason] = useState<string | null>(null);
+  const [editBlocker, setEditBlocker] = useState<EditBlocker | null>(null);
   const isEditor = project.access_mode === "editor";
-  const isLocked = project.active_version?.locked ?? false;
   const activeVersionId = project.active_version_id;
-  const canEdit = isEditor && !isLocked && !draftConflictReason && Boolean(activeVersionId);
+  const isLocked =
+    editBlocker?.kind === "version-locked" || (project.active_version?.locked ?? false);
+  const canEdit = isEditor && !isLocked && !editBlocker && Boolean(activeVersionId);
   const onRemoteSlice = useCallback(
     (incomingSlice: RoomsSlice) => {
       if (!roomModal) {
@@ -56,7 +67,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         roomsQuery.data &&
         remoteSliceChangesActiveRoom(roomsQuery.data, incomingSlice, roomModal.room)
       ) {
-        setDraftConflictReason(ACTIVE_ROOM_CONFLICT_MESSAGE);
+        setEditBlocker({ kind: "draft-conflict", message: ACTIVE_ROOM_CONFLICT_MESSAGE });
       }
     },
     [roomModal, roomsQuery.data],
@@ -73,16 +84,35 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     publishRoomsSlice,
   );
 
+  useEffect(() => {
+    setEditBlocker(null);
+  }, [activeVersionId]);
+
   const reloadDraft = async () => {
-    setDraftConflictReason(null);
+    setEditBlocker(null);
     setActionError(null);
     setRoomModal(null);
     await roomsQuery.refetch();
   };
 
   const handleStaleDraftConflict = async (message: string) => {
-    setDraftConflictReason(message);
+    setEditBlocker({ kind: "draft-conflict", message });
     await roomsQuery.refetch();
+  };
+
+  const handleVersionLockedConflict = async () => {
+    setEditBlocker({ kind: "version-locked", message: VERSION_LOCKED_MESSAGE });
+    const invalidations = [
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.detail(project.id) }),
+    ];
+    if (activeVersionId) {
+      invalidations.push(
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(project.id, activeVersionId),
+        }),
+      );
+    }
+    await Promise.all(invalidations);
   };
 
   if (roomsQuery.isLoading) {
@@ -128,6 +158,10 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     } catch (error) {
       if (isDraftStaleError(error)) {
         await handleStaleDraftConflict(conflictMessage);
+        throw error;
+      }
+      if (isVersionLockedError(error)) {
+        await handleVersionLockedConflict();
         throw error;
       }
       const message = errorMessage(error, fallbackMessage);
@@ -236,12 +270,14 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           This version is locked. Save As to copy it into a new version.
         </p>
       ) : null}
-      {draftConflictReason ? (
+      {editBlocker ? (
         <div className="draft-banner draft-conflict-banner" role="alert">
-          <span>{draftConflictReason}</span>
-          <button type="button" className="secondary-button" onClick={() => void reloadDraft()}>
-            Reload draft
-          </button>
+          <span>{editBlocker.message}</span>
+          {editBlocker.kind === "draft-conflict" ? (
+            <button type="button" className="secondary-button" onClick={() => void reloadDraft()}>
+              Reload draft
+            </button>
+          ) : null}
         </div>
       ) : null}
       {actionError ? (
@@ -258,7 +294,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         onWrite={handleTableWrite}
         onSaveOptions={saveOptions}
       />
-      {roomModal && isEditor && !isLocked ? (
+      {roomModal && isEditor ? (
         <RoomModal
           key={roomModal.mode === "add" ? "add" : roomModal.room.id}
           title={
@@ -274,12 +310,12 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           roomsSlice={roomsSlice}
           onCancel={() => setRoomModal(null)}
           onSubmit={saveRoom}
-          frozenReason={draftConflictReason}
+          frozenReason={editBlocker?.message ?? (isLocked ? VERSION_LOCKED_MESSAGE : null)}
           onFrozenReload={() => void reloadDraft()}
           onDelete={
             roomModal.mode === "edit" ? () => setRoomPendingDelete(roomModal.room) : undefined
           }
-          deleteDisabled={Boolean(draftConflictReason)}
+          deleteDisabled={Boolean(editBlocker)}
         />
       ) : null}
       {roomPendingDelete ? (

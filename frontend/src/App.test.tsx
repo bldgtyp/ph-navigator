@@ -51,6 +51,18 @@ const projectPayload = {
   ],
 };
 
+const alternateVersion = {
+  id: "9e07b34a-819d-4b65-bda4-d7fc43997f93",
+  project_id: projectPayload.id,
+  name: "Round 1 Submit",
+  kind: "submitted",
+  locked: true,
+  schema_version: 1,
+  body_size_bytes: 230,
+  created_at: "2026-05-12T19:00:00Z",
+  updated_at: "2026-05-12T19:00:00Z",
+};
+
 const statusItemPayload = {
   id: "e402f85e-ce78-41f2-a16f-685ff42edfc2",
   project_id: projectPayload.id,
@@ -456,6 +468,138 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Save As" })).toBeVisible();
   });
 
+  test("prompts to restore or discard a recovered draft and warns before unload", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl && init?.method === "DELETE") return jsonResponse(undefined, 204);
+      if (url === draftUrl) {
+        return jsonResponse({
+          ...draftSummaryPayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          dirty_tables: ["rooms"],
+          last_patched_at: "2026-05-12T18:05:00Z",
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("dialog", { name: "Unsaved draft found" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Restore draft" }));
+    expect(screen.queryByRole("dialog", { name: "Unsaved draft found" })).not.toBeInTheDocument();
+
+    const beforeUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(beforeUnload);
+    expect(beforeUnload.defaultPrevented).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+    await user.click(screen.getByRole("button", { name: "Discard draft" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(draftUrl, expect.objectContaining({ method: "DELETE" }));
+  });
+
+  test("requires a save, save-as, or discard choice before switching away from a dirty version", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const saveUrl = `${draftUrl}/save`;
+    const projectWithVersions = {
+      ...projectPayload,
+      versions: [projectPayload.versions[0], alternateVersion],
+    };
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectWithVersions);
+      if (url === draftUrl) {
+        return jsonResponse({
+          ...draftSummaryPayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          dirty_tables: ["rooms"],
+        });
+      }
+      if (url === saveUrl && init?.method === "POST") {
+        return jsonResponse({
+          project_id: projectPayload.id,
+          version: projectPayload.active_version,
+          version_etag: "saved-etag",
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Restore draft" }));
+    await user.click(screen.getByRole("button", { name: "Working" }));
+    await user.click(
+      within(screen.getByText("Round 1 Submit").closest(".version-row") as HTMLElement).getByRole(
+        "button",
+        { name: "Open" },
+      ),
+    );
+
+    expect(await screen.findByRole("dialog", { name: "Unsaved draft" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Save then open" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      saveUrl,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.any(Object),
+      }),
+    );
+    expect(window.location.search).toBe(`?version=${alternateVersion.id}`);
+  });
+
+  test("shows Save As and discard exits when Save finds a stale version ETag", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const saveUrl = `${draftUrl}/save`;
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) {
+        return jsonResponse({
+          ...draftSummaryPayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          dirty_tables: ["rooms"],
+        });
+      }
+      if (url === saveUrl && init?.method === "POST") {
+        return apiErrorResponse(409, "version_etag_mismatch", "Version changed.");
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Restore draft" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Saved version changed" });
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByRole("button", { name: "Save As" })).toBeVisible();
+    expect(within(dialog).getByRole("button", { name: "Discard draft" })).toBeVisible();
+  });
+
   test("renders read-safe recovery when the editor draft summary is unsupported", async () => {
     window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
     const draftUrl = draftSummaryUrl();
@@ -660,5 +804,64 @@ describe("App", () => {
         headers: expect.any(Headers),
       }),
     );
+  });
+
+  test("downgrades an open room edit when the version is locked elsewhere", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
+    const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
+    const draftUrl = draftSummaryUrl();
+    const room = {
+      id: "rm_101",
+      number: "101",
+      name: "Living Room",
+      floor_level: "opt_ground",
+      building_zone: null,
+      num_people: 0,
+      num_bedrooms: 0,
+      icfa_factor: 1,
+      erv_unit_ids: [],
+      catalog_origin: null,
+      notes: null,
+    };
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return jsonResponse(projectPayload);
+      }
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
+      if (url === roomsUrl && init?.method !== "PUT") {
+        return jsonResponse({
+          ...roomsSlicePayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          rooms: [room],
+          single_select_options: {
+            "rooms.floor_level": [
+              { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+            ],
+            "rooms.building_zone": [],
+          },
+        });
+      }
+      if (url === roomsUrl && init?.method === "PUT") {
+        return apiErrorResponse(409, "version_locked", "Version is locked.");
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("Living Room")).toBeVisible();
+    screen.getByRole("grid").focus();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByRole("dialog", { name: /Room: 101/ })).toBeVisible();
+    await user.clear(screen.getByLabelText("Name"));
+    await user.type(screen.getByLabelText("Name"), "Local Edit");
+    await user.click(screen.getByRole("button", { name: "Save room" }));
+
+    expect((await screen.findAllByText(/locked elsewhere/))[0]).toBeVisible();
+    expect(screen.getByDisplayValue("Local Edit")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save room" })).toBeDisabled();
   });
 });

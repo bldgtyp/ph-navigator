@@ -149,17 +149,22 @@ test("same-editor Rooms tabs freeze stale active edits", async ({ page, context 
   await expect(secondPage.getByText("Living Room")).toBeVisible();
 
   await page.getByText("Living Room").click();
+  await page.getByRole("grid").focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog", { name: /Room: 101/ })).toBeVisible();
 
   await secondPage.getByRole("button", { name: "Add room" }).click();
-  await secondPage.getByLabel("Number").fill("102");
-  await secondPage.getByLabel("Name").fill("Kitchen");
-  await secondPage.getByLabel("Floor level").fill("Ground");
-  await secondPage.getByRole("button", { name: "Save room" }).click();
+  const secondPageNewRoom = secondPage.getByRole("dialog", { name: "New room" });
+  await secondPageNewRoom.getByLabel("Number").fill("102");
+  await secondPageNewRoom.getByLabel("Name").fill("Kitchen");
+  await secondPageNewRoom.getByLabel("Floor level").fill("Ground");
+  await secondPageNewRoom.getByRole("button", { name: "Save room" }).click();
   await expect(secondPage.getByText("Kitchen")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save room" })).toBeEnabled();
 
   await secondPage.getByText("Living Room").click();
+  await secondPage.getByRole("grid").focus();
+  await secondPage.keyboard.press("Enter");
   await expect(secondPage.getByRole("dialog", { name: /Room: 101/ })).toBeVisible();
   await secondPage.getByLabel("Name").fill("Living Room Remote");
   await secondPage.getByRole("button", { name: "Save room" }).click();

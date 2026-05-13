@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "../project_document/hooks";
+import { markLocalDraftTouched } from "../project_document/lib";
 import { fetchRoomsSlice, replaceRoomsSlice } from "./api";
 import { ROOMS_TABLE_NAME, type RoomsReplacePayload, type RoomsSlice } from "./types";
 
@@ -54,6 +55,7 @@ export function useReplaceRoomsSliceMutation(
       return replaceRoomsSlice(projectId, versionId, current, payload);
     },
     onSuccess: (slice, variables) => {
+      markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
       queryClient.setQueryData(roomsQueryKeys.slice(projectId, slice.version_id, "editor"), slice);
       queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),

@@ -136,6 +136,7 @@ textarea {
 
 .auth-form,
 .project-form,
+.confirmation-panel,
 .settings-section,
 .token-issue-form,
 .diff-panel,
@@ -464,6 +465,11 @@ a:focus-visible {
 
 .room-actions {
   justify-content: flex-end;
+}
+
+.modal-actions-stack {
+  align-items: stretch;
+  flex-wrap: wrap;
 }
 
 .empty-state,

@@ -6,7 +6,6 @@ import type {
   SingleSelectOption,
 } from "./types";
 import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY } from "./types";
-import { ApiRequestError } from "../../shared/api/client";
 import type { FieldOption } from "../../shared/ui/data-table";
 import {
   createFieldOption,
@@ -14,6 +13,11 @@ import {
   formatDisplayCellValue,
 } from "../../shared/ui/data-table/lib";
 import { generatedId } from "../../shared/lib/ids";
+export {
+  isDraftStaleError,
+  isInvalidProjectDocumentError,
+  isVersionLockedError,
+} from "../project_document/lib";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
@@ -201,18 +205,6 @@ export function duplicateRoomNumber(rooms: RoomRow[], room: RoomRow): boolean {
   return rooms.some(
     (candidate) => candidate.id !== room.id && normalize(candidate.number) === number,
   );
-}
-
-export function isDraftStaleError(error: unknown): boolean {
-  return (
-    error instanceof ApiRequestError &&
-    error.status === 409 &&
-    error.errorCode === "draft_etag_mismatch"
-  );
-}
-
-export function isInvalidProjectDocumentError(error: unknown): boolean {
-  return error instanceof ApiRequestError && error.errorCode === "invalid_project_document";
 }
 
 export function remoteSliceChangesActiveRoom(
