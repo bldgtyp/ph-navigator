@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from psycopg.types.json import Jsonb
 
 from database import connection, transaction
 from features.auth.service import create_or_update_user
@@ -119,7 +120,14 @@ def room_payload() -> dict[str, Any]:
         ],
         "single_select_options": {
             "rooms.floor_level": [{"id": "opt_ground", "label": "Ground", "color": "#3b82f6", "order": 0}],
-            "rooms.building_zone": [{"id": "opt_residential", "label": "Residential", "color": "#10b981", "order": 0}],
+            "rooms.building_zone": [
+                {
+                    "id": "opt_residential",
+                    "label": "Residential",
+                    "color": "#10b981",
+                    "order": 0,
+                }
+            ],
         },
     }
 
@@ -203,6 +211,41 @@ def test_first_rooms_replace_lazily_creates_draft(clean_document_tables: None) -
     assert reloaded.json()["rooms"][0]["name"] == "Living Room"
 
 
+def test_rooms_replace_noop_does_not_create_draft(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+    assert initial.status_code == 200
+
+    noop = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json={
+            "rooms": [],
+            "single_select_options": {
+                "rooms.floor_level": [],
+                "rooms.building_zone": [],
+            },
+        },
+    )
+
+    assert noop.status_code == 200
+    assert noop.json()["source"] == "version"
+    assert noop.json()["draft_etag"] is None
+    with connection() as conn:
+        draft = conn.execute(
+            """
+            SELECT version_id
+            FROM project_version_drafts
+            WHERE version_id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+    assert draft is None
+
+
 def test_rooms_replace_requires_current_draft_etag(clean_document_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -278,7 +321,9 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
     assert response.json()["error_code"] == "invalid_project_document"
 
 
-def test_public_viewer_can_read_rooms_but_not_write(clean_document_tables: None) -> None:
+def test_public_viewer_can_read_rooms_but_not_write(
+    clean_document_tables: None,
+) -> None:
     editor = signed_in_client()
     project = create_project(editor)
     project_id = project["id"]
@@ -298,7 +343,9 @@ def test_public_viewer_can_read_rooms_but_not_write(clean_document_tables: None)
     assert write.json()["error_code"] == "not_authenticated"
 
 
-def test_save_flushes_draft_to_version_and_clears_draft(clean_document_tables: None) -> None:
+def test_save_flushes_draft_to_version_and_clears_draft(
+    clean_document_tables: None,
+) -> None:
     client = signed_in_client()
     project = create_project(client)
     project_id = project["id"]
@@ -325,7 +372,9 @@ def test_save_flushes_draft_to_version_and_clears_draft(clean_document_tables: N
     assert detail["last_saved_at"] is not None
 
 
-def test_discard_drops_draft_without_updating_saved_body(clean_document_tables: None) -> None:
+def test_discard_drops_draft_without_updating_saved_body(
+    clean_document_tables: None,
+) -> None:
     client = signed_in_client()
     project = create_project(client)
     project_id = project["id"]
@@ -342,7 +391,9 @@ def test_discard_drops_draft_without_updating_saved_body(clean_document_tables: 
     assert draft.json()["source"] == "version"
 
 
-def test_save_as_creates_active_version_from_draft_and_downloads_json(clean_document_tables: None) -> None:
+def test_save_as_creates_active_version_from_draft_and_downloads_json(
+    clean_document_tables: None,
+) -> None:
     client = signed_in_client()
     project = create_project(client)
     project_id = project["id"]
@@ -371,6 +422,45 @@ def test_save_as_creates_active_version_from_draft_and_downloads_json(clean_docu
     rooms_json = client.get(rooms_download_url(project_id, new_version["id"]))
     assert rooms_json.status_code == 200
     assert rooms_json.json()[0]["name"] == "Living Room"
+
+
+def test_project_download_returns_raw_body_when_schema_is_invalid(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    with transaction() as conn:
+        row = conn.execute(
+            """
+            SELECT body
+            FROM project_versions
+            WHERE id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+        assert row is not None
+        raw_body = dict(row["body"])
+        raw_body["schema_version"] = 999
+        conn.execute(
+            """
+            UPDATE project_versions
+            SET body = %(body)s,
+                schema_version = 999
+            WHERE id = %(version_id)s
+            """,
+            {"body": Jsonb(raw_body), "version_id": version_id},
+        )
+
+    rooms = client.get(saved_rooms_url(project_id, version_id))
+    assert rooms.status_code == 422
+    assert rooms.json()["error_code"] == "invalid_project_document"
+
+    project_json = client.get(download_url(project_id, version_id))
+    assert project_json.status_code == 200
+    assert project_json.json()["schema_version"] == 999
 
 
 def test_save_as_without_draft_copies_saved_body(clean_document_tables: None) -> None:
@@ -415,14 +505,20 @@ def test_save_as_rejects_duplicate_version_name(clean_document_tables: None) -> 
     assert duplicate.json()["error_code"] == "version_name_taken"
 
 
-def test_lock_blocks_save_and_draft_writes_but_save_as_still_copies(clean_document_tables: None) -> None:
+def test_lock_blocks_save_and_draft_writes_but_save_as_still_copies(
+    clean_document_tables: None,
+) -> None:
     client = signed_in_client()
     project = create_project(client)
     project_id = project["id"]
     version_id = project["active_version_id"]
     draft = create_rooms_draft(client, project_id, version_id)
 
-    locked = client.patch(version_url(project_id, version_id), headers={"Origin": ORIGIN}, json={"locked": True})
+    locked = client.patch(
+        version_url(project_id, version_id),
+        headers={"Origin": ORIGIN},
+        json={"locked": True},
+    )
     assert locked.status_code == 200
     assert locked.json()["active_version"]["locked"] is True
 

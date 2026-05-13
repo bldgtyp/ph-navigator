@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, TypeAlias, cast
 from uuid import UUID, uuid4
 
 from fastapi import Request
@@ -32,7 +32,11 @@ from features.project_document.models import (
 )
 from features.projects.access import ProjectAccess, require_editor_user
 from features.projects.models import ProjectDetail
-from features.projects.service import body_size_bytes, get_project_detail, version_public
+from features.projects.service import (
+    body_size_bytes,
+    get_project_detail,
+    version_public,
+)
 from features.shared.errors import api_error
 
 
@@ -47,13 +51,18 @@ def next_draft_etag(body: ProjectDocumentV1) -> str:
 
 
 ROOMS_TABLE_NAME = "rooms"
+JsonValue: TypeAlias = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 
 
 def get_saved_rooms_slice(version_id: UUID, access: ProjectAccess) -> RoomsSliceResponse:
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
         version_body = validate_document(version["body"])
         version_etag = document_etag(version_body)
 
@@ -64,8 +73,24 @@ def get_saved_document(version_id: UUID, access: ProjectAccess) -> ProjectDocume
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
         return validate_document(version["body"])
+
+
+def get_raw_saved_document(version_id: UUID, access: ProjectAccess) -> JsonValue:
+    with connection() as conn:
+        version = repository.get_project_version(conn, access.project_id, version_id)
+        if version is None:
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
+        return cast(JsonValue, version["body"])
 
 
 def get_draft_rooms_slice(version_id: UUID, access: ProjectAccess) -> RoomsSliceResponse:
@@ -85,7 +110,11 @@ def get_current_document_view(version_id: UUID, access: ProjectAccess) -> Projec
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
         version_body = validate_document(version["body"])
         version_etag = document_etag(version_body)
         draft = repository.get_draft(conn, version_id, user.id)
@@ -122,9 +151,17 @@ def replace_rooms_slice(
     with transaction() as conn:
         version = repository.get_project_version_for_update(conn, access.project_id, version_id)
         if version is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
         if version["locked"]:
-            raise api_error(status.HTTP_409_CONFLICT, "version_locked", "Locked versions cannot be edited.")
+            raise api_error(
+                status.HTTP_409_CONFLICT,
+                "version_locked",
+                "Locked versions cannot be edited.",
+            )
 
         version_body = validate_document(version["body"])
         version_etag = document_etag(version_body)
@@ -152,6 +189,16 @@ def replace_rooms_slice(
             base_version_etag = draft["base_version_etag"]
 
         next_body = apply_rooms_replace(base_body, payload)
+        if next_body == base_body:
+            return rooms_response(
+                access.project_id,
+                version_id,
+                "draft" if draft is not None else "version",
+                version_etag,
+                draft["draft_etag"] if draft is not None else None,
+                base_body,
+            )
+
         draft_etag = next_draft_etag(next_body)
         draft_etag = repository.upsert_draft(
             conn,
@@ -178,9 +225,17 @@ def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, re
     with transaction() as conn:
         version = repository.get_project_version_for_update(conn, access.project_id, version_id)
         if version is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
         if version["locked"]:
-            raise api_error(status.HTTP_409_CONFLICT, "version_locked", "Locked versions cannot be saved.")
+            raise api_error(
+                status.HTTP_409_CONFLICT,
+                "version_locked",
+                "Locked versions cannot be saved.",
+            )
 
         version_body = validate_document(version["body"])
         version_etag = document_etag(version_body)
@@ -225,14 +280,22 @@ def save_draft_as(
     user = require_editor_user(access)
     version_name = payload.name.strip()
     if not version_name:
-        raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "validation_error", "Version name is required.")
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "validation_error",
+            "Version name is required.",
+        )
     locked = payload.locked or payload.kind in {"submitted", "closed"}
 
     try:
         with transaction() as conn:
             version = repository.get_project_version_for_update(conn, access.project_id, version_id)
             if version is None:
-                raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+                raise api_error(
+                    status.HTTP_404_NOT_FOUND,
+                    "project_version_not_found",
+                    "Project version not found.",
+                )
             version_body = validate_document(version["body"])
             draft = repository.get_draft_for_update(conn, version_id, user.id)
             source_body = validate_document(draft["body"]) if draft is not None else version_body
@@ -248,7 +311,14 @@ def save_draft_as(
                 body_size_bytes(source_body),
             )
             repository.delete_draft(conn, version_id, user.id)
-            log_document_action(conn, "project_version_save_as", access, saved_row["id"], user.id, request)
+            log_document_action(
+                conn,
+                "project_version_save_as",
+                access,
+                saved_row["id"],
+                user.id,
+                request,
+            )
     except UniqueViolation as exc:
         if exc.diag.constraint_name != "uq_project_versions_project_name":
             raise
@@ -282,13 +352,19 @@ def patch_version(
     user = require_editor_user(access)
     if payload.locked is None and not payload.make_active:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, "validation_error", "No version metadata change supplied."
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "validation_error",
+            "No version metadata change supplied.",
         )
 
     with transaction() as conn:
         version = repository.get_project_version_for_update(conn, access.project_id, version_id)
         if version is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "project_version_not_found",
+                "Project version not found.",
+            )
         repository.patch_version_metadata(
             conn,
             access.project_id,
@@ -316,7 +392,11 @@ def get_project_diff(
         try:
             to_version_id = UUID(to_value)
         except ValueError as exc:
-            raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "validation_error", "Invalid diff target.") from exc
+            raise api_error(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "validation_error",
+                "Invalid diff target.",
+            ) from exc
         to_body = get_saved_document(to_version_id, access)
 
     tables = [
@@ -336,7 +416,11 @@ def get_project_diff(
 
 def require_rooms_table(table_name: str) -> None:
     if table_name != ROOMS_TABLE_NAME:
-        raise api_error(status.HTTP_404_NOT_FOUND, "document_table_not_found", "Document table not found.")
+        raise api_error(
+            status.HTTP_404_NOT_FOUND,
+            "document_table_not_found",
+            "Document table not found.",
+        )
 
 
 def validate_document(raw_body: object) -> ProjectDocumentV1:

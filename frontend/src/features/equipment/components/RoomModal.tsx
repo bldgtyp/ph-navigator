@@ -15,12 +15,16 @@ export function RoomModal({
   roomsSlice,
   onCancel,
   onSubmit,
+  frozenReason,
+  onFrozenReload,
 }: {
   title: string;
   room: RoomRow;
   roomsSlice: RoomsSlice;
   onCancel: () => void;
   onSubmit: (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => Promise<void>;
+  frozenReason?: string | null;
+  onFrozenReload?: () => void;
 }) {
   const [draft, setDraft] = useState(room);
   const [floorLevel, setFloorLevel] = useState(
@@ -31,9 +35,14 @@ export function RoomModal({
   );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isFrozen = Boolean(frozenReason);
 
   const save = async () => {
     setError(null);
+    if (frozenReason) {
+      setError(frozenReason);
+      return;
+    }
     if (!draft.number.trim()) {
       setError("Room number is required.");
       return;
@@ -68,6 +77,16 @@ export function RoomModal({
           void save();
         }}
       >
+        {frozenReason ? (
+          <div className="draft-banner draft-conflict-banner" role="alert">
+            <span>{frozenReason}</span>
+            {onFrozenReload ? (
+              <button type="button" className="secondary-button" onClick={onFrozenReload}>
+                Reload draft
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         {error ? (
           <p className="form-error" role="alert">
             {error}
@@ -79,6 +98,7 @@ export function RoomModal({
             <input
               value={draft.number}
               onChange={(event) => setDraft({ ...draft, number: event.target.value })}
+              disabled={isFrozen}
               required
             />
           </label>
@@ -87,6 +107,7 @@ export function RoomModal({
             <input
               value={draft.name}
               onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+              disabled={isFrozen}
               required
             />
           </label>
@@ -96,6 +117,7 @@ export function RoomModal({
               list="rooms-floor-level-options"
               value={floorLevel}
               onChange={(event) => setFloorLevel(event.target.value)}
+              disabled={isFrozen}
               required
             />
           </label>
@@ -105,6 +127,7 @@ export function RoomModal({
               list="rooms-building-zone-options"
               value={buildingZone}
               onChange={(event) => setBuildingZone(event.target.value)}
+              disabled={isFrozen}
             />
           </label>
           <label>
@@ -117,6 +140,7 @@ export function RoomModal({
               onChange={(event) =>
                 setDraft({ ...draft, num_people: Number(event.target.value) || 0 })
               }
+              disabled={isFrozen}
             />
           </label>
           <label>
@@ -129,6 +153,7 @@ export function RoomModal({
               onChange={(event) =>
                 setDraft({ ...draft, num_bedrooms: Number(event.target.value) || 0 })
               }
+              disabled={isFrozen}
             />
           </label>
           <label>
@@ -142,6 +167,7 @@ export function RoomModal({
               onChange={(event) =>
                 setDraft({ ...draft, icfa_factor: Number(event.target.value) || 0 })
               }
+              disabled={isFrozen}
             />
           </label>
         </div>
@@ -151,6 +177,7 @@ export function RoomModal({
             rows={4}
             value={draft.notes ?? ""}
             onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
+            disabled={isFrozen}
           />
         </label>
         <datalist id="rooms-floor-level-options">
@@ -167,7 +194,7 @@ export function RoomModal({
           <button type="button" className="secondary-button" onClick={onCancel}>
             Cancel
           </button>
-          <button type="submit" disabled={isSaving}>
+          <button type="submit" disabled={isSaving || isFrozen}>
             Save room
           </button>
         </div>

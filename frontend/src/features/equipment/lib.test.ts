@@ -3,9 +3,13 @@ import {
   deleteRoomPayload,
   duplicateRoomNumber,
   emptyRoom,
+  isDraftStaleError,
+  isInvalidProjectDocumentError,
   nextRoomsPayload,
   optionLabel,
+  remoteSliceChangesActiveRoom,
 } from "./lib";
+import { ApiRequestError } from "../../shared/api/client";
 import type { RoomsSlice } from "./types";
 
 const baseSlice: RoomsSlice = {
@@ -88,5 +92,68 @@ describe("equipment room helpers", () => {
     ).toBe("Ground");
     expect(optionLabel([], "opt_missing")).toBe("Missing option");
     expect(optionLabel([], null)).toBe("");
+  });
+
+  test("classifies document workflow API errors", () => {
+    const stale = new ApiRequestError(new Response(null, { status: 409, statusText: "Conflict" }), {
+      error_code: "draft_etag_mismatch",
+      message: "Draft changed.",
+      request_id: "req-1",
+      details: {},
+    });
+    const invalid = new ApiRequestError(
+      new Response(null, { status: 422, statusText: "Unprocessable Entity" }),
+      {
+        error_code: "invalid_project_document",
+        message: "Project document failed validation.",
+        request_id: "req-2",
+        details: {},
+      },
+    );
+
+    expect(isDraftStaleError(stale)).toBe(true);
+    expect(isDraftStaleError(invalid)).toBe(false);
+    expect(isInvalidProjectDocumentError(invalid)).toBe(true);
+  });
+
+  test("detects whether a remote Rooms slice changes the active room scope", () => {
+    const room = { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" };
+    const otherRoom = { ...emptyRoom(), id: "rm_2", number: "102", name: "Kitchen" };
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [room],
+      single_select_options: {
+        "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
+        "rooms.building_zone": [],
+      },
+    };
+
+    expect(
+      remoteSliceChangesActiveRoom(current, { ...current, rooms: [room, otherRoom] }, room),
+    ).toBe(false);
+    expect(
+      remoteSliceChangesActiveRoom(
+        current,
+        { ...current, rooms: [{ ...room, name: "Living Room" }] },
+        room,
+      ),
+    ).toBe(true);
+    expect(remoteSliceChangesActiveRoom(current, { ...current, rooms: [] }, room)).toBe(true);
+    expect(
+      remoteSliceChangesActiveRoom(
+        { ...current, rooms: [{ ...room, floor_level: "opt_ground" }] },
+        {
+          ...current,
+          rooms: [{ ...room, floor_level: "opt_ground" }],
+          single_select_options: {
+            "rooms.floor_level": [
+              { id: "opt_ground", label: "Level 1", color: "#3b82f6", order: 0 },
+            ],
+            "rooms.building_zone": [],
+          },
+        },
+        { ...room, floor_level: "opt_ground" },
+      ),
+    ).toBe(true);
   });
 });

@@ -737,9 +737,10 @@ lives in `context/technical-requirements/stack-auth-migration.md` §14.1.
 - All API routes are served under `/api/v1/`; OpenAPI is published at
   `/api/v1/openapi.json`.
 - Diff between two versions returns correct structured deltas.
-- Project JSON download returns a valid `ProjectDocumentV1` JSON that
-  round-trips through schema validation.
-- Per-table JSON download returns a valid table slice.
+- Project JSON download returns the raw saved body for the selected
+  version, including recovery downloads when the current app cannot
+  validate that body as `ProjectDocumentV1`.
+- Per-table JSON download returns a schema-validated table slice.
 - Non-logged-in visitor accessing a project URL sees the project,
   can switch versions, can download project / table / HBJSON JSON,
   and is blocked from all writes (frontend hides edit affordances;

@@ -6,6 +6,7 @@ import type {
   SingleSelectOption,
 } from "./types";
 import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY } from "./types";
+import { ApiRequestError } from "../../shared/api/client";
 
 const OPTION_COLORS = ["#3b82f6", "#10b981", "#a16207", "#7c3aed", "#0f766e", "#be123c"];
 
@@ -83,6 +84,34 @@ export function duplicateRoomNumber(rooms: RoomRow[], room: RoomRow): boolean {
   );
 }
 
+export function isDraftStaleError(error: unknown): boolean {
+  return (
+    error instanceof ApiRequestError &&
+    error.status === 409 &&
+    error.errorCode === "draft_etag_mismatch"
+  );
+}
+
+export function isInvalidProjectDocumentError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.errorCode === "invalid_project_document";
+}
+
+export function remoteSliceChangesActiveRoom(
+  current: RoomsSlice,
+  incoming: RoomsSlice,
+  room: RoomRow,
+): boolean {
+  const currentRoom = current.rooms.find((candidate) => candidate.id === room.id);
+  const incomingRoom = incoming.rooms.find((candidate) => candidate.id === room.id);
+  if (!currentRoom || !incomingRoom) return true;
+  if (roomFingerprint(currentRoom) !== roomFingerprint(incomingRoom)) return true;
+
+  return (
+    optionChanged(current, incoming, ROOM_FLOOR_LEVEL_KEY, room.floor_level) ||
+    optionChanged(current, incoming, ROOM_BUILDING_ZONE_KEY, room.building_zone)
+  );
+}
+
 function cloneOptions(current: RoomsSlice): RoomsReplacePayload["single_select_options"] {
   return {
     [ROOM_FLOOR_LEVEL_KEY]: [...current.single_select_options[ROOM_FLOOR_LEVEL_KEY]],
@@ -117,4 +146,46 @@ function clamp(value: number, min: number, max: number): number {
 
 function normalize(value: string): string {
   return value.trim().toLocaleLowerCase();
+}
+
+function optionChanged(
+  current: RoomsSlice,
+  incoming: RoomsSlice,
+  key: RoomOptionKey,
+  optionId: string | null,
+): boolean {
+  if (!optionId) return false;
+  return (
+    optionFingerprint(findOption(current, key, optionId)) !==
+    optionFingerprint(findOption(incoming, key, optionId))
+  );
+}
+
+function findOption(
+  slice: RoomsSlice,
+  key: RoomOptionKey,
+  optionId: string,
+): SingleSelectOption | undefined {
+  return slice.single_select_options[key].find((candidate) => candidate.id === optionId);
+}
+
+function roomFingerprint(room: RoomRow): string {
+  return JSON.stringify([
+    room.id,
+    room.number,
+    room.name,
+    room.floor_level,
+    room.building_zone,
+    room.num_people,
+    room.num_bedrooms,
+    room.icfa_factor,
+    room.erv_unit_ids,
+    room.catalog_origin,
+    room.notes,
+  ]);
+}
+
+function optionFingerprint(option: SingleSelectOption | undefined): string {
+  if (!option) return "";
+  return JSON.stringify([option.id, option.label, option.color, option.order]);
 }

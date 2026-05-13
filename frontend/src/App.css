@@ -556,6 +556,14 @@
   font-weight: 700;
 }
 
+.draft-conflict-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .data-table-wrap {
   overflow-x: auto;
   border: 1px solid #ebe5d8;

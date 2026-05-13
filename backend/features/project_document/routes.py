@@ -22,6 +22,7 @@ from features.project_document.service import (
     discard_draft,
     get_draft_rooms_slice,
     get_project_diff,
+    get_raw_saved_document,
     get_saved_document,
     get_saved_rooms_slice,
     patch_version,
@@ -30,10 +31,17 @@ from features.project_document.service import (
     save_draft,
     save_draft_as,
 )
-from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
+from features.projects.access import (
+    ProjectAccess,
+    require_project_edit_access,
+    require_project_view_access,
+)
 from features.projects.models import ProjectDetail
 
-router = APIRouter(prefix="/api/v1/projects/{project_id}/versions/{version_id}", tags=["project-document"])
+router = APIRouter(
+    prefix="/api/v1/projects/{project_id}/versions/{version_id}",
+    tags=["project-document"],
+)
 
 ProjectViewAccess = Annotated[ProjectAccess, Depends(require_project_view_access)]
 ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access)]
@@ -77,7 +85,13 @@ def put_draft_table(
     if_match_version: Annotated[str | None, Header()] = None,
 ) -> RoomsSliceResponse:
     require_rooms_table(table_name)
-    return replace_rooms_slice(version_id, payload, access, if_match=if_match, if_match_version=if_match_version)
+    return replace_rooms_slice(
+        version_id,
+        payload,
+        access,
+        if_match=if_match,
+        if_match_version=if_match_version,
+    )
 
 
 @router.delete("/draft", response_model=DiscardDraftResponse)
@@ -123,8 +137,8 @@ def download_document(
     version_id: UUID,
     access: ProjectViewAccess,
 ) -> Response:
-    document = get_saved_document(version_id, access)
-    return json_download_response(document.model_dump_json(), f"project-{version_id}.json")
+    document = get_raw_saved_document(version_id, access)
+    return json_download_response(json.dumps(document, separators=(",", ":")), f"project-{version_id}.json")
 
 
 @router.get("/download/tables/{table_name}")

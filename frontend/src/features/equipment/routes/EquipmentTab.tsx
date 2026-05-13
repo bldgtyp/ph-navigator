@@ -1,22 +1,74 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { projectDownloadUrl } from "../../projects/api";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomModal } from "../components/RoomModal";
 import { RoomsTable } from "../components/RoomsTable";
-import { useReplaceRoomsSliceMutation, useRoomsSliceQuery } from "../hooks";
-import { deleteRoomPayload, emptyRoom, nextRoomsPayload } from "../lib";
-import type { RoomRow } from "../types";
+import { useReplaceRoomsSliceMutation, useRoomsDraftBroadcast, useRoomsSliceQuery } from "../hooks";
+import {
+  deleteRoomPayload,
+  emptyRoom,
+  isDraftStaleError,
+  isInvalidProjectDocumentError,
+  nextRoomsPayload,
+  remoteSliceChangesActiveRoom,
+} from "../lib";
+import type { RoomRow, RoomsSlice } from "../types";
 
 type RoomModalState = { mode: "add" } | { mode: "edit"; room: RoomRow };
 
+const ACTIVE_ROOM_CONFLICT_MESSAGE =
+  "Rooms draft changed in another tab. Reload draft before saving this room.";
+const DELETE_CONFLICT_MESSAGE =
+  "Rooms draft changed in another tab. Reload draft before deleting rooms.";
+
 export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
-  const replaceRoomsMutation = useReplaceRoomsSliceMutation(project.id, project.active_version_id);
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [draftConflictReason, setDraftConflictReason] = useState<string | null>(null);
   const isEditor = project.access_mode === "editor";
   const isLocked = project.active_version?.locked ?? false;
-  const canEdit = isEditor && !isLocked;
+  const activeVersionId = project.active_version_id;
+  const canEdit = isEditor && !isLocked && !draftConflictReason && Boolean(activeVersionId);
+  const onRemoteSlice = useCallback(
+    (incomingSlice: RoomsSlice) => {
+      if (!roomModal) {
+        return;
+      }
+      if (
+        roomModal.mode === "edit" &&
+        roomsQuery.data &&
+        remoteSliceChangesActiveRoom(roomsQuery.data, incomingSlice, roomModal.room)
+      ) {
+        setDraftConflictReason(ACTIVE_ROOM_CONFLICT_MESSAGE);
+      }
+    },
+    [roomModal, roomsQuery.data],
+  );
+  const publishRoomsSlice = useRoomsDraftBroadcast(
+    project.id,
+    activeVersionId,
+    isEditor,
+    onRemoteSlice,
+  );
+  const replaceRoomsMutation = useReplaceRoomsSliceMutation(
+    project.id,
+    activeVersionId,
+    publishRoomsSlice,
+  );
+
+  const reloadDraft = async () => {
+    setDraftConflictReason(null);
+    setActionError(null);
+    setRoomModal(null);
+    await roomsQuery.refetch();
+  };
+
+  const handleStaleDraftConflict = async (message: string) => {
+    setDraftConflictReason(message);
+    await roomsQuery.refetch();
+  };
 
   if (roomsQuery.isLoading) {
     return (
@@ -28,10 +80,17 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   }
 
   if (roomsQuery.isError || !roomsQuery.data) {
+    const invalidDocument = isInvalidProjectDocumentError(roomsQuery.error);
     return (
       <section className="tab-panel" aria-labelledby="equipment-title">
         <h2 id="equipment-title">Equipment</h2>
         <p role="alert">{errorMessage(roomsQuery.error, "Could not load rooms.")}</p>
+        {invalidDocument && activeVersionId ? (
+          <p className="form-note">
+            Editing is disabled for this version.{" "}
+            <a href={projectDownloadUrl(project.id, activeVersionId)}>Download raw project JSON</a>
+          </p>
+        ) : null}
       </section>
     );
   }
@@ -41,8 +100,16 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     if (!canEdit) return;
     setActionError(null);
     const payload = nextRoomsPayload(roomsSlice, room, labels);
-    await replaceRoomsMutation.mutateAsync({ current: roomsSlice, payload });
-    setRoomModal(null);
+    try {
+      await replaceRoomsMutation.mutateAsync({ current: roomsSlice, payload });
+      setRoomModal(null);
+    } catch (error) {
+      if (isDraftStaleError(error)) {
+        await handleStaleDraftConflict(ACTIVE_ROOM_CONFLICT_MESSAGE);
+        throw error;
+      }
+      throw error;
+    }
   };
 
   const deleteRoom = (room: RoomRow) => {
@@ -52,7 +119,13 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     replaceRoomsMutation.mutate(
       { current: roomsSlice, payload: deleteRoomPayload(roomsSlice, room.id) },
       {
-        onError: (error) => setActionError(errorMessage(error, "Could not delete room.")),
+        onError: async (error) => {
+          if (isDraftStaleError(error)) {
+            await handleStaleDraftConflict(DELETE_CONFLICT_MESSAGE);
+            return;
+          }
+          setActionError(errorMessage(error, "Could not delete room."));
+        },
       },
     );
   };
@@ -95,6 +168,14 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           This version is locked. Save As to copy it into a new version.
         </p>
       ) : null}
+      {draftConflictReason ? (
+        <div className="draft-banner draft-conflict-banner" role="alert">
+          <span>{draftConflictReason}</span>
+          <button type="button" className="secondary-button" onClick={() => void reloadDraft()}>
+            Reload draft
+          </button>
+        </div>
+      ) : null}
       {actionError ? (
         <p className="form-error" role="alert">
           {actionError}
@@ -105,18 +186,19 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         isEditor={canEdit}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
       />
-      {roomModal?.mode === "edit" && canEdit ? (
+      {roomModal?.mode === "edit" && isEditor && !isLocked ? (
         <div className="room-actions">
           <button
             type="button"
             className="danger-button"
             onClick={() => deleteRoom(roomModal.room)}
+            disabled={Boolean(draftConflictReason)}
           >
             Delete room
           </button>
         </div>
       ) : null}
-      {roomModal && canEdit ? (
+      {roomModal && isEditor && !isLocked ? (
         <RoomModal
           key={roomModal.mode === "add" ? "add" : roomModal.room.id}
           title={
@@ -128,6 +210,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           roomsSlice={roomsSlice}
           onCancel={() => setRoomModal(null)}
           onSubmit={saveRoom}
+          frozenReason={draftConflictReason}
+          onFrozenReload={() => void reloadDraft()}
         />
       ) : null}
     </section>
