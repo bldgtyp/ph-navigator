@@ -73,7 +73,7 @@ Resolve these at the named slice, not all up front:
 | Generated OpenAPI/TS client in CI from day 1 | TB-02 or TB-04 | Lean yes, keep client thin |
 | V2 staging URL | TB-02 | Render staging is live: frontend `https://ph-navigator-v2-staging.onrender.com`, API `https://ph-navigator-v2.onrender.com`; custom domain post-MVP |
 | `ProjectDocumentV1` schema evolution policy | TB-04 | Saved/locked versions immutable; drafts may up-migrate on schema bump; `schema_version` is the explicit signal |
-| MCP transport | TB-04b | Both stdio and HTTP/SSE |
+| MCP transport | TB-04b | Streamable HTTP at `/mcp` plus stdio via `PHN_MCP_TOKEN`; legacy SSE deferred unless a concrete client requires it |
 | Project version name uniqueness | TB-05 | Enforce unique per project |
 | Diff UI scope | TB-05 | Structured text summary in v1 |
 | Draft GC threshold and warning timing | TB-05 | 30-day GC; warnings can tune later |
@@ -165,13 +165,13 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | HITL for MCP transport decision and local client setup |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Claude can authenticate via MCP and read project + draft state through a real local client. De-risks transport, token, and access-check choices before TB-05 introduces version semantics. |
 | References | `context/technical-requirements/llm-mcp-schema.md`; `context/user-stories/50-settings-ops-llm.md`; `context/technical-requirements/api.md` (shared access-check). |
 | Includes | MCP server scaffold with chosen transport(s); token schema and hashing; project-scoped read-only scopes; list/get tools for projects, status items, and document slices; shared access-check dependency reuse; structured MCP error shape. |
 | Tests | Token scope validation and revocation; read-only enforcement (write attempt is rejected, not silently no-op); MCP and REST share the access-check dependency; targeted tool I/O contract tests. |
 | Browser check | Run MCP list/get against a project from a local MCP client; cross-check that the same data appears in the browser dashboard for the same user. |
-| Lessons | Record MCP transport and ergonomics decisions, and what was deliberately deferred to the write-path slice (TB-17). |
+| Lessons | Streamable HTTP is mounted at `/mcp` and stdio is available through `python -m scripts.mcp_stdio` with `PHN_MCP_TOKEN`; token admin is backend-only until the Project Settings modal lands; write tools remain deferred to TB-17, with a read-only token write attempt returning a structured `mcp_scope_insufficient` tool error instead of a silent no-op. |
 
 ### TB-05 - Save, Save As, Lock, Diff Stub, Downloads
 
@@ -378,7 +378,7 @@ Resolve these at the named slice, not all up front:
 | TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
 | TB-03.5 | Complete | 2026-05-12 18:08 EDT | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke at `http://127.0.0.1:5173/dashboard` -> `/projects/114b7e10-05d6-41d1-acae-981dcb346e2f/status` verified dashboard and editor Status tab after simplify cleanup, with no console errors. Earlier smoke also verified public read-only Status tab, sign-in transition to editor controls, and populated default template. |
 | TB-04 | Complete | 2026-05-12 19:24 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 tests); `cd frontend && npm run build`; `make e2e` against fresh local API `:8001` via Vite proxy `:5173` passed for Status plus Rooms draft add/reload. Staging Render verification: signed in as editor, opened `Staging Smoke Test`, added room `test` on Equipment/Rooms, confirmed `Unsaved Rooms draft restored` and the room row rendered in the live app. |
-| TB-04b | Not started | 2026-05-12 | - |
+| TB-04b | Complete | 2026-05-12 21:10 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed after simplify cleanup); local MCP protocol smoke against `http://127.0.0.1:8002/mcp/` using a project-scoped bearer token verified `list_projects`, `get_project`, `list_status_items`, and `get_document`; automated in-process MCP tests cover saved/draft `get_document`, `get_table`, read-token metadata shape, read-only `replace_table` structured rejection, and write-only token-scope rejection; Playwright dashboard cross-check at `http://127.0.0.1:5173/dashboard` showed the same `MCP Smoke Project` / `MCP-001` with no post-login console errors. |
 | TB-05 | Not started | 2026-05-12 | - |
 | TB-06 | Not started | 2026-05-12 | - |
 | TB-07 | Not started | 2026-05-12 | - |
@@ -496,4 +496,18 @@ What did not work: The existing local `:8000` backend process was stale and retu
 What worked: Keep local browser verification same-origin through the Vite `/api` proxy, now overridable with `VITE_API_PROXY_TARGET`. The first accepted Rooms write creates a user/version draft from the saved version, guarded by `If-Match-Version`; later writes use `If-Match` on `draft_etag`. Rooms rows reference option ids, while creating floor/zone labels creates the options in the same semantic write. Keeping the temporary table renderer named `TablePrimitiveStub` reserves the canonical `DataTable` name for the later TanStack/keyboard/paste implementation.
 Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e` with fresh API `:8001` proxied through Vite `:5173`; staging Render smoke confirmed a room could be added on Equipment/Rooms and restored as an unsaved draft in the live app.
 Follow-up: TB-05 should add Save/Discard and version-body persistence, plus a real dirty/save indicator. TB-06 should revisit same-editor tab coordination with draft ETags. Before long-lived editable drafts matter, add or explicitly defer `expires_at`/keepalive/stale-warning behavior.
+```
+
+### TB-04b
+
+```text
+Slice: TB-04b
+Date: 2026-05-12
+What changed: Added `mcp_tokens`, editor-only token issue/list/revoke REST routes, high-entropy bearer-token hashing, FastMCP read tools, Streamable HTTP mounting at `/mcp`, stdio startup via `PHN_MCP_TOKEN`, and a local MCP smoke client.
+Why: Claude/agent clients need authenticated project-scoped reads before TB-05 version semantics and later MCP write leases are added.
+What we tried: Official MCP Python SDK Streamable HTTP mounting, bearer-token verification through `TokenVerifier`, local FastAPI + MCP client smoke, and dashboard cross-check through Playwright.
+What did not work: Mounting the MCP sub-app under FastAPI without running the MCP session manager lifespan returned `500 Task group is not initialized`; fixed by adding the main FastAPI lifespan around `phn_mcp.session_manager.run()`. The first dashboard browser check counted the expected pre-login `/auth/session` 401 as a console error; the accepted browser evidence starts console capture after sign-in.
+What worked: Store only token hash/prefix, return plaintext once, throttle `last_used_at` updates during token verification, and rehydrate the normal `ProjectAccess` object from the token's issuing user/project for read tools. Streamable HTTP plus stdio covers current local-client needs; legacy SSE stays deferred unless a concrete client requires it. Follow-up review tightened the slice by gating env-token auth to stdio, adding MCP URL env docs, adding in-process MCP tool tests, sharing the current document-view loader with REST, aligning the `replace_table` stub signature with the future write contract, and documenting the current FastMCP structured-error wire shape.
+Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed); `python -m scripts.smoke_mcp_read --url http://127.0.0.1:8002/mcp/ --token <project-scoped-token>`; MCP calls for `get_project`, `list_status_items`, `get_document`, `get_table`, and read-only `replace_table` rejection; Playwright dashboard check for `MCP Smoke Project` / `MCP-001`.
+Follow-up: Build the Project Settings token UI when the settings modal slice lands; TB-17 owns real MCP draft writes, save/discard, and edit lease UX; TB-06 owns read-safe-mode across REST, MCP, and frontend.
 ```

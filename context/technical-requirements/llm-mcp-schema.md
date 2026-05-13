@@ -47,10 +47,12 @@ MCP auth is **not anonymous**, even though normal project URLs are
 public-readable in the browser. MCP clients authenticate with
 project-scoped bearer tokens from `mcp_tokens` (§6.1). Tokens are issued
 by logged-in editors, shown once, stored hashed, revocable, and
-audit-logged. A token with `project:write` scope can mutate only its
-own `project_id`; a token with read-only scopes cannot call mutating
-tools. All tool calls are attributed to the issuing editor. Mutating
-tools obey the MCP/browser edit-lease rules in §8.5.
+audit-logged. Write-capable project tokens include `project:read` plus
+`project:write`; write-only project tokens are rejected. A token with
+`project:write` scope can mutate only its own `project_id`; a token
+with read-only scopes cannot call mutating tools. All tool calls are
+attributed to the issuing editor. Mutating tools obey the MCP/browser
+edit-lease rules in §8.5.
 
 Tool surface (initial):
 
@@ -61,6 +63,10 @@ get_project(project_id)              → metadata + version list
 list_versions(project_id)            → [{id, name, kind, locked, ...}]
 get_document(project_id, version_id) → full project JSON + version_body_etag
                                        + current draft_etag if present
+get_table(project_id, version_id, table_name)
+                                     → TB-04b read primitive returning one
+                                       full table; `query_table` remains the
+                                       typed filtered table contract
 update_document(project_id, version_id, json_patch, draft_etag | base_version_etag)
                                      → applies JSON-Patch to current draft,
                                        returns new draft etag
@@ -111,6 +117,13 @@ are defined as the implementation lands. MCP tools should return
 recoverable domain failures in this structured shape where the protocol
 allows; reserve hard protocol/runtime failures for malformed tool calls,
 unhandled server errors, or infrastructure failure.
+
+TB-04b implementation note: FastMCP domain failures are currently raised
+as `ToolError` with the structured envelope JSON-encoded in the error
+message string. MCP clients that need machine-readable error details
+should JSON-decode that message. Replace this with first-class
+structured error content if the SDK exposes a cleaner stable hook before
+the TB-17 write path ships.
 
 Browser behavior for MCP failures follows the same minimal rule set:
 release any MCP edit lease, preserve local browser edits, keep the

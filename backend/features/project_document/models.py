@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from features.project_document.document import (
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
+    ProjectDocumentV1,
     RoomOptionKey,
     RoomRow,
     SingleSelectOption,
@@ -48,3 +49,14 @@ class RoomsSliceResponse(BaseModel):
     draft_etag: str | None
     rooms: list[RoomRow]
     single_select_options: dict[RoomOptionKey, list[SingleSelectOption]]
+
+
+class ProjectDocumentView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: RoomsSliceSource
+    version_etag: str
+    draft_etag: str | None
+    body: ProjectDocumentV1

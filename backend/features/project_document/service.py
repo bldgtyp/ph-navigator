@@ -12,8 +12,13 @@ from starlette import status
 from database import connection, transaction
 from features.project_document import repository
 from features.project_document.document import ROOM_OPTION_KEYS, ProjectDocumentV1
-from features.project_document.models import RoomsSliceReplaceRequest, RoomsSliceResponse, RoomsSliceSource
-from features.projects.access import ProjectAccess
+from features.project_document.models import (
+    ProjectDocumentView,
+    RoomsSliceReplaceRequest,
+    RoomsSliceResponse,
+    RoomsSliceSource,
+)
+from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
 
@@ -42,6 +47,18 @@ def get_saved_rooms_slice(version_id: UUID, access: ProjectAccess) -> RoomsSlice
 
 
 def get_draft_rooms_slice(version_id: UUID, access: ProjectAccess) -> RoomsSliceResponse:
+    document = get_current_document_view(version_id, access)
+    return rooms_response(
+        access.project_id,
+        version_id,
+        document.source,
+        document.version_etag,
+        document.draft_etag,
+        document.body,
+    )
+
+
+def get_current_document_view(version_id: UUID, access: ProjectAccess) -> ProjectDocumentView:
     user = require_editor_user(access)
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
@@ -52,16 +69,23 @@ def get_draft_rooms_slice(version_id: UUID, access: ProjectAccess) -> RoomsSlice
         draft = repository.get_draft(conn, version_id, user.id)
         if draft is not None:
             draft_body = validate_document(draft["body"])
-            return rooms_response(
-                access.project_id,
-                version_id,
-                "draft",
-                version_etag,
-                draft["draft_etag"],
-                draft_body,
+            return ProjectDocumentView(
+                project_id=access.project_id,
+                version_id=version_id,
+                source="draft",
+                version_etag=version_etag,
+                draft_etag=draft["draft_etag"],
+                body=draft_body,
             )
 
-    return rooms_response(access.project_id, version_id, "version", version_etag, None, version_body)
+    return ProjectDocumentView(
+        project_id=access.project_id,
+        version_id=version_id,
+        source="version",
+        version_etag=version_etag,
+        draft_etag=None,
+        body=version_body,
+    )
 
 
 def replace_rooms_slice(
@@ -124,12 +148,6 @@ def replace_rooms_slice(
         draft_etag,
         next_body,
     )
-
-
-def require_editor_user(access: ProjectAccess):
-    if access.user is None:
-        raise api_error(status.HTTP_401_UNAUTHORIZED, "not_authenticated", "Sign-in required.")
-    return access.user
 
 
 def require_rooms_table(table_name: str) -> None:

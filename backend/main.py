@@ -5,12 +5,16 @@ Feature routes are added incrementally by tracer-bullet slice.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from features.auth.routes import router as auth_router
+from features.mcp.routes import router as mcp_token_router
+from features.mcp.server import mcp as phn_mcp
 from features.project_document.routes import router as project_document_router
 from features.project_status.routes import router as project_status_router
 from features.projects.routes import router as projects_router
@@ -18,10 +22,18 @@ from features.shared.errors import http_exception_handler, validation_exception_
 from features.shared.middleware import request_context_middleware
 from features.system.routes import router as system_router
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    async with phn_mcp.session_manager.run():
+        yield
+
+
 app = FastAPI(
     title="PH-Navigator V2",
     version=settings.app_version,
     description="PH-Navigator V2 API.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -30,6 +42,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Mcp-Session-Id", "X-Request-ID"],
 )
 
 app.middleware("http")(request_context_middleware)
@@ -40,4 +53,6 @@ app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(project_document_router)
 app.include_router(project_status_router)
+app.include_router(mcp_token_router)
 app.include_router(system_router)
+app.mount("/mcp", phn_mcp.streamable_http_app())

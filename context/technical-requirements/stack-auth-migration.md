@@ -32,7 +32,7 @@ do not make it part of default startup context.
 | Auth | Session auth (cookies) for editors; public read access on normal project URLs |
 | Hosting | Render.com (backend service, managed Postgres, frontend static site) |
 | Local dev | Docker Compose (Postgres + backend + frontend dev server) |
-| MCP transport | stdio + HTTP/SSE (FastAPI route) |
+| MCP transport | Streamable HTTP at `/mcp` + stdio via `PHN_MCP_TOKEN`; legacy SSE deferred until a concrete client needs it |
 | Testing | pytest (backend), Playwright (E2E), Vitest (frontend unit) |
 
 ### 12.1 Persistence pattern — raw SQL + Pydantic
@@ -175,8 +175,9 @@ AirTable-bound project is migrated.
   `mcp_tokens` (§6.1). Issued by logged-in editors from Project
   Settings, shown once, stored hashed, revocable, and audit-logged.
   v1 tokens can carry `project:read`, `project:write`, `asset:read`,
-  and `asset:write` scopes. Public browser read access does not create
-  anonymous MCP access.
+  and `asset:write` scopes. Write-capable tokens also include
+  `project:read`; write-only project tokens are rejected. Public browser
+  read access does not create anonymous MCP access.
 
 No anonymous editor auth. No per-table or per-version permissions
 in v1.

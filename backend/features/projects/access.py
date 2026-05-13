@@ -59,3 +59,9 @@ def require_project_view_access(project_id: UUID, request: Request) -> ProjectAc
 
 def require_project_edit_access(project_id: UUID, request: Request) -> ProjectAccess:
     return require_project_access(project_id, request, "edit")
+
+
+def require_editor_user(access: ProjectAccess) -> UserPublic:
+    if access.user is None:
+        raise api_error(status.HTTP_401_UNAUTHORIZED, "not_authenticated", "Sign-in required.")
+    return access.user

@@ -16,7 +16,7 @@ from features.project_status.models import (
     StatusItemPublic,
     StatusItemUpdateRequest,
 )
-from features.projects.access import ProjectAccess
+from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
 
@@ -108,9 +108,3 @@ def apply_default_template(access: ProjectAccess) -> StatusItemListResponse:
             )
         rows = repository.list_status_items(conn, access.project_id)
     return StatusItemListResponse(items=[status_item_public(row) for row in rows])
-
-
-def require_editor_user(access: ProjectAccess):
-    if access.user is None:
-        raise api_error(status.HTTP_401_UNAUTHORIZED, "not_authenticated", "Sign-in required.")
-    return access.user

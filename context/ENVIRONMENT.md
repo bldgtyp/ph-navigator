@@ -35,6 +35,8 @@
   - `PASSWORD_ARGON2_MEMORY_COST=65536`
   - `PASSWORD_ARGON2_PARALLELISM=4`
   - `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000`
+  - `MCP_ISSUER_URL=http://localhost:8000`
+  - `MCP_RESOURCE_SERVER_URL=http://localhost:8000/mcp`
   - `FERNET_SECRET_KEY` is reserved for future at-rest field
     encryption; TB-01 session cookies are opaque DB row pointers, not
     signed/encrypted payload cookies.
@@ -68,6 +70,8 @@ under the `Staging` environment.
     - `SESSION_COOKIE_NAME=phn_session`
     - `SESSION_LIFETIME_MINUTES=60`
     - `SESSION_COOKIE_SAMESITE=none`
+    - `MCP_ISSUER_URL=https://ph-navigator-v2.onrender.com`
+    - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-v2.onrender.com/mcp`
     - `FERNET_SECRET_KEY=<generated Fernet key>`
 - Postgres service: `ph-navigator-v2-staging-db`
   - Database: `ph_navigator_v2`
