@@ -11,6 +11,7 @@ import {
   useSaveDraftAsMutation,
   useSaveDraftMutation,
 } from "../hooks";
+import { isReadSafeProjectDocument } from "../lib";
 
 const DRAFT_DIFF_TARGET = "draft";
 type SaveAsVersionKind = "working" | "submitted" | "closed";
@@ -42,7 +43,8 @@ export function VersionControls({
   const activeVersionId = activeVersion?.id ?? null;
   const isEditor = project.access_mode === "editor";
   const draftSummaryQuery = useDraftSummaryQuery(project.id, activeVersionId, isEditor);
-  const draftSummary = draftSummaryQuery.data;
+  const draftStatus = draftSummaryQuery.data;
+  const draftSummary = draftStatus && !isReadSafeProjectDocument(draftStatus) ? draftStatus : null;
   const isLocked = draftSummary?.is_locked ?? activeVersion?.locked ?? false;
   const hasDraft = draftSummary?.source === "draft";
   const saveMutation = useSaveDraftMutation(project.id, activeVersionId);

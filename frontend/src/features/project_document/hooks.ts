@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { projectQueryKeys } from "../projects/query-keys";
-import { discardDraft, fetchDiff, fetchDraftSummary, saveDraft, saveDraftAs } from "./api";
+import {
+  discardDraft,
+  fetchDiff,
+  fetchDraftSummary,
+  fetchProjectDocument,
+  saveDraft,
+  saveDraftAs,
+} from "./api";
 import type { SaveAsPayload } from "./types";
 
 export const projectDocumentQueryKeys = {
@@ -8,6 +15,8 @@ export const projectDocumentQueryKeys = {
   project: (projectId: string) => [...projectDocumentQueryKeys.all, "project", projectId] as const,
   draftSummary: (projectId: string, versionId: string) =>
     [...projectDocumentQueryKeys.project(projectId), "draft-summary", versionId] as const,
+  document: (projectId: string, versionId: string) =>
+    [...projectDocumentQueryKeys.project(projectId), "document", versionId] as const,
   diff: (projectId: string, versionId: string, to: string) =>
     [...projectDocumentQueryKeys.project(projectId), "diff", versionId, to] as const,
 };
@@ -40,6 +49,19 @@ export function useDraftSummaryQuery(projectId: string, versionId: string | null
   return useQuery({
     queryKey: projectDocumentQueryKeys.draftSummary(projectId, resolvedVersionId),
     queryFn: ({ signal }) => fetchDraftSummary(projectId, resolvedVersionId, signal),
+    enabled: enabled && resolvedVersionId.length > 0,
+  });
+}
+
+export function useProjectDocumentQuery(
+  projectId: string,
+  versionId: string | null,
+  enabled = true,
+) {
+  const resolvedVersionId = versionId ?? "";
+  return useQuery({
+    queryKey: projectDocumentQueryKeys.document(projectId, resolvedVersionId),
+    queryFn: ({ signal }) => fetchProjectDocument(projectId, resolvedVersionId, signal),
     enabled: enabled && resolvedVersionId.length > 0,
   });
 }

@@ -1,13 +1,30 @@
 import { fetchJson, getApiBaseUrl } from "../../shared/api/client";
-import type { DiffSummary, ProjectDraftSummary, SaveAsPayload, SaveDraftResponse } from "./types";
+import type {
+  DiffSummary,
+  ProjectDocumentResponse,
+  ProjectDraftStatus,
+  SaveAsPayload,
+  SaveDraftResponse,
+} from "./types";
 
 export async function fetchDraftSummary(
   projectId: string,
   versionId: string,
   signal?: AbortSignal,
-): Promise<ProjectDraftSummary> {
-  return fetchJson<ProjectDraftSummary>(
+): Promise<ProjectDraftStatus> {
+  return fetchJson<ProjectDraftStatus>(
     `/api/v1/projects/${projectId}/versions/${versionId}/draft`,
+    { signal },
+  );
+}
+
+export async function fetchProjectDocument(
+  projectId: string,
+  versionId: string,
+  signal?: AbortSignal,
+): Promise<ProjectDocumentResponse> {
+  return fetchJson<ProjectDocumentResponse>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/document`,
     { signal },
   );
 }

@@ -81,6 +81,10 @@ def draft_url(project_id: object, version_id: object) -> str:
     return f"/api/v1/projects/{project_id}/versions/{version_id}/draft"
 
 
+def document_url(project_id: object, version_id: object) -> str:
+    return f"/api/v1/projects/{project_id}/versions/{version_id}/document"
+
+
 def save_url(project_id: object, version_id: object) -> str:
     return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/save"
 
@@ -141,6 +145,54 @@ def create_rooms_draft(client: TestClient, project_id: object, version_id: objec
     )
     assert created.status_code == 200
     return {"initial": initial, "created": created.json()}
+
+
+def corrupt_saved_version_schema(version_id: object) -> None:
+    with transaction() as conn:
+        row = conn.execute(
+            """
+            SELECT body
+            FROM project_versions
+            WHERE id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+        assert row is not None
+        raw_body = dict(row["body"])
+        raw_body["schema_version"] = 999
+        conn.execute(
+            """
+            UPDATE project_versions
+            SET body = %(body)s,
+                schema_version = 999
+            WHERE id = %(version_id)s
+            """,
+            {"body": Jsonb(raw_body), "version_id": version_id},
+        )
+
+
+def corrupt_draft_schema(version_id: object) -> None:
+    with transaction() as conn:
+        row = conn.execute(
+            """
+            SELECT body
+            FROM project_version_drafts
+            WHERE version_id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+        assert row is not None
+        raw_body = dict(row["body"])
+        raw_body["schema_version"] = 999
+        conn.execute(
+            """
+            UPDATE project_version_drafts
+            SET body = %(body)s,
+                schema_version = 999
+            WHERE version_id = %(version_id)s
+            """,
+            {"body": Jsonb(raw_body), "version_id": version_id},
+        )
 
 
 def test_empty_project_document_has_rooms_and_option_lists() -> None:
@@ -510,35 +562,66 @@ def test_project_download_returns_raw_body_when_schema_is_invalid(
     project_id = project["id"]
     version_id = project["active_version_id"]
 
-    with transaction() as conn:
-        row = conn.execute(
-            """
-            SELECT body
-            FROM project_versions
-            WHERE id = %(version_id)s
-            """,
-            {"version_id": version_id},
-        ).fetchone()
-        assert row is not None
-        raw_body = dict(row["body"])
-        raw_body["schema_version"] = 999
-        conn.execute(
-            """
-            UPDATE project_versions
-            SET body = %(body)s,
-                schema_version = 999
-            WHERE id = %(version_id)s
-            """,
-            {"body": Jsonb(raw_body), "version_id": version_id},
-        )
+    corrupt_saved_version_schema(version_id)
 
     rooms = client.get(saved_rooms_url(project_id, version_id))
     assert rooms.status_code == 422
     assert rooms.json()["error_code"] == "invalid_project_document"
 
+    document = client.get(document_url(project_id, version_id), headers={"X-Request-ID": "schema-safe"})
+    assert document.status_code == 200
+    document_body = document.json()
+    assert document_body["schema_version_unsupported"] is True
+    assert document_body["schema_version"] == 999
+    assert document_body["current_schema_version"] == 1
+    assert document_body["error_code"] == "schema_validation_failed_after_migration"
+    assert document_body["request_id"] == "schema-safe"
+    assert document_body["body"]["schema_version"] == 999
+    assert document_body["validation_errors"] == []
+
+    public_document = TestClient(app).get(
+        document_url(project_id, version_id),
+        headers={"X-Request-ID": "public-safe"},
+    )
+    assert public_document.status_code == 200
+    public_document_body = public_document.json()
+    assert public_document_body["schema_version_unsupported"] is True
+    assert public_document_body["request_id"] == "public-safe"
+    assert public_document_body["validation_errors"] == []
+
+    draft = client.get(draft_url(project_id, version_id), headers={"X-Request-ID": "draft-safe"})
+    assert draft.status_code == 200
+    draft_body = draft.json()
+    assert draft_body["schema_version_unsupported"] is True
+    assert draft_body["source"] == "version"
+    assert draft_body["request_id"] == "draft-safe"
+    assert len(draft_body["validation_errors"]) > 0
+
     project_json = client.get(download_url(project_id, version_id))
     assert project_json.status_code == 200
     assert project_json.json()["schema_version"] == 999
+
+
+def test_draft_summary_returns_read_safe_envelope_when_draft_body_is_invalid(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    create_rooms_draft(client, project_id, version_id)
+
+    corrupt_draft_schema(version_id)
+
+    draft = client.get(draft_url(project_id, version_id), headers={"X-Request-ID": "draft-body-safe"})
+    assert draft.status_code == 200
+    body = draft.json()
+    assert body["schema_version_unsupported"] is True
+    assert body["source"] == "draft"
+    assert body["schema_version"] == 999
+    assert body["request_id"] == "draft-body-safe"
+    assert body["body"]["schema_version"] == 999
+    assert len(body["validation_errors"]) > 0
 
 
 def test_save_as_without_draft_copies_saved_body(clean_document_tables: None) -> None:

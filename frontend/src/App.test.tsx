@@ -89,6 +89,21 @@ const draftSummaryPayload = {
   can_edit: true,
 };
 
+const readSafePayload = {
+  project_id: projectPayload.id,
+  version_id: projectPayload.active_version_id,
+  source: "version",
+  schema_version: 999,
+  current_schema_version: 1,
+  schema_version_unsupported: true,
+  error_code: "schema_validation_failed_after_migration",
+  message:
+    "This version uses an older project format that PHN could not fully migrate. Editing is disabled, but the raw project JSON is still available.",
+  request_id: "schema-safe",
+  validation_errors: ["Input should be 1"],
+  body: { schema_version: 999 },
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
@@ -332,6 +347,66 @@ describe("App", () => {
     expect(await screen.findByText("Unsaved")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save As" })).toBeVisible();
+  });
+
+  test("renders read-safe recovery when the editor draft summary is unsupported", async () => {
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
+    const draftUrl = draftSummaryUrl();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return jsonResponse({
+          ...projectPayload,
+          active_version: { ...projectPayload.active_version, schema_version: 999 },
+          versions: [{ ...projectPayload.versions[0], schema_version: 999 }],
+        });
+      }
+      if (url === draftUrl) return jsonResponse(readSafePayload);
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Project format recovery" })).toBeVisible();
+    expect(screen.getByText(/Editing is disabled/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Download raw project JSON" })).toHaveAttribute(
+      "href",
+      `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/download`,
+    );
+    expect(screen.getByText("schema-safe")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Equipment" })).not.toBeInTheDocument();
+  });
+
+  test("renders public read-safe recovery without editor diagnostics", async () => {
+    window.history.pushState(
+      {},
+      "",
+      `/projects/${projectPayload.id}/equipment?version=${projectPayload.active_version_id}#viewer`,
+    );
+    const documentUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/document`;
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return jsonResponse({
+          ...projectPayload,
+          access_mode: "viewer",
+          active_version: { ...projectPayload.active_version, schema_version: 999 },
+          versions: [{ ...projectPayload.versions[0], schema_version: 999 }],
+        });
+      }
+      if (url === documentUrl) return jsonResponse(readSafePayload);
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Project format recovery" })).toBeVisible();
+    expect(screen.getByText("Read-only public view")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Download raw project JSON" })).toBeVisible();
+    expect(screen.queryByText("Saved schema")).not.toBeInTheDocument();
+    expect(screen.queryByText("schema-safe")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
   });
 
   test("refetches project access after signing in from a public project URL", async () => {

@@ -30,15 +30,22 @@ def body_size_bytes(body: ProjectDocumentV1) -> int:
 
 
 def validate_document(raw_body: object) -> ProjectDocumentV1:
+    document, errors = validate_document_with_errors(raw_body)
+    if document is not None:
+        return document
+    raise api_error(
+        422,
+        "invalid_project_document",
+        "Project document failed validation.",
+        {"errors": errors},
+    )
+
+
+def validate_document_with_errors(raw_body: object) -> tuple[ProjectDocumentV1 | None, list[str]]:
     try:
-        return ProjectDocumentV1.model_validate(raw_body)
+        return ProjectDocumentV1.model_validate(raw_body), []
     except ValidationError as exc:
-        raise api_error(
-            422,
-            "invalid_project_document",
-            "Project document failed validation.",
-            {"errors": [str(error["msg"]) for error in exc.errors()]},
-        ) from exc
+        return None, [str(error["msg"]) for error in exc.errors()]
 
 
 def raw_json_value(raw_body: object) -> JsonValue:

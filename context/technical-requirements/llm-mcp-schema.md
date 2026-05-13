@@ -239,9 +239,12 @@ schema version:
    the upgraded view. **The original row is not mutated.** Lazy
    migration — only when the user explicitly Saves does the new body
    land at `CURRENT`.
-3. **Read-safe-mode fallback.** If a shim raises during read, the API
-   still returns a response: `{ schema_version: N,
-   schema_version_unsupported: true, body: <raw> }`. The frontend
+3. **Read-safe-mode fallback.** If a shim raises during read, or if the
+   migrated body fails current-schema validation, document-level API
+   reads still return a response: `{ schema_version: N,
+   schema_version_unsupported: true, body: <raw> }`. In Phase 1 this
+   applies to `GET /document` and the editor `GET /draft` summary;
+   typed table reads/writes remain validation-gated. The frontend
    renders a read-only "this project version is from an older format
    we couldn't fully migrate — please contact admin" view that **still
    permits JSON download**. Users never lose access to their data

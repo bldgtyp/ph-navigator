@@ -12,6 +12,7 @@ from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     DiscardDraftResponse,
     ProjectDiffResponse,
+    ProjectDocumentReadSafeEnvelope,
     ProjectDraftSummary,
     SaveAsDraftRequest,
     SaveDraftResponse,
@@ -19,11 +20,11 @@ from features.project_document.models import (
 )
 from features.project_document.service import (
     discard_draft,
-    get_draft_summary,
+    get_draft_summary_or_read_safe,
     get_draft_table_slice,
     get_project_diff,
     get_raw_saved_document,
-    get_saved_document,
+    get_saved_document_or_read_safe,
     get_saved_table_slice,
     patch_version,
     replace_table_slice,
@@ -48,12 +49,13 @@ ProjectViewAccess = Annotated[ProjectAccess, Depends(require_project_view_access
 ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access)]
 
 
-@router.get("/document", response_model=ProjectDocumentV1)
+@router.get("/document", response_model=ProjectDocumentV1 | ProjectDocumentReadSafeEnvelope)
 def get_document(
     version_id: UUID,
     access: ProjectViewAccess,
-) -> ProjectDocumentV1:
-    return get_saved_document(version_id, access)
+    request: Request,
+) -> ProjectDocumentV1 | ProjectDocumentReadSafeEnvelope:
+    return get_saved_document_or_read_safe(version_id, access, request_id=request_id(request))
 
 
 @router.get("/document/tables/{table_name}", response_model=RegisteredTableResponse)
@@ -74,12 +76,13 @@ def get_draft_table(
     return get_draft_table_slice(version_id, table_name, access)
 
 
-@router.get("/draft", response_model=ProjectDraftSummary)
+@router.get("/draft", response_model=ProjectDraftSummary | ProjectDocumentReadSafeEnvelope)
 def get_draft_status(
     version_id: UUID,
     access: ProjectEditAccess,
-) -> ProjectDraftSummary:
-    return get_draft_summary(version_id, access)
+    request: Request,
+) -> ProjectDraftSummary | ProjectDocumentReadSafeEnvelope:
+    return get_draft_summary_or_read_safe(version_id, access, request_id=request_id(request))
 
 
 @router.put("/draft/tables/{table_name}", response_model=RegisteredTableResponse)
@@ -164,6 +167,10 @@ def json_download_response(content: str, filename: str) -> Response:
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+def request_id(request: Request) -> str:
+    return str(getattr(request.state, "request_id", ""))
 
 
 diff_router = APIRouter(prefix="/api/v1/projects/{project_id}", tags=["project-document"])

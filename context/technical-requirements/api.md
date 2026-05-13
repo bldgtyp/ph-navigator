@@ -113,6 +113,12 @@ saved version body changes only via `draft/save` or `draft/save-as`.
 Import/admin scripts may call internal service functions, but there is
 no public whole-body `PUT /document` Save in v1.
 
+If the saved body cannot validate as the current project-document
+schema, `GET /document` returns the read-safe envelope described in
+§10.5 instead of a typed document: `schema_version_unsupported: true`,
+the saved/current schema versions, request id, and the raw body. Typed
+table reads remain validation-gated.
+
 `/document/tables/{name}` and `/draft/tables/{name}` are generic route
 shapes, but table behavior is registry-owned. A supported table must be
 registered with payload validation, response serialization, document
@@ -140,6 +146,11 @@ POST   /api/v1/projects/{pid}/versions/{vid}/draft/save-as           flush draft
                                                                      gesture); body = name,
                                                                      kind, locked
 ```
+
+If the saved body or current user's draft body cannot validate as the
+current project-document schema, editor `GET /draft` returns the same
+read-safe envelope shape as `GET /document`; mutating draft routes
+remain validation-gated.
 
 All mutating REST writes accept `Idempotency-Key`. Replay semantics:
 

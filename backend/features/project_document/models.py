@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from features.projects.models import ProjectVersionPublic, VersionKind
 
 ProjectDocumentSource = Literal["version", "draft"]
 DiffTarget = Literal["draft"]
 AUTO_LOCKED_VERSION_KINDS: frozenset[VersionKind] = frozenset({"submitted", "closed"})
+ReadSafeErrorCode = Literal["schema_migration_failed", "schema_validation_failed_after_migration"]
 
 
 class ProjectDocumentView(BaseModel):
@@ -25,6 +26,22 @@ class ProjectDocumentView(BaseModel):
     version_etag: str
     draft_etag: str | None
     body: ProjectDocumentV1
+
+
+class ProjectDocumentReadSafeEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    schema_version: int | None
+    current_schema_version: int = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version_unsupported: Literal[True] = True
+    error_code: ReadSafeErrorCode
+    message: str
+    request_id: str
+    validation_errors: list[str]
+    body: Any
 
 
 class ProjectDraftSummary(BaseModel):

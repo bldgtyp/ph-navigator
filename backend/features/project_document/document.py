@@ -15,6 +15,7 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_BUILDING_ZONE_OPTION_KEY,
 )
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 1
 
 
 class EmptyEquipmentTables(BaseModel):
@@ -97,7 +98,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

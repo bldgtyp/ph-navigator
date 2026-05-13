@@ -572,6 +572,54 @@
   flex-wrap: wrap;
 }
 
+.read-safe-panel {
+  display: grid;
+  gap: 18px;
+  border: 1px solid #c9b563;
+  border-radius: 8px;
+  background: #fff8d8;
+  color: #201f1c;
+  padding: 22px;
+}
+
+.read-safe-panel h2,
+.read-safe-panel h3,
+.read-safe-panel p {
+  margin: 0;
+}
+
+.read-safe-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.read-safe-actions a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border-radius: 6px;
+  background: #201f1c;
+  color: #fffdfa;
+  padding: 0 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.read-safe-diagnostics {
+  background: #fffdfa;
+}
+
+.read-safe-versions {
+  display: grid;
+  gap: 10px;
+}
+
+.read-safe-version-list {
+  display: grid;
+  gap: 10px;
+}
+
 .data-table-wrap {
   overflow-x: auto;
   border: 1px solid #ebe5d8;

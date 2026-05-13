@@ -1,5 +1,19 @@
 import type { ProjectVersion } from "../projects/types";
 
+export type ProjectDocumentReadSafeEnvelope = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  schema_version: number | null;
+  current_schema_version: number;
+  schema_version_unsupported: true;
+  error_code: "schema_migration_failed" | "schema_validation_failed_after_migration";
+  message: string;
+  request_id: string;
+  validation_errors: string[];
+  body: unknown;
+};
+
 export type ProjectDraftSummary = {
   project_id: string;
   version_id: string;
@@ -11,6 +25,9 @@ export type ProjectDraftSummary = {
   is_locked: boolean;
   can_edit: boolean;
 };
+
+export type ProjectDraftStatus = ProjectDraftSummary | ProjectDocumentReadSafeEnvelope;
+export type ProjectDocumentResponse = Record<string, unknown> | ProjectDocumentReadSafeEnvelope;
 
 export type SaveDraftResponse = {
   project_id: string;
