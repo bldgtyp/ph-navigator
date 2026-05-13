@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from psycopg import Connection
+from psycopg import Connection, sql
 from psycopg.types.json import Jsonb
 
 from features.project_document.document import ProjectDocumentV1
-from features.projects.models import CreateProjectRequest
+from features.projects.models import CreateProjectRequest, UpdateProjectRequest
 
 
 def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:
@@ -37,6 +37,23 @@ def get_project_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any]
         FROM projects
         WHERE id = %(project_id)s
           AND deleted_at IS NULL
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+
+
+def get_project_detail_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
+    return conn.execute(
+        """
+        SELECT projects.id, projects.name, projects.bt_number, projects.client,
+               projects.cert_programs, projects.phius_number, projects.phius_dropbox_url,
+               projects.active_version_id, projects.last_saved_at,
+               projects.created_at, projects.updated_at,
+               users.display_name AS owner_display_name
+        FROM projects
+        JOIN users ON users.id = projects.owner_id
+        WHERE projects.id = %(project_id)s
+          AND projects.deleted_at IS NULL
         """,
         {"project_id": project_id},
     ).fetchone()
@@ -140,3 +157,36 @@ def insert_project_with_initial_version(
     if updated_project is None:
         raise RuntimeError("Project active-version update did not return a row.")
     return updated_project
+
+
+def update_project_metadata(
+    conn: Connection[Any],
+    project_id: UUID,
+    payload: UpdateProjectRequest,
+    changed_fields: set[str],
+) -> dict[str, Any] | None:
+    values = payload.model_dump(exclude_unset=True)
+    params = {"project_id": project_id, **{field: values[field] for field in changed_fields}}
+    assignments = sql.SQL(", ").join(
+        sql.SQL("{} = {}").format(sql.Identifier(field), sql.Placeholder(field)) for field in sorted(changed_fields)
+    )
+    return conn.execute(
+        sql.SQL(
+            """
+            UPDATE projects
+            SET {assignments},
+                updated_at = now()
+            WHERE id = %(project_id)s
+              AND deleted_at IS NULL
+            RETURNING id, name, bt_number, client, cert_programs, phius_number,
+                      phius_dropbox_url, active_version_id, last_saved_at,
+                      created_at, updated_at,
+                      (
+                          SELECT users.display_name
+                          FROM users
+                          WHERE users.id = projects.owner_id
+                      ) AS owner_display_name
+            """
+        ).format(assignments=assignments),
+        params,
+    ).fetchone()

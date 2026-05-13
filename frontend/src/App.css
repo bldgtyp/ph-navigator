@@ -136,6 +136,8 @@ textarea {
 
 .auth-form,
 .project-form,
+.settings-section,
+.token-issue-form,
 .diff-panel,
 .read-safe-panel,
 .read-safe-versions,
@@ -428,6 +430,14 @@ a:focus-visible {
   padding: 22px 0 18px;
 }
 
+.project-header-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .modal-header,
 .modal-actions,
 .version-popover-header,
@@ -605,6 +615,159 @@ a:focus-visible {
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: 0;
+}
+
+.modal-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.settings-form {
+  gap: 20px;
+}
+
+.settings-section {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 16px;
+}
+
+.settings-section h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.settings-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-section-heading span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-readonly-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-readonly-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-readonly-list div {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-readonly-list dt {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-readonly-list dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.settings-discard-warning {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.one-time-token {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--phn-warning);
+  border-radius: var(--phn-radius);
+  background: var(--phn-warning-bg);
+  padding: 12px;
+}
+
+.one-time-token p {
+  margin: 0;
+  color: var(--phn-warning);
+  font-size: 0.875rem;
+}
+
+.one-time-token code {
+  border: 1px solid color-mix(in oklab, var(--phn-warning) 45%, transparent);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 9px;
+  overflow-wrap: anywhere;
+}
+
+.one-time-token-copy {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.one-time-token-copy code {
+  flex: 1;
+}
+
+.token-list {
+  display: grid;
+  gap: 8px;
+}
+
+.token-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-elev);
+  padding: 10px;
+}
+
+.token-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.token-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.token-row span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.revoked-token-details summary {
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.revoked-token-details .token-list {
+  margin-top: 8px;
 }
 
 .form-note {

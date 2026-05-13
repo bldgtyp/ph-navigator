@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { checkBtNumber, createProject, fetchProject, listProjects, patchVersion } from "./api";
+import {
+  checkBtNumber,
+  createProject,
+  fetchProject,
+  listProjects,
+  patchVersion,
+  updateProject,
+} from "./api";
 import { projectQueryKeys } from "./query-keys";
-import type { CreateProjectPayload } from "./types";
+import type { CreateProjectPayload, ProjectListResponse, UpdateProjectPayload } from "./types";
 
 export { projectQueryKeys };
 
@@ -56,6 +63,25 @@ export function useCreateProjectMutation() {
         }),
       );
       queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
+    },
+  });
+}
+
+export function useUpdateProjectMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateProjectPayload) => updateProject(projectId, payload),
+    onSuccess: (project) => {
+      queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
+      queryClient.setQueryData(
+        projectQueryKeys.list(),
+        (current: ProjectListResponse | undefined): ProjectListResponse | undefined => {
+          if (!current) return current;
+          return {
+            projects: current.projects.map((item) => (item.id === project.id ? project : item)),
+          };
+        },
+      );
     },
   });
 }

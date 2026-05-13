@@ -10,25 +10,33 @@ from starlette import status
 
 from features.auth.models import UserPublic
 from features.auth.routes import require_current_user
-from features.projects.access import ProjectAccess, require_project_view_access
+from features.projects.access import (
+    ProjectAccess,
+    require_editor_user,
+    require_project_edit_access,
+    require_project_view_access,
+)
 from features.projects.models import (
     AccessMode,
     BtNumberAvailabilityResponse,
     CreateProjectRequest,
     ProjectDetail,
     ProjectListResponse,
+    UpdateProjectRequest,
 )
 from features.projects.service import (
     check_bt_number_available,
     create_project,
     get_project_detail,
     list_dashboard_projects,
+    update_project_metadata,
 )
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
 CurrentUser = Annotated[tuple[UserPublic, object], Depends(require_current_user)]
 ProjectViewAccess = Annotated[ProjectAccess, Depends(require_project_view_access)]
+ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access)]
 
 
 @router.get("", response_model=ProjectListResponse)
@@ -61,4 +69,15 @@ def get_project(
     access: ProjectViewAccess,
 ) -> ProjectDetail:
     access_mode: AccessMode = "editor" if access.is_editor else "viewer"
-    return get_project_detail(project_id, access_mode=access_mode, project=access.project)
+    return get_project_detail(project_id, access_mode=access_mode)
+
+
+@router.patch("/{project_id}", response_model=ProjectDetail)
+def patch_project(
+    project_id: UUID,
+    payload: UpdateProjectRequest,
+    request: Request,
+    access: ProjectEditAccess,
+) -> ProjectDetail:
+    user = require_editor_user(access)
+    return update_project_metadata(project_id, payload, user, request)

@@ -24,6 +24,7 @@ from features.projects.models import (
     ProjectListResponse,
     ProjectSummary,
     ProjectVersionPublic,
+    UpdateProjectRequest,
 )
 from features.shared.errors import api_error
 
@@ -41,7 +42,7 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
 
 
 def project_summary(row: dict[str, object]) -> ProjectSummary:
-    return ProjectSummary.model_validate(row)
+    return ProjectSummary.model_validate({field: row[field] for field in ProjectSummary.model_fields})
 
 
 def version_public(row: dict[str, object]) -> ProjectVersionPublic:
@@ -99,17 +100,91 @@ def create_project(payload: CreateProjectRequest, user: UserPublic, request_meta
     return get_project_detail(project["id"], access_mode="editor")
 
 
+def update_project_metadata(
+    project_id: UUID,
+    payload: UpdateProjectRequest,
+    user: UserPublic,
+    request_meta: Request,
+) -> ProjectDetail:
+    try:
+        with transaction() as conn:
+            current_project = repository.get_project_by_id(conn, project_id)
+            if current_project is None:
+                raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
+
+            changed_fields = changed_project_metadata_fields(payload, current_project)
+            if not changed_fields:
+                return get_project_detail(project_id, access_mode="editor")
+
+            if payload.bt_number is not None:
+                existing = repository.get_project_by_bt_number(conn, payload.bt_number)
+                if existing is not None and existing["id"] != project_id:
+                    raise api_error(
+                        status.HTTP_409_CONFLICT,
+                        "bt_number_taken",
+                        "BT number is already assigned to another project.",
+                        {"project_id": str(existing["id"]), "name": existing["name"]},
+                    )
+
+            project = repository.update_project_metadata(conn, project_id, payload, changed_fields)
+            if project is None:
+                raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
+
+            auth_repository.log_action(
+                conn,
+                action="project_update_metadata",
+                user_id=user.id,
+                email=user.email,
+                session_id=None,
+                ip_address=client_ip(request_meta),
+                user_agent=user_agent(request_meta),
+                details={"project_id": str(project_id), "fields": sorted(changed_fields)},
+            )
+    except UniqueViolation as exc:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "bt_number_taken",
+            "BT number is already assigned to another project.",
+        ) from exc
+
+    return get_project_detail(
+        project_id,
+        access_mode="editor",
+        project=project_summary(project),
+        owner_display_name=project["owner_display_name"] if isinstance(project["owner_display_name"], str) else None,
+    )
+
+
+def changed_project_metadata_fields(payload: UpdateProjectRequest, current: dict[str, object]) -> set[str]:
+    values = payload.model_dump(exclude_unset=True)
+    changed: set[str] = set()
+    for field, value in values.items():
+        current_value = current[field]
+        if field == "cert_programs":
+            next_programs = value if isinstance(value, list) else []
+            current_programs = current_value if isinstance(current_value, list) else []
+            if sorted(next_programs) != sorted(current_programs):
+                changed.add(field)
+        elif value != current_value:
+            changed.add(field)
+    return changed
+
+
 def get_project_detail(
     project_id: UUID,
     access_mode: AccessMode,
     project: ProjectSummary | None = None,
+    owner_display_name: str | None = None,
 ) -> ProjectDetail:
     with connection() as conn:
         if project is None:
-            project_row = repository.get_project_by_id(conn, project_id)
+            project_row = repository.get_project_detail_by_id(conn, project_id)
             if project_row is None:
                 raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
             project = project_summary(project_row)
+            owner_display_name = (
+                project_row["owner_display_name"] if isinstance(project_row["owner_display_name"], str) else None
+            )
         versions = [version_public(row) for row in repository.list_versions_for_project(conn, project_id)]
 
     active_version = next((version for version in versions if version.id == project.active_version_id), None)
@@ -118,4 +193,5 @@ def get_project_detail(
         versions=versions,
         active_version=active_version,
         access_mode=access_mode,
+        owner_display_name=owner_display_name if access_mode == "editor" else None,
     )

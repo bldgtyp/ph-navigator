@@ -4,6 +4,7 @@ import type {
   CreateProjectPayload,
   ProjectDetail,
   ProjectListResponse,
+  UpdateProjectPayload,
 } from "./types";
 
 export async function listProjects(signal?: AbortSignal): Promise<ProjectListResponse> {
@@ -32,6 +33,16 @@ export async function fetchProject(
   signal?: AbortSignal,
 ): Promise<ProjectDetail> {
   return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}`, { signal });
+}
+
+export async function updateProject(
+  projectId: string,
+  payload: UpdateProjectPayload,
+): Promise<ProjectDetail> {
+  return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function patchVersion(

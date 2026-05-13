@@ -153,6 +153,112 @@ def test_bt_number_uniqueness_and_check_endpoint(clean_project_tables: None) -> 
     assert duplicate.json()["error_code"] == "bt_number_taken"
 
 
+def test_editor_can_patch_project_metadata_with_self_bt_number(clean_project_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2426"))
+    assert created.status_code == 201
+    project_id = created.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/projects/{project_id}",
+        headers={"Origin": ORIGIN},
+        json={
+            "name": "West Stockbridge Retrofit",
+            "bt_number": "2426",
+            "client": "May Studio",
+            "cert_programs": ["phi"],
+            "phius_number": None,
+            "phius_dropbox_url": "https://dropbox.example.com/cert",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["name"] == "West Stockbridge Retrofit"
+    assert payload["bt_number"] == "2426"
+    assert payload["client"] == "May Studio"
+    assert payload["cert_programs"] == ["phi"]
+    assert payload["phius_number"] is None
+    assert payload["phius_dropbox_url"] == "https://dropbox.example.com/cert"
+    assert payload["owner_display_name"] == "Ed May"
+
+    with connection() as conn:
+        action = conn.execute(
+            """
+            SELECT action, details->>'project_id' AS project_id
+            FROM user_action_log
+            WHERE action = 'project_update_metadata'
+            """
+        ).fetchone()
+
+    assert action == {"action": "project_update_metadata", "project_id": project_id}
+
+
+def test_patch_project_metadata_skips_noop_update_and_audit(clean_project_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2426"))
+    assert created.status_code == 201
+    project_id = created.json()["id"]
+    updated_at = created.json()["updated_at"]
+
+    response = client.patch(
+        f"/api/v1/projects/{project_id}",
+        headers={"Origin": ORIGIN},
+        json={"name": "West Stockbridge House", "cert_programs": ["phius", "phi"]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["updated_at"] == updated_at
+    with connection() as conn:
+        action_count = conn.execute(
+            """
+            SELECT count(*) AS count
+            FROM user_action_log
+            WHERE action = 'project_update_metadata'
+            """
+        ).fetchone()
+
+    assert action_count == {"count": 0}
+
+
+def test_patch_project_metadata_rejects_duplicate_bt_number(clean_project_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2426"))
+    other = client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2427"))
+    assert created.status_code == 201
+    assert other.status_code == 201
+
+    response = client.patch(
+        f"/api/v1/projects/{created.json()['id']}",
+        headers={"Origin": ORIGIN},
+        json={"bt_number": "2427"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "bt_number_taken"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [{"name": "   "}, {"name": None}, {"bt_number": "   "}, {"bt_number": None}, {"cert_programs": None}],
+)
+def test_patch_project_metadata_rejects_clearing_required_fields(
+    clean_project_tables: None,
+    payload: dict[str, object],
+) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload("2426"))
+    assert created.status_code == 201
+
+    response = client.patch(
+        f"/api/v1/projects/{created.json()['id']}",
+        headers={"Origin": ORIGIN},
+        json=payload,
+    )
+
+    assert response.status_code == 422
+
+
 def test_public_project_detail_is_readable_without_session(clean_project_tables: None) -> None:
     editor = signed_in_client()
     created = editor.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload())
@@ -163,6 +269,7 @@ def test_public_project_detail_is_readable_without_session(clean_project_tables:
 
     assert response.status_code == 200
     assert response.json()["access_mode"] == "viewer"
+    assert response.json()["owner_display_name"] is None
     assert response.json()["active_version"]["name"] == "Working"
 
 
@@ -173,6 +280,22 @@ def test_representative_project_write_rejects_public_viewer(clean_project_tables
         "/api/v1/projects",
         headers={"Origin": ORIGIN},
         json=create_project_payload(),
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "not_authenticated"
+
+
+def test_public_viewer_cannot_patch_project_metadata(clean_project_tables: None) -> None:
+    editor = signed_in_client()
+    created = editor.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=create_project_payload())
+    project_id = created.json()["id"]
+    public_client = TestClient(app)
+
+    response = public_client.patch(
+        f"/api/v1/projects/{project_id}",
+        headers={"Origin": ORIGIN},
+        json={"name": "Public Rename"},
     )
 
     assert response.status_code == 401

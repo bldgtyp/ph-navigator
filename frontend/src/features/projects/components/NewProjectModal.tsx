@@ -4,6 +4,7 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useBtNumberAvailabilityQuery, useCreateProjectMutation } from "../hooks";
 import { availabilityLabel } from "../lib";
 import type { CertificationProgram, CreateProjectPayload, ProjectDetail } from "../types";
+import { CertificationProgramFieldset } from "./CertificationProgramFieldset";
 
 export function NewProjectModal({
   onClose,
@@ -32,14 +33,6 @@ export function NewProjectModal({
     }, 250);
     return () => window.clearTimeout(timer);
   }, [trimmedBtNumber]);
-
-  const toggleProgram = (program: CertificationProgram) => {
-    setCertPrograms((current) =>
-      current.includes(program)
-        ? current.filter((value) => value !== program)
-        : [...current, program],
-    );
-  };
 
   const availabilityMessage = availabilityLabel(trimmedBtNumber, debouncedBtNumber, {
     isLoading: availabilityQuery.isLoading || availabilityQuery.isFetching,
@@ -90,25 +83,7 @@ export function NewProjectModal({
           <span>Client</span>
           <input value={client} onChange={(event) => setClient(event.target.value)} />
         </label>
-        <fieldset>
-          <legend>Certification programs</legend>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={certPrograms.includes("phi")}
-              onChange={() => toggleProgram("phi")}
-            />
-            <span>PHI</span>
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={certPrograms.includes("phius")}
-              onChange={() => toggleProgram("phius")}
-            />
-            <span>Phius</span>
-          </label>
-        </fieldset>
+        <CertificationProgramFieldset value={certPrograms} onChange={setCertPrograms} />
         {includesPhius ? (
           <label>
             <span>Phius number</span>

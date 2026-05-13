@@ -65,7 +65,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         token = current_token(ctx, allow_env_token)
         detail = get_project_detail(token.project_id, access_mode="viewer")
         project = ProjectSummary.model_validate(
-            detail.model_dump(exclude={"versions", "active_version", "access_mode"})
+            detail.model_dump(exclude={"versions", "active_version", "access_mode", "owner_display_name"})
         )
         return McpProjectListEnvelope(projects=[project])
 
@@ -78,7 +78,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         detail = get_project_detail(parsed_project_id, access_mode="editor")
         return McpProjectEnvelope(
             project=ProjectSummary.model_validate(
-                detail.model_dump(exclude={"versions", "active_version", "access_mode"})
+                detail.model_dump(exclude={"versions", "active_version", "access_mode", "owner_display_name"})
             ),
             active_version=detail.active_version,
             versions=detail.versions,

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
@@ -9,6 +10,7 @@ import { useDraftSummaryQuery, useProjectDocumentQuery } from "../../project_doc
 import { isReadSafeProjectDocument } from "../../project_document/lib";
 import type { ProjectDocumentReadSafeEnvelope } from "../../project_document/types";
 import { ProjectTabContent } from "../components/ProjectTabContent";
+import { ProjectSettingsModal } from "../components/ProjectSettingsModal";
 import { useProjectQuery } from "../hooks";
 import { isProjectTab, PROJECT_TABS, projectStatusPath, projectTabPath, TAB_LABELS } from "../lib";
 
@@ -16,6 +18,7 @@ export function ProjectShell() {
   const { projectId, tab } = useParams();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const activeTab = isProjectTab(tab) ? tab : null;
   const projectQuery = useProjectQuery(projectId);
   const projectData = projectQuery.data;
@@ -133,11 +136,22 @@ export function ProjectShell() {
               {project.client ? ` · ${project.client}` : ""}
             </p>
           </div>
-          <VersionControls
-            project={openProject}
-            defaultVersionId={project.active_version_id}
-            onOpenVersion={openVersionById}
-          />
+          <div className="project-header-actions">
+            {!isViewer ? (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                Project settings
+              </button>
+            ) : null}
+            <VersionControls
+              project={openProject}
+              defaultVersionId={project.active_version_id}
+              onOpenVersion={openVersionById}
+            />
+          </div>
         </div>
         <nav className="tabbar" aria-label="Project tabs">
           {PROJECT_TABS.map((projectTab) => (
@@ -155,6 +169,9 @@ export function ProjectShell() {
         </nav>
         <ProjectTabContent tab={activeTab ?? "status"} project={openProject} />
       </section>
+      {isSettingsOpen && !isViewer ? (
+        <ProjectSettingsModal project={openProject} onClose={() => setIsSettingsOpen(false)} />
+      ) : null}
     </main>
   );
 }

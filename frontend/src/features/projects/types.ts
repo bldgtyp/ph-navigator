@@ -30,6 +30,7 @@ export type ProjectDetail = ProjectSummary & {
   versions: ProjectVersion[];
   active_version: ProjectVersion | null;
   access_mode: "editor" | "viewer";
+  owner_display_name: string | null;
 };
 
 export type ProjectListResponse = {
@@ -44,6 +45,8 @@ export type CreateProjectPayload = {
   phius_number: string | null;
   phius_dropbox_url: string | null;
 };
+
+export type UpdateProjectPayload = Partial<CreateProjectPayload>;
 
 export type BtNumberAvailability = {
   available: boolean;

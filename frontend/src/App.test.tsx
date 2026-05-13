@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { App } from "./app/App";
@@ -19,6 +19,7 @@ const projectPayload = {
   cert_programs: ["phi"],
   phius_number: null,
   phius_dropbox_url: null,
+  owner_display_name: "Ed May",
   active_version_id: "61561caa-44d0-401d-9daa-0fa113df8340",
   last_saved_at: "2026-05-12T18:00:00Z",
   created_at: "2026-05-12T18:00:00Z",
@@ -282,6 +283,7 @@ describe("App", () => {
     expect(await screen.findByText("Read-only")).toBeVisible();
     expect(screen.getByText("Edit controls hidden")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Project settings" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
       `/sign-in?next=${encodeURIComponent(
@@ -312,6 +314,111 @@ describe("App", () => {
     expect(await screen.findByText("Clean")).toBeVisible();
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect(screen.queryByRole("link", { name: "Rooms JSON" })).not.toBeInTheDocument();
+  });
+
+  test("edits project settings and manages MCP tokens", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const tokenRecord = {
+      id: "4d21615a-2ed4-4d5a-bdb2-2995b91e2fe2",
+      project_id: projectPayload.id,
+      label: "Local Claude",
+      token_prefix: "phn_mcp_old",
+      scopes: ["project:read"],
+      created_at: "2026-05-12T18:00:00Z",
+      last_used_at: null,
+      expires_at: null,
+      revoked_at: null,
+    };
+    const issuedToken = {
+      id: "6c3d4a0f-2e73-4d91-bb3e-90a13a7aca1c",
+      project_id: projectPayload.id,
+      label: "Desktop MCP",
+      token_prefix: "phn_mcp_new",
+      scopes: ["project:read", "project:write", "asset:read", "asset:write"],
+      created_at: "2026-05-12T19:00:00Z",
+      last_used_at: null,
+      expires_at: null,
+      revoked_at: null,
+    };
+    const updatedProject = {
+      ...projectPayload,
+      name: "West Stockbridge Retrofit",
+      client: "May Studio",
+    };
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}` && init?.method === "PATCH") {
+        return jsonResponse(updatedProject);
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/mcp-tokens` && init?.method === "POST") {
+        return jsonResponse(
+          {
+            token: "phn_mcp_new_secret",
+            token_record: issuedToken,
+          },
+          201,
+        );
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/mcp-tokens`) {
+        return jsonResponse({ tokens: [tokenRecord] });
+      }
+      if (
+        url === `/api/v1/projects/${projectPayload.id}/mcp-tokens/${tokenRecord.id}/revoke` &&
+        init?.method === "POST"
+      ) {
+        return jsonResponse({ ...tokenRecord, revoked_at: "2026-05-12T20:00:00Z" });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Project settings" }));
+    expect(await screen.findByRole("heading", { name: "Project settings" })).toBeVisible();
+    expect(await screen.findByText("Local Claude")).toBeVisible();
+    await user.clear(screen.getByLabelText("Project name"));
+    await user.type(screen.getByLabelText("Project name"), "West Stockbridge Retrofit");
+    await user.clear(screen.getByLabelText("Client"));
+    await user.type(screen.getByLabelText("Client"), "May Studio");
+    await user.type(screen.getByLabelText("Token label"), "Desktop MCP");
+    await user.click(screen.getByRole("button", { name: "Create token" }));
+
+    expect(await screen.findByText("phn_mcp_new_secret")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(writeText).toHaveBeenCalledWith("phn_mcp_new_secret");
+    expect(await screen.findByText("Copied.")).toBeVisible();
+    const existingTokenRow = screen.getByText("Local Claude").closest(".token-row");
+    if (!existingTokenRow) throw new Error("Expected existing-token row.");
+    await user.click(
+      within(existingTokenRow as HTMLElement).getByRole("button", { name: "Revoke" }),
+    );
+    expect(await screen.findByText("1 revoked token")).toBeVisible();
+    await user.click(
+      within(screen.getByRole("dialog", { name: "Project settings" })).getByRole("button", {
+        name: "Save",
+      }),
+    );
+
+    expect(await screen.findByRole("heading", { name: "West Stockbridge Retrofit" })).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/v1/projects/${projectPayload.id}`,
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ name: "West Stockbridge Retrofit", client: "May Studio" }),
+      }),
+    );
   });
 
   test("renders locked editor header as Save As only", async () => {

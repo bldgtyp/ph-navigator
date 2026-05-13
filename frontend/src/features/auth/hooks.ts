@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mcpTokenQueryKeys } from "../mcp/hooks";
 import { projectDocumentTableQueryKeys } from "../project_document/hooks";
 import { projectQueryKeys } from "../projects/query-keys";
 import { fetchCurrentSession, signIn, signOut } from "./api";
@@ -23,6 +24,7 @@ export function useSignInMutation() {
       queryClient.setQueryData(authQueryKeys.session, session);
       queryClient.invalidateQueries({ queryKey: projectQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: projectDocumentTableQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: mcpTokenQueryKeys.all });
     },
   });
 }
@@ -35,6 +37,7 @@ export function useSignOutMutation() {
       queryClient.removeQueries({ queryKey: authQueryKeys.session });
       queryClient.removeQueries({ queryKey: projectQueryKeys.all });
       queryClient.removeQueries({ queryKey: projectDocumentTableQueryKeys.all });
+      queryClient.removeQueries({ queryKey: mcpTokenQueryKeys.all });
     },
   });
 }

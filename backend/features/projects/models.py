@@ -3,14 +3,43 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CertificationProgram = Literal["phi", "phius"]
 VersionKind = Literal["working", "submitted", "closed", "snapshot"]
 AccessMode = Literal["editor", "viewer"]
+
+
+def _strip_blank_string(value: object) -> object:
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped or None
+    return value
+
+
+def _require_project_name(value: str | None) -> str:
+    if not value:
+        raise ValueError("Project name is required.")
+    return value
+
+
+def _require_bt_number(value: str | None) -> str:
+    if not value:
+        raise ValueError("BT number is required.")
+    return value
+
+
+def _dedupe_cert_programs(value: list[CertificationProgram]) -> list[CertificationProgram]:
+    seen: set[CertificationProgram] = set()
+    result: list[CertificationProgram] = []
+    for program in value:
+        if program not in seen:
+            seen.add(program)
+            result.append(program)
+    return result
 
 
 class CreateProjectRequest(BaseModel):
@@ -26,35 +55,64 @@ class CreateProjectRequest(BaseModel):
     @field_validator("name", "bt_number", "client", "phius_number", "phius_dropbox_url", mode="before")
     @classmethod
     def strip_blank_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
+        return _strip_blank_string(value)
 
     @field_validator("bt_number")
     @classmethod
     def bt_number_required_after_strip(cls, value: str | None) -> str:
-        if not value:
-            raise ValueError("BT number is required.")
-        return value
+        return _require_bt_number(value)
 
     @field_validator("name")
     @classmethod
     def name_required_after_strip(cls, value: str | None) -> str:
-        if not value:
-            raise ValueError("Project name is required.")
-        return value
+        return _require_project_name(value)
 
     @field_validator("cert_programs")
     @classmethod
     def cert_programs_unique(cls, value: list[CertificationProgram]) -> list[CertificationProgram]:
-        seen: set[CertificationProgram] = set()
-        result: list[CertificationProgram] = []
-        for program in value:
-            if program not in seen:
-                seen.add(program)
-                result.append(program)
-        return result
+        return _dedupe_cert_programs(value)
+
+
+class UpdateProjectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    bt_number: str | None = Field(default=None, min_length=1, max_length=64)
+    client: str | None = Field(default=None, max_length=200)
+    cert_programs: list[CertificationProgram] | None = None
+    phius_number: str | None = Field(default=None, max_length=100)
+    phius_dropbox_url: str | None = Field(default=None, max_length=500)
+
+    @field_validator("name", "bt_number", "client", "phius_number", "phius_dropbox_url", mode="before")
+    @classmethod
+    def strip_blank_strings(cls, value: object) -> object:
+        return _strip_blank_string(value)
+
+    @model_validator(mode="after")
+    def required_fields_cannot_be_cleared(self) -> Self:
+        if "name" in self.model_fields_set:
+            self.name = _require_project_name(self.name)
+        if "bt_number" in self.model_fields_set:
+            self.bt_number = _require_bt_number(self.bt_number)
+        if "cert_programs" in self.model_fields_set and self.cert_programs is None:
+            raise ValueError("Certification programs must be a list.")
+        return self
+
+    @field_validator("cert_programs")
+    @classmethod
+    def cert_programs_unique(cls, value: list[CertificationProgram] | None) -> list[CertificationProgram] | None:
+        if value is None:
+            return value
+        return _dedupe_cert_programs(value)
+
+    @field_validator("phius_dropbox_url")
+    @classmethod
+    def phius_dropbox_url_must_be_http(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("Dropbox URL must start with http:// or https://.")
+        return value
 
 
 class ProjectVersionPublic(BaseModel):
@@ -91,6 +149,7 @@ class ProjectDetail(ProjectSummary):
     versions: list[ProjectVersionPublic]
     active_version: ProjectVersionPublic | None
     access_mode: AccessMode
+    owner_display_name: str | None = None
 
 
 class ProjectListResponse(BaseModel):
