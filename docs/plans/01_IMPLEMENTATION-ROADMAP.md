@@ -153,13 +153,13 @@ historical tracer-bullet ledger and evidence trail.
 | Field | Plan |
 |---|---|
 | Type | AFK; design review if the visual direction is uncertain |
-| Status | [ ] Not started |
+| Status | [~] In review |
 | Goal | Move the Phase 1 app from scaffold styling to the BLDGTYP V2 product language. |
 | References | `context/UI_UX.md`; BLDGTYP branding tokens; `context/technical-requirements/stack-auth-migration.md`. |
 | Includes | Tailwind/shadcn token alignment; fonts; shared app primitives for buttons, dialogs, popovers, toasts, tabs, table chrome, badges, banners, and empty states; project shell polish. |
 | Tests | Frontend lint/format/build; targeted tests only for non-trivial state. |
 | Browser check | Desktop and narrow-tablet screenshots for sign-in, dashboard, project shell, Status, Equipment/Rooms, settings, and version dialogs show consistent styling with no broken layout. |
-| Lessons | Record token/component decisions so later feature slices do not restart styling. |
+| Lessons | P1-04 foundation loads the published BLDGTYP `tokens.css` once from `frontend/index.html`, loads the active Outfit + JetBrains Mono weights once from the same file, sets `data-theme="light"` on `<html>`, and maps existing app chrome to `--bg-*`, `--text-*`, `--border-*`, `--accent`, and `--highlight` variables in `frontend/src/App.css`. PH-Navigator-specific primitives stay class-based for now because Tailwind/shadcn is not yet installed in the scaffold; future shadcn/Tailwind work should map to these same variables rather than reintroducing a separate palette. The named React primitives (`Button`, `Dialog`, `Popover`, `Toast`, `Tabs`, `Badge`, `Banner`, `EmptyState`) are deferred to the slice that installs Tailwind/shadcn. Graph-paper treatment is limited to technical empty/auth states and uses the BLDGTYP `--svg-line-*` helper tokens. The current semantic warning/danger colors remain PHN-local and should be reconciled when shadcn semantic tokens land. Settings-specific styling could not be browser-checked because the Settings UI is owned by P1-07. |
 
 ### P1-05 - Dashboard And Project Shell Completion
 
@@ -596,7 +596,7 @@ re-scoped in this roadmap.
 | P1 | P1-01 | Complete | 2026-05-13 11:39 EDT | Backend project-document service split; registered Rooms table contract added; unsupported table names fail through registry for REST and MCP; simplify cleanup moved body-size calculation to document helpers, made registry diff order deterministic, shared MCP HTTP error mapping, avoided full-document dump/validation on unchanged Rooms replacements, and removed duplicate saved-version loading from draft diff. Verified with `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (46 passed). |
 | P1 | P1-02 | Complete | 2026-05-13 | Added document draft summary API and project-document frontend version chrome; project header no longer imports Equipment/Rooms state; Rooms JSON moved to Equipment/Rooms. Verified with backend/frontend tests, build, and local E2E. |
 | P1 | P1-03 | In review | 2026-05-13 | Implemented document-level read-safe envelope and frontend recovery panel. Verified with `make lint`; `make typecheck`; `make test` (backend 50 passed, frontend 23 passed); `cd frontend && npm run build`; browser Playwright recovery check at `http://127.0.0.1:5173/projects/.../equipment` with intercepted unsupported-schema `/draft` response. |
-| P1 | P1-04 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-04 | In review | 2026-05-13 | BLDGTYP token/font foundation and class-based app primitives landed for current Phase 1 scaffold surfaces. Follow-up review/simplify addressed theme-aware graph paper, light-only `color-scheme`, token stylesheet load order, active font weights, visible `/ v2` markup, read-safe link reuse, status-empty grid layout, icon-button sizing, and narrowed primary button cascade. Verified with `cd frontend && npm run format:check`; `cd frontend && npm run lint`; `cd frontend && npm test` (23 passed); `cd frontend && npm run build`; `cd frontend && npm run test:e2e` (2 passed). Browser screenshots captured for sign-in, dashboard, project shell/Status, Equipment/Rooms, and version popover/dialog at desktop plus narrow-tablet where applicable; Settings is deferred to P1-07 because that UI does not exist yet. |
 | P1 | P1-05 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
 | P1 | P1-06 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
 | P1 | P1-07 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |

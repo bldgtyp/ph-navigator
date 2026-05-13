@@ -6,6 +6,7 @@ export function WorkspaceTopbar({ children }: { children: ReactNode }) {
     <header className="topbar">
       <Link className="brand" to="/dashboard" aria-label="PH-Navigator dashboard">
         PH-Nav
+        <span className="brand-version">/ v2</span>
       </Link>
       <nav className="topnav" aria-label="Primary">
         <a aria-disabled="true">Catalogs</a>

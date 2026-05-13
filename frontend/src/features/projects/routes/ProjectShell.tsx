@@ -188,7 +188,9 @@ function ReadSafeRecoveryPanel({
         <h2 id="read-safe-title">Project format recovery</h2>
         <p>{envelope.message}</p>
         <div className="read-safe-actions">
-          <a href={projectDownloadUrl(projectId, activeVersionId)}>Download raw project JSON</a>
+          <a className="download-link" href={projectDownloadUrl(projectId, activeVersionId)}>
+            Download raw project JSON
+          </a>
         </div>
         {!isViewer ? (
           <dl className="metadata-grid read-safe-diagnostics" aria-label="Diagnostic details">
