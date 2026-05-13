@@ -429,7 +429,7 @@ Properties of the document shape:
   assemblies, project_materials, window_types, rooms,
   thermal_bridges, equipment, manufacturer_filters, ... }`.
   New table types plug in by adding to `tables`. Per-table JSON
-  download is a slice of this shape.
+  download is a keyed slice of this shape, e.g. `{ "rooms": [...] }`.
 - **Registered table contracts.** Generic saved/draft table routes are
   backed by `backend/features/project_document/tables/registry.py`.
   Each editable table adds one registered contract that owns payload
@@ -476,6 +476,11 @@ defined under `backend/features/project_document/tables/` as a
 registered Pydantic-backed contract. Adding a new table type is a code
 change (table contract + frontend column config), not a schema
 migration or a new route/service branch.
+
+Implementation note for Phase 1: Rooms includes the future
+`erv_unit_ids` field in the row shape, but non-empty ERV assignments
+are rejected until the ERV table contract exists and can validate
+references against `tables.equipment.ervs[*].id`.
 
 For tables with a corresponding global catalog (fans, pumps, ERVs), the
 "add row" UI offers two paths: pick from catalog (copies values in) or

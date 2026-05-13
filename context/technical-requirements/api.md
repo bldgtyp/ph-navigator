@@ -183,6 +183,8 @@ GET /api/v1/projects/{pid}/versions/{vid}/download/tables/{table_name}      tabl
 ```
 
 Returns `application/json` with `Content-Disposition: attachment`.
+Project JSON returns the raw document body. Table JSON returns a scoped
+object keyed by the registered table name, e.g. `{ "rooms": [...] }`.
 
 ### 9.8 Catalog
 

@@ -743,7 +743,8 @@ lives in `context/technical-requirements/stack-auth-migration.md` §14.1.
 - Project JSON download returns the raw saved body for the selected
   version, including recovery downloads when the current app cannot
   validate that body as `ProjectDocumentV1`.
-- Per-table JSON download returns a schema-validated table slice.
+- Per-table JSON download returns a schema-validated keyed table slice
+  (`{ "<table_name>": [...] }`).
 - Non-logged-in visitor accessing a project URL sees the project,
   can switch versions, can download project / table / HBJSON JSON,
   and is blocked from all writes (frontend hides edit affordances;

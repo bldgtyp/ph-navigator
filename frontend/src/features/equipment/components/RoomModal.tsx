@@ -17,6 +17,8 @@ export function RoomModal({
   onSubmit,
   frozenReason,
   onFrozenReload,
+  onDelete,
+  deleteDisabled = false,
 }: {
   title: string;
   room: RoomRow;
@@ -25,6 +27,8 @@ export function RoomModal({
   onSubmit: (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => Promise<void>;
   frozenReason?: string | null;
   onFrozenReload?: () => void;
+  onDelete?: () => void;
+  deleteDisabled?: boolean;
 }) {
   const [draft, setDraft] = useState(room);
   const [floorLevel, setFloorLevel] = useState(
@@ -171,15 +175,19 @@ export function RoomModal({
             />
           </label>
         </div>
-        <label>
-          Notes
+        <details className="room-notes-expander">
+          <summary>Notes</summary>
+          <label className="sr-only" htmlFor="room-notes">
+            Notes
+          </label>
           <textarea
+            id="room-notes"
             rows={4}
             value={draft.notes ?? ""}
             onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
             disabled={isFrozen}
           />
-        </label>
+        </details>
         <datalist id="rooms-floor-level-options">
           {roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY].map((option) => (
             <option key={option.id} value={option.label} />
@@ -191,6 +199,16 @@ export function RoomModal({
           ))}
         </datalist>
         <div className="modal-actions">
+          {onDelete ? (
+            <button
+              type="button"
+              className="danger-button"
+              onClick={onDelete}
+              disabled={deleteDisabled}
+            >
+              Delete room
+            </button>
+          ) : null}
           <button type="button" className="secondary-button" onClick={onCancel}>
             Cancel
           </button>

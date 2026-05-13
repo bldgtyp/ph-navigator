@@ -48,7 +48,7 @@ class RoomRow(BaseModel):
     id: str = Field(pattern=r"^rm_[A-Za-z0-9_-]+$", max_length=80)
     number: str = Field(min_length=1, max_length=80)
     name: str = Field(min_length=1, max_length=200)
-    floor_level: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    floor_level: str = Field(pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     building_zone: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     num_people: int = Field(default=0, ge=0)
     num_bedrooms: int = Field(default=0, ge=0)
@@ -136,9 +136,11 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate room number: {room.number}")
             room_numbers.add(normalized_number)
 
-            if room.floor_level is not None and room.floor_level not in floor_option_ids:
+            if room.floor_level not in floor_option_ids:
                 raise ValueError(f"Missing floor-level option for room {room.id}: {room.floor_level}")
             if room.building_zone is not None and room.building_zone not in zone_option_ids:
                 raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")
+            if room.erv_unit_ids:
+                raise ValueError(f"Room ERV assignments are deferred until the ERV table is available: {room.id}")
 
         return self

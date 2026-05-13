@@ -17,12 +17,12 @@ import { generatedId } from "../../shared/lib/ids";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
-export function emptyRoom(): RoomRow {
+export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
   return {
     id: generatedId("rm"),
     number: "",
     name: "",
-    floor_level: null,
+    floor_level: defaultFloorLevel,
     building_zone: null,
     num_people: 0,
     num_bedrooms: 0,
@@ -48,6 +48,13 @@ export function sortedRooms(rooms: RoomRow[]): RoomRow[] {
   );
 }
 
+export function firstRoomFloorOptionId(current: RoomsSlice): string | null {
+  return (
+    [...current.single_select_options[ROOM_FLOOR_LEVEL_KEY]].sort((a, b) => a.order - b.order)[0]
+      ?.id ?? null
+  );
+}
+
 export function nextRoomsPayload(
   current: RoomsSlice,
   room: RoomRow,
@@ -56,17 +63,11 @@ export function nextRoomsPayload(
   const options = cloneOptions(current);
   const floorLevel = upsertOption(options, ROOM_FLOOR_LEVEL_KEY, labels.floorLevel);
   const buildingZone = upsertOption(options, ROOM_BUILDING_ZONE_KEY, labels.buildingZone);
-  const normalizedRoom: RoomRow = {
+  const normalizedRoom = normalizeRoomForPayload({
     ...room,
-    number: room.number.trim(),
-    name: room.name.trim(),
     floor_level: floorLevel,
     building_zone: buildingZone,
-    num_people: Math.max(0, Math.trunc(room.num_people || 0)),
-    num_bedrooms: Math.max(0, Math.trunc(room.num_bedrooms || 0)),
-    icfa_factor: clamp(room.icfa_factor || 0, 0, 1),
-    notes: room.notes?.trim() || null,
-  };
+  });
   return {
     rooms: sortedRooms([
       normalizedRoom,
@@ -106,6 +107,38 @@ export function roomsPayloadFromCellWrites(
     applyWritesToRoom(room, writesByRowId.get(room.id) ?? []),
   );
   return { rooms: sortedRooms(rooms), single_select_options: options };
+}
+
+export function validateRoomsPayload(payload: RoomsReplacePayload): string | null {
+  const roomNumbers = new Set<string>();
+  const floorOptionIds = new Set(
+    payload.single_select_options[ROOM_FLOOR_LEVEL_KEY].map((option) => option.id),
+  );
+  const zoneOptionIds = new Set(
+    payload.single_select_options[ROOM_BUILDING_ZONE_KEY].map((option) => option.id),
+  );
+  for (const room of payload.rooms) {
+    if (!room.number.trim()) return "Room number is required.";
+    const normalizedNumber = normalize(room.number);
+    if (roomNumbers.has(normalizedNumber)) return "Room number already exists in this project.";
+    roomNumbers.add(normalizedNumber);
+    if (!room.name.trim()) return "Room name is required.";
+    if (!room.floor_level || !floorOptionIds.has(room.floor_level)) {
+      return "Floor level is required.";
+    }
+    if (room.building_zone && !zoneOptionIds.has(room.building_zone)) {
+      return "Building zone option is missing.";
+    }
+    if (room.erv_unit_ids.length > 0) {
+      return "ERV assignments are deferred until ERV units are available.";
+    }
+    if (room.num_people < 0) return "People must be zero or greater.";
+    if (room.num_bedrooms < 0) return "Bedrooms must be zero or greater.";
+    if (room.icfa_factor < 0 || room.icfa_factor > 1) {
+      return "iCFA factor must be between 0 and 1.";
+    }
+  }
+  return null;
 }
 
 export function replaceRoomOptionsPayload(
@@ -211,25 +244,20 @@ function applyWritesToRoom(room: RoomRow, writes: RoomCellWrite[]): RoomRow {
   for (const write of writes) {
     next = applyWriteToRoom(next, write.fieldKey, write.value);
   }
-  return {
-    ...next,
-    number: next.number.trim(),
-    name: next.name.trim(),
-    num_people: Math.max(0, Math.trunc(next.num_people || 0)),
-    num_bedrooms: Math.max(0, Math.trunc(next.num_bedrooms || 0)),
-    icfa_factor: clamp(next.icfa_factor || 0, 0, 1),
-  };
+  return normalizeRoomForPayload(next);
 }
 
 function applyWriteToRoom(room: RoomRow, fieldKey: string, value: unknown): RoomRow {
   if (fieldKey === "number" && typeof value === "string") return { ...room, number: value };
   if (fieldKey === "name" && typeof value === "string") return { ...room, name: value };
-  if (fieldKey === "num_people" && typeof value === "number") return { ...room, num_people: value };
-  if (fieldKey === "num_bedrooms" && typeof value === "number") {
-    return { ...room, num_bedrooms: value };
+  if (fieldKey === "num_people" && isNullableNumber(value)) {
+    return { ...room, num_people: value ?? 0 };
   }
-  if (fieldKey === "icfa_factor" && typeof value === "number") {
-    return { ...room, icfa_factor: value };
+  if (fieldKey === "num_bedrooms" && isNullableNumber(value)) {
+    return { ...room, num_bedrooms: value ?? 0 };
+  }
+  if (fieldKey === "icfa_factor" && isNullableNumber(value)) {
+    return { ...room, icfa_factor: value ?? 0 };
   }
   if (fieldKey === ROOM_FLOOR_LEVEL_KEY && isNullableOptionId(value)) {
     return { ...room, floor_level: value };
@@ -242,6 +270,10 @@ function applyWriteToRoom(room: RoomRow, fieldKey: string, value: unknown): Room
 
 function isNullableOptionId(value: unknown): value is string | null {
   return value === null || (typeof value === "string" && value.startsWith("opt_"));
+}
+
+function isNullableNumber(value: unknown): value is number | null {
+  return value === null || typeof value === "number";
 }
 
 function isRoomOptionKey(key: string): key is RoomOptionKey {
@@ -268,6 +300,18 @@ function upsertOption(
   const nextOption: SingleSelectOption = createFieldOption(label, options[key]);
   options[key] = [...options[key], nextOption];
   return nextOption.id;
+}
+
+function normalizeRoomForPayload(room: RoomRow): RoomRow {
+  return {
+    ...room,
+    number: room.number.trim(),
+    name: room.name.trim(),
+    num_people: Math.max(0, Math.trunc(room.num_people || 0)),
+    num_bedrooms: Math.max(0, Math.trunc(room.num_bedrooms || 0)),
+    icfa_factor: clamp(room.icfa_factor || 0, 0, 1),
+    notes: room.notes?.trim() || null,
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {

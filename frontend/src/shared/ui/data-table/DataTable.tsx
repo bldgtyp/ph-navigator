@@ -3,7 +3,9 @@ import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tan
 import {
   applyTextFilters,
   clampRange,
+  coerceFieldValue,
   coercePasteWrites,
+  formatClipboardValue,
   formatDisplayCellValue,
   isCellInNormalizedRange,
   moveActiveCell,
@@ -14,7 +16,16 @@ import {
   rangeToTsv,
   sortRows,
 } from "./lib";
-import type { CellCoord, CellRange, DataTableProps } from "./types";
+import type { CellCoord, CellRange, DataTableProps, FieldDef } from "./types";
+
+type EditingCell = {
+  rowId: string;
+  rowIndex: number;
+  columnIndex: number;
+  fieldKey: string;
+  draftValue: string;
+  originalValue: unknown;
+};
 
 export function DataTable<TRow>({
   rows,
@@ -56,6 +67,7 @@ export function DataTable<TRow>({
   const [activeCell, setActiveCell] = useState<CellCoord>({ rowIndex: 0, columnIndex: 0 });
   const [selection, setSelection] = useState<CellRange | null>(null);
   const [announce, setAnnounce] = useState("");
+  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
 
   const tanstackColumns = useMemo<ColumnDef<TRow>[]>(
     () =>
@@ -92,6 +104,7 @@ export function DataTable<TRow>({
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented) return;
+    if (editingCell) return;
     if (isCommandShortcut(event) && event.key.toLowerCase() === "c") {
       event.preventDefault();
       void copySelection(filteredRows, visibleColumnDefs, fieldDefs, activeRange);
@@ -120,6 +133,13 @@ export function DataTable<TRow>({
       }
       return;
     }
+    if (event.key === "Enter" && onRowOpen) {
+      const row = filteredRows[activeCellInView.rowIndex];
+      if (!row) return;
+      event.preventDefault();
+      onRowOpen(row);
+      return;
+    }
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
       event.preventDefault();
       const next = moveActiveCell(
@@ -142,6 +162,57 @@ export function DataTable<TRow>({
     const fieldName =
       fieldDefs.find((field) => field.field_key === fieldKey)?.display_name ?? fieldKey;
     setAnnounce(`Sorted by ${fieldName} ${nextDirection}.`);
+  };
+
+  const startInlineEdit = (row: TRow, rowIndex: number, columnIndex: number) => {
+    const column = visibleColumnDefs[columnIndex];
+    const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
+    if (readOnly || !onWrite || !column || !isInlineEditableField(fieldDef)) {
+      onRowOpen?.(row);
+      return;
+    }
+    setEditingCell({
+      rowId: getRowId(row),
+      rowIndex,
+      columnIndex,
+      fieldKey: column.fieldKey,
+      draftValue: formatClipboardValue(column.accessor(row)),
+      originalValue: column.accessor(row),
+    });
+  };
+
+  const commitInlineEdit = async (): Promise<boolean> => {
+    if (!editingCell || !onWrite) return false;
+    const fieldDef = fieldDefByKey.get(editingCell.fieldKey);
+    const coerced = coerceFieldValue(editingCell.draftValue, fieldDef, () => [], {
+      emptyNumberValue: 0,
+    });
+    if (!coerced.ok) {
+      setAnnounce(coerced.message);
+      return false;
+    }
+    if (coerced.value === editingCell.originalValue) {
+      setEditingCell(null);
+      return true;
+    }
+    try {
+      await onWrite({
+        kind: "cell",
+        writes: [
+          {
+            rowId: editingCell.rowId,
+            fieldKey: editingCell.fieldKey,
+            value: coerced.value,
+          },
+        ],
+      });
+      setAnnounce(`${fieldDef?.display_name ?? editingCell.fieldKey} updated.`);
+      setEditingCell(null);
+      return true;
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Cell update failed.");
+      return false;
+    }
   };
 
   if (rows.length === 0) {
@@ -261,9 +332,34 @@ export function DataTable<TRow>({
                         setActiveCell(next);
                         setSelection(null);
                       }}
-                      onDoubleClick={() => onRowOpen?.(row.original)}
+                      onDoubleClick={() => startInlineEdit(row.original, rowIndex, columnIndex)}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {editingCell?.rowId === row.id &&
+                      editingCell.columnIndex === columnIndex &&
+                      editingCell.rowIndex === rowIndex ? (
+                        <InlineCellEditor
+                          value={editingCell.draftValue}
+                          onChange={(draftValue) => setEditingCell({ ...editingCell, draftValue })}
+                          onCancel={() => setEditingCell(null)}
+                          onCommit={() => void commitInlineEdit()}
+                          onCommitAndMove={(shiftKey) => {
+                            void commitInlineEdit().then((committed) => {
+                              if (!committed) return;
+                              setActiveCell(
+                                moveTabCell(
+                                  { rowIndex, columnIndex },
+                                  shiftKey,
+                                  filteredRows.length,
+                                  visibleColumnDefs.length,
+                                ),
+                              );
+                              setSelection(null);
+                            });
+                          }}
+                        />
+                      ) : (
+                        flexRender(cell.column.columnDef.cell, cell.getContext())
+                      )}
                     </td>
                   );
                 })}
@@ -274,6 +370,66 @@ export function DataTable<TRow>({
       </div>
     </div>
   );
+}
+
+function InlineCellEditor({
+  value,
+  onChange,
+  onCancel,
+  onCommit,
+  onCommitAndMove,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onCancel: () => void;
+  onCommit: () => void;
+  onCommitAndMove: (shiftKey: boolean) => void;
+}) {
+  return (
+    <input
+      className="data-table-cell-editor"
+      autoFocus
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      onBlur={onCancel}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+        if (event.key === "Escape") {
+          onCancel();
+        }
+        if (event.key === "Tab") {
+          event.preventDefault();
+          onCommitAndMove(event.shiftKey);
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          onCommit();
+        }
+      }}
+    />
+  );
+}
+
+function isInlineEditableField(fieldDef: FieldDef | undefined): boolean {
+  return (
+    !fieldDef?.read_only && (fieldDef?.field_type === "text" || fieldDef?.field_type === "number")
+  );
+}
+
+function moveTabCell(
+  active: CellCoord,
+  shiftKey: boolean,
+  rowCount: number,
+  columnCount: number,
+): CellCoord {
+  if (rowCount === 0 || columnCount === 0) return active;
+  const offset = shiftKey ? -1 : 1;
+  const flattened = active.rowIndex * columnCount + active.columnIndex;
+  const next = Math.min(Math.max(flattened + offset, 0), rowCount * columnCount - 1);
+  return {
+    rowIndex: Math.floor(next / columnCount),
+    columnIndex: next % columnCount,
+  };
 }
 
 async function copySelection<TRow>(
@@ -353,11 +509,15 @@ async function pasteIntoSelection<TRow>(
     );
     return;
   }
-  await onWrite({
-    kind: "paste",
-    writes: coerced.writes,
-    rowsInserted: [],
-    newOptions: coerced.newOptions,
-  });
-  setAnnounce(`${plan.writes.length} cells pasted.`);
+  try {
+    await onWrite({
+      kind: "paste",
+      writes: coerced.writes,
+      rowsInserted: [],
+      newOptions: coerced.newOptions,
+    });
+    setAnnounce(`${plan.writes.length} cells pasted.`);
+  } catch (error) {
+    setAnnounce(error instanceof Error ? error.message : "Paste failed.");
+  }
 }

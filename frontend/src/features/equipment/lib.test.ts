@@ -3,6 +3,7 @@ import {
   deleteRoomPayload,
   duplicateRoomNumber,
   emptyRoom,
+  firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
   replaceRoomOptionsPayload,
@@ -10,6 +11,7 @@ import {
   optionLabel,
   remoteSliceChangesActiveRoom,
   roomsPayloadFromCellWrites,
+  validateRoomsPayload,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
 import type { RoomsSlice } from "./types";
@@ -77,6 +79,24 @@ describe("equipment room helpers", () => {
     expect(payload.rooms[0]?.floor_level).toBe("opt_ground");
     expect(payload.single_select_options["rooms.floor_level"]).toHaveLength(1);
     expect(payload.rooms[0]?.building_zone).toBeNull();
+  });
+
+  test("uses the first floor option by order for new room defaults", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      single_select_options: {
+        "rooms.floor_level": [
+          { id: "opt_roof", label: "Roof", color: "#10b981", order: 2 },
+          { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+        ],
+        "rooms.building_zone": [],
+      },
+    };
+    const room = emptyRoom("opt_ground");
+
+    expect(firstRoomFloorOptionId(current)).toBe("opt_ground");
+    expect(room.floor_level).toBe("opt_ground");
+    expect(room.icfa_factor).toBe(1);
   });
 
   test("detects duplicate room numbers and deletes rows without changing options", () => {
@@ -181,6 +201,58 @@ describe("equipment room helpers", () => {
     expect(payload.single_select_options["rooms.floor_level"]).toEqual([
       { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
     ]);
+  });
+
+  test("validates required floor and duplicate numbers before draft writes", () => {
+    const missingFloor = {
+      ...baseSlice,
+      rooms: [{ ...emptyRoom(), id: "rm_1", number: "101", name: "Living" }],
+    };
+    const duplicate = {
+      ...baseSlice,
+      rooms: [
+        { ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" },
+        { ...emptyRoom("opt_ground"), id: "rm_2", number: " 101 ", name: "Kitchen" },
+      ],
+      single_select_options: {
+        "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
+        "rooms.building_zone": [],
+      },
+    };
+
+    expect(validateRoomsPayload(missingFloor)).toBe("Floor level is required.");
+    expect(validateRoomsPayload(duplicate)).toBe("Room number already exists in this project.");
+  });
+
+  test("normalizes cleared numeric cell writes and blocks deferred ERV assignments", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        {
+          ...emptyRoom("opt_ground"),
+          id: "rm_1",
+          number: "101",
+          name: "Living",
+          num_people: 3,
+          erv_unit_ids: ["erv_fake"],
+        },
+      ],
+      single_select_options: {
+        "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
+        "rooms.building_zone": [],
+      },
+    };
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "num_people", value: null }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.num_people).toBe(0);
+    expect(validateRoomsPayload(payload)).toBe(
+      "ERV assignments are deferred until ERV units are available.",
+    );
   });
 
   test("renames, reorders, and deletes options with reference replacement", () => {

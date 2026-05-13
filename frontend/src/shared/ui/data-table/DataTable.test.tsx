@@ -9,16 +9,18 @@ import {
   type ViewState,
 } from "./types";
 
-type Row = { id: string; number: string; name: string };
+type Row = { id: string; number: string; name: string; count: number };
 
-const rows: Row[] = [{ id: "rm_1", number: "101", name: "Living Room" }];
+const rows: Row[] = [{ id: "rm_1", number: "101", name: "Living Room", count: 2 }];
 const fieldDefs: FieldDef[] = [
   { field_key: "number", field_type: "text", display_name: "Number" },
   { field_key: "name", field_type: "text", display_name: "Name" },
+  { field_key: "count", field_type: "number", display_name: "Count" },
 ];
 const columnDefs: DataTableColumnDef<Row>[] = [
   { id: "number", fieldKey: "number", header: "Number", accessor: (row) => row.number },
   { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
+  { id: "count", fieldKey: "count", header: "Count", accessor: (row) => row.count },
 ];
 
 afterEach(() => {
@@ -77,6 +79,65 @@ describe("DataTable", () => {
 
     expect(screen.getByRole("button", { name: "Number" })).toHaveAttribute("tabindex", "-1");
     expect(screen.getByRole("button", { name: "Select row 1" })).toHaveAttribute("tabindex", "-1");
+  });
+
+  test("emits a cell write for inline text edits", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    fireEvent.doubleClick(screen.getByText("Living Room"));
+    const editor = screen.getByRole("textbox");
+    fireEvent.change(editor, { target: { value: "Living" } });
+    fireEvent.keyDown(editor, { key: "Enter" });
+
+    expect(await screen.findByText("Name updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: "Living" }],
+    });
+  });
+
+  test("skips no-op inline edits", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    fireEvent.doubleClick(screen.getByText("Living Room"));
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+
+    expect(onWrite).not.toHaveBeenCalled();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  test("coerces cleared inline number edits to zero", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    fireEvent.doubleClick(screen.getByText("2"));
+    const editor = screen.getByRole("textbox");
+    fireEvent.change(editor, { target: { value: "" } });
+    fireEvent.keyDown(editor, { key: "Enter" });
+
+    expect(await screen.findByText("Count updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "count", value: 0 }],
+    });
+  });
+
+  test("commits inline edits on Tab", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    fireEvent.doubleClick(screen.getByText("Living Room"));
+    const editor = screen.getByRole("textbox");
+    fireEvent.change(editor, { target: { value: "Living" } });
+    fireEvent.keyDown(editor, { key: "Tab" });
+
+    expect(await screen.findByText("Name updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: "Living" }],
+    });
   });
 });
 

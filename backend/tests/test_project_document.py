@@ -406,6 +406,28 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
     assert response.json()["error_code"] == "invalid_project_document"
 
     invalid = room_payload()
+    invalid["rooms"][0]["floor_level"] = None
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=invalid,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "validation_error"
+
+    invalid = room_payload()
+    invalid["rooms"].append({**invalid["rooms"][0], "id": "rm_kitchen", "name": "Kitchen"})
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=invalid,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "invalid_project_document"
+
+    invalid = room_payload()
     del invalid["single_select_options"]["rooms.building_zone"]
     response = client.put(
         draft_rooms_url(project_id, version_id),
@@ -418,6 +440,17 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
 
     invalid = room_payload()
     invalid["rooms"][0]["floor_level"] = "opt_missing"
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=invalid,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "invalid_project_document"
+
+    invalid = room_payload()
+    invalid["rooms"][0]["erv_unit_ids"] = ["erv_fake"]
     response = client.put(
         draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
@@ -551,7 +584,7 @@ def test_save_as_creates_active_version_from_draft_and_downloads_json(
 
     rooms_json = client.get(rooms_download_url(project_id, new_version["id"]))
     assert rooms_json.status_code == 200
-    assert rooms_json.json()[0]["name"] == "Living Room"
+    assert rooms_json.json()["rooms"][0]["name"] == "Living Room"
 
 
 def test_project_download_returns_raw_body_when_schema_is_invalid(
@@ -757,9 +790,7 @@ def test_draft_summary_and_diff_include_rooms_option_only_changes(
         json={
             "rooms": [],
             "single_select_options": {
-                "rooms.floor_level": [
-                    {"id": "opt_ground", "label": "Grade", "color": "#3b82f6", "order": 0}
-                ],
+                "rooms.floor_level": [{"id": "opt_ground", "label": "Grade", "color": "#3b82f6", "order": 0}],
                 "rooms.building_zone": [],
             },
         },

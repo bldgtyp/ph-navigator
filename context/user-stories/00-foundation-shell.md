@@ -617,8 +617,9 @@ stories.
    - Project JSON download returns the selected saved version's
      raw saved body, even if the current app cannot validate it as
      `ProjectDocumentV1`.
-   - Per-table JSON download returns one table slice from that saved
-     body and remains validation-gated.
+   - Per-table JSON download returns one keyed table slice from that
+     saved body, e.g. `{ "rooms": [...] }`, and remains
+     validation-gated.
    - Downloads are available to Editors and Viewers, including locked
      versions.
    - Draft download is not in v1; the user must Save / Save As first
@@ -639,7 +640,7 @@ stories.
 7. Project JSON download returns the raw saved body for recovery when
    `ProjectDocumentV1` validation fails.
 8. Per-table JSON download validates against that table's Pydantic
-   model / JSON Schema.
+   model / JSON Schema and returns a keyed slice object.
 9. Editors and Viewers can download saved JSON from locked versions.
 10. Draft JSON download is hidden / unavailable in v1.
 

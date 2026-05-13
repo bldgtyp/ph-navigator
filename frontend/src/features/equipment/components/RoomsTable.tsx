@@ -2,9 +2,9 @@ import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
   type DataTableColumnDef,
+  type DataTableProps,
   type FieldDef,
   type ViewState,
-  type WriteOp,
 } from "../../../shared/ui/data-table";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedRooms } from "../lib";
@@ -32,7 +32,7 @@ export function RoomsTable({
   onEdit: (room: RoomRow) => void;
   view: ViewState;
   onViewChange: (next: ViewState) => void;
-  onWrite: (op: WriteOp) => void;
+  onWrite: NonNullable<DataTableProps<RoomRow>["onWrite"]>;
   onSaveOptions: (
     fieldKey: RoomOptionKey,
     options: SingleSelectOption[],
@@ -62,6 +62,7 @@ export function RoomsTable({
       { field_key: "num_people", field_type: "number", display_name: "People" },
       { field_key: "num_bedrooms", field_type: "number", display_name: "Bedrooms" },
       { field_key: "icfa_factor", field_type: "number", display_name: "iCFA" },
+      { field_key: "erv_unit_ids", field_type: "text", display_name: "ERVs", read_only: true },
     ],
     [floorOptions, zoneOptions],
   );
@@ -119,6 +120,18 @@ export function RoomsTable({
         accessor: (room) => room.icfa_factor,
         render: (room) => room.icfa_factor.toFixed(2),
         className: "numeric-cell",
+      },
+      {
+        id: "erv_unit_ids",
+        fieldKey: "erv_unit_ids",
+        header: "ERVs",
+        accessor: (room) => room.erv_unit_ids.join(", "),
+        render: (room) =>
+          room.erv_unit_ids.length ? (
+            room.erv_unit_ids.join(", ")
+          ) : (
+            <span className="muted-cell">None</span>
+          ),
       },
     ],
     [fieldDefByKey],

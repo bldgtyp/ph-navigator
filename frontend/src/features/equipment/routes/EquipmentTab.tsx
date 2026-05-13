@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import type { ProjectDetail } from "../../projects/types";
@@ -9,12 +10,14 @@ import { useReplaceRoomsSliceMutation, useRoomsDraftBroadcast, useRoomsSliceQuer
 import {
   deleteRoomPayload,
   emptyRoom,
+  firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
   nextRoomsPayload,
   remoteSliceChangesActiveRoom,
   replaceRoomOptionsPayload,
   roomsPayloadFromCellWrites,
+  validateRoomsPayload,
 } from "../lib";
 import type { WriteOp } from "../../../shared/ui/data-table";
 import {
@@ -35,6 +38,7 @@ const DELETE_CONFLICT_MESSAGE =
 export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
+  const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
   const [roomsTableView, setRoomsTableView] = useState(emptyViewState);
   const [actionError, setActionError] = useState<string | null>(null);
   const [draftConflictReason, setDraftConflictReason] = useState<string | null>(null);
@@ -107,57 +111,60 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   }
 
   const roomsSlice = roomsQuery.data;
-  const saveRoom = async (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => {
+  const commitRoomsPayload = async (
+    payload: ReturnType<typeof nextRoomsPayload>,
+    conflictMessage: string,
+    fallbackMessage: string,
+  ) => {
     if (!canEdit) return;
     setActionError(null);
-    const payload = nextRoomsPayload(roomsSlice, room, labels);
+    const validationMessage = validateRoomsPayload(payload);
+    if (validationMessage) {
+      setActionError(validationMessage);
+      throw new Error(validationMessage);
+    }
     try {
       await replaceRoomsMutation.mutateAsync({ current: roomsSlice, payload });
-      setRoomModal(null);
     } catch (error) {
       if (isDraftStaleError(error)) {
-        await handleStaleDraftConflict(ACTIVE_ROOM_CONFLICT_MESSAGE);
+        await handleStaleDraftConflict(conflictMessage);
         throw error;
       }
-      throw error;
+      const message = errorMessage(error, fallbackMessage);
+      setActionError(message);
+      throw new Error(message);
     }
+  };
+
+  const saveRoom = async (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => {
+    await commitRoomsPayload(
+      nextRoomsPayload(roomsSlice, room, labels),
+      ACTIVE_ROOM_CONFLICT_MESSAGE,
+      "Could not save room.",
+    );
+    setRoomModal(null);
   };
 
   const deleteRoom = (room: RoomRow) => {
     if (!canEdit) return;
-    if (!window.confirm(`Delete room ${room.number}?`)) return;
-    setActionError(null);
-    replaceRoomsMutation.mutate(
-      { current: roomsSlice, payload: deleteRoomPayload(roomsSlice, room.id) },
-      {
-        onError: async (error) => {
-          if (isDraftStaleError(error)) {
-            await handleStaleDraftConflict(DELETE_CONFLICT_MESSAGE);
-            return;
-          }
-          setActionError(errorMessage(error, "Could not delete room."));
-        },
-      },
-    );
+    void commitRoomsPayload(
+      deleteRoomPayload(roomsSlice, room.id),
+      DELETE_CONFLICT_MESSAGE,
+      "Could not delete room.",
+    )
+      .then(() => {
+        setRoomPendingDelete(null);
+        setRoomModal(null);
+      })
+      .catch(() => undefined);
   };
 
-  const handleTableWrite = (op: WriteOp) => {
-    if (!canEdit || op.kind !== "paste") return;
-    setActionError(null);
-    replaceRoomsMutation.mutate(
-      {
-        current: roomsSlice,
-        payload: roomsPayloadFromCellWrites(roomsSlice, op.writes, op.newOptions),
-      },
-      {
-        onError: async (error) => {
-          if (isDraftStaleError(error)) {
-            await handleStaleDraftConflict(ACTIVE_ROOM_CONFLICT_MESSAGE);
-            return;
-          }
-          setActionError(errorMessage(error, "Could not paste rooms table values."));
-        },
-      },
+  const handleTableWrite = async (op: WriteOp) => {
+    if (!canEdit || (op.kind !== "paste" && op.kind !== "cell")) return;
+    await commitRoomsPayload(
+      roomsPayloadFromCellWrites(roomsSlice, op.writes, op.kind === "paste" ? op.newOptions : {}),
+      ACTIVE_ROOM_CONFLICT_MESSAGE,
+      "Could not update rooms table values.",
     );
   };
 
@@ -167,22 +174,18 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     replacements: Record<string, string | null> = {},
   ) => {
     if (!canEdit) return;
-    setActionError(null);
-    replaceRoomsMutation.mutate(
-      {
-        current: roomsSlice,
-        payload: replaceRoomOptionsPayload(roomsSlice, fieldKey, options, replacements),
-      },
-      {
-        onError: async (error) => {
-          if (isDraftStaleError(error)) {
-            await handleStaleDraftConflict(ACTIVE_ROOM_CONFLICT_MESSAGE);
-            return;
-          }
-          setActionError(errorMessage(error, "Could not update room options."));
-        },
-      },
-    );
+    let payload: ReturnType<typeof replaceRoomOptionsPayload>;
+    try {
+      payload = replaceRoomOptionsPayload(roomsSlice, fieldKey, options, replacements);
+    } catch (error) {
+      setActionError(errorMessage(error, "Could not update room options."));
+      return;
+    }
+    void commitRoomsPayload(
+      payload,
+      ACTIVE_ROOM_CONFLICT_MESSAGE,
+      "Could not update room options.",
+    ).catch(() => undefined);
   };
 
   return (
@@ -255,33 +258,55 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         onWrite={handleTableWrite}
         onSaveOptions={saveOptions}
       />
-      {roomModal?.mode === "edit" && isEditor && !isLocked ? (
-        <div className="room-actions">
-          <button
-            type="button"
-            className="danger-button"
-            onClick={() => deleteRoom(roomModal.room)}
-            disabled={Boolean(draftConflictReason)}
-          >
-            Delete room
-          </button>
-        </div>
-      ) : null}
       {roomModal && isEditor && !isLocked ? (
         <RoomModal
           key={roomModal.mode === "add" ? "add" : roomModal.room.id}
           title={
             roomModal.mode === "add"
-              ? "Add room"
+              ? "New room"
               : `Room: ${roomModal.room.number} - ${roomModal.room.name}`
           }
-          room={roomModal.mode === "add" ? emptyRoom() : roomModal.room}
+          room={
+            roomModal.mode === "add"
+              ? emptyRoom(firstRoomFloorOptionId(roomsSlice))
+              : roomModal.room
+          }
           roomsSlice={roomsSlice}
           onCancel={() => setRoomModal(null)}
           onSubmit={saveRoom}
           frozenReason={draftConflictReason}
           onFrozenReload={() => void reloadDraft()}
+          onDelete={
+            roomModal.mode === "edit" ? () => setRoomPendingDelete(roomModal.room) : undefined
+          }
+          deleteDisabled={Boolean(draftConflictReason)}
         />
+      ) : null}
+      {roomPendingDelete ? (
+        <ModalDialog
+          title={`Delete room ${roomPendingDelete.number}?`}
+          titleId="delete-room-title"
+          onClose={() => setRoomPendingDelete(null)}
+        >
+          <p>This removes the room from the active draft.</p>
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setRoomPendingDelete(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => deleteRoom(roomPendingDelete)}
+              disabled={replaceRoomsMutation.isPending}
+            >
+              Delete room
+            </button>
+          </div>
+        </ModalDialog>
       ) : null}
     </section>
   );

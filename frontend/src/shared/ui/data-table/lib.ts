@@ -282,7 +282,11 @@ export function coercePasteWrites<TRow>({
     const column = columns[plannedWrite.columnIndex];
     if (!row || !column) continue;
     const fieldDef = fieldDefForColumn(column, fieldDefsByKey);
-    const coerced = coercePasteValue(plannedWrite.raw, fieldDef, () => {
+    if (fieldDef?.read_only) {
+      errors.push({ ...plannedWrite, message: "Field is read-only." });
+      continue;
+    }
+    const coerced = coerceFieldValue(plannedWrite.raw, fieldDef, () => {
       const options = optionsByField.get(column.fieldKey) ?? [];
       optionsByField.set(column.fieldKey, options);
       return options;
@@ -329,14 +333,15 @@ export function singleSelectOption(
   return fieldDef.options?.find((candidate) => candidate.id === value);
 }
 
-function coercePasteValue(
+export function coerceFieldValue(
   raw: string,
   fieldDef: FieldDef | undefined,
   optionsForField: () => FieldOption[],
+  { emptyNumberValue = null }: { emptyNumberValue?: number | null } = {},
 ): { ok: true; value: unknown; created?: FieldOption } | { ok: false; message: string } {
   const trimmed = raw.trim();
   if (fieldDef?.field_type === "number") {
-    if (!trimmed) return { ok: true, value: null };
+    if (!trimmed) return { ok: true, value: emptyNumberValue };
     const value = Number(trimmed);
     return Number.isFinite(value)
       ? { ok: true, value }

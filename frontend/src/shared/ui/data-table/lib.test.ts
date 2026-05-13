@@ -187,6 +187,21 @@ describe("DataTable helpers", () => {
     expect(result.ok && result.newOptions["rooms.floor_level"]?.[0]?.label).toBe("Level 2");
   });
 
+  test("paste coercion blocks read-only fields", () => {
+    const result = coercePasteWrites({
+      plannedWrites: [{ rowIndex: 0, columnIndex: 0, raw: "102" }],
+      rows,
+      columns,
+      fieldDefs: [{ ...fieldDefs[0]!, read_only: true }, fieldDefs[1]!],
+      getRowId: (row) => row.id,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ rowIndex: 0, columnIndex: 0, raw: "102", message: "Field is read-only." }],
+    });
+  });
+
   test("keeps missing option display text out of clipboard values", () => {
     const fieldDef: FieldDef = {
       field_key: "rooms.floor_level",
