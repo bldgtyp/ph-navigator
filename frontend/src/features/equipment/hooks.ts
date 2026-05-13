@@ -4,20 +4,22 @@ import type { RoomsReplacePayload, RoomsSlice } from "./types";
 
 export const roomsQueryKeys = {
   all: ["rooms"] as const,
+  project: (projectId: string) => [...roomsQueryKeys.all, "project", projectId] as const,
   slice: (projectId: string, versionId: string, accessMode: "editor" | "viewer") =>
-    [...roomsQueryKeys.all, "slice", projectId, versionId, accessMode] as const,
+    [...roomsQueryKeys.project(projectId), "slice", versionId, accessMode] as const,
 };
 
 export function useRoomsSliceQuery(
   projectId: string,
   versionId: string | null,
   accessMode: "editor" | "viewer",
+  enabled = true,
 ) {
   const resolvedVersionId = versionId ?? "";
   return useQuery({
     queryKey: roomsQueryKeys.slice(projectId, resolvedVersionId, accessMode),
     queryFn: ({ signal }) => fetchRoomsSlice(projectId, resolvedVersionId, accessMode, signal),
-    enabled: resolvedVersionId.length > 0,
+    enabled: enabled && resolvedVersionId.length > 0,
   });
 }
 

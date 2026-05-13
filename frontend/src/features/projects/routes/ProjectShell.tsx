@@ -1,4 +1,4 @@
-import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
 import { WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
@@ -10,6 +10,7 @@ import { isProjectTab, PROJECT_TABS, projectStatusPath, projectTabPath, TAB_LABE
 export function ProjectShell() {
   const { projectId, tab } = useParams();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = isProjectTab(tab) ? tab : null;
   const projectQuery = useProjectQuery(projectId);
 
@@ -35,8 +36,27 @@ export function ProjectShell() {
   }
 
   const project = projectQuery.data;
+  const requestedVersionId = searchParams.get("version");
+  const openVersion =
+    project.versions.find((version) => version.id === requestedVersionId) ??
+    project.active_version ??
+    null;
+  const openProject = {
+    ...project,
+    active_version_id: openVersion?.id ?? null,
+    active_version: openVersion,
+  };
   const isViewer = project.access_mode === "viewer";
   const returnPath = `${location.pathname}${location.search}${location.hash}`;
+  const openVersionById = (versionId: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (versionId === project.active_version_id) {
+      next.delete("version");
+    } else {
+      next.set("version", versionId);
+    }
+    setSearchParams(next);
+  };
 
   return (
     <main className="workspace-shell">
@@ -60,20 +80,27 @@ export function ProjectShell() {
               {project.client ? ` · ${project.client}` : ""}
             </p>
           </div>
-          <ProjectHeaderControls project={project} />
+          <ProjectHeaderControls
+            project={openProject}
+            defaultVersionId={project.active_version_id}
+            onOpenVersion={openVersionById}
+          />
         </div>
         <nav className="tabbar" aria-label="Project tabs">
           {PROJECT_TABS.map((projectTab) => (
             <Link
               key={projectTab}
               className={projectTab === activeTab ? "active" : ""}
-              to={projectTabPath(project.id, projectTab)}
+              to={{
+                pathname: projectTabPath(project.id, projectTab),
+                search: searchParams.toString(),
+              }}
             >
               {TAB_LABELS[projectTab]}
             </Link>
           ))}
         </nav>
-        <ProjectTabContent tab={activeTab ?? "status"} project={project} />
+        <ProjectTabContent tab={activeTab ?? "status"} project={openProject} />
       </section>
     </main>
   );

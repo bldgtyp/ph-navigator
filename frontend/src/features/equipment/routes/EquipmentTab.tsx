@@ -15,6 +15,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const isEditor = project.access_mode === "editor";
+  const isLocked = project.active_version?.locked ?? false;
+  const canEdit = isEditor && !isLocked;
 
   if (roomsQuery.isLoading) {
     return (
@@ -36,6 +38,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
 
   const roomsSlice = roomsQuery.data;
   const saveRoom = async (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => {
+    if (!canEdit) return;
     setActionError(null);
     const payload = nextRoomsPayload(roomsSlice, room, labels);
     await replaceRoomsMutation.mutateAsync({ current: roomsSlice, payload });
@@ -43,6 +46,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   };
 
   const deleteRoom = (room: RoomRow) => {
+    if (!canEdit) return;
     if (!window.confirm(`Delete room ${room.number}?`)) return;
     setActionError(null);
     replaceRoomsMutation.mutate(
@@ -60,7 +64,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           <h2 id="equipment-title">Equipment</h2>
           <p>Rooms are the PHN-first source of truth for downstream HBJSON.</p>
         </div>
-        {isEditor ? (
+        {canEdit ? (
           <button type="button" onClick={() => setRoomModal({ mode: "add" })}>
             Add room
           </button>
@@ -86,6 +90,11 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       {roomsSlice.source === "draft" ? (
         <p className="draft-banner">Unsaved Rooms draft restored</p>
       ) : null}
+      {isLocked ? (
+        <p className="draft-banner">
+          This version is locked. Save As to copy it into a new version.
+        </p>
+      ) : null}
       {actionError ? (
         <p className="form-error" role="alert">
           {actionError}
@@ -93,10 +102,10 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       ) : null}
       <RoomsTable
         roomsSlice={roomsSlice}
-        isEditor={isEditor}
+        isEditor={canEdit}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
       />
-      {roomModal?.mode === "edit" && isEditor ? (
+      {roomModal?.mode === "edit" && canEdit ? (
         <div className="room-actions">
           <button
             type="button"
@@ -107,7 +116,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           </button>
         </div>
       ) : null}
-      {roomModal ? (
+      {roomModal && canEdit ? (
         <RoomModal
           key={roomModal.mode === "add" ? "add" : roomModal.room.id}
           title={

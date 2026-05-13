@@ -61,6 +61,40 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await expect(page.getByText("Unsaved Rooms draft restored")).toBeVisible();
   await expect(page.getByText("Living Room")).toBeVisible();
 
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Unsaved Rooms draft restored")).toHaveCount(0);
+  await expect(page.getByText("Clean")).toBeVisible();
+
+  await page.getByRole("button", { name: "Save As" }).click();
+  await page.getByLabel("Version name").fill("Round 1 Submit");
+  await page.getByLabel("Version kind").selectOption("submitted");
+  await page.getByRole("button", { name: "Create version" }).click();
+  await expect(page.getByRole("button", { name: /Round 1 Submit · Locked/ })).toBeVisible();
+  await expect(page).toHaveURL(/\?version=/);
+
+  await page.getByRole("button", { name: /Round 1 Submit · Locked/ }).click();
+  await page.locator(".version-row").filter({ hasText: "Working" }).getByRole("button", { name: "Open" }).click();
+  await expect(page.getByRole("button", { name: "Working" })).toBeVisible();
+  await page.getByRole("button", { name: "Lock" }).click();
+  await expect(page.getByRole("button", { name: /Working · Locked/ })).toBeVisible();
+  await expect(page.getByText("This version is locked. Save As to copy it into a new version.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add room" })).toHaveCount(0);
+
+  const projectDownload = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Project JSON" }).click();
+  expect((await projectDownload).suggestedFilename()).toMatch(/^project-.+\.json$/);
+
+  const roomsDownload = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Rooms JSON" }).click();
+  expect((await roomsDownload).suggestedFilename()).toMatch(/^rooms-.+\.json$/);
+
+  await page.getByRole("button", { name: "Diff" }).click();
+  await page.getByLabel("Compare current version to").selectOption({ label: "Round 1 Submit" });
+  const diffDialog = page.getByRole("dialog", { name: "Diff" });
+  await expect(diffDialog.getByRole("heading", { name: "rooms" })).toBeVisible();
+  await expect(diffDialog.getByText("0 changed paths")).toBeVisible();
+  await page.getByRole("button", { name: "Close" }).click();
+
   const publicContext = await browser.newContext();
   try {
     const publicPage = await publicContext.newPage();

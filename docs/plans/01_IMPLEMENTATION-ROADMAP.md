@@ -80,7 +80,7 @@ Resolve these at the named slice, not all up front:
 | Multi-editor concurrency scope | TB-06 | MVP supports single-active-editor per project; cross-editor conflict UX deferred to v1.1 |
 | HBJSON file-size cap | TB-14 | Start with 50 MB unless real files exceed it |
 
-## Tracer-Bullet Slices
+## Tracer-Bullet Slices [Phase 1 - Table Pages]
 
 ### TB-00 - Bootable App Health Tracer
 
@@ -178,13 +178,13 @@ Resolve these at the named slice, not all up front:
 | Field | Plan |
 |---|---|
 | Type | HITL for version-name uniqueness and diff scope confirmation |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | File-app-style version workflow is usable on the Rooms slice. |
 | References | `context/technical-requirements/save-versioning.md`; `context/technical-requirements/api.md` (version endpoints, ETag); `context/user-stories/00-foundation-shell.md` (version dropdown). |
 | Includes | Save, Save As, Discard, Lock; version dropdown behavior; denormalized save metadata; project JSON download; Rooms table JSON download; structured diff endpoint with v1 UI stub; locked-version read-only behavior. |
 | Tests | Save/version service; ETag conflicts; locked-version write rejection; JSON round-trip validation; table download validation; draft discard and restore paths. |
 | Browser check | Edit Rooms draft, Save, Save As, lock old version, try blocked edit, download project JSON and Rooms JSON, open diff stub. |
-| Lessons | Record how much diff UX was deferred and why. |
+| Lessons | Backend diff is a structured per-table/path summary; v1 UI is a text modal stub. Full side-by-side visual diff remains deferred. |
 
 ### TB-06 - Same-Editor Tabs And Stale Draft Boundaries
 
@@ -198,6 +198,9 @@ Resolve these at the named slice, not all up front:
 | Tests | Same-editor disjoint edit path; same-scope stale conflict; schema fallback raw-body download; draft age metadata if present. |
 | Browser check | Open two tabs to one project, edit in one, verify the other handles stale state without silent overwrite. |
 | Lessons | Record UX tradeoffs around force-reload vs merge, and revisit session-row locking/touch behavior under same-editor multi-tab traffic. |
+
+
+## Tracer-Bullet Slices [Phase 2 - Builder Pages]
 
 ### TB-07 - Catalog Manager Tracer
 
@@ -290,6 +293,8 @@ Resolve these at the named slice, not all up front:
 | Browser check | Build one wall assembly, download construction export, validate it via backend test/fixture path. |
 | Lessons | Record the one-direction PHN -> downstream model boundary. |
 
+## Tracer-Bullet Slices [Phase 3 - HBJSON Model]
+
 ### TB-14 - HBJSON Upload And File Picker
 
 | Field | Plan |
@@ -328,6 +333,9 @@ Resolve these at the named slice, not all up front:
 | Tests | Viewer state machine; unit format/parse helpers; color grouping logic; targeted browser checks for tool modes. |
 | Browser check | Switch viz mode, color by construction, measure a distance, select an element, inspect converted fields. |
 | Lessons | Record V1 parity decisions and any viewer controls deferred. |
+
+
+## Tracer-Bullet Slices [Phase 4 - Refine]
 
 ### TB-17 - MCP Write Path And Edit Lease
 
@@ -370,30 +378,30 @@ Resolve these at the named slice, not all up front:
 
 ## Progress Ledger
 
-| Slice | Status | Last updated | Verification evidence |
-|---|---|---|---|
-| TB-00 | Complete | 2026-05-12 11:58 EDT | `make smoke`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed with live `/api/v1` health/version and no console warnings/errors. |
-| TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
-| TB-02 | Complete | 2026-05-12 17:13 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging Render deploy verified at `https://ph-navigator-v2-staging.onrender.com`: sign in as seeded editor, create `Staging Smoke Test`, open `/projects/e5365d5e-a2b0-4059-9c7a-a212600a0574/status`, sign out, reopen the project URL, and confirm read-only public shell with edit controls hidden. |
-| TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
-| TB-03.5 | Complete | 2026-05-12 18:08 EDT | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke at `http://127.0.0.1:5173/dashboard` -> `/projects/114b7e10-05d6-41d1-acae-981dcb346e2f/status` verified dashboard and editor Status tab after simplify cleanup, with no console errors. Earlier smoke also verified public read-only Status tab, sign-in transition to editor controls, and populated default template. |
-| TB-04 | Complete | 2026-05-12 19:24 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 tests); `cd frontend && npm run build`; `make e2e` against fresh local API `:8001` via Vite proxy `:5173` passed for Status plus Rooms draft add/reload. Staging Render verification: signed in as editor, opened `Staging Smoke Test`, added room `test` on Equipment/Rooms, confirmed `Unsaved Rooms draft restored` and the room row rendered in the live app. |
-| TB-04b | Complete | 2026-05-12 21:10 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed after simplify cleanup); local MCP protocol smoke against `http://127.0.0.1:8002/mcp/` using a project-scoped bearer token verified `list_projects`, `get_project`, `list_status_items`, and `get_document`; automated in-process MCP tests cover saved/draft `get_document`, `get_table`, read-token metadata shape, read-only `replace_table` structured rejection, and write-only token-scope rejection; Playwright dashboard cross-check at `http://127.0.0.1:5173/dashboard` showed the same `MCP Smoke Project` / `MCP-001` with no post-login console errors. |
-| TB-05 | Not started | 2026-05-12 | - |
-| TB-06 | Not started | 2026-05-12 | - |
-| TB-07 | Not started | 2026-05-12 | - |
-| TB-08 | Not started | 2026-05-12 | - |
-| TB-09 | Not started | 2026-05-12 | - |
-| TB-10 | Not started | 2026-05-12 | - |
-| TB-11 | Not started | 2026-05-12 | - |
-| TB-12 | Not started | 2026-05-12 | - |
-| TB-13 | Not started | 2026-05-12 | - |
-| TB-14 | Not started | 2026-05-12 | - |
-| TB-15 | Not started | 2026-05-12 | - |
-| TB-16 | Not started | 2026-05-12 | - |
-| TB-17 | Not started | 2026-05-12 | - |
-| TB-18 | Not started | 2026-05-12 | - |
-| TB-19 | Not started | 2026-05-12 | - |
+| Phase | Slice | Status | Last updated | Verification evidence |
+|---|---|---|---|---|
+| 01 | TB-00 | Complete | 2026-05-12 11:58 EDT | `make smoke`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed with live `/api/v1` health/version and no console warnings/errors. |
+| 01 | TB-01 | Complete | 2026-05-12 12:46 EDT | `make migrate`; `make seed-dev-user`; `cd backend && uv run ruff check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`; Browser check at `http://127.0.0.1:5173/` passed for root sign-in redirect, editor sign-in, dashboard reload/session persistence, and signed-out protected-route redirect. |
+| 01 | TB-02 | Complete | 2026-05-12 17:13 EDT | Local path complete: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make e2e`. Staging Render deploy verified at `https://ph-navigator-v2-staging.onrender.com`: sign in as seeded editor, create `Staging Smoke Test`, open `/projects/e5365d5e-a2b0-4059-9c7a-a212600a0574/status`, sign out, reopen the project URL, and confirm read-only public shell with edit controls hidden. |
+| 01 | TB-03 | Complete | 2026-05-12 16:04 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser at `http://127.0.0.1:5173/projects/e64eb07f-d37b-4350-896d-63287df0220c/status` showed the populated editor status timeline with no console warnings/errors after sign-in/navigation. |
+| 01 | TB-03.5 | Complete | 2026-05-12 18:08 EDT | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (12 tests); `cd frontend && npm run build`; Playwright browser smoke at `http://127.0.0.1:5173/dashboard` -> `/projects/114b7e10-05d6-41d1-acae-981dcb346e2f/status` verified dashboard and editor Status tab after simplify cleanup, with no console errors. Earlier smoke also verified public read-only Status tab, sign-in transition to editor controls, and populated default template. |
+| 01 | TB-04 | Complete | 2026-05-12 19:24 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 tests); `cd frontend && npm run build`; `make e2e` against fresh local API `:8001` via Vite proxy `:5173` passed for Status plus Rooms draft add/reload. Staging Render verification: signed in as editor, opened `Staging Smoke Test`, added room `test` on Equipment/Rooms, confirmed `Unsaved Rooms draft restored` and the room row rendered in the live app. |
+| 01 | TB-04b | Complete | 2026-05-12 21:10 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed after simplify cleanup); local MCP protocol smoke against `http://127.0.0.1:8002/mcp/` using a project-scoped bearer token verified `list_projects`, `get_project`, `list_status_items`, and `get_document`; automated in-process MCP tests cover saved/draft `get_document`, `get_table`, read-token metadata shape, read-only `replace_table` structured rejection, and write-only token-scope rejection; Playwright dashboard cross-check at `http://127.0.0.1:5173/dashboard` showed the same `MCP Smoke Project` / `MCP-001` with no post-login console errors. |
+| 01 | TB-05 | Complete | 2026-05-13 08:48 EDT | `docker compose up -d db`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (43 passed); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 passed); `cd frontend && npm run build`; `make seed-dev-user`; `make e2e` passed with TB-05 browser path covering Rooms draft Save, Save As submitted/locked version, URL-scoped Open of the Working version, Lock, blocked locked edit, Project JSON and Rooms JSON downloads, and diff modal. In-app Browser at `http://127.0.0.1:5173/projects/745bfd13-fdc2-4884-81c4-d6bc5d5f62a7/status` showed the locked submitted version header controls and clean state; only console error was the expected pre-login `/auth/session` 401. |
+| 01 | TB-06 | Not started | 2026-05-12 | - |
+| 02 | TB-07 | Not started | 2026-05-12 | - |
+| 02 | TB-08 | Not started | 2026-05-12 | - |
+| 02 | TB-09 | Not started | 2026-05-12 | - |
+| 02 | TB-10 | Not started | 2026-05-12 | - |
+| 02 | TB-11 | Not started | 2026-05-12 | - |
+| 02 | TB-12 | Not started | 2026-05-12 | - |
+| 02 | TB-13 | Not started | 2026-05-12 | - |
+| 03 | TB-14 | Not started | 2026-05-12 | - |
+| 03 | TB-15 | Not started | 2026-05-12 | - |
+| 03 | TB-16 | Not started | 2026-05-12 | - |
+| 04 | TB-17 | Not started | 2026-05-12 | - |
+| 04 | TB-18 | Not started | 2026-05-12 | - |
+| 04 | TB-19 | Not started | 2026-05-12 | - |
 
 ## Lessons Learned Log
 
@@ -510,4 +518,18 @@ What did not work: Mounting the MCP sub-app under FastAPI without running the MC
 What worked: Store only token hash/prefix, return plaintext once, throttle `last_used_at` updates during token verification, and rehydrate the normal `ProjectAccess` object from the token's issuing user/project for read tools. Streamable HTTP plus stdio covers current local-client needs; legacy SSE stays deferred unless a concrete client requires it. Follow-up review tightened the slice by gating env-token auth to stdio, adding MCP URL env docs, adding in-process MCP tool tests, sharing the current document-view loader with REST, aligning the `replace_table` stub signature with the future write contract, and documenting the current FastMCP structured-error wire shape.
 Verification: `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed); `python -m scripts.smoke_mcp_read --url http://127.0.0.1:8002/mcp/ --token <project-scoped-token>`; MCP calls for `get_project`, `list_status_items`, `get_document`, `get_table`, and read-only `replace_table` rejection; Playwright dashboard check for `MCP Smoke Project` / `MCP-001`.
 Follow-up: Build the Project Settings token UI when the settings modal slice lands; TB-17 owns real MCP draft writes, save/discard, and edit lease UX; TB-06 owns read-safe-mode across REST, MCP, and frontend.
+```
+
+### TB-05
+
+```text
+Slice: TB-05
+Date: 2026-05-13
+What changed: Drafted the file-app lifecycle layer for Rooms: Save flushes the current draft into the open version, Save As creates a new active/default version, Discard deletes the current user's draft, Lock/Unlock update version metadata, saved project/table JSON downloads return attachments, and diff returns a structured per-table/path summary. The frontend project header now exposes version picker, URL-scoped Open, Save, Save As, Discard, Lock/Unlock, Project JSON, Rooms JSON, and a simple diff modal; locked versions freeze Rooms editing and point the user to Save As.
+Why: TB-04 created recoverable drafts but had no terminal persistence action. TB-05 makes the Rooms slice usable as an explicit-version workflow.
+What we tried: Service-layer-only saved-body writes, route-level lifecycle endpoints matching `api.md`, frontend TanStack Query invalidation after lifecycle mutations, URL-scoped open-version state rather than making Open mutate the project default, and a text diff modal instead of a side-by-side visual diff.
+What did not work: Initial local DB-backed verification could not run because Docker was not running; `docker compose up -d db` failed with "Cannot connect to the Docker daemon at unix:///Users/em/.docker/run/docker.sock." After Docker started, the first DB-backed project-document test run exposed a real diff-path mismatch: the backend returned `[rm_living]` instead of the intended `rooms[rm_living]`. The first two E2E reruns exposed loose locators for repeated `Open` buttons and the word `rooms`, both fixed in the test.
+What worked: Static backend checks and frontend checks passed. The saved-body write path stays narrow: repository helpers expose Save / Save As instead of a generic update-body API. Submitted/Closed Save As variants auto-lock. Save As from locked versions remains available and copies the existing draft when present, otherwise the saved body. Follow-up review fixed Open/default semantics, scoped Rooms query invalidation to the project, removed redundant table-download validation, added Unlock confirmation, made Save As uniqueness errors constraint-specific, and gave the diff modal a version-vs-version target.
+Verification: `docker compose up -d db`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (43 passed); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 passed); `cd frontend && npm run build`; `make seed-dev-user`; `make e2e`; in-app Browser opened the latest E2E project and confirmed the locked submitted version header controls, JSON links, and clean state.
+Follow-up: Defer the full Restore / Discard prompt, a dedicated draft-status endpoint for the header, and route-module ownership cleanup to TB-06/TB-06 prep.
 ```
