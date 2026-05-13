@@ -12,6 +12,7 @@ from features.project_status.models import StatusItemPublic
 from features.projects.models import ProjectSummary, ProjectVersionPublic
 
 McpScope = Literal["project:read", "project:write", "asset:read", "asset:write"]
+McpRecoverability = Literal["retry", "refresh", "reauthenticate", "forbidden", "fatal"]
 READ_ONLY_SCOPES: tuple[McpScope, ...] = ("project:read",)
 
 
@@ -139,5 +140,5 @@ class McpStructuredError(BaseModel):
     code: str
     message: str
     request_id: str
-    recoverability: Literal["retry", "refresh", "reauthenticate", "forbidden", "fatal"]
+    recoverability: McpRecoverability
     details: dict[str, object] = Field(default_factory=dict)

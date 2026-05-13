@@ -113,6 +113,13 @@ saved version body changes only via `draft/save` or `draft/save-as`.
 Import/admin scripts may call internal service functions, but there is
 no public whole-body `PUT /document` Save in v1.
 
+`/document/tables/{name}` and `/draft/tables/{name}` are generic route
+shapes, but table behavior is registry-owned. A supported table must be
+registered with payload validation, response serialization, document
+replacement, row extraction for downloads/MCP, and diff extraction.
+Unsupported names return structured `404 document_table_not_found` from
+the registry rather than a route-local special case.
+
 ### 9.5 Drafts (autosave / crash recovery)
 
 ```

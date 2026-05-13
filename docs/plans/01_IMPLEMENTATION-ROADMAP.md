@@ -114,13 +114,13 @@ historical tracer-bullet ledger and evidence trail.
 | Field | Plan |
 |---|---|
 | Type | AFK |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Resolve the project-document/table boundary issues that would otherwise be copied into later table work. |
 | References | `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`; `context/technical-requirements/data-model.md`; `context/technical-requirements/save-versioning.md`; `context/technical-requirements/api.md`. |
 | Includes | Split project-document workflow responsibilities; introduce the table-registry boundary; make unsupported table behavior registry-owned; preserve current public routes and behavior. |
 | Tests | Backend project-document tests; existing Rooms draft/save/version/download tests; MCP read smoke if touched. |
 | Browser check | Existing Rooms edit/save smoke still works if frontend behavior is touched. |
-| Lessons | Record the reusable boundary that the next table must follow. |
+| Lessons | Backend table behavior now goes through `features/project_document/tables/registry.py`; the next table should add a registered contract, not route/service branches. Registry iteration is deterministic by table name, and document body-size calculation lives with project-document validation helpers. |
 
 ### P1-02 - Document Summary And Header Decoupling
 
@@ -593,7 +593,7 @@ re-scoped in this roadmap.
 | 01 | TB-05 | Complete | 2026-05-13 08:48 EDT | `docker compose up -d db`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (43 passed); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 passed); `cd frontend && npm run build`; `make seed-dev-user`; `make e2e` passed with TB-05 browser path covering Rooms draft Save, Save As submitted/locked version, URL-scoped Open of the Working version, Lock, blocked locked edit, Project JSON and Rooms JSON downloads, and diff modal. In-app Browser at `http://127.0.0.1:5173/projects/745bfd13-fdc2-4884-81c4-d6bc5d5f62a7/status` showed the locked submitted version header controls and clean state; only console error was the expected pre-login `/auth/session` 401. |
 | 01 | TB-06 | Local complete; staging pending | 2026-05-13 10:51 EDT | Previous TB-06 local evidence still stands. P1-00 rerun and current staging blocker are recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md` G-01. |
 | P1 | P1-00 | Complete | 2026-05-13 11:20 EDT | Baseline matrix recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md`; local checks rerun; TB-06 staging blocker tracked as G-01 until staging credentials are available or staging is re-seeded. |
-| P1 | P1-01 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
+| P1 | P1-01 | Complete | 2026-05-13 11:39 EDT | Backend project-document service split; registered Rooms table contract added; unsupported table names fail through registry for REST and MCP; simplify cleanup moved body-size calculation to document helpers, made registry diff order deterministic, shared MCP HTTP error mapping, avoided full-document dump/validation on unchanged Rooms replacements, and removed duplicate saved-version loading from draft diff. Verified with `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (46 passed). |
 | P1 | P1-02 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
 | P1 | P1-03 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
 | P1 | P1-04 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
@@ -763,4 +763,18 @@ What did not work: The in-app Playwright MCP browser was locked by an existing `
 What worked: Accepted Rooms writes publish the new slice and `draft_etag` to sibling tabs through a stable `BroadcastChannel` subscription with a previous-ETag guard; out-of-order tab messages invalidate/refetch instead of overwriting newer cache. Tabs with no active Room modal adopt the server draft directly; tabs with an active Room edit freeze only when the active room row, deletion state, or referenced option changed, preserving the local in-memory edit until the user chooses to reload. Disjoint same-table writes can update the cached slice and continue. No-op Rooms replacements return the current slice without creating/touching a draft row. Backend table reads still reject invalid schemas, while Project JSON download returns the raw body for recovery.
 Verification: `make migrate`; `make seed-dev-user`; `make smoke`; `make lint`; `make test` (backend 45 passed, frontend 19 passed); `make typecheck`; `git diff --check`; `cd backend && uv run ruff check features/project_document/routes.py features/project_document/service.py tests/test_project_document.py`; `cd backend && uv run pytest tests/test_project_document.py` (15 passed); `cd frontend && npm run format:check`; `cd frontend && npm test -- --run src/features/equipment/lib.test.ts` (6 passed); `cd frontend && npm run build`; `cd frontend && npx playwright test tests/e2e/health.spec.ts --project=chromium` (2 passed). Staging browser check remains pending before TB-06 should be marked complete.
 Follow-up: Run the same two-tab stale-draft path on Render staging before checking TB-06 complete. The full workspace-level schema fallback banner/error-code contract, Restore / Discard prompt, and dedicated draft-status endpoint are still deferred; future non-Rooms document tables should reuse the same conflict boundary before adding merge UI.
+```
+
+### P1-01
+
+```text
+Slice: P1-01
+Date: 2026-05-13
+What changed: Split `features/project_document/service.py` into focused store, drafts, versions, diff, downloads, validation, audit, and table-contract modules. Added `features/project_document/tables/registry.py` with Rooms as the first registered table contract, routed REST plus MCP table reads through the registry, moved document body-size calculation into project-document validation helpers, made registered-table iteration deterministic by table name, shared MCP HTTP-to-tool-error mapping, avoided full-document dump/validation on unchanged Rooms replacements, and removed duplicate saved-version loading from draft diff.
+Why: The generic `/document/tables/{name}` and `/draft/tables/{name}` routes should be reusable before Phase 2 clones the Rooms tracer into more project-document tables.
+What we tried: Behavior-preserving backend refactor with a compatibility facade for existing imports, then focused REST/MCP regression tests before full backend gates.
+What did not work: The first split left a registry/Rooms circular import and type-check narrowing failures after 404 helpers. Moving `TableContract` to `tables/contracts.py` and marking the shared version-not-found helper as `NoReturn` fixed both.
+What worked: Keep route URLs and Rooms response shape stable, parse replace payloads inside the registered contract, and make unsupported names fail before payload parsing. Downloads, diff, MCP `get_table`, and draft replacement now use table contracts instead of route/service branches. Follow-up code review confirmed remaining findings are later-slice concerns; simplify pulled in the small body-size ownership, deterministic-order, MCP error-mapping, Rooms no-op/diff extraction, and duplicate-load cleanups.
+Verification: `cd backend && uv run ruff check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (46 passed). Focused preflight also ran `cd backend && uv run pytest tests/test_project_document.py tests/test_mcp.py` (21 passed).
+Follow-up: P1-02 should build document/header summary state on top of this boundary. The next editable project-document table should add a table contract under `features/project_document/tables/` and register it, not add new generic route branches. `RegisteredTableResponse = RoomsSliceResponse` remains intentionally deferred until OpenAPI/schema strategy or a second table makes the response-model decision concrete.
 ```

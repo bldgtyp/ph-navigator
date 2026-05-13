@@ -343,6 +343,29 @@ def test_public_viewer_can_read_rooms_but_not_write(
     assert write.json()["error_code"] == "not_authenticated"
 
 
+def test_unsupported_table_names_fail_through_registry(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    url = version_url(project_id, version_id)
+
+    saved = client.get(f"{url}/document/tables/windows")
+    draft = client.get(f"{url}/draft/tables/windows")
+    write = client.put(
+        f"{url}/draft/tables/windows",
+        headers={"Origin": ORIGIN, "If-Match-Version": "unused"},
+        json={"rows": []},
+    )
+    download = client.get(f"{url}/download/tables/windows")
+
+    for response in (saved, draft, write, download):
+        assert response.status_code == 404
+        body = response.json()
+        assert body["error_code"] == "document_table_not_found"
+        assert body["details"]["supported_tables"] == ["rooms"]
+
+
 def test_save_flushes_draft_to_version_and_clears_draft(
     clean_document_tables: None,
 ) -> None:

@@ -13,6 +13,7 @@ from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
 from features.project_document.document import ProjectDocumentProject, ProjectDocumentV1
+from features.project_document.validation import body_size_bytes
 from features.projects import repository
 from features.projects.models import (
     AccessMode,
@@ -25,10 +26,6 @@ from features.projects.models import (
     ProjectVersionPublic,
 )
 from features.shared.errors import api_error
-
-
-def body_size_bytes(body: ProjectDocumentV1) -> int:
-    return len(body.model_dump_json().encode("utf-8"))
 
 
 def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:

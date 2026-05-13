@@ -285,6 +285,17 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     assert table["source"] == "draft"
                     assert table["rows"][0]["name"] == "Living Room"
 
+                    missing_table_result = await session.call_tool(
+                        "get_table",
+                        {"project_id": project_id, "version_id": version_id, "table_name": "windows"},
+                    )
+                    assert missing_table_result.isError is True
+                    missing_table_error = json.loads(
+                        tool_text(missing_table_result).removeprefix("Error executing tool get_table: ")
+                    )
+                    assert missing_table_error["code"] == "document_table_not_found"
+                    assert missing_table_error["details"]["supported_tables"] == ["rooms"]
+
                     rejection = await session.call_tool(
                         "replace_table",
                         {"project_id": project_id, "version_id": version_id, "table_name": "rooms", "rows": []},

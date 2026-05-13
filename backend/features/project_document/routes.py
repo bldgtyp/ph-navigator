@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
@@ -12,25 +12,24 @@ from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     DiscardDraftResponse,
     ProjectDiffResponse,
-    RoomsSliceReplaceRequest,
-    RoomsSliceResponse,
     SaveAsDraftRequest,
     SaveDraftResponse,
     VersionPatchRequest,
 )
 from features.project_document.service import (
     discard_draft,
-    get_draft_rooms_slice,
+    get_draft_table_slice,
     get_project_diff,
     get_raw_saved_document,
     get_saved_document,
-    get_saved_rooms_slice,
+    get_saved_table_slice,
     patch_version,
-    replace_rooms_slice,
-    require_rooms_table,
+    replace_table_slice,
     save_draft,
     save_draft_as,
+    table_download_body,
 )
+from features.project_document.tables import RegisteredTableResponse
 from features.projects.access import (
     ProjectAccess,
     require_project_edit_access,
@@ -55,38 +54,36 @@ def get_document(
     return get_saved_document(version_id, access)
 
 
-@router.get("/document/tables/{table_name}", response_model=RoomsSliceResponse)
+@router.get("/document/tables/{table_name}", response_model=RegisteredTableResponse)
 def get_saved_table(
     version_id: UUID,
     table_name: str,
     access: ProjectViewAccess,
-) -> RoomsSliceResponse:
-    require_rooms_table(table_name)
-    return get_saved_rooms_slice(version_id, access)
+) -> Any:
+    return get_saved_table_slice(version_id, table_name, access)
 
 
-@router.get("/draft/tables/{table_name}", response_model=RoomsSliceResponse)
+@router.get("/draft/tables/{table_name}", response_model=RegisteredTableResponse)
 def get_draft_table(
     version_id: UUID,
     table_name: str,
     access: ProjectEditAccess,
-) -> RoomsSliceResponse:
-    require_rooms_table(table_name)
-    return get_draft_rooms_slice(version_id, access)
+) -> Any:
+    return get_draft_table_slice(version_id, table_name, access)
 
 
-@router.put("/draft/tables/{table_name}", response_model=RoomsSliceResponse)
+@router.put("/draft/tables/{table_name}", response_model=RegisteredTableResponse)
 def put_draft_table(
     version_id: UUID,
     table_name: str,
-    payload: RoomsSliceReplaceRequest,
+    payload: dict[str, Any],
     access: ProjectEditAccess,
     if_match: Annotated[str | None, Header()] = None,
     if_match_version: Annotated[str | None, Header()] = None,
-) -> RoomsSliceResponse:
-    require_rooms_table(table_name)
-    return replace_rooms_slice(
+) -> Any:
+    return replace_table_slice(
         version_id,
+        table_name,
         payload,
         access,
         if_match=if_match,
@@ -147,9 +144,7 @@ def download_table(
     table_name: str,
     access: ProjectViewAccess,
 ) -> Response:
-    require_rooms_table(table_name)
-    document = get_saved_document(version_id, access)
-    content = [room.model_dump(mode="json") for room in document.tables.rooms]
+    content = table_download_body(version_id, table_name, access)
     return json_download_response(json.dumps(content, separators=(",", ":")), f"{table_name}-{version_id}.json")
 
 

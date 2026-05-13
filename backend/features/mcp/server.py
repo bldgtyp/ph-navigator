@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Literal, NoReturn
+from typing import NoReturn
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -19,6 +19,7 @@ from features.mcp.models import (
     McpDocumentEnvelope,
     McpProjectEnvelope,
     McpProjectListEnvelope,
+    McpRecoverability,
     McpScope,
     McpStatusItemListEnvelope,
     McpStructuredError,
@@ -35,6 +36,7 @@ from features.mcp.service import (
 )
 from features.project_document.models import ProjectDocumentView
 from features.project_document.service import get_current_document_view
+from features.project_document.tables import TableContract, get_table_contract
 from features.project_status.service import list_project_status_items
 from features.projects.access import ProjectAccess
 from features.projects.models import ProjectSummary
@@ -127,11 +129,8 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         parsed_version_id = parse_uuid(version_id, "version_id", ctx)
         token = current_token(ctx, allow_env_token)
         access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
+        contract = table_contract_or_error(table_name, ctx)
         document = current_document_view_or_error(parsed_version_id, access, ctx)
-        table_payload = document.body.tables.model_dump(mode="json", include={table_name})
-        rows = table_payload.get(table_name)
-        if not isinstance(rows, list):
-            raise_mcp_error("document_table_not_found", "Document table not found.", "refresh", ctx)
         return McpTableEnvelope(
             project_id=document.project_id,
             version_id=document.version_id,
@@ -139,7 +138,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
             version_body_etag=document.version_etag,
             draft_etag=document.draft_etag,
             table_name=table_name,
-            rows=rows,
+            rows=contract.extract_rows(document.body),
         )
 
     @mcp.tool()
@@ -228,23 +227,55 @@ def current_document_view_or_error(version_id: UUID, access: ProjectAccess, ctx:
     try:
         return get_current_document_view(version_id, access)
     except HTTPException as exc:
-        detail = exc.detail if isinstance(exc.detail, dict) else {}
-        code = str(detail.get("error_code", "project_document_error"))
-        message = str(detail.get("message", "Project document could not be loaded."))
-        details = detail.get("details", {})
-        raise_mcp_error(
-            code,
-            message,
-            "refresh" if code == "project_version_not_found" else "fatal",
+        raise_http_exception_as_mcp_error(
+            exc,
             ctx,
-            details if isinstance(details, dict) else {},
+            default_code="project_document_error",
+            default_message="Project document could not be loaded.",
+            default_recoverability="fatal",
+            recoverability_by_code={"project_version_not_found": "refresh"},
         )
+
+
+def table_contract_or_error(table_name: str, ctx: Context) -> TableContract:
+    try:
+        return get_table_contract(table_name)
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="document_table_not_found",
+            default_message="Document table not found.",
+            default_recoverability="refresh",
+        )
+
+
+def raise_http_exception_as_mcp_error(
+    exc: HTTPException,
+    ctx: Context,
+    default_code: str,
+    default_message: str,
+    default_recoverability: McpRecoverability,
+    recoverability_by_code: dict[str, McpRecoverability] | None = None,
+) -> NoReturn:
+    detail = exc.detail if isinstance(exc.detail, dict) else {}
+    code = str(detail.get("error_code", default_code))
+    message = str(detail.get("message", default_message))
+    details = detail.get("details", {})
+    recoverability = (recoverability_by_code or {}).get(code, default_recoverability)
+    raise_mcp_error(
+        code,
+        message,
+        recoverability,
+        ctx,
+        details if isinstance(details, dict) else {},
+    )
 
 
 def raise_mcp_error(
     code: str,
     message: str,
-    recoverability: Literal["retry", "refresh", "reauthenticate", "forbidden", "fatal"],
+    recoverability: McpRecoverability,
     ctx: Context,
     details: dict[str, object] | None = None,
 ) -> NoReturn:

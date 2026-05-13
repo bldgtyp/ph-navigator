@@ -430,6 +430,13 @@ Properties of the document shape:
   thermal_bridges, equipment, manufacturer_filters, ... }`.
   New table types plug in by adding to `tables`. Per-table JSON
   download is a slice of this shape.
+- **Registered table contracts.** Generic saved/draft table routes are
+  backed by `backend/features/project_document/tables/registry.py`.
+  Each editable table adds one registered contract that owns payload
+  validation, response serialization, document replacement, row
+  extraction for downloads/MCP, and diff extraction. Unsupported table
+  names fail through the registry with `document_table_not_found`; they
+  are not handled by per-route branches.
 - **User-defined column options live alongside data**
   (V2 NEW per US-Builder-Tables criteria 16–17). Single-select
   columns (e.g. `rooms.floor_level`, `rooms.building_zone`,
@@ -464,10 +471,11 @@ Properties of the document shape:
 ### 6.3 Project-scoped non-catalog tables
 
 Rooms, fans, pumps, ERVs, and similar live entirely inside the document.
-No relational shadow. Schema for each table is defined in
-`backend/features/project/document/tables/` as a Pydantic model. Adding
-a new table type is a code change (Pydantic model + frontend column
-config), not a schema migration.
+No relational shadow. Schema and route behavior for each table are
+defined under `backend/features/project_document/tables/` as a
+registered Pydantic-backed contract. Adding a new table type is a code
+change (table contract + frontend column config), not a schema
+migration or a new route/service branch.
 
 For tables with a corresponding global catalog (fans, pumps, ERVs), the
 "add row" UI offers two paths: pick from catalog (copies values in) or
