@@ -37,11 +37,11 @@ Generated contact sheets for this review:
 
 | Section | Contact sheet |
 |---|---|
-| Landing / Status | `docs/plans/2026-05-12/assets/v1-landing-contact-sheet.jpg` |
-| Aperture builder | `docs/plans/2026-05-12/assets/v1-aperture-builder-contact-sheet.jpg` |
-| Assembly builder | `docs/plans/2026-05-12/assets/v1-assembly-builder-contact-sheet.jpg` |
-| Equipment table views | `docs/plans/2026-05-12/assets/v1-table-views-contact-sheet.jpg` |
-| HBJSON viewer | `docs/plans/2026-05-12/assets/v1-hbjson-viewer-contact-sheet.jpg` |
+| Landing / Status | `docs/code-reviews/2026-05-12/assets/v1-landing-contact-sheet.jpg` |
+| Aperture builder | `docs/code-reviews/2026-05-12/assets/v1-aperture-builder-contact-sheet.jpg` |
+| Assembly builder | `docs/code-reviews/2026-05-12/assets/v1-assembly-builder-contact-sheet.jpg` |
+| Equipment table views | `docs/code-reviews/2026-05-12/assets/v1-table-views-contact-sheet.jpg` |
+| HBJSON viewer | `docs/code-reviews/2026-05-12/assets/v1-hbjson-viewer-contact-sheet.jpg` |
 
 Screens reviewed:
 

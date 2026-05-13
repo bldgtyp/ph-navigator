@@ -101,13 +101,13 @@ historical tracer-bullet ledger and evidence trail.
 | Field | Plan |
 |---|---|
 | Type | AFK |
-| Status | [ ] Not started |
+| Status | [x] Complete |
 | Goal | Establish the current Phase 1 gap matrix before changing code. |
-| References | `docs/plans/2026-05-13/phase-1-full-buildout-plan.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`; `context/TECHNICAL_REQUIREMENTS.md`; `context/USER_STORIES.md`. |
+| References | `docs/plans/2026-05-13/phase-1-full-buildout-plan.md`; `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`; `context/TECHNICAL_REQUIREMENTS.md`; `context/USER_STORIES.md`. |
 | Includes | Rerun current local smoke/test path; resolve TB-06 staging status; inventory Phase 1 user-story and technical-requirement gaps; classify each gap as now/deferred/later. |
 | Tests | Existing local checks only; this is an inventory slice. |
-| Browser check | TB-06 staging browser path is either completed or the blocker is recorded. |
-| Lessons | Record the accepted Phase 1 scope and any deliberate deferrals before implementation resumes. |
+| Browser check | Blocked; see G-01 in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md`. |
+| Lessons | Accepted Phase 1 scope and gap classifications live in the baseline matrix; implementation should resume at P1-01. |
 
 ### P1-01 - Code-Review P0 Architecture Close-Out
 
@@ -339,7 +339,7 @@ historical tracer-bullet ledger and evidence trail.
 | Type | AFK |
 | Status | [x] Complete |
 | Goal | Align the frontend with the feature-first/TanStack Query shape before TB-04 adds document-editing server state. |
-| References | `context/CODING_STANDARDS.md` (frontend shape/server state); `context/TECH_STACK.md`; `docs/plans/2026-05-12/tb-03-code-review.md` (H1/M4/M5/M6). |
+| References | `context/CODING_STANDARDS.md` (frontend shape/server state); `context/TECH_STACK.md`; `docs/code-reviews/2026-05-12/tb-03-code-review.md` (H1/M4/M5/M6). |
 | Includes | `QueryClientProvider` and query defaults; feature-local API/types/hooks for project shell and project status; split `StatusTab` into route, components, and shared helpers; shared local-calendar date formatter; pure helper tests for status state cycle, order-index movement, and date-only formatting. |
 | Tests | `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test`; `cd frontend && npm run build`; targeted browser smoke for dashboard -> Status tab load and template display. |
 | Browser check | Open a project Status tab as editor and public viewer after the split; confirm the existing status happy path still renders with no console warnings/errors. |
@@ -591,8 +591,8 @@ re-scoped in this roadmap.
 | 01 | TB-04 | Complete | 2026-05-12 19:24 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest`; `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 tests); `cd frontend && npm run build`; `make e2e` against fresh local API `:8001` via Vite proxy `:5173` passed for Status plus Rooms draft add/reload. Staging Render verification: signed in as editor, opened `Staging Smoke Test`, added room `test` on Equipment/Rooms, confirmed `Unsaved Rooms draft restored` and the room row rendered in the live app. |
 | 01 | TB-04b | Complete | 2026-05-12 21:10 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed after simplify cleanup); local MCP protocol smoke against `http://127.0.0.1:8002/mcp/` using a project-scoped bearer token verified `list_projects`, `get_project`, `list_status_items`, and `get_document`; automated in-process MCP tests cover saved/draft `get_document`, `get_table`, read-token metadata shape, read-only `replace_table` structured rejection, and write-only token-scope rejection; Playwright dashboard cross-check at `http://127.0.0.1:5173/dashboard` showed the same `MCP Smoke Project` / `MCP-001` with no post-login console errors. |
 | 01 | TB-05 | Complete | 2026-05-13 08:48 EDT | `docker compose up -d db`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (43 passed); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 passed); `cd frontend && npm run build`; `make seed-dev-user`; `make e2e` passed with TB-05 browser path covering Rooms draft Save, Save As submitted/locked version, URL-scoped Open of the Working version, Lock, blocked locked edit, Project JSON and Rooms JSON downloads, and diff modal. In-app Browser at `http://127.0.0.1:5173/projects/745bfd13-fdc2-4884-81c4-d6bc5d5f62a7/status` showed the locked submitted version header controls and clean state; only console error was the expected pre-login `/auth/session` 401. |
-| 01 | TB-06 | Local complete; staging pending | 2026-05-13 09:44 EDT | `make migrate`; `make seed-dev-user`; `make smoke`; `make lint`; `make test` (backend 45 passed, frontend 19 passed); `make typecheck`; `git diff --check`; `cd backend && uv run ruff check features/project_document/routes.py features/project_document/service.py tests/test_project_document.py`; `cd backend && uv run pytest tests/test_project_document.py` (15 passed); `cd frontend && npm run format:check`; `cd frontend && npm test -- --run src/features/equipment/lib.test.ts` (6 passed); `cd frontend && npm run build`; `cd frontend && npx playwright test tests/e2e/health.spec.ts --project=chromium` (2 passed, one worker via serial mode). Local browser path verified two same-editor tabs: disjoint remote room add continued without freezing, same-room remote edit froze the active modal, reload was explicit, and the merged server draft rendered without silent overwrite. Staging browser check still pending. |
-| P1 | P1-00 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| 01 | TB-06 | Local complete; staging pending | 2026-05-13 10:51 EDT | Previous TB-06 local evidence still stands. P1-00 rerun and current staging blocker are recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md` G-01. |
+| P1 | P1-00 | Complete | 2026-05-13 11:20 EDT | Baseline matrix recorded in `docs/plans/2026-05-13/phase-1-baseline-gap-matrix.md`; local checks rerun; TB-06 staging blocker tracked as G-01 until staging credentials are available or staging is re-seeded. |
 | P1 | P1-01 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
 | P1 | P1-02 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
 | P1 | P1-03 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
