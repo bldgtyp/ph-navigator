@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { emptyViewState } from "../../../shared/ui/data-table";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomModal } from "../components/RoomModal";
@@ -25,6 +26,7 @@ const DELETE_CONFLICT_MESSAGE =
 export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
+  const [roomsTableView, setRoomsTableView] = useState(emptyViewState);
   const [actionError, setActionError] = useState<string | null>(null);
   const [draftConflictReason, setDraftConflictReason] = useState<string | null>(null);
   const isEditor = project.access_mode === "editor";
@@ -195,6 +197,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         roomsSlice={roomsSlice}
         isEditor={canEdit}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
+        view={roomsTableView}
+        onViewChange={setRoomsTableView}
       />
       {roomModal?.mode === "edit" && isEditor && !isLocked ? (
         <div className="room-actions">
