@@ -6,7 +6,8 @@ AUTHOR: Ed May (with Codex)
 SCOPE: Vertical-slice implementation plan for PH-Navigator V2 MVP.
 RELATED: context/README.md, context/PRD.md, context/TECH_STACK.md,
          context/ENVIRONMENT.md, context/USER_STORIES.md,
-         context/technical-requirements/
+         context/technical-requirements/,
+         docs/plans/2026-05-13/phase-1-full-buildout-plan.md
 ---
 
 # PH-Navigator V2 - Implementation Roadmap
@@ -17,6 +18,12 @@ Use this as the active execution tracker for PH-Navigator V2. The PRD
 and technical requirements remain the source of truth for product and
 architecture. This file sequences the work into thin tracer-bullet
 slices that can be built, tested, and verified in the browser.
+
+The Phase 1 tracer bullets have a separate close-out / full-buildout
+planning artifact:
+`docs/plans/2026-05-13/phase-1-full-buildout-plan.md`. Keep TB-00
+through TB-06 below as historical tracer evidence, then add accepted
+Phase 1 full-buildout slices here as they are scheduled.
 
 ## How To Use This Plan
 
@@ -80,7 +87,198 @@ Resolve these at the named slice, not all up front:
 | Multi-editor concurrency scope | TB-06 | MVP supports single-active-editor per project; Rooms same-editor tabs use table-slice broadcast with row-scoped freeze for overlapping active edits; generalized cross-table/cross-editor conflict UX deferred to v1.1 |
 | HBJSON file-size cap | TB-14 | Start with 50 MB unless real files exceed it |
 
-## Tracer-Bullet Slices [Phase 1 - Table Pages]
+## Phase 1 Full Build-Out
+
+Accepted plan:
+`docs/plans/2026-05-13/phase-1-full-buildout-plan.md`.
+
+These slices close out the Phase 1 tracer-bullet debt before Phase 2
+catalog/builder work begins. TB-00 through TB-06 remain below as the
+historical tracer-bullet ledger and evidence trail.
+
+### P1-00 - Phase 1 Baseline And Gap Matrix
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Establish the current Phase 1 gap matrix before changing code. |
+| References | `docs/plans/2026-05-13/phase-1-full-buildout-plan.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`; `context/TECHNICAL_REQUIREMENTS.md`; `context/USER_STORIES.md`. |
+| Includes | Rerun current local smoke/test path; resolve TB-06 staging status; inventory Phase 1 user-story and technical-requirement gaps; classify each gap as now/deferred/later. |
+| Tests | Existing local checks only; this is an inventory slice. |
+| Browser check | TB-06 staging browser path is either completed or the blocker is recorded. |
+| Lessons | Record the accepted Phase 1 scope and any deliberate deferrals before implementation resumes. |
+
+### P1-01 - Code-Review P0 Architecture Close-Out
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Resolve the project-document/table boundary issues that would otherwise be copied into later table work. |
+| References | `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`; `context/technical-requirements/data-model.md`; `context/technical-requirements/save-versioning.md`; `context/technical-requirements/api.md`. |
+| Includes | Split project-document workflow responsibilities; introduce the table-registry boundary; make unsupported table behavior registry-owned; preserve current public routes and behavior. |
+| Tests | Backend project-document tests; existing Rooms draft/save/version/download tests; MCP read smoke if touched. |
+| Browser check | Existing Rooms edit/save smoke still works if frontend behavior is touched. |
+| Lessons | Record the reusable boundary that the next table must follow. |
+
+### P1-02 - Document Summary And Header Decoupling
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Make project header/version chrome table-neutral. |
+| References | `context/user-stories/00-foundation-shell.md`; `context/technical-requirements/save-versioning.md`; `context/technical-requirements/frontend-viewer-units.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`. |
+| Includes | Document-level draft summary state; table-neutral Save, Save As, Discard, Lock/Unlock, diff, and dirty/clean indicators; remove direct Rooms/Equipment coupling from project shell controls. |
+| Tests | Backend draft-summary behavior; frontend header states for clean, dirty, locked, Viewer, and public read. |
+| Browser check | Edit Rooms, confirm header detects draft, Save/Discard works, lock/read-only states remain clear. |
+| Lessons | Record the table-neutral document chrome contract. |
+
+### P1-03 - Read-Safe-Mode Completion
+
+| Field | Plan |
+|---|---|
+| Type | HITL for acceptance-scope decision if full fallback is larger than expected |
+| Status | [ ] Not started |
+| Goal | Close or explicitly re-scope the older/invalid document recovery story. |
+| References | `context/user-stories/00-foundation-shell.md` (US-Errors-SchemaFallback); `context/technical-requirements/llm-mcp-schema.md`; `docs/code-reviews/2026-05-13/phase-1-code-review-synthesis.md`. |
+| Includes | Decide full read-safe envelope vs download-only recovery; implement or document the accepted Phase 1 behavior; ensure raw JSON remains recoverable. |
+| Tests | Invalid/unsupported saved body test; frontend recovery-state test if UI lands. |
+| Browser check | Opening an invalid/unsupported version renders a recoverable read-only path or the roadmap records the explicit deferral. |
+| Lessons | Record the schema-fallback decision before broader document tables ship. |
+
+### P1-04 - BLDGTYP Design-System Foundation
+
+| Field | Plan |
+|---|---|
+| Type | AFK; design review if the visual direction is uncertain |
+| Status | [ ] Not started |
+| Goal | Move the Phase 1 app from scaffold styling to the BLDGTYP V2 product language. |
+| References | `context/UI_UX.md`; BLDGTYP branding tokens; `context/technical-requirements/stack-auth-migration.md`. |
+| Includes | Tailwind/shadcn token alignment; fonts; shared app primitives for buttons, dialogs, popovers, toasts, tabs, table chrome, badges, banners, and empty states; project shell polish. |
+| Tests | Frontend lint/format/build; targeted tests only for non-trivial state. |
+| Browser check | Desktop and narrow-tablet screenshots for sign-in, dashboard, project shell, Status, Equipment/Rooms, settings, and version dialogs show consistent styling with no broken layout. |
+| Lessons | Record token/component decisions so later feature slices do not restart styling. |
+
+### P1-05 - Dashboard And Project Shell Completion
+
+| Field | Plan |
+|---|---|
+| Type | HITL only if pin/reorder is re-scoped |
+| Status | [ ] Not started |
+| Goal | Finish the Phase 1 shell stories enough that later tabs land inside a stable frame. |
+| References | `context/user-stories/00-foundation-shell.md`; `context/UI_UX.md`; `context/technical-requirements/api.md`. |
+| Includes | Dashboard row metadata; New Project modal polish; Catalogs dropdown routing without full catalog management; workspace header, breadcrumbs, tab routing, Viewer/read-only separation; no AirTable affordance. |
+| Tests | Project create/list/open contracts; frontend route/header behavior; write rejection for Viewer/public mode. |
+| Browser check | Sign in, create/open project, navigate tabs, return dashboard, reopen same URL as Viewer on local and staging. |
+| Lessons | Record any dashboard pin/reorder or shell-scope deferrals. |
+
+### P1-06 - Status Tab Full MVP
+
+| Field | Plan |
+|---|---|
+| Type | HITL only if drag reorder remains deferred |
+| Status | [ ] Not started |
+| Goal | Move Status from tracer feature to complete Phase 1 workflow. |
+| References | `context/user-stories/00-foundation-shell.md` (US-Status); `context/UI_UX.md` (Status tab); `context/technical-requirements/data-model.md`. |
+| Includes | Empty state; populated vertical timeline; current-step visual; add/edit/delete/state/date/description behavior; Markdown decision; reorder decision; public Viewer rendering; MCP-readable status posture. |
+| Tests | Status API transitions; date behavior; reorder; frontend state helpers where non-trivial. |
+| Browser check | Empty state, template apply, edit, reorder, delete, Viewer read-only, and current-step visual on local and staging. |
+| Lessons | Record Status MVP criteria checked off and any deliberate deferrals. |
+
+### P1-07 - Project Settings And MCP Token UI
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Make settings and MCP token administration user-accessible. |
+| References | `context/user-stories/50-settings-ops-llm.md`; `context/technical-requirements/llm-mcp-schema.md`; `context/technical-requirements/stack-auth-migration.md`; `context/UI_UX.md`. |
+| Includes | Project Settings modal; editable Phase 1 metadata; MCP token issue/list/revoke UI; one-time token display; revoked-token feedback; no project delete in settings. |
+| Tests | Settings metadata behavior; token issue/list/revoke; revoked token rejection; Viewer access rejection. |
+| Browser check | Editor issues and revokes a token from Settings; Viewer cannot open Settings; revoked token fails on next MCP request. |
+| Lessons | Record settings/token UX decisions before MCP write work. |
+
+### P1-08 - Shared DataTable Extraction
+
+| Field | Plan |
+|---|---|
+| Type | AFK; design review if POC parity regresses |
+| Status | [ ] Not started |
+| Goal | Replace the tracer table with the real reusable table primitive. |
+| References | `context/technical-requirements/data-table.md`; `context/user-stories/30-tables-equipment.md`; `context/UI_UX.md` §1.7; `research/poc-plans/grid-spike-results.md`; `research/poc-plans/poc-evaluation.md`; `research/poc-plans/poc-lessons-for-real-build.md`. |
+| Includes | TanStack/shadcn table path; stable row-id state; keyboard navigation; frozen identifier column; row gutter; selection/copy/paste; stacked sort/filter/group; read-only mode; a11y baseline. |
+| Tests | Targeted helper tests for brittle POC behaviors: selection, copy/paste planning, coercion, toolbar state, and read-only behavior. |
+| Browser check | Compare extracted table against POC workflows: selection/copy, paste with overflow, single-select paste, grouping/sorting, and fill/undo if included. |
+| Lessons | Record any intentional POC behavior cuts before Rooms migrates. |
+
+### P1-09 - Single-Select Field And Option Manager
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Finish the user-defined single-select behavior Rooms depends on. |
+| References | `context/user-stories/30-tables-equipment.md` (US-Builder-Tables criteria 16-17); `context/technical-requirements/data-table.md`; `research/poc-plans/poc-evaluation.md`. |
+| Includes | Shared single-select field display/edit/paste/sort/filter behavior; option colors; duplicate prevention; missing-option warnings; header option manager for rename, reorder, recolor, delete, and merge/replace decisions. |
+| Tests | Option validation; paste match/create; option-order sorting; missing-option recovery; delete/merge impact behavior. |
+| Browser check | Rooms floor/building-zone options can be created, pasted, reordered, recolored, and used for sorting without data loss. |
+| Lessons | Record the table field behavior pattern for future tables. |
+
+### P1-10 - Rooms Full MVP On Shared DataTable
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Complete US-EQ-2 on top of the shared table path. |
+| References | `context/user-stories/30-tables-equipment.md` (US-EQ-2); `context/technical-requirements/data-model.md`; `context/technical-requirements/save-versioning.md`; `context/technical-requirements/data-table.md`. |
+| Includes | Default Rooms columns; validation; natural sort; add row; row-detail modal; inline edit where appropriate; delete; notes; JSON download; locked/Viewer behavior; iCFA factor handling; explicit no-sync-from-HBJSON posture. |
+| Tests | Rooms validation; number uniqueness; single-select references; JSON download; locked/public write rejection. |
+| Browser check | Rooms edit/save/save-as/discard/lock/download/diff flows still work after migrating off the stub; Viewer can sort/filter/copy without edit affordances. |
+| Lessons | Record the first complete project-document table pattern. |
+
+### P1-11 - Draft, Version, And Concurrency UX Completion
+
+| Field | Plan |
+|---|---|
+| Type | AFK |
+| Status | [ ] Not started |
+| Goal | Make the file-app lifecycle safe enough for real Phase 1 use. |
+| References | `context/technical-requirements/save-versioning.md`; `context/user-stories/00-foundation-shell.md` (US-Concurrency); `context/technical-requirements/frontend-viewer-units.md`. |
+| Includes | Restore/discard prompt; dirty-draft prompt before version switch; beforeunload warning; stale ETag conflict UI; generalized same-editor tab conflict behavior; live lock downgrade; local undo invalidation rules. |
+| Tests | Draft restore/discard; version-switch prompt; stale write; lock with open draft; same-editor tab conflict behavior. |
+| Browser check | Two tabs, locked version, stale write, restore, and discard paths preserve local edits until the user chooses. |
+| Lessons | Record the reusable concurrency UX before MCP writes. |
+
+### P1-12 - Diff, Downloads, Schemas, And API Docs Baseline
+
+| Field | Plan |
+|---|---|
+| Type | HITL if OpenAPI/schema timing is explicitly deferred |
+| Status | [ ] Not started |
+| Goal | Finish the inspectability surface expected by Phase 1. |
+| References | `context/technical-requirements/api.md`; `context/technical-requirements/llm-mcp-schema.md`; `context/technical-requirements/save-versioning.md`; `context/user-stories/00-foundation-shell.md` (US-Versions-Lifecycle). |
+| Includes | Project/table JSON downloads across normal and recovery states; version-vs-version and version-vs-draft diff UX at the planned stub level; OpenAPI and project/table schema baseline or explicit deferral; request-id/structured-error visibility. |
+| Tests | Download validation; diff behavior; schema/OpenAPI endpoint checks if included; structured error/request-id checks. |
+| Browser check | Download raw project JSON, table JSON, and open a useful diff from normal and recovery states. |
+| Lessons | Record schema/OpenAPI readiness before MCP write tools. |
+
+### P1-13 - Phase 1 Hardening, Docs, And Release Gate
+
+| Field | Plan |
+|---|---|
+| Type | AFK with HITL for final scope acceptance |
+| Status | [ ] Not started |
+| Goal | Mark Phase 1 done with evidence. |
+| References | `docs/plans/2026-05-13/phase-1-full-buildout-plan.md`; `context/README.md`; `context/TECHNICAL_REQUIREMENTS.md`; `context/USER_STORIES.md`; `context/UI_UX.md`. |
+| Includes | Complete requirements matrix; update roadmap ledger; focused docs-pass; move unresolved questions to the open-question router or later roadmap slices. |
+| Tests | `make lint`; `make typecheck`; `make test`; `make e2e`; staging browser smoke for all Phase 1 paths. |
+| Browser check | Full Phase 1 staging smoke: sign in, dashboard, project shell, Status, Settings/token UI, Rooms table, Save/Save As/Discard/Lock, public Viewer, downloads/diff/recovery if included. |
+| Lessons | Record final Phase 1 evidence and remaining post-MVP work. |
+
+## Historical Tracer-Bullet Slices [Phase 1 - Table Pages]
 
 ### TB-00 - Bootable App Health Tracer
 
@@ -201,6 +399,11 @@ Resolve these at the named slice, not all up front:
 
 
 ## Tracer-Bullet Slices [Phase 2 - Builder Pages]
+
+Phase 2 is gated. Do not start TB-07 catalog work until P1-01, P1-02,
+P1-03, and the DataTable extraction gate (P1-08, or an explicit
+re-scope of that gate) have either landed or been intentionally
+re-scoped in this roadmap.
 
 ### TB-07 - Catalog Manager Tracer
 
@@ -389,6 +592,20 @@ Resolve these at the named slice, not all up front:
 | 01 | TB-04b | Complete | 2026-05-12 21:10 EDT | `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (35 passed after simplify cleanup); local MCP protocol smoke against `http://127.0.0.1:8002/mcp/` using a project-scoped bearer token verified `list_projects`, `get_project`, `list_status_items`, and `get_document`; automated in-process MCP tests cover saved/draft `get_document`, `get_table`, read-token metadata shape, read-only `replace_table` structured rejection, and write-only token-scope rejection; Playwright dashboard cross-check at `http://127.0.0.1:5173/dashboard` showed the same `MCP Smoke Project` / `MCP-001` with no post-login console errors. |
 | 01 | TB-05 | Complete | 2026-05-13 08:48 EDT | `docker compose up -d db`; `make migrate`; `cd backend && uv run ruff check .`; `cd backend && uv run ruff format --check .`; `cd backend && uv run ty check`; `cd backend && uv run pytest` (43 passed); `cd frontend && npm run lint`; `cd frontend && npm run format:check`; `cd frontend && npm test` (17 passed); `cd frontend && npm run build`; `make seed-dev-user`; `make e2e` passed with TB-05 browser path covering Rooms draft Save, Save As submitted/locked version, URL-scoped Open of the Working version, Lock, blocked locked edit, Project JSON and Rooms JSON downloads, and diff modal. In-app Browser at `http://127.0.0.1:5173/projects/745bfd13-fdc2-4884-81c4-d6bc5d5f62a7/status` showed the locked submitted version header controls and clean state; only console error was the expected pre-login `/auth/session` 401. |
 | 01 | TB-06 | Local complete; staging pending | 2026-05-13 09:44 EDT | `make migrate`; `make seed-dev-user`; `make smoke`; `make lint`; `make test` (backend 45 passed, frontend 19 passed); `make typecheck`; `git diff --check`; `cd backend && uv run ruff check features/project_document/routes.py features/project_document/service.py tests/test_project_document.py`; `cd backend && uv run pytest tests/test_project_document.py` (15 passed); `cd frontend && npm run format:check`; `cd frontend && npm test -- --run src/features/equipment/lib.test.ts` (6 passed); `cd frontend && npm run build`; `cd frontend && npx playwright test tests/e2e/health.spec.ts --project=chromium` (2 passed, one worker via serial mode). Local browser path verified two same-editor tabs: disjoint remote room add continued without freezing, same-room remote edit froze the active modal, reload was explicit, and the merged server draft rendered without silent overwrite. Staging browser check still pending. |
+| P1 | P1-00 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-01 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
+| P1 | P1-02 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
+| P1 | P1-03 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; required before TB-07. |
+| P1 | P1-04 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-05 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-06 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-07 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-08 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice; DataTable extraction gate required before TB-07 unless explicitly re-scoped. |
+| P1 | P1-09 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-10 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-11 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-12 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
+| P1 | P1-13 | Not started | 2026-05-13 | Accepted Phase 1 full-buildout slice. |
 | 02 | TB-07 | Not started | 2026-05-12 | - |
 | 02 | TB-08 | Not started | 2026-05-12 | - |
 | 02 | TB-09 | Not started | 2026-05-12 | - |
