@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "../project_document/hooks";
-import { markLocalDraftTouched } from "../project_document/lib";
-import { fetchRoomsSlice, replaceRoomsSlice } from "./api";
-import { ROOMS_TABLE_NAME, type RoomsReplacePayload, type RoomsSlice } from "./types";
+import { useQueryClient } from "@tanstack/react-query";
+import { projectDocumentQueryKeys } from "../project_document/hooks";
+import { type TableSliceVersionGuard } from "../project_document/table-slice";
+import { roomsSliceFeature } from "./api";
+import { type RoomsSlice } from "./types";
 
 const ROOMS_DRAFT_CHANNEL = "phn-rooms-draft-v1";
 
@@ -11,64 +11,14 @@ type RoomsDraftBroadcastMessage = {
   type: "rooms-slice-accepted";
   projectId: string;
   versionId: string;
-  previous: RoomsSliceVersionGuard;
+  previous: TableSliceVersionGuard;
   slice: RoomsSlice;
 };
 
-type RoomsSliceVersionGuard = {
-  draftEtag: string | null;
-  versionEtag: string;
-};
+export const roomsQueryKeys = roomsSliceFeature.queryKeys;
 
-export const roomsQueryKeys = {
-  all: (projectId: string) => projectDocumentTableQueryKeys.table(projectId, ROOMS_TABLE_NAME),
-  project: (projectId: string) => roomsQueryKeys.all(projectId),
-  slice: (projectId: string, versionId: string, accessMode: "editor" | "viewer") =>
-    [...roomsQueryKeys.project(projectId), "slice", versionId, accessMode] as const,
-};
-
-export function useRoomsSliceQuery(
-  projectId: string,
-  versionId: string | null,
-  accessMode: "editor" | "viewer",
-  enabled = true,
-) {
-  const resolvedVersionId = versionId ?? "";
-  return useQuery({
-    queryKey: roomsQueryKeys.slice(projectId, resolvedVersionId, accessMode),
-    queryFn: ({ signal }) => fetchRoomsSlice(projectId, resolvedVersionId, accessMode, signal),
-    enabled: enabled && resolvedVersionId.length > 0,
-  });
-}
-
-export function useReplaceRoomsSliceMutation(
-  projectId: string,
-  versionId: string | null,
-  onAcceptedSlice?: (slice: RoomsSlice, previous: RoomsSliceVersionGuard) => void,
-) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ current, payload }: { current: RoomsSlice; payload: RoomsReplacePayload }) => {
-      if (!versionId) {
-        throw new Error("Cannot update Rooms without an active project version.");
-      }
-      return replaceRoomsSlice(projectId, versionId, current, payload);
-    },
-    onSuccess: (slice, variables) => {
-      markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
-      queryClient.setQueryData(roomsQueryKeys.slice(projectId, slice.version_id, "editor"), slice);
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-      });
-      if (
-        slice.source !== variables.current.source ||
-        slice.draft_etag !== variables.current.draft_etag
-      ) {
-        onAcceptedSlice?.(slice, versionGuard(variables.current));
-      }
-    },
-  });
-}
+export const useRoomsSliceQuery = roomsSliceFeature.useSliceQuery;
+export const useReplaceRoomsSliceMutation = roomsSliceFeature.useReplaceSliceMutation;
 
 export function useRoomsDraftBroadcast(
   projectId: string,
@@ -121,7 +71,7 @@ export function useRoomsDraftBroadcast(
   }, [enabled, projectId, queryClient, versionId]);
 
   return useCallback(
-    (slice: RoomsSlice, previous: RoomsSliceVersionGuard) => {
+    (slice: RoomsSlice, previous: TableSliceVersionGuard) => {
       if (!enabled || !versionId) return;
       channelRef.current?.postMessage({
         type: "rooms-slice-accepted",
@@ -135,14 +85,7 @@ export function useRoomsDraftBroadcast(
   );
 }
 
-function versionGuard(slice: RoomsSlice): RoomsSliceVersionGuard {
-  return {
-    draftEtag: slice.draft_etag,
-    versionEtag: slice.version_etag,
-  };
-}
-
-function matchesVersionGuard(slice: RoomsSlice, guard: RoomsSliceVersionGuard): boolean {
+function matchesVersionGuard(slice: RoomsSlice, guard: TableSliceVersionGuard): boolean {
   if (guard.draftEtag) {
     return slice.draft_etag === guard.draftEtag;
   }

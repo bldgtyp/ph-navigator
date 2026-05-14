@@ -748,10 +748,16 @@ catalog" gesture:
   sets `synced_at = now()`, and recomputes `local_overrides` as the
   fields whose chosen project value still differs from the current
   catalog value.
-- A copied entry is **drifted** when
-  `catalog_origin.catalog_version_id != current_version_id`. A copied
-  entry with `local_overrides.length > 0` but current
-  `catalog_version_id` is **customized**, not stale.
+- A copied entry is **drifted** when either
+  `catalog_origin.catalog_version_id != current_version_id` **or** any
+  compared catalog field on the current version differs from the
+  bookshelf-copied value on the entry. The second branch exists because
+  in-place catalog edits (§7.3) patch the current version row without
+  bumping `current_version_id`, and the user's bookshelf copy still needs
+  to surface that delta. A copied entry with `local_overrides.length > 0`
+  is **customized** on those specific fields — they default to **Keep
+  mine** in the refresh dialog — but the entry as a whole is still
+  drifted if anything else differs.
 
 A "show me everything that's drifted or customized from catalog" report
 lives in the catalog manager view of a project. In v1, **Review all**

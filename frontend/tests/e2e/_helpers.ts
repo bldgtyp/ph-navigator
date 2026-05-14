@@ -34,7 +34,9 @@ export async function createProject(
   await expect(page.getByText("BT number available")).toBeVisible();
   await page.getByRole("button", { name: "Create project" }).click();
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+\/status/);
-  return page.url().match(/\/projects\/([0-9a-f-]+)\//)![1];
+  const match = page.url().match(/\/projects\/([0-9a-f-]+)\//);
+  if (!match?.[1]) throw new Error(`Could not extract project id from URL: ${page.url()}`);
+  return match[1];
 }
 
 export async function seedCatalog(

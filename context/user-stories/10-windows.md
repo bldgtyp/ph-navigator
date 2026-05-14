@@ -1634,8 +1634,12 @@ None outstanding.
 ### Acceptance criteria
 
 1. **Drift detection.** A frame or glazing entry is "drifted from
-   catalog" if `catalog_origin.catalog_version_id !=
-   catalog_*_records.current_version_id`. Computed at read time.
+   catalog" if either `catalog_origin.catalog_version_id !=
+   catalog_*_records.current_version_id` **or** any compared catalog
+   field on the current version differs from the bookshelf-copied value
+   on the entry. The field-delta branch covers in-place catalog edits
+   (data-model.md §7.3) that correct a value without bumping
+   `current_version_id`. Computed at read time.
 2. **Surfaces.**
    - **Per-entry badge** — frame / glazing chip in the elements
      table shows a `🔄` (or shadcn `RefreshCw` icon) overlay when
@@ -1683,14 +1687,18 @@ None outstanding.
 ### Resolved questions (2026-05-10)
 
 - **Q-WIN-11.1: Catalog version pinning — drift compared to what?**
-  **Resolved:** drift is detected **only when**
-  `catalog_origin.catalog_version_id !=
-  catalog_*_records.current_version_id`. Intermediate non-current
-  versions do not trigger the badge. So if the catalog row went
-  v3 → v4 → v5 (current), an entry pinned at v3 shows drift; an
-  entry pinned at v5 does not, regardless of the v3/v4 history.
-  If `local_overrides` is non-empty while the catalog version is current,
-  the entry is customized, not stale.
+  **Resolved 2026-05-10; revised 2026-05-14 (TB-09.a):** drift is
+  detected whenever `catalog_origin.catalog_version_id !=
+  catalog_*_records.current_version_id` **or** any compared catalog
+  field on the current version differs from the bookshelf-copied value.
+  Intermediate non-current versions still do not trigger the badge on
+  their own — so v3 → v4 → v5 (current) shows drift for an entry pinned
+  at v3 and not for one pinned at v5 — but in-place edits to the current
+  catalog version (data-model.md §7.3) that change a typed field will
+  drift a v5-pinned entry until the user reviews it. Fields listed in
+  `local_overrides` default to **Keep mine** in the refresh dialog;
+  they do not by themselves make an entry "not drifted" if anything
+  else differs.
 - **Q-WIN-11.2: Renamed-field handling in the diff dialog —
   deferred to schema-migration design.**
   **Revised 2026-05-11:** catalog-schema migration tooling is
