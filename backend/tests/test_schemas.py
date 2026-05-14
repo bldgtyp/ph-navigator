@@ -1,0 +1,61 @@
+"""Schema and OpenAPI endpoint contract tests."""
+
+from __future__ import annotations
+
+from fastapi.testclient import TestClient
+
+from main import app
+
+
+def test_project_document_and_room_json_schemas_are_exposed() -> None:
+    client = TestClient(app)
+
+    project_schema = client.get(
+        "/api/v1/schemas/project-document/v1.json",
+        headers={"X-Request-ID": "schema-project"},
+    )
+    room_schema = client.get(
+        "/api/v1/schemas/room/v1.json",
+        headers={"X-Request-ID": "schema-room"},
+    )
+
+    assert project_schema.status_code == 200
+    assert project_schema.headers["X-Request-ID"] == "schema-project"
+    project_body = project_schema.json()
+    assert project_body["title"] == "ProjectDocumentV1"
+    assert project_body["properties"]["schema_version"]["const"] == 1
+    assert "ProjectDocumentTables" in project_body["$defs"]
+
+    assert room_schema.status_code == 200
+    assert room_schema.headers["X-Request-ID"] == "schema-room"
+    room_body = room_schema.json()
+    assert room_body["title"] == "RoomRow"
+    assert room_body["required"] == ["id", "number", "name", "floor_level"]
+    assert room_body["properties"]["id"]["pattern"] == "^rm_[A-Za-z0-9_-]+$"
+
+
+def test_versioned_openapi_endpoint_includes_schema_and_inspectability_routes() -> None:
+    client = TestClient(app)
+
+    response = client.get(
+        "/api/v1/openapi.json",
+        headers={"X-Request-ID": "openapi-schema"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "openapi-schema"
+    body = response.json()
+    assert body["info"]["title"] == "PH-Navigator V2"
+    paths = body["paths"]
+    assert "/api/v1/schemas/project-document/v1.json" in paths
+    assert "/api/v1/schemas/room/v1.json" in paths
+    assert "/api/v1/projects/{project_id}/diff" in paths
+    assert "/api/v1/projects/{project_id}/versions/{version_id}/download" in paths
+
+
+def test_unversioned_openapi_route_does_not_exist() -> None:
+    client = TestClient(app)
+
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 404

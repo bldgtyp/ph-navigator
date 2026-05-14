@@ -19,6 +19,8 @@ class TableContract:
     """Per-table behavior used by generic document/draft/table routes."""
 
     name: str
+    schema_slug: str
+    schema_model: type[BaseModel]
     replace_request_model: type[BaseModel]
     build_response: Callable[[UUID, UUID, ProjectDocumentSource, str, str | None, ProjectDocumentV1], BaseModel]
     apply_replace: Callable[[ProjectDocumentV1, BaseModel], ProjectDocumentV1]

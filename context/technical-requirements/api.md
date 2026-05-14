@@ -290,12 +290,12 @@ stored in the metadata row.
 
 ```
 GET /api/v1/schemas/project-document/v1.json
-GET /api/v1/schemas/material/v1.json
-GET /api/v1/schemas/window-type/v1.json
 GET /api/v1/schemas/room/v1.json
 GET /api/v1/openapi.json
 ```
 
-All schemas are auto-generated from Pydantic models. The `v1.json`
-suffix is the *document schema* version, independent of the API
-version (see §10.5).
+Schemas are served from Pydantic-generated contracts. The `v1.json`
+suffix is the *document schema* version, independent of the API version
+(see §10.5). Phase 1 exposes the current project-document schema and
+the registered Rooms row schema; material and window-type schema
+endpoints should be added when those table contracts exist.

@@ -1,0 +1,1 @@
+"""Schema endpoint feature package."""

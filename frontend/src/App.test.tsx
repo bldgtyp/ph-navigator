@@ -184,7 +184,9 @@ describe("App", () => {
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { name: "Session service unavailable." }),
+      await screen.findByRole("heading", {
+        name: "Session service unavailable. (Request ID: test)",
+      }),
     ).toBeVisible();
     expect(screen.getByText("Session check failed")).toBeVisible();
     expect(window.location.pathname).toBe("/dashboard");

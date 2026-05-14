@@ -19,6 +19,7 @@ from features.project_document.routes import diff_router as project_diff_router
 from features.project_document.routes import router as project_document_router
 from features.project_status.routes import router as project_status_router
 from features.projects.routes import router as projects_router
+from features.schemas.routes import router as schemas_router
 from features.shared.errors import http_exception_handler, validation_exception_handler
 from features.shared.middleware import request_context_middleware
 from features.system.routes import router as system_router
@@ -34,6 +35,7 @@ app = FastAPI(
     title="PH-Navigator V2",
     version=settings.app_version,
     description="PH-Navigator V2 API.",
+    openapi_url="/api/v1/openapi.json",
     lifespan=lifespan,
 )
 
@@ -56,5 +58,6 @@ app.include_router(project_diff_router)
 app.include_router(project_document_router)
 app.include_router(project_status_router)
 app.include_router(mcp_token_router)
+app.include_router(schemas_router)
 app.include_router(system_router)
 app.mount("/mcp", phn_mcp.streamable_http_app())

@@ -497,13 +497,16 @@ def test_unsupported_table_names_fail_through_registry(clean_document_tables: No
         headers={"Origin": ORIGIN, "If-Match-Version": "unused"},
         json={"rows": []},
     )
-    download = client.get(f"{url}/download/tables/windows")
+    download = client.get(f"{url}/download/tables/windows", headers={"X-Request-ID": "missing-table"})
 
     for response in (saved, draft, write, download):
         assert response.status_code == 404
         body = response.json()
         assert body["error_code"] == "document_table_not_found"
         assert body["details"]["supported_tables"] == ["rooms"]
+
+    assert download.headers["X-Request-ID"] == "missing-table"
+    assert download.json()["request_id"] == "missing-table"
 
 
 def test_save_flushes_draft_to_version_and_clears_draft(

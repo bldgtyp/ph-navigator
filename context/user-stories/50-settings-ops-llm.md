@@ -430,8 +430,8 @@ paint us into a corner):**
   from a material/photo UI detaches the reference from the active draft;
   hard purge waits for GC after saved-version and active-draft reference
   checks.
-- **OpenAPI spec served at `/openapi.json`** (FastAPI gives us
-  this for free) — let any LLM tool (Claude / Anthropic API tool
+- **OpenAPI spec served at `/api/v1/openapi.json`** (FastAPI gives
+  us this for free) — let any LLM tool (Claude / Anthropic API tool
   use, OpenAI function-calling, etc.) auto-discover the endpoints
   without bespoke docs.
 - **Project-scoped bearer tokens** issued from Project Settings.

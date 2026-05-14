@@ -206,17 +206,15 @@ context/
 ├── USER_STORIES.md                 story routing + vertical-slice phasing map
 ├── user-stories/                   split canonical story bodies
 ├── GLOSSARY.md                     canonical PHN-V2 terms
-└── schemas/
-    ├── project-document-v1.json    JSON Schema (auto-generated)
-    ├── material-v1.json
-    ├── window-type-v1.json
-    └── ...
+└── technical-requirements/api.md    REST, OpenAPI, schema endpoint inventory
 ```
 
 Planned generated / implementation-adjacent docs, added only when the
 corresponding code exists: `api.md`, `mcp.md`, `operations.md`,
-`error-codes.md`, `llm-cookbook.md`, and schema files under
-`context/schemas/`.
+`error-codes.md`, and `llm-cookbook.md`. Runtime JSON Schemas are
+served from `/api/v1/schemas/...` and OpenAPI from
+`/api/v1/openapi.json`; static schema snapshots under `context/schemas/`
+can be added later if CI starts checking committed generated artifacts.
 
 These docs are deliverables in the same way as code. CI should verify
 generated schemas are in sync with Pydantic models once schema

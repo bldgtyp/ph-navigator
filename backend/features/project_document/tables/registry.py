@@ -23,6 +23,21 @@ def get_table_contract(table_name: str) -> TableContract:
     return contract
 
 
+def get_table_contract_by_schema_slug(schema_slug: str) -> TableContract:
+    for contract in _TABLES.values():
+        if contract.schema_slug == schema_slug:
+            return contract
+    raise api_error(
+        status.HTTP_404_NOT_FOUND,
+        "document_table_schema_not_found",
+        "Document table schema not found.",
+        {
+            "schema_slug": schema_slug,
+            "supported_schema_slugs": sorted(contract.schema_slug for contract in _TABLES.values()),
+        },
+    )
+
+
 def iter_table_contracts() -> Iterable[TableContract]:
     return sorted(_TABLES.values(), key=lambda contract: contract.name)
 

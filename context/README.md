@@ -47,4 +47,6 @@ Load these only when the task touches the relevant surface:
 
 Add these only as the corresponding implementation exists:
 `api.md`, `mcp.md`, `operations.md`, `error-codes.md`,
-`llm-cookbook.md`, and JSON Schemas under `schemas/`.
+`llm-cookbook.md`, and optional static JSON Schema snapshots under
+`schemas/`. The current runtime schema source is the backend endpoint
+set under `/api/v1/schemas/...`.

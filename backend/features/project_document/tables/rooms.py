@@ -106,6 +106,8 @@ def extract_rooms_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
 
 rooms_contract = TableContract(
     name=ROOMS_TABLE_NAME,
+    schema_slug="room",
+    schema_model=RoomRow,
     replace_request_model=RoomsSliceReplaceRequest,
     build_response=rooms_response,
     apply_replace=apply_rooms_replace,

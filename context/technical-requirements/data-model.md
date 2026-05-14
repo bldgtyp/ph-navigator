@@ -434,9 +434,10 @@ Properties of the document shape:
   backed by `backend/features/project_document/tables/registry.py`.
   Each editable table adds one registered contract that owns payload
   validation, response serialization, document replacement, row
-  extraction for downloads/MCP, and diff extraction. Unsupported table
-  names fail through the registry with `document_table_not_found`; they
-  are not handled by per-route branches.
+  extraction for downloads/MCP, diff extraction, and table-schema
+  endpoint metadata. Unsupported table names fail through the registry
+  with `document_table_not_found`; they are not handled by per-route
+  branches.
 - **User-defined column options live alongside data**
   (V2 NEW per US-Builder-Tables criteria 16–17). Single-select
   columns (e.g. `rooms.floor_level`, `rooms.building_zone`,
