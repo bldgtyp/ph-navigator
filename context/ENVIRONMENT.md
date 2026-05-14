@@ -40,8 +40,9 @@
   - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
   - `MCP_ALLOWED_HOSTS=` and `MCP_ALLOWED_ORIGINS=` are optional
     comma-separated extras. The backend always derives local
-    `localhost` / `127.0.0.1` hosts, deployed hosts from `MCP_*`
-    URLs, and allowed origins from `MCP_*` URLs plus `CORS_ORIGINS`.
+    `localhost` / `127.0.0.1` hosts, deployed hosts plus wildcard-port
+    variants from `MCP_*` URLs, and allowed origins from `MCP_*` URLs
+    plus `CORS_ORIGINS`.
   - `FERNET_SECRET_KEY` is reserved for future at-rest field
     encryption; TB-01 session cookies are opaque DB row pointers, not
     signed/encrypted payload cookies.

@@ -69,7 +69,9 @@ class Settings(BaseSettings):
     def mcp_allowed_hosts_list(self) -> list[str]:
         local_hosts = ["localhost:*", "127.0.0.1:*", "[::1]:*"]
         configured_hosts = _comma_separated(self.mcp_allowed_hosts)
-        derived_hosts = [_url_netloc(url) for url in [self.mcp_issuer_url, self.mcp_resource_server_url]]
+        derived_hosts = [
+            host for url in [self.mcp_issuer_url, self.mcp_resource_server_url] for host in _url_host_patterns(url)
+        ]
         return _dedupe([*local_hosts, *configured_hosts, *derived_hosts])
 
     @property
@@ -93,6 +95,15 @@ def _comma_separated(value: str) -> list[str]:
 def _url_netloc(value: str) -> str | None:
     parsed = urlparse(value)
     return parsed.netloc or None
+
+
+def _url_host_patterns(value: str) -> list[str]:
+    parsed = urlparse(value)
+    if not parsed.netloc:
+        return []
+    if parsed.port is not None or parsed.hostname is None:
+        return [parsed.netloc]
+    return [parsed.netloc, f"{parsed.hostname}:*"]
 
 
 def _url_origin(value: str) -> str | None:

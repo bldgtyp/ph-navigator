@@ -224,6 +224,7 @@ def test_mcp_transport_security_settings_include_deployed_hosts() -> None:
     )
 
     assert "ph-navigator-v2.onrender.com" in deployed.mcp_allowed_hosts_list
+    assert "ph-navigator-v2.onrender.com:*" in deployed.mcp_allowed_hosts_list
     assert "ph-navigator-v2-staging.onrender.com" in deployed.mcp_allowed_hosts_list
     assert "localhost:*" in deployed.mcp_allowed_hosts_list
     assert "https://ph-navigator-v2.onrender.com" in deployed.mcp_allowed_origins_list
