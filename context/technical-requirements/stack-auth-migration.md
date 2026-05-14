@@ -179,9 +179,10 @@ AirTable-bound project is migrated.
   `project:read`; write-only project tokens are rejected. Public browser
   read access does not create anonymous MCP access. Streamable HTTP MCP
   endpoints keep FastMCP DNS-rebinding protection enabled; allowed hosts
-  and wildcard-port variants are derived from `MCP_ISSUER_URL` and
-  `MCP_RESOURCE_SERVER_URL`; allowed origins are derived from those MCP
-  URLs plus `CORS_ORIGINS`. Deployed extras can be added through
+  and wildcard-port variants are derived from `MCP_ISSUER_URL`,
+  `MCP_RESOURCE_SERVER_URL`, and Render's `RENDER_EXTERNAL_URL` /
+  `RENDER_EXTERNAL_HOSTNAME`; allowed origins are derived from those
+  MCP URLs plus `CORS_ORIGINS`. Deployed extras can be added through
   `MCP_ALLOWED_HOSTS` and `MCP_ALLOWED_ORIGINS`.
 
 No anonymous editor auth. No per-table or per-version permissions

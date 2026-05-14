@@ -30,8 +30,9 @@ The backend now owns MCP transport-security config explicitly:
 - `MCP_ALLOWED_HOSTS`
 - `MCP_ALLOWED_ORIGINS`
 
-Allowed hosts and wildcard-port variants are derived from `MCP_ISSUER_URL` and
-`MCP_RESOURCE_SERVER_URL`; allowed origins are derived from those MCP URLs plus
+Allowed hosts and wildcard-port variants are derived from `MCP_ISSUER_URL`,
+`MCP_RESOURCE_SERVER_URL`, and Render's `RENDER_EXTERNAL_URL` /
+`RENDER_EXTERNAL_HOSTNAME`; allowed origins are derived from the MCP URLs plus
 `CORS_ORIGINS`. Local `localhost`/`127.0.0.1` hosts stay enabled for dev, and
 deployed extras can be set explicitly.
 
@@ -61,7 +62,7 @@ Rerun after the first P1-13 deploy on 2026-05-14:
 | Unauthenticated session | Pass | `/api/v1/auth/session` returned structured `401 not_authenticated`; request id `fb95c3e1-891d-4f2e-ac5f-97c4ce7a9667`. |
 | CLI browser e2e | Pass | `cd frontend && E2E_BASE_URL=https://ph-navigator-v2-staging.onrender.com npm run test:e2e` returned Chromium `2 passed`. |
 | Settings/token UI | Pass | Browser script signed in, created a project, patched metadata through Project Settings, issued an active MCP token, issued and revoked a second token, and confirmed public Viewer has no Project Settings button. |
-| Active-token MCP read | Blocked | Fresh active token against `https://ph-navigator-v2.onrender.com/mcp/` still returns `421 Misdirected Request`; next hardening adds wildcard-port derived host entries for default-port Host headers. |
+| Active-token MCP read | Blocked | Fresh active token against `https://ph-navigator-v2.onrender.com/mcp/` still returns `421 Misdirected Request`; Render logs show `Invalid Host header: ph-navigator-v2.onrender.com`, so the next hardening derives MCP host allowlist entries from Render's built-in external URL/hostname env values instead of relying only on manually configured MCP URL env vars. |
 
 ## Requirements Matrix
 

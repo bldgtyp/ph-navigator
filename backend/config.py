@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     mcp_enable_dns_rebinding_protection: bool = True
     mcp_allowed_hosts: str = ""
     mcp_allowed_origins: str = ""
+    render_external_url: str = ""
+    render_external_hostname: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
@@ -70,9 +72,12 @@ class Settings(BaseSettings):
         local_hosts = ["localhost:*", "127.0.0.1:*", "[::1]:*"]
         configured_hosts = _comma_separated(self.mcp_allowed_hosts)
         derived_hosts = [
-            host for url in [self.mcp_issuer_url, self.mcp_resource_server_url] for host in _url_host_patterns(url)
+            host
+            for url in [self.mcp_issuer_url, self.mcp_resource_server_url, self.render_external_url]
+            for host in _url_host_patterns(url)
         ]
-        return _dedupe([*local_hosts, *configured_hosts, *derived_hosts])
+        render_hostname_patterns = _hostname_patterns(self.render_external_hostname)
+        return _dedupe([*local_hosts, *configured_hosts, *derived_hosts, *render_hostname_patterns])
 
     @property
     def mcp_allowed_origins_list(self) -> list[str]:
@@ -104,6 +109,15 @@ def _url_host_patterns(value: str) -> list[str]:
     if parsed.port is not None or parsed.hostname is None:
         return [parsed.netloc]
     return [parsed.netloc, f"{parsed.hostname}:*"]
+
+
+def _hostname_patterns(value: str) -> list[str]:
+    hostname = value.strip()
+    if not hostname:
+        return []
+    if ":" in hostname:
+        return [hostname]
+    return [hostname, f"{hostname}:*"]
 
 
 def _url_origin(value: str) -> str | None:

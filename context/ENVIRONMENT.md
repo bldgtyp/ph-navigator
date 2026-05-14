@@ -41,7 +41,8 @@
   - `MCP_ALLOWED_HOSTS=` and `MCP_ALLOWED_ORIGINS=` are optional
     comma-separated extras. The backend always derives local
     `localhost` / `127.0.0.1` hosts, deployed hosts plus wildcard-port
-    variants from `MCP_*` URLs, and allowed origins from `MCP_*` URLs
+    variants from `MCP_*` URLs and Render's `RENDER_EXTERNAL_URL` /
+    `RENDER_EXTERNAL_HOSTNAME`, and allowed origins from `MCP_*` URLs
     plus `CORS_ORIGINS`.
   - `FERNET_SECRET_KEY` is reserved for future at-rest field
     encryption; TB-01 session cookies are opaque DB row pointers, not
@@ -81,6 +82,9 @@ under the `Staging` environment.
     - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
     - `MCP_ALLOWED_HOSTS=ph-navigator-v2.onrender.com`
     - `MCP_ALLOWED_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
+    - Render also sets `RENDER_EXTERNAL_URL` and
+      `RENDER_EXTERNAL_HOSTNAME`; the backend derives MCP Host allowlist
+      entries from them automatically.
     - `FERNET_SECRET_KEY=<generated Fernet key>`
 - Postgres service: `ph-navigator-v2-staging-db`
   - Database: `ph_navigator_v2`
