@@ -316,7 +316,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                         tool_text(missing_table_result).removeprefix("Error executing tool get_table: ")
                     )
                     assert missing_table_error["code"] == "document_table_not_found"
-                    assert missing_table_error["details"]["supported_tables"] == ["rooms"]
+                    assert missing_table_error["details"]["supported_tables"] == ["rooms", "window_types"]
 
                     rejection = await session.call_tool(
                         "replace_table",

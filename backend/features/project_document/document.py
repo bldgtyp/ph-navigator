@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from features.projects.models import CertificationProgram
+
+CatalogTableName = Literal["materials", "frame_types", "glazing_types"]
+CATALOG_RECORD_ID_PATTERN = r"^rec[A-Za-z0-9]{14}$"
+CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
 
 ROOM_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level"
 ROOM_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone"
@@ -73,6 +78,177 @@ class RoomRow(BaseModel):
         return value
 
 
+class CatalogOrigin(BaseModel):
+    """Bookshelf-copy provenance stamped at pick time.
+
+    Values are inlined into the document; this block records where they came
+    from so refresh-from-catalog (US-WIN-11) can re-find the source row across
+    catalog versions. No live FK / join is enforced — `catalog_record_id` and
+    `catalog_version_id` are validated only as data shape.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    catalog_table: CatalogTableName
+    catalog_record_id: str = Field(pattern=CATALOG_RECORD_ID_PATTERN)
+    catalog_version_id: str = Field(pattern=CATALOG_VERSION_ID_PATTERN)
+    catalog_schema_version: int = Field(ge=1)
+    synced_at: datetime
+    local_overrides: list[str] = Field(default_factory=list)
+
+
+def _require_catalog_origin_family(
+    origin: CatalogOrigin | None,
+    *,
+    expected_table: CatalogTableName,
+    expected_version_prefix: str,
+) -> None:
+    """Bookshelf-copy invariant: a ref's `catalog_origin` must point at the
+    right catalog family. Frame slots come from the Window-Frame catalog and
+    glazing slots from the Window-Glazing catalog; a glazing ref pointing at
+    `materials` or carrying a `matv_`/`framev_` version id is nonsense data,
+    not a future hand-enter case. `catalog_origin = None` (hand-entered) stays
+    allowed."""
+    if origin is None:
+        return
+    if origin.catalog_table != expected_table:
+        raise ValueError(f"catalog_origin.catalog_table must be {expected_table!r}, got {origin.catalog_table!r}")
+    if not origin.catalog_version_id.startswith(expected_version_prefix):
+        raise ValueError(f"catalog_origin.catalog_version_id must start with {expected_version_prefix!r}")
+
+
+class FrameRef(BaseModel):
+    """Bookshelf-copied frame values inlined into a window element side.
+
+    Mirrors the Window-Frame catalog's typed value columns plus an optional
+    `catalog_origin` block. When `catalog_origin` is null the values were
+    hand-entered, not picked from a catalog.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    brand: str | None = Field(default=None, max_length=200)
+    width_mm: float | None = Field(default=None, ge=0)
+    u_value_w_m2k: float | None = Field(default=None, ge=0)
+    psi_g_w_mk: float | None = Field(default=None, ge=0)
+    psi_install_w_mk: float | None = Field(default=None, ge=0)
+    argb_color: str | None = Field(default=None, max_length=40)
+    notes: str | None = Field(default=None, max_length=4000)
+    source_provenance: str | None = Field(default=None, max_length=400)
+    catalog_origin: CatalogOrigin | None = None
+
+    @model_validator(mode="after")
+    def _validate_catalog_origin_family(self) -> FrameRef:
+        _require_catalog_origin_family(
+            self.catalog_origin,
+            expected_table="frame_types",
+            expected_version_prefix="framev_",
+        )
+        return self
+
+
+class GlazingRef(BaseModel):
+    """Bookshelf-copied glazing values inlined into a window element's center."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    brand: str | None = Field(default=None, max_length=200)
+    u_value_w_m2k: float | None = Field(default=None, ge=0)
+    g_value: float | None = Field(default=None, ge=0.0, le=1.0)
+    argb_color: str | None = Field(default=None, max_length=40)
+    notes: str | None = Field(default=None, max_length=4000)
+    source_provenance: str | None = Field(default=None, max_length=400)
+    catalog_origin: CatalogOrigin | None = None
+
+    @model_validator(mode="after")
+    def _validate_catalog_origin_family(self) -> GlazingRef:
+        _require_catalog_origin_family(
+            self.catalog_origin,
+            expected_table="glazing_types",
+            expected_version_prefix="glazingv_",
+        )
+        return self
+
+
+class WindowElementFrames(BaseModel):
+    """Four-sided frame slots on a window element. Each side is nullable."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    top: FrameRef | None = None
+    right: FrameRef | None = None
+    bottom: FrameRef | None = None
+    left: FrameRef | None = None
+
+
+class WindowElement(BaseModel):
+    """One element on a window-type grid (US-WIN-2 / US-WIN-3)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^winel_[A-Za-z0-9_-]+$", max_length=80)
+    row_span: tuple[int, int]
+    column_span: tuple[int, int]
+    frames: WindowElementFrames = Field(default_factory=WindowElementFrames)
+    glazing: GlazingRef | None = None
+
+    @field_validator("row_span", "column_span")
+    @classmethod
+    def _validate_span(cls, value: tuple[int, int]) -> tuple[int, int]:
+        start, end = value
+        if start < 0 or end < 0:
+            raise ValueError("span indices must be >= 0")
+        if start > end:
+            raise ValueError("span start must be <= end")
+        return value
+
+
+class WindowTypeEntry(BaseModel):
+    """One window type in `tables.window_types[]` (US-WIN-1 §8)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^win_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(min_length=1, max_length=200)
+    row_heights_mm: list[float] = Field(min_length=1)
+    column_widths_mm: list[float] = Field(min_length=1)
+    elements: list[WindowElement] = Field(min_length=1)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("row_heights_mm", "column_widths_mm")
+    @classmethod
+    def _positive_dimensions(cls, value: list[float]) -> list[float]:
+        for dim in value:
+            if dim <= 0:
+                raise ValueError("grid dimensions must be > 0")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_element_spans(self) -> WindowTypeEntry:
+        rows = len(self.row_heights_mm)
+        cols = len(self.column_widths_mm)
+        element_ids: set[str] = set()
+        for element in self.elements:
+            if element.id in element_ids:
+                raise ValueError(f"Duplicate window element id: {element.id}")
+            element_ids.add(element.id)
+            if element.row_span[1] >= rows:
+                raise ValueError(f"Window element {element.id} row_span out of bounds")
+            if element.column_span[1] >= cols:
+                raise ValueError(f"Window element {element.id} column_span out of bounds")
+        return self
+
+
 class ProjectDocumentProject(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -88,7 +264,7 @@ class ProjectDocumentTables(BaseModel):
 
     assemblies: list[dict[str, object]] = Field(default_factory=list)
     project_materials: list[dict[str, object]] = Field(default_factory=list)
-    window_types: list[dict[str, object]] = Field(default_factory=list)
+    window_types: list[WindowTypeEntry] = Field(default_factory=list)
     rooms: list[RoomRow] = Field(default_factory=list)
     thermal_bridges: list[dict[str, object]] = Field(default_factory=list)
     equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
@@ -142,5 +318,17 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")
             if room.erv_unit_ids:
                 raise ValueError(f"Room ERV assignments are deferred until the ERV table is available: {room.id}")
+
+        window_type_ids: set[str] = set()
+        window_type_names: set[str] = set()
+        for window_type in self.tables.window_types:
+            if window_type.id in window_type_ids:
+                raise ValueError(f"Duplicate window type id: {window_type.id}")
+            window_type_ids.add(window_type.id)
+
+            normalized_name = window_type.name.strip().casefold()
+            if normalized_name in window_type_names:
+                raise ValueError(f"Duplicate window type name: {window_type.name}")
+            window_type_names.add(normalized_name)
 
         return self

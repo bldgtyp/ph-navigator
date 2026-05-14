@@ -8,6 +8,7 @@ from starlette import status
 
 from features.project_document.tables.contracts import TableContract
 from features.project_document.tables.rooms import rooms_contract
+from features.project_document.tables.window_types import window_types_contract
 from features.shared.errors import api_error
 
 
@@ -42,4 +43,7 @@ def iter_table_contracts() -> Iterable[TableContract]:
     return sorted(_TABLES.values(), key=lambda contract: contract.name)
 
 
-_TABLES: dict[str, TableContract] = {rooms_contract.name: rooms_contract}
+_TABLES: dict[str, TableContract] = {
+    rooms_contract.name: rooms_contract,
+    window_types_contract.name: window_types_contract,
+}

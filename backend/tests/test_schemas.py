@@ -49,6 +49,7 @@ def test_versioned_openapi_endpoint_includes_schema_and_inspectability_routes() 
     paths = body["paths"]
     assert "/api/v1/schemas/project-document/v1.json" in paths
     assert "/api/v1/schemas/room/v1.json" in paths
+    assert "/api/v1/schemas/window-type/v1.json" in paths
     assert "/api/v1/projects/{project_id}/diff" in paths
     assert "/api/v1/projects/{project_id}/versions/{version_id}/download" in paths
 

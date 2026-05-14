@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 
@@ -17,27 +15,6 @@ from features.projects.service import empty_project_document
 from main import app
 
 ORIGIN = "http://localhost:5173"
-
-
-@pytest.fixture()
-def clean_document_tables() -> Iterator[None]:
-    with transaction() as conn:
-        conn.execute(
-            """
-            TRUNCATE user_action_log, sessions, project_status_items,
-                     project_version_drafts, project_versions, projects, users
-            RESTART IDENTITY CASCADE
-            """
-        )
-    yield
-    with transaction() as conn:
-        conn.execute(
-            """
-            TRUNCATE user_action_log, sessions, project_status_items,
-                     project_version_drafts, project_versions, projects, users
-            RESTART IDENTITY CASCADE
-            """
-        )
 
 
 def signed_in_client() -> TestClient:
@@ -503,7 +480,7 @@ def test_unsupported_table_names_fail_through_registry(clean_document_tables: No
         assert response.status_code == 404
         body = response.json()
         assert body["error_code"] == "document_table_not_found"
-        assert body["details"]["supported_tables"] == ["rooms"]
+        assert body["details"]["supported_tables"] == ["rooms", "window_types"]
 
     assert download.headers["X-Request-ID"] == "missing-table"
     assert download.json()["request_id"] == "missing-table"
