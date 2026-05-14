@@ -745,9 +745,10 @@ catalog" gesture:
 - Saving the refresh dialog requires an explicit choice for every
   changed field. It writes chosen values into the draft, updates
   `catalog_origin.catalog_version_id` to the current catalog version,
-  sets `synced_at = now()`, and recomputes `local_overrides` as the
-  fields whose chosen project value still differs from the current
-  catalog value.
+  sets `synced_at = now()`, and in the V2 v1 MVP preserves
+  `local_overrides` verbatim. Recomputing `local_overrides` from the
+  post-refresh field values is deferred until full field-level override
+  management ships beyond the `u_value_w_m2k` tracer.
 - A copied entry is **drifted** when either
   `catalog_origin.catalog_version_id != current_version_id` **or** any
   compared catalog field on the current version differs from the

@@ -6,6 +6,18 @@ import { projectDownloadUrl } from "../../project_document/api";
 import { isInvalidProjectDocumentError } from "../../project_document/lib";
 import type { ProjectDetail } from "../../projects/types";
 import { useReplaceWindowTypesSliceMutation, useWindowTypesSliceQuery } from "../hooks";
+import { RefreshDialog } from "../refresh/RefreshDialog";
+import {
+  useInvalidateWindowTypesRefresh,
+  useWindowTypesRefreshReportQuery,
+} from "../refresh/hooks";
+import {
+  applyRefToWindowTypes,
+  findSlotRef,
+  refreshActionLabel,
+  refreshSlotLookupKey,
+} from "../refresh/lib";
+import type { RefreshSlotName, RefreshSlotReport } from "../refresh/types";
 import {
   FRAME_SIDES,
   OVERRIDE_TRACKER_FIELD,
@@ -17,7 +29,14 @@ import {
   replaceWindowTypeInList,
   updateElementInWindowType,
 } from "../lib";
-import type { CatalogPickableRow, PickableRef, WindowElement, WindowTypeEntry } from "../types";
+import type {
+  CatalogPickableRow,
+  FrameRef,
+  GlazingRef,
+  PickableRef,
+  WindowElement,
+  WindowTypeEntry,
+} from "../types";
 
 export function WindowsTab({ project }: { project: ProjectDetail }) {
   const sliceQuery = useWindowTypesSliceQuery(
@@ -33,14 +52,32 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
   const frameTypesQuery = useFrameTypesQuery(false, canEdit);
   const glazingTypesQuery = useGlazingTypesQuery(false, canEdit);
   const replaceMutation = useReplaceWindowTypesSliceMutation(project.id, project.active_version_id);
+  const refreshQuery = useWindowTypesRefreshReportQuery(
+    project.id,
+    project.active_version_id,
+    canEdit,
+  );
+  const invalidateRefresh = useInvalidateWindowTypesRefresh(project.id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [activeRefresh, setActiveRefresh] = useState<{
+    windowTypeId: string;
+    elementId: string;
+    slot: RefreshSlotName;
+  } | null>(null);
 
   const windowTypes = sliceQuery.data?.window_types;
   const sortedTypes = useMemo(
     () => (windowTypes ? naturalSortByName(windowTypes) : []),
     [windowTypes],
   );
+  const refreshSlotsByTarget = useMemo(() => {
+    const out = new Map<string, RefreshSlotReport>();
+    for (const slot of refreshQuery.data?.slots ?? []) {
+      out.set(refreshSlotLookupKey(slot.window_type_id, slot.element_id, slot.slot), slot);
+    }
+    return out;
+  }, [refreshQuery.data?.slots]);
 
   useEffect(() => {
     if (!windowTypes) return;
@@ -78,16 +115,19 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
   const slice = sliceQuery.data;
   const selectedWindowType = sortedTypes.find((entry) => entry.id === selectedId) ?? null;
 
-  const commitWindowTypes = async (nextList: WindowTypeEntry[]) => {
-    if (!canEdit) return;
+  const commitWindowTypes = async (nextList: WindowTypeEntry[]): Promise<boolean> => {
+    if (!canEdit) return false;
     setActionError(null);
     try {
       await replaceMutation.mutateAsync({
         current: slice,
         payload: { window_types: nextList },
       });
+      void invalidateRefresh();
+      return true;
     } catch (error) {
       setActionError(errorMessage(error, "Could not update window types."));
+      return false;
     }
   };
 
@@ -100,6 +140,38 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
 
   const handleUpdateWindowType = (next: WindowTypeEntry) =>
     commitWindowTypes(replaceWindowTypeInList(slice.window_types, next));
+
+  const refreshSlot = activeRefresh
+    ? (refreshSlotsByTarget.get(
+        refreshSlotLookupKey(
+          activeRefresh.windowTypeId,
+          activeRefresh.elementId,
+          activeRefresh.slot,
+        ),
+      ) ?? null)
+    : null;
+  const refreshRef =
+    activeRefresh && refreshSlot
+      ? findSlotRef(
+          slice.window_types,
+          activeRefresh.windowTypeId,
+          activeRefresh.elementId,
+          activeRefresh.slot,
+        )
+      : null;
+
+  const applyRefresh = async (nextRef: FrameRef | GlazingRef) => {
+    if (!activeRefresh) return;
+    const nextList = applyRefToWindowTypes(
+      slice.window_types,
+      activeRefresh.windowTypeId,
+      activeRefresh.elementId,
+      activeRefresh.slot,
+      nextRef,
+    );
+    const saved = await commitWindowTypes(nextList);
+    if (saved) setActiveRefresh(null);
+  };
 
   return (
     <section className="tab-panel windows-panel" aria-labelledby="windows-title">
@@ -137,12 +209,29 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
             frameTypesLoading={frameTypesQuery.isLoading}
             glazingTypes={glazingTypesQuery.data ?? []}
             glazingTypesLoading={glazingTypesQuery.isLoading}
+            getRefreshSlot={(elementId, slot) =>
+              refreshSlotsByTarget.get(
+                refreshSlotLookupKey(selectedWindowType.id, elementId, slot),
+              ) ?? null
+            }
+            onReviewRefresh={(elementId, slot) =>
+              setActiveRefresh({ windowTypeId: selectedWindowType.id, elementId, slot })
+            }
             onChange={(next) => void handleUpdateWindowType(next)}
           />
         ) : (
           <p className="empty-state">{emptyDetailMessage(sortedTypes.length, canEdit)}</p>
         )}
       </div>
+      {refreshSlot && refreshRef ? (
+        <RefreshDialog
+          slot={refreshSlot}
+          refValue={refreshRef}
+          busy={replaceMutation.isPending}
+          onCancel={() => setActiveRefresh(null)}
+          onApply={(nextRef) => void applyRefresh(nextRef)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -196,6 +285,8 @@ function WindowTypeDetail({
   frameTypesLoading,
   glazingTypes,
   glazingTypesLoading,
+  getRefreshSlot,
+  onReviewRefresh,
   onChange,
 }: {
   windowType: WindowTypeEntry;
@@ -204,6 +295,8 @@ function WindowTypeDetail({
   frameTypesLoading: boolean;
   glazingTypes: CatalogGlazingType[];
   glazingTypesLoading: boolean;
+  getRefreshSlot: (elementId: string, slot: RefreshSlotName) => RefreshSlotReport | null;
+  onReviewRefresh: (elementId: string, slot: RefreshSlotName) => void;
   onChange: (next: WindowTypeEntry) => void;
 }) {
   return (
@@ -221,6 +314,8 @@ function WindowTypeDetail({
             frameTypesLoading={frameTypesLoading}
             glazingTypes={glazingTypes}
             glazingTypesLoading={glazingTypesLoading}
+            getRefreshSlot={getRefreshSlot}
+            onReviewRefresh={onReviewRefresh}
             onChange={(nextElement) =>
               onChange(updateElementInWindowType(windowType, element.id, () => nextElement))
             }
@@ -238,6 +333,8 @@ function WindowElementCard({
   frameTypesLoading,
   glazingTypes,
   glazingTypesLoading,
+  getRefreshSlot,
+  onReviewRefresh,
   onChange,
 }: {
   element: WindowElement;
@@ -246,6 +343,8 @@ function WindowElementCard({
   frameTypesLoading: boolean;
   glazingTypes: CatalogGlazingType[];
   glazingTypesLoading: boolean;
+  getRefreshSlot: (elementId: string, slot: RefreshSlotName) => RefreshSlotReport | null;
+  onReviewRefresh: (elementId: string, slot: RefreshSlotName) => void;
   onChange: (next: WindowElement) => void;
 }) {
   return (
@@ -263,6 +362,8 @@ function WindowElementCard({
             catalogRows={frameTypes}
             catalogRowsLoading={frameTypesLoading}
             refFromCatalogRow={frameRefFromCatalog}
+            refreshSlot={getRefreshSlot(element.id, `frame.${side}`)}
+            onReviewRefresh={() => onReviewRefresh(element.id, `frame.${side}`)}
             onChange={(next) =>
               onChange({ ...element, frames: { ...element.frames, [side]: next } })
             }
@@ -279,6 +380,8 @@ function WindowElementCard({
         catalogRows={glazingTypes}
         catalogRowsLoading={glazingTypesLoading}
         refFromCatalogRow={glazingRefFromCatalog}
+        refreshSlot={getRefreshSlot(element.id, "glazing")}
+        onReviewRefresh={() => onReviewRefresh(element.id, "glazing")}
         onChange={(next) => onChange({ ...element, glazing: next })}
       />
     </article>
@@ -295,6 +398,8 @@ function CatalogPickerSlot<TRow extends CatalogPickableRow, TRef extends Pickabl
   catalogRows,
   catalogRowsLoading,
   refFromCatalogRow,
+  refreshSlot,
+  onReviewRefresh,
   onChange,
 }: {
   label: string;
@@ -306,10 +411,13 @@ function CatalogPickerSlot<TRow extends CatalogPickableRow, TRef extends Pickabl
   catalogRows: TRow[];
   catalogRowsLoading: boolean;
   refFromCatalogRow: (row: TRow) => TRef;
+  refreshSlot?: RefreshSlotReport | null;
+  onReviewRefresh: () => void;
   onChange: (next: TRef | null) => void;
 }) {
   const selectId = useId();
   const overrides = value?.catalog_origin?.local_overrides ?? [];
+  const refreshLabel = canEdit && refreshSlot ? refreshActionLabel(refreshSlot.state) : null;
   return (
     <div className={className ? `window-slot ${className}` : "window-slot"}>
       <label htmlFor={selectId} className="window-slot-label">
@@ -343,6 +451,15 @@ function CatalogPickerSlot<TRow extends CatalogPickableRow, TRef extends Pickabl
             <span className="catalog-origin-badge" data-testid={testId}>
               Catalog
             </span>
+          ) : null}
+          {refreshLabel ? (
+            <button
+              type="button"
+              className="text-button refresh-slot-button"
+              onClick={onReviewRefresh}
+            >
+              {refreshLabel}
+            </button>
           ) : null}
           <UValueOverrideInput
             value={value.u_value_w_m2k}

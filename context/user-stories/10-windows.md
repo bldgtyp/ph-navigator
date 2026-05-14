@@ -1667,10 +1667,11 @@ None outstanding.
      value** (third value opens an inline input).
    - Bulk actions: **Take all from catalog**, **Keep all mine**.
    - **Save** writes the chosen values into the document and
-     updates `catalog_origin.catalog_version_id = current_version_id`,
-     `catalog_origin.synced_at = now()`, and recomputes
-     `catalog_origin.local_overrides` as the fields whose chosen
-     project value still differs from the current catalog value.
+     updates `catalog_origin.catalog_version_id = current_version_id`
+     and `catalog_origin.synced_at = now()`. The V2 v1 MVP preserves
+     `catalog_origin.local_overrides` verbatim; recomputing it from the
+     post-refresh field values is deferred until full field-level
+     override management ships beyond the `u_value_w_m2k` tracer.
 4. **Diverged user-edited fields.** If the user previously
    inline-edited a value (US-WIN-4 criterion 5, field key in
    `catalog_origin.local_overrides`), the diff explicitly tags
@@ -1680,8 +1681,10 @@ None outstanding.
    §17 question 9 lean). The dialog requires explicit per-row
    choice. **Review all** opens the drift report with per-entry
    actions; it does not auto-apply multiple entries.
-6. **Read-only on locked versions / for Viewers.** Drift badges
-   still show; refresh dialog is unavailable.
+6. **Read-only on locked versions / for Viewers.** The V2 v1 MVP hides
+   refresh affordances in locked / Viewer contexts because the current
+   drift report endpoint is editor-only. Read-only drift badges are
+   deferred until a read-safe drift-status endpoint exists.
 7. **All changes flow through the draft buffer.**
 
 ### Resolved questions (2026-05-10)
