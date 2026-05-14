@@ -1,6 +1,6 @@
 ---
 DATE: 2026-05-14
-STATUS: P1-13 in progress; local release gate passed, staging redeploy and HITL acceptance pending.
+STATUS: P1-13 complete; HITL final acceptance approved by Ed on 2026-05-14.
 SCOPE: Phase 1 hardening, requirements traceability, and release-gate evidence.
 RELATED:
   - docs/plans/01_IMPLEMENTATION-ROADMAP.md
@@ -13,9 +13,8 @@ RELATED:
 
 ## Current Decision
 
-Phase 1 is locally release-gate clean after P1-13 MCP transport-security
-hardening. It is not final-release accepted until the backend is deployed with
-the MCP allowlist env values and the staging smoke below passes.
+Phase 1 is locally and staging release-gate clean after P1-13 MCP
+transport-security hardening. Ed approved P1-13 as complete on 2026-05-14.
 
 ## P1-13 Change
 
@@ -54,7 +53,7 @@ deployed extras can be set explicitly.
 
 ## Staging Verification
 
-Rerun after the first P1-13 deploy on 2026-05-14:
+Rerun across the P1-13 staging deploys on 2026-05-14:
 
 | Check | Result | Evidence |
 |---|---|---|
@@ -62,13 +61,16 @@ Rerun after the first P1-13 deploy on 2026-05-14:
 | Unauthenticated session | Pass | `/api/v1/auth/session` returned structured `401 not_authenticated`; request id `fb95c3e1-891d-4f2e-ac5f-97c4ce7a9667`. |
 | CLI browser e2e | Pass | `cd frontend && E2E_BASE_URL=https://ph-navigator-v2-staging.onrender.com npm run test:e2e` returned Chromium `2 passed`. |
 | Settings/token UI | Pass | Browser script signed in, created a project, patched metadata through Project Settings, issued an active MCP token, issued and revoked a second token, and confirmed public Viewer has no Project Settings button. |
-| Active-token MCP read | Blocked | Fresh active token against `https://ph-navigator-v2.onrender.com/mcp/` still returns `421 Misdirected Request`; Render logs show `Invalid Host header: ph-navigator-v2.onrender.com`, so the next hardening derives MCP host allowlist entries from Render's built-in external URL/hostname env values instead of relying only on manually configured MCP URL env vars. |
+| Second-deploy health/session | Pass | Health `200` request id `c2fc67a3-d51a-477e-b46a-71cefa097cd5`; unauthenticated session structured `401 not_authenticated` request id `0781f025-05c5-43ba-b53f-1054013d3645`. |
+| Second-deploy active-token MCP read | Blocked, then fixed | Token issue succeeded with request id `aec1a039-10c1-43c4-8b81-35fe389f2d39`, but MCP read still returned `421`; Render logs showed `Invalid Host header: ph-navigator-v2.onrender.com`, so the follow-up derived MCP host allowlist entries from Render's built-in external URL/hostname env values. |
+| Third-deploy health/session | Pass | Health `200` request id `0fcea900-b949-4e8e-b786-24fbbadc4e39`; unauthenticated session structured `401 not_authenticated` request id `f1f2dc25-2dbb-4678-b129-03e9e9a0423f`. |
+| Third-deploy active-token MCP read | Pass | Login `200` request id `ac1ca526-0d3f-4c48-8fb6-38f8f0e372c5`; project create `201` request id `9862e168-e091-4951-afc0-4fd20a3d8738`; token issue `201` request id `67f9460a-effa-4c8b-9406-c9edf47d127e`; MCP smoke passed `list_projects`, `get_project`, `list_versions`, `list_status_items`, `get_document`, and `get_table` against project `544faa6d-ff90-409b-897b-7a87c7198a62`; test token revoked with request id `95eae472-a5eb-4b63-b7ba-15df717c9aba`. |
 
 ## Requirements Matrix
 
 | Area | Phase 1 status | Evidence / owner |
 |---|---|---|
-| TB-06 staging evidence | Pending final staging smoke | P1-13 staging checklist below. |
+| TB-06 staging evidence | Complete for Phase 1 gate | P1-13 staging verification above. |
 | Project-document boundaries | Complete | P1-01 ledger. |
 | Table-neutral header/version chrome | Complete | P1-02 ledger. |
 | Read-safe recovery | Complete for MVP contract | P1-03 ledger; raw JSON recovery, typed editing fails closed. |
@@ -76,7 +78,7 @@ Rerun after the first P1-13 deploy on 2026-05-14:
 | Dashboard/project shell | Complete for Phase 1 | P1-05 ledger; pin/reorder deferred. |
 | Status | Complete for Phase 1 | P1-06 ledger. |
 | Project Settings and MCP token admin | Complete for UI/admin | P1-07 ledger. |
-| Active-token MCP read transport | Code hardening complete; staging redeploy pending | P1-13 local tests; deploy env values from `context/ENVIRONMENT.md`. |
+| Active-token MCP read transport | Complete | Third-deploy MCP smoke above. |
 | Shared DataTable | Complete for Rooms path | P1-08 ledger. |
 | Single-select option behavior | Complete for Rooms path | P1-09 ledger; polish deferred to TB-20. |
 | Rooms MVP | Complete for Phase 1 | P1-10 ledger; visible filter/search deferred to TB-20. |
