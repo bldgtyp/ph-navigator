@@ -58,3 +58,7 @@ postgres_data/
 
 # ─── Build output ───
 *.tsbuildinfo
+
+# ─── Claude Code harness state ───
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks/

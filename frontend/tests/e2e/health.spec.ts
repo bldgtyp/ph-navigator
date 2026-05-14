@@ -1,8 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { createProject, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
 test("editor creates a project and public viewer can open the shell", async ({ page, browser }) => {
+  // Asserts the `/` -> `/sign-in?next=%2F` redirect; the rest of the
+  // sign-in flow is shared with `signIn` but the redirect probe is unique
+  // to this test, so it stays inline.
   await page.goto("/");
   await expect(page).toHaveURL(/\/sign-in\?next=%2F/);
   await page.getByLabel("Email").fill(process.env.E2E_EMAIL ?? "ed@example.com");
@@ -12,16 +16,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await expect(page.getByRole("heading", { name: "My Projects", exact: true })).toBeVisible();
 
   const btNumber = `e2e-${Date.now().toString().slice(-8)}`;
-
-  await page.getByRole("button", { name: "Create new project" }).click();
-  await page.getByLabel("Project name").fill(`E2E Project ${btNumber}`);
-  await page.getByLabel("BT number").fill(btNumber);
-  await page.getByLabel("Client").fill("BLDGTYP");
-  await page.getByRole("checkbox", { name: "PHI", exact: true }).check();
-  await expect(page.getByText("BT number available")).toBeVisible();
-  await page.getByRole("button", { name: "Create project" }).click();
-
-  await expect(page).toHaveURL(/\/projects\/.+\/status/);
+  await createProject(page, { name: `E2E Project ${btNumber}`, btNumber });
   await expect(page.getByRole("heading", { name: "Status" })).toBeVisible();
   await expect(page.getByText(`${btNumber} · BLDGTYP`)).toBeVisible();
   await expect(
@@ -99,8 +94,14 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await page.getByRole("button", { name: "Diff" }).click();
   await page.getByLabel("Compare current version to").selectOption({ label: "Round 1 Submit" });
   const diffDialog = page.getByRole("dialog", { name: "Diff" });
-  await expect(diffDialog.getByRole("heading", { name: "rooms" })).toBeVisible();
-  await expect(diffDialog.getByText("0 changed paths")).toBeVisible();
+  // Diff renders one <section class="diff-table"> per registered table
+  // (rooms, window_types, …). Scope the "0 changed paths" count to the
+  // rooms section so an unrelated table with zero changes can't mask a
+  // Rooms regression.
+  const roomsDiffSection = diffDialog.locator("section.diff-table").filter({
+    has: page.getByRole("heading", { name: "rooms" }),
+  });
+  await expect(roomsDiffSection.getByText("0 changed paths")).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
 
   const publicContext = await browser.newContext();
@@ -119,20 +120,10 @@ test("editor creates a project and public viewer can open the shell", async ({ p
 });
 
 test("same-editor Rooms tabs freeze stale active edits", async ({ page, context }) => {
-  await page.goto("/");
-  await page.getByLabel("Email").fill(process.env.E2E_EMAIL ?? "ed@example.com");
-  await page.getByLabel("Password").fill(process.env.E2E_PASSWORD ?? "password");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  await signIn(page);
 
   const btNumber = `tabs-${Date.now().toString().slice(-8)}`;
-  await page.getByRole("button", { name: "Create new project" }).click();
-  await page.getByLabel("Project name").fill(`Tab Conflict ${btNumber}`);
-  await page.getByLabel("BT number").fill(btNumber);
-  await page.getByLabel("Client").fill("BLDGTYP");
-  await page.getByRole("checkbox", { name: "PHI", exact: true }).check();
-  await expect(page.getByText("BT number available")).toBeVisible();
-  await page.getByRole("button", { name: "Create project" }).click();
+  await createProject(page, { name: `Tab Conflict ${btNumber}`, btNumber });
 
   await page.getByRole("link", { name: "Equipment" }).click();
   await expect(page.getByRole("heading", { name: "Equipment" })).toBeVisible();

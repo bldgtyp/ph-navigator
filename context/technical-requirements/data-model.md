@@ -316,17 +316,25 @@ JSON document. Illustrative sketch (the canonical model is the
             "id": "winel_...",
             "row_span": [0, 0],
             "column_span": [0, 0],
-            "frames": {
-              "top":    { /* inlined frame; see ProjectDocumentV1 */ },
-              "right":  { /* inlined frame; see ProjectDocumentV1 */ },
-              "bottom": { /* inlined frame; see ProjectDocumentV1 */ },
-              "left":   { /* inlined frame; see ProjectDocumentV1 */ }
+            "frames": {                          // each side: FrameRef | null (TB-08.b)
+              "top":    { /* FrameRef: see below */ },
+              "right":  null,
+              "bottom": null,
+              "left":   null
             },
-            "glazing": { /* inlined; see ProjectDocumentV1 for full shape */ }
+            "glazing": { /* GlazingRef | null: see below */ }
           }
         ]
       }
     ],
+    // FrameRef fields (TB-08.b, mirrors catalog_frame_type_versions):
+    //   name, manufacturer, brand, width_mm, u_value_w_m2k, psi_g_w_mk,
+    //   psi_install_w_mk, argb_color, notes, source_provenance,
+    //   catalog_origin (nullable; null when hand-entered)
+    // GlazingRef fields (TB-08.b, mirrors catalog_glazing_type_versions):
+    //   name, manufacturer, brand, u_value_w_m2k, g_value, argb_color,
+    //   notes, source_provenance, catalog_origin (nullable)
+    // Authoritative schema: GET /api/v1/schemas/window-type/v1.json
     "rooms": [                               // see US-EQ-2
       {
         "id": "rm_...",
