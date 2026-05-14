@@ -62,7 +62,7 @@ under the `Staging` environment.
 - Static frontend service: `ph-navigator-v2-staging`
   - URL: `https://ph-navigator-v2-staging.onrender.com`
   - Root directory: `frontend`
-  - Build command: `corepack enable && pnpm install --frozen-lockfile && pnpm run build`
+  - Build command: `pnpm install --frozen-lockfile && pnpm run build`
   - Publish directory: `dist`
   - Rewrite rule: `/*` -> `/index.html` with action `Rewrite`
   - Env: `VITE_API_BASE_URL=https://ph-navigator-v2.onrender.com`
