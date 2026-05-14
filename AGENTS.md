@@ -55,11 +55,14 @@ Start here in `context/`:
   for every feature, preserve strict typing, split large modules, and
   document the why behind behavior.
 
-## Node — npm only
+## Node — pnpm only
 
-- `npm install`, `npm run dev`, `npm test`, `npm run build`.
-- Frontend root: `frontend/`. NOT yarn, NOT pnpm.
-- Run Prettier (`npm run format`) after frontend changes.
+- `pnpm install`, `pnpm run dev`, `pnpm test`, `pnpm run build`.
+- Frontend root: `frontend/`. NOT npm, NOT yarn.
+- Keep pnpm supply-chain protections enabled: 24-hour
+  `minimumReleaseAge`, strict minimum-age enforcement, and
+  `blockExoticSubdeps`.
+- Run Prettier (`pnpm run format`) after frontend changes.
 - Frontend feature code follows `context/CODING_STANDARDS.md`: keep
   feature-first organization, keep `App.tsx` as provider/router
   composition, use TanStack Query for server state, and split large

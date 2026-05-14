@@ -9,12 +9,12 @@ feature work (see `context/USER_STORIES.md`, the relevant
 
 ```bash
 cd frontend
-npm install              # first time / when package-lock.json changes
-npm run dev              # Vite dev server on http://localhost:5173
-npm test                 # Vitest
-npm run test:e2e         # Playwright (Vite must be running)
-npm run lint             # ESLint
-npm run format           # Prettier
+pnpm install             # first time / when pnpm-lock.yaml changes
+pnpm run dev             # Vite dev server on http://localhost:5173
+pnpm test                # Vitest
+pnpm run test:e2e        # Playwright (Vite must be running)
+pnpm run lint            # ESLint
+pnpm run format          # Prettier
 ```
 
 Or from the repo root: `make frontend`, `make test-frontend`, `make e2e`.

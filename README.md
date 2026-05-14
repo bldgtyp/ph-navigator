@@ -15,7 +15,7 @@ sibling, not a migration in place.
 cd backend && uv python install 3.11 && uv sync && cd ..
 
 # 2. Frontend: install Node deps
-cd frontend && npm install && cd ..
+cd frontend && pnpm install && cd ..
 
 # 3. Copy env templates
 cp backend/.env.example backend/.env
@@ -59,7 +59,7 @@ See `Makefile` (`make help`) for the full recipe list.
 
 1. **Python:** `uv run …` or `uvx …`. Never `python`, `pip`, or
    `source .venv/bin/activate`.
-2. **Node:** `npm` only. No yarn / pnpm.
+2. **Node:** `pnpm` only. No npm / yarn.
 3. **Database:** Postgres in Docker via `docker compose`. No system
    `psql`.
 4. **Env files:** `backend/.env` and `frontend/.env.local`. No

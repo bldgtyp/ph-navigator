@@ -340,10 +340,10 @@ Required local checks before considering frontend work complete:
 
 ```bash
 cd frontend
-npm run build
-npm test
-npm run lint
-npm run format:check
+pnpm run build
+pnpm test
+pnpm run lint
+pnpm run format:check
 ```
 
 Repo-level equivalents may be used when available:
@@ -376,5 +376,5 @@ For every frontend feature or change:
 - Are API types, route helpers, tab registries, and payload builders outside
   page component files?
 - Are component files still small enough to review?
-- Did `build`, frontend tests, lint, and format checks pass through `npm` or the
+- Did `build`, frontend tests, lint, and format checks pass through `pnpm` or the
   Makefile?

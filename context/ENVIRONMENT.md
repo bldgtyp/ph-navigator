@@ -8,11 +8,14 @@
 - NEVER use `python`, `python3`, `pip`, `source .venv/bin/activate`
 - Backend project root: `backend/`
 
-## Node: npm only
+## Node: pnpm only
 
-- `npm install`, `npm run dev`, `npm test`, `npm run build`
+- `pnpm install`, `pnpm run dev`, `pnpm test`, `pnpm run build`
 - Frontend project root: `frontend/`
-- NOT yarn, NOT pnpm
+- NOT npm, NOT yarn
+- Keep pnpm supply-chain protections enabled: 24-hour
+  `minimumReleaseAge`, strict minimum-age enforcement, and
+  `blockExoticSubdeps`.
 
 ## Database
 
@@ -59,7 +62,7 @@ under the `Staging` environment.
 - Static frontend service: `ph-navigator-v2-staging`
   - URL: `https://ph-navigator-v2-staging.onrender.com`
   - Root directory: `frontend`
-  - Build command: `npm ci && npm run build`
+  - Build command: `corepack enable && pnpm install --frozen-lockfile && pnpm run build`
   - Publish directory: `dist`
   - Rewrite rule: `/*` -> `/index.html` with action `Rewrite`
   - Env: `VITE_API_BASE_URL=https://ph-navigator-v2.onrender.com`
@@ -138,7 +141,7 @@ password was shared in chat or another durable channel, rotate it.
   `uv` or the Makefile.
 - Frontend work must preserve feature-first organization, use TanStack
   Query for server state, and pass `build`, tests, lint, and format
-  checks through `npm` or the Makefile.
+  checks through `pnpm` or the Makefile.
 
 ## Browser testing (Playwright MCP)
 

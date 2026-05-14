@@ -1,7 +1,7 @@
 # ph-navigator-v2/Makefile
 # All recipes are runnable standalone; this file is the discoverability
 # layer for new contributors and LLM agents. Every recipe is
-# `cd <subdir> && uv run …` or `cd <subdir> && npm …` so it never assumes
+# `cd <subdir> && uv run …` or `cd <subdir> && pnpm …` so it never assumes
 # the caller's working directory. See context/environment-setup.md §6.
 
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
@@ -16,13 +16,13 @@ help: ## Show available recipes
 
 setup: ## First-time setup (Python, Node, env files)
 	cd backend && uv python install 3.11 && uv sync
-	cd frontend && npm install
+	cd frontend && pnpm install
 	test -f backend/.env || cp backend/.env.example backend/.env
 	test -f frontend/.env.local || cp frontend/.env.example frontend/.env.local
 
 sync: ## Re-sync Python and Node deps from lockfiles
 	cd backend && uv sync
-	cd frontend && npm ci
+	cd frontend && pnpm install --frozen-lockfile
 
 # ─────────────── daily dev ───────────────
 
@@ -37,7 +37,7 @@ backend: ## Run FastAPI dev server
 	cd backend && uv run uvicorn main:app --reload --port 8000
 
 frontend: ## Run Vite dev server
-	cd frontend && npm run dev
+	cd frontend && pnpm run dev
 
 # ─────────────── database ───────────────
 
@@ -67,24 +67,24 @@ test-backend:
 	cd backend && uv run pytest
 
 test-frontend:
-	cd frontend && npm test
+	cd frontend && pnpm test
 
 typecheck: ## Run backend static type checker
 	cd backend && uv run ty check
 
 e2e: ## Run Playwright end-to-end tests (frontend must be running)
-	cd frontend && npm run test:e2e
+	cd frontend && pnpm run test:e2e
 
 e2e-report: ## Open the last Playwright HTML report
-	cd frontend && npm exec -- playwright show-report
+	cd frontend && pnpm exec playwright show-report
 
 lint: ## Run linters (ruff + eslint)
 	cd backend && uvx ruff check .
-	cd frontend && npm run lint
+	cd frontend && pnpm run lint
 
 format: ## Auto-format code
 	cd backend && uvx ruff format .
-	cd frontend && npm run format
+	cd frontend && pnpm run format
 
 # ─────────────── misc ───────────────
 
