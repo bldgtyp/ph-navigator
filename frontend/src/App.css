@@ -1808,3 +1808,118 @@ th.data-table-frozen {
     justify-content: flex-start;
   }
 }
+
+.windows-panel .windows-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.windows-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.windows-sidebar button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--border-subtle, #d4d4d8);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.windows-sidebar button.active {
+  border-color: var(--accent, #2563eb);
+  background: var(--bg-emphasized, #eff6ff);
+}
+
+.windows-detail-header h3 {
+  margin: 0 0 12px 0;
+}
+
+.windows-elements {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.window-element-card {
+  border: 1px solid var(--border-subtle, #d4d4d8);
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface, #fff);
+}
+
+.window-element-card h4 {
+  margin: 0 0 8px 0;
+}
+
+.window-element-frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.window-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.window-slot-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #6b7280);
+}
+
+.window-slot-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.window-slot-uvalue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.window-slot-uvalue input {
+  width: 90px;
+}
+
+.catalog-origin-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--bg-emphasized, #eef2ff);
+  color: var(--accent, #2563eb);
+}
+
+.override-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--bg-warning, #fef3c7);
+  color: #92400e;
+}
+
+@media (max-width: 720px) {
+  .windows-panel .windows-layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -77,11 +77,12 @@ function useInvalidateFrameTypes() {
   return () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.frameTypes() });
 }
 
-export function useFrameTypesQuery(includeInactive: boolean) {
+export function useFrameTypesQuery(includeInactive: boolean, enabled = true) {
   return useQuery({
     queryKey: catalogQueryKeys.frameTypesList(includeInactive),
     queryFn: ({ signal }) => listFrameTypes(includeInactive, signal),
     select: (payload) => payload.items,
+    enabled,
   });
 }
 
@@ -123,10 +124,11 @@ function useInvalidateGlazingTypes() {
   return () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.glazingTypes() });
 }
 
-export function useGlazingTypesQuery(includeInactive: boolean) {
+export function useGlazingTypesQuery(includeInactive: boolean, enabled = true) {
   return useQuery({
     queryKey: catalogQueryKeys.glazingTypesList(includeInactive),
     queryFn: ({ signal }) => listGlazingTypes(includeInactive, signal),
+    enabled,
     select: (payload) => payload.items,
   });
 }
