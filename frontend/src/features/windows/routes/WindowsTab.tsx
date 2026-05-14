@@ -7,6 +7,7 @@ import { isInvalidProjectDocumentError } from "../../project_document/lib";
 import type { ProjectDetail } from "../../projects/types";
 import { useReplaceWindowTypesSliceMutation, useWindowTypesSliceQuery } from "../hooks";
 import { RefreshDialog } from "../refresh/RefreshDialog";
+import { RefreshReviewAllModal } from "../refresh/RefreshReviewAllModal";
 import {
   useInvalidateWindowTypesRefresh,
   useWindowTypesRefreshReportQuery,
@@ -17,7 +18,7 @@ import {
   refreshActionLabel,
   refreshSlotLookupKey,
 } from "../refresh/lib";
-import type { RefreshSlotName, RefreshSlotReport } from "../refresh/types";
+import type { RefreshSlotName, RefreshSlotReport, RefreshSlotState } from "../refresh/types";
 import {
   FRAME_SIDES,
   OVERRIDE_TRACKER_FIELD,
@@ -65,18 +66,21 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
     elementId: string;
     slot: RefreshSlotName;
   } | null>(null);
+  const [reviewAllOpen, setReviewAllOpen] = useState(false);
 
   const windowTypes = sliceQuery.data?.window_types;
   const sortedTypes = useMemo(
     () => (windowTypes ? naturalSortByName(windowTypes) : []),
     [windowTypes],
   );
-  const refreshSlotsByTarget = useMemo(() => {
-    const out = new Map<string, RefreshSlotReport>();
+  const refreshSlots = useMemo(() => {
+    const byTarget = new Map<string, RefreshSlotReport>();
+    const reviewable: RefreshSlotReport[] = [];
     for (const slot of refreshQuery.data?.slots ?? []) {
-      out.set(refreshSlotLookupKey(slot.window_type_id, slot.element_id, slot.slot), slot);
+      byTarget.set(refreshSlotLookupKey(slot.window_type_id, slot.element_id, slot.slot), slot);
+      if (isReviewableRefreshState(slot.state)) reviewable.push(slot);
     }
-    return out;
+    return { byTarget, reviewable };
   }, [refreshQuery.data?.slots]);
 
   useEffect(() => {
@@ -114,6 +118,7 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
 
   const slice = sliceQuery.data;
   const selectedWindowType = sortedTypes.find((entry) => entry.id === selectedId) ?? null;
+  const reviewableRefreshSlots = refreshSlots.reviewable;
 
   const commitWindowTypes = async (nextList: WindowTypeEntry[]): Promise<boolean> => {
     if (!canEdit) return false;
@@ -142,7 +147,7 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
     commitWindowTypes(replaceWindowTypeInList(slice.window_types, next));
 
   const refreshSlot = activeRefresh
-    ? (refreshSlotsByTarget.get(
+    ? (refreshSlots.byTarget.get(
         refreshSlotLookupKey(
           activeRefresh.windowTypeId,
           activeRefresh.elementId,
@@ -181,11 +186,29 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
           <p>Pick frame and glazing types from the catalogs.</p>
         </div>
         {canEdit ? (
-          <button type="button" onClick={() => void handleAdd()}>
-            Add window type
-          </button>
+          <div className="windows-header-actions">
+            <button type="button" onClick={() => setReviewAllOpen(true)}>
+              Review all
+            </button>
+            <button type="button" onClick={() => void handleAdd()}>
+              Add window type
+            </button>
+          </div>
         ) : null}
       </div>
+      {canEdit && reviewableRefreshSlots.length > 0 ? (
+        <p className="draft-banner">
+          {reviewableRefreshSlots.length}{" "}
+          {reviewableRefreshSlots.length === 1 ? "entry" : "entries"} drifted from catalog.{" "}
+          <button
+            type="button"
+            className="text-button refresh-slot-button"
+            onClick={() => setReviewAllOpen(true)}
+          >
+            Review all
+          </button>
+        </p>
+      ) : null}
       {isLocked ? (
         <p className="draft-banner">
           This version is locked. Save As to copy it into a new version.
@@ -210,7 +233,7 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
             glazingTypes={glazingTypesQuery.data ?? []}
             glazingTypesLoading={glazingTypesQuery.isLoading}
             getRefreshSlot={(elementId, slot) =>
-              refreshSlotsByTarget.get(
+              refreshSlots.byTarget.get(
                 refreshSlotLookupKey(selectedWindowType.id, elementId, slot),
               ) ?? null
             }
@@ -232,6 +255,18 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
           onApply={(nextRef) => void applyRefresh(nextRef)}
         />
       ) : null}
+      {reviewAllOpen ? (
+        <RefreshReviewAllModal
+          slots={reviewableRefreshSlots}
+          windowTypes={slice.window_types}
+          onClose={() => setReviewAllOpen(false)}
+          onReview={(target) => {
+            setReviewAllOpen(false);
+            setSelectedId(target.windowTypeId);
+            setActiveRefresh(target);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -241,6 +276,10 @@ function emptyDetailMessage(typeCount: number, canEdit: boolean): string {
   return canEdit
     ? "No window types yet. Add one to start picking frames and glazing."
     : "No window types in this version yet.";
+}
+
+function isReviewableRefreshState(state: RefreshSlotState): boolean {
+  return state === "drifted" || state === "source_deactivated";
 }
 
 function WindowTypeSidebar({

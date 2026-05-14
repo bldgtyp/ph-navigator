@@ -272,6 +272,20 @@ API. They require `project:write` plus `asset:write`, obey the same ETag
 rules as other draft writes, and only mutate asset-id arrays in the
 project document. They do not mutate saved versions directly.
 
+### 9.10a Window Type Catalog Refresh
+
+```
+GET /api/v1/projects/{pid}/versions/{vid}/refresh/window-types?source=draft|version
+```
+
+Returns the TB-09 refresh report for copied FrameRef / GlazingRef values
+in `tables.window_types[]`. The route is editor-only in V2 v1, omits
+hand-entered refs without `catalog_origin`, and reports each copied slot
+as `in_sync`, `drifted`, or `source_deactivated` with per-field catalog
+vs project values and override flags. Apply actions write through the
+existing `PUT /draft/tables/window_types` replace-slice path; there is no
+bulk update endpoint.
+
 ### 9.11 HBJSON files
 
 ```

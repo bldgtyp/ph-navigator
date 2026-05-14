@@ -4,9 +4,11 @@ import {
   FRAME_TYPES_TABLE,
   GLAZING_TYPES_PATH,
   GLAZING_TYPES_TABLE,
+  apiUrl,
   createProject,
   deactivateCatalogRow,
   originHeaders,
+  readWindowTypesSlice,
   seedCatalog,
   signIn,
 } from "./_helpers";
@@ -37,22 +39,24 @@ test("editor picks frame and glazing into a window type and the override tracer 
   try {
     // Seed catalogs through the API so the spec stays focused on the
     // picker / override / save flow. TB-08.a covers the catalog UI itself.
-    frameId = await seedCatalog(page.request, FRAME_TYPES_PATH, headers, {
-      name: frameName,
-      manufacturer: "Skyline",
-      brand: "Ridge",
-      width_mm: 82,
-      u_value_w_m2k: 0.95,
-      psi_g_w_mk: 0.038,
-      psi_install_w_mk: 0.04,
-    });
-    glazingId = await seedCatalog(page.request, GLAZING_TYPES_PATH, headers, {
-      name: glazingName,
-      manufacturer: "Cardinal",
-      brand: "LoE-366",
-      u_value_w_m2k: 0.6,
-      g_value: 0.5,
-    });
+    [frameId, glazingId] = await Promise.all([
+      seedCatalog(page.request, apiUrl(baseURL, FRAME_TYPES_PATH), headers, {
+        name: frameName,
+        manufacturer: "Skyline",
+        brand: "Ridge",
+        width_mm: 82,
+        u_value_w_m2k: 0.95,
+        psi_g_w_mk: 0.038,
+        psi_install_w_mk: 0.04,
+      }),
+      seedCatalog(page.request, apiUrl(baseURL, GLAZING_TYPES_PATH), headers, {
+        name: glazingName,
+        manufacturer: "Cardinal",
+        brand: "LoE-366",
+        u_value_w_m2k: 0.6,
+        g_value: 0.5,
+      }),
+    ]);
 
     const projectId = await createProject(page, {
       name: `Windows TB-08c ${stamp}`,
@@ -91,16 +95,7 @@ test("editor picks frame and glazing into a window type and the override tracer 
     await expect(page.getByLabel("Glazing U-value")).toHaveValue("0.6");
     await expect(page.locator(".override-badge").first()).toBeVisible();
 
-    const slice = await page.evaluate(async (id: string) => {
-      const detailResponse = await fetch(`/api/v1/projects/${id}`, { credentials: "include" });
-      const detail = await detailResponse.json();
-      const versionId = detail.active_version_id;
-      const tableResponse = await fetch(
-        `/api/v1/projects/${id}/versions/${versionId}/document/tables/window_types`,
-        { credentials: "include" },
-      );
-      return tableResponse.json();
-    }, projectId);
+    const slice = await readWindowTypesSlice(page.request, baseURL, projectId);
     expect(slice.window_types).toHaveLength(1);
     const element = slice.window_types[0].elements[0];
     expect(element.frames.top.u_value_w_m2k).toBeCloseTo(0.85, 5);
@@ -110,7 +105,18 @@ test("editor picks frame and glazing into a window type and the override tracer 
     expect(element.glazing.catalog_origin.catalog_table).toBe(GLAZING_TYPES_TABLE);
     expect(element.glazing.catalog_origin.local_overrides).toEqual([]);
   } finally {
-    if (frameId) await deactivateCatalogRow(page.request, FRAME_TYPES_PATH, frameId, headers);
-    if (glazingId) await deactivateCatalogRow(page.request, GLAZING_TYPES_PATH, glazingId, headers);
+    await Promise.all([
+      frameId
+        ? deactivateCatalogRow(page.request, apiUrl(baseURL, FRAME_TYPES_PATH), frameId, headers)
+        : Promise.resolve(),
+      glazingId
+        ? deactivateCatalogRow(
+            page.request,
+            apiUrl(baseURL, GLAZING_TYPES_PATH),
+            glazingId,
+            headers,
+          )
+        : Promise.resolve(),
+    ]);
   }
 });

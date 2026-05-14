@@ -54,7 +54,11 @@ export function refreshSlotLookupKey(
   elementId: string,
   slot: RefreshSlotName,
 ): string {
-  return `${windowTypeId}:${elementId}:${slot}`;
+  return `${refreshElementLookupKey(windowTypeId, elementId)}:${slot}`;
+}
+
+export function refreshElementLookupKey(windowTypeId: string, elementId: string): string {
+  return `${windowTypeId}:${elementId}`;
 }
 
 export function refreshActionLabel(state: RefreshSlotState): string | null {

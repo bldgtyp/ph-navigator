@@ -7,11 +7,21 @@ export const FRAME_TYPES_TABLE = "frame_types";
 export const GLAZING_TYPES_TABLE = "glazing_types";
 
 const DEFAULT_BASE_URL = "http://localhost:5173";
+const STAGING_FRONTEND_URL = "https://ph-navigator-v2-staging.onrender.com";
+const STAGING_API_URL = "https://ph-navigator-v2.onrender.com";
 
 // TB-01's mutating-route Origin check rejects API requests without an
 // allowed Origin header; `page.request` doesn't add one by default.
 export function originHeaders(baseURL: string | undefined): Record<string, string> {
   return { Origin: (baseURL ?? DEFAULT_BASE_URL).replace(/\/$/, "") };
+}
+
+export function apiUrl(baseURL: string | undefined, path: string): string {
+  const configured = process.env.E2E_API_BASE_URL;
+  if (configured) return new URL(path, configured).toString();
+  const frontendBase = (baseURL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+  if (frontendBase === STAGING_FRONTEND_URL) return new URL(path, STAGING_API_URL).toString();
+  return new URL(path, frontendBase).toString();
 }
 
 export async function signIn(page: Page): Promise<void> {
@@ -61,4 +71,33 @@ export async function deactivateCatalogRow(
   } catch {
     // Best-effort teardown.
   }
+}
+
+export async function updateCatalogRow(
+  request: APIRequestContext,
+  endpoint: string,
+  id: string,
+  headers: Record<string, string>,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const response = await request.patch(`${endpoint}/${id}`, { headers, data });
+  expect(response.status(), await response.text()).toBe(200);
+}
+
+export async function readWindowTypesSlice(
+  request: APIRequestContext,
+  baseURL: string | undefined,
+  projectId: string,
+) {
+  const detailResponse = await request.get(apiUrl(baseURL, `/api/v1/projects/${projectId}`));
+  expect(detailResponse.status(), await detailResponse.text()).toBe(200);
+  const detail = await detailResponse.json();
+  const tableResponse = await request.get(
+    apiUrl(
+      baseURL,
+      `/api/v1/projects/${projectId}/versions/${detail.active_version_id}/document/tables/window_types`,
+    ),
+  );
+  expect(tableResponse.status(), await tableResponse.text()).toBe(200);
+  return tableResponse.json();
 }
