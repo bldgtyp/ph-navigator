@@ -697,7 +697,28 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
   });
 
-  test("routes the Catalogs dropdown to the live catalog placeholders", async () => {
+  test("routes the Catalogs dropdown to the live Materials catalog page", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", "/dashboard");
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/catalogs/materials") return jsonResponse({ items: [] });
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByText("Catalogs"));
+    await user.click(screen.getByRole("link", { name: "Materials" }));
+
+    expect(await screen.findByRole("heading", { name: "Materials" })).toBeVisible();
+    expect(await screen.findByText("No materials yet")).toBeVisible();
+    expect(window.location.pathname).toBe("/catalog/materials");
+  });
+
+  test("routes other Catalogs entries to the pending placeholder", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -710,11 +731,11 @@ describe("App", () => {
     render(<App />);
 
     await user.click(await screen.findByText("Catalogs"));
-    await user.click(screen.getByRole("link", { name: "Materials" }));
+    await user.click(screen.getByRole("link", { name: "Window-Frame Elements" }));
 
-    expect(await screen.findByRole("heading", { name: "Materials" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Window-Frame Elements" })).toBeVisible();
     expect(screen.getByText("Catalog manager pending")).toBeVisible();
-    expect(window.location.pathname).toBe("/catalog/materials");
+    expect(window.location.pathname).toBe("/catalog/window-frame-elements");
   });
 
   test("applies the default status template from the empty Status tab", async () => {

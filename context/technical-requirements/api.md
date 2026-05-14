@@ -197,6 +197,20 @@ PATCH  /api/v1/catalog/{table}/{rid}/versions/{vid}         in-place edit (curre
 DELETE /api/v1/catalog/{table}/{rid}                        soft delete record
 ```
 
+TB-07 implementation status (2026-05-14): Materials is the first catalog
+and ships under a per-catalog prefix rather than the generic
+`/catalog/{table}` shape — the live routes are
+`/api/v1/catalogs/materials` with list/create/get/patch/delete plus a
+`POST /{rid}/reactivate` for soft-undelete. `PATCH` targets the
+identity row and the current version in one in-place edit; explicit
+`/versions` sub-routes and new-version creation are deferred until a
+second catalog requires the generic shape (TB-08 should pick: keep
+per-catalog prefixes consistent across catalogs, or generalize to
+`/catalog/{table}` once 2+ catalogs exist). Every response carries
+`catalog_schema_version: 1` and the joined `current_version_id` /
+`version_label` / `version_date` so downstream pickers can build a
+`catalog_origin` block at pick time.
+
 ### 9.9 Public links
 
 **Removed 2026-05-10.** Per the updated §4 access model, there are

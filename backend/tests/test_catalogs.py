@@ -1,0 +1,271 @@
+"""Materials catalog contract tests for TB-07."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+import pytest
+from fastapi.testclient import TestClient
+
+from database import connection, transaction
+from features.auth.service import create_or_update_user
+from main import app
+
+ORIGIN = "http://localhost:5173"
+
+
+@pytest.fixture()
+def clean_catalog_tables() -> Iterator[None]:
+    with transaction() as conn:
+        conn.execute(
+            """
+            TRUNCATE catalog_material_versions, catalog_materials,
+                     user_action_log, sessions, project_status_items,
+                     project_version_drafts, project_versions, projects, users
+            RESTART IDENTITY CASCADE
+            """
+        )
+    yield
+    with transaction() as conn:
+        conn.execute(
+            """
+            TRUNCATE catalog_material_versions, catalog_materials,
+                     user_action_log, sessions, project_status_items,
+                     project_version_drafts, project_versions, projects, users
+            RESTART IDENTITY CASCADE
+            """
+        )
+
+
+def signed_in_client() -> TestClient:
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+    response = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert response.status_code == 200
+    return client
+
+
+def _xps_payload(name: str = "XPS") -> dict[str, object]:
+    return {
+        "name": name,
+        "category": "Insulation",
+        "version_label": "2024 spec",
+        "version_date": "2024-06-01",
+        "conductivity_w_mk": 0.034,
+        "density_kg_m3": 35.0,
+        "specific_heat_j_kgk": 1500.0,
+        "emissivity": 0.9,
+        "argb_color": "(255,220,230,240)",
+        "notes": "Type IV per ASTM C578",
+        "source_provenance": "Manufacturer datasheet 2024-Q2",
+    }
+
+
+def test_create_returns_bookshelf_metadata(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    response = client.post(
+        "/api/v1/catalogs/materials",
+        headers={"Origin": ORIGIN},
+        json=_xps_payload(),
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["name"] == "XPS"
+    assert body["category"] == "Insulation"
+    assert body["conductivity_w_mk"] == pytest.approx(0.034)
+    assert body["is_active"] is True
+    # Bookshelf-copy metadata shape: downstream picker needs these to construct
+    # `catalog_origin` per data-model.md §6.2 / §7.4.
+    assert body["id"].startswith("mat_")
+    assert body["current_version_id"].startswith("matv_")
+    assert body["catalog_schema_version"] == 1
+    assert body["version_label"] == "2024 spec"
+    assert body["version_date"] == "2024-06-01"
+
+
+def test_list_filters_inactive_by_default_and_active_filter_is_explicit(
+    clean_catalog_tables: None,
+) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload("XPS")).json()
+    client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload("Mineral Wool")).json()
+
+    listed = client.get("/api/v1/catalogs/materials").json()
+    assert {item["name"] for item in listed["items"]} == {"XPS", "Mineral Wool"}
+
+    deactivate = client.delete(f"/api/v1/catalogs/materials/{created['id']}", headers={"Origin": ORIGIN})
+    assert deactivate.status_code == 204
+
+    listed_after = client.get("/api/v1/catalogs/materials").json()
+    assert {item["name"] for item in listed_after["items"]} == {"Mineral Wool"}
+
+    listed_inactive = client.get("/api/v1/catalogs/materials", params={"include_inactive": "true"}).json()
+    assert {item["name"] for item in listed_inactive["items"]} == {"XPS", "Mineral Wool"}
+    xps = next(item for item in listed_inactive["items"] if item["name"] == "XPS")
+    assert xps["is_active"] is False
+
+
+def test_edit_in_place_does_not_touch_project_versions(clean_catalog_tables: None) -> None:
+    """A catalog edit must not mutate any project document.
+
+    The bookshelf model copies values at pick time; later catalog edits live
+    only on the catalog row and surface through refresh-from-catalog, never
+    via silent mutation of saved project bodies.
+    """
+    client = signed_in_client()
+    # Create a project so project_versions is non-empty when the catalog edit lands.
+    project_response = client.post(
+        "/api/v1/projects",
+        headers={"Origin": ORIGIN},
+        json={
+            "name": "Catalog Side-Effect Test",
+            "bt_number": "0007",
+            "client": None,
+            "cert_programs": [],
+            "phius_number": None,
+            "phius_dropbox_url": None,
+        },
+    )
+    assert project_response.status_code == 201
+
+    with connection() as conn:
+        before = conn.execute("SELECT id, body::text AS body_text, updated_at FROM project_versions").fetchall()
+    assert len(before) >= 1
+
+    created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
+
+    patched = client.patch(
+        f"/api/v1/catalogs/materials/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"conductivity_w_mk": 0.030, "notes": "Reformulated 2026"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["conductivity_w_mk"] == pytest.approx(0.030)
+    # current_version_id is unchanged (in-place edit per §7.3).
+    assert patched.json()["current_version_id"] == created["current_version_id"]
+
+    with connection() as conn:
+        after = conn.execute("SELECT id, body::text AS body_text, updated_at FROM project_versions").fetchall()
+    assert after == before
+
+
+def test_validation_rejects_blank_name_and_negative_conductivity(
+    clean_catalog_tables: None,
+) -> None:
+    client = signed_in_client()
+    blank = client.post(
+        "/api/v1/catalogs/materials",
+        headers={"Origin": ORIGIN},
+        json={**_xps_payload(), "name": "   "},
+    )
+    assert blank.status_code == 422
+
+    negative = client.post(
+        "/api/v1/catalogs/materials",
+        headers={"Origin": ORIGIN},
+        json={**_xps_payload(), "conductivity_w_mk": -0.1},
+    )
+    assert negative.status_code == 422
+
+    bad_emissivity = client.post(
+        "/api/v1/catalogs/materials",
+        headers={"Origin": ORIGIN},
+        json={**_xps_payload(), "emissivity": 1.5},
+    )
+    assert bad_emissivity.status_code == 422
+
+
+def test_unauthenticated_read_and_write_rejected(clean_catalog_tables: None) -> None:
+    # Seed one row so the list endpoint has data to expose if auth ever leaked.
+    client = signed_in_client()
+    client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload())
+
+    anon = TestClient(app)
+    assert anon.get("/api/v1/catalogs/materials").status_code == 401
+    assert (
+        anon.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload("Anon")).status_code
+        == 401
+    )
+
+
+def test_deactivate_is_idempotent_and_reactivate_restores(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
+
+    first = client.delete(f"/api/v1/catalogs/materials/{created['id']}", headers={"Origin": ORIGIN})
+    assert first.status_code == 204
+    second = client.delete(f"/api/v1/catalogs/materials/{created['id']}", headers={"Origin": ORIGIN})
+    assert second.status_code == 404  # already inactive
+
+    reactivated = client.post(
+        f"/api/v1/catalogs/materials/{created['id']}/reactivate",
+        headers={"Origin": ORIGIN},
+    )
+    assert reactivated.status_code == 200
+    assert reactivated.json()["is_active"] is True
+
+
+def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None) -> None:
+    """Per US-OPS-1 / data-model.md §7.3, catalog edits must be audit-logged."""
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
+    record_id = created["id"]
+    version_id = created["current_version_id"]
+
+    patched = client.patch(
+        f"/api/v1/catalogs/materials/{record_id}",
+        headers={"Origin": ORIGIN},
+        json={"conductivity_w_mk": 0.030},
+    )
+    assert patched.status_code == 200
+
+    assert client.delete(f"/api/v1/catalogs/materials/{record_id}", headers={"Origin": ORIGIN}).status_code == 204
+
+    reactivated = client.post(f"/api/v1/catalogs/materials/{record_id}/reactivate", headers={"Origin": ORIGIN})
+    assert reactivated.status_code == 200
+
+    with connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT action, details::text AS details_text
+            FROM user_action_log
+            WHERE action LIKE 'catalog_%%'
+            ORDER BY created_at ASC, id ASC
+            """
+        ).fetchall()
+    actions = [row["action"] for row in rows]
+    assert actions == [
+        "catalog_record_create",
+        "catalog_record_update",
+        "catalog_record_delete",
+        "catalog_record_reactivate",
+    ]
+    for row in rows:
+        details = row["details_text"]
+        assert '"catalog_table": "materials"' in details
+        assert record_id in details
+    # The update entry records which fields changed so audit can answer
+    # "what changed" without diffing the version row.
+    update_row = next(row for row in rows if row["action"] == "catalog_record_update")
+    assert '"conductivity_w_mk"' in update_row["details_text"]
+    # Create + update + reactivate carry the version id so the audit trail
+    # can be joined back to a specific catalog_material_versions row.
+    for action in ("catalog_record_create", "catalog_record_update", "catalog_record_reactivate"):
+        row = next(r for r in rows if r["action"] == action)
+        assert version_id in row["details_text"]
+
+
+def test_patch_rejects_null_version_date(clean_catalog_tables: None) -> None:
+    """PATCH with version_date=null must 422 cleanly instead of hitting the NOT NULL constraint."""
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
+    response = client.patch(
+        f"/api/v1/catalogs/materials/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"version_date": None},
+    )
+    assert response.status_code == 422

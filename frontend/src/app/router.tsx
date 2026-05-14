@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireAuth } from "../features/auth/routes/RequireAuth";
 import { SignInPage } from "../features/auth/routes/SignInPage";
 import { CatalogPlaceholder } from "../features/catalogs/routes/CatalogPlaceholder";
+import { MaterialsCatalogPage } from "../features/catalogs/routes/MaterialsCatalogPage";
 import { Dashboard } from "../features/projects/routes/Dashboard";
 import { ProjectShell } from "../features/projects/routes/ProjectShell";
 import { ProjectTabRedirect } from "../features/projects/routes/ProjectTabRedirect";
@@ -13,6 +14,12 @@ export function AppRouter() {
       <Route
         path="/dashboard"
         element={<RequireAuth>{(session) => <Dashboard session={session} />}</RequireAuth>}
+      />
+      <Route
+        path="/catalog/materials"
+        element={
+          <RequireAuth>{(session) => <MaterialsCatalogPage session={session} />}</RequireAuth>
+        }
       />
       <Route
         path="/catalog/:catalogSlug"
