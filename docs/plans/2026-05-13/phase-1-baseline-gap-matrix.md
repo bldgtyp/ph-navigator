@@ -29,13 +29,16 @@ Local baseline rerun on 2026-05-13:
 | `make seed-dev-user` | Pass | Local `ed@example.com` seed refreshed after backend tests. |
 | `make e2e` | Pass | Chromium e2e `2 passed`: project shell/status/public viewer and same-editor Rooms tab freeze. |
 
-Staging TB-06 check on 2026-05-13:
+Staging TB-06 / P1-07 check on 2026-05-14:
 
 | Check | Result | Evidence |
 |---|---|---|
-| API health | Pass after cold start | `curl https://ph-navigator-v2.onrender.com/api/v1/health` returned `200` with request id `ffa755dd-e28a-4f37-8892-991d43a4559e`; cold response took roughly 25s. |
-| Unauthenticated session | Pass after cold start | `curl https://ph-navigator-v2.onrender.com/api/v1/auth/session` returned structured `401 not_authenticated`; CORS with staging origin returned the expected credentialed headers. |
-| Browser sign-in path | Blocked | Staging frontend reached `/sign-in?next=%2F` after extended wait, but `ed@example.com` / local seed password returned "Email or password is incorrect." Full TB-06 staging browser path cannot be completed until staging editor credentials are known or staging is re-seeded. |
+| API health | Pass | `curl https://ph-navigator-v2.onrender.com/api/v1/health` returned `200` with request id `e8dfc827-887b-41f1-820e-8be5db6788e4`. |
+| Unauthenticated session | Pass | `curl https://ph-navigator-v2.onrender.com/api/v1/auth/session` returned structured `401 not_authenticated` with request id `e65d8b59-04c5-4276-8a8a-f31df21faeb5`. |
+| Editor sign-in path | Pass after re-seed | Staging `ed@example.com` was re-seeded through the Render external database; direct API login from the staging frontend origin returned `200` with request id `afe93bcb-ffeb-4221-9884-51e4eed7dc67`. |
+| P1-07 browser Settings path | Pass | Browser check on project `3bfaaf7b-c70e-4655-addf-b371bf4bd261`: editor opened Project Settings, issued an MCP token with one-time plaintext display, revoked it, and a fresh Viewer context had zero Project Settings buttons and no console errors. |
+| P1-07 revoked-token MCP rejection | Pass | A revoked staging token failed the next `/mcp/` request with `401 invalid_token` and request id `bfad7a3a-51ba-4e66-ae7a-75fb85020629`. |
+| Active-token MCP staging read | Follow-up | An active staging token currently reaches `/mcp/` as `421 Invalid Host header` with request id `d220be53-5ea0-47b7-8ac5-509d68ad104c`; unauthenticated `/mcp/` reaches FastMCP and returns `401`. Treat this as MCP transport/env hardening for P1-13/TB-04b, not a P1-07 token-admin UI blocker. |
 
 ## Gap Classification
 
@@ -54,7 +57,7 @@ Classification terms:
 
 | ID | Area | Current baseline | Classification | Owner slice |
 |---|---|---|---|---|
-| G-01 | TB-06 staging evidence | Local TB-06 and current local e2e pass; staging browser check is blocked by invalid/unknown staging editor password after API cold-start. | Now | TB-06 ledger follow-up / P1-13 release gate |
+| G-01 | TB-06 staging evidence | Local TB-06 and current local e2e pass; staging API is healthy and editor sign-in is unblocked after re-seeding. Full TB-06 staging browser evidence still belongs to the release gate. | Now | TB-06 ledger follow-up / P1-13 release gate |
 | G-02 | `project_document` workflow boundary | API works but `features/project_document/service.py` still owns draft, version, diff, downloads, Rooms table behavior, ETags, validation, and audit logging together. | Now | P1-01 |
 | G-03 | Generic table route contract | Routes are generic, but implementation is Rooms-specific through `RoomsSliceResponse`, `RoomsSliceReplaceRequest`, `require_rooms_table()`, `apply_rooms_replace()`, and `rooms_response()`. | Now | P1-01 |
 | G-04 | Header/version chrome state | Save, Save As, Discard, Diff, and table JSON affordances are still coupled to Rooms/Equipment query state and copy. | Now | P1-02 |
@@ -63,8 +66,8 @@ Classification terms:
 | G-07 | Dashboard MVP completion | Sign-in, create/open, list, and public viewer paths work; pin/unpin, pinned ordering, row action polish, Catalogs routing, and delete policy remain incomplete or need explicit cuts. | Now decision | P1-05 |
 | G-08 | Project shell completion | Default Status route, tabs, version dropdown, lock/read-only banners, and downloads work; breadcrumbs, IP/SI placement, settings overflow, and table-neutral dirty state remain incomplete. | Now | P1-05 / P1-02 |
 | G-09 | Status full MVP | Complete for Phase 1: local/browser pass covers backend CRUD/template, empty state/template apply, current-step timeline, state/date edit, keyboard/up-down reorder, modal delete, public Viewer read-only rendering, sanitized Markdown display plus edit-modal preview, drag/drop reorder, and MCP-readable REST posture. Review/simplify follow-up added sanitizer regression coverage, delete-dialog/preview a11y polish, shared Markdown/order-index helpers, drag/drop no-op guards, and delete-cache no-op handling. Explicit MVP deferrals: inline title edit, `⋯` row-action menu, production icon-library drag handle, touch drag/drop support, richer drop-target affordance, and Markdown renderer lazy-loading/bundle-budget work. Ed confirmed complete on 2026-05-13. | Complete | P1-06 |
-| G-10 | Project Settings UI | Local P1-07 implementation now provides an editor-only Project Settings modal, metadata edit flow, read-only metadata display, and browser MCP token issue/list/revoke flow. Remaining gate is acceptance/staging confirmation, not missing local UI. | In progress | P1-07 |
-| G-11 | MCP token/browser admin | Local browser token administration now exists for issue/list/revoke with one-time plaintext display and revoked-token rejection. Write-capable MCP tools remain out of current implementation and belong to later write slices. | UI in progress; writes later | P1-07 / P1-12 / post-Phase 1 write slices |
+| G-10 | Project Settings UI | Complete for Phase 1: local and staging browser checks provide the editor-only Project Settings modal, metadata edit flow, read-only metadata display, and browser MCP token issue/list/revoke flow. | Complete | P1-07 |
+| G-11 | MCP token/browser admin | Browser token administration is complete for issue/list/revoke with one-time plaintext display and revoked-token rejection. Write-capable MCP tools remain out of current implementation and belong to later write slices. Active-token MCP reads on staging expose a separate `421 Invalid Host header` transport/config issue to resolve before release. | Browser admin complete; transport follow-up | P1-07 / P1-13 / TB-04b hardening / post-Phase 1 write slices |
 | G-12 | Shared DataTable | Rooms still renders through `frontend/src/shared/ui/TablePrimitiveStub.tsx`; real `<ProjectDataTable>` extraction is not landed. | Now | P1-08 |
 | G-13 | Single-select option manager | Backend validates Rooms options enough for current tracer; full shared single-select UX, paste match/create, header option modal, reorder/color/merge/delete behavior are not landed. | Now | P1-09 |
 | G-14 | Rooms full MVP | Add/edit draft restore/save/save-as/lock/download/diff work; Rooms lacks real DataTable behavior, full 8-column modal posture, ERV assignment represented in a forward-compatible way, natural-sort/table toolbar/copy, and complete single-select semantics. | Now | P1-10 |
@@ -98,7 +101,7 @@ Classification terms:
 1. Keep JSONB `ProjectDocumentV1` as the v1 source of truth. The gap is reusable boundaries, not persistence direction.
 2. Treat DataTable extraction as a blocker before adding more editable project tables.
 3. Treat read-safe-mode as an explicit P1-03 decision: implement the unsupported-schema envelope now if small, or record a named Phase 1 downgrade to download-only recovery.
-4. Do not mark TB-06 fully complete until staging browser evidence lands. Current blocker is staging auth, not local code.
+4. P1-07 can close on token-admin/browser evidence; do not mark TB-06 or the Phase 1 release gate fully complete until the broader staging browser evidence lands.
 5. Keep ERVs/Fans/Pumps/Thermal Bridges out of the Phase 1 close-out unless the roadmap is explicitly re-scoped.
 6. Treat idempotency, the general JSON-Patch draft endpoint, and JSON Schema endpoints as named decision gates before MCP writes rather than implicit Phase 1 omissions.
 7. Do not block P1-11 completion on undo-stack behavior or MCP edit leases: no bounded undo stack exists in the current Rooms path, and browser/MCP lease UX is owned by the later write-capable MCP slice.
