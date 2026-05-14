@@ -13,6 +13,7 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import TextContent
 
+from config import Settings
 from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.mcp.server import mcp as phn_mcp
@@ -211,6 +212,22 @@ def test_project_token_validates_scope_and_project_boundary(clean_mcp_tables: No
         require_token_scope(token, token.project_id, "project:write")
     with pytest.raises(PermissionError, match="mcp_project_scope_mismatch"):
         require_token_scope(token, other.json()["id"], "project:read")
+
+
+def test_mcp_transport_security_settings_include_deployed_hosts() -> None:
+    deployed = Settings(
+        mcp_issuer_url="https://ph-navigator-v2.onrender.com",
+        mcp_resource_server_url="https://ph-navigator-v2.onrender.com/mcp",
+        cors_origins="https://ph-navigator-v2.onrender.com,https://ph-navigator-v2-staging.onrender.com",
+        mcp_allowed_hosts="ph-navigator-v2-staging.onrender.com",
+        mcp_allowed_origins="https://ph-navigator-v2-staging.onrender.com",
+    )
+
+    assert "ph-navigator-v2.onrender.com" in deployed.mcp_allowed_hosts_list
+    assert "ph-navigator-v2-staging.onrender.com" in deployed.mcp_allowed_hosts_list
+    assert "localhost:*" in deployed.mcp_allowed_hosts_list
+    assert "https://ph-navigator-v2.onrender.com" in deployed.mcp_allowed_origins_list
+    assert "https://ph-navigator-v2-staging.onrender.com" in deployed.mcp_allowed_origins_list
 
 
 @pytest.mark.asyncio

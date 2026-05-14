@@ -12,6 +12,7 @@ from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.streamable_http import TransportSecuritySettings
 from pydantic import AnyHttpUrl
 
 from config import settings
@@ -56,6 +57,11 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
             issuer_url=AnyHttpUrl(settings.mcp_issuer_url),
             resource_server_url=AnyHttpUrl(settings.mcp_resource_server_url),
             required_scopes=["project:read"],
+        ),
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=settings.mcp_enable_dns_rebinding_protection,
+            allowed_hosts=settings.mcp_allowed_hosts_list,
+            allowed_origins=settings.mcp_allowed_origins_list,
         ),
     )
 

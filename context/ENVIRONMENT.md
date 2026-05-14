@@ -37,6 +37,11 @@
   - `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000`
   - `MCP_ISSUER_URL=http://localhost:8000`
   - `MCP_RESOURCE_SERVER_URL=http://localhost:8000/mcp`
+  - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
+  - `MCP_ALLOWED_HOSTS=` and `MCP_ALLOWED_ORIGINS=` are optional
+    comma-separated extras. The backend always derives local
+    `localhost` / `127.0.0.1` hosts, deployed hosts from `MCP_*`
+    URLs, and allowed origins from `MCP_*` URLs plus `CORS_ORIGINS`.
   - `FERNET_SECRET_KEY` is reserved for future at-rest field
     encryption; TB-01 session cookies are opaque DB row pointers, not
     signed/encrypted payload cookies.
@@ -72,6 +77,9 @@ under the `Staging` environment.
     - `SESSION_COOKIE_SAMESITE=none`
     - `MCP_ISSUER_URL=https://ph-navigator-v2.onrender.com`
     - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-v2.onrender.com/mcp`
+    - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
+    - `MCP_ALLOWED_HOSTS=ph-navigator-v2.onrender.com`
+    - `MCP_ALLOWED_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
     - `FERNET_SECRET_KEY=<generated Fernet key>`
 - Postgres service: `ph-navigator-v2-staging-db`
   - Database: `ph_navigator_v2`

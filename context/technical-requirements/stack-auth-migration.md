@@ -177,7 +177,12 @@ AirTable-bound project is migrated.
   v1 tokens can carry `project:read`, `project:write`, `asset:read`,
   and `asset:write` scopes. Write-capable tokens also include
   `project:read`; write-only project tokens are rejected. Public browser
-  read access does not create anonymous MCP access.
+  read access does not create anonymous MCP access. Streamable HTTP MCP
+  endpoints keep FastMCP DNS-rebinding protection enabled; allowed hosts
+  are derived from `MCP_ISSUER_URL` and `MCP_RESOURCE_SERVER_URL`;
+  allowed origins are derived from those MCP URLs plus `CORS_ORIGINS`.
+  Deployed extras can be added through `MCP_ALLOWED_HOSTS` and
+  `MCP_ALLOWED_ORIGINS`.
 
 No anonymous editor auth. No per-table or per-version permissions
 in v1.
