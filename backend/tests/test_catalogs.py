@@ -20,6 +20,8 @@ def clean_catalog_tables() -> Iterator[None]:
         conn.execute(
             """
             TRUNCATE catalog_material_versions, catalog_materials,
+                     catalog_frame_type_versions, catalog_frame_types,
+                     catalog_glazing_type_versions, catalog_glazing_types,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE
@@ -30,6 +32,8 @@ def clean_catalog_tables() -> Iterator[None]:
         conn.execute(
             """
             TRUNCATE catalog_material_versions, catalog_materials,
+                     catalog_frame_type_versions, catalog_frame_types,
+                     catalog_glazing_type_versions, catalog_glazing_types,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE
@@ -79,8 +83,11 @@ def test_create_returns_bookshelf_metadata(clean_catalog_tables: None) -> None:
     assert body["conductivity_w_mk"] == pytest.approx(0.034)
     assert body["is_active"] is True
     # Bookshelf-copy metadata shape: downstream picker needs these to construct
-    # `catalog_origin` per data-model.md §6.2 / §7.4.
-    assert body["id"].startswith("mat_")
+    # `catalog_origin` per data-model.md §6.2 / §7.4. Record ids share the
+    # AirTable `rec` + 14-char shape across all three v1 catalogs so V1 /
+    # AirTable imports drop in as a literal INSERT. Versions stay V2-native.
+    assert body["id"].startswith("rec")
+    assert len(body["id"]) == 17
     assert body["current_version_id"].startswith("matv_")
     assert body["catalog_schema_version"] == 1
     assert body["version_label"] == "2024 spec"

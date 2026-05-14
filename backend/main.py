@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from features.auth.routes import router as auth_router
-from features.catalogs.routes import router as catalogs_router
+from features.catalogs import routers as catalog_routers
 from features.mcp.routes import router as mcp_token_router
 from features.mcp.server import mcp as phn_mcp
 from features.project_document.routes import diff_router as project_diff_router
@@ -59,7 +59,8 @@ app.include_router(project_diff_router)
 app.include_router(project_document_router)
 app.include_router(project_status_router)
 app.include_router(mcp_token_router)
-app.include_router(catalogs_router)
+for catalog_router in catalog_routers:
+    app.include_router(catalog_router)
 app.include_router(schemas_router)
 app.include_router(system_router)
 app.mount("/mcp", phn_mcp.streamable_http_app())

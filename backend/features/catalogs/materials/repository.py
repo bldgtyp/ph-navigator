@@ -9,6 +9,13 @@ from uuid import UUID
 
 from psycopg import Connection, sql
 
+from features.catalogs._shared import (
+    reactivate_catalog_record,
+    soft_delete_catalog_record,
+)
+
+_TABLE = "catalog_materials"
+
 _SELECT_JOINED = """
 SELECT
     cm.id                                  AS id,
@@ -176,30 +183,8 @@ def update_material(
 
 
 def soft_delete_material(conn: Connection[Any], material_id: str, user_id: UUID) -> bool:
-    row = conn.execute(
-        """
-        UPDATE catalog_materials
-        SET deleted_at = now(),
-            updated_at = now(),
-            updated_by = %(user_id)s
-        WHERE id = %(id)s AND deleted_at IS NULL
-        RETURNING id
-        """,
-        {"id": material_id, "user_id": user_id},
-    ).fetchone()
-    return row is not None
+    return soft_delete_catalog_record(conn, table=_TABLE, record_id=material_id, user_id=user_id)
 
 
 def reactivate_material(conn: Connection[Any], material_id: str, user_id: UUID) -> bool:
-    row = conn.execute(
-        """
-        UPDATE catalog_materials
-        SET deleted_at = NULL,
-            updated_at = now(),
-            updated_by = %(user_id)s
-        WHERE id = %(id)s AND deleted_at IS NOT NULL
-        RETURNING id
-        """,
-        {"id": material_id, "user_id": user_id},
-    ).fetchone()
-    return row is not None
+    return reactivate_catalog_record(conn, table=_TABLE, record_id=material_id, user_id=user_id)

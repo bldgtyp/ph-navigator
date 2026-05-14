@@ -1,4 +1,4 @@
-"""Pydantic contracts for the Materials catalog (TB-07 first catalog)."""
+"""Pydantic contracts for the Materials catalog."""
 
 from __future__ import annotations
 
@@ -8,8 +8,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-CATALOG_SCHEMA_VERSION: Final[int] = 1
-CATALOG_RECORD_ID_PREFIX: Final[str] = "mat_"
+from features.catalogs._shared import (
+    reject_clearing_version_date,
+    strip_optional,
+    strip_required,
+)
+
 CATALOG_VERSION_ID_PREFIX: Final[str] = "matv_"
 
 
@@ -50,19 +54,6 @@ class CatalogMaterialListResponse(BaseModel):
     items: list[CatalogMaterialPublic]
 
 
-def _strip_required(value: object) -> object:
-    if isinstance(value, str):
-        return value.strip()
-    return value
-
-
-def _strip_optional(value: object) -> object:
-    if isinstance(value, str):
-        stripped = value.strip()
-        return stripped or None
-    return value
-
-
 class _CatalogMaterialFields(BaseModel):
     """Shared field shape and validators for Create/Update requests.
 
@@ -85,12 +76,12 @@ class _CatalogMaterialFields(BaseModel):
     @field_validator("version_label", mode="before")
     @classmethod
     def _strip_optional_label(cls, value: object) -> object:
-        return _strip_optional(value)
+        return strip_optional(value)
 
     @field_validator("argb_color", "notes", "source_provenance", mode="before")
     @classmethod
     def _strip_optional_fields(cls, value: object) -> object:
-        return _strip_optional(value)
+        return strip_optional(value)
 
     @field_validator("conductivity_w_mk", "density_kg_m3", "specific_heat_j_kgk")
     @classmethod
@@ -108,7 +99,7 @@ class CatalogMaterialCreateRequest(_CatalogMaterialFields):
     @field_validator("name", "category", "version_label", mode="before")
     @classmethod
     def _strip_required_fields(cls, value: object) -> object:
-        return _strip_required(value)
+        return strip_required(value)
 
 
 class CatalogMaterialUpdateRequest(_CatalogMaterialFields):
@@ -124,13 +115,9 @@ class CatalogMaterialUpdateRequest(_CatalogMaterialFields):
     @field_validator("name", "category", mode="before")
     @classmethod
     def _strip_optional_identity(cls, value: object) -> object:
-        return _strip_optional(value)
+        return strip_optional(value)
 
     @model_validator(mode="after")
     def _reject_clearing_version_date(self) -> CatalogMaterialUpdateRequest:
-        # version_date is NOT NULL in storage. Omitting the field leaves the
-        # column untouched; passing an explicit null would build
-        # `SET version_date = NULL` and trip the constraint at the DB.
-        if "version_date" in self.model_fields_set and self.version_date is None:
-            raise ValueError("version_date cannot be set to null; omit the field to leave it unchanged")
+        reject_clearing_version_date(self)
         return self

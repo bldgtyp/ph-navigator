@@ -718,13 +718,14 @@ describe("App", () => {
     expect(window.location.pathname).toBe("/catalog/materials");
   });
 
-  test("routes other Catalogs entries to the pending placeholder", async () => {
+  test("routes the Catalogs dropdown to the Window-Frame Elements catalog page", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/catalogs/frame-types") return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });
 
@@ -734,8 +735,29 @@ describe("App", () => {
     await user.click(screen.getByRole("link", { name: "Window-Frame Elements" }));
 
     expect(await screen.findByRole("heading", { name: "Window-Frame Elements" })).toBeVisible();
-    expect(screen.getByText("Catalog manager pending")).toBeVisible();
-    expect(window.location.pathname).toBe("/catalog/window-frame-elements");
+    expect(await screen.findByText("No frame types yet")).toBeVisible();
+    expect(window.location.pathname).toBe("/catalog/frame-types");
+  });
+
+  test("routes the Catalogs dropdown to the Window-Glazing catalog page", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", "/dashboard");
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/catalogs/glazing-types") return jsonResponse({ items: [] });
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByText("Catalogs"));
+    await user.click(screen.getByRole("link", { name: "Window-Glazing" }));
+
+    expect(await screen.findByRole("heading", { name: "Window-Glazing" })).toBeVisible();
+    expect(await screen.findByText("No glazing types yet")).toBeVisible();
+    expect(window.location.pathname).toBe("/catalog/glazing-types");
   });
 
   test("applies the default status template from the empty Status tab", async () => {

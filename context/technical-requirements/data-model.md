@@ -648,7 +648,7 @@ in and the project no longer cares which version was the source.
 
 ```sql
 catalog_materials (
-    id              TEXT PRIMARY KEY,         -- stable identity slug or rec id
+    id              TEXT PRIMARY KEY,         -- AirTable-shaped rec id; see §7.2.1
     name            TEXT NOT NULL,
     category        TEXT NOT NULL,
     current_version_id  TEXT REFERENCES catalog_material_versions(id),
@@ -658,7 +658,7 @@ catalog_materials (
 )
 
 catalog_material_versions (
-    id              TEXT PRIMARY KEY,
+    id              TEXT PRIMARY KEY,         -- V2-native `matv_<token>`; see §7.2.1
     record_id       TEXT NOT NULL REFERENCES catalog_materials(id),
     version_label   TEXT NOT NULL,            -- e.g. "2024 spec"
     version_date    DATE NOT NULL,
@@ -676,6 +676,38 @@ catalog_material_versions (
 
 Frame types and glazing types follow the same identity-plus-versions
 pattern. Catalog audit log records all edits.
+
+#### 7.2.1 Catalog id format (TB-08.a)
+
+Catalog **record** ids use the AirTable shape: literal prefix `rec`
+followed by 14 base62 (`[A-Za-z0-9]`) characters. The format is uniform
+across all three v1 catalogs (`catalog_materials`,
+`catalog_frame_types`, `catalog_glazing_types`) and is used for both
+imported V1/AirTable rows and net-new V2-created rows. Choosing the
+same shape lets V1/AirTable imports drop in as a literal
+`INSERT … id = airtable_record_id` with no remapping table, and lets
+legacy cross-references (e.g. V1 `aperture_element_frame.material_id`
+→ catalog material) resolve unchanged after import.
+
+Catalog **version** ids are V2-native and use a table-prefixed shape
+because AirTable has no version concept. Prefixes:
+
+| Catalog                | Version-id prefix |
+|------------------------|-------------------|
+| `catalog_materials`    | `matv_`           |
+| `catalog_frame_types`  | `framev_`         |
+| `catalog_glazing_types`| `glazingv_`       |
+
+Document-level entity ids (`asm_<ULID>`, `pmat_<ULID>`, `win_<ULID>`,
+`winel_<ULID>`, `rm_<ULID>`, etc.) keep their existing per-entity-type
+prefixes; they are project-document internal and are not imported from
+AirTable. The catalog id format applies only to the catalog identity
+and version rows.
+
+The shared id generator lives in
+`backend/features/catalogs/_shared.py` (`new_catalog_record_id`,
+`new_catalog_version_id`). New catalogs added in future slices must
+reuse it rather than inventing per-catalog id schemes.
 
 ### 7.3 Catalog UX
 

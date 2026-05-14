@@ -3,6 +3,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import type { CatalogMaterial, CatalogMaterialCreatePayload } from "../types";
+import { editorSubmitLabel, todayIso } from "./form-helpers";
 
 type FormState = {
   name: string;
@@ -23,7 +24,7 @@ function emptyForm(): FormState {
     name: "",
     category: "",
     version_label: "v1",
-    version_date: new Date().toISOString().slice(0, 10),
+    version_date: todayIso(),
     conductivity_w_mk: "",
     density_kg_m3: "",
     specific_heat_j_kgk: "",
@@ -254,13 +255,7 @@ export function MaterialEditorModal({
             Cancel
           </button>
           <button type="submit" disabled={!canSubmit}>
-            {activeMutation.isPending
-              ? isEdit
-                ? "Saving…"
-                : "Creating…"
-              : isEdit
-                ? "Save changes"
-                : "Add material"}
+            {editorSubmitLabel(isEdit, activeMutation.isPending, "Add material")}
           </button>
         </div>
       </form>

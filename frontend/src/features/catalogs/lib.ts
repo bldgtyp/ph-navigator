@@ -1,7 +1,7 @@
 export const CATALOGS = [
   { slug: "materials", label: "Materials" },
-  { slug: "window-frame-elements", label: "Window-Frame Elements" },
-  { slug: "window-glazing", label: "Window-Glazing" },
+  { slug: "frame-types", label: "Window-Frame Elements" },
+  { slug: "glazing-types", label: "Window-Glazing" },
 ] as const;
 
 export type CatalogSlug = (typeof CATALOGS)[number]["slug"];

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import secrets
 from datetime import date
 from typing import Any
 
@@ -11,10 +10,13 @@ from starlette import status
 
 from database import connection, transaction
 from features.auth.models import UserPublic
-from features.catalogs import repository
-from features.catalogs.audit import log_catalog_action
-from features.catalogs.models import (
-    CATALOG_RECORD_ID_PREFIX,
+from features.catalogs._shared import (
+    log_catalog_action,
+    new_catalog_record_id,
+    new_catalog_version_id,
+)
+from features.catalogs.materials import repository
+from features.catalogs.materials.models import (
     CATALOG_VERSION_ID_PREFIX,
     CatalogMaterialCreateRequest,
     CatalogMaterialListResponse,
@@ -24,10 +26,6 @@ from features.catalogs.models import (
 from features.shared.errors import api_error
 
 CATALOG_TABLE = "materials"
-
-
-def _new_id(prefix: str) -> str:
-    return f"{prefix}{secrets.token_urlsafe(12)}"
 
 
 def _to_public(row: dict[str, Any]) -> CatalogMaterialPublic:
@@ -49,8 +47,8 @@ def get_material(material_id: str) -> CatalogMaterialPublic:
 
 
 def create_material(payload: CatalogMaterialCreateRequest, user: UserPublic, request: Request) -> CatalogMaterialPublic:
-    record_id = _new_id(CATALOG_RECORD_ID_PREFIX)
-    version_id = _new_id(CATALOG_VERSION_ID_PREFIX)
+    record_id = new_catalog_record_id()
+    version_id = new_catalog_version_id(CATALOG_VERSION_ID_PREFIX)
     version_date = payload.version_date or date.today()
     with transaction() as conn:
         repository.insert_material(
@@ -156,6 +154,7 @@ def reactivate_material(material_id: str, user: UserPublic, request: Request) ->
                 "Catalog material not found or already active.",
             )
         row = repository.get_material(conn, material_id)
+        assert row is not None, "Catalog material disappeared after successful reactivate."
         log_catalog_action(
             conn,
             "catalog_record_reactivate",
@@ -163,8 +162,6 @@ def reactivate_material(material_id: str, user: UserPublic, request: Request) ->
             request,
             catalog_table=CATALOG_TABLE,
             record_id=material_id,
-            version_id=row["current_version_id"] if row else None,
+            version_id=row["current_version_id"],
         )
-    if row is None:
-        raise RuntimeError("Catalog material disappeared after reactivate.")
     return _to_public(row)

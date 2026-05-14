@@ -14,13 +14,13 @@ from starlette import status
 
 from features.auth.models import UserPublic
 from features.auth.routes import require_current_user
-from features.catalogs.models import (
+from features.catalogs.materials.models import (
     CatalogMaterialCreateRequest,
     CatalogMaterialListResponse,
     CatalogMaterialPublic,
     CatalogMaterialUpdateRequest,
 )
-from features.catalogs.service import (
+from features.catalogs.materials.service import (
     create_material,
     deactivate_material,
     get_material,

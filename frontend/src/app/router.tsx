@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireAuth } from "../features/auth/routes/RequireAuth";
 import { SignInPage } from "../features/auth/routes/SignInPage";
-import { CatalogPlaceholder } from "../features/catalogs/routes/CatalogPlaceholder";
+import { FrameTypesCatalogPage } from "../features/catalogs/routes/FrameTypesCatalogPage";
+import { GlazingTypesCatalogPage } from "../features/catalogs/routes/GlazingTypesCatalogPage";
 import { MaterialsCatalogPage } from "../features/catalogs/routes/MaterialsCatalogPage";
 import { Dashboard } from "../features/projects/routes/Dashboard";
 import { ProjectShell } from "../features/projects/routes/ProjectShell";
@@ -22,8 +23,16 @@ export function AppRouter() {
         }
       />
       <Route
-        path="/catalog/:catalogSlug"
-        element={<RequireAuth>{(session) => <CatalogPlaceholder session={session} />}</RequireAuth>}
+        path="/catalog/frame-types"
+        element={
+          <RequireAuth>{(session) => <FrameTypesCatalogPage session={session} />}</RequireAuth>
+        }
+      />
+      <Route
+        path="/catalog/glazing-types"
+        element={
+          <RequireAuth>{(session) => <GlazingTypesCatalogPage session={session} />}</RequireAuth>
+        }
       />
       <Route path="/projects/:projectId" element={<ProjectTabRedirect />} />
       <Route path="/projects/:projectId/:tab" element={<ProjectShell />} />

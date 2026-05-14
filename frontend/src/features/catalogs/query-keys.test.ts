@@ -11,6 +11,6 @@ describe("catalogQueryKeys", () => {
   test("all material keys share the materials root for bulk invalidation", () => {
     const root = catalogQueryKeys.materials();
     expect(catalogQueryKeys.materialsList(false).slice(0, root.length)).toEqual(root);
-    expect(catalogQueryKeys.material("mat_x").slice(0, root.length)).toEqual(root);
+    expect(catalogQueryKeys.material("recABCDEFGHIJKLMN").slice(0, root.length)).toEqual(root);
   });
 });
