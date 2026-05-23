@@ -407,11 +407,14 @@ export type FilterEvaluator = (
   fieldDef: FieldDef,
 ) => boolean;
 
+// §12 Q8 resolution: labels match AirTable verbatim. Text /
+// value-taking operators carry an ellipsis ("contains…", "is…");
+// valueless operators do not.
 export const TEXT_OPERATORS: readonly FilterOperatorDef[] = [
-  { operator: "contains",         label: "contains",          shape: { kind: "string" } },
-  { operator: "does_not_contain", label: "does not contain",  shape: { kind: "string" } },
-  { operator: "is",               label: "is",                shape: { kind: "string" } },
-  { operator: "is_not",           label: "is not",            shape: { kind: "string" } },
+  { operator: "contains",         label: "contains…",         shape: { kind: "string" } },
+  { operator: "does_not_contain", label: "does not contain…", shape: { kind: "string" } },
+  { operator: "is",               label: "is…",               shape: { kind: "string" } },
+  { operator: "is_not",           label: "is not…",           shape: { kind: "string" } },
   { operator: "is_empty",         label: "is empty",          shape: { kind: "none"   } },
   { operator: "is_not_empty",     label: "is not empty",      shape: { kind: "none"   } },
 ] as const;
@@ -433,6 +436,11 @@ export const SINGLE_SELECT_OPERATORS: readonly FilterOperatorDef[] = [
   { operator: "is_not_empty", label: "is not empty", shape: { kind: "none"         } },
 ] as const;
 ```
+
+Sort direction labels (§12 Q8 resolution) are `A → Z` (asc) and
+`Z → A` (desc) regardless of field type. Defined inline in
+`SortPopover.tsx` — no catalogue entry needed, the direction
+union stays `"asc" | "desc"`.
 
 `computed` field defs declare their underlying type via a new
 optional slot on `FieldDef` (see §4.3). The registry maps
@@ -972,12 +980,19 @@ every column participating in that axis, and (c) the column
 header background of those same columns.
 
 ```css
+/*
+ * §12 Q10 resolution: match AirTable's colors. The OKLCH
+ * values below are PLACEHOLDERS — Step 2 samples the actual
+ * AirTable button-active and filter-chip swatches from the
+ * 2026-05-23 screenshots (or live in airtable.com if needed)
+ * and updates these literals before commit.
+ */
 :root {
-  /* Filter axis — green, matches AirTable's filter chip green. */
+  /* Filter axis — sample from AirTable's `Filtered by …` chip. */
   --data-table-tint-filter: oklch(96% 0.04 145);
   --data-table-tint-filter-header: oklch(93% 0.06 145);
 
-  /* Sort axis — peach/orange, matches AirTable's sort chip peach. */
+  /* Sort axis — sample from AirTable's active `Sort` button. */
   --data-table-tint-sort: oklch(95% 0.05 50);
   --data-table-tint-sort-header: oklch(91% 0.08 50);
 }
@@ -1309,7 +1324,7 @@ typecheck`, `make lint`). Commit per step.
 | `applyTextFilters` → `applyFilters` rename misses a caller. | Single in-repo caller (`DataTable.tsx:59`). `grep -rn applyTextFilters` confirms. ESLint + typecheck catch any miss. |
 | Number filter with empty value silently hides all rows because `Number("")` is 0. | Evaluator explicitly returns dormant (`true`) when `value` parses to NaN OR the trimmed string is empty. Covered by tests. |
 | `between` filter with reversed bounds (lo > hi) hides all rows. | Evaluator swaps bounds defensively (§4.4). Covered by test. |
-| Existing user habit: clicking a column header to sort. After removal it is a no-op. | Acceptable usability regression — AirTable has trained the entire industry that sort lives in a toolbar popover, and the per-column chevron is what *we* added during early scaffolding. Mitigation: the first time a user clicks a header label in the grid with no filter/sort active, the `aria-live` region announces "Sort is in the toolbar Sort button" — see §12 question 9 (defaulted off; turn on if the user-walk shows confusion). |
+| Existing user habit: clicking a column header to sort. After removal it is a no-op. | Acceptable design choice — PH-Navigator has no pre-existing user base trained on a sort chevron, so there's no habit to manage. Header clicks route only to the Phase 3 column-select gesture (§12 Q9 resolution). No announcement, no toast, no tooltip. |
 | Header-click as a hit zone collides with the Phase 3 column-select strip drag. | Already addressed in Phase 3: the column-select strip is the top 6 px; the header label area is the remaining ~24 px. After Phase 4 removes the header button entirely, the header label `<span>` has no `onClick` and no pointer behaviour — clicking it does nothing. Phase 3 drag is unaffected. |
 | Dormant filter rules should not tint the column. | `isFilterContributing(rule)` excludes empty values per shape. Tested explicitly. |
 | Filter + sort on same column → ambiguous tint. | Precedence rule: filter wins. Documented in §4.10 and tested. Phase 6 generalizes via the 7-subset palette. |
