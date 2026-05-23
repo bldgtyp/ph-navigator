@@ -79,16 +79,18 @@ describe("DataTable", () => {
     expect(screen.queryByText("No rooms yet.")).not.toBeInTheDocument();
   });
 
-  test("keeps header and gutter buttons out of the tab order", () => {
+  test("keeps gutter buttons out of the tab order and renders no per-column sort UI", () => {
     renderTable();
 
-    // Phase 3 R1: the column header is no longer a button itself; the
-    // sort gesture moves to a chevron sub-button. Verify the chevron
-    // stays out of the tab order.
-    expect(screen.getByRole("button", { name: /Sort by Number/ })).toHaveAttribute(
-      "tabindex",
-      "-1",
-    );
+    // Phase 4 §4.9: the per-column sort chevron is gone entirely.
+    // Sort is reachable only from the toolbar Sort popover (Step 4).
+    expect(screen.queryByRole("button", { name: /Sort by/ })).not.toBeInTheDocument();
+    // The header `<th>` no longer carries `aria-sort` either — sort
+    // state is a view-state list announced via the live region, not a
+    // per-column DOM property.
+    expect(
+      screen.queryByRole("columnheader", { name: "Number" })?.getAttribute("aria-sort"),
+    ).toBeNull();
     expect(screen.getByRole("button", { name: "Highlight row 1" })).toHaveAttribute(
       "tabindex",
       "-1",
@@ -97,6 +99,63 @@ describe("DataTable", () => {
       "tabindex",
       "-1",
     );
+  });
+
+  test("body cells carry data-axis-tint='filter' on a column with a contributing filter rule", () => {
+    renderTable({
+      view: {
+        ...emptyViewState(),
+        filter: [{ fieldKey: "name", operator: "contains", value: "Liv" }],
+      },
+    });
+
+    const nameCell = screen
+      .getByText("Living Room")
+      .closest("td");
+    expect(nameCell).toHaveAttribute("data-axis-tint", "filter");
+    // Non-filtered columns carry no axis tint.
+    const numberCell = screen.getByText("101").closest("td");
+    expect(numberCell).not.toHaveAttribute("data-axis-tint");
+  });
+
+  test("dormant filter rules (blank value) do NOT tint their column", () => {
+    renderTable({
+      view: {
+        ...emptyViewState(),
+        filter: [{ fieldKey: "name", operator: "contains", value: "" }],
+      },
+    });
+
+    const nameCell = screen.getByText("Living Room").closest("td");
+    expect(nameCell).not.toHaveAttribute("data-axis-tint");
+  });
+
+  test("body cells carry data-axis-tint='sort' on a sorted column", () => {
+    renderTable({
+      view: {
+        ...emptyViewState(),
+        sort: [{ fieldKey: "number", direction: "asc" }],
+      },
+    });
+
+    const numberCell = screen.getByText("101").closest("td");
+    expect(numberCell).toHaveAttribute("data-axis-tint", "sort");
+    expect(numberCell?.parentElement?.querySelectorAll("td")[1]).not.toHaveAttribute(
+      "data-axis-tint",
+    );
+  });
+
+  test("filter wins on overlap with sort on the same column", () => {
+    renderTable({
+      view: {
+        ...emptyViewState(),
+        filter: [{ fieldKey: "name", operator: "contains", value: "Liv" }],
+        sort: [{ fieldKey: "name", direction: "asc" }],
+      },
+    });
+
+    const nameCell = screen.getByText("Living Room").closest("td");
+    expect(nameCell).toHaveAttribute("data-axis-tint", "filter");
   });
 
   test("emits a cell write for inline text edits", async () => {

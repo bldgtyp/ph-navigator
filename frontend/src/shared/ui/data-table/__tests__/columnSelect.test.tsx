@@ -110,16 +110,14 @@ describe("DataTable column-select via header click (Phase 3 R1)", () => {
     }
   });
 
-  test("mousedown on the sort chevron does NOT trigger column-select", () => {
+  test("the per-column sort chevron is gone after Phase 4", () => {
     renderTable();
 
+    // Phase 4 §4.9: per-column sort UI is removed. The header carries
+    // only a plain label; sort lives only in the toolbar Sort popover
+    // (Step 4). No `Sort by X` button exists in the header.
     const header = getColumnHeader("Name");
-    const sortButton = within(header).getByRole("button", { name: /Sort by Name/ });
-    fireEvent.mouseDown(sortButton, { button: 0 });
-
-    // Cell range stays at its 1×1 default — no column selected.
-    expect(getBodyCell(0, 1)).not.toHaveClass("data-table-cell-selected");
-    expect(getBodyCell(1, 1)).not.toHaveClass("data-table-cell-selected");
+    expect(within(header).queryByRole("button", { name: /Sort by Name/ })).not.toBeInTheDocument();
   });
 
   test("read-only mode keeps the header click target for drag-select / copy", () => {

@@ -24,6 +24,10 @@ export type GridBodyProps<TRow> = {
   showRowCheckbox: boolean;
   emptyMessage: string;
   totalRowCount: number;
+  // Phase 4 §4.10: per-column axis tint ("filter" green | "sort" peach |
+  // null). Cells emit `data-axis-tint="<axis>"` so the CSS attribute
+  // selector paints the cell — no JS color work in the renderer.
+  axisTintByFieldKey: Map<string, "filter" | "sort" | null>;
   onCellActivate: (rowId: string, fieldKey: string) => void;
   onCellMouseDown?: (event: ReactMouseEvent<HTMLTableCellElement>) => void;
   onCellOpen: (row: TRow, columnIndex: number) => void;
@@ -46,6 +50,7 @@ export function GridBody<TRow>({
   showRowCheckbox,
   emptyMessage,
   totalRowCount,
+  axisTintByFieldKey,
   onCellActivate,
   onCellMouseDown,
   onCellOpen,
@@ -90,6 +95,7 @@ export function GridBody<TRow>({
             const edgeStyle = selected
               ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
               : undefined;
+            const axisTint = fieldKey ? (axisTintByFieldKey.get(fieldKey) ?? null) : null;
             return (
               <td
                 key={cell.id}
@@ -98,6 +104,7 @@ export function GridBody<TRow>({
                 aria-selected={selected}
                 data-row-id={rowId}
                 data-field-key={fieldKey || undefined}
+                data-axis-tint={axisTint ?? undefined}
                 className={[
                   visibleColumnDefs[columnIndex]?.className,
                   columnIndex === 0 ? "data-table-frozen" : "",
