@@ -1345,14 +1345,40 @@ button:disabled {
 
 .data-table-view-popover-rule {
   display: grid;
-  grid-template-columns: 48px minmax(80px, 1fr) minmax(80px, 1fr) minmax(120px, 1.4fr) 24px;
+  grid-template-columns: 48px minmax(80px, 1fr) minmax(80px, 1fr) minmax(120px, 1.4fr) 24px 20px;
   gap: 6px;
   align-items: center;
   padding: 4px 0;
 }
 
 .data-table-view-popover-rule.is-sort {
-  grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr) 24px;
+  grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr) 24px 20px;
+}
+
+.data-table-view-popover-rule[data-dragging="true"] {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+.data-table-view-popover-drag {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: grab;
+  padding: 0 2px;
+  font-size: 0.85em;
+  border-radius: var(--phn-radius);
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+}
+
+.data-table-view-popover-rule:hover .data-table-view-popover-drag,
+.data-table-view-popover-drag:focus-visible {
+  opacity: 1;
+}
+
+.data-table-view-popover-drag:active {
+  cursor: grabbing;
 }
 
 .data-table-view-popover-conjunction {
@@ -1475,6 +1501,43 @@ button:disabled {
   color: var(--text-secondary);
   font-size: 0.72rem;
   font-style: italic;
+}
+
+/* Phase 4 §4.7: toolbar overflow menu. Same surface tokens as the
+   filter / sort popovers so the cluster reads as one. */
+.data-table-overflow-menu {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 4px;
+  min-width: 160px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.8rem;
+}
+
+.data-table-overflow-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--phn-radius);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.data-table-overflow-menu-item:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-overflow-menu-item:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
 }
 
 .data-table-alert-overlay {

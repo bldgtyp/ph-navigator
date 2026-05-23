@@ -172,4 +172,22 @@ describe("FilterPopover", () => {
     expect(within(popoverContent()).getByText("Where")).toBeInTheDocument();
     expect(within(popoverContent()).getByText("And")).toBeInTheDocument();
   });
+
+  test("each rule exposes a drag handle reachable as a Reorder button", () => {
+    render(
+      <Harness
+        initialRules={[
+          { fieldKey: "name", operator: "contains" },
+          { fieldKey: "num_people", operator: "eq" },
+        ]}
+        onFilterChange={vi.fn()}
+      />,
+    );
+    expect(
+      within(popoverContent()).getByRole("button", { name: "Reorder rule 1" }),
+    ).toBeInTheDocument();
+    expect(
+      within(popoverContent()).getByRole("button", { name: "Reorder rule 2" }),
+    ).toBeInTheDocument();
+  });
 });

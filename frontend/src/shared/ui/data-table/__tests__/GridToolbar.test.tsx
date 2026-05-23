@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { GridToolbar } from "../components/GridToolbar";
 import { emptyViewState, type FieldDef, type ViewState } from "../types";
@@ -8,7 +8,10 @@ const FIELDS: FieldDef[] = [
   { field_key: "count", field_type: "number", display_name: "Count" },
 ];
 
-function renderToolbar(view: ViewState = emptyViewState()) {
+function renderToolbar(
+  view: ViewState = emptyViewState(),
+  handlers: { onResetView?: () => void } = {},
+) {
   render(
     <GridToolbar
       readOnly={false}
@@ -18,6 +21,7 @@ function renderToolbar(view: ViewState = emptyViewState()) {
       sortableFieldDefs={FIELDS}
       onFilterChange={vi.fn()}
       onSortChange={vi.fn()}
+      onResetView={handlers.onResetView ?? vi.fn()}
     />,
   );
 }
@@ -82,5 +86,30 @@ describe("GridToolbar", () => {
     const button = screen.getByRole("button", { name: /Sorted by Name/ });
     expect(button).toHaveAttribute("data-axis-active", "true");
     expect(button).toHaveAttribute("data-axis", "sort");
+  });
+
+  test("Reset view action in the overflow menu fires onResetView", () => {
+    const onResetView = vi.fn();
+    renderToolbar(
+      {
+        ...emptyViewState(),
+        filter: [{ fieldKey: "name", operator: "contains", value: "x" }],
+        sort: [{ fieldKey: "name", direction: "asc" }],
+      },
+      { onResetView },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
+    expect(onResetView).toHaveBeenCalledTimes(1);
+  });
+
+  test("Reset view is disabled when both filter and sort are empty", () => {
+    const onResetView = vi.fn();
+    renderToolbar(emptyViewState(), { onResetView });
+    fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
+    const item = screen.getByRole("button", { name: "Reset view" });
+    expect(item).toBeDisabled();
+    fireEvent.click(item);
+    expect(onResetView).not.toHaveBeenCalled();
   });
 });

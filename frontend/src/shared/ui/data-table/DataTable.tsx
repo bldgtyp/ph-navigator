@@ -326,6 +326,13 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
+  // Phase 4 §4.7: Reset clears only filter + sort (the keys Phase 4
+  // owns). Group / column-order / aggregation / hidden columns are
+  // intentionally preserved; Phase 6 will pick them up when group
+  // accordion lands.
+  const handleResetView = useCallback(() => {
+    onViewChange({ ...view, filter: [], sort: [] });
+  }, [onViewChange, view]);
 
   // Phase 4 §4.10: derive per-column axis tint from `view.filter` and
   // `view.sort`. Filter wins on overlap (§4.10 precedence rule).
@@ -412,6 +419,7 @@ export function DataTable<TRow>({
         sortableFieldDefs={sortableFieldDefs}
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
+        onResetView={handleResetView}
         actions={toolbarActions}
       />
       <ConfirmRowDeleteDialog

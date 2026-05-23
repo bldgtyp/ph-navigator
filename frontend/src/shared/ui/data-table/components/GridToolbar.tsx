@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { FilterPopover } from "./FilterPopover";
 import { SortPopover } from "./SortPopover";
+import { ViewMenuOverflow } from "./ViewMenuOverflow";
 import type { FieldDef, FilterCondition, SortRule, ViewState } from "../types";
 
 // Toolbar shell. Status chips on the left, right-aligned axis buttons
@@ -16,6 +17,7 @@ export type GridToolbarProps = {
   sortableFieldDefs: FieldDef[];
   onFilterChange: (next: FilterCondition[]) => void;
   onSortChange: (next: SortRule[]) => void;
+  onResetView: () => void;
   actions?: ReactNode;
 };
 
@@ -27,6 +29,7 @@ export function GridToolbar({
   sortableFieldDefs,
   onFilterChange,
   onSortChange,
+  onResetView,
   actions,
 }: GridToolbarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -89,6 +92,10 @@ export function GridToolbar({
               <span>{sortButtonLabel.text}</span>
             </button>
           }
+        />
+        <ViewMenuOverflow
+          onReset={onResetView}
+          canReset={view.filter.length > 0 || view.sort.length > 0}
         />
       </div>
       {actions ? <div className="data-table-toolbar-actions">{actions}</div> : null}

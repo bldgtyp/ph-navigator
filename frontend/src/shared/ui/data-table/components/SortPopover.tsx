@@ -1,5 +1,21 @@
 import * as Popover from "@radix-ui/react-popover";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, type CSSProperties } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { generatedId } from "../../../lib/ids";
 import type { FieldDef, SortRule } from "../types";
 
@@ -77,6 +93,30 @@ export function SortPopover({
     [onSortChange, rules],
   );
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const fromIndex = ruleIdsRef.current.indexOf(String(active.id));
+      const toIndex = ruleIdsRef.current.indexOf(String(over.id));
+      if (fromIndex < 0 || toIndex < 0) return;
+      const nextRules = [...rules];
+      const [moved] = nextRules.splice(fromIndex, 1);
+      if (!moved) return;
+      nextRules.splice(toIndex, 0, moved);
+      const nextIds = [...ruleIdsRef.current];
+      const [movedId] = nextIds.splice(fromIndex, 1);
+      if (movedId !== undefined) nextIds.splice(toIndex, 0, movedId);
+      ruleIdsRef.current = nextIds;
+      onSortChange(nextRules);
+    },
+    [onSortChange, rules],
+  );
+
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>{trigger}</Popover.Trigger>
@@ -91,23 +131,37 @@ export function SortPopover({
           {rules.length === 0 ? (
             <div className="data-table-view-popover-empty">No sort rules applied.</div>
           ) : (
-            <ul className="data-table-view-popover-rules" role="list">
-              {rules.map((rule, index) => {
-                const fieldOptions = sortableFieldDefs.filter(
-                  (def) =>
-                    def.field_key === rule.fieldKey || !usedFieldKeys.has(def.field_key),
-                );
-                return (
-                  <SortRuleRow
-                    key={ruleIdsRef.current[index] ?? `sort-${index}`}
-                    rule={rule}
-                    fieldOptions={fieldOptions}
-                    onChange={(next) => handleRuleChange(index, next)}
-                    onRemove={() => handleRuleRemove(index)}
-                  />
-                );
-              })}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={ruleIdsRef.current.slice(0, rules.length)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="data-table-view-popover-rules" role="list">
+                  {rules.map((rule, index) => {
+                    const fieldOptions = sortableFieldDefs.filter(
+                      (def) =>
+                        def.field_key === rule.fieldKey ||
+                        !usedFieldKeys.has(def.field_key),
+                    );
+                    return (
+                      <SortRuleRow
+                        key={ruleIdsRef.current[index] ?? `sort-${index}`}
+                        ruleId={ruleIdsRef.current[index] ?? `sort-${index}`}
+                        index={index}
+                        rule={rule}
+                        fieldOptions={fieldOptions}
+                        onChange={(next) => handleRuleChange(index, next)}
+                        onRemove={() => handleRuleRemove(index)}
+                      />
+                    );
+                  })}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
           <button
             type="button"
@@ -124,15 +178,27 @@ export function SortPopover({
 }
 
 type SortRuleRowProps = {
+  ruleId: string;
+  index: number;
   rule: SortRule;
   fieldOptions: FieldDef[];
   onChange: (next: SortRule) => void;
   onRemove: () => void;
 };
 
-function SortRuleRow({ rule, fieldOptions, onChange, onRemove }: SortRuleRowProps) {
+function SortRuleRow({ ruleId, index, rule, fieldOptions, onChange, onRemove }: SortRuleRowProps) {
+  const sortable = useSortable({ id: ruleId });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+  };
   return (
-    <li className="data-table-view-popover-rule is-sort">
+    <li
+      className="data-table-view-popover-rule is-sort"
+      ref={sortable.setNodeRef}
+      style={style}
+      data-dragging={sortable.isDragging ? "true" : undefined}
+    >
       <select
         aria-label="Sort field"
         className="data-table-view-popover-select"
@@ -163,6 +229,16 @@ function SortRuleRow({ rule, fieldOptions, onChange, onRemove }: SortRuleRowProp
         onClick={onRemove}
       >
         ×
+      </button>
+      <button
+        type="button"
+        className="data-table-view-popover-drag"
+        aria-label={`Reorder sort rule ${index + 1}`}
+        ref={sortable.setActivatorNodeRef}
+        {...sortable.attributes}
+        {...sortable.listeners}
+      >
+        ⋮⋮
       </button>
     </li>
   );
