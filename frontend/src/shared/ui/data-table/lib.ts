@@ -403,9 +403,7 @@ export function extractRowDefaults<TRow>(
   fieldDefs: FieldDef[],
   columns: DataTableColumnDef<TRow>[],
 ): Record<string, unknown> {
-  const accessorByFieldKey = new Map(
-    columns.map((column) => [column.fieldKey, column.accessor]),
-  );
+  const accessorByFieldKey = new Map(columns.map((column) => [column.fieldKey, column.accessor]));
   return Object.fromEntries(
     fieldDefs.map((fieldDef) => {
       const accessor = accessorByFieldKey.get(fieldDef.field_key);

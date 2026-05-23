@@ -31,6 +31,8 @@ export function DataTable<TRow>({
   onViewChange,
   onWrite,
   buildEmptyRow,
+  generateRowId,
+  sessionKey,
   renderHeaderActions,
   readOnly = false,
   density = "compact",
@@ -78,13 +80,17 @@ export function DataTable<TRow>({
     hasWriteHandler: Boolean(onWrite),
   });
 
-  // History is in-memory per session (PoC L6.3); clear when the rows
-  // identity changes — switching projects, sub-tabs, or refetching the
-  // table all hand us a fresh rows array.
+  // History is in-memory per session (PoC L6.3). Phase 2: prefer the
+  // consumer-supplied sessionKey so history survives the rows-identity
+  // change that TanStack Query produces after every successful write
+  // (the row-insert / row-delete acceptance criteria require ⌘Z to work
+  // across that cycle). When no sessionKey is provided we fall back to
+  // the Phase 0 rule (clear on rows-identity change) for compatibility
+  // with consumers that haven't adopted the key yet.
   useEffect(() => {
     history.clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows]);
+  }, [sessionKey ?? rows]);
 
   const tanstackColumns = useMemo<ColumnDef<TRow>[]>(
     () =>
@@ -143,7 +149,7 @@ export function DataTable<TRow>({
     const fieldDefaults = anchorRow
       ? extractRowDefaults(anchorRow, fieldDefs, visibleColumnDefs)
       : buildEmptyRowDefaults(fieldDefs);
-    const tmpId = `tmp_${generatedId("row")}`;
+    const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
     const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
     const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
 
@@ -180,6 +186,7 @@ export function DataTable<TRow>({
     fieldDefByKey,
     fieldDefs,
     filteredRows,
+    generateRowId,
     getRowId,
     selection.activeCell.rowIndex,
     visibleColumnDefs,
@@ -308,10 +315,6 @@ export function DataTable<TRow>({
     void clipboard.pasteText(tsv);
   };
 
-  if (rows.length === 0) {
-    return <div className="data-table-empty">{emptyMessage}</div>;
-  }
-
   const toolbarActions =
     !readOnly && rowSelection.count > 0 ? (
       <button
@@ -384,6 +387,8 @@ export function DataTable<TRow>({
             edit={edit}
             rowSelection={rowSelection}
             showRowCheckbox={!readOnly}
+            emptyMessage={emptyMessage}
+            totalRowCount={rows.length}
             onCellActivate={(rowId, fieldKey) => {
               selection.setActive({ rowId, fieldKey });
               focusGrid();

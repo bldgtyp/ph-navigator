@@ -26,6 +26,9 @@ export function RoomsTable({
   onViewChange,
   onWrite,
   onSaveOptions,
+  buildEmptyRow,
+  generateRowId,
+  sessionKey,
 }: {
   roomsSlice: RoomsSlice;
   isEditor: boolean;
@@ -38,6 +41,9 @@ export function RoomsTable({
     options: SingleSelectOption[],
     replacements?: Record<string, string | null>,
   ) => void;
+  buildEmptyRow?: DataTableProps<RoomRow>["buildEmptyRow"];
+  generateRowId?: DataTableProps<RoomRow>["generateRowId"];
+  sessionKey?: DataTableProps<RoomRow>["sessionKey"];
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
   const floorOptions = roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY];
@@ -148,6 +154,9 @@ export function RoomsTable({
       view={view}
       onViewChange={onViewChange}
       onWrite={onWrite}
+      buildEmptyRow={buildEmptyRow}
+      generateRowId={generateRowId}
+      sessionKey={sessionKey}
       renderHeaderActions={(fieldDef) => {
         if (
           fieldDef.field_key !== ROOM_FLOOR_LEVEL_KEY &&

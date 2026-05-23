@@ -28,10 +28,7 @@ export function GridGutter({
   };
 
   return (
-    <th
-      className={`data-table-gutter${selected ? " data-table-gutter-selected" : ""}`}
-      scope="row"
-    >
+    <th className={`data-table-gutter${selected ? " data-table-gutter-selected" : ""}`} scope="row">
       <div className="data-table-gutter-inner">
         {showCheckbox ? (
           <input
