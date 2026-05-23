@@ -203,6 +203,40 @@ describe("equipment room helpers", () => {
     ]);
   });
 
+  test("removedOptions strips option ids from the relevant single-select list", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        {
+          ...emptyRoom("opt_ground"),
+          id: "rm_1",
+          number: "101",
+          name: "Living",
+          floor_level: "opt_mez",
+        },
+      ],
+      single_select_options: {
+        "rooms.floor_level": [
+          { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+          { id: "opt_mez", label: "Mezzanine", color: "#10b981", order: 1 },
+        ],
+        "rooms.building_zone": [],
+      },
+    };
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "rooms.floor_level", value: "opt_ground" }],
+      {},
+      { "rooms.floor_level": ["opt_mez"] },
+    );
+
+    expect(payload.rooms[0]?.floor_level).toBe("opt_ground");
+    expect(payload.single_select_options["rooms.floor_level"]).toEqual([
+      { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+    ]);
+  });
+
   test("validates required floor and duplicate numbers before draft writes", () => {
     const missingFloor = {
       ...baseSlice,

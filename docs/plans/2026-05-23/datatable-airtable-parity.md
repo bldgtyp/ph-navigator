@@ -686,7 +686,7 @@ migration that follows.
 | Phase | Started | Demo passed | Notes |
 |-------|---------|-------------|-------|
 | 0 | 2026-05-23 | ✅ 2026-05-23 | All 6 steps landed; 100 tests passing; `DataTable.tsx` 231 LOC. Three post-walk fixes folded in (native onPaste, wrapper focus, sort chevron). Frozen-column sticky positioning removed pending Phase 3 re-engineering. Sign-off detail in `phase-0-foundation-refactor.md` §11–§12. |
-| 1 | — | — | — |
+| 1 | 2026-05-23 | — | Plan drafted in `phase-1-inline-edit-popover.md`. Branch `phase-1-inline-edit-popover` off main. Awaiting Ed approval before Step 1. |
 | 2 | — | — | — |
 | 3 | — | — | — |
 | 4 | — | — | — |

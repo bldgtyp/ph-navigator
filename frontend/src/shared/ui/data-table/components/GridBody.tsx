@@ -1,15 +1,18 @@
 import { flexRender, type Table } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib";
-import type { CellCoord, DataTableColumnDef } from "../types";
+import type { CellCoord, DataTableColumnDef, FieldDef } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
 import { GridGutter } from "./GridGutter";
 import { InlineCellEditor } from "./InlineCellEditor";
+import { SingleSelectPopover } from "./SingleSelectPopover";
 
 // Pure tbody renderer. Hit targets emit stable identity to the parent;
 // active/selection visuals derive from the normalized range projection.
 export type GridBodyProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
+  fieldDefByKey: Map<string, FieldDef>;
   rowIds: string[];
   fieldKeys: string[];
   normalizedActiveRange: NormalizedRange;
@@ -24,6 +27,7 @@ export type GridBodyProps<TRow> = {
 export function GridBody<TRow>({
   table,
   visibleColumnDefs,
+  fieldDefByKey,
   rowIds,
   fieldKeys,
   normalizedActiveRange,
@@ -81,21 +85,17 @@ export function GridBody<TRow>({
                 }}
                 onDoubleClick={() => onCellOpen(row.original, columnIndex)}
               >
-                {edit.isEditingCell(row.id, fieldKey) && edit.editing ? (
-                  <InlineCellEditor
-                    value={edit.editing.draftValue}
-                    onChange={edit.draft}
-                    onCancel={edit.cancel}
-                    onCommit={() => void edit.commit()}
-                    onCommitAndMove={(shiftKey) => {
-                      void edit.commit().then((committed) => {
-                        if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
-                      });
-                    }}
-                  />
-                ) : (
-                  flexRender(cell.column.columnDef.cell, cell.getContext())
-                )}
+                {renderCellContent({
+                  edit,
+                  rowId: row.id,
+                  fieldKey,
+                  fieldDef: fieldDefByKey.get(fieldKey),
+                  fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
+                  onCommitAndMove: (shiftKey) =>
+                    void edit.commit().then((committed) => {
+                      if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
+                    }),
+                })}
               </td>
             );
           })}
@@ -103,4 +103,48 @@ export function GridBody<TRow>({
       ))}
     </tbody>
   );
+}
+
+// Pick the cell's inner content. When the cell is in edit mode, choose
+// the editor matching the typed draft (text/number → InlineCellEditor;
+// single_select → SingleSelectPopover). Other field types fall through
+// to the static render.
+function renderCellContent(args: {
+  edit: GridEdit;
+  rowId: string;
+  fieldKey: string;
+  fieldDef: FieldDef | undefined;
+  fallback: () => ReactNode;
+  onCommitAndMove: (shiftKey: boolean) => void;
+}): ReactNode {
+  const { edit, rowId, fieldKey, fieldDef, fallback, onCommitAndMove } = args;
+  if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) return fallback();
+  const editor = edit.editing.editor;
+  if (editor.kind === "text" || editor.kind === "number") {
+    return (
+      <InlineCellEditor
+        value={editor.draftValue}
+        onChange={edit.draft}
+        onCancel={edit.cancel}
+        onCommit={() => void edit.commit()}
+        onCommitAndMove={onCommitAndMove}
+      />
+    );
+  }
+  if (editor.kind === "single_select") {
+    return (
+      <SingleSelectPopover
+        options={fieldDef?.options ?? []}
+        searchText={editor.searchText}
+        highlightedOptionId={editor.highlightedOptionId}
+        onSearchTextChange={edit.draft}
+        onHighlight={edit.highlight}
+        onCancel={edit.cancel}
+        onCommit={() => void edit.commit()}
+        onCommitAndMove={onCommitAndMove}
+        anchorChildren={<span className="single-select-popover-anchor">{fallback()}</span>}
+      />
+    );
+  }
+  return fallback();
 }
