@@ -126,4 +126,22 @@ describe("SortPopover", () => {
     expect(within(popover()).getByText("A → Z")).toBeInTheDocument();
     expect(within(popover()).getByText("Z → A")).toBeInTheDocument();
   });
+
+  test("each rule exposes a drag handle reachable as a Reorder button", () => {
+    render(
+      <Harness
+        initialRules={[
+          { fieldKey: "number", direction: "asc" },
+          { fieldKey: "name", direction: "asc" },
+        ]}
+        onSortChange={vi.fn()}
+      />,
+    );
+    expect(
+      within(popover()).getByRole("button", { name: "Reorder sort rule 1" }),
+    ).toBeInTheDocument();
+    expect(
+      within(popover()).getByRole("button", { name: "Reorder sort rule 2" }),
+    ).toBeInTheDocument();
+  });
 });

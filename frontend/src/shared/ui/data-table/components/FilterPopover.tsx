@@ -1,6 +1,22 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useCallback, useMemo, useRef, type CSSProperties } from "react";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   getFilterOperators,
   getOperatorDef,
   type FilterOperatorDef,
@@ -80,6 +96,34 @@ export function FilterPopover({
     [onFilterChange, rules],
   );
 
+  // Phase 4 §4.5 + Step 5: drag-to-reorder via @dnd-kit/sortable.
+  // Tests fire `DndContext.onDragEnd` directly so we keep the sensor
+  // setup default but rely on the active/over id pair carried by the
+  // event rather than the pointer position.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const fromIndex = ruleIdsRef.current.indexOf(String(active.id));
+      const toIndex = ruleIdsRef.current.indexOf(String(over.id));
+      if (fromIndex < 0 || toIndex < 0) return;
+      const nextRules = [...rules];
+      const [moved] = nextRules.splice(fromIndex, 1);
+      if (!moved) return;
+      nextRules.splice(toIndex, 0, moved);
+      const nextIds = [...ruleIdsRef.current];
+      const [movedId] = nextIds.splice(fromIndex, 1);
+      if (movedId !== undefined) nextIds.splice(toIndex, 0, movedId);
+      ruleIdsRef.current = nextIds;
+      onFilterChange(nextRules);
+    },
+    [onFilterChange, rules],
+  );
+
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>{trigger}</Popover.Trigger>
@@ -97,18 +141,30 @@ export function FilterPopover({
           {rules.length === 0 ? (
             <div className="data-table-view-popover-empty">No filters applied to this view.</div>
           ) : (
-            <ul className="data-table-view-popover-rules" role="list">
-              {rules.map((rule, index) => (
-                <FilterRuleRow
-                  key={ruleIdsRef.current[index] ?? `filt-${index}`}
-                  index={index}
-                  rule={rule}
-                  fieldDefs={filterableFieldDefs}
-                  onChange={(next) => handleRuleChange(index, next)}
-                  onRemove={() => handleRuleRemove(index)}
-                />
-              ))}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={ruleIdsRef.current.slice(0, rules.length)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="data-table-view-popover-rules" role="list">
+                  {rules.map((rule, index) => (
+                    <FilterRuleRow
+                      key={ruleIdsRef.current[index] ?? `filt-${index}`}
+                      ruleId={ruleIdsRef.current[index] ?? `filt-${index}`}
+                      index={index}
+                      rule={rule}
+                      fieldDefs={filterableFieldDefs}
+                      onChange={(next) => handleRuleChange(index, next)}
+                      onRemove={() => handleRuleRemove(index)}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
           <button
             type="button"
@@ -125,6 +181,7 @@ export function FilterPopover({
 }
 
 type FilterRuleRowProps = {
+  ruleId: string;
   index: number;
   rule: FilterCondition;
   fieldDefs: FieldDef[];
@@ -132,10 +189,15 @@ type FilterRuleRowProps = {
   onRemove: () => void;
 };
 
-function FilterRuleRow({ index, rule, fieldDefs, onChange, onRemove }: FilterRuleRowProps) {
+function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: FilterRuleRowProps) {
   const fieldDef = fieldDefs.find((def) => def.field_key === rule.fieldKey);
   const operators = useMemo(() => getFilterOperators(fieldDef), [fieldDef]);
   const operatorDef = getOperatorDef(rule.operator);
+  const sortable = useSortable({ id: ruleId });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+  };
 
   const handleFieldChange = (nextFieldKey: string) => {
     const nextField = fieldDefs.find((def) => def.field_key === nextFieldKey);
@@ -162,8 +224,15 @@ function FilterRuleRow({ index, rule, fieldDefs, onChange, onRemove }: FilterRul
   };
 
   return (
-    <li className="data-table-view-popover-rule">
-      <span className="data-table-view-popover-conjunction">{index === 0 ? "Where" : "And"}</span>
+    <li
+      className="data-table-view-popover-rule"
+      ref={sortable.setNodeRef}
+      style={style}
+      data-dragging={sortable.isDragging ? "true" : undefined}
+    >
+      <span className="data-table-view-popover-conjunction">
+        {index === 0 ? "Where" : "And"}
+      </span>
       <select
         aria-label="Filter field"
         className="data-table-view-popover-select"
@@ -203,6 +272,16 @@ function FilterRuleRow({ index, rule, fieldDefs, onChange, onRemove }: FilterRul
         onClick={onRemove}
       >
         🗑
+      </button>
+      <button
+        type="button"
+        className="data-table-view-popover-drag"
+        aria-label={`Reorder rule ${index + 1}`}
+        ref={sortable.setActivatorNodeRef}
+        {...sortable.attributes}
+        {...sortable.listeners}
+      >
+        ⋮⋮
       </button>
     </li>
   );
