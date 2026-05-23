@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import { usePatchVersionMutation } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
@@ -56,12 +57,15 @@ export function VersionControls({
   project,
   defaultVersionId,
   onOpenVersion,
+  onOpenProjectSettings,
 }: {
   project: ProjectDetail;
   defaultVersionId: string | null;
   onOpenVersion: (versionId: string) => void;
+  onOpenProjectSettings?: () => void;
 }) {
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffTarget, setDiffTarget] = useState(DRAFT_DIFF_TARGET);
@@ -71,6 +75,7 @@ export function VersionControls({
   const [confirmation, setConfirmation] = useState<ConfirmationDialog | null>(null);
   const [draftRestorePrompt, setDraftRestorePrompt] = useState<DraftRestorePrompt | null>(null);
   const [saveAsReturnVersionId, setSaveAsReturnVersionId] = useState<string | null>(null);
+  const controlsRef = useRef<HTMLDivElement | null>(null);
   const initializedDraftKeysRef = useRef(new Set<string>());
   const activeVersion = project.active_version;
   const activeVersionId = activeVersion?.id ?? null;
@@ -90,6 +95,11 @@ export function VersionControls({
     diffTarget,
     diffOpen && Boolean(activeVersionId),
   );
+
+  useOutsidePointerDown(controlsRef, versionsOpen || actionsOpen, () => {
+    setVersionsOpen(false);
+    setActionsOpen(false);
+  });
 
   useEffect(() => {
     if (!hasDraft || !activeVersionId) return;
@@ -209,6 +219,7 @@ export function VersionControls({
 
   const toggleLock = async () => {
     if (!activeVersionId) return;
+    setActionsOpen(false);
     if (isLocked) {
       setConfirmation({ kind: "unlock" });
       return;
@@ -261,6 +272,7 @@ export function VersionControls({
   const openSaveAs = (returnVersionId: string | null = null) => {
     setSaveAsReturnVersionId(returnVersionId);
     setSaveAsOpen(true);
+    setActionsOpen(false);
     setConfirmation(null);
   };
 
@@ -281,17 +293,30 @@ export function VersionControls({
     patchVersionMutation.isPending;
 
   return (
-    <div className="version-control-wrap">
+    <div className="version-control-wrap" ref={controlsRef}>
       <div className="shell-controls">
         <button
           type="button"
-          className="secondary-button"
-          onClick={() => setVersionsOpen((value) => !value)}
+          className="secondary-button version-trigger"
+          onClick={() => {
+            setVersionsOpen((value) => !value);
+            setActionsOpen(false);
+          }}
+          aria-expanded={versionsOpen}
         >
           {activeVersion?.name ?? "No version"}
           {isLocked ? " · Locked" : ""}
         </button>
-        <span className={hasDraft ? "save-state dirty" : "save-state"}>
+        <span
+          className={hasDraft ? "save-state dirty" : "save-state"}
+          title={
+            draftSummaryQuery.isLoading
+              ? "Checking draft state"
+              : hasDraft
+                ? "Unsaved draft changes"
+                : "Saved version is clean"
+          }
+        >
           {draftSummaryQuery.isLoading ? "Checking..." : hasDraft ? "Unsaved" : "Clean"}
         </span>
         {isLocked ? (
@@ -303,49 +328,91 @@ export function VersionControls({
             Save
           </button>
         )}
-        {!isLocked ? (
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => openSaveAs()}
-            disabled={!activeVersionId || busy}
-          >
-            Save As
-          </button>
-        ) : null}
         <button
           type="button"
-          className="secondary-button"
-          onClick={() => setConfirmation({ kind: "discard" })}
-          disabled={!hasDraft || busy}
+          className="secondary-button icon-button project-actions-trigger"
+          onClick={() => {
+            setActionsOpen((value) => !value);
+            setVersionsOpen(false);
+          }}
+          aria-label="Project actions"
+          aria-expanded={actionsOpen}
+          title="Project actions"
         >
-          Discard
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={toggleLock}
-          disabled={!activeVersionId || busy}
-        >
-          {isLocked ? "Unlock" : "Lock"}
-        </button>
-        {activeVersionId ? (
-          <a
-            className="secondary-button download-link"
-            href={projectDownloadUrl(project.id, activeVersionId)}
-          >
-            Project JSON
-          </a>
-        ) : null}
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => setDiffOpen(true)}
-          disabled={!activeVersionId}
-        >
-          Diff
+          ...
         </button>
       </div>
+      {actionsOpen ? (
+        <div className="project-actions-menu" role="menu" aria-label="Project actions">
+          {onOpenProjectSettings ? (
+            <button
+              type="button"
+              className="menu-action"
+              role="menuitem"
+              onClick={() => {
+                setActionsOpen(false);
+                onOpenProjectSettings();
+              }}
+            >
+              Project settings
+            </button>
+          ) : null}
+          {!isLocked ? (
+            <button
+              type="button"
+              className="menu-action"
+              role="menuitem"
+              onClick={() => openSaveAs()}
+              disabled={!activeVersionId || busy}
+            >
+              Save As
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="menu-action"
+            role="menuitem"
+            onClick={() => {
+              setActionsOpen(false);
+              setConfirmation({ kind: "discard" });
+            }}
+            disabled={!hasDraft || busy}
+          >
+            Discard changes
+          </button>
+          <button
+            type="button"
+            className="menu-action"
+            role="menuitem"
+            onClick={() => void toggleLock()}
+            disabled={!activeVersionId || busy}
+          >
+            {isLocked ? "Unlock version" : "Lock version"}
+          </button>
+          <button
+            type="button"
+            className="menu-action"
+            role="menuitem"
+            onClick={() => {
+              setActionsOpen(false);
+              setDiffOpen(true);
+            }}
+            disabled={!activeVersionId}
+          >
+            Diff
+          </button>
+          {activeVersionId ? (
+            <a
+              className="menu-action download-link"
+              role="menuitem"
+              href={projectDownloadUrl(project.id, activeVersionId)}
+              onClick={() => setActionsOpen(false)}
+            >
+              Project JSON
+            </a>
+          ) : null}
+        </div>
+      ) : null}
       {actionError && !confirmation ? (
         <p className="inline-action-error" role="alert">
           {actionError}

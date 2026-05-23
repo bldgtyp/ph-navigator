@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useOutsidePointerDown } from "./useOutsidePointerDown";
 
 type Breadcrumb = {
   label: string;
@@ -45,8 +46,20 @@ export function WorkspaceTopbar({
 }
 
 export function TopbarAccountMenu({ label, onSignOut }: { label: string; onSignOut: () => void }) {
+  const detailsRef = useRef<HTMLDetailsElement | null>(null);
+  const [open, setOpen] = useState(false);
+
+  useOutsidePointerDown(detailsRef, open, () => {
+    if (detailsRef.current) detailsRef.current.open = false;
+    setOpen(false);
+  });
+
   return (
-    <details className="account-menu">
+    <details
+      ref={detailsRef}
+      className="account-menu"
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
       <summary>{label}</summary>
       <div className="account-menu-panel">
         <button type="button" className="text-button" onClick={onSignOut}>
