@@ -109,9 +109,7 @@ describe("DataTable", () => {
       },
     });
 
-    const nameCell = screen
-      .getByText("Living Room")
-      .closest("td");
+    const nameCell = screen.getByText("Living Room").closest("td");
     expect(nameCell).toHaveAttribute("data-axis-tint", "filter");
     // Non-filtered columns carry no axis tint.
     const numberCell = screen.getByText("101").closest("td");

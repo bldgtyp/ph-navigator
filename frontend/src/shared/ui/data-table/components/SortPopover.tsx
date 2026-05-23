@@ -59,10 +59,7 @@ export function SortPopover({
     }
   }
 
-  const usedFieldKeys = useMemo(
-    () => new Set(rules.map((rule) => rule.fieldKey)),
-    [rules],
-  );
+  const usedFieldKeys = useMemo(() => new Set(rules.map((rule) => rule.fieldKey)), [rules]);
   const unusedFieldDefs = useMemo(
     () => sortableFieldDefs.filter((def) => !usedFieldKeys.has(def.field_key)),
     [sortableFieldDefs, usedFieldKeys],
@@ -143,9 +140,7 @@ export function SortPopover({
                 <ul className="data-table-view-popover-rules" role="list">
                   {rules.map((rule, index) => {
                     const fieldOptions = sortableFieldDefs.filter(
-                      (def) =>
-                        def.field_key === rule.fieldKey ||
-                        !usedFieldKeys.has(def.field_key),
+                      (def) => def.field_key === rule.fieldKey || !usedFieldKeys.has(def.field_key),
                     );
                     return (
                       <SortRuleRow
@@ -215,9 +210,7 @@ function SortRuleRow({ ruleId, index, rule, fieldOptions, onChange, onRemove }: 
         aria-label="Sort direction"
         className="data-table-view-popover-select"
         value={rule.direction}
-        onChange={(event) =>
-          onChange({ ...rule, direction: event.target.value as "asc" | "desc" })
-        }
+        onChange={(event) => onChange({ ...rule, direction: event.target.value as "asc" | "desc" })}
       >
         <option value="asc">A → Z</option>
         <option value="desc">Z → A</option>

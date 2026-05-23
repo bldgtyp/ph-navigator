@@ -309,8 +309,7 @@ export function DataTable<TRow>({
   const sortableFieldDefs = useMemo(
     () =>
       fieldDefs.filter(
-        (fieldDef) =>
-          fieldDef.field_type !== "attachment" && fieldDef.field_type !== "argb_color",
+        (fieldDef) => fieldDef.field_type !== "attachment" && fieldDef.field_type !== "argb_color",
       ),
     [fieldDefs],
   );

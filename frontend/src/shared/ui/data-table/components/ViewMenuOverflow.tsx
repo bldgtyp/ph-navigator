@@ -21,11 +21,7 @@ export function ViewMenuOverflow({ onReset, canReset }: ViewMenuOverflowProps) {
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button
-          type="button"
-          className="data-table-toolbar-button"
-          aria-label="More view actions"
-        >
+        <button type="button" className="data-table-toolbar-button" aria-label="More view actions">
           ⋯
         </button>
       </Popover.Trigger>

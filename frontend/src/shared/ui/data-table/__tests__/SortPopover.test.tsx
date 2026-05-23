@@ -56,7 +56,9 @@ describe("SortPopover", () => {
   test("Add button is disabled when all sortable fields are used", () => {
     render(
       <Harness
-        initialRules={FIELDS.map((def) => ({ fieldKey: def.field_key, direction: "asc" }) as SortRule)}
+        initialRules={FIELDS.map(
+          (def) => ({ fieldKey: def.field_key, direction: "asc" }) as SortRule,
+        )}
         onSortChange={vi.fn()}
       />,
     );
@@ -67,10 +69,7 @@ describe("SortPopover", () => {
   test("changing direction updates the rule via onSortChange", () => {
     const onChange = vi.fn();
     render(
-      <Harness
-        initialRules={[{ fieldKey: "number", direction: "asc" }]}
-        onSortChange={onChange}
-      />,
+      <Harness initialRules={[{ fieldKey: "number", direction: "asc" }]} onSortChange={onChange} />,
     );
     const directionPicker = within(popover()).getByLabelText("Sort direction");
     fireEvent.change(directionPicker, { target: { value: "desc" } });
@@ -118,10 +117,7 @@ describe("SortPopover", () => {
 
   test("direction labels read A → Z and Z → A regardless of field type", () => {
     render(
-      <Harness
-        initialRules={[{ fieldKey: "people", direction: "asc" }]}
-        onSortChange={vi.fn()}
-      />,
+      <Harness initialRules={[{ fieldKey: "people", direction: "asc" }]} onSortChange={vi.fn()} />,
     );
     expect(within(popover()).getByText("A → Z")).toBeInTheDocument();
     expect(within(popover()).getByText("Z → A")).toBeInTheDocument();

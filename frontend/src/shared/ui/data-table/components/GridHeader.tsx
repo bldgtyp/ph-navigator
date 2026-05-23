@@ -47,10 +47,7 @@ export function GridHeader<TRow>({
                 role="columnheader"
                 aria-colindex={columnIndex + 1}
                 data-axis-tint={axisTint ?? undefined}
-                className={[
-                  "data-table-th",
-                  columnIndex === 0 ? "data-table-frozen" : "",
-                ]
+                className={["data-table-th", columnIndex === 0 ? "data-table-frozen" : ""]
                   .filter(Boolean)
                   .join(" ")}
                 onMouseDown={

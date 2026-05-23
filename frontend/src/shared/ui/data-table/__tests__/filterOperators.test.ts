@@ -76,18 +76,18 @@ describe("isFilterContributing", () => {
     expect(
       isFilterContributing({ fieldKey: "x", operator: "between", valuePair: ["1", "5"] }),
     ).toBe(true);
-    expect(
-      isFilterContributing({ fieldKey: "x", operator: "between", valuePair: ["", "5"] }),
-    ).toBe(false);
+    expect(isFilterContributing({ fieldKey: "x", operator: "between", valuePair: ["", "5"] })).toBe(
+      false,
+    );
     expect(
       isFilterContributing({ fieldKey: "x", operator: "between", valuePair: ["abc", "5"] }),
     ).toBe(false);
   });
 
   test("option-list operators require a non-empty list", () => {
-    expect(
-      isFilterContributing({ fieldKey: "x", operator: "is_any_of", valueList: ["a"] }),
-    ).toBe(true);
+    expect(isFilterContributing({ fieldKey: "x", operator: "is_any_of", valueList: ["a"] })).toBe(
+      true,
+    );
     expect(isFilterContributing({ fieldKey: "x", operator: "is_any_of", valueList: [] })).toBe(
       false,
     );
