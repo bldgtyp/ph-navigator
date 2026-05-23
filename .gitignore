@@ -62,3 +62,4 @@ postgres_data/
 # ─── Claude Code harness state ───
 .claude/scheduled_tasks.lock
 .claude/scheduled_tasks/
+phase3-walk/

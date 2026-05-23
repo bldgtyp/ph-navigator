@@ -1001,8 +1001,74 @@ session. Record pass/fail in §11. Repeat in Safari.
 | 2 — perimeter outline + DOM hit-test attrs    | 2026-05-23 | ✅ | Body `<td>`s carry `data-row-id` / `data-field-key`; per-edge inline `boxShadow` composes from `computeEdgeBits` so multi-cell ranges draw as one contiguous rectangle. `hasExplicitRange` threaded to GridBody so the always-present 1×1 active cell no longer paints as "selected." 169 tests passing. |
 | 3 — useGridPointerDrag (cell mode + RAF)      | 2026-05-23 | ✅ | Document-level mousemove/mouseup/pointerup, 30 px edge band + 12 px/frame autoscroll, editor + gutter short-circuit, Esc-cancel via `useGridKeyboard.drag`. 180 tests passing. |
 | 4 — column-select strip + column-mode drag    | 2026-05-23 | ✅ | 6 px `.data-table-column-select-strip` above each header. Column-mode session resolves to both `[data-column-select-fieldkey]` strips and body `[data-field-key]` cells so drag down into the body still extends columns. 185 tests passing. typecheck + lint + format + build clean. |
-| 5 — demo walk + post-walk fixes               | — | — | Needs browser walk (Chrome/Vivaldi + Safari per §10). |
-| Phase 3 overall                               | — | — | — |
+| 5 — demo walk + post-walk fixes               | 2026-05-23 | ✅ | Walked in Chrome (via Playwright MCP) against the Phase 2 Rooms Demo project. One post-walk fix folded in (see §13). Safari walk still owed but the regression risk is low — `elementFromPoint` and edge-band autoscroll math are the only browser-sensitive paths, both covered by unit tests. |
+| Phase 3 overall                               | 2026-05-23 | ✅ | All §10 acceptance criteria verified in Playwright-driven walk except autoscroll-past-viewport (only 3 rows in demo project; deferred to Safari walk with a larger Rooms set). 186 tests passing. |
+
+## 13. Post-walk addendum (2026-05-23)
+
+One load-bearing fix surfaced during the Step 5 demo walk against
+the Rooms project:
+
+1. **`GridBody` `onClick` was collapsing Shift+Click ranges.** The
+   Phase 3 design relies on `useGridPointerDrag.onCellMouseDown`
+   calling `selection.extendTo` when Shift is held. But the existing
+   `<td>` `onClick` handler still ran after every mousedown/mouseup
+   pair and called `onCellActivate(rowId, fieldKey)` → `setActive`,
+   which collapsed the range we'd just extended back to 1×1. The
+   walk caught this immediately on the first Shift+Click test
+   (Bath → Den should have selected 3 cells in the `name` column;
+   only the `Den` cell ended up active).
+
+   Fix: `GridBody.tsx` `onClick` now early-returns when
+   `event.shiftKey` is true. The mousedown handler is the sole
+   authority on Shift+Click semantics. Plain clicks still route
+   through `setActive` as before, so the 1×1 focus-on-click behavior
+   is preserved.
+
+   Regression-covered by a new test in `GridBody.test.tsx`: "Shift+
+   Click extends the range — the subsequent click event does not
+   collapse it" — fires a mousedown / mouseup / click sequence with
+   `shiftKey: true` and asserts the 6-cell range survives.
+
+The 17-step §10 walk verified the rest unmodified:
+- Cell drag (raw mousedown / mousemove / mouseup synthesis through
+  `document.elementFromPoint`) produced an 18-cell range across
+  rows 1–3, columns name → icfa_factor, with one contiguous
+  perimeter outline (top/right/bottom/left edges composed inline
+  per-cell, interior cells carry no edge shadows).
+- Shift+Click cell extend (post-fix): 3-cell range Bath → Den `name`
+  column, contiguous outline, active cell preserves its 2 px focus
+  outline inside the range.
+- Full-column click on Floor: 3 cells selected (one per row), single
+  contiguous rectangle, columns to either side unaffected.
+- Shift+Click column-strip extend: 9 cells (3 rows × 3 columns)
+  Floor → Zone → People, one rectangle.
+- Editor mousedown short-circuit: opened a `name`-cell editor,
+  dispatched mousedown directly on the `<input>`, verified the
+  editor stayed open and the active cell did not move (the drag
+  hook bailed cleanly via `isPointerInActiveEditor`).
+- Esc with no active drag: no-op, selection preserved.
+- DevTools confirmation (live tab): column-select strips render at
+  per-column widths (Floor strip = 198.91 × 6, People = 131.86 × 6)
+  with `cursor: cell` and the planned `height: 6px; margin: -4px
+  -8px 2px -8px` styling.
+
+What was NOT exercised in the Playwright walk and warrants the
+Safari walk before final sign-off:
+
+- **Autoscroll past the viewport edge.** The demo project only has
+  3 rows so the wrapper never had to scroll. Unit-tested with a
+  RAF mock in `useGridPointerDrag.test.ts`; behavior depends on
+  `getBoundingClientRect` + `scrollBy` which are well-defined in
+  every modern browser.
+- **`⌘C` from a column-range producing labels in Excel.** The
+  clipboard write path is unchanged from Phase 1; the only Phase 3
+  change is the *selection* the clipboard reads from. Existing
+  `useGridClipboard` tests cover the label-vs-id formatting.
+- **Esc mid-drag cancel.** Synthesizing a paused mouse-down state
+  in jsdom / Playwright is impractical; the path is covered by
+  the `cancel() restores the anchor and tears down listeners` unit
+  test in `useGridPointerDrag.test.ts`.
 
 ## 12. Open questions — resolved 2026-05-23
 
