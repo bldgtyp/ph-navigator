@@ -4,7 +4,8 @@ import { applyTextFilters, formatDisplayCellValue, sortRows } from "./lib";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
-import { useGridEdit, isInlineEditableField } from "./hooks/useGridEdit";
+import { useGridEdit } from "./hooks/useGridEdit";
+import { getFieldEditor } from "./fields/registry";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { GridHeader } from "./components/GridHeader";
@@ -148,7 +149,8 @@ export function DataTable<TRow>({
   const startInlineEdit = (row: TRow, columnIndex: number) => {
     const column = visibleColumnDefs[columnIndex];
     const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
-    if (readOnly || !onWrite || !column || !isInlineEditableField(fieldDef)) {
+    const editorKind = getFieldEditor(fieldDef).kind;
+    if (readOnly || !onWrite || !column || editorKind === "none") {
       onRowOpen?.(row);
       return;
     }
@@ -156,6 +158,7 @@ export function DataTable<TRow>({
       rowId: getRowId(row),
       fieldKey: column.fieldKey,
       initialValue: column.accessor(row),
+      intent: "extend",
     });
   };
 

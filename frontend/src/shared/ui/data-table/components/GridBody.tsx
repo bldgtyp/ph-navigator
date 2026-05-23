@@ -1,4 +1,5 @@
 import { flexRender, type Table } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib";
 import type { CellCoord, DataTableColumnDef } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
@@ -81,21 +82,16 @@ export function GridBody<TRow>({
                 }}
                 onDoubleClick={() => onCellOpen(row.original, columnIndex)}
               >
-                {edit.isEditingCell(row.id, fieldKey) && edit.editing ? (
-                  <InlineCellEditor
-                    value={edit.editing.draftValue}
-                    onChange={edit.draft}
-                    onCancel={edit.cancel}
-                    onCommit={() => void edit.commit()}
-                    onCommitAndMove={(shiftKey) => {
-                      void edit.commit().then((committed) => {
-                        if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
-                      });
-                    }}
-                  />
-                ) : (
-                  flexRender(cell.column.columnDef.cell, cell.getContext())
-                )}
+                {renderCellContent({
+                  edit,
+                  rowId: row.id,
+                  fieldKey,
+                  fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
+                  onCommitAndMove: (shiftKey) =>
+                    void edit.commit().then((committed) => {
+                      if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
+                    }),
+                })}
               </td>
             );
           })}
@@ -103,4 +99,35 @@ export function GridBody<TRow>({
       ))}
     </tbody>
   );
+}
+
+// Pick the cell's inner content. When the cell is in edit mode, choose
+// the editor matching the typed draft. Single-select rendering is the
+// noop fall-through here until Step 3 wires SingleSelectPopover.
+function renderCellContent(args: {
+  edit: GridEdit;
+  rowId: string;
+  fieldKey: string;
+  fallback: () => ReactNode;
+  onCommitAndMove: (shiftKey: boolean) => void;
+}): ReactNode {
+  const { edit, rowId, fieldKey, fallback, onCommitAndMove } = args;
+  if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) return fallback();
+  const editor = edit.editing.editor;
+  if (editor.kind === "text" || editor.kind === "number") {
+    return (
+      <InlineCellEditor
+        value={editor.draftValue}
+        onChange={edit.draft}
+        onCancel={edit.cancel}
+        onCommit={() => void edit.commit()}
+        onCommitAndMove={onCommitAndMove}
+      />
+    );
+  }
+  // single_select: popover renders in Step 3. For now, show the static
+  // cell content so the table doesn't render a blank `<td>` while
+  // edit state is open — matters only if a future caller opens a
+  // single_select edit before Step 3 lands.
+  return fallback();
 }
