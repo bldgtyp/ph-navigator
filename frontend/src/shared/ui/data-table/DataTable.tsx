@@ -4,12 +4,14 @@ import { applyTextFilters, formatDisplayCellValue, sortRows } from "./lib";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
+import { useGridRowSelection } from "./hooks/useGridRowSelection";
 import { useGridEdit } from "./hooks/useGridEdit";
 import { getFieldEditor } from "./fields/registry";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
+import { GridToolbar } from "./components/GridToolbar";
 import type { CellCoord, DataTableProps } from "./types";
 
 export function DataTable<TRow>({
@@ -59,6 +61,7 @@ export function DataTable<TRow>({
   const history = useGridHistory();
   const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
   const selection = useGridSelection({ rowIds, fieldKeys });
+  const rowSelection = useGridRowSelection({ rowIds });
   const edit = useGridEdit({
     fieldDefByKey,
     dispatchWrite,
@@ -192,12 +195,7 @@ export function DataTable<TRow>({
 
   return (
     <div className={`data-table-shell data-table-shell-${density}`}>
-      <div className="data-table-toolbar" aria-label="Table view controls">
-        <span>{readOnly ? "Read-only" : "Editable"}</span>
-        <span>{view.filter.length ? `Filtered by ${view.filter.length} rule` : "No filters"}</span>
-        <span>{view.group.length ? "Ungroup to paste" : "Ungrouped"}</span>
-        <span>{view.sort.length ? `Sorted by ${view.sort.length} field` : "Unsorted"}</span>
-      </div>
+      <GridToolbar readOnly={readOnly} view={view} />
       <div className="sr-only" aria-live="polite">
         {announce}
       </div>
@@ -242,6 +240,8 @@ export function DataTable<TRow>({
             normalizedActiveRange={selection.normalizedRange}
             activeCell={selection.activeCell}
             edit={edit}
+            rowSelection={rowSelection}
+            showRowCheckbox={!readOnly}
             onCellActivate={(rowId, fieldKey) => {
               selection.setActive({ rowId, fieldKey });
               focusGrid();
@@ -249,6 +249,10 @@ export function DataTable<TRow>({
             onCellOpen={startInlineEdit}
             onRowSelect={(rowId) => {
               selection.selectRow(rowId);
+              focusGrid();
+            }}
+            onRowToggleSelected={(rowId, mode) => {
+              rowSelection.toggle(rowId, mode);
               focusGrid();
             }}
             onCommitAndMove={handleCommitAndMove}
