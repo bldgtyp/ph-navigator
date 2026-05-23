@@ -1,5 +1,5 @@
 import { flexRender, type Table } from "@tanstack/react-table";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { computeEdgeBits, isCellInNormalizedRange, type NormalizedRange } from "../lib";
 import type { CellCoord, DataTableColumnDef, FieldDef } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
@@ -25,6 +25,7 @@ export type GridBodyProps<TRow> = {
   emptyMessage: string;
   totalRowCount: number;
   onCellActivate: (rowId: string, fieldKey: string) => void;
+  onCellMouseDown?: (event: ReactMouseEvent<HTMLTableCellElement>) => void;
   onCellOpen: (row: TRow, columnIndex: number) => void;
   onRowSelect: (rowId: string) => void;
   onRowToggleSelected: (rowId: string, mode: RowSelectionMode) => void;
@@ -46,6 +47,7 @@ export function GridBody<TRow>({
   emptyMessage,
   totalRowCount,
   onCellActivate,
+  onCellMouseDown,
   onCellOpen,
   onRowSelect,
   onRowToggleSelected,
@@ -105,6 +107,7 @@ export function GridBody<TRow>({
                   .filter(Boolean)
                   .join(" ")}
                 style={edgeStyle}
+                onMouseDown={onCellMouseDown}
                 onClick={() => {
                   if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
                 }}

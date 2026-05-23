@@ -29,15 +29,35 @@ export type GridKeyboardArgs = {
   // promise so the keyboard hook can await a mid-edit commit before
   // requesting the insert.
   onRowInsertBelowActive?: () => Promise<void>;
+  // Phase 3 §4.4: Esc during an active drag cancels the drag and
+  // collapses the range to the drag anchor. Optional — when no drag
+  // composition is wired, Esc keeps its prior no-op behavior.
+  drag?: { isDragging: boolean; cancel: () => void };
 };
 
 export function useGridKeyboard(args: GridKeyboardArgs) {
-  const { selection, edit, readOnly, onCopy, onUndo, onRedo, onRowOpen, onRowInsertBelowActive } =
-    args;
+  const {
+    selection,
+    edit,
+    readOnly,
+    onCopy,
+    onUndo,
+    onRedo,
+    onRowOpen,
+    onRowInsertBelowActive,
+    drag,
+  } = args;
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.defaultPrevented) return;
+      // Esc cancels an active pointer drag before any other handling,
+      // so the keystroke works even mid-drag with the wrapper focused.
+      if (event.key === "Escape" && drag?.isDragging) {
+        event.preventDefault();
+        drag.cancel();
+        return;
+      }
       // Edit-mode hands off all keystrokes to InlineCellEditor; the grid
       // shell ignores everything until the edit closes.
       if (edit.editing) return;
@@ -82,7 +102,7 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
         selection.moveBy(event.key, event.shiftKey);
       }
     },
-    [edit, onCopy, onRedo, onRowInsertBelowActive, onRowOpen, onUndo, readOnly, selection],
+    [drag, edit, onCopy, onRedo, onRowInsertBelowActive, onRowOpen, onUndo, readOnly, selection],
   );
 
   return { onKeyDown };

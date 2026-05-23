@@ -15,6 +15,7 @@ import { useGridRowSelection } from "./hooks/useGridRowSelection";
 import { useGridEdit } from "./hooks/useGridEdit";
 import { getFieldEditor } from "./fields/registry";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
+import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
@@ -113,6 +114,25 @@ export function DataTable<TRow>({
 
   const isGrouped = view.group.length > 0;
   const wrapperRef = useRef<HTMLDivElement>(null);
+  // Phase 3 §4.9: short-circuit pointer drag when the mousedown source
+  // lives inside the active editor (inline <input> or single-select
+  // popover). Lets native text-selection inside the editor work
+  // without interference from the cell-drag hook.
+  const isPointerInActiveEditor = useCallback(
+    (target: EventTarget | null) => {
+      if (!edit.editing) return false;
+      if (!(target instanceof Element)) return false;
+      if (target.closest(".data-table-cell-editor")) return true;
+      if (target.closest(".single-select-popover")) return true;
+      return false;
+    },
+    [edit.editing],
+  );
+  const pointerDrag = useGridPointerDrag({
+    containerRef: wrapperRef,
+    selection,
+    isPointerInActiveEditor,
+  });
   // Refocuses the grid wrapper so subsequent keyboard shortcuts (⌘Z,
   // ⌘C, arrows) route through onKeyDown rather than the browser's
   // default for whichever element happened to receive focus from the
@@ -263,6 +283,7 @@ export function DataTable<TRow>({
         }
       : undefined,
     onRowInsertBelowActive: canInsertRow ? insertRowBelowActive : undefined,
+    drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
 
   const toggleSort = (fieldKey: string) => {
@@ -394,6 +415,7 @@ export function DataTable<TRow>({
               selection.setActive({ rowId, fieldKey });
               focusGrid();
             }}
+            onCellMouseDown={pointerDrag.onCellMouseDown}
             onCellOpen={startInlineEdit}
             onRowSelect={(rowId) => {
               selection.selectRow(rowId);
