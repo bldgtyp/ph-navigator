@@ -43,8 +43,10 @@ function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
   );
 }
 
-function getColumnSelectStrip(displayName: string): HTMLElement {
-  return screen.getByRole("button", { name: `Select column ${displayName}` });
+function getColumnHeader(name: string): HTMLElement {
+  // The header `<th>` itself is the column-select hit target. Match by
+  // its accessible label (the rendered header text).
+  return screen.getByRole("columnheader", { name: new RegExp(name) });
 }
 
 function getBodyCell(rowIndex: number, columnIndex: number): HTMLTableCellElement {
@@ -55,27 +57,12 @@ function getBodyCell(rowIndex: number, columnIndex: number): HTMLTableCellElemen
   return within(row).getAllByRole("gridcell")[columnIndex] as HTMLTableCellElement;
 }
 
-describe("DataTable column-select strip", () => {
-  test("each header renders a column-select strip with the right fieldKey", () => {
+describe("DataTable column-select via header click (Phase 3 R1)", () => {
+  test("mousedown anywhere on the header selects the full column", () => {
     renderTable();
 
-    const numberStrip = getColumnSelectStrip("Number");
-    expect(numberStrip.dataset.columnSelectFieldkey).toBe("number");
+    fireEvent.mouseDown(getColumnHeader("Name"), { button: 0 });
 
-    const nameStrip = getColumnSelectStrip("Name");
-    expect(nameStrip.dataset.columnSelectFieldkey).toBe("name");
-
-    const countStrip = getColumnSelectStrip("Count");
-    expect(countStrip.dataset.columnSelectFieldkey).toBe("count");
-  });
-
-  test("mousedown on the strip selects the full column (perimeter outline spans all rows)", () => {
-    renderTable();
-
-    fireEvent.mouseDown(getColumnSelectStrip("Name"), { button: 0 });
-
-    // After column select, every body cell in the `name` column should
-    // be marked as selected (interior fill + perimeter outline).
     const topCell = getBodyCell(0, 1);
     const middleCell = getBodyCell(1, 1);
     const bottomCell = getBodyCell(2, 1);
@@ -88,8 +75,6 @@ describe("DataTable column-select strip", () => {
     expect(getBodyCell(0, 0)).not.toHaveClass("data-table-cell-selected");
     expect(getBodyCell(0, 2)).not.toHaveClass("data-table-cell-selected");
 
-    // Edges compose: the top cell carries the top edge, the bottom the
-    // bottom edge, every cell in the column carries left+right.
     expect(topCell.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
     expect(topCell.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
     expect(topCell.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
@@ -98,14 +83,25 @@ describe("DataTable column-select strip", () => {
     expect(middleCell.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
   });
 
-  test("Shift+mousedown on a second strip extends across to a contiguous column block", () => {
+  test("clicking the same header again deselects the column (toggle)", () => {
     renderTable();
 
-    // First click: anchor on `number`.
-    fireEvent.mouseDown(getColumnSelectStrip("Number"), { button: 0 });
-    // Second click: shift-extend to `count` — should cover number,
-    // name, and count.
-    fireEvent.mouseDown(getColumnSelectStrip("Count"), { button: 0, shiftKey: true });
+    fireEvent.mouseDown(getColumnHeader("Name"), { button: 0 });
+    expect(getBodyCell(0, 1)).toHaveClass("data-table-cell-selected");
+
+    fireEvent.mouseDown(getColumnHeader("Name"), { button: 0 });
+
+    // Range collapses; no body cell carries the selected class.
+    expect(getBodyCell(0, 1)).not.toHaveClass("data-table-cell-selected");
+    expect(getBodyCell(1, 1)).not.toHaveClass("data-table-cell-selected");
+    expect(getBodyCell(2, 1)).not.toHaveClass("data-table-cell-selected");
+  });
+
+  test("Shift+mousedown on a second header extends across to a contiguous column block", () => {
+    renderTable();
+
+    fireEvent.mouseDown(getColumnHeader("Number"), { button: 0 });
+    fireEvent.mouseDown(getColumnHeader("Count"), { button: 0, shiftKey: true });
 
     for (let columnIndex = 0; columnIndex <= 2; columnIndex += 1) {
       for (let rowIndex = 0; rowIndex <= 2; rowIndex += 1) {
@@ -114,18 +110,29 @@ describe("DataTable column-select strip", () => {
     }
   });
 
-  test("read-only mode still renders the strip (drag-select for copy is preserved)", () => {
+  test("mousedown on the sort chevron does NOT trigger column-select", () => {
+    renderTable();
+
+    const header = getColumnHeader("Name");
+    const sortButton = within(header).getByRole("button", { name: /Sort by Name/ });
+    fireEvent.mouseDown(sortButton, { button: 0 });
+
+    // Cell range stays at its 1×1 default — no column selected.
+    expect(getBodyCell(0, 1)).not.toHaveClass("data-table-cell-selected");
+    expect(getBodyCell(1, 1)).not.toHaveClass("data-table-cell-selected");
+  });
+
+  test("read-only mode keeps the header click target for drag-select / copy", () => {
     renderTable({ readOnly: true });
 
-    // Strip is present and clickable.
-    fireEvent.mouseDown(getColumnSelectStrip("Name"), { button: 0 });
+    fireEvent.mouseDown(getColumnHeader("Name"), { button: 0 });
     expect(getBodyCell(0, 1)).toHaveClass("data-table-cell-selected");
   });
 
-  test("non-primary mousedown is ignored on the strip", () => {
+  test("non-primary mousedown is ignored", () => {
     renderTable();
 
-    fireEvent.mouseDown(getColumnSelectStrip("Name"), { button: 2 });
+    fireEvent.mouseDown(getColumnHeader("Name"), { button: 2 });
 
     expect(getBodyCell(0, 1)).not.toHaveClass("data-table-cell-selected");
   });

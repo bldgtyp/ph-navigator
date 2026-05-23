@@ -2,13 +2,15 @@ import { flexRender, type Table } from "@tanstack/react-table";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { DataTableColumnDef, FieldDef, SortRule } from "../types";
 
-// Pure presentational. Owns thead markup, sort affordance click target,
-// and the slot the consumer uses to inject column-level menus (Phase 5
-// option management lives there). Phase 3 adds a 6 px column-select
-// strip above each header label; mousedowns on the strip route through
-// `onColumnMouseDown` so the strip behaves like a header-wide hit zone
-// for the full-column-select gesture without disturbing the existing
-// sort click target.
+// Pure presentational. Owns thead markup and the slot the consumer
+// uses to inject column-level menus (Phase 5 option management lives
+// there). Phase 3 R1: the whole `<th>` is the column-select hit target
+// — mousedown anywhere outside a button toggles the column-select. The
+// existing sort gesture moves to a small chevron button (visible on
+// hover or when sort is active); the chevron's mousedown is filtered
+// out by `useGridPointerDrag.onColumnMouseDown`'s "skip if mousedown
+// landed in a button" check, so clicking the chevron toggles sort and
+// nothing else.
 export type GridHeaderProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
@@ -37,6 +39,10 @@ export function GridHeader<TRow>({
           {headerGroup.headers.map((header, columnIndex) => {
             const column = visibleColumnDefs[columnIndex];
             const direction = column ? directionByFieldKey.get(column.fieldKey) : undefined;
+            const sortIndicator = direction === "asc" ? "▲" : direction === "desc" ? "▼" : "↕";
+            const sortAriaLabel = column
+              ? `Sort by ${column.header}${direction === "asc" ? " (currently ascending)" : direction === "desc" ? " (currently descending)" : ""}`
+              : "Sort";
             return (
               <th
                 key={header.id}
@@ -49,35 +55,37 @@ export function GridHeader<TRow>({
                       ? "descending"
                       : undefined
                 }
-                className={columnIndex === 0 ? "data-table-frozen" : undefined}
+                className={[
+                  "data-table-th",
+                  direction ? "is-sorted" : "",
+                  columnIndex === 0 ? "data-table-frozen" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onMouseDown={
+                  column && onColumnMouseDown
+                    ? (event) => onColumnMouseDown(event, column.fieldKey)
+                    : undefined
+                }
               >
-                {column && onColumnMouseDown ? (
-                  <div
-                    className="data-table-column-select-strip"
-                    role="button"
-                    aria-label={`Select column ${column.header}`}
-                    data-column-select-fieldkey={column.fieldKey}
-                    tabIndex={-1}
-                    onMouseDown={(event) => onColumnMouseDown(event, column.fieldKey)}
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  className="data-table-header-button"
-                  tabIndex={-1}
-                  onClick={() => {
-                    if (column) onToggleSort(column.fieldKey);
-                  }}
-                >
+                <div className="data-table-header-row">
                   <span className="data-table-header-label">
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </span>
-                  {direction ? (
-                    <span className="data-table-sort-indicator" aria-hidden="true">
-                      {direction === "asc" ? "▲" : "▼"}
-                    </span>
+                  {column ? (
+                    <button
+                      type="button"
+                      className="data-table-sort-button"
+                      tabIndex={-1}
+                      aria-label={sortAriaLabel}
+                      onClick={() => onToggleSort(column.fieldKey)}
+                    >
+                      <span className="data-table-sort-indicator" aria-hidden="true">
+                        {sortIndicator}
+                      </span>
+                    </button>
                   ) : null}
-                </button>
+                </div>
                 {column
                   ? renderHeaderActions?.(
                       fieldDefByKey.get(column.fieldKey) ?? {

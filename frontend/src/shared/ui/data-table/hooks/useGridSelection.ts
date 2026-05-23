@@ -108,16 +108,34 @@ export function useGridSelection(args: { rowIds: string[]; fieldKeys: string[] }
     [fieldKeys],
   );
 
+  // Phase 3 R1: whole-header click is the column-select gesture, so
+  // clicking the same header twice must toggle off. "Fully selected"
+  // means the anchor and focus span the full row range on this one
+  // fieldKey and `explicit` is true. In that case, collapse to a 1×1
+  // focus on the column's first cell and drop the explicit flag —
+  // matches what `setActive` would produce.
   const selectColumn = useCallback(
     (fieldKey: string) => {
       const firstRow = rowIds[0];
       const lastRow = rowIds[rowIds.length - 1];
       if (!firstRow || !lastRow) return;
+      const isAlreadyFullColumn =
+        explicit &&
+        anchor?.fieldKey === fieldKey &&
+        focus?.fieldKey === fieldKey &&
+        anchor?.rowId === firstRow &&
+        focus?.rowId === lastRow;
+      if (isAlreadyFullColumn) {
+        setAnchor({ rowId: firstRow, fieldKey });
+        setFocus({ rowId: firstRow, fieldKey });
+        setExplicit(false);
+        return;
+      }
       setAnchor({ rowId: firstRow, fieldKey });
       setFocus({ rowId: lastRow, fieldKey });
       setExplicit(true);
     },
-    [rowIds],
+    [rowIds, anchor, focus, explicit],
   );
 
   // Phase 3 §4.4: extends the active range across to another column-

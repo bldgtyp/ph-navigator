@@ -223,6 +223,12 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
       if (event.button !== 0) return;
       if (!fieldKey) return;
 
+      // If the mousedown landed inside any button under the header
+      // (sort chevron, Options menu trigger, future ⋯ menu), let that
+      // button handle the click — column-select must not preempt it.
+      const targetEl = event.target instanceof Element ? event.target : null;
+      if (targetEl?.closest("button")) return;
+
       if (event.shiftKey) extendToColumnRef.current(fieldKey);
       else selectColumnRef.current(fieldKey);
 

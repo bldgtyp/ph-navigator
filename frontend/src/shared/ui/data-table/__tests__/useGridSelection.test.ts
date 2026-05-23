@@ -144,6 +144,42 @@ describe("useGridSelection", () => {
     expect(result.current.focus).toEqual({ rowId: "c", fieldKey: "count" });
   });
 
+  test("selectColumn called twice on the same column toggles off (Phase 3 R1)", () => {
+    const { result } = renderHook(() =>
+      useGridSelection({ rowIds: ["a", "b", "c"], fieldKeys: FIELDS }),
+    );
+
+    act(() => result.current.selectColumn("name"));
+    expect(result.current.hasExplicitRange).toBe(true);
+    expect(result.current.normalizedRange).toEqual({
+      rowStart: 0,
+      rowEnd: 2,
+      columnStart: 1,
+      columnEnd: 1,
+    });
+
+    act(() => result.current.selectColumn("name"));
+    expect(result.current.hasExplicitRange).toBe(false);
+    expect(result.current.activeCell).toEqual({ rowIndex: 0, columnIndex: 1 });
+  });
+
+  test("selectColumn on a different column replaces (does not toggle off)", () => {
+    const { result } = renderHook(() =>
+      useGridSelection({ rowIds: ["a", "b", "c"], fieldKeys: FIELDS }),
+    );
+
+    act(() => result.current.selectColumn("name"));
+    act(() => result.current.selectColumn("count"));
+
+    expect(result.current.hasExplicitRange).toBe(true);
+    expect(result.current.normalizedRange).toEqual({
+      rowStart: 0,
+      rowEnd: 2,
+      columnStart: 2,
+      columnEnd: 2,
+    });
+  });
+
   test("extendToColumn without a prior anchor falls through to selectColumn", () => {
     const { result } = renderHook(() =>
       useGridSelection({ rowIds: ["a", "b", "c"], fieldKeys: FIELDS }),
