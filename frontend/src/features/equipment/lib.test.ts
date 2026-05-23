@@ -6,11 +6,14 @@ import {
   firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
+  nextFreeRoomNumber,
   replaceRoomOptionsPayload,
   nextRoomsPayload,
   optionLabel,
   remoteSliceChangesActiveRoom,
   roomsPayloadFromCellWrites,
+  roomsPayloadFromRowDelete,
+  roomsPayloadFromRowInsert,
   validateRoomsPayload,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
@@ -332,5 +335,128 @@ describe("equipment room helpers", () => {
     expect(() => replaceRoomOptionsPayload(current, "rooms.floor_level", [])).toThrow(
       "Missing replacement for referenced rooms.floor_level option opt_ground.",
     );
+  });
+
+  test("nextFreeRoomNumber increments numeric anchors past taken values", () => {
+    const rooms = [
+      { ...emptyRoom(), id: "rm_1", number: "101" },
+      { ...emptyRoom(), id: "rm_2", number: "102" },
+      { ...emptyRoom(), id: "rm_3", number: "104" },
+    ];
+    expect(nextFreeRoomNumber(rooms, "101")).toBe("103");
+    expect(nextFreeRoomNumber(rooms, "104")).toBe("105");
+  });
+
+  test("nextFreeRoomNumber falls back to a (copy) ladder for non-numeric anchors", () => {
+    const rooms = [{ ...emptyRoom(), id: "rm_a", number: "A1" }];
+    expect(nextFreeRoomNumber(rooms, "A1")).toBe("A1 (copy)");
+    const next = [...rooms, { ...emptyRoom(), id: "rm_b", number: "A1 (copy)" }];
+    expect(nextFreeRoomNumber(next, "A1")).toBe("A1 (copy 2)");
+  });
+
+  test("nextFreeRoomNumber returns the input when it is already free (delete-undo path)", () => {
+    const rooms = [
+      { ...emptyRoom(), id: "rm_a", number: "5" },
+      { ...emptyRoom(), id: "rm_b", number: "6" },
+    ];
+    // After deleting "1", undo dispatches a rowInsert with anchor "1";
+    // since "1" is now free, the inverse insert should restore it
+    // verbatim rather than incrementing.
+    expect(nextFreeRoomNumber(rooms, "1")).toBe("1");
+    expect(nextFreeRoomNumber([], "1")).toBe("1");
+  });
+
+  test("nextFreeRoomNumber compares case-insensitively", () => {
+    const rooms = [{ ...emptyRoom(), id: "rm_a", number: "Foo" }];
+    expect(nextFreeRoomNumber(rooms, "foo")).toBe("foo (copy)");
+  });
+
+  test("roomsPayloadFromRowInsert appends rows built from the anchor", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        {
+          id: "rm_5",
+          number: "5",
+          name: "Living",
+          floor_level: ground.id,
+          building_zone: null,
+          num_people: 2,
+          num_bedrooms: 1,
+          icfa_factor: 0.85,
+          erv_unit_ids: [],
+          catalog_origin: null,
+          notes: null,
+        },
+      ],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    };
+    const payload = roomsPayloadFromRowInsert(
+      current,
+      [
+        {
+          rowId: "tmp_row_1",
+          anchorRowId: "rm_5",
+          fieldDefaults: {
+            number: "5",
+            name: "Living",
+            "rooms.floor_level": ground.id,
+          },
+        },
+      ],
+      ({ rowId, anchorRow }) => ({
+        ...(anchorRow ?? emptyRoom()),
+        id: rowId,
+        number: nextFreeRoomNumber(current.rooms, anchorRow?.number ?? ""),
+      }),
+    );
+    expect(payload.rooms).toHaveLength(2);
+    const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
+    expect(inserted?.number).toBe("6");
+    expect(inserted?.name).toBe("Living");
+    expect(inserted?.floor_level).toBe(ground.id);
+    expect(inserted?.icfa_factor).toBe(0.85);
+  });
+
+  test("roomsPayloadFromRowDelete removes by id and preserves the option lists", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        {
+          id: "rm_1",
+          number: "1",
+          name: "Living",
+          floor_level: ground.id,
+          building_zone: null,
+          num_people: 0,
+          num_bedrooms: 0,
+          icfa_factor: 1,
+          erv_unit_ids: [],
+          catalog_origin: null,
+          notes: null,
+        },
+        {
+          id: "rm_2",
+          number: "2",
+          name: "Kitchen",
+          floor_level: ground.id,
+          building_zone: null,
+          num_people: 0,
+          num_bedrooms: 0,
+          icfa_factor: 1,
+          erv_unit_ids: [],
+          catalog_origin: null,
+          notes: null,
+        },
+      ],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    };
+    const payload = roomsPayloadFromRowDelete(current, [
+      { rowId: "rm_1", row: current.rooms[0], anchorRowId: null },
+    ]);
+    expect(payload.rooms.map((room) => room.id)).toEqual(["rm_2"]);
+    expect(payload.single_select_options["rooms.floor_level"]).toEqual([ground]);
   });
 });

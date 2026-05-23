@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../../../shared/lib/errors";
+import { generatedId } from "../../../shared/lib/ids";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
@@ -17,13 +18,16 @@ import {
   isDraftStaleError,
   isInvalidProjectDocumentError,
   isVersionLockedError,
+  nextFreeRoomNumber,
   nextRoomsPayload,
   remoteSliceChangesActiveRoom,
   replaceRoomOptionsPayload,
   roomsPayloadFromCellWrites,
+  roomsPayloadFromRowDelete,
+  roomsPayloadFromRowInsert,
   validateRoomsPayload,
 } from "../lib";
-import type { WriteOp } from "../../../shared/ui/data-table";
+import type { BuildEmptyRow, WriteOp } from "../../../shared/ui/data-table";
 import {
   ROOMS_TABLE_NAME,
   type RoomOptionKey,
@@ -193,15 +197,62 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       .catch(() => undefined);
   };
 
+  const buildEmptyRoomRow: BuildEmptyRow<RoomRow> = ({ rowId, fieldDefaults, anchorRow }) => {
+    if (anchorRow) {
+      return {
+        ...anchorRow,
+        id: rowId,
+        number: nextFreeRoomNumber(roomsSlice.rooms, anchorRow.number),
+      };
+    }
+    // No-anchor fallback (currently unreachable via Shift+Enter
+    // because the empty-state branch short-circuits the grid). Pulls
+    // values from FieldDef.default through the library's
+    // buildEmptyRowDefaults output.
+    return {
+      id: rowId,
+      number: nextFreeRoomNumber(roomsSlice.rooms, String(fieldDefaults.number ?? "")),
+      name: String(fieldDefaults.name ?? "Untitled"),
+      floor_level: ((fieldDefaults["rooms.floor_level"] as string | null | undefined) ??
+        firstRoomFloorOptionId(roomsSlice)) as string | null,
+      building_zone: (fieldDefaults["rooms.building_zone"] as string | null | undefined) ?? null,
+      num_people: Number(fieldDefaults.num_people ?? 0),
+      num_bedrooms: Number(fieldDefaults.num_bedrooms ?? 0),
+      icfa_factor: Number(fieldDefaults.icfa_factor ?? 1),
+      erv_unit_ids: [],
+      catalog_origin: null,
+      notes: null,
+    };
+  };
+
   const handleTableWrite = async (op: WriteOp) => {
-    if (!canEdit || (op.kind !== "paste" && op.kind !== "cell")) return;
-    const newOptions = op.kind === "paste" ? op.newOptions : (op.newOptions ?? {});
-    const removedOptions = op.removedOptions ?? {};
-    await commitRoomsPayload(
-      roomsPayloadFromCellWrites(roomsSlice, op.writes, newOptions, removedOptions),
-      ACTIVE_ROOM_CONFLICT_MESSAGE,
-      "Could not update rooms table values.",
-    );
+    if (!canEdit) return;
+    if (op.kind === "cell" || op.kind === "paste") {
+      const newOptions = op.kind === "paste" ? op.newOptions : (op.newOptions ?? {});
+      const removedOptions = op.removedOptions ?? {};
+      await commitRoomsPayload(
+        roomsPayloadFromCellWrites(roomsSlice, op.writes, newOptions, removedOptions),
+        ACTIVE_ROOM_CONFLICT_MESSAGE,
+        "Could not update rooms table values.",
+      );
+      return;
+    }
+    if (op.kind === "rowInsert") {
+      await commitRoomsPayload(
+        roomsPayloadFromRowInsert(roomsSlice, op.rows, buildEmptyRoomRow),
+        ACTIVE_ROOM_CONFLICT_MESSAGE,
+        "Could not insert room.",
+      );
+      return;
+    }
+    if (op.kind === "rowDelete") {
+      await commitRoomsPayload(
+        roomsPayloadFromRowDelete(roomsSlice, op.rows),
+        ACTIVE_ROOM_CONFLICT_MESSAGE,
+        "Could not delete rooms.",
+      );
+      return;
+    }
   };
 
   const saveOptions = (
@@ -295,6 +346,9 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         onViewChange={setRoomsTableView}
         onWrite={handleTableWrite}
         onSaveOptions={saveOptions}
+        buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
+        generateRowId={canEdit ? () => generatedId("rm") : undefined}
+        sessionKey={`${project.id}:${activeVersionId ?? "none"}:rooms`}
       />
       {roomModal && isEditor ? (
         <RoomModal

@@ -23,10 +23,17 @@ export type GridKeyboardArgs = {
   onUndo: () => void;
   onRedo: () => void;
   onRowOpen?: () => void;
+  // Shift+Enter row-insert (Phase 2 §4.5). Receives the active rowId
+  // as the anchor — null when the active cell does not resolve to a
+  // visible row (defensive; should not happen in practice). Returns a
+  // promise so the keyboard hook can await a mid-edit commit before
+  // requesting the insert.
+  onRowInsertBelowActive?: () => Promise<void>;
 };
 
 export function useGridKeyboard(args: GridKeyboardArgs) {
-  const { selection, edit, readOnly, onCopy, onUndo, onRedo, onRowOpen } = args;
+  const { selection, edit, readOnly, onCopy, onUndo, onRedo, onRowOpen, onRowInsertBelowActive } =
+    args;
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -57,6 +64,13 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
         }
       }
 
+      if (event.key === "Enter" && event.shiftKey) {
+        if (readOnly || !onRowInsertBelowActive) return;
+        event.preventDefault();
+        void onRowInsertBelowActive();
+        return;
+      }
+
       if (event.key === "Enter" && onRowOpen) {
         event.preventDefault();
         onRowOpen();
@@ -68,7 +82,7 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
         selection.moveBy(event.key, event.shiftKey);
       }
     },
-    [edit, onCopy, onRedo, onRowOpen, onUndo, readOnly, selection],
+    [edit, onCopy, onRedo, onRowInsertBelowActive, onRowOpen, onUndo, readOnly, selection],
   );
 
   return { onKeyDown };

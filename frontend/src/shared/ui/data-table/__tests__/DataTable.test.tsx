@@ -83,7 +83,14 @@ describe("DataTable", () => {
     renderTable();
 
     expect(screen.getByRole("button", { name: "Number" })).toHaveAttribute("tabindex", "-1");
-    expect(screen.getByRole("button", { name: "Select row 1" })).toHaveAttribute("tabindex", "-1");
+    expect(screen.getByRole("button", { name: "Highlight row 1" })).toHaveAttribute(
+      "tabindex",
+      "-1",
+    );
+    expect(screen.getByRole("checkbox", { name: "Select row 1" })).toHaveAttribute(
+      "tabindex",
+      "-1",
+    );
   });
 
   test("emits a cell write for inline text edits", async () => {

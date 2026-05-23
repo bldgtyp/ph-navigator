@@ -1213,11 +1213,84 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.data-table-toolbar-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.data-table-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
 .data-table-toolbar span {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   padding: 5px 7px;
   background: var(--bg-page);
+}
+
+.data-table-toolbar-actions button {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 5px 10px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.data-table-toolbar-actions button:hover {
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-page));
+}
+
+.data-table-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 100;
+}
+
+.data-table-alert-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 20px;
+  min-width: 320px;
+  max-width: 480px;
+  z-index: 101;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.data-table-alert-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.data-table-alert-description {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.data-table-alert-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .data-table-shell .data-table-wrap {
@@ -1286,7 +1359,28 @@ button:disabled {
   text-align: right;
 }
 
-.data-table-gutter button,
+.data-table-gutter-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.data-table-gutter-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.data-table-gutter-number {
+  min-height: 28px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: inherit;
+  cursor: pointer;
+}
+
 .data-table-header-button {
   width: 100%;
   min-height: 28px;
@@ -1295,6 +1389,12 @@ button:disabled {
   color: inherit;
   padding: 0;
   text-align: inherit;
+}
+
+.data-table-gutter-selected,
+.data-table tbody tr:has(.data-table-gutter-selected) td,
+.data-table tbody tr:has(.data-table-gutter-selected) .data-table-gutter {
+  background: color-mix(in oklab, var(--accent) 18%, var(--bg-card));
 }
 
 .data-table-header-button {

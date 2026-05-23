@@ -1,6 +1,7 @@
 export { DataTable } from "./DataTable";
 export { emptyViewState } from "./types";
 export type {
+  BuildEmptyRow,
   CellWrite,
   DataTableColumnDef,
   DataTableProps,
@@ -8,6 +9,8 @@ export type {
   FieldOption,
   FilterCondition,
   GroupRule,
+  RowDeletePayload,
+  RowInsertPayload,
   SortRule,
   ViewState,
   WriteOp,

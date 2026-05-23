@@ -6,7 +6,12 @@ import type {
   SingleSelectOption,
 } from "./types";
 import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY } from "./types";
-import type { FieldOption } from "../../shared/ui/data-table";
+import type {
+  BuildEmptyRow,
+  FieldOption,
+  RowDeletePayload,
+  RowInsertPayload,
+} from "../../shared/ui/data-table";
 import {
   createFieldOption,
   findFieldOptionByLabel,
@@ -86,6 +91,80 @@ export function deleteRoomPayload(current: RoomsSlice, roomId: string): RoomsRep
     rooms: current.rooms.filter((room) => room.id !== roomId),
     single_select_options: cloneOptions(current),
   };
+}
+
+// Build a RoomsReplacePayload that adds the rows synthesized by the
+// <DataTable> Shift+Enter gesture. The consumer's buildEmptyRow has
+// already expanded fieldDefaults + anchorRow into a full RoomRow
+// (including any uniqueness remapping for `number` via
+// nextFreeRoomNumber) — this helper just merges into the current rooms
+// list and clones options unchanged.
+export function roomsPayloadFromRowInsert(
+  current: RoomsSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<RoomRow>,
+): RoomsReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.rooms.find((room) => room.id === payload.anchorRowId) ?? null)
+      : null;
+    return build({
+      rowId: payload.rowId,
+      fieldDefaults: payload.fieldDefaults,
+      anchorRow,
+    });
+  });
+  return {
+    rooms: sortedRooms([...current.rooms, ...built]),
+    single_select_options: cloneOptions(current),
+  };
+}
+
+// Build a RoomsReplacePayload that removes the rows named by the
+// <DataTable> toolbar-delete gesture. Inverse-of-delete (undo)
+// dispatches a matching rowInsert; the consumer's buildEmptyRow
+// reconstructs each row from extractRowDefaults output.
+export function roomsPayloadFromRowDelete(
+  current: RoomsSlice,
+  deletes: RowDeletePayload[],
+): RoomsReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    rooms: current.rooms.filter((room) => !toDelete.has(room.id)),
+    single_select_options: cloneOptions(current),
+  };
+}
+
+// Pick the next free room number, starting from the anchor row's
+// `number`. Numeric anchors increment by one until free; non-numeric
+// (or numeric collisions exhausted) fall through to a "(copy)" /
+// "(copy 2)" ladder. The library-internal anchor-clone path
+// (extractRowDefaults) would otherwise produce a duplicate `number`,
+// which validateRoomsPayload rejects — this helper makes the cloned
+// row valid at first commit.
+// Find a unique room number starting from `from`. Returns `from` itself
+// when free (used by row-delete-undo, which re-inserts rows with their
+// pre-delete numbers into a slice that no longer holds them). For
+// numeric anchors, increments by one until free; otherwise falls back
+// to a "(copy)" / "(copy 2)" ladder. Comparisons are trim +
+// case-insensitive to match validateRoomsPayload's uniqueness rule.
+export function nextFreeRoomNumber(rooms: RoomRow[], from: string): string {
+  const taken = new Set(rooms.map((room) => room.number.trim().toLowerCase()));
+  const trimmed = from.trim();
+  if (trimmed && !taken.has(trimmed.toLowerCase())) return trimmed;
+  const parsed = Number(trimmed);
+  if (Number.isFinite(parsed) && trimmed !== "") {
+    for (let n = parsed + 1; n < parsed + 10_000; n += 1) {
+      const candidate = String(n);
+      if (!taken.has(candidate.toLowerCase())) return candidate;
+    }
+  }
+  const base = trimmed || "Untitled";
+  for (let i = 1; i < 1_000; i += 1) {
+    const candidate = i === 1 ? `${base} (copy)` : `${base} (copy ${i})`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+  return `${base}-${generatedId("row").slice(-6)}`;
 }
 
 export function roomsPayloadFromCellWrites(
