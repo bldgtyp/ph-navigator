@@ -1252,6 +1252,47 @@ button:disabled {
   background: color-mix(in oklab, var(--accent) 12%, var(--bg-page));
 }
 
+.data-table-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 100;
+}
+
+.data-table-alert-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 20px;
+  min-width: 320px;
+  max-width: 480px;
+  z-index: 101;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.data-table-alert-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.data-table-alert-description {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.data-table-alert-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .data-table-shell .data-table-wrap {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
