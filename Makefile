@@ -34,10 +34,20 @@ dev: db-up ## Start Postgres + remind user how to launch backend + frontend
 	@echo ""
 
 backend: ## Run FastAPI dev server
-	cd backend && uv run uvicorn main:app --reload --port 8000
+	cd backend && uv run uvicorn main:app --reload --port 8000; \
+	exit_code=$$?; \
+	if [ $$exit_code -eq 130 ]; then \
+		exit 0; \
+	fi; \
+	exit $$exit_code
 
 frontend: ## Run Vite dev server
-	cd frontend && pnpm run dev
+	cd frontend && pnpm run dev; \
+	exit_code=$$?; \
+	if [ $$exit_code -eq 130 ]; then \
+		exit 0; \
+	fi; \
+	exit $$exit_code
 
 # ─────────────── database ───────────────
 
