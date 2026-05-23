@@ -1382,27 +1382,28 @@ button:disabled {
   cursor: pointer;
 }
 
-.data-table-header-button {
-  width: 100%;
-  min-height: 28px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  text-align: inherit;
-}
-
 .data-table-gutter-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td,
 .data-table tbody tr:has(.data-table-gutter-selected) .data-table-gutter {
   background: color-mix(in oklab, var(--accent) 18%, var(--bg-card));
 }
 
-.data-table-header-button {
-  text-align: left;
+/* Phase 3 R1: whole-header click is the column-select gesture.
+   `cursor: cell` signals the hit target to the user; the inner sort
+   chevron resets to default cursor to distinguish itself. */
+.data-table-th {
+  cursor: cell;
+}
+
+.data-table-th .data-table-sort-button {
+  cursor: pointer;
+}
+
+.data-table-header-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  min-height: 28px;
 }
 
 .data-table-header-label {
@@ -1410,23 +1411,41 @@ button:disabled {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Phase 3 §4.6: 6 px strip above each column header. Transparent at
-   rest, tints on hover so the hit target is discoverable without
-   stealing visual weight from the sort/filter affordances below.
-   Mousedown on the strip routes through `useGridPointerDrag` →
-   `selection.selectColumn` (or extendToColumn when Shift is held). */
-.data-table-column-select-strip {
-  height: 6px;
-  margin: -4px -8px 2px -8px;
+/* Sort chevron. Hidden by default; revealed on header hover or when
+   the column carries an active sort. Click toggles direction (or
+   initiates sort on a previously-unsorted column). The mousedown on
+   the button is filtered out of column-select by
+   `useGridPointerDrag.onColumnMouseDown`'s "skip if mousedown landed
+   in a button" check. */
+.data-table-sort-button {
+  flex: 0 0 auto;
+  border: 0;
   background: transparent;
-  cursor: cell;
-  transition: background-color 0.12s var(--ease);
+  color: var(--text-secondary, var(--text-primary));
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  line-height: 1;
+  opacity: 0;
+  transition:
+    opacity 0.12s var(--ease),
+    background-color 0.12s var(--ease);
 }
 
-.data-table-column-select-strip:hover {
-  background: color-mix(in oklab, var(--accent) 30%, transparent);
+.data-table-th:hover .data-table-sort-button,
+.data-table-th.is-sorted .data-table-sort-button {
+  opacity: 1;
+}
+
+.data-table-sort-button:hover {
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+}
+
+.data-table-sort-indicator {
+  display: inline-block;
 }
 
 .data-table-sort-indicator {

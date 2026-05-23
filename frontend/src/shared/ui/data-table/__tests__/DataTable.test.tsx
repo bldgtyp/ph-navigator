@@ -82,7 +82,13 @@ describe("DataTable", () => {
   test("keeps header and gutter buttons out of the tab order", () => {
     renderTable();
 
-    expect(screen.getByRole("button", { name: "Number" })).toHaveAttribute("tabindex", "-1");
+    // Phase 3 R1: the column header is no longer a button itself; the
+    // sort gesture moves to a chevron sub-button. Verify the chevron
+    // stays out of the tab order.
+    expect(screen.getByRole("button", { name: /Sort by Number/ })).toHaveAttribute(
+      "tabindex",
+      "-1",
+    );
     expect(screen.getByRole("button", { name: "Highlight row 1" })).toHaveAttribute(
       "tabindex",
       "-1",

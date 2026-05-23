@@ -47,8 +47,16 @@ export function useGridRowSelection(args: { rowIds: string[] }): GridRowSelectio
     (rowId: string, mode: RowSelectionMode) => {
       if (!rowIndexById.has(rowId)) return;
       if (mode === "single") {
-        setSelected(new Set([rowId]));
-        setAnchor(rowId);
+        // Phase 3 R2: clicking the checkbox of the only selected row
+        // unselects it — checkbox semantics. Clicking a different row
+        // replaces the set (set's only entry becomes that row), so
+        // multi-row state coming from Shift/Cmd is correctly cleared
+        // by a subsequent plain click on any single checkbox.
+        setSelected((current) => {
+          if (current.size === 1 && current.has(rowId)) return new Set();
+          return new Set([rowId]);
+        });
+        setAnchor((current) => (current === rowId ? null : rowId));
         return;
       }
       if (mode === "cmd") {

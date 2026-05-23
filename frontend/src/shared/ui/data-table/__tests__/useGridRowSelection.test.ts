@@ -22,6 +22,30 @@ describe("useGridRowSelection", () => {
     expect(result.current.anchorRowId).toBe("d");
   });
 
+  test("single mode toggles off when the same row is clicked again (Phase 3 R2)", () => {
+    const { result } = renderHook(() => useGridRowSelection({ rowIds: ROWS }));
+
+    act(() => result.current.toggle("b", "single"));
+    expect(Array.from(result.current.selectedRowIds)).toEqual(["b"]);
+    expect(result.current.anchorRowId).toBe("b");
+
+    act(() => result.current.toggle("b", "single"));
+    expect(result.current.count).toBe(0);
+    expect(result.current.anchorRowId).toBeNull();
+  });
+
+  test("single mode on a multi-row set replaces with the clicked row", () => {
+    const { result } = renderHook(() => useGridRowSelection({ rowIds: ROWS }));
+
+    act(() => result.current.toggle("a", "single"));
+    act(() => result.current.toggle("c", "shift")); // set = {a, b, c}
+    expect(result.current.count).toBe(3);
+
+    act(() => result.current.toggle("b", "single")); // replace, not toggle off
+    expect(Array.from(result.current.selectedRowIds)).toEqual(["b"]);
+    expect(result.current.anchorRowId).toBe("b");
+  });
+
   test("shift mode without a prior anchor falls through to single", () => {
     const { result } = renderHook(() => useGridRowSelection({ rowIds: ROWS }));
     act(() => result.current.toggle("c", "shift"));
