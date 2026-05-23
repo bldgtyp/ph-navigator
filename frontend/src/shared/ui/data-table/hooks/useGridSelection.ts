@@ -25,6 +25,8 @@ export type GridSelection = {
   extendTo: (addr: CellAddr) => void;
   collapse: () => void;
   selectRow: (rowId: string) => void;
+  selectColumn: (fieldKey: string) => void;
+  extendToColumn: (fieldKey: string) => void;
   selectAll: () => void;
   moveBy: (key: string, extend: boolean) => void;
 };
@@ -106,6 +108,38 @@ export function useGridSelection(args: { rowIds: string[]; fieldKeys: string[] }
     [fieldKeys],
   );
 
+  const selectColumn = useCallback(
+    (fieldKey: string) => {
+      const firstRow = rowIds[0];
+      const lastRow = rowIds[rowIds.length - 1];
+      if (!firstRow || !lastRow) return;
+      setAnchor({ rowId: firstRow, fieldKey });
+      setFocus({ rowId: lastRow, fieldKey });
+      setExplicit(true);
+    },
+    [rowIds],
+  );
+
+  // Phase 3 §4.4: extends the active range across to another column-
+  // header. Preserves the existing anchor's rowId so a Shift+Click on
+  // a column strip after a column-strip click extends to the full
+  // contiguous column block. If there is no prior anchor, falls
+  // through to `selectColumn`.
+  const extendToColumn = useCallback(
+    (fieldKey: string) => {
+      const lastRow = rowIds[rowIds.length - 1];
+      if (!lastRow) return;
+      setAnchor((current) => {
+        if (current) return current;
+        const firstRow = rowIds[0];
+        return firstRow ? { rowId: firstRow, fieldKey } : current;
+      });
+      setFocus({ rowId: lastRow, fieldKey });
+      setExplicit(true);
+    },
+    [rowIds],
+  );
+
   const selectAll = useCallback(() => {
     const firstRow = rowIds[0];
     const lastRow = rowIds[rowIds.length - 1];
@@ -147,6 +181,8 @@ export function useGridSelection(args: { rowIds: string[]; fieldKeys: string[] }
     extendTo,
     collapse,
     selectRow,
+    selectColumn,
+    extendToColumn,
     selectAll,
     moveBy,
   };
