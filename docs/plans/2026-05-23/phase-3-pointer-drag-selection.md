@@ -997,11 +997,11 @@ session. Record pass/fail in §11. Repeat in Safari.
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
-| 1 — selection hook + edge-bit helper          | — | — | — |
-| 2 — perimeter outline + DOM hit-test attrs    | — | — | — |
-| 3 — useGridPointerDrag (cell mode + RAF)      | — | — | — |
-| 4 — column-select strip + column-mode drag    | — | — | — |
-| 5 — demo walk + post-walk fixes               | — | — | — |
+| 1 — selection hook + edge-bit helper          | 2026-05-23 | ✅ | `selectColumn` / `extendToColumn` + `computeEdgeBits`. 163 tests passing. |
+| 2 — perimeter outline + DOM hit-test attrs    | 2026-05-23 | ✅ | Body `<td>`s carry `data-row-id` / `data-field-key`; per-edge inline `boxShadow` composes from `computeEdgeBits` so multi-cell ranges draw as one contiguous rectangle. `hasExplicitRange` threaded to GridBody so the always-present 1×1 active cell no longer paints as "selected." 169 tests passing. |
+| 3 — useGridPointerDrag (cell mode + RAF)      | 2026-05-23 | ✅ | Document-level mousemove/mouseup/pointerup, 30 px edge band + 12 px/frame autoscroll, editor + gutter short-circuit, Esc-cancel via `useGridKeyboard.drag`. 180 tests passing. |
+| 4 — column-select strip + column-mode drag    | 2026-05-23 | ✅ | 6 px `.data-table-column-select-strip` above each header. Column-mode session resolves to both `[data-column-select-fieldkey]` strips and body `[data-field-key]` cells so drag down into the body still extends columns. 185 tests passing. typecheck + lint + format + build clean. |
+| 5 — demo walk + post-walk fixes               | — | — | Needs browser walk (Chrome/Vivaldi + Safari per §10). |
 | Phase 3 overall                               | — | — | — |
 
 ## 12. Open questions — resolved 2026-05-23
