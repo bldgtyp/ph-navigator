@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { FilterPopover } from "./FilterPopover";
-import type { FieldDef, FilterCondition, ViewState } from "../types";
+import { SortPopover } from "./SortPopover";
+import type { FieldDef, FilterCondition, SortRule, ViewState } from "../types";
 
 // Toolbar shell. Status chips on the left, right-aligned axis buttons
 // (Phase 4 §4.8). The `actions` slot — used by Phase 2 for the row-
@@ -12,7 +13,9 @@ export type GridToolbarProps = {
   view: ViewState;
   fieldDefs: FieldDef[];
   filterableFieldDefs: FieldDef[];
+  sortableFieldDefs: FieldDef[];
   onFilterChange: (next: FilterCondition[]) => void;
+  onSortChange: (next: SortRule[]) => void;
   actions?: ReactNode;
 };
 
@@ -21,17 +24,22 @@ export function GridToolbar({
   view,
   fieldDefs,
   filterableFieldDefs,
+  sortableFieldDefs,
   onFilterChange,
+  onSortChange,
   actions,
 }: GridToolbarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
   const filterButtonLabel = describeFilterLabel(view.filter, fieldDefs);
-  // §4.8: button tints as soon as any rule exists (matches AirTable —
-  // the chip colors on rule-present, dormant or not). The per-column
-  // cell tint requires a contributing rule and is computed separately
-  // in DataTable.tsx.
+  const sortButtonLabel = describeSortLabel(view.sort, fieldDefs);
+  // §4.8: buttons tint as soon as any rule exists (matches AirTable —
+  // the chip colors on rule-present, dormant or not). Per-column cell
+  // tint requires a contributing rule and is computed separately in
+  // DataTable.tsx.
   const filterActive = view.filter.length > 0;
+  const sortActive = view.sort.length > 0;
 
   return (
     <div className="data-table-toolbar" aria-label="Table view controls">
@@ -61,6 +69,27 @@ export function GridToolbar({
             </button>
           }
         />
+        <SortPopover
+          open={sortOpen}
+          onOpenChange={setSortOpen}
+          rules={view.sort}
+          onSortChange={onSortChange}
+          sortableFieldDefs={sortableFieldDefs}
+          trigger={
+            <button
+              type="button"
+              className="data-table-toolbar-button"
+              data-axis="sort"
+              data-axis-active={sortActive ? "true" : undefined}
+              aria-label={sortButtonLabel.ariaLabel}
+            >
+              <span className="data-table-toolbar-button-icon" aria-hidden>
+                ↑↓
+              </span>
+              <span>{sortButtonLabel.text}</span>
+            </button>
+          }
+        />
       </div>
       {actions ? <div className="data-table-toolbar-actions">{actions}</div> : null}
     </div>
@@ -84,5 +113,25 @@ function describeFilterLabel(
   return {
     text: `Filtered by ${rules.length} fields`,
     ariaLabel: `Filtered by ${rules.length} fields`,
+  };
+}
+
+function describeSortLabel(
+  rules: SortRule[],
+  fieldDefs: FieldDef[],
+): { text: string; ariaLabel: string } {
+  if (rules.length === 0) return { text: "Sort", ariaLabel: "Sort" };
+  if (rules.length === 1) {
+    const rule = rules[0]!;
+    const fieldName =
+      fieldDefs.find((def) => def.field_key === rule.fieldKey)?.display_name ?? rule.fieldKey;
+    return {
+      text: `Sorted by ${fieldName}`,
+      ariaLabel: `Sorted by ${fieldName}`,
+    };
+  }
+  return {
+    text: `Sorted by ${rules.length} fields`,
+    ariaLabel: `Sorted by ${rules.length} fields`,
   };
 }

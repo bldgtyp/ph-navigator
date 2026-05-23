@@ -28,6 +28,7 @@ import type {
   FieldDef,
   FilterCondition,
   RowDeletePayload,
+  SortRule,
   WriteOp,
 } from "./types";
 
@@ -302,9 +303,26 @@ export function DataTable<TRow>({
     () => fieldDefs.filter((fieldDef) => getFilterOperators(fieldDef).length > 0),
     [fieldDefs],
   );
+  // Phase 4 §4.11: sortable fields exclude only `attachment` and
+  // `argb_color` (they have no meaningful order). Read-only computed
+  // columns sort fine.
+  const sortableFieldDefs = useMemo(
+    () =>
+      fieldDefs.filter(
+        (fieldDef) =>
+          fieldDef.field_type !== "attachment" && fieldDef.field_type !== "argb_color",
+      ),
+    [fieldDefs],
+  );
   const handleFilterChange = useCallback(
     (next: FilterCondition[]) => {
       onViewChange({ ...view, filter: next });
+    },
+    [onViewChange, view],
+  );
+  const handleSortChange = useCallback(
+    (next: SortRule[]) => {
+      onViewChange({ ...view, sort: next });
     },
     [onViewChange, view],
   );
@@ -391,7 +409,9 @@ export function DataTable<TRow>({
         view={view}
         fieldDefs={fieldDefs}
         filterableFieldDefs={filterableFieldDefs}
+        sortableFieldDefs={sortableFieldDefs}
         onFilterChange={handleFilterChange}
+        onSortChange={handleSortChange}
         actions={toolbarActions}
       />
       <ConfirmRowDeleteDialog
