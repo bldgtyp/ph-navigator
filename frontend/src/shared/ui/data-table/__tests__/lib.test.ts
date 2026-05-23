@@ -399,9 +399,9 @@ describe("DataTable helpers", () => {
   });
 
   test("defaultOperatorForField picks the catalogue's first operator per field type", () => {
-    expect(
-      defaultOperatorForField({ field_key: "x", field_type: "text", display_name: "X" }),
-    ).toBe("contains");
+    expect(defaultOperatorForField({ field_key: "x", field_type: "text", display_name: "X" })).toBe(
+      "contains",
+    );
     expect(
       defaultOperatorForField({ field_key: "x", field_type: "number", display_name: "X" }),
     ).toBe("eq");

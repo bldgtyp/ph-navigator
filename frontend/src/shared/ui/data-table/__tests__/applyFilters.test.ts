@@ -52,58 +52,64 @@ function ids(filtered: Row[]): string[] {
 describe("applyFilters — text operators", () => {
   test("contains matches case-insensitively; empty value passes everything", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "contains", value: "ROOM" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "contains", value: "ROOM" },
+        ]),
+      ),
     ).toEqual(["r1", "r2"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "contains", value: "" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "contains", value: "" },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r3", "r4"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "contains" },
-      ])),
+      ids(applyFilters(rows, columns, fieldDefs, [{ fieldKey: "name", operator: "contains" }])),
     ).toEqual(["r1", "r2", "r3", "r4"]);
   });
 
   test("does_not_contain negates with dormant pass-through", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "does_not_contain", value: "Room" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "does_not_contain", value: "Room" },
+        ]),
+      ),
     ).toEqual(["r3", "r4"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "does_not_contain", value: "" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "does_not_contain", value: "" },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r3", "r4"]);
   });
 
   test("is and is_not match the trimmed lowercased display value exactly", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "is", value: "kitchen" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "is", value: "kitchen" },
+        ]),
+      ),
     ).toEqual(["r3"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "is_not", value: "kitchen" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "is_not", value: "kitchen" },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r4"]);
   });
 
   test("is_empty and is_not_empty recognise null and blank strings", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "is_empty" },
-      ])),
+      ids(applyFilters(rows, columns, fieldDefs, [{ fieldKey: "name", operator: "is_empty" }])),
     ).toEqual(["r4"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "is_not_empty" },
-      ])),
+      ids(applyFilters(rows, columns, fieldDefs, [{ fieldKey: "name", operator: "is_not_empty" }])),
     ).toEqual(["r1", "r2", "r3"]);
   });
 });
@@ -112,78 +118,100 @@ describe("applyFilters — number operators", () => {
   test("is_empty distinguishes null from zero", () => {
     const rowsWithZero: Row[] = [...rows, { id: "rz", name: "Z", number: 0, floor: null, icfa: 0 }];
     expect(
-      ids(applyFilters(rowsWithZero, columns, fieldDefs, [
-        { fieldKey: "number", operator: "is_empty" },
-      ])),
+      ids(
+        applyFilters(rowsWithZero, columns, fieldDefs, [
+          { fieldKey: "number", operator: "is_empty" },
+        ]),
+      ),
     ).toEqual(["r4"]);
     expect(
-      ids(applyFilters(rowsWithZero, columns, fieldDefs, [
-        { fieldKey: "number", operator: "is_not_empty" },
-      ])),
+      ids(
+        applyFilters(rowsWithZero, columns, fieldDefs, [
+          { fieldKey: "number", operator: "is_not_empty" },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r3", "rz"]);
   });
 
   test("eq / neq / gt / lt parse the value with Number(); NaN values are dormant", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "eq", value: "101" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "eq", value: "101" },
+        ]),
+      ),
     ).toEqual(["r1"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "neq", value: "101" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "neq", value: "101" },
+        ]),
+      ),
     ).toEqual(["r2", "r3"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "gt", value: "150" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "gt", value: "150" },
+        ]),
+      ),
     ).toEqual(["r2"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "lt", value: "150" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "lt", value: "150" },
+        ]),
+      ),
     ).toEqual(["r1", "r3"]);
 
     // NaN value → dormant
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "gt", value: "abc" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "gt", value: "abc" },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r3", "r4"]);
     // Empty value → dormant
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "gt", value: "" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [{ fieldKey: "number", operator: "gt", value: "" }]),
+      ),
     ).toEqual(["r1", "r2", "r3", "r4"]);
   });
 
   test("between honours swapped bounds and treats missing bound as dormant", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "between", valuePair: ["100", "200"] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "between", valuePair: ["100", "200"] },
+        ]),
+      ),
     ).toEqual(["r1", "r3"]);
     // swapped bounds → same result
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "between", valuePair: ["200", "100"] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "between", valuePair: ["200", "100"] },
+        ]),
+      ),
     ).toEqual(["r1", "r3"]);
     // missing bound → dormant
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "number", operator: "between", valuePair: ["", "200"] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "number", operator: "between", valuePair: ["", "200"] },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r3", "r4"]);
   });
 
   test("computed_type: number routes through NUMBER_OPERATORS", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "icfa", operator: "lt", value: "1.0" },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "icfa", operator: "lt", value: "1.0" },
+        ]),
+      ),
     ).toEqual(["r1", "r2"]);
   });
 });
@@ -191,31 +219,35 @@ describe("applyFilters — number operators", () => {
 describe("applyFilters — single_select operators", () => {
   test("is_any_of compares against option ids; empty list is dormant", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "floor", operator: "is_any_of", valueList: ["opt_ground"] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "floor", operator: "is_any_of", valueList: ["opt_ground"] },
+        ]),
+      ),
     ).toEqual(["r1", "r3"]);
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "floor", operator: "is_any_of", valueList: [] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "floor", operator: "is_any_of", valueList: [] },
+        ]),
+      ),
     ).toEqual(["r1", "r2", "r3", "r4"]);
   });
 
   test("is_none_of with a non-empty list excludes null cells (null is not in any non-empty list, so this returns true for null)", () => {
     // Null cell is not "in" the excluded set, so is_none_of returns true for it.
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "floor", operator: "is_none_of", valueList: ["opt_ground"] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "floor", operator: "is_none_of", valueList: ["opt_ground"] },
+        ]),
+      ),
     ).toEqual(["r2", "r4"]);
   });
 
   test("is_empty / is_not_empty handle null option references", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "floor", operator: "is_empty" },
-      ])),
+      ids(applyFilters(rows, columns, fieldDefs, [{ fieldKey: "floor", operator: "is_empty" }])),
     ).toEqual(["r4"]);
   });
 });
@@ -223,10 +255,12 @@ describe("applyFilters — single_select operators", () => {
 describe("applyFilters — multi-rule AND combination", () => {
   test("multiple rules combine with logical AND", () => {
     expect(
-      ids(applyFilters(rows, columns, fieldDefs, [
-        { fieldKey: "name", operator: "contains", value: "room" },
-        { fieldKey: "floor", operator: "is_any_of", valueList: ["opt_ground"] },
-      ])),
+      ids(
+        applyFilters(rows, columns, fieldDefs, [
+          { fieldKey: "name", operator: "contains", value: "room" },
+          { fieldKey: "floor", operator: "is_any_of", valueList: ["opt_ground"] },
+        ]),
+      ),
     ).toEqual(["r1"]);
   });
 });

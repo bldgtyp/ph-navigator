@@ -135,9 +135,7 @@ export function FilterPopover({
           aria-label="Filter rules"
         >
           <div className="data-table-view-popover-heading">Filter</div>
-          <div className="data-table-view-popover-subheading">
-            In this view, show records
-          </div>
+          <div className="data-table-view-popover-subheading">In this view, show records</div>
           {rules.length === 0 ? (
             <div className="data-table-view-popover-empty">No filters applied to this view.</div>
           ) : (
@@ -230,9 +228,7 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
       style={style}
       data-dragging={sortable.isDragging ? "true" : undefined}
     >
-      <span className="data-table-view-popover-conjunction">
-        {index === 0 ? "Where" : "And"}
-      </span>
+      <span className="data-table-view-popover-conjunction">{index === 0 ? "Where" : "And"}</span>
       <select
         aria-label="Filter field"
         className="data-table-view-popover-select"
@@ -355,10 +351,7 @@ function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValu
         else next.add(optionId);
         onChange({ ...rule, valueList: Array.from(next) });
       };
-      const summary =
-        selected.size === 0
-          ? "Select options"
-          : `${selected.size} selected`;
+      const summary = selected.size === 0 ? "Select options" : `${selected.size} selected`;
       return (
         <details className="data-table-view-popover-disclosure">
           <summary>{summary}</summary>
