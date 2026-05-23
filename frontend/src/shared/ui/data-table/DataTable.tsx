@@ -19,7 +19,8 @@ import { useGridClipboard } from "./hooks/useGridClipboard";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { GridToolbar } from "./components/GridToolbar";
-import type { CellCoord, DataTableProps, FieldDef, WriteOp } from "./types";
+import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
+import type { CellCoord, DataTableProps, FieldDef, RowDeletePayload, WriteOp } from "./types";
 
 export function DataTable<TRow>({
   rows,
@@ -184,6 +185,49 @@ export function DataTable<TRow>({
     visibleColumnDefs,
   ]);
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const deleteSelectedRows = useCallback(async () => {
+    if (rowSelection.count === 0 || readOnly || !onWrite) return;
+    const targets: { row: TRow; rowId: string; index: number }[] = [];
+    filteredRows.forEach((row, index) => {
+      const rowId = getRowId(row);
+      if (rowSelection.isSelected(rowId)) targets.push({ row, rowId, index });
+    });
+    if (targets.length === 0) return;
+    const deletes: RowDeletePayload[] = targets.map(({ row, rowId, index }) => ({
+      rowId,
+      row,
+      anchorRowId: index > 0 ? (rowIds[index - 1] ?? null) : null,
+    }));
+    const op: WriteOp = { kind: "rowDelete", rows: deletes };
+    const inverse: WriteOp = {
+      kind: "rowInsert",
+      rows: targets.map(({ row, rowId, index }) => ({
+        rowId,
+        anchorRowId: index > 0 ? (rowIds[index - 1] ?? null) : null,
+        fieldDefaults: extractRowDefaults(row, fieldDefs, visibleColumnDefs),
+      })),
+    };
+    try {
+      await dispatchWrite(op, inverse);
+      const count = deletes.length;
+      setAnnounce(`${count} row${count === 1 ? "" : "s"} deleted.`);
+      rowSelection.clear();
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Row delete failed.");
+    }
+  }, [
+    dispatchWrite,
+    fieldDefs,
+    filteredRows,
+    getRowId,
+    onWrite,
+    readOnly,
+    rowIds,
+    rowSelection,
+    visibleColumnDefs,
+  ]);
+
   // Pending-edit handoff (Phase 2 §4.4). Once the inserted row lands
   // in the next render's rowIds, consumePendingEdit calls edit.start on
   // the new row's first editable cell.
@@ -268,9 +312,32 @@ export function DataTable<TRow>({
     return <div className="data-table-empty">{emptyMessage}</div>;
   }
 
+  const toolbarActions =
+    !readOnly && rowSelection.count > 0 ? (
+      <button
+        type="button"
+        aria-label={`Delete ${rowSelection.count} selected row${rowSelection.count === 1 ? "" : "s"}`}
+        onClick={() => setDeleteDialogOpen(true)}
+      >
+        Delete {rowSelection.count} {rowSelection.count === 1 ? "row" : "rows"}
+      </button>
+    ) : null;
+
   return (
     <div className={`data-table-shell data-table-shell-${density}`}>
-      <GridToolbar readOnly={readOnly} view={view} />
+      <GridToolbar readOnly={readOnly} view={view} actions={toolbarActions} />
+      <ConfirmRowDeleteDialog
+        open={deleteDialogOpen}
+        count={rowSelection.count}
+        onCancel={() => {
+          setDeleteDialogOpen(false);
+          focusGrid();
+        }}
+        onConfirm={() => {
+          setDeleteDialogOpen(false);
+          void deleteSelectedRows().then(() => focusGrid());
+        }}
+      />
       <div className="sr-only" aria-live="polite">
         {announce}
       </div>
