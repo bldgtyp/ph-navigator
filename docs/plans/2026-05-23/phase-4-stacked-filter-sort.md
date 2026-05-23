@@ -1,20 +1,24 @@
 ---
 DATE: 2026-05-23
 TIME: planning
-STATUS: Draft — not yet walked. Awaiting open-questions answers in §12
-        before execution begins.
+STATUS: Walked with Ed 2026-05-23; all ten §12 open questions resolved
+        inline. Ready to begin Step 1.
 SCOPE: Phase 4 of the `<DataTable>` AirTable-parity plan. Stacked
        filter + sort toolbar popovers wired to user-intent `ViewState`
-       (PoC L8.1). Per-field-type operator sets via the field
-       registry (L2.3), one mutation channel per axis (L8.2),
+       (PoC L8.1), modeled visually and behaviorally on AirTable.
+       Per-field-type operator sets via the field registry (L2.3),
+       one mutation channel per axis (L8.2),
        dormant-row-passes-everything semantics (L8.4), drag-to-reorder
-       within each popover, and a Reset action in the toolbar
-       overflow. Header-click sort survives but routes through
-       `onViewChange` (replaces today's direct `view.sort`
-       single-rule overwrite); Shift+Click appends. Driven against
-       Rooms (US-EQ-2). No other consumers touched. Closes wishlist
-       item #1e (stacked filter / sort with toolbar-tinted state) —
-       minus the tint cascade itself, which lands in Phase 6.
+       within each popover, and a Reset action. **Per-axis cell tint**:
+       filter active → green button + green column cells; sort active
+       → peach button + peach column cells. **Header-click sort is
+       removed**: per-column chevrons go away entirely; sort lives
+       only in the toolbar popover (matches AirTable). The 7-subset
+       palette that handles filter+sort+group overlap is deferred to
+       Phase 6; Phase 4 ships single-axis tints with a documented
+       precedence rule when both apply. Driven against Rooms
+       (US-EQ-2). No other consumers touched. Closes wishlist item
+       #1e (stacked filter / sort with toolbar-tinted state).
 PARENT-PLAN: docs/plans/2026-05-23/datatable-airtable-parity.md
 RELATED:
   - context/technical-requirements/data-table.md (canonical contract,
@@ -41,13 +45,16 @@ same `selection.range` that ⌘C / ⌘V / fill (Phase 7) read from.
 What is still missing is the **view-state mutation channel**:
 
 1. **Sort is single-rule and header-click-only.** Today `toggleSort`
-   in `DataTable.tsx:289` overwrites `view.sort` with one rule.
+   in `DataTable.tsx:289` overwrites `view.sort` with one rule, and
+   the only entry point is the chevron next to each column header.
    There is no way to ask for "sort by floor_level asc, then by
    number asc" — and no way to remove sort short of clicking the
-   same header twice into "desc" then once more to start over. A
-   user who wants the AirTable behaviour ("stack any number of
-   sorts, drag to reorder, X to remove") has nowhere to express
-   that intent.
+   same header twice into "desc" then once more to start over. The
+   per-column chevron also clutters each header with an
+   affordance that 95% of users won't engage with most of the time.
+   AirTable solves both problems with a single right-aligned
+   `Sort` toolbar button that opens a popover; the per-column
+   chevron goes away entirely. Phase 4 follows.
 2. **Filter has no UI at all.** `applyTextFilters` in `lib.ts:218`
    already evaluates the `FilterCondition[]` carried on `ViewState`,
    and existing tests pass a hand-crafted filter rule
@@ -70,20 +77,35 @@ What is still missing is the **view-state mutation channel**:
    for "Reset-to-default action in the toolbar overflow."
 
 Phase 4 closes all four gaps with one shared mechanism: every
-sort/filter change — header-click, popover edit, drag-reorder,
-reset — flows through `onViewChange(nextViewState)` (L8.2), and the
-view state is *derived* into TanStack shapes via memo (L8.1).
-Operator semantics live in the typed `FieldDef` registry so adding
-a new field type later adds its operator bundle once and every
-consumer table gets the new operators for free (L2.3). The drag
-handle inside each popover row uses `@dnd-kit/sortable` — the one
-new dependency this phase introduces (parent plan §15).
+sort/filter change — popover edit, drag-reorder, reset — flows
+through `onViewChange(nextViewState)` (L8.2), and the view state
+is *derived* into TanStack shapes via memo (L8.1). Operator
+semantics live in the typed `FieldDef` registry so adding a new
+field type later adds its operator bundle once and every consumer
+table gets the new operators for free (L2.3). The drag handle
+inside each popover row uses `@dnd-kit/sortable` — the one new
+dependency this phase introduces (parent plan §15).
 
-After Phase 4, the toolbar is the **single mutation channel** for
-sort and filter on every consumer table, the rule lists in
-`ViewState` are the user-intent source of truth, and any cell
-that wants to be filtered or sorted by a future field type only
-has to declare its operator bundle in the registry.
+A separate, equally important closure: **per-axis cell tint**. A
+user with a 12-rule view (5 filters, 7 sorts) has no way today to
+see *which columns* are participating without opening both
+popovers and reading them. AirTable solves this by tinting (a)
+the toolbar button when any rule of that axis is active, and (b)
+every body cell + column header background in the affected columns
+with the same axis-specific colour. Filter is green; sort is peach.
+A column that participates in both gets the precedence-rule tint
+(filter wins; see §4.11 and §12 question 3). Phase 6 will
+generalize this into the full 7-subset palette that handles
+filter ∩ sort ∩ group; Phase 4 ships the single-axis-at-a-time
+foundation.
+
+After Phase 4, the toolbar is the **single entry point** for sort
+and filter on every consumer table, the rule lists in `ViewState`
+are the user-intent source of truth, the per-column header
+chevron is gone, every filtered/sorted column tints with its
+axis colour, and any cell that wants to be filtered or sorted by
+a future field type only has to declare its operator bundle in
+the registry.
 
 ## 2. Binding constraints
 
@@ -95,10 +117,11 @@ has to declare its operator bundle in the registry.
    this phase, pause and re-evaluate.
 2. **`onViewChange` is the only mutation channel for sort/filter**
    (L8.2). Every gesture — popover Add Rule, popover row edit,
-   popover row reorder, popover row delete, header-click,
-   Shift+Click header, Reset — calls `onViewChange(nextView)`
-   exactly once with a fully-shaped `ViewState`. No partial-update
-   prop, no per-axis callback.
+   popover row reorder, popover row delete, Reset — calls
+   `onViewChange(nextView)` exactly once with a fully-shaped
+   `ViewState`. No partial-update prop, no per-axis callback. No
+   header-driven mutation exists after Phase 4 (see constraint
+   8 below).
 3. **TanStack `sorting` / `columnFilters` are derived, never
    written to** (L8.1). Phase 4 does not introduce TanStack's
    row-model filtering; the library continues to compute
@@ -121,14 +144,16 @@ has to declare its operator bundle in the registry.
    backend, or to any router param. View state lives in the
    consumer's component state (`useState(emptyViewState)`); Phase
    4 does not change that contract.
-8. **Header-click sort is preserved and re-routed**, not removed
-   (parent plan §3 sequencing rule 6). The existing sort indicator
-   chevron in `GridHeader.tsx:75` continues to render. The click
-   behaviour switches: plain click sets a single-rule
-   `view.sort = [{fieldKey, direction}]` (replacing the stack);
-   Shift+Click appends to the stack; clicking a column already
-   in the stack toggles its direction without removing other
-   rules.
+8. **Header-click sort is removed.** Per AirTable parity (and the
+   refinement walked 2026-05-23): the existing chevron indicator
+   in `GridHeader.tsx:75`, the `data-table-header-button` element,
+   the `onToggleSort` prop, and the `aria-sort` derivation all go
+   away. Sort is reachable only through the toolbar popover. The
+   parent plan §3 sequencing rule 6 ("header-click sort survives
+   Phase 0 but is rewritten in Phase 4 to call the same
+   `onViewChange` path the toolbar popovers do") is superseded by
+   this constraint; the parent plan needs a one-line note pointing
+   here (filed in §13).
 9. **One new dependency: `@dnd-kit/sortable`** (parent plan §15.2).
    Same 24-hour `minimumReleaseAge` gate as Phase 1's Popover and
    Phase 2's AlertDialog installs. No shadcn CLI scaffold; we use
@@ -199,18 +224,25 @@ walk against Rooms.
    `Filtered by 0 fields · Sorted by 2 fields`.
 10. **Drag-to-reorder sort rules.** Same handle / drag UX as the
     filter popover. Reordering changes the sort key precedence.
-11. **Header-click sort still works.** With the sort popover
-    empty, click the `Number` column header. `view.sort` becomes
-    `[{fieldKey: "number", direction: "asc"}]`; the sort
-    indicator chevron renders. Click again → direction flips to
-    `desc`. Click a third time → does **not** clear the rule
-    (Phase 4 keeps the existing two-state toggle; clearing is
-    done via the popover `×` or the Reset action).
-12. **Shift+Click appends.** With `number asc` already in the
-    stack, Shift+Click the `Name` header. `view.sort` becomes
-    `[{number asc}, {name asc}]`. Shift+Click `Name` again
-    flips the second rule to `desc`. The popover reflects this
-    state if opened.
+11. **No header chevrons; no per-column sort UI.** The chevron,
+    the `data-table-header-button`, and the `aria-sort` attribute
+    are gone from every `<th>`. Clicking a column header is a
+    no-op (the column-select strip from Phase 3 still owns the
+    top 6 px hit zone for full-column select). Sort is reachable
+    only via the toolbar `Sort` button.
+12. **Per-axis cell tint.** With any filter rule active and a
+    non-empty value (i.e. the rule is contributing to the row
+    filter), every body cell in the rule's `fieldKey` column —
+    plus that column's header background — tints green
+    (`var(--data-table-tint-filter)`). The toolbar `Filter`
+    button itself tints green when any rule is active (regardless
+    of dormant-status; matches AirTable). The same rule applies
+    to sort with the peach token (`var(--data-table-tint-sort)`)
+    against the toolbar `Sort` button and every column in
+    `view.sort`. A column appearing in both `view.filter` (with a
+    non-dormant rule) and `view.sort` tints green (filter wins
+    by precedence rule §4.11; see §12 question 3 for the
+    overlap-blend alternative).
 13. **Reset clears both stacks.** Toolbar `⋯` overflow menu
     contains a `Reset view` item. Clicking it produces
     `view.filter = []` and `view.sort = []` via a single
@@ -244,20 +276,36 @@ walk against Rooms.
 ```
 frontend/src/shared/ui/data-table/
   DataTable.tsx              composes the toolbar popovers; passes
-                             view + onViewChange down; replaces the
-                             inline `toggleSort` body with the new
-                             onHeaderSort dispatcher (still ≤ ~280 LOC)
+                             view + onViewChange + axis-tint maps
+                             down; deletes the `toggleSort` body
+                             and the `onToggleSort` prop pass-through
+                             to GridHeader (still ≤ ~280 LOC)
   components/
-    GridHeader.tsx           extended — onHeaderSort gains a
-                             `shiftKey` parameter so Shift+Click
-                             routes through the append path
-    GridBody.tsx             UNCHANGED
+    GridHeader.tsx           SIMPLIFIED — removes the
+                             `data-table-header-button`, the
+                             chevron sort indicator, the `aria-sort`
+                             attribute derivation, and the
+                             `onToggleSort` / `sort` props. Adds a
+                             plain `<span>` label inside each `<th>`
+                             and a `data-axis-tint` attribute used
+                             by §4.11 CSS for per-column header
+                             tinting. The column-select strip from
+                             Phase 3 stays untouched.
+    GridBody.tsx             extended — each body `<td>` reads its
+                             column's axis-tint slot from the
+                             axis-tint map and emits a
+                             `data-axis-tint` attribute. No JS color
+                             work; the CSS in §4.11 paints the cell
+                             via the attribute selector.
     GridGutter.tsx           UNCHANGED
     GridToolbar.tsx          extended — adds Filter / Sort buttons
-                             on the left of the status row and the
-                             ⋯ overflow menu on the right; existing
+                             on the **right** of the toolbar (matches
+                             AirTable layout), and a ⋯ overflow menu
+                             rightmost-of-all. Buttons tint when
+                             active (per §4.11 tokens). Existing
                              `actions` slot stays for the Phase 2
-                             Delete button
+                             Delete button; status chips on the left
+                             stay (slightly re-worded — see §4.8).
     InlineCellEditor.tsx     UNCHANGED
     SingleSelectPopover.tsx  UNCHANGED
     ConfirmRowDeleteDialog.tsx
@@ -531,33 +579,43 @@ same external behaviour for these operators).
 
 ### 4.5 Filter popover surface
 
+Layout, copy, and column order match AirTable's filter popover
+exactly (per the screenshot walked 2026-05-23):
+
 ```
 ┌────────────────────────────────────────────────────────────┐
-│ Filter by                                                  │
+│ Filter                                                     │
+│ ──────────────────────────────────────────────────────     │
+│ In this view, show records                                 │
 │                                                            │
-│ ⋮⋮  [Field ▾]  [Operator ▾]  [Value ───────]     ×        │ ← rule row
-│ ⋮⋮  [Field ▾]  [Operator ▾]  [Value ───────]     ×        │
+│ Where  [Field ▾]  [Operator ▾]  [Value ─────]   🗑  ⋮⋮    │ ← rule row 1
+│ And    [Field ▾]  [Operator ▾]  [Value ─────]   🗑  ⋮⋮    │ ← rule row 2+
 │                                                            │
-│ + Add filter rule                                          │
+│ + Add condition                                            │
 └────────────────────────────────────────────────────────────┘
 ```
 
-- **Drag handle (`⋮⋮`)** — `@dnd-kit/sortable` listener. Pointer-
-  down + drag reorders the rule within `view.filter`. ARIA grab
-  handle, focusable, Space + arrow-keys also reorder for
-  keyboard users.
+The leftmost-text-label changes per row: row 1 reads "Where",
+rows 2+ read "And" (AND-only — OR is deferred). This labelling
+is purely cosmetic; the conjunction is fixed at AND regardless
+of label.
+
+- **Conjunction label** — leftmost column of each rule row.
+  Row 1: "Where". Rows 2+: "And". Pure text; no control.
 - **Field picker** — native `<select>` (L10.2 — native controls
   good enough for popover MVPs). Lists every `FieldDef` whose
-  `read_only !== true` and whose registry catalogue is
-  non-empty (excludes `attachment` and `argb_color`). Defaults
-  to the first such field on rule create.
+  registry catalogue is non-empty (excludes `attachment` and
+  `argb_color`). Read-only fields included by default — see
+  §12 question 2. Defaults to the first such field on rule
+  create.
 - **Operator picker** — native `<select>`. Options come from
   `getFilterOperators(fieldDef)`. Switching the field resets
   the operator to the catalogue's first entry and clears the
   value slot (the previous operator's value shape may not
   match).
 - **Value editor** — chosen by `FilterValueShape`:
-  - `none` → no editor rendered.
+  - `none` → no editor rendered (cell collapses; tab order
+    skips past).
   - `string` → borderless `<input type="text">`.
   - `number` → `<input type="number" inputMode="decimal">`. The
     raw string is stored on `value`; parsing happens in the
@@ -567,21 +625,33 @@ same external behaviour for these operators).
   - `optionIdList` → a `<details><summary>` disclosure listing
     the field's options as checkboxes (label + colored pill).
     Multi-select; checked ids accumulate in `valueList`.
-- **Delete (`×`)** — splices the rule out of `view.filter`.
-- **Add filter rule** — appends a dormant rule (first field /
+- **Delete (🗑)** — splices the rule out of `view.filter`.
+  Trash-icon button, AirTable-style, sits in the slot right of
+  the value editor.
+- **Drag handle (`⋮⋮`)** — `@dnd-kit/sortable` listener. Pointer-
+  down + drag reorders the rule within `view.filter`. ARIA grab
+  handle, focusable, Space + arrow-keys also reorder for
+  keyboard users. Sits in the rightmost slot, after the trash
+  button (matches AirTable's column order in the screenshot).
+- **+ Add condition** — appends a dormant rule (first field /
   first operator / empty value) so the user can start filling
   it in. Until the value is filled in, the row passes
-  everything (L8.4).
+  everything (L8.4). Footer button, left-aligned.
 
 Markup composition (sketch):
 
 ```tsx
 <Popover.Root open={open} onOpenChange={setOpen}>
   <Popover.Trigger asChild>
-    <button className="data-table-toolbar-button">
-      Filter
-      {view.filter.length ? ` (${view.filter.length})` : ""}
-      <span aria-hidden>▾</span>
+    <button
+      className="data-table-toolbar-button"
+      data-axis="filter"
+      data-axis-active={view.filter.length > 0 ? "true" : undefined}
+    >
+      <FilterIcon aria-hidden />
+      {view.filter.length
+        ? `Filtered by ${describeFilterFields(view.filter, fieldDefs)}`
+        : "Filter"}
     </button>
   </Popover.Trigger>
   <Popover.Portal>
@@ -623,33 +693,59 @@ state — they exist only as React keys and as `@dnd-kit` ids.
 
 ### 4.6 Sort popover surface
 
+Layout, copy, and column order match AirTable's sort popover
+exactly (per the screenshot walked 2026-05-23):
+
 ```
 ┌────────────────────────────────────────────────────────────┐
 │ Sort by                                                    │
 │                                                            │
-│ ⋮⋮  [Field ▾]  [asc | desc]                       ×        │
-│ ⋮⋮  [Field ▾]  [asc | desc]                       ×        │
+│   [Field ▾]                 [A → Z ▾]              ×       │ ← rule 1
+│   [Field ▾]                 [A → Z ▾]              ×       │ ← rule 2+
 │                                                            │
-│ + Add sort rule                                            │
+│ + Add another sort                                         │
 └────────────────────────────────────────────────────────────┘
 ```
 
-Same shell as the filter popover; rule row is simpler:
+The popover is narrower than the filter popover (single
+`min-width: 300px`). The direction picker uses AirTable's
+`A → Z` / `Z → A` labels — these are direction-only and rendered
+verbatim regardless of field type (per AirTable; even for
+numbers the screenshot shows "A → Z" rather than "1 → 9").
 
-- **Drag handle** — same as filter.
-- **Field picker** — `<select>` of every `FieldDef` (read-only
-  fields included — sorting by a computed read-only column is
-  valid). The same field is allowed in multiple sort rules only
-  if Ed says so in §12 question 1; the default plan is to
-  exclude already-used fields from the picker so the stack
-  cannot trivially duplicate itself.
-- **Direction toggle** — pair of radio-style buttons
-  `[asc | desc]` driven by `rule.direction`.
-- **Delete (`×`)** — splices the rule out of `view.sort`.
+- **Field picker** — native `<select>` listing every `FieldDef`
+  whose field_type is not `attachment` or `argb_color`. Read-only
+  computed fields *are* sortable. The same field is allowed in
+  multiple sort rules only if Ed resolves §12 question 1 that
+  way; the default plan excludes already-used fields from the
+  picker so the stack cannot trivially duplicate itself.
+- **Direction picker** — native `<select>` with two options:
+  `A → Z` (asc) and `Z → A` (desc). Driven by `rule.direction`.
+- **Delete (×)** — AirTable uses a plain `×` (not a trash icon)
+  in the sort popover, distinct from the filter popover's 🗑.
+  Splices the rule out of `view.sort`.
+- **Drag handle** — `@dnd-kit/sortable` listener on the row's
+  entire chrome; no visible handle slot (AirTable's screenshot
+  doesn't show one in the sort popover, though hover reveals a
+  hit zone on the left). The plan ships a hover-visible
+  `⋮⋮` glyph in the leftmost 16 px of the row so the gesture is
+  discoverable while idle whitespace stays clean.
+- **+ Add another sort** — appends a rule whose field defaults
+  to the first sortable field that is *not* already in the
+  stack (or, if all are used and §12 Q1 resolves to allow
+  duplicates, falls through to the first sortable field).
 
 `sortRows` in `lib.ts` already walks `sortRules` in order and
 returns the first non-zero comparator result, so the data path
 needs no change.
+
+(AirTable's screenshot also shows a "Automatically sort
+records" toggle below the rule list. Skipping it for Phase 4 —
+our data path always re-sorts on view-state change because
+`sortRows` runs unconditionally in the `filteredRows` useMemo;
+adding the toggle would mean introducing manual "apply" state
+that defeats the user-intent → row-data path. Recorded as a
+deferred polish item in §7.)
 
 ### 4.7 Reset action
 
@@ -677,63 +773,136 @@ Phase 6's plan can pick up the rest without surprise.
 
 ### 4.8 Toolbar layout (after)
 
+Matches AirTable: buttons are right-aligned, the leftmost slot
+keeps the status chips, and a `⋯` overflow menu sits at the
+absolute right edge.
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ [Filter ▾]  [Sort ▾]   Editable · Filtered by 2 · Sorted by 1 · Ungrp  ⋯ │
-│                                                              [Delete 3]  │
+│ Editable · Ungrp · …    [Filtered by name]  [Sort]  ⋯                   │
+│                                                          [Delete 3]      │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Buttons on the left of the status chips: `Filter ▾`, `Sort ▾`,
-  each rendering its rule count next to the label when non-zero.
-- Status chips remain, slightly re-worded: `Filtered by N fields`
-  / `Sorted by N fields` (plural-aware, matches Phase 0 status
-  text wording).
-- `⋯` overflow menu on the right. The existing `actions` slot
-  (Phase 2 Delete) renders below the status row when present, so
-  it doesn't fight the buttons for horizontal space.
+- **Filter button** (right-aligned). Label `Filter` when
+  `view.filter.length === 0`. When ≥1 rule has a contributing
+  (non-dormant) value, the label changes to
+  `Filtered by <field_display_name>` for the single-rule case
+  (matches AirTable screenshot) or
+  `Filtered by N fields` for the multi-rule case. The button
+  background tints green via `data-axis-active="true"`
+  (§4.11). Leading icon: a small horizontal-lines glyph
+  matching AirTable's filter glyph (rendered inline as an
+  inline SVG; no icon dependency).
+- **Sort button** (right of Filter). Label `Sort` when
+  `view.sort.length === 0`; `Sorted by N` when active. Tints
+  peach when active. Leading icon: `↑↓` glyph.
+- **`⋯` overflow** (rightmost). Owns the Reset view action;
+  forward-compat slot for Phase 6 group / future column-config
+  actions.
+- **Status chips** stay on the left, slightly re-worded:
+  `Editable | Read-only` and `Ungrouped` (Phase 6 changes the
+  grouping chip). The old `Filtered by N rule` and `Sorted by N
+  field` status chips are **removed** — the button labels now
+  carry that information (matches AirTable).
+- **Phase 2 Delete action** (consumer-supplied `actions` slot)
+  renders below the toolbar row when row-selection is
+  non-empty. It stays visually separate from the right-aligned
+  axis buttons so the user can't accidentally hit Delete while
+  reaching for Sort.
 - All toolbar controls keep `tabIndex={-1}` semantics consistent
   with Phase 2 (the grid wrapper is the keyboard-focus host;
   toolbar controls are reachable by Tab from the wrapper).
 
-CSS additions (sketch — colors / spacing match the existing
-toolbar):
+CSS additions for the toolbar layout (§4.11 owns the tint
+tokens):
 
 ```css
-.data-table-toolbar { display: flex; align-items: center; gap: 8px; }
-.data-table-toolbar-buttons { display: flex; gap: 4px; }
-.data-table-toolbar-button {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 8px; border-radius: 4px;
-  background: transparent; border: 1px solid var(--border);
+.data-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.data-table-toolbar-status {
+  display: flex;
+  gap: 12px;
+  margin-right: auto;          /* push buttons to the right */
+  color: var(--muted);
   font-size: 12px;
 }
-.data-table-toolbar-button[aria-expanded="true"] {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
+.data-table-toolbar-buttons { display: flex; gap: 4px; }
+.data-table-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+.data-table-toolbar-button:hover {
+  background: color-mix(in oklab, var(--fg) 6%, transparent);
+}
+/* Filter axis tint when any rule is active. */
+.data-table-toolbar-button[data-axis="filter"][data-axis-active="true"] {
+  background: var(--data-table-tint-filter);
+}
+/* Sort axis tint when any rule is active. */
+.data-table-toolbar-button[data-axis="sort"][data-axis-active="true"] {
+  background: var(--data-table-tint-sort);
 }
 .data-table-view-popover {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 8px;
+  padding: 12px;
   min-width: 380px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
+.data-table-view-popover.is-sort { min-width: 300px; }
+.data-table-view-popover-heading {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.data-table-view-popover-subheading {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
 .data-table-view-popover-rule {
   display: grid;
-  grid-template-columns: 16px 1fr 1fr 2fr 20px;
+  grid-template-columns: 48px 1fr 1fr 1.5fr 20px 16px;
   gap: 6px;
   align-items: center;
   padding: 4px 0;
 }
+.data-table-view-popover-rule.is-sort {
+  grid-template-columns: 1fr 1fr 20px 16px;  /* no Where/And label, no operator/value */
+}
+.data-table-view-popover-conjunction {
+  font-size: 12px;
+  color: var(--muted);
+}
 .data-table-view-popover-drag {
   cursor: grab;
   color: var(--muted);
+  opacity: 0;                  /* hover-visible on sort popover */
+  transition: opacity 0.1s ease-out;
+}
+.data-table-view-popover-rule:hover .data-table-view-popover-drag {
+  opacity: 1;
 }
 .data-table-view-popover-add {
-  margin-top: 6px;
+  margin-top: 8px;
+  padding: 4px;
   font-size: 12px;
   color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 .data-table-view-popover-rule[data-dragging="true"] {
   opacity: 0.6;
@@ -741,63 +910,159 @@ toolbar):
 }
 ```
 
-### 4.9 Header-click sort rewrite
+### 4.9 Header chevron removal
 
-`DataTable.tsx:289` `toggleSort` is rewritten to accept the
-mouse event's `shiftKey`. `GridHeader.tsx`'s sort button passes
-the event through:
+The Phase 0–3 header layout renders three slots inside each
+`<th>`:
+
+1. `data-table-column-select-strip` (Phase 3, top 6 px) —
+   **kept**, owns the full-column-select hit zone.
+2. `data-table-header-button` — a `<button>` whose `onClick`
+   calls `onToggleSort(fieldKey)`; renders the column label and
+   a chevron `▲ / ▼` when `view.sort` has a matching rule.
+   **Removed entirely.**
+3. `renderHeaderActions(field)` slot (consumer-supplied) —
+   **kept**, Phase 5 uses it for the per-column `⋯` menu.
+
+After Phase 4, the header column reads:
 
 ```tsx
-<button
-  type="button"
-  className="data-table-header-button"
-  tabIndex={-1}
-  onClick={(event) => {
-    if (column) onToggleSort(column.fieldKey, event.shiftKey);
-  }}
+<th
+  role="columnheader"
+  aria-colindex={columnIndex + 1}
+  data-axis-tint={axisTintByFieldKey.get(column.fieldKey)}
 >
+  <div
+    className="data-table-column-select-strip"
+    role="button"
+    aria-label={`Select column ${column.header}`}
+    data-column-select-fieldkey={column.fieldKey}
+    tabIndex={-1}
+    onMouseDown={(event) => onColumnMouseDown(event, column.fieldKey)}
+  />
+  <span className="data-table-header-label">{column.header}</span>
+  {renderHeaderActions?.(fieldDef)}
+</th>
 ```
 
-The dispatcher:
+The `aria-sort` attribute is removed from `<th>` because the
+sort state is no longer a per-column property in the UI — it's a
+view-state list reachable only through the toolbar. Multi-rule
+sort is announced via the `aria-live` region (Phase 0
+`announce` state) when the user opens / changes the Sort
+popover; the announcement reads
+`Sorted by 2 fields: floor_level ascending, then number ascending`.
+
+`onToggleSort` is removed from `GridHeaderProps`. The
+`DataTable.tsx:289` `toggleSort` function is deleted; no
+replacement is added (sort goes through `onViewChange` only,
+from the popover).
+
+The existing `aria-rowindex` / `role="columnheader"` /
+`tabIndex={-1}` / `aria-label` attributes are preserved. The
+header label is now a plain `<span>`; it cannot be clicked or
+focused.
+
+### 4.10 Per-axis cell tint (visual)
+
+Per-axis tinting is the **headline visual** of Phase 4. Two CSS
+tokens define the palette; both are applied to (a) the toolbar
+button when the axis has any active rule, (b) the body cells of
+every column participating in that axis, and (c) the column
+header background of those same columns.
+
+```css
+:root {
+  /* Filter axis — green, matches AirTable's filter chip green. */
+  --data-table-tint-filter: oklch(96% 0.04 145);
+  --data-table-tint-filter-header: oklch(93% 0.06 145);
+
+  /* Sort axis — peach/orange, matches AirTable's sort chip peach. */
+  --data-table-tint-sort: oklch(95% 0.05 50);
+  --data-table-tint-sort-header: oklch(91% 0.08 50);
+}
+```
+
+Cells receive their tint via a `data-axis-tint` attribute on
+each body `<td>` and each header `<th>`. The attribute is
+computed once per render, in `DataTable.tsx`, from
+`view.filter` and `view.sort`:
 
 ```ts
-const onHeaderSort = (fieldKey: string, shiftKey: boolean) => {
-  const existing = view.sort.findIndex((rule) => rule.fieldKey === fieldKey);
-  if (!shiftKey) {
-    // Plain click: replace stack with a single rule, toggling
-    // direction if already at the top of the stack.
-    const direction: "asc" | "desc" =
-      existing === 0 && view.sort[0]?.direction === "asc" ? "desc" : "asc";
-    onViewChange({ ...view, sort: [{ fieldKey, direction }] });
-    return;
+const axisTintByFieldKey = useMemo<Map<string, "filter" | "sort" | null>>(() => {
+  const out = new Map<string, "filter" | "sort" | null>();
+  // Filter wins on overlap (§12 question 3 default).
+  const contributingFilters = new Set(
+    view.filter
+      .filter((rule) => isFilterContributing(rule))
+      .map((rule) => rule.fieldKey),
+  );
+  const sorted = new Set(view.sort.map((rule) => rule.fieldKey));
+  for (const fieldDef of fieldDefs) {
+    if (contributingFilters.has(fieldDef.field_key)) {
+      out.set(fieldDef.field_key, "filter");
+    } else if (sorted.has(fieldDef.field_key)) {
+      out.set(fieldDef.field_key, "sort");
+    } else {
+      out.set(fieldDef.field_key, null);
+    }
   }
-  // Shift+Click: append or toggle in place.
-  if (existing === -1) {
-    onViewChange({
-      ...view,
-      sort: [...view.sort, { fieldKey, direction: "asc" }],
-    });
-    return;
-  }
-  const next = [...view.sort];
-  next[existing] = {
-    fieldKey,
-    direction: next[existing]!.direction === "asc" ? "desc" : "asc",
-  };
-  onViewChange({ ...view, sort: next });
-};
+  return out;
+}, [fieldDefs, view.filter, view.sort]);
 ```
 
-Header-click never deletes a rule. The user removes a rule via
-the popover `×` or Reset. This is intentional: a stack of 4 sort
-rules accidentally cleared by a wayward header click would be
-maddening.
+`isFilterContributing(rule)` returns false for dormant rules
+(blank value / blank value pair / empty value list) — a dormant
+rule that passes everything doesn't visually tint its column,
+matching AirTable's behaviour (the chip only colors when the
+filter is contributing).
 
-The aria-sort attribute on each `<th>` continues to derive from
-`directionByFieldKey.get(column.fieldKey)`, so multi-rule stacks
-correctly announce per-column sort direction.
+The tint CSS is purely attribute-driven:
 
-### 4.10 Visible-fields path
+```css
+.data-table th[data-axis-tint="filter"] {
+  background: var(--data-table-tint-filter-header);
+}
+.data-table th[data-axis-tint="sort"] {
+  background: var(--data-table-tint-sort-header);
+}
+.data-table td[data-axis-tint="filter"] {
+  background: var(--data-table-tint-filter);
+}
+.data-table td[data-axis-tint="sort"] {
+  background: var(--data-table-tint-sort);
+}
+```
+
+**Layer order** with existing selection / focus visuals
+(matches PoC L9.3 — tint → selection → focus):
+
+- Tint is the base background. It sits behind everything else.
+- Selection (Phase 3 perimeter outline + interior fill) is a
+  `box-shadow` + a translucent overlay. Overlays composite on
+  top of tint correctly because `background` and `box-shadow`
+  occupy different rendering channels.
+- Focus (Phase 0 active cell) is an `outline`. Outline sits
+  above both tint and selection regardless of stacking.
+
+The Phase 3 `.data-table-cell-selected` interior fill uses
+`color-mix(in oklab, var(--accent) 10%, transparent)` which
+composites *over* the tint background — the user can see a
+green tint with a translucent blue selection on top, which is
+exactly what AirTable shows for a filtered+selected cell.
+
+**Overlap rule**: when a column is in both `view.filter` (with
+a contributing rule) and `view.sort`, the column tints green
+(filter wins). Rationale: filter is the more impactful state
+(it hides rows; sort only reorders them), and a single tint per
+column keeps the visual unambiguous. The full 7-subset blend
+palette that AirTable uses for filter ∩ sort ∩ group is
+deferred to Phase 6. §12 question 3 records the alternative
+(use `color-mix` to blend the two tokens for the overlap case,
+or accept Phase 4's filter-wins precedence and let Phase 6
+generalize).
+
+### 4.11 Visible-fields path
 
 `editableFieldDefs` (the list the field picker shows) is computed
 once in `DataTable.tsx` and threaded down to both popovers:
@@ -833,7 +1098,7 @@ filterable).
 plan filters read-only fields, which matches AirTable. Excluding
 them would simplify the picker but lose useful behaviour.)
 
-### 4.11 Test plan
+### 4.12 Test plan
 
 Existing 186 tests pass unchanged. The
 `applyTextFilters → applyFilters` rename is a single mechanical
@@ -895,12 +1160,30 @@ New tests:
     `filter: []` and `sort: []` while preserving the other
     `ViewState` keys.
 - **`__tests__/DataTable.test.tsx` extensions**:
-  - Header-click on `name` with `shiftKey: true` and an
-    existing single rule appends a second rule.
-  - Header-click on a field already in the stack toggles its
-    direction in place without removing other rules.
-  - Plain header-click with a non-empty stack replaces the
-    stack with a single rule on the clicked field.
+  - Header chevron / `data-table-header-button` is no longer
+    rendered on any `<th>` (replaces the existing
+    `expect(screen.getByRole("button", { name: "Number" })).toHaveAttribute("tabindex", "-1")`
+    test at `DataTable.test.tsx:85`, which is removed since
+    the button itself is gone). The header label is a plain
+    `<span>` with text content.
+  - `aria-sort` is not set on any `<th>` (replaces the
+    existing test that asserts it is).
+  - With `view.filter = [{name contains "liv"}]`, the body
+    `<td>`s for the `name` column carry `data-axis-tint="filter"`.
+    All other columns carry `data-axis-tint=""` (or no
+    attribute).
+  - With `view.sort = [{number asc}]`, the `number` column's
+    cells carry `data-axis-tint="sort"`.
+  - With both `view.filter = [{name contains "liv"}]` and
+    `view.sort = [{name asc}]` on the same column, the column
+    tints filter (overlap precedence rule §4.10).
+  - Dormant filter rules (empty value) do NOT produce
+    `data-axis-tint="filter"` on their column.
+  - Toolbar Filter button has `data-axis-active="true"` when
+    any filter rule is present (dormant or not — matches
+    AirTable: chip colors as soon as a rule exists).
+  - Toolbar Sort button has `data-axis-active="true"` when
+    `view.sort.length > 0`.
 - **`__tests__/lib.test.ts` extensions**:
   - `applyFilters` short-circuits to `rows` when the filter
     array is empty (preserves array identity for memo).
@@ -936,45 +1219,62 @@ typecheck`, `make lint`). Commit per step.
 - At this step, no UI changes are visible. The library can
   now evaluate the full operator set against any field def.
 
-### Step 2 — Header-click sort dispatcher
+### Step 2 — Header chevron removal + per-axis tint plumbing
 
-- Replace `DataTable.tsx:289` `toggleSort` with `onHeaderSort`
-  per §4.9. Thread `shiftKey` through `GridHeader.tsx:69`.
-- Update `aria-sort` derivation to read from the full stack
-  (already correct; verify).
-- Test: `DataTable.test.tsx` extensions for plain-click replace,
-  Shift+Click append, Shift+Click toggle-in-place.
-- At this step, header-click behaviour matches the parent
-  plan's Phase 4 contract. The popover UI is still absent;
-  the stack is observable via the chip text.
+- Delete `data-table-header-button`, the chevron span, the
+  `aria-sort` derivation, the `onToggleSort` prop, and the
+  `sort` prop from `GridHeader.tsx`. Replace with a plain
+  `<span className="data-table-header-label">`.
+- Delete `DataTable.tsx:289` `toggleSort` and its wiring.
+- Compute `axisTintByFieldKey` in `DataTable.tsx` per §4.10
+  and thread it to `GridHeader` (header `<th>`'s
+  `data-axis-tint`) and `GridBody` (body `<td>`'s
+  `data-axis-tint`).
+- Add tint CSS tokens (`--data-table-tint-filter`,
+  `--data-table-tint-sort`, and their `-header` variants) to
+  `App.css`. Add the four selector rules per §4.10.
+- Test: `DataTable.test.tsx` extensions for chevron-removal,
+  `data-axis-tint` on cells / headers, overlap precedence,
+  dormant-rule no-tint.
+- At this step, headers are clean (no per-column sort UI),
+  and any view state set externally produces the correct
+  tint. The popover UI is still absent; the user has no way
+  to *build* a stack yet.
 
 ### Step 3 — Filter popover (no drag yet)
 
 - Add `@dnd-kit/sortable` to `package.json` (still un-used).
 - Create `components/FilterPopover.tsx` with the Radix Popover
-  shell, rule list, Add Rule footer, per-row editors. No drag
+  shell, the "Filter / In this view, show records" headings,
+  the rule list with Where/And conjunction labels, the
+  "+ Add condition" footer, and the per-row editors. No drag
   handle yet — the rule order is locked at append order.
-- Extend `GridToolbar.tsx` to render the `Filter ▾` button on
-  the left of the status row. The button toggles popover open
-  state.
+- Extend `GridToolbar.tsx` per §4.8: status chips on the left
+  (re-worded to drop the Filtered/Sorted chips), right-aligned
+  Filter button with `data-axis="filter"` and dynamic label,
+  green tint via §4.10 when active.
 - Wire `DataTable.tsx` to thread `view.filter`, `onViewChange`,
-  and `filterableFieldDefs` to the toolbar / popover.
+  and `filterableFieldDefs` to the toolbar / popover. The
+  `axisTintByFieldKey` map from Step 2 now updates live as
+  the user edits rules in the popover.
 - Test: `__tests__/FilterPopover.test.tsx` (no drag),
   `__tests__/GridToolbar.test.tsx`.
-- At this step, the user can build a filter stack via Add Rule
-  + edit, delete rules, and see the grid filter live. Verify
-  §10 steps 1–7 in browser.
+- At this step, the user can build a filter stack via Add
+  condition + edit, delete rules, and see the grid filter
+  live with the column cells tinted green. Verify §10 steps
+  1–7 in browser.
 
 ### Step 4 — Sort popover (no drag yet)
 
-- Create `components/SortPopover.tsx` with the same shell as
-  FilterPopover and the simpler rule row (field + asc/desc + ×).
-- Extend `GridToolbar.tsx` to render the `Sort ▾` button next
-  to `Filter ▾`.
+- Create `components/SortPopover.tsx` with the "Sort by"
+  heading, the simpler rule row (field + A→Z / Z→A + ×),
+  and the "+ Add another sort" footer.
+- Extend `GridToolbar.tsx` to render the right-aligned Sort
+  button with `data-axis="sort"` and peach tint.
 - Wire `view.sort` + `onViewChange` to the popover.
 - Test: `__tests__/SortPopover.test.tsx`.
-- At this step, stacked sort works via popover + via
-  Shift+Click on headers. Verify §10 steps 8–12 in browser.
+- At this step, stacked sort works via the popover. Affected
+  columns tint peach. Verify §10 steps 8–10 in browser.
 
 ### Step 5 — Drag-to-reorder (both popovers) + Reset menu
 
@@ -1007,7 +1307,11 @@ typecheck`, `make lint`). Commit per step.
 | `applyTextFilters` → `applyFilters` rename misses a caller. | Single in-repo caller (`DataTable.tsx:59`). `grep -rn applyTextFilters` confirms. ESLint + typecheck catch any miss. |
 | Number filter with empty value silently hides all rows because `Number("")` is 0. | Evaluator explicitly returns dormant (`true`) when `value` parses to NaN OR the trimmed string is empty. Covered by tests. |
 | `between` filter with reversed bounds (lo > hi) hides all rows. | Evaluator swaps bounds defensively (§4.4). Covered by test. |
-| Shift+Click header sort collides with the drag-pointer handler. | The Phase 3 column-select strip lives **above** the header button, so Shift+Click on the button passes only the `shiftKey` through `onClick`. The drag hook short-circuits when `closest('.data-table-column-select-strip')` succeeds; the sort button isn't inside that strip. Verified in §10 step 12. |
+| Existing user habit: clicking a column header to sort. After removal it is a no-op. | Acceptable usability regression — AirTable has trained the entire industry that sort lives in a toolbar popover, and the per-column chevron is what *we* added during early scaffolding. Mitigation: the first time a user clicks a header label in the grid with no filter/sort active, the `aria-live` region announces "Sort is in the toolbar Sort button" — see §12 question 9 (defaulted off; turn on if the user-walk shows confusion). |
+| Header-click as a hit zone collides with the Phase 3 column-select strip drag. | Already addressed in Phase 3: the column-select strip is the top 6 px; the header label area is the remaining ~24 px. After Phase 4 removes the header button entirely, the header label `<span>` has no `onClick` and no pointer behaviour — clicking it does nothing. Phase 3 drag is unaffected. |
+| Dormant filter rules should not tint the column. | `isFilterContributing(rule)` excludes empty values per shape. Tested explicitly. |
+| Filter + sort on same column → ambiguous tint. | Precedence rule: filter wins. Documented in §4.10 and tested. Phase 6 generalizes via the 7-subset palette. |
+| Tint tokens become muddy when composited with the Phase 3 selection-fill overlay (10% accent over green) on a filtered column. | `color-mix(in oklab, ...)` composites cleanly across hue families. Manual verification in §10 step 12 (selection inside a filtered column). |
 | `@dnd-kit/sortable` in jsdom requires PointerSensor setup that doesn't fire in tests. | Tests bypass the sensor and fire `DndContext.onDragEnd` directly. Documented in `__tests__/FilterPopover.test.tsx` header comment. |
 | Popover content that overflows the viewport (long option list inside `is_any_of`) clips. | Radix Popover handles collision avoidance via `side` / `align` props. The `<details>` disclosure inside the row keeps the option list collapsed by default; long lists scroll inside the disclosure (max-height: 240px). |
 | Reset clears more than Phase 4 owns and breaks a future Phase 6 grouping that the user has set up. | Reset clears only `filter: []` and `sort: []`. §4.7 documents this scope explicitly so Phase 6 plans accordingly. |
@@ -1015,7 +1319,7 @@ typecheck`, `make lint`). Commit per step.
 | User changes the field on a rule whose value slot doesn't apply to the new field type → orphan value. | Field-change handler clears `value`, `valuePair`, and `valueList` on the next condition. Operator is reset to the new field's first catalogue entry. Tested. |
 | Single-select filter `is_any_of` evaluates against option-ids but the user thinks in labels. | The option-list checkboxes show the colored pill + label; the underlying `valueList` carries ids. Hover tooltip on each option = label (acceptable; the colored pill is the canonical visual). |
 | Toolbar buttons increase shell height and shove the grid down. | Buttons sit on the existing toolbar row; CSS keeps the row at the current ~28 px height. Verified visually. |
-| Header sort indicator only shows the chevron for the top rule, not multi-rule stacks. | Acceptable Phase 4 visual. Phase 6 (`stacked group accordion + per-column aggregations + tint cascade`) introduces toolbar-tinted columns; per-rule index numbering on the header chevron is a Phase 6 polish item. |
+| Sort popover ordering doesn't match the visual order of tinted columns. The user can't tell which sort rule applies to which peach-tinted column. | The popover itself shows the stack in rule order; the per-column tint is a presence indicator, not a precedence indicator. Multi-rule stacks read the rule names + directions verbatim from the popover; the tint just answers "is this column participating?" Phase 6's tint cascade refines this with explicit role overlays. |
 
 ## 7. What this phase explicitly does not do
 
@@ -1036,33 +1340,50 @@ typecheck`, `make lint`). Commit per step.
 - **No per-rule "enable / disable" toggle.** A user who wants
   to temporarily disable a rule deletes and re-adds it. AirTable
   has a checkbox toggle; we defer to keep the popover row tight.
-- **No filter / sort tinting on columns.** That visual is Phase
-  6's `ROLE_BACKGROUNDS.body` palette. Phase 4 ships the
-  *behaviour*; Phase 6 layers the *colour* on top.
-- **No header chevron per-rule index numbering** (e.g. "1▲ 2▼"
-  on multi-rule stacks). Acceptable visual gap — Phase 6 polish.
+- **No 7-subset overlap palette.** Phase 4 ships per-axis tints
+  with filter-wins precedence on overlap. The full
+  filter ∩ sort ∩ group palette that handles every subset of
+  the three axes lands in Phase 6.
+- **No "Automatically sort records" toggle in the sort popover.**
+  AirTable surfaces this control; Phase 4 omits it because our
+  data path re-sorts unconditionally on every view-state change
+  (see §4.6 note). If users ask for manual-apply semantics
+  later it can be added without a contract change.
+- **No condition-group / nested-AND-OR (`+ Add condition group`
+  in the AirTable screenshot).** OR mode is deferred per parent
+  plan §16. The filter popover footer shows `+ Add condition`
+  only, not the second `+ Add condition group` button.
+- **No "Describe what you want to see" natural-language filter
+  builder** (the green dotted box at the top of AirTable's
+  filter popover). That's AirTable's LLM feature; out of scope.
 - **No undo for filter/sort changes.** View state lives outside
   the write reducer's history (per Phase 0 contract — only
   data writes go into history). A user who wants to revert a
   Reset action rebuilds the stack from the popover. AirTable
   matches this.
+- **No header `aria-sort` attribute.** Sort state is no longer
+  a per-column property of the rendered grid; it's a view-state
+  list announced via the live region.
 
 ## 8. Effort estimate
 
 | Step | Hours (low) | Hours (high) |
 |------|------------:|-------------:|
 | 1 — operator catalogue + evaluator + types | 2.0 | 3.0 |
-| 2 — header-click sort dispatcher           | 0.5 | 1.0 |
+| 2 — header chevron removal + axis tint     | 1.5 | 2.5 |
 | 3 — filter popover (no drag)               | 3.5 | 5.0 |
 | 4 — sort popover (no drag)                 | 2.0 | 3.0 |
 | 5 — drag-to-reorder + Reset menu           | 2.5 | 4.0 |
 | 6 — demo walk + post-walk fixes            | 1.5 | 2.0 |
-| **Total**                                  | **12.0** | **18.0** |
+| **Total**                                  | **13.0** | **19.5** |
 
-Parent plan budgeted 12–18; this estimate lands inside that
-window. The 5-hour high on Step 3 is the largest single
-allocation — the per-field-type value editor needs four
-distinct shapes (text input, number input, number pair,
+Parent plan budgeted 12–18; this estimate's high end pushes
+1.5 hr past, allowing for the additional tint-plumbing work
+(per-axis tokens, contributing-rule detection, overlap
+precedence, CSS layering against the Phase 3 selection
+overlay). The 5-hour high on Step 3 is still the largest
+single allocation — the per-field-type value editor needs
+four distinct shapes (text input, number input, number pair,
 option-id checkboxes) and each needs its own keyboard / focus
 plumbing.
 
@@ -1072,7 +1393,7 @@ One commit per step. Subject prefixes match the data-table
 convention from Phases 0–3:
 
 1. `feat(data-table): filter operator catalogue + evaluator`
-2. `feat(data-table): header-click sort routes through onViewChange`
+2. `feat(data-table): remove header chevron + per-axis cell tint`
 3. `feat(data-table): stacked filter toolbar popover`
 4. `feat(data-table): stacked sort toolbar popover`
 5. `feat(data-table): popover drag-reorder + Reset view`
@@ -1119,23 +1440,46 @@ browser session. Record pass/fail in §11. Repeat in Safari.
 10. **Drag-reorder.** In the Sort popover, drag the second
     rule above the first. Sort precedence flips; grid
     re-orders.
-11. **Header-click plain.** Close popover. Click the `Floor`
-    column header. `view.sort` collapses to a single rule
-    `[{floor_level asc}]` (plain click replaces). Sort
-    popover, when reopened, shows the single rule.
-12. **Header-click Shift to append.** Shift+Click the `Number`
-    column header. `view.sort` becomes
-    `[{floor_level asc}, {number asc}]`. Shift+Click `Number`
-    again — the second rule flips to `desc`. Other rules
-    untouched.
-13. **Reset view.** Click the `⋯` overflow → `Reset view`.
-    Both filter and sort stacks clear. Grid returns to
-    pre-filter, pre-sort order. Column order / hidden columns
-    untouched (verify by visually checking the column order).
-14. **Read-only mode.** Sign in as Viewer (or open a locked
+11. **Headers are clean (no chevron).** Visually confirm:
+    every column header shows only its label text. No sort
+    chevron `▲/▼`, no underlying `<button>`, no hover state on
+    the label itself. The Phase 3 column-select strip is still
+    there (cursor changes to `cell` near the top edge).
+    Clicking the header label is a no-op.
+12. **Per-axis cell tint.** With `view.filter = [{name
+    contains "liv"}]` and `view.sort = [{number asc}]` active
+    from earlier steps:
+    - The `name` column's body cells and header are visibly
+      tinted green (filter token).
+    - The `number` column's body cells and header are tinted
+      peach (sort token).
+    - The toolbar `Filter` button is green; the `Sort` button
+      is peach.
+    - All other columns have no tint.
+    Now click a single cell in the `name` column to focus it
+    (Phase 0). The cell shows: green tint base + active-cell
+    blue outline. The two visuals compose without muddiness.
+13. **Filter + sort overlap precedence.** Open Filter, add a
+    rule `number > 0` (contributing). Open Sort, confirm the
+    `number` sort rule is still present. The `number` column
+    now appears in both axes; it tints **green** (filter wins
+    by precedence rule §4.10).
+14. **Dormant rule does not tint.** Open Filter, add a third
+    rule `name is`, leave its value empty. The `name` column
+    is still green (the first contributing `contains "liv"`
+    rule keeps it active). Delete the first rule via 🗑. The
+    `name` column's green tint disappears (only the dormant
+    rule remains; dormant rules don't tint).
+15. **Reset view.** Click the `⋯` overflow → `Reset view`.
+    Both filter and sort stacks clear. Toolbar buttons revert
+    to neutral (no tint). Grid returns to pre-filter,
+    pre-sort order. All column tints clear. Column order /
+    hidden columns untouched.
+16. **Read-only mode.** Sign in as Viewer (or open a locked
     version). Repeat steps 3, 8, 10. Filter + sort + reorder
-    work. Inline edit and Delete N stay blocked from Phase 2.
-15. **No Phase 0/1/2/3 regressions.** Mouse-drag still builds
+    work. Tints render identically. Inline edit and Delete N
+    stay blocked from Phase 2.
+17. **No Phase 0/1/2/3 regressions.** Mouse-drag still builds
     a range. Shift+Arrow still extends. ⌘C still copies. ⌘V
     still pastes (with the current filter still active —
     pasted values land at the active cell regardless of
@@ -1146,68 +1490,72 @@ browser session. Record pass/fail in §11. Repeat in Safari.
     checkbox still toggles row select. Toolbar `Delete N`
     still appears with the confirm dialog when rows are
     selected.
-16. **Filter dormant rows.** With the Filter popover open and
-    a rule on `name contains` and an empty value, the grid
-    shows all rows. Typing into the value box narrows
-    progressively. Backspacing the value back to empty
-    restores all rows.
-17. **Type-checks / lint / tests / build.** Run `make
+18. **Filter dormant rows (data path, not tint).** With the
+    Filter popover open and a rule on `name contains` and an
+    empty value, the grid shows all rows. Typing into the
+    value box narrows progressively. Backspacing the value
+    back to empty restores all rows. Tint follows: green
+    appears as soon as the first non-empty character is
+    typed; disappears on backspace-to-empty.
+19. **Type-checks / lint / tests / build.** Run `make
     typecheck && make lint && make test && pnpm run build`
     in a separate terminal — everything clean.
-18. **Safari walk.** Repeat steps 3, 8, 10, 13 in Safari.
+20. **Safari walk.** Repeat steps 3, 8, 10, 12, 15 in Safari.
 
 ## 11. Sign-off
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
 | 1 — operator catalogue + evaluator + types  | — | — | — |
-| 2 — header-click sort dispatcher            | — | — | — |
+| 2 — header chevron removal + axis tint      | — | — | — |
 | 3 — filter popover (no drag)                | — | — | — |
 | 4 — sort popover (no drag)                  | — | — | — |
 | 5 — drag-reorder + Reset menu               | — | — | — |
 | 6 — demo walk + post-walk fixes             | — | — | — |
 | Phase 4 overall                             | — | — | — |
 
-## 12. Open questions — awaiting Ed
+## 12. Open questions — resolved 2026-05-23
 
-These need answers before execution begins. Each defaults to
-a concrete choice in the plan above; an alternative is recorded
-here so a quick walk can lock it in.
+Ed walked the ten open questions on 2026-05-23. Resolutions
+below.
 
-1. **Allow the same field in multiple sort rules?**
-   The default plan **excludes** already-used fields from the
-   sort popover's field picker (the user cannot trivially
-   stack two `number asc` rules; that would be a no-op). The
-   alternative is to **allow** duplicates and let the user
-   discover the no-op themselves. AirTable allows duplicates.
-   - **Default**: exclude duplicates from the picker; show a
-     subtle hint when only one field remains unused.
-   - **Alternative**: allow duplicates; silent no-op.
+1. **Allow the same field in multiple sort rules?** — RESOLVED.
+   Decision: **exclude duplicates from the picker.** A field
+   can only appear in one sort rule; once used it disappears
+   from the field dropdown of any subsequent rule. When all
+   sortable fields are in the stack, "+ Add another sort"
+   becomes disabled (or hidden — implementation choice at
+   Step 4). Rationale: a second `number asc` rule is a no-op
+   and clutters the popover; keeping the picker tight beats
+   AirTable's permissiveness here.
 
-2. **Filter on read-only fields?**
-   The default plan **allows** filtering on read-only fields
-   (matching AirTable). The user can filter a Rooms grid by
-   `icfa` (a read-only computed number) without being able to
-   edit those cells. The alternative is to exclude read-only
-   fields from the filter field picker. Sort already allows
-   read-only fields (the comparator handles them; no
-   editability is required to sort).
-   - **Default**: allow read-only fields in the filter
-     picker.
-   - **Alternative**: exclude them; users would have to add a
-     non-read-only proxy field to filter on it.
+2. **Filter on read-only fields?** — RESOLVED.
+   Decision: **allow read-only fields in the filter picker.**
+   Filtering a Rooms grid by `icfa` (read-only computed
+   number) is a real use case; editability is irrelevant to
+   filterability. Sort already allows read-only fields, so
+   this keeps the two axes symmetric. The
+   `filterableFieldDefs` memo in §4.11 drops the
+   `!fieldDef.read_only` clause; only the `attachment` /
+   `argb_color` exclusion remains.
 
-3. **Header chevron behaviour with multi-rule sort stacks.**
-   The default plan renders the chevron on every column that
-   appears in the stack, but the chevron shows only direction
-   (▲ / ▼), not the rule's position in the stack. A user
-   reading the headers cannot tell whether `floor_level` is
-   the primary or tertiary sort. The alternative is to render
-   a small numeric badge next to the chevron ("▲1", "▲2") on
-   multi-rule stacks.
-   - **Default**: chevron only; no numeric badge. Phase 6
-     polish.
-   - **Alternative**: numeric badge from Phase 4.
+3. **Overlap precedence: filter wins, or blend the tokens?**
+   When a column is in both `view.filter` (contributing) and
+   `view.sort`, Phase 4 has to decide what to paint. The
+   default plan tints the column **green (filter wins)** on
+   the rationale that filter is the more functionally
+   significant state (it hides rows; sort only reorders). The
+   alternative is to **blend** the two tokens with
+   `color-mix(in oklab, var(--data-table-tint-filter) 60%,
+   var(--data-table-tint-sort) 40%)`, producing a single
+   olive-ish tint that signals "both axes apply." Phase 6's
+   7-subset palette will pick this up properly with bespoke
+   tokens; the question is whether Phase 4 ships a placeholder
+   blend or a precedence rule.
+   - **Default**: filter wins. Clear, easy to test, easy to
+     undo when Phase 6 lands.
+   - **Alternative**: blend. More accurate signal but extra
+     CSS surface that Phase 6 will replace.
 
 4. **Reset menu surface — Radix Popover or native `<details>`?**
    The default plan uses a Radix Popover for the `⋯` overflow
@@ -1265,6 +1613,72 @@ here so a quick walk can lock it in.
    - **Default**: mixed per §4.2 catalogue.
    - **Alternative**: all-words or all-symbols.
 
+9. **Header-click hint when sort is unset.** Users who have
+   been trained by Phases 0–3 (and by every prior data tool)
+   will likely click a column header expecting it to sort.
+   The default plan does nothing — a label click is a silent
+   no-op. The alternative is to announce a one-shot hint
+   through the `aria-live` region on the first header click
+   per session: *"Sort is in the toolbar Sort button."* (No
+   visible tooltip; just the assistive-tech announcement and
+   a transient toast-style chip on the toolbar Sort button
+   for 2 s.) Phase 4 ships with the announcement disabled and
+   re-enables it if the walk shows real confusion.
+   - **Default**: silent no-op.
+   - **Alternative**: one-shot announcement + 2 s toolbar
+     chip pulse.
+
+10. **Exact tint hues for the two tokens.** The default plan
+    uses `oklch(96% 0.04 145)` (filter green) and
+    `oklch(95% 0.05 50)` (sort peach), tuned by eye to match
+    the AirTable screenshots. These need verification on real
+    screens against the existing Phase 0 background, accent,
+    and selection-overlay colors — the tokens should sit
+    quietly enough that selection + focus remain readable on
+    a tinted column. Adjustable in Step 2 / Step 6.
+    - **Default**: ship the OKLCH values above; tune in §11
+      sign-off if the demo walk flags low contrast.
+    - **Alternative**: pre-pick from an existing design-system
+      green / peach swatch if BLDGTYP has one (none exists in
+      `App.css` today).
+
 Capture decisions inline above (replace the **Default** line
 with a `Decision: …` line and a one-sentence rationale) before
 Step 1 begins, mirroring the Phase 3 §12 resolution pattern.
+
+## 13. Parent-plan delta
+
+This Phase 4 plan supersedes one rule from
+`datatable-airtable-parity.md`:
+
+- **Parent §3 sequencing rule 6** ("Toolbar is the single
+  mutation channel for sort/filter/group. Header-click sort
+  survives Phase 0 but is rewritten in Phase 4 to call the
+  same `onViewChange` path the toolbar popovers do.") — the
+  "header-click sort survives" half is reversed by the
+  refinement walked 2026-05-23. After Phase 4, header-click
+  sort does not survive in any form; sort lives only in the
+  toolbar popover. The parent plan should be updated with a
+  one-line note pointing here, in the same place where the
+  Phase 3 sign-off updated the status table. Suggested edit:
+
+  > 6. **Toolbar is the single mutation channel** for sort/
+  >    filter/group (L8.2). ~~Header-click sort survives Phase
+  >    0 but is rewritten in Phase 4 to call the same
+  >    `onViewChange` path the toolbar popovers do.~~ Phase 4
+  >    removes the per-column header chevron entirely; sort is
+  >    only reachable from the toolbar popover (see
+  >    `phase-4-stacked-filter-sort.md` §4.9).
+
+Also adds two visual deliverables that the parent plan
+nominally assigned to Phase 6 (tint cascade):
+
+- Per-axis cell tint (filter=green, sort=peach), single-axis
+  only.
+- Per-axis toolbar button tint when active.
+
+The Phase 6 §12 plan is unchanged: it still owns the full
+7-subset palette that handles every overlap of
+filter ∩ sort ∩ group. Phase 4 ships the single-axis
+foundation and the overlap-precedence rule (§4.10) that
+Phase 6 will generalize.
