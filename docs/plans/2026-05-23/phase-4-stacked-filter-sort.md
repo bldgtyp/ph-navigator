@@ -1068,9 +1068,11 @@ generalize).
 once in `DataTable.tsx` and threaded down to both popovers:
 
 ```ts
+// §12 Q2 resolution: read-only fields ARE filterable. The
+// catalogue returns operators for them; editability is
+// irrelevant to filterability.
 const filterableFieldDefs = useMemo(
   () => fieldDefs.filter((fieldDef) =>
-    !fieldDef.read_only &&
     getFilterOperators(fieldDef).length > 0,
   ),
   [fieldDefs],
@@ -1086,17 +1088,17 @@ const sortableFieldDefs = useMemo(
 
 Computed columns are sortable (the sort comparator already
 handles them) and filterable (via the `computed_type` slot,
-defaulting to text). Read-only computed columns can be filtered
-but not edited — the popover treats `read_only` as "not editable
-through the popover" only at the cell-edit level (Phase 1); the
-filter/sort registry does not respect `read_only` for sort, and
-respects it for filter only to the extent it has nothing
-meaningful to filter on (which is rare; even read-only text is
-filterable).
+defaulting to text). Read-only fields appear in **both**
+pickers (§12 Q2 resolution) — `read_only` governs cell-level
+editability only, not whether the column shows up in view-state
+rules.
 
-(Decision point in §12 question 2 — confirm or reverse: today's
-plan filters read-only fields, which matches AirTable. Excluding
-them would simplify the picker but lose useful behaviour.)
+The sort field picker additionally **excludes fields already
+in the stack** (§12 Q1 resolution). Implementation: pass the
+current `view.sort` to `SortPopover` so it can compute
+`alreadyUsed = new Set(view.sort.map((rule) => rule.fieldKey))`
+and filter the picker's options. The Add-another-sort button
+is disabled when `alreadyUsed.size === sortableFieldDefs.length`.
 
 ### 4.12 Test plan
 
@@ -1539,112 +1541,86 @@ below.
    `!fieldDef.read_only` clause; only the `attachment` /
    `argb_color` exclusion remains.
 
-3. **Overlap precedence: filter wins, or blend the tokens?**
-   When a column is in both `view.filter` (contributing) and
-   `view.sort`, Phase 4 has to decide what to paint. The
-   default plan tints the column **green (filter wins)** on
-   the rationale that filter is the more functionally
-   significant state (it hides rows; sort only reorders). The
-   alternative is to **blend** the two tokens with
-   `color-mix(in oklab, var(--data-table-tint-filter) 60%,
-   var(--data-table-tint-sort) 40%)`, producing a single
-   olive-ish tint that signals "both axes apply." Phase 6's
-   7-subset palette will pick this up properly with bespoke
-   tokens; the question is whether Phase 4 ships a placeholder
-   blend or a precedence rule.
-   - **Default**: filter wins. Clear, easy to test, easy to
-     undo when Phase 6 lands.
-   - **Alternative**: blend. More accurate signal but extra
-     CSS surface that Phase 6 will replace.
+3. **Overlap precedence: filter wins, or blend the tokens?** — RESOLVED.
+   Decision: **filter wins.** When a column is in both
+   `view.filter` (contributing) and `view.sort`, the column
+   tints green. Clear, easy to test, and Phase 6 will replace
+   this with the proper 7-subset palette without a contract
+   change.
 
-4. **Reset menu surface — Radix Popover or native `<details>`?**
-   The default plan uses a Radix Popover for the `⋯` overflow
-   menu, matching the Filter / Sort buttons. The alternative
-   is a native `<details><summary>` element, which sidesteps
-   focus-management edge cases on Safari (§6 risk) and adds
-   zero dependency surface. Visually they end up the same.
-   - **Default**: Radix Popover. Consistency with the rest of
-     the toolbar.
-   - **Alternative**: native `<details>`. Zero focus risk.
+4. **Reset menu surface — Radix Popover or native `<details>`?** — RESOLVED.
+   Decision: **Radix Popover.** Keeps the `⋯` overflow
+   visually consistent with the Filter / Sort buttons (same
+   surface, same shadow, same border-radius), and the focus
+   edge case is small enough to handle if it bites. Native
+   `<details>` would have been a pragmatic fallback; not
+   needed up front.
 
 5. **Default operator on rule create — first in catalogue, or
-   smartest pick?**
-   The default plan picks the first operator in the field's
-   catalogue (text → `contains`, number → `=`, single_select
-   → `is any of`). AirTable's default is `is` for text, which
-   surprises users when they're trying to do a substring
-   search. The alternative is to bake the "smartest pick" into
-   the catalogue itself by ordering operators most-useful-first.
-   - **Default**: first in catalogue; catalogue is already
-     ordered most-useful-first (`contains` is first for text).
-   - **Alternative**: separate `defaultOperator` field on
-     each catalogue entry. Adds a slot for marginal benefit.
+   smartest pick?** — RESOLVED.
+   Decision: **first in catalogue.** The catalogue is already
+   ordered most-useful-first (text → `contains`, number →
+   `=`, single_select → `is any of`). No need for a separate
+   `defaultOperator` slot. AirTable's `is` default for text
+   is a minor mismatch we accept in exchange for a smaller
+   surface.
 
 6. **Numeric value input — `<input type="number">` or
-   `<input type="text" inputMode="decimal">`?**
-   `type="number"` gives free up/down spinners + automatic
-   numeric IME on mobile but blocks pasting "1,234" (the
-   comma confuses parsing). `type="text" inputMode="decimal"`
-   accepts anything and the evaluator handles the parse. Phase
-   4 lives on desktop so the mobile IME concern is moot; the
-   comma-paste case matters more.
-   - **Default**: `<input type="number" step="any">`. Spinners
-     are useful; comma-pasting is rare in this domain (Rooms
-     uses single-digit floor counts and decimal iCFA).
-   - **Alternative**: `type="text" inputMode="decimal"`.
-     Trades spinners for tolerance.
+   `<input type="text" inputMode="decimal">`?** — RESOLVED.
+   Decision: **`<input type="number" step="any">`.** Spinners
+   are useful; comma-pasted strings like "1,234" are rare in
+   this domain (Rooms uses single-digit floor counts and
+   decimal iCFA values). The evaluator's NaN-handling keeps
+   the rule dormant if a paste does fail to parse.
 
-7. **Cross-browser verification gating.**
-   Phase 3's resolution: "Chrome (Vivaldi) or Safari is
-   sufficient; no Firefox walk required." Phase 4 reuses that
-   default — the popover + DnD machinery is the same across
-   engines (Radix is well-tested in Firefox; `@dnd-kit` has
-   no engine-specific quirks documented for jsdom-compatible
-   pointer events).
-   - **Default**: Chrome + Safari walk in §10. No Firefox.
-   - **Alternative**: add a Firefox walk.
+7. **Cross-browser verification gating.** — RESOLVED.
+   Decision: **Chrome + Safari only; no Firefox.** Matches
+   Phase 3 §12 resolution 6. Radix and `@dnd-kit` are
+   well-tested in Firefox; revisiting only if a Phase 4 demo
+   surfaces an engine-specific quirk.
 
-8. **Operator labels — full word or symbol?**
-   The default plan uses symbolic labels for number operators
-   (`= / ≠ / > / <`) and word labels for everything else
-   (`contains / does not contain / is any of`). The
-   alternative is fully-symbolic everywhere or fully-worded
-   everywhere. AirTable mixes; we match.
-   - **Default**: mixed per §4.2 catalogue.
-   - **Alternative**: all-words or all-symbols.
+8. **Operator labels — full word or symbol?** — RESOLVED.
+   Decision: **match AirTable verbatim.** That means:
+   - **Text operators take an ellipsis** when they accept a
+     value: `contains… / does not contain… / is… / is not…`.
+     The valueless `is empty` / `is not empty` get no
+     ellipsis. (Matches the dropdown screenshot.)
+   - **Number operators stay symbolic**: `= / ≠ / > / <` plus
+     `between`, `is empty`, `is not empty`.
+   - **Single-select operators use the AirTable phrasing**:
+     `is any of` / `is none of` / `is empty` / `is not empty`.
+   - **Sort direction labels** use AirTable's literal arrows:
+     `A → Z` / `Z → A`, regardless of field type.
 
-9. **Header-click hint when sort is unset.** Users who have
-   been trained by Phases 0–3 (and by every prior data tool)
-   will likely click a column header expecting it to sort.
-   The default plan does nothing — a label click is a silent
-   no-op. The alternative is to announce a one-shot hint
-   through the `aria-live` region on the first header click
-   per session: *"Sort is in the toolbar Sort button."* (No
-   visible tooltip; just the assistive-tech announcement and
-   a transient toast-style chip on the toolbar Sort button
-   for 2 s.) Phase 4 ships with the announcement disabled and
-   re-enables it if the walk shows real confusion.
-   - **Default**: silent no-op.
-   - **Alternative**: one-shot announcement + 2 s toolbar
-     chip pulse.
+   The catalogue in §4.2 needs its `label` strings updated to
+   carry the ellipsis on text/value-taking operators when
+   Step 1 lands.
 
-10. **Exact tint hues for the two tokens.** The default plan
-    uses `oklch(96% 0.04 145)` (filter green) and
-    `oklch(95% 0.05 50)` (sort peach), tuned by eye to match
-    the AirTable screenshots. These need verification on real
-    screens against the existing Phase 0 background, accent,
-    and selection-overlay colors — the tokens should sit
-    quietly enough that selection + focus remain readable on
-    a tinted column. Adjustable in Step 2 / Step 6.
-    - **Default**: ship the OKLCH values above; tune in §11
-      sign-off if the demo walk flags low contrast.
-    - **Alternative**: pre-pick from an existing design-system
-      green / peach swatch if BLDGTYP has one (none exists in
-      `App.css` today).
+9. **Header-click hint when sort is unset.** — RESOLVED.
+   Decision: **header clicks are select-only; no
+   announcement.** The header label region routes only to
+   the Phase 3 column-select gesture. PH-Navigator has no
+   pre-existing user base trained on a sort chevron, so the
+   accessibility-affordance question is moot. The "Sort is
+   in the toolbar" announcement is removed from the plan
+   entirely (drop the line from §6 risk row about §12 Q9
+   mitigation; the row stays as a documented design choice,
+   not a deferred mitigation).
 
-Capture decisions inline above (replace the **Default** line
-with a `Decision: …` line and a one-sentence rationale) before
-Step 1 begins, mirroring the Phase 3 §12 resolution pattern.
+10. **Exact tint hues for the two tokens.** — RESOLVED.
+    Decision: **match AirTable's colors.** Sample the
+    button-active background colours directly from the
+    screenshots walked 2026-05-23 (the green
+    `Filtered by DISPLAY_NAME` chip and the peach `Sort`
+    button) using DevTools' color picker, and use those as
+    the `--data-table-tint-filter` /
+    `--data-table-tint-sort` body values. The matching
+    `-header` variants are ~3% deeper saturation of the same
+    hue. Recorded in Step 2's commit message; verified in
+    the §10 step-12 walk. Adjust if the demo walk surfaces
+    contrast issues against the Phase 3 selection overlay.
+    The OKLCH values in §4.10 are a placeholder until Step 2
+    samples the AirTable swatches.
 
 ## 13. Parent-plan delta
 
