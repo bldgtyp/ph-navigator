@@ -123,10 +123,9 @@ export function ProjectShell() {
         primaryNav={<CatalogMenu />}
         accountSlot={accountSlot}
       />
-      <section className="project-page" aria-labelledby="project-title">
-        <div className="project-header">
-          <div>
-            <p className="eyebrow">Project</p>
+      <section className="project-page project-workspace" aria-labelledby="project-title">
+        <div className="project-workbar">
+          <div className="project-identity">
             <div className="project-title-row">
               <h1 id="project-title">{project.name}</h1>
               {isViewer ? <span className="read-only-pill">Read-only</span> : null}
@@ -136,20 +135,12 @@ export function ProjectShell() {
               {project.client ? ` · ${project.client}` : ""}
             </p>
           </div>
-          <div className="project-header-actions">
-            {!isViewer ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                Project settings
-              </button>
-            ) : null}
+          <div className="project-workbar-actions">
             <VersionControls
               project={openProject}
               defaultVersionId={project.active_version_id}
               onOpenVersion={openVersionById}
+              onOpenProjectSettings={!isViewer ? () => setIsSettingsOpen(true) : undefined}
             />
           </div>
         </div>

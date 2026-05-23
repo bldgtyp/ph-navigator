@@ -395,6 +395,7 @@ describe("App", () => {
   });
 
   test("renders table-neutral editor header states", async () => {
+    const user = userEvent.setup();
     window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -412,6 +413,16 @@ describe("App", () => {
     expect(await screen.findByText("Clean")).toBeVisible();
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect(screen.queryByRole("link", { name: "Rooms JSON" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Working" }));
+    expect(screen.getByText("Versions")).toBeVisible();
+    await user.click(screen.getByRole("heading", { name: "Status" }));
+    expect(screen.queryByText("Versions")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Project actions" }));
+    expect(screen.getByRole("menuitem", { name: "Diff" })).toBeVisible();
+    await user.click(screen.getByRole("heading", { name: "Status" }));
+    expect(screen.queryByRole("menuitem", { name: "Diff" })).not.toBeInTheDocument();
   });
 
   test("edits project settings and manages MCP tokens", async () => {
@@ -483,7 +494,8 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Project settings" }));
+    await user.click(await screen.findByRole("button", { name: "Project actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Project settings" }));
     expect(await screen.findByRole("heading", { name: "Project settings" })).toBeVisible();
     expect(await screen.findByText("Local Claude")).toBeVisible();
     await user.clear(screen.getByLabelText("Project name"));
@@ -587,7 +599,8 @@ describe("App", () => {
     window.dispatchEvent(beforeUnload);
     expect(beforeUnload.defaultPrevented).toBe(true);
 
-    await user.click(screen.getByRole("button", { name: "Discard" }));
+    await user.click(screen.getByRole("button", { name: "Project actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Discard changes" }));
     await user.click(screen.getByRole("button", { name: "Discard draft" }));
 
     expect(fetchMock).toHaveBeenCalledWith(draftUrl, expect.objectContaining({ method: "DELETE" }));
@@ -800,6 +813,29 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "Materials" })).toBeVisible();
     expect(await screen.findByText("No materials yet")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/materials");
+  });
+
+  test("closes topbar dropdown menus when clicking outside", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", "/dashboard");
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByText("Catalogs"));
+    expect(screen.getByRole("link", { name: "Materials" })).toBeVisible();
+    await user.click(screen.getByRole("heading", { name: "My Projects" }));
+    expect(screen.getByRole("link", { name: "Materials", hidden: true })).not.toBeVisible();
+
+    await user.click(screen.getByText("Ed May"));
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await user.click(screen.getByRole("heading", { name: "My Projects" }));
+    expect(screen.getByRole("button", { name: "Sign out", hidden: true })).not.toBeVisible();
   });
 
   test("routes the Catalogs dropdown to the Window-Frame Elements catalog page", async () => {
