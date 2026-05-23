@@ -55,18 +55,14 @@ describe("Toolbar row delete", () => {
   test("checkbox click surfaces the toolbar Delete action with the selection count", () => {
     renderTable(vi.fn());
     fireEvent.click(screen.getByRole("checkbox", { name: "Select row 2" }));
-    expect(
-      screen.getByRole("button", { name: /Delete 1 selected row$/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Delete 1 selected row$/i })).toBeInTheDocument();
   });
 
   test("shift-click on a second checkbox extends the selection", () => {
     renderTable(vi.fn());
     fireEvent.click(screen.getByRole("checkbox", { name: "Select row 1" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Select row 3" }), { shiftKey: true });
-    expect(
-      screen.getByRole("button", { name: /Delete 3 selected rows$/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Delete 3 selected rows$/i })).toBeInTheDocument();
   });
 
   test("confirm dispatches one rowDelete with all selected rows and clears the set", async () => {
@@ -108,9 +104,7 @@ describe("Toolbar row delete", () => {
     expect(onWrite).not.toHaveBeenCalled();
     // Selection persists so the user can adjust before re-opening.
     await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: /Delete 1 selected row$/i }),
-      ).toBeInTheDocument(),
+      expect(screen.getByRole("button", { name: /Delete 1 selected row$/i })).toBeInTheDocument(),
     );
   });
 });

@@ -82,10 +82,9 @@ describe("useGridRowSelection", () => {
 
   test("clears the set when the rowIds array identity changes", () => {
     const initialRows = ["a", "b", "c"];
-    const { result, rerender } = renderHook(
-      ({ rowIds }) => useGridRowSelection({ rowIds }),
-      { initialProps: { rowIds: initialRows } },
-    );
+    const { result, rerender } = renderHook(({ rowIds }) => useGridRowSelection({ rowIds }), {
+      initialProps: { rowIds: initialRows },
+    });
     act(() => result.current.toggle("b", "single"));
     expect(result.current.count).toBe(1);
 

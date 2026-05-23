@@ -21,6 +21,8 @@ export type GridBodyProps<TRow> = {
   edit: GridEdit;
   rowSelection: GridRowSelection;
   showRowCheckbox: boolean;
+  emptyMessage: string;
+  totalRowCount: number;
   onCellActivate: (rowId: string, fieldKey: string) => void;
   onCellOpen: (row: TRow, columnIndex: number) => void;
   onRowSelect: (rowId: string) => void;
@@ -39,6 +41,8 @@ export function GridBody<TRow>({
   edit,
   rowSelection,
   showRowCheckbox,
+  emptyMessage,
+  totalRowCount,
   onCellActivate,
   onCellOpen,
   onRowSelect,
@@ -46,12 +50,13 @@ export function GridBody<TRow>({
   onCommitAndMove,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
+  const isSourceEmpty = totalRowCount === 0;
   return (
     <tbody>
       {tableRows.length === 0 ? (
         <tr role="row" aria-rowindex={2}>
           <td className="data-table-filter-empty" colSpan={visibleColumnDefs.length + 1}>
-            No rows match the current table view.
+            {isSourceEmpty ? emptyMessage : "No rows match the current table view."}
           </td>
         </tr>
       ) : null}

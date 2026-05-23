@@ -148,6 +148,19 @@ export type DataTableProps<TRow> = {
   onViewChange: (next: ViewState) => void;
   onWrite?: (op: WriteOp) => void | Promise<void>;
   buildEmptyRow?: BuildEmptyRow<TRow>;
+  // Generate a fresh row id for Shift+Enter inserts. Consumers whose
+  // backend enforces a specific id prefix (Rooms: ^rm_...) should pass
+  // their own; the library default is `tmp_<ulid>`. Whatever id this
+  // returns is also the rowId carried in the rowInsert WriteOp.
+  generateRowId?: () => string;
+  // Opaque string the library uses to decide when to clear the in-
+  // memory undo history (PoC L6.3). Consumers should pass a key that
+  // changes on session boundaries — e.g. project switch, version
+  // switch, sub-tab switch — and stays stable across the consumer's
+  // own write/refetch cycles. When omitted, history clears on every
+  // `rows` identity change (the Phase 0 default, which is unsafe for
+  // consumers whose rows array reidentifies after a successful write).
+  sessionKey?: string;
   renderHeaderActions?: (field: FieldDef) => ReactNode;
   readOnly?: boolean;
   density?: "compact" | "comfortable";
