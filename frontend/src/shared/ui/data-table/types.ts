@@ -82,6 +82,29 @@ export type OptionListDelta = {
   removedOptions?: Record<string, string[]>;
 };
 
+// One entry per row inserted in a `rowInsert` op. `fieldDefaults` keys
+// the grid-visible fields by `field_key`; the consumer's `buildEmptyRow`
+// expands those into a full TRow (filling in non-grid fields from the
+// anchor row or from its own defaults). `anchorRowId` is the rowId
+// immediately above the new row at insert time (null for "insert at top"
+// gestures, currently unreachable through Shift+Enter).
+export type RowInsertPayload = {
+  rowId: string;
+  fieldDefaults: Record<string, unknown>;
+  anchorRowId: string | null;
+};
+
+// One entry per row removed in a `rowDelete` op. `row` is the full TRow
+// at delete time, so the inverse `rowInsert` reconstruction is lossless
+// for grid-visible fields (Phase 2 §4.6 — non-grid fields rebuild via
+// the consumer's defaults, which is acceptable while Rooms is the only
+// consumer).
+export type RowDeletePayload = {
+  rowId: string;
+  row: unknown;
+  anchorRowId: string | null;
+};
+
 export type WriteOp =
   | ({ kind: "cell"; writes: CellWrite[] } & OptionListDelta)
   | ({
@@ -91,8 +114,8 @@ export type WriteOp =
       newOptions: Record<string, FieldOption[]>;
     } & Pick<OptionListDelta, "removedOptions">)
   | { kind: "fill"; writes: CellWrite[] }
-  | { kind: "rowInsert"; rows: unknown[] }
-  | { kind: "rowDelete"; rows: unknown[] }
+  | { kind: "rowInsert"; rows: RowInsertPayload[] }
+  | { kind: "rowDelete"; rows: RowDeletePayload[] }
   | { kind: "fieldDefMutation"; before: FieldDef; after: FieldDef };
 
 export type CellCoord = {
@@ -105,6 +128,17 @@ export type CellRange = {
   focus: CellCoord;
 };
 
+// Consumer callback used by Shift+Enter row insert (Phase 2). Receives
+// the library-generated tmp rowId, the field-default map (cloned from
+// the anchor row when present, otherwise from `FieldDef.default`), and
+// the anchor row itself so the consumer can copy non-grid fields
+// directly. Consumers that omit this prop disable row insert.
+export type BuildEmptyRow<TRow> = (args: {
+  rowId: string;
+  fieldDefaults: Record<string, unknown>;
+  anchorRow: TRow | null;
+}) => TRow;
+
 export type DataTableProps<TRow> = {
   rows: TRow[];
   getRowId: (row: TRow) => string;
@@ -113,6 +147,7 @@ export type DataTableProps<TRow> = {
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onWrite?: (op: WriteOp) => void | Promise<void>;
+  buildEmptyRow?: BuildEmptyRow<TRow>;
   renderHeaderActions?: (field: FieldDef) => ReactNode;
   readOnly?: boolean;
   density?: "compact" | "comfortable";
