@@ -1,0 +1,156 @@
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import { DataTable } from "../DataTable";
+import {
+  emptyViewState,
+  type DataTableColumnDef,
+  type DataTableProps,
+  type FieldDef,
+  type ViewState,
+} from "../types";
+
+type Row = { id: string; number: string; name: string; count: number };
+
+const ROWS: Row[] = [
+  { id: "rm_1", number: "101", name: "Living", count: 1 },
+  { id: "rm_2", number: "102", name: "Kitchen", count: 2 },
+  { id: "rm_3", number: "103", name: "Bedroom", count: 3 },
+];
+const FIELD_DEFS: FieldDef[] = [
+  { field_key: "number", field_type: "text", display_name: "Number" },
+  { field_key: "name", field_type: "text", display_name: "Name" },
+  { field_key: "count", field_type: "number", display_name: "Count" },
+];
+const COLUMN_DEFS: DataTableColumnDef<Row>[] = [
+  { id: "number", fieldKey: "number", header: "Number", accessor: (row) => row.number },
+  { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
+  { id: "count", fieldKey: "count", header: "Count", accessor: (row) => row.count },
+];
+
+function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
+  const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
+  render(
+    <DataTable<Row>
+      rows={ROWS}
+      getRowId={(row) => row.id}
+      fieldDefs={FIELD_DEFS}
+      columnDefs={COLUMN_DEFS}
+      view={view}
+      onViewChange={setView}
+      emptyMessage="No rows yet."
+      {...overrides}
+    />,
+  );
+}
+
+function getBodyCell(rowIndex: number, columnIndex: number): HTMLTableCellElement {
+  const rowGroup = screen.getAllByRole("rowgroup")[1];
+  if (!rowGroup) throw new Error("body rowgroup missing");
+  const row = within(rowGroup).getAllByRole("row")[rowIndex];
+  if (!row) throw new Error(`body row ${rowIndex} missing`);
+  return within(row).getAllByRole("gridcell")[columnIndex] as HTMLTableCellElement;
+}
+
+describe("GridBody — DOM hit-test attrs", () => {
+  test("body cells expose data-row-id and data-field-key", () => {
+    renderTable();
+
+    const cell = getBodyCell(0, 1);
+    expect(cell.dataset.rowId).toBe("rm_1");
+    expect(cell.dataset.fieldKey).toBe("name");
+
+    const otherCell = getBodyCell(2, 2);
+    expect(otherCell.dataset.rowId).toBe("rm_3");
+    expect(otherCell.dataset.fieldKey).toBe("count");
+  });
+});
+
+describe("GridBody — perimeter outline rendering", () => {
+  test("the active 1x1 cell has no perimeter box-shadow (outline channel only)", () => {
+    renderTable();
+
+    const active = getBodyCell(0, 0);
+    expect(active).toHaveClass("data-table-cell-active");
+    expect(active).not.toHaveClass("data-table-cell-selected");
+    expect(active.style.boxShadow).toBe("");
+  });
+
+  test("dragging Shift+ArrowDown produces a 2x1 range with top+left+right on the first cell and bottom+left+right on the last", () => {
+    renderTable();
+
+    const grid = screen.getByRole("grid");
+    // Anchor at row 0, col 0 (default focus).
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+
+    const top = getBodyCell(0, 0);
+    const bottom = getBodyCell(1, 0);
+
+    expect(top).toHaveClass("data-table-cell-selected");
+    expect(bottom).toHaveClass("data-table-cell-selected");
+    // 1-column range → both cells carry left+right edges. Top cell adds
+    // top edge; bottom cell adds bottom edge.
+    expect(top.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
+    expect(top.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
+    expect(top.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
+    expect(top.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
+    expect(bottom.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
+    expect(bottom.style.boxShadow).not.toContain("inset 0 1px 0 0 var(--accent-edge)");
+  });
+
+  test("a 2x2 range marks the four corner cells with the right pair of edges", () => {
+    renderTable();
+
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowRight", shiftKey: true });
+
+    const topLeft = getBodyCell(0, 0);
+    const topRight = getBodyCell(0, 1);
+    const bottomLeft = getBodyCell(1, 0);
+    const bottomRight = getBodyCell(1, 1);
+
+    // top-left: top + left only
+    expect(topLeft.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
+    expect(topLeft.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
+    expect(topLeft.style.boxShadow).not.toContain("inset -1px 0 0 0 var(--accent-edge)");
+    expect(topLeft.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
+
+    // top-right: top + right
+    expect(topRight.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
+    expect(topRight.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
+
+    // bottom-left: bottom + left
+    expect(bottomLeft.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
+    expect(bottomLeft.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
+
+    // bottom-right: bottom + right
+    expect(bottomRight.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
+    expect(bottomRight.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
+  });
+
+  test("a 3x1 range marks the middle cell with left+right only (interior bit unset)", () => {
+    renderTable();
+
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+
+    const middle = getBodyCell(1, 0);
+    expect(middle).toHaveClass("data-table-cell-selected");
+    expect(middle.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
+    expect(middle.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
+    expect(middle.style.boxShadow).not.toContain("inset 0 1px 0 0 var(--accent-edge)");
+    expect(middle.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
+  });
+
+  test("cells outside the range carry no perimeter shadow and no selected class", () => {
+    renderTable();
+
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+
+    const outside = getBodyCell(2, 2);
+    expect(outside).not.toHaveClass("data-table-cell-selected");
+    expect(outside.style.boxShadow).toBe("");
+  });
+});
