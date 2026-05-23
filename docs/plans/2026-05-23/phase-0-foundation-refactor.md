@@ -490,10 +490,22 @@ verifies every step. Record pass/fail in §11.
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
-| 1 — history + write reducer | — | — | — |
-| 2 — selection (L1.1) | — | — | — |
-| 3 — edit lifecycle | — | — | — |
-| 4 — keyboard dispatch | — | — | — |
-| 5 — body / header / gutter | — | — | — |
-| 6 — tests + acceptance walk | — | — | — |
-| Phase 0 overall | — | — | — |
+| 1 — history + write reducer | 2026-05-23 | tests | `useGridHistory` (6 tests) + `useGridWriteReducer` (5 tests) green; ⌘Z/⌘⇧Z wired; rows-identity `useEffect(clear)` in place; existing 9 DataTable tests pass. |
+| 2 — selection (L1.1) | 2026-05-23 | tests | `useGridSelection` (8 tests) green incl. row-reorder invariant and removed-anchor fallback. Visual coords are derived per render; internal state is `{rowId, fieldKey}`. |
+| 3 — edit lifecycle | 2026-05-23 | tests | `useGridEdit` extracted; `InlineCellEditor` moved to `components/`. Commit routes through `dispatchWrite` with paired inverse. |
+| 4 — keyboard dispatch | 2026-05-23 | tests | `useGridKeyboard` owns arrow/Home/End/Tab + ⌘A/⌘C/⌘V/⌘Z. Only DOM-event hook in the system. |
+| 5 — body / header / gutter | 2026-05-23 | tests | `GridHeader`, `GridBody`, `GridGutter` pure presentational. `useGridClipboard` also extracted to keep DataTable thin. `DataTable.tsx` = 231 LOC (target ≤200 — overshoot is shell+composition, no extra logic). |
+| 6 — tests + acceptance walk | 2026-05-23 | ✅ | `git mv` placed `DataTable.test.tsx` and `lib.test.ts` under `__tests__/`. Full suite: 100 tests, all passing. `make lint` clean, `pnpm run build` succeeds, `pnpm run format` clean. Browser walk completed against Rooms; §3 / §10 checklist green. |
+| Phase 0 overall | 2026-05-23 | ✅ | All six steps shipped. Three post-walk fixes folded in: native `onPaste` (Excel ⌘V was blocked by keydown `preventDefault`), wrapper-focus discipline (⌘Z was leaking to the browser tab), sort chevron indicator. The frozen-column `position: sticky` was removed because it overlapped adjacent cells under horizontal scroll — proper frozen columns will be re-engineered in Phase 3 with explicit width propagation if required. |
+
+## 12. Post-walk fixes (2026-05-23)
+
+Three issues surfaced during Ed's first browser walk; all fixed before sign-off.
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| ⌘V from Excel did nothing | The ⌘V keydown handler called `event.preventDefault()`, which cancels the browser's default action — and the browser's default action for ⌘V *is* to fire the `paste` event. So the native `paste` event never fired, and the fallback `navigator.clipboard.readText()` is permission-gated and silently rejects in most contexts. The mocked test gave a false positive because it stubbed `readText`. | Removed the ⌘V branch from `useGridKeyboard`. The wrapper's `onPaste` handler now receives the real paste event with `clipboardData` already populated. The three paste tests were rewritten to use `fireEvent.paste` with a `clipboardData.getData` mock — exercising the same code path the real browser hits. |
+| ⌘Z sometimes navigated the browser tab instead of undoing a cell edit | After an edit committed, the `<input>` unmounted and focus fell to `document.body`. The grid wrapper's `onKeyDown` only fires when the wrapper has focus, so ⌘Z fell through to whatever the browser interpreted (back-nav, prior input's undo stack, etc.). | Added a `wrapperRef`. Every internal mutation that could lose focus (commit-and-move, header sort click, gutter row-select click, cell click) now calls `focusGrid()` to put focus back on the wrapper. ⌘Z is now reliably scoped. |
+| Frozen first column ("Number") overlapped the start of the Name cell | `position: sticky; left: 42px` on `.data-table-frozen`: when the wrap is even slightly horizontally scrolled (which happens when the table's `min-width: 760px` exceeds the wrap's available width), the sticky cell stays at viewport left=42px while the next column scrolls under it. Visible as "Living Room" rendering as "g Room" — first characters covered. | Removed `position: sticky` from `.data-table-frozen`; kept the border-right styling for visual column separation. If Phase 3 or later phases need true frozen columns for very wide tables, re-engineer with explicit width propagation via `<colgroup>` + `<col>` plus inline body-cell widths so the sticky position aligns exactly with the column boundary. |
+
+A fourth cosmetic addition: sort header chevron. `GridHeader` now reads `view.sort` and renders ▲ (asc) or ▼ (desc) next to the column label of any sorted field. `aria-sort` is also set correctly.

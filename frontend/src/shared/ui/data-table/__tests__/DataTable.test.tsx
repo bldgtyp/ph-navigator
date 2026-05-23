@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { DataTable } from "./DataTable";
+import { DataTable } from "../DataTable";
 import {
   emptyViewState,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
   type ViewState,
-} from "./types";
+} from "../types";
 
 type Row = { id: string; number: string; name: string; count: number };
 
@@ -27,11 +27,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+function pasteClipboardData(tsv: string) {
+  return {
+    clipboardData: { getData: (type: string) => (type === "text/plain" ? tsv : "") },
+  };
+}
+
 describe("DataTable", () => {
   test("announces that paste is unavailable when no write handler is provided", async () => {
     renderTable();
 
-    fireEvent.keyDown(screen.getByRole("grid"), { key: "v", ctrlKey: true });
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102"));
 
     expect(await screen.findByText("Paste is not enabled for this table yet.")).toBeVisible();
   });
@@ -40,7 +46,7 @@ describe("DataTable", () => {
     const onWrite = vi.fn();
     renderTable({ readOnly: true, onWrite });
 
-    fireEvent.keyDown(screen.getByRole("grid"), { key: "v", ctrlKey: true });
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102"));
 
     expect(onWrite).not.toHaveBeenCalled();
     expect(screen.queryByText(/cells pasted/i)).not.toBeInTheDocument();
@@ -48,10 +54,9 @@ describe("DataTable", () => {
 
   test("emits a paste write when a write handler is provided", async () => {
     const onWrite = vi.fn();
-    vi.stubGlobal("navigator", { clipboard: { readText: vi.fn().mockResolvedValue("102") } });
     renderTable({ onWrite });
 
-    fireEvent.keyDown(screen.getByRole("grid"), { key: "v", ctrlKey: true });
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102"));
 
     expect(await screen.findByText("1 cells pasted.")).toBeVisible();
     expect(onWrite).toHaveBeenCalledWith({

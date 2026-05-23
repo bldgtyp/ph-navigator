@@ -1,31 +1,15 @@
-import { useMemo, useState, type KeyboardEvent } from "react";
-import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import {
-  applyTextFilters,
-  clampRange,
-  coerceFieldValue,
-  coercePasteWrites,
-  formatClipboardValue,
-  formatDisplayCellValue,
-  isCellInNormalizedRange,
-  moveActiveCell,
-  normalizeRange,
-  parseTsv,
-  planPaste,
-  rangeToHtml,
-  rangeToTsv,
-  sortRows,
-} from "./lib";
-import type { CellCoord, CellRange, DataTableProps, FieldDef } from "./types";
-
-type EditingCell = {
-  rowId: string;
-  rowIndex: number;
-  columnIndex: number;
-  fieldKey: string;
-  draftValue: string;
-  originalValue: unknown;
-};
+import { useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
+import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
+import { applyTextFilters, formatDisplayCellValue, sortRows } from "./lib";
+import { useGridHistory } from "./hooks/useGridHistory";
+import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
+import { useGridSelection } from "./hooks/useGridSelection";
+import { useGridEdit, isInlineEditableField } from "./hooks/useGridEdit";
+import { useGridKeyboard } from "./hooks/useGridKeyboard";
+import { useGridClipboard } from "./hooks/useGridClipboard";
+import { GridHeader } from "./components/GridHeader";
+import { GridBody } from "./components/GridBody";
+import type { CellCoord, DataTableProps } from "./types";
 
 export function DataTable<TRow>({
   rows,
@@ -64,10 +48,30 @@ export function DataTable<TRow>({
       ),
     [rows, visibleColumnDefs, fieldDefs, view.filter, view.sort],
   );
-  const [activeCell, setActiveCell] = useState<CellCoord>({ rowIndex: 0, columnIndex: 0 });
-  const [selection, setSelection] = useState<CellRange | null>(null);
+  const rowIds = useMemo(() => filteredRows.map(getRowId), [filteredRows, getRowId]);
+  const fieldKeys = useMemo(
+    () => visibleColumnDefs.map((column) => column.fieldKey),
+    [visibleColumnDefs],
+  );
+
   const [announce, setAnnounce] = useState("");
-  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+  const history = useGridHistory();
+  const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
+  const selection = useGridSelection({ rowIds, fieldKeys });
+  const edit = useGridEdit({
+    fieldDefByKey,
+    dispatchWrite,
+    onAnnounce: setAnnounce,
+    hasWriteHandler: Boolean(onWrite),
+  });
+
+  // History is in-memory per session (PoC L6.3); clear when the rows
+  // identity changes — switching projects, sub-tabs, or refetching the
+  // table all hand us a fresh rows array.
+  useEffect(() => {
+    history.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
 
   const tanstackColumns = useMemo<ColumnDef<TRow>[]>(
     () =>
@@ -81,7 +85,6 @@ export function DataTable<TRow>({
       })),
     [fieldDefByKey, visibleColumnDefs],
   );
-
   const table = useReactTable<TRow>({
     data: filteredRows,
     columns: tanstackColumns,
@@ -89,130 +92,95 @@ export function DataTable<TRow>({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const activeRange = useMemo(
-    () =>
-      clampRange(
-        selection ?? { anchor: activeCell, focus: activeCell },
-        filteredRows.length,
-        visibleColumnDefs.length,
-      ),
-    [activeCell, filteredRows.length, selection, visibleColumnDefs.length],
-  );
-  const normalizedActiveRange = useMemo(() => normalizeRange(activeRange), [activeRange]);
-  const activeCellInView = activeRange.focus;
   const isGrouped = view.group.length > 0;
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.defaultPrevented) return;
-    if (editingCell) return;
-    if (isCommandShortcut(event) && event.key.toLowerCase() === "c") {
-      event.preventDefault();
-      void copySelection(filteredRows, visibleColumnDefs, fieldDefs, activeRange);
-      return;
-    }
-    if (isCommandShortcut(event) && event.key.toLowerCase() === "v") {
-      if (readOnly || isGrouped) return;
-      event.preventDefault();
-      void pasteIntoSelection(
-        activeRange,
-        filteredRows,
-        visibleColumnDefs,
-        fieldDefs,
-        getRowId,
-        onWrite,
-        setAnnounce,
-      );
-      return;
-    }
-    if (isCommandShortcut(event) && event.key.toLowerCase() === "a") {
-      event.preventDefault();
-      const next = selectAllRange(filteredRows.length, visibleColumnDefs.length);
-      if (next) {
-        setActiveCell(next.anchor);
-        setSelection(next);
-      }
-      return;
-    }
-    if (event.key === "Enter" && onRowOpen) {
-      const row = filteredRows[activeCellInView.rowIndex];
-      if (!row) return;
-      event.preventDefault();
-      onRowOpen(row);
-      return;
-    }
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
-      event.preventDefault();
-      const next = moveActiveCell(
-        activeCellInView,
-        event.key,
-        filteredRows.length,
-        visibleColumnDefs.length,
-      );
-      if (next === activeCellInView) return;
-      setActiveCell(next);
-      setSelection(event.shiftKey ? { anchor: activeRange.anchor, focus: next } : null);
-    }
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  // Refocuses the grid wrapper so subsequent keyboard shortcuts (⌘Z,
+  // ⌘C, arrows) route through onKeyDown rather than the browser's
+  // default for whichever element happened to receive focus from the
+  // last click. Without this, ⌘Z after an edit commit lands on the
+  // page body and the browser interprets it (back/tab-undo).
+  const focusGrid = () => {
+    wrapperRef.current?.focus({ preventScroll: true });
   };
+  const clipboard = useGridClipboard({
+    range: selection.range,
+    rows: filteredRows,
+    columns: visibleColumnDefs,
+    fieldDefs,
+    getRowId,
+    onWrite,
+    dispatchWrite,
+    onAnnounce: setAnnounce,
+  });
+
+  const keyboard = useGridKeyboard({
+    selection,
+    edit,
+    readOnly,
+    isGrouped,
+    onCopy: clipboard.copy,
+    onUndo: () =>
+      void undoOnce().catch((error) => {
+        setAnnounce(error instanceof Error ? error.message : "Undo failed.");
+      }),
+    onRedo: () =>
+      void redoOnce().catch((error) => {
+        setAnnounce(error instanceof Error ? error.message : "Redo failed.");
+      }),
+    onRowOpen: onRowOpen
+      ? () => {
+          const row = filteredRows[selection.activeCell.rowIndex];
+          if (row) onRowOpen(row);
+        }
+      : undefined,
+  });
 
   const toggleSort = (fieldKey: string) => {
     const current = view.sort.find((rule) => rule.fieldKey === fieldKey);
     const nextDirection: "asc" | "desc" = current?.direction === "asc" ? "desc" : "asc";
-    const next = { ...view, sort: [{ fieldKey, direction: nextDirection }] };
-    onViewChange(next);
+    onViewChange({ ...view, sort: [{ fieldKey, direction: nextDirection }] });
     const fieldName =
       fieldDefs.find((field) => field.field_key === fieldKey)?.display_name ?? fieldKey;
     setAnnounce(`Sorted by ${fieldName} ${nextDirection}.`);
+    focusGrid();
   };
 
-  const startInlineEdit = (row: TRow, rowIndex: number, columnIndex: number) => {
+  const startInlineEdit = (row: TRow, columnIndex: number) => {
     const column = visibleColumnDefs[columnIndex];
     const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
     if (readOnly || !onWrite || !column || !isInlineEditableField(fieldDef)) {
       onRowOpen?.(row);
       return;
     }
-    setEditingCell({
+    edit.start({
       rowId: getRowId(row),
-      rowIndex,
-      columnIndex,
       fieldKey: column.fieldKey,
-      draftValue: formatClipboardValue(column.accessor(row)),
-      originalValue: column.accessor(row),
+      initialValue: column.accessor(row),
     });
   };
 
-  const commitInlineEdit = async (): Promise<boolean> => {
-    if (!editingCell || !onWrite) return false;
-    const fieldDef = fieldDefByKey.get(editingCell.fieldKey);
-    const coerced = coerceFieldValue(editingCell.draftValue, fieldDef, () => [], {
-      emptyNumberValue: 0,
-    });
-    if (!coerced.ok) {
-      setAnnounce(coerced.message);
-      return false;
+  const handleCommitAndMove = (rowIndex: number, columnIndex: number, shiftKey: boolean) => {
+    const next = moveTabCell(
+      { rowIndex, columnIndex },
+      shiftKey,
+      filteredRows.length,
+      visibleColumnDefs.length,
+    );
+    const nextRowId = rowIds[next.rowIndex];
+    const nextFieldKey = fieldKeys[next.columnIndex];
+    if (nextRowId !== undefined && nextFieldKey !== undefined) {
+      selection.setActive({ rowId: nextRowId, fieldKey: nextFieldKey });
     }
-    if (coerced.value === editingCell.originalValue) {
-      setEditingCell(null);
-      return true;
-    }
-    try {
-      await onWrite({
-        kind: "cell",
-        writes: [
-          {
-            rowId: editingCell.rowId,
-            fieldKey: editingCell.fieldKey,
-            value: coerced.value,
-          },
-        ],
-      });
-      setAnnounce(`${fieldDef?.display_name ?? editingCell.fieldKey} updated.`);
-      setEditingCell(null);
-      return true;
-    } catch (error) {
-      setAnnounce(error instanceof Error ? error.message : "Cell update failed.");
-      return false;
-    }
+    focusGrid();
+  };
+
+  const handlePasteEvent = (event: ClipboardEvent<HTMLDivElement>) => {
+    if (readOnly || isGrouped) return;
+    if (edit.editing) return;
+    const tsv = event.clipboardData.getData("text/plain");
+    if (!tsv) return;
+    event.preventDefault();
+    void clipboard.pasteText(tsv);
   };
 
   if (rows.length === 0) {
@@ -231,188 +199,59 @@ export function DataTable<TRow>({
         {announce}
       </div>
       <div
+        ref={wrapperRef}
         className="data-table-wrap"
         role="grid"
         aria-rowcount={filteredRows.length + 1}
         aria-colcount={visibleColumnDefs.length}
         tabIndex={0}
-        onKeyDown={handleKeyDown}
+        onKeyDown={keyboard.onKeyDown}
+        onPaste={handlePasteEvent}
       >
         <table className="data-table">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} role="row" aria-rowindex={1}>
-                <th className="data-table-gutter" aria-label="Row number" />
-                {headerGroup.headers.map((header, columnIndex) => {
-                  const column = visibleColumnDefs[columnIndex];
-                  return (
-                    <th
-                      key={header.id}
-                      role="columnheader"
-                      aria-colindex={columnIndex + 1}
-                      className={columnIndex === 0 ? "data-table-frozen" : undefined}
-                      style={{ width: column?.width }}
-                    >
-                      <button
-                        type="button"
-                        className="data-table-header-button"
-                        tabIndex={-1}
-                        onClick={() => {
-                          if (column) toggleSort(column.fieldKey);
-                        }}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                      </button>
-                      {column
-                        ? renderHeaderActions?.(
-                            fieldDefByKey.get(column.fieldKey) ?? {
-                              field_key: column.fieldKey,
-                              field_type: "text",
-                              display_name: column.header,
-                            },
-                          )
-                        : null}
-                    </th>
-                  );
-                })}
-              </tr>
+          {/* Propagate column widths to every row so the sticky frozen
+              cell renders at the same horizontal position as its header.
+              Without a colgroup, the body cell width is auto-derived and
+              the sticky `left: 42px` cell overlaps the adjacent column. */}
+          <colgroup>
+            <col className="data-table-gutter-col" />
+            {visibleColumnDefs.map((column) => (
+              <col
+                key={column.id}
+                style={column.width ? { width: `${column.width}px` } : undefined}
+              />
             ))}
-          </thead>
-          <tbody>
-            {filteredRows.length === 0 ? (
-              <tr role="row" aria-rowindex={2}>
-                <td className="data-table-filter-empty" colSpan={visibleColumnDefs.length + 1}>
-                  No rows match the current table view.
-                </td>
-              </tr>
-            ) : null}
-            {table.getRowModel().rows.map((row, rowIndex) => (
-              <tr key={row.id} role="row" aria-rowindex={rowIndex + 2}>
-                <th className="data-table-gutter" scope="row">
-                  <button
-                    type="button"
-                    aria-label={`Select row ${rowIndex + 1}`}
-                    tabIndex={-1}
-                    onClick={() => {
-                      const range = {
-                        anchor: { rowIndex, columnIndex: 0 },
-                        focus: { rowIndex, columnIndex: visibleColumnDefs.length - 1 },
-                      };
-                      setActiveCell(range.anchor);
-                      setSelection(range);
-                    }}
-                  >
-                    {rowIndex + 1}
-                  </button>
-                </th>
-                {row.getVisibleCells().map((cell, columnIndex) => {
-                  const selected = isCellInNormalizedRange(
-                    { rowIndex, columnIndex },
-                    normalizedActiveRange,
-                  );
-                  const active =
-                    activeCellInView.rowIndex === rowIndex &&
-                    activeCellInView.columnIndex === columnIndex;
-                  return (
-                    <td
-                      key={cell.id}
-                      role="gridcell"
-                      aria-colindex={columnIndex + 1}
-                      aria-selected={selected}
-                      className={[
-                        visibleColumnDefs[columnIndex]?.className,
-                        columnIndex === 0 ? "data-table-frozen" : "",
-                        selected ? "data-table-cell-selected" : "",
-                        active ? "data-table-cell-active" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      onClick={() => {
-                        const next = { rowIndex, columnIndex };
-                        setActiveCell(next);
-                        setSelection(null);
-                      }}
-                      onDoubleClick={() => startInlineEdit(row.original, rowIndex, columnIndex)}
-                    >
-                      {editingCell?.rowId === row.id &&
-                      editingCell.columnIndex === columnIndex &&
-                      editingCell.rowIndex === rowIndex ? (
-                        <InlineCellEditor
-                          value={editingCell.draftValue}
-                          onChange={(draftValue) => setEditingCell({ ...editingCell, draftValue })}
-                          onCancel={() => setEditingCell(null)}
-                          onCommit={() => void commitInlineEdit()}
-                          onCommitAndMove={(shiftKey) => {
-                            void commitInlineEdit().then((committed) => {
-                              if (!committed) return;
-                              setActiveCell(
-                                moveTabCell(
-                                  { rowIndex, columnIndex },
-                                  shiftKey,
-                                  filteredRows.length,
-                                  visibleColumnDefs.length,
-                                ),
-                              );
-                              setSelection(null);
-                            });
-                          }}
-                        />
-                      ) : (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
+          </colgroup>
+          <GridHeader
+            table={table}
+            visibleColumnDefs={visibleColumnDefs}
+            fieldDefByKey={fieldDefByKey}
+            sort={view.sort}
+            onToggleSort={toggleSort}
+            renderHeaderActions={renderHeaderActions}
+          />
+          <GridBody
+            table={table}
+            visibleColumnDefs={visibleColumnDefs}
+            rowIds={rowIds}
+            fieldKeys={fieldKeys}
+            normalizedActiveRange={selection.normalizedRange}
+            activeCell={selection.activeCell}
+            edit={edit}
+            onCellActivate={(rowId, fieldKey) => {
+              selection.setActive({ rowId, fieldKey });
+              focusGrid();
+            }}
+            onCellOpen={startInlineEdit}
+            onRowSelect={(rowId) => {
+              selection.selectRow(rowId);
+              focusGrid();
+            }}
+            onCommitAndMove={handleCommitAndMove}
+          />
         </table>
       </div>
     </div>
-  );
-}
-
-function InlineCellEditor({
-  value,
-  onChange,
-  onCancel,
-  onCommit,
-  onCommitAndMove,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onCancel: () => void;
-  onCommit: () => void;
-  onCommitAndMove: (shiftKey: boolean) => void;
-}) {
-  return (
-    <input
-      className="data-table-cell-editor"
-      autoFocus
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={onCancel}
-      onKeyDown={(event) => {
-        event.stopPropagation();
-        if (event.key === "Escape") {
-          onCancel();
-        }
-        if (event.key === "Tab") {
-          event.preventDefault();
-          onCommitAndMove(event.shiftKey);
-        }
-        if (event.key === "Enter") {
-          event.preventDefault();
-          onCommit();
-        }
-      }}
-    />
-  );
-}
-
-function isInlineEditableField(fieldDef: FieldDef | undefined): boolean {
-  return (
-    !fieldDef?.read_only && (fieldDef?.field_type === "text" || fieldDef?.field_type === "number")
   );
 }
 
@@ -430,94 +269,4 @@ function moveTabCell(
     rowIndex: Math.floor(next / columnCount),
     columnIndex: next % columnCount,
   };
-}
-
-async function copySelection<TRow>(
-  rows: TRow[],
-  columns: DataTableProps<TRow>["columnDefs"],
-  fieldDefs: DataTableProps<TRow>["fieldDefs"],
-  range: CellRange,
-) {
-  const tsv = rangeToTsv(rows, columns, fieldDefs, range);
-  const html = rangeToHtml(rows, columns, fieldDefs, range);
-  if ("ClipboardItem" in window && navigator.clipboard?.write) {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "text/plain": new Blob([tsv], { type: "text/plain" }),
-        "text/html": new Blob([html], { type: "text/html" }),
-      }),
-    ]);
-    return;
-  }
-  await navigator.clipboard?.writeText(tsv);
-}
-
-function isCommandShortcut(event: KeyboardEvent<HTMLDivElement>): boolean {
-  return event.metaKey || event.ctrlKey;
-}
-
-function selectAllRange(rowCount: number, columnCount: number): CellRange | null {
-  if (rowCount === 0 || columnCount === 0) return null;
-  return {
-    anchor: { rowIndex: 0, columnIndex: 0 },
-    focus: { rowIndex: rowCount - 1, columnIndex: columnCount - 1 },
-  };
-}
-
-async function pasteIntoSelection<TRow>(
-  range: CellRange,
-  rows: TRow[],
-  columns: DataTableProps<TRow>["columnDefs"],
-  fieldDefs: DataTableProps<TRow>["fieldDefs"],
-  getRowId: (row: TRow) => string,
-  onWrite: DataTableProps<TRow>["onWrite"],
-  setAnnounce: (message: string) => void,
-) {
-  if (!onWrite) {
-    setAnnounce("Paste is not enabled for this table yet.");
-    return;
-  }
-  const raw = await navigator.clipboard?.readText();
-  if (!raw) return;
-  const plan = planPaste({
-    clipboard: parseTsv(raw),
-    target: range,
-    rowCount: rows.length,
-    columnCount: columns.length,
-  });
-  if (plan.rowsOverflow) {
-    setAnnounce(`Clipboard has ${plan.rowsOverflow} more rows. Add rows before paste.`);
-    return;
-  }
-  if (plan.columnsOverflow) {
-    setAnnounce(`Clipboard has ${plan.columnsOverflow} more columns. Extra columns dropped.`);
-    return;
-  }
-  const coerced = coercePasteWrites({
-    plannedWrites: plan.writes,
-    rows,
-    columns,
-    fieldDefs,
-    getRowId,
-  });
-  if (!coerced.ok) {
-    const first = coerced.errors[0];
-    setAnnounce(
-      first
-        ? `Paste blocked at row ${first.rowIndex + 1}, column ${first.columnIndex + 1}: ${first.message}`
-        : "Paste blocked.",
-    );
-    return;
-  }
-  try {
-    await onWrite({
-      kind: "paste",
-      writes: coerced.writes,
-      rowsInserted: [],
-      newOptions: coerced.newOptions,
-    });
-    setAnnounce(`${plan.writes.length} cells pasted.`);
-  } catch (error) {
-    setAnnounce(error instanceof Error ? error.message : "Paste failed.");
-  }
 }

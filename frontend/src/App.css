@@ -1122,6 +1122,10 @@ button:disabled {
   background: var(--bg-card);
 }
 
+.data-table-gutter-col {
+  width: 42px;
+}
+
 .data-table th,
 .data-table td {
   border-bottom: 1px solid var(--border-subtle);
@@ -1184,6 +1188,23 @@ button:disabled {
 
 .data-table-header-button {
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.data-table-header-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.data-table-sort-indicator {
+  flex: 0 0 auto;
+  font-size: 0.6rem;
+  color: var(--accent-text);
+  letter-spacing: 0;
 }
 
 .data-table-header-action {
@@ -1198,14 +1219,7 @@ button:disabled {
 }
 
 .data-table-frozen {
-  position: sticky;
-  left: 42px;
-  z-index: 2;
   border-right: 1px solid var(--border-subtle);
-}
-
-th.data-table-frozen {
-  z-index: 5;
 }
 
 .data-table-cell-selected {

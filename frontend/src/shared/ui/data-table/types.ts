@@ -16,6 +16,10 @@ export type FieldDef = {
   required?: boolean;
   description?: string;
   options?: FieldOption[];
+  // Forward-compat slot consumed by row-insert defaults (Phase 2). Falls
+  // back to the field-type natural zero (text: "", number: null,
+  // single_select: null) when omitted.
+  default?: unknown;
 };
 
 export type FieldOption = {

@@ -10,8 +10,8 @@ import {
   planPaste,
   rangeToTsv,
   sortRows,
-} from "./lib";
-import type { DataTableColumnDef, FieldDef } from "./types";
+} from "../lib";
+import type { DataTableColumnDef, FieldDef } from "../types";
 
 type Row = { id: string; number: string; name: string };
 
