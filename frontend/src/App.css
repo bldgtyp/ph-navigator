@@ -111,7 +111,8 @@ textarea {
 
 .auth-panel h1,
 .page-heading h1,
-.project-header h1 {
+.project-header h1,
+.project-workbar h1 {
   margin: 0;
   color: var(--text-primary);
   font-size: clamp(2rem, 5vw, 3.1rem);
@@ -246,11 +247,11 @@ a:focus-visible {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 22px;
-  min-height: 64px;
+  gap: 18px;
+  min-height: 52px;
   border-bottom: 1px solid var(--border-subtle);
   background: color-mix(in oklab, var(--bg-page) 88%, transparent);
-  padding: 0 32px;
+  padding: 0 24px;
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
 }
@@ -258,9 +259,9 @@ a:focus-visible {
 .brand {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 28px;
   border-right: 1px solid var(--border-subtle);
-  padding-right: 28px;
+  padding-right: 22px;
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 0.82rem;
@@ -389,7 +390,7 @@ a:focus-visible {
 
 .dashboard-page,
 .project-page {
-  width: min(1180px, calc(100vw - 40px));
+  width: min(1440px, calc(100vw - 32px));
   margin: 0 auto;
 }
 
@@ -398,7 +399,7 @@ a:focus-visible {
 }
 
 .project-page {
-  padding: 28px 0 40px;
+  padding: 0 0 40px;
 }
 
 .page-heading,
@@ -431,12 +432,34 @@ a:focus-visible {
   padding: 22px 0 18px;
 }
 
-.project-header-actions {
+.project-workspace {
+  max-width: none;
+}
+
+.project-workbar {
+  position: sticky;
+  top: 52px;
+  z-index: 18;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in oklab, var(--bg-page) 94%, transparent);
+  padding: 10px 0;
+}
+
+.project-identity {
+  min-width: min(440px, 100%);
+}
+
+.project-workbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: min(100%, 520px);
 }
 
 .modal-header,
@@ -455,12 +478,35 @@ a:focus-visible {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
+}
+
+.version-trigger {
+  max-width: min(320px, 42vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-actions-trigger {
+  letter-spacing: 0;
 }
 
 .status-heading {
   align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.status-heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.status-heading p {
+  margin-top: 6px;
+  font-size: 0.92rem;
 }
 
 .room-actions {
@@ -815,11 +861,24 @@ a:focus-visible {
 }
 
 .save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.save-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 12%, transparent);
 }
 
 .save-state.dirty {
@@ -831,6 +890,7 @@ a:focus-visible {
   display: grid;
   justify-items: end;
   gap: 8px;
+  min-width: 0;
 }
 
 .inline-action-error {
@@ -849,6 +909,44 @@ a:focus-visible {
   width: min(420px, calc(100vw - 40px));
   padding: 14px;
   box-shadow: var(--phn-shadow);
+}
+
+.project-actions-menu {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  min-width: 220px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  padding: 6px;
+  box-shadow: var(--phn-shadow);
+}
+
+.menu-action,
+.project-actions-menu .download-link {
+  min-height: 34px;
+  justify-content: flex-start;
+  border: 0;
+  border-radius: var(--phn-radius);
+  background: transparent;
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font-family: var(--font-primary);
+  font-size: 0.88rem;
+  letter-spacing: 0;
+  text-align: left;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.menu-action:hover:not(:disabled),
+.project-actions-menu .download-link:hover {
+  background: var(--bg-elev);
+  color: var(--accent-text);
+  transform: none;
 }
 
 .version-list {
@@ -951,9 +1049,9 @@ button:disabled {
 }
 
 .project-meta {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   letter-spacing: 0.04em;
 }
 
@@ -961,7 +1059,16 @@ button:disabled {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+}
+
+.project-workbar h1 {
+  max-width: min(56vw, 760px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  line-height: 1.1;
 }
 
 .read-only-pill {
@@ -981,6 +1088,8 @@ button:disabled {
   gap: 2px;
   overflow-x: auto;
   border-bottom: 1px solid var(--border-subtle);
+  min-height: 36px;
+  align-items: flex-end;
 }
 
 .tabbar a {
@@ -988,24 +1097,26 @@ button:disabled {
   border-bottom: 0;
   border-radius: var(--phn-radius) var(--phn-radius) 0 0;
   color: var(--text-secondary);
-  padding: 10px 12px;
+  padding: 9px 12px 8px;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   letter-spacing: 0.05em;
   text-decoration: none;
   text-transform: uppercase;
 }
 
 .tabbar a.active {
-  border-color: var(--border-subtle);
-  background: var(--bg-card);
+  border-color: transparent;
+  border-bottom: 2px solid var(--accent);
+  background: transparent;
   color: var(--accent-text);
 }
 
 .tab-panel {
   min-height: 280px;
-  border-top: 0;
-  padding: 22px;
+  border: 0;
+  background: transparent;
+  padding: 18px 0 0;
 }
 
 .status-empty {
@@ -1823,11 +1934,27 @@ button:disabled {
   gap: 10px;
 }
 
+.status-heading p {
+  margin-top: 6px;
+  font-size: 0.92rem;
+}
+
 @media (max-width: 760px) {
   .topbar {
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 12px 20px;
+  }
+
+  .project-workbar {
+    position: static;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .project-workbar h1 {
+    max-width: 100%;
+    white-space: normal;
   }
 
   .brand {
