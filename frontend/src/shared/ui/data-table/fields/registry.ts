@@ -1,6 +1,9 @@
 import type { FieldDef } from "../types";
 import type { FieldEditor } from "./types";
 
+export { getFilterOperators, evaluateFilter, isFilterContributing } from "./filterOperators";
+export type { FilterOperatorDef, FilterValueShape } from "./filterOperators";
+
 // Resolve the editor a field type uses for inline edit. The registry is
 // the one place that maps `FieldType` → behavior; both the keyboard
 // dispatch and the body cell renderer consult it so the

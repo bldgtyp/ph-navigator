@@ -1,9 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
-  applyTextFilters,
+  applyFilters,
   buildEmptyRowDefaults,
   coercePasteWrites,
   computeEdgeBits,
+  defaultOperatorForField,
   extractRowDefaults,
   formatClipboardCellValue,
   formatDisplayCellValue,
@@ -102,17 +103,17 @@ describe("DataTable helpers", () => {
 
   test("applies text filters and treats dormant rows as pass-through", () => {
     expect(
-      applyTextFilters(rows, columns, fieldDefs, [
+      applyFilters(rows, columns, fieldDefs, [
         { fieldKey: "name", operator: "contains", value: "kit" },
       ]).map((row) => row.id),
     ).toEqual(["rm_2"]);
     expect(
-      applyTextFilters(rows, columns, fieldDefs, [
+      applyFilters(rows, columns, fieldDefs, [
         { fieldKey: "name", operator: "is", value: "BEDROOM" },
       ]).map((row) => row.id),
     ).toEqual(["rm_10"]);
     expect(
-      applyTextFilters(rows, columns, fieldDefs, [
+      applyFilters(rows, columns, fieldDefs, [
         { fieldKey: "name", operator: "contains", value: "" },
       ]).map((row) => row.id),
     ).toEqual(["rm_2", "rm_10"]);
@@ -122,7 +123,7 @@ describe("DataTable helpers", () => {
     const rowsWithEmpty: Row[] = [...rows, { id: "rm_empty", number: "11", name: "" }];
 
     expect(
-      applyTextFilters(rowsWithEmpty, columns, fieldDefs, [
+      applyFilters(rowsWithEmpty, columns, fieldDefs, [
         { fieldKey: "name", operator: "is_empty" },
       ]).map((row) => row.id),
     ).toEqual(["rm_empty"]);
@@ -382,6 +383,53 @@ describe("DataTable helpers", () => {
       bottom: false,
       left: false,
     });
+  });
+
+  test("applyFilters returns the same array identity when there are no active filters", () => {
+    const result = applyFilters(rows, columns, fieldDefs, []);
+    expect(result).toBe(rows);
+  });
+
+  test("applyFilters returns a new array when any rule is active", () => {
+    const result = applyFilters(rows, columns, fieldDefs, [
+      { fieldKey: "name", operator: "contains", value: "kit" },
+    ]);
+    expect(result).not.toBe(rows);
+    expect(result.map((row) => row.id)).toEqual(["rm_2"]);
+  });
+
+  test("defaultOperatorForField picks the catalogue's first operator per field type", () => {
+    expect(
+      defaultOperatorForField({ field_key: "x", field_type: "text", display_name: "X" }),
+    ).toBe("contains");
+    expect(
+      defaultOperatorForField({ field_key: "x", field_type: "number", display_name: "X" }),
+    ).toBe("eq");
+    expect(
+      defaultOperatorForField({
+        field_key: "x",
+        field_type: "single_select",
+        display_name: "X",
+      }),
+    ).toBe("is_any_of");
+    expect(
+      defaultOperatorForField({ field_key: "x", field_type: "computed", display_name: "X" }),
+    ).toBe("contains");
+    expect(
+      defaultOperatorForField({
+        field_key: "x",
+        field_type: "computed",
+        display_name: "X",
+        computed_type: "number",
+      }),
+    ).toBe("eq");
+    expect(
+      defaultOperatorForField({
+        field_key: "x",
+        field_type: "attachment",
+        display_name: "X",
+      }),
+    ).toBeNull();
   });
 
   test("keeps missing option display text out of clipboard values", () => {

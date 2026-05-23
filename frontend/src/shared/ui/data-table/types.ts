@@ -20,6 +20,11 @@ export type FieldDef = {
   // back to the field-type natural zero (text: "", number: null,
   // single_select: null) when omitted.
   default?: unknown;
+  // Phase 4: for `field_type === "computed"`, declare the underlying
+  // value type so the filter-operator registry knows which catalogue to
+  // expose. Defaults to "text" when omitted (preserves Phase 0–3
+  // behaviour for existing computed columns).
+  computed_type?: "text" | "number";
 };
 
 export type FieldOption = {
@@ -44,10 +49,39 @@ export type SortRule = {
   direction: "asc" | "desc";
 };
 
+export type FilterOperator =
+  // text operators (also "computed" with computed_type === "text" or absent)
+  | "contains"
+  | "does_not_contain"
+  | "is"
+  | "is_not"
+  | "is_empty"
+  | "is_not_empty"
+  // number operators (also "computed" with computed_type === "number")
+  | "eq"
+  | "neq"
+  | "gt"
+  | "lt"
+  | "between"
+  // single_select operators
+  | "is_any_of"
+  | "is_none_of";
+
+// Discriminated only by `operator`: each operator consults one of the
+// three value slots (per its `FilterValueShape` in the registry):
+//   - text + number-single: `value` (raw string; number ops parse with Number())
+//   - between:              `valuePair` (two raw strings)
+//   - is_any_of/is_none_of: `valueList` (option ids)
+//   - is_empty/is_not_empty: none
+// Slots are individually optional so consumers can construct conditions
+// inline without a narrowing tax; the evaluator treats missing/blank
+// slots as dormant (row passes — see Phase 4 §4.4).
 export type FilterCondition = {
   fieldKey: string;
-  operator: "contains" | "is" | "is_empty";
+  operator: FilterOperator;
   value?: string;
+  valuePair?: [string, string];
+  valueList?: string[];
 };
 
 export type GroupRule = {

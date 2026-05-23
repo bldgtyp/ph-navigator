@@ -7,9 +7,11 @@ import type {
   FieldOption,
   FieldType,
   FilterCondition,
+  FilterOperator,
   SortRule,
 } from "./types";
 import { generatedId } from "../../lib/ids";
+import { evaluateFilter, getFilterOperators } from "./fields/filterOperators";
 
 export type NormalizedRange = {
   rowStart: number;
@@ -215,7 +217,13 @@ export function planPaste({
   };
 }
 
-export function applyTextFilters<TRow>(
+// Phase 4 §4.4: route every condition through the field-type registry's
+// `evaluateFilter`. The library never branches on field_type here —
+// operator semantics live in `fields/filterOperators.ts`. Dormant rules
+// (blank value / unparsable number / empty option list) pass everything
+// per L8.4. Conditions whose field is unknown or whose field exposes no
+// operators (attachment / argb_color) are skipped (treated as dormant).
+export function applyFilters<TRow>(
   rows: TRow[],
   columns: DataTableColumnDef<TRow>[],
   fieldDefs: FieldDef[],
@@ -228,20 +236,22 @@ export function applyTextFilters<TRow>(
   return rows.filter((row) =>
     activeFilters.every((filter) => {
       const column = columnsByFieldKey.get(filter.fieldKey);
-      if (!column) return true;
-      const value = formatClipboardCellValue(
-        column.accessor(row),
-        fieldDefForColumn(column, fieldDefsByKey),
-      )
-        .trim()
-        .toLowerCase();
-      const expected = (filter.value ?? "").trim().toLowerCase();
-      if (filter.operator === "is_empty") return value === "";
-      if (!expected) return true;
-      if (filter.operator === "is") return value === expected;
-      return value.includes(expected);
+      const fieldDef = fieldDefForColumn(column, fieldDefsByKey);
+      if (!column || !fieldDef) return true;
+      if (getFilterOperators(fieldDef).length === 0) return true;
+      return evaluateFilter(filter, column.accessor(row), fieldDef);
     }),
   );
+}
+
+// Phase 4 §4.4: pick the first operator the registry exposes for a
+// field. Used by the FilterPopover when adding a new rule and when the
+// user changes a rule's field to one that doesn't support the rule's
+// current operator. Returns null when the field has no operators
+// (attachment / argb_color); the popover skips such fields.
+export function defaultOperatorForField(fieldDef: FieldDef | undefined): FilterOperator | null {
+  const operators = getFilterOperators(fieldDef);
+  return operators[0]?.operator ?? null;
 }
 
 export function sortRows<TRow>(
