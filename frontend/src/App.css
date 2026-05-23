@@ -1389,14 +1389,11 @@ button:disabled {
 }
 
 /* Phase 3 R1: whole-header click is the column-select gesture.
-   `cursor: cell` signals the hit target to the user; the inner sort
-   chevron resets to default cursor to distinguish itself. */
+   `cursor: cell` signals the hit target to the user. Phase 4 removed
+   the inner sort chevron — header label is a plain span now; sort
+   lives only in the toolbar Sort popover. */
 .data-table-th {
   cursor: cell;
-}
-
-.data-table-th .data-table-sort-button {
-  cursor: pointer;
 }
 
 .data-table-header-row {
@@ -1414,45 +1411,30 @@ button:disabled {
   white-space: nowrap;
 }
 
-/* Sort chevron. Hidden by default; revealed on header hover or when
-   the column carries an active sort. Click toggles direction (or
-   initiates sort on a previously-unsorted column). The mousedown on
-   the button is filtered out of column-select by
-   `useGridPointerDrag.onColumnMouseDown`'s "skip if mousedown landed
-   in a button" check. */
-.data-table-sort-button {
-  flex: 0 0 auto;
-  border: 0;
-  background: transparent;
-  color: var(--text-secondary, var(--text-primary));
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  line-height: 1;
-  opacity: 0;
-  transition:
-    opacity 0.12s var(--ease),
-    background-color 0.12s var(--ease);
+/* Phase 4 §4.10: per-axis tint tokens. Filter wins precedence on
+   overlap (§4.10). Hues sampled from AirTable's `Filtered by …` chip
+   (green) and active `Sort` button (peach) walked 2026-05-23. Body
+   variants are the lighter cell-paint; `-header` variants are slightly
+   deeper for the column-header background. Phase 6 will generalize
+   these to the full 7-subset palette. */
+:root {
+  --data-table-tint-filter: oklch(96% 0.04 145);
+  --data-table-tint-filter-header: oklch(93% 0.06 145);
+  --data-table-tint-sort: oklch(95% 0.05 50);
+  --data-table-tint-sort-header: oklch(91% 0.08 50);
 }
 
-.data-table-th:hover .data-table-sort-button,
-.data-table-th.is-sorted .data-table-sort-button {
-  opacity: 1;
+.data-table th[data-axis-tint="filter"] {
+  background: var(--data-table-tint-filter-header);
 }
-
-.data-table-sort-button:hover {
-  background: color-mix(in oklab, var(--accent) 16%, transparent);
+.data-table th[data-axis-tint="sort"] {
+  background: var(--data-table-tint-sort-header);
 }
-
-.data-table-sort-indicator {
-  display: inline-block;
+.data-table td[data-axis-tint="filter"] {
+  background: var(--data-table-tint-filter);
 }
-
-.data-table-sort-indicator {
-  flex: 0 0 auto;
-  font-size: 0.6rem;
-  color: var(--accent-text);
-  letter-spacing: 0;
+.data-table td[data-axis-tint="sort"] {
+  background: var(--data-table-tint-sort);
 }
 
 .data-table-header-action {

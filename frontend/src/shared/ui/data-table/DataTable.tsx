@@ -14,6 +14,7 @@ import { useGridSelection } from "./hooks/useGridSelection";
 import { useGridRowSelection } from "./hooks/useGridRowSelection";
 import { useGridEdit } from "./hooks/useGridEdit";
 import { getFieldEditor } from "./fields/registry";
+import { isFilterContributing } from "./fields/filterOperators";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
@@ -29,7 +30,10 @@ export function DataTable<TRow>({
   fieldDefs,
   columnDefs,
   view,
-  onViewChange,
+  // Phase 4 Step 2: `onViewChange` lands back in the destructure in
+  // Step 3 when the Filter / Sort popovers wire through. The prop
+  // stays declared in `DataTableProps` so consumers don't change
+  // their signatures across the step boundary.
   onWrite,
   buildEmptyRow,
   generateRowId,
@@ -286,15 +290,29 @@ export function DataTable<TRow>({
     drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
 
-  const toggleSort = (fieldKey: string) => {
-    const current = view.sort.find((rule) => rule.fieldKey === fieldKey);
-    const nextDirection: "asc" | "desc" = current?.direction === "asc" ? "desc" : "asc";
-    onViewChange({ ...view, sort: [{ fieldKey, direction: nextDirection }] });
-    const fieldName =
-      fieldDefs.find((field) => field.field_key === fieldKey)?.display_name ?? fieldKey;
-    setAnnounce(`Sorted by ${fieldName} ${nextDirection}.`);
-    focusGrid();
-  };
+  // Phase 4 §4.10: derive per-column axis tint from `view.filter` and
+  // `view.sort`. Filter wins on overlap (§4.10 precedence rule).
+  // Dormant filter rules (blank value) do not contribute — `view.filter
+  // = [{name contains ""}]` leaves the column un-tinted, matching
+  // AirTable's chip-color behaviour. Phase 6 will generalize this into
+  // the 7-subset filter ∩ sort ∩ group palette.
+  const axisTintByFieldKey = useMemo<Map<string, "filter" | "sort" | null>>(() => {
+    const map = new Map<string, "filter" | "sort" | null>();
+    const contributingFilterKeys = new Set(
+      view.filter.filter((rule) => isFilterContributing(rule)).map((rule) => rule.fieldKey),
+    );
+    const sortKeys = new Set(view.sort.map((rule) => rule.fieldKey));
+    for (const fieldDef of fieldDefs) {
+      if (contributingFilterKeys.has(fieldDef.field_key)) {
+        map.set(fieldDef.field_key, "filter");
+      } else if (sortKeys.has(fieldDef.field_key)) {
+        map.set(fieldDef.field_key, "sort");
+      } else {
+        map.set(fieldDef.field_key, null);
+      }
+    }
+    return map;
+  }, [fieldDefs, view.filter, view.sort]);
 
   const startInlineEdit = (row: TRow, columnIndex: number) => {
     const column = visibleColumnDefs[columnIndex];
@@ -393,8 +411,7 @@ export function DataTable<TRow>({
             table={table}
             visibleColumnDefs={visibleColumnDefs}
             fieldDefByKey={fieldDefByKey}
-            sort={view.sort}
-            onToggleSort={toggleSort}
+            axisTintByFieldKey={axisTintByFieldKey}
             onColumnMouseDown={pointerDrag.onColumnMouseDown}
             renderHeaderActions={renderHeaderActions}
           />
@@ -412,6 +429,7 @@ export function DataTable<TRow>({
             showRowCheckbox={!readOnly}
             emptyMessage={emptyMessage}
             totalRowCount={rows.length}
+            axisTintByFieldKey={axisTintByFieldKey}
             onCellActivate={(rowId, fieldKey) => {
               selection.setActive({ rowId, fieldKey });
               focusGrid();
