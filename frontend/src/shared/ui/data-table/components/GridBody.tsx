@@ -108,7 +108,13 @@ export function GridBody<TRow>({
                   .join(" ")}
                 style={edgeStyle}
                 onMouseDown={onCellMouseDown}
-                onClick={() => {
+                onClick={(event) => {
+                  // Phase 3: Shift+Click extends the range via the
+                  // mousedown handler's `selection.extendTo`. The
+                  // click event would otherwise call `setActive` and
+                  // collapse the range we just extended, so skip the
+                  // collapse when the modifier is held.
+                  if (event.shiftKey) return;
                   if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
                 }}
                 onDoubleClick={() => onCellOpen(row.original, columnIndex)}

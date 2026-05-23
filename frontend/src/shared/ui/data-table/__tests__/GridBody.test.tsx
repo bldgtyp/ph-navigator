@@ -143,6 +143,23 @@ describe("GridBody — perimeter outline rendering", () => {
     expect(middle.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
   });
 
+  test("Shift+Click extends the range — the subsequent click event does not collapse it", () => {
+    renderTable();
+
+    const grid = screen.getByRole("grid");
+    // Click row 0, col 0 to anchor.
+    fireEvent.click(getBodyCell(0, 0));
+    // Shift+Click row 2, col 1 — mousedown extends via the drag hook,
+    // click event must NOT call setActive (which would collapse the
+    // range to 1×1). Regression test for the Phase 3 demo walk fix.
+    fireEvent.mouseDown(getBodyCell(2, 1), { button: 0, shiftKey: true });
+    fireEvent.mouseUp(getBodyCell(2, 1), { shiftKey: true });
+    fireEvent.click(getBodyCell(2, 1), { shiftKey: true });
+
+    const selectedCount = grid.querySelectorAll(".data-table-cell-selected").length;
+    expect(selectedCount).toBe(6); // 3 rows × 2 cols
+  });
+
   test("cells outside the range carry no perimeter shadow and no selected class", () => {
     renderTable();
 
