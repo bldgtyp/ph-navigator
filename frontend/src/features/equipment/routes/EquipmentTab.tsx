@@ -195,8 +195,10 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
 
   const handleTableWrite = async (op: WriteOp) => {
     if (!canEdit || (op.kind !== "paste" && op.kind !== "cell")) return;
+    const newOptions = op.kind === "paste" ? op.newOptions : (op.newOptions ?? {});
+    const removedOptions = op.removedOptions ?? {};
     await commitRoomsPayload(
-      roomsPayloadFromCellWrites(roomsSlice, op.writes, op.kind === "paste" ? op.newOptions : {}),
+      roomsPayloadFromCellWrites(roomsSlice, op.writes, newOptions, removedOptions),
       ACTIVE_ROOM_CONFLICT_MESSAGE,
       "Could not update rooms table values.",
     );

@@ -72,14 +72,24 @@ export type CellWrite = {
   value: unknown;
 };
 
+// Optional payload carried by cell / paste ops when a single semantic
+// gesture also mutates a single-select option list. `newOptions` lists
+// options that the op creates; `removedOptions` lists option ids that
+// the op removes (used on the inverse leg of a create-then-write op so
+// ⌘Z reverts both halves in one entry — PoC L6.5).
+export type OptionListDelta = {
+  newOptions?: Record<string, FieldOption[]>;
+  removedOptions?: Record<string, string[]>;
+};
+
 export type WriteOp =
-  | { kind: "cell"; writes: CellWrite[] }
-  | {
+  | ({ kind: "cell"; writes: CellWrite[] } & OptionListDelta)
+  | ({
       kind: "paste";
       writes: CellWrite[];
       rowsInserted: unknown[];
       newOptions: Record<string, FieldOption[]>;
-    }
+    } & Pick<OptionListDelta, "removedOptions">)
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: unknown[] }
   | { kind: "rowDelete"; rows: unknown[] }
