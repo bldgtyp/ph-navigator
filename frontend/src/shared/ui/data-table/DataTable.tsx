@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import {
-  applyTextFilters,
+  applyFilters,
   buildEmptyRowDefaults,
   extractRowDefaults,
   formatDisplayCellValue,
@@ -56,7 +56,7 @@ export function DataTable<TRow>({
   const filteredRows = useMemo(
     () =>
       sortRows(
-        applyTextFilters(rows, visibleColumnDefs, fieldDefs, view.filter),
+        applyFilters(rows, visibleColumnDefs, fieldDefs, view.filter),
         visibleColumnDefs,
         fieldDefs,
         view.sort,

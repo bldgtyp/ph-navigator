@@ -1,0 +1,200 @@
+import type { FieldDef, FilterCondition, FilterOperator } from "../types";
+import { formatClipboardCellValue } from "../lib";
+
+// Phase 4 §4.2: per-field-type operator catalogue. Each entry declares
+// its display label (verbatim AirTable phrasing per §12 Q8) and the
+// shape of its value slot. The catalogue is the single source of
+// operator semantics — `evaluateFilter` switches on `operator` to read
+// the right slot, and `getFilterOperators(fieldDef)` returns the
+// catalogue the popover dropdown should expose for that field.
+
+export type FilterValueShape =
+  | { kind: "none" } // is_empty / is_not_empty
+  | { kind: "string" } // text contains / is / etc.
+  | { kind: "number" } // = / != / > / <
+  | { kind: "numberPair" } // between
+  | { kind: "optionIdList" }; // single_select is_any_of
+
+export type FilterOperatorDef = {
+  operator: FilterOperator;
+  label: string;
+  shape: FilterValueShape;
+};
+
+export const TEXT_OPERATORS: readonly FilterOperatorDef[] = [
+  { operator: "contains", label: "contains…", shape: { kind: "string" } },
+  { operator: "does_not_contain", label: "does not contain…", shape: { kind: "string" } },
+  { operator: "is", label: "is…", shape: { kind: "string" } },
+  { operator: "is_not", label: "is not…", shape: { kind: "string" } },
+  { operator: "is_empty", label: "is empty", shape: { kind: "none" } },
+  { operator: "is_not_empty", label: "is not empty", shape: { kind: "none" } },
+] as const;
+
+export const NUMBER_OPERATORS: readonly FilterOperatorDef[] = [
+  { operator: "eq", label: "=", shape: { kind: "number" } },
+  { operator: "neq", label: "≠", shape: { kind: "number" } },
+  { operator: "gt", label: ">", shape: { kind: "number" } },
+  { operator: "lt", label: "<", shape: { kind: "number" } },
+  { operator: "between", label: "between", shape: { kind: "numberPair" } },
+  { operator: "is_empty", label: "is empty", shape: { kind: "none" } },
+  { operator: "is_not_empty", label: "is not empty", shape: { kind: "none" } },
+] as const;
+
+export const SINGLE_SELECT_OPERATORS: readonly FilterOperatorDef[] = [
+  { operator: "is_any_of", label: "is any of", shape: { kind: "optionIdList" } },
+  { operator: "is_none_of", label: "is none of", shape: { kind: "optionIdList" } },
+  { operator: "is_empty", label: "is empty", shape: { kind: "none" } },
+  { operator: "is_not_empty", label: "is not empty", shape: { kind: "none" } },
+] as const;
+
+const EMPTY_OPERATORS: readonly FilterOperatorDef[] = [];
+
+// Pick the operator catalogue for a field. `attachment` and `argb_color`
+// return [] — they don't filter through the toolbar. `computed` honours
+// the optional `computed_type` slot; absent → text catalogue (Phase 0–3
+// behaviour preserved for unspecified computed columns).
+export function getFilterOperators(fieldDef: FieldDef | undefined): readonly FilterOperatorDef[] {
+  if (!fieldDef) return EMPTY_OPERATORS;
+  switch (fieldDef.field_type) {
+    case "text":
+      return TEXT_OPERATORS;
+    case "number":
+      return NUMBER_OPERATORS;
+    case "single_select":
+      return SINGLE_SELECT_OPERATORS;
+    case "computed":
+      return fieldDef.computed_type === "number" ? NUMBER_OPERATORS : TEXT_OPERATORS;
+    case "attachment":
+    case "argb_color":
+      return EMPTY_OPERATORS;
+  }
+}
+
+export function getOperatorDef(operator: FilterOperator): FilterOperatorDef | undefined {
+  for (const catalogue of [TEXT_OPERATORS, NUMBER_OPERATORS, SINGLE_SELECT_OPERATORS]) {
+    const found = catalogue.find((def) => def.operator === operator);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+// Phase 4 §4.10: a contributing rule is one whose value slot is
+// populated for its operator's shape. Dormant rules pass everything
+// (§4.4) and DO NOT tint their column (matches AirTable's chip-color
+// behaviour). The toolbar Filter button tints as soon as any rule
+// exists, contributing or not — that decision lives in DataTable.tsx.
+export function isFilterContributing(condition: FilterCondition): boolean {
+  const def = getOperatorDef(condition.operator);
+  if (!def) return false;
+  switch (def.shape.kind) {
+    case "none":
+      return true;
+    case "string":
+    case "number":
+      return Boolean(condition.value && condition.value.trim().length > 0);
+    case "numberPair": {
+      const [lo, hi] = condition.valuePair ?? ["", ""];
+      return (
+        Boolean(lo && lo.trim().length > 0) &&
+        Boolean(hi && hi.trim().length > 0) &&
+        parseNumberOrNull(lo) !== null &&
+        parseNumberOrNull(hi) !== null
+      );
+    }
+    case "optionIdList":
+      return Boolean(condition.valueList && condition.valueList.length > 0);
+  }
+}
+
+export function evaluateFilter(
+  condition: FilterCondition,
+  cellValue: unknown,
+  fieldDef: FieldDef,
+): boolean {
+  switch (condition.operator) {
+    case "is_empty":
+      return isCellEmpty(cellValue);
+    case "is_not_empty":
+      return !isCellEmpty(cellValue);
+
+    case "contains": {
+      const expected = (condition.value ?? "").trim().toLowerCase();
+      if (!expected) return true;
+      return formatClipboardCellValue(cellValue, fieldDef).toLowerCase().includes(expected);
+    }
+    case "does_not_contain": {
+      const expected = (condition.value ?? "").trim().toLowerCase();
+      if (!expected) return true;
+      return !formatClipboardCellValue(cellValue, fieldDef).toLowerCase().includes(expected);
+    }
+    case "is": {
+      const expected = (condition.value ?? "").trim().toLowerCase();
+      if (!expected) return true;
+      return formatClipboardCellValue(cellValue, fieldDef).trim().toLowerCase() === expected;
+    }
+    case "is_not": {
+      const expected = (condition.value ?? "").trim().toLowerCase();
+      if (!expected) return true;
+      return formatClipboardCellValue(cellValue, fieldDef).trim().toLowerCase() !== expected;
+    }
+
+    case "eq":
+      return numCompare(cellValue, condition.value, (a, b) => a === b);
+    case "neq":
+      return numCompare(cellValue, condition.value, (a, b) => a !== b);
+    case "gt":
+      return numCompare(cellValue, condition.value, (a, b) => a > b);
+    case "lt":
+      return numCompare(cellValue, condition.value, (a, b) => a < b);
+    case "between": {
+      const lo = parseNumberOrNull(condition.valuePair?.[0]);
+      const hi = parseNumberOrNull(condition.valuePair?.[1]);
+      if (lo === null || hi === null) return true;
+      const cell = parseNumberOrNull(cellValue);
+      if (cell === null) return false;
+      const [low, high] = lo <= hi ? [lo, hi] : [hi, lo];
+      return cell >= low && cell <= high;
+    }
+
+    case "is_any_of": {
+      const list = condition.valueList ?? [];
+      if (list.length === 0) return true;
+      return typeof cellValue === "string" && list.includes(cellValue);
+    }
+    case "is_none_of": {
+      const list = condition.valueList ?? [];
+      if (list.length === 0) return true;
+      return !(typeof cellValue === "string" && list.includes(cellValue));
+    }
+  }
+}
+
+// Number 0 is NOT empty (matches AirTable). Strings are empty when
+// trimmed to "". Anything else non-null/undefined is non-empty.
+function isCellEmpty(cellValue: unknown): boolean {
+  if (cellValue === null || cellValue === undefined) return true;
+  if (typeof cellValue === "string") return cellValue.trim() === "";
+  return false;
+}
+
+function numCompare(
+  cellValue: unknown,
+  rawExpected: string | undefined,
+  predicate: (cell: number, expected: number) => boolean,
+): boolean {
+  const expected = parseNumberOrNull(rawExpected);
+  if (expected === null) return true; // dormant
+  const cell = parseNumberOrNull(cellValue);
+  if (cell === null) return false; // cell cannot satisfy a numeric comparison
+  return predicate(cell, expected);
+}
+
+function parseNumberOrNull(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}

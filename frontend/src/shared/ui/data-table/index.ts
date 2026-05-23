@@ -8,6 +8,7 @@ export type {
   FieldDef,
   FieldOption,
   FilterCondition,
+  FilterOperator,
   GroupRule,
   RowDeletePayload,
   RowInsertPayload,
