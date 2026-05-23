@@ -108,6 +108,59 @@ describe("useGridSelection", () => {
     expect(result.current.focus).toEqual({ rowId: "b", fieldKey: "name" });
   });
 
+  test("selectColumn spans the column's full height", () => {
+    const { result } = renderHook(() =>
+      useGridSelection({ rowIds: ["a", "b", "c"], fieldKeys: FIELDS }),
+    );
+
+    act(() => result.current.selectColumn("name"));
+
+    expect(result.current.normalizedRange).toEqual({
+      rowStart: 0,
+      rowEnd: 2,
+      columnStart: 1,
+      columnEnd: 1,
+    });
+    expect(result.current.anchor).toEqual({ rowId: "a", fieldKey: "name" });
+    expect(result.current.focus).toEqual({ rowId: "c", fieldKey: "name" });
+    expect(result.current.hasExplicitRange).toBe(true);
+  });
+
+  test("extendToColumn preserves the prior anchor and stretches to the new column", () => {
+    const { result } = renderHook(() =>
+      useGridSelection({ rowIds: ["a", "b", "c"], fieldKeys: FIELDS }),
+    );
+    act(() => result.current.selectColumn("number"));
+
+    act(() => result.current.extendToColumn("count"));
+
+    expect(result.current.normalizedRange).toEqual({
+      rowStart: 0,
+      rowEnd: 2,
+      columnStart: 0,
+      columnEnd: 2,
+    });
+    expect(result.current.anchor).toEqual({ rowId: "a", fieldKey: "number" });
+    expect(result.current.focus).toEqual({ rowId: "c", fieldKey: "count" });
+  });
+
+  test("extendToColumn without a prior anchor falls through to selectColumn", () => {
+    const { result } = renderHook(() =>
+      useGridSelection({ rowIds: ["a", "b", "c"], fieldKeys: FIELDS }),
+    );
+
+    act(() => result.current.extendToColumn("name"));
+
+    expect(result.current.normalizedRange).toEqual({
+      rowStart: 0,
+      rowEnd: 2,
+      columnStart: 1,
+      columnEnd: 1,
+    });
+    expect(result.current.anchor).toEqual({ rowId: "a", fieldKey: "name" });
+    expect(result.current.focus).toEqual({ rowId: "c", fieldKey: "name" });
+  });
+
   test("focus falls back to origin when the anchored row is removed", () => {
     const { result, rerender } = renderHook(
       ({ rowIds }) => useGridSelection({ rowIds, fieldKeys: FIELDS }),

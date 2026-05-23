@@ -3,6 +3,7 @@ import {
   applyTextFilters,
   buildEmptyRowDefaults,
   coercePasteWrites,
+  computeEdgeBits,
   extractRowDefaults,
   formatClipboardCellValue,
   formatDisplayCellValue,
@@ -271,6 +272,116 @@ describe("DataTable helpers", () => {
     expect(naturalZero("computed")).toBeNull();
     expect(naturalZero("attachment")).toBeNull();
     expect(naturalZero("argb_color")).toBeNull();
+  });
+
+  test("computeEdgeBits returns all-false outside the range", () => {
+    const range = { rowStart: 1, rowEnd: 2, columnStart: 1, columnEnd: 2 };
+    expect(computeEdgeBits(0, 0, range)).toEqual({
+      top: false,
+      right: false,
+      bottom: false,
+      left: false,
+    });
+    expect(computeEdgeBits(3, 1, range)).toEqual({
+      top: false,
+      right: false,
+      bottom: false,
+      left: false,
+    });
+  });
+
+  test("computeEdgeBits for a 1x1 range returns all-true", () => {
+    const range = { rowStart: 2, rowEnd: 2, columnStart: 3, columnEnd: 3 };
+    expect(computeEdgeBits(2, 3, range)).toEqual({
+      top: true,
+      right: true,
+      bottom: true,
+      left: true,
+    });
+  });
+
+  test("computeEdgeBits along a 1xN range marks top+bottom always and left/right only at the ends", () => {
+    const range = { rowStart: 0, rowEnd: 0, columnStart: 0, columnEnd: 2 };
+    expect(computeEdgeBits(0, 0, range)).toEqual({
+      top: true,
+      right: false,
+      bottom: true,
+      left: true,
+    });
+    expect(computeEdgeBits(0, 1, range)).toEqual({
+      top: true,
+      right: false,
+      bottom: true,
+      left: false,
+    });
+    expect(computeEdgeBits(0, 2, range)).toEqual({
+      top: true,
+      right: true,
+      bottom: true,
+      left: false,
+    });
+  });
+
+  test("computeEdgeBits along an Nx1 range marks left+right always and top/bottom only at the ends", () => {
+    const range = { rowStart: 0, rowEnd: 2, columnStart: 5, columnEnd: 5 };
+    expect(computeEdgeBits(0, 5, range)).toEqual({
+      top: true,
+      right: true,
+      bottom: false,
+      left: true,
+    });
+    expect(computeEdgeBits(1, 5, range)).toEqual({
+      top: false,
+      right: true,
+      bottom: false,
+      left: true,
+    });
+    expect(computeEdgeBits(2, 5, range)).toEqual({
+      top: false,
+      right: true,
+      bottom: true,
+      left: true,
+    });
+  });
+
+  test("computeEdgeBits for an NxM range marks corners, edges, and interiors correctly", () => {
+    const range = { rowStart: 0, rowEnd: 2, columnStart: 0, columnEnd: 2 };
+    expect(computeEdgeBits(0, 0, range)).toEqual({
+      top: true,
+      right: false,
+      bottom: false,
+      left: true,
+    });
+    expect(computeEdgeBits(0, 2, range)).toEqual({
+      top: true,
+      right: true,
+      bottom: false,
+      left: false,
+    });
+    expect(computeEdgeBits(2, 0, range)).toEqual({
+      top: false,
+      right: false,
+      bottom: true,
+      left: true,
+    });
+    expect(computeEdgeBits(2, 2, range)).toEqual({
+      top: false,
+      right: true,
+      bottom: true,
+      left: false,
+    });
+    expect(computeEdgeBits(0, 1, range)).toEqual({
+      top: true,
+      right: false,
+      bottom: false,
+      left: false,
+    });
+    expect(computeEdgeBits(1, 1, range)).toEqual({
+      top: false,
+      right: false,
+      bottom: false,
+      left: false,
+    });
   });
 
   test("keeps missing option display text out of clipboard values", () => {
