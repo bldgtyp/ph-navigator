@@ -395,6 +395,7 @@ export function DataTable<TRow>({
             fieldDefByKey={fieldDefByKey}
             sort={view.sort}
             onToggleSort={toggleSort}
+            onColumnMouseDown={pointerDrag.onColumnMouseDown}
             renderHeaderActions={renderHeaderActions}
           />
           <GridBody

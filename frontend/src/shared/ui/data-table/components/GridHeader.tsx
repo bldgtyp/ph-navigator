@@ -1,16 +1,21 @@
 import { flexRender, type Table } from "@tanstack/react-table";
-import type { ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { DataTableColumnDef, FieldDef, SortRule } from "../types";
 
 // Pure presentational. Owns thead markup, sort affordance click target,
 // and the slot the consumer uses to inject column-level menus (Phase 5
-// option management lives there).
+// option management lives there). Phase 3 adds a 6 px column-select
+// strip above each header label; mousedowns on the strip route through
+// `onColumnMouseDown` so the strip behaves like a header-wide hit zone
+// for the full-column-select gesture without disturbing the existing
+// sort click target.
 export type GridHeaderProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
   fieldDefByKey: Map<string, FieldDef>;
   sort: SortRule[];
   onToggleSort: (fieldKey: string) => void;
+  onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   renderHeaderActions?: (field: FieldDef) => ReactNode;
 };
 
@@ -20,6 +25,7 @@ export function GridHeader<TRow>({
   fieldDefByKey,
   sort,
   onToggleSort,
+  onColumnMouseDown,
   renderHeaderActions,
 }: GridHeaderProps<TRow>) {
   const directionByFieldKey = new Map(sort.map((rule) => [rule.fieldKey, rule.direction]));
@@ -45,6 +51,16 @@ export function GridHeader<TRow>({
                 }
                 className={columnIndex === 0 ? "data-table-frozen" : undefined}
               >
+                {column && onColumnMouseDown ? (
+                  <div
+                    className="data-table-column-select-strip"
+                    role="button"
+                    aria-label={`Select column ${column.header}`}
+                    data-column-select-fieldkey={column.fieldKey}
+                    tabIndex={-1}
+                    onMouseDown={(event) => onColumnMouseDown(event, column.fieldKey)}
+                  />
+                ) : null}
                 <button
                   type="button"
                   className="data-table-header-button"
