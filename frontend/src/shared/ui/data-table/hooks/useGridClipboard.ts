@@ -1,6 +1,13 @@
 import { useCallback } from "react";
 import { coercePasteWrites, parseTsv, planPaste, rangeToHtml, rangeToTsv } from "../lib";
-import type { CellRange, CellWrite, DataTableColumnDef, FieldDef, WriteOp } from "../types";
+import type {
+  CellRange,
+  CellWrite,
+  DataTableColumnDef,
+  FieldDef,
+  FieldOption,
+  WriteOp,
+} from "../types";
 import type { DispatchWrite } from "./useGridWriteReducer";
 
 // Clipboard wiring — copy and paste — routed through dispatchWrite so
@@ -138,13 +145,31 @@ async function pasteIntoSelection<TRow>(args: {
     rowsInserted: [],
     newOptions: coerced.newOptions,
   };
-  const inverse: WriteOp = { kind: "cell", writes: inverseWrites };
+  const removedOptions = optionsToRemoveOnInverse(coerced.newOptions);
+  const inverse: WriteOp = {
+    kind: "cell",
+    writes: inverseWrites,
+    ...(removedOptions ? { removedOptions } : {}),
+  };
   try {
     await dispatchWrite(op, inverse);
     onAnnounce(`${plan.writes.length} cells pasted.`);
   } catch (error) {
     onAnnounce(error instanceof Error ? error.message : "Paste failed.");
   }
+}
+
+function optionsToRemoveOnInverse(
+  newOptions: Record<string, FieldOption[]>,
+): Record<string, string[]> | null {
+  const removed: Record<string, string[]> = {};
+  let any = false;
+  for (const [fieldKey, options] of Object.entries(newOptions)) {
+    if (!options.length) continue;
+    removed[fieldKey] = options.map((option) => option.id);
+    any = true;
+  }
+  return any ? removed : null;
 }
 
 function buildPasteInverse<TRow>(

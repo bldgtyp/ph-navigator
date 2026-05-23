@@ -92,8 +92,16 @@ export function roomsPayloadFromCellWrites(
   current: RoomsSlice,
   writes: RoomCellWrite[],
   newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
 ): RoomsReplacePayload {
   const options = cloneOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    if (!isRoomOptionKey(fieldKey) || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[fieldKey] = normalizeOptionOrders(
+      options[fieldKey].filter((option) => !remove.has(option.id)),
+    );
+  }
   for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
     if (!isRoomOptionKey(fieldKey)) continue;
     options[fieldKey] = normalizeOptionOrders([...options[fieldKey], ...createdOptions]);
