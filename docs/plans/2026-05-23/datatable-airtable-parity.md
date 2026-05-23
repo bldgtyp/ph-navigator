@@ -688,7 +688,7 @@ migration that follows.
 | 0 | 2026-05-23 | ✅ 2026-05-23 | All 6 steps landed; 100 tests passing; `DataTable.tsx` 231 LOC. Three post-walk fixes folded in (native onPaste, wrapper focus, sort chevron). Frozen-column sticky positioning removed pending Phase 3 re-engineering. Sign-off detail in `phase-0-foundation-refactor.md` §11–§12. |
 | 1 | 2026-05-23 | ✅ 2026-05-23 | Merged via PR #1 (`phase-1-inline-edit-popover`); Steps 1–6 landed. |
 | 2 | 2026-05-23 | ✅ 2026-05-23 | All 6 steps landed; 155 tests passing. Two Phase-0-inherited fixes folded in (sessionKey-based history-clear; empty-state keeps the grid mounted). `generateRowId` prop added so consumers can satisfy backend id schemas (Q6 revisited because the demo hit it). nextFreeRoomNumber now returns the input verbatim when free, so delete-undo restores original numbers. |
-| 3 | — | — | — |
+| 3 | 2026-05-23 | — | Steps 1–4 landed; 185 tests passing; library hardened for pointer drag + perimeter outline + full-column select. Step 5 (browser walk in Chrome/Vivaldi + Safari) still owed before sign-off. Detail in `phase-3-pointer-drag-selection.md` §11. |
 | 4 | — | — | — |
 | 5 | — | — | — |
 | 6 | — | — | — |
