@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib";
 import type { CellCoord, DataTableColumnDef, FieldDef } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
+import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { GridGutter } from "./GridGutter";
 import { InlineCellEditor } from "./InlineCellEditor";
 import { SingleSelectPopover } from "./SingleSelectPopover";
@@ -18,9 +19,12 @@ export type GridBodyProps<TRow> = {
   normalizedActiveRange: NormalizedRange;
   activeCell: CellCoord;
   edit: GridEdit;
+  rowSelection: GridRowSelection;
+  showRowCheckbox: boolean;
   onCellActivate: (rowId: string, fieldKey: string) => void;
   onCellOpen: (row: TRow, columnIndex: number) => void;
   onRowSelect: (rowId: string) => void;
+  onRowToggleSelected: (rowId: string, mode: RowSelectionMode) => void;
   onCommitAndMove: (rowIndex: number, columnIndex: number, shiftKey: boolean) => void;
 };
 
@@ -33,9 +37,12 @@ export function GridBody<TRow>({
   normalizedActiveRange,
   activeCell,
   edit,
+  rowSelection,
+  showRowCheckbox,
   onCellActivate,
   onCellOpen,
   onRowSelect,
+  onRowToggleSelected,
   onCommitAndMove,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
@@ -52,9 +59,15 @@ export function GridBody<TRow>({
         <tr key={row.id} role="row" aria-rowindex={rowIndex + 2}>
           <GridGutter
             rowNumber={rowIndex + 1}
+            selected={rowSelection.isSelected(rowIds[rowIndex] ?? "")}
+            showCheckbox={showRowCheckbox}
             onSelectRow={() => {
               const rowId = rowIds[rowIndex];
               if (rowId !== undefined) onRowSelect(rowId);
+            }}
+            onToggleSelected={(mode) => {
+              const rowId = rowIds[rowIndex];
+              if (rowId !== undefined) onRowToggleSelected(rowId, mode);
             }}
           />
           {row.getVisibleCells().map((cell, columnIndex) => {
