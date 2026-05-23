@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
   applyTextFilters,
+  buildEmptyRowDefaults,
   coercePasteWrites,
+  extractRowDefaults,
   formatClipboardCellValue,
   formatDisplayCellValue,
   isCellInRange,
   moveActiveCell,
+  naturalZero,
   parseTsv,
   planPaste,
   rangeToTsv,
@@ -200,6 +203,74 @@ describe("DataTable helpers", () => {
       ok: false,
       errors: [{ rowIndex: 0, columnIndex: 0, raw: "102", message: "Field is read-only." }],
     });
+  });
+
+  test("extractRowDefaults reads anchor row values via column accessors", () => {
+    const anchor: Row = { id: "rm_5", number: "5", name: "Living" };
+    expect(extractRowDefaults(anchor, fieldDefs, columns)).toEqual({
+      number: "5",
+      name: "Living",
+    });
+  });
+
+  test("extractRowDefaults falls back to FieldDef.default when no column accessor exists", () => {
+    const anchor: Row = { id: "rm_5", number: "5", name: "Living" };
+    const extra: FieldDef = {
+      field_key: "icfa_factor",
+      field_type: "number",
+      display_name: "iCFA",
+      default: 1,
+    };
+    expect(extractRowDefaults(anchor, [...fieldDefs, extra], columns)).toEqual({
+      number: "5",
+      name: "Living",
+      icfa_factor: 1,
+    });
+  });
+
+  test("extractRowDefaults falls back to naturalZero when neither column nor default exists", () => {
+    const anchor: Row = { id: "rm_5", number: "5", name: "Living" };
+    const extras: FieldDef[] = [
+      { field_key: "notes", field_type: "text", display_name: "Notes" },
+      { field_key: "num_people", field_type: "number", display_name: "People" },
+      { field_key: "zone", field_type: "single_select", display_name: "Zone" },
+    ];
+    expect(extractRowDefaults(anchor, [...fieldDefs, ...extras], columns)).toEqual({
+      number: "5",
+      name: "Living",
+      notes: "",
+      num_people: 0,
+      zone: null,
+    });
+  });
+
+  test("buildEmptyRowDefaults uses FieldDef.default when present, else naturalZero", () => {
+    const defs: FieldDef[] = [
+      { field_key: "number", field_type: "text", display_name: "Number", default: "" },
+      { field_key: "name", field_type: "text", display_name: "Name" },
+      {
+        field_key: "icfa_factor",
+        field_type: "number",
+        display_name: "iCFA",
+        default: 1,
+      },
+      { field_key: "floor", field_type: "single_select", display_name: "Floor" },
+    ];
+    expect(buildEmptyRowDefaults(defs)).toEqual({
+      number: "",
+      name: "",
+      icfa_factor: 1,
+      floor: null,
+    });
+  });
+
+  test("naturalZero maps each FieldType to its empty-cell representation", () => {
+    expect(naturalZero("text")).toBe("");
+    expect(naturalZero("number")).toBe(0);
+    expect(naturalZero("single_select")).toBeNull();
+    expect(naturalZero("computed")).toBeNull();
+    expect(naturalZero("attachment")).toBeNull();
+    expect(naturalZero("argb_color")).toBeNull();
   });
 
   test("keeps missing option display text out of clipboard values", () => {

@@ -1,16 +1,26 @@
-import { useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { applyTextFilters, formatDisplayCellValue, sortRows } from "./lib";
+import {
+  applyTextFilters,
+  buildEmptyRowDefaults,
+  extractRowDefaults,
+  formatDisplayCellValue,
+  sortRows,
+} from "./lib";
+import { generatedId } from "../../lib/ids";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
+import { useGridRowSelection } from "./hooks/useGridRowSelection";
 import { useGridEdit } from "./hooks/useGridEdit";
 import { getFieldEditor } from "./fields/registry";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
-import type { CellCoord, DataTableProps } from "./types";
+import { GridToolbar } from "./components/GridToolbar";
+import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
+import type { CellCoord, DataTableProps, FieldDef, RowDeletePayload, WriteOp } from "./types";
 
 export function DataTable<TRow>({
   rows,
@@ -20,6 +30,9 @@ export function DataTable<TRow>({
   view,
   onViewChange,
   onWrite,
+  buildEmptyRow,
+  generateRowId,
+  sessionKey,
   renderHeaderActions,
   readOnly = false,
   density = "compact",
@@ -59,6 +72,7 @@ export function DataTable<TRow>({
   const history = useGridHistory();
   const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
   const selection = useGridSelection({ rowIds, fieldKeys });
+  const rowSelection = useGridRowSelection({ rowIds });
   const edit = useGridEdit({
     fieldDefByKey,
     dispatchWrite,
@@ -66,13 +80,17 @@ export function DataTable<TRow>({
     hasWriteHandler: Boolean(onWrite),
   });
 
-  // History is in-memory per session (PoC L6.3); clear when the rows
-  // identity changes — switching projects, sub-tabs, or refetching the
-  // table all hand us a fresh rows array.
+  // History is in-memory per session (PoC L6.3). Phase 2: prefer the
+  // consumer-supplied sessionKey so history survives the rows-identity
+  // change that TanStack Query produces after every successful write
+  // (the row-insert / row-delete acceptance criteria require ⌘Z to work
+  // across that cycle). When no sessionKey is provided we fall back to
+  // the Phase 0 rule (clear on rows-identity change) for compatibility
+  // with consumers that haven't adopted the key yet.
   useEffect(() => {
     history.clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows]);
+  }, [sessionKey ?? rows]);
 
   const tanstackColumns = useMemo<ColumnDef<TRow>[]>(
     () =>
@@ -114,6 +132,116 @@ export function DataTable<TRow>({
     onAnnounce: setAnnounce,
   });
 
+  const canInsertRow = Boolean(buildEmptyRow) && !readOnly && Boolean(onWrite);
+  const insertRowBelowActive = useCallback(async () => {
+    if (!canInsertRow || !buildEmptyRow) {
+      setAnnounce("Row insert is not enabled for this table.");
+      return;
+    }
+    // Commit any pending edit first; abort if the commit failed
+    // (validation blocked the cell write).
+    if (edit.editing) {
+      const committed = await edit.commit();
+      if (!committed) return;
+    }
+    const anchorRow = filteredRows[selection.activeCell.rowIndex] ?? null;
+    const anchorRowId = anchorRow ? getRowId(anchorRow) : null;
+    const fieldDefaults = anchorRow
+      ? extractRowDefaults(anchorRow, fieldDefs, visibleColumnDefs)
+      : buildEmptyRowDefaults(fieldDefs);
+    const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
+    const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
+    const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
+
+    const op: WriteOp = {
+      kind: "rowInsert",
+      rows: [{ rowId: tmpId, fieldDefaults, anchorRowId }],
+    };
+    const inverse: WriteOp = {
+      kind: "rowDelete",
+      rows: [{ rowId: tmpId, row: newRow, anchorRowId }],
+    };
+    try {
+      await dispatchWrite(op, inverse);
+      if (firstEditableFieldKey) {
+        const initialValue =
+          fieldDefaults[firstEditableFieldKey] ??
+          fieldDefByKey.get(firstEditableFieldKey)?.default ??
+          "";
+        edit.queuePendingEdit({
+          rowId: tmpId,
+          fieldKey: firstEditableFieldKey,
+          initialValue,
+        });
+      }
+      setAnnounce("Row inserted.");
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Row insert failed.");
+    }
+  }, [
+    buildEmptyRow,
+    canInsertRow,
+    dispatchWrite,
+    edit,
+    fieldDefByKey,
+    fieldDefs,
+    filteredRows,
+    generateRowId,
+    getRowId,
+    selection.activeCell.rowIndex,
+    visibleColumnDefs,
+  ]);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const deleteSelectedRows = useCallback(async () => {
+    if (rowSelection.count === 0 || readOnly || !onWrite) return;
+    const targets: { row: TRow; rowId: string; index: number }[] = [];
+    filteredRows.forEach((row, index) => {
+      const rowId = getRowId(row);
+      if (rowSelection.isSelected(rowId)) targets.push({ row, rowId, index });
+    });
+    if (targets.length === 0) return;
+    const deletes: RowDeletePayload[] = targets.map(({ row, rowId, index }) => ({
+      rowId,
+      row,
+      anchorRowId: index > 0 ? (rowIds[index - 1] ?? null) : null,
+    }));
+    const op: WriteOp = { kind: "rowDelete", rows: deletes };
+    const inverse: WriteOp = {
+      kind: "rowInsert",
+      rows: targets.map(({ row, rowId, index }) => ({
+        rowId,
+        anchorRowId: index > 0 ? (rowIds[index - 1] ?? null) : null,
+        fieldDefaults: extractRowDefaults(row, fieldDefs, visibleColumnDefs),
+      })),
+    };
+    try {
+      await dispatchWrite(op, inverse);
+      const count = deletes.length;
+      setAnnounce(`${count} row${count === 1 ? "" : "s"} deleted.`);
+      rowSelection.clear();
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Row delete failed.");
+    }
+  }, [
+    dispatchWrite,
+    fieldDefs,
+    filteredRows,
+    getRowId,
+    onWrite,
+    readOnly,
+    rowIds,
+    rowSelection,
+    visibleColumnDefs,
+  ]);
+
+  // Pending-edit handoff (Phase 2 §4.4). Once the inserted row lands
+  // in the next render's rowIds, consumePendingEdit calls edit.start on
+  // the new row's first editable cell.
+  useEffect(() => {
+    edit.consumePendingEdit(rowIds);
+  }, [edit, rowIds]);
+
   const keyboard = useGridKeyboard({
     selection,
     edit,
@@ -134,6 +262,7 @@ export function DataTable<TRow>({
           if (row) onRowOpen(row);
         }
       : undefined,
+    onRowInsertBelowActive: canInsertRow ? insertRowBelowActive : undefined,
   });
 
   const toggleSort = (fieldKey: string) => {
@@ -186,18 +315,32 @@ export function DataTable<TRow>({
     void clipboard.pasteText(tsv);
   };
 
-  if (rows.length === 0) {
-    return <div className="data-table-empty">{emptyMessage}</div>;
-  }
+  const toolbarActions =
+    !readOnly && rowSelection.count > 0 ? (
+      <button
+        type="button"
+        aria-label={`Delete ${rowSelection.count} selected row${rowSelection.count === 1 ? "" : "s"}`}
+        onClick={() => setDeleteDialogOpen(true)}
+      >
+        Delete {rowSelection.count} {rowSelection.count === 1 ? "row" : "rows"}
+      </button>
+    ) : null;
 
   return (
     <div className={`data-table-shell data-table-shell-${density}`}>
-      <div className="data-table-toolbar" aria-label="Table view controls">
-        <span>{readOnly ? "Read-only" : "Editable"}</span>
-        <span>{view.filter.length ? `Filtered by ${view.filter.length} rule` : "No filters"}</span>
-        <span>{view.group.length ? "Ungroup to paste" : "Ungrouped"}</span>
-        <span>{view.sort.length ? `Sorted by ${view.sort.length} field` : "Unsorted"}</span>
-      </div>
+      <GridToolbar readOnly={readOnly} view={view} actions={toolbarActions} />
+      <ConfirmRowDeleteDialog
+        open={deleteDialogOpen}
+        count={rowSelection.count}
+        onCancel={() => {
+          setDeleteDialogOpen(false);
+          focusGrid();
+        }}
+        onConfirm={() => {
+          setDeleteDialogOpen(false);
+          void deleteSelectedRows().then(() => focusGrid());
+        }}
+      />
       <div className="sr-only" aria-live="polite">
         {announce}
       </div>
@@ -242,6 +385,10 @@ export function DataTable<TRow>({
             normalizedActiveRange={selection.normalizedRange}
             activeCell={selection.activeCell}
             edit={edit}
+            rowSelection={rowSelection}
+            showRowCheckbox={!readOnly}
+            emptyMessage={emptyMessage}
+            totalRowCount={rows.length}
             onCellActivate={(rowId, fieldKey) => {
               selection.setActive({ rowId, fieldKey });
               focusGrid();
@@ -251,12 +398,29 @@ export function DataTable<TRow>({
               selection.selectRow(rowId);
               focusGrid();
             }}
+            onRowToggleSelected={(rowId, mode) => {
+              rowSelection.toggle(rowId, mode);
+              focusGrid();
+            }}
             onCommitAndMove={handleCommitAndMove}
           />
         </table>
       </div>
     </div>
   );
+}
+
+function pickFirstEditableFieldKey(
+  visibleColumns: { fieldKey: string }[],
+  fieldDefByKey: Map<string, FieldDef>,
+): string | null {
+  for (const column of visibleColumns) {
+    const fieldDef = fieldDefByKey.get(column.fieldKey);
+    if (!fieldDef || fieldDef.read_only) continue;
+    if (getFieldEditor(fieldDef).kind === "none") continue;
+    return column.fieldKey;
+  }
+  return null;
 }
 
 function moveTabCell(

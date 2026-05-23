@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   coerceFieldValue,
   createFieldOption,
@@ -40,6 +40,17 @@ export type StartArgs = {
   intent: EditIntent;
 };
 
+// One-shot focus handoff used by the Shift+Enter row-insert flow
+// (Phase 2 §4.4). Queued before the rowInsert op is dispatched; the
+// shell calls consumePendingEdit once the new row appears in the
+// current render's rowIds. If the row never appears within a single
+// useEffect cycle, the entry is dropped silently.
+export type PendingEdit = {
+  rowId: string;
+  fieldKey: string;
+  initialValue: unknown;
+};
+
 export type GridEdit = {
   editing: EditingCell | null;
   isEditingCell: (rowId: string, fieldKey: string) => boolean;
@@ -52,6 +63,8 @@ export type GridEdit = {
   highlight: (optionId: string | null) => void;
   commit: () => Promise<boolean>;
   cancel: () => void;
+  queuePendingEdit: (pending: PendingEdit | null) => void;
+  consumePendingEdit: (rowIds: string[]) => void;
 };
 
 export function useGridEdit(args: {
@@ -62,6 +75,11 @@ export function useGridEdit(args: {
 }): GridEdit {
   const { fieldDefByKey, dispatchWrite, onAnnounce, hasWriteHandler } = args;
   const [editing, setEditing] = useState<EditingCell | null>(null);
+  const pendingRef = useRef<PendingEdit | null>(null);
+  // Tracks the rowIds identity we last saw so a queued pending entry
+  // gets one render to resolve. If the next render does not contain
+  // the queued rowId, the entry is dropped.
+  const pendingRowsRef = useRef<string[] | null>(null);
 
   const start = useCallback(
     ({ rowId, fieldKey, initialValue, intent }: StartArgs) => {
@@ -123,7 +141,49 @@ export function useGridEdit(args: {
     }
   }, [editing, hasWriteHandler, fieldDefByKey, dispatchWrite, onAnnounce]);
 
-  return { editing, isEditingCell, start, draft, highlight, commit, cancel };
+  const queuePendingEdit = useCallback((pending: PendingEdit | null) => {
+    pendingRef.current = pending;
+    pendingRowsRef.current = null;
+  }, []);
+
+  const consumePendingEdit = useCallback(
+    (rowIds: string[]) => {
+      const pending = pendingRef.current;
+      if (!pending) return;
+      if (rowIds.includes(pending.rowId)) {
+        pendingRef.current = null;
+        pendingRowsRef.current = null;
+        start({
+          rowId: pending.rowId,
+          fieldKey: pending.fieldKey,
+          initialValue: pending.initialValue,
+          intent: "replace",
+        });
+        return;
+      }
+      // Give the entry one render to land. If a second different
+      // rowIds identity arrives without the queued rowId in it, drop.
+      if (pendingRowsRef.current === null) {
+        pendingRowsRef.current = rowIds;
+      } else if (pendingRowsRef.current !== rowIds) {
+        pendingRef.current = null;
+        pendingRowsRef.current = null;
+      }
+    },
+    [start],
+  );
+
+  return {
+    editing,
+    isEditingCell,
+    start,
+    draft,
+    highlight,
+    commit,
+    cancel,
+    queuePendingEdit,
+    consumePendingEdit,
+  };
 }
 
 // Pure planner: turn the current editor state into a forward/inverse op
