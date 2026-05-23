@@ -15,7 +15,9 @@ function renderToolbar(view: ViewState = emptyViewState()) {
       view={view}
       fieldDefs={FIELDS}
       filterableFieldDefs={FIELDS}
+      sortableFieldDefs={FIELDS}
       onFilterChange={vi.fn()}
+      onSortChange={vi.fn()}
     />,
   );
 }
@@ -57,5 +59,28 @@ describe("GridToolbar", () => {
     expect(screen.queryByText(/No filters/)).not.toBeInTheDocument();
     expect(screen.getByText("Editable")).toBeInTheDocument();
     expect(screen.getByText("Ungrouped")).toBeInTheDocument();
+  });
+
+  test("Sort button label is 'Sort' when neutral and 'Sorted by N fields' when active", () => {
+    renderToolbar();
+    expect(screen.getByRole("button", { name: "Sort" })).toBeInTheDocument();
+    renderToolbar({
+      ...emptyViewState(),
+      sort: [
+        { fieldKey: "name", direction: "asc" },
+        { fieldKey: "count", direction: "desc" },
+      ],
+    });
+    expect(screen.getByRole("button", { name: "Sorted by 2 fields" })).toBeInTheDocument();
+  });
+
+  test("Sort button tints peach when any rule is present", () => {
+    renderToolbar({
+      ...emptyViewState(),
+      sort: [{ fieldKey: "name", direction: "asc" }],
+    });
+    const button = screen.getByRole("button", { name: /Sorted by Name/ });
+    expect(button).toHaveAttribute("data-axis-active", "true");
+    expect(button).toHaveAttribute("data-axis", "sort");
   });
 });
