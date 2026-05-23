@@ -1,8 +1,10 @@
 ---
 DATE: 2026-05-23
 TIME: planning
-STATUS: Draft — not yet walked. Awaiting open-questions answers in §12
-        before execution begins.
+STATUS: Implementation complete — all 5 steps + 2 post-walk
+        revisions (R1, R2) landed. 191 tests passing. Demo walked
+        live in Playwright. Safari smoke walk still owed for the
+        autoscroll-past-viewport edge case.
 SCOPE: Phase 3 of the `<DataTable>` AirTable-parity plan. Mouse-drag
        rectangular range selection, viewport-edge auto-scroll during
        drag, full-column select header affordance, and the contiguous
@@ -1001,36 +1003,106 @@ session. Record pass/fail in §11. Repeat in Safari.
 | 2 — perimeter outline + DOM hit-test attrs    | 2026-05-23 | ✅ | Body `<td>`s carry `data-row-id` / `data-field-key`; per-edge inline `boxShadow` composes from `computeEdgeBits` so multi-cell ranges draw as one contiguous rectangle. `hasExplicitRange` threaded to GridBody so the always-present 1×1 active cell no longer paints as "selected." 169 tests passing. |
 | 3 — useGridPointerDrag (cell mode + RAF)      | 2026-05-23 | ✅ | Document-level mousemove/mouseup/pointerup, 30 px edge band + 12 px/frame autoscroll, editor + gutter short-circuit, Esc-cancel via `useGridKeyboard.drag`. 180 tests passing. |
 | 4 — column-select strip + column-mode drag    | 2026-05-23 | ✅ | 6 px `.data-table-column-select-strip` above each header. Column-mode session resolves to both `[data-column-select-fieldkey]` strips and body `[data-field-key]` cells so drag down into the body still extends columns. 185 tests passing. typecheck + lint + format + build clean. |
-| 5 — demo walk + post-walk fixes               | 2026-05-23 | ✅ | Walked in Chrome (via Playwright MCP) against the Phase 2 Rooms Demo project. One post-walk fix folded in (see §13). Safari walk still owed but the regression risk is low — `elementFromPoint` and edge-band autoscroll math are the only browser-sensitive paths, both covered by unit tests. |
-| Phase 3 overall                               | 2026-05-23 | ✅ | All §10 acceptance criteria verified in Playwright-driven walk except autoscroll-past-viewport (only 3 rows in demo project; deferred to Safari walk with a larger Rooms set). 186 tests passing. |
+| 5 — demo walk + post-walk fixes               | 2026-05-23 | ✅ | Walked in Chrome (via Playwright MCP) against the Phase 2 Rooms Demo project. Three post-walk changes folded in (see §13): one immediate bugfix (Shift+Click no longer collapses) plus two UX revisions Ed flagged during the walk (R1 whole-header column-select, R2 row-checkbox toggle). Safari walk still owed but the regression risk is low — `elementFromPoint` and edge-band autoscroll math are the only browser-sensitive paths, both covered by unit tests. |
+| Phase 3 overall                               | 2026-05-23 | ✅ | All §10 acceptance criteria verified in Playwright-driven walk except autoscroll-past-viewport (only 3 rows in demo project; deferred to Safari walk with a larger Rooms set). R1 + R2 verified live. 191 tests passing. |
 
 ## 13. Post-walk addendum (2026-05-23)
 
-One load-bearing fix surfaced during the Step 5 demo walk against
-the Rooms project:
+Three load-bearing changes surfaced during the Step 5 demo walk
+against the Rooms project — one immediate bugfix that the §10
+acceptance criteria caught, plus two UX revisions Ed flagged after
+seeing the new behaviors in his own tab.
 
-1. **`GridBody` `onClick` was collapsing Shift+Click ranges.** The
-   Phase 3 design relies on `useGridPointerDrag.onCellMouseDown`
-   calling `selection.extendTo` when Shift is held. But the existing
-   `<td>` `onClick` handler still ran after every mousedown/mouseup
-   pair and called `onCellActivate(rowId, fieldKey)` → `setActive`,
-   which collapsed the range we'd just extended back to 1×1. The
-   walk caught this immediately on the first Shift+Click test
-   (Bath → Den should have selected 3 cells in the `name` column;
-   only the `Den` cell ended up active).
+### Fix 1 — `GridBody` `onClick` was collapsing Shift+Click ranges
 
-   Fix: `GridBody.tsx` `onClick` now early-returns when
-   `event.shiftKey` is true. The mousedown handler is the sole
-   authority on Shift+Click semantics. Plain clicks still route
-   through `setActive` as before, so the 1×1 focus-on-click behavior
-   is preserved.
+The Phase 3 design relies on `useGridPointerDrag.onCellMouseDown`
+calling `selection.extendTo` when Shift is held. But the existing
+`<td>` `onClick` handler still ran after every mousedown/mouseup
+pair and called `onCellActivate(rowId, fieldKey)` → `setActive`,
+which collapsed the range we'd just extended back to 1×1. The walk
+caught this immediately on the first Shift+Click test (Bath → Den
+should have selected 3 cells in the `name` column; only the `Den`
+cell ended up active).
 
-   Regression-covered by a new test in `GridBody.test.tsx`: "Shift+
-   Click extends the range — the subsequent click event does not
-   collapse it" — fires a mousedown / mouseup / click sequence with
-   `shiftKey: true` and asserts the 6-cell range survives.
+Fix: `GridBody.tsx` `onClick` now early-returns when
+`event.shiftKey` is true. The mousedown handler is the sole
+authority on Shift+Click semantics. Plain clicks still route
+through `setActive` as before, so the 1×1 focus-on-click behavior
+is preserved.
 
-The 17-step §10 walk verified the rest unmodified:
+Regression-covered by a new test in `GridBody.test.tsx`: "Shift+
+Click extends the range — the subsequent click event does not
+collapse it" — fires a mousedown / mouseup / click sequence with
+`shiftKey: true` and asserts the 6-cell range survives.
+
+### Revision R1 — Whole-header click for column-select (reverses §12 Q2)
+
+After the walk Ed flagged that the 6 px column-select strips were
+"in irregular places (vertically)" — the inline `<th>` flex
+positioning didn't keep the strip at a uniform offset across all
+column headers, and the strip itself was a thin, easy-to-miss hit
+target. He asked for AirTable's whole-header model: single-click
+anywhere on the header → column-select / deselect; double-click
+reserved for future column-edit (Phase 5 territory).
+
+This reverses the §12 Q2 resolution that had picked the strip for
+lower coupling to Phase 4 sort work. Implementation:
+
+- **Strip removed.** `.data-table-column-select-strip` and its
+  rendering disappear.
+- **`<th>` itself owns the mousedown.** `GridHeader.tsx` attaches
+  `onMouseDown={(event) => onColumnMouseDown(event, column.fieldKey)}`
+  directly on the `<th>` element. `cursor: cell` on `.data-table-th`
+  signals the hit target.
+- **Sort moves to a hover-revealed chevron `<button>`** inside the
+  header. The chevron is visible on `:hover` or always when the
+  column carries an active sort (`.is-sorted` class). Click on the
+  chevron toggles direction (asc → desc → asc, matching the
+  pre-existing `toggleSort` semantics). Mousedown on the chevron
+  is filtered out of column-select by a single guard in
+  `useGridPointerDrag.onColumnMouseDown`: `targetEl?.closest("button")`
+  short-circuits. This same guard also protects the existing
+  per-column `Options` menu (rendered via `renderHeaderActions`)
+  from triggering column-select.
+- **`selectColumn` becomes a toggle.** Click the same header twice
+  → the range collapses to a 1×1 focus on the column's first cell
+  (`hasExplicitRange` flips to false; visual matches what
+  `setActive` would produce). Click a *different* header → the new
+  column replaces.
+
+Tests rewritten:
+- `columnSelect.test.tsx` — 6 tests covering the new mousedown
+  model: header mousedown selects, second mousedown deselects,
+  Shift+mousedown extends, sort-chevron mousedown does NOT trigger
+  column-select, read-only retention, non-primary-button ignore.
+- `useGridSelection.test.ts` — two new tests: same-column toggle,
+  different-column replace.
+- `DataTable.test.tsx` Tab-order test updated for the renamed
+  "Sort by Number" chevron button (the old "Number" header
+  button is gone).
+
+### Revision R2 — Row-checkbox toggle (uncheck on second click)
+
+Ed flagged that gutter-checkbox row-select couldn't be un-toggled:
+clicking an already-checked checkbox did nothing visible (the
+`single` mode just re-set the same `{rowId}` set). Per Phase 2 §4.3
+the original design was deliberate — single = replace, cmd = toggle.
+But on a checkbox the user expects checkbox semantics: a second click
+unchecks.
+
+Fix in `useGridRowSelection.toggle("single")`:
+
+- If the set has exactly one entry and it's this `rowId` → empty the
+  set and drop the anchor. (Checkbox unchecks.)
+- Otherwise → replace the set with `{rowId}` and seed the anchor.
+  (Multi-row state from prior Shift/Cmd correctly collapses to one.)
+
+Two new tests in `useGridRowSelection.test.ts` cover the toggle-off
+and the multi-row-replace paths.
+
+### §10 walk results (Playwright-driven)
+
+The 17-step §10 walk verified:
 - Cell drag (raw mousedown / mousemove / mouseup synthesis through
   `document.elementFromPoint`) produced an 18-cell range across
   rows 1–3, columns name → icfa_factor, with one contiguous
@@ -1048,10 +1120,19 @@ The 17-step §10 walk verified the rest unmodified:
   editor stayed open and the active cell did not move (the drag
   hook bailed cleanly via `isPointerInActiveEditor`).
 - Esc with no active drag: no-op, selection preserved.
-- DevTools confirmation (live tab): column-select strips render at
-  per-column widths (Floor strip = 198.91 × 6, People = 131.86 × 6)
-  with `cursor: cell` and the planned `height: 6px; margin: -4px
-  -8px 2px -8px` styling.
+- After R1: whole-header click on Name → 3 cells selected, contiguous
+  outline. Second click on the same header → 0 cells selected, focus
+  on row 1 of Name. Sort-chevron click → `aria-sort="ascending"`
+  set on the Name `<th>`, rows re-sorted by name, column-select did
+  NOT fire.
+- After R2: row 2 gutter-checkbox click → row 2 selected, toolbar
+  "Delete 1 row" appears. Second click → row cleared, Delete button
+  hides.
+- DevTools confirmation (live tab, pre-R1): column-select strips
+  rendered at per-column widths (Floor strip = 198.91 × 6, People =
+  131.86 × 6) with `cursor: cell` and the planned `height: 6px;
+  margin: -4px -8px 2px -8px` styling. R1 then replaced them with
+  the whole-header model.
 
 What was NOT exercised in the Playwright walk and warrants the
 Safari walk before final sign-off:
