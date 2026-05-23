@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-23
 TIME: planning
-STATUS: Draft implementation plan — awaiting Ed approval.
+STATUS: Implementation complete — all 6 steps landed, demo walked clean, 155 tests passing.
 SCOPE: Phase 2 of the `<DataTable>` AirTable-parity plan. Row-level
        write gestures (Shift+Enter insert-below; gutter-checkbox
        multi-row select; toolbar Delete with AlertDialog confirm).
@@ -988,13 +988,50 @@ session. Record pass/fail in §11.
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
-| 1 — type tightening + buildEmptyRowDefaults | — | — | — |
-| 2 — useGridRowSelection | — | — | — |
-| 3 — gutter checkbox + GridToolbar | — | — | — |
-| 4 — Shift+Enter row insert | — | — | — |
-| 5 — toolbar row-delete + AlertDialog | — | — | — |
-| 6 — consumer wiring polish + demo walk | — | — | — |
-| Phase 2 overall | — | — | — |
+| 1 — type tightening + buildEmptyRowDefaults | 2026-05-23 | ✅ | RowInsertPayload / RowDeletePayload + extractRowDefaults / buildEmptyRowDefaults / naturalZero shipped with tests. |
+| 2 — useGridRowSelection | 2026-05-23 | ✅ | Single/shift/cmd modes + anchor + clear-on-rowIds-identity-change, with 10 dedicated tests. |
+| 3 — gutter checkbox + GridToolbar | 2026-05-23 | ✅ | Always-visible checkbox alongside row-number; GridToolbar extracted with library-owned action slot. Existing DataTable.test.tsx Tab-order test updated for the renamed buttons. |
+| 4 — Shift+Enter row insert | 2026-05-23 | ✅ | useGridEdit.queuePendingEdit / consumePendingEdit channel handles the focus handoff across the consumer's re-render cycle. |
+| 5 — toolbar row-delete + AlertDialog | 2026-05-23 | ✅ | @radix-ui/react-alert-dialog @ 1.1.15. Toolbar action appears only when rowSelection.count > 0. |
+| 6 — consumer wiring polish + demo walk | 2026-05-23 | ✅ | See post-walk addendum §13. |
+| Phase 2 overall | 2026-05-23 | ✅ | All 12 acceptance criteria walked clean. |
+
+## 13. Post-walk addendum (2026-05-23)
+
+Three load-bearing changes surfaced during the Step 6 demo walk that
+weren't anticipated in the original plan:
+
+1. **`generateRowId` prop on DataTableProps.** Backend rejected the
+   library's `tmp_<ulid>` row ids with a 422 because the Rooms
+   schema enforces `^rm_[A-Za-z0-9_-]+$`. Q6 had deferred the
+   id-strategy question; the demo forced the answer. Consumers now
+   pass their own id factory (Rooms: `() => generatedId("rm")`).
+   Library fallback remains `tmp_<ulid>`.
+
+2. **`sessionKey` prop on DataTableProps.** Phase 0's
+   `history.clear()` on `rows` identity changes also fired after
+   every successful write (TanStack Query reidentifies the array on
+   `setQueryData`), so undo never crossed the dispatchWrite round-
+   trip. The library now prefers a consumer-supplied `sessionKey`
+   (Rooms: `${projectId}:${versionId}:rooms`) and falls back to the
+   rows-identity rule when absent. Pre-existing Phase 0 / Phase 1
+   consumers continue to work; undo behavior across writes is
+   strictly improved.
+
+3. **Empty-state moved inside the grid wrapper.** Phase 0's
+   `if (rows.length === 0) return <div class="data-table-empty">`
+   short-circuited the wrapper `<div role="grid" onKeyDown>`, so ⌘Z
+   couldn't fire after deleting the last row. The empty message now
+   renders inside the `<tbody>` (GridBody distinguishes "filtered
+   empty" from "source empty" via the new `totalRowCount` prop) and
+   the grid wrapper stays mounted. The empty-state styling is
+   unchanged.
+
+A fourth small fix: `nextFreeRoomNumber` now returns the input
+verbatim when free. Delete-undo dispatches rowInsert with the
+deleted row's original `number`; the slice no longer holds it, so
+the helper restores "1" instead of incrementing to "2". Covered by a
+new regression test in `equipment/lib.test.ts`.
 
 ## 12. Open questions — resolved 2026-05-23
 
