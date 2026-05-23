@@ -236,6 +236,7 @@ export function DataTable<TRow>({
           <GridBody
             table={table}
             visibleColumnDefs={visibleColumnDefs}
+            fieldDefByKey={fieldDefByKey}
             rowIds={rowIds}
             fieldKeys={fieldKeys}
             normalizedActiveRange={selection.normalizedRange}
