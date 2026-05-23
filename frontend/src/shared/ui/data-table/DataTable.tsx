@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { applyTextFilters, formatDisplayCellValue, sortRows } from "./lib";
+import {
+  applyTextFilters,
+  buildEmptyRowDefaults,
+  extractRowDefaults,
+  formatDisplayCellValue,
+  sortRows,
+} from "./lib";
+import { generatedId } from "../../lib/ids";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
@@ -12,7 +19,7 @@ import { useGridClipboard } from "./hooks/useGridClipboard";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { GridToolbar } from "./components/GridToolbar";
-import type { CellCoord, DataTableProps } from "./types";
+import type { CellCoord, DataTableProps, FieldDef, WriteOp } from "./types";
 
 export function DataTable<TRow>({
   rows,
@@ -22,6 +29,7 @@ export function DataTable<TRow>({
   view,
   onViewChange,
   onWrite,
+  buildEmptyRow,
   renderHeaderActions,
   readOnly = false,
   density = "compact",
@@ -117,6 +125,72 @@ export function DataTable<TRow>({
     onAnnounce: setAnnounce,
   });
 
+  const canInsertRow = Boolean(buildEmptyRow) && !readOnly && Boolean(onWrite);
+  const insertRowBelowActive = useCallback(async () => {
+    if (!canInsertRow || !buildEmptyRow) {
+      setAnnounce("Row insert is not enabled for this table.");
+      return;
+    }
+    // Commit any pending edit first; abort if the commit failed
+    // (validation blocked the cell write).
+    if (edit.editing) {
+      const committed = await edit.commit();
+      if (!committed) return;
+    }
+    const anchorRow = filteredRows[selection.activeCell.rowIndex] ?? null;
+    const anchorRowId = anchorRow ? getRowId(anchorRow) : null;
+    const fieldDefaults = anchorRow
+      ? extractRowDefaults(anchorRow, fieldDefs, visibleColumnDefs)
+      : buildEmptyRowDefaults(fieldDefs);
+    const tmpId = `tmp_${generatedId("row")}`;
+    const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
+    const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
+
+    const op: WriteOp = {
+      kind: "rowInsert",
+      rows: [{ rowId: tmpId, fieldDefaults, anchorRowId }],
+    };
+    const inverse: WriteOp = {
+      kind: "rowDelete",
+      rows: [{ rowId: tmpId, row: newRow, anchorRowId }],
+    };
+    try {
+      await dispatchWrite(op, inverse);
+      if (firstEditableFieldKey) {
+        const initialValue =
+          fieldDefaults[firstEditableFieldKey] ??
+          fieldDefByKey.get(firstEditableFieldKey)?.default ??
+          "";
+        edit.queuePendingEdit({
+          rowId: tmpId,
+          fieldKey: firstEditableFieldKey,
+          initialValue,
+        });
+      }
+      setAnnounce("Row inserted.");
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Row insert failed.");
+    }
+  }, [
+    buildEmptyRow,
+    canInsertRow,
+    dispatchWrite,
+    edit,
+    fieldDefByKey,
+    fieldDefs,
+    filteredRows,
+    getRowId,
+    selection.activeCell.rowIndex,
+    visibleColumnDefs,
+  ]);
+
+  // Pending-edit handoff (Phase 2 §4.4). Once the inserted row lands
+  // in the next render's rowIds, consumePendingEdit calls edit.start on
+  // the new row's first editable cell.
+  useEffect(() => {
+    edit.consumePendingEdit(rowIds);
+  }, [edit, rowIds]);
+
   const keyboard = useGridKeyboard({
     selection,
     edit,
@@ -137,6 +211,7 @@ export function DataTable<TRow>({
           if (row) onRowOpen(row);
         }
       : undefined,
+    onRowInsertBelowActive: canInsertRow ? insertRowBelowActive : undefined,
   });
 
   const toggleSort = (fieldKey: string) => {
@@ -261,6 +336,19 @@ export function DataTable<TRow>({
       </div>
     </div>
   );
+}
+
+function pickFirstEditableFieldKey(
+  visibleColumns: { fieldKey: string }[],
+  fieldDefByKey: Map<string, FieldDef>,
+): string | null {
+  for (const column of visibleColumns) {
+    const fieldDef = fieldDefByKey.get(column.fieldKey);
+    if (!fieldDef || fieldDef.read_only) continue;
+    if (getFieldEditor(fieldDef).kind === "none") continue;
+    return column.fieldKey;
+  }
+  return null;
 }
 
 function moveTabCell(
