@@ -21,16 +21,16 @@ import type { GridSelection } from "./useGridSelection";
 const EDGE_PX = 30;
 const SCROLL_PX = 12;
 
-export type GridDragMode = "cell";
+export type GridDragMode = "cell" | "column";
 
-type DragSession = {
-  mode: "cell";
-  anchor: { rowId: string; fieldKey: string };
-};
+type DragSession =
+  | { mode: "cell"; anchor: { rowId: string; fieldKey: string } }
+  | { mode: "column"; anchorFieldKey: string };
 
 export type GridPointerDrag = {
   isDragging: boolean;
   onCellMouseDown: (event: ReactMouseEvent<HTMLTableCellElement>) => void;
+  onColumnMouseDown: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   cancel: () => void;
 };
 
@@ -53,15 +53,19 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
   const cleanupRef = useRef<(() => void) | null>(null);
 
   // The cell-address resolver and the document handlers all need the
-  // latest `selection.extendTo`. Keep a ref so handlers attached at
+  // latest `selection.extendTo` etc. Keep refs so handlers attached at
   // drag-start time still see the current callback if the parent
   // re-renders mid-drag.
   const extendToRef = useRef(selection.extendTo);
   const setActiveRef = useRef(selection.setActive);
+  const selectColumnRef = useRef(selection.selectColumn);
+  const extendToColumnRef = useRef(selection.extendToColumn);
   useEffect(() => {
     extendToRef.current = selection.extendTo;
     setActiveRef.current = selection.setActive;
-  }, [selection.extendTo, selection.setActive]);
+    selectColumnRef.current = selection.selectColumn;
+    extendToColumnRef.current = selection.extendToColumn;
+  }, [selection.extendTo, selection.setActive, selection.selectColumn, selection.extendToColumn]);
 
   const stopAutoScroll = useCallback(() => {
     if (rafIdRef.current !== null) {
@@ -81,8 +85,10 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
 
   const cancel = useCallback(() => {
     const session = sessionRef.current;
-    if (session && session.mode === "cell") {
+    if (session?.mode === "cell") {
       setActiveRef.current(session.anchor);
+    } else if (session?.mode === "column") {
+      selectColumnRef.current(session.anchorFieldKey);
     }
     teardown();
   }, [teardown]);
@@ -99,12 +105,30 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
     if (!session) return;
     const target = document.elementFromPoint(pointer.x, pointer.y);
     if (!(target instanceof Element)) return;
-    const cellEl = target.closest("td[data-row-id][data-field-key]");
-    if (!(cellEl instanceof HTMLElement)) return;
-    const rowId = cellEl.dataset.rowId;
-    const fieldKey = cellEl.dataset.fieldKey;
-    if (!rowId || !fieldKey) return;
-    extendToRef.current({ rowId, fieldKey });
+    if (session.mode === "cell") {
+      const cellEl = target.closest("td[data-row-id][data-field-key]");
+      if (!(cellEl instanceof HTMLElement)) return;
+      const rowId = cellEl.dataset.rowId;
+      const fieldKey = cellEl.dataset.fieldKey;
+      if (!rowId || !fieldKey) return;
+      extendToRef.current({ rowId, fieldKey });
+      return;
+    }
+    // column mode — resolve to the nearest column-select strip and
+    // extend across columns. The body <td>s also carry `data-field-
+    // key`, so a column drag that travels down into the body still
+    // resolves to the right column via the cell's fieldKey.
+    const stripEl = target.closest("[data-column-select-fieldkey]");
+    if (stripEl instanceof HTMLElement) {
+      const fieldKey = stripEl.dataset.columnSelectFieldkey;
+      if (fieldKey) extendToColumnRef.current(fieldKey);
+      return;
+    }
+    const cellEl = target.closest("td[data-field-key]");
+    if (cellEl instanceof HTMLElement) {
+      const fieldKey = cellEl.dataset.fieldKey;
+      if (fieldKey) extendToColumnRef.current(fieldKey);
+    }
   }, []);
 
   const autoScrollFrame = useCallback(() => {
@@ -132,6 +156,44 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
     rafIdRef.current = requestAnimationFrame(autoScrollFrame);
   }, [autoScrollFrame]);
 
+  // Both modes need the same document listener setup and the same
+  // focus-recapture dance. Factored out so the two mousedown handlers
+  // stay focused on mode-specific work.
+  const startSession = useCallback(
+    (session: DragSession, pointer: { x: number; y: number }) => {
+      sessionRef.current = session;
+      lastPointerRef.current = pointer;
+      setIsDragging(true);
+      // The drag-start mousedown was default-prevented (cell handler
+      // suppresses native text-selection; column handler suppresses the
+      // browser's default focus-on-mousedown on the strip), so refocus
+      // the wrapper explicitly. Keeps Esc / ⌘C / arrows aimed at the
+      // grid.
+      containerRef.current?.focus({ preventScroll: true });
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        lastPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
+        resolvePointerToCell();
+        ensureAutoScrollRunning();
+      };
+      const handleMouseUp = () => {
+        teardown();
+      };
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      // Safety net for releases the OS routes through pointerup before
+      // mouseup reaches the document (iframes, drag-out cases).
+      document.addEventListener("pointerup", handleMouseUp, { once: true });
+
+      cleanupRef.current = () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("pointerup", handleMouseUp);
+      };
+    },
+    [containerRef, ensureAutoScrollRunning, resolvePointerToCell, teardown],
+  );
+
   const onCellMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLTableCellElement>) => {
       if (event.button !== 0) return;
@@ -147,51 +209,30 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
       if (!rowId || !fieldKey) return;
 
       const addr = { rowId, fieldKey };
-      if (event.shiftKey) {
-        extendToRef.current(addr);
-      } else {
-        setActiveRef.current(addr);
-      }
-      sessionRef.current = { mode: "cell", anchor: addr };
-      lastPointerRef.current = { x: event.clientX, y: event.clientY };
-      setIsDragging(true);
+      if (event.shiftKey) extendToRef.current(addr);
+      else setActiveRef.current(addr);
 
-      // Suppress native cross-cell text selection.
       event.preventDefault();
-      // The default-prevented mousedown also blocks the wrapper from
-      // receiving focus the browser would normally hand to the
-      // nearest focusable ancestor. Re-focus explicitly so the
-      // subsequent keyboard shortcuts (Esc cancel, ⌘C copy, arrows)
-      // land on the grid.
-      containerRef.current?.focus({ preventScroll: true });
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        lastPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
-        resolvePointerToCell();
-        ensureAutoScrollRunning();
-      };
-      const handleMouseUp = () => {
-        teardown();
-      };
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      // Safety net for releases that the OS routes through pointerup
-      // before mouseup reaches the document (iframes, drag-out cases).
-      document.addEventListener("pointerup", handleMouseUp, { once: true });
-
-      cleanupRef.current = () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.removeEventListener("pointerup", handleMouseUp);
-      };
+      startSession({ mode: "cell", anchor: addr }, { x: event.clientX, y: event.clientY });
     },
-    [
-      containerRef,
-      ensureAutoScrollRunning,
-      isPointerInActiveEditor,
-      resolvePointerToCell,
-      teardown,
-    ],
+    [isPointerInActiveEditor, startSession],
+  );
+
+  const onColumnMouseDown = useCallback(
+    (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => {
+      if (event.button !== 0) return;
+      if (!fieldKey) return;
+
+      if (event.shiftKey) extendToColumnRef.current(fieldKey);
+      else selectColumnRef.current(fieldKey);
+
+      event.preventDefault();
+      startSession(
+        { mode: "column", anchorFieldKey: fieldKey },
+        { x: event.clientX, y: event.clientY },
+      );
+    },
+    [startSession],
   );
 
   useEffect(() => {
@@ -206,5 +247,5 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
     };
   }, []);
 
-  return { isDragging, onCellMouseDown, cancel };
+  return { isDragging, onCellMouseDown, onColumnMouseDown, cancel };
 }
