@@ -14,7 +14,7 @@ import { useGridSelection } from "./hooks/useGridSelection";
 import { useGridRowSelection } from "./hooks/useGridRowSelection";
 import { useGridEdit } from "./hooks/useGridEdit";
 import { getFieldEditor } from "./fields/registry";
-import { isFilterContributing } from "./fields/filterOperators";
+import { getFilterOperators, isFilterContributing } from "./fields/filterOperators";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
@@ -22,7 +22,14 @@ import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { GridToolbar } from "./components/GridToolbar";
 import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
-import type { CellCoord, DataTableProps, FieldDef, RowDeletePayload, WriteOp } from "./types";
+import type {
+  CellCoord,
+  DataTableProps,
+  FieldDef,
+  FilterCondition,
+  RowDeletePayload,
+  WriteOp,
+} from "./types";
 
 export function DataTable<TRow>({
   rows,
@@ -30,10 +37,7 @@ export function DataTable<TRow>({
   fieldDefs,
   columnDefs,
   view,
-  // Phase 4 Step 2: `onViewChange` lands back in the destructure in
-  // Step 3 when the Filter / Sort popovers wire through. The prop
-  // stays declared in `DataTableProps` so consumers don't change
-  // their signatures across the step boundary.
+  onViewChange,
   onWrite,
   buildEmptyRow,
   generateRowId,
@@ -290,6 +294,21 @@ export function DataTable<TRow>({
     drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
 
+  // Phase 4 §4.11: fields the FilterPopover offers in its field picker.
+  // `read_only` does NOT exclude the field — filtering on a computed
+  // column is a real use case (§12 Q2). `attachment` / `argb_color`
+  // are excluded because the registry returns no operators for them.
+  const filterableFieldDefs = useMemo(
+    () => fieldDefs.filter((fieldDef) => getFilterOperators(fieldDef).length > 0),
+    [fieldDefs],
+  );
+  const handleFilterChange = useCallback(
+    (next: FilterCondition[]) => {
+      onViewChange({ ...view, filter: next });
+    },
+    [onViewChange, view],
+  );
+
   // Phase 4 §4.10: derive per-column axis tint from `view.filter` and
   // `view.sort`. Filter wins on overlap (§4.10 precedence rule).
   // Dormant filter rules (blank value) do not contribute — `view.filter
@@ -367,7 +386,14 @@ export function DataTable<TRow>({
 
   return (
     <div className={`data-table-shell data-table-shell-${density}`}>
-      <GridToolbar readOnly={readOnly} view={view} actions={toolbarActions} />
+      <GridToolbar
+        readOnly={readOnly}
+        view={view}
+        fieldDefs={fieldDefs}
+        filterableFieldDefs={filterableFieldDefs}
+        onFilterChange={handleFilterChange}
+        actions={toolbarActions}
+      />
       <ConfirmRowDeleteDialog
         open={deleteDialogOpen}
         count={rowSelection.count}

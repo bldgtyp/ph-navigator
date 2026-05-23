@@ -1253,6 +1253,230 @@ button:disabled {
   background: color-mix(in oklab, var(--accent) 12%, var(--bg-page));
 }
 
+/* Phase 4 §4.8: right-aligned axis buttons (Filter / Sort / overflow).
+   The buttons live in their own container right of the status chips;
+   `.data-table-toolbar-actions` (row-delete) keeps `margin-left:auto`
+   and renders after, ensuring the destructive Delete button is never
+   side-by-side with Sort. */
+.data-table-toolbar-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.data-table-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--phn-radius);
+  background: transparent;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.data-table-toolbar-button:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-toolbar-button[data-axis="filter"][data-axis-active="true"] {
+  background: var(--data-table-tint-filter);
+}
+
+.data-table-toolbar-button[data-axis="sort"][data-axis-active="true"] {
+  background: var(--data-table-tint-sort);
+}
+
+.data-table-toolbar-button-icon {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+/* Phase 4 §4.5 / §4.6: shared popover surface for Filter and Sort. */
+.data-table-view-popover {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 12px;
+  min-width: 380px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.data-table-view-popover.is-sort {
+  min-width: 300px;
+}
+
+.data-table-view-popover-heading {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.data-table-view-popover-subheading {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.data-table-view-popover-empty {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.data-table-view-popover-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-table-view-popover-rule {
+  display: grid;
+  grid-template-columns: 48px minmax(80px, 1fr) minmax(80px, 1fr) minmax(120px, 1.4fr) 24px;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.data-table-view-popover-rule.is-sort {
+  grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr) 24px;
+}
+
+.data-table-view-popover-conjunction {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table-view-popover-select {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 3px 4px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  min-width: 0;
+}
+
+.data-table-view-popover-input {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 3px 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.data-table-view-popover-value {
+  min-width: 0;
+}
+
+.data-table-view-popover-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.data-table-view-popover-range-sep {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.data-table-view-popover-remove {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-view-popover-remove:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+}
+
+.data-table-view-popover-add {
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  color: var(--accent-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.data-table-view-popover-add:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.data-table-view-popover-disclosure {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-page);
+  padding: 0;
+  width: 100%;
+}
+
+.data-table-view-popover-disclosure > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 3px 6px;
+  font-size: 0.78rem;
+}
+
+.data-table-view-popover-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.data-table-view-popover-options {
+  list-style: none;
+  padding: 4px 6px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.data-table-view-popover-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.data-table-view-popover-options-empty {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
 .data-table-alert-overlay {
   position: fixed;
   inset: 0;
