@@ -383,6 +383,7 @@ export function DataTable<TRow>({
             rowIds={rowIds}
             fieldKeys={fieldKeys}
             normalizedActiveRange={selection.normalizedRange}
+            hasExplicitRange={selection.hasExplicitRange}
             activeCell={selection.activeCell}
             edit={edit}
             rowSelection={rowSelection}

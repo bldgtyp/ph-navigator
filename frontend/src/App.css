@@ -10,6 +10,7 @@
   --phn-danger: #9b2f24;
   --phn-danger-bg: #fff0ee;
   --phn-control-height: 38px;
+  --accent-edge: color-mix(in oklab, var(--accent) 60%, transparent);
 }
 
 * {
@@ -1433,8 +1434,12 @@ button:disabled {
   border-right: 1px solid var(--border-subtle);
 }
 
+/* Phase 3 §4.10: interior fill for any cell inside the active range.
+   The contiguous perimeter outline is composed per-cell as an inline
+   `box-shadow` from `computeEdgeBits` so corner / edge / interior cells
+   layer correctly (PoC L3.2 — box-shadow channel for selection). */
 .data-table-cell-selected {
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 42%, transparent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
 }
 
 .data-table-cell-active {
