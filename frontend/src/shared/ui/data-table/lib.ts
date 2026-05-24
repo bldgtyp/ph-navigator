@@ -1051,11 +1051,10 @@ export function planFill<TRow>(args: {
         skipped += 1;
         continue;
       }
-      const sr =
-        source.rowStart + (((r - source.rowStart) % cycleRows) + cycleRows) % cycleRows;
+      const sr = source.rowStart + ((((r - source.rowStart) % cycleRows) + cycleRows) % cycleRows);
       const sc =
         source.columnStart +
-        (((c - source.columnStart) % cycleColumns) + cycleColumns) % cycleColumns;
+        ((((c - source.columnStart) % cycleColumns) + cycleColumns) % cycleColumns);
       const sourceRow = rows[sr];
       const sourceCol = columns[sc];
       if (!sourceRow || !sourceCol) continue;

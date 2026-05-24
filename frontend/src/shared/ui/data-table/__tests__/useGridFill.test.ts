@@ -34,9 +34,12 @@ const groupedPath = new Map<string, string>([
   ["rm_5", "2nd"],
 ]);
 
-function makeSelection(
-  normalizedRange: { rowStart: number; rowEnd: number; columnStart: number; columnEnd: number },
-): GridSelection {
+function makeSelection(normalizedRange: {
+  rowStart: number;
+  rowEnd: number;
+  columnStart: number;
+  columnEnd: number;
+}): GridSelection {
   return {
     anchor: null,
     focus: null,
@@ -179,18 +182,14 @@ describe("useGridFill — handleVisible", () => {
 
   test("is false when the source spans two groups", () => {
     const selection = makeSelection({ rowStart: 1, rowEnd: 4, columnStart: 0, columnEnd: 0 });
-    const { result } = renderHook(() =>
-      useHarness({ selection, groupPathByRowId: groupedPath }),
-    );
+    const { result } = renderHook(() => useHarness({ selection, groupPathByRowId: groupedPath }));
     expect(result.current.handleVisible).toBe(false);
     expect(result.current.source).toBe(null);
   });
 
   test("is true on a multi-row source within one group", () => {
     const selection = makeSelection({ rowStart: 0, rowEnd: 2, columnStart: 0, columnEnd: 0 });
-    const { result } = renderHook(() =>
-      useHarness({ selection, groupPathByRowId: groupedPath }),
-    );
+    const { result } = renderHook(() => useHarness({ selection, groupPathByRowId: groupedPath }));
     expect(result.current.handleVisible).toBe(true);
   });
 });
@@ -293,7 +292,7 @@ describe("useGridFill — drag lifecycle", () => {
       result.current.onHandleMouseDown(event);
     });
     expect(result.current.isDragging).toBe(true);
-    expect((event.stopPropagation as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
+    expect(event.stopPropagation as ReturnType<typeof vi.fn>).toHaveBeenCalled();
 
     // Pointer moves enough to cross the axis threshold vertically.
     act(() => {
