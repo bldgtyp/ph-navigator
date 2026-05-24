@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent 
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import {
   applyFilters,
+  buildBodyPlan,
   buildEmptyRowDefaults,
   effectiveSortFromView,
   extractRowDefaults,
@@ -83,7 +84,29 @@ export function DataTable<TRow>({
       ),
     [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort],
   );
-  const rowIds = useMemo(() => filteredRows.map(getRowId), [filteredRows, getRowId]);
+  // Phase 6 §4.6: interleaved group-header + data-row plan. When
+  // `view.group.length === 0` this collapses to a flat data-only
+  // sequence and the rest of the grid behaves exactly as Phase 5.
+  // Aggregated values per group path are precomputed inside the
+  // builder; chevron toggles only re-run the cheap interleaving walk
+  // because the aggregated map memoizes on its own inputs (§12 Q10).
+  const bodyPlan = useMemo(
+    () => buildBodyPlan(filteredRows, visibleColumnDefs, fieldDefs, getRowId, view),
+    [filteredRows, visibleColumnDefs, fieldDefs, getRowId, view],
+  );
+  // Selection / keyboard / clipboard operate on the data-row subset
+  // of the body plan — collapsed-group rows are invisible to those
+  // models (§4.6.1). Group-header rows never enter `rowIds`, so the
+  // existing `useGridSelection` clamp keeps the active cell on a
+  // visible data row.
+  const visibleDataRows = useMemo(
+    () =>
+      bodyPlan
+        .filter((item): item is Extract<typeof item, { kind: "data" }> => item.kind === "data")
+        .map((item) => item.row),
+    [bodyPlan],
+  );
+  const rowIds = useMemo(() => visibleDataRows.map(getRowId), [visibleDataRows, getRowId]);
   const fieldKeys = useMemo(
     () => visibleColumnDefs.map((column) => column.fieldKey),
     [visibleColumnDefs],
@@ -132,8 +155,14 @@ export function DataTable<TRow>({
       })),
     [fieldDefByKey, visibleColumnDefs],
   );
+  // The TanStack table model is keyed on `visibleDataRows` so its row
+  // model lines up 1:1 with the data items in `bodyPlan` and with
+  // `rowIds` — keeping the selection / clipboard / keyboard models on
+  // the visible data-row subset rather than the (filtered, unhidden)
+  // full list (§4.6.1). Collapsed-group members are invisible to
+  // every model that walks rows.
   const table = useReactTable<TRow>({
-    data: filteredRows,
+    data: visibleDataRows,
     columns: tanstackColumns,
     getRowId,
     getCoreRowModel: getCoreRowModel(),
@@ -170,7 +199,10 @@ export function DataTable<TRow>({
   };
   const clipboard = useGridClipboard({
     range: selection.range,
-    rows: filteredRows,
+    // Phase 6 §4.1: copy across a range that spans a collapsed group
+    // emits only the visible data rows. Group-header rows never enter
+    // the TSV / HTML output. Matches AirTable.
+    rows: visibleDataRows,
     columns: visibleColumnDefs,
     fieldDefs,
     getRowId,
@@ -191,7 +223,7 @@ export function DataTable<TRow>({
       const committed = await edit.commit();
       if (!committed) return;
     }
-    const anchorRow = filteredRows[selection.activeCell.rowIndex] ?? null;
+    const anchorRow = visibleDataRows[selection.activeCell.rowIndex] ?? null;
     const anchorRowId = anchorRow ? getRowId(anchorRow) : null;
     const fieldDefaults = anchorRow
       ? extractRowDefaults(anchorRow, fieldDefs, visibleColumnDefs)
@@ -232,7 +264,7 @@ export function DataTable<TRow>({
     edit,
     fieldDefByKey,
     fieldDefs,
-    filteredRows,
+    visibleDataRows,
     generateRowId,
     getRowId,
     selection.activeCell.rowIndex,
@@ -243,7 +275,7 @@ export function DataTable<TRow>({
   const deleteSelectedRows = useCallback(async () => {
     if (rowSelection.count === 0 || readOnly || !onWrite) return;
     const targets: { row: TRow; rowId: string; index: number }[] = [];
-    filteredRows.forEach((row, index) => {
+    visibleDataRows.forEach((row, index) => {
       const rowId = getRowId(row);
       if (rowSelection.isSelected(rowId)) targets.push({ row, rowId, index });
     });
@@ -273,7 +305,7 @@ export function DataTable<TRow>({
   }, [
     dispatchWrite,
     fieldDefs,
-    filteredRows,
+    visibleDataRows,
     getRowId,
     onWrite,
     readOnly,
@@ -305,7 +337,7 @@ export function DataTable<TRow>({
       }),
     onRowOpen: onRowOpen
       ? () => {
-          const row = filteredRows[selection.activeCell.rowIndex];
+          const row = visibleDataRows[selection.activeCell.rowIndex];
           if (row) onRowOpen(row);
         }
       : undefined,
@@ -359,21 +391,32 @@ export function DataTable<TRow>({
     [onViewChange, view],
   );
   // Phase 6 §4.2 / §12 Q15: Collapse all / Expand all live in the
-  // Group popover header, not the toolbar overflow. Collapse-all
-  // requires knowing every current group's pathKey, which lives in
-  // the body plan — Step 4 wires that up. For Step 3, the handlers
-  // exist but only operate on the user-intent map: Expand-all clears
-  // `expandedGroups` (defaults all paths to expanded); Collapse-all
-  // is a no-op until Step 4 supplies the visible pathKeys.
+  // Group popover header. Expand-all clears `expandedGroups` so every
+  // path falls back to the default-expanded sentinel. Collapse-all
+  // walks the bodyPlan, collects every distinct group pathKey, and
+  // sets each to `false` in a single onViewChange call.
   const handleExpandAllGroups = useCallback(() => {
     if (Object.keys(view.expandedGroups).length === 0) return;
     onViewChange({ ...view, expandedGroups: {} });
   }, [onViewChange, view]);
   const handleCollapseAllGroups = useCallback(() => {
-    // Step 4 replaces this with a pathKey-aware implementation.
     if (view.group.length === 0) return;
-    onViewChange({ ...view });
-  }, [onViewChange, view]);
+    const next: Record<string, boolean> = {};
+    for (const item of bodyPlan) {
+      if (item.kind === "group") next[item.pathKey] = false;
+    }
+    onViewChange({ ...view, expandedGroups: next });
+  }, [bodyPlan, onViewChange, view]);
+  const handleToggleGroup = useCallback(
+    (pathKey: string) => {
+      const current = view.expandedGroups[pathKey] ?? true;
+      onViewChange({
+        ...view,
+        expandedGroups: { ...view.expandedGroups, [pathKey]: !current },
+      });
+    },
+    [onViewChange, view],
+  );
   // Phase 6 §4.4: Reset clears every view-state key the toolbar can
   // mutate — filter / sort / group / aggregations / expandedGroups.
   // Column order / hidden columns / column widths are owned by a
@@ -439,7 +482,7 @@ export function DataTable<TRow>({
     const next = moveTabCell(
       { rowIndex, columnIndex },
       shiftKey,
-      filteredRows.length,
+      visibleDataRows.length,
       visibleColumnDefs.length,
     );
     const nextRowId = rowIds[next.rowIndex];
@@ -532,7 +575,7 @@ export function DataTable<TRow>({
         ref={wrapperRef}
         className="data-table-wrap"
         role="grid"
-        aria-rowcount={filteredRows.length + 1}
+        aria-rowcount={bodyPlan.length + 1}
         aria-colcount={visibleColumnDefs.length}
         tabIndex={0}
         onKeyDown={keyboard.onKeyDown}
@@ -579,6 +622,8 @@ export function DataTable<TRow>({
             emptyMessage={emptyMessage}
             totalRowCount={rows.length}
             axisRolesByFieldKey={axisRolesByFieldKey}
+            bodyPlan={bodyPlan}
+            onGroupToggle={handleToggleGroup}
             onCellActivate={(rowId, fieldKey) => {
               selection.setActive({ rowId, fieldKey });
               focusGrid();
