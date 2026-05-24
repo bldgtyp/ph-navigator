@@ -1903,15 +1903,6 @@ button:disabled {
   cursor: pointer;
 }
 
-.data-table-gutter-number-stack {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-height: 28px;
-  min-width: 22px;
-}
-
 .data-table-gutter-number {
   min-height: 28px;
   border: 0;
@@ -1922,16 +1913,19 @@ button:disabled {
   cursor: pointer;
 }
 
-/* AirTable-style row-expand affordance. Hidden by default; swaps in for
-   the row number on row-hover (or when keyboard-focused). The button is
-   absolutely positioned over the number so the gutter width doesn't
-   shift between the two states. */
+/* AirTable-style row-expand affordance. Hidden by default; reveals on
+   row-hover (or when keyboard-focused). Positioned absolutely against
+   the gutter cell (which is already `position: sticky`) so it consumes
+   zero inline width — the column doesn't reflow between states. */
 .data-table-gutter-expand {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  right: 6px;
   display: none;
   align-items: center;
   justify-content: center;
+  width: 22px;
+  height: 22px;
   margin: 0;
   padding: 0;
   border: 1px solid var(--border-subtle);
@@ -1939,6 +1933,7 @@ button:disabled {
   background: var(--bg-card);
   color: var(--text-secondary);
   cursor: pointer;
+  transform: translateY(-50%);
 }
 
 .data-table-gutter-expand:hover,
@@ -2300,6 +2295,16 @@ button:disabled {
   background: color-mix(in oklab, var(--accent-text) 12%, var(--bg-card));
   box-shadow: none;
   outline: 0;
+}
+
+.data-table tbody tr:hover td.data-table-cell-selected,
+.data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card));
+}
+
+.data-table tbody tr:hover td.data-table-cell-active,
+.data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-active {
+  background: color-mix(in oklab, var(--accent-text) 12%, var(--bg-card));
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the
