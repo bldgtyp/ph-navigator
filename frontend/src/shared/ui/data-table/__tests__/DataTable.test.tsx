@@ -463,25 +463,82 @@ describe("DataTable", () => {
       writes: [{ rowId: "rm_1", fieldKey: "name", value: "Living" }],
     });
   });
+
+  // Plan 06: summary bar at the table bottom drives aggregation picks.
+  describe("plan 06 — summary bar", () => {
+    const moreRows: Row[] = [
+      { id: "rm_1", number: "101", name: "Living", count: 1 },
+      { id: "rm_2", number: "102", name: "Kitchen", count: 2 },
+      { id: "rm_3", number: "103", name: "Bedroom", count: 3 },
+    ];
+
+    test("renders Count: N over the post-filter row set", () => {
+      renderTable({ rowsOverride: moreRows });
+      const bar = screen.getByTestId("data-table-summary-bar");
+      expect(bar).toHaveTextContent("Count");
+      expect(bar).toHaveTextContent("3");
+    });
+
+    test("Count recomputes when a filter trims the visible set", () => {
+      renderTable({
+        rowsOverride: moreRows,
+        view: {
+          ...emptyViewState(),
+          filter: [{ fieldKey: "name", operator: "contains", value: "Liv" }],
+        },
+      });
+      const bar = screen.getByTestId("data-table-summary-bar");
+      expect(bar).toHaveTextContent("1");
+    });
+
+    test("picking Sum on the count column fires onViewChange with the new aggregation", () => {
+      const onViewChange = vi.fn();
+      renderTable({ rowsOverride: moreRows, onViewChange });
+      const bar = screen.getByTestId("data-table-summary-bar");
+      const summaryCells = bar.querySelectorAll("td");
+      // Index 0 gutter; index 1 = number (first frozen / count cell);
+      // index 2 = name; index 3 = count.
+      const countSummaryCell = summaryCells[3] as HTMLElement;
+      const trigger = countSummaryCell.querySelector("button") as HTMLButtonElement;
+      fireEvent.click(trigger);
+      fireEvent.click(screen.getByRole("button", { name: "Sum" }));
+      expect(onViewChange).toHaveBeenCalledWith(
+        expect.objectContaining({ aggregations: { count: "sum" } }),
+      );
+    });
+
+    test("aggregation persists in the rendered value when set in view-state", () => {
+      renderTable({
+        rowsOverride: moreRows,
+        view: { ...emptyViewState(), aggregations: { count: "sum" } },
+      });
+      const bar = screen.getByTestId("data-table-summary-bar");
+      expect(bar).toHaveTextContent("6.00");
+    });
+  });
 });
 
 function renderTable({
   view = emptyViewState(),
   readOnly = false,
   onWrite,
+  onViewChange,
+  rowsOverride,
 }: {
   view?: ViewState;
   readOnly?: boolean;
   onWrite?: DataTableProps<Row>["onWrite"];
+  onViewChange?: DataTableProps<Row>["onViewChange"];
+  rowsOverride?: Row[];
 } = {}) {
   return render(
     <DataTable
-      rows={rows}
+      rows={rowsOverride ?? rows}
       getRowId={(row) => row.id}
       fieldDefs={fieldDefs}
       columnDefs={columnDefs}
       view={view}
-      onViewChange={vi.fn()}
+      onViewChange={onViewChange ?? vi.fn()}
       onWrite={onWrite}
       readOnly={readOnly}
       emptyMessage="No rooms yet."

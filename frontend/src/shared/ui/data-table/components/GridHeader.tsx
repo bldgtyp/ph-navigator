@@ -1,7 +1,6 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { AxisRoleSubset, DataTableColumnDef, FieldDef, ViewState } from "../types";
-import type { AggregationKind } from "../fields/aggregations";
+import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
 import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
 
 // Header onMouseDown owns column-select; double-click on editable
@@ -20,8 +19,6 @@ export type GridHeaderProps<TRow> = {
   onEditField?: (fieldKey: string) => void;
   openFieldKey?: string | null;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
-  aggregations: ViewState["aggregations"];
-  onAggregationChange: (fieldKey: string, next: AggregationKind) => void;
 };
 
 export function GridHeader<TRow>({
@@ -35,8 +32,6 @@ export function GridHeader<TRow>({
   onEditField,
   openFieldKey,
   headerCellRefByFieldKey,
-  aggregations,
-  onAggregationChange,
 }: GridHeaderProps<TRow>) {
   return (
     <thead>
@@ -100,8 +95,6 @@ export function GridHeader<TRow>({
                       fieldDef={fieldDef}
                       canEditOptions={isEditableSingleSelect}
                       onEditOptions={() => onEditField?.(column.fieldKey)}
-                      currentAggregation={aggregations[column.fieldKey] ?? "none"}
-                      onAggregationChange={(next) => onAggregationChange(column.fieldKey, next)}
                     />
                   ) : null}
                 </div>
