@@ -130,15 +130,8 @@ export function HideFieldsPanel<TRow>({
       {filtered.length === 0 ? (
         <div className="data-table-hide-fields-empty">No fields match &lsquo;{search}&rsquo;</div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={filtered.map((c) => c.id)}
-            strategy={verticalListSortingStrategy}
-          >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={filtered.map((c) => c.id)} strategy={verticalListSortingStrategy}>
             <ul className="data-table-hide-fields-list" role="list">
               {filtered.map((column) => {
                 const fieldDef = fieldDefByKey.get(column.fieldKey);

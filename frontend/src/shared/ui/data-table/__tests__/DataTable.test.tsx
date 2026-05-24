@@ -516,6 +516,46 @@ describe("DataTable", () => {
       expect(bar).toHaveTextContent("6.00");
     });
   });
+
+  describe("Plan 07 — Hide fields", () => {
+    test("columns listed in view.hiddenColumns do not render in the header", () => {
+      renderTable({ view: { ...emptyViewState(), hiddenColumns: ["count"] } });
+      const headers = screen.getAllByRole("columnheader").map((th) => th.textContent ?? "");
+      expect(headers.some((h) => h.includes("Count"))).toBe(false);
+      expect(headers.some((h) => h.includes("Name"))).toBe(true);
+    });
+
+    test("primary column stays visible even when listed in hiddenColumns", () => {
+      // `number` is the first column — the useGridColumns guard keeps
+      // it visible regardless of what hiddenColumns says.
+      renderTable({ view: { ...emptyViewState(), hiddenColumns: ["number"] } });
+      const headers = screen.getAllByRole("columnheader").map((th) => th.textContent ?? "");
+      expect(headers.some((h) => h.includes("Number"))).toBe(true);
+    });
+
+    test("toggling a column from the panel emits an onViewChange with the new hiddenColumns", () => {
+      const onViewChange = vi.fn();
+      renderTable({ onViewChange });
+      fireEvent.click(screen.getByRole("button", { name: "Hide fields" }));
+      const panel = screen.getByRole("dialog", { name: "Hide or show fields" });
+      fireEvent.click(within(panel).getByLabelText("Hide Count"));
+      expect(onViewChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ hiddenColumns: ["count"] }),
+      );
+    });
+
+    test("columnOrder controls header order", () => {
+      renderTable({
+        view: { ...emptyViewState(), columnOrder: ["number", "count", "name"] },
+      });
+      const headers = screen
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent ?? "")
+        // drop the gutter header (empty / row-number column)
+        .filter((label) => /Number|Name|Count/.test(label));
+      expect(headers).toEqual(["Number", "Count", "Name"]);
+    });
+  });
 });
 
 function renderTable({

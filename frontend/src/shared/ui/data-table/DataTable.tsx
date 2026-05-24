@@ -44,6 +44,12 @@ import type {
   SortRule,
   WriteOp,
 } from "./types";
+// Stable empty array for the no-hidden-columns variant of
+// `useGridColumns` consumed by the Hide-fields panel. Defined at module
+// scope so its identity stays the same across renders — the hook would
+// otherwise recompute every render when given a fresh `[]` literal.
+const EMPTY_ID_LIST: string[] = [];
+
 export function DataTable<TRow>({
   rows,
   getRowId,
@@ -63,6 +69,10 @@ export function DataTable<TRow>({
   footerAction,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
+  // Plan 07 — the Hide-fields panel needs every column (hidden + visible)
+  // in display order so users can toggle hidden ones back on. Same hook,
+  // empty hidden list.
+  const orderedColumnsForHidePanel = useGridColumns(columnDefs, view.columnOrder, EMPTY_ID_LIST);
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
@@ -553,6 +563,16 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
+  const handleHideFieldsChange = useCallback(
+    (change: { hiddenColumns?: string[]; columnOrder?: string[] }) => {
+      onViewChange({
+        ...view,
+        ...(change.hiddenColumns !== undefined ? { hiddenColumns: change.hiddenColumns } : {}),
+        ...(change.columnOrder !== undefined ? { columnOrder: change.columnOrder } : {}),
+      });
+    },
+    [onViewChange, view],
+  );
   // Reset clears every view-state key the toolbar can mutate. Column
   // order / widths / hidden columns are owned by a future column-
   // config phase and stay untouched.
@@ -640,12 +660,14 @@ export function DataTable<TRow>({
         filterableFieldDefs={filterableFieldDefs}
         sortableFieldDefs={sortableFieldDefs}
         groupableFieldDefs={sortableFieldDefs}
+        orderedColumnsForHidePanel={orderedColumnsForHidePanel}
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
         onGroupChange={handleGroupChange}
         onCollapseAllGroups={handleCollapseAllGroups}
         onExpandAllGroups={handleExpandAllGroups}
         onResetView={handleResetView}
+        onHideFieldsChange={handleHideFieldsChange}
         overflowMenuActions={overflowMenuActions}
         actions={toolbarActions}
       />
