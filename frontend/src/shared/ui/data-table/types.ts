@@ -1,4 +1,12 @@
 import type { ReactNode } from "react";
+import type { AggregationKind } from "./fields/aggregations";
+
+// Phase 6 §4.3.1: subset codes for the 7 non-empty subsets of
+// {filter, sort, group}. Encoded as lowercase concatenations of the
+// present axes' first letters, in fixed order f < s < g. Used as the
+// `data-axis-tint` HTML attribute value so CSS attribute selectors
+// paint each cell without any per-render JS work.
+export type AxisRoleSubset = "f" | "s" | "g" | "fs" | "fg" | "sg" | "fsg";
 
 export type FieldType =
   | "text"
@@ -96,7 +104,7 @@ export type ViewState = {
   filter: FilterCondition[];
   sort: SortRule[];
   group: GroupRule[];
-  aggregations: Record<string, "none" | "count" | "sum" | "mean" | "min" | "max">;
+  aggregations: Record<string, AggregationKind>;
   columnOrder: string[];
   columnWidths: Record<string, number>;
   hiddenColumns: string[];
@@ -211,6 +219,29 @@ export type DataTableProps<TRow> = {
   emptyMessage: string;
   onRowOpen?: (row: TRow) => void;
 };
+
+// Phase 6 §4.6: discriminated union the body renderer walks. A `group`
+// entry produces a <GroupHeaderRow> at the given depth; a `data` entry
+// produces a regular data <tr>. The plan replaces the raw `tableRows`
+// iteration in `GridBody`, interleaving group headers between data rows
+// in display order.
+export type BodyPlanItem<TRow> =
+  | {
+      kind: "group";
+      depth: number;
+      pathKey: string;
+      fieldDef: FieldDef;
+      groupValue: unknown;
+      count: number;
+      expanded: boolean;
+      aggregatedValues: Map<string, string>;
+    }
+  | {
+      kind: "data";
+      row: TRow;
+      rowId: string;
+      depth: number;
+    };
 
 export function emptyViewState(): ViewState {
   return {
