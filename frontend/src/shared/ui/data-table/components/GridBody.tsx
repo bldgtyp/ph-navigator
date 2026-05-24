@@ -232,7 +232,16 @@ export function GridBody<TRow>({
                     if (editing) return;
                     if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
                   }}
-                  onDoubleClick={() => onCellOpen(tanstackRow.original, columnIndex)}
+                  onDoubleClick={
+                    // Plan 05: single-select cells use the chevron as
+                    // the open affordance, so double-click here would
+                    // race with the chevron path and re-open the
+                    // popover under it. Other field types keep
+                    // double-click as the open gesture.
+                    fieldDef?.field_type === "single_select"
+                      ? undefined
+                      : () => onCellOpen(tanstackRow.original, columnIndex)
+                  }
                 >
                   {renderCellContent({
                     edit,
