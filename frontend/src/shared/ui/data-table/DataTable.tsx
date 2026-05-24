@@ -17,6 +17,7 @@ import { useGridSelection } from "./hooks/useGridSelection";
 import { useGridRowSelection } from "./hooks/useGridRowSelection";
 import { useGridEdit } from "./hooks/useGridEdit";
 import { getFieldEditor } from "./fields/registry";
+import type { AggregationKind } from "./fields/aggregations";
 import { getFilterOperators, isFilterContributing } from "./fields/filterOperators";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
@@ -70,10 +71,7 @@ export function DataTable<TRow>({
   // intent `view.sort`. `effectiveSortFromView` dedups so a field
   // present in both axes only appears once in the comparator (group
   // direction wins). `view.sort` itself is preserved unchanged.
-  const effectiveSort = useMemo(
-    () => effectiveSortFromView(view),
-    [view],
-  );
+  const effectiveSort = useMemo(() => effectiveSortFromView(view), [view]);
   const filteredRows = useMemo(
     () =>
       sortRows(
@@ -417,6 +415,18 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
+  // Phase 6 §4.9: per-column aggregation picker. `none` deletes the
+  // entry from view.aggregations rather than storing it explicitly,
+  // so the map stays tight (matches the §4.6 invariant: absence == none).
+  const handleAggregationChange = useCallback(
+    (fieldKey: string, kind: AggregationKind) => {
+      const next = { ...view.aggregations };
+      if (kind === "none") delete next[fieldKey];
+      else next[fieldKey] = kind;
+      onViewChange({ ...view, aggregations: next });
+    },
+    [onViewChange, view],
+  );
   // Phase 6 §4.4: Reset clears every view-state key the toolbar can
   // mutate — filter / sort / group / aggregations / expandedGroups.
   // Column order / hidden columns / column widths are owned by a
@@ -606,6 +616,8 @@ export function DataTable<TRow>({
             onEditField={setFieldEditorOpenForFieldKey}
             openFieldKey={fieldEditorOpenForFieldKey}
             headerCellRefByFieldKey={headerCellRefByFieldKey}
+            aggregations={view.aggregations}
+            onAggregationChange={handleAggregationChange}
           />
           <GridBody
             table={table}

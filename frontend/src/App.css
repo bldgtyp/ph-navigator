@@ -1450,6 +1450,82 @@ button:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+/* Phase 6 §4.9: per-column overflow menu. Trigger sits in the header
+   row to the right of the label; hover-revealed to keep the chrome
+   quiet when the user isn't reaching for it. */
+.data-table-header-menu-trigger {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 0.9em;
+  border-radius: var(--phn-radius);
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+  margin-left: auto;
+}
+
+.data-table-th:hover .data-table-header-menu-trigger,
+.data-table-header-menu-trigger:focus-visible,
+.data-table-th[data-field-editor-open="true"] .data-table-header-menu-trigger {
+  opacity: 1;
+}
+
+.data-table-header-menu-trigger:hover {
+  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+}
+
+.data-table-column-menu,
+.data-table-column-menu-submenu {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 4px;
+  min-width: 180px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.78rem;
+}
+
+.data-table-column-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: var(--phn-radius);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: inherit;
+  width: 100%;
+}
+
+.data-table-column-menu-item:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-column-menu-item[data-active="true"] {
+  font-weight: 600;
+}
+
+.data-table-column-menu-item-value {
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.data-table-column-menu-divider {
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  margin: 4px 0;
+}
+
 .data-table-view-popover-rule[data-dragging="true"] {
   opacity: 0.6;
   cursor: grabbing;
