@@ -111,6 +111,17 @@ describe("GridBody — selection fill rendering", () => {
     expect(active.style.boxShadow).toBe("");
   });
 
+  test("an explicit 1x1 range does not emit the selected fill class", () => {
+    renderTable();
+
+    const active = getBodyCell(0, 0);
+    fireEvent.mouseDown(active, { button: 0, shiftKey: true });
+    fireEvent.mouseUp(active, { shiftKey: true });
+
+    expect(active).toHaveClass("data-table-cell-active");
+    expect(active).not.toHaveClass("data-table-cell-selected");
+  });
+
   test("dragging Shift+ArrowDown produces a 2x1 range with selected fill classes only", () => {
     renderTable();
 
