@@ -852,6 +852,7 @@ function isPathFullyExpanded(
 // -----------------------------------------------------------------
 
 export type FillAxis = "vertical" | "horizontal";
+export type FillDirection = "up" | "down" | "left" | "right";
 
 // Map data-row id → innermost group's `pathKey`. Group-header items are
 // skipped; their pathKey is recorded as the "current path" so subsequent
@@ -886,24 +887,47 @@ export function chooseFillAxis(args: {
   return dy >= dx ? "vertical" : "horizontal";
 }
 
-// Extend the source rectangle along `axis` to include the pointer cell.
-// The non-axis edge stays at the source's edge. Returns the source
-// rectangle itself when the pointer sits inside (or before) the source
-// on the chosen axis — the caller treats that as "fill canceled."
+// Returns the cardinal direction within an already-locked axis based on
+// the sign of the pointer delta. A zero delta (pointer back at start)
+// resolves to the positive direction (`"down"` / `"right"`); the caller
+// treats a same-as-source target as "fill canceled" anyway.
+export function chooseFillDirection(args: {
+  pointerStart: { x: number; y: number };
+  pointerCurrent: { x: number; y: number };
+  axis: FillAxis;
+}): FillDirection {
+  if (args.axis === "vertical") {
+    return args.pointerCurrent.y >= args.pointerStart.y ? "down" : "up";
+  }
+  return args.pointerCurrent.x >= args.pointerStart.x ? "right" : "left";
+}
+
+// Extend the source rectangle in `direction` to include the pointer cell.
+// The opposite edge stays at the source. Returns the source rectangle
+// itself when the pointer sits inside (or past) the source on the
+// chosen direction — the caller treats that as "fill canceled."
 export function buildFillTargetFromPointer(args: {
   source: NormalizedRange;
   pointerCell: { rowIndex: number; columnIndex: number };
-  axis: FillAxis;
+  direction: FillDirection;
   rowCount: number;
   columnCount: number;
 }): NormalizedRange {
-  const { source, pointerCell, axis, rowCount, columnCount } = args;
-  if (axis === "vertical") {
+  const { source, pointerCell, direction, rowCount, columnCount } = args;
+  if (direction === "down" || direction === "up") {
     const clampedRow = Math.min(Math.max(pointerCell.rowIndex, 0), Math.max(rowCount - 1, 0));
-    if (clampedRow > source.rowEnd) {
+    if (direction === "down" && clampedRow > source.rowEnd) {
       return {
         rowStart: source.rowStart,
         rowEnd: clampedRow,
+        columnStart: source.columnStart,
+        columnEnd: source.columnEnd,
+      };
+    }
+    if (direction === "up" && clampedRow < source.rowStart) {
+      return {
+        rowStart: clampedRow,
+        rowEnd: source.rowEnd,
         columnStart: source.columnStart,
         columnEnd: source.columnEnd,
       };
@@ -914,7 +938,7 @@ export function buildFillTargetFromPointer(args: {
     Math.max(pointerCell.columnIndex, 0),
     Math.max(columnCount - 1, 0),
   );
-  if (clampedColumn > source.columnEnd) {
+  if (direction === "right" && clampedColumn > source.columnEnd) {
     return {
       rowStart: source.rowStart,
       rowEnd: source.rowEnd,
@@ -922,13 +946,24 @@ export function buildFillTargetFromPointer(args: {
       columnEnd: clampedColumn,
     };
   }
+  if (direction === "left" && clampedColumn < source.columnStart) {
+    return {
+      rowStart: source.rowStart,
+      rowEnd: source.rowEnd,
+      columnStart: clampedColumn,
+      columnEnd: source.columnEnd,
+    };
+  }
   return source;
 }
 
 // Clamp a target rectangle's row span to the contiguous same-group run
-// from the source row. Horizontal axis is a no-op (columns have no
-// group affinity). Ungrouped views (`""` sentinel for the source row's
-// pathKey) are also a no-op.
+// from the source row, in either vertical direction. Horizontal axis is
+// a no-op (columns have no group affinity). Ungrouped views (`""`
+// sentinel for the source row's pathKey) are also a no-op.
+// `buildFillTargetFromPointer`'s contract guarantees a target extends
+// on only one side of source per drag frame, so the two clamp branches
+// here are independent and never compete.
 export function clampRangeToGroup(args: {
   target: NormalizedRange;
   source: NormalizedRange;
@@ -942,9 +977,10 @@ export function clampRangeToGroup(args: {
   const sourceGroup = sourceRowId ? (groupPathByRowId.get(sourceRowId) ?? "") : "";
   if (sourceGroup === "") return { clamped: target, wasClamped: false };
   let rowEnd = target.rowEnd;
-  // Walk down from the source's bottom edge and stop at the first
-  // out-of-group row. Source rows themselves are always in-group by
-  // construction (they form the source rectangle).
+  let rowStart = target.rowStart;
+  // Downward fill: walk down from the source's bottom edge and stop at
+  // the first out-of-group row. Source rows themselves are always in
+  // group by construction.
   for (let r = source.rowEnd + 1; r <= rowEnd; r += 1) {
     const id = rowIds[r];
     if (!id || (groupPathByRowId.get(id) ?? "") !== sourceGroup) {
@@ -952,9 +988,18 @@ export function clampRangeToGroup(args: {
       break;
     }
   }
-  const wasClamped = rowEnd !== target.rowEnd;
+  // Upward fill: walk up from the source's top edge and stop at the
+  // first out-of-group row.
+  for (let r = source.rowStart - 1; r >= rowStart; r -= 1) {
+    const id = rowIds[r];
+    if (!id || (groupPathByRowId.get(id) ?? "") !== sourceGroup) {
+      rowStart = r + 1;
+      break;
+    }
+  }
+  const wasClamped = rowEnd !== target.rowEnd || rowStart !== target.rowStart;
   return {
-    clamped: { ...target, rowEnd },
+    clamped: { ...target, rowEnd, rowStart },
     wasClamped,
   };
 }
@@ -1013,8 +1058,13 @@ export type PlanFillResult = {
 // Build the writes / inverse pair for one (source, target) pair. Cyclic
 // repeat: target cells outside the source rectangle take their value
 // from source[(r - source.rowStart) mod cycleRows][(c - source.columnStart)
-// mod cycleColumns]. Read-only target columns are silently skipped and
-// counted. Cells inside the source rectangle are never rewritten.
+// mod cycleColumns]. The `((x % n) + n) % n` guard makes the formula
+// symmetric: negative deltas (target rows above source / target columns
+// left of source) tile the cycle the same way positive deltas do —
+// e.g., a 3-row source (rowStart=8) with target row 7 picks
+// source.rowEnd, row 6 picks rowEnd-1, etc. Read-only target columns
+// are silently skipped and counted. Cells inside the source rectangle
+// are never rewritten.
 //
 // The caller is responsible for clamping `target` to a group before
 // calling — this helper assumes the rectangle is already legal.

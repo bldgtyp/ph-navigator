@@ -9,10 +9,12 @@ import {
 import {
   buildFillTargetFromPointer,
   chooseFillAxis,
+  chooseFillDirection,
   clampRangeToGroup,
   planFill,
   splitRangeByGroup,
   type FillAxis,
+  type FillDirection,
   type NormalizedRange,
 } from "../lib";
 import { AXIS_THRESHOLD, EDGE_PX, SCROLL_PX } from "../tokens/pointerDragConstants";
@@ -20,17 +22,26 @@ import type { CellWrite, DataTableColumnDef, FieldDef, FillState, WriteOp } from
 import type { GridSelection } from "./useGridSelection";
 import type { DispatchWrite } from "./useGridWriteReducer";
 
-// Phase 7 §4.1: orchestrator for the fill handle drag + ⌘D / ⌘R
+// Orchestrator for the fill handle drag + ⌘D / ⌘R / ⌘⇧D / ⌘⇧R
 // keyboard. Sibling to `useGridPointerDrag`, not a co-mode: both hooks
 // install their own document-level listeners and never share state. The
 // only common surface is the three pointer-drag constants imported from
 // `pointerDragConstants.ts`.
 
+const FILL_NOOP_MESSAGES: Record<FillDirection, string> = {
+  down: "Select more than one row to fill down.",
+  up: "Select more than one row to fill up.",
+  right: "Select more than one column to fill right.",
+  left: "Select more than one column to fill left.",
+};
+
 export type GridFill = FillState & {
   isDragging: boolean;
   onHandleMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   fillDown: () => Promise<void>;
+  fillUp: () => Promise<void>;
   fillRight: () => Promise<void>;
+  fillLeft: () => Promise<void>;
   cancel: () => void;
 };
 
@@ -220,6 +231,14 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
       axisRef.current = axis;
     }
     const axis = axisRef.current;
+    // The axis locks once at threshold (above); the direction within
+    // that axis is recomputed every frame so a user can drag past the
+    // source and back without re-locking.
+    const direction = chooseFillDirection({
+      pointerStart,
+      pointerCurrent,
+      axis,
+    });
     const pointerCell = resolvePointerToCell();
     if (!pointerCell) {
       return;
@@ -227,7 +246,7 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
     const rawTarget = buildFillTargetFromPointer({
       source: src,
       pointerCell,
-      axis,
+      direction,
       rowCount: liveRef.current.rows.length,
       columnCount: liveRef.current.columns.length,
     });
@@ -240,7 +259,9 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
     });
     if (clamp.wasClamped && !hasAnnouncedClampRef.current) {
       hasAnnouncedClampRef.current = true;
-      liveRef.current.onAnnounce("Fill clamped to group bottom.");
+      const message =
+        direction === "up" ? "Fill clamped to group top." : "Fill clamped to group bottom.";
+      liveRef.current.onAnnounce(message);
     }
     targetPreviewRef.current = clamp.clamped;
     setTargetPreview(clamp.clamped);
@@ -308,14 +329,22 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
     const skippedNote = result.skipped > 0 ? ` (${result.skipped} skipped, read-only)` : "";
     live.onAnnounce(`${result.writes.length} cells filled.${skippedNote}`);
     // Selection lands on the target rectangle so the user can chain
-    // another gesture (§2 constraint 12).
-    const topLeftRowId = live.rowIds[src.rowStart];
-    const topLeftFieldKey = live.fieldKeys[src.columnStart];
-    const bottomRightRowId = live.rowIds[target.rowEnd];
-    const bottomRightFieldKey = live.fieldKeys[target.columnEnd];
-    if (topLeftRowId && topLeftFieldKey && bottomRightRowId && bottomRightFieldKey) {
-      live.selection.setActive({ rowId: topLeftRowId, fieldKey: topLeftFieldKey });
-      live.selection.extendTo({ rowId: bottomRightRowId, fieldKey: bottomRightFieldKey });
+    // another gesture (§2 constraint 12). Anchor and focus follow the
+    // drag direction: anchor at the source corner opposite the drag,
+    // focus at the target corner at the drag endpoint.
+    const isUpward = target.rowStart < src.rowStart;
+    const isLeftward = target.columnStart < src.columnStart;
+    const anchorRowIndex = isUpward ? src.rowEnd : src.rowStart;
+    const anchorColIndex = isLeftward ? src.columnEnd : src.columnStart;
+    const focusRowIndex = isUpward ? target.rowStart : target.rowEnd;
+    const focusColIndex = isLeftward ? target.columnStart : target.columnEnd;
+    const anchorRowId = live.rowIds[anchorRowIndex];
+    const anchorFieldKey = live.fieldKeys[anchorColIndex];
+    const focusRowId = live.rowIds[focusRowIndex];
+    const focusFieldKey = live.fieldKeys[focusColIndex];
+    if (anchorRowId && anchorFieldKey && focusRowId && focusFieldKey) {
+      live.selection.setActive({ rowId: anchorRowId, fieldKey: anchorFieldKey });
+      live.selection.extendTo({ rowId: focusRowId, fieldKey: focusFieldKey });
     }
   }, []);
 
@@ -425,58 +454,73 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
     [],
   );
 
-  const fillDown = useCallback(async () => {
-    const live = liveRef.current;
-    if (readOnly || isEditing || !hasWriteHandler) return;
-    if (live.rows.length === 0) return;
-    const range = live.selection.normalizedRange;
-    if (range.rowStart === range.rowEnd) {
-      live.onAnnounce("Select more than one row to fill down.");
-      return;
-    }
-    const subRanges = splitRangeByGroup({
-      range,
-      groupPathByRowId: live.groupPathByRowId,
-      rowIds: live.rowIds,
-    });
-    const pairs = subRanges
-      .filter((sub) => sub.rowEnd > sub.rowStart)
-      .map((sub) => ({
-        source: {
-          rowStart: sub.rowStart,
-          rowEnd: sub.rowStart,
-          columnStart: sub.columnStart,
-          columnEnd: sub.columnEnd,
+  const fillInDirection = useCallback(
+    async (direction: FillDirection) => {
+      const live = liveRef.current;
+      if (readOnly || isEditing || !hasWriteHandler) return;
+      if (live.rows.length === 0) return;
+      const range = live.selection.normalizedRange;
+      const noopMessage = FILL_NOOP_MESSAGES[direction];
+      const sourceAtEnd = direction === "up" || direction === "left";
+      if (direction === "down" || direction === "up") {
+        if (range.rowStart === range.rowEnd) {
+          live.onAnnounce(noopMessage);
+          return;
+        }
+        // Vertical splits on groups; each sub-range fills from its own
+        // top-or-bottom row depending on direction. Horizontal axis is
+        // group-free, so the leftward / rightward branches below skip
+        // the split entirely.
+        const subRanges = splitRangeByGroup({
+          range,
+          groupPathByRowId: live.groupPathByRowId,
+          rowIds: live.rowIds,
+        });
+        const pairs = subRanges
+          .filter((sub) => sub.rowEnd > sub.rowStart)
+          .map((sub) => {
+            const sourceRow = sourceAtEnd ? sub.rowEnd : sub.rowStart;
+            return {
+              source: {
+                rowStart: sourceRow,
+                rowEnd: sourceRow,
+                columnStart: sub.columnStart,
+                columnEnd: sub.columnEnd,
+              },
+              target: sub,
+            };
+          });
+        if (pairs.length === 0) {
+          live.onAnnounce(noopMessage);
+          return;
+        }
+        await dispatchCombinedFill(pairs);
+        return;
+      }
+      if (range.columnStart === range.columnEnd) {
+        live.onAnnounce(noopMessage);
+        return;
+      }
+      const sourceCol = sourceAtEnd ? range.columnEnd : range.columnStart;
+      await dispatchCombinedFill([
+        {
+          source: {
+            rowStart: range.rowStart,
+            rowEnd: range.rowEnd,
+            columnStart: sourceCol,
+            columnEnd: sourceCol,
+          },
+          target: range,
         },
-        target: sub,
-      }));
-    if (pairs.length === 0) {
-      live.onAnnounce("Select more than one row to fill down.");
-      return;
-    }
-    await dispatchCombinedFill(pairs);
-  }, [dispatchCombinedFill, hasWriteHandler, isEditing, readOnly]);
+      ]);
+    },
+    [dispatchCombinedFill, hasWriteHandler, isEditing, readOnly],
+  );
 
-  const fillRight = useCallback(async () => {
-    const live = liveRef.current;
-    if (readOnly || isEditing || !hasWriteHandler) return;
-    if (live.rows.length === 0) return;
-    const range = live.selection.normalizedRange;
-    if (range.columnStart === range.columnEnd) {
-      live.onAnnounce("Select more than one column to fill right.");
-      return;
-    }
-    const pair = {
-      source: {
-        rowStart: range.rowStart,
-        rowEnd: range.rowEnd,
-        columnStart: range.columnStart,
-        columnEnd: range.columnStart,
-      },
-      target: range,
-    };
-    await dispatchCombinedFill([pair]);
-  }, [dispatchCombinedFill, hasWriteHandler, isEditing, readOnly]);
+  const fillDown = useCallback(() => fillInDirection("down"), [fillInDirection]);
+  const fillUp = useCallback(() => fillInDirection("up"), [fillInDirection]);
+  const fillRight = useCallback(() => fillInDirection("right"), [fillInDirection]);
+  const fillLeft = useCallback(() => fillInDirection("left"), [fillInDirection]);
 
   // Mid-edit start aborts any drag-in-progress (§2 constraint 8).
   useEffect(() => {
@@ -507,7 +551,9 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
     isDragging,
     onHandleMouseDown,
     fillDown,
+    fillUp,
     fillRight,
+    fillLeft,
     cancel,
   };
 }

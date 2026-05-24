@@ -245,6 +245,63 @@ describe("useGridFill — fillDown", () => {
   });
 });
 
+describe("useGridFill — fillUp", () => {
+  test("no-op + announce when selection is single-row", async () => {
+    const onAnnounce = vi.fn();
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    const selection = makeSelection({ rowStart: 0, rowEnd: 0, columnStart: 0, columnEnd: 0 });
+    const { result } = renderHook(() => useHarness({ selection, onAnnounce, dispatchWrite }));
+    await act(async () => {
+      await result.current.fillUp();
+    });
+    expect(dispatchWrite).not.toHaveBeenCalled();
+    expect(onAnnounce).toHaveBeenCalledWith("Select more than one row to fill up.");
+  });
+
+  test("dispatches one fill op using the bottom row as source", async () => {
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    // Select rows 0..2, column 0: source = row 2 ("C"), targets = rows 0,1.
+    const selection = makeSelection({ rowStart: 0, rowEnd: 2, columnStart: 0, columnEnd: 0 });
+    const { result } = renderHook(() => useHarness({ selection, dispatchWrite }));
+    await act(async () => {
+      await result.current.fillUp();
+    });
+    expect(dispatchWrite).toHaveBeenCalledTimes(1);
+    const [op, inverse] = dispatchWrite.mock.calls[0]! as [
+      { kind: string; writes: { rowId: string; value: unknown }[] },
+      { kind: string; writes: { value: unknown }[] },
+    ];
+    expect(op.kind).toBe("fill");
+    expect(op.writes).toHaveLength(2);
+    expect(op.writes.map((w) => w.rowId)).toEqual(["rm_1", "rm_2"]);
+    expect(op.writes.map((w) => w.value)).toEqual(["C", "C"]);
+    expect(inverse.kind).toBe("cell");
+    expect(inverse.writes.map((w) => w.value)).toEqual(["A", "B"]);
+  });
+
+  test("multi-group selection produces ONE op with each group's bottom row as source", async () => {
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    // rows 1..4: rm_2, rm_3 (1st), rm_4, rm_5 (2nd). Sub-ranges:
+    // [1..2] source rm_3 ("C"), target rm_2; [3..4] source rm_5 ("E"),
+    // target rm_4.
+    const selection = makeSelection({ rowStart: 1, rowEnd: 4, columnStart: 0, columnEnd: 0 });
+    const { result } = renderHook(() =>
+      useHarness({ selection, dispatchWrite, groupPathByRowId: groupedPath }),
+    );
+    await act(async () => {
+      await result.current.fillUp();
+    });
+    expect(dispatchWrite).toHaveBeenCalledTimes(1);
+    const [op] = dispatchWrite.mock.calls[0]! as [
+      { kind: string; writes: { rowId: string; value: unknown }[] },
+    ];
+    if (op.kind !== "fill") throw new Error("expected fill op");
+    expect(op.writes).toHaveLength(2);
+    expect(op.writes.map((w) => w.rowId)).toEqual(["rm_2", "rm_4"]);
+    expect(op.writes.map((w) => w.value)).toEqual(["C", "E"]);
+  });
+});
+
 describe("useGridFill — fillRight", () => {
   test("no-op when selection is single-column", async () => {
     const onAnnounce = vi.fn();
@@ -270,6 +327,39 @@ describe("useGridFill — fillRight", () => {
     if (op.kind !== "fill") throw new Error("expected fill op");
     expect(op.writes).toHaveLength(1);
     expect(op.writes[0]!.fieldKey).toBe("floor");
+  });
+});
+
+describe("useGridFill — fillLeft", () => {
+  test("no-op when selection is single-column", async () => {
+    const onAnnounce = vi.fn();
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    const selection = makeSelection({ rowStart: 0, rowEnd: 0, columnStart: 0, columnEnd: 0 });
+    const { result } = renderHook(() => useHarness({ selection, onAnnounce, dispatchWrite }));
+    await act(async () => {
+      await result.current.fillLeft();
+    });
+    expect(dispatchWrite).not.toHaveBeenCalled();
+    expect(onAnnounce).toHaveBeenCalledWith("Select more than one column to fill left.");
+  });
+
+  test("dispatches one fill op using the rightmost column as source", async () => {
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    // Select row 0 cols 0..1: source = col 1 ("floor"="1st"), targets =
+    // col 0.
+    const selection = makeSelection({ rowStart: 0, rowEnd: 0, columnStart: 0, columnEnd: 1 });
+    const { result } = renderHook(() => useHarness({ selection, dispatchWrite }));
+    await act(async () => {
+      await result.current.fillLeft();
+    });
+    expect(dispatchWrite).toHaveBeenCalledTimes(1);
+    const [op] = dispatchWrite.mock.calls[0]! as [
+      { kind: string; writes: { fieldKey: string; value: unknown }[] },
+    ];
+    if (op.kind !== "fill") throw new Error("expected fill op");
+    expect(op.writes).toHaveLength(1);
+    expect(op.writes[0]!.fieldKey).toBe("name");
+    expect(op.writes[0]!.value).toBe("1st");
   });
 });
 
@@ -310,6 +400,79 @@ describe("useGridFill — drag lifecycle", () => {
     expect(result.current.isDragging).toBe(false);
   });
 
+  test("drag with negative dy commits an upward fill", async () => {
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    const onAnnounce = vi.fn();
+    // Source = row 4 ("E"). Drag up to row 1 (negative dy).
+    const selection = makeSelection({ rowStart: 4, rowEnd: 4, columnStart: 0, columnEnd: 0 });
+    const { result } = renderHook(() => useHarness({ selection, dispatchWrite, onAnnounce }));
+
+    const cell = document.createElement("td");
+    cell.dataset.rowId = "rm_2";
+    cell.dataset.fieldKey = "name";
+    document.body.appendChild(cell);
+    stubElementFromPoint(cell);
+
+    const event = syntheticMouseDown();
+    act(() => {
+      result.current.onHandleMouseDown(event);
+    });
+    // Pointer moves upward past axis threshold (dy = -100).
+    act(() => {
+      document.dispatchEvent(new MouseEvent("mousemove", { clientX: 100, clientY: 0 }));
+    });
+    expect(result.current.targetPreview).not.toBe(null);
+
+    await act(async () => {
+      document.dispatchEvent(new MouseEvent("mouseup"));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(dispatchWrite).toHaveBeenCalledTimes(1);
+    const [op] = dispatchWrite.mock.calls[0]! as [
+      { kind: string; writes: { rowId: string; value: unknown }[] },
+    ];
+    if (op.kind !== "fill") throw new Error("expected fill op");
+    // Targets = rows 1..3 receive "E" (the source row 4 value).
+    expect(op.writes.map((w) => w.rowId)).toEqual(["rm_2", "rm_3", "rm_4"]);
+    expect(op.writes.map((w) => w.value)).toEqual(["E", "E", "E"]);
+  });
+
+  test("drag with negative dx commits a leftward fill", async () => {
+    const dispatchWrite = vi.fn().mockResolvedValue(undefined);
+    // Source = col 1 ("floor"="1st"). Drag left to col 0 (negative dx).
+    const selection = makeSelection({ rowStart: 0, rowEnd: 0, columnStart: 1, columnEnd: 1 });
+    const { result } = renderHook(() => useHarness({ selection, dispatchWrite }));
+
+    const cell = document.createElement("td");
+    cell.dataset.rowId = "rm_1";
+    cell.dataset.fieldKey = "name";
+    document.body.appendChild(cell);
+    stubElementFromPoint(cell);
+
+    const event = syntheticMouseDown();
+    act(() => {
+      result.current.onHandleMouseDown(event);
+    });
+    // Horizontal drag, negative dx.
+    act(() => {
+      document.dispatchEvent(new MouseEvent("mousemove", { clientX: 0, clientY: 100 }));
+    });
+
+    await act(async () => {
+      document.dispatchEvent(new MouseEvent("mouseup"));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(dispatchWrite).toHaveBeenCalledTimes(1);
+    const [op] = dispatchWrite.mock.calls[0]! as [
+      { kind: string; writes: { fieldKey: string; value: unknown }[] },
+    ];
+    if (op.kind !== "fill") throw new Error("expected fill op");
+    expect(op.writes.map((w) => w.fieldKey)).toEqual(["name"]);
+    expect(op.writes.map((w) => w.value)).toEqual(["1st"]);
+  });
+
   test("cancel() tears down without committing", async () => {
     const dispatchWrite = vi.fn().mockResolvedValue(undefined);
     const selection = makeSelection({ rowStart: 0, rowEnd: 0, columnStart: 0, columnEnd: 0 });
@@ -329,6 +492,35 @@ describe("useGridFill — drag lifecycle", () => {
 });
 
 describe("useGridFill — group clamp announce", () => {
+  test("fires Fill clamped to group top once per upward drag session", () => {
+    const onAnnounce = vi.fn();
+    // Source = rm_4 ("2nd"). Drag upward into "1st" group should clamp
+    // to top of "2nd".
+    const selection = makeSelection({ rowStart: 3, rowEnd: 3, columnStart: 0, columnEnd: 0 });
+    const { result } = renderHook(() =>
+      useHarness({ selection, onAnnounce, groupPathByRowId: groupedPath }),
+    );
+    // Drag-up pointer cell is rm_1 (in "1st" group, past clamp boundary).
+    const cell = document.createElement("td");
+    cell.dataset.rowId = "rm_1";
+    cell.dataset.fieldKey = "name";
+    document.body.appendChild(cell);
+    stubElementFromPoint(cell);
+    act(() => {
+      result.current.onHandleMouseDown(syntheticMouseDown());
+    });
+    // Negative dy crosses axis threshold.
+    act(() => {
+      document.dispatchEvent(new MouseEvent("mousemove", { clientX: 100, clientY: 0 }));
+    });
+    const topCalls = onAnnounce.mock.calls.filter(([msg]) => msg === "Fill clamped to group top.");
+    expect(topCalls).toHaveLength(1);
+    const bottomCalls = onAnnounce.mock.calls.filter(
+      ([msg]) => msg === "Fill clamped to group bottom.",
+    );
+    expect(bottomCalls).toHaveLength(0);
+  });
+
   test("fires Fill clamped to group bottom once per drag session", () => {
     const onAnnounce = vi.fn();
     const selection = makeSelection({ rowStart: 0, rowEnd: 0, columnStart: 0, columnEnd: 0 });
