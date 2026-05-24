@@ -1398,6 +1398,58 @@ button:disabled {
   min-width: 340px;
 }
 
+/* Phase 6 §4.7: group-header row styling. Chevron + key (pill or
+   text) + count live in the first column with depth-based left
+   padding; per-column aggregation cells fill the rest of the row
+   right-aligned to mirror data-cell alignment. */
+.data-table-group-row {
+  background: var(--bg-card);
+  font-weight: 500;
+  height: 32px;
+}
+
+.data-table-group-row td {
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+}
+
+.data-table-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.data-table-group-chevron {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.7em;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-group-chevron:hover {
+  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+}
+
+.data-table-group-key {
+  font-weight: 600;
+}
+
+.data-table-group-count {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.data-table-group-aggregation {
+  text-align: right;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
 .data-table-view-popover-rule[data-dragging="true"] {
   opacity: 0.6;
   cursor: grabbing;

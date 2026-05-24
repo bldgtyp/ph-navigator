@@ -1,10 +1,17 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { computeEdgeBits, isCellInNormalizedRange, type NormalizedRange } from "../lib";
-import type { AxisRoleSubset, CellCoord, DataTableColumnDef, FieldDef } from "../types";
+import type {
+  AxisRoleSubset,
+  BodyPlanItem,
+  CellCoord,
+  DataTableColumnDef,
+  FieldDef,
+} from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { GridGutter } from "./GridGutter";
+import { GroupHeaderRow } from "./GroupHeaderRow";
 import { InlineCellEditor } from "./InlineCellEditor";
 import { SingleSelectPopover } from "./SingleSelectPopover";
 
@@ -29,6 +36,12 @@ export type GridBodyProps<TRow> = {
   // so the CSS attribute selector paints — no JS color work here.
   // Codes: "f" | "s" | "g" | "fs" | "fg" | "sg" | "fsg".
   axisRolesByFieldKey: Map<string, AxisRoleSubset>;
+  // Phase 6 §4.6: interleaved group-header + data-row plan. When
+  // ungrouped this is a flat sequence of data items and the body
+  // renders exactly as Phase 5. With group rules active, group-header
+  // items emit <GroupHeaderRow>s between data rows.
+  bodyPlan: BodyPlanItem<TRow>[];
+  onGroupToggle: (pathKey: string) => void;
   onCellActivate: (rowId: string, fieldKey: string) => void;
   onCellMouseDown?: (event: ReactMouseEvent<HTMLTableCellElement>) => void;
   onCellOpen: (row: TRow, columnIndex: number) => void;
@@ -52,6 +65,8 @@ export function GridBody<TRow>({
   emptyMessage,
   totalRowCount,
   axisRolesByFieldKey,
+  bodyPlan,
+  onGroupToggle,
   onCellActivate,
   onCellMouseDown,
   onCellOpen,
@@ -60,89 +75,123 @@ export function GridBody<TRow>({
   onCommitAndMove,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
+  const tableRowByRowId = new Map(tableRows.map((row) => [row.id, row]));
   const isSourceEmpty = totalRowCount === 0;
+  let ariaRowIndex = 1; // 1 is the header row; data + group rows start at 2.
+  // Walk the body plan once, emitting a group-header <tr> or a data
+  // <tr> per item. The data-row index passed to selection helpers is
+  // the position among data items only (lines up with `rowIds`).
+  let dataRowIndex = 0;
   return (
     <tbody>
-      {tableRows.length === 0 ? (
+      {bodyPlan.length === 0 ? (
         <tr role="row" aria-rowindex={2}>
           <td className="data-table-filter-empty" colSpan={visibleColumnDefs.length + 1}>
             {isSourceEmpty ? emptyMessage : "No rows match the current table view."}
           </td>
         </tr>
       ) : null}
-      {tableRows.map((row, rowIndex) => (
-        <tr key={row.id} role="row" aria-rowindex={rowIndex + 2}>
-          <GridGutter
-            rowNumber={rowIndex + 1}
-            selected={rowSelection.isSelected(rowIds[rowIndex] ?? "")}
-            showCheckbox={showRowCheckbox}
-            onSelectRow={() => {
+      {bodyPlan.map((item) => {
+        ariaRowIndex += 1;
+        if (item.kind === "group") {
+          return (
+            <GroupHeaderRow
+              key={`group::${item.pathKey}`}
+              depth={item.depth}
+              pathKey={item.pathKey}
+              fieldDef={item.fieldDef}
+              groupValue={item.groupValue}
+              count={item.count}
+              aggregatedValues={item.aggregatedValues}
+              expanded={item.expanded}
+              visibleColumnDefs={visibleColumnDefs}
+              onToggle={onGroupToggle}
+            />
+          );
+        }
+        const rowIndex = dataRowIndex;
+        dataRowIndex += 1;
+        const tanstackRow = tableRowByRowId.get(item.rowId);
+        if (!tanstackRow) return null;
+        return (
+          <tr
+            key={tanstackRow.id}
+            role="row"
+            aria-rowindex={ariaRowIndex}
+            data-row-depth={item.depth}
+          >
+            <GridGutter
+              rowNumber={rowIndex + 1}
+              selected={rowSelection.isSelected(rowIds[rowIndex] ?? "")}
+              showCheckbox={showRowCheckbox}
+              onSelectRow={() => {
+                const rowId = rowIds[rowIndex];
+                if (rowId !== undefined) onRowSelect(rowId);
+              }}
+              onToggleSelected={(mode) => {
+                const rowId = rowIds[rowIndex];
+                if (rowId !== undefined) onRowToggleSelected(rowId, mode);
+              }}
+            />
+            {tanstackRow.getVisibleCells().map((cell, columnIndex) => {
+              const selected =
+                hasExplicitRange &&
+                isCellInNormalizedRange({ rowIndex, columnIndex }, normalizedActiveRange);
+              const active =
+                activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex;
+              const fieldKey = fieldKeys[columnIndex] ?? "";
               const rowId = rowIds[rowIndex];
-              if (rowId !== undefined) onRowSelect(rowId);
-            }}
-            onToggleSelected={(mode) => {
-              const rowId = rowIds[rowIndex];
-              if (rowId !== undefined) onRowToggleSelected(rowId, mode);
-            }}
-          />
-          {row.getVisibleCells().map((cell, columnIndex) => {
-            const selected =
-              hasExplicitRange &&
-              isCellInNormalizedRange({ rowIndex, columnIndex }, normalizedActiveRange);
-            const active =
-              activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex;
-            const fieldKey = fieldKeys[columnIndex] ?? "";
-            const rowId = rowIds[rowIndex];
-            const edgeStyle = selected
-              ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
-              : undefined;
-            const axisTint = fieldKey ? axisRolesByFieldKey.get(fieldKey) : undefined;
-            return (
-              <td
-                key={cell.id}
-                role="gridcell"
-                aria-colindex={columnIndex + 1}
-                aria-selected={selected}
-                data-row-id={rowId}
-                data-field-key={fieldKey || undefined}
-                data-axis-tint={axisTint}
-                className={[
-                  visibleColumnDefs[columnIndex]?.className,
-                  columnIndex === 0 ? "data-table-frozen" : "",
-                  selected ? "data-table-cell-selected" : "",
-                  active ? "data-table-cell-active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                style={edgeStyle}
-                onMouseDown={onCellMouseDown}
-                onClick={(event) => {
-                  // Phase 3: Shift+Click extends the range via the
-                  // mousedown handler's `selection.extendTo`. The
-                  // click event would otherwise call `setActive` and
-                  // collapse the range we just extended, so skip the
-                  // collapse when the modifier is held.
-                  if (event.shiftKey) return;
-                  if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
-                }}
-                onDoubleClick={() => onCellOpen(row.original, columnIndex)}
-              >
-                {renderCellContent({
-                  edit,
-                  rowId: row.id,
-                  fieldKey,
-                  fieldDef: fieldDefByKey.get(fieldKey),
-                  fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
-                  onCommitAndMove: (shiftKey) =>
-                    void edit.commit().then((committed) => {
-                      if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
-                    }),
-                })}
-              </td>
-            );
-          })}
-        </tr>
-      ))}
+              const edgeStyle = selected
+                ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
+                : undefined;
+              const axisTint = fieldKey ? axisRolesByFieldKey.get(fieldKey) : undefined;
+              return (
+                <td
+                  key={cell.id}
+                  role="gridcell"
+                  aria-colindex={columnIndex + 1}
+                  aria-selected={selected}
+                  data-row-id={rowId}
+                  data-field-key={fieldKey || undefined}
+                  data-axis-tint={axisTint}
+                  className={[
+                    visibleColumnDefs[columnIndex]?.className,
+                    columnIndex === 0 ? "data-table-frozen" : "",
+                    selected ? "data-table-cell-selected" : "",
+                    active ? "data-table-cell-active" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  style={edgeStyle}
+                  onMouseDown={onCellMouseDown}
+                  onClick={(event) => {
+                    // Phase 3: Shift+Click extends the range via the
+                    // mousedown handler's `selection.extendTo`. The
+                    // click event would otherwise call `setActive` and
+                    // collapse the range we just extended, so skip the
+                    // collapse when the modifier is held.
+                    if (event.shiftKey) return;
+                    if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
+                  }}
+                  onDoubleClick={() => onCellOpen(tanstackRow.original, columnIndex)}
+                >
+                  {renderCellContent({
+                    edit,
+                    rowId: tanstackRow.id,
+                    fieldKey,
+                    fieldDef: fieldDefByKey.get(fieldKey),
+                    fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
+                    onCommitAndMove: (shiftKey) =>
+                      void edit.commit().then((committed) => {
+                        if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
+                      }),
+                  })}
+                </td>
+              );
+            })}
+          </tr>
+        );
+      })}
     </tbody>
   );
 }

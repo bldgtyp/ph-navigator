@@ -171,3 +171,86 @@ describe("GridBody — perimeter outline rendering", () => {
     expect(outside.style.boxShadow).toBe("");
   });
 });
+
+describe("GridBody — group accordion", () => {
+  test("renders group-header rows when view.group is non-empty", () => {
+    const onViewChange = vi.fn<(next: ViewState) => void>();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={{
+          ...emptyViewState(),
+          group: [{ fieldKey: "name", direction: "asc" }],
+        }}
+        onViewChange={onViewChange}
+        emptyMessage="No rows yet."
+      />,
+    );
+
+    const groupRows = document.querySelectorAll(".data-table-group-row");
+    // Each row has a unique `name` value, so we get one group header per row.
+    expect(groupRows.length).toBe(3);
+    // The first column in each group header shows chevron + key + count.
+    const firstGroup = groupRows[0]!;
+    expect(firstGroup.querySelector(".data-table-group-chevron")).not.toBeNull();
+    expect(firstGroup.textContent).toContain("(1 row)");
+  });
+
+  test("aggregation values render in the group header for the aggregated column", () => {
+    const onViewChange = vi.fn<(next: ViewState) => void>();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={{
+          ...emptyViewState(),
+          group: [{ fieldKey: "name", direction: "asc" }],
+          aggregations: { count: "sum" },
+        }}
+        onViewChange={onViewChange}
+        emptyMessage="No rows yet."
+      />,
+    );
+
+    const groupRows = document.querySelectorAll(".data-table-group-row");
+    // The count column is the third visible column (after the gutter).
+    // Each group has one row so sum equals that row's count value.
+    const counts = Array.from(groupRows).map(
+      (row) => row.querySelectorAll(".data-table-group-aggregation")[1]?.textContent,
+    );
+    // ROWS sorted by name asc: Bedroom (3), Kitchen (2), Living (1).
+    expect(counts).toEqual(["3.00", "2.00", "1.00"]);
+  });
+
+  test("clicking the chevron dispatches a view change toggling expandedGroups", () => {
+    const onViewChange = vi.fn<(next: ViewState) => void>();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={{
+          ...emptyViewState(),
+          group: [{ fieldKey: "name", direction: "asc" }],
+        }}
+        onViewChange={onViewChange}
+        emptyMessage="No rows yet."
+      />,
+    );
+
+    const chevron = document.querySelector(".data-table-group-chevron") as HTMLButtonElement;
+    expect(chevron).not.toBeNull();
+    fireEvent.click(chevron);
+    expect(onViewChange).toHaveBeenCalled();
+    const next = onViewChange.mock.calls[0]![0] as ViewState;
+    // Exactly one path key should be flipped to false.
+    const flipped = Object.entries(next.expandedGroups).filter(([, v]) => v === false);
+    expect(flipped.length).toBe(1);
+  });
+});
