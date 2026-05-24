@@ -49,10 +49,10 @@ export const SINGLE_SELECT_OPERATORS: readonly FilterOperatorDef[] = [
 
 const EMPTY_OPERATORS: readonly FilterOperatorDef[] = [];
 
-// Pick the operator catalogue for a field. `attachment` and `argb_color`
-// return [] — they don't filter through the toolbar. `computed` honours
-// the optional `computed_type` slot; absent → text catalogue (Phase 0–3
-// behaviour preserved for unspecified computed columns).
+// `computed` defaults to text operators when `computed_type` is absent
+// (preserves Phase 0–3 behaviour for existing computed columns).
+// `attachment` and `argb_color` return [] — they don't filter through
+// the toolbar.
 export function getFilterOperators(fieldDef: FieldDef | undefined): readonly FilterOperatorDef[] {
   if (!fieldDef) return EMPTY_OPERATORS;
   switch (fieldDef.field_type) {
@@ -70,12 +70,17 @@ export function getFilterOperators(fieldDef: FieldDef | undefined): readonly Fil
   }
 }
 
+// Reverse lookup: operator → def. Built once at module load so the
+// popover row's per-render `getOperatorDef(rule.operator)` is O(1).
+const OPERATOR_DEF_BY_NAME = new Map<FilterOperator, FilterOperatorDef>(
+  [...TEXT_OPERATORS, ...NUMBER_OPERATORS, ...SINGLE_SELECT_OPERATORS].map((def) => [
+    def.operator,
+    def,
+  ]),
+);
+
 export function getOperatorDef(operator: FilterOperator): FilterOperatorDef | undefined {
-  for (const catalogue of [TEXT_OPERATORS, NUMBER_OPERATORS, SINGLE_SELECT_OPERATORS]) {
-    const found = catalogue.find((def) => def.operator === operator);
-    if (found) return found;
-  }
-  return undefined;
+  return OPERATOR_DEF_BY_NAME.get(operator);
 }
 
 // Phase 4 §4.10: a contributing rule is one whose value slot is

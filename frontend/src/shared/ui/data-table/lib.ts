@@ -11,7 +11,7 @@ import type {
   SortRule,
 } from "./types";
 import { generatedId } from "../../lib/ids";
-import { evaluateFilter, getFilterOperators } from "./fields/filterOperators";
+import { evaluateFilter, getFilterOperators, isFilterContributing } from "./fields/filterOperators";
 
 export type NormalizedRange = {
   rowStart: number;
@@ -217,30 +217,43 @@ export function planPaste({
   };
 }
 
-// Phase 4 §4.4: route every condition through the field-type registry's
-// `evaluateFilter`. The library never branches on field_type here —
-// operator semantics live in `fields/filterOperators.ts`. Dormant rules
-// (blank value / unparsable number / empty option list) pass everything
-// per L8.4. Conditions whose field is unknown or whose field exposes no
-// operators (attachment / argb_color) are skipped (treated as dormant).
+// Route every condition through the field-type registry's
+// `evaluateFilter` — operator semantics live in
+// `fields/filterOperators.ts`. Dormant rules (blank value / unparsable
+// number / empty option list) pass everything per L8.4. Conditions
+// whose field is unknown, whose field exposes no operators, or whose
+// value slots aren't yet contributing are pre-filtered outside the row
+// loop, so when no rule is actually narrowing we return `rows` by
+// identity (preserves downstream memo identity on `filteredRows`).
 export function applyFilters<TRow>(
   rows: TRow[],
   columns: DataTableColumnDef<TRow>[],
   fieldDefs: FieldDef[],
   filters: FilterCondition[],
 ): TRow[] {
-  const activeFilters = filters.filter((filter) => filter.fieldKey);
-  if (activeFilters.length === 0) return rows;
+  if (filters.length === 0) return rows;
   const columnsByFieldKey = fieldKeyColumnMap(columns);
   const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
+  const activeRules: {
+    filter: FilterCondition;
+    column: DataTableColumnDef<TRow>;
+    fieldDef: FieldDef;
+  }[] = [];
+  for (const filter of filters) {
+    if (!filter.fieldKey) continue;
+    const column = columnsByFieldKey.get(filter.fieldKey);
+    if (!column) continue;
+    const fieldDef = fieldDefsByKey.get(filter.fieldKey);
+    if (!fieldDef) continue;
+    if (getFilterOperators(fieldDef).length === 0) continue;
+    if (!isFilterContributing(filter)) continue;
+    activeRules.push({ filter, column, fieldDef });
+  }
+  if (activeRules.length === 0) return rows;
   return rows.filter((row) =>
-    activeFilters.every((filter) => {
-      const column = columnsByFieldKey.get(filter.fieldKey);
-      const fieldDef = fieldDefForColumn(column, fieldDefsByKey);
-      if (!column || !fieldDef) return true;
-      if (getFilterOperators(fieldDef).length === 0) return true;
-      return evaluateFilter(filter, column.accessor(row), fieldDef);
-    }),
+    activeRules.every(({ filter, column, fieldDef }) =>
+      evaluateFilter(filter, column.accessor(row), fieldDef),
+    ),
   );
 }
 

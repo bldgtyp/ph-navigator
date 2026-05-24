@@ -1,20 +1,7 @@
 import * as Popover from "@radix-ui/react-popover";
-import { useCallback, useMemo, useRef, type CSSProperties } from "react";
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { useMemo, type CSSProperties } from "react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   getFilterOperators,
@@ -22,19 +9,15 @@ import {
   type FilterOperatorDef,
 } from "../fields/filterOperators";
 import { defaultOperatorForField } from "../lib";
-import { generatedId } from "../../../lib/ids";
+import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, FilterCondition, FilterOperator } from "../types";
 
 // Phase 4 §4.5: Filter popover. Stacked rule rows wired to user-intent
 // `view.filter` via a single `onFilterChange(next)` callback. Each
-// gesture (add / edit / delete) produces a fully-shaped new array and
-// fires `onFilterChange` exactly once (L8.2). Operator semantics live
-// in the field-type registry — this component knows nothing about how
-// a rule evaluates.
-//
-// Step 3 ships without drag-to-reorder; Step 5 adds @dnd-kit/sortable
-// handles to each row. Until then rules render in their array order
-// and the "+ Add condition" footer appends to the tail.
+// gesture (add / edit / delete / reorder) produces a fully-shaped new
+// array and fires `onFilterChange` exactly once (L8.2). Operator
+// semantics live in the field-type registry — this component knows
+// nothing about how a rule evaluates.
 
 export type FilterPopoverProps = {
   open: boolean;
@@ -53,76 +36,15 @@ export function FilterPopover({
   onFilterChange,
   filterableFieldDefs,
 }: FilterPopoverProps) {
-  // Stable React keys for the rule list. `view.filter` is array-positional;
-  // we generate a fresh id whenever a rule is appended and re-use the
-  // existing id when a rule is replaced in place. This lets the React
-  // tree (and Step 5's dnd-kit ids) stay stable across edits without
-  // persisting any id to the view state.
-  const ruleIdsRef = useRef<string[]>([]);
-  if (ruleIdsRef.current.length !== rules.length) {
-    if (rules.length > ruleIdsRef.current.length) {
-      while (ruleIdsRef.current.length < rules.length) {
-        ruleIdsRef.current.push(generatedId("filt"));
-      }
-    } else {
-      ruleIdsRef.current = ruleIdsRef.current.slice(0, rules.length);
-    }
-  }
+  const sortable = useSortableRules(rules, onFilterChange, "filt");
 
-  const handleAddRule = useCallback(() => {
+  const handleAddRule = () => {
     const firstField = filterableFieldDefs[0];
     if (!firstField) return;
     const operator = defaultOperatorForField(firstField);
     if (!operator) return;
-    const next: FilterCondition = { fieldKey: firstField.field_key, operator };
-    ruleIdsRef.current.push(generatedId("filt"));
-    onFilterChange([...rules, next]);
-  }, [filterableFieldDefs, onFilterChange, rules]);
-
-  const handleRuleChange = useCallback(
-    (index: number, next: FilterCondition) => {
-      const updated = [...rules];
-      updated[index] = next;
-      onFilterChange(updated);
-    },
-    [onFilterChange, rules],
-  );
-
-  const handleRuleRemove = useCallback(
-    (index: number) => {
-      ruleIdsRef.current.splice(index, 1);
-      onFilterChange(rules.filter((_rule, i) => i !== index));
-    },
-    [onFilterChange, rules],
-  );
-
-  // Phase 4 §4.5 + Step 5: drag-to-reorder via @dnd-kit/sortable.
-  // Tests fire `DndContext.onDragEnd` directly so we keep the sensor
-  // setup default but rely on the active/over id pair carried by the
-  // event rather than the pointer position.
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-      const fromIndex = ruleIdsRef.current.indexOf(String(active.id));
-      const toIndex = ruleIdsRef.current.indexOf(String(over.id));
-      if (fromIndex < 0 || toIndex < 0) return;
-      const nextRules = [...rules];
-      const [moved] = nextRules.splice(fromIndex, 1);
-      if (!moved) return;
-      nextRules.splice(toIndex, 0, moved);
-      const nextIds = [...ruleIdsRef.current];
-      const [movedId] = nextIds.splice(fromIndex, 1);
-      if (movedId !== undefined) nextIds.splice(toIndex, 0, movedId);
-      ruleIdsRef.current = nextIds;
-      onFilterChange(nextRules);
-    },
-    [onFilterChange, rules],
-  );
+    sortable.appendRule({ fieldKey: firstField.field_key, operator });
+  };
 
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
@@ -140,24 +62,21 @@ export function FilterPopover({
             <div className="data-table-view-popover-empty">No filters applied to this view.</div>
           ) : (
             <DndContext
-              sensors={sensors}
+              sensors={sortable.sensors}
               collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+              onDragEnd={sortable.onDragEnd}
             >
-              <SortableContext
-                items={ruleIdsRef.current.slice(0, rules.length)}
-                strategy={verticalListSortingStrategy}
-              >
+              <SortableContext items={sortable.ids} strategy={verticalListSortingStrategy}>
                 <ul className="data-table-view-popover-rules" role="list">
                   {rules.map((rule, index) => (
                     <FilterRuleRow
-                      key={ruleIdsRef.current[index] ?? `filt-${index}`}
-                      ruleId={ruleIdsRef.current[index] ?? `filt-${index}`}
+                      key={sortable.ids[index]!}
+                      ruleId={sortable.ids[index]!}
                       index={index}
                       rule={rule}
                       fieldDefs={filterableFieldDefs}
-                      onChange={(next) => handleRuleChange(index, next)}
-                      onRemove={() => handleRuleRemove(index)}
+                      onChange={(next) => sortable.updateRuleAt(index, next)}
+                      onRemove={() => sortable.removeRuleAt(index)}
                     />
                   ))}
                 </ul>
@@ -201,19 +120,17 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
     const nextField = fieldDefs.find((def) => def.field_key === nextFieldKey);
     const nextOperator = defaultOperatorForField(nextField);
     if (!nextField || !nextOperator) return;
-    // Changing the field resets operator to the new catalogue's first
-    // entry and clears the value slots — the previous operator's shape
-    // may not match (e.g. text contains "abc" → number eq doesn't read
-    // a string value).
+    // Field change forces operator reset + value-slot clear: the prior
+    // operator's value shape may not match the new field's catalogue
+    // (text "contains abc" → number "eq" can't read a string value).
     onChange({ fieldKey: nextFieldKey, operator: nextOperator });
   };
 
   const handleOperatorChange = (nextOperator: FilterOperator) => {
     const nextDef = getOperatorDef(nextOperator);
     if (!nextDef) return;
-    // If the new operator's value shape differs from the current one,
-    // clear the value slots so we don't carry stale data of the wrong
-    // type into the next render's evaluator.
+    // Value-shape change → drop stale value slots so the evaluator
+    // doesn't read data of the wrong type next render.
     if (!operatorDef || nextDef.shape.kind !== operatorDef.shape.kind) {
       onChange({ fieldKey: rule.fieldKey, operator: nextOperator });
       return;
@@ -253,14 +170,12 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
           </option>
         ))}
       </select>
-      <div className="data-table-view-popover-value">
-        <FilterValueEditor
-          rule={rule}
-          operatorDef={operatorDef}
-          fieldDef={fieldDef}
-          onChange={onChange}
-        />
-      </div>
+      <FilterValueEditor
+        rule={rule}
+        operatorDef={operatorDef}
+        fieldDef={fieldDef}
+        onChange={onChange}
+      />
       <button
         type="button"
         className="data-table-view-popover-remove"
@@ -291,16 +206,16 @@ type FilterValueEditorProps = {
 };
 
 function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValueEditorProps) {
-  if (!operatorDef) return null;
+  if (!operatorDef) return <div className="data-table-view-popover-value" />;
   switch (operatorDef.shape.kind) {
     case "none":
-      return null;
+      return <div className="data-table-view-popover-value" />;
     case "string":
       return (
         <input
           type="text"
           aria-label="Filter value"
-          className="data-table-view-popover-input"
+          className="data-table-view-popover-value data-table-view-popover-input"
           value={rule.value ?? ""}
           onChange={(event) => onChange({ ...rule, value: event.target.value })}
           placeholder="Enter a value"
@@ -312,7 +227,7 @@ function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValu
           type="number"
           step="any"
           aria-label="Filter value"
-          className="data-table-view-popover-input"
+          className="data-table-view-popover-value data-table-view-popover-input"
           value={rule.value ?? ""}
           onChange={(event) => onChange({ ...rule, value: event.target.value })}
           placeholder="Enter a number"
@@ -321,7 +236,7 @@ function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValu
     case "numberPair": {
       const [lo = "", hi = ""] = rule.valuePair ?? [];
       return (
-        <div className="data-table-view-popover-range">
+        <div className="data-table-view-popover-value data-table-view-popover-range">
           <input
             type="number"
             step="any"
@@ -353,7 +268,7 @@ function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValu
       };
       const summary = selected.size === 0 ? "Select options" : `${selected.size} selected`;
       return (
-        <details className="data-table-view-popover-disclosure">
+        <details className="data-table-view-popover-value data-table-view-popover-disclosure">
           <summary>{summary}</summary>
           <ul className="data-table-view-popover-options">
             {options.map((option) => (

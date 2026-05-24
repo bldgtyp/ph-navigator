@@ -12,7 +12,7 @@ import type { FieldDef, FilterCondition, SortRule, ViewState } from "../types";
 export type GridToolbarProps = {
   readOnly: boolean;
   view: ViewState;
-  fieldDefs: FieldDef[];
+  fieldDefByKey: Map<string, FieldDef>;
   filterableFieldDefs: FieldDef[];
   sortableFieldDefs: FieldDef[];
   onFilterChange: (next: FilterCondition[]) => void;
@@ -21,10 +21,12 @@ export type GridToolbarProps = {
   actions?: ReactNode;
 };
 
+type AxisRule = { fieldKey: string };
+
 export function GridToolbar({
   readOnly,
   view,
-  fieldDefs,
+  fieldDefByKey,
   filterableFieldDefs,
   sortableFieldDefs,
   onFilterChange,
@@ -35,12 +37,11 @@ export function GridToolbar({
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const filterButtonLabel = describeFilterLabel(view.filter, fieldDefs);
-  const sortButtonLabel = describeSortLabel(view.sort, fieldDefs);
+  const filterLabel = describeAxisLabel(view.filter, fieldDefByKey, "Filter", "Filtered by");
+  const sortLabel = describeAxisLabel(view.sort, fieldDefByKey, "Sort", "Sorted by");
   // §4.8: buttons tint as soon as any rule exists (matches AirTable —
   // the chip colors on rule-present, dormant or not). Per-column cell
-  // tint requires a contributing rule and is computed separately in
-  // DataTable.tsx.
+  // tint requires a contributing rule and is computed in DataTable.tsx.
   const filterActive = view.filter.length > 0;
   const sortActive = view.sort.length > 0;
 
@@ -63,12 +64,12 @@ export function GridToolbar({
               className="data-table-toolbar-button"
               data-axis="filter"
               data-axis-active={filterActive ? "true" : undefined}
-              aria-label={filterButtonLabel.ariaLabel}
+              aria-label={filterLabel}
             >
               <span className="data-table-toolbar-button-icon" aria-hidden>
                 ☰
               </span>
-              <span>{filterButtonLabel.text}</span>
+              <span>{filterLabel}</span>
             </button>
           }
         />
@@ -84,12 +85,12 @@ export function GridToolbar({
               className="data-table-toolbar-button"
               data-axis="sort"
               data-axis-active={sortActive ? "true" : undefined}
-              aria-label={sortButtonLabel.ariaLabel}
+              aria-label={sortLabel}
             >
               <span className="data-table-toolbar-button-icon" aria-hidden>
                 ↑↓
               </span>
-              <span>{sortButtonLabel.text}</span>
+              <span>{sortLabel}</span>
             </button>
           }
         />
@@ -103,42 +104,17 @@ export function GridToolbar({
   );
 }
 
-function describeFilterLabel(
-  rules: FilterCondition[],
-  fieldDefs: FieldDef[],
-): { text: string; ariaLabel: string } {
-  if (rules.length === 0) return { text: "Filter", ariaLabel: "Filter" };
+function describeAxisLabel(
+  rules: AxisRule[],
+  fieldDefByKey: Map<string, FieldDef>,
+  idleLabel: string,
+  activePrefix: string,
+): string {
+  if (rules.length === 0) return idleLabel;
   if (rules.length === 1) {
     const rule = rules[0]!;
-    const fieldName =
-      fieldDefs.find((def) => def.field_key === rule.fieldKey)?.display_name ?? rule.fieldKey;
-    return {
-      text: `Filtered by ${fieldName}`,
-      ariaLabel: `Filtered by ${fieldName}`,
-    };
+    const fieldName = fieldDefByKey.get(rule.fieldKey)?.display_name ?? rule.fieldKey;
+    return `${activePrefix} ${fieldName}`;
   }
-  return {
-    text: `Filtered by ${rules.length} fields`,
-    ariaLabel: `Filtered by ${rules.length} fields`,
-  };
-}
-
-function describeSortLabel(
-  rules: SortRule[],
-  fieldDefs: FieldDef[],
-): { text: string; ariaLabel: string } {
-  if (rules.length === 0) return { text: "Sort", ariaLabel: "Sort" };
-  if (rules.length === 1) {
-    const rule = rules[0]!;
-    const fieldName =
-      fieldDefs.find((def) => def.field_key === rule.fieldKey)?.display_name ?? rule.fieldKey;
-    return {
-      text: `Sorted by ${fieldName}`,
-      ariaLabel: `Sorted by ${fieldName}`,
-    };
-  }
-  return {
-    text: `Sorted by ${rules.length} fields`,
-    ariaLabel: `Sorted by ${rules.length} fields`,
-  };
+  return `${activePrefix} ${rules.length} fields`;
 }

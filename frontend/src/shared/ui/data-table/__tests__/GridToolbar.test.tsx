@@ -16,7 +16,7 @@ function renderToolbar(
     <GridToolbar
       readOnly={false}
       view={view}
-      fieldDefs={FIELDS}
+      fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}
       filterableFieldDefs={FIELDS}
       sortableFieldDefs={FIELDS}
       onFilterChange={vi.fn()}
