@@ -200,6 +200,142 @@ describe("DataTable", () => {
     });
   });
 
+  test("type-to-edit: printable key on active cell opens editor seeded with the typed char", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    const nameCell = screen.getByText("Living Room").closest("td") as HTMLElement;
+    fireEvent.click(nameCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "K" });
+
+    const editor = screen.getByRole("textbox") as HTMLInputElement;
+    expect(editor.value).toBe("K");
+
+    fireEvent.change(editor, { target: { value: "Kitchen" } });
+    fireEvent.keyDown(editor, { key: "Enter" });
+
+    expect(await screen.findByText("Name updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: "Kitchen" }],
+    });
+  });
+
+  test("type-to-edit: printable key on a number cell seeds the typed digit", () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    const countCell = screen.getByText("2").closest("td") as HTMLElement;
+    fireEvent.click(countCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "7" });
+
+    const editor = screen.getByRole("textbox") as HTMLInputElement;
+    expect(editor.value).toBe("7");
+  });
+
+  test("type-to-edit: Backspace on active editable cell opens editor with empty draft", () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    const nameCell = screen.getByText("Living Room").closest("td") as HTMLElement;
+    fireEvent.click(nameCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "Backspace" });
+
+    const editor = screen.getByRole("textbox") as HTMLInputElement;
+    expect(editor.value).toBe("");
+  });
+
+  test("type-to-edit: ⌘-shortcut keystrokes are not intercepted (⌘C still copies)", () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    const nameCell = screen.getByText("Living Room").closest("td") as HTMLElement;
+    fireEvent.click(nameCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "c", metaKey: true });
+
+    // No editor mounted — ⌘C took the copy path, not the type-to-edit path.
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  test("F2 opens the inline editor with prior value prefilled", () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    const nameCell = screen.getByText("Living Room").closest("td") as HTMLElement;
+    fireEvent.click(nameCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "F2" });
+
+    const editor = screen.getByRole("textbox") as HTMLInputElement;
+    expect(editor.value).toBe("Living Room");
+  });
+
+  test("Enter opens the inline editor with prior value prefilled (plan 04)", () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    const nameCell = screen.getByText("Living Room").closest("td") as HTMLElement;
+    fireEvent.click(nameCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "Enter" });
+
+    const editor = screen.getByRole("textbox") as HTMLInputElement;
+    expect(editor.value).toBe("Living Room");
+  });
+
+  test("Enter on a read-only cell falls through to onRowOpen", () => {
+    const onRowOpen = vi.fn();
+    const onWrite = vi.fn();
+    const readOnlyFieldDefs: FieldDef[] = [
+      { field_key: "number", field_type: "text", display_name: "Number", read_only: true },
+      ...fieldDefs.slice(1),
+    ];
+    render(
+      <DataTable
+        rows={rows}
+        getRowId={(row) => row.id}
+        fieldDefs={readOnlyFieldDefs}
+        columnDefs={columnDefs}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        onRowOpen={onRowOpen}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    const numberCell = screen.getByText("101").closest("td") as HTMLElement;
+    fireEvent.click(numberCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "Enter" });
+
+    expect(onRowOpen).toHaveBeenCalledWith(rows[0]);
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  test("type-to-edit announces 'read-only' on a read-only column", async () => {
+    const readOnlyFieldDefs: FieldDef[] = [
+      { field_key: "number", field_type: "text", display_name: "Number", read_only: true },
+      ...fieldDefs.slice(1),
+    ];
+    render(
+      <DataTable
+        rows={rows}
+        getRowId={(row) => row.id}
+        fieldDefs={readOnlyFieldDefs}
+        columnDefs={columnDefs}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={vi.fn()}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    const numberCell = screen.getByText("101").closest("td") as HTMLElement;
+    fireEvent.click(numberCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "K" });
+
+    expect(await screen.findByText("This cell is read-only.")).toBeVisible();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
   test("commits inline edits on Tab", async () => {
     const onWrite = vi.fn();
     renderTable({ onWrite });

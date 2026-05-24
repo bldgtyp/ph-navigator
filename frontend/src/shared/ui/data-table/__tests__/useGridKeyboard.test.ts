@@ -47,16 +47,24 @@ type SyntheticKeyEvent = ReactKeyboardEvent<HTMLDivElement> & {
 
 function makeKeyEvent(
   key: string,
-  options: { metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean } = {},
+  options: {
+    metaKey?: boolean;
+    ctrlKey?: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    isComposing?: boolean;
+  } = {},
 ): SyntheticKeyEvent {
   const preventDefault = vi.fn();
   return {
     key,
     metaKey: options.metaKey ?? false,
     ctrlKey: options.ctrlKey ?? false,
+    altKey: options.altKey ?? false,
     shiftKey: options.shiftKey ?? false,
     defaultPrevented: false,
     preventDefault,
+    nativeEvent: { isComposing: options.isComposing ?? false },
   } as unknown as SyntheticKeyEvent;
 }
 
@@ -297,6 +305,238 @@ describe("useGridKeyboard — ⌘D / ⌘R", () => {
     act(() => result.current.onKeyDown(event));
     expect(onFillLeft).not.toHaveBeenCalled();
     expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
+  test("type-to-edit: printable char with no modifiers calls onPrintableKey", () => {
+    const onPrintableKey = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onPrintableKey,
+      }),
+    );
+    const event = makeKeyEvent("K");
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onPrintableKey).toHaveBeenCalledWith("K");
+  });
+
+  test("type-to-edit: printable char with ⌘ held does NOT call onPrintableKey", () => {
+    const onPrintableKey = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onPrintableKey,
+      }),
+    );
+    const event = makeKeyEvent("c", { metaKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(onPrintableKey).not.toHaveBeenCalled();
+  });
+
+  test("type-to-edit: IME composition keystroke does NOT call onPrintableKey", () => {
+    const onPrintableKey = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onPrintableKey,
+      }),
+    );
+    const event = makeKeyEvent("a", { isComposing: true });
+    act(() => result.current.onKeyDown(event));
+    expect(onPrintableKey).not.toHaveBeenCalled();
+  });
+
+  test("type-to-edit: no-op when an editor is already active", () => {
+    const onPrintableKey = vi.fn();
+    const editing = makeEdit();
+    editing.editing = {
+      rowId: "rm_1",
+      fieldKey: "name",
+      originalValue: "Bedroom",
+      editor: { kind: "text", draftValue: "Bedroom" },
+    };
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: editing,
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onPrintableKey,
+      }),
+    );
+    const event = makeKeyEvent("K");
+    act(() => result.current.onKeyDown(event));
+    expect(onPrintableKey).not.toHaveBeenCalled();
+  });
+
+  test("type-to-edit: multi-char keystrokes (Tab, Enter, arrows) do NOT call onPrintableKey", () => {
+    const onPrintableKey = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onPrintableKey,
+      }),
+    );
+    for (const key of ["Tab", "Escape", "F1", "ArrowDown"]) {
+      const event = makeKeyEvent(key);
+      act(() => result.current.onKeyDown(event));
+    }
+    expect(onPrintableKey).not.toHaveBeenCalled();
+  });
+
+  test("Backspace and Delete call onClearActiveCell", () => {
+    const onClearActiveCell = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onClearActiveCell,
+      }),
+    );
+    for (const key of ["Backspace", "Delete"]) {
+      const event = makeKeyEvent(key);
+      act(() => result.current.onKeyDown(event));
+      expect(event.preventDefault).toHaveBeenCalled();
+    }
+    expect(onClearActiveCell).toHaveBeenCalledTimes(2);
+  });
+
+  test("Backspace with ⌘ held does NOT call onClearActiveCell (browser shortcut)", () => {
+    const onClearActiveCell = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onClearActiveCell,
+      }),
+    );
+    const event = makeKeyEvent("Backspace", { metaKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(onClearActiveCell).not.toHaveBeenCalled();
+  });
+
+  test("F2 calls onBeginEdit and preventDefaults", () => {
+    const onBeginEdit = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onBeginEdit,
+      }),
+    );
+    const event = makeKeyEvent("F2");
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onBeginEdit).toHaveBeenCalled();
+  });
+
+  test("Enter prefers onBeginEdit over onRowOpen when both are wired", () => {
+    const onBeginEdit = vi.fn();
+    const onRowOpen = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onBeginEdit,
+        onRowOpen,
+      }),
+    );
+    const event = makeKeyEvent("Enter");
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onBeginEdit).toHaveBeenCalled();
+    expect(onRowOpen).not.toHaveBeenCalled();
+  });
+
+  test("Enter falls through to onRowOpen when onBeginEdit is undefined", () => {
+    const onRowOpen = vi.fn();
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onRowOpen,
+      }),
+    );
+    const event = makeKeyEvent("Enter");
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onRowOpen).toHaveBeenCalled();
+  });
+
+  test("Arrow keys still navigate after the new handlers are wired", () => {
+    const moveBy = vi.fn();
+    const selection = makeSelection();
+    selection.moveBy = moveBy;
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection,
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onPrintableKey: vi.fn(),
+        onClearActiveCell: vi.fn(),
+        onBeginEdit: vi.fn(),
+      }),
+    );
+    const event = makeKeyEvent("ArrowDown");
+    act(() => result.current.onKeyDown(event));
+    expect(moveBy).toHaveBeenCalledWith("ArrowDown", false);
   });
 
   test("⌘C is unaffected by the fill wiring", () => {
