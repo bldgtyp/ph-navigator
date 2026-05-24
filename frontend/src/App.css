@@ -1721,6 +1721,7 @@ button:disabled {
   font: inherit;
   font-size: 0.8rem;
   text-align: left;
+  text-decoration: none;
 }
 
 .data-table-overflow-menu-item:hover:not(:disabled) {
@@ -1789,16 +1790,55 @@ button:disabled {
   font-kerning: normal;
 }
 
+.data-table-footer-row {
+  display: flex;
+  min-width: 760px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.data-table-add-row-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 42px;
+  height: 34px;
+  min-height: 34px;
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.data-table-add-row-button:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  color: var(--accent-text);
+  transform: none;
+}
+
 .data-table-gutter-col {
   width: 42px;
 }
 
 .data-table th,
 .data-table td {
+  border-right: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
   min-height: 32px;
   padding: 7px 10px;
   text-align: left;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+  border-right: 0;
 }
 
 .data-table th {
@@ -2239,6 +2279,10 @@ td:has(> .data-table-fill-handle) {
   background: var(--accent-text);
   cursor: crosshair;
   z-index: 2;
+}
+
+.data-table td:last-child .data-table-fill-handle {
+  right: 0;
 }
 
 /* Phase 7 §4.1 — tint the cells inside the drag-preview target rect

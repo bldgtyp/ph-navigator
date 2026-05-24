@@ -22,6 +22,7 @@ export type GridToolbarProps = {
   onCollapseAllGroups: () => void;
   onExpandAllGroups: () => void;
   onResetView: () => void;
+  overflowMenuActions?: ReactNode;
   actions?: ReactNode;
 };
 
@@ -40,6 +41,7 @@ export function GridToolbar({
   onCollapseAllGroups,
   onExpandAllGroups,
   onResetView,
+  overflowMenuActions,
   actions,
 }: GridToolbarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -136,7 +138,11 @@ export function GridToolbar({
             </button>
           }
         />
-        <ViewMenuOverflow onReset={onResetView} canReset={canResetView} />
+        <ViewMenuOverflow
+          onReset={onResetView}
+          canReset={canResetView}
+          actions={overflowMenuActions}
+        />
       </div>
       {actions ? <div className="data-table-toolbar-actions">{actions}</div> : null}
     </div>

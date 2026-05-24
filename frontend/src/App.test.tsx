@@ -956,8 +956,11 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Equipment" })).toBeVisible();
-    await user.click(await screen.findByRole("button", { name: "Add room" }));
+    expect(await screen.findByRole("region", { name: "Equipment" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "More view actions" }));
+    expect(screen.getByRole("link", { name: "Rooms JSON" })).toBeVisible();
+    await user.keyboard("{Escape}");
+    await user.click(await screen.findByRole("button", { name: "Add New Room" }));
     await user.type(screen.getByLabelText("Number"), "101");
     await user.type(screen.getByLabelText("Name"), "Living Room");
     await user.type(screen.getByLabelText("Floor level"), "Ground");

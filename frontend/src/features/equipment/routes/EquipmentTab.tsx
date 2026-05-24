@@ -124,8 +124,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
 
   if (roomsQuery.isLoading) {
     return (
-      <section className="tab-panel" aria-labelledby="equipment-title">
-        <h2 id="equipment-title">Equipment</h2>
+      <section className="tab-panel" aria-label="Equipment">
         <p>Loading rooms...</p>
       </section>
     );
@@ -134,8 +133,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   if (roomsQuery.isError || !roomsQuery.data) {
     const invalidDocument = isInvalidProjectDocumentError(roomsQuery.error);
     return (
-      <section className="tab-panel" aria-labelledby="equipment-title">
-        <h2 id="equipment-title">Equipment</h2>
+      <section className="tab-panel" aria-label="Equipment">
         <p role="alert">{errorMessage(roomsQuery.error, "Could not load rooms.")}</p>
         {invalidDocument && activeVersionId ? (
           <p className="form-note">
@@ -234,7 +232,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       // Phase 7: `fill` shares the CellWrite[] payload shape with
       // `cell` / `paste` but carries no option list delta (the source
       // values are already in the table — fill never creates options).
-      const newOptions = op.kind === "paste" ? op.newOptions : (op.kind === "cell" ? (op.newOptions ?? {}) : {});
+      const newOptions =
+        op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
       const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
       await commitRoomsPayload(
         roomsPayloadFromCellWrites(roomsSlice, op.writes, newOptions, removedOptions),
@@ -292,29 +291,28 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     }
   };
 
+  const roomsDownloadAction = activeVersionId ? (
+    <a
+      className="data-table-overflow-menu-item"
+      href={tableDownloadUrl(project.id, activeVersionId, ROOMS_TABLE_NAME)}
+    >
+      Rooms JSON
+    </a>
+  ) : null;
+  const addRoomAction = canEdit ? (
+    <button
+      type="button"
+      className="data-table-add-row-button"
+      aria-label="Add New Room"
+      title="Add New Room"
+      onClick={() => setRoomModal({ mode: "add" })}
+    >
+      +
+    </button>
+  ) : null;
+
   return (
-    <section className="tab-panel equipment-panel" aria-labelledby="equipment-title">
-      <div className="status-heading">
-        <div>
-          <h2 id="equipment-title">Equipment</h2>
-          <p>Rooms are the PHN-first source of truth for downstream HBJSON.</p>
-        </div>
-        <div className="table-actions">
-          {activeVersionId ? (
-            <a
-              className="secondary-button download-link"
-              href={tableDownloadUrl(project.id, activeVersionId, ROOMS_TABLE_NAME)}
-            >
-              Rooms JSON
-            </a>
-          ) : null}
-          {canEdit ? (
-            <button type="button" onClick={() => setRoomModal({ mode: "add" })}>
-              Add room
-            </button>
-          ) : null}
-        </div>
-      </div>
+    <section className="tab-panel equipment-panel" aria-label="Equipment">
       <div className="subtabbar" aria-label="Equipment tables">
         <button type="button" className="active">
           Rooms
@@ -367,6 +365,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
         generateRowId={canEdit ? () => generatedId("rm") : undefined}
         sessionKey={`${project.id}:${activeVersionId ?? "none"}:rooms`}
+        overflowMenuActions={roomsDownloadAction}
+        footerAction={addRoomAction}
       />
       {roomModal && isEditor ? (
         <RoomModal

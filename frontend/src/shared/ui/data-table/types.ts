@@ -218,6 +218,8 @@ export type DataTableProps<TRow> = {
   density?: "compact" | "comfortable";
   emptyMessage: string;
   onRowOpen?: (row: TRow) => void;
+  overflowMenuActions?: ReactNode;
+  footerAction?: ReactNode;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`
