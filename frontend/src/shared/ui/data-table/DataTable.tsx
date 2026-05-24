@@ -81,6 +81,7 @@ export function DataTable<TRow>({
   onRowOpen,
   overflowMenuActions,
   footerAction,
+  onResetView,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
   // Hide-fields panel needs hidden columns too, so users can toggle
@@ -647,6 +648,10 @@ export function DataTable<TRow>({
   // order / widths / hidden columns are owned by a future column-
   // config phase and stay untouched.
   const handleResetView = useCallback(() => {
+    if (onResetView) {
+      onResetView();
+      return;
+    }
     onViewChange({
       ...view,
       filter: [],
@@ -655,7 +660,7 @@ export function DataTable<TRow>({
       aggregations: {},
       expandedGroups: {},
     });
-  }, [onViewChange, view]);
+  }, [onResetView, onViewChange, view]);
 
   // Filter membership requires the rule to be contributing (dormant
   // rules don't tint, matching AirTable). Sort and group count as

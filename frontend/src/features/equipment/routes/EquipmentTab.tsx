@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../../../shared/lib/errors";
 import { generatedId } from "../../../shared/lib/ids";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { emptyViewState } from "../../../shared/ui/data-table";
+import { useProjectTableViewState } from "../../table_views/useProjectTableViewState";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import { projectDocumentQueryKeys } from "../../project_document/hooks";
 import type { ProjectDetail } from "../../projects/types";
@@ -27,6 +28,8 @@ import {
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowInsert,
+  roomsTableColumnsForSanitize,
+  roomsTableFieldDefs,
   validateRoomsPayload,
 } from "../lib";
 import type { BuildEmptyRow, WriteOp } from "../../../shared/ui/data-table";
@@ -56,11 +59,32 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
-  const [roomsTableView, setRoomsTableView] = useState(emptyViewState);
   const [actionError, setActionError] = useState<string | null>(null);
   const [editBlocker, setEditBlocker] = useState<EditBlocker | null>(null);
   const isEditor = project.access_mode === "editor";
   const activeVersionId = project.active_version_id;
+  // Plan 09: per-(user, project, table) persisted ViewState. Defaults
+  // come from `emptyViewState`; the hook owns load, debounced PUT, and
+  // DELETE-on-reset. Anonymous viewers bypass the API entirely.
+  const roomsViewDefaults = useMemo(() => emptyViewState(), []);
+  const roomsFieldDefsForSanitize = useMemo(
+    () => (roomsQuery.data ? roomsTableFieldDefs(roomsQuery.data) : []),
+    [roomsQuery.data],
+  );
+  const roomsColumnsForSanitize = useMemo(() => roomsTableColumnsForSanitize(), []);
+  const {
+    view: roomsTableView,
+    onViewChange: handleRoomsViewChange,
+    isLoading: roomsViewLoading,
+    reset: resetRoomsView,
+  } = useProjectTableViewState({
+    projectId: project.id,
+    tableKey: "rooms",
+    defaults: roomsViewDefaults,
+    enabled: isEditor,
+    columns: roomsColumnsForSanitize,
+    fieldDefs: roomsFieldDefsForSanitize,
+  });
   const isLocked =
     editBlocker?.kind === "version-locked" || (project.active_version?.locked ?? false);
   const canEdit = isEditor && !isLocked && !editBlocker && Boolean(activeVersionId);
@@ -355,19 +379,24 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           {actionError}
         </p>
       ) : null}
-      <RoomsTable
-        roomsSlice={roomsSlice}
-        isEditor={canEdit}
-        onEdit={(room) => setRoomModal({ mode: "edit", room })}
-        view={roomsTableView}
-        onViewChange={setRoomsTableView}
-        onWrite={handleTableWrite}
-        buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
-        generateRowId={canEdit ? () => generatedId("rm") : undefined}
-        sessionKey={`${project.id}:${activeVersionId ?? "none"}:rooms`}
-        overflowMenuActions={roomsDownloadAction}
-        footerAction={addRoomAction}
-      />
+      {roomsViewLoading ? (
+        <p className="form-note">Loading table view…</p>
+      ) : (
+        <RoomsTable
+          roomsSlice={roomsSlice}
+          isEditor={canEdit}
+          onEdit={(room) => setRoomModal({ mode: "edit", room })}
+          view={roomsTableView}
+          onViewChange={handleRoomsViewChange}
+          onResetView={resetRoomsView}
+          onWrite={handleTableWrite}
+          buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
+          generateRowId={canEdit ? () => generatedId("rm") : undefined}
+          sessionKey={`${project.id}:${activeVersionId ?? "none"}:rooms`}
+          overflowMenuActions={roomsDownloadAction}
+          footerAction={addRoomAction}
+        />
+      )}
       {roomModal && isEditor ? (
         <RoomModal
           key={roomModal.mode === "add" ? "add" : roomModal.room.id}
