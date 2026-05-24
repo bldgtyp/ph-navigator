@@ -23,6 +23,24 @@
 - Local V2 Postgres publishes host `localhost:5433` to container `5432`
   so V1 can keep using host `5432`.
 - `cd backend && uv run alembic upgrade head` to apply migrations
+- **Two local databases, one Postgres container:**
+  - `ph_navigator_v2` — the dev database the running backend, the
+    seeded dev user, and any locally-created projects live in.
+  - `ph_navigator_v2_test` — the dedicated pytest database. Test
+    fixtures `TRUNCATE … RESTART IDENTITY CASCADE` every table on
+    every run, so this MUST stay separate from the dev DB.
+- Fresh `docker compose up` (empty volume) auto-creates both DBs via
+  `docker/postgres-init/`. On a pre-existing volume run
+  `make db-create-test` once — it's idempotent.
+- `make test-backend` runs `db-create-test` + `db-migrate-test`
+  automatically and exports `DATABASE_URL=…/ph_navigator_v2_test` for
+  pytest. `backend/tests/conftest.py` also pins the env var and a
+  session-scoped safety-net fixture refuses to run the suite if the
+  URL doesn't end in `_test`. If a future refactor breaks the
+  override, the suite fails loud instead of silently truncating dev
+  data.
+- `make db-reset` wipes the Postgres volume — **both** dev and test
+  databases are destroyed.
 
 ## Env files
 
@@ -118,8 +136,10 @@ password was shared in chat or another durable channel, rotate it.
 - The seed script refuses to run outside local environments
   (`development`, `test`, `local`) unless `--allow-staging` is used
   with `ENVIRONMENT=staging`.
-- Backend auth tests truncate auth tables. Run `make seed-dev-user`
-  after backend tests and before browser/E2E sign-in checks.
+- Backend auth tests now truncate only the `ph_navigator_v2_test`
+  database — the seeded dev user in `ph_navigator_v2` survives
+  `make test-backend`. Re-seed only after `make db-reset` or if you
+  manually delete the dev user.
 
 ## Make recipes
 

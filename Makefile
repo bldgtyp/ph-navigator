@@ -5,8 +5,13 @@
 # the caller's working directory. See context/environment-setup.md §6.
 
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
+        db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
         lint format smoke seed-dev-user e2e e2e-report clean
+
+# Local Postgres URL for the dedicated pytest database. Mirrors the dev
+# URL in backend/.env.example with the database name swapped to *_test.
+TEST_DATABASE_URL ?= postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test
 
 help: ## Show available recipes
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / \
@@ -59,11 +64,22 @@ db-down: ## Stop Postgres container
 
 db: db-up ## Alias for db-up
 
-db-reset: ## Destroy and recreate the Postgres volume (DANGER — local only)
+db-reset: ## Destroy and recreate the Postgres volume (DANGER — wipes BOTH dev and test DBs)
 	docker compose down -v
 	docker compose up -d db
 
-migrate: ## Apply Alembic migrations to head
+db-create-test: db-up ## Create the ph_navigator_v2_test database if missing (idempotent)
+	@docker exec phn-v2-postgres sh -c '\
+		psql -U phn -d ph_navigator_v2 -tAc \
+		  "SELECT 1 FROM pg_database WHERE datname = '"'"'ph_navigator_v2_test'"'"'" \
+		| grep -q 1 \
+		|| psql -U phn -d ph_navigator_v2 -v ON_ERROR_STOP=1 -c \
+		     "CREATE DATABASE ph_navigator_v2_test OWNER phn"'
+
+db-migrate-test: db-create-test ## Apply Alembic migrations to the test database
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run alembic upgrade head
+
+migrate: ## Apply Alembic migrations to head (dev database)
 	cd backend && uv run alembic upgrade head
 
 makemigration: ## Generate new empty Alembic migration ('make makemigration name=add_foo')
@@ -73,8 +89,8 @@ makemigration: ## Generate new empty Alembic migration ('make makemigration name
 
 test: test-backend test-frontend ## Run all unit / integration tests
 
-test-backend:
-	cd backend && uv run pytest
+test-backend: db-migrate-test ## Run backend tests against the dedicated *_test DB
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest
 
 test-frontend:
 	cd frontend && pnpm test

@@ -30,10 +30,8 @@ export {
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
-// Plan 09 §4.2: schema metadata for the Rooms table, shared by the
-// renderer (RoomsTable) and the persistence adapter (so the sanitizer
-// in useProjectTableViewState can drop stale refs without depending on
-// the live React tree).
+// Shared by RoomsTable (renderer) and useProjectTableViewState (sanitizer)
+// so view-state persistence doesn't depend on the live React tree.
 export function roomsTableFieldDefs(roomsSlice: RoomsSlice): FieldDef[] {
   return [
     { field_key: "number", field_type: "text", display_name: "Number", required: true },
@@ -58,20 +56,18 @@ export function roomsTableFieldDefs(roomsSlice: RoomsSlice): FieldDef[] {
   ];
 }
 
-// Stub columns for sanitization. Sanitizer reads only `id` and
-// `fieldKey`; the accessor is unused but required by the type. The full
-// columns (including `render` functions) live in RoomsTable.
-export function roomsTableColumnsForSanitize(): DataTableColumnDef<unknown>[] {
-  return [
-    { id: "number", fieldKey: "number", header: "Number", accessor: () => null },
-    { id: "name", fieldKey: "name", header: "Name", accessor: () => null },
-    { id: "floor_level", fieldKey: ROOM_FLOOR_LEVEL_KEY, header: "Floor", accessor: () => null },
-    { id: "building_zone", fieldKey: ROOM_BUILDING_ZONE_KEY, header: "Zone", accessor: () => null },
-    { id: "num_people", fieldKey: "num_people", header: "People", accessor: () => null },
-    { id: "num_bedrooms", fieldKey: "num_bedrooms", header: "Bedrooms", accessor: () => null },
-    { id: "icfa_factor", fieldKey: "icfa_factor", header: "iCFA", accessor: () => null },
-    { id: "erv_unit_ids", fieldKey: "erv_unit_ids", header: "ERVs", accessor: () => null },
-  ];
+// Stub columns for sanitization — sanitizer reads only `id` + `fieldKey`.
+// Column id equals field_key for every Rooms column; the real columns
+// (with `render`, accessors, widths) live in RoomsTable.tsx.
+export function roomsTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id: fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
 }
 
 export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
