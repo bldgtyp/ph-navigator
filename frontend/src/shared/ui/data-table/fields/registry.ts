@@ -3,6 +3,8 @@ import type { FieldEditor } from "./types";
 
 export { getFilterOperators, evaluateFilter, isFilterContributing } from "./filterOperators";
 export type { FilterOperatorDef, FilterValueShape } from "./filterOperators";
+export { getAggregationKinds, formatAggregation } from "./aggregations";
+export type { AggregationDef, AggregationKind } from "./aggregations";
 
 // Resolve the editor a field type uses for inline edit. The registry is
 // the one place that maps `FieldType` → behavior; both the keyboard
