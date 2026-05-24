@@ -63,6 +63,85 @@ describe("useGridEdit", () => {
     expect(result.current.edit.editing?.editor).toEqual({ kind: "text", draftValue: "" });
   });
 
+  test("start(replace) with replaceSeed seeds the typed character on text", () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "name",
+        initialValue: "Bedroom",
+        intent: "replace",
+        replaceSeed: "K",
+      });
+    });
+    expect(result.current.edit.editing?.editor).toEqual({ kind: "text", draftValue: "K" });
+    expect(result.current.edit.editing?.originalValue).toBe("Bedroom");
+  });
+
+  test("start(replace) with replaceSeed seeds the typed digit on number", () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "num_people",
+        initialValue: 2,
+        intent: "replace",
+        replaceSeed: "7",
+      });
+    });
+    expect(result.current.edit.editing?.editor).toEqual({ kind: "number", draftValue: "7" });
+    expect(result.current.edit.editing?.originalValue).toBe(2);
+  });
+
+  test("start(replace) with empty replaceSeed (Backspace path) seeds empty draft", () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "name",
+        initialValue: "Bedroom",
+        intent: "replace",
+        replaceSeed: "",
+      });
+    });
+    expect(result.current.edit.editing?.editor).toEqual({ kind: "text", draftValue: "" });
+    expect(result.current.edit.editing?.originalValue).toBe("Bedroom");
+  });
+
+  test("start(replace) without replaceSeed seeds empty (existing paste behavior preserved)", () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "name",
+        initialValue: "Living Room",
+        intent: "replace",
+      });
+    });
+    expect(result.current.edit.editing?.editor).toEqual({ kind: "text", draftValue: "" });
+  });
+
+  test("commit after start(replace, replaceSeed) writes the typed-then-edited value", async () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "name",
+        initialValue: "Bedroom",
+        intent: "replace",
+        replaceSeed: "K",
+      });
+      result.current.edit.draft("Kit");
+    });
+    await act(async () => {
+      await result.current.edit.commit();
+    });
+    expect(result.current.onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: "Kit" }],
+    });
+  });
+
   test("start(extend) on text seeds the formatted initial value", () => {
     const { result } = setup();
     act(() => {
