@@ -14,8 +14,8 @@ SCOPE: Narrative descriptions of every UI page and flow in PH-Navigator
        prescription.
 RELATED: context/PRD.md (architecture PRD),
          context/USER_STORIES.md (user stories),
-         https://github.com/bldgtyp/branding,
-         https://bldgtyp.github.io/branding/
+         https://github.com/bldgtyp/bt-branding,
+         https://bldgtyp.github.io/bt-branding/
 ---
 
 # PH-Navigator V2 — UI / UX Narrative
@@ -84,14 +84,14 @@ PH-Navigator V2 should crib directly from the BLDGTYP brand design
 system where it helps the application feel like part of the same
 technical tool family:
 
-- Canonical reference: <https://bldgtyp.github.io/branding/>
-- Source repo: <https://github.com/bldgtyp/branding>
+- Canonical reference: <https://bldgtyp.github.io/bt-branding/>
+- Source repo: <https://github.com/bldgtyp/bt-branding>
 - Required CSS tokens:
-  <https://bldgtyp.github.io/branding/tokens/tokens.css>
+  <https://bldgtyp.github.io/bt-branding/tokens/tokens.css>
 - Optional component reference:
-  <https://bldgtyp.github.io/branding/tokens/components.css>
+  <https://bldgtyp.github.io/bt-branding/tokens/components.css>
 - Machine-readable tokens:
-  <https://bldgtyp.github.io/branding/tokens/tokens.json>
+  <https://bldgtyp.github.io/bt-branding/tokens/tokens.json>
 
 Use the published tokens for fonts, color, radius, motion, and theme
 surfaces when possible. Build PH-Navigator-specific components on
@@ -100,9 +100,12 @@ of inventing a separate palette.
 
 Initial application guidance:
 
-- Use Outfit for readable headings/body where practical.
-- Use JetBrains Mono for labels, numeric annotations, nav triggers,
+- Use Outfit 400 for readable body text where practical; keep headings
+  on Outfit weights from the published token scale.
+- Use Geist Mono for labels, numeric annotations, nav triggers,
   compact metadata, units, and technical chips.
+- Use the published `--font-table` token (Geist) for table headers and
+  records.
 - Use `--accent` / `--accent-text` as the primary action/accent channel.
 - Use `--highlight` / `--highlight-text` sparingly for emphasis,
   warnings, missing evidence, or selected technical objects. Do not let

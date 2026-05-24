@@ -7,9 +7,11 @@ import type {
   CellCoord,
   DataTableColumnDef,
   FieldDef,
+  FillRect,
 } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
+import { FillHandle } from "./FillHandle";
 import { GridGutter } from "./GridGutter";
 import { GroupHeaderRow } from "./GroupHeaderRow";
 import { InlineCellEditor } from "./InlineCellEditor";
@@ -48,6 +50,15 @@ export type GridBodyProps<TRow> = {
   onRowSelect: (rowId: string) => void;
   onRowToggleSelected: (rowId: string, mode: RowSelectionMode) => void;
   onCommitAndMove: (rowIndex: number, columnIndex: number, shiftKey: boolean) => void;
+  // Phase 7: fill state from `useGridFill`. The bottom-right cell of
+  // `fillSource` carries `data-fill-handle="true"` and renders
+  // `<FillHandle>` when `fillHandleVisible` is true. Cells inside
+  // `fillTargetPreview` carry `data-fill-target="true"` so CSS tints
+  // them during a drag.
+  fillSource?: FillRect | null;
+  fillTargetPreview?: FillRect | null;
+  fillHandleVisible?: boolean;
+  onFillHandleMouseDown?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 };
 
 export function GridBody<TRow>({
@@ -73,6 +84,10 @@ export function GridBody<TRow>({
   onRowSelect,
   onRowToggleSelected,
   onCommitAndMove,
+  fillSource,
+  fillTargetPreview,
+  fillHandleVisible,
+  onFillHandleMouseDown,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
@@ -144,6 +159,18 @@ export function GridBody<TRow>({
                 ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
                 : undefined;
               const axisTint = fieldKey ? axisRolesByFieldKey.get(fieldKey) : undefined;
+              const isFillSourceCorner =
+                fillHandleVisible === true &&
+                fillSource != null &&
+                rowIndex === fillSource.rowEnd &&
+                columnIndex === fillSource.columnEnd;
+              const isFillTarget =
+                fillTargetPreview != null &&
+                isCellInNormalizedRange({ rowIndex, columnIndex }, fillTargetPreview) &&
+                !(
+                  fillSource != null &&
+                  isCellInNormalizedRange({ rowIndex, columnIndex }, fillSource)
+                );
               return (
                 <td
                   key={cell.id}
@@ -153,6 +180,8 @@ export function GridBody<TRow>({
                   data-row-id={rowId}
                   data-field-key={fieldKey || undefined}
                   data-axis-tint={axisTint}
+                  data-fill-handle={isFillSourceCorner ? "true" : undefined}
+                  data-fill-target={isFillTarget ? "true" : undefined}
                   className={[
                     visibleColumnDefs[columnIndex]?.className,
                     columnIndex === 0 ? "data-table-frozen" : "",
@@ -185,6 +214,9 @@ export function GridBody<TRow>({
                         if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
                       }),
                   })}
+                  {isFillSourceCorner && onFillHandleMouseDown ? (
+                    <FillHandle onMouseDown={onFillHandleMouseDown} />
+                  ) : null}
                 </td>
               );
             })}
