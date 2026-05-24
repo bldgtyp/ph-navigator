@@ -101,8 +101,8 @@ describe("GridBody — row-expand affordance", () => {
   });
 });
 
-describe("GridBody — perimeter outline rendering", () => {
-  test("the active 1x1 cell has no perimeter box-shadow (outline channel only)", () => {
+describe("GridBody — selection fill rendering", () => {
+  test("the active 1x1 cell has no inline perimeter box-shadow", () => {
     renderTable();
 
     const active = getBodyCell(0, 0);
@@ -111,7 +111,7 @@ describe("GridBody — perimeter outline rendering", () => {
     expect(active.style.boxShadow).toBe("");
   });
 
-  test("dragging Shift+ArrowDown produces a 2x1 range with top+left+right on the first cell and bottom+left+right on the last", () => {
+  test("dragging Shift+ArrowDown produces a 2x1 range with selected fill classes only", () => {
     renderTable();
 
     const grid = screen.getByRole("grid");
@@ -123,17 +123,11 @@ describe("GridBody — perimeter outline rendering", () => {
 
     expect(top).toHaveClass("data-table-cell-selected");
     expect(bottom).toHaveClass("data-table-cell-selected");
-    // 1-column range → both cells carry left+right edges. Top cell adds
-    // top edge; bottom cell adds bottom edge.
-    expect(top.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
-    expect(top.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
-    expect(top.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
-    expect(top.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
-    expect(bottom.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
-    expect(bottom.style.boxShadow).not.toContain("inset 0 1px 0 0 var(--accent-edge)");
+    expect(top.style.boxShadow).toBe("");
+    expect(bottom.style.boxShadow).toBe("");
   });
 
-  test("a 2x2 range marks the four corner cells with the right pair of edges", () => {
+  test("a 2x2 range marks all selected cells without inline edge shadows", () => {
     renderTable();
 
     const grid = screen.getByRole("grid");
@@ -145,26 +139,13 @@ describe("GridBody — perimeter outline rendering", () => {
     const bottomLeft = getBodyCell(1, 0);
     const bottomRight = getBodyCell(1, 1);
 
-    // top-left: top + left only
-    expect(topLeft.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
-    expect(topLeft.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
-    expect(topLeft.style.boxShadow).not.toContain("inset -1px 0 0 0 var(--accent-edge)");
-    expect(topLeft.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
-
-    // top-right: top + right
-    expect(topRight.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
-    expect(topRight.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
-
-    // bottom-left: bottom + left
-    expect(bottomLeft.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
-    expect(bottomLeft.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
-
-    // bottom-right: bottom + right
-    expect(bottomRight.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
-    expect(bottomRight.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
+    for (const cell of [topLeft, topRight, bottomLeft, bottomRight]) {
+      expect(cell).toHaveClass("data-table-cell-selected");
+      expect(cell.style.boxShadow).toBe("");
+    }
   });
 
-  test("a 3x1 range marks the middle cell with left+right only (interior bit unset)", () => {
+  test("a 3x1 range marks the middle cell without inline edge shadows", () => {
     renderTable();
 
     const grid = screen.getByRole("grid");
@@ -173,10 +154,7 @@ describe("GridBody — perimeter outline rendering", () => {
 
     const middle = getBodyCell(1, 0);
     expect(middle).toHaveClass("data-table-cell-selected");
-    expect(middle.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
-    expect(middle.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
-    expect(middle.style.boxShadow).not.toContain("inset 0 1px 0 0 var(--accent-edge)");
-    expect(middle.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
+    expect(middle.style.boxShadow).toBe("");
   });
 
   test("Shift+Click extends the range — the subsequent click event does not collapse it", () => {
@@ -196,7 +174,7 @@ describe("GridBody — perimeter outline rendering", () => {
     expect(selectedCount).toBe(6); // 3 rows × 2 cols
   });
 
-  test("cells outside the range carry no perimeter shadow and no selected class", () => {
+  test("cells outside the range carry no selection fill class", () => {
     renderTable();
 
     const grid = screen.getByRole("grid");
