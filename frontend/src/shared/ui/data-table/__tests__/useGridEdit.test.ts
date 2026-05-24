@@ -207,7 +207,7 @@ describe("useGridEdit", () => {
     expect(result.current.edit.editing).toBeNull();
   });
 
-  test("single_select start(replace, seed=\"B\") pre-fills the search and clears highlight", () => {
+  test('single_select start(replace, seed="B") pre-fills the search and clears highlight', () => {
     const { result } = setup();
     act(() => {
       result.current.edit.start({
@@ -225,7 +225,7 @@ describe("useGridEdit", () => {
     });
   });
 
-  test("single_select start(replace, seed=\"\") opens with the current option highlighted", () => {
+  test('single_select start(replace, seed="") opens with the current option highlighted', () => {
     const { result } = setup();
     act(() => {
       result.current.edit.start({

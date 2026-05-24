@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
 import {
@@ -334,6 +334,118 @@ describe("DataTable", () => {
 
     expect(await screen.findByText("This cell is read-only.")).toBeVisible();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  test("type-to-edit on single-select cell opens popover with the typed char in the search input (plan 05)", () => {
+    const onWrite = vi.fn();
+    const selectFieldDefs: FieldDef[] = [
+      {
+        field_key: "floor",
+        field_type: "single_select",
+        display_name: "Floor",
+        options: [
+          { id: "opt_basement", label: "Basement", color: "#3b82f6", order: 0 },
+          { id: "opt_ground", label: "Ground", color: "#10b981", order: 1 },
+        ],
+      },
+    ];
+    const selectColumnDefs: DataTableColumnDef<{ id: string; floor: string }>[] = [
+      { id: "floor", fieldKey: "floor", header: "Floor", accessor: (row) => row.floor },
+    ];
+    render(
+      <DataTable
+        rows={[{ id: "rm_1", floor: "opt_ground" }]}
+        getRowId={(row) => row.id}
+        fieldDefs={selectFieldDefs}
+        columnDefs={selectColumnDefs}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    // Active cell defaults to row 0 / col 0 (the only cell).
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "B" });
+
+    const search = screen.getByRole("textbox", { name: "Search options" }) as HTMLInputElement;
+    expect(search.value).toBe("B");
+    // List is filtered to options matching "B" — Basement is in,
+    // Ground is out. Scope to the listbox so the popover anchor's
+    // copy of the cell label (still mounted underneath) doesn't show
+    // up as a false positive for "Ground".
+    const listbox = screen.getByRole("listbox");
+    expect(within(listbox).getByText("Basement")).toBeInTheDocument();
+    expect(within(listbox).queryByText("Ground")).toBeNull();
+  });
+
+  test("Space on a single-select cell opens popover with the current option highlighted (plan 05)", () => {
+    const onWrite = vi.fn();
+    const selectFieldDefs: FieldDef[] = [
+      {
+        field_key: "floor",
+        field_type: "single_select",
+        display_name: "Floor",
+        options: [
+          { id: "opt_basement", label: "Basement", color: "#3b82f6", order: 0 },
+          { id: "opt_ground", label: "Ground", color: "#10b981", order: 1 },
+        ],
+      },
+    ];
+    const selectColumnDefs: DataTableColumnDef<{ id: string; floor: string }>[] = [
+      { id: "floor", fieldKey: "floor", header: "Floor", accessor: (row) => row.floor },
+    ];
+    render(
+      <DataTable
+        rows={[{ id: "rm_1", floor: "opt_ground" }]}
+        getRowId={(row) => row.id}
+        fieldDefs={selectFieldDefs}
+        columnDefs={selectColumnDefs}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole("grid"), { key: " " });
+
+    const search = screen.getByRole("textbox", { name: "Search options" }) as HTMLInputElement;
+    expect(search.value).toBe("");
+    // The current option (Ground) is highlighted; the other is not.
+    const listbox = screen.getByRole("listbox");
+    const ground = within(listbox).getByText("Ground").closest("[role='option']") as HTMLElement;
+    expect(ground.getAttribute("aria-selected")).toBe("true");
+  });
+
+  test("Backspace on a single-select cell is a no-op (does not open popover)", () => {
+    const onWrite = vi.fn();
+    const selectFieldDefs: FieldDef[] = [
+      {
+        field_key: "floor",
+        field_type: "single_select",
+        display_name: "Floor",
+        options: [{ id: "opt_ground", label: "Ground", color: "#10b981", order: 0 }],
+      },
+    ];
+    const selectColumnDefs: DataTableColumnDef<{ id: string; floor: string }>[] = [
+      { id: "floor", fieldKey: "floor", header: "Floor", accessor: (row) => row.floor },
+    ];
+    render(
+      <DataTable
+        rows={[{ id: "rm_1", floor: "opt_ground" }]}
+        getRowId={(row) => row.id}
+        fieldDefs={selectFieldDefs}
+        columnDefs={selectColumnDefs}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "Backspace" });
+    expect(screen.queryByRole("textbox", { name: "Search options" })).toBeNull();
   });
 
   test("commits inline edits on Tab", async () => {
