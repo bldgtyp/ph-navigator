@@ -104,7 +104,12 @@ export type ViewState = {
   filter: FilterCondition[];
   sort: SortRule[];
   group: GroupRule[];
-  aggregations: Record<string, AggregationKind>;
+  // Plan 06 §4.1: `null` and a missing key both mean "no aggregation".
+  // The library normalises both to "none" at read time; the explicit
+  // `null` form exists so plan 09 (persistence) can distinguish
+  // "user cleared this column" from "user never picked one" without
+  // changing the in-memory render path.
+  aggregations: Record<string, AggregationKind | null>;
   columnOrder: string[];
   columnWidths: Record<string, number>;
   hiddenColumns: string[];
