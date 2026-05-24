@@ -104,7 +104,44 @@ attach_asset(project_id, version_id, asset_id, target_path)
                                      → JSON-Patch attach into token owner's draft
 detach_asset(project_id, version_id, asset_id, target_path)
                                      → JSON-Patch detach from token owner's draft
+
+# Custom field schema mutations (Phase 2 of plan-13; project-document
+# tables only — catalog tables are not custom-field-capable in v1).
+# Each tool maps to the same backend FieldSchemaMutation service used
+# by the browser; require `project:write`; reject unauthenticated MCP.
+add_custom_field(project_id, version_id, table_key, after, insert_after_field_id?, expected_schema_fingerprint)
+                                     → CustomFieldDef
+rename_custom_field(project_id, version_id, table_key, field_id, display_name, expected_schema_fingerprint)
+                                     → CustomFieldDef
+delete_custom_field(project_id, version_id, table_key, field_id, expected_schema_fingerprint)
+                                     → { removed_field_id, cleared_row_count }
+duplicate_custom_field(project_id, version_id, table_key, source_field_id, after, expected_schema_fingerprint)
+                                     → CustomFieldDef
+change_custom_field_type(project_id, version_id, table_key, field_id, after, cell_writes, expected_schema_fingerprint)
+                                     → CustomFieldDef                # later phase
+set_custom_field_description(project_id, version_id, table_key, field_id, description, expected_schema_fingerprint)
+                                     → CustomFieldDef
+set_custom_field_formula(project_id, version_id, table_key, field_id, config, expected_schema_fingerprint)
+                                     → CustomFieldDef                # Phase 4
 ```
+
+Custom-field MCP rules:
+
+- Cell writes to custom fields go through the existing `patch_draft` /
+  table-row tools unchanged — no new write surface is needed for
+  values. Only schema mutation gets dedicated tools.
+- Each schema-mutation tool requires `project:write` and the same
+  draft-edit-lease semantics as browser writes (§8.5). The token's
+  user id is the `created_by` for added/duplicated fields.
+- Structured error codes the Phase 2 implementation must return
+  (mapped onto the common error envelope described in §10.3):
+  `custom_field_duplicate_name`, `custom_field_stale_schema_fingerprint`,
+  `custom_field_invalid_field_id`, `custom_field_illegal_type_conversion`,
+  `custom_field_formula_parse_error`, `custom_field_formula_cycle`, and
+  `custom_field_schema_write_unauthorized`.
+- Custom-field schema mutations are validated immediately on accept,
+  not deferred to Save; the draft never accumulates malformed
+  custom-field state. See `save-versioning.md` §8.3.
 
 Tools return Pydantic-validated structured results.
 
@@ -277,3 +314,34 @@ Mechanisms:
 This is the **only** migration path for project-side schema. No
 ALTER TABLE for project entities. All evolution flows through the
 shim chain.
+
+### 10.6 Custom-field read surface
+
+Project-document tables that opt into custom fields advertise their
+schema inline in the document body (`tables.<name>.custom_fields`)
+so an MCP client reading the document can render and write custom
+values without out-of-band knowledge. See `data-model.md` §6.6 for
+the envelope and `CustomFieldDef` shape.
+
+Contract gates for the read surface:
+
+- The published `ProjectDocumentV1` JSON Schema declares the
+  `CustomFieldDef` shape as **closed** (every field listed and
+  typed) and leaves each row's `custom` dict as
+  `additionalProperties: true` so user-defined keys are accepted
+  without a per-project schema. There is no per-project schema
+  endpoint in v1.
+- Project-JSON downloads include each table's `custom_fields` array
+  inline at `tables.<name>.custom_fields`. Each row's `custom`
+  dict is keyed by the same `cf_*` ids that appear in
+  `custom_fields[*].id`.
+- Formula computed values, when present, are inlined under a
+  separate per-row `computed` overlay keyed by the same `cf_*` id
+  (see `data-model.md` §6.6.6). Inbound writes that include
+  `computed` are rejected or stripped; formula fields remain
+  write-protected even though their values are visible in reads.
+- Field descriptions (US-CF-14) are included in `CustomFieldDef`
+  downloads and in the published schema. Plain text, max 280 chars,
+  no markdown rendering in v1.
+- Catalog tables are not custom-field-capable in v1; their
+  documents and reads keep their current rigid shape.

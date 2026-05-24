@@ -110,6 +110,7 @@ type FieldDef = {
   display_name: string;
   config?: FieldConfig;
   read_only?: boolean;
+  read_only_schema?: boolean;   // true = core field; schema-mutation menu items hidden (US-CF-6)
   required?: boolean;
   description?: string;
 };
@@ -134,6 +135,16 @@ Clipboard coercion must preflight the whole paste range. If any cell
 fails validation, commit nothing and show a paste review dialog with row,
 column, raw value, and error, capped to the first 25 failures plus an
 overflow count.
+
+**Field identity rule.** For core fields, `FieldDef.field_key` is the
+declared core key (e.g. `"name"`, `"floor_level"`). For user-defined
+custom fields it is the immutable `cf_*` id from
+`CustomFieldDef.id` — never the display name and never the advisory
+`field_key` slug. `CellWrite.fieldKey`, `WriteOp.fieldKey`, filter /
+sort / group / column-width / hidden-column entries in `ViewState`,
+and formula dependency ids all carry this identity. Renaming a custom
+field never rewrites any row, write op, or view-state entry.
+See `data-model.md` §6.6.2.
 
 ## Interaction Requirements
 
@@ -165,8 +176,44 @@ type WriteOp =
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: unknown[] }
   | { kind: "rowDelete"; rows: unknown[] }
-  | { kind: "fieldDefMutation"; before: FieldDef; after: FieldDef };
+  | { kind: "schemaMutation"; mutation: FieldSchemaMutation };
 ```
+
+`FieldSchemaMutation` is the discriminated DTO for user-defined field
+schema changes. It is shared by browser writes, REST, and MCP so that
+add / rename / delete / duplicate / change-type / describe / set-formula
+go through one validation and audit path:
+
+```ts
+type FieldSchemaMutation =
+  | { kind: "addField";       tableKey: TableKey; after: CustomFieldDef;  insertAfterFieldId?: string; expectedSchemaFingerprint: string }
+  | { kind: "renameField";    tableKey: TableKey; fieldId: string;        displayName: string;          expectedSchemaFingerprint: string }
+  | { kind: "deleteField";    tableKey: TableKey; fieldId: string;        clearValues: true;            expectedSchemaFingerprint: string }
+  | { kind: "duplicateField"; tableKey: TableKey; sourceFieldId: string;  after: CustomFieldDef;        expectedSchemaFingerprint: string }
+  | { kind: "changeType";     tableKey: TableKey; fieldId: string;        after: CustomFieldDef;        cellWrites: CellWrite[]; expectedSchemaFingerprint: string }
+  | { kind: "setDescription"; tableKey: TableKey; fieldId: string;        description: string | null;   expectedSchemaFingerprint: string }
+  | { kind: "setFormula";     tableKey: TableKey; fieldId: string;        config: FormulaConfig;        expectedSchemaFingerprint: string };
+```
+
+Invariants:
+
+- **Table-scoped identity.** `tableKey` plus `fieldId` (a stable
+  `cf_*` id) is the unique target. Display names and the advisory
+  `field_key` slug are never identity.
+- **Optimistic concurrency.** `expectedSchemaFingerprint` is the
+  fingerprint of the table's `custom_fields` array as the editor saw
+  it (see View State below). The backend rejects with a structured
+  stale-fingerprint error if the live draft has moved on.
+- **One semantic gesture = one undo entry.** `changeType` carries the
+  dependent `cellWrites` (incompatible values cleared per US-CF-4)
+  inside the same op so the operation is atomic from an undo
+  perspective.
+- **Backend authority.** The backend re-validates duplicate-name
+  rules (per-table, case-insensitive, trimmed, across core + custom),
+  type-conversion legality, formula parse + cycle + dependency rules,
+  and option-list namespace edits, then applies the mutation in one
+  transaction or rejects it. See `data-model.md` §6.6 and
+  `save-versioning.md` §8.3.
 
 Rules:
 
@@ -224,6 +271,21 @@ Rules:
   Anonymous Viewer mode never reads or writes saved view state.
   Catalog manager persistence is still out of scope; a future design
   may add `scope_type/scope_id` rather than reusing project ids.
+- **Schema fingerprint on persisted view state.** Custom-field
+  schemas are *version*-scoped while persisted view state is
+  *(user, project, table)*-scoped. Each persisted view-state record
+  carries a stable fingerprint of the active table schema (computed
+  from core field ids + custom field ids + custom field types,
+  ordered by the table schema). On load, view state is applied for
+  render regardless of fingerprint, but writes back are gated by
+  matching fingerprint: switching to a version whose schema does
+  not match must not overwrite the saved order / widths / hidden /
+  sort / filter / group / aggregation entries of the version whose
+  schema does match. The first user-driven view-state change under
+  a new schema persists under the new fingerprint. Tests cover the
+  round-trip: version A with custom columns, version B without
+  them, back to version A with column order / width / hidden state
+  preserved.
 
 ## Layout, Styling, And Accessibility
 
@@ -236,6 +298,14 @@ Rules:
 - Focus uses an outline channel. Selection and fill preview use separate
   border/box-shadow channels.
 - Tint palette is an explicit token set, not runtime HSL blending.
+- Locked / unlocked field state (core vs custom; US-CF-11) is a
+  **header-only** signal communicated through a non-background channel
+  (lock glyph and/or 2–3 px left border accent on a dedicated token,
+  e.g. `--phn-header-border-locked`). It must not consume a fifth
+  tint channel — the existing four header tints (filter / sort /
+  group / future) remain reserved for view state and layer on top
+  of the locked-state indicator. The indicator is visible to Viewers
+  as well as Editors.
 - Container has `tabIndex={0}` and owns bubbled keyboard handling.
 - Use grid semantics: `role="grid"` plus visual
   `aria-rowindex`/`aria-colindex`.
@@ -295,8 +365,11 @@ group / order / hidden columns (plan 09).
 - Mobile/phone optimization.
 - Comments, mentions, and presence cursors.
 - Linked-record / relation cells.
-- User-created runtime schema editing (the tail "+" cell is laid out
-  but unwired).
+- ~~User-created runtime schema editing (the tail "+" cell is laid out
+  but unwired).~~ Replaced by user-defined custom fields — see
+  `data-model.md` §6.6 and `docs/plans/2026-05-24/plan-13-custom-fields-overview.md`.
+  The tail `+` cell opens the field editor popover for Editors and
+  remains hidden in Viewer mode.
 - Named/shareable table views.
 - Dark-mode tint palette.
 - Row-height presets and per-cell wrap toggle.
