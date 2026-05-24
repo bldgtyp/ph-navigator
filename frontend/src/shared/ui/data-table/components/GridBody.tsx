@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
+import { AddFieldTailCell } from "./AddFieldTailCell";
 import { FillHandle } from "./FillHandle";
 import { GridChevron } from "./GridChevron";
 import { GridGutter } from "./GridGutter";
@@ -117,7 +118,7 @@ export function GridBody<TRow>({
     <tbody>
       {bodyPlan.length === 0 ? (
         <tr role="row" aria-rowindex={2}>
-          <td className="data-table-filter-empty" colSpan={visibleColumnDefs.length + 1}>
+          <td className="data-table-filter-empty" colSpan={visibleColumnDefs.length + 2}>
             {isSourceEmpty ? emptyMessage : "No rows match the current table view."}
           </td>
         </tr>
@@ -265,6 +266,7 @@ export function GridBody<TRow>({
                 </td>
               );
             })}
+            <AddFieldTailCell variant="td" />
           </tr>
         );
       })}

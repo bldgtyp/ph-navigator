@@ -252,6 +252,41 @@ Rules:
 5. Add attachment rendering when the Envelope/assets slice needs it.
 6. Run an accessibility pass after the interaction model is stable.
 
+## Column widths
+
+Every column has an explicit pixel width that the user can change by
+dragging the right edge of its header. Widths are user view-state, not
+column-definition data — they ride on `ViewState.columnWidths` and
+persist per `(user, project, table_key)` exactly like sort / filter /
+group / order / hidden columns (plan 09).
+
+- **Resolver.** `resolveColumnWidth(columnDef, fieldDef, view)` in
+  `shared/ui/data-table/lib/columnWidths.ts` is the single source of
+  truth. Precedence is: persisted `view.columnWidths[id]` →
+  `DataTableColumnDef.defaultWidth` → per-field-type default
+  (`FIELD_TYPE_DEFAULT_WIDTH`) → text default. Always clamped to the
+  column's `[minWidth, maxWidth]` (global defaults: 60 / 800 px).
+- **Render path.** `<DataTable>` emits one `<col>` per visible column
+  with an inline `width: ${px}px` style. `<table>` is
+  `width: max-content; table-layout: fixed` and the wrapper handles
+  both axes' overflow.
+- **Resize gesture.** `useGridColumnResize` (Pointer Events) owns the
+  drag session and emits `onViewChange` continuously via
+  `requestAnimationFrame`; the consumer's 500 ms debounce in
+  `useProjectTableViewState` collapses the burst into one PUT.
+  Esc cancels.
+- **Fit-to-content.** Double-click on the resize handle invokes
+  `measureColumnFitWidth` against the header label + every visible
+  cell's accessor (or `DataTableColumnDef.measureText` override),
+  clamped to `[minWidth, maxWidth]`.
+- **Tail "+" cell.** A 42 px cell sits at the right edge of every
+  header / data / summary row. v1 is `aria-disabled`; the future
+  "add field" feature only needs to add behavior, not layout.
+- **Persistence corollary.** `sanitizeViewStateForSchema` drops widths
+  whose column id is no longer present in the schema. No back-compat
+  shim is required for the rename from `width` → `defaultWidth` —
+  pre-deployment.
+
 ## Deferred
 
 - OR mode in filters.
@@ -260,6 +295,12 @@ Rules:
 - Mobile/phone optimization.
 - Comments, mentions, and presence cursors.
 - Linked-record / relation cells.
-- User-created runtime schema editing.
+- User-created runtime schema editing (the tail "+" cell is laid out
+  but unwired).
 - Named/shareable table views.
 - Dark-mode tint palette.
+- Row-height presets and per-cell wrap toggle.
+- Catalog-manager view-state persistence (column widths persist for
+  project-document tables only; catalog tables resize locally).
+- Auto-fit / "distribute remaining width" toolbar action.
+- Keyboard-driven column resize (mouse / touch / pen only in v1).

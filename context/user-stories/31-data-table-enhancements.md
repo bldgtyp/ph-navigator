@@ -32,6 +32,7 @@ backbone slice).
 | US-TBL-COLREORDER-1 | Drag-to-reorder columns | Draft |
 | US-TBL-ICONS-1 | AirTable icon set for toolbar | Draft |
 | US-TBL-AGG-1 | AirTable-style summary bar (per-column aggregates) | Draft |
+| US-TBL-COLWIDTH-1 | User-resizable, persisted column widths | Implemented |
 
 ---
 
@@ -479,5 +480,71 @@ ungrouped tables (total iCFA, total fan wattage, etc.).
 - **Q-AGG-2:** Default aggregations for known numeric columns (e.g.
   iCFA, airflow_cfm)? Recommend **none** — user opts in
   per-column.
+
+---
+
+## US-TBL-COLWIDTH-1 — User-resizable, persisted column widths
+
+**Status:** Implemented (Plans 11 + 12, 2026-05-24) · **Priority:** MVP enhancement
+**Reference:** AirTable column-resize behavior (see attached
+screenshot, 2026-05-24).
+**Related plans:**
+`docs/plans/2026-05-24/plan-11-tbl-column-resize-overflow.md`
+(guidelines) and
+`docs/plans/2026-05-24/plan-12-tbl-column-resize-implementation.md`
+(phasing).
+
+### Story
+> As an editor, I want every column in any data table to have a
+> width I can set by dragging the right edge of its header, and I
+> want that width to persist exactly like my sort / filter / group
+> / hide / reorder choices already do — so that opening a table
+> after sign-out, on another device, or after I navigate away and
+> come back shows the table the way I shaped it.
+
+### Acceptance criteria
+1. **Resize.** Hover the right edge of any column header — a 4 px
+   wide grab zone shows a column-resize cursor. Press and drag
+   horizontally to resize. Release commits. Drag below the column's
+   minimum snaps to minimum; drag above the maximum snaps to maximum.
+2. **Persisted across navigation.** Navigating away from the page
+   and back, reloading, signing out and back in, or opening the
+   same project on another device restores every column to the last
+   width the user chose.
+3. **Independent of order / sort / filter / group / hide.**
+   Reordering columns, sorting, filtering, grouping, hiding columns
+   and re-showing them: none of these reset, shift, or touch
+   widths. Widths key on column `id`, not display index.
+4. **Underflow.** If the sum of visible column widths is less than
+   the wrapper width, the data ends where the last column ends. To
+   the right of the last column is a neutral "outside" area painted
+   with the `--bg-table-outside` token. The table does **not**
+   stretch to fill.
+5. **Tail "+" affordance.** A 42 px "+" cell sits at the right edge
+   of the header strip and as a tail cell on every data row, ready
+   for the future "add field" behavior. In v1 it is disabled
+   (`aria-disabled`).
+6. **Overflow.** If the sum of visible column widths exceeds the
+   wrapper width, the wrapper scrolls horizontally. The frozen
+   first data column and the row-number gutter stay pinned to the
+   left edge of the wrapper. The header strip stays pinned to the
+   top edge of the wrapper while the body scrolls vertically. The
+   summary bar stays pinned to the bottom edge of the wrapper.
+7. **Read-only mode.** Locked-version and authenticated Viewer
+   modes still allow resize; widths are per-user view state, not
+   project data. (Anonymous Viewer mode reads defaults only.)
+8. **Double-click on resize handle: fit-to-content.** Sets the
+   column width to the widest currently visible (post-filter,
+   post-group) non-truncated content, including the header label,
+   clamped to `[minWidth, maxWidth]`.
+9. **No reflow during inline edit.** Editing a cell never changes
+   any column width — see US-TBL-EDIT-1.
+10. **Persistence is one PUT per gesture.** A drag emits many
+    `onViewChange` updates but the existing 500 ms debounce in
+    `useProjectTableViewState` collapses them into one PUT.
+
+### Open questions
+- None outstanding — see Plan 11 §8 for resolutions to
+  Q-RESIZE-1…Q-RESIZE-7.
 
 ---

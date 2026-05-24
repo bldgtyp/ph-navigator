@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { getAggregationKinds, type AggregationKind } from "../fields/aggregations";
 import { computeAggregate } from "../hooks/useGridAggregations";
 import type { DataTableColumnDef, FieldDef } from "../types";
+import { AddFieldTailCell } from "./AddFieldTailCell";
 
 // Plan 06: pinned <tfoot> rendered at the bottom of the table. The
 // first column always shows `Count: N` over the post-filter visible
@@ -70,6 +71,7 @@ export function SummaryBar<TRow>({
             />
           );
         })}
+        <AddFieldTailCell variant="td" />
       </tr>
     </tfoot>
   );

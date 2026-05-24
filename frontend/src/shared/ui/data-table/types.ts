@@ -52,7 +52,15 @@ export type DataTableColumnDef<TRow> = {
   accessor: (row: TRow) => unknown;
   render?: (row: TRow) => ReactNode;
   className?: string;
-  width?: number;
+  defaultWidth?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  resizable?: boolean;
+  // Used by fit-to-content double-click. Defaults to
+  // `String(accessor(row))`. Override when `render(row)` produces a
+  // visibly shorter string than the accessor (e.g. iCFA rendered as
+  // `toFixed(2)`) so the measured width matches what the user sees.
+  measureText?: (row: TRow) => string;
 };
 
 export type SortRule = {

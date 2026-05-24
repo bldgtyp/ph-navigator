@@ -6,6 +6,15 @@ export {
   optionReferenceCounts,
   sanitizeViewStateForSchema,
 } from "./lib";
+export {
+  FIELD_TYPE_DEFAULT_WIDTH,
+  GLOBAL_MAX_WIDTH,
+  GLOBAL_MIN_WIDTH,
+  resolveColumnMax,
+  resolveColumnMin,
+  resolveColumnWidth,
+  sumColumnWidths,
+} from "./lib/columnWidths";
 export { emptyViewState } from "./types";
 export type {
   BuildEmptyRow,

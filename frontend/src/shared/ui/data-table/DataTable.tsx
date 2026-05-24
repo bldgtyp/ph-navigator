@@ -26,6 +26,7 @@ import {
   pruneExpandedGroups,
   sortRows,
 } from "./lib";
+import { resolveColumnWidth } from "./lib/columnWidths";
 import { buildSubsetCode } from "./tokens/data-table-tints";
 import { generatedId } from "../../lib/ids";
 import { useGridHistory } from "./hooks/useGridHistory";
@@ -42,6 +43,7 @@ import { useGridClipboard } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
 import { reorderColumnIds, useGridColumns } from "./hooks/useGridColumns";
 import { useGridColumnDragKeyboard } from "./hooks/useGridColumnDragKeyboard";
+import { useGridColumnResize } from "./hooks/useGridColumnResize";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
@@ -644,6 +646,14 @@ export function DataTable<TRow>({
     onColumnOrderChange: handleColumnOrderChange,
     onAnnounce: setAnnounce,
   });
+  const columnResize = useGridColumnResize({
+    view,
+    onViewChange,
+    visibleColumnDefs,
+    fieldDefByKey,
+    wrapperRef,
+    visibleRows: visibleDataRows,
+  });
   // Reset clears every view-state key the toolbar can mutate. Column
   // order / widths / hidden columns are owned by a future column-
   // config phase and stay untouched.
@@ -801,12 +811,15 @@ export function DataTable<TRow>({
               the sticky `left: 42px` cell overlaps the adjacent column. */}
               <colgroup>
                 <col className="data-table-gutter-col" />
-                {visibleColumnDefs.map((column) => (
-                  <col
-                    key={column.id}
-                    style={column.width ? { width: `${column.width}px` } : undefined}
-                  />
-                ))}
+                {visibleColumnDefs.map((column) => {
+                  const width = resolveColumnWidth(
+                    column,
+                    fieldDefByKey.get(column.fieldKey),
+                    view,
+                  );
+                  return <col key={column.id} style={{ width: `${width}px` }} />;
+                })}
+                <col className="data-table-tail-col" />
               </colgroup>
               <GridHeader
                 table={table}
@@ -820,6 +833,7 @@ export function DataTable<TRow>({
                 openFieldKey={fieldEditorOpenForFieldKey}
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
                 columnDragKeyboard={columnDragKeyboard}
+                columnResize={columnResize}
               />
               <GridBody
                 table={table}

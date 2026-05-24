@@ -277,6 +277,9 @@ the UI/UX-level summary that other pages reference.
 highlight on rows. Sticky-left first column for any table whose
 first column is the row identifier. Sticky 32 px left gutter outside
 the column model carries row numbers and the row-select target.
+Every column has a user-resizable, persisted width (drag the right
+edge of any header; double-click fits to content; defaults per field
+type).
 
 **Active cell + keyboard nav.** A single click focuses a cell (no
 double-click required). Arrow keys, Tab/Shift+Tab (with row
