@@ -1,35 +1,27 @@
-import { useState, type ReactNode } from "react";
-import * as Popover from "@radix-ui/react-popover";
+import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUpDown, EyeOff, Filter, Group } from "lucide-react";
 import { FilterPopover } from "./FilterPopover";
 import { SortPopover } from "./SortPopover";
 import { GroupPopover } from "./GroupPopover";
 import { ViewMenuOverflow } from "./ViewMenuOverflow";
-import { HideFieldsPanel, type HideFieldsPanelChange } from "./HideFieldsPanel";
-import type {
-  DataTableColumnDef,
-  FieldDef,
-  FilterCondition,
-  GroupRule,
-  SortRule,
-  ViewState,
-} from "../types";
+import { HideFieldsPopover } from "./HideFieldsPopover";
+import type { HideFieldsColumn, HideFieldsPanelChange } from "./HideFieldsPanel";
+import type { FieldDef, FilterCondition, GroupRule, SortRule, ViewState } from "../types";
 
 // Toolbar shell. Status chips on the left, right-aligned axis buttons.
 // The `actions` slot — used for the row-delete button — sits below the
 // toolbar row so a destructive action never overlaps the Sort / Filter
 // / overflow controls reaching for the same area.
-export type GridToolbarProps<TRow> = {
+export type GridToolbarProps = {
   readOnly: boolean;
   view: ViewState;
   fieldDefByKey: Map<string, FieldDef>;
   filterableFieldDefs: FieldDef[];
   sortableFieldDefs: FieldDef[];
   groupableFieldDefs: FieldDef[];
-  // Plan 07: full list of columns (ordered by useGridColumns with no
-  // hidden filter applied) so the Hide-fields panel can render rows
-  // for hidden columns too. The toolbar passes this straight through.
-  orderedColumnsForHidePanel: DataTableColumnDef<TRow>[];
+  // Full column list — ordered, includes hidden ones — so the Hide-
+  // fields panel can render every row with the right toggle state.
+  orderedColumnsForHidePanel: HideFieldsColumn[];
   onFilterChange: (next: FilterCondition[]) => void;
   onSortChange: (next: SortRule[]) => void;
   onGroupChange: (next: GroupRule[]) => void;
@@ -43,7 +35,7 @@ export type GridToolbarProps<TRow> = {
 
 type AxisRule = { fieldKey: string };
 
-export function GridToolbar<TRow>({
+export function GridToolbar({
   readOnly,
   view,
   fieldDefByKey,
@@ -60,16 +52,17 @@ export function GridToolbar<TRow>({
   onHideFieldsChange,
   overflowMenuActions,
   actions,
-}: GridToolbarProps<TRow>) {
+}: GridToolbarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
   const [hideFieldsOpen, setHideFieldsOpen] = useState(false);
-  // Hidden columns are de-duped against the full ordered list so a stale
-  // id (column the consumer removed) doesn't bump the label count.
-  const hiddenCount = view.hiddenColumns.filter((id) =>
-    orderedColumnsForHidePanel.some((column) => column.id === id),
-  ).length;
+  // De-dupe hiddenColumns against the live ordered list so a stale id
+  // (column the consumer removed) doesn't bump the label count.
+  const hiddenCount = useMemo(() => {
+    const knownIds = new Set(orderedColumnsForHidePanel.map((column) => column.id));
+    return view.hiddenColumns.reduce((acc, id) => acc + (knownIds.has(id) ? 1 : 0), 0);
+  }, [orderedColumnsForHidePanel, view.hiddenColumns]);
   const hideFieldsLabel = hiddenCount === 0 ? "Hide fields" : `Hide fields (${hiddenCount})`;
   const hideFieldsActive = hiddenCount > 0;
 
@@ -163,8 +156,14 @@ export function GridToolbar<TRow>({
             </button>
           }
         />
-        <Popover.Root open={hideFieldsOpen} onOpenChange={setHideFieldsOpen}>
-          <Popover.Trigger asChild>
+        <HideFieldsPopover
+          open={hideFieldsOpen}
+          onOpenChange={setHideFieldsOpen}
+          orderedColumns={orderedColumnsForHidePanel}
+          fieldDefByKey={fieldDefByKey}
+          hiddenColumns={view.hiddenColumns}
+          onChange={onHideFieldsChange}
+          trigger={
             <button
               type="button"
               className="data-table-toolbar-button"
@@ -177,22 +176,8 @@ export function GridToolbar<TRow>({
               </span>
               <span>{hideFieldsLabel}</span>
             </button>
-          </Popover.Trigger>
-          <Popover.Portal>
-            <Popover.Content
-              align="end"
-              sideOffset={6}
-              className="data-table-hide-fields-popover"
-            >
-              <HideFieldsPanel
-                orderedColumns={orderedColumnsForHidePanel}
-                fieldDefByKey={fieldDefByKey}
-                hiddenColumns={view.hiddenColumns}
-                onChange={onHideFieldsChange}
-              />
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+          }
+        />
         <ViewMenuOverflow
           onReset={onResetView}
           canReset={canResetView}
