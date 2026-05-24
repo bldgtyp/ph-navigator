@@ -109,6 +109,10 @@ export function GridBody<TRow>({
   // `tableRows[i]` aligns with the i-th data item in `bodyPlan`. Walk
   // a cursor instead of building a row-id lookup each render.
   let dataRowIndex = 0;
+  const hasMultiCellRange =
+    hasExplicitRange &&
+    (normalizedActiveRange.rowStart !== normalizedActiveRange.rowEnd ||
+      normalizedActiveRange.columnStart !== normalizedActiveRange.columnEnd);
   return (
     <tbody>
       {bodyPlan.length === 0 ? (
@@ -163,7 +167,7 @@ export function GridBody<TRow>({
             />
             {tanstackRow.getVisibleCells().map((cell, columnIndex) => {
               const selected =
-                hasExplicitRange &&
+                hasMultiCellRange &&
                 isCellInNormalizedRange({ rowIndex, columnIndex }, normalizedActiveRange);
               const active =
                 activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex;

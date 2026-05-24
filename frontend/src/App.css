@@ -2289,7 +2289,7 @@ button:disabled {
 /* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
    Single active cells keep the normal bordered cursor treatment below. */
 .data-table td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 18%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 4%, var(--bg-card)) !important;
   box-shadow: none !important;
 }
 
@@ -2304,13 +2304,13 @@ button:disabled {
 }
 
 .data-table td.data-table-cell-active.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 26%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card)) !important;
   box-shadow: none !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 18%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 4%, var(--bg-card)) !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-active.data-table-cell-selected,
@@ -2318,7 +2318,7 @@ button:disabled {
   tbody
   tr:has(.data-table-gutter-selected)
   td.data-table-cell-active.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 26%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card)) !important;
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the
