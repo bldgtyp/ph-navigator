@@ -4,12 +4,14 @@ import {
   applyFilters,
   buildBodyPlan,
   buildEmptyRowDefaults,
+  computeAggregatesByPath,
   effectiveSortFromView,
   extractRowDefaults,
   formatDisplayCellValue,
   pruneExpandedGroups,
   sortRows,
 } from "./lib";
+import { buildSubsetCode } from "./tokens/data-table-tints";
 import { generatedId } from "../../lib/ids";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
@@ -67,10 +69,6 @@ export function DataTable<TRow>({
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
   );
-  // Phase 6 §4.5: group rules force a pre-sort prepended to the user-
-  // intent `view.sort`. `effectiveSortFromView` dedups so a field
-  // present in both axes only appears once in the comparator (group
-  // direction wins). `view.sort` itself is preserved unchanged.
   const effectiveSort = useMemo(() => effectiveSortFromView(view), [view]);
   const filteredRows = useMemo(
     () =>
@@ -82,21 +80,42 @@ export function DataTable<TRow>({
       ),
     [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort],
   );
-  // Phase 6 §4.6: interleaved group-header + data-row plan. When
-  // `view.group.length === 0` this collapses to a flat data-only
-  // sequence and the rest of the grid behaves exactly as Phase 5.
-  // Aggregated values per group path are precomputed inside the
-  // builder; chevron toggles only re-run the cheap interleaving walk
-  // because the aggregated map memoizes on its own inputs (§12 Q10).
+  // Split aggregates and interleave into separate memos so a chevron
+  // toggle (which only mutates `view.expandedGroups`) doesn't re-run
+  // the aggregation pass.
+  const aggregatesByPath = useMemo(
+    () =>
+      computeAggregatesByPath(filteredRows, visibleColumnDefs, fieldDefs, {
+        group: view.group,
+        aggregations: view.aggregations,
+      }),
+    [filteredRows, visibleColumnDefs, fieldDefs, view.group, view.aggregations],
+  );
   const bodyPlan = useMemo(
-    () => buildBodyPlan(filteredRows, visibleColumnDefs, fieldDefs, getRowId, view),
-    [filteredRows, visibleColumnDefs, fieldDefs, getRowId, view],
+    () =>
+      buildBodyPlan(
+        filteredRows,
+        visibleColumnDefs,
+        fieldDefs,
+        getRowId,
+        { group: view.group, expandedGroups: view.expandedGroups, aggregations: view.aggregations },
+        aggregatesByPath,
+      ),
+    [
+      filteredRows,
+      visibleColumnDefs,
+      fieldDefs,
+      getRowId,
+      view.group,
+      view.expandedGroups,
+      view.aggregations,
+      aggregatesByPath,
+    ],
   );
   // Selection / keyboard / clipboard operate on the data-row subset
   // of the body plan — collapsed-group rows are invisible to those
-  // models (§4.6.1). Group-header rows never enter `rowIds`, so the
-  // existing `useGridSelection` clamp keeps the active cell on a
-  // visible data row.
+  // models. Group-header rows never enter `rowIds`, so the existing
+  // `useGridSelection` clamp keeps the active cell on a visible row.
   const visibleDataRows = useMemo(
     () =>
       bodyPlan
@@ -343,17 +362,15 @@ export function DataTable<TRow>({
     drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
 
-  // Phase 4 §4.11: fields the FilterPopover offers in its field picker.
-  // `read_only` does NOT exclude the field — filtering on a computed
-  // column is a real use case (§12 Q2). `attachment` / `argb_color`
-  // are excluded because the registry returns no operators for them.
+  // `read_only` does NOT exclude a field — filtering on a computed
+  // column is a real use case. attachment / argb_color are dropped
+  // because the registry returns no operators for them.
   const filterableFieldDefs = useMemo(
     () => fieldDefs.filter((fieldDef) => getFilterOperators(fieldDef).length > 0),
     [fieldDefs],
   );
-  // Phase 4 §4.11: sortable fields exclude only `attachment` and
-  // `argb_color` (they have no meaningful order). Read-only computed
-  // columns sort fine. Phase 6: groupable shares the same rule.
+  // Sortable and groupable share the same rule: drop only the field
+  // types with no meaningful order.
   const sortableFieldDefs = useMemo(
     () =>
       fieldDefs.filter(
@@ -361,7 +378,6 @@ export function DataTable<TRow>({
       ),
     [fieldDefs],
   );
-  const groupableFieldDefs = sortableFieldDefs;
   const handleFilterChange = useCallback(
     (next: FilterCondition[]) => {
       onViewChange({ ...view, filter: next });
@@ -374,10 +390,6 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
-  // Phase 6 §4.10: group changes prune expandedGroups whose path depth
-  // exceeds the new group depth (so old deep keys don't accumulate).
-  // Same-or-shorter paths stay — re-grouping by a different field at
-  // the same depth keeps state in place (acceptable; clears on Reset).
   const handleGroupChange = useCallback(
     (next: GroupRule[]) => {
       onViewChange({
@@ -388,23 +400,16 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
-  // Phase 6 §4.2 / §12 Q15: Collapse all / Expand all live in the
-  // Group popover header. Expand-all clears `expandedGroups` so every
-  // path falls back to the default-expanded sentinel. Collapse-all
-  // walks the bodyPlan, collects every distinct group pathKey, and
-  // sets each to `false` in a single onViewChange call.
   const handleExpandAllGroups = useCallback(() => {
     if (Object.keys(view.expandedGroups).length === 0) return;
     onViewChange({ ...view, expandedGroups: {} });
   }, [onViewChange, view]);
   const handleCollapseAllGroups = useCallback(() => {
-    if (view.group.length === 0) return;
+    if (view.group.length === 0 || aggregatesByPath.size === 0) return;
     const next: Record<string, boolean> = {};
-    for (const item of bodyPlan) {
-      if (item.kind === "group") next[item.pathKey] = false;
-    }
+    for (const pathKey of aggregatesByPath.keys()) next[pathKey] = false;
     onViewChange({ ...view, expandedGroups: next });
-  }, [bodyPlan, onViewChange, view]);
+  }, [aggregatesByPath, onViewChange, view]);
   const handleToggleGroup = useCallback(
     (pathKey: string) => {
       const current = view.expandedGroups[pathKey] ?? true;
@@ -415,11 +420,12 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
-  // Phase 6 §4.9: per-column aggregation picker. `none` deletes the
-  // entry from view.aggregations rather than storing it explicitly,
-  // so the map stays tight (matches the §4.6 invariant: absence == none).
+  // `none` deletes the entry rather than storing it explicitly so the
+  // map stays tight (absence == none in the body-plan walk).
   const handleAggregationChange = useCallback(
     (fieldKey: string, kind: AggregationKind) => {
+      const current = view.aggregations[fieldKey] ?? "none";
+      if (current === kind) return;
       const next = { ...view.aggregations };
       if (kind === "none") delete next[fieldKey];
       else next[fieldKey] = kind;
@@ -427,10 +433,9 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
-  // Phase 6 §4.4: Reset clears every view-state key the toolbar can
-  // mutate — filter / sort / group / aggregations / expandedGroups.
-  // Column order / hidden columns / column widths are owned by a
-  // future column-config phase and stay untouched.
+  // Reset clears every view-state key the toolbar can mutate. Column
+  // order / widths / hidden columns are owned by a future column-
+  // config phase and stay untouched.
   const handleResetView = useCallback(() => {
     onViewChange({
       ...view,
@@ -441,19 +446,10 @@ export function DataTable<TRow>({
       expandedGroups: {},
     });
   }, [onViewChange, view]);
-  const canResetView =
-    view.filter.length > 0 ||
-    view.sort.length > 0 ||
-    view.group.length > 0 ||
-    Object.keys(view.aggregations).length > 0 ||
-    Object.keys(view.expandedGroups).length > 0;
 
-  // Phase 6 §4.3.2: per-column subset code over {filter, sort, group}.
   // Filter membership requires the rule to be contributing (dormant
-  // rules don't tint, matching AirTable). Sort and group always count
-  // as soon as a rule exists. Codes concatenate the present axes'
-  // first letters in fixed order (f < s < g) so two callers can never
-  // disagree. Absence == untinted.
+  // rules don't tint, matching AirTable). Sort and group count as
+  // soon as a rule exists.
   const axisRolesByFieldKey = useMemo<Map<string, AxisRoleSubset>>(() => {
     const map = new Map<string, AxisRoleSubset>();
     const filterContributing = new Set(
@@ -461,13 +457,13 @@ export function DataTable<TRow>({
     );
     const sortKeys = new Set(view.sort.map((rule) => rule.fieldKey));
     const groupKeys = new Set(view.group.map((rule) => rule.fieldKey));
-    const allKeys = new Set<string>([...filterContributing, ...sortKeys, ...groupKeys]);
-    for (const fieldKey of allKeys) {
-      let code = "";
-      if (filterContributing.has(fieldKey)) code += "f";
-      if (sortKeys.has(fieldKey)) code += "s";
-      if (groupKeys.has(fieldKey)) code += "g";
-      if (code) map.set(fieldKey, code as AxisRoleSubset);
+    for (const fieldKey of new Set<string>([...filterContributing, ...sortKeys, ...groupKeys])) {
+      const code = buildSubsetCode({
+        filter: filterContributing.has(fieldKey),
+        sort: sortKeys.has(fieldKey),
+        group: groupKeys.has(fieldKey),
+      });
+      if (code) map.set(fieldKey, code);
     }
     return map;
   }, [view.filter, view.sort, view.group]);
@@ -539,14 +535,13 @@ export function DataTable<TRow>({
         fieldDefByKey={fieldDefByKey}
         filterableFieldDefs={filterableFieldDefs}
         sortableFieldDefs={sortableFieldDefs}
-        groupableFieldDefs={groupableFieldDefs}
+        groupableFieldDefs={sortableFieldDefs}
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
         onGroupChange={handleGroupChange}
         onCollapseAllGroups={handleCollapseAllGroups}
         onExpandAllGroups={handleExpandAllGroups}
         onResetView={handleResetView}
-        canResetView={canResetView}
         actions={toolbarActions}
       />
       {fieldEditorContext ? (

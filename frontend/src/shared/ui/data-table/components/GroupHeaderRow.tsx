@@ -2,12 +2,10 @@ import type { CSSProperties, ReactNode } from "react";
 import { formatDisplayCellValue, singleSelectOption } from "../lib";
 import type { DataTableColumnDef, FieldDef } from "../types";
 
-// Phase 6 §4.7: presentational group-header row. Receives depth +
-// pathKey + group key value + field def + count + per-column
-// aggregated display strings + an expanded flag + onToggle callback.
-// Renders chevron + left-indent + key (pill for single_select) +
-// `(N rows)` count in the first column; aggregation cells fan out
-// across the rest of the visible columns aligned with the body.
+// Presentational group-header row. Chevron + left-indent + key (pill
+// for single_select) + `(N rows)` count in the first column; per-
+// column aggregation cells fan out across the rest, aligned with the
+// body.
 
 export type GroupHeaderRowProps<TRow> = {
   depth: number;

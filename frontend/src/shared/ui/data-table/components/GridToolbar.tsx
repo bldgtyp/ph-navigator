@@ -5,11 +5,10 @@ import { GroupPopover } from "./GroupPopover";
 import { ViewMenuOverflow } from "./ViewMenuOverflow";
 import type { FieldDef, FilterCondition, GroupRule, SortRule, ViewState } from "../types";
 
-// Toolbar shell. Status chips on the left, right-aligned axis buttons
-// (Phase 4 §4.8). The `actions` slot — used by Phase 2 for the row-
-// delete button — sits below the toolbar row so the destructive action
-// never overlaps the Sort / Filter / overflow controls reaching for
-// the same area.
+// Toolbar shell. Status chips on the left, right-aligned axis buttons.
+// The `actions` slot — used for the row-delete button — sits below the
+// toolbar row so a destructive action never overlaps the Sort / Filter
+// / overflow controls reaching for the same area.
 export type GridToolbarProps = {
   readOnly: boolean;
   view: ViewState;
@@ -23,7 +22,6 @@ export type GridToolbarProps = {
   onCollapseAllGroups: () => void;
   onExpandAllGroups: () => void;
   onResetView: () => void;
-  canResetView: boolean;
   actions?: ReactNode;
 };
 
@@ -42,7 +40,6 @@ export function GridToolbar({
   onCollapseAllGroups,
   onExpandAllGroups,
   onResetView,
-  canResetView,
   actions,
 }: GridToolbarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -52,12 +49,19 @@ export function GridToolbar({
   const filterLabel = describeAxisLabel(view.filter, fieldDefByKey, "Filter", "Filtered by");
   const sortLabel = describeAxisLabel(view.sort, fieldDefByKey, "Sort", "Sorted by");
   const groupLabel = describeAxisLabel(view.group, fieldDefByKey, "Group", "Grouped by");
-  // §4.8: buttons tint as soon as any rule exists (matches AirTable —
-  // the chip colors on rule-present, dormant or not). Per-column cell
-  // tint requires a contributing rule and is computed in DataTable.tsx.
+  // Buttons tint as soon as any rule exists (matches AirTable's
+  // chip-on-rule-present behaviour, including dormant rules). Per-
+  // column cell tint requires a contributing rule and is computed in
+  // DataTable.tsx.
   const filterActive = view.filter.length > 0;
   const sortActive = view.sort.length > 0;
   const groupActive = view.group.length > 0;
+  const canResetView =
+    filterActive ||
+    sortActive ||
+    groupActive ||
+    Object.keys(view.aggregations).length > 0 ||
+    Object.keys(view.expandedGroups).length > 0;
 
   return (
     <div className="data-table-toolbar" aria-label="Table view controls">

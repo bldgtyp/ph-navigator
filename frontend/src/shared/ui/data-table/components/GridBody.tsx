@@ -75,12 +75,11 @@ export function GridBody<TRow>({
   onCommitAndMove,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
-  const tableRowByRowId = new Map(tableRows.map((row) => [row.id, row]));
   const isSourceEmpty = totalRowCount === 0;
-  let ariaRowIndex = 1; // 1 is the header row; data + group rows start at 2.
-  // Walk the body plan once, emitting a group-header <tr> or a data
-  // <tr> per item. The data-row index passed to selection helpers is
-  // the position among data items only (lines up with `rowIds`).
+  let ariaRowIndex = 1; // header row is 1; data + group rows start at 2.
+  // TanStack receives `visibleDataRows` as its data source, so
+  // `tableRows[i]` aligns with the i-th data item in `bodyPlan`. Walk
+  // a cursor instead of building a row-id lookup each render.
   let dataRowIndex = 0;
   return (
     <tbody>
@@ -111,7 +110,7 @@ export function GridBody<TRow>({
         }
         const rowIndex = dataRowIndex;
         dataRowIndex += 1;
-        const tanstackRow = tableRowByRowId.get(item.rowId);
+        const tanstackRow = tableRows[rowIndex];
         if (!tanstackRow) return null;
         return (
           <tr

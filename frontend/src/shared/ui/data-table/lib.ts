@@ -599,11 +599,10 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-// Phase 6 §4.5: derived sort prepended with group rules. The user's
-// `view.sort` is preserved as-is in user intent; only the derived list
-// dedups against `view.group` so a field doesn't appear twice in the
-// effective comparator (L8.3). The group's direction wins when a field
-// is in both lists.
+// Derived sort prepended with group rules. The user's `view.sort` is
+// preserved as-is in user intent; only the derived list dedups against
+// `view.group` so a field doesn't appear twice in the comparator. The
+// group's direction wins when a field is in both lists.
 export function effectiveSortFromView(view: Pick<ViewState, "group" | "sort">): SortRule[] {
   if (view.group.length === 0) return view.sort;
   const groupSort: SortRule[] = view.group.map((rule) => ({
@@ -615,19 +614,14 @@ export function effectiveSortFromView(view: Pick<ViewState, "group" | "sort">): 
   return [...groupSort, ...userSort];
 }
 
-// Phase 6 §4.6: stable string key the body plan uses for
-// `expandedGroups` lookups. JSON-stringifying each path segment keeps
-// keys stable across re-renders without needing a row id. The keys
-// ride only in client state — they never reach the backend.
+// Stable string key for an `expandedGroups` lookup. Client-only;
+// never reaches the backend.
 export function groupPathKey(values: readonly unknown[]): string {
   return values.map((value) => JSON.stringify(value ?? null)).join("::");
 }
 
-// Phase 6 §4.10: drop expandedGroups entries whose path depth exceeds
-// the new group depth. Called whenever `view.group` changes so the map
-// doesn't accumulate stale deep-path keys. Same-or-shorter paths stay —
-// re-grouping by a different field at the same depth keeps the old
-// state in place (acceptable; clears on Reset).
+// Drop expandedGroups entries whose path depth exceeds the new group
+// depth, so stale deep-path keys don't accumulate across re-grouping.
 export function pruneExpandedGroups(
   map: Record<string, boolean>,
   nextGroup: readonly GroupRule[],
@@ -636,30 +630,26 @@ export function pruneExpandedGroups(
   if (maxDepth === 0) return {};
   const next: Record<string, boolean> = {};
   for (const [key, value] of Object.entries(map)) {
-    // Path depth = number of `::`-separated segments. JSON.stringify
-    // never emits `::` for any primitive, so split-count is safe.
+    // JSON.stringify never emits "::" for any primitive — split-count
+    // is the segment count.
     const depth = key.split("::").length;
     if (depth <= maxDepth) next[key] = value;
   }
   return next;
 }
 
-// Phase 6 §4.6: build the interleaved group-header + data-row plan.
-// `rows` is assumed already pre-sorted via `effectiveSortFromView` so
-// rows sharing a path arrive contiguously. One pass: when the current
-// row's path diverges from the previous at depth N, emit a group
-// header at every depth from N down to view.group.length - 1, then
-// emit the data row (unless any ancestor is collapsed).
-//
-// Aggregated values per group path are precomputed via
-// `computeAggregatesByPath` so chevron toggles (which only change
-// `expandedGroups`) can re-run only this cheap interleaving pass.
+// Build the interleaved group-header + data-row plan. `rows` must be
+// pre-sorted via `effectiveSortFromView` so rows sharing a path arrive
+// contiguously. Aggregated values are precomputed and passed in so a
+// chevron toggle (which only flips `view.expandedGroups`) skips the
+// aggregation pass entirely.
 export function buildBodyPlan<TRow>(
   rows: readonly TRow[],
   columns: readonly DataTableColumnDef<TRow>[],
   fieldDefs: readonly FieldDef[],
   getRowId: (row: TRow) => string,
   view: Pick<ViewState, "group" | "expandedGroups" | "aggregations">,
+  aggregatesByPath?: Map<string, { count: number; values: Map<string, string> }>,
 ): BodyPlanItem<TRow>[] {
   if (view.group.length === 0) {
     return rows.map((row) => ({
@@ -669,29 +659,18 @@ export function buildBodyPlan<TRow>(
       depth: 0,
     }));
   }
-  const fieldDefByKey = new Map(fieldDefs.map((f) => [f.field_key, f]));
-  const columnByKey = new Map(columns.map((c) => [c.fieldKey, c]));
-  const groupFieldDefs: FieldDef[] = [];
-  const groupAccessors: ((row: TRow) => unknown)[] = [];
-  for (const rule of view.group) {
-    const fieldDef = fieldDefByKey.get(rule.fieldKey);
-    const column = columnByKey.get(rule.fieldKey);
-    if (!fieldDef || !column) {
-      // Group rule references a field that isn't in the table; fall
-      // back to a flat plan rather than crash. Phase 6 doesn't surface
-      // this as an error — the toolbar field picker prevents it.
-      return rows.map((row) => ({
-        kind: "data",
-        row,
-        rowId: getRowId(row),
-        depth: 0,
-      }));
-    }
-    groupFieldDefs.push(fieldDef);
-    groupAccessors.push(column.accessor);
+  const resolved = resolveGroupRules(view.group, columns, fieldDefs);
+  if (!resolved) {
+    return rows.map((row) => ({
+      kind: "data",
+      row,
+      rowId: getRowId(row),
+      depth: 0,
+    }));
   }
-
-  const aggregatesByPath = computeAggregatesByPath(rows, columns, fieldDefs, view, groupAccessors);
+  const { groupFieldDefs, groupAccessors } = resolved;
+  const aggregates =
+    aggregatesByPath ?? computeAggregatesByPath(rows, columns, fieldDefs, view, groupAccessors);
 
   const plan: BodyPlanItem<TRow>[] = [];
   let prevPath: unknown[] = [];
@@ -700,39 +679,27 @@ export function buildBodyPlan<TRow>(
     const path = groupAccessors.map((accessor) => accessor(row));
     const divergeAt = isFirstRow ? 0 : firstDivergeIndex(prevPath, path);
     isFirstRow = false;
-    if (divergeAt < view.group.length) {
-      // Skip emission entirely when any ancestor above the divergence
-      // is already collapsed — descendant headers belong inside that
-      // closed group and must stay hidden until it expands.
-      let ancestorCollapsed = false;
-      for (let depth = 0; depth < divergeAt; depth += 1) {
-        const ancestorKey = groupPathKey(path.slice(0, depth + 1));
-        if (view.expandedGroups[ancestorKey] === false) {
-          ancestorCollapsed = true;
-          break;
-        }
-      }
-      if (!ancestorCollapsed) {
-        for (let depth = divergeAt; depth < view.group.length; depth += 1) {
-          const subPath = path.slice(0, depth + 1);
-          const pathKey = groupPathKey(subPath);
-          const expanded = view.expandedGroups[pathKey] ?? true;
-          const agg = aggregatesByPath.get(pathKey);
-          plan.push({
-            kind: "group",
-            depth,
-            pathKey,
-            fieldDef: groupFieldDefs[depth]!,
-            groupValue: path[depth],
-            count: agg?.count ?? 0,
-            expanded,
-            aggregatedValues: agg?.values ?? new Map(),
-          });
-          // Stop emitting deeper headers under a collapsed parent so
-          // a closed group hides both its data rows AND its child
-          // group headers (acceptance criterion 6).
-          if (!expanded) break;
-        }
+    if (
+      divergeAt < view.group.length &&
+      !isAncestorCollapsed(view.expandedGroups, path, divergeAt)
+    ) {
+      for (let depth = divergeAt; depth < view.group.length; depth += 1) {
+        const pathKey = groupPathKey(path.slice(0, depth + 1));
+        const expanded = view.expandedGroups[pathKey] ?? true;
+        const agg = aggregates.get(pathKey);
+        plan.push({
+          kind: "group",
+          depth,
+          pathKey,
+          fieldDef: groupFieldDefs[depth]!,
+          groupValue: path[depth],
+          count: agg?.count ?? 0,
+          expanded,
+          aggregatedValues: agg?.values ?? new Map(),
+        });
+        // Hide both data rows AND deeper group headers under a
+        // collapsed parent.
+        if (!expanded) break;
       }
     }
     prevPath = path;
@@ -747,22 +714,53 @@ export function buildBodyPlan<TRow>(
   return plan;
 }
 
-// Walk `rows` once, accumulating per-path row counts and per-column
-// raw values for fields with a non-`none` aggregation kind in
-// `view.aggregations`. At the end, format each value list via the
-// registry's `formatAggregation`. Aggregates at a given depth cover
-// all descendant data rows — including those under collapsed inner
-// groups (parent §16: no per-level-only toggle).
+function resolveGroupRules<TRow>(
+  group: readonly GroupRule[],
+  columns: readonly DataTableColumnDef<TRow>[],
+  fieldDefs: readonly FieldDef[],
+): { groupFieldDefs: FieldDef[]; groupAccessors: ((row: TRow) => unknown)[] } | null {
+  const fieldDefByKey = new Map(fieldDefs.map((f) => [f.field_key, f]));
+  const columnByKey = new Map(columns.map((c) => [c.fieldKey, c]));
+  const groupFieldDefs: FieldDef[] = [];
+  const groupAccessors: ((row: TRow) => unknown)[] = [];
+  for (const rule of group) {
+    const fieldDef = fieldDefByKey.get(rule.fieldKey);
+    const column = columnByKey.get(rule.fieldKey);
+    if (!fieldDef || !column) return null;
+    groupFieldDefs.push(fieldDef);
+    groupAccessors.push(column.accessor);
+  }
+  return { groupFieldDefs, groupAccessors };
+}
+
+function isAncestorCollapsed(
+  expandedGroups: Readonly<Record<string, boolean>>,
+  path: readonly unknown[],
+  divergeAt: number,
+): boolean {
+  for (let depth = 0; depth < divergeAt; depth += 1) {
+    const key = groupPathKey(path.slice(0, depth + 1));
+    if (expandedGroups[key] === false) return true;
+  }
+  return false;
+}
+
+// Aggregates at a given depth cover all descendant data rows —
+// including those under collapsed inner groups. Output keys cover
+// every distinct group pathKey reachable from `rows`, which doubles
+// as the "what to collapse" set for Collapse-all.
 export function computeAggregatesByPath<TRow>(
   rows: readonly TRow[],
   columns: readonly DataTableColumnDef<TRow>[],
   fieldDefs: readonly FieldDef[],
   view: Pick<ViewState, "group" | "aggregations">,
-  groupAccessors: readonly ((row: TRow) => unknown)[],
+  groupAccessors?: readonly ((row: TRow) => unknown)[],
 ): Map<string, { count: number; values: Map<string, string> }> {
-  const fieldDefByKey = new Map(fieldDefs.map((f) => [f.field_key, f]));
-  // Pre-resolve column accessors for fields with an active aggregation
-  // so the per-row loop stays O(rows × aggregated columns).
+  if (view.group.length === 0) return new Map();
+  const resolvedAccessors =
+    groupAccessors ?? resolveGroupRules(view.group, columns, fieldDefs)?.groupAccessors;
+  if (!resolvedAccessors) return new Map();
+  const columnByKey = new Map(columns.map((c) => [c.fieldKey, c]));
   const aggregated: {
     fieldKey: string;
     kind: AggregationKind;
@@ -770,12 +768,11 @@ export function computeAggregatesByPath<TRow>(
   }[] = [];
   for (const [fieldKey, kind] of Object.entries(view.aggregations)) {
     if (kind === "none") continue;
-    const column = columns.find((c) => c.fieldKey === fieldKey);
+    const column = columnByKey.get(fieldKey);
     if (!column) continue;
     aggregated.push({ fieldKey, kind, accessor: column.accessor });
   }
 
-  // Per path: count + map of fieldKey → array of raw values.
   type PathAcc = { count: number; valueLists: Map<string, unknown[]> };
   const acc = new Map<string, PathAcc>();
   const ensure = (pathKey: string): PathAcc => {
@@ -788,7 +785,7 @@ export function computeAggregatesByPath<TRow>(
   };
 
   for (const row of rows) {
-    const path = groupAccessors.map((accessor) => accessor(row));
+    const path = resolvedAccessors.map((accessor) => accessor(row));
     for (let depth = 0; depth < view.group.length; depth += 1) {
       const pathKey = groupPathKey(path.slice(0, depth + 1));
       const entry = ensure(pathKey);
@@ -804,14 +801,12 @@ export function computeAggregatesByPath<TRow>(
     }
   }
 
-  // Format each value list via the registry. Doing this once at the
-  // end keeps the per-row loop free of string-formatting work.
   const result = new Map<string, { count: number; values: Map<string, string> }>();
   for (const [pathKey, entry] of acc) {
     const values = new Map<string, string>();
     for (const { fieldKey, kind } of aggregated) {
       const list = entry.valueLists.get(fieldKey) ?? [];
-      values.set(fieldKey, formatAggregation(kind, list, fieldDefByKey.get(fieldKey)));
+      values.set(fieldKey, formatAggregation(kind, list));
     }
     result.set(pathKey, { count: entry.count, values });
   }
@@ -823,27 +818,28 @@ export function computeAggregatesByPath<TRow>(
 export function firstDivergeIndex(prev: readonly unknown[], next: readonly unknown[]): number {
   const len = Math.min(prev.length, next.length);
   for (let i = 0; i < len; i += 1) {
-    if (!shallowEqualValue(prev[i], next[i])) return i;
+    const a = prev[i];
+    const b = next[i];
+    if (a === b) continue;
+    // Group keys are primitive cell values 99% of the time; only fall
+    // through to a structural compare for the rare object case.
+    if (
+      a !== null &&
+      b !== null &&
+      typeof a === "object" &&
+      typeof b === "object" &&
+      JSON.stringify(a) === JSON.stringify(b)
+    )
+      continue;
+    return i;
   }
   return len;
-}
-
-function shallowEqualValue(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a === null || b === null || a === undefined || b === undefined) return false;
-  // Group keys are primitive cell values (string ids, numbers,
-  // strings). JSON-stringify equality covers the rare object case
-  // without forcing a deep-equal dependency.
-  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function isPathFullyExpanded(
   expandedGroups: Readonly<Record<string, boolean>>,
   path: readonly unknown[],
 ): boolean {
-  // Every ancestor (depths 0..path.length-1) must be expanded for a
-  // data row at this path to render. Default expanded when a path
-  // hasn't been touched.
   for (let depth = 0; depth < path.length; depth += 1) {
     const key = groupPathKey(path.slice(0, depth + 1));
     if (expandedGroups[key] === false) return false;
