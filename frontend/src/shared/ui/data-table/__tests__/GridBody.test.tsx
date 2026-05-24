@@ -65,6 +65,42 @@ describe("GridBody — DOM hit-test attrs", () => {
   });
 });
 
+describe("GridBody — row-expand affordance", () => {
+  test("renders an Expand button per row when onRowOpen is wired", () => {
+    const onRowOpen = vi.fn();
+    renderTable({ onRowOpen });
+
+    const expandButtons = screen.getAllByRole("button", { name: /Expand row \d/ });
+    expect(expandButtons).toHaveLength(ROWS.length);
+  });
+
+  test("clicking the Expand button invokes onRowOpen with that row", () => {
+    const onRowOpen = vi.fn();
+    renderTable({ onRowOpen });
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand row 2" }));
+    expect(onRowOpen).toHaveBeenCalledWith(ROWS[1]);
+  });
+
+  test("clicking the Expand button does not bubble to the row-select gesture", () => {
+    const onRowOpen = vi.fn();
+    renderTable({ onRowOpen });
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand row 1" }));
+    // The cell-range shouldn't have collapsed to a whole-row selection
+    // — onSelectRow is the gutter number's click handler, separate from
+    // Expand. We assert by checking that no body cell carries the
+    // explicit-range selected class.
+    const cell = getBodyCell(0, 1);
+    expect(cell).not.toHaveClass("data-table-cell-selected");
+  });
+
+  test("omits the Expand button when onRowOpen is undefined", () => {
+    renderTable();
+    expect(screen.queryByRole("button", { name: /Expand row/ })).not.toBeInTheDocument();
+  });
+});
+
 describe("GridBody — perimeter outline rendering", () => {
   test("the active 1x1 cell has no perimeter box-shadow (outline channel only)", () => {
     renderTable();

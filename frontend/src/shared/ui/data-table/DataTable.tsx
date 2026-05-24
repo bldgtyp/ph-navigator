@@ -739,6 +739,7 @@ export function DataTable<TRow>({
               rowSelection.toggle(rowId, mode);
               focusGrid();
             }}
+            onRowExpand={onRowOpen}
             onCommitAndMove={handleCommitAndMove}
             fillSource={fill.source}
             fillTargetPreview={fill.targetPreview}

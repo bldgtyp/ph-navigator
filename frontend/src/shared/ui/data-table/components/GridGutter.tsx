@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { Maximize2 } from "lucide-react";
 import type { RowSelectionMode } from "../hooks/useGridRowSelection";
 
 // Row-number / row-select gutter cell. Lives outside the TanStack
@@ -11,6 +12,12 @@ export type GridGutterProps = {
   showCheckbox: boolean;
   onSelectRow: () => void;
   onToggleSelected: (mode: RowSelectionMode) => void;
+  // AirTable-style row-expand affordance: when wired, an Expand icon
+  // overlays the row number on row-hover and invokes the consumer's
+  // row-open callback. Plan 04 took the Enter key for inline editing,
+  // so this button is the new keyboard-and-mouse path to the row
+  // detail dialog.
+  onExpandRow?: () => void;
 };
 
 export function GridGutter({
@@ -19,12 +26,20 @@ export function GridGutter({
   showCheckbox,
   onSelectRow,
   onToggleSelected,
+  onExpandRow,
 }: GridGutterProps) {
   const handleCheckboxClick = (event: MouseEvent<HTMLInputElement>) => {
     // Stop the click from bubbling to the gutter cell and triggering the
     // row-number's selectRow on the surrounding cell-range channel.
     event.stopPropagation();
     onToggleSelected(modeFromEvent(event));
+  };
+
+  const handleExpandClick = (event: MouseEvent<HTMLButtonElement>) => {
+    // Stop the click from bubbling so the surrounding gutter cell
+    // doesn't fire selectRow.
+    event.stopPropagation();
+    onExpandRow?.();
   };
 
   return (
@@ -43,15 +58,29 @@ export function GridGutter({
             tabIndex={-1}
           />
         ) : null}
-        <button
-          type="button"
-          className="data-table-gutter-number"
-          aria-label={`Highlight row ${rowNumber}`}
-          tabIndex={-1}
-          onClick={onSelectRow}
-        >
-          {rowNumber}
-        </button>
+        <span className="data-table-gutter-number-stack">
+          <button
+            type="button"
+            className="data-table-gutter-number"
+            aria-label={`Highlight row ${rowNumber}`}
+            tabIndex={-1}
+            onClick={onSelectRow}
+          >
+            {rowNumber}
+          </button>
+          {onExpandRow ? (
+            <button
+              type="button"
+              className="data-table-gutter-expand"
+              aria-label={`Expand row ${rowNumber}`}
+              title="Expand row"
+              tabIndex={-1}
+              onClick={handleExpandClick}
+            >
+              <Maximize2 size={12} aria-hidden="true" />
+            </button>
+          ) : null}
+        </span>
       </div>
     </th>
   );
