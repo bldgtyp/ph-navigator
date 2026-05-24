@@ -28,6 +28,7 @@ import { useGridClipboard } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
+import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
 import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
@@ -722,8 +723,6 @@ export function DataTable<TRow>({
             onEditField={setFieldEditorOpenForFieldKey}
             openFieldKey={fieldEditorOpenForFieldKey}
             headerCellRefByFieldKey={headerCellRefByFieldKey}
-            aggregations={view.aggregations}
-            onAggregationChange={handleAggregationChange}
           />
           <GridBody
             table={table}
@@ -763,6 +762,14 @@ export function DataTable<TRow>({
             fillHandleVisible={fill.handleVisible}
             onFillHandleMouseDown={fill.onHandleMouseDown}
             cellsWritable={!readOnly && Boolean(onWrite)}
+          />
+          <SummaryBar
+            columns={visibleColumnDefs}
+            visibleRows={filteredRows}
+            aggregations={view.aggregations}
+            fieldDefByKey={fieldDefByKey}
+            readOnly={readOnly}
+            onAggregationChange={handleAggregationChange}
           />
         </table>
         {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}

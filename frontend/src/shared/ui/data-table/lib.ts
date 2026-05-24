@@ -767,7 +767,7 @@ export function computeAggregatesByPath<TRow>(
     accessor: (row: TRow) => unknown;
   }[] = [];
   for (const [fieldKey, kind] of Object.entries(view.aggregations)) {
-    if (kind === "none") continue;
+    if (kind === "none" || kind == null) continue;
     const column = columnByKey.get(fieldKey);
     if (!column) continue;
     aggregated.push({ fieldKey, kind, accessor: column.accessor });

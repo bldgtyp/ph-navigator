@@ -3350,3 +3350,110 @@ td.data-table-cell-editing {
     grid-template-columns: 1fr;
   }
 }
+
+/* Plan 06 — AirTable-style summary bar. Pinned <tfoot> at the bottom
+   of the table; one cell per visible column. First cell shows
+   `Count: N` over the post-filter row set; subsequent cells either
+   show the picked aggregate or expose a "Calculate" click target. */
+.data-table-summary-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-card);
+  z-index: 2;
+}
+
+.data-table-summary-bar tr {
+  height: 30px;
+}
+
+.data-table-summary-gutter {
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-subtle, #d4d4d8);
+}
+
+.data-table-summary-cell {
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-subtle, #d4d4d8);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.data-table-summary-cell.data-table-frozen {
+  text-align: left;
+}
+
+.data-table-summary-count {
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.data-table-summary-count-label {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.data-table-summary-count-value {
+  font-weight: 600;
+}
+
+.data-table-summary-trigger {
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  margin: 0;
+  border-radius: var(--phn-radius);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+  width: 100%;
+  min-height: 22px;
+}
+
+.data-table-summary-trigger:hover,
+.data-table-summary-trigger:focus-visible {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.data-table-summary-placeholder {
+  opacity: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  transition: opacity 0.1s ease-out;
+}
+
+.data-table-summary-cell:hover .data-table-summary-placeholder,
+.data-table-summary-trigger:focus-visible .data-table-summary-placeholder {
+  opacity: 1;
+}
+
+.data-table-summary-kind {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.data-table-summary-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.data-table-summary-cell[data-readonly="true"] {
+  cursor: default;
+}
