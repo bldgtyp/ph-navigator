@@ -1,9 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useMemo, useState } from "react";
-import {
-  getAggregationKinds,
-  type AggregationKind,
-} from "../fields/aggregations";
+import { getAggregationKinds, type AggregationKind } from "../fields/aggregations";
 import { computeAggregate } from "../hooks/useGridAggregations";
 import type { DataTableColumnDef, FieldDef } from "../types";
 
@@ -137,11 +134,7 @@ function SummaryCell<TRow>({
     <td className={cellClassName} data-field-key={column.fieldKey}>
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
-          <button
-            type="button"
-            className="data-table-summary-trigger"
-            aria-label={triggerLabel}
-          >
+          <button type="button" className="data-table-summary-trigger" aria-label={triggerLabel}>
             {aggregation === "none" ? (
               <span className="data-table-summary-placeholder">Calculate</span>
             ) : (

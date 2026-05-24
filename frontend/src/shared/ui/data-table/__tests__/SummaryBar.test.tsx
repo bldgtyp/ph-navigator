@@ -21,9 +21,7 @@ const FIELD_DEFS = new Map<string, FieldDef>([
   ["icfa", { field_key: "icfa", field_type: "number", display_name: "iCFA" }],
 ]);
 
-function renderBar(
-  overrides: Partial<React.ComponentProps<typeof SummaryBar<Row>>> = {},
-) {
+function renderBar(overrides: Partial<React.ComponentProps<typeof SummaryBar<Row>>> = {}) {
   const onAggregationChange = vi.fn();
   render(
     <table>
