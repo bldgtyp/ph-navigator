@@ -16,7 +16,12 @@ services:
     volumes:
       - phn_v2_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-phn}"]
+      # `-d` is required: pg_isready defaults dbname to the username
+      # when omitted, so without it the probe asks for `dbname=phn`
+      # (which doesn't exist) and fills the log with FATAL noise — even
+      # though the probe still returns healthy because the server
+      # responded.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-phn} -d ${POSTGRES_DB:-ph_navigator_v2}"]
       interval: 10s
       timeout: 5s
       retries: 5
