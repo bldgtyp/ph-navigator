@@ -1026,8 +1026,10 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByText("Living Room")).toBeVisible();
-    screen.getByRole("grid").focus();
-    await user.keyboard("{Enter}");
+    // Plan 04 changed Enter to open the inline editor on editable
+    // cells; double-click on the read-only ERVs cell falls through to
+    // onRowOpen and brings up the Room dialog.
+    await user.dblClick(screen.getByText("None"));
     expect(await screen.findByRole("dialog", { name: /Room: 101/ })).toBeVisible();
     await user.clear(screen.getByLabelText("Name"));
     await user.type(screen.getByLabelText("Name"), "Local Edit");
