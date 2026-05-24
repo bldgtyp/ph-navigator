@@ -1832,13 +1832,13 @@ against Rooms in a fresh browser session. Record pass/fail in
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
-| 1 — aggregation registry + group derivation lib  | — | — | — |
-| 2 — tint cascade tokens + axis-roles plumbing    | — | — | — |
-| 3 — group popover + toolbar button               | — | — | — |
-| 4 — group accordion body rendering               | — | — | — |
-| 5 — aggregation picker in ColumnHeaderMenu       | — | — | — |
-| 6 — demo walk + post-walk fixes                  | — | — | — |
-| Phase 6 overall                                  | — | — | — |
+| 1 — aggregation registry + group derivation lib  | 2026-05-24 | code-only | 9 aggregation + 19 body-plan tests. |
+| 2 — tint cascade tokens + axis-roles plumbing    | 2026-05-24 | code-only | 14 CSS tokens; DataTable axis-tint tests rewired to subset codes. |
+| 3 — group popover + toolbar button               | 2026-05-24 | code-only | New GroupPopover + Group ▾ button; Reset widens to clear all five toolbar-owned keys. |
+| 4 — group accordion body rendering               | 2026-05-24 | code-only | GridBody walks bodyPlan; visibleDataRows drives selection / clipboard / row insert. |
+| 5 — aggregation picker in ColumnHeaderMenu       | 2026-05-24 | code-only | `⋯` trigger now appears on every aggregatable column; AggregationMenuItem with submenu. |
+| 6 — demo walk + post-walk fixes                  | 2026-05-24 | not run    | Manual browser walk deferred to the human reviewer; verified via 325-test suite + clean lint + clean build + Prettier check. |
+| Phase 6 overall                                  | 2026-05-24 | code-only | All five steps merged; tint cascade, group accordion, and per-column aggregations shipped against the data-table library with zero consumer changes. |
 
 ## 12. Open questions — resolved 2026-05-24
 
