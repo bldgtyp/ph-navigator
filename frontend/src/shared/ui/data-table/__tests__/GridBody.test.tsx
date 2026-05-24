@@ -172,6 +172,56 @@ describe("GridBody — perimeter outline rendering", () => {
   });
 });
 
+describe("GridBody — fill handle (Phase 7)", () => {
+  test("the active cell carries data-fill-handle='true' and renders the FillHandle when writable", () => {
+    renderTable({ onWrite: vi.fn() });
+    const active = getBodyCell(0, 0);
+    expect(active.dataset.fillHandle).toBe("true");
+    expect(within(active).getByRole("button", { name: "Drag to fill" })).toBeInTheDocument();
+  });
+
+  test("no handle when the table is read-only (no onWrite handler)", () => {
+    renderTable();
+    const active = getBodyCell(0, 0);
+    expect(active.dataset.fillHandle).toBeUndefined();
+    expect(active.querySelector(".data-table-fill-handle")).toBeNull();
+  });
+
+  test("no handle when readOnly is true", () => {
+    renderTable({ readOnly: true, onWrite: vi.fn() });
+    const active = getBodyCell(0, 0);
+    expect(active.dataset.fillHandle).toBeUndefined();
+  });
+
+  test("no handle when the source spans more than one group", () => {
+    const onViewChange = vi.fn<(next: ViewState) => void>();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={{
+          ...emptyViewState(),
+          group: [{ fieldKey: "name", direction: "asc" }],
+        }}
+        onViewChange={onViewChange}
+        onWrite={vi.fn()}
+        emptyMessage="No rows yet."
+      />,
+    );
+    // Each row has a unique `name`, so each row is its own group. A
+    // 1-row selection sits within one group → handle visible. Now
+    // extend the selection across rows: Shift+ArrowDown.
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    // The selection spans 3 unique-name groups — no cell should carry
+    // the fill-handle attribute.
+    expect(document.querySelector("[data-fill-handle]")).toBeNull();
+  });
+});
+
 describe("GridBody — group accordion", () => {
   test("renders group-header rows when view.group is non-empty", () => {
     const onViewChange = vi.fn<(next: ViewState) => void>();

@@ -27,8 +27,10 @@ body {
   background: var(--bg-page);
   color: var(--text-primary);
   font-family: var(--font-primary);
-  font-weight: 300;
-  text-rendering: geometricPrecision;
+  font-weight: 400;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -131,7 +133,7 @@ textarea {
   color: var(--accent-text);
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -321,7 +323,7 @@ a:focus-visible {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 0.05em;
   text-decoration: none;
   text-transform: uppercase;
@@ -609,12 +611,11 @@ a:focus-visible {
 }
 
 .project-list-heading,
-.data-table th,
 .metadata-grid dt {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1310,7 +1311,7 @@ button:disabled {
   min-width: 380px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
   z-index: 50;
-  font-family: var(--font-sans, inherit);
+  font-family: var(--font-primary, inherit);
   font-size: 0.8rem;
   color: var(--text-primary);
 }
@@ -1488,7 +1489,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-family: var(--font-sans, inherit);
+  font-family: var(--font-primary, inherit);
   font-size: 0.78rem;
 }
 
@@ -1684,7 +1685,7 @@ button:disabled {
   min-width: 160px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
   z-index: 50;
-  font-family: var(--font-sans, inherit);
+  font-family: var(--font-primary, inherit);
   font-size: 0.8rem;
 }
 
@@ -1763,6 +1764,9 @@ button:disabled {
   border-collapse: separate;
   border-spacing: 0;
   background: var(--bg-card);
+  font-family: var(--font-table, var(--font-primary));
+  font-feature-settings: "kern" 1;
+  font-kerning: normal;
 }
 
 .data-table-gutter-col {
@@ -1783,10 +1787,10 @@ button:disabled {
   z-index: 3;
   background: var(--bg-card);
   color: var(--text-secondary);
-  font-family: var(--font-mono);
+  font-family: var(--font-table, var(--font-primary));
   font-size: 0.72rem;
-  font-weight: 400;
-  letter-spacing: 0.05em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
@@ -1798,6 +1802,9 @@ button:disabled {
   position: relative;
   height: 32px;
   background: var(--bg-card);
+  font-family: var(--font-table, var(--font-primary));
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .data-table tbody tr:hover td,
@@ -2181,6 +2188,43 @@ button:disabled {
 .data-table-cell-active {
   outline: 2px solid var(--accent-text);
   outline-offset: -2px;
+}
+
+/* Phase 7 §4.1 — fill handle. Small solid square anchored at the
+   bottom-right of the source rectangle's last cell; half overlaps the
+   cell interior, half overlaps the outside seam so it reads as a
+   grabbable corner of the active outline (matches the AirTable
+   reference Ed walked 2026-05-24). The `:has()` rule promotes the host
+   cell to `position: relative` so the absolutely-positioned handle
+   anchors there. */
+td:has(> .data-table-fill-handle) {
+  position: relative;
+}
+
+.data-table-fill-handle {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-text);
+  border: 0;
+  padding: 0;
+  cursor: crosshair;
+  z-index: 2;
+}
+
+/* Phase 7 §4.1 — tint the cells inside the drag-preview target rect
+   while a fill drag is in flight. */
+td[data-fill-target="true"] {
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+/* Phase 7 §4.1 — keep the crosshair cursor across the whole document
+   while a fill drag is active; without this the cursor reverts to the
+   default outside the source cell. */
+body[data-grid-fill-active="true"] {
+  cursor: crosshair;
 }
 
 .numeric-cell {
@@ -2738,36 +2782,50 @@ button:disabled {
 
 .catalog-table-wrapper {
   overflow-x: auto;
-  border: 1px solid var(--border-default);
-  border-radius: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
 }
 
 .catalog-table {
   border-collapse: collapse;
   width: 100%;
   min-width: 960px;
-  font-size: 0.92em;
+  font-family: var(--font-table, var(--font-primary));
+  font-feature-settings: "kern" 1;
+  font-kerning: normal;
+  font-size: 0.875rem;
 }
 
 .catalog-table th,
 .catalog-table td {
   text-align: left;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-subtle);
   vertical-align: top;
 }
 
 .catalog-table th {
-  background: var(--bg-elevated);
-  font-weight: 600;
-  color: var(--text-strong);
+  background: var(--bg-elev);
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   position: sticky;
   top: 0;
 }
 
+.catalog-table td {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
 .catalog-row-inactive {
   color: var(--text-muted);
-  background: var(--bg-elevated);
+  background: var(--bg-elev);
+}
+
+.catalog-row-inactive td {
+  color: var(--text-muted);
 }
 
 .catalog-row-actions {

@@ -8,6 +8,7 @@ import {
   effectiveSortFromView,
   extractRowDefaults,
   formatDisplayCellValue,
+  groupPathByRowIdFromBodyPlan,
   pruneExpandedGroups,
   sortRows,
 } from "./lib";
@@ -24,6 +25,7 @@ import { getFilterOperators, isFilterContributing } from "./fields/filterOperato
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
+import { useGridFill } from "./hooks/useGridFill";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { GridToolbar } from "./components/GridToolbar";
@@ -193,8 +195,12 @@ export function DataTable<TRow>({
   // without interference from the cell-drag hook.
   const isPointerInActiveEditor = useCallback(
     (target: EventTarget | null) => {
-      if (!edit.editing) return false;
       if (!(target instanceof Element)) return false;
+      // Mousedown on the fill handle is not "in an editor", but it must
+      // still short-circuit the cell-drag path so useGridFill's session
+      // can own the drag (Phase 7 §4.3).
+      if (target.closest(".data-table-fill-handle")) return true;
+      if (!edit.editing) return false;
       if (target.closest(".data-table-cell-editor")) return true;
       if (target.closest(".single-select-popover")) return true;
       return false;
@@ -214,6 +220,29 @@ export function DataTable<TRow>({
   const focusGrid = () => {
     wrapperRef.current?.focus({ preventScroll: true });
   };
+  // Phase 7: per-data-row pathKey, derived once from the body plan. The
+  // fill hook uses it to (a) hide the handle when the source spans
+  // multiple groups, (b) clamp the drag target to the source group,
+  // and (c) split a multi-group ⌘D selection into per-group sub-fills.
+  const groupPathByRowId = useMemo(() => groupPathByRowIdFromBodyPlan(bodyPlan), [bodyPlan]);
+
+  const fill = useGridFill({
+    containerRef: wrapperRef,
+    selection,
+    rows: visibleDataRows,
+    rowIds,
+    fieldKeys,
+    columns: visibleColumnDefs,
+    fieldDefs,
+    getRowId,
+    groupPathByRowId,
+    dispatchWrite,
+    readOnly,
+    isEditing: Boolean(edit.editing),
+    hasWriteHandler: Boolean(onWrite),
+    onAnnounce: setAnnounce,
+  });
+
   const clipboard = useGridClipboard({
     range: selection.range,
     // Phase 6 §4.1: copy across a range that spans a collapsed group
@@ -646,6 +675,10 @@ export function DataTable<TRow>({
               focusGrid();
             }}
             onCommitAndMove={handleCommitAndMove}
+            fillSource={fill.source}
+            fillTargetPreview={fill.targetPreview}
+            fillHandleVisible={fill.handleVisible}
+            onFillHandleMouseDown={fill.onHandleMouseDown}
           />
         </table>
       </div>
