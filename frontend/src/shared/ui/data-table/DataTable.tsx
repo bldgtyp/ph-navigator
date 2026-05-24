@@ -745,6 +745,7 @@ export function DataTable<TRow>({
             fillTargetPreview={fill.targetPreview}
             fillHandleVisible={fill.handleVisible}
             onFillHandleMouseDown={fill.onHandleMouseDown}
+            cellsWritable={!readOnly && Boolean(onWrite)}
           />
         </table>
         {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}
