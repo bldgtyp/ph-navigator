@@ -243,6 +243,27 @@ export type BodyPlanItem<TRow> =
       depth: number;
     };
 
+// Phase 7 §4.1: state the fill hook publishes to the body renderer.
+// `source` is the active selection's normalized rectangle whenever the
+// handle is visible; `targetPreview` is the (group-clamped) target
+// rectangle during an active drag (null otherwise). `handleVisible`
+// gates the `<FillHandle>` render and the `data-fill-handle="true"`
+// attribute on the source's bottom-right cell. The rectangle shape is
+// inlined (rather than imported from `lib.ts`) to keep the type module
+// free of runtime-side imports.
+export type FillRect = {
+  rowStart: number;
+  rowEnd: number;
+  columnStart: number;
+  columnEnd: number;
+};
+
+export type FillState = {
+  source: FillRect | null;
+  targetPreview: FillRect | null;
+  handleVisible: boolean;
+};
+
 export function emptyViewState(): ViewState {
   return {
     filter: [],
