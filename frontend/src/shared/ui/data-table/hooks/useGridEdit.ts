@@ -299,10 +299,18 @@ function initialEditorState(
 ): EditorState | null {
   if (kind === "none") return null;
   if (kind === "single_select") {
+    // Plan 05: type-to-edit on a single-select cell pre-fills the
+    // popover's search input with the typed character so the list
+    // filters immediately. With a seed present we drop the prior-
+    // value highlight (the cycle effect will snap to the first
+    // filtered option); with no seed (Enter / F2 / Space, or any
+    // `extend` start) we highlight the existing value.
+    const seed = intent === "replace" ? (replaceSeed ?? "") : "";
     return {
       kind: "single_select",
-      searchText: intent === "replace" ? "" : "",
-      highlightedOptionId: typeof initialValue === "string" ? initialValue : null,
+      searchText: seed,
+      highlightedOptionId:
+        seed.length > 0 ? null : typeof initialValue === "string" ? initialValue : null,
     };
   }
   const seed = intent === "replace" ? (replaceSeed ?? "") : formatClipboardValue(initialValue);
