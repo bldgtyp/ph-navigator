@@ -207,6 +207,42 @@ describe("useGridEdit", () => {
     expect(result.current.edit.editing).toBeNull();
   });
 
+  test('single_select start(replace, seed="B") pre-fills the search and clears highlight', () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "floor_level",
+        initialValue: "opt_ground",
+        intent: "replace",
+        replaceSeed: "B",
+      });
+    });
+    expect(result.current.edit.editing?.editor).toEqual({
+      kind: "single_select",
+      searchText: "B",
+      highlightedOptionId: null,
+    });
+  });
+
+  test('single_select start(replace, seed="") opens with the current option highlighted', () => {
+    const { result } = setup();
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "floor_level",
+        initialValue: "opt_mez",
+        intent: "replace",
+        replaceSeed: "",
+      });
+    });
+    expect(result.current.edit.editing?.editor).toEqual({
+      kind: "single_select",
+      searchText: "",
+      highlightedOptionId: "opt_mez",
+    });
+  });
+
   test("single_select start(extend) highlights the current option", () => {
     const { result } = setup();
     act(() => {
