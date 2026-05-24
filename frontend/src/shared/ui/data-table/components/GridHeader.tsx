@@ -1,6 +1,6 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { DataTableColumnDef, FieldDef } from "../types";
+import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
 
 // Header onMouseDown owns column-select; double-click on editable
 // single_select headers opens the field editor via `onEditField`.
@@ -10,7 +10,7 @@ export type GridHeaderProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
   fieldDefByKey: Map<string, FieldDef>;
-  axisTintByFieldKey: Map<string, "filter" | "sort">;
+  axisRolesByFieldKey: Map<string, AxisRoleSubset>;
   onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   readOnly: boolean;
   hasWriteHandler: boolean;
@@ -23,7 +23,7 @@ export function GridHeader<TRow>({
   table,
   visibleColumnDefs,
   fieldDefByKey,
-  axisTintByFieldKey,
+  axisRolesByFieldKey,
   onColumnMouseDown,
   readOnly,
   hasWriteHandler,
@@ -38,7 +38,7 @@ export function GridHeader<TRow>({
           <th className="data-table-gutter" aria-label="Row number" />
           {headerGroup.headers.map((header, columnIndex) => {
             const column = visibleColumnDefs[columnIndex];
-            const axisTint = column ? axisTintByFieldKey.get(column.fieldKey) : undefined;
+            const axisTint = column ? axisRolesByFieldKey.get(column.fieldKey) : undefined;
             const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
             const isEditableSingleSelect =
               !!column &&

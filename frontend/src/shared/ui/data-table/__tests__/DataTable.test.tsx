@@ -101,7 +101,7 @@ describe("DataTable", () => {
     );
   });
 
-  test("body cells carry data-axis-tint='filter' on a column with a contributing filter rule", () => {
+  test("body cells carry data-axis-tint='f' on a column with a contributing filter rule", () => {
     renderTable({
       view: {
         ...emptyViewState(),
@@ -110,7 +110,7 @@ describe("DataTable", () => {
     });
 
     const nameCell = screen.getByText("Living Room").closest("td");
-    expect(nameCell).toHaveAttribute("data-axis-tint", "filter");
+    expect(nameCell).toHaveAttribute("data-axis-tint", "f");
     // Non-filtered columns carry no axis tint.
     const numberCell = screen.getByText("101").closest("td");
     expect(numberCell).not.toHaveAttribute("data-axis-tint");
@@ -128,7 +128,7 @@ describe("DataTable", () => {
     expect(nameCell).not.toHaveAttribute("data-axis-tint");
   });
 
-  test("body cells carry data-axis-tint='sort' on a sorted column", () => {
+  test("body cells carry data-axis-tint='s' on a sorted column", () => {
     renderTable({
       view: {
         ...emptyViewState(),
@@ -137,13 +137,13 @@ describe("DataTable", () => {
     });
 
     const numberCell = screen.getByText("101").closest("td");
-    expect(numberCell).toHaveAttribute("data-axis-tint", "sort");
+    expect(numberCell).toHaveAttribute("data-axis-tint", "s");
     expect(numberCell?.parentElement?.querySelectorAll("td")[1]).not.toHaveAttribute(
       "data-axis-tint",
     );
   });
 
-  test("filter wins on overlap with sort on the same column", () => {
+  test("filter + sort on the same column composes to the 'fs' subset code", () => {
     renderTable({
       view: {
         ...emptyViewState(),
@@ -153,7 +153,7 @@ describe("DataTable", () => {
     });
 
     const nameCell = screen.getByText("Living Room").closest("td");
-    expect(nameCell).toHaveAttribute("data-axis-tint", "filter");
+    expect(nameCell).toHaveAttribute("data-axis-tint", "fs");
   });
 
   test("emits a cell write for inline text edits", async () => {

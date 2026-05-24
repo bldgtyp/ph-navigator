@@ -1,7 +1,7 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { computeEdgeBits, isCellInNormalizedRange, type NormalizedRange } from "../lib";
-import type { CellCoord, DataTableColumnDef, FieldDef } from "../types";
+import type { AxisRoleSubset, CellCoord, DataTableColumnDef, FieldDef } from "../types";
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { GridGutter } from "./GridGutter";
@@ -24,10 +24,11 @@ export type GridBodyProps<TRow> = {
   showRowCheckbox: boolean;
   emptyMessage: string;
   totalRowCount: number;
-  // Phase 4 §4.10: per-column axis tint ("filter" green | "sort" peach).
-  // Absent entries == untinted. Cells emit `data-axis-tint="<axis>"` so
-  // the CSS attribute selector paints — no JS color work here.
-  axisTintByFieldKey: Map<string, "filter" | "sort">;
+  // Phase 6 §4.3: per-column subset code over {filter, sort, group}.
+  // Absent entries == untinted. Cells emit `data-axis-tint="<code>"`
+  // so the CSS attribute selector paints — no JS color work here.
+  // Codes: "f" | "s" | "g" | "fs" | "fg" | "sg" | "fsg".
+  axisRolesByFieldKey: Map<string, AxisRoleSubset>;
   onCellActivate: (rowId: string, fieldKey: string) => void;
   onCellMouseDown?: (event: ReactMouseEvent<HTMLTableCellElement>) => void;
   onCellOpen: (row: TRow, columnIndex: number) => void;
@@ -50,7 +51,7 @@ export function GridBody<TRow>({
   showRowCheckbox,
   emptyMessage,
   totalRowCount,
-  axisTintByFieldKey,
+  axisRolesByFieldKey,
   onCellActivate,
   onCellMouseDown,
   onCellOpen,
@@ -95,7 +96,7 @@ export function GridBody<TRow>({
             const edgeStyle = selected
               ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
               : undefined;
-            const axisTint = fieldKey ? axisTintByFieldKey.get(fieldKey) : undefined;
+            const axisTint = fieldKey ? axisRolesByFieldKey.get(fieldKey) : undefined;
             return (
               <td
                 key={cell.id}
