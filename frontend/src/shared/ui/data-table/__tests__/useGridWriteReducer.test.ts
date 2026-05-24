@@ -81,6 +81,51 @@ describe("useGridWriteReducer", () => {
     expect(result.current.history.canUndo).toBe(false);
   });
 
+  test("fieldDefMutation with cellWrites round-trips through undo / redo", async () => {
+    const onWrite = vi.fn();
+    const { result } = renderHook(() => useHarness(onWrite));
+    const fieldDefForward: WriteOp = {
+      kind: "fieldDefMutation",
+      before: {
+        field_key: "floor",
+        field_type: "single_select",
+        display_name: "Floor",
+        options: [
+          { id: "opt_a", label: "A", color: "#000", order: 0 },
+          { id: "opt_b", label: "B", color: "#000", order: 1 },
+        ],
+      },
+      after: {
+        field_key: "floor",
+        field_type: "single_select",
+        display_name: "Floor",
+        options: [{ id: "opt_a", label: "A", color: "#000", order: 0 }],
+      },
+      cellWrites: [{ rowId: "rm_1", fieldKey: "floor", value: null }],
+    };
+    const fieldDefInverse: WriteOp = {
+      kind: "fieldDefMutation",
+      before: fieldDefForward.after,
+      after: fieldDefForward.before,
+      cellWrites: [{ rowId: "rm_1", fieldKey: "floor", value: "opt_b" }],
+    };
+
+    await act(async () => {
+      await result.current.reducer.dispatchWrite(fieldDefForward, fieldDefInverse);
+    });
+    expect(onWrite).toHaveBeenLastCalledWith(fieldDefForward);
+
+    await act(async () => {
+      await result.current.reducer.undoOnce();
+    });
+    expect(onWrite).toHaveBeenLastCalledWith(fieldDefInverse);
+
+    await act(async () => {
+      await result.current.reducer.redoOnce();
+    });
+    expect(onWrite).toHaveBeenLastCalledWith(fieldDefForward);
+  });
+
   test("dispatchWrite with skipHistory does not push", async () => {
     const onWrite = vi.fn();
     const { result } = renderHook(() => useHarness(onWrite));

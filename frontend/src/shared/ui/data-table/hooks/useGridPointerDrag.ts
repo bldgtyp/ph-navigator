@@ -223,6 +223,10 @@ export function useGridPointerDrag(args: UseGridPointerDragArgs): GridPointerDra
       if (event.button !== 0) return;
       if (!fieldKey) return;
 
+      // The second mousedown of a header double-click must not extend
+      // a column-select range — double-click opens the field editor.
+      if (event.detail >= 2) return;
+
       // If the mousedown landed inside any button under the header
       // (sort chevron, Options menu trigger, future ⋯ menu), let that
       // button handle the click — column-select must not preempt it.

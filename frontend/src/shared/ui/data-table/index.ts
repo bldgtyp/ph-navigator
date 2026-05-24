@@ -1,4 +1,10 @@
 export { DataTable } from "./DataTable";
+export {
+  OPTION_COLOR_PALETTE,
+  missingOptionReferences,
+  normalizeOptionOrders,
+  optionReferenceCounts,
+} from "./lib";
 export { emptyViewState } from "./types";
 export type {
   BuildEmptyRow,

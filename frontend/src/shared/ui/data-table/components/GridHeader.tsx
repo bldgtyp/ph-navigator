@@ -1,28 +1,22 @@
 import { flexRender, type Table } from "@tanstack/react-table";
-import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import type { DataTableColumnDef, FieldDef } from "../types";
 
-// Pure presentational. Owns thead markup and the slot the consumer
-// uses to inject column-level menus (Phase 5 option management lives
-// there).
-//
-// Phase 3 R1: the whole `<th>` is the column-select hit target —
-// mousedown anywhere outside a button toggles the column-select.
-//
-// Phase 4 §4.9: header-click sort is removed. The per-column sort
-// chevron, the `data-table-header-button`, the `aria-sort` attribute,
-// and the `onToggleSort` prop are all gone. Sort lives only in the
-// toolbar Sort popover. The header label is now a plain `<span>`; it
-// cannot be clicked or focused. The `data-axis-tint` attribute on each
-// `<th>` drives per-column axis tinting (filter green / sort peach)
-// per §4.10.
+// Header onMouseDown owns column-select; double-click on editable
+// single_select headers opens the field editor via `onEditField`.
+// Header `<th>` refs are captured into `headerCellRefByFieldKey` so
+// the popover can anchor to them.
 export type GridHeaderProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
   fieldDefByKey: Map<string, FieldDef>;
   axisTintByFieldKey: Map<string, "filter" | "sort">;
   onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
-  renderHeaderActions?: (field: FieldDef) => ReactNode;
+  readOnly: boolean;
+  hasWriteHandler: boolean;
+  onEditField?: (fieldKey: string) => void;
+  openFieldKey?: string | null;
+  headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
 };
 
 export function GridHeader<TRow>({
@@ -31,7 +25,11 @@ export function GridHeader<TRow>({
   fieldDefByKey,
   axisTintByFieldKey,
   onColumnMouseDown,
-  renderHeaderActions,
+  readOnly,
+  hasWriteHandler,
+  onEditField,
+  openFieldKey,
+  headerCellRefByFieldKey,
 }: GridHeaderProps<TRow>) {
   return (
     <thead>
@@ -41,12 +39,28 @@ export function GridHeader<TRow>({
           {headerGroup.headers.map((header, columnIndex) => {
             const column = visibleColumnDefs[columnIndex];
             const axisTint = column ? axisTintByFieldKey.get(column.fieldKey) : undefined;
+            const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
+            const isEditableSingleSelect =
+              !!column &&
+              fieldDef?.field_type === "single_select" &&
+              !readOnly &&
+              hasWriteHandler &&
+              !!onEditField;
+            const isEditorOpen =
+              !!column && openFieldKey != null && openFieldKey === column.fieldKey;
             return (
               <th
                 key={header.id}
+                ref={(node) => {
+                  if (!column || !headerCellRefByFieldKey) return;
+                  if (node) headerCellRefByFieldKey.set(column.fieldKey, node);
+                  else headerCellRefByFieldKey.delete(column.fieldKey);
+                }}
                 role="columnheader"
                 aria-colindex={columnIndex + 1}
                 data-axis-tint={axisTint}
+                data-field-editable={isEditableSingleSelect ? "true" : undefined}
+                data-field-editor-open={isEditorOpen ? "true" : undefined}
                 className={["data-table-th", columnIndex === 0 ? "data-table-frozen" : ""]
                   .filter(Boolean)
                   .join(" ")}
@@ -55,21 +69,26 @@ export function GridHeader<TRow>({
                     ? (event) => onColumnMouseDown(event, column.fieldKey)
                     : undefined
                 }
+                onDoubleClick={
+                  isEditableSingleSelect && column
+                    ? (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onEditField?.(column.fieldKey);
+                      }
+                    : undefined
+                }
               >
                 <div className="data-table-header-row">
                   <span className="data-table-header-label">
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </span>
+                  {isEditableSingleSelect ? (
+                    <span aria-hidden className="data-table-header-edit-chevron">
+                      ▾
+                    </span>
+                  ) : null}
                 </div>
-                {column
-                  ? renderHeaderActions?.(
-                      fieldDefByKey.get(column.fieldKey) ?? {
-                        field_key: column.fieldKey,
-                        field_type: "text",
-                        display_name: column.header,
-                      },
-                    )
-                  : null}
               </th>
             );
           })}
