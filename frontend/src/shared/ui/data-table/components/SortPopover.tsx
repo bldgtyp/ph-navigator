@@ -1,22 +1,9 @@
 import * as Popover from "@radix-ui/react-popover";
-import { useCallback, useMemo, useRef, type CSSProperties } from "react";
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { useMemo, type CSSProperties } from "react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { generatedId } from "../../../lib/ids";
+import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, SortRule } from "../types";
 
 // Phase 4 §4.6: Sort popover. Stacked rule rows wired to user-intent
@@ -48,16 +35,7 @@ export function SortPopover({
   onSortChange,
   sortableFieldDefs,
 }: SortPopoverProps) {
-  const ruleIdsRef = useRef<string[]>([]);
-  if (ruleIdsRef.current.length !== rules.length) {
-    if (rules.length > ruleIdsRef.current.length) {
-      while (ruleIdsRef.current.length < rules.length) {
-        ruleIdsRef.current.push(generatedId("sort"));
-      }
-    } else {
-      ruleIdsRef.current = ruleIdsRef.current.slice(0, rules.length);
-    }
-  }
+  const sortable = useSortableRules(rules, onSortChange, "sort");
 
   const usedFieldKeys = useMemo(() => new Set(rules.map((rule) => rule.fieldKey)), [rules]);
   const unusedFieldDefs = useMemo(
@@ -66,53 +44,11 @@ export function SortPopover({
   );
   const canAddRule = unusedFieldDefs.length > 0;
 
-  const handleAddRule = useCallback(() => {
+  const handleAddRule = () => {
     const next = unusedFieldDefs[0];
     if (!next) return;
-    ruleIdsRef.current.push(generatedId("sort"));
-    onSortChange([...rules, { fieldKey: next.field_key, direction: "asc" }]);
-  }, [onSortChange, rules, unusedFieldDefs]);
-
-  const handleRuleChange = useCallback(
-    (index: number, next: SortRule) => {
-      const updated = [...rules];
-      updated[index] = next;
-      onSortChange(updated);
-    },
-    [onSortChange, rules],
-  );
-
-  const handleRuleRemove = useCallback(
-    (index: number) => {
-      ruleIdsRef.current.splice(index, 1);
-      onSortChange(rules.filter((_rule, i) => i !== index));
-    },
-    [onSortChange, rules],
-  );
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-      const fromIndex = ruleIdsRef.current.indexOf(String(active.id));
-      const toIndex = ruleIdsRef.current.indexOf(String(over.id));
-      if (fromIndex < 0 || toIndex < 0) return;
-      const nextRules = [...rules];
-      const [moved] = nextRules.splice(fromIndex, 1);
-      if (!moved) return;
-      nextRules.splice(toIndex, 0, moved);
-      const nextIds = [...ruleIdsRef.current];
-      const [movedId] = nextIds.splice(fromIndex, 1);
-      if (movedId !== undefined) nextIds.splice(toIndex, 0, movedId);
-      ruleIdsRef.current = nextIds;
-      onSortChange(nextRules);
-    },
-    [onSortChange, rules],
-  );
+    sortable.appendRule({ fieldKey: next.field_key, direction: "asc" });
+  };
 
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
@@ -129,14 +65,11 @@ export function SortPopover({
             <div className="data-table-view-popover-empty">No sort rules applied.</div>
           ) : (
             <DndContext
-              sensors={sensors}
+              sensors={sortable.sensors}
               collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+              onDragEnd={sortable.onDragEnd}
             >
-              <SortableContext
-                items={ruleIdsRef.current.slice(0, rules.length)}
-                strategy={verticalListSortingStrategy}
-              >
+              <SortableContext items={sortable.ids} strategy={verticalListSortingStrategy}>
                 <ul className="data-table-view-popover-rules" role="list">
                   {rules.map((rule, index) => {
                     const fieldOptions = sortableFieldDefs.filter(
@@ -144,13 +77,13 @@ export function SortPopover({
                     );
                     return (
                       <SortRuleRow
-                        key={ruleIdsRef.current[index] ?? `sort-${index}`}
-                        ruleId={ruleIdsRef.current[index] ?? `sort-${index}`}
+                        key={sortable.ids[index]!}
+                        ruleId={sortable.ids[index]!}
                         index={index}
                         rule={rule}
                         fieldOptions={fieldOptions}
-                        onChange={(next) => handleRuleChange(index, next)}
-                        onRemove={() => handleRuleRemove(index)}
+                        onChange={(next) => sortable.updateRuleAt(index, next)}
+                        onRemove={() => sortable.removeRuleAt(index)}
                       />
                     );
                   })}

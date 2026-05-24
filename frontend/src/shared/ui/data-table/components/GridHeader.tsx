@@ -20,7 +20,7 @@ export type GridHeaderProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
   fieldDefByKey: Map<string, FieldDef>;
-  axisTintByFieldKey: Map<string, "filter" | "sort" | null>;
+  axisTintByFieldKey: Map<string, "filter" | "sort">;
   onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   renderHeaderActions?: (field: FieldDef) => ReactNode;
 };
@@ -40,13 +40,13 @@ export function GridHeader<TRow>({
           <th className="data-table-gutter" aria-label="Row number" />
           {headerGroup.headers.map((header, columnIndex) => {
             const column = visibleColumnDefs[columnIndex];
-            const axisTint = column ? (axisTintByFieldKey.get(column.fieldKey) ?? null) : null;
+            const axisTint = column ? axisTintByFieldKey.get(column.fieldKey) : undefined;
             return (
               <th
                 key={header.id}
                 role="columnheader"
                 aria-colindex={columnIndex + 1}
-                data-axis-tint={axisTint ?? undefined}
+                data-axis-tint={axisTint}
                 className={["data-table-th", columnIndex === 0 ? "data-table-frozen" : ""]
                   .filter(Boolean)
                   .join(" ")}

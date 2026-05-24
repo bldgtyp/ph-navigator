@@ -333,29 +333,21 @@ export function DataTable<TRow>({
     onViewChange({ ...view, filter: [], sort: [] });
   }, [onViewChange, view]);
 
-  // Phase 4 §4.10: derive per-column axis tint from `view.filter` and
-  // `view.sort`. Filter wins on overlap (§4.10 precedence rule).
-  // Dormant filter rules (blank value) do not contribute — `view.filter
-  // = [{name contains ""}]` leaves the column un-tinted, matching
-  // AirTable's chip-color behaviour. Phase 6 will generalize this into
-  // the 7-subset filter ∩ sort ∩ group palette.
-  const axisTintByFieldKey = useMemo<Map<string, "filter" | "sort" | null>>(() => {
-    const map = new Map<string, "filter" | "sort" | null>();
-    const contributingFilterKeys = new Set(
-      view.filter.filter((rule) => isFilterContributing(rule)).map((rule) => rule.fieldKey),
-    );
-    const sortKeys = new Set(view.sort.map((rule) => rule.fieldKey));
-    for (const fieldDef of fieldDefs) {
-      if (contributingFilterKeys.has(fieldDef.field_key)) {
-        map.set(fieldDef.field_key, "filter");
-      } else if (sortKeys.has(fieldDef.field_key)) {
-        map.set(fieldDef.field_key, "sort");
-      } else {
-        map.set(fieldDef.field_key, null);
-      }
+  // Phase 4 §4.10: per-column axis tint. Filter wins on overlap;
+  // dormant filter rules don't contribute (matches AirTable's chip-
+  // color behaviour). Phase 6 will generalize this into the 7-subset
+  // filter ∩ sort ∩ group palette. Only tinted columns are stored —
+  // consumers use `map.get(fieldKey) ?? null` so absence == untinted.
+  const axisTintByFieldKey = useMemo<Map<string, "filter" | "sort">>(() => {
+    const map = new Map<string, "filter" | "sort">();
+    for (const rule of view.sort) {
+      map.set(rule.fieldKey, "sort");
+    }
+    for (const rule of view.filter) {
+      if (isFilterContributing(rule)) map.set(rule.fieldKey, "filter");
     }
     return map;
-  }, [fieldDefs, view.filter, view.sort]);
+  }, [view.filter, view.sort]);
 
   const startInlineEdit = (row: TRow, columnIndex: number) => {
     const column = visibleColumnDefs[columnIndex];
@@ -413,7 +405,7 @@ export function DataTable<TRow>({
       <GridToolbar
         readOnly={readOnly}
         view={view}
-        fieldDefs={fieldDefs}
+        fieldDefByKey={fieldDefByKey}
         filterableFieldDefs={filterableFieldDefs}
         sortableFieldDefs={sortableFieldDefs}
         onFilterChange={handleFilterChange}
