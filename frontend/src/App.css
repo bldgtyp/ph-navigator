@@ -2490,7 +2490,9 @@ td.data-table-cell-editing {
   border-radius: 999px;
   background: color-mix(in oklab, var(--option-color) 16%, var(--bg-card));
   color: var(--text-primary);
-  padding: 2px 8px;
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
