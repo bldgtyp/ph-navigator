@@ -1,10 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
-import {
-  HideFieldsPanel,
-  type HideFieldsPanelChange,
-} from "../components/HideFieldsPanel";
+import { HideFieldsPanel, type HideFieldsPanelChange } from "../components/HideFieldsPanel";
 import type { DataTableColumnDef, FieldDef } from "../types";
 
 type Row = { id: string; name: string; floor: string; count: number; tags: string };

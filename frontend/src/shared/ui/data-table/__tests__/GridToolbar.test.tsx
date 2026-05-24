@@ -1,11 +1,18 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { GridToolbar } from "../components/GridToolbar";
-import { emptyViewState, type FieldDef, type ViewState } from "../types";
+import { emptyViewState, type DataTableColumnDef, type FieldDef, type ViewState } from "../types";
 
 const FIELDS: FieldDef[] = [
   { field_key: "name", field_type: "text", display_name: "Name" },
   { field_key: "count", field_type: "number", display_name: "Count" },
+];
+
+type Row = { id: string; name: string; count: number };
+
+const COLUMNS: DataTableColumnDef<Row>[] = [
+  { id: "name", fieldKey: "name", header: "Name", accessor: (r) => r.name },
+  { id: "count", fieldKey: "count", header: "Count", accessor: (r) => r.count },
 ];
 
 function renderToolbar(
@@ -15,22 +22,25 @@ function renderToolbar(
     onGroupChange?: () => void;
     onCollapseAllGroups?: () => void;
     onExpandAllGroups?: () => void;
+    onHideFieldsChange?: () => void;
   } = {},
 ) {
   render(
-    <GridToolbar
+    <GridToolbar<Row>
       readOnly={false}
       view={view}
       fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}
       filterableFieldDefs={FIELDS}
       sortableFieldDefs={FIELDS}
       groupableFieldDefs={FIELDS}
+      orderedColumnsForHidePanel={COLUMNS}
       onFilterChange={vi.fn()}
       onSortChange={vi.fn()}
       onGroupChange={handlers.onGroupChange ?? vi.fn()}
       onCollapseAllGroups={handlers.onCollapseAllGroups ?? vi.fn()}
       onExpandAllGroups={handlers.onExpandAllGroups ?? vi.fn()}
       onResetView={handlers.onResetView ?? vi.fn()}
+      onHideFieldsChange={handlers.onHideFieldsChange ?? vi.fn()}
     />,
   );
 }
@@ -155,5 +165,35 @@ describe("GridToolbar", () => {
     expect(item).toBeDisabled();
     fireEvent.click(item);
     expect(onResetView).not.toHaveBeenCalled();
+  });
+
+  test("Hide fields button label is 'Hide fields' when nothing is hidden", () => {
+    renderToolbar();
+    const button = screen.getByRole("button", { name: "Hide fields" });
+    expect(button).toBeInTheDocument();
+    expect(button).not.toHaveAttribute("data-axis-active");
+  });
+
+  test("Hide fields button label shows a count when columns are hidden", () => {
+    renderToolbar({ ...emptyViewState(), hiddenColumns: ["count"] });
+    const button = screen.getByRole("button", { name: "Hide fields (1)" });
+    expect(button).toHaveAttribute("data-axis-active", "true");
+  });
+
+  test("clicking Hide fields opens the panel", () => {
+    renderToolbar();
+    fireEvent.click(screen.getByRole("button", { name: "Hide fields" }));
+    const panel = screen.getByRole("dialog", { name: "Hide or show fields" });
+    expect(panel).toBeInTheDocument();
+    expect(within(panel).getByLabelText("Find a field")).toBeInTheDocument();
+  });
+
+  test("toggling a field in the panel fires onHideFieldsChange", () => {
+    const onHideFieldsChange = vi.fn();
+    renderToolbar(emptyViewState(), { onHideFieldsChange });
+    fireEvent.click(screen.getByRole("button", { name: "Hide fields" }));
+    const panel = screen.getByRole("dialog", { name: "Hide or show fields" });
+    fireEvent.click(within(panel).getByLabelText("Hide Count"));
+    expect(onHideFieldsChange).toHaveBeenLastCalledWith({ hiddenColumns: ["count"] });
   });
 });
