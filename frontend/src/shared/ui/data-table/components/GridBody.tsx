@@ -188,14 +188,14 @@ export function GridBody<TRow>({
                   fillSource != null &&
                   isCellInNormalizedRange({ rowIndex, columnIndex }, fillSource)
                 );
-              // Plan 05: chevron renders only on the active single-
-              // select cell when the table is writable and no editor is
-              // open. The popover replaces the static pill render
-              // during edit mode, so a chevron sitting next to it would
-              // be redundant.
+              // Plan 05: render the chevron on every writable single-
+              // select cell so CSS can fade it in on hover OR the active
+              // cell. Skipped while an editor is open — the popover
+              // replaces the static pill render and a chevron sitting
+              // next to it would be redundant.
               const fieldDef = fieldKey ? fieldDefByKey.get(fieldKey) : undefined;
               const showSelectChevron =
-                active && !editing && cellsWritable && fieldDef?.field_type === "single_select";
+                !editing && cellsWritable && fieldDef?.field_type === "single_select";
               return (
                 <td
                   key={cell.id}
@@ -224,6 +224,12 @@ export function GridBody<TRow>({
                     // collapse the range we just extended, so skip the
                     // collapse when the modifier is held.
                     if (event.shiftKey) return;
+                    // Plan 05: a chevron click starts inline edit on
+                    // mousedown, then bubbles a click here. Activating
+                    // would call focusGrid() and steal focus from the
+                    // popover's search input — Radix would then fire
+                    // focus-outside and close the popover immediately.
+                    if (editing) return;
                     if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
                   }}
                   onDoubleClick={() => onCellOpen(tanstackRow.original, columnIndex)}

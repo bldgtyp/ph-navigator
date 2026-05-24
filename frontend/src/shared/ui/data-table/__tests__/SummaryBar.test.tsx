@@ -59,11 +59,13 @@ describe("SummaryBar", () => {
     expect(cells[0]).toHaveTextContent("3");
   });
 
-  test("non-first cells render empty when no aggregation picked", () => {
+  test("non-first cells render only the chevron when no aggregation picked", () => {
     renderBar();
     const cells = getCells();
     const trigger = within(cells[1] as HTMLElement).getByRole("button");
-    expect(trigger).toHaveTextContent(/^Calculate$/);
+    // No "Sum" / "Mean" / numeric text — only the aria-hidden chevron
+    // glyph rendered inside the trigger.
+    expect(trigger).toHaveTextContent(/^▾$/);
   });
 
   test("picking Sum on a number column renders the formatted total", () => {
@@ -155,6 +157,6 @@ describe("SummaryBar", () => {
     renderBar({ aggregations: { icfa: null } });
     const cells = getCells();
     const trigger = within(cells[1] as HTMLElement).getByRole("button");
-    expect(trigger).toHaveTextContent(/^Calculate$/);
+    expect(trigger).toHaveTextContent(/^▾$/);
   });
 });

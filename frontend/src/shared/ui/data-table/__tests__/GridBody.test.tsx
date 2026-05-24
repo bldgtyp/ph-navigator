@@ -294,16 +294,12 @@ describe("GridBody — single-select chevron (plan 05)", () => {
     return within(row).getAllByRole("gridcell")[columnIndex] as HTMLTableCellElement;
   }
 
-  test("active single-select cell renders the chevron when writable", () => {
+  test("writable single-select cells render the chevron (visibility gated by CSS hover/active)", () => {
     renderSelectTable({ onWrite: vi.fn() });
     const active = getSelectCell(0, 0);
     expect(within(active).getByRole("button", { name: "Open options" })).toBeInTheDocument();
-  });
-
-  test("inactive single-select cells do not render the chevron", () => {
-    renderSelectTable({ onWrite: vi.fn() });
     const inactive = getSelectCell(1, 0);
-    expect(within(inactive).queryByRole("button", { name: "Open options" })).toBeNull();
+    expect(within(inactive).getByRole("button", { name: "Open options" })).toBeInTheDocument();
   });
 
   test("active text cell does not render the chevron", () => {
