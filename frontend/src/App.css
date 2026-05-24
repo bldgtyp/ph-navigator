@@ -1355,8 +1355,47 @@ button:disabled {
   padding: 4px 0;
 }
 
-.data-table-view-popover-rule.is-sort {
+.data-table-view-popover-rule.is-sort,
+.data-table-view-popover-rule.is-group {
   grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr) 24px 20px;
+}
+
+/* Phase 6 §4.2: Group popover header. Title left, Collapse / Expand
+   text actions right-aligned (matches AirTable walked 2026-05-24). */
+.data-table-view-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.data-table-view-popover-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.data-table-view-popover-text-action {
+  border: 0;
+  background: transparent;
+  color: var(--text-link, var(--accent-text));
+  padding: 0;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.data-table-view-popover-text-action:disabled {
+  color: var(--text-disabled, var(--text-secondary));
+  cursor: default;
+  opacity: 0.55;
+}
+
+.data-table-view-popover-text-action:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+.data-table-view-popover.is-group {
+  min-width: 340px;
 }
 
 .data-table-view-popover-rule[data-dragging="true"] {

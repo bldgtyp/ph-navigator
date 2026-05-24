@@ -10,7 +10,12 @@ const FIELDS: FieldDef[] = [
 
 function renderToolbar(
   view: ViewState = emptyViewState(),
-  handlers: { onResetView?: () => void } = {},
+  handlers: {
+    onResetView?: () => void;
+    onGroupChange?: () => void;
+    onCollapseAllGroups?: () => void;
+    onExpandAllGroups?: () => void;
+  } = {},
 ) {
   render(
     <GridToolbar
@@ -19,9 +24,20 @@ function renderToolbar(
       fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}
       filterableFieldDefs={FIELDS}
       sortableFieldDefs={FIELDS}
+      groupableFieldDefs={FIELDS}
       onFilterChange={vi.fn()}
       onSortChange={vi.fn()}
+      onGroupChange={handlers.onGroupChange ?? vi.fn()}
+      onCollapseAllGroups={handlers.onCollapseAllGroups ?? vi.fn()}
+      onExpandAllGroups={handlers.onExpandAllGroups ?? vi.fn()}
       onResetView={handlers.onResetView ?? vi.fn()}
+      canResetView={
+        view.filter.length > 0 ||
+        view.sort.length > 0 ||
+        view.group.length > 0 ||
+        Object.keys(view.aggregations).length > 0 ||
+        Object.keys(view.expandedGroups).length > 0
+      }
     />,
   );
 }
@@ -58,11 +74,46 @@ describe("GridToolbar", () => {
   test("status chips collapse when filter chip moves into the button label", () => {
     renderToolbar();
     // Phase 4 §4.8: the old `No filters` / `Sorted by 0 fields` chips
-    // were removed; the toolbar status row only carries editability +
-    // grouping.
+    // were removed. Phase 6: the `Ungrouped` chip is also removed —
+    // the Group ▾ button label now carries the grouping info, and the
+    // "Ungroup to paste" banner moves out of the status row (only
+    // surfaces on a paste attempt). The status row only carries
+    // editability + the grouped paste banner when applicable.
     expect(screen.queryByText(/No filters/)).not.toBeInTheDocument();
     expect(screen.getByText("Editable")).toBeInTheDocument();
-    expect(screen.getByText("Ungrouped")).toBeInTheDocument();
+    expect(screen.queryByText("Ungrouped")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ungroup to paste")).not.toBeInTheDocument();
+  });
+
+  test("status row surfaces 'Ungroup to paste' chip when any group rule is active", () => {
+    renderToolbar({
+      ...emptyViewState(),
+      group: [{ fieldKey: "name", direction: "asc" }],
+    });
+    expect(screen.getByText("Ungroup to paste")).toBeInTheDocument();
+  });
+
+  test("Group button label is 'Group' when neutral and 'Grouped by N fields' when active", () => {
+    renderToolbar();
+    expect(screen.getByRole("button", { name: "Group" })).toBeInTheDocument();
+    renderToolbar({
+      ...emptyViewState(),
+      group: [
+        { fieldKey: "name", direction: "asc" },
+        { fieldKey: "count", direction: "desc" },
+      ],
+    });
+    expect(screen.getByRole("button", { name: "Grouped by 2 fields" })).toBeInTheDocument();
+  });
+
+  test("Group button tints lavender when any rule is present", () => {
+    renderToolbar({
+      ...emptyViewState(),
+      group: [{ fieldKey: "name", direction: "asc" }],
+    });
+    const button = screen.getByRole("button", { name: /Grouped by Name/ });
+    expect(button).toHaveAttribute("data-axis-active", "true");
+    expect(button).toHaveAttribute("data-axis", "group");
   });
 
   test("Sort button label is 'Sort' when neutral and 'Sorted by N fields' when active", () => {
