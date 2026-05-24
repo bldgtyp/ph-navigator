@@ -605,6 +605,172 @@ Rules:
   version or active draft references its asset id. Default retention for
   purge candidates is 90 days.
 
+### 6.6 Custom fields on project-document tables
+
+Project-document tables (Rooms, ERVs, Pumps, Fans, Thermal Bridges, ...)
+are user-extensible: editors may add their own fields per project version.
+Catalog tables (`catalog_materials`, frame, glazing) are **not** custom-
+field-capable in v1 — catalog stability is foundational and revisited
+post-v1. Implementation plan: `docs/plans/2026-05-24/plan-13-custom-fields-overview.md`.
+
+The contract gates below are the durable record of decisions
+plan-13 §3 made about identity, shape, validation timing, and export
+shape. Phase-specific implementation lives in subsequent dated plans.
+
+#### 6.6.1 Table envelope shape
+
+Every custom-field-capable table is reshaped from `Row[]` to
+`{ custom_fields, rows }`:
+
+```jsonc
+"tables": {
+  "rooms": {
+    "custom_fields": [ /* CustomFieldDef[] */ ],
+    "rows": [
+      {
+        "id": "rm_...",
+        "name": "Master Bedroom",            // core, strongly typed by Pydantic
+        "floor_level": "opt_...",            // core single-select option_id
+        /* ... other core fields ... */
+        "custom": { "cf_01HX...": "needs paint" }
+      }
+    ]
+  }
+}
+```
+
+Rules:
+
+- Core fields stay strongly typed in the row model and are **never**
+  listed in `custom_fields`.
+- Each row's `custom` is a sparse dict keyed by the immutable `cf_*`
+  id (see §6.6.2). Absent keys mean the row has no value for that
+  field; the dict may be omitted entirely when empty.
+- The reshape is a one-shot `schema_version` bump. No back-compat
+  shim — V2 is pre-deploy.
+
+#### 6.6.2 `CustomFieldDef` shape
+
+```jsonc
+{
+  "id": "cf_01HX...",                 // stable ULID; primary identity
+  "field_key": "u_notes",             // optional export slug; advisory only
+  "display_name": "Notes",
+  "field_type": "long_text",          // see §6.6.3
+  "config": { /* type-specific */ },
+  "description": null,                // optional, plain text, ≤ 280 chars
+  "created_at": "2026-05-24T...",
+  "created_by": "user_..."            // null only for fixtures (D11); API/MCP path requires real user id
+}
+```
+
+**Identity gate (D12).** The stored `id` is the system of record. It is
+also the frontend `FieldDef.field_key` for custom fields, the
+`CellWrite.fieldKey` and `WriteOp.fieldKey` for all custom-field writes,
+the formula dependency identity, and the persisted `ViewState` column
+id for custom columns. Renames mutate `display_name` (and optionally
+the advisory `field_key` slug); they never touch `id`. Display names
+and the advisory slug must never be used for cell writes, persisted
+view-state ids, or formula references.
+
+The `field_key` slug exists only for JSON readability and optional
+formula-editor display. Convention is a `u_` prefix to distinguish
+from core field keys, but the system of record is always the id.
+
+#### 6.6.3 Field types — v1 closed set
+
+| `field_type` | Notes |
+|---|---|
+| `short_text` | Single-line text. |
+| `long_text` | Multi-line text; truncated in cell, expands in popover editor. |
+| `number` | SI semantics; per-field `precision` in config. **Unit dimension deferred** — start unitless to avoid coupling to the IP/SI machinery in v1. |
+| `url` | URL-validated; renders as a link. |
+| `single_select` | Options live in the existing `single_select_options` map under `<table_path>.<cf_id>` (see §6.6.4). Same lifecycle as core single-select option lists. |
+| `formula` | Read-only computed value. AirTable-style `{Display Name}` syntax parsed to a typed AST with ids resolved at commit. See plan-13 §4.4 for grammar, parity, and resource limits. |
+
+Future types (date, attachment, cross-table lookup, cross-row
+aggregations) are out of scope for v1; see plan-13 §6.
+
+#### 6.6.4 Option lists for custom single-select fields
+
+Custom single-select options reuse the existing top-level
+`single_select_options` map (§6.2) under
+`single_select_options["<table_path>.<cf_id>"]`, e.g.
+`"rooms.cf_01HX..."`. The option shape, rename / reorder / delete /
+merge lifecycle, and `option_id`-by-reference rule are identical to
+core single-select lists. Renaming a custom field never touches the
+option-list key because the key is the `cf_*` id, not the display name.
+
+#### 6.6.5 Validation timing
+
+Custom-field validation is **immediate at draft mutation acceptance,
+not deferred to Save** (D16). The backend rejects malformed schema
+mutations and malformed custom-cell writes before they reach the
+draft buffer; Save re-validates the full document as a final gate.
+See `save-versioning.md` §8.3 for the full draft-validation rule.
+
+#### 6.6.6 Export / download shape
+
+Source values and computed formula outputs are kept **distinct** on
+read surfaces (D3 / plan-13 §4.9). Stored rows contain source values
+only:
+
+```jsonc
+{
+  "id": "rm_...",
+  "name": "Master Bedroom",
+  "custom": { "cf_01HX_notes": "needs paint" }
+}
+```
+
+Project-JSON downloads and MCP reads may inline computed formula
+values, but they live in a separate `computed` overlay keyed by
+`cf_*` id so consumers can ignore or strip them on round-trip:
+
+```jsonc
+{
+  "rooms": {
+    "custom_fields": [ /* CustomFieldDef[] */ ],
+    "rows": [
+      {
+        "id": "rm_...",
+        "name": "Master Bedroom",
+        "custom":   { "cf_01HX_notes": "needs paint" },
+        "computed": { "cf_01HX_label": "101 - MASTER BEDROOM" }
+      }
+    ]
+  }
+}
+```
+
+Inbound writes that include `computed` are rejected or stripped —
+formula fields remain write-protected even though their values are
+visible in read surfaces.
+
+#### 6.6.7 Registered table contract extension (D14)
+
+Every custom-field-capable table registers a single contract in
+`backend/features/project_document/tables/registry.py` rather than
+introducing table-specific branches in routes or services. Each opt-in
+table declares:
+
+- `table_key` and JSON document path (including nested paths like
+  `equipment.ervs`);
+- row model and table-envelope model (`{ custom_fields, rows }`);
+- accessors for reading and replacing `custom_fields`;
+- accessors for reading and setting a row's `custom` dict;
+- the core field registry for duplicate-name checks (case-insensitive,
+  trimmed, across core + custom; D5) and formula refs;
+- the `single_select_options` namespace for custom option lists
+  (§6.6.4);
+- JSON Schema slug and per-table schema endpoint metadata;
+- download / diff / MCP / table-query field discovery;
+- schema-mutation apply and validate functions.
+
+Phase 1 proves this with Rooms only; the abstraction must be real
+enough that ERVs / Pumps / Fans / Thermal Bridges do not require their
+own schema-editor services later.
+
 ## 7. Catalog (bookshelf model)
 
 ### 7.0 Catalog roster
