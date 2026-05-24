@@ -846,3 +846,232 @@ function isPathFullyExpanded(
   }
   return true;
 }
+
+// -----------------------------------------------------------------
+// Phase 7 — fill planner + group derivation helpers
+// -----------------------------------------------------------------
+
+export type FillAxis = "vertical" | "horizontal";
+
+// Map data-row id → innermost group's `pathKey`. Group-header items are
+// skipped; their pathKey is recorded as the "current path" so subsequent
+// data items inherit it. Ungrouped views produce a map where every
+// entry maps to the empty-string sentinel.
+export function groupPathByRowIdFromBodyPlan<TRow>(
+  bodyPlan: readonly BodyPlanItem<TRow>[],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  let currentPathKey = "";
+  for (const item of bodyPlan) {
+    if (item.kind === "group") {
+      currentPathKey = item.pathKey;
+      continue;
+    }
+    map.set(item.rowId, currentPathKey);
+  }
+  return map;
+}
+
+// Returns the axis the fill should lock to, or null while neither
+// pointer delta has crossed `axisThreshold`. Ties (equal absolute
+// deltas) resolve to vertical — matches AirTable.
+export function chooseFillAxis(args: {
+  pointerStart: { x: number; y: number };
+  pointerCurrent: { x: number; y: number };
+  axisThreshold: number;
+}): FillAxis | null {
+  const dx = Math.abs(args.pointerCurrent.x - args.pointerStart.x);
+  const dy = Math.abs(args.pointerCurrent.y - args.pointerStart.y);
+  if (dx < args.axisThreshold && dy < args.axisThreshold) return null;
+  return dy >= dx ? "vertical" : "horizontal";
+}
+
+// Extend the source rectangle along `axis` to include the pointer cell.
+// The non-axis edge stays at the source's edge. Returns the source
+// rectangle itself when the pointer sits inside (or before) the source
+// on the chosen axis — the caller treats that as "fill canceled."
+export function buildFillTargetFromPointer(args: {
+  source: NormalizedRange;
+  pointerCell: { rowIndex: number; columnIndex: number };
+  axis: FillAxis;
+  rowCount: number;
+  columnCount: number;
+}): NormalizedRange {
+  const { source, pointerCell, axis, rowCount, columnCount } = args;
+  if (axis === "vertical") {
+    const clampedRow = Math.min(Math.max(pointerCell.rowIndex, 0), Math.max(rowCount - 1, 0));
+    if (clampedRow > source.rowEnd) {
+      return {
+        rowStart: source.rowStart,
+        rowEnd: clampedRow,
+        columnStart: source.columnStart,
+        columnEnd: source.columnEnd,
+      };
+    }
+    return source;
+  }
+  const clampedColumn = Math.min(
+    Math.max(pointerCell.columnIndex, 0),
+    Math.max(columnCount - 1, 0),
+  );
+  if (clampedColumn > source.columnEnd) {
+    return {
+      rowStart: source.rowStart,
+      rowEnd: source.rowEnd,
+      columnStart: source.columnStart,
+      columnEnd: clampedColumn,
+    };
+  }
+  return source;
+}
+
+// Clamp a target rectangle's row span to the contiguous same-group run
+// from the source row. Horizontal axis is a no-op (columns have no
+// group affinity). Ungrouped views (`""` sentinel for the source row's
+// pathKey) are also a no-op.
+export function clampRangeToGroup(args: {
+  target: NormalizedRange;
+  source: NormalizedRange;
+  groupPathByRowId: ReadonlyMap<string, string>;
+  rowIds: readonly string[];
+  axis: FillAxis;
+}): { clamped: NormalizedRange; wasClamped: boolean } {
+  const { target, source, groupPathByRowId, rowIds, axis } = args;
+  if (axis === "horizontal") return { clamped: target, wasClamped: false };
+  const sourceRowId = rowIds[source.rowStart];
+  const sourceGroup = sourceRowId ? (groupPathByRowId.get(sourceRowId) ?? "") : "";
+  if (sourceGroup === "") return { clamped: target, wasClamped: false };
+  let rowEnd = target.rowEnd;
+  // Walk down from the source's bottom edge and stop at the first
+  // out-of-group row. Source rows themselves are always in-group by
+  // construction (they form the source rectangle).
+  for (let r = source.rowEnd + 1; r <= rowEnd; r += 1) {
+    const id = rowIds[r];
+    if (!id || (groupPathByRowId.get(id) ?? "") !== sourceGroup) {
+      rowEnd = r - 1;
+      break;
+    }
+  }
+  const wasClamped = rowEnd !== target.rowEnd;
+  return {
+    clamped: { ...target, rowEnd },
+    wasClamped,
+  };
+}
+
+// Split a rectangle into contiguous same-group sub-rectangles by row.
+// Used by ⌘D when the selection straddles a group boundary: each sub-
+// range gets its own source (the top row of the sub-range) and target
+// (the rest). Columns are preserved as-is (⌘R doesn't split — the
+// horizontal axis is group-free).
+export function splitRangeByGroup(args: {
+  range: NormalizedRange;
+  groupPathByRowId: ReadonlyMap<string, string>;
+  rowIds: readonly string[];
+}): NormalizedRange[] {
+  const { range, groupPathByRowId, rowIds } = args;
+  const subRanges: NormalizedRange[] = [];
+  let runStart = range.rowStart;
+  let runGroup: string | null = null;
+  for (let r = range.rowStart; r <= range.rowEnd; r += 1) {
+    const id = rowIds[r];
+    if (!id) continue;
+    const group = groupPathByRowId.get(id) ?? "";
+    if (runGroup === null) {
+      runGroup = group;
+      runStart = r;
+      continue;
+    }
+    if (group !== runGroup) {
+      subRanges.push({
+        rowStart: runStart,
+        rowEnd: r - 1,
+        columnStart: range.columnStart,
+        columnEnd: range.columnEnd,
+      });
+      runStart = r;
+      runGroup = group;
+    }
+  }
+  if (runGroup !== null) {
+    subRanges.push({
+      rowStart: runStart,
+      rowEnd: range.rowEnd,
+      columnStart: range.columnStart,
+      columnEnd: range.columnEnd,
+    });
+  }
+  return subRanges;
+}
+
+export type PlanFillResult = {
+  writes: CellWrite[];
+  inverse: CellWrite[];
+  skipped: number;
+};
+
+// Build the writes / inverse pair for one (source, target) pair. Cyclic
+// repeat: target cells outside the source rectangle take their value
+// from source[(r - source.rowStart) mod cycleRows][(c - source.columnStart)
+// mod cycleColumns]. Read-only target columns are silently skipped and
+// counted. Cells inside the source rectangle are never rewritten.
+//
+// The caller is responsible for clamping `target` to a group before
+// calling — this helper assumes the rectangle is already legal.
+export function planFill<TRow>(args: {
+  source: NormalizedRange;
+  target: NormalizedRange;
+  rows: readonly TRow[];
+  columns: readonly DataTableColumnDef<TRow>[];
+  fieldDefs: readonly FieldDef[];
+  getRowId: (row: TRow) => string;
+}): PlanFillResult {
+  const { source, target, rows, columns, fieldDefs, getRowId } = args;
+  const fieldDefsByKey = new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef]));
+  const writes: CellWrite[] = [];
+  const inverse: CellWrite[] = [];
+  let skipped = 0;
+  const cycleRows = Math.max(1, source.rowEnd - source.rowStart + 1);
+  const cycleColumns = Math.max(1, source.columnEnd - source.columnStart + 1);
+  for (let r = target.rowStart; r <= target.rowEnd; r += 1) {
+    for (let c = target.columnStart; c <= target.columnEnd; c += 1) {
+      if (
+        r >= source.rowStart &&
+        r <= source.rowEnd &&
+        c >= source.columnStart &&
+        c <= source.columnEnd
+      ) {
+        continue;
+      }
+      const targetRow = rows[r];
+      const targetCol = columns[c];
+      if (!targetRow || !targetCol) continue;
+      const fieldDef = fieldDefsByKey.get(targetCol.fieldKey);
+      if (fieldDef?.read_only) {
+        skipped += 1;
+        continue;
+      }
+      const sr =
+        source.rowStart + (((r - source.rowStart) % cycleRows) + cycleRows) % cycleRows;
+      const sc =
+        source.columnStart +
+        (((c - source.columnStart) % cycleColumns) + cycleColumns) % cycleColumns;
+      const sourceRow = rows[sr];
+      const sourceCol = columns[sc];
+      if (!sourceRow || !sourceCol) continue;
+      const nextValue = sourceCol.accessor(sourceRow);
+      const previousValue = targetCol.accessor(targetRow);
+      writes.push({
+        rowId: getRowId(targetRow),
+        fieldKey: targetCol.fieldKey,
+        value: nextValue,
+      });
+      inverse.push({
+        rowId: getRowId(targetRow),
+        fieldKey: targetCol.fieldKey,
+        value: previousValue,
+      });
+    }
+  }
+  return { writes, inverse, skipped };
+}

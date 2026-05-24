@@ -6,6 +6,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import type { GridSelection } from "./useGridSelection";
+import { EDGE_PX, SCROLL_PX } from "../tokens/pointerDragConstants";
 
 // Phase 3 §4.3: document-level pointer tracking for rectangular range
 // selection. Listeners attach only while a drag session is active so
@@ -17,9 +18,6 @@ import type { GridSelection } from "./useGridSelection";
 // Selection state still lives in `useGridSelection`; this hook is the
 // orchestrator that translates raw pointer events into `setActive` /
 // `extendTo` calls.
-
-const EDGE_PX = 30;
-const SCROLL_PX = 12;
 
 export type GridDragMode = "cell" | "column";
 
