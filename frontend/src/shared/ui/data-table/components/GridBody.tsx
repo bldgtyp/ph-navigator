@@ -49,6 +49,10 @@ export type GridBodyProps<TRow> = {
   onCellOpen: (row: TRow, columnIndex: number) => void;
   onRowSelect: (rowId: string) => void;
   onRowToggleSelected: (rowId: string, mode: RowSelectionMode) => void;
+  // Plan 04 follow-up: row-hover Expand button in the gutter. Wired
+  // when the consumer provides `onRowOpen` on DataTable; the gutter
+  // hides the affordance entirely when undefined.
+  onRowExpand?: (row: TRow) => void;
   onCommitAndMove: (rowIndex: number, columnIndex: number, shiftKey: boolean) => void;
   // Phase 7: fill state from `useGridFill`. The bottom-right cell of
   // `fillSource` carries `data-fill-handle="true"` and renders
@@ -83,6 +87,7 @@ export function GridBody<TRow>({
   onCellOpen,
   onRowSelect,
   onRowToggleSelected,
+  onRowExpand,
   onCommitAndMove,
   fillSource,
   fillTargetPreview,
@@ -146,6 +151,7 @@ export function GridBody<TRow>({
                 const rowId = rowIds[rowIndex];
                 if (rowId !== undefined) onRowToggleSelected(rowId, mode);
               }}
+              onExpandRow={onRowExpand ? () => onRowExpand(tanstackRow.original) : undefined}
             />
             {tanstackRow.getVisibleCells().map((cell, columnIndex) => {
               const selected =

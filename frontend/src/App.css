@@ -1903,6 +1903,15 @@ button:disabled {
   cursor: pointer;
 }
 
+.data-table-gutter-number-stack {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 28px;
+  min-width: 22px;
+}
+
 .data-table-gutter-number {
   min-height: 28px;
   border: 0;
@@ -1911,6 +1920,41 @@ button:disabled {
   padding: 0;
   text-align: inherit;
   cursor: pointer;
+}
+
+/* AirTable-style row-expand affordance. Hidden by default; swaps in for
+   the row number on row-hover (or when keyboard-focused). The button is
+   absolutely positioned over the number so the gutter width doesn't
+   shift between the two states. */
+.data-table-gutter-expand {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.data-table-gutter-expand:hover,
+.data-table-gutter-expand:focus-visible {
+  color: var(--accent-text, var(--text-primary));
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+}
+
+.data-table tbody tr:hover .data-table-gutter-expand,
+.data-table-gutter-expand:focus-visible {
+  display: inline-flex;
+}
+
+.data-table tbody tr:hover .data-table-gutter-number {
+  visibility: hidden;
 }
 
 .data-table-gutter-selected,
@@ -2248,12 +2292,14 @@ button:disabled {
    `box-shadow` from `computeEdgeBits` so corner / edge / interior cells
    layer correctly (PoC L3.2 — box-shadow channel for selection). */
 .data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  background: color-mix(in oklab, var(--accent) 14%, var(--bg-card));
 }
 
 .data-table-cell-active {
-  outline: 2px solid var(--accent-text);
-  outline-offset: -2px;
+  z-index: 2;
+  background: color-mix(in oklab, var(--accent) 22%, var(--bg-card));
+  box-shadow: none;
+  outline: 0;
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the
