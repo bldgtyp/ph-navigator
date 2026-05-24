@@ -19,6 +19,7 @@ import {
   isInvalidProjectDocumentError,
   isRoomOptionKey,
   isVersionLockedError,
+  wasLocalDraftTouched,
   nextFreeRoomNumber,
   nextRoomsPayload,
   remoteSliceChangesActiveRoom,
@@ -229,9 +230,12 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
 
   const handleTableWrite = async (op: WriteOp) => {
     if (!canEdit) return;
-    if (op.kind === "cell" || op.kind === "paste") {
-      const newOptions = op.kind === "paste" ? op.newOptions : (op.newOptions ?? {});
-      const removedOptions = op.removedOptions ?? {};
+    if (op.kind === "cell" || op.kind === "paste" || op.kind === "fill") {
+      // Phase 7: `fill` shares the CellWrite[] payload shape with
+      // `cell` / `paste` but carries no option list delta (the source
+      // values are already in the table — fill never creates options).
+      const newOptions = op.kind === "paste" ? op.newOptions : (op.kind === "cell" ? (op.newOptions ?? {}) : {});
+      const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
       await commitRoomsPayload(
         roomsPayloadFromCellWrites(roomsSlice, op.writes, newOptions, removedOptions),
         ACTIVE_ROOM_CONFLICT_MESSAGE,
@@ -328,7 +332,9 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           Fans
         </button>
       </div>
-      {roomsSlice.source === "draft" ? (
+      {roomsSlice.source === "draft" &&
+      activeVersionId &&
+      !wasLocalDraftTouched(project.id, activeVersionId, roomsSlice.draft_etag) ? (
         <p className="draft-banner">Unsaved Rooms draft restored</p>
       ) : null}
       {isLocked ? (

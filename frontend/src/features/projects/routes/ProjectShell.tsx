@@ -3,7 +3,6 @@ import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-r
 import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
 import { WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
-import { CatalogMenu } from "../../catalogs/components/CatalogMenu";
 import { projectDownloadUrl } from "../../project_document/api";
 import { VersionControls } from "../../project_document/components/VersionControls";
 import { useDraftSummaryQuery, useProjectDocumentQuery } from "../../project_document/hooks";
@@ -85,26 +84,40 @@ export function ProjectShell() {
     }
     setSearchParams(next);
   };
+  const projectCrumbLabel = `${project.bt_number} - ${project.name}`;
   const topbarBreadcrumbs = [
-    { label: project.name, to: projectStatusPath(project.id) },
+    { label: projectCrumbLabel, to: projectStatusPath(project.id) },
     { label: TAB_LABELS[activeTab ?? "status"] },
   ];
   const accountSlot = isViewer ? (
-    <Link className="text-link" to={`/sign-in?next=${encodeURIComponent(returnPath)}`}>
-      Sign in
-    </Link>
-  ) : (
-    <span>Editor</span>
+    <>
+      <span className="read-only-pill">Read-only</span>
+      <Link className="text-link" to={`/sign-in?next=${encodeURIComponent(returnPath)}`}>
+        Sign in
+      </Link>
+    </>
+  ) : null;
+  const versionControls = readSafeEnvelope ? null : (
+    <VersionControls
+      project={openProject}
+      defaultVersionId={project.active_version_id}
+      onOpenVersion={openVersionById}
+      onOpenProjectSettings={!isViewer ? () => setIsSettingsOpen(true) : undefined}
+    />
+  );
+
+  const topbar = (
+    <WorkspaceTopbar
+      breadcrumbs={topbarBreadcrumbs}
+      primaryNav={versionControls}
+      accountSlot={accountSlot}
+    />
   );
 
   if (readSafeEnvelope && openProject.active_version_id) {
     return (
       <main className="workspace-shell">
-        <WorkspaceTopbar
-          breadcrumbs={topbarBreadcrumbs}
-          primaryNav={<CatalogMenu />}
-          accountSlot={accountSlot}
-        />
+        {topbar}
         <ReadSafeRecoveryPanel
           projectName={project.name}
           versions={project.versions.map((version) => ({ id: version.id, name: version.name }))}
@@ -118,32 +131,11 @@ export function ProjectShell() {
 
   return (
     <main className="workspace-shell">
-      <WorkspaceTopbar
-        breadcrumbs={topbarBreadcrumbs}
-        primaryNav={<CatalogMenu />}
-        accountSlot={accountSlot}
-      />
-      <section className="project-page project-workspace" aria-labelledby="project-title">
-        <div className="project-workbar">
-          <div className="project-identity">
-            <div className="project-title-row">
-              <h1 id="project-title">{project.name}</h1>
-              {isViewer ? <span className="read-only-pill">Read-only</span> : null}
-            </div>
-            <p className="project-meta">
-              {project.bt_number}
-              {project.client ? ` · ${project.client}` : ""}
-            </p>
-          </div>
-          <div className="project-workbar-actions">
-            <VersionControls
-              project={openProject}
-              defaultVersionId={project.active_version_id}
-              onOpenVersion={openVersionById}
-              onOpenProjectSettings={!isViewer ? () => setIsSettingsOpen(true) : undefined}
-            />
-          </div>
-        </div>
+      {topbar}
+      <section
+        className="project-page project-workspace"
+        aria-label={`${projectCrumbLabel} workspace`}
+      >
         <nav className="tabbar" aria-label="Project tabs">
           {PROJECT_TABS.map((projectTab) => (
             <Link
@@ -190,7 +182,6 @@ function ReadSafeRecoveryPanel({
           <p className="eyebrow">Project</p>
           <div className="project-title-row">
             <h1>{projectName}</h1>
-            {isViewer ? <span className="read-only-pill">Read-only</span> : null}
           </div>
         </div>
         <a

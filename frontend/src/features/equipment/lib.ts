@@ -23,6 +23,7 @@ export {
   isDraftStaleError,
   isInvalidProjectDocumentError,
   isVersionLockedError,
+  wasLocalDraftTouched,
 } from "../project_document/lib";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };

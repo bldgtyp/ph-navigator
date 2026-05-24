@@ -339,12 +339,20 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
       }
       containerRef.current?.focus({ preventScroll: true });
 
+      // A single physical pointer release fires both `mouseup` and
+      // `pointerup`. The commit path is not idempotent (each call
+      // dispatches a mutation), so the second handler would send a
+      // now-stale draft etag and trip the conflict banner. Guard with
+      // a one-shot flag.
+      let committed = false;
       const handleMouseMove = (moveEvent: MouseEvent) => {
         lastPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
         updatePreview();
         ensureAutoScrollRunning();
       };
       const handleMouseUp = () => {
+        if (committed) return;
+        committed = true;
         void commitDrag().finally(() => {
           teardown();
         });
