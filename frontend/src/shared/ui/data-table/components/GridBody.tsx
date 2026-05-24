@@ -155,6 +155,8 @@ export function GridBody<TRow>({
                 activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex;
               const fieldKey = fieldKeys[columnIndex] ?? "";
               const rowId = rowIds[rowIndex];
+              const editing =
+                rowId !== undefined && fieldKey ? edit.isEditingCell(rowId, fieldKey) : false;
               const edgeStyle = selected
                 ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
                 : undefined;

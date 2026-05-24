@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { ArrowUpDown, Filter, Group } from "lucide-react";
 import { FilterPopover } from "./FilterPopover";
 import { SortPopover } from "./SortPopover";
 import { GroupPopover } from "./GroupPopover";
@@ -87,7 +88,7 @@ export function GridToolbar({
               aria-label={filterLabel}
             >
               <span className="data-table-toolbar-button-icon" aria-hidden>
-                ☰
+                <Filter />
               </span>
               <span>{filterLabel}</span>
             </button>
@@ -108,7 +109,7 @@ export function GridToolbar({
               aria-label={sortLabel}
             >
               <span className="data-table-toolbar-button-icon" aria-hidden>
-                ↑↓
+                <ArrowUpDown />
               </span>
               <span>{sortLabel}</span>
             </button>
@@ -132,7 +133,7 @@ export function GridToolbar({
               aria-label={groupLabel}
             >
               <span className="data-table-toolbar-button-icon" aria-hidden>
-                ⊞
+                <Group />
               </span>
               <span>{groupLabel}</span>
             </button>
