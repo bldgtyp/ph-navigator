@@ -57,6 +57,8 @@ export function DataTable<TRow>({
   density = "compact",
   emptyMessage,
   onRowOpen,
+  overflowMenuActions,
+  footerAction,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useMemo(() => {
     const hidden = new Set(view.hiddenColumns);
@@ -573,6 +575,7 @@ export function DataTable<TRow>({
         onCollapseAllGroups={handleCollapseAllGroups}
         onExpandAllGroups={handleExpandAllGroups}
         onResetView={handleResetView}
+        overflowMenuActions={overflowMenuActions}
         actions={toolbarActions}
       />
       {fieldEditorContext ? (
@@ -683,6 +686,7 @@ export function DataTable<TRow>({
             onFillHandleMouseDown={fill.onHandleMouseDown}
           />
         </table>
+        {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import * as Popover from "@radix-ui/react-popover";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 // Phase 4 §4.7: toolbar overflow menu, rightmost of the axis-button
 // cluster. Owns the Reset view action today; forward-compat slot for
@@ -14,9 +14,10 @@ export type ViewMenuOverflowProps = {
   // Disable Reset when there is nothing to clear (both stacks empty).
   // Keeps the menu honest and prevents a no-op onViewChange.
   canReset: boolean;
+  actions?: ReactNode;
 };
 
-export function ViewMenuOverflow({ onReset, canReset }: ViewMenuOverflowProps) {
+export function ViewMenuOverflow({ onReset, canReset, actions }: ViewMenuOverflowProps) {
   const [open, setOpen] = useState(false);
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
@@ -36,6 +37,7 @@ export function ViewMenuOverflow({ onReset, canReset }: ViewMenuOverflowProps) {
           sideOffset={6}
           aria-label="View actions"
         >
+          {actions}
           <button
             type="button"
             className="data-table-overflow-menu-item"

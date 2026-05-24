@@ -25,6 +25,8 @@ export function RoomsTable({
   buildEmptyRow,
   generateRowId,
   sessionKey,
+  overflowMenuActions,
+  footerAction,
 }: {
   roomsSlice: RoomsSlice;
   isEditor: boolean;
@@ -35,6 +37,8 @@ export function RoomsTable({
   buildEmptyRow?: DataTableProps<RoomRow>["buildEmptyRow"];
   generateRowId?: DataTableProps<RoomRow>["generateRowId"];
   sessionKey?: DataTableProps<RoomRow>["sessionKey"];
+  overflowMenuActions?: DataTableProps<RoomRow>["overflowMenuActions"];
+  footerAction?: DataTableProps<RoomRow>["footerAction"];
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
   const floorOptions = roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY];
@@ -149,6 +153,8 @@ export function RoomsTable({
       generateRowId={generateRowId}
       sessionKey={sessionKey}
       onRowOpen={isEditor ? onEdit : undefined}
+      overflowMenuActions={overflowMenuActions}
+      footerAction={footerAction}
     />
   );
 }
