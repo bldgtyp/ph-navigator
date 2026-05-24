@@ -57,13 +57,14 @@ export function RoomsTable({
         fieldKey: "number",
         header: "Number",
         accessor: (room) => room.number,
-        width: 120,
+        defaultWidth: 120,
       },
       {
         id: "name",
         fieldKey: "name",
         header: "Name",
         accessor: (room) => room.name,
+        defaultWidth: 240,
       },
       {
         id: ROOM_FLOOR_LEVEL_COLUMN_ID,
@@ -99,6 +100,7 @@ export function RoomsTable({
         header: "iCFA",
         accessor: (room) => room.icfa_factor,
         render: (room) => room.icfa_factor.toFixed(2),
+        measureText: (room) => room.icfa_factor.toFixed(2),
         className: "numeric-cell",
       },
       {
@@ -112,6 +114,7 @@ export function RoomsTable({
           ) : (
             <span className="muted-cell">None</span>
           ),
+        defaultWidth: 200,
       },
     ],
     [fieldDefByKey],

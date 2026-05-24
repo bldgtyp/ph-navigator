@@ -620,6 +620,36 @@ describe("DataTable", () => {
       expect(onViewChange).not.toHaveBeenCalled();
     });
   });
+
+  describe("column widths", () => {
+    test("every visible <col> renders an explicit pixel width", () => {
+      const { container } = renderTable();
+      const cols = container.querySelectorAll("colgroup col");
+      // 1 gutter col + 3 data columns + 1 tail "+" col
+      expect(cols).toHaveLength(5);
+      // Data columns (indexes 1, 2, 3) carry explicit width styles; the
+      // gutter and tail get their widths from CSS classes.
+      for (let i = 1; i <= 3; i++) {
+        expect((cols[i] as HTMLElement).style.width).toMatch(/^\d+px$/);
+      }
+    });
+
+    test("view.columnWidths takes precedence over field-type defaults", () => {
+      const { container } = renderTable({
+        view: { ...emptyViewState(), columnWidths: { name: 275 } },
+      });
+      const cols = container.querySelectorAll("colgroup col");
+      // index 0 = gutter, 1 = number, 2 = name, 3 = count
+      expect((cols[2] as HTMLElement).style.width).toBe("275px");
+    });
+
+    test("each visible column header carries a resize handle", () => {
+      const { container } = renderTable();
+      // 3 visible data columns → 3 handles.
+      const handles = container.querySelectorAll("[data-column-resize-handle]");
+      expect(handles).toHaveLength(3);
+    });
+  });
 });
 
 function renderTable({

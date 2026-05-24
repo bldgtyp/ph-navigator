@@ -1,8 +1,11 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
 import type { GridColumnDragKeyboard } from "../hooks/useGridColumnDragKeyboard";
+import type { GridColumnResize } from "../hooks/useGridColumnResize";
 import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
+import { AddFieldTailCell } from "./AddFieldTailCell";
 import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
+import { ColumnResizeHandle } from "./ColumnResizeHandle";
 import { SortableHeaderCell } from "./SortableHeaderCell";
 
 // Header onMouseDown owns column-select; double-click on editable
@@ -32,6 +35,8 @@ export type GridHeaderProps<TRow> = {
   // Plan 08 §4.3 — Space/Arrow/Esc on a focused non-primary header
   // routes here. When omitted, header keyboard reorder is disabled.
   columnDragKeyboard?: GridColumnDragKeyboard;
+  // When omitted, no resize handle is rendered on any column.
+  columnResize?: GridColumnResize;
 };
 
 export function GridHeader<TRow>({
@@ -46,6 +51,7 @@ export function GridHeader<TRow>({
   openFieldKey,
   headerCellRefByFieldKey,
   columnDragKeyboard,
+  columnResize,
 }: GridHeaderProps<TRow>) {
   const pickedUpColumnIndex = columnDragKeyboard?.pickedUpColumnIndex ?? null;
   return (
@@ -122,9 +128,18 @@ export function GridHeader<TRow>({
                     />
                   ) : null}
                 </div>
+                {columnResize && column.resizable !== false ? (
+                  <ColumnResizeHandle
+                    columnId={column.id}
+                    active={columnResize.activeColumnId === column.id}
+                    onPointerDown={(event) => columnResize.onHandlePointerDown(column.id, event)}
+                    onDoubleClick={() => columnResize.onHandleDoubleClick(column.id)}
+                  />
+                ) : null}
               </SortableHeaderCell>
             );
           })}
+          <AddFieldTailCell variant="th" />
         </tr>
       ))}
     </thead>

@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { formatDisplayCellValue, singleSelectOption } from "../lib";
 import type { DataTableColumnDef, FieldDef } from "../types";
+import { AddFieldTailCell } from "./AddFieldTailCell";
 
 // Presentational group-header row. Chevron + left-indent + key (pill
 // for single_select) + `(N rows)` count in the first column; per-
@@ -77,6 +78,7 @@ export function GroupHeaderRow<TRow>({
           </td>
         );
       })}
+      <AddFieldTailCell variant="td" />
     </tr>
   );
 }
