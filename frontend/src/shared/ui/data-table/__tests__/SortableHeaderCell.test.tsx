@@ -9,11 +9,7 @@ import { SortableHeaderCell } from "../components/SortableHeaderCell";
 // `SortableContext` (for the items list). A real consumer renders a
 // `<table>` around the `<th>`; here we wrap in a single-cell table so
 // the DOM is valid HTML and `getByRole("columnheader")` resolves.
-function renderHeaderCell(props: {
-  id: string;
-  isPrimary: boolean;
-  isPickedUp?: boolean;
-}) {
+function renderHeaderCell(props: { id: string; isPrimary: boolean; isPickedUp?: boolean }) {
   const items = [props.id];
   return render(
     <DndContext>

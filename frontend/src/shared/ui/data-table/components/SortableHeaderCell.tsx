@@ -72,9 +72,7 @@ export function SortableHeaderCell({
     transition: sortable.transition,
   };
 
-  const dragProps = isPrimary
-    ? {}
-    : { ...sortable.attributes, ...sortable.listeners };
+  const dragProps = isPrimary ? {} : { ...sortable.attributes, ...sortable.listeners };
 
   return (
     <th
