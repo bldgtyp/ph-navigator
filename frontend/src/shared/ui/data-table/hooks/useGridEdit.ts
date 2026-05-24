@@ -38,6 +38,12 @@ export type StartArgs = {
   fieldKey: string;
   initialValue: unknown;
   intent: EditIntent;
+  // Seed the text/number draft when `intent === "replace"` so a
+  // type-to-edit gesture lands in the editor with the typed character
+  // (or empty string for Backspace / Delete) instead of the prior
+  // cell value. Ignored for prefill (`intent === "extend"`) and for
+  // the single_select editor.
+  replaceSeed?: string;
 };
 
 // One-shot focus handoff used by the Shift+Enter row-insert flow
@@ -82,10 +88,10 @@ export function useGridEdit(args: {
   const pendingRowsRef = useRef<string[] | null>(null);
 
   const start = useCallback(
-    ({ rowId, fieldKey, initialValue, intent }: StartArgs) => {
+    ({ rowId, fieldKey, initialValue, intent, replaceSeed }: StartArgs) => {
       const fieldDef = fieldDefByKey.get(fieldKey);
       const editorKind = getFieldEditor(fieldDef).kind;
-      const editor = initialEditorState(editorKind, initialValue, intent);
+      const editor = initialEditorState(editorKind, initialValue, intent, replaceSeed);
       if (!editor) return;
       setEditing({ rowId, fieldKey, originalValue: initialValue, editor });
     },
@@ -289,6 +295,7 @@ function initialEditorState(
   kind: "text" | "number" | "single_select" | "none",
   initialValue: unknown,
   intent: EditIntent,
+  replaceSeed: string | undefined,
 ): EditorState | null {
   if (kind === "none") return null;
   if (kind === "single_select") {
@@ -298,7 +305,7 @@ function initialEditorState(
       highlightedOptionId: typeof initialValue === "string" ? initialValue : null,
     };
   }
-  const seed = intent === "replace" ? "" : formatClipboardValue(initialValue);
+  const seed = intent === "replace" ? (replaceSeed ?? "") : formatClipboardValue(initialValue);
   return { kind, draftValue: seed };
 }
 
