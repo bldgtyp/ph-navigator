@@ -3486,6 +3486,16 @@ td.data-table-cell-editing {
    the toolbar's "Hide fields" button. Mirrors AirTable's panel: search
    input, vertical sortable list of all columns, Hide all / Show all
    bulk actions. */
+
+/* The Radix Popover.Content wrapper. Sticky table headers (`.data-table
+   th`) sit at z-index 3 in their own stacking context, but Radix's
+   portal doesn't carry our inner-panel z-index up to its positioned
+   wrapper — without this rule the popover sometimes loses the
+   stacking-context race against the sticky headers when they overlap. */
+.data-table-hide-fields-popover {
+  z-index: 200;
+}
+
 .data-table-hide-fields-panel {
   width: 280px;
   background: var(--bg-card);
@@ -3518,8 +3528,6 @@ td.data-table-cell-editing {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 320px;
-  overflow-y: auto;
 }
 
 .data-table-hide-fields-row {

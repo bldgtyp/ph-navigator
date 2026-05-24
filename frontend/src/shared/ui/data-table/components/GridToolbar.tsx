@@ -179,7 +179,11 @@ export function GridToolbar<TRow>({
             </button>
           </Popover.Trigger>
           <Popover.Portal>
-            <Popover.Content align="end" sideOffset={6}>
+            <Popover.Content
+              align="end"
+              sideOffset={6}
+              className="data-table-hide-fields-popover"
+            >
               <HideFieldsPanel
                 orderedColumns={orderedColumnsForHidePanel}
                 fieldDefByKey={fieldDefByKey}
