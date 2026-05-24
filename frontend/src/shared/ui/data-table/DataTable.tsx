@@ -369,6 +369,77 @@ export function DataTable<TRow>({
     edit.consumePendingEdit(rowIds);
   }, [edit, rowIds]);
 
+  // Inline-edit entry points. Defined before `useGridKeyboard` so the
+  // keyboard hook closure can call them at render time.
+  const startInlineEdit = (row: TRow, columnIndex: number) => {
+    const column = visibleColumnDefs[columnIndex];
+    const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
+    const editorKind = getFieldEditor(fieldDef).kind;
+    if (readOnly || !onWrite || !column || editorKind === "none") {
+      onRowOpen?.(row);
+      return;
+    }
+    edit.start({
+      rowId: getRowId(row),
+      fieldKey: column.fieldKey,
+      initialValue: column.accessor(row),
+      intent: "extend",
+    });
+  };
+
+  // Plan 04 — F2 / Enter open the editor on the active cell with the
+  // prior value prefilled. Non-editable cells fall through to the
+  // row-open gesture (inside startInlineEdit) so consumers wiring
+  // onRowOpen keep their drawer.
+  const beginEditActiveCell = () => {
+    const row = visibleDataRows[selection.activeCell.rowIndex];
+    if (!row) return;
+    startInlineEdit(row, selection.activeCell.columnIndex);
+  };
+
+  // Multi-cell typing announce is de-duplicated per selection-change so
+  // a held-down key doesn't spam the live region. Reset whenever the
+  // active range changes shape.
+  const multiCellAnnouncedRef = useRef(false);
+  const { rowStart, rowEnd, columnStart, columnEnd } = selection.normalizedRange;
+  useEffect(() => {
+    multiCellAnnouncedRef.current = false;
+  }, [rowStart, rowEnd, columnStart, columnEnd]);
+
+  // Replace-mode entry point for type-to-edit. `initialKey` is the typed
+  // character ("K", "7", " ") or empty string for Backspace / Delete.
+  const typeToEditActiveCell = (initialKey: string) => {
+    const isSingleCell =
+      rowStart === rowEnd && columnStart === columnEnd && !selection.hasExplicitRange;
+    if (!isSingleCell) {
+      if (!multiCellAnnouncedRef.current) {
+        setAnnounce("Select a single cell to start typing.");
+        multiCellAnnouncedRef.current = true;
+      }
+      return;
+    }
+    const row = visibleDataRows[selection.activeCell.rowIndex];
+    const column = visibleColumnDefs[selection.activeCell.columnIndex];
+    if (!row || !column) return;
+    const fieldDef = fieldDefByKey.get(column.fieldKey);
+    const editorKind = getFieldEditor(fieldDef).kind;
+    if (readOnly || !onWrite || editorKind === "none") {
+      setAnnounce("This cell is read-only.");
+      return;
+    }
+    // Single-select cells route through SingleSelectPopover (plan 05).
+    // Until that lands, ignore typing on these cells — double-click
+    // still opens the popover with the existing value highlighted.
+    if (editorKind === "single_select") return;
+    edit.start({
+      rowId: getRowId(row),
+      fieldKey: column.fieldKey,
+      initialValue: column.accessor(row),
+      intent: "replace",
+      replaceSeed: initialKey,
+    });
+  };
+
   const keyboard = useGridKeyboard({
     selection,
     edit,
@@ -389,6 +460,9 @@ export function DataTable<TRow>({
           if (row) onRowOpen(row);
         }
       : undefined,
+    onBeginEdit: beginEditActiveCell,
+    onPrintableKey: !readOnly && onWrite ? typeToEditActiveCell : undefined,
+    onClearActiveCell: !readOnly && onWrite ? () => typeToEditActiveCell("") : undefined,
     onRowInsertBelowActive: canInsertRow ? insertRowBelowActive : undefined,
     onFillDown: !readOnly && Boolean(onWrite) ? fill.fillDown : undefined,
     onFillRight: !readOnly && Boolean(onWrite) ? fill.fillRight : undefined,
@@ -502,22 +576,6 @@ export function DataTable<TRow>({
     }
     return map;
   }, [view.filter, view.sort, view.group]);
-
-  const startInlineEdit = (row: TRow, columnIndex: number) => {
-    const column = visibleColumnDefs[columnIndex];
-    const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
-    const editorKind = getFieldEditor(fieldDef).kind;
-    if (readOnly || !onWrite || !column || editorKind === "none") {
-      onRowOpen?.(row);
-      return;
-    }
-    edit.start({
-      rowId: getRowId(row),
-      fieldKey: column.fieldKey,
-      initialValue: column.accessor(row),
-      intent: "extend",
-    });
-  };
 
   const handleCommitAndMove = (rowIndex: number, columnIndex: number, shiftKey: boolean) => {
     const next = moveTabCell(

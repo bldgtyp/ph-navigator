@@ -23,6 +23,21 @@ export type GridKeyboardArgs = {
   onUndo: () => void;
   onRedo: () => void;
   onRowOpen?: () => void;
+  // Plan 04 — type-to-edit. F2 (and Enter, when wired) open the inline
+  // editor on the active cell with the cell's prior value prefilled
+  // ("edit, don't replace"). When the active cell is not editable,
+  // `onBeginEdit` falls through to `onRowOpen` inside the shell.
+  onBeginEdit?: () => void;
+  // A printable character typed on a single-cell selection while no
+  // editor is open replaces the cell's value and enters edit mode.
+  // The shell-level handler gates further (read-only, single-select
+  // routing, multi-cell announce) — the keyboard hook only checks that
+  // the keystroke is a single printable char with no modifiers and not
+  // an IME composition.
+  onPrintableKey?: (key: string) => void;
+  // Backspace / Delete on the active cell clears the value via the
+  // same replace path (initial draft = "").
+  onClearActiveCell?: () => void;
   // Shift+Enter row-insert (Phase 2 §4.5). Receives the active rowId
   // as the anchor — null when the active cell does not resolve to a
   // visible row (defensive; should not happen in practice). Returns a
@@ -54,6 +69,9 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
     onUndo,
     onRedo,
     onRowOpen,
+    onBeginEdit,
+    onPrintableKey,
+    onClearActiveCell,
     onRowInsertBelowActive,
     onFillDown,
     onFillRight,
@@ -120,25 +138,82 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
         return;
       }
 
-      if (event.key === "Enter" && onRowOpen) {
+      // F2 opens the inline editor with the prior cell value prefilled.
+      // The shell-level handler decides whether to fall through to
+      // onRowOpen when the active cell is not editable.
+      if (event.key === "F2" && onBeginEdit) {
         event.preventDefault();
-        onRowOpen();
+        onBeginEdit();
         return;
+      }
+
+      // Enter prefers the inline editor (Excel/AirTable parity, plan 04).
+      // The shell's onBeginEdit falls through to onRowOpen for non-editable
+      // cells, preserving the row-detail gesture when the active cell has
+      // no inline editor.
+      if (event.key === "Enter") {
+        if (onBeginEdit) {
+          event.preventDefault();
+          onBeginEdit();
+          return;
+        }
+        if (onRowOpen) {
+          event.preventDefault();
+          onRowOpen();
+          return;
+        }
       }
 
       if (ARROW_KEYS.has(event.key)) {
         event.preventDefault();
         selection.moveBy(event.key, event.shiftKey);
+        return;
+      }
+
+      // Backspace / Delete on the active cell clears the value via the
+      // type-to-edit replace path. The shell's handler enforces
+      // single-cell, editable-cell, and write-handler gates.
+      if (
+        (event.key === "Backspace" || event.key === "Delete") &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        onClearActiveCell
+      ) {
+        event.preventDefault();
+        onClearActiveCell();
+        return;
+      }
+
+      // Printable single-character keystroke with no modifiers and no
+      // IME composition → route to the type-to-edit handler. The shell
+      // applies the multi-cell / read-only / single-select gates.
+      // `isComposing` lives on the native KeyboardEvent, not React's
+      // synthetic event wrapper.
+      if (
+        event.key.length === 1 &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.nativeEvent.isComposing &&
+        onPrintableKey
+      ) {
+        event.preventDefault();
+        onPrintableKey(event.key);
+        return;
       }
     },
     [
       drag,
       edit,
+      onBeginEdit,
+      onClearActiveCell,
       onCopy,
       onFillDown,
       onFillLeft,
       onFillRight,
       onFillUp,
+      onPrintableKey,
       onRedo,
       onRowInsertBelowActive,
       onRowOpen,
