@@ -25,7 +25,16 @@ import {
   Paperclip,
   Type,
 } from "lucide-react";
-import type { DataTableColumnDef, FieldDef, FieldType } from "../types";
+import type { FieldDef, FieldType } from "../types";
+
+// Narrow column shape this panel needs. Avoids dragging the `DataTable`
+// row generic through every consumer (`GridToolbar`, tests, etc.) just
+// to read three string fields.
+export type HideFieldsColumn = {
+  id: string;
+  fieldKey: string;
+  header: string;
+};
 
 // Plan 07 — Hide / Show fields panel. Renders the full column list
 // with a per-row visibility toggle and drag handle, a search input at
@@ -42,22 +51,22 @@ export type HideFieldsPanelChange = {
   columnOrder?: string[];
 };
 
-export type HideFieldsPanelProps<TRow> = {
+export type HideFieldsPanelProps = {
   // Already in display order (output of useGridColumns(... [],[])) so
   // the panel doesn't reapply the order logic. Hidden columns are
   // included here — they appear in the list with their toggle off.
-  orderedColumns: DataTableColumnDef<TRow>[];
+  orderedColumns: HideFieldsColumn[];
   fieldDefByKey: Map<string, FieldDef>;
   hiddenColumns: string[];
   onChange: (next: HideFieldsPanelChange) => void;
 };
 
-export function HideFieldsPanel<TRow>({
+export function HideFieldsPanel({
   orderedColumns,
   fieldDefByKey,
   hiddenColumns,
   onChange,
-}: HideFieldsPanelProps<TRow>) {
+}: HideFieldsPanelProps) {
   const [search, setSearch] = useState("");
 
   const hiddenSet = useMemo(() => new Set(hiddenColumns), [hiddenColumns]);
@@ -80,10 +89,8 @@ export function HideFieldsPanel<TRow>({
   const handleToggle = (columnId: string, nextVisible: boolean) => {
     if (columnId === primaryColumnId) return;
     if (nextVisible) {
-      if (!hiddenSet.has(columnId)) return;
       onChange({ hiddenColumns: hiddenColumns.filter((id) => id !== columnId) });
     } else {
-      if (hiddenSet.has(columnId)) return;
       onChange({ hiddenColumns: [...hiddenColumns, columnId] });
     }
   };
@@ -103,6 +110,8 @@ export function HideFieldsPanel<TRow>({
 
   const handleHideAll = () => {
     const idsToHide = orderedColumns.slice(1).map((c) => c.id);
+    if (idsToHide.length === 0) return;
+    if (idsToHide.every((id) => hiddenSet.has(id))) return;
     onChange({ hiddenColumns: idsToHide });
   };
 
@@ -201,7 +210,7 @@ function SortableFieldRow({
     transform: CSS.Transform.toString(sortable.transform),
     transition: sortable.transition,
   };
-  const FieldIcon = ICON_FOR_FIELD_TYPE[fieldType ?? "text"] ?? Type;
+  const FieldIcon = ICON_FOR_FIELD_TYPE[fieldType ?? "text"];
   const toggleLabel = visible ? `Hide ${displayName}` : `Show ${displayName}`;
   const dragLabel = `Reorder ${displayName}`;
   return (

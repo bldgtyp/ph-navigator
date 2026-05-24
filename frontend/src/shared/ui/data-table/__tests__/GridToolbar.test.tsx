@@ -1,18 +1,17 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { GridToolbar } from "../components/GridToolbar";
-import { emptyViewState, type DataTableColumnDef, type FieldDef, type ViewState } from "../types";
+import type { HideFieldsColumn } from "../components/HideFieldsPanel";
+import { emptyViewState, type FieldDef, type ViewState } from "../types";
 
 const FIELDS: FieldDef[] = [
   { field_key: "name", field_type: "text", display_name: "Name" },
   { field_key: "count", field_type: "number", display_name: "Count" },
 ];
 
-type Row = { id: string; name: string; count: number };
-
-const COLUMNS: DataTableColumnDef<Row>[] = [
-  { id: "name", fieldKey: "name", header: "Name", accessor: (r) => r.name },
-  { id: "count", fieldKey: "count", header: "Count", accessor: (r) => r.count },
+const COLUMNS: HideFieldsColumn[] = [
+  { id: "name", fieldKey: "name", header: "Name" },
+  { id: "count", fieldKey: "count", header: "Count" },
 ];
 
 function renderToolbar(
@@ -26,7 +25,7 @@ function renderToolbar(
   } = {},
 ) {
   render(
-    <GridToolbar<Row>
+    <GridToolbar
       readOnly={false}
       view={view}
       fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}

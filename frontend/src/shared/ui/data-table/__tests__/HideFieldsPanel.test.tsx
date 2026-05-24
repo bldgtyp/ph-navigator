@@ -1,10 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
-import { HideFieldsPanel, type HideFieldsPanelChange } from "../components/HideFieldsPanel";
-import type { DataTableColumnDef, FieldDef } from "../types";
-
-type Row = { id: string; name: string; floor: string; count: number; tags: string };
+import {
+  HideFieldsPanel,
+  type HideFieldsColumn,
+  type HideFieldsPanelChange,
+} from "../components/HideFieldsPanel";
+import type { FieldDef } from "../types";
 
 const FIELDS: FieldDef[] = [
   { field_key: "name", field_type: "text", display_name: "Name" },
@@ -13,11 +15,11 @@ const FIELDS: FieldDef[] = [
   { field_key: "tags", field_type: "text", display_name: "Tags" },
 ];
 
-const COLUMNS: DataTableColumnDef<Row>[] = [
-  { id: "name", fieldKey: "name", header: "Name", accessor: (r) => r.name },
-  { id: "floor", fieldKey: "floor", header: "Floor", accessor: (r) => r.floor },
-  { id: "count", fieldKey: "count", header: "iCFA factor", accessor: (r) => r.count },
-  { id: "tags", fieldKey: "tags", header: "Tags", accessor: (r) => r.tags },
+const COLUMNS: HideFieldsColumn[] = [
+  { id: "name", fieldKey: "name", header: "Name" },
+  { id: "floor", fieldKey: "floor", header: "Floor" },
+  { id: "count", fieldKey: "count", header: "iCFA factor" },
+  { id: "tags", fieldKey: "tags", header: "Tags" },
 ];
 
 const FIELD_BY_KEY = new Map(FIELDS.map((f) => [f.field_key, f]));
@@ -29,13 +31,13 @@ function Harness({
 }: {
   onChange: (change: HideFieldsPanelChange) => void;
   initialHidden?: string[];
-  columns?: DataTableColumnDef<Row>[];
+  columns?: HideFieldsColumn[];
 }) {
   const [hidden, setHidden] = useState<string[]>(initialHidden);
   const [order, setOrder] = useState<string[]>(columns.map((c) => c.id));
   const orderedColumns = order
     .map((id) => columns.find((c) => c.id === id))
-    .filter((c): c is DataTableColumnDef<Row> => Boolean(c));
+    .filter((c): c is HideFieldsColumn => Boolean(c));
   return (
     <HideFieldsPanel
       orderedColumns={orderedColumns}

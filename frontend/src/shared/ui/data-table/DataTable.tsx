@@ -31,6 +31,7 @@ import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
+import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
 import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
 import type {
@@ -44,10 +45,8 @@ import type {
   SortRule,
   WriteOp,
 } from "./types";
-// Stable empty array for the no-hidden-columns variant of
-// `useGridColumns` consumed by the Hide-fields panel. Defined at module
-// scope so its identity stays the same across renders — the hook would
-// otherwise recompute every render when given a fresh `[]` literal.
+// Module-scope so identity is stable across renders — an inline `[]`
+// would invalidate `useGridColumns`'s memo every render.
 const EMPTY_ID_LIST: string[] = [];
 
 export function DataTable<TRow>({
@@ -69,9 +68,8 @@ export function DataTable<TRow>({
   footerAction,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
-  // Plan 07 — the Hide-fields panel needs every column (hidden + visible)
-  // in display order so users can toggle hidden ones back on. Same hook,
-  // empty hidden list.
+  // Hide-fields panel needs hidden columns too, so users can toggle
+  // them back on — same hook with no hidden list applied.
   const orderedColumnsForHidePanel = useGridColumns(columnDefs, view.columnOrder, EMPTY_ID_LIST);
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
@@ -564,12 +562,8 @@ export function DataTable<TRow>({
     [onViewChange, view],
   );
   const handleHideFieldsChange = useCallback(
-    (change: { hiddenColumns?: string[]; columnOrder?: string[] }) => {
-      onViewChange({
-        ...view,
-        ...(change.hiddenColumns !== undefined ? { hiddenColumns: change.hiddenColumns } : {}),
-        ...(change.columnOrder !== undefined ? { columnOrder: change.columnOrder } : {}),
-      });
+    (change: HideFieldsPanelChange) => {
+      onViewChange({ ...view, ...change });
     },
     [onViewChange, view],
   );
