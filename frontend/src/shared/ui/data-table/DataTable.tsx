@@ -22,6 +22,7 @@ import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { GridToolbar } from "./components/GridToolbar";
 import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
+import { FieldEditorPopover } from "./components/FieldEditorPopover";
 import type {
   CellCoord,
   DataTableProps,
@@ -43,7 +44,6 @@ export function DataTable<TRow>({
   buildEmptyRow,
   generateRowId,
   sessionKey,
-  renderHeaderActions,
   readOnly = false,
   density = "compact",
   emptyMessage,
@@ -79,6 +79,13 @@ export function DataTable<TRow>({
   );
 
   const [announce, setAnnounce] = useState("");
+  const [fieldEditorOpenForFieldKey, setFieldEditorOpenForFieldKey] = useState<string | null>(null);
+  const headerCellRefByFieldKey = useRef(new Map<string, HTMLTableCellElement>()).current;
+  // Discard a staged field-editor edit when fieldDefs reidentifies
+  // (post-save refetch, remote broadcast, session switch).
+  useEffect(() => {
+    setFieldEditorOpenForFieldKey(null);
+  }, [fieldDefs]);
   const history = useGridHistory();
   const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
   const selection = useGridSelection({ rowIds, fieldKeys });
@@ -389,6 +396,14 @@ export function DataTable<TRow>({
     void clipboard.pasteText(tsv);
   };
 
+  const fieldEditorContext = useMemo(() => {
+    if (!fieldEditorOpenForFieldKey) return null;
+    const fieldDef = fieldDefByKey.get(fieldEditorOpenForFieldKey);
+    const column = columnDefs.find((c) => c.fieldKey === fieldEditorOpenForFieldKey);
+    if (!fieldDef || !column) return null;
+    return { fieldDef, column };
+  }, [columnDefs, fieldDefByKey, fieldEditorOpenForFieldKey]);
+
   const toolbarActions =
     !readOnly && rowSelection.count > 0 ? (
       <button
@@ -413,6 +428,23 @@ export function DataTable<TRow>({
         onResetView={handleResetView}
         actions={toolbarActions}
       />
+      {fieldEditorContext ? (
+        <FieldEditorPopover<TRow>
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              setFieldEditorOpenForFieldKey(null);
+              focusGrid();
+            }
+          }}
+          fieldDef={fieldEditorContext.fieldDef}
+          rows={rows}
+          getRowId={getRowId}
+          accessor={fieldEditorContext.column.accessor}
+          anchorElement={headerCellRefByFieldKey.get(fieldEditorContext.fieldDef.field_key) ?? null}
+          dispatchWrite={dispatchWrite}
+        />
+      ) : null}
       <ConfirmRowDeleteDialog
         open={deleteDialogOpen}
         count={rowSelection.count}
@@ -458,7 +490,11 @@ export function DataTable<TRow>({
             fieldDefByKey={fieldDefByKey}
             axisTintByFieldKey={axisTintByFieldKey}
             onColumnMouseDown={pointerDrag.onColumnMouseDown}
-            renderHeaderActions={renderHeaderActions}
+            readOnly={readOnly}
+            hasWriteHandler={Boolean(onWrite)}
+            onEditField={setFieldEditorOpenForFieldKey}
+            openFieldKey={fieldEditorOpenForFieldKey}
+            headerCellRefByFieldKey={headerCellRefByFieldKey}
           />
           <GridBody
             table={table}

@@ -25,6 +25,9 @@ export type FieldDef = {
   // expose. Defaults to "text" when omitted (preserves Phase 0–3
   // behaviour for existing computed columns).
   computed_type?: "text" | "number";
+  // When false, single_select pills render with a neutral background
+  // even when each option still carries a color. Default true.
+  colorCodeOptions?: boolean;
 };
 
 export type FieldOption = {
@@ -150,7 +153,15 @@ export type WriteOp =
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: RowInsertPayload[] }
   | { kind: "rowDelete"; rows: RowDeletePayload[] }
-  | { kind: "fieldDefMutation"; before: FieldDef; after: FieldDef };
+  | {
+      kind: "fieldDefMutation";
+      before: FieldDef;
+      after: FieldDef;
+      // Dependent cell writes ride in the same op so ⌘Z reverts the
+      // field-def + cell changes together. Populated when an option
+      // delete cascades (Clear / Replace-with).
+      cellWrites?: CellWrite[];
+    };
 
 export type CellCoord = {
   rowIndex: number;
@@ -195,7 +206,6 @@ export type DataTableProps<TRow> = {
   // `rows` identity change (the Phase 0 default, which is unsafe for
   // consumers whose rows array reidentifies after a successful write).
   sessionKey?: string;
-  renderHeaderActions?: (field: FieldDef) => ReactNode;
   readOnly?: boolean;
   density?: "compact" | "comfortable";
   emptyMessage: string;

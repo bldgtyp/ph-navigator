@@ -506,6 +506,15 @@ export function hasDuplicateFieldOptionLabels(options: FieldOption[]): boolean {
   return false;
 }
 
+export const OPTION_COLOR_PALETTE: readonly string[] = [
+  "#3b82f6",
+  "#10b981",
+  "#a16207",
+  "#7c3aed",
+  "#0f766e",
+  "#be123c",
+] as const;
+
 export function createFieldOption(rawLabel: string, existingOptions: FieldOption[]): FieldOption {
   return {
     id: generatedId("opt"),
@@ -515,13 +524,57 @@ export function createFieldOption(rawLabel: string, existingOptions: FieldOption
   };
 }
 
+// Counts how many rows reference each option id, read through the
+// supplied accessor. The accessor makes this row-shape-agnostic so any
+// DataTable consumer can reuse it without knowing the row type.
+export function optionReferenceCounts<TRow>(
+  rows: readonly TRow[],
+  accessor: (row: TRow) => unknown,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    const value = accessor(row);
+    if (typeof value !== "string" || !value) continue;
+    counts[value] = (counts[value] ?? 0) + 1;
+  }
+  return counts;
+}
+
+// Returns the option ids referenced by ≥1 row that are NOT present in
+// the supplied options list. Used by the FieldEditorPopover to surface
+// a "N rows reference unknown options" warning.
+export function missingOptionReferences<TRow>(
+  rows: readonly TRow[],
+  options: readonly FieldOption[],
+  accessor: (row: TRow) => unknown,
+): string[] {
+  const validIds = new Set(options.map((option) => option.id));
+  const missing = new Set<string>();
+  for (const row of rows) {
+    const value = accessor(row);
+    if (typeof value !== "string" || !value) continue;
+    if (!validIds.has(value)) missing.add(value);
+  }
+  return [...missing];
+}
+
+// Reindexes options' `order` to 0..N-1 in current array order and trims
+// their labels. Used after every drag-reorder save to keep the order
+// ints contiguous.
+export function normalizeOptionOrders(options: readonly FieldOption[]): FieldOption[] {
+  return options.map((option, index) => ({
+    ...option,
+    label: option.label.trim(),
+    order: index,
+  }));
+}
+
 function normalizeOptionLabel(label: string): string {
   return label.trim().toLocaleLowerCase();
 }
 
 function nextOptionColor(index: number): string {
-  const colors = ["#3b82f6", "#10b981", "#a16207", "#7c3aed", "#0f766e", "#be123c"];
-  return colors[index % colors.length] ?? "#6b7280";
+  return OPTION_COLOR_PALETTE[index % OPTION_COLOR_PALETTE.length] ?? "#6b7280";
 }
 
 function nextOptionOrder(options: FieldOption[]): number {

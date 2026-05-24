@@ -17,6 +17,7 @@ import {
   firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
+  isRoomOptionKey,
   isVersionLockedError,
   nextFreeRoomNumber,
   nextRoomsPayload,
@@ -29,11 +30,12 @@ import {
 } from "../lib";
 import type { BuildEmptyRow, WriteOp } from "../../../shared/ui/data-table";
 import {
+  ROOM_BUILDING_ZONE_KEY,
+  ROOM_FLOOR_LEVEL_KEY,
   ROOMS_TABLE_NAME,
   type RoomOptionKey,
   type RoomRow,
   type RoomsSlice,
-  type SingleSelectOption,
 } from "../types";
 
 type RoomModalState = { mode: "add" } | { mode: "edit"; room: RoomRow };
@@ -213,9 +215,9 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       id: rowId,
       number: nextFreeRoomNumber(roomsSlice.rooms, String(fieldDefaults.number ?? "")),
       name: String(fieldDefaults.name ?? "Untitled"),
-      floor_level: ((fieldDefaults["rooms.floor_level"] as string | null | undefined) ??
+      floor_level: ((fieldDefaults[ROOM_FLOOR_LEVEL_KEY] as string | null | undefined) ??
         firstRoomFloorOptionId(roomsSlice)) as string | null,
-      building_zone: (fieldDefaults["rooms.building_zone"] as string | null | undefined) ?? null,
+      building_zone: (fieldDefaults[ROOM_BUILDING_ZONE_KEY] as string | null | undefined) ?? null,
       num_people: Number(fieldDefaults.num_people ?? 0),
       num_bedrooms: Number(fieldDefaults.num_bedrooms ?? 0),
       icfa_factor: Number(fieldDefaults.icfa_factor ?? 1),
@@ -253,26 +255,37 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       );
       return;
     }
-  };
-
-  const saveOptions = (
-    fieldKey: RoomOptionKey,
-    options: SingleSelectOption[],
-    replacements: Record<string, string | null> = {},
-  ) => {
-    if (!canEdit) return;
-    let payload: ReturnType<typeof replaceRoomOptionsPayload>;
-    try {
-      payload = replaceRoomOptionsPayload(roomsSlice, fieldKey, options, replacements);
-    } catch (error) {
-      setActionError(errorMessage(error, "Could not update room options."));
+    if (op.kind === "fieldDefMutation") {
+      const optionKey = op.after.field_key;
+      if (!isRoomOptionKey(optionKey)) return;
+      // replaceRoomOptionsPayload takes a per-option-id replacement
+      // map; the op's cellWrites carry per-row target values. Collapse
+      // by reading each row's prior option id from the live slice.
+      const replacements = collapseRoomCellWritesToReplacements(
+        roomsSlice,
+        optionKey,
+        op.cellWrites,
+      );
+      let payload: ReturnType<typeof replaceRoomOptionsPayload>;
+      try {
+        payload = replaceRoomOptionsPayload(
+          roomsSlice,
+          optionKey,
+          op.after.options ?? [],
+          replacements,
+        );
+      } catch (error) {
+        const message = errorMessage(error, "Could not update room options.");
+        setActionError(message);
+        throw new Error(message);
+      }
+      await commitRoomsPayload(
+        payload,
+        ACTIVE_ROOM_CONFLICT_MESSAGE,
+        "Could not update room options.",
+      );
       return;
     }
-    void commitRoomsPayload(
-      payload,
-      ACTIVE_ROOM_CONFLICT_MESSAGE,
-      "Could not update room options.",
-    ).catch(() => undefined);
   };
 
   return (
@@ -345,7 +358,6 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         view={roomsTableView}
         onViewChange={setRoomsTableView}
         onWrite={handleTableWrite}
-        onSaveOptions={saveOptions}
         buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
         generateRowId={canEdit ? () => generatedId("rm") : undefined}
         sessionKey={`${project.id}:${activeVersionId ?? "none"}:rooms`}
@@ -402,4 +414,23 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       ) : null}
     </section>
   );
+}
+
+function collapseRoomCellWritesToReplacements(
+  slice: RoomsSlice,
+  key: RoomOptionKey,
+  cellWrites: ReadonlyArray<{ rowId: string; fieldKey: string; value: unknown }> | undefined,
+): Record<string, string | null> {
+  if (!cellWrites?.length) return {};
+  const roomField = key === ROOM_FLOOR_LEVEL_KEY ? "floor_level" : "building_zone";
+  const replacements: Record<string, string | null> = {};
+  for (const write of cellWrites) {
+    if (write.fieldKey !== key) continue;
+    const room = slice.rooms.find((candidate) => candidate.id === write.rowId);
+    const previousOptionId = room?.[roomField] ?? null;
+    if (previousOptionId) {
+      replacements[previousOptionId] = typeof write.value === "string" ? write.value : null;
+    }
+  }
+  return replacements;
 }

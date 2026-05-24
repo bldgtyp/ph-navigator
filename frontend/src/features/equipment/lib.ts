@@ -16,6 +16,7 @@ import {
   createFieldOption,
   findFieldOptionByLabel,
   formatDisplayCellValue,
+  normalizeOptionOrders,
 } from "../../shared/ui/data-table/lib";
 import { generatedId } from "../../shared/lib/ids";
 export {
@@ -259,34 +260,6 @@ export function replaceRoomOptionsPayload(
   return { rooms: sortedRooms(rooms), single_select_options: options };
 }
 
-export function optionReferenceCounts(
-  rooms: RoomRow[],
-  key: RoomOptionKey,
-): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const room of rooms) {
-    const optionId = roomValueForOptionKey(room, key);
-    if (!optionId) continue;
-    counts[optionId] = (counts[optionId] ?? 0) + 1;
-  }
-  return counts;
-}
-
-export function missingOptionReferences(
-  rooms: RoomRow[],
-  key: RoomOptionKey,
-  options: SingleSelectOption[],
-): string[] {
-  const optionIds = new Set(options.map((option) => option.id));
-  return rooms
-    .map((room) => roomValueForOptionKey(room, key))
-    .filter((optionId): optionId is string => optionId !== null && !optionIds.has(optionId));
-}
-
-export function normalizeOptionOrders(options: SingleSelectOption[]): SingleSelectOption[] {
-  return options.map((option, index) => ({ ...option, label: option.label.trim(), order: index }));
-}
-
 export function duplicateRoomNumber(rooms: RoomRow[], room: RoomRow): boolean {
   const number = normalize(room.number);
   return rooms.some(
@@ -355,7 +328,7 @@ function isNullableNumber(value: unknown): value is number | null {
   return value === null || typeof value === "number";
 }
 
-function isRoomOptionKey(key: string): key is RoomOptionKey {
+export function isRoomOptionKey(key: string): key is RoomOptionKey {
   return key === ROOM_FLOOR_LEVEL_KEY || key === ROOM_BUILDING_ZONE_KEY;
 }
 

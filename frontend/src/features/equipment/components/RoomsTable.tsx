@@ -8,14 +8,11 @@ import {
 } from "../../../shared/ui/data-table";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedRooms } from "../lib";
-import { RoomOptionManager } from "./RoomOptionManager";
 import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_KEY,
-  type RoomOptionKey,
   type RoomRow,
   type RoomsSlice,
-  type SingleSelectOption,
 } from "../types";
 
 export function RoomsTable({
@@ -25,7 +22,6 @@ export function RoomsTable({
   view,
   onViewChange,
   onWrite,
-  onSaveOptions,
   buildEmptyRow,
   generateRowId,
   sessionKey,
@@ -36,11 +32,6 @@ export function RoomsTable({
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onWrite: NonNullable<DataTableProps<RoomRow>["onWrite"]>;
-  onSaveOptions: (
-    fieldKey: RoomOptionKey,
-    options: SingleSelectOption[],
-    replacements?: Record<string, string | null>,
-  ) => void;
   buildEmptyRow?: DataTableProps<RoomRow>["buildEmptyRow"];
   generateRowId?: DataTableProps<RoomRow>["generateRowId"];
   sessionKey?: DataTableProps<RoomRow>["sessionKey"];
@@ -157,25 +148,6 @@ export function RoomsTable({
       buildEmptyRow={buildEmptyRow}
       generateRowId={generateRowId}
       sessionKey={sessionKey}
-      renderHeaderActions={(fieldDef) => {
-        if (
-          fieldDef.field_key !== ROOM_FLOOR_LEVEL_KEY &&
-          fieldDef.field_key !== ROOM_BUILDING_ZONE_KEY
-        ) {
-          return null;
-        }
-        return (
-          <RoomOptionManager
-            fieldKey={fieldDef.field_key}
-            label={fieldDef.display_name}
-            options={fieldDef.options ?? []}
-            required={fieldDef.required}
-            rooms={roomsSlice.rooms}
-            disabled={!isEditor}
-            onSave={onSaveOptions}
-          />
-        );
-      }}
       onRowOpen={isEditor ? onEdit : undefined}
     />
   );
@@ -184,12 +156,13 @@ export function RoomsTable({
 function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
   const option = singleSelectOption(value, fieldDef);
   const label = value ? (option?.label ?? "Missing option") : "Unassigned";
+  const applyColor = option && fieldDef?.colorCodeOptions !== false;
   return (
     <span
       className={
         option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
       }
-      style={option ? ({ "--option-color": option.color } as CSSProperties) : undefined}
+      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
     >
       {label}
     </span>
