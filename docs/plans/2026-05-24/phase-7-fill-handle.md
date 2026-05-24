@@ -1,13 +1,26 @@
 ---
 DATE: 2026-05-24
 TIME: planning
-STATUS: Draft — written while Phase 5 is signed off and Phase 6 is mid-
-        implementation (Steps 1–5 code-complete, demo walk owed). The
-        plan is shaped to absorb the small refinements still possible
-        in Phase 5 (single-select) and Phase 6 (grouping) without
-        re-planning Phase 7 — the only Phase-6 surface Phase 7
-        couples to is `bodyPlan` + `view.group` + `view.expandedGroups`,
-        and that contract is settled (see §2 constraint 4 below).
+STATUS: Walked with Ed 2026-05-24; all ten §12 open questions
+        resolved inline (see §12). Ed supplied one AirTable
+        reference screenshot of the fill handle on an active
+        single-select cell (in-context only; the on-disk path he
+        cited did not persist). From the screenshot the handle is
+        a small (~6 px) solid blue filled square centered on the
+        active cell's bottom-right corner, the same blue as the
+        perimeter outline (Phase 3 `var(--accent-text)`), with no
+        border. §4.1's CSS rule + §4.2 visibility logic update to
+        match: handle is 6 × 6, color `var(--accent-text)`,
+        positioned `right: -3px; bottom: -3px` so half the square
+        sits inside the cell and half outside, overlapping the
+        outline corner exactly the way AirTable does. Plan
+        otherwise unchanged from the original draft. The plan is
+        still shaped to absorb the small refinements still
+        possible in Phase 5 (single-select) and Phase 6 (grouping)
+        without re-planning Phase 7 — the only Phase-6 surface
+        Phase 7 couples to is `bodyPlan` + `view.group` +
+        `view.expandedGroups`, and that contract is settled (see
+        §2 constraint 4 below). Ready to begin Step 1.
 
         **Material delta from parent plan §13.** Parent §13 says
         "Disabled while grouped (banner 'Ungroup to fill')." Per Ed
@@ -571,14 +584,18 @@ frontend/src/shared/ui/data-table/
 
 `App.css` adds (a) one `.data-table-fill-handle` rule positioning
 the handle at the bottom-right of its cell with
-`position: absolute; right: -4px; bottom: -4px; width: 8px; height:
-8px; background: var(--accent); cursor: crosshair;`, (b) one rule
-on the source cell `td:has(.data-table-fill-handle) { position:
-relative; }` so the absolutely-positioned handle anchors correctly,
-(c) one rule `td[data-fill-target="true"] { background: color-mix(
-in oklab, var(--accent) 18%, transparent); }` to tint the drag-
-preview rectangle, (d) one rule `body[data-grid-fill-active="true"]
-{ cursor: crosshair; }` set during the drag so the cursor stays
+`position: absolute; right: -3px; bottom: -3px; width: 6px; height:
+6px; background: var(--accent-text); border: 0; padding: 0;
+cursor: crosshair; z-index: 2;` — sized + colored to match the
+AirTable reference Ed walked 2026-05-24 (small solid blue square
+centered on the active outline corner, same blue as the outline
+itself), (b) one rule on the source cell
+`td:has(.data-table-fill-handle) { position: relative; }` so the
+absolutely-positioned handle anchors correctly, (c) one rule
+`td[data-fill-target="true"] { background: color-mix(in oklab,
+var(--accent) 18%, transparent); }` to tint the drag-preview
+rectangle, (d) one rule `body[data-grid-fill-active="true"] {
+cursor: crosshair; }` set during the drag so the cursor stays
 consistent past the source cell. All four rules are local to
 Phase 7 — no Phase 6 tokens change.
 
@@ -1130,7 +1147,7 @@ typecheck`, `make lint`). Commit per step.
 
 | Risk | Mitigation |
 |---|---|
-| The handle's absolute positioning at `right: -4px; bottom: -4px` overlaps the next cell's left border / next row's top border, creating a 1-pixel visual artifact at the seam between adjacent cells. | The handle is 8 × 8 with `z-index: 2`; the adjacent cells' borders render below it. Verified visually in Phase 3's perimeter outline (which also lives outside the cell box and composes cleanly). Step 5 demo walk validates against the live grid. |
+| The handle's absolute positioning at `right: -3px; bottom: -3px` overlaps the next cell's left border / next row's top border, creating a 1-pixel visual artifact at the seam between adjacent cells. | The handle is 6 × 6 with `z-index: 2`; the adjacent cells' borders render below it. Verified visually in Phase 3's perimeter outline (which also lives outside the cell box and composes cleanly). Step 5 demo walk validates against the live grid. |
 | `useGridFill`'s document-listener setup duplicates `useGridPointerDrag`'s pattern; factoring shared infrastructure tempts an over-engineered abstraction. | Resist factoring beyond the shared constants (`pointerDragConstants.ts`). The hooks share *behavior* but not *state*; a shared "drag session" abstraction would couple them across the cell/column/fill distinction in a way that complicates each. Two ~150-LOC hooks beats one ~300-LOC abstraction. Phase 7 lifts only the three constants. |
 | Mousedown on the handle bubbles to the cell, which interprets it as a range-start gesture and clobbers the selection. | `FillHandle.onMouseDown` calls `event.stopPropagation()` AND `event.preventDefault()`. The cell handler's existing `isPointerInActiveEditor` guard widens to also return true for fill-handle targets — belt + suspenders. Tested. |
 | Auto-scroll during a vertical fill drag past the visible group bottom keeps scrolling but the clamp pins the target row — the user sees the viewport scroll past the group without the target rectangle following, which reads as a stuck drag. | The auto-scroll loop runs unconditionally (pointer + EDGE_PX), but the clamp pins the target rectangle. The visual result is that the target rectangle's bottom edge stays at the group's last row while the viewport continues to scroll, exposing rows in the next group with no fill preview. Acceptable — the user sees "you're past the group, fill won't follow." Announce fires once (`Fill clamped to group bottom.`). Demo step 10 validates this read. |
@@ -1142,7 +1159,7 @@ typecheck`, `make lint`). Commit per step.
 | ⌘R over a 1-column selection (no fill possible) competes with the browser's default ⌘R (reload). Same risk shape as ⌘D — and reload is worse than bookmark. | Same fix: preventDefault before deciding the fill is a no-op. Tested. Note for Step 5 demo: if a Safari extension intercepts ⌘R before the page handler (some dev users have such setups), the test fails harmlessly — the page reloads and the user's work is lost. Document this as a Safari-only caveat in the demo notes; consider warning users to disable conflicting extensions. |
 | `planFill`'s cyclic formula uses `((delta) % cycle + cycle) % cycle` to handle negative deltas — easy to get wrong, edge case is upward fill from a multi-row source. | Phase 7 does not support upward fill in the drag (the handle is at the source's bottom-right; a user can't drag "up" past the source). The cyclic formula is robust against any input by construction; the negative-delta guard is defensive. Unit-tested in `fillPlanner.test.ts`. |
 | Cross-column horizontal fill from a number column into a text column writes a number value into a text field. The consumer's `onWrite` may accept this silently (storing the number), reject it, or fail at the backend. | Phase 7 doesn't try to mediate cross-type fills — the registry's `coerceFieldValue` exists but isn't called by `planFill`. The contract is "fill writes raw values; consumer's onWrite enforces target-field schema." Rooms (Phase 7's only consumer) has no horizontal-fill-across-types scenarios. Documented as §7 "what this phase explicitly does not do." A future phase can route fill writes through the registry's coerce path if a consumer needs it. |
-| Fill-handle visible on a 1×1 active cell (no explicit range) — the user might expect drag-extends-selection (Phase 3's cell-drag) rather than drag-fills. | The handle is a small (8 × 8) target at the cell's bottom-right corner; the rest of the cell starts a Phase 3 cell-drag. The 8 px target is small enough to be unambiguous to a deliberate user, large enough to be hittable. Matches AirTable's affordance size. If users in Step 5 demo find it confusing, the handle can shrink to 6 × 6 or grow to 10 × 10 without contract changes. |
+| Fill-handle visible on a 1×1 active cell (no explicit range) — the user might expect drag-extends-selection (Phase 3's cell-drag) rather than drag-fills. | The handle is a small (6 × 6) target at the cell's bottom-right corner; the rest of the cell starts a Phase 3 cell-drag. The 6 px target matches AirTable's affordance size exactly (Ed-supplied reference, §12 Q1). Half the handle sits outside the cell border, half inside — so the effective hit target overlaps both the cell interior and a small strip below + right of it. If users in Step 5 demo find the hit target too small on touch devices, can grow to 8 × 8 without contract changes; PH-Navigator's pointer-first user base makes 6 × 6 the right starting point. |
 | Selection-after-fill (§2 constraint 12) on a multi-group ⌘D fill — should the resulting selection cover all sub-ranges (multi-region selection) or just the original selection rectangle? | Selection stays exactly where it was before ⌘D (the same range the user already had selected). PH-Navigator's selection model doesn't support multi-region selections; preserving the input range matches AirTable's ⌘D behavior. Tested. |
 | `data-fill-handle="true"` attribute on `<td>` could conflict with future column-config attribute additions or CSS selectors. | The attribute is namespaced under `data-fill-` (no collision with `data-axis-tint`, `data-row-id`, `data-field-key`, `data-column-select-fieldkey`). `grep -rn "data-fill" frontend/src/` returns only Phase 7's own selectors. Safe. |
 | The handle's `position: absolute; right: -4px; bottom: -4px` requires the cell to be `position: relative`; if any other Phase 0–6 CSS rule sets `position` on cells, the handle floats away from its anchor. | The `:has(.data-table-fill-handle)` selector targets exactly the source cell and sets `position: relative` defensively. No other Phase 0–6 rule sets `position` on `<td>`. Safari 15+ supports `:has` (Safari is the only browser PH-Navigator supports besides Chrome per §12 Q4 of Phase 6); the rule works there. If older Safari support is ever needed, switch to a JS-set `relative` class. |
@@ -1339,70 +1356,81 @@ against Rooms in a fresh browser session. Record pass/fail in
 | 5 — demo walk + post-walk fixes                 | — | — | — |
 | Phase 7 overall                                 | — | — | — |
 
-## 12. Open questions
+## 12. Open questions — resolved 2026-05-24
 
-Phase 7's defaults below stand unless walked otherwise. Most
-are minor surface choices; flag any that need an Ed-walk
-session before Step 3 (the visual surfaces) or Step 5 (demo
-walk).
+Ed walked the ten open questions on 2026-05-24. Resolutions
+below; the §4.1 CSS rule and §6 risk note update inline to
+match the AirTable visual the walk pinned down.
 
-1. **Handle size.** Default 8 × 8 px, positioned at `right:
-   -4px; bottom: -4px`. Acceptable starting point; can shrink
-   to 6 × 6 or grow to 10 × 10 in Step 5 polish without
-   contract changes. **Recommendation:** stay at 8 × 8 until
-   the demo walk surfaces a hit-rate issue.
+1. **Handle size + shape.** RESOLVED. **Match AirTable.**
+   Reference: Ed-supplied screenshot of an active single-
+   select cell ("Oven" → "Yes" cell in a TYPE-grouped table;
+   in-context only — the cited on-disk path
+   `/Users/em/Desktop/Screenshot 2026-05-24 at 10.31.07 AM.png`
+   did not persist; the visual specs derived from it are
+   captured here so the implementation doesn't need the file).
+   The screenshot shows: small solid filled square at the
+   active cell's bottom-right corner, ~6 px on a side, no
+   border, no rounding visible at that size, sitting centered
+   on the corner so half overlaps the cell interior and half
+   overlaps the outside seam. §4.1 CSS rule updates to
+   `width: 6px; height: 6px; right: -3px; bottom: -3px;
+   border: 0; padding: 0; z-index: 2`.
 
-2. **Handle color.** Default uses `var(--accent)`, the same
-   token Phase 3 uses for the perimeter outline. Visually
-   consistent with the selection chrome. Alternative: a
-   distinct token (e.g. `var(--accent-strong)`) so the handle
-   pops against the outline. **Recommendation:** stay with
-   `var(--accent)` until the demo walk shows a discoverability
-   issue.
+2. **Handle color.** RESOLVED. **Match AirTable.** From the
+   same screenshot: the handle is the **same blue as the
+   active-cell perimeter outline** — a fully-saturated,
+   slightly-darker-than-the-tint blue that reads as "the
+   outline's corner is a knob you can grab." §4.1 CSS rule
+   uses `background: var(--accent-text)` (the token Phase 3
+   `.data-table-cell-active` uses for `outline: 2px solid
+   var(--accent-text)`). The handle and the outline share
+   the same blue, exactly as the AirTable reference shows.
+   No new token introduced.
 
-3. **Axis-threshold value.** Default 8 px. AirTable's
-   threshold is ~5–7 px observationally; 8 px is conservative.
-   Step 5 can drop to 6 px if drags feel sluggish.
-   **Recommendation:** 8 px starting; tune in Step 5.
+3. **Axis-threshold value.** RESOLVED. **8 px.** Matches the
+   draft default; reads as deliberate without feeling sluggish.
 
-4. **Cursor during drag.** Default `crosshair`. AirTable uses
-   a custom drag-handle cursor. The default is recognizable
-   and built-in; no asset work needed. **Recommendation:**
-   stay with `crosshair`.
+4. **Cursor during drag.** RESOLVED. **`crosshair`.** Matches
+   the draft recommendation; no custom asset needed.
 
-5. **Multi-group ⌘D announce wording.** Default: `N cells
-   filled.` (no group-count phrasing). Alternative: `N cells
-   filled across M groups.`. **Recommendation:** stay with
-   the simple wording; the user can see the result in the
-   grid.
+5. **Multi-group ⌘D announce wording.** RESOLVED. **Simple
+   wording — `N cells filled.`** (no group-count phrasing).
+   The grid renders the result; the announce is for screen-
+   reader users who already know they triggered ⌘D.
 
-6. **Selection-after-fill on multi-group ⌘D.** Default: stays
-   on the original selection rectangle (which crosses groups).
-   Alternative: collapse to the union of the per-group sub-
-   ranges (visually identical since groups are contiguous).
-   **Recommendation:** stay with the original selection; the
-   user already chose it.
+6. **Selection-after-fill on multi-group ⌘D.** RESOLVED.
+   **Stay on the original selection rectangle.** The user
+   chose that rectangle; preserving it lets them re-fire ⌘D
+   without re-selecting. Matches the draft recommendation.
 
-7. **Announce wording for the clamp event.** Default: `Fill
-   clamped to group bottom.` (fired once per session).
-   Alternative: stay silent and let the visual stop be the
-   only signal. **Recommendation:** keep the announce — the
-   group boundary is an invisible constraint to a screen-
-   reader user; the announce surfaces it.
+7. **Announce wording for the clamp event.** RESOLVED. **Keep
+   the announce.** `Fill clamped to group bottom.` fires once
+   per session. The clamp is an invisible constraint to a
+   screen-reader user; the announce surfaces it.
 
-8. **Cross-browser verification gating.** Chrome + Safari
-   only; no Firefox (matches Phases 3–6).
+8. **Cross-browser verification gating.** RESOLVED. **Chrome
+   + Safari only; no Firefox.** Matches Phases 3 / 4 / 5 / 6.
 
-9. **Fill across a hidden column.** Default: the planner walks
-   `visibleColumnDefs` so hidden columns are invisible to
-   fill — same as paste. A hidden column between two visible
-   ones is not part of the fill path. **Recommendation:**
-   matches the rest of the library's "visible-only" stance.
+9. **Fill across a hidden column.** RESOLVED. **Visible-only**
+   (planner walks `visibleColumnDefs`, hidden columns are
+   invisible to fill — same as paste).
 
 10. **Single-cell handle visibility on an empty grid.**
-    Default: `visibleDataRows.length === 0` → no handle. The
-    "select a cell to fill" surface is moot when there are no
-    cells. **Recommendation:** keep the guard.
+    RESOLVED. **Keep the guard.** `visibleDataRows.length ===
+    0` → no handle. Selecting a cell to fill is moot when
+    there are no cells.
+
+Additional surface detail captured from the walked screenshot
+that doesn't fit a clean Q/A:
+
+- The screenshot also shows AirTable's **cell-expansion icon**
+  (`↗`) at the top-right of the active cell, separate from
+  the fill handle. That icon is a different feature (open
+  the row's side-panel detail view) and **not part of Phase
+  7's scope** — PH-Navigator's side-panel work is deferred
+  to the catalog-migration plan per parent §14. Phase 7
+  ships only the bottom-right handle.
 
 ## 13. Parent-plan delta
 
