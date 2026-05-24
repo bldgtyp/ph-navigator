@@ -1,5 +1,6 @@
 import { flexRender, type Table } from "@tanstack/react-table";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
+import type { GridColumnDragKeyboard } from "../hooks/useGridColumnDragKeyboard";
 import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
 import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
 import { SortableHeaderCell } from "./SortableHeaderCell";
@@ -28,6 +29,9 @@ export type GridHeaderProps<TRow> = {
   onEditField?: (fieldKey: string) => void;
   openFieldKey?: string | null;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
+  // Plan 08 §4.3 — Space/Arrow/Esc on a focused non-primary header
+  // routes here. When omitted, header keyboard reorder is disabled.
+  columnDragKeyboard?: GridColumnDragKeyboard;
 };
 
 export function GridHeader<TRow>({
@@ -41,7 +45,9 @@ export function GridHeader<TRow>({
   onEditField,
   openFieldKey,
   headerCellRefByFieldKey,
+  columnDragKeyboard,
 }: GridHeaderProps<TRow>) {
+  const pickedUpColumnIndex = columnDragKeyboard?.pickedUpColumnIndex ?? null;
   return (
     <thead>
       {table.getHeaderGroups().map((headerGroup) => (
@@ -62,6 +68,11 @@ export function GridHeader<TRow>({
             const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
               .filter(Boolean)
               .join(" ");
+            const isPickedUp = pickedUpColumnIndex === columnIndex;
+            const headerKeyDown =
+              columnDragKeyboard && !isPrimary
+                ? buildHeaderKeyDown(columnIndex, columnDragKeyboard)
+                : undefined;
             return (
               <SortableHeaderCell
                 key={header.id}
@@ -72,11 +83,13 @@ export function GridHeader<TRow>({
                 axisTint={axisTint}
                 fieldEditable={isEditableSingleSelect}
                 fieldEditorOpen={isEditorOpen}
+                isPickedUp={isPickedUp}
                 cellRef={(node) => {
                   if (!headerCellRefByFieldKey) return;
                   if (node) headerCellRefByFieldKey.set(column.fieldKey, node);
                   else headerCellRefByFieldKey.delete(column.fieldKey);
                 }}
+                onKeyDown={headerKeyDown}
                 onMouseDown={
                   onColumnMouseDown
                     ? (event) => onColumnMouseDown(event, column.fieldKey)
@@ -116,4 +129,39 @@ export function GridHeader<TRow>({
       ))}
     </thead>
   );
+}
+
+// Routes Space / ←→ / Esc on a focused non-primary header to the
+// keyboard-drag state machine. `preventDefault` keeps the keystroke
+// from bubbling into the wrapper's grid-navigation handler (which
+// would otherwise interpret Space as type-to-edit on the active cell
+// and arrows as cell-selection moves). Once any column is picked up
+// every header's Space / ←→ / Esc map to commit / move / cancel —
+// the keyboard focus stays on the cell the user originally pressed
+// Space on, while the pickup target visually slides; routing the
+// keystroke through the originally-focused cell is what lets the
+// gesture complete without a focus jump.
+function buildHeaderKeyDown(
+  columnIndex: number,
+  handlers: GridColumnDragKeyboard,
+): (event: ReactKeyboardEvent<HTMLTableCellElement>) => void {
+  return (event) => {
+    const pickupActive = handlers.pickedUpColumnIndex !== null;
+    if (event.key === "Escape" && pickupActive) {
+      event.preventDefault();
+      handlers.onCancel();
+      return;
+    }
+    if (event.key === " ") {
+      event.preventDefault();
+      if (pickupActive) handlers.onCommit();
+      else handlers.onPickup(columnIndex);
+      return;
+    }
+    if (pickupActive && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      handlers.onMove(event.key === "ArrowLeft" ? -1 : 1);
+      return;
+    }
+  };
 }

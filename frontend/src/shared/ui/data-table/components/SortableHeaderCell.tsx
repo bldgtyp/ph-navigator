@@ -1,6 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import type {
+  CSSProperties,
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  ReactNode,
+} from "react";
 import type { AxisRoleSubset } from "../types";
 
 // Plan 08 §4.1 — wraps the header `<th>` in a dnd-kit Sortable so a
@@ -28,6 +33,7 @@ export type SortableHeaderCellProps = {
   isPickedUp?: boolean;
   onMouseDown?: (event: ReactMouseEvent<HTMLElement>) => void;
   onDoubleClick?: (event: ReactMouseEvent<HTMLElement>) => void;
+  onKeyDown?: (event: ReactKeyboardEvent<HTMLTableCellElement>) => void;
   children: ReactNode;
 };
 
@@ -43,6 +49,7 @@ export function SortableHeaderCell({
   isPickedUp = false,
   onMouseDown,
   onDoubleClick,
+  onKeyDown,
   children,
 }: SortableHeaderCellProps) {
   // Override dnd-kit's default `role="button"` on `attributes` so the
@@ -86,6 +93,9 @@ export function SortableHeaderCell({
       onMouseDown={onMouseDown}
       onDoubleClick={onDoubleClick}
       {...dragProps}
+      // Spread last so the keyboard reorder handler wins over any
+      // `onKeyDown` dnd-kit may install via its sensor listeners.
+      onKeyDown={onKeyDown}
     >
       {children}
     </th>

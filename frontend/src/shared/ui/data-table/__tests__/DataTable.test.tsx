@@ -556,6 +556,70 @@ describe("DataTable", () => {
       expect(headers).toEqual(["Number", "Count", "Name"]);
     });
   });
+
+  describe("Plan 08 — column reorder", () => {
+    test("non-primary headers expose the drag-affordance hook (data-draggable)", () => {
+      renderTable();
+      const primary = screen.getByRole("columnheader", { name: /Number/ });
+      const draggable = screen.getByRole("columnheader", { name: /Name/ });
+      expect(primary.getAttribute("data-draggable")).toBeNull();
+      expect(draggable.getAttribute("data-draggable")).toBe("true");
+    });
+
+    test("Space on a focused non-primary header marks it picked up (data-picked-up)", () => {
+      renderTable();
+      const header = screen.getByRole("columnheader", { name: /Name/ });
+      header.focus();
+      fireEvent.keyDown(header, { key: " " });
+      expect(header.getAttribute("data-picked-up")).toBe("true");
+      expect(header.getAttribute("aria-grabbed")).toBe("true");
+    });
+
+    test("Space on a focused primary header is ignored", () => {
+      renderTable();
+      const primary = screen.getByRole("columnheader", { name: /Number/ });
+      primary.focus();
+      fireEvent.keyDown(primary, { key: " " });
+      expect(primary.getAttribute("data-picked-up")).toBeNull();
+    });
+
+    test("Space → ArrowRight → Space commits a reorder with the new columnOrder", () => {
+      const onViewChange = vi.fn();
+      renderTable({ onViewChange });
+      const header = screen.getByRole("columnheader", { name: /Name/ });
+      header.focus();
+      fireEvent.keyDown(header, { key: " " });
+      fireEvent.keyDown(header, { key: "ArrowRight" });
+      fireEvent.keyDown(header, { key: " " });
+      expect(onViewChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ columnOrder: ["number", "count", "name"] }),
+      );
+    });
+
+    test("Esc during pickup cancels without firing onViewChange", () => {
+      const onViewChange = vi.fn();
+      renderTable({ onViewChange });
+      const header = screen.getByRole("columnheader", { name: /Name/ });
+      header.focus();
+      fireEvent.keyDown(header, { key: " " });
+      fireEvent.keyDown(header, { key: "ArrowRight" });
+      fireEvent.keyDown(header, { key: "Escape" });
+      expect(header.getAttribute("data-picked-up")).toBeNull();
+      expect(onViewChange).not.toHaveBeenCalled();
+    });
+
+    test("ArrowLeft cannot move a column before the primary (clamp at index 1)", () => {
+      const onViewChange = vi.fn();
+      renderTable({ onViewChange });
+      const header = screen.getByRole("columnheader", { name: /Name/ }); // visible index 1
+      header.focus();
+      fireEvent.keyDown(header, { key: " " });
+      fireEvent.keyDown(header, { key: "ArrowLeft" });
+      fireEvent.keyDown(header, { key: " " });
+      // Already at index 1, moves clamped — commit treated as no-op.
+      expect(onViewChange).not.toHaveBeenCalled();
+    });
+  });
 });
 
 function renderTable({
