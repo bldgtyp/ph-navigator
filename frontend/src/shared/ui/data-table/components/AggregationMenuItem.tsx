@@ -3,15 +3,9 @@ import { useState } from "react";
 import { getAggregationKinds, type AggregationKind } from "../fields/aggregations";
 import type { FieldDef } from "../types";
 
-// Phase 6 §4.9.1: per-column aggregation picker. The outer label
-// reads `Aggregation: <current> ▾` and opens a sub-popover listing
-// every kind the field's catalogue exposes plus an implicit `None`.
-// Picking a kind closes the sub-popover and dispatches the new map.
-// `None` deletes the key from view.aggregations so the map stays tight.
-//
-// Renders nothing when the field has no aggregation catalogue
-// (attachment / argb_color). The parent (ColumnHeaderMenu) keys the
-// `⋯` trigger visibility on the same predicate.
+// Renders nothing when the field's aggregation catalogue is empty
+// (attachment / argb_color), so the parent menu can render this
+// unconditionally and let it self-gate.
 
 const KIND_LABELS: Record<AggregationKind, string> = {
   none: "None",

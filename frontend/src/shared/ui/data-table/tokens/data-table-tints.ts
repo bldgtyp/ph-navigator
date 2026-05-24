@@ -1,15 +1,11 @@
 import type { AxisRoleSubset } from "../types";
 
-// Phase 6 §4.3 / L9.2: the seven non-empty subsets of
-// {filter, sort, group}. Listed in lexical order — the codes
-// concatenate the present axes' first letters in fixed order
-// f < s < g so two callers can never disagree about which code to use.
-//
-// The actual paint lives as CSS custom properties in App.css, keyed
-// by the subset code: `--data-table-tint-<code>-body` for cells and
-// `--data-table-tint-<code>-header` for column headers. Cells emit
-// `data-axis-tint="<code>"` so attribute selectors paint without any
-// per-render JS work (matches Phase 4's contract).
+// The seven non-empty subsets of {filter, sort, group}. Codes
+// concatenate present axes' first letters in fixed order f < s < g.
+// CSS variables in App.css are keyed off the codes
+// (`--data-table-tint-<code>-body` / `-header`); cells emit the code
+// as `data-axis-tint="<code>"` so attribute selectors paint without
+// per-render JS work.
 export const AXIS_ROLE_SUBSETS: readonly AxisRoleSubset[] = [
   "f",
   "s",
@@ -19,3 +15,15 @@ export const AXIS_ROLE_SUBSETS: readonly AxisRoleSubset[] = [
   "sg",
   "fsg",
 ] as const;
+
+export function buildSubsetCode(present: {
+  filter: boolean;
+  sort: boolean;
+  group: boolean;
+}): AxisRoleSubset | null {
+  let code = "";
+  if (present.filter) code += "f";
+  if (present.sort) code += "s";
+  if (present.group) code += "g";
+  return code ? (code as AxisRoleSubset) : null;
+}

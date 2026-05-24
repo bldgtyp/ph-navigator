@@ -6,17 +6,12 @@ import { CSS } from "@dnd-kit/utilities";
 import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, GroupRule } from "../types";
 
-// Phase 6 §4.2: Group popover. Stacked rule rows wired to user-intent
-// `view.group` via a single `onGroupChange(next)` callback (L8.2).
-// Up to 4 rules per §12 Q1; the `+ Add subgroup` button disables at
-// the cap. Direction labels are `First → Last` / `Last → First`,
-// verbatim AirTable's group-popover phrasing — the internal direction
-// stays "asc" | "desc" so the sortRows comparator path is unchanged.
-//
-// Popover-header right-side carries `Collapse all` / `Expand all`
-// text actions (§12 Q15). They drive `onExpandAll` / `onCollapseAll`
-// which the parent translates into a single `onViewChange` with a
-// mass-toggled `expandedGroups` map.
+// Group popover. Stacked rule rows wired to `view.group` via a
+// single `onGroupChange(next)` callback. Direction labels follow
+// AirTable's group-popover phrasing (`First → Last` / `Last → First`)
+// rather than the Sort popover's `A → Z` / `Z → A`; the internal
+// direction stays "asc" | "desc". The popover-header right-side
+// carries `Collapse all` / `Expand all` text actions.
 
 export const MAX_GROUP_RULES = 4;
 

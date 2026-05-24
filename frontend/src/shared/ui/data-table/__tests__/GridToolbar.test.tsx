@@ -31,13 +31,6 @@ function renderToolbar(
       onCollapseAllGroups={handlers.onCollapseAllGroups ?? vi.fn()}
       onExpandAllGroups={handlers.onExpandAllGroups ?? vi.fn()}
       onResetView={handlers.onResetView ?? vi.fn()}
-      canResetView={
-        view.filter.length > 0 ||
-        view.sort.length > 0 ||
-        view.group.length > 0 ||
-        Object.keys(view.aggregations).length > 0 ||
-        Object.keys(view.expandedGroups).length > 0
-      }
     />,
   );
 }

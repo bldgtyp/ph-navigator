@@ -64,34 +64,34 @@ describe("aggregation registry", () => {
 
 describe("formatAggregation", () => {
   test("none always renders empty", () => {
-    expect(formatAggregation("none", [1, 2, 3], numberField)).toBe("");
+    expect(formatAggregation("none", [1, 2, 3])).toBe("");
   });
 
   test("count skips null / undefined / empty string but counts 0", () => {
-    expect(formatAggregation("count", [null, undefined, "", 0, "x"], textField)).toBe("2");
+    expect(formatAggregation("count", [null, undefined, "", 0, "x"])).toBe("2");
   });
 
   test("count returns 0 for an empty list", () => {
-    expect(formatAggregation("count", [], textField)).toBe("0");
+    expect(formatAggregation("count", [])).toBe("0");
   });
 
   test("sum / mean / min / max parse string numbers and ignore NaN", () => {
     const values = [1, "2", "not-a-number", null, 3];
-    expect(formatAggregation("sum", values, numberField)).toBe("6.00");
-    expect(formatAggregation("mean", values, numberField)).toBe("2.00");
-    expect(formatAggregation("min", values, numberField)).toBe("1.00");
-    expect(formatAggregation("max", values, numberField)).toBe("3.00");
+    expect(formatAggregation("sum", values)).toBe("6.00");
+    expect(formatAggregation("mean", values)).toBe("2.00");
+    expect(formatAggregation("min", values)).toBe("1.00");
+    expect(formatAggregation("max", values)).toBe("3.00");
   });
 
   test("stat kinds return — for an empty numeric collection", () => {
-    expect(formatAggregation("sum", [null, "", "abc"], numberField)).toBe("—");
-    expect(formatAggregation("mean", [], numberField)).toBe("—");
-    expect(formatAggregation("min", [], numberField)).toBe("—");
-    expect(formatAggregation("max", [], numberField)).toBe("—");
+    expect(formatAggregation("sum", [null, "", "abc"])).toBe("—");
+    expect(formatAggregation("mean", [])).toBe("—");
+    expect(formatAggregation("min", [])).toBe("—");
+    expect(formatAggregation("max", [])).toBe("—");
   });
 
   test("numbers format to two decimals", () => {
-    expect(formatAggregation("mean", [1, 2], numberField)).toBe("1.50");
-    expect(formatAggregation("sum", [0.1, 0.2], numberField)).toMatch(/^0\.30/);
+    expect(formatAggregation("mean", [1, 2])).toBe("1.50");
+    expect(formatAggregation("sum", [0.1, 0.2])).toMatch(/^0\.30/);
   });
 });
