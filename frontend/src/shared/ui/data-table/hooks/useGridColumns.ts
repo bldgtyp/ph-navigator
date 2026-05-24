@@ -14,6 +14,28 @@ import type { DataTableColumnDef } from "../types";
 //    column and is NEVER hidden, even if its id appears in
 //    `hiddenColumns`. The toolbar UI prevents the user from toggling
 //    it, but this guard is the source of truth.
+// Plan 08 — splice helper used by both the header drag (`DataTable`)
+// and the Hide-fields panel drag (`HideFieldsPanel`). Operates on the
+// full ordered id list so hidden columns keep their relative positions
+// even when the visible reorder originates from the header. Returns
+// the input array unchanged when from/to are equal or either id is
+// missing — callers can pass the result straight to `onViewChange`.
+export function reorderColumnIds(
+  fullOrder: string[],
+  fromColumnId: string,
+  toColumnId: string,
+): string[] {
+  if (fromColumnId === toColumnId) return fullOrder;
+  const fromIndex = fullOrder.indexOf(fromColumnId);
+  const toIndex = fullOrder.indexOf(toColumnId);
+  if (fromIndex < 0 || toIndex < 0) return fullOrder;
+  const next = [...fullOrder];
+  const [moved] = next.splice(fromIndex, 1);
+  if (moved === undefined) return fullOrder;
+  next.splice(toIndex, 0, moved);
+  return next;
+}
+
 export function useGridColumns<TRow>(
   columnDefs: DataTableColumnDef<TRow>[],
   columnOrder: string[],

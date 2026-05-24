@@ -1970,6 +1970,24 @@ button:disabled {
   cursor: cell;
 }
 
+/* Plan 08 — non-primary headers become a drag handle on hover.
+   `data-draggable` is set by `SortableHeaderCell`; the primary column
+   omits it (and stays at `cursor: cell` for column-select). During an
+   active drag the cell goes translucent; the keyboard pickup state
+   gets an accent outline. */
+.data-table-th[data-draggable="true"]:hover {
+  cursor: grab;
+}
+.data-table-th[data-dragging="true"] {
+  opacity: 0.5;
+  cursor: grabbing;
+  z-index: 2;
+}
+.data-table-th[data-picked-up="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .data-table-header-row {
   display: flex;
   align-items: center;
