@@ -5,7 +5,12 @@ import type {
   RoomsSlice,
   SingleSelectOption,
 } from "./types";
-import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY } from "./types";
+import {
+  ROOM_BUILDING_ZONE_COLUMN_ID,
+  ROOM_BUILDING_ZONE_KEY,
+  ROOM_FLOOR_LEVEL_COLUMN_ID,
+  ROOM_FLOOR_LEVEL_KEY,
+} from "./types";
 import type {
   BuildEmptyRow,
   DataTableColumnDef,
@@ -57,13 +62,21 @@ export function roomsTableFieldDefs(roomsSlice: RoomsSlice): FieldDef[] {
 }
 
 // Stub columns for sanitization — sanitizer reads only `id` + `fieldKey`.
-// Column id equals field_key for every Rooms column; the real columns
-// (with `render`, accessors, widths) live in RoomsTable.tsx.
+// The real columns (with `render`, accessors, widths) live in
+// RoomsTable.tsx; ids here must match those there, or
+// sanitizeViewStateForSchema would silently drop entries from
+// view.columnOrder / view.hiddenColumns and the user's drag-reorder
+// would not survive a render.
+const ROOMS_COLUMN_ID_BY_FIELD_KEY: Record<string, string> = {
+  [ROOM_FLOOR_LEVEL_KEY]: ROOM_FLOOR_LEVEL_COLUMN_ID,
+  [ROOM_BUILDING_ZONE_KEY]: ROOM_BUILDING_ZONE_COLUMN_ID,
+};
+
 export function roomsTableColumnsForSanitize(
   fieldDefs: readonly FieldDef[],
 ): DataTableColumnDef<unknown>[] {
   return fieldDefs.map((fieldDef) => ({
-    id: fieldDef.field_key,
+    id: ROOMS_COLUMN_ID_BY_FIELD_KEY[fieldDef.field_key] ?? fieldDef.field_key,
     fieldKey: fieldDef.field_key,
     header: fieldDef.display_name,
     accessor: () => null,

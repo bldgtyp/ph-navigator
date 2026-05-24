@@ -21,6 +21,13 @@ export const ROOM_BUILDING_ZONE_KEY = "rooms.building_zone";
 export const ROOM_OPTION_KEYS = [ROOM_FLOOR_LEVEL_KEY, ROOM_BUILDING_ZONE_KEY] as const;
 export const ROOMS_TABLE_NAME = "rooms";
 
+// Single-select option fields use a namespaced `field_key`
+// ("rooms.floor_level") but the table column id is the short form. Both
+// `RoomsTable` (real columns) and `roomsTableColumnsForSanitize`
+// (sanitize stubs) must share these so saved view state lines up.
+export const ROOM_FLOOR_LEVEL_COLUMN_ID = "floor_level";
+export const ROOM_BUILDING_ZONE_COLUMN_ID = "building_zone";
+
 export type RoomOptionKey = (typeof ROOM_OPTION_KEYS)[number];
 
 export type RoomsSlice = {

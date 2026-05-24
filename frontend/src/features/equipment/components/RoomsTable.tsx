@@ -9,7 +9,9 @@ import {
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { roomsTableFieldDefs, sortedRooms } from "../lib";
 import {
+  ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
+  ROOM_FLOOR_LEVEL_COLUMN_ID,
   ROOM_FLOOR_LEVEL_KEY,
   type RoomRow,
   type RoomsSlice,
@@ -64,14 +66,14 @@ export function RoomsTable({
         accessor: (room) => room.name,
       },
       {
-        id: "floor_level",
+        id: ROOM_FLOOR_LEVEL_COLUMN_ID,
         fieldKey: ROOM_FLOOR_LEVEL_KEY,
         header: "Floor",
         accessor: (room) => room.floor_level,
         render: (room) => optionPill(room.floor_level, fieldDefByKey.get(ROOM_FLOOR_LEVEL_KEY)),
       },
       {
-        id: "building_zone",
+        id: ROOM_BUILDING_ZONE_COLUMN_ID,
         fieldKey: ROOM_BUILDING_ZONE_KEY,
         header: "Zone",
         accessor: (room) => room.building_zone,
