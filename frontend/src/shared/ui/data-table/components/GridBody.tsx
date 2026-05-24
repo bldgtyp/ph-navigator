@@ -12,6 +12,7 @@ import type {
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { FillHandle } from "./FillHandle";
+import { GridChevron } from "./GridChevron";
 import { GridGutter } from "./GridGutter";
 import { GroupHeaderRow } from "./GroupHeaderRow";
 import { InlineCellEditor } from "./InlineCellEditor";
@@ -63,6 +64,12 @@ export type GridBodyProps<TRow> = {
   fillTargetPreview?: FillRect | null;
   fillHandleVisible?: boolean;
   onFillHandleMouseDown?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  // Plan 05: gate the single-select chevron affordance. When false
+  // (read-only / viewer mode / no write handler), the chevron is
+  // hidden on active single-select cells. Inline-edit start paths
+  // (onCellOpen) already gate themselves on the same flag — this is
+  // just the render-side mirror so the affordance matches the gesture.
+  cellsWritable?: boolean;
 };
 
 export function GridBody<TRow>({
@@ -93,6 +100,7 @@ export function GridBody<TRow>({
   fillTargetPreview,
   fillHandleVisible,
   onFillHandleMouseDown,
+  cellsWritable = false,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
@@ -179,6 +187,14 @@ export function GridBody<TRow>({
                   fillSource != null &&
                   isCellInNormalizedRange({ rowIndex, columnIndex }, fillSource)
                 );
+              // Plan 05: chevron renders only on the active single-
+              // select cell when the table is writable and no editor is
+              // open. The popover replaces the static pill render
+              // during edit mode, so a chevron sitting next to it would
+              // be redundant.
+              const fieldDef = fieldKey ? fieldDefByKey.get(fieldKey) : undefined;
+              const showSelectChevron =
+                active && !editing && cellsWritable && fieldDef?.field_type === "single_select";
               return (
                 <td
                   key={cell.id}
@@ -223,6 +239,11 @@ export function GridBody<TRow>({
                         if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
                       }),
                   })}
+                  {showSelectChevron ? (
+                    <GridChevron
+                      onMouseDown={() => onCellOpen(tanstackRow.original, columnIndex)}
+                    />
+                  ) : null}
                   {isFillSourceCorner && onFillHandleMouseDown ? (
                     <FillHandle onMouseDown={onFillHandleMouseDown} />
                   ) : null}
