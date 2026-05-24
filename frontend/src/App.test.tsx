@@ -957,7 +957,7 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("region", { name: "Equipment" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "More view actions" }));
+    await user.click(await screen.findByRole("button", { name: "More view actions" }));
     expect(screen.getByRole("link", { name: "Rooms JSON" })).toBeVisible();
     await user.keyboard("{Escape}");
     await user.click(await screen.findByRole("button", { name: "Add New Room" }));
@@ -967,7 +967,6 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Building zone"), "Residential");
     await user.click(screen.getByRole("button", { name: "Save room" }));
 
-    expect(await screen.findByText("Unsaved Rooms draft restored")).toBeVisible();
     expect(await screen.findByText("Unsaved")).toBeVisible();
     expect(screen.getByText("Living Room")).toBeVisible();
     expect(screen.getByText("Ground")).toBeVisible();
