@@ -14,10 +14,12 @@ import {
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowInsert,
+  roomsTableColumnsForSanitize,
+  roomsTableFieldDefs,
   validateRoomsPayload,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
-import type { RoomsSlice } from "./types";
+import { ROOM_BUILDING_ZONE_COLUMN_ID, ROOM_FLOOR_LEVEL_COLUMN_ID, type RoomsSlice } from "./types";
 
 const baseSlice: RoomsSlice = {
   project_id: "project-1",
@@ -458,5 +460,28 @@ describe("equipment room helpers", () => {
     ]);
     expect(payload.rooms.map((room) => room.id)).toEqual(["rm_2"]);
     expect(payload.single_select_options["rooms.floor_level"]).toEqual([ground]);
+  });
+
+  // Regression: sanitize-columns must use the same ids as the real
+  // RoomsTable columns. The single-select fields have namespaced
+  // `field_key` ("rooms.floor_level") but the column uses the short id
+  // ("floor_level"). When the two diverge, sanitizeViewStateForSchema
+  // silently filters dragged-reorder entries out of view.columnOrder
+  // and the user's drag is undone on render.
+  test("roomsTableColumnsForSanitize emits ids that match RoomsTable column ids", () => {
+    const columns = roomsTableColumnsForSanitize(roomsTableFieldDefs(baseSlice));
+    const ids = columns.map((column) => column.id);
+    expect(ids).toEqual([
+      "number",
+      "name",
+      ROOM_FLOOR_LEVEL_COLUMN_ID,
+      ROOM_BUILDING_ZONE_COLUMN_ID,
+      "num_people",
+      "num_bedrooms",
+      "icfa_factor",
+      "erv_unit_ids",
+    ]);
+    expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");
+    expect(ROOM_BUILDING_ZONE_COLUMN_ID).toBe("building_zone");
   });
 });
