@@ -22,6 +22,7 @@ Canonical story bodies now live in `context/user-stories/`:
 | `10-windows.md` | Windows tab parent and US-WIN-1..12 | Phase 3 |
 | `20-envelope.md` | Envelope tab parent and US-ENV-1..15 | Phase 4 |
 | `30-tables-equipment.md` | Shared DataTable story; Equipment parent; Rooms, ERVs, Fans, and placeholder mechanical tables | Phase 2 and Phase 6 |
+| `31-data-table-enhancements.md` | AirTable-parity enhancements to the shared `<DataTable>` primitive (US-TBL-FILL/EDIT/VIEW/SELECT/FIELDS/COLREORDER/ICONS/AGG) | Phase 2+ (post US-Builder-Tables landing) |
 | `40-model-viewer.md` | Model tab parent and US-VIEW-1..7 | Phase 5 |
 | `50-settings-ops-llm.md` | Project Settings; action logging; header consistency; post-parity features; LLM/MCP asset API | Phases 0, 2, and 6 |
 | `90-open-questions.md` | Current and resolved open-question index | Ongoing cleanup |
