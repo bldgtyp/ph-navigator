@@ -3,8 +3,10 @@ import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-
 import {
   applyFilters,
   buildEmptyRowDefaults,
+  effectiveSortFromView,
   extractRowDefaults,
   formatDisplayCellValue,
+  pruneExpandedGroups,
   sortRows,
 } from "./lib";
 import { generatedId } from "../../lib/ids";
@@ -29,11 +31,11 @@ import type {
   DataTableProps,
   FieldDef,
   FilterCondition,
+  GroupRule,
   RowDeletePayload,
   SortRule,
   WriteOp,
 } from "./types";
-
 export function DataTable<TRow>({
   rows,
   getRowId,
@@ -63,15 +65,23 @@ export function DataTable<TRow>({
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
   );
+  // Phase 6 §4.5: group rules force a pre-sort prepended to the user-
+  // intent `view.sort`. `effectiveSortFromView` dedups so a field
+  // present in both axes only appears once in the comparator (group
+  // direction wins). `view.sort` itself is preserved unchanged.
+  const effectiveSort = useMemo(
+    () => effectiveSortFromView(view),
+    [view],
+  );
   const filteredRows = useMemo(
     () =>
       sortRows(
         applyFilters(rows, visibleColumnDefs, fieldDefs, view.filter),
         visibleColumnDefs,
         fieldDefs,
-        view.sort,
+        effectiveSort,
       ),
-    [rows, visibleColumnDefs, fieldDefs, view.filter, view.sort],
+    [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort],
   );
   const rowIds = useMemo(() => filteredRows.map(getRowId), [filteredRows, getRowId]);
   const fieldKeys = useMemo(
@@ -313,7 +323,7 @@ export function DataTable<TRow>({
   );
   // Phase 4 §4.11: sortable fields exclude only `attachment` and
   // `argb_color` (they have no meaningful order). Read-only computed
-  // columns sort fine.
+  // columns sort fine. Phase 6: groupable shares the same rule.
   const sortableFieldDefs = useMemo(
     () =>
       fieldDefs.filter(
@@ -321,6 +331,7 @@ export function DataTable<TRow>({
       ),
     [fieldDefs],
   );
+  const groupableFieldDefs = sortableFieldDefs;
   const handleFilterChange = useCallback(
     (next: FilterCondition[]) => {
       onViewChange({ ...view, filter: next });
@@ -333,13 +344,56 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
-  // Phase 4 §4.7: Reset clears only filter + sort (the keys Phase 4
-  // owns). Group / column-order / aggregation / hidden columns are
-  // intentionally preserved; Phase 6 will pick them up when group
-  // accordion lands.
-  const handleResetView = useCallback(() => {
-    onViewChange({ ...view, filter: [], sort: [] });
+  // Phase 6 §4.10: group changes prune expandedGroups whose path depth
+  // exceeds the new group depth (so old deep keys don't accumulate).
+  // Same-or-shorter paths stay — re-grouping by a different field at
+  // the same depth keeps state in place (acceptable; clears on Reset).
+  const handleGroupChange = useCallback(
+    (next: GroupRule[]) => {
+      onViewChange({
+        ...view,
+        group: next,
+        expandedGroups: pruneExpandedGroups(view.expandedGroups, next),
+      });
+    },
+    [onViewChange, view],
+  );
+  // Phase 6 §4.2 / §12 Q15: Collapse all / Expand all live in the
+  // Group popover header, not the toolbar overflow. Collapse-all
+  // requires knowing every current group's pathKey, which lives in
+  // the body plan — Step 4 wires that up. For Step 3, the handlers
+  // exist but only operate on the user-intent map: Expand-all clears
+  // `expandedGroups` (defaults all paths to expanded); Collapse-all
+  // is a no-op until Step 4 supplies the visible pathKeys.
+  const handleExpandAllGroups = useCallback(() => {
+    if (Object.keys(view.expandedGroups).length === 0) return;
+    onViewChange({ ...view, expandedGroups: {} });
   }, [onViewChange, view]);
+  const handleCollapseAllGroups = useCallback(() => {
+    // Step 4 replaces this with a pathKey-aware implementation.
+    if (view.group.length === 0) return;
+    onViewChange({ ...view });
+  }, [onViewChange, view]);
+  // Phase 6 §4.4: Reset clears every view-state key the toolbar can
+  // mutate — filter / sort / group / aggregations / expandedGroups.
+  // Column order / hidden columns / column widths are owned by a
+  // future column-config phase and stay untouched.
+  const handleResetView = useCallback(() => {
+    onViewChange({
+      ...view,
+      filter: [],
+      sort: [],
+      group: [],
+      aggregations: {},
+      expandedGroups: {},
+    });
+  }, [onViewChange, view]);
+  const canResetView =
+    view.filter.length > 0 ||
+    view.sort.length > 0 ||
+    view.group.length > 0 ||
+    Object.keys(view.aggregations).length > 0 ||
+    Object.keys(view.expandedGroups).length > 0;
 
   // Phase 6 §4.3.2: per-column subset code over {filter, sort, group}.
   // Filter membership requires the rule to be contributing (dormant
@@ -432,9 +486,14 @@ export function DataTable<TRow>({
         fieldDefByKey={fieldDefByKey}
         filterableFieldDefs={filterableFieldDefs}
         sortableFieldDefs={sortableFieldDefs}
+        groupableFieldDefs={groupableFieldDefs}
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
+        onGroupChange={handleGroupChange}
+        onCollapseAllGroups={handleCollapseAllGroups}
+        onExpandAllGroups={handleExpandAllGroups}
         onResetView={handleResetView}
+        canResetView={canResetView}
         actions={toolbarActions}
       />
       {fieldEditorContext ? (
