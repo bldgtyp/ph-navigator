@@ -2286,29 +2286,39 @@ button:disabled {
   border-right: 1px solid var(--border-subtle);
 }
 
-/* Phase 3 §4.10: interior fill for any cell inside the active range.
-   The contiguous perimeter outline is composed per-cell as an inline
-   `box-shadow` from `computeEdgeBits` so corner / edge / interior cells
-   layer correctly (PoC L3.2 — box-shadow channel for selection). */
-.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card));
+/* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
+   Single active cells keep the normal bordered cursor treatment below. */
+.data-table td.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 18%, var(--bg-card)) !important;
+  box-shadow: none !important;
 }
 
-.data-table-cell-active {
+.data-table td.data-table-cell-active {
   z-index: 2;
-  background: color-mix(in oklab, var(--accent-text) 12%, var(--bg-card));
-  box-shadow: none;
   outline: 0;
+}
+
+.data-table td.data-table-cell-active:not(.data-table-cell-selected) {
+  background: var(--bg-card);
+  box-shadow: inset 0 0 0 2px var(--accent-text);
+}
+
+.data-table td.data-table-cell-active.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 26%, var(--bg-card)) !important;
+  box-shadow: none !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card));
+  background: color-mix(in oklab, var(--accent-text) 18%, var(--bg-card)) !important;
 }
 
-.data-table tbody tr:hover td.data-table-cell-active,
-.data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-active {
-  background: color-mix(in oklab, var(--accent-text) 12%, var(--bg-card));
+.data-table tbody tr:hover td.data-table-cell-active.data-table-cell-selected,
+.data-table
+  tbody
+  tr:has(.data-table-gutter-selected)
+  td.data-table-cell-active.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 26%, var(--bg-card)) !important;
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the

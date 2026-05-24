@@ -75,12 +75,9 @@ describe("DataTable column-select via header click (Phase 3 R1)", () => {
     expect(getBodyCell(0, 0)).not.toHaveClass("data-table-cell-selected");
     expect(getBodyCell(0, 2)).not.toHaveClass("data-table-cell-selected");
 
-    expect(topCell.style.boxShadow).toContain("inset 0 1px 0 0 var(--accent-edge)");
-    expect(topCell.style.boxShadow).toContain("inset 1px 0 0 0 var(--accent-edge)");
-    expect(topCell.style.boxShadow).toContain("inset -1px 0 0 0 var(--accent-edge)");
-    expect(bottomCell.style.boxShadow).toContain("inset 0 -1px 0 0 var(--accent-edge)");
-    expect(middleCell.style.boxShadow).not.toContain("inset 0 1px 0 0 var(--accent-edge)");
-    expect(middleCell.style.boxShadow).not.toContain("inset 0 -1px 0 0 var(--accent-edge)");
+    expect(topCell.style.boxShadow).toBe("");
+    expect(middleCell.style.boxShadow).toBe("");
+    expect(bottomCell.style.boxShadow).toBe("");
   });
 
   test("clicking the same header again deselects the column (toggle)", () => {

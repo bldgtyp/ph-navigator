@@ -1,6 +1,6 @@
 import { flexRender, type Table } from "@tanstack/react-table";
-import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import { computeEdgeBits, isCellInNormalizedRange, type NormalizedRange } from "../lib";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import { isCellInNormalizedRange, type NormalizedRange } from "../lib";
 import type {
   AxisRoleSubset,
   BodyPlanItem,
@@ -171,9 +171,6 @@ export function GridBody<TRow>({
               const rowId = rowIds[rowIndex];
               const editing =
                 rowId !== undefined && fieldKey ? edit.isEditingCell(rowId, fieldKey) : false;
-              const edgeStyle = selected
-                ? buildEdgeShadowStyle(rowIndex, columnIndex, normalizedActiveRange)
-                : undefined;
               const axisTint = fieldKey ? axisRolesByFieldKey.get(fieldKey) : undefined;
               const isFillSourceCorner =
                 fillHandleVisible === true &&
@@ -215,7 +212,6 @@ export function GridBody<TRow>({
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  style={edgeStyle}
                   onMouseDown={onCellMouseDown}
                   onClick={(event) => {
                     // Phase 3: Shift+Click extends the range via the
@@ -255,33 +251,6 @@ export function GridBody<TRow>({
       })}
     </tbody>
   );
-}
-
-// Phase 3 §4.10: compose the cell's perimeter-outline `box-shadow`
-// from the edge bits. Interior cells of an N×M range have no edge
-// bits set and receive `undefined` so React drops the inline style
-// entirely (the interior fill comes from the `.data-table-cell-
-// selected` CSS rule). Edge cells layer one inset shadow per edge so
-// a multi-cell range draws as one contiguous rectangle.
-const EDGE_SHADOWS: Record<keyof ReturnType<typeof computeEdgeBits>, string> = {
-  top: "inset 0 1px 0 0 var(--accent-edge)",
-  right: "inset -1px 0 0 0 var(--accent-edge)",
-  bottom: "inset 0 -1px 0 0 var(--accent-edge)",
-  left: "inset 1px 0 0 0 var(--accent-edge)",
-};
-
-function buildEdgeShadowStyle(
-  rowIndex: number,
-  columnIndex: number,
-  range: NormalizedRange,
-): CSSProperties | undefined {
-  const edges = computeEdgeBits(rowIndex, columnIndex, range);
-  const parts: string[] = [];
-  if (edges.top) parts.push(EDGE_SHADOWS.top);
-  if (edges.right) parts.push(EDGE_SHADOWS.right);
-  if (edges.bottom) parts.push(EDGE_SHADOWS.bottom);
-  if (edges.left) parts.push(EDGE_SHADOWS.left);
-  return parts.length ? { boxShadow: parts.join(", ") } : undefined;
 }
 
 // Pick the cell's inner content. When the cell is in edit mode, choose
