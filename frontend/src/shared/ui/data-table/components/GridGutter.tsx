@@ -58,29 +58,27 @@ export function GridGutter({
             tabIndex={-1}
           />
         ) : null}
-        <span className="data-table-gutter-number-stack">
+        <button
+          type="button"
+          className="data-table-gutter-number"
+          aria-label={`Highlight row ${rowNumber}`}
+          tabIndex={-1}
+          onClick={onSelectRow}
+        >
+          {rowNumber}
+        </button>
+        {onExpandRow ? (
           <button
             type="button"
-            className="data-table-gutter-number"
-            aria-label={`Highlight row ${rowNumber}`}
+            className="data-table-gutter-expand"
+            aria-label={`Expand row ${rowNumber}`}
+            title="Expand row"
             tabIndex={-1}
-            onClick={onSelectRow}
+            onClick={handleExpandClick}
           >
-            {rowNumber}
+            <Maximize2 size={12} aria-hidden="true" />
           </button>
-          {onExpandRow ? (
-            <button
-              type="button"
-              className="data-table-gutter-expand"
-              aria-label={`Expand row ${rowNumber}`}
-              title="Expand row"
-              tabIndex={-1}
-              onClick={handleExpandClick}
-            >
-              <Maximize2 size={12} aria-hidden="true" />
-            </button>
-          ) : null}
-        </span>
+        ) : null}
       </div>
     </th>
   );
