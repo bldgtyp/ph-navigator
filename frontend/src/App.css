@@ -1186,6 +1186,10 @@ button:disabled {
   overflow-x: auto;
 }
 
+.data-table-wrap:focus {
+  outline: none;
+}
+
 .data-table-wrap:has(.room-option-popover) {
   overflow: visible;
 }
