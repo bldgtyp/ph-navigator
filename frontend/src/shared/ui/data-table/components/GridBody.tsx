@@ -194,10 +194,7 @@ export function GridBody<TRow>({
               // be redundant.
               const fieldDef = fieldKey ? fieldDefByKey.get(fieldKey) : undefined;
               const showSelectChevron =
-                active &&
-                !editing &&
-                cellsWritable &&
-                fieldDef?.field_type === "single_select";
+                active && !editing && cellsWritable && fieldDef?.field_type === "single_select";
               return (
                 <td
                   key={cell.id}

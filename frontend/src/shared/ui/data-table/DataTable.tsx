@@ -427,10 +427,27 @@ export function DataTable<TRow>({
       setAnnounce("This cell is read-only.");
       return;
     }
-    // Single-select cells route through SingleSelectPopover (plan 05).
-    // Until that lands, ignore typing on these cells — double-click
-    // still opens the popover with the existing value highlighted.
-    if (editorKind === "single_select") return;
+    // Plan 05: single-select cells route through SingleSelectPopover
+    // with the typed char pre-filling the search input. Trim the seed
+    // so Space — which the keyboard hook treats as a printable char —
+    // opens the popover with no filter (matches Enter / F2 / chevron
+    // click); a single trailing space would otherwise filter to "no
+    // matches" because option labels are stored trimmed. An empty
+    // seed (Backspace / Delete) is a no-op on single-select to
+    // preserve the prior "clearing is not how you change a select"
+    // behavior — users open the popover instead.
+    if (editorKind === "single_select") {
+      const trimmed = initialKey.trim();
+      if (initialKey === "" && trimmed === "") return;
+      edit.start({
+        rowId: getRowId(row),
+        fieldKey: column.fieldKey,
+        initialValue: column.accessor(row),
+        intent: "replace",
+        replaceSeed: trimmed,
+      });
+      return;
+    }
     edit.start({
       rowId: getRowId(row),
       fieldKey: column.fieldKey,
