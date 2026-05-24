@@ -1349,12 +1349,51 @@ against Rooms in a fresh browser session. Record pass/fail in
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
-| 1 — fill planner + group derivation helpers     | — | — | — |
-| 2 — useGridFill hook (no UI)                    | — | — | — |
-| 3 — FillHandle component + body wiring          | — | — | — |
-| 4 — ⌘D / ⌘R keyboard wiring                     | — | — | — |
-| 5 — demo walk + post-walk fixes                 | — | — | — |
-| Phase 7 overall                                 | — | — | — |
+| 1 — fill planner + group derivation helpers     | 2026-05-24 | ✅ | 21 helper tests; pointer-drag constants promoted to shared tokens module. |
+| 2 — useGridFill hook (no UI)                    | 2026-05-24 | ✅ | 14 hook tests. Hook wiring deferred to Step 3 to keep the tree green under `noUnusedLocals`. |
+| 3 — FillHandle component + body wiring          | 2026-05-24 | ✅ | 4 FillHandle + 4 GridBody tests. Drag-fill works end-to-end after Step 4. |
+| 4 — ⌘D / ⌘R keyboard wiring                     | 2026-05-24 | ✅ | 7 keyboard + 5 end-to-end tests. Full suite 380 → 392 green. |
+| 5 — demo walk + post-walk fixes                 | 2026-05-24 | ✅ | Four post-walk patches landed in `294f848` (see notes below). |
+| Phase 7 overall                                 | 2026-05-24 | ✅ | All sixteen acceptance criteria verified on Chrome against Rooms. |
+
+**Post-walk fixes (Step 5, all in `294f848 Refactor topbar, grid-fill guard, CSS & tests`):**
+
+1. **Handle rendered as a vertical line instead of a 6×6 square.** Global
+   `button { min-height: 38px; padding: 8px 14px; border: 1px solid
+   transparent }` rule in `App.css` was stretching the handle to
+   `~6×38 px`. Fix: `.data-table-fill-handle` rule explicitly resets
+   `min-height: 0`, `min-width: 0`, `border: 0`, `border-radius: 0`,
+   `padding: 0`, plus `box-sizing: border-box` so the 6×6 is literal.
+2. **Plan §2 constraint 1 was wrong: "library-only" didn't account for
+   the consumer needing to materialize `kind: "fill"` writes.**
+   `EquipmentTab.handleTableWrite` only branched on `cell` / `paste`,
+   so fill ops fell through and writes were never persisted. Fix:
+   one-line widen to `cell | paste | fill` (fill shape is `CellWrite[]`
+   like `cell`, no option-list delta). Constraint 1 should be re-read
+   as "library + a one-line consumer route to the same payload path
+   the `cell` op already uses." Recorded as a plan delta to apply to
+   the catalog-page migration spec.
+3. **mouseup + pointerup both firing → two mutations per drag → stale
+   draft conflict banner.** `useGridFill` mirrored `useGridPointerDrag`'s
+   pattern of listening to both events, but the pointer-drag hook's
+   `handleMouseUp` is idempotent (just `teardown()`); the fill hook's
+   commit path dispatches a mutation each time, so the second event
+   fired a duplicate mutation with the now-stale draft etag. Fix: a
+   one-shot `committed` flag in the session closure guards the commit
+   call (Phase 7 §6 risks should add this — the `useGridPointerDrag`
+   pattern is NOT safely transferable to hooks whose teardown is not
+   idempotent).
+4. **"Unsaved Rooms draft restored" banner fired after every in-session
+   edit (pre-existing UX bug, surfaced during the walk).** Banner at
+   `EquipmentTab.tsx:335` gated only on `roomsSlice.source === "draft"`,
+   which is true after any edit — not just on cross-session restore.
+   Fix: gate the banner on `!wasLocalDraftTouched(project.id,
+   activeVersionId, roomsSlice.draft_etag)` (the pattern already used
+   by `VersionControls.tsx:122`). Banner now correctly distinguishes
+   "draft from a prior session/tab we recovered" from "draft this tab
+   just produced." Not a Phase 7 regression — pre-existing since the
+   draft-touch tracking was introduced — but fixed inline because the
+   walk made it obvious.
 
 ## 12. Open questions — resolved 2026-05-24
 
