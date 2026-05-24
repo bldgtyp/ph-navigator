@@ -388,6 +388,8 @@ export function DataTable<TRow>({
         }
       : undefined,
     onRowInsertBelowActive: canInsertRow ? insertRowBelowActive : undefined,
+    onFillDown: !readOnly && Boolean(onWrite) ? fill.fillDown : undefined,
+    onFillRight: !readOnly && Boolean(onWrite) ? fill.fillRight : undefined,
     drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
 

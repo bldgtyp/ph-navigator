@@ -16,13 +16,7 @@ import {
   type NormalizedRange,
 } from "../lib";
 import { AXIS_THRESHOLD, EDGE_PX, SCROLL_PX } from "../tokens/pointerDragConstants";
-import type {
-  CellWrite,
-  DataTableColumnDef,
-  FieldDef,
-  FillState,
-  WriteOp,
-} from "../types";
+import type { CellWrite, DataTableColumnDef, FieldDef, FillState, WriteOp } from "../types";
 import type { GridSelection } from "./useGridSelection";
 import type { DispatchWrite } from "./useGridWriteReducer";
 
@@ -405,9 +399,7 @@ export function useGridFill<TRow>(args: UseGridFillArgs<TRow>): GridFill {
       }
       if (writes.length === 0) {
         live.onAnnounce(
-          totalSkipped > 0
-            ? `${totalSkipped} cells skipped (read-only).`
-            : "Nothing to fill.",
+          totalSkipped > 0 ? `${totalSkipped} cells skipped (read-only).` : "Nothing to fill.",
         );
         return;
       }

@@ -34,7 +34,12 @@ const fieldDefs: FieldDef[] = [
 
 const getRowId = (row: Row) => row.id;
 
-function rect(rowStart: number, rowEnd: number, columnStart: number, columnEnd: number): NormalizedRange {
+function rect(
+  rowStart: number,
+  rowEnd: number,
+  columnStart: number,
+  columnEnd: number,
+): NormalizedRange {
   return { rowStart, rowEnd, columnStart, columnEnd };
 }
 
@@ -145,7 +150,7 @@ describe("groupPathByRowIdFromBodyPlan", () => {
       {
         kind: "group",
         depth: 0,
-        pathKey: "\"1st\"",
+        pathKey: '"1st"',
         fieldDef: fieldDefs[1]!,
         groupValue: "1st",
         count: 3,
@@ -158,7 +163,7 @@ describe("groupPathByRowIdFromBodyPlan", () => {
       {
         kind: "group",
         depth: 0,
-        pathKey: "\"2nd\"",
+        pathKey: '"2nd"',
         fieldDef: fieldDefs[1]!,
         groupValue: "2nd",
         count: 2,
@@ -169,10 +174,10 @@ describe("groupPathByRowIdFromBodyPlan", () => {
       { kind: "data", row: rows[4]!, rowId: "rm_5", depth: 1 },
     ];
     const map = groupPathByRowIdFromBodyPlan(plan);
-    expect(map.get("rm_1")).toBe("\"1st\"");
-    expect(map.get("rm_3")).toBe("\"1st\"");
-    expect(map.get("rm_4")).toBe("\"2nd\"");
-    expect(map.get("rm_5")).toBe("\"2nd\"");
+    expect(map.get("rm_1")).toBe('"1st"');
+    expect(map.get("rm_3")).toBe('"1st"');
+    expect(map.get("rm_4")).toBe('"2nd"');
+    expect(map.get("rm_5")).toBe('"2nd"');
   });
 });
 
