@@ -2387,6 +2387,18 @@ td:has(> .data-table-cell-chevron) {
   color: var(--text-muted);
   cursor: pointer;
   z-index: 1;
+  /* Chevron is rendered on every writable single-select cell. CSS
+     fades it in on hover OR active so the affordance is discoverable
+     without crowding every cell at rest. */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+}
+
+td:hover > .data-table-cell-chevron,
+td.data-table-cell-active > .data-table-cell-chevron {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .data-table-cell-chevron:hover {
@@ -2399,11 +2411,10 @@ td:has(> .data-table-cell-chevron) {
   height: 14px;
 }
 
-/* Reserve right padding on the active single-select cell so the pill
-   doesn't run under the chevron. Inactive cells keep their normal
-   padding — the chevron is only rendered on the active cell. */
-td.data-table-cell-active:has(> .data-table-cell-chevron) > .single-select-popover-anchor,
-td.data-table-cell-active:has(> .data-table-cell-chevron) {
+/* Reserve right padding on every cell that carries a chevron so the
+   pill doesn't run under it when the chevron fades in on hover. */
+td:has(> .data-table-cell-chevron) > .single-select-popover-anchor,
+td:has(> .data-table-cell-chevron) {
   padding-right: 24px;
 }
 
@@ -3363,7 +3374,7 @@ td.data-table-cell-editing {
 }
 
 .data-table-summary-bar tr {
-  height: 30px;
+  height: 32px;
 }
 
 .data-table-summary-gutter {
@@ -3371,9 +3382,13 @@ td.data-table-cell-editing {
   border-top: 2px solid var(--border-subtle, #d4d4d8);
 }
 
+/* Match body `.data-table td` padding so the summary content baseline-
+   aligns with body cells in the same column. `font-size: inherit` keeps
+   the row visually attached to the body rather than reading as a
+   detached caption. */
 .data-table-summary-cell {
-  padding: 4px 8px;
-  font-size: 0.78rem;
+  padding: 7px 10px;
+  font-size: inherit;
   color: var(--text-secondary);
   background: var(--bg-card);
   border-top: 2px solid var(--border-subtle, #d4d4d8);
@@ -3388,16 +3403,21 @@ td.data-table-cell-editing {
 }
 
 .data-table-summary-count {
-  font-weight: 500;
   color: var(--text-primary);
-  display: flex;
-  align-items: center;
+}
+
+.data-table-summary-count-inner {
+  display: inline-flex;
+  align-items: baseline;
   gap: 6px;
 }
 
 .data-table-summary-count-label {
   color: var(--text-secondary);
   font-weight: 400;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .data-table-summary-count-value {
@@ -3428,17 +3448,21 @@ td.data-table-cell-editing {
   outline: none;
 }
 
-.data-table-summary-placeholder {
+/* Plan 06 follow-up — picker chevron mirrors
+   `.data-table-header-edit-chevron`. Always visible when an aggregate
+   is set (the picker is the only way to change it) and on cell hover
+   / popover-open so empty cells still advertise their affordance. */
+.data-table-summary-chevron {
   opacity: 0;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 10px;
   color: var(--text-secondary);
   transition: opacity 0.1s ease-out;
 }
 
-.data-table-summary-cell:hover .data-table-summary-placeholder,
-.data-table-summary-trigger:focus-visible .data-table-summary-placeholder {
+.data-table-summary-cell-active .data-table-summary-chevron,
+.data-table-summary-cell:hover .data-table-summary-chevron,
+.data-table-summary-trigger:focus-visible .data-table-summary-chevron,
+.data-table-summary-cell[data-summary-open="true"] .data-table-summary-chevron {
   opacity: 1;
 }
 

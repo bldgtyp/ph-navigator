@@ -51,8 +51,10 @@ export function SummaryBar<TRow>({
                 className="data-table-summary-cell data-table-summary-count data-table-frozen"
                 data-field-key={column.fieldKey}
               >
-                <span className="data-table-summary-count-label">Count</span>
-                <span className="data-table-summary-count-value">{visibleRows.length}</span>
+                <span className="data-table-summary-count-inner">
+                  <span className="data-table-summary-count-label">Count</span>
+                  <span className="data-table-summary-count-value">{visibleRows.length}</span>
+                </span>
               </td>
             );
           }
@@ -131,15 +133,30 @@ function SummaryCell<TRow>({
 
   const choices: AggregationKind[] = ["none", ...catalogue.map((def) => def.kind)];
   return (
-    <td className={cellClassName} data-field-key={column.fieldKey}>
+    <td
+      className={cellClassName}
+      data-field-key={column.fieldKey}
+      data-summary-open={open ? "true" : undefined}
+    >
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
-          <button type="button" className="data-table-summary-trigger" aria-label={triggerLabel}>
-            {aggregation === "none" ? (
-              <span className="data-table-summary-placeholder">Calculate</span>
-            ) : (
-              <SummaryValue kind={aggregation} value={value} />
-            )}
+          <button
+            type="button"
+            className="data-table-summary-trigger"
+            aria-label={triggerLabel}
+            // Phase 6 follow-up: the table's pointer-drag / focus
+            // recovery sit on document-level listeners that can race
+            // Radix's open and immediately treat the same click as an
+            // outside interaction, snapping the popover shut. Stopping
+            // propagation at the trigger keeps the open click owned by
+            // Radix — mirrors the ColumnHeaderMenu trigger.
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {aggregation !== "none" ? <SummaryValue kind={aggregation} value={value} /> : null}
+            <span aria-hidden className="data-table-summary-chevron">
+              ▾
+            </span>
           </button>
         </Popover.Trigger>
         <Popover.Portal>
@@ -149,6 +166,11 @@ function SummaryCell<TRow>({
             side="top"
             sideOffset={6}
             aria-label={`${fieldDef?.display_name ?? column.header} aggregation`}
+            // Body cells live under the same wrapper that owns the
+            // grid's keyboard / paste handlers — without this guard a
+            // stray focus shift back to the wrapper would close the
+            // popover the instant it opened.
+            onOpenAutoFocus={(event) => event.preventDefault()}
           >
             {choices.map((kind) => (
               <button
