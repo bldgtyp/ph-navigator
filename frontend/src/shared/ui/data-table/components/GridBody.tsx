@@ -189,6 +189,7 @@ export function GridBody<TRow>({
                     columnIndex === 0 ? "data-table-frozen" : "",
                     selected ? "data-table-cell-selected" : "",
                     active ? "data-table-cell-active" : "",
+                    editing ? "data-table-cell-editing" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}

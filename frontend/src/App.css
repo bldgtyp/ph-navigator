@@ -2308,15 +2308,30 @@ body[data-grid-fill-active="true"] {
   text-align: right;
 }
 
+/* Plan 02 — pin editor to cell box so edit-start never reflows the
+   table. The cell carries `data-table-cell-editing` (position:
+   relative + overflow: hidden) so this absolutely-positioned input
+   anchors to the cell and clips overflow. `min-width: 0` overrides
+   the browser-default `<input>` intrinsic min — without it, the
+   input would widen the cell to fit `size="20"` chars. */
+td.data-table-cell-editing {
+  position: relative;
+  overflow: hidden;
+}
+
 .data-table-cell-editor {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  min-width: 80px;
-  border: 1px solid var(--accent-text);
-  border-radius: 4px;
+  height: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
   background: var(--bg-card);
   color: var(--text-primary);
   font: inherit;
-  padding: 4px 6px;
 }
 
 .single-select-pill {
