@@ -24,6 +24,7 @@ from features.schemas.routes import router as schemas_router
 from features.shared.errors import http_exception_handler, validation_exception_handler
 from features.shared.middleware import request_context_middleware
 from features.system.routes import router as system_router
+from features.table_views.routes import router as table_views_router
 
 
 @asynccontextmanager
@@ -63,4 +64,5 @@ for catalog_router in catalog_routers:
     app.include_router(catalog_router)
 app.include_router(schemas_router)
 app.include_router(system_router)
+app.include_router(table_views_router)
 app.mount("/mcp", phn_mcp.streamable_http_app())

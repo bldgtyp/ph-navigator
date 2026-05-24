@@ -4,6 +4,7 @@ export {
   missingOptionReferences,
   normalizeOptionOrders,
   optionReferenceCounts,
+  sanitizeViewStateForSchema,
 } from "./lib";
 export { emptyViewState } from "./types";
 export type {

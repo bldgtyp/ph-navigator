@@ -26,7 +26,7 @@ backbone slice).
 | US-TBL-FILL-1 | Fill propagation in all four directions | Draft |
 | US-TBL-EDIT-1 | Inline editor preserves column layout | Draft |
 | US-TBL-EDIT-2 | Type-to-edit on selected cell | Draft |
-| US-TBL-VIEW-1 | Persist table view state across sessions | Draft |
+| US-TBL-VIEW-1 | Persist table view state across sessions | Implemented |
 | US-TBL-SELECT-1 | Single-select chevron + dropdown picker | Draft |
 | US-TBL-FIELDS-1 | Hide / Show fields panel | Draft |
 | US-TBL-COLREORDER-1 | Drag-to-reorder columns | Draft |
@@ -168,11 +168,12 @@ keystrokes that immediately replace the cell value.
 
 ## US-TBL-VIEW-1 — Persist table view state across sessions
 
-**Status:** Draft · **Priority:** MVP enhancement
+**Status:** Implemented (Plan 09, 2026-05-24) · **Priority:** MVP enhancement
 **Supersedes:** US-Builder-Tables criterion 3 (session-only
 Zustand). Resolves the deferred half of **Q-TBL-1** ("per-user
 persisted view state") with a scope smaller than the full
-Interfaces analog.
+Interfaces analog. Wired for the Rooms slice in `EquipmentTab` via
+`useProjectTableViewState`; storage lives in `user_table_views`.
 **Cross-ref:** NEW-TBL-1 (shareable named views) remains
 post-parity — this story only persists *the current user's
 last-used view per table*.

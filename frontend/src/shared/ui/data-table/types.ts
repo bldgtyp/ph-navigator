@@ -225,6 +225,11 @@ export type DataTableProps<TRow> = {
   onRowOpen?: (row: TRow) => void;
   overflowMenuActions?: ReactNode;
   footerAction?: ReactNode;
+  // Plan 09: when provided, the toolbar's "Reset view" action invokes
+  // this callback instead of the in-DataTable default (which clears
+  // filter/sort/group/aggregations/expandedGroups in place). The
+  // persistence hook uses this slot to also send a DELETE.
+  onResetView?: () => void;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

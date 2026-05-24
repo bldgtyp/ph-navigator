@@ -87,8 +87,10 @@ Rules:
 
 - `rows` use stable ids. Never treat visual row index or data-array
   index as identity.
-- `view` is controlled by the parent. For V2 v1, project-table view
-  state is session-only in Zustand; named/shareable views are post-v1.
+- `view` is controlled by the parent. For project-document tables,
+  per-user view state is persisted across sessions and devices through
+  the `features/table_views` adapter (see Plan 09 / US-TBL-VIEW-1).
+  Named/shareable views remain post-v1 (NEW-TBL-1).
 - Selection, active-cell, edit, and fill-handle state remain internal
   unless multiple consumers need to observe them.
 - `readOnly` covers locked versions, Viewer mode, and permission
@@ -212,9 +214,16 @@ Rules:
 - Group direction requires a pre-sort derived from group rules.
 - Empty/dormant filter rows pass all rows; they do not match empty
   strings.
-- For V2 v1 project tables, view state is in-memory per session and
-  keyed by `table_key`. Catalog manager persistence can be added later
-  only if it has a concrete workflow.
+- Project-document tables persist one `ViewState` per
+  `(user_id, project_id, table_key)` through
+  `useProjectTableViewState` (`features/table_views`). The hook owns
+  the load gate, debounced PUT (500 ms), in-flight + latest-pending
+  save queue, DELETE-on-reset, and render-safe schema sanitization.
+  Backend storage lives in `user_table_views` and is JSONB-opaque
+  beyond envelope checks (schema version, byte size, table-key syntax).
+  Anonymous Viewer mode never reads or writes saved view state.
+  Catalog manager persistence is still out of scope; a future design
+  may add `scope_type/scope_id` rather than reusing project ids.
 
 ## Layout, Styling, And Accessibility
 

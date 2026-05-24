@@ -7,7 +7,7 @@ import {
   type ViewState,
 } from "../../../shared/ui/data-table";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
-import { sortedRooms } from "../lib";
+import { roomsTableFieldDefs, sortedRooms } from "../lib";
 import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_KEY,
@@ -27,6 +27,7 @@ export function RoomsTable({
   sessionKey,
   overflowMenuActions,
   footerAction,
+  onResetView,
 }: {
   roomsSlice: RoomsSlice;
   isEditor: boolean;
@@ -39,34 +40,10 @@ export function RoomsTable({
   sessionKey?: DataTableProps<RoomRow>["sessionKey"];
   overflowMenuActions?: DataTableProps<RoomRow>["overflowMenuActions"];
   footerAction?: DataTableProps<RoomRow>["footerAction"];
+  onResetView?: DataTableProps<RoomRow>["onResetView"];
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
-  const floorOptions = roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY];
-  const zoneOptions = roomsSlice.single_select_options[ROOM_BUILDING_ZONE_KEY];
-  const fieldDefs = useMemo<FieldDef[]>(
-    () => [
-      { field_key: "number", field_type: "text", display_name: "Number", required: true },
-      { field_key: "name", field_type: "text", display_name: "Name", required: true },
-      {
-        field_key: ROOM_FLOOR_LEVEL_KEY,
-        field_type: "single_select",
-        display_name: "Floor",
-        required: true,
-        options: floorOptions,
-      },
-      {
-        field_key: ROOM_BUILDING_ZONE_KEY,
-        field_type: "single_select",
-        display_name: "Zone",
-        options: zoneOptions,
-      },
-      { field_key: "num_people", field_type: "number", display_name: "People" },
-      { field_key: "num_bedrooms", field_type: "number", display_name: "Bedrooms" },
-      { field_key: "icfa_factor", field_type: "number", display_name: "iCFA" },
-      { field_key: "erv_unit_ids", field_type: "text", display_name: "ERVs", read_only: true },
-    ],
-    [floorOptions, zoneOptions],
-  );
+  const fieldDefs = useMemo<FieldDef[]>(() => roomsTableFieldDefs(roomsSlice), [roomsSlice]);
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
@@ -155,6 +132,7 @@ export function RoomsTable({
       onRowOpen={isEditor ? onEdit : undefined}
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
+      onResetView={onResetView}
     />
   );
 }

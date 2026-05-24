@@ -8,6 +8,8 @@ import type {
 import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY } from "./types";
 import type {
   BuildEmptyRow,
+  DataTableColumnDef,
+  FieldDef,
   FieldOption,
   RowDeletePayload,
   RowInsertPayload,
@@ -27,6 +29,50 @@ export {
 } from "../project_document/lib";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
+
+// Plan 09 §4.2: schema metadata for the Rooms table, shared by the
+// renderer (RoomsTable) and the persistence adapter (so the sanitizer
+// in useProjectTableViewState can drop stale refs without depending on
+// the live React tree).
+export function roomsTableFieldDefs(roomsSlice: RoomsSlice): FieldDef[] {
+  return [
+    { field_key: "number", field_type: "text", display_name: "Number", required: true },
+    { field_key: "name", field_type: "text", display_name: "Name", required: true },
+    {
+      field_key: ROOM_FLOOR_LEVEL_KEY,
+      field_type: "single_select",
+      display_name: "Floor",
+      required: true,
+      options: roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY],
+    },
+    {
+      field_key: ROOM_BUILDING_ZONE_KEY,
+      field_type: "single_select",
+      display_name: "Zone",
+      options: roomsSlice.single_select_options[ROOM_BUILDING_ZONE_KEY],
+    },
+    { field_key: "num_people", field_type: "number", display_name: "People" },
+    { field_key: "num_bedrooms", field_type: "number", display_name: "Bedrooms" },
+    { field_key: "icfa_factor", field_type: "number", display_name: "iCFA" },
+    { field_key: "erv_unit_ids", field_type: "text", display_name: "ERVs", read_only: true },
+  ];
+}
+
+// Stub columns for sanitization. Sanitizer reads only `id` and
+// `fieldKey`; the accessor is unused but required by the type. The full
+// columns (including `render` functions) live in RoomsTable.
+export function roomsTableColumnsForSanitize(): DataTableColumnDef<unknown>[] {
+  return [
+    { id: "number", fieldKey: "number", header: "Number", accessor: () => null },
+    { id: "name", fieldKey: "name", header: "Name", accessor: () => null },
+    { id: "floor_level", fieldKey: ROOM_FLOOR_LEVEL_KEY, header: "Floor", accessor: () => null },
+    { id: "building_zone", fieldKey: ROOM_BUILDING_ZONE_KEY, header: "Zone", accessor: () => null },
+    { id: "num_people", fieldKey: "num_people", header: "People", accessor: () => null },
+    { id: "num_bedrooms", fieldKey: "num_bedrooms", header: "Bedrooms", accessor: () => null },
+    { id: "icfa_factor", fieldKey: "icfa_factor", header: "iCFA", accessor: () => null },
+    { id: "erv_unit_ids", fieldKey: "erv_unit_ids", header: "ERVs", accessor: () => null },
+  ];
+}
 
 export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
   return {
