@@ -74,7 +74,10 @@ export function formatAggregation(
   if (nums.length === 0) return "—";
   switch (kind) {
     case "sum":
-      return formatNumber(nums.reduce((a, b) => a + b, 0), fieldDef);
+      return formatNumber(
+        nums.reduce((a, b) => a + b, 0),
+        fieldDef,
+      );
     case "mean":
       return formatNumber(nums.reduce((a, b) => a + b, 0) / nums.length, fieldDef);
     case "min":
@@ -103,6 +106,7 @@ function collectFiniteNumbers(values: readonly unknown[]): number[] {
 // display (§12 Q12). A future phase can extend FieldDef with a
 // `numberFormat` slot; Phase 6 keeps the dependency on fieldDef so the
 // signature is stable when that lands.
-function formatNumber(n: number, _fieldDef: FieldDef | undefined): string {
+function formatNumber(n: number, fieldDef: FieldDef | undefined): string {
+  void fieldDef;
   return n.toFixed(2);
 }

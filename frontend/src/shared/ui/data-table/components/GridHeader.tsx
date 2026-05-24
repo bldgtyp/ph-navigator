@@ -1,11 +1,17 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
+import type { AxisRoleSubset, DataTableColumnDef, FieldDef, ViewState } from "../types";
+import type { AggregationKind } from "../fields/aggregations";
+import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
+import { getAggregationKinds } from "../fields/aggregations";
 
 // Header onMouseDown owns column-select; double-click on editable
 // single_select headers opens the field editor via `onEditField`.
 // Header `<th>` refs are captured into `headerCellRefByFieldKey` so
-// the popover can anchor to them.
+// the popover can anchor to them. Phase 6: every column whose field
+// def has ≥1 menu item (Edit options for single_select editable, or
+// a non-empty aggregation catalogue) gets a `⋯` trigger next to its
+// label.
 export type GridHeaderProps<TRow> = {
   table: Table<TRow>;
   visibleColumnDefs: DataTableColumnDef<TRow>[];
@@ -17,6 +23,8 @@ export type GridHeaderProps<TRow> = {
   onEditField?: (fieldKey: string) => void;
   openFieldKey?: string | null;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
+  aggregations: ViewState["aggregations"];
+  onAggregationChange: (fieldKey: string, next: AggregationKind) => void;
 };
 
 export function GridHeader<TRow>({
@@ -30,6 +38,8 @@ export function GridHeader<TRow>({
   onEditField,
   openFieldKey,
   headerCellRefByFieldKey,
+  aggregations,
+  onAggregationChange,
 }: GridHeaderProps<TRow>) {
   return (
     <thead>
@@ -87,6 +97,17 @@ export function GridHeader<TRow>({
                     <span aria-hidden className="data-table-header-edit-chevron">
                       ▾
                     </span>
+                  ) : null}
+                  {column &&
+                  fieldDef &&
+                  (isEditableSingleSelect || getAggregationKinds(fieldDef).length > 0) ? (
+                    <ColumnHeaderMenu
+                      fieldDef={fieldDef}
+                      canEditOptions={isEditableSingleSelect}
+                      onEditOptions={() => onEditField?.(column.fieldKey)}
+                      currentAggregation={aggregations[column.fieldKey] ?? "none"}
+                      onAggregationChange={(next) => onAggregationChange(column.fieldKey, next)}
+                    />
                   ) : null}
                 </div>
               </th>

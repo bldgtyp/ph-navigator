@@ -183,9 +183,9 @@ describe("buildBodyPlan", () => {
     // its child zone headers and its data rows are hidden.
     expect(groupItems.map((g) => g.groupValue)).toEqual(["1st", "2nd", "A", "B"]);
     const dataItems = plan.filter((p) => p.kind === "data");
-    expect(dataItems.map((d) => (d as Extract<BodyPlanItem<Room>, { kind: "data" }>).rowId)).toEqual(
-      ["rm_4", "rm_5"],
-    );
+    expect(
+      dataItems.map((d) => (d as Extract<BodyPlanItem<Room>, { kind: "data" }>).rowId),
+    ).toEqual(["rm_4", "rm_5"]);
   });
 
   test("count reflects all descendant data rows including collapsed ones", () => {

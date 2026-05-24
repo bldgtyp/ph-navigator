@@ -88,9 +88,10 @@ describe("DataTable", () => {
     // The header `<th>` no longer carries `aria-sort` either — sort
     // state is a view-state list announced via the live region, not a
     // per-column DOM property.
-    expect(
-      screen.queryByRole("columnheader", { name: "Number" })?.getAttribute("aria-sort"),
-    ).toBeNull();
+    const numberHeader = screen
+      .getAllByRole("columnheader")
+      .find((th) => th.textContent?.includes("Number"));
+    expect(numberHeader?.getAttribute("aria-sort")).toBeNull();
     expect(screen.getByRole("button", { name: "Highlight row 1" })).toHaveAttribute(
       "tabindex",
       "-1",

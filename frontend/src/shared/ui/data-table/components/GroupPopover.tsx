@@ -101,8 +101,7 @@ export function GroupPopover({
                 <ul className="data-table-view-popover-rules" role="list">
                   {rules.map((rule, index) => {
                     const fieldOptions = groupableFieldDefs.filter(
-                      (def) =>
-                        def.field_key === rule.fieldKey || !usedFieldKeys.has(def.field_key),
+                      (def) => def.field_key === rule.fieldKey || !usedFieldKeys.has(def.field_key),
                     );
                     return (
                       <GroupRuleRow

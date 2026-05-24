@@ -763,8 +763,11 @@ export function computeAggregatesByPath<TRow>(
   const fieldDefByKey = new Map(fieldDefs.map((f) => [f.field_key, f]));
   // Pre-resolve column accessors for fields with an active aggregation
   // so the per-row loop stays O(rows × aggregated columns).
-  const aggregated: { fieldKey: string; kind: AggregationKind; accessor: (row: TRow) => unknown }[] =
-    [];
+  const aggregated: {
+    fieldKey: string;
+    kind: AggregationKind;
+    accessor: (row: TRow) => unknown;
+  }[] = [];
   for (const [fieldKey, kind] of Object.entries(view.aggregations)) {
     if (kind === "none") continue;
     const column = columns.find((c) => c.fieldKey === fieldKey);
