@@ -233,7 +233,7 @@ needed.)
 
 | Step | Date | Demo passed | Notes |
 |------|------|-------------|-------|
-| 1 — read current path                | | | |
-| 2 — CSS + markup change              | | | |
-| 3 — Playwright visual check          | | | |
-| Plan 02 overall                      | | | |
+| 1 — read current path                | 2026-05-24 | n/a | `GridBody.tsx` applies `data-table-cell-active` per-cell; no editing class yet. `.data-table-cell-editor` was width:100% min-width:80px with a visible border + padding. |
+| 2 — CSS + markup change              | 2026-05-24 | ✅ | `editing` flag derived from `edit.isEditingCell(rowId, fieldKey)` adds `data-table-cell-editing` class to the cell. CSS rule rewritten to `position: absolute; inset: 0; min-width: 0`. Cell gets `position: relative; overflow: hidden`. |
+| 3 — Playwright visual check          | 2026-05-24 | ✅ | Verified on Equipment page (room 1 `name` cell). Pre-edit row height 43, name cell width 128, neighbors at left=179/right=307. Post edit-start: identical. After typing 194-char string: still identical. After Escape: cell returns to read mode with no geometry change. |
+| Plan 02 overall                      | 2026-05-24 | ✅ | Committed as `9819248`. |
