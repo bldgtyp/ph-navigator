@@ -1285,11 +1285,15 @@ button:disabled {
 }
 
 .data-table-toolbar-button[data-axis="filter"][data-axis-active="true"] {
-  background: var(--data-table-tint-filter);
+  background: var(--data-table-tint-f-body);
 }
 
 .data-table-toolbar-button[data-axis="sort"][data-axis-active="true"] {
-  background: var(--data-table-tint-sort);
+  background: var(--data-table-tint-s-body);
+}
+
+.data-table-toolbar-button[data-axis="group"][data-axis-active="true"] {
+  background: var(--data-table-tint-g-body);
 }
 
 .data-table-toolbar-button-icon {
@@ -1905,30 +1909,83 @@ button:disabled {
   border-top: 1px solid var(--border-subtle, #e5e7eb);
 }
 
-/* Phase 4 §4.10: per-axis tint tokens. Filter wins precedence on
-   overlap (§4.10). Hues sampled from AirTable's `Filtered by …` chip
-   (green) and active `Sort` button (peach) walked 2026-05-23. Body
-   variants are the lighter cell-paint; `-header` variants are slightly
-   deeper for the column-header background. Phase 6 will generalize
-   these to the full 7-subset palette. */
+/* Phase 6 §4.3.3: per-axis tint cascade. Seven non-empty subsets of
+   {filter, sort, group} × {body, header} = 14 tokens. Subset codes
+   concatenate axes' first letters in fixed order (f < s < g) so the
+   `data-axis-tint` HTML attribute composes deterministically. Single-
+   axis hues:
+     - f = green   (filter chip, sampled from AirTable 2026-05-23)
+     - s = peach   (active Sort button, sampled from AirTable 2026-05-23)
+     - g = lavender (active Group button + group-cell tint, sampled
+                    from AirTable 2026-05-24 — §12 Q4 + §12 Q15)
+   Two-axis blends shift the hue toward the midpoint of the two
+   single-axis tones; the three-axis blend (`fsg`) sits in a
+   desaturated cool grey so it reads as "everything" without competing
+   with cell content. Header variants are ~3% deeper saturation. */
 :root {
-  --data-table-tint-filter: oklch(96% 0.04 145);
-  --data-table-tint-filter-header: oklch(93% 0.06 145);
-  --data-table-tint-sort: oklch(95% 0.05 50);
-  --data-table-tint-sort-header: oklch(91% 0.08 50);
+  /* single axes */
+  --data-table-tint-f-body: oklch(96% 0.04 145);
+  --data-table-tint-f-header: oklch(93% 0.06 145);
+  --data-table-tint-s-body: oklch(95% 0.05 50);
+  --data-table-tint-s-header: oklch(91% 0.08 50);
+  --data-table-tint-g-body: oklch(96% 0.03 290);
+  --data-table-tint-g-header: oklch(92% 0.05 290);
+
+  /* two-axis blends */
+  --data-table-tint-fs-body: oklch(94% 0.04 95);
+  --data-table-tint-fs-header: oklch(90% 0.06 95);
+  --data-table-tint-fg-body: oklch(94% 0.04 220);
+  --data-table-tint-fg-header: oklch(90% 0.06 220);
+  --data-table-tint-sg-body: oklch(94% 0.04 350);
+  --data-table-tint-sg-header: oklch(90% 0.06 350);
+
+  /* three-axis blend */
+  --data-table-tint-fsg-body: oklch(93% 0.03 280);
+  --data-table-tint-fsg-header: oklch(89% 0.05 280);
 }
 
-.data-table th[data-axis-tint="filter"] {
-  background: var(--data-table-tint-filter-header);
+.data-table th[data-axis-tint="f"] {
+  background: var(--data-table-tint-f-header);
 }
-.data-table th[data-axis-tint="sort"] {
-  background: var(--data-table-tint-sort-header);
+.data-table th[data-axis-tint="s"] {
+  background: var(--data-table-tint-s-header);
 }
-.data-table td[data-axis-tint="filter"] {
-  background: var(--data-table-tint-filter);
+.data-table th[data-axis-tint="g"] {
+  background: var(--data-table-tint-g-header);
 }
-.data-table td[data-axis-tint="sort"] {
-  background: var(--data-table-tint-sort);
+.data-table th[data-axis-tint="fs"] {
+  background: var(--data-table-tint-fs-header);
+}
+.data-table th[data-axis-tint="fg"] {
+  background: var(--data-table-tint-fg-header);
+}
+.data-table th[data-axis-tint="sg"] {
+  background: var(--data-table-tint-sg-header);
+}
+.data-table th[data-axis-tint="fsg"] {
+  background: var(--data-table-tint-fsg-header);
+}
+
+.data-table td[data-axis-tint="f"] {
+  background: var(--data-table-tint-f-body);
+}
+.data-table td[data-axis-tint="s"] {
+  background: var(--data-table-tint-s-body);
+}
+.data-table td[data-axis-tint="g"] {
+  background: var(--data-table-tint-g-body);
+}
+.data-table td[data-axis-tint="fs"] {
+  background: var(--data-table-tint-fs-body);
+}
+.data-table td[data-axis-tint="fg"] {
+  background: var(--data-table-tint-fg-body);
+}
+.data-table td[data-axis-tint="sg"] {
+  background: var(--data-table-tint-sg-body);
+}
+.data-table td[data-axis-tint="fsg"] {
+  background: var(--data-table-tint-fsg-body);
 }
 
 .data-table-header-action {

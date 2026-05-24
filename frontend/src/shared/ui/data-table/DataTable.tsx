@@ -24,6 +24,7 @@ import { GridToolbar } from "./components/GridToolbar";
 import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
 import type {
+  AxisRoleSubset,
   CellCoord,
   DataTableProps,
   FieldDef,
@@ -340,21 +341,29 @@ export function DataTable<TRow>({
     onViewChange({ ...view, filter: [], sort: [] });
   }, [onViewChange, view]);
 
-  // Phase 4 §4.10: per-column axis tint. Filter wins on overlap;
-  // dormant filter rules don't contribute (matches AirTable's chip-
-  // color behaviour). Phase 6 will generalize this into the 7-subset
-  // filter ∩ sort ∩ group palette. Only tinted columns are stored —
-  // consumers use `map.get(fieldKey) ?? null` so absence == untinted.
-  const axisTintByFieldKey = useMemo<Map<string, "filter" | "sort">>(() => {
-    const map = new Map<string, "filter" | "sort">();
-    for (const rule of view.sort) {
-      map.set(rule.fieldKey, "sort");
-    }
-    for (const rule of view.filter) {
-      if (isFilterContributing(rule)) map.set(rule.fieldKey, "filter");
+  // Phase 6 §4.3.2: per-column subset code over {filter, sort, group}.
+  // Filter membership requires the rule to be contributing (dormant
+  // rules don't tint, matching AirTable). Sort and group always count
+  // as soon as a rule exists. Codes concatenate the present axes'
+  // first letters in fixed order (f < s < g) so two callers can never
+  // disagree. Absence == untinted.
+  const axisRolesByFieldKey = useMemo<Map<string, AxisRoleSubset>>(() => {
+    const map = new Map<string, AxisRoleSubset>();
+    const filterContributing = new Set(
+      view.filter.filter((rule) => isFilterContributing(rule)).map((rule) => rule.fieldKey),
+    );
+    const sortKeys = new Set(view.sort.map((rule) => rule.fieldKey));
+    const groupKeys = new Set(view.group.map((rule) => rule.fieldKey));
+    const allKeys = new Set<string>([...filterContributing, ...sortKeys, ...groupKeys]);
+    for (const fieldKey of allKeys) {
+      let code = "";
+      if (filterContributing.has(fieldKey)) code += "f";
+      if (sortKeys.has(fieldKey)) code += "s";
+      if (groupKeys.has(fieldKey)) code += "g";
+      if (code) map.set(fieldKey, code as AxisRoleSubset);
     }
     return map;
-  }, [view.filter, view.sort]);
+  }, [view.filter, view.sort, view.group]);
 
   const startInlineEdit = (row: TRow, columnIndex: number) => {
     const column = visibleColumnDefs[columnIndex];
@@ -488,7 +497,7 @@ export function DataTable<TRow>({
             table={table}
             visibleColumnDefs={visibleColumnDefs}
             fieldDefByKey={fieldDefByKey}
-            axisTintByFieldKey={axisTintByFieldKey}
+            axisRolesByFieldKey={axisRolesByFieldKey}
             onColumnMouseDown={pointerDrag.onColumnMouseDown}
             readOnly={readOnly}
             hasWriteHandler={Boolean(onWrite)}
@@ -510,7 +519,7 @@ export function DataTable<TRow>({
             showRowCheckbox={!readOnly}
             emptyMessage={emptyMessage}
             totalRowCount={rows.length}
-            axisTintByFieldKey={axisTintByFieldKey}
+            axisRolesByFieldKey={axisRolesByFieldKey}
             onCellActivate={(rowId, fieldKey) => {
               selection.setActive({ rowId, fieldKey });
               focusGrid();
