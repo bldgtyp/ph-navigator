@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   buildFillTargetFromPointer,
   chooseFillAxis,
+  chooseFillDirection,
   clampRangeToGroup,
   groupPathByRowIdFromBodyPlan,
   planFill,
@@ -85,46 +86,162 @@ describe("chooseFillAxis", () => {
   });
 });
 
+describe("chooseFillDirection", () => {
+  test("vertical: positive dy => down", () => {
+    expect(
+      chooseFillDirection({
+        pointerStart: { x: 0, y: 0 },
+        pointerCurrent: { x: 0, y: 20 },
+        axis: "vertical",
+      }),
+    ).toBe("down");
+  });
+
+  test("vertical: negative dy => up", () => {
+    expect(
+      chooseFillDirection({
+        pointerStart: { x: 0, y: 0 },
+        pointerCurrent: { x: 0, y: -20 },
+        axis: "vertical",
+      }),
+    ).toBe("up");
+  });
+
+  test("horizontal: positive dx => right", () => {
+    expect(
+      chooseFillDirection({
+        pointerStart: { x: 0, y: 0 },
+        pointerCurrent: { x: 20, y: 0 },
+        axis: "horizontal",
+      }),
+    ).toBe("right");
+  });
+
+  test("horizontal: negative dx => left", () => {
+    expect(
+      chooseFillDirection({
+        pointerStart: { x: 0, y: 0 },
+        pointerCurrent: { x: -20, y: 0 },
+        axis: "horizontal",
+      }),
+    ).toBe("left");
+  });
+
+  test("zero delta defaults to positive direction", () => {
+    expect(
+      chooseFillDirection({
+        pointerStart: { x: 5, y: 5 },
+        pointerCurrent: { x: 5, y: 5 },
+        axis: "vertical",
+      }),
+    ).toBe("down");
+    expect(
+      chooseFillDirection({
+        pointerStart: { x: 5, y: 5 },
+        pointerCurrent: { x: 5, y: 5 },
+        axis: "horizontal",
+      }),
+    ).toBe("right");
+  });
+});
+
 describe("buildFillTargetFromPointer", () => {
-  test("vertical: extends the bottom edge to the pointer row", () => {
+  test("down: extends the bottom edge to the pointer row", () => {
     const target = buildFillTargetFromPointer({
       source: rect(2, 2, 0, 0),
       pointerCell: { rowIndex: 6, columnIndex: 0 },
-      axis: "vertical",
+      direction: "down",
       rowCount: 10,
       columnCount: 3,
     });
     expect(target).toEqual(rect(2, 6, 0, 0));
   });
 
-  test("vertical: pointer above source collapses to source", () => {
+  test("down: pointer above source collapses to source", () => {
     const source = rect(3, 4, 0, 0);
     const target = buildFillTargetFromPointer({
       source,
       pointerCell: { rowIndex: 1, columnIndex: 0 },
-      axis: "vertical",
+      direction: "down",
       rowCount: 10,
       columnCount: 3,
     });
     expect(target).toBe(source);
   });
 
-  test("horizontal: extends right edge to pointer column", () => {
+  test("up: extends the top edge to the pointer row", () => {
+    const target = buildFillTargetFromPointer({
+      source: rect(8, 8, 0, 0),
+      pointerCell: { rowIndex: 3, columnIndex: 0 },
+      direction: "up",
+      rowCount: 10,
+      columnCount: 3,
+    });
+    expect(target).toEqual(rect(3, 8, 0, 0));
+  });
+
+  test("up: pointer below source collapses to source", () => {
+    const source = rect(3, 4, 0, 0);
+    const target = buildFillTargetFromPointer({
+      source,
+      pointerCell: { rowIndex: 6, columnIndex: 0 },
+      direction: "up",
+      rowCount: 10,
+      columnCount: 3,
+    });
+    expect(target).toBe(source);
+  });
+
+  test("right: extends right edge to pointer column", () => {
     const target = buildFillTargetFromPointer({
       source: rect(0, 0, 1, 1),
       pointerCell: { rowIndex: 0, columnIndex: 2 },
-      axis: "horizontal",
+      direction: "right",
       rowCount: 5,
       columnCount: 3,
     });
     expect(target).toEqual(rect(0, 0, 1, 2));
   });
 
+  test("left: extends left edge to pointer column", () => {
+    const target = buildFillTargetFromPointer({
+      source: rect(0, 0, 2, 2),
+      pointerCell: { rowIndex: 0, columnIndex: 0 },
+      direction: "left",
+      rowCount: 5,
+      columnCount: 3,
+    });
+    expect(target).toEqual(rect(0, 0, 0, 2));
+  });
+
+  test("left: pointer right of source collapses to source", () => {
+    const source = rect(0, 0, 1, 1);
+    const target = buildFillTargetFromPointer({
+      source,
+      pointerCell: { rowIndex: 0, columnIndex: 2 },
+      direction: "left",
+      rowCount: 5,
+      columnCount: 3,
+    });
+    expect(target).toBe(source);
+  });
+
   test("clamps the pointer cell to grid bounds", () => {
     const target = buildFillTargetFromPointer({
       source: rect(0, 0, 0, 0),
       pointerCell: { rowIndex: 99, columnIndex: 0 },
-      axis: "vertical",
+      direction: "down",
+      rowCount: 5,
+      columnCount: 3,
+    });
+    expect(target).toEqual(rect(0, 4, 0, 0));
+  });
+
+  test("clamps negative pointer row on upward fill", () => {
+    const target = buildFillTargetFromPointer({
+      source: rect(4, 4, 0, 0),
+      pointerCell: { rowIndex: -10, columnIndex: 0 },
+      direction: "up",
       rowCount: 5,
       columnCount: 3,
     });
@@ -239,6 +356,34 @@ describe("clampRangeToGroup", () => {
     expect(result.clamped).toEqual(rect(0, 2, 0, 0));
     expect(result.wasClamped).toBe(false);
   });
+
+  test("vertical: trims target rowStart upward to the first in-group row", () => {
+    // Source = rm_4 ("2nd" group). Target extends upward to row 0 (rm_1,
+    // "1st" group). Expect clamp top edge to row 3 (rm_4 itself, since
+    // every row above is in "1st").
+    const result = clampRangeToGroup({
+      target: rect(0, 3, 0, 0),
+      source: rect(3, 3, 0, 0),
+      groupPathByRowId,
+      rowIds,
+      axis: "vertical",
+    });
+    expect(result.clamped).toEqual(rect(3, 3, 0, 0));
+    expect(result.wasClamped).toBe(true);
+  });
+
+  test("vertical: upward target stays put when run is in-group", () => {
+    // Source = rm_3 ("1st"). Target extends upward to rm_1, all "1st".
+    const result = clampRangeToGroup({
+      target: rect(0, 2, 0, 0),
+      source: rect(2, 2, 0, 0),
+      groupPathByRowId,
+      rowIds,
+      axis: "vertical",
+    });
+    expect(result.clamped).toEqual(rect(0, 2, 0, 0));
+    expect(result.wasClamped).toBe(false);
+  });
 });
 
 describe("splitRangeByGroup", () => {
@@ -331,6 +476,57 @@ describe("planFill", () => {
     expect(result.writes).toHaveLength(1);
     expect(result.writes[0]!.fieldKey).toBe("iCFA");
     expect(result.skipped).toBe(1);
+  });
+
+  test("1x1 source fill-up cycles to source.rowEnd at the row immediately above", () => {
+    // Source = row 3 ("D"). Target rows 0..3. Row 2 ("C") should
+    // become "D", row 1 → "D", row 0 → "D" (1-row source, no cycle).
+    const result = planFill({
+      source: rect(3, 3, 0, 0),
+      target: rect(0, 3, 0, 0),
+      rows,
+      columns,
+      fieldDefs,
+      getRowId,
+    });
+    expect(result.writes).toHaveLength(3);
+    expect(result.writes.map((w) => w.rowId)).toEqual(["rm_1", "rm_2", "rm_3"]);
+    expect(result.writes.map((w) => w.value)).toEqual(["D", "D", "D"]);
+    expect(result.inverse.map((w) => w.value)).toEqual(["A", "B", "C"]);
+  });
+
+  test("3x1 source fill-up cycles values per the natural-extension rule", () => {
+    // Source rows 2..4 (C, D, E). Target rows 0..4. The cycle continues
+    // upward so the row immediately above source.rowStart=2 picks
+    // source.rowEnd=4 (=E), then 3 (=D), with another tile above.
+    const result = planFill({
+      source: rect(2, 4, 0, 0),
+      target: rect(0, 4, 0, 0),
+      rows,
+      columns,
+      fieldDefs,
+      getRowId,
+    });
+    expect(result.writes).toHaveLength(2);
+    expect(result.writes.map((w) => w.rowId)).toEqual(["rm_1", "rm_2"]);
+    // r=0: source.rowStart + (((-2) % 3 + 3) % 3) = 2 + 1 = 3 -> rm_4 "D"
+    // r=1: source.rowStart + (((-1) % 3 + 3) % 3) = 2 + 2 = 4 -> rm_5 "E"
+    expect(result.writes.map((w) => w.value)).toEqual(["D", "E"]);
+  });
+
+  test("1x1 source fill-left cycles across columns to the left", () => {
+    // Source = row 0, column "iCFA" (col 2). Target row 0, columns 0..2.
+    const result = planFill({
+      source: rect(0, 0, 2, 2),
+      target: rect(0, 0, 0, 2),
+      rows,
+      columns,
+      fieldDefs,
+      getRowId,
+    });
+    expect(result.writes).toHaveLength(2);
+    expect(result.writes.map((w) => w.fieldKey)).toEqual(["name", "floor"]);
+    expect(result.writes.map((w) => w.value)).toEqual([10, 10]);
   });
 
   test("source and target equal => zero writes (fill canceled)", () => {

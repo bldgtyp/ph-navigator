@@ -175,6 +175,130 @@ describe("useGridKeyboard — ⌘D / ⌘R", () => {
     expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
+  test("⌘⇧D dispatches onFillUp and preventDefaults when wired", () => {
+    const onFillUp = vi.fn().mockResolvedValue(undefined);
+    const onFillDown = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onFillDown,
+        onFillUp,
+      }),
+    );
+    const event = makeKeyEvent("d", { metaKey: true, shiftKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onFillUp).toHaveBeenCalled();
+    expect(onFillDown).not.toHaveBeenCalled();
+  });
+
+  test("⌘⇧D is a no-op when onFillUp is undefined", () => {
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        // onFillDown wired but onFillUp not — the shift modifier must
+        // NOT fall through to onFillDown.
+        onFillDown: vi.fn().mockResolvedValue(undefined),
+      }),
+    );
+    const event = makeKeyEvent("d", { metaKey: true, shiftKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
+  test("⌘⇧D is inert when readOnly", () => {
+    const onFillUp = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: true,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onFillUp,
+      }),
+    );
+    const event = makeKeyEvent("d", { metaKey: true, shiftKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(onFillUp).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
+  test("⌘⇧R dispatches onFillLeft and preventDefaults when wired", () => {
+    const onFillLeft = vi.fn().mockResolvedValue(undefined);
+    const onFillRight = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onFillRight,
+        onFillLeft,
+      }),
+    );
+    const event = makeKeyEvent("r", { metaKey: true, shiftKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onFillLeft).toHaveBeenCalled();
+    expect(onFillRight).not.toHaveBeenCalled();
+  });
+
+  test("⌘⇧R is a no-op when onFillLeft is undefined", () => {
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: false,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onFillRight: vi.fn().mockResolvedValue(undefined),
+      }),
+    );
+    const event = makeKeyEvent("r", { metaKey: true, shiftKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
+  test("⌘⇧R is inert when readOnly", () => {
+    const onFillLeft = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() =>
+      useGridKeyboard({
+        selection: makeSelection(),
+        edit: makeEdit(),
+        readOnly: true,
+        isGrouped: false,
+        onCopy: vi.fn(),
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onFillLeft,
+      }),
+    );
+    const event = makeKeyEvent("r", { metaKey: true, shiftKey: true });
+    act(() => result.current.onKeyDown(event));
+    expect(onFillLeft).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
   test("⌘C is unaffected by the fill wiring", () => {
     const onCopy = vi.fn();
     const onFillDown = vi.fn().mockResolvedValue(undefined);

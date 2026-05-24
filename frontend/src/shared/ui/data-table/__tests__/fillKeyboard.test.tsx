@@ -131,6 +131,81 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     }
   });
 
+  test("⌘⇧D over a multi-row, single-column selection fills upward", async () => {
+    const onWrite = vi.fn();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        emptyMessage="No rows yet."
+      />,
+    );
+    const grid = screen.getByRole("grid");
+    // Active is (0,0); extend down to (0..2, 0).
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "d", metaKey: true, shiftKey: true });
+    expect(await screen.findByText("2 cells filled.")).toBeVisible();
+    const op = onWrite.mock.calls[0]![0] as WriteOp;
+    if (op.kind !== "fill") throw new Error("expected fill op");
+    // Source is row 2 ("103"). Targets: rows 0, 1.
+    expect(op.writes).toEqual([
+      { rowId: "rm_1", fieldKey: "number", value: "103" },
+      { rowId: "rm_2", fieldKey: "number", value: "103" },
+    ]);
+  });
+
+  test("⌘⇧D on a 1-row selection announces fill-up no-op message", async () => {
+    const onWrite = vi.fn();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        emptyMessage="No rows yet."
+      />,
+    );
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "d", metaKey: true, shiftKey: true });
+    expect(await screen.findByText("Select more than one row to fill up.")).toBeVisible();
+    expect(onWrite).not.toHaveBeenCalled();
+  });
+
+  test("⌘⇧R over a multi-column row fills leftward", async () => {
+    const onWrite = vi.fn();
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={FIELD_DEFS}
+        columnDefs={COLUMN_DEFS}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={onWrite}
+        emptyMessage="No rows yet."
+      />,
+    );
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "r", metaKey: true, shiftKey: true });
+    expect(await screen.findByText("2 cells filled.")).toBeVisible();
+    const op = onWrite.mock.calls[0]![0] as WriteOp;
+    if (op.kind !== "fill") throw new Error("expected fill op");
+    // Source is col "count" (rightmost). Targets: "number", "name".
+    expect(op.writes.map((w) => w.fieldKey)).toEqual(["number", "name"]);
+    expect(op.writes.map((w) => w.value)).toEqual([1, 1]);
+  });
+
   test("readOnly disables ⌘D entirely (no announce, no preventDefault)", () => {
     const onWrite = vi.fn();
     render(

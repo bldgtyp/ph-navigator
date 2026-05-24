@@ -29,14 +29,16 @@ export type GridKeyboardArgs = {
   // promise so the keyboard hook can await a mid-edit commit before
   // requesting the insert.
   onRowInsertBelowActive?: () => Promise<void>;
-  // Phase 7: ⌘D fill down / ⌘R fill right. The shell-level callback
-  // does the no-op announce when the selection is single-row / single-
-  // column, so the keyboard hook always preventDefaults on these two
-  // keystrokes whenever the callback is wired — otherwise the browser
-  // default (bookmark / reload) wins. When the callback is undefined,
-  // the keystroke falls through to the browser.
+  // ⌘D / ⌘R fill down / right and ⌘⇧D / ⌘⇧R fill up / left. The
+  // shell-level callback announces the no-op when the selection is
+  // single-row / single-column; the keyboard hook always preventDefaults
+  // when the matching callback is wired so the browser's default
+  // (bookmark / reload / hard-reload for ⌘⇧R on Chrome / Safari) loses.
+  // When the matching callback is undefined the keystroke falls through.
   onFillDown?: () => Promise<void>;
   onFillRight?: () => Promise<void>;
+  onFillUp?: () => Promise<void>;
+  onFillLeft?: () => Promise<void>;
   // Phase 3 §4.4: Esc during an active drag cancels the drag and
   // collapses the range to the drag anchor. Optional — when no drag
   // composition is wired, Esc keeps its prior no-op behavior.
@@ -55,6 +57,8 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
     onRowInsertBelowActive,
     onFillDown,
     onFillRight,
+    onFillUp,
+    onFillLeft,
     drag,
   } = args;
 
@@ -92,18 +96,19 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
           selection.selectAll();
           return;
         }
-        // Phase 7: ⌘D / ⌘R only intercept when the consumer has wired
-        // fill. Otherwise the browser default (bookmark / reload) wins.
-        if (key === "d" && onFillDown) {
+        // ⌘D / ⌘R / ⌘⇧D / ⌘⇧R only intercept when the matching fill
+        // callback is wired — otherwise the keystroke falls through to
+        // the browser default (bookmark / reload / hard reload).
+        const fillCallback = pickFillCallback(key, event.shiftKey, {
+          onFillDown,
+          onFillUp,
+          onFillRight,
+          onFillLeft,
+        });
+        if (fillCallback) {
           if (readOnly) return;
           event.preventDefault();
-          void onFillDown();
-          return;
-        }
-        if (key === "r" && onFillRight) {
-          if (readOnly) return;
-          event.preventDefault();
-          void onFillRight();
+          void fillCallback();
           return;
         }
       }
@@ -131,7 +136,9 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
       edit,
       onCopy,
       onFillDown,
+      onFillLeft,
       onFillRight,
+      onFillUp,
       onRedo,
       onRowInsertBelowActive,
       onRowOpen,
@@ -146,4 +153,21 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
 
 function isCommandShortcut(event: KeyboardEvent<HTMLDivElement>): boolean {
   return event.metaKey || event.ctrlKey;
+}
+
+type FillCallback = () => Promise<void>;
+
+function pickFillCallback(
+  key: string,
+  shiftKey: boolean,
+  callbacks: {
+    onFillDown?: FillCallback;
+    onFillUp?: FillCallback;
+    onFillRight?: FillCallback;
+    onFillLeft?: FillCallback;
+  },
+): FillCallback | undefined {
+  if (key === "d") return shiftKey ? callbacks.onFillUp : callbacks.onFillDown;
+  if (key === "r") return shiftKey ? callbacks.onFillLeft : callbacks.onFillRight;
+  return undefined;
 }
