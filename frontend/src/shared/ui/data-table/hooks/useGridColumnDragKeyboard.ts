@@ -58,7 +58,9 @@ export function useGridColumnDragKeyboard<TRow>(
       const column = visibleColumns[columnIndex];
       if (!column) return;
       setPickedUp({ columnIndex, originalIndex: columnIndex });
-      onAnnounce(`Picked up ${column.header}. Use arrow keys to move, Space to drop, Escape to cancel.`);
+      onAnnounce(
+        `Picked up ${column.header}. Use arrow keys to move, Space to drop, Escape to cancel.`,
+      );
     },
     [onAnnounce, visibleColumns],
   );
