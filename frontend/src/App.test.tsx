@@ -351,7 +351,8 @@ describe("App", () => {
     expect(await screen.findByText("BT number available")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Create project" }));
 
-    expect(await screen.findByRole("heading", { name: "West Stockbridge House" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Save" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
   });
@@ -521,7 +522,9 @@ describe("App", () => {
       }),
     );
 
-    expect(await screen.findByRole("heading", { name: "West Stockbridge Retrofit" })).toBeVisible();
+    expect(
+      await screen.findByRole("link", { name: "2426 - West Stockbridge Retrofit" }),
+    ).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/v1/projects/${projectPayload.id}`,
       expect.objectContaining({
@@ -789,7 +792,10 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Password"), "password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByText("Editor")).toBeVisible();
+    expect(
+      await screen.findByRole("link", { name: "2426 - West Stockbridge House" }),
+    ).toBeVisible();
+    expect(screen.queryByText("Editor")).not.toBeInTheDocument();
     expect(screen.queryByText("Read-only public view")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
   });

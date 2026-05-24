@@ -339,7 +339,7 @@ export function VersionControls({
           aria-expanded={actionsOpen}
           title="Project actions"
         >
-          ...
+          <span aria-hidden="true">...</span>
         </button>
       </div>
       {actionsOpen ? (

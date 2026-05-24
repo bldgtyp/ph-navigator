@@ -13,8 +13,8 @@ export function WorkspaceTopbar({
   accountSlot,
 }: {
   breadcrumbs?: Breadcrumb[];
-  primaryNav: ReactNode;
-  accountSlot: ReactNode;
+  primaryNav?: ReactNode;
+  accountSlot?: ReactNode;
 }) {
   return (
     <header className="topbar">
@@ -37,10 +37,12 @@ export function WorkspaceTopbar({
       ) : (
         <span aria-hidden="true" />
       )}
-      <nav className="topnav" aria-label="Primary">
-        {primaryNav}
-      </nav>
-      <div className="user-menu">{accountSlot}</div>
+      {primaryNav ? (
+        <nav className="topnav" aria-label="Primary">
+          {primaryNav}
+        </nav>
+      ) : null}
+      {accountSlot ? <div className="user-menu">{accountSlot}</div> : null}
     </header>
   );
 }

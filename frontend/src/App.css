@@ -114,8 +114,7 @@ textarea {
 
 .auth-panel h1,
 .page-heading h1,
-.project-header h1,
-.project-workbar h1 {
+.project-header h1 {
   margin: 0;
   color: var(--text-primary);
   font-size: clamp(2rem, 5vw, 3.1rem);
@@ -250,8 +249,8 @@ a:focus-visible {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 18px;
-  min-height: 52px;
+  gap: 16px;
+  min-height: 58px;
   border-bottom: 1px solid var(--border-subtle);
   background: color-mix(in oklab, var(--bg-page) 88%, transparent);
   padding: 0 24px;
@@ -327,6 +326,13 @@ a:focus-visible {
   letter-spacing: 0.05em;
   text-decoration: none;
   text-transform: uppercase;
+}
+
+.topnav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .catalog-menu,
@@ -439,32 +445,6 @@ a:focus-visible {
   max-width: none;
 }
 
-.project-workbar {
-  position: sticky;
-  top: 52px;
-  z-index: 18;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  min-height: 64px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: color-mix(in oklab, var(--bg-page) 94%, transparent);
-  padding: 10px 0;
-}
-
-.project-identity {
-  min-width: min(440px, 100%);
-}
-
-.project-workbar-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-width: min(100%, 520px);
-}
-
 .modal-header,
 .modal-actions,
 .version-popover-header,
@@ -492,7 +472,18 @@ a:focus-visible {
 }
 
 .project-actions-trigger {
-  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.project-actions-trigger span {
+  transform: translateY(-2px);
 }
 
 .status-heading {
@@ -863,9 +854,16 @@ a:focus-visible {
 }
 
 .save-state {
+  --save-state-dot: var(--accent-text);
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0 12px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 400;
@@ -879,11 +877,14 @@ a:focus-visible {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 12%, transparent);
+  background: var(--save-state-dot);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--save-state-dot) 12%, transparent);
 }
 
 .save-state.dirty {
+  --save-state-dot: var(--highlight-text);
+  border-color: color-mix(in oklab, var(--highlight-text) 40%, var(--border-strong));
+  background: color-mix(in oklab, var(--highlight-text) 8%, var(--bg-card));
   color: var(--highlight-text);
 }
 
@@ -893,6 +894,11 @@ a:focus-visible {
   justify-items: end;
   gap: 8px;
   min-width: 0;
+}
+
+.version-control-wrap .shell-controls {
+  flex-wrap: nowrap;
+  gap: 8px;
 }
 
 .inline-action-error {
@@ -1062,15 +1068,6 @@ button:disabled {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-}
-
-.project-workbar h1 {
-  max-width: min(56vw, 760px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: clamp(1.25rem, 2vw, 1.7rem);
-  line-height: 1.1;
 }
 
 .read-only-pill {
@@ -2205,11 +2202,18 @@ td:has(> .data-table-fill-handle) {
   position: absolute;
   right: -3px;
   bottom: -3px;
+  box-sizing: border-box;
+  /* Override the global `button` rule's 38px min-height + 8/14 padding
+     + 1px transparent border, which would otherwise stretch the handle
+     to a thin vertical line. */
   width: 6px;
+  min-width: 0;
   height: 6px;
-  background: var(--accent-text);
+  min-height: 0;
   border: 0;
+  border-radius: 0;
   padding: 0;
+  background: var(--accent-text);
   cursor: crosshair;
   z-index: 2;
 }
@@ -2845,20 +2849,18 @@ body[data-grid-fill-active="true"] {
     padding: 12px 20px;
   }
 
-  .project-workbar {
-    position: static;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .project-workbar h1 {
-    max-width: 100%;
-    white-space: normal;
-  }
-
   .brand {
     border-right: 0;
     padding-right: 0;
+  }
+
+  .topnav {
+    justify-content: flex-start;
+  }
+
+  .version-control-wrap .shell-controls {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .user-menu,
