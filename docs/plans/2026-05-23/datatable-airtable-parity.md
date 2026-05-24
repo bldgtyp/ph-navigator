@@ -93,8 +93,11 @@ Other consumers will adopt the result wholesale, not piecemeal.
    insert/delete, option mutation) emits a `WriteOp` through `onWrite`.
    Phase 0 codifies this; later phases plug in.
 6. **Toolbar is the single mutation channel** for sort/filter/group
-   (L8.2). Header-click sort survives Phase 0 but is rewritten in Phase 4
-   to call the same `onViewChange` path the toolbar popovers do.
+   (L8.2). ~~Header-click sort survives Phase 0 but is rewritten in
+   Phase 4 to call the same `onViewChange` path the toolbar popovers
+   do.~~ Phase 4 removed the per-column header chevron entirely; sort
+   is reachable only from the toolbar popover (see
+   `phase-4-stacked-filter-sort.md` §4.9).
 
 ## 4. Phase summary
 
@@ -104,7 +107,7 @@ Other consumers will adopt the result wholesale, not piecemeal.
 | 1 | Inline edit + single-select cell popover | Click any Rooms cell, type → value updates. Single-select cells open a search-and-create popover; one ⌘Z reverts cell + option creation as one op. |
 | 2 | Row insert / delete with semantic undo | Shift+Enter inserts blank row below; gutter checkboxes + Delete remove N rows with confirm; ⌘Z reverts. |
 | 3 | Mouse-drag range selection + auto-scroll + full-column select | Click-drag a rectangle past the viewport edge, container auto-scrolls, ⌘C copies into Excel as a shaped block. |
-| 4 | Stacked filter + sort toolbar | Toolbar popovers stack 2 filters + 2 sorts wired to user-intent `ViewState`; header-click sort calls the same `onViewChange`. |
+| 4 | Stacked filter + sort toolbar | Toolbar popovers stack 2 filters + 2 sorts wired to user-intent `ViewState`; per-axis cell tint; header-click sort is removed (per `phase-4-stacked-filter-sort.md` §4.9). |
 | 5 | Single-select header modal (option management) | Reorder / recolor / rename / delete-with-impact-confirm; row pills update without rewriting row data. |
 | 6 | Stacked group accordion + per-column aggregations + tint cascade | Group by 2 levels, mean per group, 14-entry pre-mixed tint palette layered tint→selection→focus. |
 | 7 | Fill handle + ⌘D / ⌘R | Drag the bottom-right square down 30 rows; cyclic repeat; disabled while grouped. |
@@ -419,10 +422,16 @@ cascade, which lands in Phase 6.
   - Dormant rows (value blank) pass everything (L8.4).
 - **Sort popover**:
   - Stacked rows: field picker + asc/desc + drag handle + delete.
-  - Header-click sort still works but routes through `onViewChange`
+  - ~~Header-click sort still works but routes through `onViewChange`
     (replaces current direct toggle), so the two channels stay
-    consistent (L8.2).
-  - Shift+Click on a header appends to the stack rather than replacing.
+    consistent (L8.2).~~
+  - ~~Shift+Click on a header appends to the stack rather than replacing.~~
+  - Per the 2026-05-23 refinement (see
+    `phase-4-stacked-filter-sort.md` §4.9 and §13): header-click sort
+    is removed entirely — the per-column chevron, the
+    `data-table-header-button`, the `aria-sort` derivation, and the
+    `onToggleSort` prop are all gone. Sort is reachable only from the
+    toolbar popover, matching AirTable.
 - **Drag-to-reorder** rows in either popover via `@dnd-kit/sortable`
   (acceptable add per L10.2).
 - **Toolbar status text** stays factual until Phase 6 adds tints:
@@ -689,7 +698,7 @@ migration that follows.
 | 1 | 2026-05-23 | ✅ 2026-05-23 | Merged via PR #1 (`phase-1-inline-edit-popover`); Steps 1–6 landed. |
 | 2 | 2026-05-23 | ✅ 2026-05-23 | All 6 steps landed; 155 tests passing. Two Phase-0-inherited fixes folded in (sessionKey-based history-clear; empty-state keeps the grid mounted). `generateRowId` prop added so consumers can satisfy backend id schemas (Q6 revisited because the demo hit it). nextFreeRoomNumber now returns the input verbatim when free, so delete-undo restores original numbers. |
 | 3 | 2026-05-23 | ✅ 2026-05-23 | All 5 steps landed; 191 tests passing; library hardened for pointer drag, perimeter outline, and full-column select. Demo walked live in Chrome via Playwright MCP against the Phase 2 Rooms Demo project. Three post-walk changes folded in: Shift+Click no-collapse bugfix; R1 whole-header column-select (reverses §12 Q2 — strip → whole-`<th>` mousedown, sort moves to hover-revealed chevron); R2 row-checkbox toggle (clicking sole-selected row unchecks). Safari smoke walk still owed for autoscroll-past-viewport; both unit-covered. Sign-off detail in `phase-3-pointer-drag-selection.md` §11–§13. |
-| 4 | — | — | — |
+| 4 | 2026-05-23 | code-complete; demo walk owed | Steps 1–6 landed; 247 tests passing. Header-click sort removed entirely per `phase-4-stacked-filter-sort.md` §4.9; sort + filter both live in the toolbar popovers. Per-axis cell tint (filter green / sort peach) ships with filter-wins overlap precedence; Phase 6 generalizes to the 7-subset palette. Tint OKLCH literals are placeholders pending live AirTable swatch sample during the demo walk (§12 Q10). Awaiting §10 demo walk in Chrome + Safari. |
 | 5 | — | — | — |
 | 6 | — | — | — |
 | 7 | — | — | — |
