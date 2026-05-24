@@ -41,6 +41,7 @@ import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
 import { reorderColumnIds, useGridColumns } from "./hooks/useGridColumns";
+import { useGridColumnDragKeyboard } from "./hooks/useGridColumnDragKeyboard";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
@@ -623,6 +624,25 @@ export function DataTable<TRow>({
     },
     [handleColumnReorder, primaryColumnId],
   );
+  // Plan 08 §4.3 — accessible keyboard reorder. Operates on the same
+  // `view.columnOrder` field as the pointer drag, so the two surfaces
+  // (and the Hide-fields panel) agree on the canonical order.
+  const fullOrderedColumnIds = useMemo(
+    () => orderedColumnsForHidePanel.map((column) => column.id),
+    [orderedColumnsForHidePanel],
+  );
+  const handleColumnOrderChange = useCallback(
+    (next: string[]) => {
+      onViewChange({ ...view, columnOrder: next });
+    },
+    [onViewChange, view],
+  );
+  const columnDragKeyboard = useGridColumnDragKeyboard({
+    visibleColumns: visibleColumnDefs,
+    fullOrderedColumnIds,
+    onColumnOrderChange: handleColumnOrderChange,
+    onAnnounce: setAnnounce,
+  });
   // Reset clears every view-state key the toolbar can mutate. Column
   // order / widths / hidden columns are owned by a future column-
   // config phase and stay untouched.
@@ -794,6 +814,7 @@ export function DataTable<TRow>({
             onEditField={setFieldEditorOpenForFieldKey}
             openFieldKey={fieldEditorOpenForFieldKey}
             headerCellRefByFieldKey={headerCellRefByFieldKey}
+            columnDragKeyboard={columnDragKeyboard}
           />
           <GridBody
             table={table}
