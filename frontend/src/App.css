@@ -2292,12 +2292,12 @@ button:disabled {
    `box-shadow` from `computeEdgeBits` so corner / edge / interior cells
    layer correctly (PoC L3.2 — box-shadow channel for selection). */
 .data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent) 14%, var(--bg-card));
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card));
 }
 
 .data-table-cell-active {
   z-index: 2;
-  background: color-mix(in oklab, var(--accent) 22%, var(--bg-card));
+  background: color-mix(in oklab, var(--accent-text) 12%, var(--bg-card));
   box-shadow: none;
   outline: 0;
 }
