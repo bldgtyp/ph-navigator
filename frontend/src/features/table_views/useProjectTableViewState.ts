@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { errorMessage } from "../../shared/lib/errors";
 import {
   sanitizeViewStateForSchema,
   type DataTableColumnDef,
@@ -8,6 +9,8 @@ import {
 import { deleteTableView, fetchTableView, saveTableView } from "./api";
 
 export const SAVE_DEBOUNCE_MS = 500;
+
+const SAVE_FALLBACK_MESSAGE = "View persistence unavailable.";
 
 export type UseProjectTableViewStateArgs = {
   projectId: string;
@@ -27,10 +30,6 @@ export type UseProjectTableViewStateResult = {
   saveError: string | null;
 };
 
-// Plan 09 §4.4. Owns the controlled `view` value the parent passes into
-// <DataTable>, plus the load gate, the 500ms debounced save with a
-// single in-flight + latest-pending queue, and DELETE-on-reset. The
-// sanitization step is pure and render-safe — see `sanitizeViewStateForSchema`.
 export function useProjectTableViewState({
   projectId,
   tableKey,
@@ -49,11 +48,11 @@ export function useProjectTableViewState({
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightRef = useRef(false);
   const pendingViewRef = useRef<ViewState | null>(null);
-  const userTouchedRef = useRef(false);
 
-  // Sanitize against current schema for render. Pure helper; safe to
-  // call on every render — output identity changes only when refs do.
-  const renderSafeView = sanitizeViewStateForSchema(view, fieldDefs, columns);
+  const renderSafeView = useMemo(
+    () => sanitizeViewStateForSchema(view, fieldDefs, columns),
+    [view, fieldDefs, columns],
+  );
 
   const clearDebounce = useCallback(() => {
     if (debounceTimerRef.current !== null) {
@@ -73,16 +72,14 @@ export function useProjectTableViewState({
         await saveTableView(projectId, tableKey, next);
         setSaveError(null);
       } catch (error) {
-        // Drop stale results from older scopes.
         if (scopeKeyRef.current === scope) {
-          setSaveError(error instanceof Error ? error.message : "View persistence unavailable.");
+          setSaveError(errorMessage(error, SAVE_FALLBACK_MESSAGE));
         }
       } finally {
         inFlightRef.current = false;
         const queued = pendingViewRef.current;
         pendingViewRef.current = null;
         if (queued !== null && scopeKeyRef.current === scope) {
-          // Newer view arrived while saving — flush it now.
           void flushSave(queued, scope);
         }
       }
@@ -90,13 +87,11 @@ export function useProjectTableViewState({
     [projectId, tableKey],
   );
 
-  // Load gate. Resets render to defaults until the GET resolves to
-  // avoid the "default flash" hazard from §2 rule 8.
+  // Load gate avoids the "default flash" — render skeleton until GET settles.
   useEffect(() => {
     scopeKeyRef.current = scopeKey;
     clearDebounce();
     pendingViewRef.current = null;
-    userTouchedRef.current = false;
 
     if (!enabled) {
       setView(defaults);
@@ -122,7 +117,7 @@ export function useProjectTableViewState({
       } catch (error) {
         if (cancelled || scopeKeyRef.current !== scopeKey) return;
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setSaveError(error instanceof Error ? error.message : "View persistence unavailable.");
+        setSaveError(errorMessage(error, SAVE_FALLBACK_MESSAGE));
       } finally {
         if (!cancelled && scopeKeyRef.current === scopeKey) {
           setIsLoading(false);
@@ -139,20 +134,16 @@ export function useProjectTableViewState({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, tableKey, enabled, scopeKey, clearDebounce]);
 
-  // Cleanup on unmount.
   useEffect(() => clearDebounce, [clearDebounce]);
 
   const onViewChange = useCallback(
     (next: ViewState) => {
-      setView(next);
+      setView((current) => (current === next ? current : next));
       if (!enabled) return;
-      userTouchedRef.current = true;
       clearDebounce();
       const scope = scopeKeyRef.current;
       debounceTimerRef.current = setTimeout(() => {
         debounceTimerRef.current = null;
-        // Send the latest view at fire time, not the captured `next`,
-        // so coalesced changes always ship the most recent value.
         void flushSave(next, scope);
       }, debounceMs);
     },
@@ -162,14 +153,14 @@ export function useProjectTableViewState({
   const reset = useCallback(() => {
     clearDebounce();
     pendingViewRef.current = null;
-    userTouchedRef.current = false;
     setView(defaults);
     setSaveError(null);
     if (!enabled) return;
-    // Fire-and-forget DELETE. Defaults rebuild from code on next load
-    // so reset never freezes today's defaults into the saved row.
+    // DELETE rather than PUT-with-defaults: defaults rebuild from code
+    // on next load, so reset never freezes today's defaults into the
+    // saved row.
     void deleteTableView(projectId, tableKey).catch((error) => {
-      setSaveError(error instanceof Error ? error.message : "View persistence unavailable.");
+      setSaveError(errorMessage(error, SAVE_FALLBACK_MESSAGE));
     });
   }, [clearDebounce, defaults, enabled, projectId, tableKey]);
 

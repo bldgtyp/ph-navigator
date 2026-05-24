@@ -447,7 +447,7 @@ function fieldDefForColumn<TRow>(
   return fieldDefsByKey.get(column.fieldKey);
 }
 
-function fieldKeyFieldDefMap(fieldDefs: FieldDef[]): Map<string, FieldDef> {
+function fieldKeyFieldDefMap(fieldDefs: readonly FieldDef[]): Map<string, FieldDef> {
   return new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef]));
 }
 
@@ -620,21 +620,17 @@ export function groupPathKey(values: readonly unknown[]): string {
   return values.map((value) => JSON.stringify(value ?? null)).join("::");
 }
 
-// Plan 09 §4.2: drop view-state references to columns or single-select
-// options that no longer exist in the currently-rendered schema. Pure
-// and render-safe — the hook calls this on every load and on every
-// user `onViewChange`, but does NOT auto-save the sanitized result (so
-// switching to an older locked version with fewer fields cannot destroy
-// the head-version preference).
-//
-// The function trusts callers to pass valid input; malformed JSON is
-// the persistence-layer's problem, not this helper's.
+// Drop view-state references to columns or single-select options that
+// no longer exist in the currently-rendered schema. Render-only — the
+// persistence layer must not auto-save the sanitized result, so an
+// older locked version with fewer fields cannot destroy the head-
+// version preference.
 export function sanitizeViewStateForSchema(
   view: ViewState,
   fieldDefs: readonly FieldDef[],
   columns: readonly DataTableColumnDef<unknown>[],
 ): ViewState {
-  const fieldDefByKey = new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef]));
+  const fieldDefByKey = fieldKeyFieldDefMap(fieldDefs);
   const columnIds = new Set(columns.map((column) => column.id));
   const fieldKeys = new Set(columns.map((column) => column.fieldKey));
 

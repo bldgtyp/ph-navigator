@@ -63,15 +63,15 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const [editBlocker, setEditBlocker] = useState<EditBlocker | null>(null);
   const isEditor = project.access_mode === "editor";
   const activeVersionId = project.active_version_id;
-  // Plan 09: per-(user, project, table) persisted ViewState. Defaults
-  // come from `emptyViewState`; the hook owns load, debounced PUT, and
-  // DELETE-on-reset. Anonymous viewers bypass the API entirely.
   const roomsViewDefaults = useMemo(() => emptyViewState(), []);
   const roomsFieldDefsForSanitize = useMemo(
     () => (roomsQuery.data ? roomsTableFieldDefs(roomsQuery.data) : []),
     [roomsQuery.data],
   );
-  const roomsColumnsForSanitize = useMemo(() => roomsTableColumnsForSanitize(), []);
+  const roomsColumnsForSanitize = useMemo(
+    () => roomsTableColumnsForSanitize(roomsFieldDefsForSanitize),
+    [roomsFieldDefsForSanitize],
+  );
   const {
     view: roomsTableView,
     onViewChange: handleRoomsViewChange,
@@ -79,7 +79,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     reset: resetRoomsView,
   } = useProjectTableViewState({
     projectId: project.id,
-    tableKey: "rooms",
+    tableKey: ROOMS_TABLE_NAME,
     defaults: roomsViewDefaults,
     enabled: isEditor,
     columns: roomsColumnsForSanitize,
@@ -392,7 +392,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           onWrite={handleTableWrite}
           buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
           generateRowId={canEdit ? () => generatedId("rm") : undefined}
-          sessionKey={`${project.id}:${activeVersionId ?? "none"}:rooms`}
+          sessionKey={`${project.id}:${activeVersionId ?? "none"}:${ROOMS_TABLE_NAME}`}
           overflowMenuActions={roomsDownloadAction}
           footerAction={addRoomAction}
         />

@@ -1,4 +1,4 @@
-"""Persisted project-table view-state contract tests for Plan 09."""
+"""Persisted project-table view-state contract tests."""
 
 from __future__ import annotations
 
