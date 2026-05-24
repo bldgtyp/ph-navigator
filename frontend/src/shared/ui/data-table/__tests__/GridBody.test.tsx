@@ -258,6 +258,101 @@ describe("GridBody — fill handle (Phase 7)", () => {
   });
 });
 
+describe("GridBody — single-select chevron (plan 05)", () => {
+  type SelectRow = { id: string; floor: string; name: string };
+  const SELECT_ROWS: SelectRow[] = [
+    { id: "rm_1", floor: "opt_ground", name: "Living" },
+    { id: "rm_2", floor: "opt_mez", name: "Kitchen" },
+  ];
+  const SELECT_FIELD_DEFS: FieldDef[] = [
+    {
+      field_key: "floor",
+      field_type: "single_select",
+      display_name: "Floor",
+      options: [
+        { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+        { id: "opt_mez", label: "Mezzanine", color: "#10b981", order: 1 },
+      ],
+    },
+    { field_key: "name", field_type: "text", display_name: "Name" },
+  ];
+  const SELECT_COLUMN_DEFS: DataTableColumnDef<SelectRow>[] = [
+    { id: "floor", fieldKey: "floor", header: "Floor", accessor: (row) => row.floor },
+    { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
+  ];
+
+  function renderSelectTable(overrides: Partial<DataTableProps<SelectRow>> = {}) {
+    const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
+    render(
+      <DataTable<SelectRow>
+        rows={SELECT_ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={SELECT_FIELD_DEFS}
+        columnDefs={SELECT_COLUMN_DEFS}
+        view={view}
+        onViewChange={setView}
+        emptyMessage="No rows yet."
+        {...overrides}
+      />,
+    );
+  }
+
+  function getSelectCell(rowIndex: number, columnIndex: number): HTMLTableCellElement {
+    const rowGroup = screen.getAllByRole("rowgroup")[1];
+    if (!rowGroup) throw new Error("body rowgroup missing");
+    const row = within(rowGroup).getAllByRole("row")[rowIndex];
+    if (!row) throw new Error(`body row ${rowIndex} missing`);
+    return within(row).getAllByRole("gridcell")[columnIndex] as HTMLTableCellElement;
+  }
+
+  test("active single-select cell renders the chevron when writable", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const active = getSelectCell(0, 0);
+    expect(within(active).getByRole("button", { name: "Open options" })).toBeInTheDocument();
+  });
+
+  test("inactive single-select cells do not render the chevron", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const inactive = getSelectCell(1, 0);
+    expect(within(inactive).queryByRole("button", { name: "Open options" })).toBeNull();
+  });
+
+  test("active text cell does not render the chevron", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowRight" });
+    const active = getSelectCell(0, 1);
+    expect(within(active).queryByRole("button", { name: "Open options" })).toBeNull();
+  });
+
+  test("read-only table hides the chevron on active single-select cells", () => {
+    renderSelectTable({ readOnly: true, onWrite: vi.fn() });
+    const active = getSelectCell(0, 0);
+    expect(within(active).queryByRole("button", { name: "Open options" })).toBeNull();
+  });
+
+  test("no onWrite handler hides the chevron", () => {
+    renderSelectTable();
+    const active = getSelectCell(0, 0);
+    expect(within(active).queryByRole("button", { name: "Open options" })).toBeNull();
+  });
+
+  test("clicking the chevron opens the single-select popover", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const active = getSelectCell(0, 0);
+    const chevron = within(active).getByRole("button", { name: "Open options" });
+    fireEvent.mouseDown(chevron);
+    expect(screen.getByRole("textbox", { name: "Search options" })).toBeInTheDocument();
+  });
+
+  test("chevron disappears while the popover is open (cell is editing)", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const active = getSelectCell(0, 0);
+    fireEvent.mouseDown(within(active).getByRole("button", { name: "Open options" }));
+    expect(within(active).queryByRole("button", { name: "Open options" })).toBeNull();
+  });
+});
+
 describe("GridBody — group accordion", () => {
   test("renders group-header rows when view.group is non-empty", () => {
     const onViewChange = vi.fn<(next: ViewState) => void>();

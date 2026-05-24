@@ -2346,6 +2346,57 @@ td:has(> .data-table-fill-handle) {
   right: 0;
 }
 
+/* Plan 05 — chevron affordance on the active single-select cell.
+   Anchored at the cell's right edge, vertically centered. The
+   bottom-right fill handle (6×6, half-overlapping the seam) sits
+   below the chevron's vertical center on the default ~32 px row, so
+   they never overlap. */
+td:has(> .data-table-cell-chevron) {
+  position: relative;
+}
+
+.data-table-cell-chevron {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+  /* Override the global `button` rule's 38px min-height + padding
+     that would otherwise stretch the chevron and push the cell. */
+  width: 16px;
+  min-width: 0;
+  height: 16px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.data-table-cell-chevron:hover {
+  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+.data-table-cell-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Reserve right padding on the active single-select cell so the pill
+   doesn't run under the chevron. Inactive cells keep their normal
+   padding — the chevron is only rendered on the active cell. */
+td.data-table-cell-active:has(> .data-table-cell-chevron) > .single-select-popover-anchor,
+td.data-table-cell-active:has(> .data-table-cell-chevron) {
+  padding-right: 24px;
+}
+
 /* Phase 7 §4.1 — tint the cells inside the drag-preview target rect
    while a fill drag is in flight. */
 td[data-fill-target="true"] {
