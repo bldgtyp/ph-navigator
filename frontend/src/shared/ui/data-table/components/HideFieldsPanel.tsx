@@ -25,6 +25,7 @@ import {
   Paperclip,
   Type,
 } from "lucide-react";
+import { reorderColumnIds } from "../hooks/useGridColumns";
 import type { FieldDef, FieldType } from "../types";
 
 // Narrow column shape this panel needs. Avoids dragging the `DataTable`
@@ -97,14 +98,10 @@ export function HideFieldsPanel({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const fromIndex = orderedColumns.findIndex((c) => c.id === active.id);
-    const toIndex = orderedColumns.findIndex((c) => c.id === over.id);
-    if (fromIndex < 0 || toIndex < 0) return;
-    const next = orderedColumns.map((c) => c.id);
-    const [moved] = next.splice(fromIndex, 1);
-    if (moved === undefined) return;
-    next.splice(toIndex, 0, moved);
+    if (!over) return;
+    const fullOrder = orderedColumns.map((c) => c.id);
+    const next = reorderColumnIds(fullOrder, String(active.id), String(over.id));
+    if (next === fullOrder) return;
     onChange({ columnOrder: next });
   };
 

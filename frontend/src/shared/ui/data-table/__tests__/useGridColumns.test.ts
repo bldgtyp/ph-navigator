@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import { useGridColumns } from "../hooks/useGridColumns";
+import { reorderColumnIds, useGridColumns } from "../hooks/useGridColumns";
 import type { DataTableColumnDef } from "../types";
 
 type Row = { id: string; name: string; count: number; floor: string };
@@ -68,5 +68,35 @@ describe("useGridColumns", () => {
     const first = result.current;
     rerender();
     expect(result.current).toBe(first);
+  });
+});
+
+describe("reorderColumnIds (Plan 08 splice helper)", () => {
+  const FULL = ["name", "floor", "count", "tags"];
+
+  test("moves a column to a later position", () => {
+    expect(reorderColumnIds(FULL, "floor", "tags")).toEqual(["name", "count", "tags", "floor"]);
+  });
+
+  test("moves a column to an earlier position", () => {
+    expect(reorderColumnIds(FULL, "tags", "floor")).toEqual(["name", "tags", "floor", "count"]);
+  });
+
+  test("returns input unchanged when from === to", () => {
+    expect(reorderColumnIds(FULL, "floor", "floor")).toBe(FULL);
+  });
+
+  test("returns input unchanged when from id is missing", () => {
+    expect(reorderColumnIds(FULL, "missing", "floor")).toBe(FULL);
+  });
+
+  test("returns input unchanged when to id is missing", () => {
+    expect(reorderColumnIds(FULL, "floor", "missing")).toBe(FULL);
+  });
+
+  test("preserves hidden columns' relative positions (drag visible cols around them)", () => {
+    // Simulate hidden `count` sitting in the middle of the full order.
+    // Drag `tags` → `name`. `count` stays between them.
+    expect(reorderColumnIds(FULL, "tags", "name")).toEqual(["tags", "name", "floor", "count"]);
   });
 });

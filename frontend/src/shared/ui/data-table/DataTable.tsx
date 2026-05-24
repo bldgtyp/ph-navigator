@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import {
   applyFilters,
   buildBodyPlan,
   buildEmptyRowDefaults,
@@ -26,7 +40,7 @@ import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
-import { useGridColumns } from "./hooks/useGridColumns";
+import { reorderColumnIds, useGridColumns } from "./hooks/useGridColumns";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
@@ -567,6 +581,48 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
+  // Plan 08 — header drag-to-reorder. The drag's from / to ids are both
+  // visible column ids; splice them inside the full ordered id list
+  // (visible + hidden, in display order) so hidden columns keep their
+  // relative positions. The result is the new `columnOrder`.
+  const handleColumnReorder = useCallback(
+    (fromColumnId: string, toColumnId: string) => {
+      const fullOrder = orderedColumnsForHidePanel.map((column) => column.id);
+      const next = reorderColumnIds(fullOrder, fromColumnId, toColumnId);
+      if (next === fullOrder) return;
+      onViewChange({ ...view, columnOrder: next });
+    },
+    [onViewChange, orderedColumnsForHidePanel, view],
+  );
+  // Plan 08 — DndContext + SortableContext sit outside `<table>` (their
+  // accessibility `<div>`s would be invalid HTML nested in `<thead>`).
+  // `activationConstraint.distance: 8` defers dnd-kit until the pointer
+  // moves 8 px so short clicks still reach the Phase 3 column-select
+  // handler (§4.2). The primary (frozen) column stays in the sortable
+  // id list so dnd-kit can read its rect, but `useSortable({ disabled })`
+  // and the drop-target guard inside `handleColumnDragEnd` prevent it
+  // from being dragged or dropped onto.
+  const sortableSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const sortableColumnIds = useMemo(
+    () => visibleColumnDefs.map((column) => column.id),
+    [visibleColumnDefs],
+  );
+  const primaryColumnId = visibleColumnDefs[0]?.id ?? null;
+  const handleColumnDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over) return;
+      const fromId = String(active.id);
+      const toId = String(over.id);
+      if (fromId === toId) return;
+      if (fromId === primaryColumnId || toId === primaryColumnId) return;
+      handleColumnReorder(fromId, toId);
+    },
+    [handleColumnReorder, primaryColumnId],
+  );
   // Reset clears every view-state key the toolbar can mutate. Column
   // order / widths / hidden columns are owned by a future column-
   // config phase and stay untouched.
@@ -697,6 +753,12 @@ export function DataTable<TRow>({
       <div className="sr-only" aria-live="polite">
         {announce}
       </div>
+      <DndContext
+        sensors={sortableSensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleColumnDragEnd}
+      >
+        <SortableContext items={sortableColumnIds} strategy={horizontalListSortingStrategy}>
       <div
         ref={wrapperRef}
         className="data-table-wrap"
@@ -783,6 +845,8 @@ export function DataTable<TRow>({
         </table>
         {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}
       </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 }
