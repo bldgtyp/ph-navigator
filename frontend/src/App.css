@@ -476,14 +476,19 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  line-height: 1;
 }
 
-.project-actions-trigger span {
-  transform: translateY(-2px);
+.project-actions-icon {
+  display: grid;
+  width: 14px;
+  gap: 3px;
+}
+
+.project-actions-icon span {
+  display: block;
+  height: 1px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .status-heading {
@@ -1234,6 +1239,22 @@ button:disabled {
   background: var(--bg-page);
 }
 
+.data-table-toolbar .project-actions-icon {
+  width: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.data-table-toolbar .project-actions-icon span {
+  height: 1px;
+  border: 0;
+  border-radius: 999px;
+  background: currentColor;
+  padding: 0;
+}
+
 .data-table-toolbar-actions button {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
@@ -1265,7 +1286,9 @@ button:disabled {
 .data-table-toolbar-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-width: 26px;
   padding: 4px 10px;
   border-radius: var(--phn-radius);
   background: transparent;
