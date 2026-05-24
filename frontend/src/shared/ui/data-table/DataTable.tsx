@@ -26,6 +26,7 @@ import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
+import { useGridColumns } from "./hooks/useGridColumns";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
@@ -61,15 +62,7 @@ export function DataTable<TRow>({
   overflowMenuActions,
   footerAction,
 }: DataTableProps<TRow>) {
-  const visibleColumnDefs = useMemo(() => {
-    const hidden = new Set(view.hiddenColumns);
-    const byId = new Map(columnDefs.map((column) => [column.id, column]));
-    const ordered = view.columnOrder
-      .map((id) => byId.get(id))
-      .filter((column): column is (typeof columnDefs)[number] => Boolean(column));
-    const remainder = columnDefs.filter((column) => !view.columnOrder.includes(column.id));
-    return [...ordered, ...remainder].filter((column) => !hidden.has(column.id));
-  }, [columnDefs, view.columnOrder, view.hiddenColumns]);
+  const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
