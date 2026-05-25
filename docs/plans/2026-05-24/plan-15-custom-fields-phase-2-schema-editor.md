@@ -1,20 +1,21 @@
 ---
 DATE: 2026-05-24
 TIME: planning (detailed implementation phasing)
-STATUS: In progress. Phase 2 of plan-13 (custom fields). 7/8 sub-
+STATUS: In progress. Phase 2 of plan-13 (custom fields). 8/9 sub-
         phases shipped (P2.0 scaffold + ADR, P2.1 backend mutation
         DTOs + apply service, P2.2 REST endpoint, P2.3 MCP write
         tools, P2.4 frontend dispatcher + builders, P2.5 locked
         indicator + description tooltip + `<HeaderContextMenu>` +
         delete-field flow, P2.6 add-field popover + tail `+` cell
-        wire-up + Insert-left/right header items). Editors can now
-        add custom fields end-to-end through the browser for the
+        wire-up + Insert-left/right header items, P2.7 rename inline
+        + duplicate + edit-description). Editors can now add and
+        manage custom fields end-to-end through the browser for the
         four Phase 2 types (`short_text`, `long_text`, `number`,
         `url`) with optional description + `number.precision`
-        config. Next up: P2.7 — rename inline + duplicate +
-        edit-description. See **Progress log** at the bottom for
-        the latest checkpoint, what's green, and the resume
-        pointer.
+        config. Next up: P2.8 — exit-criteria acceptance tests,
+        Playwright smoke, and focused a11y pass. See **Progress log**
+        at the bottom for the latest checkpoint, what's green, and
+        the resume pointer.
         Builds on the completed Phase 1 envelope (plan-14): Rooms
         already carries
         `{custom_fields, rows}`, `CustomFieldDef` is closed, the
@@ -1271,40 +1272,49 @@ design).
 | P2.4 — Frontend: `schemaMutation` WriteOp + dispatcher | ✅ Done | 2026-05-24 |
 | P2.5 — Frontend: locked indicator + tooltip + `<HeaderContextMenu>` skeleton | ✅ Done | 2026-05-24 |
 | P2.6 — Frontend: add-field popover + tail `+` cell wire-up | ✅ Done | 2026-05-24 |
-| P2.7 — Frontend: rename + delete + duplicate + edit-description | ⏭️ Next | — |
-| P2.8 — Exit-criteria acceptance tests + Playwright + a11y pass | ⏳ Pending | — |
+| P2.7 — Frontend: rename + delete + duplicate + edit-description | ✅ Done | 2026-05-24 |
+| P2.8 — Exit-criteria acceptance tests + Playwright + a11y pass | ⏭️ Next | — |
 
 ### Resume pointer
 
-**Next sub-phase: P2.7 — Frontend: rename inline + delete confirm
-+ duplicate + edit-description** (see phase block above for full
-spec). P2.6 closed the add-field surface; P2.7 rounds out the
-custom-field menu so every US-CF-1 / US-CF-3 / US-CF-13 / US-CF-14
-write criterion (excluding type-change Phase 3 and edit-formula
-Phase 4) is reachable from the browser. Concretely:
+**Next sub-phase: P2.8 — exit-criteria acceptance tests +
+Playwright + a11y pass** (see phase block above for full spec).
+P2.7 rounded out the browser schema-editor menu for custom fields:
+rename inline from the header menu or double-click, delete confirm
+copy that names populated row impact + locked-version retention,
+duplicate with a fresh `cf_*` id and copied config / description,
+and edit-description via a 280-character popover.
 
-1. Add an inline header-label edit primitive (or reuse the
-   `InlineCellEditor`) wired to a new `Rename field` menu item on
-   custom-field headers and to a header double-click affordance.
-   Build via `buildRenameFieldMutation`, dispatch via
-   `commitSchemaMutation`. Preserve the `cf_*` id.
-2. Refine the delete-field confirm copy already shipped in P2.5 to
-   mention the row-value count and the fact that older locked
-   versions retain the field (US-CF-5 criterion 4).
-3. Add a `Duplicate field` menu item on custom fields. Compute a
-   uniquified `<source> copy` / `copy 2` / ... display name,
-   mint a fresh id, deep-copy `field_type` / `config` /
-   `description`, build via `buildDuplicateFieldMutation`.
-4. Add an `Edit description` menu item on custom fields that opens
-   a small popover (textarea, 280 max). Build via
-   `buildSetDescriptionMutation`; empty trimmed input sends
-   `description: null`. Core fields don't expose this item.
+### P2.7 (2026-05-24) — Rename + delete confirm + duplicate + edit-description
 
-All of the typed-mutation plumbing is in place: every builder
-exists, `commitSchemaMutation` in EquipmentTab routes WriteOps,
-the `HeaderContextMenu` already grows by adding entries to its
-items array, and the `AddFieldPopover` shipped in P2.6 is a good
-visual template for the per-mutation popovers.
+**What landed:**
+
+- `HeaderContextMenu` now renders custom-field schema actions
+  (`Rename field`, `Delete field`, `Duplicate field`, `Edit
+  description`) ahead of view-state actions, and includes the
+  header-level `Filter by this field` action.
+- `DataTable` owns the inline header rename state, description
+  popover state, duplicate focus handoff, and refined delete-field
+  confirm copy.
+- `RoomsTable` forwards the new schema-editor callbacks; `EquipmentTab`
+  builds `renameField`, `duplicateField`, and `setDescription`
+  `FieldSchemaMutation`s with the current Rooms schema fingerprint.
+- `EditFieldDescriptionPopover` covers the textarea / 280-character
+  limit / empty-to-null behavior; duplicate keeps row values out of
+  the new field by using the backend duplicate mutation path.
+- `$simplify` follow-up extracted shared display-name normalization /
+  duplicate-copy naming and shared schema-mutation error copy, and
+  short-circuits unchanged rename / description saves plus empty
+  `columnOrder` duplicate splices.
+
+**Gates green:** `cd frontend && pnpm exec vitest run
+src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx
+src/shared/ui/data-table/__tests__/HeaderContextMenu.test.tsx
+src/shared/ui/data-table/__tests__/EditFieldDescriptionPopover.test.tsx
+src/features/equipment/__tests__/RoomsTable.addField.test.tsx
+src/shared/ui/data-table/__tests__/AddFieldPopover.test.tsx`;
+`cd frontend && pnpm run format:check`; `cd frontend && pnpm run
+lint`; `cd frontend && pnpm run build` (Vite chunk-size warning only).
 
 ### P2.0 (2026-05-24) — Story promotion + scaffold + ADR
 
@@ -1925,18 +1935,18 @@ that earlier phases noted is also clean on this run.
   rather than just on the cell, queue an `edit.start(...)`
   instead — see the rowInsert pattern in
   `insertRowBelowActive` for precedent.
-- **Existing field names** are derived from `fieldDefs` inside
+- **Existing field labels** are derived from `fieldDefs` inside
   DataTable. Consumers don't pass them through; the data-table
   is the source of truth for what's currently in the schema.
+  Rename preflight passes `{ fieldKey, displayName }` pairs so
+  the current field is excluded by identity rather than by name.
   Future tables (ERVs / Pumps / Fans) get the same preflight
   for free.
-- **ApiRequestError import** is the first time the data-table
-  reaches across into `shared/api/client`. The dependency is
-  light — only the error class — and it sits at the same
-  `shared/` level as `data-table` itself, so this isn't a layer
-  break. If a third use-case appears, consider a tiny
-  `shared/ui/data-table/lib/errorCodes.ts` translator owned by
-  the consumer.
+- **Schema-mutation error copy** is centralized in
+  `shared/ui/data-table/lib/schemaMutationErrors.ts`. This keeps
+  `ApiRequestError.errorCode` handling consistent across add and
+  edit-description surfaces while preserving operation-specific
+  fallback text.
 - **No new Radix dep.** Followed P2.5's precedent of reusing
   `@radix-ui/react-popover` rather than adding
   `@radix-ui/react-dialog`. The popover's `role="dialog"`

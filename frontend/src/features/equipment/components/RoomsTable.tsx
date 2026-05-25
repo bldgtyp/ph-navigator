@@ -35,6 +35,9 @@ export function RoomsTable({
   onResetView,
   onDeleteCustomField,
   onAddCustomField,
+  onRenameCustomField,
+  onDuplicateCustomField,
+  onSetCustomFieldDescription,
 }: {
   roomsSlice: RoomsSlice;
   // Plan-14 P1.4: produced by the parent's single `useTableSchema`
@@ -54,6 +57,9 @@ export function RoomsTable({
   onResetView?: DataTableProps<RoomRow>["onResetView"];
   onDeleteCustomField?: DataTableProps<RoomRow>["onDeleteCustomField"];
   onAddCustomField?: DataTableProps<RoomRow>["onAddCustomField"];
+  onRenameCustomField?: DataTableProps<RoomRow>["onRenameCustomField"];
+  onDuplicateCustomField?: DataTableProps<RoomRow>["onDuplicateCustomField"];
+  onSetCustomFieldDescription?: DataTableProps<RoomRow>["onSetCustomFieldDescription"];
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
   const { fieldDefs, customFields } = tableSchema;
@@ -165,6 +171,9 @@ export function RoomsTable({
       onResetView={onResetView}
       onDeleteCustomField={onDeleteCustomField}
       onAddCustomField={onAddCustomField}
+      onRenameCustomField={onRenameCustomField}
+      onDuplicateCustomField={onDuplicateCustomField}
+      onSetCustomFieldDescription={onSetCustomFieldDescription}
     />
   );
 }

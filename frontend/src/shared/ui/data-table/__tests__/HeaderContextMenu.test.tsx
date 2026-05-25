@@ -10,9 +10,7 @@ import type { FieldDef } from "../types";
 // ref so individual tests can dispatch events against the same node
 // the menu listens on.
 
-type RenderArgs = Partial<
-  Omit<HeaderContextMenuProps, "fieldDef" | "triggerRef">
-> & {
+type RenderArgs = Partial<Omit<HeaderContextMenuProps, "fieldDef" | "triggerRef">> & {
   fieldDef?: FieldDef;
 };
 
@@ -35,9 +33,13 @@ function Wrapper(props: RenderArgs) {
         isViewer={props.isViewer ?? false}
         onSortAsc={props.onSortAsc ?? vi.fn()}
         onSortDesc={props.onSortDesc ?? vi.fn()}
+        onFilterBy={props.onFilterBy ?? vi.fn()}
         onGroupBy={props.onGroupBy ?? vi.fn()}
         onHide={props.onHide ?? vi.fn()}
+        onRenameField={props.onRenameField}
         onDeleteField={props.onDeleteField}
+        onDuplicateField={props.onDuplicateField}
+        onEditDescription={props.onEditDescription}
         onInsertFieldLeft={props.onInsertFieldLeft}
         onInsertFieldRight={props.onInsertFieldRight}
       />
@@ -61,20 +63,37 @@ describe("HeaderContextMenu", () => {
     render(<Wrapper fieldDef={coreField} onDeleteField={vi.fn()} />);
     openViaContextMenu();
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
-    expect(items).toEqual(["Sort A → Z", "Sort Z → A", "Group by this field", "Hide field"]);
-    expect(items).not.toContain("Delete field");
-  });
-
-  test("right-click on a custom-field header shows view-state items AND Delete field", () => {
-    render(<Wrapper onDeleteField={vi.fn()} />);
-    openViaContextMenu();
-    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       "Sort A → Z",
       "Sort Z → A",
+      "Filter by this field",
       "Group by this field",
       "Hide field",
+    ]);
+    expect(items).not.toContain("Delete field");
+  });
+
+  test("right-click on a custom-field header shows schema items before view-state items", () => {
+    render(
+      <Wrapper
+        onRenameField={vi.fn()}
+        onDeleteField={vi.fn()}
+        onDuplicateField={vi.fn()}
+        onEditDescription={vi.fn()}
+      />,
+    );
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).toEqual([
+      "Rename field",
       "Delete field",
+      "Duplicate field",
+      "Edit description",
+      "Sort A → Z",
+      "Sort Z → A",
+      "Filter by this field",
+      "Group by this field",
+      "Hide field",
     ]);
   });
 
@@ -120,8 +139,8 @@ describe("HeaderContextMenu", () => {
     // see when driving via keyboard.
     fireEvent.keyDown(menu, { key: "ArrowDown" });
     fireEvent.keyDown(menu, { key: "ArrowDown" });
-    // Items 0,1,2 = Sort A→Z, Sort Z→A, Group by — focus index 2.
-    expect(document.activeElement?.textContent).toBe("Group by this field");
+    // Items 0,1,2 = Delete, Sort A→Z, Sort Z→A — focus index 2.
+    expect(document.activeElement?.textContent).toBe("Sort Z → A");
     fireEvent.keyDown(menu, { key: "Escape" });
     expect(screen.queryByRole("menu")).toBeNull();
   });
@@ -147,6 +166,7 @@ describe("HeaderContextMenu", () => {
     expect(items).toEqual([
       "Sort A → Z",
       "Sort Z → A",
+      "Filter by this field",
       "Group by this field",
       "Hide field",
       "Insert field left",
@@ -162,12 +182,14 @@ describe("HeaderContextMenu", () => {
   test("each view-state item routes to its callback", () => {
     const onSortAsc = vi.fn();
     const onSortDesc = vi.fn();
+    const onFilterBy = vi.fn();
     const onGroupBy = vi.fn();
     const onHide = vi.fn();
     render(
       <Wrapper
         onSortAsc={onSortAsc}
         onSortDesc={onSortDesc}
+        onFilterBy={onFilterBy}
         onGroupBy={onGroupBy}
         onHide={onHide}
       />,
@@ -177,11 +199,14 @@ describe("HeaderContextMenu", () => {
     openViaContextMenu();
     fireEvent.click(screen.getByRole("menuitem", { name: "Sort Z → A" }));
     openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Filter by this field" }));
+    openViaContextMenu();
     fireEvent.click(screen.getByRole("menuitem", { name: "Group by this field" }));
     openViaContextMenu();
     fireEvent.click(screen.getByRole("menuitem", { name: "Hide field" }));
     expect(onSortAsc).toHaveBeenCalledTimes(1);
     expect(onSortDesc).toHaveBeenCalledTimes(1);
+    expect(onFilterBy).toHaveBeenCalledTimes(1);
     expect(onGroupBy).toHaveBeenCalledTimes(1);
     expect(onHide).toHaveBeenCalledTimes(1);
   });

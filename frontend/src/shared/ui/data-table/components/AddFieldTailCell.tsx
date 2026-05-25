@@ -1,10 +1,3 @@
-// Rightmost tail cell. The `th` variant exposes either a disabled
-// "coming soon" preview (no callback) or a focusable button that opens
-// the add-field popover when `onClick` is provided (plan-15 P2.6). The
-// `td` variant is always inert — it only exists to keep the column
-// alignment consistent across body / group / summary rows. Viewer mode
-// is handled at the consumer: it omits `onClick` and renders the same
-// disabled glyph the original Phase 0 layout previewed.
 import { forwardRef } from "react";
 
 export type AddFieldTailCellProps = {

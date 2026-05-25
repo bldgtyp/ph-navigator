@@ -84,8 +84,8 @@ export class SchemaMutationBuildError extends Error {
   }
 }
 
-const MAX_DISPLAY_NAME = 120;
-const MAX_DESCRIPTION = 280;
+export const MAX_DISPLAY_NAME = 120;
+export const MAX_DESCRIPTION = 280;
 
 function assertCustomFieldId(fieldId: string, label: string): void {
   if (!isCustomFieldKey(fieldId) || fieldId.length <= CUSTOM_FIELD_KEY_PREFIX.length) {

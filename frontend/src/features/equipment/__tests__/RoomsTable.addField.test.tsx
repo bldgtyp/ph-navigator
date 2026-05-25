@@ -135,9 +135,7 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
     const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
     expect(request.displayName).toBe("Notes");
     expect(request.fieldType).toBe("short_text");
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Add field" })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Add field" })).toBeNull());
   });
 
   test("viewer mode hides the add-field affordance", () => {
@@ -170,9 +168,7 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
       target: { value: "Notes" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Add field" })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Add field" })).toBeNull());
     expect(screen.getByRole("columnheader", { name: /^Notes\b/ })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 export { DataTable } from "./DataTable";
 export type { AddCustomFieldRequest } from "./components/AddFieldPopover";
+export type { EditCustomFieldDescriptionRequest } from "./components/EditFieldDescriptionPopover";
 export {
   CUSTOM_FIELD_KEY_PREFIX,
   getCustomValue,
@@ -26,6 +27,7 @@ export {
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
 } from "./lib/customFieldMutations";
+export { uniqueCopyDisplayName } from "./lib/fieldDisplayNames";
 export type {
   AddFieldMutation,
   ChangeTypeMutation,
@@ -65,6 +67,7 @@ export type {
   GroupRule,
   RowDeletePayload,
   RowInsertPayload,
+  RenameCustomFieldRequest,
   SortRule,
   ViewState,
   WriteOp,

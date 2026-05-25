@@ -1,10 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { describe, expect, test, vi } from "vitest";
-import {
-  AddFieldPopover,
-  type AddCustomFieldRequest,
-} from "../components/AddFieldPopover";
+import { AddFieldPopover, type AddCustomFieldRequest } from "../components/AddFieldPopover";
 import { ApiRequestError } from "../../../api/client";
 
 type HarnessProps = {
@@ -120,9 +117,7 @@ describe("AddFieldPopover", () => {
     const dispatch = vi.fn();
     render(<Harness dispatch={dispatch} existingFieldNames={["Notes", "Number"]} />);
     typeName("  notes  ");
-    expect(
-      within(dialog()).getByText(/A field named "notes" already exists/i),
-    ).toBeInTheDocument();
+    expect(within(dialog()).getByText(/A field named "notes" already exists/i)).toBeInTheDocument();
     const addButton = within(dialog()).getByRole("button", {
       name: /Add field/,
     }) as HTMLButtonElement;

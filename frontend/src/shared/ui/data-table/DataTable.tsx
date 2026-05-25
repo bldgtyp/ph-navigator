@@ -49,8 +49,12 @@ import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
 import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
-import { AddFieldPopover } from "./components/AddFieldPopover";
+import { AddFieldPopover, type AddCustomFieldRequest } from "./components/AddFieldPopover";
 import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
+import {
+  EditFieldDescriptionPopover,
+  type EditCustomFieldDescriptionRequest,
+} from "./components/EditFieldDescriptionPopover";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
@@ -88,6 +92,9 @@ export function DataTable<TRow>({
   onResetView,
   onDeleteCustomField,
   onAddCustomField,
+  onRenameCustomField,
+  onDuplicateCustomField,
+  onSetCustomFieldDescription,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
   // Hide-fields panel needs hidden columns too, so users can toggle
@@ -601,6 +608,16 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
+  const handleHeaderFilterBy = useCallback(
+    (fieldKey: string) => {
+      const fieldDef = fieldDefByKey.get(fieldKey);
+      const operator = getFilterOperators(fieldDef)[0]?.operator;
+      if (!operator) return;
+      if (view.filter.some((rule) => rule.fieldKey === fieldKey)) return;
+      onViewChange({ ...view, filter: [...view.filter, { fieldKey, operator }] });
+    },
+    [fieldDefByKey, onViewChange, view],
+  );
   const handleHeaderGroupBy = useCallback(
     (fieldKey: string) => {
       if (view.group.some((rule) => rule.fieldKey === fieldKey)) return;
@@ -660,6 +677,8 @@ export function DataTable<TRow>({
     insertAfterFieldKey: string | null;
   };
   const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
+  const [renamingFieldKey, setRenamingFieldKey] = useState<string | null>(null);
+  const [descriptionFieldKey, setDescriptionFieldKey] = useState<string | null>(null);
   const tailCellRef = useRef<HTMLTableCellElement | null>(null);
   const [pendingFocusFieldKey, setPendingFocusFieldKey] = useState<string | null>(null);
 
@@ -681,11 +700,9 @@ export function DataTable<TRow>({
   const requestInsertFieldLeft = useCallback(
     (fieldKey: string, anchorElement: HTMLElement | null) => {
       if (!addFieldEnabled) return;
-      // "Insert left of column N" = "insert right of column N-1" once
-      // the visible order is taken into account. When N is the first
-      // visible column, there is no anchor (the new field falls at
-      // position 0 of the visible order; the consumer collapses that
-      // to a null backend `insert_after_field_id`).
+      // "Insert left of column N" = "insert right of column N-1" — when N
+      // is the first visible column, there is no anchor and the consumer
+      // collapses that to a null backend `insert_after_field_id`.
       const index = visibleColumnDefs.findIndex((column) => column.fieldKey === fieldKey);
       const previous = index > 0 ? (visibleColumnDefs[index - 1]?.fieldKey ?? null) : null;
       openAddFieldPopover(anchorElement, previous);
@@ -694,7 +711,7 @@ export function DataTable<TRow>({
   );
 
   const handleAddFieldSubmit = useCallback(
-    async (request: import("./components/AddFieldPopover").AddCustomFieldRequest) => {
+    async (request: AddCustomFieldRequest) => {
       if (!onAddCustomField) return;
       const { newFieldKey } = await onAddCustomField(request);
       setPendingFocusFieldKey(newFieldKey);
@@ -702,10 +719,42 @@ export function DataTable<TRow>({
     [onAddCustomField],
   );
 
-  // Once the consumer's refetch reidentifies fieldDefs and the new
-  // column lands in the visible set, jump the selection to row 0 of
-  // that column and refocus the grid (US-CF-2 criterion 4). One-shot —
-  // clears immediately after firing.
+  const handleRenameCustomFieldSubmit = useCallback(
+    async (fieldKey: string, displayName: string) => {
+      if (!onRenameCustomField) return;
+      await onRenameCustomField({ fieldKey, displayName });
+      setRenamingFieldKey(null);
+    },
+    [onRenameCustomField],
+  );
+
+  const requestDuplicateCustomField = useCallback(
+    async (fieldKey: string) => {
+      if (!onDuplicateCustomField) return;
+      try {
+        const result = await onDuplicateCustomField(fieldKey);
+        if (result?.newFieldKey) setPendingFocusFieldKey(result.newFieldKey);
+      } catch (error) {
+        setAnnounce(error instanceof Error ? error.message : "Could not duplicate field.");
+      }
+    },
+    [onDuplicateCustomField],
+  );
+
+  const handleSetCustomFieldDescription = useCallback(
+    async (request: EditCustomFieldDescriptionRequest) => {
+      if (!onSetCustomFieldDescription) return;
+      await onSetCustomFieldDescription(request);
+    },
+    [onSetCustomFieldDescription],
+  );
+
+  // Once the consumer's refetch reidentifies fieldDefs and the new column
+  // lands in the visible set, jump the selection to row 0 of that column
+  // and refocus the grid. Narrow the deps to `selection.setActive` so an
+  // unrelated render that reidentifies the `selection` object doesn't
+  // re-run this body.
+  const setActiveCell = selection.setActive;
   useEffect(() => {
     if (!pendingFocusFieldKey) return;
     const target = visibleColumnDefs.findIndex(
@@ -714,11 +763,11 @@ export function DataTable<TRow>({
     if (target < 0) return;
     const firstRowId = rowIds[0];
     if (firstRowId !== undefined) {
-      selection.setActive({ rowId: firstRowId, fieldKey: pendingFocusFieldKey });
+      setActiveCell({ rowId: firstRowId, fieldKey: pendingFocusFieldKey });
     }
     setPendingFocusFieldKey(null);
     wrapperRef.current?.focus({ preventScroll: true });
-  }, [pendingFocusFieldKey, visibleColumnDefs, rowIds, selection]);
+  }, [pendingFocusFieldKey, visibleColumnDefs, rowIds, setActiveCell]);
 
   const openAddFieldFromTail = useCallback(() => {
     if (!addFieldEnabled) return;
@@ -730,18 +779,29 @@ export function DataTable<TRow>({
     () => ({
       onSortAsc: (fieldKey: string) => handleHeaderSort(fieldKey, "asc"),
       onSortDesc: (fieldKey: string) => handleHeaderSort(fieldKey, "desc"),
+      onFilterBy: handleHeaderFilterBy,
       onGroupBy: handleHeaderGroupBy,
       onHide: handleHeaderHide,
+      onRenameCustomField: onRenameCustomField ? setRenamingFieldKey : undefined,
       onDeleteCustomField: onDeleteCustomField ? requestDeleteCustomField : undefined,
+      onDuplicateCustomField: onDuplicateCustomField ? requestDuplicateCustomField : undefined,
+      onEditCustomFieldDescription: onSetCustomFieldDescription
+        ? setDescriptionFieldKey
+        : undefined,
       onInsertFieldLeft: addFieldEnabled ? requestInsertFieldLeft : undefined,
       onInsertFieldRight: addFieldEnabled ? requestInsertFieldRight : undefined,
     }),
     [
       handleHeaderSort,
+      handleHeaderFilterBy,
       handleHeaderGroupBy,
       handleHeaderHide,
+      onRenameCustomField,
       onDeleteCustomField,
+      onDuplicateCustomField,
+      onSetCustomFieldDescription,
       requestDeleteCustomField,
+      requestDuplicateCustomField,
       addFieldEnabled,
       requestInsertFieldLeft,
       requestInsertFieldRight,
@@ -883,6 +943,14 @@ export function DataTable<TRow>({
     () => fieldDefs.map((fieldDef) => fieldDef.display_name),
     [fieldDefs],
   );
+  const existingFieldLabels = useMemo(
+    () =>
+      fieldDefs.map((fieldDef) => ({
+        fieldKey: fieldDef.field_key,
+        displayName: fieldDef.display_name,
+      })),
+    [fieldDefs],
+  );
 
   const fieldEditorContext = useMemo(() => {
     if (!fieldEditorOpenForFieldKey) return null;
@@ -891,6 +959,9 @@ export function DataTable<TRow>({
     if (!fieldDef || !column) return null;
     return { fieldDef, column };
   }, [columnDefs, fieldDefByKey, fieldEditorOpenForFieldKey]);
+  const descriptionFieldDef = descriptionFieldKey
+    ? fieldDefByKey.get(descriptionFieldKey)
+    : undefined;
 
   const toolbarActions =
     !readOnly && rowSelection.count > 0 ? (
@@ -969,10 +1040,26 @@ export function DataTable<TRow>({
           dispatchAddField={handleAddFieldSubmit}
         />
       ) : null}
+      {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (
+        <EditFieldDescriptionPopover
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              setDescriptionFieldKey(null);
+              focusGrid();
+            }
+          }}
+          anchorElement={headerCellRefByFieldKey.get(descriptionFieldKey) ?? null}
+          fieldKey={descriptionFieldKey}
+          fieldDisplayName={descriptionFieldDef.display_name}
+          initialDescription={descriptionFieldDef.description}
+          dispatchDescription={handleSetCustomFieldDescription}
+        />
+      ) : null}
       <ConfirmDestructiveDialog
         open={pendingDeleteFieldKey !== null}
         title={`Delete field “${pendingDeleteFieldDef?.display_name ?? ""}”?`}
-        description={`${describeDeleteImpact(pendingDeleteRowCount)} This cannot be undone from a saved version.`}
+        description={`${describeDeleteImpact(pendingDeleteRowCount)} Older locked versions keep this field. This cannot be undone from a saved version.`}
         confirmLabel="Delete field"
         onCancel={() => {
           setPendingDeleteFieldKey(null);
@@ -1028,6 +1115,13 @@ export function DataTable<TRow>({
                 hasWriteHandler={Boolean(onWrite)}
                 onEditField={setFieldEditorOpenForFieldKey}
                 openFieldKey={fieldEditorOpenForFieldKey}
+                renamingFieldKey={renamingFieldKey}
+                existingFieldLabels={existingFieldLabels}
+                onRenameCustomFieldSubmit={handleRenameCustomFieldSubmit}
+                onRenameCustomFieldCancel={() => {
+                  setRenamingFieldKey(null);
+                  focusGrid();
+                }}
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
                 columnDragKeyboard={columnDragKeyboard}
                 columnResize={columnResize}
