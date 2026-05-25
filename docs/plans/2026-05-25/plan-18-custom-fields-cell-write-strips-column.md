@@ -328,6 +328,37 @@ Items above are **adjacent** to plan-18's regression but **not**
 required for plan-18 acceptance — they ride in the same PR to keep
 the closeout coherent.
 
+### 5c. Backend follow-up bugs surfaced while writing B1/B2 (fixed)
+
+Two additional defects were uncovered by the §5b coverage work and
+patched alongside this plan:
+
+1. **`RoomsSliceOptions` rejected the `rooms.cf_*` namespace.** Plan-
+   18 §4.3 broadened the frontend `cloneOptions` to spread the full
+   `single_select_options` record into the slice-replace payload.
+   The backend's `RoomsSliceOptions(extra="forbid")` then 422'd on
+   `"Extra inputs are not permitted"` the moment any custom
+   single_select existed in the slice. Fix:
+   `backend/features/project_document/tables/rooms.py` —
+   `RoomsSliceOptions` switches to `extra="allow"` with a strict
+   `model_validator` that admits only `rooms.cf_*` keys, coerces
+   their values to `list[SingleSelectOption]`, and exposes them
+   through `custom_option_lists()`. `apply_rooms_replace` merges
+   those into the body's option dict, making the payload
+   authoritative for any list it carries. Pinned by
+   `test_phase_2_slice_replace_accepts_rooms_cf_option_lists` and
+   `test_phase_2_slice_replace_rejects_non_namespaced_extras`.
+2. **`coerce_custom_value` did not validate URL scheme.** The
+   `changeType` mutation path enforced `http://` / `https://` (see
+   `schema_mutations._coerce_to_target`), but cell writes through
+   the slice-replace path accepted any string for a `url` custom
+   field. Fix:
+   `backend/features/project_document/custom_fields.py` — the `url`
+   branch now strips whitespace, normalizes empty to `None`, and
+   requires the same scheme prefix. The asymmetry between cell-write
+   and type-change validation is closed. Pinned by the URL case in
+   `test_phase_2_put_rejects_mistyped_custom_values`.
+
 ## 6. Acceptance
 
 - `pnpm test`, `pnpm run typecheck`, `pnpm run lint`,

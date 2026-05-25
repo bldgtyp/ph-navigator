@@ -13,7 +13,8 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
-from typing import Iterable as IterableT
+from collections.abc import Iterable as IterableT
+from typing import cast
 
 from starlette import status
 
@@ -135,7 +136,7 @@ def find_cells_referencing_option(
         row_id = str(row.get("id", ""))
         if is_custom:
             custom = row.get("custom") or {}
-            value = custom.get(field_id) if isinstance(custom, Mapping) else None
+            value = cast(Mapping[str, object], custom).get(field_id) if isinstance(custom, Mapping) else None
         else:
             value = row.get(field_id)
         if value == option_id:

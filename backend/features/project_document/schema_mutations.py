@@ -11,7 +11,7 @@ until later phases implement them.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 from starlette import status
@@ -21,11 +21,13 @@ from features.project_document.custom_fields import (
     SHORT_TEXT_MAX_LENGTH,
     CustomFieldDef,
     CustomFieldType,
+    CustomValue,
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
 from features.project_document.formula import (
     SOURCE_LENGTH_MAX,
+    FormulaAST,
     FormulaCycleError,
     FormulaMissingRefError,
     FormulaParseError,
@@ -1066,7 +1068,9 @@ def _apply_change_type(
     # Apply row writes. `capability.replace_custom_fields` does not
     # touch the row list, so we can reuse the `rows` we already iterated
     # for preflight and skip a second envelope read.
-    write_by_row: dict[str, object | None] = dict(compatible_writes)
+    write_by_row: dict[str, CustomValue] = {
+        row_id: cast(CustomValue, value) for row_id, value in compatible_writes
+    }
     incompatible_by_row: set[str] = {str(entry["row_id"]) for entry in incompatible}
 
     new_rows: list[object] = []
@@ -1078,7 +1082,7 @@ def _apply_change_type(
             if value is None:
                 custom.pop(mutation.field_id, None)
             else:
-                custom[mutation.field_id] = value  # type: ignore[assignment]
+                custom[mutation.field_id] = value
             new_rows.append(capability.set_row_custom(row, custom))
         elif row_id in incompatible_by_row:
             custom = dict(capability.read_row_custom(row))
@@ -1230,7 +1234,7 @@ def _apply_set_formula(
         raise  # pragma: no cover
 
     # Cycle-check against every other formula field's stored AST.
-    asts_by_id: dict[str, object] = {}
+    asts_by_id: dict[str, FormulaAST] = {}
     for f in current_fields:
         if f.id == mutation.field_id:
             continue
@@ -1247,7 +1251,7 @@ def _apply_set_formula(
             continue
 
     try:
-        detect_cycles(mutation.field_id, resolved, asts_by_id)  # type: ignore[arg-type]
+        detect_cycles(mutation.field_id, resolved, asts_by_id)
     except FormulaCycleError as exc:
         _raise_formula_cycle(exc, mutation.field_id)
         raise  # pragma: no cover

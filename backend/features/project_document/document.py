@@ -417,6 +417,7 @@ class ProjectDocumentV1(BaseModel):
         # Lazy-import to keep the document module free of formula deps
         # for callers that don't touch custom formula fields.
         from features.project_document.formula import (
+            FormulaAST,
             FormulaCycleError,
             ast_from_json,
             detect_cycles,
@@ -429,7 +430,7 @@ class ProjectDocumentV1(BaseModel):
         if not formula_fields:
             return
 
-        asts_by_id: dict[str, object] = {}
+        asts_by_id: dict[str, FormulaAST] = {}
         for f in formula_fields:
             stored = f.config.get("ast")
             if stored is None:
@@ -448,7 +449,7 @@ class ProjectDocumentV1(BaseModel):
             # composes its own asts map.
             others = {k: v for k, v in asts_by_id.items() if k != f.id}
             try:
-                detect_cycles(f.id, stored, others)  # type: ignore[arg-type]
+                detect_cycles(f.id, stored, others)
             except FormulaCycleError as exc:
                 raise ValueError(
                     f"Rooms formula cycle for {f.display_name!r}: "

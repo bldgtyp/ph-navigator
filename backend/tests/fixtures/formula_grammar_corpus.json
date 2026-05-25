@@ -1,0 +1,426 @@
+{
+  "comment": "Shared formula grammar corpus. Both the Python parser (backend/features/project_document/formula/parser.py) and the TypeScript parser (frontend/src/shared/ui/data-table/lib/formula/parser.ts) must agree on every case. CI fails on the first divergence. Each case is either expected_ast (the parser produces a matching AST, refs unresolved -> field_id=null) or expected_error (the parser raises a matching error). Number literal values use integer JSON syntax; both languages must compare them as numerically equal (Python 2 == 2.0; JS 2 === 2).",
+  "cases": [
+    {
+      "name": "literal_number_integer",
+      "source": "42",
+      "expected_ast": {
+        "kind": "literal",
+        "value": 42,
+        "inferred_type": "number"
+      }
+    },
+    {
+      "name": "literal_number_fractional",
+      "source": "1.5",
+      "expected_ast": {
+        "kind": "literal",
+        "value": 1.5,
+        "inferred_type": "number"
+      }
+    },
+    {
+      "name": "literal_number_scientific",
+      "source": "1e3",
+      "expected_ast": {
+        "kind": "literal",
+        "value": 1000,
+        "inferred_type": "number"
+      }
+    },
+    {
+      "name": "literal_string_simple",
+      "source": "\"hello\"",
+      "expected_ast": {
+        "kind": "literal",
+        "value": "hello",
+        "inferred_type": "text"
+      }
+    },
+    {
+      "name": "literal_string_with_escapes",
+      "source": "\"a\\\\b\\nc\"",
+      "expected_ast": {
+        "kind": "literal",
+        "value": "a\\b\nc",
+        "inferred_type": "text"
+      }
+    },
+    {
+      "name": "literal_bool_true",
+      "source": "true",
+      "expected_ast": {
+        "kind": "literal",
+        "value": true,
+        "inferred_type": "bool"
+      }
+    },
+    {
+      "name": "literal_bool_false",
+      "source": "false",
+      "expected_ast": {
+        "kind": "literal",
+        "value": false,
+        "inferred_type": "bool"
+      }
+    },
+    {
+      "name": "literal_null",
+      "source": "null",
+      "expected_ast": {
+        "kind": "literal",
+        "value": null,
+        "inferred_type": "null"
+      }
+    },
+    {
+      "name": "field_ref_simple",
+      "source": "{Name}",
+      "expected_ast": {
+        "kind": "field_ref",
+        "display_name": "Name",
+        "field_id": null
+      }
+    },
+    {
+      "name": "field_ref_trimmed",
+      "source": "{  Name  }",
+      "expected_ast": {
+        "kind": "field_ref",
+        "display_name": "Name",
+        "field_id": null
+      }
+    },
+    {
+      "name": "binop_add",
+      "source": "1 + 2",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "+",
+        "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+        "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "binop_sub_left_assoc",
+      "source": "5 - 2 - 1",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "-",
+        "left": {
+          "kind": "binary_op",
+          "op": "-",
+          "left": {"kind": "literal", "value": 5, "inferred_type": "number"},
+          "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+        },
+        "right": {"kind": "literal", "value": 1, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "binop_mul_precedence",
+      "source": "1 + 2 * 3",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "+",
+        "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+        "right": {
+          "kind": "binary_op",
+          "op": "*",
+          "left": {"kind": "literal", "value": 2, "inferred_type": "number"},
+          "right": {"kind": "literal", "value": 3, "inferred_type": "number"}
+        }
+      }
+    },
+    {
+      "name": "binop_div_and_mod",
+      "source": "10 / 3 % 2",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "%",
+        "left": {
+          "kind": "binary_op",
+          "op": "/",
+          "left": {"kind": "literal", "value": 10, "inferred_type": "number"},
+          "right": {"kind": "literal", "value": 3, "inferred_type": "number"}
+        },
+        "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "parens_override_precedence",
+      "source": "(1 + 2) * 3",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "*",
+        "left": {
+          "kind": "binary_op",
+          "op": "+",
+          "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+          "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+        },
+        "right": {"kind": "literal", "value": 3, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "unary_minus",
+      "source": "-3",
+      "expected_ast": {
+        "kind": "unary_op",
+        "op": "-",
+        "operand": {"kind": "literal", "value": 3, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "unary_minus_chain",
+      "source": "--3",
+      "expected_ast": {
+        "kind": "unary_op",
+        "op": "-",
+        "operand": {
+          "kind": "unary_op",
+          "op": "-",
+          "operand": {"kind": "literal", "value": 3, "inferred_type": "number"}
+        }
+      }
+    },
+    {
+      "name": "cmp_eq",
+      "source": "1 = 1",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "=",
+        "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+        "right": {"kind": "literal", "value": 1, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "cmp_neq",
+      "source": "1 != 2",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "!=",
+        "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+        "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "cmp_lte",
+      "source": "1 <= 2",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "<=",
+        "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+        "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "cmp_gte",
+      "source": "2 >= 1",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": ">=",
+        "left": {"kind": "literal", "value": 2, "inferred_type": "number"},
+        "right": {"kind": "literal", "value": 1, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "bool_and_or",
+      "source": "true and false or true",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "or",
+        "left": {
+          "kind": "binary_op",
+          "op": "and",
+          "left": {"kind": "literal", "value": true, "inferred_type": "bool"},
+          "right": {"kind": "literal", "value": false, "inferred_type": "bool"}
+        },
+        "right": {"kind": "literal", "value": true, "inferred_type": "bool"}
+      }
+    },
+    {
+      "name": "bool_not",
+      "source": "not true",
+      "expected_ast": {
+        "kind": "unary_op",
+        "op": "not",
+        "operand": {"kind": "literal", "value": true, "inferred_type": "bool"}
+      }
+    },
+    {
+      "name": "if_expr",
+      "source": "if(true, 1, 2)",
+      "expected_ast": {
+        "kind": "if",
+        "condition": {"kind": "literal", "value": true, "inferred_type": "bool"},
+        "then_branch": {"kind": "literal", "value": 1, "inferred_type": "number"},
+        "else_branch": {"kind": "literal", "value": 2, "inferred_type": "number"}
+      }
+    },
+    {
+      "name": "func_call_concat",
+      "source": "concat(\"a\", \"b\", \"c\")",
+      "expected_ast": {
+        "kind": "func_call",
+        "name": "concat",
+        "args": [
+          {"kind": "literal", "value": "a", "inferred_type": "text"},
+          {"kind": "literal", "value": "b", "inferred_type": "text"},
+          {"kind": "literal", "value": "c", "inferred_type": "text"}
+        ]
+      }
+    },
+    {
+      "name": "func_call_upper_with_field_ref",
+      "source": "upper({Name})",
+      "expected_ast": {
+        "kind": "func_call",
+        "name": "upper",
+        "args": [
+          {"kind": "field_ref", "display_name": "Name", "field_id": null}
+        ]
+      }
+    },
+    {
+      "name": "func_call_substring_two_args",
+      "source": "substring(\"hello\", 2)",
+      "expected_ast": {
+        "kind": "func_call",
+        "name": "substring",
+        "args": [
+          {"kind": "literal", "value": "hello", "inferred_type": "text"},
+          {"kind": "literal", "value": 2, "inferred_type": "number"}
+        ]
+      }
+    },
+    {
+      "name": "func_call_replace",
+      "source": "replace(\"abc\", \"b\", \"x\")",
+      "expected_ast": {
+        "kind": "func_call",
+        "name": "replace",
+        "args": [
+          {"kind": "literal", "value": "abc", "inferred_type": "text"},
+          {"kind": "literal", "value": "b", "inferred_type": "text"},
+          {"kind": "literal", "value": "x", "inferred_type": "text"}
+        ]
+      }
+    },
+    {
+      "name": "nested_call",
+      "source": "concat(upper({Name}), \" - \", lower({Notes}))",
+      "expected_ast": {
+        "kind": "func_call",
+        "name": "concat",
+        "args": [
+          {
+            "kind": "func_call",
+            "name": "upper",
+            "args": [{"kind": "field_ref", "display_name": "Name", "field_id": null}]
+          },
+          {"kind": "literal", "value": " - ", "inferred_type": "text"},
+          {
+            "kind": "func_call",
+            "name": "lower",
+            "args": [{"kind": "field_ref", "display_name": "Notes", "field_id": null}]
+          }
+        ]
+      }
+    },
+    {
+      "name": "error_empty_source",
+      "source": "",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_whitespace_only",
+      "source": "   ",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_unterminated_string",
+      "source": "\"hello",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_unterminated_field_ref",
+      "source": "{Name",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_empty_field_ref",
+      "source": "{}",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_trailing_comma_in_call",
+      "source": "concat(\"a\",)",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_chained_comparison",
+      "source": "1 < 2 < 3",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_unsupported_function",
+      "source": "sqrt(4)",
+      "expected_error": {
+        "type": "FormulaUnsupportedFunctionError",
+        "function_name": "sqrt"
+      }
+    },
+    {
+      "name": "error_function_arity_too_few",
+      "source": "replace(\"a\", \"b\")",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_function_arity_too_many",
+      "source": "substring(\"a\", 1, 2, 3)",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_unexpected_character",
+      "source": "1 @ 2",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_unexpected_trailing_token",
+      "source": "1 2",
+      "expected_error": {"type": "FormulaParseError"}
+    },
+    {
+      "name": "error_source_length_exceeded",
+      "source_spec": {"kind": "repeat", "unit": "1+", "count": 600, "trailer": "0"},
+      "expected_error": {
+        "type": "FormulaResourceLimitError",
+        "limit_name": "source_length"
+      }
+    },
+    {
+      "name": "error_ast_depth_exceeded",
+      "source_spec": {"kind": "balanced_parens", "depth": 30, "core": "1"},
+      "expected_error": {
+        "type": "FormulaResourceLimitError",
+        "limit_name": "ast_depth"
+      }
+    },
+    {
+      "name": "error_dep_count_exceeded",
+      "source_spec": {"kind": "many_field_refs", "count": 17, "trailer": "0"},
+      "expected_error": {
+        "type": "FormulaResourceLimitError",
+        "limit_name": "dep_count"
+      }
+    },
+    {
+      "name": "error_ast_node_count_exceeded",
+      "source_spec": {"kind": "repeat", "unit": "1+", "count": 260, "trailer": "0"},
+      "expected_error": {
+        "type": "FormulaResourceLimitError",
+        "limit_name": "ast_node_count"
+      }
+    }
+  ]
+}

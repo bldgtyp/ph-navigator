@@ -17,9 +17,9 @@ by P4.4's downloads / slice responses / MCP reads.
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
@@ -41,6 +41,8 @@ if TYPE_CHECKING:
     from features.project_document.document import ProjectDocumentV1
     from features.project_document.tables.contracts import CustomFieldCapability
 
+EvalValue = str | int | float | bool | None
+
 
 @dataclass(slots=True)
 class EvalFuse:
@@ -50,7 +52,7 @@ class EvalFuse:
 
 @dataclass(frozen=True, slots=True)
 class EvalSuccess:
-    value: str | float | bool | None
+    value: EvalValue
 
 
 EvalErrorCode = Literal[
@@ -67,7 +69,7 @@ class EvalError:
     code: EvalErrorCode
 
 
-EvalResult = Union[EvalSuccess, EvalError]
+EvalResult = EvalSuccess | EvalError
 
 
 # --------------------------------------------------------------------------
@@ -95,6 +97,8 @@ def evaluate(
         return EvalError(code=exc.code)
     if isinstance(value, str) and len(value) > output_length_max:
         return EvalError(code="output_too_long")
+    if not (value is None or isinstance(value, (str, int, float, bool))):
+        return EvalError(code="type_mismatch")
     return EvalSuccess(value=value)
 
 
@@ -262,22 +266,27 @@ def _compare(left: object, right: object, op: str) -> bool:
     if isinstance(left, bool) or isinstance(right, bool):
         raise _EvalErrorSignal("type_mismatch")
     if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-        a = float(left)
-        b = float(right)
-    elif isinstance(left, str) and isinstance(right, str):
-        # Unicode code-point ordering — Python default for strings.
-        a = left  # type: ignore[assignment]
-        b = right  # type: ignore[assignment]
-    else:
+        left_number = float(left)
+        right_number = float(right)
+        if op == "<":
+            return left_number < right_number
+        if op == "<=":
+            return left_number <= right_number
+        if op == ">":
+            return left_number > right_number
+        if op == ">=":
+            return left_number >= right_number
         raise _EvalErrorSignal("type_mismatch")
-    if op == "<":
-        return a < b  # type: ignore[operator]
-    if op == "<=":
-        return a <= b  # type: ignore[operator]
-    if op == ">":
-        return a > b  # type: ignore[operator]
-    if op == ">=":
-        return a >= b  # type: ignore[operator]
+    if isinstance(left, str) and isinstance(right, str):
+        # Unicode code-point ordering — Python default for strings.
+        if op == "<":
+            return left < right
+        if op == "<=":
+            return left <= right
+        if op == ">":
+            return left > right
+        if op == ">=":
+            return left >= right
     raise _EvalErrorSignal("type_mismatch")
 
 
@@ -416,13 +425,14 @@ def _format_number(value: float) -> str:
     `Number.prototype.toString` for the corpus subset (the corpus pins
     every edge case we exercise).
     """
-    if math.isnan(value) or math.isinf(value):
+    number = float(value)
+    if math.isnan(number) or math.isinf(number):
         raise _EvalErrorSignal("type_mismatch")
-    if value == 0:
+    if number == 0:
         return "0"
-    if value.is_integer() and abs(value) < 1e16:
-        return str(int(value))
-    return repr(value)
+    if number.is_integer() and abs(number) < 1e16:
+        return str(int(number))
+    return repr(number)
 
 
 # --------------------------------------------------------------------------
@@ -431,8 +441,8 @@ def _format_number(value: float) -> str:
 
 
 def evaluate_table_formulas(
-    capability: "CustomFieldCapability",
-    body: "ProjectDocumentV1",
+    capability: CustomFieldCapability,
+    body: ProjectDocumentV1,
 ) -> dict[str, dict[str, object]]:
     """Return `{row_id: {cf_id: encoded_value}}` for every formula
     field on this table.
@@ -468,7 +478,7 @@ def evaluate_table_formulas(
         custom = capability.read_row_custom(row)
         per_row_computed: dict[str, object] = {}
 
-        def accessor(field_id: str) -> object | None:
+        def accessor(field_id: str, *, row_for_core: object = row) -> object | None:
             if field_id in per_row_computed:  # noqa: B023 — intended closure over per_row_computed
                 stored = per_row_computed[field_id]  # noqa: B023
                 if isinstance(stored, dict) and "error" in stored:
@@ -484,7 +494,7 @@ def evaluate_table_formulas(
             # Core field accessor through the capability.
             getter = getattr(capability, "core_field_value_for_formula", None)
             if getter is not None:
-                return getter(row, field_id)
+                return getter(row_for_core, field_id)
             return None
 
         for cf_id in ordered_formula_ids:
@@ -511,7 +521,7 @@ def evaluate_table_formulas(
 
 
 def _read_envelope_rows(
-    capability: "CustomFieldCapability", body: "ProjectDocumentV1"
+    capability: CustomFieldCapability, body: ProjectDocumentV1
 ) -> list[object]:
     envelope = body.tables
     for path_part in capability.table_path:
@@ -522,7 +532,7 @@ def _read_envelope_rows(
     return list(rows)
 
 
-def _topo_order_formulas(formula_fields: list["CustomFieldDef"]) -> list[str]:
+def _topo_order_formulas(formula_fields: list[CustomFieldDef]) -> list[str]:
     """Return formula `cf_*` ids in dependency order.
 
     Each formula's `config["deps"]` is the resolved id list. Non-formula

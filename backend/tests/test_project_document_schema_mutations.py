@@ -512,7 +512,8 @@ def test_set_formula_round_trip() -> None:
     config = next_body.tables.rooms.custom_fields[0].config
     assert config["source"] == 'concat({Number}, " - ", upper({Name}))'
     assert isinstance(config["ast"], dict)
-    assert sorted(config["deps"]) == ["name", "number"]  # type: ignore[arg-type]
+    deps = cast(list[str], config["deps"])
+    assert sorted(deps) == ["name", "number"]
     assert config["result_type"] == "text"
     assert audit["kind"] == "setFormula"
     assert audit["deps"] == config["deps"]
@@ -866,7 +867,8 @@ def test_change_type_text_to_number_requires_acknowledgement_on_failure() -> Non
     details = cast(dict[str, object], detail["details"])
     assert details["incompatible_row_count"] == 1
     assert details["total_row_count"] == 2
-    assert details["incompatible_rows"][0]["row_id"] == "rm_1"
+    incompatible_rows = cast(list[dict[str, object]], details["incompatible_rows"])
+    assert incompatible_rows[0]["row_id"] == "rm_1"
 
     ack = ChangeTypeMutation(
         kind="changeType",

@@ -93,7 +93,7 @@ def coerce_custom_value(
     value: object,
     field_type: CustomFieldType,
     *,
-    option_list: "list[SingleSelectOption] | None" = None,
+    option_list: list[SingleSelectOption] | None = None,
 ) -> CustomValue:
     """Coerce / validate a row's `custom[cf_id]` value against its declared type.
 
@@ -126,6 +126,16 @@ def coerce_custom_value(
     if field_type is CustomFieldType.url:
         if not isinstance(value, str):
             raise ValueError(f"url value must be a string, got {type(value).__name__}")
+        stripped = value.strip()
+        if not stripped:
+            return None
+        # Mirror the changeType-mutation URL guard in
+        # `schema_mutations._coerce_to_target` — require an explicit
+        # `http://` / `https://` scheme so cell writes share the same
+        # validation contract as type conversions.
+        lowered = stripped.lower()
+        if not (lowered.startswith("http://") or lowered.startswith("https://")):
+            raise ValueError(f"url value must start with http:// or https://, got {value!r}")
         return value
     if field_type is CustomFieldType.single_select:
         if value == "":
