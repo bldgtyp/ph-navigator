@@ -51,6 +51,10 @@ function Harness({
   const [open, setOpen] = useState(true);
   const [fieldDef, setFieldDef] = useState<FieldDef | undefined>(initialField);
   const [rows, setRows] = useState<ReadonlyArray<PreflightSourceRow> | undefined>(preflightRows);
+  const [formulaRowsRevision, setFormulaRowsRevision] = useState(0);
+  const [formulaPreviewValues, setFormulaPreviewValues] = useState<Record<string, unknown>>({
+    num_people: 2,
+  });
   return (
     <div>
       <button data-testid="trigger" onClick={() => setOpen(true)}>
@@ -81,9 +85,11 @@ function Harness({
       </button>
       <button
         data-testid="rows-mutate"
-        onClick={() =>
-          setRows((current) => [...(current ?? []), { rowId: "rm_new", rawValue: "x" }])
-        }
+        onClick={() => {
+          setRows((current) => [...(current ?? []), { rowId: "rm_new", rawValue: "x" }]);
+          setFormulaPreviewValues({ num_people: 10 });
+          setFormulaRowsRevision((current) => current + 1);
+        }}
       >
         mutate rows
       </button>
@@ -100,6 +106,24 @@ function Harness({
         sourceCustomFieldType={sourceCustomFieldType ?? fieldDef?.custom_field_type}
         preflightRows={rows}
         optionRows={optionRows ?? rows}
+        formulaPreview={{
+          fieldRegistry: [
+            {
+              field_id: "num_people",
+              display_name: "People",
+              field_type: "number",
+              origin: "core",
+            },
+            {
+              field_id: "cf_notes",
+              display_name: "Notes",
+              field_type: "formula",
+              origin: "custom",
+            },
+          ],
+          row: { id: "rm_1", values: formulaPreviewValues },
+          rowsRevision: formulaRowsRevision,
+        }}
       />
     </div>
   );
@@ -548,6 +572,60 @@ describe("FieldConfigModal", () => {
         }),
       ),
     );
+  });
+
+  test("formula fields mount the formula section and save source in the bundle", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: {
+            source: "{People} * 2",
+            ast: null,
+            deps: ["num_people"],
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Preview based on row at modal open")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Expression"), { target: { value: "{People} * 3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fieldKey: "cf_notes",
+          formulaSource: "{People} * 3",
+        }),
+      ),
+    );
+  });
+
+  test("R-S4 — formula preview keeps the modal-open snapshot and marks stale after row mutation", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: {
+            source: "{People} * 2",
+            ast: null,
+            deps: ["num_people"],
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByText("4")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("rows-mutate"));
+    expect(screen.getByText("Preview based on row at modal open — stale")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.queryByText("20")).toBeNull();
   });
 
   test("Server preflight envelope re-renders the sub-panel against the server row list", async () => {

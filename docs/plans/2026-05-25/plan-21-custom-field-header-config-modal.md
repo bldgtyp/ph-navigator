@@ -695,7 +695,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
 - [x] **P5a.4 — Number precision section.** Port from `AddFieldPopover`
   inline; trivially small.
 
-- [ ] **P5a.5 — Formula section.** Port `FormulaEditorPopover` into
+- [x] **P5a.5 — Formula section.** Port `FormulaEditorPopover` into
   `FieldConfigSectionFormula`. Live preview against the snapshot
   row works the same. Implement R-S4 here (value-copy snapshot,
   stale indicator after any row mutation). Also implement US-CF-16
