@@ -145,6 +145,7 @@ export function GridBody<TRow>({
         dataRowIndex += 1;
         const tanstackRow = tableRows[rowIndex];
         if (!tanstackRow) return null;
+        const isLastDataRow = rowIndex === rowIds.length - 1;
         return (
           <tr
             key={tanstackRow.id}
@@ -208,6 +209,7 @@ export function GridBody<TRow>({
                   data-axis-tint={axisTint}
                   data-fill-handle={isFillSourceCorner ? "true" : undefined}
                   data-fill-target={isFillTarget ? "true" : undefined}
+                  data-row-edge={isLastDataRow ? "bottom" : undefined}
                   className={[
                     visibleColumnDefs[columnIndex]?.className,
                     columnIndex === 0 ? "data-table-frozen" : "",
