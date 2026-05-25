@@ -90,21 +90,25 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const isEditor = project.access_mode === "editor";
   const activeVersionId = project.active_version_id;
   const roomsViewDefaults = useMemo(() => emptyViewState(), []);
-  const roomsFieldDefsForSanitize = useMemo(
+  const roomsCoreFieldDefs = useMemo(
     () => (roomsQuery.data ? roomsTableFieldDefs(roomsQuery.data) : []),
     [roomsQuery.data],
   );
-  const roomsColumnsForSanitize = useMemo(
-    () => roomsTableColumnsForSanitize(roomsFieldDefsForSanitize),
-    [roomsFieldDefsForSanitize],
-  );
   const roomsTableSchema = useTableSchema({
     tableKey: ROOMS_TABLE_NAME,
-    coreFieldDefs: roomsFieldDefsForSanitize,
+    coreFieldDefs: roomsCoreFieldDefs,
     fingerprintCoreFieldKeys: ROOMS_SCHEMA_CORE_FIELD_KEYS,
     customFields: roomsQuery.data?.custom_fields,
     singleSelectOptions: roomsQuery.data?.single_select_options ?? null,
   });
+  // Sanitizer needs core + custom fields so view-state operations
+  // (hide / resize / reorder / filter / sort / group) survive on
+  // user-defined columns. Without custom fields here every cf_* entry
+  // gets stripped, which silently reverts hide / column-width writes.
+  const roomsColumnsForSanitize = useMemo(
+    () => roomsTableColumnsForSanitize(roomsTableSchema.fieldDefs),
+    [roomsTableSchema.fieldDefs],
+  );
   // Plan-17 P4.9: registry for the in-grid formula editor. Core
   // entries use the formula-side `field_id` (the Pydantic attribute
   // name) which differs from the column `field_key` for the two
@@ -124,7 +128,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     defaults: roomsViewDefaults,
     enabled: isEditor,
     columns: roomsColumnsForSanitize,
-    fieldDefs: roomsFieldDefsForSanitize,
+    fieldDefs: roomsTableSchema.fieldDefs,
     schemaFingerprint: roomsTableSchema.schemaFingerprint,
   });
   const isLocked =
