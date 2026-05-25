@@ -10,7 +10,9 @@ import {
   buildEditOptionsMutation,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
+  buildSetFormulaMutation,
 } from "../lib/customFieldMutations";
+import { SOURCE_LENGTH_MAX } from "../lib/formula";
 
 const SAMPLE_FIELD: CustomFieldDef = {
   id: "cf_sample",
@@ -289,6 +291,57 @@ describe("buildAddFieldMutation initialOptions (Phase 3 P3.5)", () => {
         newField: SAMPLE_FIELD,
         insertAfterFieldId: null,
         initialOptions: [{ id: "opt_a", label: "A", color: "#3b82f6", order: 1 }],
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+});
+
+describe("buildSetFormulaMutation", () => {
+  test("produces the typed wire shape", () => {
+    const op = buildSetFormulaMutation({
+      tableKey: "rooms",
+      fieldId: "cf_formula",
+      source: 'concat({Number}, " — ", upper({Name}))',
+      schemaFingerprint: "fp",
+    });
+    expect(op).toEqual({
+      kind: "setFormula",
+      tableKey: "rooms",
+      fieldId: "cf_formula",
+      source: 'concat({Number}, " — ", upper({Name}))',
+      expectedSchemaFingerprint: "fp",
+    });
+  });
+
+  test("rejects an empty source", () => {
+    expect(() =>
+      buildSetFormulaMutation({
+        tableKey: "rooms",
+        fieldId: "cf_formula",
+        source: "   ",
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+
+  test("rejects a source longer than SOURCE_LENGTH_MAX", () => {
+    expect(() =>
+      buildSetFormulaMutation({
+        tableKey: "rooms",
+        fieldId: "cf_formula",
+        source: "x".repeat(SOURCE_LENGTH_MAX + 1),
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+
+  test("rejects a non-cf_* fieldId", () => {
+    expect(() =>
+      buildSetFormulaMutation({
+        tableKey: "rooms",
+        fieldId: "name",
+        source: "upper({Name})",
         schemaFingerprint: "fp",
       }),
     ).toThrow(SchemaMutationBuildError);

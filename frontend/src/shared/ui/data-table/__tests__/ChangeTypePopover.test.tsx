@@ -1,10 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { describe, expect, test, vi } from "vitest";
-import {
-  ChangeTypePopover,
-  type ChangeTypeRequest,
-} from "../components/ChangeTypePopover";
+import { ChangeTypePopover, type ChangeTypeRequest } from "../components/ChangeTypePopover";
 import type { CustomFieldType } from "../hooks/useTableSchema";
 import type { FieldDef } from "../types";
 
@@ -104,7 +101,9 @@ describe("ChangeTypePopover (plan-18 §5b F2)", () => {
     pickTarget("Number");
 
     // 2 of 3 coerce ("42" and "7.5"); the "abc" row is incompatible.
-    expect(within(dialog()).getByText(/2 of 3 rows will keep their value; 1 will be cleared/)).toBeInTheDocument();
+    expect(
+      within(dialog()).getByText(/2 of 3 rows will keep their value; 1 will be cleared/),
+    ).toBeInTheDocument();
 
     const submit = within(dialog()).getByRole("button", {
       name: /Convert anyway \(1 cleared\)/,
@@ -161,9 +160,7 @@ describe("ChangeTypePopover (plan-18 §5b F2)", () => {
     // payload and require an ack matching the server's row count.
     const error = Object.assign(new Error("preflight"), {
       details: {
-        incompatible_rows: [
-          { rowId: "rm_x", rawValue: "from-server", reason: "type_mismatch" },
-        ],
+        incompatible_rows: [{ rowId: "rm_x", rawValue: "from-server", reason: "type_mismatch" }],
         total_row_count: 4,
       },
     });
@@ -181,7 +178,9 @@ describe("ChangeTypePopover (plan-18 §5b F2)", () => {
     fireEvent.click(within(dialog()).getByRole("button", { name: "Convert" }));
 
     await waitFor(() =>
-      expect(within(dialog()).getByText(/3 of 4 rows will keep their value; 1 will be cleared/)).toBeInTheDocument(),
+      expect(
+        within(dialog()).getByText(/3 of 4 rows will keep their value; 1 will be cleared/),
+      ).toBeInTheDocument(),
     );
     // Server-supplied row id surfaces in the list.
     expect(within(dialog()).getByText("rm_x")).toBeInTheDocument();

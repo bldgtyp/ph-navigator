@@ -49,6 +49,13 @@ export type RoomsSlice = {
   // type-level guarantee that the two core keys are always present (the
   // backend always emits them).
   single_select_options: RoomsOptionMap;
+  // Plan-17 P4.4: read-overlay for formula custom fields. Keyed by
+  // room id then by `cf_*` field id. Empty when the table has no
+  // formula fields. Successful evaluations are raw scalars; failures
+  // are `{error: "<token>"}` objects (see `ComputedCellValue`).
+  // Optional to keep test fixtures and pre-P4.4 payloads compatible
+  // — consumers treat a missing overlay as `{}`.
+  rows_computed?: Record<string, Record<string, unknown>>;
 };
 
 export type RoomsOptionMap = Record<RoomOptionKey, SingleSelectOption[]> & {

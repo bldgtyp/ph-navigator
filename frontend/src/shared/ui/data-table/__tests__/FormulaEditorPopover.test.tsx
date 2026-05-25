@@ -55,9 +55,7 @@ function dialog(): HTMLElement {
 }
 
 function sourceInput(): HTMLInputElement | HTMLTextAreaElement {
-  return within(dialog()).getByLabelText("Expression") as
-    | HTMLInputElement
-    | HTMLTextAreaElement;
+  return within(dialog()).getByLabelText("Expression") as HTMLInputElement | HTMLTextAreaElement;
 }
 
 function setSource(value: string) {
@@ -70,12 +68,12 @@ function submitButton(): HTMLButtonElement {
 
 describe("FormulaEditorPopover", () => {
   test("renders the focused-row hint when no row is focused", () => {
-    render(<Harness focusedRow={null} initialSource={"concat({Name}, \"!\")"} />);
+    render(<Harness focusedRow={null} initialSource={'concat({Name}, "!")'} />);
     expect(within(dialog()).getByText("Focus a row to preview.")).toBeInTheDocument();
   });
 
   test("evaluates the local preview against the focused row", () => {
-    render(<Harness initialSource={"concat({Name}, \"!\")"} />);
+    render(<Harness initialSource={'concat({Name}, "!")'} />);
     expect(within(dialog()).getByText("Master Bedroom!")).toBeInTheDocument();
   });
 
@@ -86,13 +84,13 @@ describe("FormulaEditorPopover", () => {
   });
 
   test("disables Submit when the formula references the field being edited", () => {
-    render(<Harness initialSource={"concat({Label}, \"!\")"} />);
+    render(<Harness initialSource={'concat({Label}, "!")'} />);
     expect(submitButton().disabled).toBe(true);
     expect(within(dialog()).getByRole("status").textContent).toMatch(/cycle/i);
   });
 
   test("disables Submit when a referenced field doesn't exist in the registry", () => {
-    render(<Harness initialSource={"concat({Ghost}, \"!\")"} />);
+    render(<Harness initialSource={'concat({Ghost}, "!")'} />);
     expect(submitButton().disabled).toBe(true);
     expect(within(dialog()).getByRole("status").textContent).toMatch(/doesn't exist/);
   });
@@ -109,12 +107,8 @@ describe("FormulaEditorPopover", () => {
 
   test("excludes the field being edited from the palette", () => {
     render(<Harness initialSource={""} />);
-    expect(
-      within(dialog()).queryByRole("button", { name: /Formula column Label/ }),
-    ).toBeNull();
-    expect(
-      within(dialog()).getByRole("button", { name: /Text column Name/ }),
-    ).toBeInTheDocument();
+    expect(within(dialog()).queryByRole("button", { name: /Formula column Label/ })).toBeNull();
+    expect(within(dialog()).getByRole("button", { name: /Text column Name/ })).toBeInTheDocument();
   });
 
   test("dispatches onSubmit with the typed source on happy path", async () => {
@@ -130,7 +124,7 @@ describe("FormulaEditorPopover", () => {
 
   test("surfaces a server-side error message and stays open on rejection", async () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error("nope"));
-    render(<Harness onSubmit={onSubmit} initialSource={'upper({Name})'} />);
+    render(<Harness onSubmit={onSubmit} initialSource={"upper({Name})"} />);
     fireEvent.click(submitButton());
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(within(dialog()).getByRole("alert").textContent).toContain("nope");
@@ -141,7 +135,7 @@ describe("FormulaEditorPopover", () => {
 describe("rebuildSourceFromStoredAst (display-name re-render on open)", () => {
   test("substitutes the current display_name for renamed field refs", () => {
     // Save-time AST refers to {Name} resolved to field_id "name".
-    const storedAst = resolveRefs(parse("concat({Name}, \"!\")"), REGISTRY);
+    const storedAst = resolveRefs(parse('concat({Name}, "!")'), REGISTRY);
     // Now suppose "Name" was renamed to "Title" since save.
     const renamed: ReadonlyArray<FieldRegistryEntry> = REGISTRY.map((entry) =>
       entry.field_id === "name" ? { ...entry, display_name: "Title" } : entry,

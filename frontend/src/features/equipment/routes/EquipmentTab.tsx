@@ -9,6 +9,7 @@ import {
   buildDuplicateFieldMutation,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
+  buildSetFormulaMutation,
   emptyViewState,
   isCustomFieldKey,
   uniqueCopyDisplayName,
@@ -52,7 +53,9 @@ import type {
   AddCustomFieldRequest,
   BuildEmptyRow,
   EditCustomFieldDescriptionRequest,
+  EditCustomFieldFormulaRequest,
   FieldSchemaMutation,
+  FormulaFieldRegistryEntry,
   RenameCustomFieldRequest,
   WriteOp,
 } from "../../../shared/ui/data-table";
@@ -102,6 +105,14 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     customFields: roomsQuery.data?.custom_fields,
     singleSelectOptions: roomsQuery.data?.single_select_options ?? null,
   });
+  // Plan-17 P4.9: registry for the in-grid formula editor. Core
+  // entries use the formula-side `field_id` (the Pydantic attribute
+  // name) which differs from the column `field_key` for the two
+  // namespaced single-selects ("rooms.floor_level" → "floor_level").
+  const formulaFieldRegistry = useMemo<FormulaFieldRegistryEntry[]>(
+    () => buildRoomsFormulaRegistry(roomsTableSchema.fieldDefs),
+    [roomsTableSchema.fieldDefs],
+  );
   const {
     view: roomsTableView,
     onViewChange: handleRoomsViewChange,
@@ -380,9 +391,6 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     if (!source) {
       throw new Error("That custom field no longer exists. Refresh to see the current fields.");
     }
-    if (source.field_type === "formula") {
-      throw new Error("Duplicate is not available for formula fields yet.");
-    }
     const newFieldId = roomsTableSchema.mintCustomFieldId();
     const mutation = buildDuplicateFieldMutation({
       tableKey: ROOMS_TABLE_NAME,
@@ -416,6 +424,17 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       tableKey: ROOMS_TABLE_NAME,
       fieldId: request.fieldKey,
       description: request.description,
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+  };
+
+  const handleEditCustomFieldFormula = async (request: EditCustomFieldFormulaRequest) => {
+    if (!canEdit) return;
+    const mutation = buildSetFormulaMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      fieldId: request.fieldKey,
+      source: request.source,
       schemaFingerprint: roomsTableSchema.schemaFingerprint,
     });
     await commitSchemaMutation(mutation);
@@ -581,6 +600,10 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           onRenameCustomField={canEdit ? handleRenameCustomField : undefined}
           onDuplicateCustomField={canEdit ? handleDuplicateCustomField : undefined}
           onSetCustomFieldDescription={canEdit ? handleSetCustomFieldDescription : undefined}
+          onEditCustomFieldFormula={canEdit ? handleEditCustomFieldFormula : undefined}
+          formulaFieldRegistry={formulaFieldRegistry}
+          getFormulaRowValues={buildRoomFormulaRowValues}
+          rowsComputed={roomsSlice.rows_computed}
         />
       )}
       {roomModal && isEditor ? (
@@ -654,6 +677,91 @@ function collapseRoomCellWritesToReplacements(
     }
   }
   return replacements;
+}
+
+// Maps Rooms FieldDefs (whose `field_key`s use the column-side
+// namespaced ids for `rooms.floor_level` / `rooms.building_zone`) onto
+// formula-side `field_id`s that match the backend's
+// `ROOMS_CORE_FORMULA_TYPES` keys. Custom fields already use the
+// formula identity (their `cf_*` id), so the mapping is identity for
+// them.
+const ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY: Record<string, string> = {
+  [ROOM_FLOOR_LEVEL_KEY]: "floor_level",
+  [ROOM_BUILDING_ZONE_KEY]: "building_zone",
+};
+
+function buildRoomsFormulaRegistry(
+  fieldDefs: ReadonlyArray<{
+    field_key: string;
+    display_name: string;
+    field_type: string;
+    read_only_schema?: boolean;
+  }>,
+): FormulaFieldRegistryEntry[] {
+  return fieldDefs.map((fieldDef) => {
+    const isCore = fieldDef.read_only_schema === true;
+    const fieldId = ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY[fieldDef.field_key] ?? fieldDef.field_key;
+    const formulaType = mapToFormulaType(fieldDef.field_type);
+    return {
+      field_id: fieldId,
+      display_name: fieldDef.display_name,
+      origin: isCore ? "core" : "custom",
+      field_type: formulaType,
+    };
+  });
+}
+
+function mapToFormulaType(
+  fieldType: string,
+): "text" | "number" | "single_select" | "formula" | "bool" {
+  switch (fieldType) {
+    case "number":
+      return "number";
+    case "single_select":
+      return "single_select";
+    case "computed":
+      return "formula";
+    default:
+      return "text";
+  }
+}
+
+// Read a formula-side core value off a RoomRow, mirroring the
+// backend's `_read_rooms_core_field_for_formula` so the in-editor live
+// preview agrees with the server-side computed overlay. List-valued
+// cores are joined with ", " for parity.
+function readRoomsFormulaValue(room: RoomRow, fieldId: string): unknown {
+  if (fieldId.startsWith("cf_")) {
+    return room.custom[fieldId] ?? null;
+  }
+  const raw = (room as unknown as Record<string, unknown>)[fieldId];
+  if (Array.isArray(raw)) return raw.map((v) => String(v)).join(", ");
+  if (raw === undefined) return null;
+  return raw;
+}
+
+function buildRoomFormulaRowValues(room: RoomRow): Record<string, unknown> {
+  const values: Record<string, unknown> = {};
+  const coreIds = [
+    "id",
+    "number",
+    "name",
+    "floor_level",
+    "building_zone",
+    "num_people",
+    "num_bedrooms",
+    "icfa_factor",
+    "erv_unit_ids",
+    "catalog_origin",
+    "notes",
+  ];
+  for (const fieldId of coreIds) {
+    values[fieldId] = readRoomsFormulaValue(room, fieldId);
+  }
+  for (const [cfId, value] of Object.entries(room.custom)) {
+    values[cfId] = value ?? null;
+  }
+  return values;
 }
 
 function insertAfterColumnOrder(

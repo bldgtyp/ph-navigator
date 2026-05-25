@@ -38,12 +38,7 @@ import {
   FormulaResourceLimitError,
   FormulaUnsupportedFunctionError,
 } from "./errors";
-import {
-  AST_DEPTH_MAX,
-  AST_NODE_COUNT_MAX,
-  DEP_COUNT_MAX,
-  SOURCE_LENGTH_MAX,
-} from "./limits";
+import { AST_DEPTH_MAX, AST_NODE_COUNT_MAX, DEP_COUNT_MAX, SOURCE_LENGTH_MAX } from "./limits";
 import { Token, TokenKind } from "./tokens";
 
 // v1 function allow-list. Mirror of backend ALLOWED_FUNCTIONS. `if` is
@@ -107,11 +102,7 @@ const ALNUM_RE = /[A-Za-z0-9_]/;
 
 export function tokenize(source: string): Token[] {
   if (source.length > SOURCE_LENGTH_MAX) {
-    throw new FormulaResourceLimitError(
-      "source_length",
-      source.length,
-      SOURCE_LENGTH_MAX,
-    );
+    throw new FormulaResourceLimitError("source_length", source.length, SOURCE_LENGTH_MAX);
   }
 
   const tokens: Token[] = [];
@@ -127,10 +118,7 @@ export function tokenize(source: string): Token[] {
     const offset = i;
 
     // Numbers.
-    if (
-      DIGIT_RE.test(ch) ||
-      (ch === "." && i + 1 < n && DIGIT_RE.test(source[i + 1]!))
-    ) {
+    if (DIGIT_RE.test(ch) || (ch === "." && i + 1 < n && DIGIT_RE.test(source[i + 1]!))) {
       let j = i;
       let hasDot = false;
       let hasExp = false;
@@ -154,11 +142,7 @@ export function tokenize(source: string): Token[] {
       const text = source.slice(i, j);
       const value = Number(text);
       if (!Number.isFinite(value)) {
-        throw new FormulaParseError(
-          `invalid number literal '${text}'`,
-          offset,
-          source,
-        );
+        throw new FormulaParseError(`invalid number literal '${text}'`, offset, source);
       }
       tokens.push({ kind: TokenKind.NUMBER, text, offset, value });
       i = j;
@@ -174,23 +158,14 @@ export function tokenize(source: string): Token[] {
         const c = source[j]!;
         if (c === "\\") {
           if (j + 1 >= n) {
-            throw new FormulaParseError(
-              "unterminated string escape",
-              offset,
-              source,
-            );
+            throw new FormulaParseError("unterminated string escape", offset, source);
           }
           const esc = source[j + 1]!;
           if (esc === "\\") buf.push("\\");
           else if (esc === '"') buf.push('"');
           else if (esc === "n") buf.push("\n");
           else if (esc === "t") buf.push("\t");
-          else
-            throw new FormulaParseError(
-              `unknown string escape \\${esc}`,
-              j,
-              source,
-            );
+          else throw new FormulaParseError(`unknown string escape \\${esc}`, j, source);
           j += 2;
         } else if (c === '"') {
           j++;
@@ -202,11 +177,7 @@ export function tokenize(source: string): Token[] {
         }
       }
       if (!closed) {
-        throw new FormulaParseError(
-          "unterminated string literal",
-          offset,
-          source,
-        );
+        throw new FormulaParseError("unterminated string literal", offset, source);
       }
       tokens.push({
         kind: TokenKind.STRING,
@@ -230,29 +201,17 @@ export function tokenize(source: string): Token[] {
           break;
         }
         if (c === "{") {
-          throw new FormulaParseError(
-            "nested '{' inside field reference",
-            j,
-            source,
-          );
+          throw new FormulaParseError("nested '{' inside field reference", j, source);
         }
         buf2.push(c);
         j++;
       }
       if (!closed) {
-        throw new FormulaParseError(
-          "unterminated field reference",
-          offset,
-          source,
-        );
+        throw new FormulaParseError("unterminated field reference", offset, source);
       }
       const displayName = buf2.join("").trim();
       if (displayName === "") {
-        throw new FormulaParseError(
-          "empty field reference {}",
-          offset,
-          source,
-        );
+        throw new FormulaParseError("empty field reference {}", offset, source);
       }
       tokens.push({
         kind: TokenKind.FIELD_REF,
@@ -313,11 +272,7 @@ export function tokenize(source: string): Token[] {
       continue;
     }
 
-    throw new FormulaParseError(
-      `unexpected character '${ch}'`,
-      offset,
-      source,
-    );
+    throw new FormulaParseError(`unexpected character '${ch}'`, offset, source);
   }
 
   tokens.push({ kind: TokenKind.EOF, text: "", offset: n });
@@ -371,22 +326,14 @@ class Parser {
   private bumpNode(): void {
     this.nodeCount++;
     if (this.nodeCount > AST_NODE_COUNT_MAX) {
-      throw new FormulaResourceLimitError(
-        "ast_node_count",
-        this.nodeCount,
-        AST_NODE_COUNT_MAX,
-      );
+      throw new FormulaResourceLimitError("ast_node_count", this.nodeCount, AST_NODE_COUNT_MAX);
     }
   }
 
   private enterDepth(): void {
     this.depth++;
     if (this.depth > AST_DEPTH_MAX) {
-      throw new FormulaResourceLimitError(
-        "ast_depth",
-        this.depth,
-        AST_DEPTH_MAX,
-      );
+      throw new FormulaResourceLimitError("ast_depth", this.depth, AST_DEPTH_MAX);
     }
   }
 
@@ -398,11 +345,7 @@ class Parser {
     const node = this.expr();
     if (this.peek().kind !== TokenKind.EOF) {
       const tok = this.peek();
-      throw new FormulaParseError(
-        `unexpected token '${tok.text}'`,
-        tok.offset,
-        this.source,
-      );
+      throw new FormulaParseError(`unexpected token '${tok.text}'`, tok.offset, this.source);
     }
     return node;
   }
@@ -528,10 +471,7 @@ class Parser {
 
   private add(): FormulaAST {
     let left = this.mul();
-    while (
-      this.peek().kind === TokenKind.PLUS ||
-      this.peek().kind === TokenKind.MINUS
-    ) {
+    while (this.peek().kind === TokenKind.PLUS || this.peek().kind === TokenKind.MINUS) {
       const op: BinaryOp = this.advance().kind === TokenKind.PLUS ? "+" : "-";
       const right = this.mul();
       this.bumpNode();
@@ -554,12 +494,7 @@ class Parser {
       this.peek().kind === TokenKind.PERCENT
     ) {
       const kind = this.advance().kind;
-      const op: BinaryOp =
-        kind === TokenKind.STAR
-          ? "*"
-          : kind === TokenKind.SLASH
-            ? "/"
-            : "%";
+      const op: BinaryOp = kind === TokenKind.STAR ? "*" : kind === TokenKind.SLASH ? "/" : "%";
       const right = this.unary();
       this.bumpNode();
       const node: BinaryOpNode = {
@@ -645,11 +580,7 @@ class Parser {
       const normalized = displayName.trim().toLocaleLowerCase();
       this.distinctRefs.add(normalized);
       if (this.distinctRefs.size > DEP_COUNT_MAX) {
-        throw new FormulaResourceLimitError(
-          "dep_count",
-          this.distinctRefs.size,
-          DEP_COUNT_MAX,
-        );
+        throw new FormulaResourceLimitError("dep_count", this.distinctRefs.size, DEP_COUNT_MAX);
       }
       const node: FieldRefNode = {
         kind: "field_ref",
@@ -676,11 +607,7 @@ class Parser {
     if (tok.kind === TokenKind.IF) {
       return this.ifExpr();
     }
-    throw new FormulaParseError(
-      `unexpected token '${tok.text}'`,
-      tok.offset,
-      this.source,
-    );
+    throw new FormulaParseError(`unexpected token '${tok.text}'`, tok.offset, this.source);
   }
 
   private funcCall(): FormulaAST {
@@ -725,12 +652,7 @@ class Parser {
   }
 }
 
-function validateFunctionArity(
-  name: string,
-  count: number,
-  offset: number,
-  source: string,
-): void {
+function validateFunctionArity(name: string, count: number, offset: number, source: string): void {
   const arity = FUNCTION_ARITY[name];
   if (arity === undefined) return;
   const [minArgs, maxArgs] = arity;

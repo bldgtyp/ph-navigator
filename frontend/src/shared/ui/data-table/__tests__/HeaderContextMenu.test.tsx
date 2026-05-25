@@ -40,6 +40,7 @@ function Wrapper(props: RenderArgs) {
         onDeleteField={props.onDeleteField}
         onDuplicateField={props.onDuplicateField}
         onEditDescription={props.onEditDescription}
+        onEditFieldFormula={props.onEditFieldFormula}
         onInsertFieldLeft={props.onInsertFieldLeft}
         onInsertFieldRight={props.onInsertFieldRight}
       />
@@ -209,5 +210,29 @@ describe("HeaderContextMenu", () => {
     expect(onFilterBy).toHaveBeenCalledTimes(1);
     expect(onGroupBy).toHaveBeenCalledTimes(1);
     expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  test("Edit formula… is rendered only when onEditFieldFormula is provided", () => {
+    const formulaField: FieldDef = {
+      field_key: "cf_label",
+      field_type: "computed",
+      display_name: "Label",
+    };
+    const onEditFieldFormula = vi.fn();
+    render(<Wrapper fieldDef={formulaField} onEditFieldFormula={onEditFieldFormula} />);
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit formula…" }));
+    expect(onEditFieldFormula).toHaveBeenCalledTimes(1);
+  });
+
+  test("Edit formula… is absent when handler is omitted", () => {
+    const formulaField: FieldDef = {
+      field_key: "cf_label",
+      field_type: "computed",
+      display_name: "Label",
+    };
+    render(<Wrapper fieldDef={formulaField} />);
+    openViaContextMenu();
+    expect(screen.queryByRole("menuitem", { name: "Edit formula…" })).toBeNull();
   });
 });

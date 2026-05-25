@@ -14,6 +14,20 @@ import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { normalizeDisplayName } from "../lib/fieldDisplayNames";
 import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
+import {
+  FormulaMissingRefError,
+  FormulaParseError,
+  FormulaResourceLimitError,
+  FormulaUnsupportedFunctionError,
+  SOURCE_LENGTH_MAX,
+  astToJson,
+  collectFieldRefs,
+  parse,
+  resolveRefs,
+  type FieldRegistryEntry,
+  type FormulaAST,
+} from "../lib/formula";
+import { FormulaFieldPalette } from "./FormulaFieldPalette";
 import type { FieldOption } from "../types";
 
 const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint: string }> = [
@@ -22,10 +36,13 @@ const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint:
   { kind: "number", label: "Number", hint: "Numeric value with optional precision." },
   { kind: "url", label: "URL", hint: "Link target (validated server-side)." },
   { kind: "single_select", label: "Single select", hint: "Pick one option from a defined list." },
+  {
+    kind: "formula",
+    label: "Formula",
+    hint: "Read-only value computed from other fields.",
+  },
 ];
-const DISABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; planned: string }> = [
-  { kind: "formula", label: "Formula", planned: "Phase 4" },
-];
+const DISABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; planned: string }> = [];
 
 const MIN_PRECISION = 0;
 const MAX_PRECISION = 10;
@@ -55,6 +72,10 @@ export type AddFieldPopoverProps = {
   // US-CF-12. Includes both core and custom display names.
   existingFieldNames: ReadonlyArray<string>;
   dispatchAddField: (request: AddCustomFieldRequest) => Promise<void>;
+  // Plan-17 P4.9 — required for the formula pill. When absent, the
+  // formula pill is hidden (consumers in viewer mode / on tables that
+  // don't yet support formulas omit this).
+  formulaFieldRegistry?: ReadonlyArray<FieldRegistryEntry>;
 };
 
 type FormState = {
@@ -64,6 +85,7 @@ type FormState = {
   description: string;
   numberPrecision: number;
   options: FieldOption[];
+  formulaSource: string;
 };
 
 const INITIAL_STATE: FormState = {
@@ -73,7 +95,69 @@ const INITIAL_STATE: FormState = {
   description: "",
   numberPrecision: DEFAULT_PRECISION,
   options: [],
+  formulaSource: "",
 };
+
+type FormulaLocalState =
+  | { kind: "empty" }
+  | { kind: "ok"; ast: FormulaAST; deps: ReadonlyArray<string> }
+  | { kind: "parse_error"; message: string; offset: number }
+  | { kind: "resource_limit"; limit: string; actual: number; max: number }
+  | { kind: "unsupported_function"; name: string }
+  | { kind: "missing_ref"; display_name: string };
+
+function parseFormulaSource(
+  source: string,
+  registry: ReadonlyArray<FieldRegistryEntry>,
+): FormulaLocalState {
+  if (source.trim() === "") return { kind: "empty" };
+  let ast: FormulaAST;
+  try {
+    ast = parse(source);
+  } catch (err) {
+    if (err instanceof FormulaParseError) {
+      return { kind: "parse_error", message: err.message, offset: err.offset };
+    }
+    if (err instanceof FormulaResourceLimitError) {
+      return {
+        kind: "resource_limit",
+        limit: err.limit_name,
+        actual: err.actual,
+        max: err.max_value,
+      };
+    }
+    if (err instanceof FormulaUnsupportedFunctionError) {
+      return { kind: "unsupported_function", name: err.function_name };
+    }
+    throw err;
+  }
+  let resolved: FormulaAST;
+  try {
+    resolved = resolveRefs(ast, registry);
+  } catch (err) {
+    if (err instanceof FormulaMissingRefError) {
+      return { kind: "missing_ref", display_name: err.display_name };
+    }
+    throw err;
+  }
+  return { kind: "ok", ast: resolved, deps: collectFieldRefs(resolved) };
+}
+
+function formatFormulaError(state: FormulaLocalState): string | null {
+  switch (state.kind) {
+    case "empty":
+    case "ok":
+      return null;
+    case "parse_error":
+      return `Couldn't parse the formula: ${state.message} (position ${state.offset}).`;
+    case "resource_limit":
+      return `Formula exceeds ${state.limit} limit (${state.actual}/${state.max}).`;
+    case "unsupported_function":
+      return `Function '${state.name}' is not supported.`;
+    case "missing_ref":
+      return `Formula references a field that doesn't exist: ${state.display_name}.`;
+  }
+}
 
 export function AddFieldPopover({
   open,
@@ -82,6 +166,7 @@ export function AddFieldPopover({
   insertAfterFieldKey,
   existingFieldNames,
   dispatchAddField,
+  formulaFieldRegistry,
 }: AddFieldPopoverProps) {
   const [state, setState] = useState<FormState>(INITIAL_STATE);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -139,7 +224,33 @@ export function AddFieldPopover({
     return true;
   }, [state.fieldType, state.options]);
 
-  const canSubmit = Boolean(trimmedName) && !localNameError && optionsValid && !pending;
+  const formulaState = useMemo<FormulaLocalState>(() => {
+    if (state.fieldType !== "formula") return { kind: "empty" };
+    return parseFormulaSource(state.formulaSource, formulaFieldRegistry ?? []);
+  }, [state.fieldType, state.formulaSource, formulaFieldRegistry]);
+  const formulaError = useMemo(() => formatFormulaError(formulaState), [formulaState]);
+  const formulaValid = state.fieldType !== "formula" || formulaState.kind === "ok";
+
+  const formulaSourceInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const handleInsertFormulaToken = (token: string) => {
+    const el = formulaSourceInputRef.current;
+    if (!el) {
+      setState((prev) =>
+        prev.formulaSource.length + token.length > SOURCE_LENGTH_MAX
+          ? prev
+          : { ...prev, formulaSource: `${prev.formulaSource}${token}` },
+      );
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const next = `${el.value.slice(0, start)}${token}${el.value.slice(end)}`;
+    if (next.length > SOURCE_LENGTH_MAX) return;
+    setState((prev) => ({ ...prev, formulaSource: next }));
+  };
+
+  const canSubmit =
+    Boolean(trimmedName) && !localNameError && optionsValid && formulaValid && !pending;
 
   const virtualAnchorRef = useElementAnchorRef(anchorElement);
 
@@ -147,8 +258,17 @@ export function AddFieldPopover({
     event.preventDefault();
     if (!canSubmit) return;
     const description = state.descriptionEnabled ? state.description.trim() : "";
-    const config: Record<string, unknown> =
-      state.fieldType === "number" ? { precision: state.numberPrecision } : {};
+    let config: Record<string, unknown> = {};
+    if (state.fieldType === "number") {
+      config = { precision: state.numberPrecision };
+    } else if (state.fieldType === "formula") {
+      if (formulaState.kind !== "ok") return;
+      config = {
+        source: state.formulaSource,
+        ast: astToJson(formulaState.ast),
+        deps: [...formulaState.deps],
+      };
+    }
     const request: AddCustomFieldRequest = {
       displayName: trimmedName,
       fieldType: state.fieldType,
@@ -297,6 +417,43 @@ export function AddFieldPopover({
                     setState((prev) => ({ ...prev, numberPrecision: next }));
                   }}
                 />
+              </div>
+            ) : null}
+
+            {state.fieldType === "formula" ? (
+              <div className="data-table-add-field-config">
+                <label className="data-table-add-field-label" htmlFor={`${nameInputId}-formula`}>
+                  Expression
+                </label>
+                <input
+                  id={`${nameInputId}-formula`}
+                  ref={(node) => {
+                    formulaSourceInputRef.current = node;
+                  }}
+                  type="text"
+                  className="data-table-add-field-input data-table-formula-editor-source"
+                  value={state.formulaSource}
+                  maxLength={SOURCE_LENGTH_MAX}
+                  spellCheck={false}
+                  autoComplete="off"
+                  aria-invalid={formulaError ? true : undefined}
+                  onChange={(event) =>
+                    setState((prev) => ({ ...prev, formulaSource: event.target.value }))
+                  }
+                />
+                <span className="data-table-add-field-counter" aria-hidden>
+                  {state.formulaSource.length}/{SOURCE_LENGTH_MAX}
+                </span>
+                <FormulaFieldPalette
+                  entries={formulaFieldRegistry ?? []}
+                  disabled={state.formulaSource.length >= SOURCE_LENGTH_MAX}
+                  onInsert={handleInsertFormulaToken}
+                />
+                {formulaError ? (
+                  <p className="form-error data-table-add-field-inline-error" role="alert">
+                    {formulaError}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 

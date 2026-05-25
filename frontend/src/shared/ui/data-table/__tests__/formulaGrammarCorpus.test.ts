@@ -33,10 +33,7 @@ interface ManyFieldRefsSpec {
 type SourceSpec = RepeatSpec | BalancedParensSpec | ManyFieldRefsSpec;
 
 interface ExpectedError {
-  type:
-    | "FormulaParseError"
-    | "FormulaResourceLimitError"
-    | "FormulaUnsupportedFunctionError";
+  type: "FormulaParseError" | "FormulaResourceLimitError" | "FormulaUnsupportedFunctionError";
   limit_name?: string;
   function_name?: string;
 }
@@ -73,16 +70,8 @@ function expandSource(testCase: GrammarCase): string {
 }
 
 function astEqual(actual: unknown, expected: unknown): boolean {
-  if (
-    typeof expected === "object" &&
-    expected !== null &&
-    !Array.isArray(expected)
-  ) {
-    if (
-      typeof actual !== "object" ||
-      actual === null ||
-      Array.isArray(actual)
-    ) {
+  if (typeof expected === "object" && expected !== null && !Array.isArray(expected)) {
+    if (typeof actual !== "object" || actual === null || Array.isArray(actual)) {
       return false;
     }
     const eObj = expected as Record<string, unknown>;
@@ -130,9 +119,7 @@ describe("formula grammar corpus parity", () => {
 
       const expectedError = testCase.expected_error;
       if (expectedError === undefined) {
-        throw new Error(
-          `case '${testCase.name}' missing expected_ast/expected_error`,
-        );
+        throw new Error(`case '${testCase.name}' missing expected_ast/expected_error`);
       }
 
       let thrown: unknown;
@@ -151,17 +138,15 @@ describe("formula grammar corpus parity", () => {
         case "FormulaResourceLimitError":
           expect(thrown).toBeInstanceOf(FormulaResourceLimitError);
           if (expectedError.limit_name !== undefined) {
-            expect(
-              (thrown as FormulaResourceLimitError).limit_name,
-            ).toBe(expectedError.limit_name);
+            expect((thrown as FormulaResourceLimitError).limit_name).toBe(expectedError.limit_name);
           }
           break;
         case "FormulaUnsupportedFunctionError":
           expect(thrown).toBeInstanceOf(FormulaUnsupportedFunctionError);
           if (expectedError.function_name !== undefined) {
-            expect(
-              (thrown as FormulaUnsupportedFunctionError).function_name,
-            ).toBe(expectedError.function_name);
+            expect((thrown as FormulaUnsupportedFunctionError).function_name).toBe(
+              expectedError.function_name,
+            );
           }
           break;
       }

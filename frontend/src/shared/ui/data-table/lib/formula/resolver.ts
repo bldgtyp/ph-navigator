@@ -22,10 +22,7 @@ function normalizeDisplayName(name: string): string {
   return name.trim().toLocaleLowerCase();
 }
 
-export function resolveRefs(
-  ast: FormulaAST,
-  registry: Iterable<FieldRegistryEntry>,
-): FormulaAST {
+export function resolveRefs(ast: FormulaAST, registry: Iterable<FieldRegistryEntry>): FormulaAST {
   const byName = new Map<string, FieldRegistryEntry>();
   for (const entry of registry) {
     byName.set(normalizeDisplayName(entry.display_name), entry);
@@ -33,10 +30,7 @@ export function resolveRefs(
   return walk(ast, byName);
 }
 
-function walk(
-  node: FormulaAST,
-  byName: ReadonlyMap<string, FieldRegistryEntry>,
-): FormulaAST {
+function walk(node: FormulaAST, byName: ReadonlyMap<string, FieldRegistryEntry>): FormulaAST {
   switch (node.kind) {
     case "literal":
       return node;

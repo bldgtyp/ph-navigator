@@ -1,11 +1,6 @@
 import type { EvalErrorCode } from "./evaluator";
 
-export type ComputedCellValue =
-  | string
-  | number
-  | boolean
-  | null
-  | { error: EvalErrorCode };
+export type ComputedCellValue = string | number | boolean | null | { error: EvalErrorCode };
 
 export const COMPUTED_ERROR_MESSAGES: Record<EvalErrorCode, string> = {
   div_by_zero: "Division by zero.",
@@ -15,9 +10,7 @@ export const COMPUTED_ERROR_MESSAGES: Record<EvalErrorCode, string> = {
   output_too_long: "Formula output exceeds the maximum length.",
 };
 
-export function isComputedErrorValue(
-  value: unknown,
-): value is { error: EvalErrorCode } {
+export function isComputedErrorValue(value: unknown): value is { error: EvalErrorCode } {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
   const code = obj.error;

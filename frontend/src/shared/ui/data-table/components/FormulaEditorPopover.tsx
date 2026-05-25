@@ -222,11 +222,7 @@ export function FormulaEditorPopover({
 
   const handleSourceKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        event.currentTarget.tagName === "INPUT"
-      ) {
+      if (event.key === "Enter" && !event.shiftKey && event.currentTarget.tagName === "INPUT") {
         event.preventDefault();
         void handleSubmit();
       }
@@ -256,9 +252,7 @@ export function FormulaEditorPopover({
     "aria-invalid": localErrorMessage ? true : undefined,
     "aria-describedby": previewLabelId,
     onChange: (
-      event:
-        | React.ChangeEvent<HTMLInputElement>
-        | React.ChangeEvent<HTMLTextAreaElement>,
+      event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
     ) => setSource(event.target.value),
     onKeyDown: handleSourceKeyDown,
   } as const;
@@ -320,10 +314,7 @@ export function FormulaEditorPopover({
             />
 
             {submitError ? (
-              <p
-                className="form-error data-table-add-field-error"
-                role="alert"
-              >
+              <p className="form-error data-table-add-field-error" role="alert">
                 {submitError}
               </p>
             ) : null}
@@ -363,19 +354,11 @@ function FormulaPreviewPanel({
   focusedRow,
   previewResult,
 }: FormulaPreviewPanelProps) {
-  const panel = previewPanelContent(
-    localState,
-    localErrorMessage,
-    focusedRow,
-    previewResult,
-  );
+  const panel = previewPanelContent(localState, localErrorMessage, focusedRow, previewResult);
   return (
     <div
       id={labelId}
-      className={joinClassNames(
-        "data-table-formula-editor-preview",
-        panel.modifier,
-      )}
+      className={joinClassNames("data-table-formula-editor-preview", panel.modifier)}
       role="status"
       aria-live="polite"
     >

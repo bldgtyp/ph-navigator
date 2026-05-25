@@ -135,6 +135,24 @@ function customFieldToFieldDef(
   if (custom.field_type === "single_select") {
     fieldDef.options = [...(optionsByFieldId[custom.id] ?? EMPTY_OPTIONS)];
   }
+  if (custom.field_type === "formula") {
+    const config = custom.config ?? {};
+    const source = typeof config.source === "string" ? config.source : "";
+    const deps = Array.isArray(config.deps)
+      ? (config.deps as unknown[]).filter((entry): entry is string => typeof entry === "string")
+      : [];
+    const resultType = typeof config.result_type === "string" ? config.result_type : undefined;
+    fieldDef.formula_config = {
+      source,
+      ast: config.ast ?? null,
+      deps,
+      result_type: resultType,
+    };
+    // Route filter / sort / aggregation through the existing computed
+    // catalogue — number-typed formulas get the number operator set;
+    // every other formula falls back to text (plan-17 P4.9 wire-up).
+    fieldDef.computed_type = resultType === "number" ? "number" : "text";
+  }
   return fieldDef;
 }
 

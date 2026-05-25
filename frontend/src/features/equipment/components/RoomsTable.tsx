@@ -8,6 +8,7 @@ import {
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
+import { ComputedCell } from "../../../shared/ui/data-table/components/ComputedCell";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedRooms } from "../lib";
 import {
@@ -38,6 +39,10 @@ export function RoomsTable({
   onRenameCustomField,
   onDuplicateCustomField,
   onSetCustomFieldDescription,
+  onEditCustomFieldFormula,
+  formulaFieldRegistry,
+  getFormulaRowValues,
+  rowsComputed,
 }: {
   roomsSlice: RoomsSlice;
   // Plan-14 P1.4: produced by the parent's single `useTableSchema`
@@ -60,6 +65,10 @@ export function RoomsTable({
   onRenameCustomField?: DataTableProps<RoomRow>["onRenameCustomField"];
   onDuplicateCustomField?: DataTableProps<RoomRow>["onDuplicateCustomField"];
   onSetCustomFieldDescription?: DataTableProps<RoomRow>["onSetCustomFieldDescription"];
+  onEditCustomFieldFormula?: DataTableProps<RoomRow>["onEditCustomFieldFormula"];
+  formulaFieldRegistry?: DataTableProps<RoomRow>["formulaFieldRegistry"];
+  getFormulaRowValues?: DataTableProps<RoomRow>["getFormulaRowValues"];
+  rowsComputed?: Record<string, Record<string, unknown>>;
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
   const { fieldDefs, customFields } = tableSchema;
@@ -71,6 +80,25 @@ export function RoomsTable({
     () =>
       customFields.map((custom) => {
         const fieldDef = fieldDefByKey.get(custom.id);
+        if (custom.field_type === "formula") {
+          // Formula values live in `rows_computed`, never on the row
+          // itself. Sort / filter / group / aggregate share this
+          // accessor so they see the computed scalar; the cell render
+          // routes errors through `<ComputedCell>`.
+          const computedType = fieldDef?.computed_type ?? "text";
+          return {
+            id: custom.id,
+            fieldKey: custom.id,
+            header: custom.display_name,
+            accessor: (room) => readComputedScalar(rowsComputed, room.id, custom.id),
+            render: (room) => (
+              <ComputedCell
+                value={readComputedRaw(rowsComputed, room.id, custom.id)}
+                computedType={computedType}
+              />
+            ),
+          };
+        }
         return {
           id: custom.id,
           fieldKey: custom.id,
@@ -78,7 +106,7 @@ export function RoomsTable({
           accessor: (room) => (fieldDef ? (getCustomValue(room, fieldDef) ?? null) : null),
         };
       }),
-    [customFields, fieldDefByKey],
+    [customFields, fieldDefByKey, rowsComputed],
   );
   const columns = useMemo<DataTableColumnDef<RoomRow>[]>(
     () => [
@@ -174,8 +202,36 @@ export function RoomsTable({
       onRenameCustomField={onRenameCustomField}
       onDuplicateCustomField={onDuplicateCustomField}
       onSetCustomFieldDescription={onSetCustomFieldDescription}
+      onEditCustomFieldFormula={onEditCustomFieldFormula}
+      formulaFieldRegistry={formulaFieldRegistry}
+      getFormulaRowValues={getFormulaRowValues}
     />
   );
+}
+
+function readComputedRaw(
+  overlay: Record<string, Record<string, unknown>> | undefined,
+  rowId: string,
+  fieldId: string,
+): unknown {
+  if (!overlay) return null;
+  const rowOverlay = overlay[rowId];
+  if (!rowOverlay) return null;
+  return rowOverlay[fieldId] ?? null;
+}
+
+// Sort / filter / group / aggregate consume the *scalar* value;
+// structured error tokens (`{error: ...}`) become null so a `#ERROR`
+// cell doesn't poison the column's ordering or summary stats. Render
+// still surfaces the error glyph via `readComputedRaw`.
+function readComputedScalar(
+  overlay: Record<string, Record<string, unknown>> | undefined,
+  rowId: string,
+  fieldId: string,
+): unknown {
+  const raw = readComputedRaw(overlay, rowId, fieldId);
+  if (raw !== null && typeof raw === "object" && "error" in raw) return null;
+  return raw;
 }
 
 function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
