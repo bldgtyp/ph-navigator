@@ -100,6 +100,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     coreFieldDefs: roomsFieldDefsForSanitize,
     fingerprintCoreFieldKeys: ROOMS_SCHEMA_CORE_FIELD_KEYS,
     customFields: roomsQuery.data?.custom_fields,
+    singleSelectOptions: roomsQuery.data?.single_select_options ?? null,
   });
   const {
     view: roomsTableView,
@@ -379,8 +380,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     if (!source) {
       throw new Error("That custom field no longer exists. Refresh to see the current fields.");
     }
-    if (source.field_type === "single_select" || source.field_type === "formula") {
-      throw new Error("Duplicate is not available for that custom field type yet.");
+    if (source.field_type === "formula") {
+      throw new Error("Duplicate is not available for formula fields yet.");
     }
     const newFieldId = roomsTableSchema.mintCustomFieldId();
     const mutation = buildDuplicateFieldMutation({
@@ -449,6 +450,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         created_by: null,
       },
       insertAfterFieldId: backendAnchor,
+      initialOptions: request.initialOptions,
       schemaFingerprint: roomsTableSchema.schemaFingerprint,
     });
     await commitSchemaMutation(mutation);

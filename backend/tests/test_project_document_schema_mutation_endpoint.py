@@ -286,9 +286,11 @@ def test_post_schema_mutation_returns_409_on_stale_draft_etag(
     assert stale.json()["error_code"] == "draft_etag_mismatch"
 
 
-def test_post_schema_mutation_rejects_change_type_in_phase_2(
+def test_post_schema_mutation_change_type_clean_preflight_succeeds(
     clean_document_tables: None,
 ) -> None:
+    """Phase 3: changeType is now supported. Clean preflight (no rows on
+    the column) succeeds without acknowledge_destructive."""
     client = _signed_in_client()
     project = _create_project(client)
     project_id = project["id"]
@@ -297,7 +299,6 @@ def test_post_schema_mutation_rejects_change_type_in_phase_2(
     initial = client.get(_draft_rooms_url(project_id, version_id))
     fingerprint = _fingerprint(initial.json()["custom_fields"])
 
-    # First add a field so changeType has a target.
     added = client.post(
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
@@ -311,21 +312,19 @@ def test_post_schema_mutation_rejects_change_type_in_phase_2(
     new_fp = _fingerprint(added.json()["custom_fields"])
     change_type = {
         "kind": "changeType",
-        "table_key": "rooms",
-        "field_id": "cf_a",
+        "tableKey": "rooms",
+        "fieldId": "cf_a",
         "after": _new_field_payload(cf_id="cf_a", display_name="A", field_type=CustomFieldType.number),
-        "cell_writes": [],
-        "expected_schema_fingerprint": new_fp,
+        "expectedSchemaFingerprint": new_fp,
     }
     response = client.post(
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": added.json()["draft_etag"]},
         json=change_type,
     )
-    assert response.status_code == 422
+    assert response.status_code == 200, response.text
     payload = response.json()
-    assert payload["error_code"] == "custom_field_unsupported_mutation"
-    assert payload["details"]["available_in_phase"] == "Phase 3"
+    assert payload["custom_fields"][0]["field_type"] == "number"
 
 
 def test_post_schema_mutation_emits_audit_log(clean_document_tables: None) -> None:
@@ -362,3 +361,100 @@ def test_post_schema_mutation_emits_audit_log(clean_document_tables: None) -> No
     assert details["kind"] == "addField"
     assert details["field_id"] == "cf_logged"
     assert details["display_name"] == "Logged"
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 (plan-16) — editOptions + changeType endpoint coverage
+# ---------------------------------------------------------------------------
+
+
+def test_post_schema_mutation_add_single_select_with_initial_options(
+    clean_document_tables: None,
+) -> None:
+    """Phase 3 P3.5: AddFieldMutation supports an atomic
+    `initialOptions` payload for single_select fields. The response
+    envelope includes the namespaced option list under
+    `single_select_options["rooms.<cf_id>"]`."""
+    client = _signed_in_client()
+    project = _create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(_draft_rooms_url(project_id, version_id))
+    fingerprint = _fingerprint(initial.json()["custom_fields"])
+
+    add = {
+        "kind": "addField",
+        "tableKey": "rooms",
+        "after": _new_field_payload(
+            cf_id="cf_status",
+            display_name="Status",
+            field_type=CustomFieldType.single_select,
+        ),
+        "initialOptions": [
+            {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
+            {"id": "opt_done", "label": "Done", "color": "#10b981", "order": 2},
+        ],
+        "expectedSchemaFingerprint": fingerprint,
+    }
+    response = client.post(
+        _mutate_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=add,
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["custom_fields"][0]["field_type"] == "single_select"
+    assert body["single_select_options"]["rooms.cf_status"][0]["label"] == "Open"
+
+
+def test_post_schema_mutation_edit_options_delete_cascade(
+    clean_document_tables: None,
+) -> None:
+    """Phase 3 P3.2: EditOptionsMutation deletes cascade to row clears
+    and the response carries the updated namespaced option list."""
+    client = _signed_in_client()
+    project = _create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(_draft_rooms_url(project_id, version_id))
+    fingerprint = _fingerprint(initial.json()["custom_fields"])
+
+    add_response = client.post(
+        _mutate_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json={
+            "kind": "addField",
+            "tableKey": "rooms",
+            "after": _new_field_payload(
+                cf_id="cf_status",
+                display_name="Status",
+                field_type=CustomFieldType.single_select,
+            ),
+            "initialOptions": [
+                {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
+                {"id": "opt_done", "label": "Done", "color": "#10b981", "order": 2},
+            ],
+            "expectedSchemaFingerprint": fingerprint,
+        },
+    )
+    assert add_response.status_code == 200, add_response.text
+
+    edit = client.post(
+        _mutate_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": add_response.json()["draft_etag"]},
+        json={
+            "kind": "editOptions",
+            "tableKey": "rooms",
+            "fieldId": "cf_status",
+            "nextOptions": [
+                {"id": "opt_done", "label": "Done renamed", "color": "#10b981", "order": 1},
+                {"id": "opt_new", "label": "Brand new", "color": "#a16207", "order": 2},
+            ],
+            "expectedSchemaFingerprint": _fingerprint(add_response.json()["custom_fields"]),
+        },
+    )
+    assert edit.status_code == 200, edit.text
+    options = edit.json()["single_select_options"]["rooms.cf_status"]
+    assert [opt["id"] for opt in options] == ["opt_done", "opt_new"]

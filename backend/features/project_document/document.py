@@ -378,8 +378,11 @@ class ProjectDocumentV1(BaseModel):
                 custom_field = custom_field_ids.get(cf_id)
                 if custom_field is None:
                     raise ValueError(f"Unknown custom field id on room {room.id}: {cf_id}")
+                option_list = None
+                if custom_field.field_type.value == "single_select":
+                    option_list = self.single_select_options.get(f"rooms.{cf_id}", [])
                 try:
-                    coerce_custom_value(value, custom_field.field_type)
+                    coerce_custom_value(value, custom_field.field_type, option_list=option_list)
                 except ValueError as exc:
                     raise ValueError(
                         f"Invalid custom value for {custom_field.display_name!r} on room {room.id}: {exc}"

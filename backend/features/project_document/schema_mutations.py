@@ -18,10 +18,19 @@ from starlette import status
 
 from features.project_document.custom_fields import (
     CUSTOM_FIELD_DESCRIPTION_MAX,
+    SHORT_TEXT_MAX_LENGTH,
     CustomFieldDef,
+    CustomFieldType,
     normalize_display_name,
 )
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import ProjectDocumentV1, SingleSelectOption
+from features.project_document.options import (
+    OPTION_COLOR_PALETTE,
+    mint_option_id,
+    option_list_key,
+    remove_option_list,
+    validate_option_list,
+)
 from features.project_document.tables.contracts import CustomFieldCapability
 from features.project_document.validation import validate_document
 from features.shared.errors import api_error
@@ -34,12 +43,47 @@ AUDIT_KIND_BY_MUTATION: dict[str, str] = {
     "deleteField": "project_version_custom_field_delete",
     "duplicateField": "project_version_custom_field_duplicate",
     "setDescription": "project_version_custom_field_set_description",
+    "editOptions": "project_version_custom_field_edit_options",
+    "changeType": "project_version_custom_field_change_type",
 }
 
 _DEFERRED_MUTATION_PHASES: dict[str, str] = {
-    "changeType": "Phase 3",
     "setFormula": "Phase 4",
 }
+
+# Convertibility matrix: (from, to) -> ConversionPolicy. Pairs absent
+# from this map are forbidden. Frontend `typeConversionMatrix.ts`
+# mirrors this — keep them in sync.
+ConversionPolicy = Literal[
+    "lossless",
+    "lossy",
+    "create_options",
+    "substitute_labels",
+]
+
+CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolicy] = {
+    # short_text → *
+    (CustomFieldType.short_text, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.short_text, CustomFieldType.number): "lossy",
+    (CustomFieldType.short_text, CustomFieldType.url): "lossy",
+    (CustomFieldType.short_text, CustomFieldType.single_select): "create_options",
+    # long_text → *
+    (CustomFieldType.long_text, CustomFieldType.short_text): "lossy",
+    (CustomFieldType.long_text, CustomFieldType.number): "lossy",
+    (CustomFieldType.long_text, CustomFieldType.url): "lossy",
+    (CustomFieldType.long_text, CustomFieldType.single_select): "create_options",
+    # number → *
+    (CustomFieldType.number, CustomFieldType.short_text): "lossless",
+    (CustomFieldType.number, CustomFieldType.long_text): "lossless",
+    # url → *
+    (CustomFieldType.url, CustomFieldType.short_text): "lossless",
+    (CustomFieldType.url, CustomFieldType.long_text): "lossless",
+    # single_select → *
+    (CustomFieldType.single_select, CustomFieldType.short_text): "substitute_labels",
+    (CustomFieldType.single_select, CustomFieldType.long_text): "substitute_labels",
+}
+
+TEXT_TO_SINGLE_SELECT_OPTION_CAP = 50
 
 
 def _to_lower_camel(value: str) -> str:
@@ -61,6 +105,10 @@ class AddFieldMutation(BaseModel):
     table_key: str
     after: CustomFieldDef
     insert_after_field_id: str | None = None
+    # Only valid when `after.field_type == "single_select"`; supplies the
+    # initial option list so add-with-options is one atomic mutation
+    # rather than a follow-up `editOptions` round trip.
+    initial_options: list[SingleSelectOption] | None = None
     expected_schema_fingerprint: str
 
 
@@ -116,8 +164,12 @@ class SetDescriptionMutation(BaseModel):
 
 
 class ChangeTypeMutation(BaseModel):
-    """Declared up front to close the discriminator; rejected by the
-    dispatcher with `custom_field_unsupported_mutation` until Phase 3."""
+    """Change a custom field's type with per-row coercion preflight.
+
+    Identity rules: `after.id` must equal `field_id`; only `field_type`
+    and `config` may differ from the existing field. The server derives
+    cell clears authoritatively — no client-supplied cell_writes.
+    """
 
     model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
@@ -125,7 +177,31 @@ class ChangeTypeMutation(BaseModel):
     table_key: str
     field_id: str
     after: CustomFieldDef
-    cell_writes: list[dict[str, object]] = Field(default_factory=list)
+    acknowledge_destructive: bool = False
+    expected_schema_fingerprint: str
+
+
+class EditOptionsMutation(BaseModel):
+    """Edit a single_select field's option list in one gesture.
+
+    Covers add / rename / reorder / recolor / delete. The server diffs
+    `next_options` against the current list and cascades deletes to row
+    clears (custom: clear `custom[cf_id]`; core nullable: clear field;
+    core required: reject without replacement). Works for both core and
+    custom single-selects via the contract's option-key map / list
+    helpers.
+    """
+
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
+
+    kind: Literal["editOptions"]
+    table_key: str
+    field_id: str
+    next_options: list[SingleSelectOption]
+    # Optional replacements for deleted required-core option ids:
+    # `{deleted_option_id: replacement_option_id}`. Required-core deletes
+    # without replacements are rejected.
+    replacements: dict[str, str] = Field(default_factory=dict)
     expected_schema_fingerprint: str
 
 
@@ -148,6 +224,7 @@ FieldSchemaMutation = Annotated[
     | DeleteFieldMutation
     | DuplicateFieldMutation
     | SetDescriptionMutation
+    | EditOptionsMutation
     | ChangeTypeMutation
     | SetFormulaMutation,
     Field(discriminator="kind"),
@@ -169,7 +246,7 @@ def apply_schema_mutation(
     """
     _check_stale_fingerprint(body, mutation, capability)
 
-    if isinstance(mutation, ChangeTypeMutation | SetFormulaMutation):
+    if isinstance(mutation, SetFormulaMutation):
         _raise_unsupported_mutation(mutation.kind)
 
     if isinstance(mutation, AddFieldMutation):
@@ -182,6 +259,10 @@ def apply_schema_mutation(
         next_body, audit = _apply_duplicate_field(body, mutation, actor_user_id, capability)
     elif isinstance(mutation, SetDescriptionMutation):
         next_body, audit = _apply_set_description(body, mutation, capability)
+    elif isinstance(mutation, EditOptionsMutation):
+        next_body, audit = _apply_edit_options(body, mutation, capability)
+    elif isinstance(mutation, ChangeTypeMutation):
+        next_body, audit = _apply_change_type(body, mutation, capability)
     else:
         # Defensive — every discriminator branch is handled above; this
         # only fires if the union grows without a matching dispatcher.
@@ -237,16 +318,32 @@ def _apply_add_field(
         mutation.table_key,
     )
 
+    initial_options = mutation.initial_options
+    if initial_options is not None and mutation.after.field_type is not CustomFieldType.single_select:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_option_list_invalid",
+            "initial_options is only valid for single_select fields.",
+            {"reason": "initial_options_wrong_type", "field_type": mutation.after.field_type.value},
+        )
+    if mutation.after.field_type is CustomFieldType.single_select and initial_options:
+        validate_option_list(initial_options)
+
     stamped = mutation.after.model_copy(update={"created_by": actor_user_id})
     next_fields = list(current_fields)
     next_fields.insert(position, stamped)
     next_body = capability.replace_custom_fields(body, next_fields)
+    if mutation.after.field_type is CustomFieldType.single_select:
+        next_body = capability.replace_field_option_list(
+            next_body, stamped.id, list(initial_options or [])
+        )
     audit: dict[str, object] = {
         "kind": "addField",
         "table_key": mutation.table_key,
         "field_id": stamped.id,
         "display_name": stamped.display_name,
         "field_type": stamped.field_type.value,
+        "initial_option_count": len(initial_options or []),
     }
     return next_body, audit
 
@@ -334,12 +431,22 @@ def _apply_duplicate_field(
     next_fields = list(current_fields)
     next_fields.insert(source_index + 1, stamped)
     next_body = capability.replace_custom_fields(body, next_fields)
+    duplicated_option_count = 0
+    if source.field_type is CustomFieldType.single_select:
+        # Row values aren't copied, but the source's option list is
+        # deep-copied under fresh ids so the duplicate column is fully
+        # independent of the source.
+        source_options = capability.read_field_option_list(next_body, source.id)
+        new_options = [option.model_copy(update={"id": mint_option_id()}) for option in source_options]
+        next_body = capability.replace_field_option_list(next_body, stamped.id, new_options)
+        duplicated_option_count = len(new_options)
     audit: dict[str, object] = {
         "kind": "duplicateField",
         "table_key": mutation.table_key,
         "source_field_id": source.id,
         "new_field_id": stamped.id,
         "display_name": stamped.display_name,
+        "duplicated_option_count": duplicated_option_count,
     }
     return next_body, audit
 
@@ -533,3 +640,441 @@ def _replace_rows_in_envelope(
     next_envelope = envelope.model_copy(update={"rows": list(rows)})
     next_tables = body.tables.model_copy(update={table_key: next_envelope})
     return body.model_copy(update={"tables": next_tables})
+
+
+# ---------------------------------------------------------------------------
+# editOptions
+# ---------------------------------------------------------------------------
+
+
+def _resolve_option_target(
+    body: ProjectDocumentV1,
+    field_id: str,
+    table_key: str,
+    capability: CustomFieldCapability,
+) -> tuple[bool, str, list[SingleSelectOption]]:
+    """Return (is_custom, namespace_key, current_options) for a field id.
+
+    Raises `custom_field_invalid_field_id` if the field is neither a
+    core single-select nor a custom single-select.
+    """
+    core_key = capability.core_option_key_by_field_id.get(field_id)
+    if core_key is not None:
+        return False, core_key, list(body.single_select_options.get(core_key, []))
+    custom_fields = capability.read_custom_fields(body)
+    for field in custom_fields:
+        if field.id == field_id:
+            if field.field_type is not CustomFieldType.single_select:
+                raise api_error(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "custom_field_invalid_field_id",
+                    "Cannot edit options on a non-single_select field.",
+                    {
+                        "field_id": field_id,
+                        "table_key": table_key,
+                        "reason": "field_type_not_single_select",
+                    },
+                )
+            namespace_key = option_list_key(capability.table_path, field_id)
+            return True, namespace_key, list(body.single_select_options.get(namespace_key, []))
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "custom_field_invalid_field_id",
+        "Field id was not found as a single-select column.",
+        {"field_id": field_id, "table_key": table_key},
+    )
+
+
+def _apply_edit_options(
+    body: ProjectDocumentV1,
+    mutation: EditOptionsMutation,
+    capability: CustomFieldCapability,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    is_custom, namespace_key, current_options = _resolve_option_target(
+        body, mutation.field_id, mutation.table_key, capability
+    )
+    validate_option_list(mutation.next_options)
+
+    current_ids = {option.id for option in current_options}
+    next_ids = {option.id for option in mutation.next_options}
+    deleted_ids = current_ids - next_ids
+
+    # Required core single-select fields cannot be cleared on referenced
+    # deletes — caller must supply replacement option ids.
+    if (
+        not is_custom
+        and mutation.field_id in capability.required_core_select_fields
+        and deleted_ids
+    ):
+        for deleted_id in deleted_ids:
+            replacement = mutation.replacements.get(deleted_id)
+            if replacement is None:
+                raise api_error(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "custom_field_option_list_invalid",
+                    "Required core single-select option deletion requires a replacement.",
+                    {
+                        "reason": "required_core_select_delete_without_replacement",
+                        "deleted_option_id": deleted_id,
+                        "field_id": mutation.field_id,
+                    },
+                )
+            if replacement not in next_ids:
+                raise api_error(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "custom_field_option_list_invalid",
+                    "Replacement option must be present in next_options.",
+                    {
+                        "reason": "replacement_not_in_next_options",
+                        "deleted_option_id": deleted_id,
+                        "replacement_option_id": replacement,
+                    },
+                )
+
+    # Cascade deletes into row values atomically.
+    cleared_row_count = 0
+    next_body = body
+    if deleted_ids:
+        rows = _read_rows_from_envelope(next_body, mutation.table_key)
+        next_rows: list[object] = []
+        for row in rows:
+            if is_custom:
+                custom = capability.read_row_custom(row)
+                current_value = custom.get(mutation.field_id)
+                if isinstance(current_value, str) and current_value in deleted_ids:
+                    cleared_row_count += 1
+                    new_custom = dict(custom)
+                    new_custom[mutation.field_id] = None
+                    next_rows.append(capability.set_row_custom(row, new_custom))
+                else:
+                    next_rows.append(row)
+            else:
+                current_value = capability.read_core_option_value(row, mutation.field_id)
+                if isinstance(current_value, str) and current_value in deleted_ids:
+                    cleared_row_count += 1
+                    replacement = mutation.replacements.get(current_value)
+                    next_rows.append(
+                        capability.set_core_option_value(row, mutation.field_id, replacement)
+                    )
+                else:
+                    next_rows.append(row)
+        next_body = _replace_rows_in_envelope(next_body, mutation.table_key, next_rows)
+
+    next_options = list(mutation.next_options)
+    next_map = dict(next_body.single_select_options)
+    next_map[namespace_key] = next_options
+    next_body = next_body.model_copy(update={"single_select_options": next_map})
+
+    audit: dict[str, object] = {
+        "kind": "editOptions",
+        "table_key": mutation.table_key,
+        "field_id": mutation.field_id,
+        "is_custom": is_custom,
+        "added_option_ids": sorted(next_ids - current_ids),
+        "deleted_option_ids": sorted(deleted_ids),
+        "cleared_row_count": cleared_row_count,
+    }
+    return next_body, audit
+
+
+# ---------------------------------------------------------------------------
+# changeType
+# ---------------------------------------------------------------------------
+
+
+def _format_number_for_text(value: object) -> str:
+    """Locale-independent text rendering for number -> text coercion."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        # Match JS / JSON canonical form: integers without `.0`.
+        if value.is_integer():
+            return str(int(value))
+        return repr(value)
+    return str(value)
+
+
+def _try_coerce_for_change_type(
+    raw_value: object,
+    to_type: CustomFieldType,
+    *,
+    target_option_list: list[SingleSelectOption] | None,
+) -> tuple[bool, object | None, str]:
+    """Try to coerce raw_value to to_type. Returns (ok, coerced, reason).
+
+    `coerced` is the new stored value (None when the source was empty);
+    `reason` carries a short string when ok=False (used in the preflight
+    diagnostics).
+    """
+    if raw_value is None or raw_value == "":
+        return True, None, ""
+    if to_type is CustomFieldType.short_text:
+        if isinstance(raw_value, str):
+            if len(raw_value) > SHORT_TEXT_MAX_LENGTH:
+                return False, None, "exceeds_short_text_max_length"
+            return True, raw_value, ""
+        if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+            return True, _format_number_for_text(raw_value), ""
+        return False, None, "not_coercible_to_short_text"
+    if to_type is CustomFieldType.long_text:
+        if isinstance(raw_value, str):
+            return True, raw_value, ""
+        if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+            return True, _format_number_for_text(raw_value), ""
+        return False, None, "not_coercible_to_long_text"
+    if to_type is CustomFieldType.number:
+        if isinstance(raw_value, bool):
+            return False, None, "boolean_not_numeric"
+        if isinstance(raw_value, (int, float)):
+            return True, raw_value, ""
+        if isinstance(raw_value, str):
+            stripped = raw_value.strip()
+            if not stripped:
+                return True, None, ""
+            try:
+                value = float(stripped)
+            except ValueError:
+                return False, None, "not_a_number"
+            if value.is_integer():
+                return True, int(value), ""
+            return True, value, ""
+        return False, None, "not_coercible_to_number"
+    if to_type is CustomFieldType.url:
+        if not isinstance(raw_value, str):
+            return False, None, "url_must_be_string"
+        stripped = raw_value.strip()
+        if not stripped:
+            return True, None, ""
+        # Minimal URL guard: require a recognized scheme prefix. The
+        # frontend `coerceCustomValue` mirrors this exactly.
+        lowered = stripped.lower()
+        if not (lowered.startswith("http://") or lowered.startswith("https://")):
+            return False, None, "missing_url_scheme"
+        return True, stripped, ""
+    if to_type is CustomFieldType.single_select:
+        # When the target option list is provided, look up by label
+        # (case-insensitive trimmed) — the create_options policy in
+        # `_apply_change_type` materializes the list before calling here.
+        if target_option_list is None:
+            return False, None, "missing_target_option_list"
+        if not isinstance(raw_value, str):
+            return False, None, "single_select_requires_text"
+        normalized = normalize_display_name(raw_value)
+        if not normalized:
+            return True, None, ""
+        for option in target_option_list:
+            if normalize_display_name(option.label) == normalized:
+                return True, option.id, ""
+        return False, None, "no_matching_option"
+    return False, None, f"unsupported_to_type:{to_type.value}"
+
+
+def _materialize_options_for_text_to_select(
+    rows: list[object],
+    field_id: str,
+    capability: CustomFieldCapability,
+) -> tuple[list[SingleSelectOption], list[tuple[str, object, str]]]:
+    """Enumerate distinct trimmed non-empty source values into options.
+
+    Returns the new option list (capped at TEXT_TO_SINGLE_SELECT_OPTION_CAP)
+    and the list of `(row_id, raw_value, reason)` diagnostics for rows
+    whose value falls past the cap.
+    """
+    seen: dict[str, SingleSelectOption] = {}
+    overflow: list[tuple[str, object, str]] = []
+    order_index = 0
+    for row in rows:
+        custom = capability.read_row_custom(row)
+        raw_value = custom.get(field_id)
+        if not isinstance(raw_value, str):
+            continue
+        stripped = raw_value.strip()
+        if not stripped:
+            continue
+        normalized = normalize_display_name(stripped)
+        if normalized in seen:
+            continue
+        if len(seen) >= TEXT_TO_SINGLE_SELECT_OPTION_CAP:
+            row_id = str(getattr(row, "id", ""))
+            overflow.append((row_id, raw_value, "single_select_option_cap_exceeded"))
+            continue
+        option_id = mint_option_id()
+        color = OPTION_COLOR_PALETTE[order_index % len(OPTION_COLOR_PALETTE)]
+        seen[normalized] = SingleSelectOption(
+            id=option_id,
+            label=stripped,
+            color=color,
+            order=float(order_index + 1),
+        )
+        order_index += 1
+    return list(seen.values()), overflow
+
+
+def _apply_change_type(
+    body: ProjectDocumentV1,
+    mutation: ChangeTypeMutation,
+    capability: CustomFieldCapability,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    current_fields = capability.read_custom_fields(body)
+    index, existing = _find_field(current_fields, mutation.field_id, mutation.table_key)
+
+    if mutation.after.id != mutation.field_id:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_invalid_field_id",
+            "changeType target id must equal the source field id.",
+            {"field_id": mutation.after.id, "expected_field_id": mutation.field_id},
+        )
+    if mutation.after.field_type == existing.field_type:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_invalid_field_id",
+            "changeType requires a different target field_type.",
+            {"field_id": mutation.field_id, "field_type": existing.field_type.value},
+        )
+    # Disallow silent metadata rewrites during a type change — only
+    # field_type and config may differ. `created_at` and `created_by`
+    # are preserved server-side (clients aren't required to round-trip
+    # them exactly), but `display_name`, `field_key`, and `description`
+    # must match the stored field.
+    for attr in ("display_name", "field_key", "description"):
+        if getattr(mutation.after, attr) != getattr(existing, attr):
+            raise api_error(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "custom_field_invalid_field_id",
+                "changeType may not modify field metadata other than type/config.",
+                {"field_id": mutation.field_id, "disallowed_attribute": attr},
+            )
+
+    from_type = existing.field_type
+    to_type = mutation.after.field_type
+    policy = CONVERSION_MATRIX.get((from_type, to_type))
+    if policy is None:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_illegal_type_conversion",
+            f"Cannot convert custom field from {from_type.value} to {to_type.value}.",
+            {"field_id": mutation.field_id, "from_type": from_type.value, "to_type": to_type.value},
+        )
+
+    rows = _read_rows_from_envelope(body, mutation.table_key)
+
+    target_option_list: list[SingleSelectOption] | None = None
+    generated_options: list[SingleSelectOption] | None = None
+    overflow_diagnostics: list[tuple[str, object, str]] = []
+    label_lookup_for_substitute: dict[str, str] | None = None
+    if policy == "create_options":
+        generated_options, overflow_diagnostics = _materialize_options_for_text_to_select(
+            rows, mutation.field_id, capability
+        )
+        target_option_list = generated_options
+    elif policy == "substitute_labels":
+        # Build {option_id: label} from the existing namespaced list so
+        # the per-row pass can substitute labels.
+        namespace_key = option_list_key(capability.table_path, mutation.field_id)
+        existing_options = body.single_select_options.get(namespace_key, [])
+        label_lookup_for_substitute = {opt.id: opt.label for opt in existing_options}
+
+    # Per-row preflight.
+    incompatible: list[dict[str, object]] = []
+    compatible_writes: list[tuple[str, object | None]] = []
+    for row in rows:
+        row_id = str(getattr(row, "id", ""))
+        custom = capability.read_row_custom(row)
+        raw_value = custom.get(mutation.field_id)
+        if policy == "substitute_labels" and label_lookup_for_substitute is not None:
+            if raw_value is None or raw_value == "":
+                compatible_writes.append((row_id, None))
+                continue
+            label = label_lookup_for_substitute.get(str(raw_value))
+            if label is None:
+                incompatible.append(
+                    {"row_id": row_id, "raw_value": raw_value, "reason": "no_matching_option"}
+                )
+            else:
+                compatible_writes.append((row_id, label))
+            continue
+        ok, coerced, reason = _try_coerce_for_change_type(
+            raw_value, to_type, target_option_list=target_option_list
+        )
+        if ok:
+            compatible_writes.append((row_id, coerced))
+        else:
+            incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
+    # Overflow diagnostics from text→single_select cap are also incompatible.
+    for row_id, raw_value, reason in overflow_diagnostics:
+        incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
+
+    if incompatible and not mutation.acknowledge_destructive:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_coercion_preflight_required",
+            "Conversion would clear values; resubmit with acknowledge_destructive.",
+            {
+                "field_id": mutation.field_id,
+                "from_type": from_type.value,
+                "to_type": to_type.value,
+                "incompatible_row_count": len(incompatible),
+                "total_row_count": len(rows),
+                "incompatible_rows": incompatible[:25],
+            },
+        )
+
+    # Apply: replace field def, rewrite rows, update option lists.
+    # Preserve created_at / created_by from the existing field so a
+    # client doesn't need to round-trip them exactly.
+    next_fields = list(current_fields)
+    next_fields[index] = mutation.after.model_copy(
+        update={"created_by": existing.created_by, "created_at": existing.created_at}
+    )
+    next_body = capability.replace_custom_fields(body, next_fields)
+
+    # Handle option-list namespace changes.
+    if policy == "create_options":
+        next_body = capability.replace_field_option_list(
+            next_body, mutation.field_id, generated_options or []
+        )
+    elif from_type is CustomFieldType.single_select:
+        # Field is no longer single_select — strip its option-list entry.
+        namespace_key = option_list_key(capability.table_path, mutation.field_id)
+        next_body = remove_option_list(next_body, namespace_key)
+
+    # Apply row writes. `capability.replace_custom_fields` does not
+    # touch the row list, so we can reuse the `rows` we already iterated
+    # for preflight and skip a second envelope read.
+    write_by_row: dict[str, object | None] = dict(compatible_writes)
+    incompatible_by_row: set[str] = {str(entry["row_id"]) for entry in incompatible}
+
+    new_rows: list[object] = []
+    for row in rows:
+        row_id = str(getattr(row, "id", ""))
+        if row_id in write_by_row:
+            custom = dict(capability.read_row_custom(row))
+            value = write_by_row[row_id]
+            if value is None:
+                custom.pop(mutation.field_id, None)
+            else:
+                custom[mutation.field_id] = value  # type: ignore[assignment]
+            new_rows.append(capability.set_row_custom(row, custom))
+        elif row_id in incompatible_by_row:
+            custom = dict(capability.read_row_custom(row))
+            custom.pop(mutation.field_id, None)
+            new_rows.append(capability.set_row_custom(row, custom))
+        else:
+            new_rows.append(row)
+    next_body = _replace_rows_in_envelope(next_body, mutation.table_key, new_rows)
+
+    audit: dict[str, object] = {
+        "kind": "changeType",
+        "table_key": mutation.table_key,
+        "field_id": mutation.field_id,
+        "from_type": from_type.value,
+        "to_type": to_type.value,
+        "compatible_row_count": len(compatible_writes),
+        "cleared_row_count": len(incompatible),
+    }
+    if generated_options is not None:
+        audit["created_option_count"] = len(generated_options)
+    return next_body, audit

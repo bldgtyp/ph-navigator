@@ -9,19 +9,21 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import type { CustomFieldType } from "../hooks/useTableSchema";
+import { createFieldOption, OPTION_COLOR_PALETTE } from "../lib";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { normalizeDisplayName } from "../lib/fieldDisplayNames";
 import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
+import type { FieldOption } from "../types";
 
 const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint: string }> = [
   { kind: "short_text", label: "Short text", hint: "Single-line text." },
   { kind: "long_text", label: "Long text", hint: "Multi-line text." },
   { kind: "number", label: "Number", hint: "Numeric value with optional precision." },
   { kind: "url", label: "URL", hint: "Link target (validated server-side)." },
+  { kind: "single_select", label: "Single select", hint: "Pick one option from a defined list." },
 ];
 const DISABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; planned: string }> = [
-  { kind: "single_select", label: "Single select", planned: "Phase 3" },
   { kind: "formula", label: "Formula", planned: "Phase 4" },
 ];
 
@@ -34,6 +36,9 @@ export type AddCustomFieldRequest = {
   fieldType: CustomFieldType;
   config: Record<string, unknown>;
   description: string | null;
+  // Only set when `fieldType === "single_select"`. Carries the initial
+  // option list so add-with-options is one atomic POST.
+  initialOptions?: FieldOption[];
   // Visual anchor in `view.columnOrder` ("insert this new field right
   // after this fieldKey"). Null means "append at end". Any fieldKey is
   // accepted — the consumer decides what subset (custom-only) to
@@ -58,6 +63,7 @@ type FormState = {
   descriptionEnabled: boolean;
   description: string;
   numberPrecision: number;
+  options: FieldOption[];
 };
 
 const INITIAL_STATE: FormState = {
@@ -66,6 +72,7 @@ const INITIAL_STATE: FormState = {
   descriptionEnabled: false,
   description: "",
   numberPrecision: DEFAULT_PRECISION,
+  options: [],
 };
 
 export function AddFieldPopover({
@@ -118,7 +125,21 @@ export function AddFieldPopover({
     return null;
   }, [trimmedName, normalizedNames]);
 
-  const canSubmit = Boolean(trimmedName) && !localNameError && !pending;
+  const optionsValid = useMemo(() => {
+    if (state.fieldType !== "single_select") return true;
+    if (state.options.length === 0) return false;
+    const labels = new Set<string>();
+    for (const option of state.options) {
+      const trimmed = option.label.trim();
+      if (!trimmed) return false;
+      const normalized = trimmed.toLocaleLowerCase();
+      if (labels.has(normalized)) return false;
+      labels.add(normalized);
+    }
+    return true;
+  }, [state.fieldType, state.options]);
+
+  const canSubmit = Boolean(trimmedName) && !localNameError && optionsValid && !pending;
 
   const virtualAnchorRef = useElementAnchorRef(anchorElement);
 
@@ -135,6 +156,13 @@ export function AddFieldPopover({
       description: description ? description : null,
       insertAfterFieldKey,
     };
+    if (state.fieldType === "single_select") {
+      request.initialOptions = state.options.map((option, index) => ({
+        ...option,
+        label: option.label.trim(),
+        order: index + 1,
+      }));
+    }
     setPending(true);
     setSubmitError(null);
     try {
@@ -215,7 +243,17 @@ export function AddFieldPopover({
                     className="data-table-add-field-type-pill"
                     data-active={state.fieldType === option.kind ? "true" : undefined}
                     title={option.hint}
-                    onClick={() => setState((prev) => ({ ...prev, fieldType: option.kind }))}
+                    onClick={() =>
+                      setState((prev) => {
+                        const isSelect = option.kind === "single_select";
+                        const wasSelect = prev.fieldType === "single_select";
+                        const nextOptions =
+                          isSelect && !wasSelect && prev.options.length === 0
+                            ? [createFieldOption("", [])]
+                            : prev.options;
+                        return { ...prev, fieldType: option.kind, options: nextOptions };
+                      })
+                    }
                   >
                     {option.label}
                   </button>
@@ -259,6 +297,85 @@ export function AddFieldPopover({
                     setState((prev) => ({ ...prev, numberPrecision: next }));
                   }}
                 />
+              </div>
+            ) : null}
+
+            {state.fieldType === "single_select" ? (
+              <div className="data-table-add-field-config">
+                <span className="data-table-add-field-label">Options</span>
+                <ul className="data-table-add-field-options" role="list">
+                  {state.options.map((option, index) => (
+                    <li key={option.id} className="data-table-add-field-option-row">
+                      <select
+                        className="data-table-add-field-option-color"
+                        aria-label={`Option color ${index + 1}`}
+                        value={option.color}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          setState((prev) => ({
+                            ...prev,
+                            options: prev.options.map((opt) =>
+                              opt.id === option.id ? { ...opt, color: next } : opt,
+                            ),
+                          }));
+                        }}
+                      >
+                        {OPTION_COLOR_PALETTE.map((swatch) => (
+                          <option key={swatch} value={swatch}>
+                            {swatch}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        className="data-table-add-field-input"
+                        aria-label={`Option label ${index + 1}`}
+                        value={option.label}
+                        maxLength={120}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setState((prev) => ({
+                            ...prev,
+                            options: prev.options.map((opt) =>
+                              opt.id === option.id ? { ...opt, label: value } : opt,
+                            ),
+                          }));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        aria-label={`Remove option ${index + 1}`}
+                        disabled={state.options.length === 1}
+                        onClick={() =>
+                          setState((prev) => ({
+                            ...prev,
+                            options: prev.options.filter((opt) => opt.id !== option.id),
+                          }))
+                        }
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      options: [...prev.options, createFieldOption("", prev.options)],
+                    }))
+                  }
+                >
+                  + Add option
+                </button>
+                {!optionsValid ? (
+                  <p className="form-error data-table-add-field-inline-error" role="alert">
+                    Each option needs a unique non-empty label.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 

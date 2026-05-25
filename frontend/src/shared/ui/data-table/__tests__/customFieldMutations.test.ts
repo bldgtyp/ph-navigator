@@ -4,8 +4,10 @@ import type { CustomFieldDef } from "../hooks/useTableSchema";
 import {
   SchemaMutationBuildError,
   buildAddFieldMutation,
+  buildChangeTypeMutation,
   buildDeleteFieldMutation,
   buildDuplicateFieldMutation,
+  buildEditOptionsMutation,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
 } from "../lib/customFieldMutations";
@@ -195,5 +197,100 @@ describe("buildSetDescriptionMutation", () => {
       description: null,
       expectedSchemaFingerprint: "fp",
     });
+  });
+});
+
+describe("buildEditOptionsMutation", () => {
+  test("produces a typed editOptions mutation", () => {
+    const op = buildEditOptionsMutation({
+      tableKey: "rooms",
+      fieldId: "cf_status",
+      nextOptions: [
+        { id: "opt_a", label: "Open", color: "#3b82f6", order: 1 },
+        { id: "opt_b", label: "Closed", color: "#10b981", order: 2 },
+      ],
+      schemaFingerprint: "fp",
+    });
+    expect(op.kind).toBe("editOptions");
+    expect(op.fieldId).toBe("cf_status");
+    expect(op.nextOptions).toHaveLength(2);
+  });
+
+  test("rejects duplicate labels (case-insensitive trimmed)", () => {
+    expect(() =>
+      buildEditOptionsMutation({
+        tableKey: "rooms",
+        fieldId: "cf_status",
+        nextOptions: [
+          { id: "opt_a", label: "Open", color: "#3b82f6", order: 1 },
+          { id: "opt_b", label: " open ", color: "#10b981", order: 2 },
+        ],
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+
+  test("rejects malformed color", () => {
+    expect(() =>
+      buildEditOptionsMutation({
+        tableKey: "rooms",
+        fieldId: "cf_status",
+        nextOptions: [{ id: "opt_a", label: "Open", color: "not-a-color", order: 1 }],
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+});
+
+describe("buildChangeTypeMutation", () => {
+  test("produces a typed changeType mutation preserving identity", () => {
+    const after: CustomFieldDef = { ...SAMPLE_FIELD, field_type: "number" };
+    const op = buildChangeTypeMutation({
+      tableKey: "rooms",
+      fieldId: SAMPLE_FIELD.id,
+      after,
+      acknowledgeDestructive: true,
+      schemaFingerprint: "fp",
+    });
+    expect(op.kind).toBe("changeType");
+    expect(op.acknowledgeDestructive).toBe(true);
+    expect(op.after.field_type).toBe("number");
+  });
+
+  test("rejects identity mismatch", () => {
+    const after: CustomFieldDef = { ...SAMPLE_FIELD, id: "cf_other" };
+    expect(() =>
+      buildChangeTypeMutation({
+        tableKey: "rooms",
+        fieldId: SAMPLE_FIELD.id,
+        after,
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+});
+
+describe("buildAddFieldMutation initialOptions (Phase 3 P3.5)", () => {
+  test("attaches initialOptions for single_select fields", () => {
+    const op = buildAddFieldMutation({
+      tableKey: "rooms",
+      newField: { ...SAMPLE_FIELD, field_type: "single_select" },
+      insertAfterFieldId: null,
+      initialOptions: [{ id: "opt_a", label: "A", color: "#3b82f6", order: 1 }],
+      schemaFingerprint: "fp",
+    });
+    expect(op.initialOptions).toHaveLength(1);
+  });
+
+  test("rejects initialOptions on a non-single_select field", () => {
+    expect(() =>
+      buildAddFieldMutation({
+        tableKey: "rooms",
+        newField: SAMPLE_FIELD,
+        insertAfterFieldId: null,
+        initialOptions: [{ id: "opt_a", label: "A", color: "#3b82f6", order: 1 }],
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
   });
 });

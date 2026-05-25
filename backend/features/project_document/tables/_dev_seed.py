@@ -20,6 +20,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import (
     ProjectDocumentV1,
     RoomsTableEnvelope,
+    SingleSelectOption,
 )
 from features.project_document.validation import validate_document
 
@@ -61,4 +62,43 @@ def seed_rooms_custom_field(
     )
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
     next_body = body.model_copy(update={"tables": next_tables})
+    return validate_document(next_body.model_dump(mode="json")), custom_field
+
+
+def seed_rooms_custom_single_select(
+    body: ProjectDocumentV1,
+    *,
+    display_name: str,
+    options: list[SingleSelectOption],
+    description: str | None = None,
+    field_id: str | None = None,
+    created_at: datetime | None = None,
+) -> tuple[ProjectDocumentV1, CustomFieldDef]:
+    """TEST/DEV ONLY. Seed a custom single_select field + its option list.
+
+    The field is registered in `rooms.custom_fields` and the option list
+    is stored under `single_select_options["rooms.<cf_id>"]`.
+    """
+    if not _is_dev_or_test():
+        raise RuntimeError("seed_rooms_custom_single_select is dev/test only")
+
+    custom_field = CustomFieldDef(
+        id=field_id or mint_custom_field_id(),
+        display_name=display_name,
+        field_type=CustomFieldType.single_select,
+        description=description,
+        created_at=created_at or datetime.now(tz=UTC),
+        created_by=None,
+    )
+    next_custom_fields = [*body.tables.rooms.custom_fields, custom_field]
+    next_envelope = RoomsTableEnvelope(
+        custom_fields=next_custom_fields,
+        rows=list(body.tables.rooms.rows),
+    )
+    next_tables = body.tables.model_copy(update={"rooms": next_envelope})
+    next_options = dict(body.single_select_options)
+    next_options[f"rooms.{custom_field.id}"] = list(options)
+    next_body = body.model_copy(
+        update={"tables": next_tables, "single_select_options": next_options}
+    )
     return validate_document(next_body.model_dump(mode="json")), custom_field

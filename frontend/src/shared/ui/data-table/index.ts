@@ -1,6 +1,16 @@
 export { DataTable } from "./DataTable";
 export type { AddCustomFieldRequest } from "./components/AddFieldPopover";
+export { ChangeTypePopover } from "./components/ChangeTypePopover";
+export type { ChangeTypePopoverProps, ChangeTypeRequest } from "./components/ChangeTypePopover";
 export type { EditCustomFieldDescriptionRequest } from "./components/EditFieldDescriptionPopover";
+export { coerceCustomValue } from "./lib/coerceCustomFieldType";
+export type { CoerceResult } from "./lib/coerceCustomFieldType";
+export {
+  CONVERSION_MATRIX,
+  conversionPolicy,
+  isConversionAllowed,
+} from "./lib/typeConversionMatrix";
+export type { ConversionPolicy } from "./lib/typeConversionMatrix";
 export {
   CUSTOM_FIELD_KEY_PREFIX,
   getCustomValue,
@@ -22,8 +32,10 @@ export type {
 export {
   SchemaMutationBuildError,
   buildAddFieldMutation,
+  buildChangeTypeMutation,
   buildDeleteFieldMutation,
   buildDuplicateFieldMutation,
+  buildEditOptionsMutation,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
 } from "./lib/customFieldMutations";
@@ -33,6 +45,7 @@ export type {
   ChangeTypeMutation,
   DeleteFieldMutation,
   DuplicateFieldMutation,
+  EditOptionsMutation,
   FieldSchemaMutation,
   RenameFieldMutation,
   SetDescriptionMutation,
