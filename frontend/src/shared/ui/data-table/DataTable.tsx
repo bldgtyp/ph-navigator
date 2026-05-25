@@ -57,8 +57,8 @@ import {
 } from "./components/EditFieldDescriptionPopover";
 import { FieldConfigModal } from "./components/FieldConfigModal";
 import { FormulaEditorPopover } from "./components/FormulaEditorPopover";
-import { astFromJson, rebuildSourceFromStoredAst } from "./lib/formula";
-import type { FormulaAST } from "./lib/formula";
+import type { FieldRegistryEntry } from "./lib/formula";
+import { formulaSourceFromFieldDef } from "./lib/formulaFieldSource";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
   AxisRoleSubset,
@@ -75,6 +75,7 @@ import type {
 // Module-scope so identity is stable across renders — an inline `[]`
 // would invalidate `useGridColumns`'s memo every render.
 const EMPTY_ID_LIST: string[] = [];
+const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
 
 export function DataTable<TRow>({
   rows,
@@ -1032,22 +1033,11 @@ export function DataTable<TRow>({
     const fieldDef = fieldDefByKey.get(formulaEditorState.fieldKey);
     if (!fieldDef || !fieldDef.formula_config) return null;
     const registry = formulaFieldRegistry ?? [];
-    let initialSource = fieldDef.formula_config.source ?? "";
-    const storedAst = fieldDef.formula_config.ast;
-    if (storedAst && registry.length > 0) {
-      try {
-        const ast = astFromJson(storedAst) as FormulaAST;
-        initialSource = rebuildSourceFromStoredAst(ast, registry);
-      } catch {
-        // Stored AST didn't round-trip; fall back to raw source so
-        // the user can still edit + re-commit.
-      }
-    }
     return {
       fieldDef: { id: fieldDef.field_key, display_name: fieldDef.display_name },
       anchorElement: formulaEditorState.anchorElement,
       registry,
-      initialSource,
+      initialSource: formulaSourceFromFieldDef(fieldDef, registry),
     };
   }, [formulaEditorState, fieldDefByKey, formulaFieldRegistry]);
 
@@ -1066,6 +1056,33 @@ export function DataTable<TRow>({
     getRowId,
     getFormulaRowValues,
   ]);
+
+  const configModalFormulaPreviewRow = useMemo<{
+    id: string;
+    values: Record<string, unknown>;
+  } | null>(() => {
+    if (!configModalState || !getFormulaRowValues) return null;
+    const fieldDef = fieldDefByKey.get(configModalState.fieldKey);
+    if (fieldDef?.custom_field_type !== "formula") return null;
+    const row = visibleDataRows[selection.activeCell.rowIndex] ?? visibleDataRows[0];
+    if (!row) return null;
+    return { id: getRowId(row), values: getFormulaRowValues(row) };
+  }, [
+    configModalState,
+    fieldDefByKey,
+    getFormulaRowValues,
+    getRowId,
+    selection.activeCell.rowIndex,
+    visibleDataRows,
+  ]);
+  const configModalFormulaPreview = useMemo(
+    () => ({
+      fieldRegistry: formulaFieldRegistry ?? EMPTY_FORMULA_FIELD_REGISTRY,
+      row: configModalFormulaPreviewRow,
+      rowsRevision: rows,
+    }),
+    [configModalFormulaPreviewRow, formulaFieldRegistry, rows],
+  );
 
   const toolbarActions =
     !readOnly && rowSelection.count > 0 ? (
@@ -1165,6 +1182,7 @@ export function DataTable<TRow>({
           sourceCustomFieldType={configModalFieldDef?.custom_field_type}
           preflightRows={configModalPreflightRows}
           optionRows={configModalPreflightRows}
+          formulaPreview={configModalFormulaPreview}
         />
       ) : null}
       {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (

@@ -19,11 +19,13 @@ import type {
   FieldDef,
   FieldOption,
 } from "../types";
+import type { FieldRegistryEntry } from "../lib/formula";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 import { computeLocalPreflight, type PreflightSourceRow } from "../lib/coerceCustomFieldType";
 import { isConversionAllowed } from "../lib/typeConversionMatrix";
+import { formulaSourceFromFieldDef } from "../lib/formulaFieldSource";
 import {
   FieldConfigSectionTypeChange,
   type ServerPreflightPayload,
@@ -31,6 +33,11 @@ import {
 import { FieldConfigSectionOptions, type OptionSourceRow } from "./FieldConfigSectionOptions";
 import { FieldConfigSectionNumber } from "./FieldConfigSectionNumber";
 import { DEFAULT_NUMBER_PRECISION, clampNumberPrecision } from "../lib/numberPrecision";
+import {
+  FieldConfigSectionFormula,
+  type FormulaDraftState,
+  type FormulaPreviewRowSnapshot,
+} from "./FieldConfigSectionFormula";
 
 function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {
   if (a.length !== b.length) return false;
@@ -43,15 +50,21 @@ function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOptio
 
 type TargetCandidate = { kind: CustomFieldType; label: string };
 
-// `formula` is excluded — forbidden in/out per CONVERSION_MATRIX. The
-// current type is included so the pill row always renders the source.
 const TARGET_CANDIDATES: ReadonlyArray<TargetCandidate> = [
   { kind: "short_text", label: "Short text" },
   { kind: "long_text", label: "Long text" },
   { kind: "number", label: "Number" },
   { kind: "url", label: "URL" },
   { kind: "single_select", label: "Single select" },
+  { kind: "formula", label: "Formula" },
 ];
+const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
+
+export type FieldConfigFormulaPreviewContext = {
+  fieldRegistry: ReadonlyArray<FieldRegistryEntry>;
+  row: FormulaPreviewRowSnapshot | null;
+  rowsRevision: unknown;
+};
 
 export type FieldConfigModalProps = {
   open: boolean;
@@ -81,6 +94,7 @@ export type FieldConfigModalProps = {
   // over TRow. Drives the local change-type preflight.
   preflightRows?: ReadonlyArray<PreflightSourceRow>;
   optionRows?: ReadonlyArray<OptionSourceRow>;
+  formulaPreview?: FieldConfigFormulaPreviewContext;
 };
 
 export function FieldConfigModal({
@@ -94,6 +108,7 @@ export function FieldConfigModal({
   sourceCustomFieldType,
   preflightRows,
   optionRows,
+  formulaPreview,
 }: FieldConfigModalProps) {
   // Source-of-truth FieldDef captured at modal open. Used for the
   // change-detection diff and for R-S2 comparison against the live
@@ -118,11 +133,16 @@ export function FieldConfigModal({
     dirty: boolean;
   } | null>(null);
   const [numberPrecision, setNumberPrecision] = useState(DEFAULT_NUMBER_PRECISION);
+  const [formulaDraft, setFormulaDraft] = useState<FormulaDraftState | null>(null);
+  const [formulaPreviewSnapshot, setFormulaPreviewSnapshot] =
+    useState<FormulaPreviewRowSnapshot | null>(null);
+  const [formulaPreviewStale, setFormulaPreviewStale] = useState(false);
   // Populated from the backend's `custom_field_coercion_preflight_required`
   // 422 envelope; overrides the local preflight in the sub-panel.
   const [serverPreflight, setServerPreflight] = useState<ServerPreflightPayload | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const formulaRowsRevisionAtOpenRef = useRef<unknown>(null);
   const nameId = useId();
   const descriptionId = useId();
   const errorId = useId();
@@ -140,6 +160,9 @@ export function FieldConfigModal({
       setAcknowledged(false);
       setOptionsDraft(null);
       setNumberPrecision(DEFAULT_NUMBER_PRECISION);
+      setFormulaDraft(null);
+      setFormulaPreviewSnapshot(null);
+      setFormulaPreviewStale(false);
       setServerPreflight(null);
       return;
     }
@@ -157,8 +180,18 @@ export function FieldConfigModal({
     setAcknowledged(false);
     setOptionsDraft(null);
     setNumberPrecision(clampNumberPrecision(seededSource.numberPrecision));
+    setFormulaDraft(null);
+    setFormulaPreviewSnapshot(cloneFormulaPreviewRow(formulaPreview?.row ?? null));
+    setFormulaPreviewStale(false);
+    formulaRowsRevisionAtOpenRef.current = formulaPreview?.rowsRevision;
     setServerPreflight(null);
   }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const formulaFieldRegistry = formulaPreview?.fieldRegistry ?? EMPTY_FORMULA_FIELD_REGISTRY;
+  const initialFormulaSource = useMemo(() => {
+    if (!source || draftType !== "formula") return "";
+    return formulaSourceFromFieldDef(source, formulaFieldRegistry);
+  }, [source, draftType, formulaFieldRegistry]);
 
   // Focus + select Name on open so rename stays a one-gesture-plus-
   // one-keystroke action (plan-21 Q4 resolution).
@@ -195,9 +228,11 @@ export function FieldConfigModal({
         clampNumberPrecision(source.numberPrecision) ||
       !optionListsEquivalent(fieldDef.options ?? [], source.options ?? []) ||
       (fieldDef.defaultOptionId ?? null) !== (source.defaultOptionId ?? null) ||
-      (fieldDef.colorCodeOptions !== false) !== (source.colorCodeOptions !== false);
+      (fieldDef.colorCodeOptions !== false) !== (source.colorCodeOptions !== false) ||
+      formulaSourceFromFieldDef(fieldDef, formulaFieldRegistry) !==
+        formulaSourceFromFieldDef(source, formulaFieldRegistry);
     if (changed) setExternalConflict(fieldDef);
-  }, [open, source, fieldDef, sourceCustomFieldType, externalConflict]);
+  }, [open, source, fieldDef, sourceCustomFieldType, externalConflict, formulaFieldRegistry]);
 
   // R-S3 — row data changed while a type change is staged. Invalidate
   // the ack so the user re-confirms against the new preflight.
@@ -207,6 +242,16 @@ export function FieldConfigModal({
     setAcknowledged(false);
     setServerPreflight(null);
   }, [preflightRows, draftType, sourceCustomFieldType, open, source]);
+
+  // R-S4 — formula preview evaluates against a value-copied snapshot
+  // captured at modal open. Any later row mutation marks it stale
+  // without changing the preview values.
+  useEffect(() => {
+    if (!open || !source || draftType !== "formula") return;
+    if (formulaPreviewStale) return;
+    if (Object.is(formulaRowsRevisionAtOpenRef.current, formulaPreview?.rowsRevision)) return;
+    setFormulaPreviewStale(true);
+  }, [formulaPreview?.rowsRevision, formulaPreviewStale, open, source, draftType]);
 
   const trimmedName = displayName.trim();
   const initialName = source?.display_name ?? "";
@@ -249,7 +294,9 @@ export function FieldConfigModal({
     numberPrecision !== clampNumberPrecision(source?.numberPrecision ?? DEFAULT_NUMBER_PRECISION);
 
   const hasTypeSpecificDirty = Boolean(
-    (draftType === "single_select" && optionsDraft?.dirty) || numberDirty,
+    (draftType === "single_select" && optionsDraft?.dirty) ||
+    numberDirty ||
+    (draftType === "formula" && formulaDraft?.dirty),
   );
 
   const formDirty =
@@ -261,7 +308,9 @@ export function FieldConfigModal({
       hasTypeSpecificDirty);
 
   const optionsValid = draftType !== "single_select" || optionsDraft?.valid !== false;
-  const canSave = formDirty && optionsValid && !pending && !externalConflict && ackSatisfied;
+  const formulaValid = draftType !== "formula" || formulaDraft?.valid !== false;
+  const canSave =
+    formDirty && optionsValid && formulaValid && !pending && !externalConflict && ackSatisfied;
 
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
@@ -282,6 +331,9 @@ export function FieldConfigModal({
             }
           : {}),
         ...(draftType === "number" && (typeChanged || numberDirty) ? { numberPrecision } : {}),
+        ...(draftType === "formula" && formulaDraft?.dirty
+          ? { formulaSource: formulaDraft.source }
+          : {}),
       });
       onOpenChange(false);
     } catch (error) {
@@ -321,6 +373,7 @@ export function FieldConfigModal({
     dispatchBundle,
     optionsDraft,
     numberPrecision,
+    formulaDraft,
     onOpenChange,
     preflightRows,
   ]);
@@ -363,10 +416,13 @@ export function FieldConfigModal({
     setAcknowledged(false);
     setOptionsDraft(null);
     setNumberPrecision(clampNumberPrecision(externalConflict.numberPrecision));
+    setFormulaDraft(null);
+    setFormulaPreviewSnapshot(cloneFormulaPreviewRow(formulaPreview?.row ?? null));
+    setFormulaPreviewStale(false);
     setServerPreflight(null);
     setExternalConflict(null);
     setSubmitError(null);
-  }, [externalConflict, sourceCustomFieldType]);
+  }, [externalConflict, formulaPreview, sourceCustomFieldType]);
 
   const handleCloseAutoFocus = (event: Event) => {
     if (!returnFocusTo) return;
@@ -483,11 +539,7 @@ export function FieldConfigModal({
                         aria-disabled={!allowed}
                         disabled={!allowed || pending}
                         data-active={selected ? "true" : undefined}
-                        title={
-                          allowed
-                            ? candidate.label
-                            : `Cannot convert ${sourceCustomFieldType} values to ${candidate.label.toLowerCase()}.`
-                        }
+                        title={typeCandidateTitle(candidate, sourceCustomFieldType, allowed)}
                         className="data-table-add-field-type-pill"
                         onClick={() => {
                           setDraftType(candidate.kind);
@@ -531,6 +583,17 @@ export function FieldConfigModal({
                 disabled={pending}
               />
             ) : null}
+            {draftType === "formula" && source ? (
+              <FieldConfigSectionFormula
+                fieldId={source.field_key}
+                initialSource={initialFormulaSource}
+                fieldRegistry={formulaFieldRegistry}
+                previewRow={formulaPreviewSnapshot}
+                previewStale={formulaPreviewStale}
+                disabled={pending}
+                onDraftChange={setFormulaDraft}
+              />
+            ) : null}
             <div className="data-table-field-config-modal-section">
               <label className="data-table-add-field-label" htmlFor={descriptionId}>
                 Description
@@ -570,4 +633,33 @@ export function FieldConfigModal({
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function cloneFormulaPreviewRow(
+  row: FormulaPreviewRowSnapshot | null,
+): FormulaPreviewRowSnapshot | null {
+  if (!row) return null;
+  return {
+    id: row.id,
+    values: cloneRecord(row.values),
+  };
+}
+
+function cloneRecord(record: Record<string, unknown>): Record<string, unknown> {
+  if (typeof structuredClone === "function") {
+    return structuredClone(record) as Record<string, unknown>;
+  }
+  return JSON.parse(JSON.stringify(record)) as Record<string, unknown>;
+}
+
+function typeCandidateTitle(
+  candidate: TargetCandidate,
+  sourceCustomFieldType: CustomFieldType,
+  allowed: boolean,
+): string {
+  if (allowed) return candidate.label;
+  if (candidate.kind === "formula" || sourceCustomFieldType === "formula") {
+    return "Formula fields cannot be converted to or from another type.";
+  }
+  return `Cannot convert ${sourceCustomFieldType} values to ${candidate.label.toLowerCase()}.`;
 }

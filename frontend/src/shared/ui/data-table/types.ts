@@ -357,6 +357,10 @@ export type EditCustomFieldBundleRequest = {
   colorCodeOptions?: boolean;
   // Set for custom number fields. Stored in CustomFieldDef.config.
   numberPrecision?: number;
+  // Set for custom formula fields when the expression changed. The
+  // consumer sends it as `editFieldBundle.formulaSource` so the
+  // backend reparses/resolves the bundle atomically.
+  formulaSource?: string;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

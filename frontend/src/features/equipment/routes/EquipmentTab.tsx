@@ -464,6 +464,14 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     } else if (nextFieldType !== "number") {
       delete nextConfig.precision;
     }
+    if (nextFieldType !== "formula") {
+      delete nextConfig.source;
+      delete nextConfig.ast;
+      delete nextConfig.deps;
+      delete nextConfig.result_type;
+    } else if (request.formulaSource !== undefined) {
+      nextConfig.source = request.formulaSource;
+    }
     const mutation = buildEditFieldBundleMutation({
       tableKey: ROOMS_TABLE_NAME,
       fieldId: request.fieldKey,
@@ -476,6 +484,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       },
       nextOptions: request.options,
       acknowledgeDestructive: request.acknowledgeDestructive ?? false,
+      formulaSource: request.formulaSource,
       schemaFingerprint: roomsTableSchema.schemaFingerprint,
     });
     await commitSchemaMutation(mutation);
