@@ -154,9 +154,7 @@ export function buildAddFieldMutation(args: BuildAddFieldArgs): AddFieldMutation
   }
   if (args.initialOptions !== undefined) {
     if (args.newField.field_type !== "single_select") {
-      throw new SchemaMutationBuildError(
-        "initialOptions is only valid for single_select fields.",
-      );
+      throw new SchemaMutationBuildError("initialOptions is only valid for single_select fields.");
     }
     validateOptionList(args.initialOptions);
     op.initialOptions = args.initialOptions.map((option) => ({ ...option }));

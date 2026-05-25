@@ -70,6 +70,50 @@ and successor plans.
 use `loguru` — it replaces stdlib's root logger in ways that fight
 uvicorn and Alembic.
 
+### Processor chain (canonical order)
+
+`configure_logging` installs this chain on every record, in this order:
+
+1. `structlog.contextvars.merge_contextvars` — pull request-scoped
+   context (`request_id`, `method`, `path`, `user_id`, …) onto the
+   record.
+2. `structlog.stdlib.add_logger_name` — emit `logger` (e.g.
+   `backend.features.project_document.store`) so log search can filter
+   by feature module.
+3. `structlog.processors.add_log_level`
+4. `structlog.processors.TimeStamper(fmt="iso", utc=True)`
+5. `structlog.processors.StackInfoRenderer()`
+6. `structlog.processors.format_exc_info`
+7. **Redaction processor** (custom, ~15 lines): walks the event dict and
+   replaces values for known-sensitive keys with `"***"`. Keys are
+   matched case-insensitively against a small allowlist:
+   `password`, `passwd`, `secret`, `token`, `authorization`, `cookie`,
+   `api_key`, `bearer`, `fernet_key`, `client_secret`, `private_key`.
+   Defense in depth — the convention ("never log secrets") is the
+   primary control; the processor catches the inevitable mistake.
+8. **Field-size cap processor** (custom, ~10 lines): truncates any
+   string value longer than 4 KiB to `value[:4096] + "...<trunc>"`.
+   Prevents one accidental `log.info("…", body=full_doc)` from
+   blowing up a log line, which is the single biggest cost driver on
+   Render Log Streams and the most common pager-fatigue cause
+   downstream.
+9. Renderer — `JSONRenderer()` for `json`, `ConsoleRenderer(colors=True)`
+   for `console`.
+
+Stdlib log records (uvicorn, Alembic, third-party libraries) flow
+through `structlog.stdlib.ProcessorFormatter` with the same renderer and
+a `foreign_pre_chain` containing items 2–8 above so they get the same
+redaction and size-cap treatment as application code.
+
+### Stdlib handler hygiene
+
+`configure_logging` is idempotent and **must clear pre-existing root
+handlers** before installing its own (`logging.getLogger().handlers.clear()`),
+otherwise `uvicorn --reload` and pytest fixtures produce duplicate
+output. Per-logger `propagate=False` is set on `uvicorn.error`,
+`uvicorn.access`, and `sqlalchemy.engine` so records flow through the
+root handler exactly once.
+
 ## Backend Configuration
 
 Logging is configured exactly once, at process start, from
@@ -107,8 +151,11 @@ per-request context binding. The current middleware already:
 
 It is extended to also:
 
-1. `structlog.contextvars.bind_contextvars(request_id, method, path)`
-   at the top of the request.
+1. `structlog.contextvars.bind_contextvars(request_id, method, path,
+   client_ip)` at the top of the request. `path` is `request.url.path`
+   only — query strings are deliberately excluded (see Security rules
+   below). `client_ip` is the first entry of `X-Forwarded-For` when
+   present (Render terminates TLS) else `request.client.host`.
 2. Bind `user_id` once auth resolves the session (from a downstream
    dependency or by reading `request.state.user_id` if the auth layer
    sets it).
@@ -116,6 +163,16 @@ It is extended to also:
    `log.info("http.request", status=..., duration_ms=...,
    request_id=..., method=..., path=...)`.
 4. `structlog.contextvars.clear_contextvars()` in a `finally` block.
+
+#### `X-Request-ID` trust boundary
+
+The header is accepted from clients so a frontend can correlate a fetch
+with a backend log, but it is not trusted blindly. The middleware
+validates an inbound `X-Request-ID` against a permissive shape check
+(printable ASCII, length ≤ 64); anything else is replaced with a fresh
+UUID4. This blocks newline / control-character injection into JSON log
+lines via the header, and bounds the search-index pollution a hostile
+client can cause.
 
 Every log call inside the request — service, repository, exception
 handler, MCP server, anywhere — inherits `request_id`, `method`,
@@ -257,7 +314,9 @@ logger is left at WARNING in normal operation. Setting `log_sql=true`
 | `GIT_SHA` | Map from Render's `RENDER_GIT_COMMIT` (already set by Render on every deploy). Bound into every log line so "did my fix ship?" is answerable from logs. |
 | `ENVIRONMENT` | `staging` or `production`; already required by `Settings`. |
 | Log search | Use Render's per-service log viewer. Filter by `request_id=...`, then by `event=...`. |
-| Retention | Render's default window. Add a Log Stream drain (Better Stack, Logtail, Datadog) when the retention window stops being enough. |
+| Retention | Render's default window (currently ~7 days on the service tier in use — verify in the dashboard before relying on it for incident review). Add a Log Stream drain (Better Stack, Logtail, Datadog) when the retention window stops being enough. |
+| Aggregator field-name compat | The renderer emits `event` / `level` / `timestamp`. Datadog, Better Stack, and Logtail handle these natively. If a future drain targets GCP Cloud Logging (which expects `severity`), add a rename processor at drain time — do not change the canonical field names here. |
+| Instance identity | If/when Render scales the service past one instance, bind `instance_id` (from `RENDER_INSTANCE_ID` or `socket.gethostname()`) once at startup so cross-instance log search is possible. |
 | Frontend | Static site — no server-side logs. Browser `console` only. |
 
 Render-internal Postgres logs are visible in the Render dashboard for
@@ -279,7 +338,9 @@ infrastructure (Render, eventually a log drain). The following rules
 are non-negotiable:
 
 1. Never log secrets — passwords, session-cookie values, MCP bearer
-   tokens, Fernet keys, raw R2 credentials, OAuth client secrets.
+   tokens, Fernet keys, raw R2 credentials, OAuth client secrets. The
+   redaction processor (see "Processor chain") is the safety net; the
+   call-site convention is the primary control.
 2. Never log full request bodies. Log a stable identifier (`project_id`,
    `version_id`, `record_id`) and a shape descriptor (`bytes`,
    `op_count`).
@@ -288,6 +349,19 @@ are non-negotiable:
    bearer secret).
 5. When in doubt, log the ID and an event name; reconstruct the rest
    from the database.
+6. **Never log query strings or request headers.** Bind `path`
+   (`request.url.path`), not `request.url` or `str(request.url)`.
+   Query strings routinely carry filter values, tokens, and emails;
+   headers carry `Authorization`, `Cookie`, and `X-API-Key`.
+7. **Exception messages are not safe by default.** Driver-level
+   exceptions can echo input values into their message text (e.g.
+   `psycopg.errors.UniqueViolation: detail: Key (email)=(alice@x.com)
+   already exists.`). The redaction + size-cap processors apply to
+   exception payloads as well, but feature code should still prefer
+   `log.error("feature.failed", error_code="...", entity_id=...)` over
+   re-raising the driver exception into a log line. Reserve
+   `log.exception(...)` for genuinely unexpected errors caught at the
+   middleware top level.
 
 ## Review Checklist
 
@@ -299,7 +373,13 @@ Before merging code that adds or changes logging:
   unrecoverable)?
 - Does the log line carry `request_id`-bearing context (automatic if
   the call sits inside a request)?
-- Does the payload exclude bodies, secrets, and PII per the rules above?
+- Does the payload exclude bodies, secrets, query strings, headers,
+  and PII per the rules above? (The redaction processor is a net, not
+  a license — call sites are still responsible.)
+- Are any new structured kwargs named to match the redaction allowlist
+  if they hold sensitive values? (i.e. prefer `token_id=` over a key
+  the processor cannot recognize.)
 - For new exception paths: does the error handler log the failure with
-  the same `request_id` that the user sees?
+  the same `request_id` that the user sees, and use a structured event
+  name rather than re-raising a driver exception into the log line?
 - For new feature code: did `ruff`, `ty check`, and `pytest` pass?

@@ -19,7 +19,7 @@ RELATED:
     `logging.getLogger(__name__)` — convert to structlog)
 ---
 
-# Plan 18 — Logging Phase 1: backend `structlog` + request-scoped context
+# Plan 19 — Logging Phase 1: backend `structlog` + request-scoped context
 
 ## 1. Goal
 
@@ -51,9 +51,22 @@ The PR is done when all of the following pass:
      `log_format="json"`.
    - `configure_logging` produces console output when
      `log_format="console"`.
+   - `configure_logging` is idempotent: calling it twice does not
+     duplicate output, and pre-existing root handlers are cleared.
+   - JSON output carries `logger=<module>` (proves `add_logger_name`
+     is wired).
+   - Redaction processor replaces sensitive-keyed values with `***`
+     (`token`, `Authorization`, `password`, mixed case).
+   - Size-cap processor truncates a 100 KiB string field to ≤ ~4 KiB
+     and appends `...<trunc>`.
    - A log call inside a simulated request carries `request_id`,
-     `method`, `path` after middleware binds them.
+     `method`, `path`, `client_ip` after middleware binds them.
+   - Two concurrent simulated requests do not leak `user_id` between
+     each other (contextvars isolation regression test).
    - `clear_contextvars` runs even when `call_next` raises.
+   - `_accept_request_id` returns a fresh UUID for `None`, `""`, a
+     65-char string, and a string containing `"\n"`; returns the
+     input verbatim for a valid header.
    - `caplog` can assert on event names (e.g.
      `assert any(r.event == "project_document.saved" for r in caplog.records)`).
 6. New integration test under `backend/tests/test_error_logging.py`:
@@ -109,40 +122,89 @@ def configure_logging(settings: Settings) -> None:
 
 Responsibilities:
 
-1. Decide renderer:
+1. **Reset stdlib handlers before installing our own** —
+   `logging.getLogger().handlers.clear()` and set a module-level
+   sentinel (e.g. `_configured: bool`) that makes a second call
+   into a no-op idempotently. Required for `uvicorn --reload` and for
+   test fixtures that build the app more than once. Without this, log
+   lines duplicate.
+2. Decide renderer:
    - `"json"` → `structlog.processors.JSONRenderer()`
    - `"console"` → `structlog.dev.ConsoleRenderer(colors=True)`
-2. Build the structlog processor chain:
+3. Build the structlog processor chain (canonical order, mirrored in
+   `context/LOGGING.md` §"Processor chain"):
    - `structlog.contextvars.merge_contextvars`
+   - `structlog.stdlib.add_logger_name`  ← new: emits `logger` field
    - `structlog.processors.add_log_level`
    - `structlog.processors.TimeStamper(fmt="iso", utc=True)`
    - `structlog.processors.StackInfoRenderer()`
    - `structlog.processors.format_exc_info`
+   - `_redact_sensitive` (custom, see below)
+   - `_truncate_large_strings` (custom, see below)
    - selected renderer.
-3. `structlog.configure(...)` with that chain,
+4. `structlog.configure(...)` with that chain,
    `wrapper_class=structlog.make_filtering_bound_logger(LEVEL)`,
    `cache_logger_on_first_use=True`.
-4. Route stdlib `logging` through a `ProcessorFormatter` so that
-   uvicorn, Alembic, and any third-party library log lines render in
-   the same format as application code. Use
-   `structlog.stdlib.ProcessorFormatter` with the renderer as
-   `processor=` and `foreign_pre_chain=[add_log_level, TimeStamper,
-   format_exc_info]`.
-5. Set per-logger levels:
+5. Route stdlib `logging` through a single root `StreamHandler` whose
+   formatter is `structlog.stdlib.ProcessorFormatter` so uvicorn,
+   Alembic, and any third-party library log lines render in the same
+   format as application code. `processor=` is the selected renderer;
+   `foreign_pre_chain` mirrors items 3.2–3.8 above (everything except
+   `merge_contextvars` and the renderer) so foreign records also get
+   `logger`, redaction, and size-cap treatment.
+6. Set per-logger levels and disable propagation so records flow
+   through the root handler exactly once:
    - root → `settings.log_level`
-   - `uvicorn.error` → INFO
-   - `uvicorn.access` → CRITICAL (effectively silenced; replaced by
-     the middleware's `http.request` line)
-   - `sqlalchemy.engine` → INFO if `settings.log_sql` else WARNING
+   - `uvicorn.error` → INFO, `propagate=False`
+   - `uvicorn.access` → WARNING, `propagate=False` (effectively
+     silenced; replaced by the middleware's `http.request` line — use
+     `propagate=False` rather than CRITICAL-as-silence so future
+     uvicorn WARNINGs about access-log shape still surface)
+   - `sqlalchemy.engine` → INFO if `settings.log_sql` else WARNING,
+     `propagate=False`
    - `httpx` → WARNING
    - `botocore`, `boto3`, `urllib3` → WARNING
-6. Bind global context once: `environment`, `git_sha`, `app_version`
-   into a `structlog.contextvars.bind_contextvars(...)` call so that
-   even non-request lines carry deploy identity.
+7. Bind global context once: `environment`, `git_sha`, `app_version`,
+   and (when present) `instance_id` from `RENDER_INSTANCE_ID` or
+   `socket.gethostname()` into a
+   `structlog.contextvars.bind_contextvars(...)` call so that even
+   non-request lines carry deploy identity.
+
+### Custom processors
+
+Two small processors live in the same module (kept private; tested in
+isolation):
+
+```python
+_SENSITIVE_KEYS = frozenset({
+    "password", "passwd", "secret", "token", "authorization",
+    "cookie", "api_key", "bearer", "fernet_key", "client_secret",
+    "private_key",
+})
+_MAX_STR = 4096
+
+def _redact_sensitive(_logger, _method, event_dict):
+    for key in list(event_dict):
+        if key.lower() in _SENSITIVE_KEYS and event_dict[key] is not None:
+            event_dict[key] = "***"
+    return event_dict
+
+def _truncate_large_strings(_logger, _method, event_dict):
+    for key, value in event_dict.items():
+        if isinstance(value, str) and len(value) > _MAX_STR:
+            event_dict[key] = value[:_MAX_STR] + "...<trunc>"
+    return event_dict
+```
+
+Rationale: defense in depth on top of the call-site convention. The
+size cap is the day-1 cost-control mechanism — one accidental
+`log.info("…", body=full_doc)` would otherwise blow up a single line
+into MB and dominate Render log volume. Both processors run on
+foreign (stdlib / library) records too via `foreign_pre_chain`.
 
 Module size budget per `context/CODING_STANDARDS.md`: well under 200
-lines. Keep helpers (`_build_processors`, `_apply_stdlib_levels`)
-private.
+lines. Keep helpers (`_build_processors`, `_apply_stdlib_levels`,
+`_redact_sensitive`, `_truncate_large_strings`) private.
 
 ### 3.4 `backend/main.py`
 
@@ -163,15 +225,39 @@ from time import perf_counter
 
 log = structlog.get_logger(__name__)
 
+_REQUEST_ID_MAX = 64
+
+def _accept_request_id(raw: str | None) -> str:
+    """Trust-bounded acceptance of an inbound X-Request-ID header.
+
+    Defends against newline / control-character injection into JSON
+    log lines via a client-controlled header, and bounds search-index
+    pollution. Falls back to a fresh UUID4 on any deviation.
+    """
+    if not raw:
+        return str(uuid4())
+    if len(raw) > _REQUEST_ID_MAX or not raw.isprintable():
+        return str(uuid4())
+    return raw
+
+
+def _client_ip(request: Request) -> str | None:
+    fwd = request.headers.get("X-Forwarded-For")
+    if fwd:
+        return fwd.split(",", 1)[0].strip() or None
+    return request.client.host if request.client else None
+
+
 async def request_context_middleware(request: Request, call_next: CallNext) -> Response:
-    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    request_id = _accept_request_id(request.headers.get("X-Request-ID"))
     request.state.request_id = request_id
 
     structlog.contextvars.clear_contextvars()
     structlog.contextvars.bind_contextvars(
         request_id=request_id,
         method=request.method,
-        path=request.url.path,
+        path=request.url.path,  # path only — never request.url or query
+        client_ip=_client_ip(request),
     )
 
     start = perf_counter()
@@ -196,12 +282,31 @@ async def request_context_middleware(request: Request, call_next: CallNext) -> R
                 "http.request",
                 status=status_code,
                 duration_ms=duration_ms,
+                request_bytes=_int_or_none(request.headers.get("content-length")),
+                response_bytes=_int_or_none(
+                    response.headers.get("content-length") if status_code and status_code < 500 else None
+                ),
             )
         structlog.contextvars.clear_contextvars()
 ```
 
 `_should_log_access(path)` returns `False` for `/health` and
 `/api/v1/openapi.json` unless `settings.log_sample_health` is true.
+
+`_int_or_none` parses a `Content-Length` header to `int`, returning
+`None` on a missing, empty, or non-numeric value (chunked / streaming
+responses set no `Content-Length`, in which case `response_bytes` is
+`None` and the field is omitted from the log line by the JSON
+renderer). Response bytes are only captured on non-5xx responses
+because the error path returns from the `except` block before
+`response` is bound.
+
+Tests cover `_accept_request_id` (UUID fallback for empty, oversize,
+and non-printable inputs; verbatim pass-through for a valid header),
+`_client_ip` (X-Forwarded-For first hop wins; falls back to
+`request.client.host`; returns `None` cleanly when neither is
+available), and `_int_or_none` (digit string → int; `None`/`""`/
+non-numeric → `None`).
 
 Binding `user_id` here is awkward because auth resolves later in the
 dependency chain. Use a small helper in `features/auth` that calls
@@ -308,8 +413,14 @@ Document the result in `context/ENVIRONMENT.md` Render staging block
 | Risk | Mitigation |
 |---|---|
 | `structlog` swallows uvicorn's startup banner | `ProcessorFormatter` foreign-pre-chain preserves stdlib records; smoke-test by running uvicorn locally before merging. |
+| Duplicate log lines under `uvicorn --reload` or repeated app construction in tests | `configure_logging` clears pre-existing root handlers and is gated by a `_configured` sentinel; unit test asserts a second call is a no-op. |
+| Pre-existing per-logger handlers double-emit through the root | `propagate=False` on `uvicorn.error`, `uvicorn.access`, `sqlalchemy.engine`; one handler attached at root only. |
 | `clear_contextvars` misses on early-return middleware paths | The middleware's `finally` block clears unconditionally. Tests cover both the success path and the exception path. |
 | `user_id` binding leaks across requests | `clear_contextvars()` runs in `finally`, and contextvars are task-local anyway. Tested by issuing two parallel requests with different sessions and asserting no `user_id` leak in their log lines. |
+| Client injects newline / control chars via `X-Request-ID` | `_accept_request_id` rejects non-printable or oversize headers and falls back to a fresh UUID. Tested explicitly. |
+| Secret leaks into a log call via a kwarg name we didn't anticipate | Redaction processor covers the common allowlist; convention + review checklist in `context/LOGGING.md` are the primary control. Keep the allowlist co-located with the processor so reviewers can extend it. |
+| One bad call dumps a multi-MB string into the log stream | Size-cap processor truncates string values >4 KiB. Unit-tested. |
+| Driver exception text echoes user input into a log line (e.g. `UniqueViolation: Key (email)=…`) | Feature code logs `error_code` + entity IDs rather than re-raising driver exceptions into logs; `log.exception` reserved for unexpected errors. Size-cap + redaction processors apply to `exc_info` payloads as a backstop. |
 | Duration measurement wrong on streaming responses | `perf_counter` is captured before `call_next`; `duration_ms` reflects header-write time. Acceptable for v1; revisit if/when we add long-running streams. |
 | Render `RENDER_GIT_COMMIT` not exposed as expected | Fall back to leaving `git_sha=""` (the existing default); add a one-line README note in `backend/README.md` if the Render mapping needs a workaround. |
 
@@ -354,17 +465,23 @@ Document the result in `context/ENVIRONMENT.md` Render staging block
   base grows beyond direct contact. The architecture already leaves
   the integration point in `app/providers.tsx`.
 
-## 10. Open questions
+## 10. Open questions — resolved 2026-05-25
 
-1. Should `http.request` lines also include the response
-   `Content-Length` and the request `Content-Length`? Useful for
-   spotting fat payloads, but adds noise. Lean: include
-   `response_bytes` when available, skip request size.
-2. Should the access-log path filter live on `Settings` (the current
-   plan) or on a separate `LOGGING_DROP_PATHS` env list? Lean: keep
-   it on `Settings.log_sample_health` for now; promote to an
-   allowlist only if a second sampling decision arrives.
-3. Do we want a top-level `Exception` handler registered on the
-   FastAPI app, separate from the middleware-level `log.exception`?
-   FastAPI already converts uncaught exceptions to 500s; the middleware
-   log captures them. Lean: no extra handler.
+1. **`http.request` includes payload sizes — decided: include both.**
+   The line now carries `request_bytes` and `response_bytes`, both
+   sourced from the `Content-Length` header and both nullable
+   (streaming / chunked / 5xx paths emit no value). Cheap to add, and
+   the asymmetry of "response only" wasn't worth the cognitive cost.
+2. **Access-log path filter location — decided: keep on `Settings`.**
+   `Settings.log_sample_health` stays. Promote to a
+   `LOGGING_DROP_PATHS` allowlist only if a second sampling decision
+   ever arrives.
+3. **Top-level FastAPI `Exception` handler — decided: do not add.**
+   The middleware's `except Exception: log.exception(...)` already
+   captures the line with the same `request_id` the client sees.
+   Adding a second handler would double-log.
+4. **Configurable redaction allowlist — decided: keep in code.**
+   The allowlist lives next to the processor so reviewers see every
+   change in the diff. If a new sensitive-kwarg name surfaces, prefer
+   renaming the call site to a key the processor already covers
+   rather than broadening the list.

@@ -505,6 +505,13 @@ shared `<DataTable>` still passing all existing tests against Rooms.
 
 ### Phase 4 — Formula fields
 
+**Status (2026-05-25):** Backend half shipped (P4.0 → P4.6) plus
+backend acceptance coverage from P4.10; 204 / 204 backend tests
+green. Frontend half (P4.7 TS parity port, P4.8 popover, P4.9 grid
+wiring, P4.10 e2e + a11y) is the next phase of work. See
+`docs/plans/2026-05-25/plan-17-custom-fields-phase-4-formula-fields.md`
+for the per-sub-phase progress log and lessons learned.
+
 - Grammar + AST + parser (Python + TS).
 - Resource limits and deterministic null / numeric error semantics
   specified before implementation.

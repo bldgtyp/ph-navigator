@@ -6,11 +6,7 @@
 
 import type { CustomFieldType } from "../hooks/useTableSchema";
 
-export type ConversionPolicy =
-  | "lossless"
-  | "lossy"
-  | "create_options"
-  | "substitute_labels";
+export type ConversionPolicy = "lossless" | "lossy" | "create_options" | "substitute_labels";
 
 export const CONVERSION_MATRIX: Partial<
   Record<CustomFieldType, Partial<Record<CustomFieldType, ConversionPolicy>>>

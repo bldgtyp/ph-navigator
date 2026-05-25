@@ -19,6 +19,7 @@ import type {
   RowDeletePayload,
   RowInsertPayload,
 } from "../../shared/ui/data-table";
+import { isCustomFieldKey, setCustomValue } from "../../shared/ui/data-table";
 import {
   createFieldOption,
   findFieldOptionByLabel,
@@ -34,6 +35,10 @@ export {
 } from "../project_document/lib";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
+
+// Namespace prefix for custom single-select option lists scoped to the
+// Rooms table. Mirrors backend `option_list_key((ROOMS_TABLE_NAME,), cf_id)`.
+const ROOMS_CUSTOM_OPTION_PREFIX = "rooms.cf_";
 
 export const ROOMS_SCHEMA_CORE_FIELD_KEYS = [
   "id",
@@ -155,6 +160,7 @@ export function nextRoomsPayload(
       ...current.rooms.filter((candidate) => candidate.id !== normalizedRoom.id),
     ]),
     single_select_options: options,
+    custom_fields: [...current.custom_fields],
   };
 }
 
@@ -162,6 +168,7 @@ export function deleteRoomPayload(current: RoomsSlice, roomId: string): RoomsRep
   return {
     rooms: current.rooms.filter((room) => room.id !== roomId),
     single_select_options: cloneOptions(current),
+    custom_fields: [...current.custom_fields],
   };
 }
 
@@ -189,6 +196,7 @@ export function roomsPayloadFromRowInsert(
   return {
     rooms: sortedRooms([...current.rooms, ...built]),
     single_select_options: cloneOptions(current),
+    custom_fields: [...current.custom_fields],
   };
 }
 
@@ -204,6 +212,7 @@ export function roomsPayloadFromRowDelete(
   return {
     rooms: current.rooms.filter((room) => !toDelete.has(room.id)),
     single_select_options: cloneOptions(current),
+    custom_fields: [...current.custom_fields],
   };
 }
 
@@ -247,15 +256,17 @@ export function roomsPayloadFromCellWrites(
 ): RoomsReplacePayload {
   const options = cloneOptions(current);
   for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
-    if (!isRoomOptionKey(fieldKey) || removedIds.length === 0) continue;
+    if (!isRoomsOptionListKey(fieldKey) || removedIds.length === 0) continue;
     const remove = new Set(removedIds);
+    const currentList = options[fieldKey] ?? [];
     options[fieldKey] = normalizeOptionOrders(
-      options[fieldKey].filter((option) => !remove.has(option.id)),
+      currentList.filter((option) => !remove.has(option.id)),
     );
   }
   for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
-    if (!isRoomOptionKey(fieldKey)) continue;
-    options[fieldKey] = normalizeOptionOrders([...options[fieldKey], ...createdOptions]);
+    if (!isRoomsOptionListKey(fieldKey)) continue;
+    const currentList = options[fieldKey] ?? [];
+    options[fieldKey] = normalizeOptionOrders([...currentList, ...createdOptions]);
   }
   const writesByRowId = writes.reduce((byRowId, write) => {
     const rowWrites = byRowId.get(write.rowId);
@@ -266,10 +277,15 @@ export function roomsPayloadFromCellWrites(
     }
     return byRowId;
   }, new Map<string, RoomCellWrite[]>());
+  const customFieldIds = new Set(current.custom_fields.map((field) => field.id));
   const rooms = current.rooms.map((room) =>
-    applyWritesToRoom(room, writesByRowId.get(room.id) ?? []),
+    applyWritesToRoom(room, writesByRowId.get(room.id) ?? [], customFieldIds),
   );
-  return { rooms: sortedRooms(rooms), single_select_options: options };
+  return {
+    rooms: sortedRooms(rooms),
+    single_select_options: options,
+    custom_fields: [...current.custom_fields],
+  };
 }
 
 export function validateRoomsPayload(payload: RoomsReplacePayload): string | null {
@@ -328,7 +344,11 @@ export function replaceRoomOptionsPayload(
     if (!currentOptionId || !(currentOptionId in replacements)) return room;
     return { ...room, [roomFieldForOptionKey(key)]: replacements[currentOptionId] };
   });
-  return { rooms: sortedRooms(rooms), single_select_options: options };
+  return {
+    rooms: sortedRooms(rooms),
+    single_select_options: options,
+    custom_fields: [...current.custom_fields],
+  };
 }
 
 export function duplicateRoomNumber(rooms: RoomRow[], room: RoomRow): boolean {
@@ -355,22 +375,48 @@ export function remoteSliceChangesActiveRoom(
 }
 
 function cloneOptions(current: RoomsSlice): RoomsReplacePayload["single_select_options"] {
-  return {
+  // Spread the full record so namespaced custom single-select lists
+  // (`rooms.cf_*`) round-trip through every whole-table replace path.
+  // Without this, plan-16 P3.5 custom single_select fields would lose
+  // their option lists on the next cell / row / option mutation.
+  const out: RoomsReplacePayload["single_select_options"] = {
     [ROOM_FLOOR_LEVEL_KEY]: [...current.single_select_options[ROOM_FLOOR_LEVEL_KEY]],
     [ROOM_BUILDING_ZONE_KEY]: [...current.single_select_options[ROOM_BUILDING_ZONE_KEY]],
   };
+  for (const [key, list] of Object.entries(current.single_select_options)) {
+    if (key === ROOM_FLOOR_LEVEL_KEY || key === ROOM_BUILDING_ZONE_KEY) continue;
+    out[key] = [...list];
+  }
+  return out;
 }
 
-function applyWritesToRoom(room: RoomRow, writes: RoomCellWrite[]): RoomRow {
+function applyWritesToRoom(
+  room: RoomRow,
+  writes: RoomCellWrite[],
+  customFieldIds: ReadonlySet<string>,
+): RoomRow {
   if (writes.length === 0) return room;
   let next = room;
   for (const write of writes) {
-    next = applyWriteToRoom(next, write.fieldKey, write.value);
+    next = applyWriteToRoom(next, write.fieldKey, write.value, customFieldIds);
   }
   return normalizeRoomForPayload(next);
 }
 
-function applyWriteToRoom(room: RoomRow, fieldKey: string, value: unknown): RoomRow {
+function applyWriteToRoom(
+  room: RoomRow,
+  fieldKey: string,
+  value: unknown,
+  customFieldIds: ReadonlySet<string>,
+): RoomRow {
+  if (isCustomFieldKey(fieldKey)) {
+    // Schema-drift guard: an unknown `cf_*` cannot land in `row.custom`
+    // — backend validation would reject it and the cell would have no
+    // column. Returning unchanged is the same shape we get for any
+    // other unrecognized field key.
+    if (!customFieldIds.has(fieldKey)) return room;
+    return setCustomValue(room, { field_key: fieldKey }, value);
+  }
   if (fieldKey === "number" && typeof value === "string") return { ...room, number: value };
   if (fieldKey === "name" && typeof value === "string") return { ...room, name: value };
   if (fieldKey === "num_people" && isNullableNumber(value)) {
@@ -401,6 +447,14 @@ function isNullableNumber(value: unknown): value is number | null {
 
 export function isRoomOptionKey(key: string): key is RoomOptionKey {
   return key === ROOM_FLOOR_LEVEL_KEY || key === ROOM_BUILDING_ZONE_KEY;
+}
+
+// Broader than `isRoomOptionKey`: accepts the two core rooms option
+// keys plus any namespaced custom single-select list under the
+// `rooms.cf_*` prefix. Used by cell-write payloads where
+// `newOptions` / `removedOptions` may target a custom single_select.
+function isRoomsOptionListKey(key: string): boolean {
+  return isRoomOptionKey(key) || key.startsWith(ROOMS_CUSTOM_OPTION_PREFIX);
 }
 
 function roomFieldForOptionKey(key: RoomOptionKey): "floor_level" | "building_zone" {

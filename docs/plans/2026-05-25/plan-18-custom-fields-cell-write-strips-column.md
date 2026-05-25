@@ -284,6 +284,50 @@ All in `frontend/src/features/equipment/lib.test.ts` unless noted.
    Enter, expect the column **and** the value to persist; reload the
    page, expect both to survive.
 
+## 5b. Companion test coverage (added 2026-05-25 review)
+
+The library-level tests in §5.1–§5.5 prove the regression cannot
+recur at the payload-builder boundary. A separate
+custom-fields-test-suite review surfaced adjacent gaps that share the
+same risk profile (custom field code-paths exercised only by the
+schema-mutation surface, never by the cell-write / read / type-
+change surfaces). Land these as part of the same closeout so the
+suite covers the "basic operations" promise (add / delete / rename /
+set cell / download) end-to-end:
+
+### Backend (`backend/tests/`)
+
+- B1. Whole-table `PUT /draft/tables/rooms` with a mistyped custom
+  value (number→string, short_text→int, single_select→unknown id)
+  returns `422 invalid_project_document`. Pins the
+  `coerce_custom_value` → validator boundary called out in
+  plan-14 §1.5.
+- B2. Download `GET /…/download/tables/rooms` after seeding one of
+  each phase-2 custom-field type (`short_text`, `long_text`,
+  `number`, `url`, plus a `single_select`) and writing values
+  through the slice replace path. Asserts the values land in
+  `rows[].custom` and the `custom_fields` block is verbatim — the
+  download-shape contract in plan-13 §4.9.
+
+### Frontend (`frontend/src/…/__tests__/`)
+
+- F1. Component round-trip — render `<RoomsTable>` with a seeded
+  `cf_*` `short_text` field, drive an inline cell edit through
+  `useGridEdit`, and assert the emitted `op.kind === "cell"` carries
+  the `cf_*` `fieldKey` with the typed value. (Plan-18 §5.6 named
+  this; this entry pins it in the suite-level plan.)
+- F2. `ChangeTypePopover` component test — preflight diagnostics
+  counter, "Convert anyway" acknowledgement gating, and the
+  dispatched mutation shape (currently no `__tests__` file).
+- F3. `AddFieldPopover` with `field_type === "single_select"` plus
+  `initialOptions` through `<RoomsTable>` → `EquipmentTab`, asserting
+  the resulting mutation carries `initialOptions` and the new column
+  renders with its option pill renderer.
+
+Items above are **adjacent** to plan-18's regression but **not**
+required for plan-18 acceptance — they ride in the same PR to keep
+the closeout coherent.
+
 ## 6. Acceptance
 
 - `pnpm test`, `pnpm run typecheck`, `pnpm run lint`,
