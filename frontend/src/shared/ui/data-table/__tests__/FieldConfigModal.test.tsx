@@ -60,6 +60,20 @@ function Harness({
       >
         ext rename
       </button>
+      <button
+        data-testid="external-type"
+        onClick={() =>
+          setFieldDef(
+            baseField({
+              field_type: "number",
+              custom_field_type: "number",
+              display_name: fieldDef?.display_name ?? "Notes",
+            }),
+          )
+        }
+      >
+        ext type
+      </button>
       <button data-testid="external-delete" onClick={() => setFieldDef(undefined)}>
         ext delete
       </button>
@@ -81,7 +95,7 @@ function Harness({
         }))}
         dispatchBundle={dispatchBundle}
         onFieldRemoved={onFieldRemoved}
-        sourceCustomFieldType={sourceCustomFieldType}
+        sourceCustomFieldType={sourceCustomFieldType ?? fieldDef?.custom_field_type}
         preflightRows={rows}
       />
     </div>
@@ -188,6 +202,45 @@ describe("FieldConfigModal", () => {
     // from the rebased source.
     expect(screen.queryByText("This field changed elsewhere")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).not.toBeDisabled();
+  });
+
+  test("R-S2 — Discard after external type change re-seeds the type picker", async () => {
+    render(
+      <Harness
+        initialField={baseField({ custom_field_type: "short_text" })}
+        preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Long text" }));
+    expect(screen.getByRole("group", { name: /short_text → long_text/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("external-type"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("This field changed elsewhere");
+    fireEvent.click(screen.getByRole("button", { name: "Discard my changes" }));
+
+    expect(screen.getByRole("radio", { name: "Number" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("group", { name: /short_text → long_text/ })).toBeNull();
+  });
+
+  test("R-S2 — Keep after external type change preserves the local draft", async () => {
+    render(
+      <Harness
+        initialField={baseField({ custom_field_type: "short_text" })}
+        preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Local edit" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Long text" }));
+
+    fireEvent.click(screen.getByTestId("external-type"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("This field changed elsewhere");
+    fireEvent.click(screen.getByRole("button", { name: "Keep my changes" }));
+
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Local edit");
+    expect(screen.getByRole("radio", { name: "Long text" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   });
 
   test("R-S5 — pending Save suppresses Cancel and disables inputs", async () => {
