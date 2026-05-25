@@ -1,8 +1,5 @@
 export { DataTable } from "./DataTable";
 export type { AddCustomFieldRequest } from "./components/AddFieldPopover";
-export { ChangeTypePopover } from "./components/ChangeTypePopover";
-export type { ChangeTypePopoverProps, ChangeTypeRequest } from "./components/ChangeTypePopover";
-export type { EditCustomFieldDescriptionRequest } from "./components/EditFieldDescriptionPopover";
 export { coerceCustomValue } from "./lib/coerceCustomFieldType";
 export type { CoerceResult } from "./lib/coerceCustomFieldType";
 export {
@@ -79,7 +76,6 @@ export type {
   DataTableColumnDef,
   DataTableProps,
   EditCustomFieldBundleRequest,
-  EditCustomFieldFormulaRequest,
   FieldDef,
   FieldOption,
   FilterCondition,
@@ -87,7 +83,6 @@ export type {
   GroupRule,
   RowDeletePayload,
   RowInsertPayload,
-  RenameCustomFieldRequest,
   SortRule,
   ViewState,
   WriteOp,

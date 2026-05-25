@@ -1,5 +1,5 @@
 // TypeScript port of backend `_try_coerce_for_change_type`
-// (schema_mutations.py). Drives the ChangeTypePopover preflight panel.
+// (schema_mutations.py). Drives the field-config type-change preflight panel.
 // The backend remains authoritative on commit; the two implementations
 // must agree byte-for-byte on outcomes.
 

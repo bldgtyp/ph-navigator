@@ -1,10 +1,7 @@
 import { flexRender, type Header, type Table } from "@tanstack/react-table";
 import { Lock } from "lucide-react";
 import {
-  useEffect,
   useRef,
-  useState,
-  type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -17,13 +14,13 @@ import { ColumnResizeHandle } from "./ColumnResizeHandle";
 import { CustomFieldDescriptionTooltip } from "./CustomFieldDescriptionTooltip";
 import { HeaderContextMenu } from "./HeaderContextMenu";
 import { SortableHeaderCell } from "./SortableHeaderCell";
-import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 
 // Header onMouseDown owns column-select; double-click on editable
 // custom headers opens the field config modal.
 // Header `<th>` refs are captured into `headerCellRefByFieldKey` so
-// the popover can anchor to them. `<ColumnHeaderMenu>` owns the
-// show/hide decision for the `⋯` trigger internally.
+// dialogs and header menus can return focus to the originating column.
+// `<ColumnHeaderMenu>` owns the show/hide decision for the `⋯` trigger
+// internally.
 //
 // Plan 08: every non-primary header `<th>` is wrapped in
 // `<SortableHeaderCell>`. The `DndContext` + `SortableContext` live
@@ -40,18 +37,10 @@ export type HeaderActionHandlers = {
   onFilterBy: (fieldKey: string) => void;
   onGroupBy: (fieldKey: string) => void;
   onHide: (fieldKey: string) => void;
-  onRenameCustomField?: (fieldKey: string) => void;
   onDeleteCustomField?: (fieldKey: string) => void;
   onDuplicateCustomField?: (fieldKey: string) => void;
-  onEditCustomFieldDescription?: (fieldKey: string) => void;
-  // Custom formula fields only. The anchor element rides along so
-  // the DataTable can mount the formula-editor popover against the
-  // clicked header.
-  onEditCustomFieldFormula?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
-  // plan-21 P5a.1 — opens the unified field-config modal for a custom
-  // field. Wired to double-click on a custom header and to the new
-  // "Edit field…" menu item. The anchor element is stashed so the
-  // modal can return focus on close.
+  // Opens the unified field-config modal for a custom field. The anchor
+  // element is stashed so the modal can return focus on close.
   onEditCustomFieldConfig?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
   // The anchor is the clicked `<th>` (captured by the menu's triggerRef)
   // so the DataTable can mount the add-field popover against it.
@@ -67,10 +56,6 @@ export type GridHeaderProps<TRow> = {
   onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   readOnly: boolean;
   hasWriteHandler: boolean;
-  renamingFieldKey?: string | null;
-  existingFieldLabels?: ReadonlyArray<FieldDisplayName>;
-  onRenameCustomFieldSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
-  onRenameCustomFieldCancel?: () => void;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
   // Plan 08 §4.3 — Space/Arrow/Esc on a focused non-primary header
   // routes here. When omitted, header keyboard reorder is disabled.
@@ -92,10 +77,6 @@ export function GridHeader<TRow>({
   onColumnMouseDown,
   readOnly,
   hasWriteHandler,
-  renamingFieldKey,
-  existingFieldLabels = [],
-  onRenameCustomFieldSubmit,
-  onRenameCustomFieldCancel,
   headerCellRefByFieldKey,
   columnDragKeyboard,
   columnResize,
@@ -124,10 +105,6 @@ export function GridHeader<TRow>({
                 isPrimary={columnIndex === 0}
                 readOnly={readOnly}
                 hasWriteHandler={hasWriteHandler}
-                renamingFieldKey={renamingFieldKey ?? null}
-                existingFieldLabels={existingFieldLabels}
-                onRenameCustomFieldSubmit={onRenameCustomFieldSubmit}
-                onRenameCustomFieldCancel={onRenameCustomFieldCancel}
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
                 columnDragKeyboard={columnDragKeyboard}
                 pickedUp={pickedUpColumnIndex === columnIndex}
@@ -153,10 +130,6 @@ type DataTableHeaderCellProps<TRow> = {
   isPrimary: boolean;
   readOnly: boolean;
   hasWriteHandler: boolean;
-  renamingFieldKey: string | null;
-  existingFieldLabels: ReadonlyArray<FieldDisplayName>;
-  onRenameCustomFieldSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
-  onRenameCustomFieldCancel?: () => void;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
   columnDragKeyboard?: GridColumnDragKeyboard;
   pickedUp: boolean;
@@ -174,10 +147,6 @@ function DataTableHeaderCell<TRow>({
   isPrimary,
   readOnly,
   hasWriteHandler,
-  renamingFieldKey,
-  existingFieldLabels,
-  onRenameCustomFieldSubmit,
-  onRenameCustomFieldCancel,
   headerCellRefByFieldKey,
   columnDragKeyboard,
   pickedUp,
@@ -187,9 +156,6 @@ function DataTableHeaderCell<TRow>({
 }: DataTableHeaderCellProps<TRow>) {
   const triggerRef = useRef<HTMLTableCellElement | null>(null);
   const isCustomField = fieldDef ? fieldDef.read_only_schema !== true : false;
-  const canRenameCustomField =
-    isCustomField && !readOnly && hasWriteHandler && !!onRenameCustomFieldSubmit;
-  const isRenaming = renamingFieldKey !== null && renamingFieldKey === column.fieldKey;
   const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
     .filter(Boolean)
     .join(" ");
@@ -199,10 +165,6 @@ function DataTableHeaderCell<TRow>({
       : undefined;
   const schemaLocked = fieldDef?.read_only_schema === true;
   const description = fieldDef?.description?.trim() ?? "";
-  const onRenameCustomField =
-    canRenameCustomField && headerActions.onRenameCustomField
-      ? () => headerActions.onRenameCustomField?.(column.fieldKey)
-      : undefined;
   const onDeleteCustomField =
     isCustomField && headerActions.onDeleteCustomField
       ? () => headerActions.onDeleteCustomField?.(column.fieldKey)
@@ -211,26 +173,14 @@ function DataTableHeaderCell<TRow>({
     isCustomField && isDuplicableCustomField(fieldDef) && headerActions.onDuplicateCustomField
       ? () => headerActions.onDuplicateCustomField?.(column.fieldKey)
       : undefined;
-  const onEditCustomFieldDescription =
-    isCustomField && headerActions.onEditCustomFieldDescription
-      ? () => headerActions.onEditCustomFieldDescription?.(column.fieldKey)
-      : undefined;
-  // Custom formula fields only. `useTableSchema` synthesises formula
-  // CustomFieldDefs as `field_type === "computed"`; this gate ignores
-  // core computed columns (which set `read_only_schema`).
-  const onEditCustomFieldFormula =
-    isCustomField && fieldDef?.field_type === "computed" && headerActions.onEditCustomFieldFormula
-      ? () => headerActions.onEditCustomFieldFormula?.(column.fieldKey, triggerRef.current)
-      : undefined;
   const onInsertFieldLeft = headerActions.onInsertFieldLeft
     ? () => headerActions.onInsertFieldLeft?.(column.fieldKey, triggerRef.current)
     : undefined;
   const onInsertFieldRight = headerActions.onInsertFieldRight
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
-  // plan-21 P5a.3 — any custom field's double-click or chevron opens
-  // the unified config modal. The legacy single-select options popover
-  // is no longer an entry point.
+  // Any custom field's double-click or chevron opens the unified config
+  // modal. Core fields and viewer mode have no field-config entry point.
   const canEditCustomFieldConfig =
     isCustomField && !readOnly && hasWriteHandler && !!headerActions.onEditCustomFieldConfig;
   const onEditCustomFieldConfig =
@@ -279,19 +229,9 @@ function DataTableHeaderCell<TRow>({
             <Lock aria-hidden size={12} />
           </span>
         ) : null}
-        {isRenaming && fieldDef ? (
-          <HeaderRenameEditor
-            fieldKey={column.fieldKey}
-            initialName={fieldDef.display_name}
-            existingFieldLabels={existingFieldLabels}
-            onSubmit={onRenameCustomFieldSubmit}
-            onCancel={onRenameCustomFieldCancel}
-          />
-        ) : (
-          <span className="data-table-header-label">
-            {flexRender(header.column.columnDef.header, header.getContext())}
-          </span>
-        )}
+        <span className="data-table-header-label">
+          {flexRender(header.column.columnDef.header, header.getContext())}
+        </span>
         {canEditCustomFieldConfig ? (
           <span aria-hidden className="data-table-header-edit-chevron">
             ▾
@@ -321,11 +261,8 @@ function DataTableHeaderCell<TRow>({
           onFilterBy={() => headerActions.onFilterBy(column.fieldKey)}
           onGroupBy={() => headerActions.onGroupBy(column.fieldKey)}
           onHide={() => headerActions.onHide(column.fieldKey)}
-          onRenameField={onRenameCustomField}
           onDeleteField={onDeleteCustomField}
           onDuplicateField={onDuplicateCustomField}
-          onEditDescription={onEditCustomFieldDescription}
-          onEditFieldFormula={onEditCustomFieldFormula}
           onEditFieldConfig={onEditCustomFieldConfig}
           onInsertFieldLeft={onInsertFieldLeft}
           onInsertFieldRight={onInsertFieldRight}
@@ -340,111 +277,6 @@ function DataTableHeaderCell<TRow>({
         />
       ) : null}
     </SortableHeaderCell>
-  );
-}
-
-function HeaderRenameEditor({
-  fieldKey,
-  initialName,
-  existingFieldLabels,
-  onSubmit,
-  onCancel,
-}: {
-  fieldKey: string;
-  initialName: string;
-  existingFieldLabels: ReadonlyArray<FieldDisplayName>;
-  onSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
-  onCancel?: () => void;
-}) {
-  const [value, setValue] = useState(initialName);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const pendingRef = useRef(false);
-
-  useEffect(() => {
-    setValue(initialName);
-    setError(null);
-    setPending(false);
-    pendingRef.current = false;
-    const handle = window.setTimeout(() => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }, 0);
-    return () => window.clearTimeout(handle);
-  }, [initialName]);
-
-  const submit = async () => {
-    if (pendingRef.current || !onSubmit) return;
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setError("Field name cannot be empty.");
-      return;
-    }
-    if (trimmed === initialName.trim()) {
-      onCancel?.();
-      return;
-    }
-    const duplicate = findDuplicateDisplayName(trimmed, existingFieldLabels, fieldKey);
-    if (duplicate) {
-      setError(`A field named "${trimmed}" already exists in this table.`);
-      return;
-    }
-    pendingRef.current = true;
-    setPending(true);
-    setError(null);
-    try {
-      await onSubmit(fieldKey, trimmed);
-    } catch (caught) {
-      setError(
-        caught instanceof Error && caught.message ? caught.message : "Could not rename field.",
-      );
-    } finally {
-      pendingRef.current = false;
-      setPending(false);
-    }
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    void submit();
-  };
-
-  return (
-    <form className="data-table-header-rename" onSubmit={handleSubmit}>
-      <input
-        ref={inputRef}
-        className="data-table-header-rename-input"
-        aria-label={`Rename ${initialName}`}
-        value={value}
-        disabled={pending}
-        onChange={(event) => setValue(event.target.value)}
-        onKeyDown={(event) => {
-          event.stopPropagation();
-          if (event.key === "Enter" && !pendingRef.current) {
-            event.preventDefault();
-            void submit();
-            return;
-          }
-          if (event.key === "Escape" && !pendingRef.current) {
-            event.preventDefault();
-            onCancel?.();
-          }
-        }}
-        onBlur={() => {
-          void submit();
-        }}
-        onPaste={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
-        onMouseDown={(event) => event.stopPropagation()}
-        onDoubleClick={(event) => event.stopPropagation()}
-      />
-      {error ? (
-        <span className="data-table-header-rename-error" role="alert">
-          {error}
-        </span>
-      ) : null}
-    </form>
   );
 }
 

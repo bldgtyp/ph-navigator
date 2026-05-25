@@ -2,7 +2,7 @@
 // Mirror of `backend/features/project_document/formula/resolver.py`.
 // Cycle detection is NOT mirrored here — the backend rejects cycles at
 // commit time and the read-overlay path is server-side. The browser
-// resolver is used inside `<FormulaEditorPopover>` only, so the preview
+// resolver is used inside the field-config formula section only, so the preview
 // can flag missing refs before submit.
 
 import { FieldRefNode, FormulaAST, FuncCallNode } from "./ast";

@@ -24,17 +24,10 @@ export type HeaderContextMenuProps = {
   fieldDef: FieldDef;
   triggerRef: RefObject<HTMLElement | null>;
   isViewer: boolean;
-  onRenameField?: () => void;
   onDeleteField?: () => void;
   onDuplicateField?: () => void;
-  onEditDescription?: () => void;
-  onChangeFieldType?: () => void;
-  // Only forwarded when the field is a custom formula field — the
-  // menu omits the item otherwise (US-CF-8 criterion 2).
-  onEditFieldFormula?: () => void;
-  // plan-21 P5a.1 — "Edit field…" entry that opens the unified
-  // field-config modal. Forwarded for any custom field when the
-  // DataTable consumer wired `onEditCustomFieldBundle`.
+  // "Edit field…" entry that opens the unified field-config modal.
+  // Forwarded for any custom field when the consumer supports schema edits.
   onEditFieldConfig?: () => void;
   onInsertFieldLeft?: () => void;
   onInsertFieldRight?: () => void;

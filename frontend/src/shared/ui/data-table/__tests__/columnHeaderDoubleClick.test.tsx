@@ -91,7 +91,6 @@ function renderCustomFieldTable(overrides: Partial<DataTableProps<CustomRow>> = 
       onViewChange={setView}
       emptyMessage="No rows yet."
       onWrite={vi.fn()}
-      onRenameCustomField={vi.fn().mockResolvedValue(undefined)}
       {...overrides}
     />,
   );

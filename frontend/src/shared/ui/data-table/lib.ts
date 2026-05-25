@@ -545,7 +545,7 @@ export function optionReferenceCounts<TRow>(
 }
 
 // Returns the option ids referenced by ≥1 row that are NOT present in
-// the supplied options list. Used by the FieldEditorPopover to surface
+// the supplied options list. Used by the field-config options section to surface
 // a "N rows reference unknown options" warning.
 export function missingOptionReferences<TRow>(
   rows: readonly TRow[],

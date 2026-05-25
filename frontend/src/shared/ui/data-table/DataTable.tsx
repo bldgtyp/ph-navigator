@@ -51,14 +51,8 @@ import { GridToolbar } from "./components/GridToolbar";
 import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
 import { AddFieldPopover, type AddCustomFieldRequest } from "./components/AddFieldPopover";
 import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
-import {
-  EditFieldDescriptionPopover,
-  type EditCustomFieldDescriptionRequest,
-} from "./components/EditFieldDescriptionPopover";
 import { FieldConfigModal } from "./components/FieldConfigModal";
-import { FormulaEditorPopover } from "./components/FormulaEditorPopover";
 import type { FieldRegistryEntry } from "./lib/formula";
-import { formulaSourceFromFieldDef } from "./lib/formulaFieldSource";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
   AxisRoleSubset,
@@ -97,11 +91,8 @@ export function DataTable<TRow>({
   onResetView,
   onDeleteCustomField,
   onAddCustomField,
-  onRenameCustomField,
   onDuplicateCustomField,
-  onSetCustomFieldDescription,
   onEditCustomFieldBundle,
-  onEditCustomFieldFormula,
   formulaFieldRegistry,
   getFormulaRowValues,
 }: DataTableProps<TRow>) {
@@ -663,17 +654,12 @@ export function DataTable<TRow>({
     insertAfterFieldKey: string | null;
   };
   const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
-  const [renamingFieldKey, setRenamingFieldKey] = useState<string | null>(null);
-  const [descriptionFieldKey, setDescriptionFieldKey] = useState<string | null>(null);
-  // plan-21 P5a.1: which custom field's config modal is open (if any).
   // The originating header element is stashed at open time so focus
-  // returns there on close (US-CF-15 criterion 5).
+  // returns there on close.
   const [configModalState, setConfigModalState] = useState<{
     fieldKey: string;
     triggerEl: HTMLElement | null;
   } | null>(null);
-  type FormulaEditorState = { fieldKey: string; anchorElement: HTMLElement | null };
-  const [formulaEditorState, setFormulaEditorState] = useState<FormulaEditorState | null>(null);
   const tailCellRef = useRef<HTMLTableCellElement | null>(null);
   const [pendingFocusFieldKey, setPendingFocusFieldKey] = useState<string | null>(null);
 
@@ -714,9 +700,9 @@ export function DataTable<TRow>({
     [onAddCustomField],
   );
 
-  // plan-21 P5a.1 — open the unified field-config modal on any custom
-  // header (double-click, chevron, or context-menu "Edit field…").
-  // Core fields and viewer mode pass through unchanged.
+  // Custom fields open a unified config modal from double-click,
+  // chevron, or the header context menu. Core fields and viewer mode
+  // pass through unchanged.
   const editConfigEnabled = !readOnly && Boolean(onWrite) && Boolean(onEditCustomFieldBundle);
   const openConfigModal = useCallback(
     (fieldKey: string, triggerEl: HTMLElement | null) => {
@@ -734,15 +720,6 @@ export function DataTable<TRow>({
     [onEditCustomFieldBundle],
   );
 
-  const handleRenameCustomFieldSubmit = useCallback(
-    async (fieldKey: string, displayName: string) => {
-      if (!onRenameCustomField) return;
-      await onRenameCustomField({ fieldKey, displayName });
-      setRenamingFieldKey(null);
-    },
-    [onRenameCustomField],
-  );
-
   const requestDuplicateCustomField = useCallback(
     async (fieldKey: string) => {
       if (!onDuplicateCustomField) return;
@@ -754,38 +731,6 @@ export function DataTable<TRow>({
       }
     },
     [onDuplicateCustomField],
-  );
-
-  const handleSetCustomFieldDescription = useCallback(
-    async (request: EditCustomFieldDescriptionRequest) => {
-      if (!onSetCustomFieldDescription) return;
-      await onSetCustomFieldDescription(request);
-    },
-    [onSetCustomFieldDescription],
-  );
-
-  const formulaEditorEnabled =
-    !readOnly &&
-    Boolean(onEditCustomFieldFormula) &&
-    Boolean(formulaFieldRegistry && formulaFieldRegistry.length > 0);
-
-  const requestEditCustomFieldFormula = useCallback(
-    (fieldKey: string, anchorElement: HTMLElement | null) => {
-      if (!formulaEditorEnabled) return;
-      setFormulaEditorState({ fieldKey, anchorElement });
-    },
-    [formulaEditorEnabled],
-  );
-
-  const handleEditFormulaSubmit = useCallback(
-    async (payload: { source: string }) => {
-      if (!onEditCustomFieldFormula || !formulaEditorState) return;
-      await onEditCustomFieldFormula({
-        fieldKey: formulaEditorState.fieldKey,
-        source: payload.source,
-      });
-    },
-    [onEditCustomFieldFormula, formulaEditorState],
   );
 
   // Once the consumer's refetch reidentifies fieldDefs and the new column
@@ -821,13 +766,8 @@ export function DataTable<TRow>({
       onFilterBy: handleHeaderFilterBy,
       onGroupBy: handleHeaderGroupBy,
       onHide: handleHeaderHide,
-      onRenameCustomField: onRenameCustomField ? setRenamingFieldKey : undefined,
       onDeleteCustomField: onDeleteCustomField ? requestDeleteCustomField : undefined,
       onDuplicateCustomField: onDuplicateCustomField ? requestDuplicateCustomField : undefined,
-      onEditCustomFieldDescription: onSetCustomFieldDescription
-        ? setDescriptionFieldKey
-        : undefined,
-      onEditCustomFieldFormula: formulaEditorEnabled ? requestEditCustomFieldFormula : undefined,
       onEditCustomFieldConfig: editConfigEnabled ? openConfigModal : undefined,
       onInsertFieldLeft: addFieldEnabled ? requestInsertFieldLeft : undefined,
       onInsertFieldRight: addFieldEnabled ? requestInsertFieldRight : undefined,
@@ -837,14 +777,10 @@ export function DataTable<TRow>({
       handleHeaderFilterBy,
       handleHeaderGroupBy,
       handleHeaderHide,
-      onRenameCustomField,
       onDeleteCustomField,
       onDuplicateCustomField,
-      onSetCustomFieldDescription,
       requestDeleteCustomField,
       requestDuplicateCustomField,
-      formulaEditorEnabled,
-      requestEditCustomFieldFormula,
       editConfigEnabled,
       openConfigModal,
       addFieldEnabled,
@@ -997,13 +933,9 @@ export function DataTable<TRow>({
     [fieldDefs],
   );
 
-  const descriptionFieldDef = descriptionFieldKey
-    ? fieldDefByKey.get(descriptionFieldKey)
-    : undefined;
-  // plan-21 P5a.1 — modal source FieldDef. Resolves only when the
-  // modal is open; core columns (`read_only_schema: true`) collapse
-  // to `undefined` so the modal won't render against an app-managed
-  // field if a stale gesture slipped through.
+  // Modal source FieldDef. Core columns (`read_only_schema: true`)
+  // collapse to `undefined` so a stale gesture cannot render the
+  // config modal against an app-managed field.
   const configModalFieldDef = useMemo(() => {
     if (!configModalState) return undefined;
     const fieldDef = fieldDefByKey.get(configModalState.fieldKey);
@@ -1022,40 +954,6 @@ export function DataTable<TRow>({
       rawValue: column.accessor(row),
     }));
   }, [configModalState, columnDefs, rows, getRowId]);
-
-  // Split the editor context into two memos: the AST rebuild is
-  // expensive but depends only on the stored AST + registry; the
-  // focused-row resolution flips on every arrow keypress. Keeping them
-  // together would re-parse + re-walk the stored AST on every cursor
-  // move while the popover is open.
-  const formulaEditorFieldContext = useMemo(() => {
-    if (!formulaEditorState) return null;
-    const fieldDef = fieldDefByKey.get(formulaEditorState.fieldKey);
-    if (!fieldDef || !fieldDef.formula_config) return null;
-    const registry = formulaFieldRegistry ?? [];
-    return {
-      fieldDef: { id: fieldDef.field_key, display_name: fieldDef.display_name },
-      anchorElement: formulaEditorState.anchorElement,
-      registry,
-      initialSource: formulaSourceFromFieldDef(fieldDef, registry),
-    };
-  }, [formulaEditorState, fieldDefByKey, formulaFieldRegistry]);
-
-  const formulaEditorFocusedRow = useMemo<{
-    id: string;
-    values: Record<string, unknown>;
-  } | null>(() => {
-    if (!formulaEditorFieldContext || !getFormulaRowValues) return null;
-    const row = visibleDataRows[selection.activeCell.rowIndex];
-    if (!row) return null;
-    return { id: getRowId(row), values: getFormulaRowValues(row) };
-  }, [
-    formulaEditorFieldContext,
-    selection.activeCell.rowIndex,
-    visibleDataRows,
-    getRowId,
-    getFormulaRowValues,
-  ]);
 
   const configModalFormulaPreviewRow = useMemo<{
     id: string;
@@ -1145,23 +1043,6 @@ export function DataTable<TRow>({
           formulaFieldRegistry={formulaFieldRegistry}
         />
       ) : null}
-      {formulaEditorEnabled && formulaEditorFieldContext ? (
-        <FormulaEditorPopover
-          open
-          onOpenChange={(next) => {
-            if (!next) {
-              setFormulaEditorState(null);
-              focusGrid();
-            }
-          }}
-          anchorElement={formulaEditorFieldContext.anchorElement}
-          fieldDef={formulaEditorFieldContext.fieldDef}
-          fieldRegistry={formulaEditorFieldContext.registry}
-          focusedRow={formulaEditorFocusedRow}
-          initialSource={formulaEditorFieldContext.initialSource}
-          onSubmit={handleEditFormulaSubmit}
-        />
-      ) : null}
       {onEditCustomFieldBundle ? (
         <FieldConfigModal
           open={configModalState !== null}
@@ -1183,22 +1064,6 @@ export function DataTable<TRow>({
           preflightRows={configModalPreflightRows}
           optionRows={configModalPreflightRows}
           formulaPreview={configModalFormulaPreview}
-        />
-      ) : null}
-      {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (
-        <EditFieldDescriptionPopover
-          open
-          onOpenChange={(next) => {
-            if (!next) {
-              setDescriptionFieldKey(null);
-              focusGrid();
-            }
-          }}
-          anchorElement={headerCellRefByFieldKey.get(descriptionFieldKey) ?? null}
-          fieldKey={descriptionFieldKey}
-          fieldDisplayName={descriptionFieldDef.display_name}
-          initialDescription={descriptionFieldDef.description}
-          dispatchDescription={handleSetCustomFieldDescription}
         />
       ) : null}
       <ConfirmDestructiveDialog
@@ -1258,13 +1123,6 @@ export function DataTable<TRow>({
                 onColumnMouseDown={pointerDrag.onColumnMouseDown}
                 readOnly={readOnly}
                 hasWriteHandler={Boolean(onWrite)}
-                renamingFieldKey={renamingFieldKey}
-                existingFieldLabels={existingFieldLabels}
-                onRenameCustomFieldSubmit={handleRenameCustomFieldSubmit}
-                onRenameCustomFieldCancel={() => {
-                  setRenamingFieldKey(null);
-                  focusGrid();
-                }}
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
                 columnDragKeyboard={columnDragKeyboard}
                 columnResize={columnResize}
