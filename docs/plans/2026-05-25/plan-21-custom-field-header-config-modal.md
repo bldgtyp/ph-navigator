@@ -712,7 +712,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   is replaced entirely by the bundle path) and that no production
   code still imports the deleted components.
 
-- [ ] **P5a.7 — Acceptance.** Wire the new modal into every
+- [x] **P5a.7 — Acceptance.** Wire the new modal into every
   `<DataTable>` consumer (Rooms today, Pumps when plan-20 lands).
   Manual QA pass per US-CF-15 / US-CF-16 / US-CF-17. Append the
   modal's focus-trap + Esc + screen-reader behavior to

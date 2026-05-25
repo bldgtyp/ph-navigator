@@ -204,6 +204,39 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
   });
 
+  test("plan-21: Enter on a focused custom header opens the FieldConfigModal", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderCustomFieldTable({ onEditCustomFieldBundle });
+    const notes = getColumnHeader("Notes");
+    notes.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("dialog", { name: /Edit field/ })).toBeInTheDocument();
+  });
+
+  test("plan-21: closing the modal returns focus to the originating header", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderCustomFieldTable({ onEditCustomFieldBundle });
+    const notes = getColumnHeader("Notes");
+    notes.focus();
+    await user.keyboard("{Enter}");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(notes).toHaveFocus();
+  });
+
+  test("plan-21: viewer mode suppresses Enter on a focused custom header", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn();
+    renderCustomFieldTable({ onEditCustomFieldBundle, readOnly: true });
+    const notes = getColumnHeader("Notes");
+    notes.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
+  });
+
   test("Cancel closes the custom-field config modal without saving", async () => {
     const user = userEvent.setup();
     const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);

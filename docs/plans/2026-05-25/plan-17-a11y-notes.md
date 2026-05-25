@@ -219,7 +219,73 @@ the palette has any borderline pairs.
   walkthrough with screenshots under
   `docs/plans/2026-05-25/screenshots/plan-17-p4-10/`).
 
+---
+
+# Phase 5a.7 — Field config modal a11y notes
+
+## Scope
+
+Acceptance review for Plan 21's unified custom-field config modal:
+
+- `frontend/src/shared/ui/data-table/components/FieldConfigModal.tsx`
+- `frontend/src/shared/ui/data-table/components/GridHeader.tsx`
+- `frontend/src/shared/ui/data-table/components/HeaderContextMenu.tsx`
+- `frontend/src/shared/ui/data-table/components/ColumnHeaderMenu.tsx`
+
+This is a source + component-test + browser acceptance pass. It records
+the modal's focus trap, Escape, and screen-reader behavior as the single
+a11y checklist for the Plan 21 P5a acceptance step.
+
+## Findings
+
+### Dialog semantics and focus trap
+
+`FieldConfigModal` is a Radix `Dialog`; while open, focus is trapped
+inside the dialog content. The dialog is labelled by the modal title
+(`aria-labelledby`) and the title includes the current field display
+name, so screen readers announce the edited field on open.
+
+### Open gestures and focus return
+
+Editable custom-field headers open the same modal from double-click,
+the header `Edit field...` menu item, the header chevron menu, and
+keyboard Enter on the focused column header. Core fields and viewer
+mode suppress those edit entry points. On close, focus returns to the
+originating header cell through the stored trigger element.
+
+### Keyboard dismissal and pending-save lockout
+
+Escape and backdrop click close the modal while the form is idle. While
+Save is pending, Escape, backdrop close, and Cancel are suppressed and
+form controls are disabled; this avoids losing the user's draft during
+an unresolved schema mutation.
+
+### Form order and live feedback
+
+The keyboard order follows the form declaration: Name, Type, the active
+type-specific section, Description, Cancel, Save. Type-change preflight
+messages use alert/status semantics inside the type section, and the
+formula preview keeps its polite live-region behavior after moving into
+the modal.
+
+## Verification artifacts
+
+- `frontend/src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  covers Escape/backdrop behavior, pending-save lockout, source-field
+  removal, external-change conflict handling, and focus return.
+- `frontend/src/shared/ui/data-table/__tests__/columnHeaderDoubleClick.test.tsx`
+  covers custom-header double-click, viewer-mode suppression, and the
+  Plan 21 keyboard Enter open path.
+- Browser acceptance on `http://localhost:5173`: focused the `Finish`
+  custom-field header, dispatched Enter, confirmed `Edit field -
+  Finish` opened with the Name input focused, pressed Escape, and
+  confirmed focus returned to the originating column header.
+- `pnpm exec playwright test tests/e2e/custom-fields-phase-2.spec.ts`
+  passed and covers the header menu `Edit field...` path through a
+  real Rooms project.
+
 ## Sign-off
 
-No critical a11y findings. Phase 4 ships. Non-blocking items above
-roll into the Phase 5 a11y polish ADR-equivalent.
+No critical a11y findings for Phase 4 or Plan 21 P5a.7. Phase 4's
+non-blocking items above roll into the Phase 5 a11y polish
+ADR-equivalent.

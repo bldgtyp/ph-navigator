@@ -159,7 +159,7 @@ function DataTableHeaderCell<TRow>({
   const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
     .filter(Boolean)
     .join(" ");
-  const headerKeyDown =
+  const columnDragKeyDown =
     columnDragKeyboard && !isPrimary
       ? buildHeaderKeyDown(columnIndex, columnDragKeyboard)
       : undefined;
@@ -188,6 +188,22 @@ function DataTableHeaderCell<TRow>({
       ? () => headerActions.onEditCustomFieldConfig?.(column.fieldKey, triggerRef.current)
       : undefined;
   const doubleClickAction = canEditCustomFieldConfig ? onEditCustomFieldConfig : undefined;
+  const headerKeyDown =
+    canEditCustomFieldConfig || columnDragKeyDown
+      ? (event: ReactKeyboardEvent<HTMLTableCellElement>) => {
+          if (
+            event.key === "Enter" &&
+            canEditCustomFieldConfig &&
+            (columnDragKeyboard?.pickedUpColumnIndex ?? null) === null
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            onEditCustomFieldConfig?.();
+            return;
+          }
+          columnDragKeyDown?.(event);
+        }
+      : undefined;
   return (
     <SortableHeaderCell
       id={column.id}
