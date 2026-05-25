@@ -654,12 +654,8 @@ export function DataTable<TRow>({
     insertAfterFieldKey: string | null;
   };
   const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
-  // The originating header element is stashed at open time so focus
-  // returns there on close.
-  const [configModalState, setConfigModalState] = useState<{
-    fieldKey: string;
-    triggerEl: HTMLElement | null;
-  } | null>(null);
+  const [configModalState, setConfigModalState] = useState<{ fieldKey: string } | null>(null);
+  const configModalReturnFocusRef = useRef<HTMLElement | null>(null);
   const tailCellRef = useRef<HTMLTableCellElement | null>(null);
   const [pendingFocusFieldKey, setPendingFocusFieldKey] = useState<string | null>(null);
 
@@ -707,7 +703,8 @@ export function DataTable<TRow>({
   const openConfigModal = useCallback(
     (fieldKey: string, triggerEl: HTMLElement | null) => {
       if (!editConfigEnabled) return;
-      setConfigModalState({ fieldKey, triggerEl });
+      configModalReturnFocusRef.current = triggerEl;
+      setConfigModalState({ fieldKey });
     },
     [editConfigEnabled],
   );
@@ -1056,7 +1053,7 @@ export function DataTable<TRow>({
           fieldDef={configModalFieldDef}
           existingFieldLabels={existingFieldLabels}
           dispatchBundle={handleEditCustomFieldBundle}
-          returnFocusTo={configModalState?.triggerEl ?? null}
+          returnFocusTo={configModalReturnFocusRef.current}
           onFieldRemoved={(message) => {
             setAnnounce(message);
           }}
