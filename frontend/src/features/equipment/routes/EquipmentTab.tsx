@@ -54,8 +54,8 @@ import type {
   BuildEmptyRow,
   EditCustomFieldDescriptionRequest,
   EditCustomFieldFormulaRequest,
+  FieldRegistryEntry,
   FieldSchemaMutation,
-  FormulaFieldRegistryEntry,
   RenameCustomFieldRequest,
   WriteOp,
 } from "../../../shared/ui/data-table";
@@ -109,11 +109,10 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     () => roomsTableColumnsForSanitize(roomsTableSchema.fieldDefs),
     [roomsTableSchema.fieldDefs],
   );
-  // Plan-17 P4.9: registry for the in-grid formula editor. Core
-  // entries use the formula-side `field_id` (the Pydantic attribute
-  // name) which differs from the column `field_key` for the two
+  // Core entries use the formula-side `field_id` (the Pydantic
+  // attribute name), which differs from the column `field_key` for
   // namespaced single-selects ("rooms.floor_level" → "floor_level").
-  const formulaFieldRegistry = useMemo<FormulaFieldRegistryEntry[]>(
+  const formulaFieldRegistry = useMemo<FieldRegistryEntry[]>(
     () => buildRoomsFormulaRegistry(roomsTableSchema.fieldDefs),
     [roomsTableSchema.fieldDefs],
   );
@@ -701,7 +700,7 @@ function buildRoomsFormulaRegistry(
     field_type: string;
     read_only_schema?: boolean;
   }>,
-): FormulaFieldRegistryEntry[] {
+): FieldRegistryEntry[] {
   return fieldDefs.map((fieldDef) => {
     const isCore = fieldDef.read_only_schema === true;
     const fieldId = ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY[fieldDef.field_key] ?? fieldDef.field_key;
@@ -746,20 +745,7 @@ function readRoomsFormulaValue(room: RoomRow, fieldId: string): unknown {
 
 function buildRoomFormulaRowValues(room: RoomRow): Record<string, unknown> {
   const values: Record<string, unknown> = {};
-  const coreIds = [
-    "id",
-    "number",
-    "name",
-    "floor_level",
-    "building_zone",
-    "num_people",
-    "num_bedrooms",
-    "icfa_factor",
-    "erv_unit_ids",
-    "catalog_origin",
-    "notes",
-  ];
-  for (const fieldId of coreIds) {
+  for (const fieldId of ROOMS_SCHEMA_CORE_FIELD_KEYS) {
     values[fieldId] = readRoomsFormulaValue(room, fieldId);
   }
   for (const [cfId, value] of Object.entries(room.custom)) {

@@ -3,6 +3,7 @@ import type { AddCustomFieldRequest } from "./components/AddFieldPopover";
 import type { EditCustomFieldDescriptionRequest } from "./components/EditFieldDescriptionPopover";
 import type { AggregationKind } from "./fields/aggregations";
 import type { FieldSchemaMutation } from "./lib/customFieldMutations";
+import type { FieldRegistryEntry } from "./lib/formula/resolver";
 
 // Phase 6 §4.3.1: subset codes for the 7 non-empty subsets of
 // {filter, sort, group}. Encoded as lowercase concatenations of the
@@ -45,12 +46,10 @@ export type FieldDef = {
   // leave it absent. The flag ships in plan-14 P1.4 so the schema is
   // consistent; the menu component that consumes it lands in Phase 2.
   read_only_schema?: boolean;
-  // Plan-17 P4.9 — attached by `useTableSchema` to synthesized FieldDefs
-  // for custom formula fields. The grid uses this to (a) rebuild the
-  // expression source from the stored AST on `Edit formula…` (so a
-  // referenced field's rename absorbs silently between sessions, D2),
-  // and (b) route filter / sort / aggregation through the right
-  // computed_type. Absent on core fields and non-formula custom fields.
+  // Carries the stored source + AST + deps for a custom formula
+  // field. Absent on core fields and non-formula custom fields. The
+  // grid rebuilds the displayed expression from `ast` on each open so
+  // a referenced field's rename absorbs silently between sessions.
   formula_config?: {
     source: string;
     ast: unknown;
@@ -281,29 +280,19 @@ export type DataTableProps<TRow> = {
   onRenameCustomField?: (request: RenameCustomFieldRequest) => Promise<void>;
   onDuplicateCustomField?: (fieldKey: string) => Promise<{ newFieldKey: string } | void>;
   onSetCustomFieldDescription?: (request: EditCustomFieldDescriptionRequest) => Promise<void>;
-  // Plan-17 P4.9 — commit the new formula `source` for a custom
-  // formula field. Backend re-parses + resolves + cycle-checks; the
-  // popover surfaces server-side errors via the same routing as
-  // other schema mutations. Omit to hide the `Edit formula…` menu
-  // item entirely.
+  // Commit the new formula `source` for a custom formula field.
+  // Backend re-parses + resolves + cycle-checks. Omit to hide the
+  // `Edit formula…` menu item entirely.
   onEditCustomFieldFormula?: (request: EditCustomFieldFormulaRequest) => Promise<void>;
-  // Plan-17 P4.9 — registry the formula editor uses for ref
-  // completion / palette / live preview. When omitted (or empty),
-  // the editor cannot resolve `{Display Name}` refs, so the
-  // `Edit formula…` menu item is suppressed.
-  formulaFieldRegistry?: ReadonlyArray<FormulaFieldRegistryEntry>;
-  // Plan-17 P4.9 — builder that maps a row to its per-`field_id`
-  // value map. Used by the formula editor's focused-row live
-  // preview. Each map key is a formula-side `field_id` (core key
-  // for core fields, `cf_*` for custom fields).
+  // Registry the formula editor uses for ref completion / palette /
+  // live preview. When omitted (or empty), the editor cannot resolve
+  // `{Display Name}` refs, so the `Edit formula…` menu item is
+  // suppressed.
+  formulaFieldRegistry?: ReadonlyArray<FieldRegistryEntry>;
+  // Maps a row to its per-`field_id` value map for the formula
+  // editor's focused-row live preview. Each map key is a formula-side
+  // `field_id` (core key for core fields, `cf_*` for custom fields).
   getFormulaRowValues?: (row: TRow) => Record<string, unknown>;
-};
-
-export type FormulaFieldRegistryEntry = {
-  field_id: string;
-  display_name: string;
-  origin: "core" | "custom";
-  field_type: "text" | "number" | "single_select" | "formula" | "bool";
 };
 
 export type EditCustomFieldFormulaRequest = {

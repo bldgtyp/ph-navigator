@@ -75,10 +75,7 @@ export type SetFormulaMutation = {
   tableKey: string;
   fieldId: string;
   // User-typed expression source. Backend re-parses, resolves refs,
-  // and cycle-checks on commit (the wire shape that survives is
-  // {source, ast, deps, result_type} in `config`, but the request
-  // only ships the source string — defence-in-depth against a
-  // client-side AST that doesn't match what the server would parse).
+  // and cycle-checks on commit — the client does not ship an AST.
   source: string;
   expectedSchemaFingerprint: string;
 };

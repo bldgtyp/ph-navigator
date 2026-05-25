@@ -9,6 +9,7 @@ import {
   type ViewState,
 } from "../../../shared/ui/data-table";
 import { ComputedCell } from "../../../shared/ui/data-table/components/ComputedCell";
+import { isComputedErrorValue } from "../../../shared/ui/data-table/lib/formula";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedRooms } from "../lib";
 import {
@@ -81,10 +82,9 @@ export function RoomsTable({
       customFields.map((custom) => {
         const fieldDef = fieldDefByKey.get(custom.id);
         if (custom.field_type === "formula") {
-          // Formula values live in `rows_computed`, never on the row
-          // itself. Sort / filter / group / aggregate share this
-          // accessor so they see the computed scalar; the cell render
-          // routes errors through `<ComputedCell>`.
+          // Formula values live in `rows_computed`, never on the row.
+          // The accessor returns the scalar (errors → null) so sorts
+          // and aggregates stay clean; render shows the error glyph.
           const computedType = fieldDef?.computed_type ?? "text";
           return {
             id: custom.id,
@@ -214,24 +214,20 @@ function readComputedRaw(
   rowId: string,
   fieldId: string,
 ): unknown {
-  if (!overlay) return null;
-  const rowOverlay = overlay[rowId];
-  if (!rowOverlay) return null;
-  return rowOverlay[fieldId] ?? null;
+  return overlay?.[rowId]?.[fieldId] ?? null;
 }
 
 // Sort / filter / group / aggregate consume the *scalar* value;
-// structured error tokens (`{error: ...}`) become null so a `#ERROR`
-// cell doesn't poison the column's ordering or summary stats. Render
-// still surfaces the error glyph via `readComputedRaw`.
+// structured error tokens become null so a `#ERROR` cell doesn't
+// poison the column's ordering or summary stats. Render still
+// surfaces the error glyph via `readComputedRaw`.
 function readComputedScalar(
   overlay: Record<string, Record<string, unknown>> | undefined,
   rowId: string,
   fieldId: string,
 ): unknown {
   const raw = readComputedRaw(overlay, rowId, fieldId);
-  if (raw !== null && typeof raw === "object" && "error" in raw) return null;
-  return raw;
+  return isComputedErrorValue(raw) ? null : raw;
 }
 
 function optionPill(value: string | null, fieldDef: FieldDef | undefined) {

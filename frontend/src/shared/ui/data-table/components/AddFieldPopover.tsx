@@ -15,17 +15,12 @@ import { normalizeDisplayName } from "../lib/fieldDisplayNames";
 import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 import {
-  FormulaMissingRefError,
-  FormulaParseError,
-  FormulaResourceLimitError,
-  FormulaUnsupportedFunctionError,
   SOURCE_LENGTH_MAX,
   astToJson,
-  collectFieldRefs,
-  parse,
-  resolveRefs,
+  formatLocalFormulaError,
+  parseFormulaSource,
   type FieldRegistryEntry,
-  type FormulaAST,
+  type LocalFormulaState,
 } from "../lib/formula";
 import { FormulaFieldPalette } from "./FormulaFieldPalette";
 import type { FieldOption } from "../types";
@@ -72,9 +67,8 @@ export type AddFieldPopoverProps = {
   // US-CF-12. Includes both core and custom display names.
   existingFieldNames: ReadonlyArray<string>;
   dispatchAddField: (request: AddCustomFieldRequest) => Promise<void>;
-  // Plan-17 P4.9 — required for the formula pill. When absent, the
-  // formula pill is hidden (consumers in viewer mode / on tables that
-  // don't yet support formulas omit this).
+  // Required for the formula pill's parser + palette. When absent
+  // the pill still appears but with no resolvable refs.
   formulaFieldRegistry?: ReadonlyArray<FieldRegistryEntry>;
 };
 
@@ -97,67 +91,6 @@ const INITIAL_STATE: FormState = {
   options: [],
   formulaSource: "",
 };
-
-type FormulaLocalState =
-  | { kind: "empty" }
-  | { kind: "ok"; ast: FormulaAST; deps: ReadonlyArray<string> }
-  | { kind: "parse_error"; message: string; offset: number }
-  | { kind: "resource_limit"; limit: string; actual: number; max: number }
-  | { kind: "unsupported_function"; name: string }
-  | { kind: "missing_ref"; display_name: string };
-
-function parseFormulaSource(
-  source: string,
-  registry: ReadonlyArray<FieldRegistryEntry>,
-): FormulaLocalState {
-  if (source.trim() === "") return { kind: "empty" };
-  let ast: FormulaAST;
-  try {
-    ast = parse(source);
-  } catch (err) {
-    if (err instanceof FormulaParseError) {
-      return { kind: "parse_error", message: err.message, offset: err.offset };
-    }
-    if (err instanceof FormulaResourceLimitError) {
-      return {
-        kind: "resource_limit",
-        limit: err.limit_name,
-        actual: err.actual,
-        max: err.max_value,
-      };
-    }
-    if (err instanceof FormulaUnsupportedFunctionError) {
-      return { kind: "unsupported_function", name: err.function_name };
-    }
-    throw err;
-  }
-  let resolved: FormulaAST;
-  try {
-    resolved = resolveRefs(ast, registry);
-  } catch (err) {
-    if (err instanceof FormulaMissingRefError) {
-      return { kind: "missing_ref", display_name: err.display_name };
-    }
-    throw err;
-  }
-  return { kind: "ok", ast: resolved, deps: collectFieldRefs(resolved) };
-}
-
-function formatFormulaError(state: FormulaLocalState): string | null {
-  switch (state.kind) {
-    case "empty":
-    case "ok":
-      return null;
-    case "parse_error":
-      return `Couldn't parse the formula: ${state.message} (position ${state.offset}).`;
-    case "resource_limit":
-      return `Formula exceeds ${state.limit} limit (${state.actual}/${state.max}).`;
-    case "unsupported_function":
-      return `Function '${state.name}' is not supported.`;
-    case "missing_ref":
-      return `Formula references a field that doesn't exist: ${state.display_name}.`;
-  }
-}
 
 export function AddFieldPopover({
   open,
@@ -224,11 +157,11 @@ export function AddFieldPopover({
     return true;
   }, [state.fieldType, state.options]);
 
-  const formulaState = useMemo<FormulaLocalState>(() => {
+  const formulaState = useMemo<LocalFormulaState>(() => {
     if (state.fieldType !== "formula") return { kind: "empty" };
     return parseFormulaSource(state.formulaSource, formulaFieldRegistry ?? []);
   }, [state.fieldType, state.formulaSource, formulaFieldRegistry]);
-  const formulaError = useMemo(() => formatFormulaError(formulaState), [formulaState]);
+  const formulaError = useMemo(() => formatLocalFormulaError(formulaState), [formulaState]);
   const formulaValid = state.fieldType !== "formula" || formulaState.kind === "ok";
 
   const formulaSourceInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);

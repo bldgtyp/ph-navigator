@@ -44,9 +44,9 @@ export type HeaderActionHandlers = {
   onDeleteCustomField?: (fieldKey: string) => void;
   onDuplicateCustomField?: (fieldKey: string) => void;
   onEditCustomFieldDescription?: (fieldKey: string) => void;
-  // Plan-17 P4.9 — only invoked for custom formula fields. The
-  // anchor element ride-alongs let the DataTable mount the
-  // formula-editor popover against the clicked header.
+  // Custom formula fields only. The anchor element rides along so
+  // the DataTable can mount the formula-editor popover against the
+  // clicked header.
   onEditCustomFieldFormula?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
   // The anchor is the clicked `<th>` (captured by the menu's triggerRef)
   // so the DataTable can mount the add-field popover against it.
@@ -216,18 +216,16 @@ function DataTableHeaderCell<TRow>({
       ? () => headerActions.onDeleteCustomField?.(column.fieldKey)
       : undefined;
   const onDuplicateCustomField =
-    isCustomField && isPhase2DuplicableCustomField(fieldDef) && headerActions.onDuplicateCustomField
+    isCustomField && isDuplicableCustomField(fieldDef) && headerActions.onDuplicateCustomField
       ? () => headerActions.onDuplicateCustomField?.(column.fieldKey)
       : undefined;
   const onEditCustomFieldDescription =
     isCustomField && headerActions.onEditCustomFieldDescription
       ? () => headerActions.onEditCustomFieldDescription?.(column.fieldKey)
       : undefined;
-  // Plan-17 P4.9 — the formula menu item is forwarded only on
-  // custom formula fields. `useTableSchema` synthesises formula
-  // CustomFieldDefs as FieldDef.field_type === "computed", so this
-  // gate captures every custom formula field while ignoring core
-  // computed columns (which set `read_only_schema`).
+  // Custom formula fields only. `useTableSchema` synthesises formula
+  // CustomFieldDefs as `field_type === "computed"`; this gate ignores
+  // core computed columns (which set `read_only_schema`).
   const onEditCustomFieldFormula =
     isCustomField && fieldDef?.field_type === "computed" && headerActions.onEditCustomFieldFormula
       ? () => headerActions.onEditCustomFieldFormula?.(column.fieldKey, triggerRef.current)
@@ -443,11 +441,7 @@ function HeaderRenameEditor({
   );
 }
 
-function isPhase2DuplicableCustomField(fieldDef: FieldDef | undefined): boolean {
-  // Plan-17 P4.9 unlocks `computed` (custom formula fields) — duplicate
-  // deep-copies `config.source` / `config.ast` / `config.deps`; there
-  // are no row values to copy because formula values are read-overlay
-  // only. `single_select` duplication is gated elsewhere by Phase 3.
+function isDuplicableCustomField(fieldDef: FieldDef | undefined): boolean {
   return (
     fieldDef?.field_type === "text" ||
     fieldDef?.field_type === "number" ||

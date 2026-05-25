@@ -11,19 +11,14 @@ import {
 } from "react";
 import {
   COMPUTED_ERROR_MESSAGES,
-  FormulaMissingRefError,
-  FormulaParseError,
-  FormulaResourceLimitError,
-  FormulaUnsupportedFunctionError,
   SOURCE_LENGTH_MAX,
-  collectFieldRefs,
   createFuse,
   evaluate,
-  parse,
-  resolveRefs,
+  formatLocalFormulaError,
+  parseFormulaSource,
   type EvalResult,
   type FieldRegistryEntry,
-  type FormulaAST,
+  type LocalFormulaState,
 } from "../lib/formula";
 import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
@@ -62,15 +57,6 @@ export type FormulaEditorPopoverProps = {
   onSubmit: (payload: FormulaEditorSubmitPayload) => Promise<void>;
 };
 
-type LocalParseState =
-  | { kind: "empty" }
-  | { kind: "ok"; ast: FormulaAST; deps: ReadonlyArray<string> }
-  | { kind: "missing_ref"; display_name: string }
-  | { kind: "cycle"; field_id: string }
-  | { kind: "parse_error"; message: string; offset: number }
-  | { kind: "resource_limit"; limit: string; actual: number; max: number }
-  | { kind: "unsupported_function"; name: string };
-
 export function FormulaEditorPopover({
   open,
   onOpenChange,
@@ -107,43 +93,10 @@ export function FormulaEditorPopover({
     return () => window.clearTimeout(handle);
   }, [open]);
 
-  const localState = useMemo<LocalParseState>(() => {
-    if (source.trim() === "") return { kind: "empty" };
-    let ast: FormulaAST;
-    try {
-      ast = parse(source);
-    } catch (err) {
-      if (err instanceof FormulaParseError) {
-        return { kind: "parse_error", message: err.message, offset: err.offset };
-      }
-      if (err instanceof FormulaResourceLimitError) {
-        return {
-          kind: "resource_limit",
-          limit: err.limit_name,
-          actual: err.actual,
-          max: err.max_value,
-        };
-      }
-      if (err instanceof FormulaUnsupportedFunctionError) {
-        return { kind: "unsupported_function", name: err.function_name };
-      }
-      throw err;
-    }
-    let resolved: FormulaAST;
-    try {
-      resolved = resolveRefs(ast, fieldRegistry);
-    } catch (err) {
-      if (err instanceof FormulaMissingRefError) {
-        return { kind: "missing_ref", display_name: err.display_name };
-      }
-      throw err;
-    }
-    const deps = collectFieldRefs(resolved);
-    if (deps.includes(fieldDef.id)) {
-      return { kind: "cycle", field_id: fieldDef.id };
-    }
-    return { kind: "ok", ast: resolved, deps };
-  }, [source, fieldRegistry, fieldDef.id]);
+  const localState = useMemo<LocalFormulaState>(
+    () => parseFormulaSource(source, fieldRegistry, { excludeSelfRefId: fieldDef.id }),
+    [source, fieldRegistry, fieldDef.id],
+  );
 
   const previewResult = useMemo<EvalResult | null>(() => {
     if (localState.kind !== "ok") return null;
@@ -152,7 +105,7 @@ export function FormulaEditorPopover({
     return evaluate(localState.ast, accessor, { fuse: createFuse() });
   }, [localState, focusedRow]);
 
-  const localErrorMessage = useMemo(() => formatLocalError(localState), [localState]);
+  const localErrorMessage = useMemo(() => formatLocalFormulaError(localState), [localState]);
   const canSubmit = localState.kind === "ok" && !pending;
 
   // The popover may close between insertion and the next animation
@@ -341,7 +294,7 @@ export function FormulaEditorPopover({
 
 type FormulaPreviewPanelProps = {
   labelId: string;
-  localState: LocalParseState;
+  localState: LocalFormulaState;
   localErrorMessage: string | null;
   focusedRow: FormulaEditorFocusedRow | null;
   previewResult: EvalResult | null;
@@ -370,7 +323,7 @@ function FormulaPreviewPanel({
 type PreviewPanel = { modifier: string | null; body: React.ReactNode };
 
 function previewPanelContent(
-  localState: LocalParseState,
+  localState: LocalFormulaState,
   localErrorMessage: string | null,
   focusedRow: FormulaEditorFocusedRow | null,
   previewResult: EvalResult | null,
@@ -424,24 +377,6 @@ function formatPreviewValue(value: string | number | boolean | null): string {
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") return String(value);
   return value;
-}
-
-function formatLocalError(state: LocalParseState): string | null {
-  switch (state.kind) {
-    case "empty":
-    case "ok":
-      return null;
-    case "parse_error":
-      return `Couldn't parse the formula: ${state.message} (position ${state.offset}).`;
-    case "resource_limit":
-      return `Formula exceeds ${state.limit} limit (${state.actual}/${state.max}). Simplify the expression and try again.`;
-    case "unsupported_function":
-      return `Function '${state.name}' is not supported.`;
-    case "missing_ref":
-      return `Formula references a field that doesn't exist in this table: ${state.display_name}.`;
-    case "cycle":
-      return "This formula references itself, which would create a cycle.";
-  }
 }
 
 function joinClassNames(...parts: ReadonlyArray<string | false | null | undefined>): string {

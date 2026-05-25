@@ -149,8 +149,8 @@ function customFieldToFieldDef(
       result_type: resultType,
     };
     // Route filter / sort / aggregation through the existing computed
-    // catalogue — number-typed formulas get the number operator set;
-    // every other formula falls back to text (plan-17 P4.9 wire-up).
+    // catalogue: number-typed formulas use the number operator set,
+    // every other formula falls back to text.
     fieldDef.computed_type = resultType === "number" ? "number" : "text";
   }
   return fieldDef;

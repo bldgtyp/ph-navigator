@@ -68,6 +68,7 @@ export {
   resolveColumnWidth,
   sumColumnWidths,
 } from "./lib/columnWidths";
+export type { FieldRegistryEntry } from "./lib/formula";
 export { emptyViewState } from "./types";
 export type {
   BuildEmptyRow,
@@ -79,7 +80,6 @@ export type {
   FieldOption,
   FilterCondition,
   FilterOperator,
-  FormulaFieldRegistryEntry,
   GroupRule,
   RowDeletePayload,
   RowInsertPayload,
