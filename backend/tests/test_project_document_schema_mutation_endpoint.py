@@ -58,10 +58,7 @@ def _draft_rooms_url(project_id: object, version_id: object) -> str:
 
 
 def _mutate_url(project_id: object, version_id: object) -> str:
-    return (
-        f"/api/v1/projects/{project_id}/versions/{version_id}"
-        f"/draft/tables/rooms/custom-fields:mutate"
-    )
+    return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/rooms/custom-fields:mutate"
 
 
 def _save_as_url(project_id: object, version_id: object) -> str:
@@ -316,9 +313,7 @@ def test_post_schema_mutation_rejects_change_type_in_phase_2(
         "kind": "changeType",
         "table_key": "rooms",
         "field_id": "cf_a",
-        "after": _new_field_payload(
-            cf_id="cf_a", display_name="A", field_type=CustomFieldType.number
-        ),
+        "after": _new_field_payload(cf_id="cf_a", display_name="A", field_type=CustomFieldType.number),
         "cell_writes": [],
         "expected_schema_fingerprint": new_fp,
     }

@@ -1,22 +1,24 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 
-// Destructive-action confirm dialog for the toolbar row-delete gesture
-// (Phase 2 §4.6). Default focus is Cancel — same pattern as the
-// existing RoomModal delete confirm and matching US-Builder-Tables
-// criterion 10 (no name retyping).
-export type ConfirmRowDeleteDialogProps = {
+// Default focus lands on Cancel — matches the existing RoomModal
+// delete confirm and US-Builder-Tables criterion 10 (no name retype).
+export type ConfirmDestructiveDialogProps = {
   open: boolean;
-  count: number;
+  title: string;
+  description: string;
+  confirmLabel: string;
   onCancel: () => void;
   onConfirm: () => void;
 };
 
-export function ConfirmRowDeleteDialog({
+export function ConfirmDestructiveDialog({
   open,
-  count,
+  title,
+  description,
+  confirmLabel,
   onCancel,
   onConfirm,
-}: ConfirmRowDeleteDialogProps) {
+}: ConfirmDestructiveDialogProps) {
   return (
     <AlertDialog.Root
       open={open}
@@ -27,11 +29,9 @@ export function ConfirmRowDeleteDialog({
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="data-table-alert-overlay" />
         <AlertDialog.Content className="data-table-alert-content">
-          <AlertDialog.Title className="data-table-alert-title">
-            {count === 1 ? "Delete 1 row?" : `Delete ${count} rows?`}
-          </AlertDialog.Title>
+          <AlertDialog.Title className="data-table-alert-title">{title}</AlertDialog.Title>
           <AlertDialog.Description className="data-table-alert-description">
-            This cannot be undone from a saved version. You can ⌘Z to restore within this session.
+            {description}
           </AlertDialog.Description>
           <div className="data-table-alert-actions">
             <AlertDialog.Cancel asChild>
@@ -41,7 +41,7 @@ export function ConfirmRowDeleteDialog({
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
               <button type="button" className="danger-button" onClick={onConfirm}>
-                Delete
+                {confirmLabel}
               </button>
             </AlertDialog.Action>
           </div>

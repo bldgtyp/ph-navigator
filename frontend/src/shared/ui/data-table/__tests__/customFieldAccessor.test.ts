@@ -1,9 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  getCustomValue,
-  isCustomFieldKey,
-  setCustomValue,
-} from "../lib/customFieldAccessor";
+import { getCustomValue, isCustomFieldKey, setCustomValue } from "../lib/customFieldAccessor";
 
 describe("customFieldAccessor", () => {
   test("isCustomFieldKey detects the cf_ prefix", () => {

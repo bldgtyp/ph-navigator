@@ -1,0 +1,188 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useRef, type RefObject } from "react";
+import { describe, expect, test, vi } from "vitest";
+import { HeaderContextMenu, type HeaderContextMenuProps } from "../components/HeaderContextMenu";
+import type { FieldDef } from "../types";
+
+// Wraps the menu in a real `<button>` trigger so the `triggerRef`
+// effect can attach `contextmenu` / `keydown` listeners just like it
+// would in production. The wrapper exposes both the trigger and the
+// ref so individual tests can dispatch events against the same node
+// the menu listens on.
+
+type RenderArgs = Partial<
+  Omit<HeaderContextMenuProps, "fieldDef" | "triggerRef">
+> & {
+  fieldDef?: FieldDef;
+};
+
+function Wrapper(props: RenderArgs) {
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const customField: FieldDef = {
+    field_key: "cf_notes",
+    field_type: "text",
+    display_name: "Notes",
+  };
+  const fieldDef = props.fieldDef ?? customField;
+  return (
+    <>
+      <button ref={triggerRef} type="button" data-testid="header-trigger">
+        {fieldDef.display_name}
+      </button>
+      <HeaderContextMenu
+        fieldDef={fieldDef}
+        triggerRef={triggerRef as RefObject<HTMLElement | null>}
+        isViewer={props.isViewer ?? false}
+        onSortAsc={props.onSortAsc ?? vi.fn()}
+        onSortDesc={props.onSortDesc ?? vi.fn()}
+        onGroupBy={props.onGroupBy ?? vi.fn()}
+        onHide={props.onHide ?? vi.fn()}
+        onDeleteField={props.onDeleteField}
+        onInsertFieldLeft={props.onInsertFieldLeft}
+        onInsertFieldRight={props.onInsertFieldRight}
+      />
+    </>
+  );
+}
+
+function openViaContextMenu() {
+  const trigger = screen.getByTestId("header-trigger");
+  fireEvent.contextMenu(trigger, { clientX: 100, clientY: 50 });
+}
+
+describe("HeaderContextMenu", () => {
+  test("right-click on a core-field header opens menu with view-state items only", () => {
+    const coreField: FieldDef = {
+      field_key: "name",
+      field_type: "text",
+      display_name: "Name",
+      read_only_schema: true,
+    };
+    render(<Wrapper fieldDef={coreField} onDeleteField={vi.fn()} />);
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).toEqual(["Sort A → Z", "Sort Z → A", "Group by this field", "Hide field"]);
+    expect(items).not.toContain("Delete field");
+  });
+
+  test("right-click on a custom-field header shows view-state items AND Delete field", () => {
+    render(<Wrapper onDeleteField={vi.fn()} />);
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).toEqual([
+      "Sort A → Z",
+      "Sort Z → A",
+      "Group by this field",
+      "Hide field",
+      "Delete field",
+    ]);
+  });
+
+  test("viewer mode never opens the menu (browser default surfaces instead)", () => {
+    render(<Wrapper isViewer onDeleteField={vi.fn()} />);
+    openViaContextMenu();
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("menuitem")).toBeNull();
+  });
+
+  test("Shift+F10 on the trigger opens the menu", () => {
+    render(<Wrapper onDeleteField={vi.fn()} />);
+    const trigger = screen.getByTestId("header-trigger");
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "F10", shiftKey: true });
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getAllByRole("menuitem").length).toBeGreaterThan(0);
+  });
+
+  test("ContextMenu key opens the menu", () => {
+    render(<Wrapper onDeleteField={vi.fn()} />);
+    const trigger = screen.getByTestId("header-trigger");
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "ContextMenu" });
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
+  test("clicking Delete field invokes the onDeleteField callback and closes the menu", () => {
+    const onDeleteField = vi.fn();
+    render(<Wrapper onDeleteField={onDeleteField} />);
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete field" }));
+    expect(onDeleteField).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  test("ArrowDown / ArrowUp move focus across items; Escape closes the menu", () => {
+    render(<Wrapper onDeleteField={vi.fn()} />);
+    openViaContextMenu();
+    const menu = screen.getByRole("menu");
+    // The first item gets focus on open; ArrowDown shifts to the
+    // second. Active focus reflects the visible focus indicator users
+    // see when driving via keyboard.
+    fireEvent.keyDown(menu, { key: "ArrowDown" });
+    fireEvent.keyDown(menu, { key: "ArrowDown" });
+    // Items 0,1,2 = Sort A→Z, Sort Z→A, Group by — focus index 2.
+    expect(document.activeElement?.textContent).toBe("Group by this field");
+    fireEvent.keyDown(menu, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  test("Insert field left / right appear on both core and custom fields when wired", () => {
+    const onInsertFieldLeft = vi.fn();
+    const onInsertFieldRight = vi.fn();
+    const coreField: FieldDef = {
+      field_key: "name",
+      field_type: "text",
+      display_name: "Name",
+      read_only_schema: true,
+    };
+    render(
+      <Wrapper
+        fieldDef={coreField}
+        onInsertFieldLeft={onInsertFieldLeft}
+        onInsertFieldRight={onInsertFieldRight}
+      />,
+    );
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).toEqual([
+      "Sort A → Z",
+      "Sort Z → A",
+      "Group by this field",
+      "Hide field",
+      "Insert field left",
+      "Insert field right",
+    ]);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Insert field right" }));
+    expect(onInsertFieldRight).toHaveBeenCalledTimes(1);
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Insert field left" }));
+    expect(onInsertFieldLeft).toHaveBeenCalledTimes(1);
+  });
+
+  test("each view-state item routes to its callback", () => {
+    const onSortAsc = vi.fn();
+    const onSortDesc = vi.fn();
+    const onGroupBy = vi.fn();
+    const onHide = vi.fn();
+    render(
+      <Wrapper
+        onSortAsc={onSortAsc}
+        onSortDesc={onSortDesc}
+        onGroupBy={onGroupBy}
+        onHide={onHide}
+      />,
+    );
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sort A → Z" }));
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sort Z → A" }));
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Group by this field" }));
+    openViaContextMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Hide field" }));
+    expect(onSortAsc).toHaveBeenCalledTimes(1);
+    expect(onSortDesc).toHaveBeenCalledTimes(1);
+    expect(onGroupBy).toHaveBeenCalledTimes(1);
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+});

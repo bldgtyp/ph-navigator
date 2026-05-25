@@ -31,6 +31,7 @@ export type SortableHeaderCellProps = {
   fieldEditable: boolean;
   fieldEditorOpen: boolean;
   isPickedUp?: boolean;
+  schemaLocked?: boolean;
   onMouseDown?: (event: ReactMouseEvent<HTMLElement>) => void;
   onDoubleClick?: (event: ReactMouseEvent<HTMLElement>) => void;
   onKeyDown?: (event: ReactKeyboardEvent<HTMLTableCellElement>) => void;
@@ -47,6 +48,7 @@ export function SortableHeaderCell({
   fieldEditable,
   fieldEditorOpen,
   isPickedUp = false,
+  schemaLocked = false,
   onMouseDown,
   onDoubleClick,
   onKeyDown,
@@ -86,6 +88,7 @@ export function SortableHeaderCell({
       data-draggable={isPrimary ? undefined : "true"}
       data-dragging={sortable.isDragging ? "true" : undefined}
       data-picked-up={isPickedUp ? "true" : undefined}
+      data-schema-locked={schemaLocked ? "true" : undefined}
       aria-grabbed={isPickedUp ? true : undefined}
       className={className}
       onMouseDown={onMouseDown}

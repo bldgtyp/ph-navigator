@@ -352,8 +352,7 @@ class ProjectDocumentV1(BaseModel):
             if normalized_name in name_seen:
                 existing = name_seen[normalized_name]
                 raise ValueError(
-                    f"Duplicate field name in rooms: {custom_field.display_name!r} "
-                    f"collides with {existing!r}"
+                    f"Duplicate field name in rooms: {custom_field.display_name!r} collides with {existing!r}"
                 )
             name_seen[normalized_name] = custom_field.display_name
 

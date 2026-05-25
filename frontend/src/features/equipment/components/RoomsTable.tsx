@@ -33,6 +33,8 @@ export function RoomsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  onDeleteCustomField,
+  onAddCustomField,
 }: {
   roomsSlice: RoomsSlice;
   // Plan-14 P1.4: produced by the parent's single `useTableSchema`
@@ -50,6 +52,8 @@ export function RoomsTable({
   overflowMenuActions?: DataTableProps<RoomRow>["overflowMenuActions"];
   footerAction?: DataTableProps<RoomRow>["footerAction"];
   onResetView?: DataTableProps<RoomRow>["onResetView"];
+  onDeleteCustomField?: DataTableProps<RoomRow>["onDeleteCustomField"];
+  onAddCustomField?: DataTableProps<RoomRow>["onAddCustomField"];
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
   const { fieldDefs, customFields } = tableSchema;
@@ -65,8 +69,7 @@ export function RoomsTable({
           id: custom.id,
           fieldKey: custom.id,
           header: custom.display_name,
-          accessor: (room) =>
-            fieldDef ? getCustomValue(room, fieldDef) ?? null : null,
+          accessor: (room) => (fieldDef ? (getCustomValue(room, fieldDef) ?? null) : null),
         };
       }),
     [customFields, fieldDefByKey],
@@ -160,6 +163,8 @@ export function RoomsTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      onDeleteCustomField={onDeleteCustomField}
+      onAddCustomField={onAddCustomField}
     />
   );
 }

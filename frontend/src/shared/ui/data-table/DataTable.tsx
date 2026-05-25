@@ -49,8 +49,10 @@ import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
 import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
-import { ConfirmRowDeleteDialog } from "./components/ConfirmRowDeleteDialog";
+import { AddFieldPopover } from "./components/AddFieldPopover";
+import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
+import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
   AxisRoleSubset,
   CellCoord,
@@ -84,6 +86,8 @@ export function DataTable<TRow>({
   overflowMenuActions,
   footerAction,
   onResetView,
+  onDeleteCustomField,
+  onAddCustomField,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
   // Hide-fields panel needs hidden columns too, so users can toggle
@@ -585,6 +589,164 @@ export function DataTable<TRow>({
     },
     [onViewChange, view],
   );
+
+  const handleHeaderSort = useCallback(
+    (fieldKey: string, direction: "asc" | "desc") => {
+      const head = view.sort[0];
+      if (head && head.fieldKey === fieldKey && head.direction === direction) return;
+      onViewChange({
+        ...view,
+        sort: [{ fieldKey, direction }, ...view.sort.filter((rule) => rule.fieldKey !== fieldKey)],
+      });
+    },
+    [onViewChange, view],
+  );
+  const handleHeaderGroupBy = useCallback(
+    (fieldKey: string) => {
+      if (view.group.some((rule) => rule.fieldKey === fieldKey)) return;
+      onViewChange({
+        ...view,
+        group: [...view.group, { fieldKey, direction: "asc" }],
+      });
+    },
+    [onViewChange, view],
+  );
+  const handleHeaderHide = useCallback(
+    (fieldKey: string) => {
+      if (view.hiddenColumns.includes(fieldKey)) return;
+      onViewChange({ ...view, hiddenColumns: [...view.hiddenColumns, fieldKey] });
+    },
+    [onViewChange, view],
+  );
+
+  const [pendingDeleteFieldKey, setPendingDeleteFieldKey] = useState<string | null>(null);
+  const pendingDeleteFieldDef = pendingDeleteFieldKey
+    ? fieldDefByKey.get(pendingDeleteFieldKey)
+    : undefined;
+  // Counts only while the dialog is open so an unrelated cell write
+  // (which reidentifies `rows`) doesn't drag a per-row scan onto the
+  // hot path.
+  const pendingDeleteRowCount = useMemo(() => {
+    if (pendingDeleteFieldKey === null || !pendingDeleteFieldDef) return 0;
+    let count = 0;
+    for (const row of rows) {
+      const value = getCustomValue(
+        row as { custom?: Record<string, unknown> | null | undefined },
+        pendingDeleteFieldDef,
+      );
+      if (value !== undefined && value !== null && value !== "") count += 1;
+    }
+    return count;
+  }, [pendingDeleteFieldKey, pendingDeleteFieldDef, rows]);
+  const requestDeleteCustomField = useCallback((fieldKey: string) => {
+    setPendingDeleteFieldKey(fieldKey);
+  }, []);
+  const confirmDeleteCustomField = useCallback(async () => {
+    if (!pendingDeleteFieldKey || !onDeleteCustomField) {
+      setPendingDeleteFieldKey(null);
+      return;
+    }
+    const fieldKey = pendingDeleteFieldKey;
+    setPendingDeleteFieldKey(null);
+    try {
+      await onDeleteCustomField(fieldKey);
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Could not delete field.");
+    }
+  }, [onDeleteCustomField, pendingDeleteFieldKey]);
+  const addFieldEnabled = !readOnly && Boolean(onAddCustomField);
+  type AddFieldPopoverState = {
+    anchorElement: HTMLElement | null;
+    insertAfterFieldKey: string | null;
+  };
+  const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
+  const tailCellRef = useRef<HTMLTableCellElement | null>(null);
+  const [pendingFocusFieldKey, setPendingFocusFieldKey] = useState<string | null>(null);
+
+  const openAddFieldPopover = useCallback(
+    (anchor: HTMLElement | null, insertAfterFieldKey: string | null) => {
+      if (!addFieldEnabled || !anchor) return;
+      setAddFieldPopover({ anchorElement: anchor, insertAfterFieldKey });
+    },
+    [addFieldEnabled],
+  );
+
+  const requestInsertFieldRight = useCallback(
+    (fieldKey: string, anchorElement: HTMLElement | null) => {
+      if (!addFieldEnabled) return;
+      openAddFieldPopover(anchorElement, fieldKey);
+    },
+    [addFieldEnabled, openAddFieldPopover],
+  );
+  const requestInsertFieldLeft = useCallback(
+    (fieldKey: string, anchorElement: HTMLElement | null) => {
+      if (!addFieldEnabled) return;
+      // "Insert left of column N" = "insert right of column N-1" once
+      // the visible order is taken into account. When N is the first
+      // visible column, there is no anchor (the new field falls at
+      // position 0 of the visible order; the consumer collapses that
+      // to a null backend `insert_after_field_id`).
+      const index = visibleColumnDefs.findIndex((column) => column.fieldKey === fieldKey);
+      const previous = index > 0 ? (visibleColumnDefs[index - 1]?.fieldKey ?? null) : null;
+      openAddFieldPopover(anchorElement, previous);
+    },
+    [addFieldEnabled, openAddFieldPopover, visibleColumnDefs],
+  );
+
+  const handleAddFieldSubmit = useCallback(
+    async (request: import("./components/AddFieldPopover").AddCustomFieldRequest) => {
+      if (!onAddCustomField) return;
+      const { newFieldKey } = await onAddCustomField(request);
+      setPendingFocusFieldKey(newFieldKey);
+    },
+    [onAddCustomField],
+  );
+
+  // Once the consumer's refetch reidentifies fieldDefs and the new
+  // column lands in the visible set, jump the selection to row 0 of
+  // that column and refocus the grid (US-CF-2 criterion 4). One-shot —
+  // clears immediately after firing.
+  useEffect(() => {
+    if (!pendingFocusFieldKey) return;
+    const target = visibleColumnDefs.findIndex(
+      (column) => column.fieldKey === pendingFocusFieldKey,
+    );
+    if (target < 0) return;
+    const firstRowId = rowIds[0];
+    if (firstRowId !== undefined) {
+      selection.setActive({ rowId: firstRowId, fieldKey: pendingFocusFieldKey });
+    }
+    setPendingFocusFieldKey(null);
+    wrapperRef.current?.focus({ preventScroll: true });
+  }, [pendingFocusFieldKey, visibleColumnDefs, rowIds, selection]);
+
+  const openAddFieldFromTail = useCallback(() => {
+    if (!addFieldEnabled) return;
+    const lastVisible = visibleColumnDefs[visibleColumnDefs.length - 1] ?? null;
+    openAddFieldPopover(tailCellRef.current, lastVisible?.fieldKey ?? null);
+  }, [addFieldEnabled, openAddFieldPopover, visibleColumnDefs]);
+
+  const headerActions = useMemo(
+    () => ({
+      onSortAsc: (fieldKey: string) => handleHeaderSort(fieldKey, "asc"),
+      onSortDesc: (fieldKey: string) => handleHeaderSort(fieldKey, "desc"),
+      onGroupBy: handleHeaderGroupBy,
+      onHide: handleHeaderHide,
+      onDeleteCustomField: onDeleteCustomField ? requestDeleteCustomField : undefined,
+      onInsertFieldLeft: addFieldEnabled ? requestInsertFieldLeft : undefined,
+      onInsertFieldRight: addFieldEnabled ? requestInsertFieldRight : undefined,
+    }),
+    [
+      handleHeaderSort,
+      handleHeaderGroupBy,
+      handleHeaderHide,
+      onDeleteCustomField,
+      requestDeleteCustomField,
+      addFieldEnabled,
+      requestInsertFieldLeft,
+      requestInsertFieldRight,
+    ],
+  );
   // Plan 08 — header drag-to-reorder. The drag's from / to ids are both
   // visible column ids; splice them inside the full ordered id list
   // (visible + hidden, in display order) so hidden columns keep their
@@ -717,6 +879,11 @@ export function DataTable<TRow>({
     void clipboard.pasteText(tsv);
   };
 
+  const existingFieldNames = useMemo(
+    () => fieldDefs.map((fieldDef) => fieldDef.display_name),
+    [fieldDefs],
+  );
+
   const fieldEditorContext = useMemo(() => {
     if (!fieldEditorOpenForFieldKey) return null;
     const fieldDef = fieldDefByKey.get(fieldEditorOpenForFieldKey);
@@ -773,9 +940,11 @@ export function DataTable<TRow>({
           dispatchWrite={dispatchWrite}
         />
       ) : null}
-      <ConfirmRowDeleteDialog
+      <ConfirmDestructiveDialog
         open={deleteDialogOpen}
-        count={rowSelection.count}
+        title={rowSelection.count === 1 ? "Delete 1 row?" : `Delete ${rowSelection.count} rows?`}
+        description="This cannot be undone from a saved version. You can ⌘Z to restore within this session."
+        confirmLabel="Delete"
         onCancel={() => {
           setDeleteDialogOpen(false);
           focusGrid();
@@ -783,6 +952,34 @@ export function DataTable<TRow>({
         onConfirm={() => {
           setDeleteDialogOpen(false);
           void deleteSelectedRows().then(() => focusGrid());
+        }}
+      />
+      {addFieldEnabled ? (
+        <AddFieldPopover
+          open={addFieldPopover !== null}
+          onOpenChange={(next) => {
+            if (!next) {
+              setAddFieldPopover(null);
+              focusGrid();
+            }
+          }}
+          anchorElement={addFieldPopover?.anchorElement ?? null}
+          insertAfterFieldKey={addFieldPopover?.insertAfterFieldKey ?? null}
+          existingFieldNames={existingFieldNames}
+          dispatchAddField={handleAddFieldSubmit}
+        />
+      ) : null}
+      <ConfirmDestructiveDialog
+        open={pendingDeleteFieldKey !== null}
+        title={`Delete field “${pendingDeleteFieldDef?.display_name ?? ""}”?`}
+        description={`${describeDeleteImpact(pendingDeleteRowCount)} This cannot be undone from a saved version.`}
+        confirmLabel="Delete field"
+        onCancel={() => {
+          setPendingDeleteFieldKey(null);
+          focusGrid();
+        }}
+        onConfirm={() => {
+          void confirmDeleteCustomField().then(() => focusGrid());
         }}
       />
       <div className="sr-only" aria-live="polite">
@@ -834,6 +1031,9 @@ export function DataTable<TRow>({
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
                 columnDragKeyboard={columnDragKeyboard}
                 columnResize={columnResize}
+                headerActions={headerActions}
+                onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
+                tailCellRef={tailCellRef}
               />
               <GridBody
                 table={table}
@@ -889,6 +1089,13 @@ export function DataTable<TRow>({
       </DndContext>
     </div>
   );
+}
+
+function describeDeleteImpact(populatedRowCount: number): string {
+  if (populatedRowCount === 0) return "No rows currently have a value for this field.";
+  if (populatedRowCount === 1)
+    return "1 row currently has a value for this field; that value will be cleared.";
+  return `${populatedRowCount} rows currently have values for this field; those values will be cleared.`;
 }
 
 function pickFirstEditableFieldKey(

@@ -26,7 +26,10 @@ const customField = (id: string, overrides: Partial<CustomFieldDef> = {}): Custo
 
 describe("useTableSchema", () => {
   test("merges core and custom field defs in core-then-custom order", () => {
-    const customFields = [customField("cf_notes"), customField("cf_owner", { field_type: "number" })];
+    const customFields = [
+      customField("cf_notes"),
+      customField("cf_owner", { field_type: "number" }),
+    ];
     const { result } = renderHook(() =>
       useTableSchema({
         tableKey: "rooms",

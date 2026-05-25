@@ -186,9 +186,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "project_id": project_id,
                             "version_id": version_id,
                             "table_key": "rooms",
-                            "after": _new_field_payload(
-                                cf_id="cf_mcp_notes", display_name="MCP Notes"
-                            ),
+                            "after": _new_field_payload(cf_id="cf_mcp_notes", display_name="MCP Notes"),
                             "expected_schema_fingerprint": fingerprint,
                             "if_match_version": initial.json()["version_etag"],
                         },
@@ -200,9 +198,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                     assert added["created_by"] is not None
 
                     refetched = rest_client.get(_draft_rooms_url(project_id, version_id))
-                    assert [field["id"] for field in refetched.json()["custom_fields"]] == [
-                        "cf_mcp_notes"
-                    ]
+                    assert [field["id"] for field in refetched.json()["custom_fields"]] == ["cf_mcp_notes"]
 
                     # --- (2) stale-fingerprint reject → recoverability "refresh"
                     stale = await session.call_tool(
@@ -231,7 +227,8 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "version_id": version_id,
                             "table_key": "rooms",
                             "after": _new_field_payload(
-                                cf_id="cf_dup_name", display_name="Number"  # collides w/ core
+                                cf_id="cf_dup_name",
+                                display_name="Number",  # collides w/ core
                             ),
                             "expected_schema_fingerprint": fp_after_add,
                             "if_match": refetched.json()["draft_etag"],
@@ -271,9 +268,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "table_key": "rooms",
                             "field_id": "cf_mcp_notes",
                             "description": "Set via MCP.",
-                            "expected_schema_fingerprint": _fingerprint(
-                                after_rename.json()["custom_fields"]
-                            ),
+                            "expected_schema_fingerprint": _fingerprint(after_rename.json()["custom_fields"]),
                             "if_match": after_rename.json()["draft_etag"],
                         },
                     )
@@ -295,9 +290,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                                 display_name="MCP Notes (renamed) copy",
                                 description="Set via MCP.",
                             ),
-                            "expected_schema_fingerprint": _fingerprint(
-                                after_desc.json()["custom_fields"]
-                            ),
+                            "expected_schema_fingerprint": _fingerprint(after_desc.json()["custom_fields"]),
                             "if_match": after_desc.json()["draft_etag"],
                         },
                     )
@@ -329,9 +322,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                                 }
                             ],
                             "single_select_options": {
-                                "rooms.floor_level": [
-                                    {"id": "opt_g", "label": "G", "color": "#aaaaaa", "order": 0}
-                                ],
+                                "rooms.floor_level": [{"id": "opt_g", "label": "G", "color": "#aaaaaa", "order": 0}],
                                 "rooms.building_zone": [],
                             },
                             "custom_fields": after_dup.json()["custom_fields"],
@@ -346,9 +337,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "version_id": version_id,
                             "table_key": "rooms",
                             "field_id": "cf_mcp_notes_dup",
-                            "expected_schema_fingerprint": _fingerprint(
-                                populated.json()["custom_fields"]
-                            ),
+                            "expected_schema_fingerprint": _fingerprint(populated.json()["custom_fields"]),
                             "if_match": populated.json()["draft_etag"],
                         },
                     )
@@ -381,9 +370,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "version_id": version_id,
                             "table_key": "rooms",
                             "after": _new_field_payload(cf_id="cf_viewer_attempt"),
-                            "expected_schema_fingerprint": _fingerprint(
-                                fresh.json()["custom_fields"]
-                            ),
+                            "expected_schema_fingerprint": _fingerprint(fresh.json()["custom_fields"]),
                             "if_match": fresh.json()["draft_etag"],
                         },
                     )

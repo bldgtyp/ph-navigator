@@ -188,9 +188,7 @@ export function buildDuplicateFieldMutation(args: BuildDuplicateFieldArgs): Dupl
   assertCustomFieldId(args.sourceFieldId, "duplicateField.sourceFieldId");
   assertCustomFieldDef(args.newField, "duplicateField.after");
   if (args.newField.id === args.sourceFieldId) {
-    throw new SchemaMutationBuildError(
-      "duplicateField target id must differ from the source id.",
-    );
+    throw new SchemaMutationBuildError("duplicateField target id must differ from the source id.");
   }
   return {
     kind: "duplicateField",

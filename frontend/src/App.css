@@ -13,6 +13,10 @@
   --accent-edge: color-mix(in oklab, var(--accent) 60%, transparent);
   --gutter-width: 42px;
   --bg-table-outside: color-mix(in oklab, var(--accent) 4%, var(--bg-page));
+  /* Left-edge tint on header cells with `read_only_schema` (core +
+     system custom fields). User custom fields render without the
+     accent so editors can tell which columns are schema-mutable. */
+  --phn-header-border-locked: color-mix(in oklab, var(--accent) 35%, transparent);
 }
 
 * {
@@ -1885,6 +1889,159 @@ button:disabled {
   background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
 }
 
+.data-table-add-field-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.data-table-add-field-button:hover,
+.data-table-add-field-button:focus-visible {
+  color: var(--accent-text);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+  outline: none;
+}
+
+.data-table-add-field-popover {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: var(--shadow-popover, 0 8px 24px rgba(0, 0, 0, 0.12));
+  padding: 12px;
+  min-width: 280px;
+  max-width: 360px;
+  z-index: 50;
+}
+
+.data-table-add-field-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-table-add-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table-add-field-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-strong);
+}
+
+.data-table-add-field-input:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.data-table-add-field-inline-error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.data-table-add-field-types {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.data-table-add-field-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.data-table-add-field-type-pill {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  color: var(--text-strong);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.data-table-add-field-type-pill[data-active="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+  color: var(--accent-text);
+}
+
+.data-table-add-field-type-pill[data-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.data-table-add-field-config {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-table-add-field-description-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.data-table-add-field-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.data-table-add-field-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-strong);
+}
+
+.data-table-add-field-counter {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  align-self: flex-end;
+}
+
+.data-table-add-field-error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.data-table-add-field-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 4px;
+}
+
 .data-table th,
 .data-table td {
   border-right: 1px solid var(--border-subtle);
@@ -2095,6 +2252,61 @@ button:disabled {
 .data-table-th[data-field-editable="true"]:hover .data-table-header-edit-chevron,
 .data-table-th[data-field-editor-open="true"] .data-table-header-edit-chevron {
   opacity: 1;
+}
+
+/* Locked-schema indicator, description tooltip, and header context-
+   menu trigger. Both glyphs render in viewer and editor mode. */
+.data-table-th[data-schema-locked="true"] {
+  border-left: 2px solid var(--phn-header-border-locked);
+}
+
+.data-table-header-lock {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.data-table-header-description-trigger {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: help;
+  padding: 0 2px;
+  font-size: 0.78rem;
+  line-height: 1;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-header-description-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.data-table-header-description-tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 6px 10px;
+  max-width: 280px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: 70;
+  font-family: var(--font-primary, inherit);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.data-table-column-menu-item[data-danger="true"] {
+  color: var(--phn-danger, #9b2f24);
+}
+
+.data-table-column-menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* Phase 5 §4.3: field-editor popover. Re-uses

@@ -191,9 +191,7 @@ def apply_schema_mutation_to_draft(
             base_body = validate_document(draft["body"])
             base_version_etag = draft["base_version_etag"]
 
-        next_body, audit_payload = contract.custom_fields.apply_schema_mutation(
-            base_body, mutation, user.id.hex
-        )
+        next_body, audit_payload = contract.custom_fields.apply_schema_mutation(base_body, mutation, user.id.hex)
 
         if next_body == base_body:
             # The only mutation that can no-op is `setDescription` to
@@ -236,9 +234,7 @@ def apply_schema_mutation_to_draft(
         )
 
     return (
-        contract.build_response(
-            access.project_id, version_id, "draft", version_etag, draft_etag, next_body
-        ),
+        contract.build_response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body),
         audit_payload,
     )
 
