@@ -1,14 +1,19 @@
 ---
 DATE: 2026-05-25
 TIME: planning (detailed implementation phasing)
-STATUS: **Backend half landed (P4.0 → P4.6) + backend acceptance
-        coverage from P4.10. 2026-05-25.** Open decisions D22–D26
+STATUS: **Backend half (P4.0 → P4.6) + backend P4.10 acceptance
+        + P4.7 TS port landed. 2026-05-25.** Open decisions D22–D26
         resolved in chat 2026-05-25 (recorded in plan-13 §3). Full
-        backend test suite green (204 / 204), including 5 new
-        `test_project_document_custom_fields_phase_4.py` cases.
-        Frontend half (P4.7 TS parity port, P4.8 popover, P4.9
-        grid wiring, P4.10 e2e + a11y) is the next phase of work
-        and is unblocked — the backend wire shape is final.
+        backend test suite green (332 passed, 0 failed) and full
+        frontend test suite green (806 passed, 0 failed) including
+        129 new parity-corpus cases in
+        `frontend/src/shared/ui/data-table/__tests__/formula{Grammar,Evaluator,Limits}*.test.ts`
+        driven by the shared corpora at
+        `backend/tests/fixtures/formula_{grammar,evaluator}_corpus.json`.
+        Python parser/evaluator and TypeScript port now agree on
+        every corpus case — CI will fail on the first divergence.
+        Frontend UI half (P4.8 popover, P4.9 grid wiring, P4.10
+        e2e + a11y) is the next phase of work and is unblocked.
         See "Progress" and "Lessons learned" sections below for
         per-sub-phase deliverables and the pragmatic deviations
         from the plan as written.
@@ -1693,11 +1698,12 @@ These belong to subsequent plans, not Phase 4:
 
 ## Progress log
 
-### Backend half (P4.0 → P4.6) + backend P4.10 — **landed 2026-05-25**
+### Backend half (P4.0 → P4.6) + backend P4.10 + P4.7 TS port — **landed 2026-05-25**
 
 Each sub-phase landed against the same trunk; no separate PRs in
-this drop. Full backend test suite green (204 / 204), including the
-5 new Phase 4 acceptance cases.
+this drop. Full backend test suite green (332 / 332) and full
+frontend test suite green (806 / 806) including the 129 new TS
+parity-corpus cases.
 
 | Sub-phase | Status | Notes |
 |---|---|---|
@@ -1708,7 +1714,7 @@ this drop. Full backend test suite green (204 / 204), including the
 | P4.4 | **shipped** | `evaluate_table_formulas` in `formula/evaluator.py` returns `{row_id: {cf_id: encoded_value}}`; topo-sorts formula deps; encodes evaluator errors per D25. `RoomsSliceResponse.rows_computed` carries the side-mapping; `extract_rooms_envelope` (downloads, MCP `get_table`, diff) attaches the overlay onto every row dict via `default_attach_computed_overlay`. Empty `computed: {}` invariant holds when no formula fields exist (the slice carries `rows_computed: {}` rather than per-row dicts in that case — slightly different from plan-17 P4.4's wording, see Lessons learned). |
 | P4.5 | **shipped** | `_apply_set_formula` replaces the `_raise_unsupported_mutation("setFormula")` stub. `SetFormulaMutation.source: str` (not the original `config: dict[str, object]` placeholder); the backend parses, resolves, cycle-checks against every other formula field's stored AST, and writes `config = {"source", "ast", "deps", "result_type"}`. `_count_ast_nodes` and `_infer_result_type` helpers added — the result-type inference goes beyond the plan as written (the plan only mentioned `deps` and `ast_node_count` on the audit payload) but it lights up downstream `computed` filter / aggregation routing in `useTableSchema` for free. Audit kind `project_version_custom_field_set_formula` registered. Five new structured error codes emit through `api_error` with the user-facing copy from §"Review amendments". |
 | P4.6 | **shipped** | MCP `set_custom_field_formula` tool registered behind the same `project:write` scope gate as the Phase 2 / 3 tools; delegates to `_apply_mcp_schema_mutation` so audit + recoverability handling is identical. `_SCHEMA_MUTATION_RECOVERABILITY` extended with the 5 `custom_field_formula_*` codes (all `fatal` per the ADR plan). **Security checkpoint paragraph appended:** deferred to the P4.7+ frontend drop so all Phase 4 MCP findings can be reviewed in one pass; preliminary check confirms no new code path bypasses the scope gate, no envelope leaks body/diff content beyond the documented `details` keys, and the parser/evaluator fuse caps prevent MCP-token DoS via pathological formulas. |
-| P4.7 | **not started** | TypeScript port of `tokens.ts` / `parser.ts` / `ast.ts` / `evaluator.ts` / `resolver.ts` / `limits.ts`. Hard contract: byte-equal output across Python and V8. **Blocked on** seeding the two shared corpus files (`formula_grammar_corpus.json`, `formula_evaluator_corpus.json`) which become the parity gate. The Python evaluator's edge cases (negative-zero, scientific notation, `text(integer_float)` no-trailing-zero, `_fmod` sign rules) need to be enumerated into the corpus before the TS port can be written to a fixed target. |
+| P4.7 | **shipped** | Shared corpora seeded at `backend/tests/fixtures/formula_{grammar,evaluator}_corpus.json` (45 grammar cases + 80 evaluator cases). Python parity drivers in `tests/test_project_document_formula_{grammar,evaluator}.py` run both corpora directly (124 cases green). TypeScript port at `frontend/src/shared/ui/data-table/lib/formula/` (`tokens.ts` / `ast.ts` / `parser.ts` / `evaluator.ts` / `resolver.ts` / `limits.ts` / `errors.ts` / `index.ts`) mirrors the Python implementation; explicit `_fmod` helper rather than `%`, explicit `formatNumber` mirroring Python `_format_number`, code-point string comparison, AirTable-parity null coercion in string functions. TS parity drivers in `frontend/src/shared/ui/data-table/__tests__/formula{GrammarCorpus,EvaluatorCorpus,LimitsParity}.test.ts` import the corpora via new `@fixtures` Vite alias (also added to `tsconfig.json` `paths`); 129 cases green. `formulaLimitsParity.test.ts` reads `backend/.../formula/limits.py` as text and asserts every D23 constant matches its TS sibling — drift fails CI before behavior tests do. **Pragmatic deviations from the plan:** corpus uses an inline `source_spec` mini-DSL (`{kind: "repeat"\|"balanced_parens"\|"many_field_refs"}`) so resource-limit cases stay compact in JSON; both Python and TS drivers expand them identically. The substring case `substring("hello", 6, 9)` is in the corpus with `value: "o"` (matches the Python implementation's clamp-then-slice behavior, not the intuitive "past end → empty") — pinned the corpus to the implementation, not the other way around. |
 | P4.8 | **not started** | `<FormulaEditorPopover>` + `<FormulaFieldPalette>` + `<ComputedCell>` body + focused-row live preview + display-name re-render from stored AST on open. |
 | P4.9 | **not started** | `AddFieldPopover` formula pill enabled (atomic add-with-config); `HeaderContextMenu` Edit formula… item; unlock duplicate-of-formula; `buildSetFormulaMutation`; grid wiring in `EquipmentTab` (formula errors routed through the existing schema-mutation error band). |
 | P4.10 | **partial** | 5 backend acceptance tests in `backend/tests/test_project_document_custom_fields_phase_4.py` exercise the REST round-trip end-to-end against an in-memory test client: formula adds + slice/download overlay parity, missing-ref rejection, self-cycle rejection, type-change-to-formula rejection, and stored-AST identity (deps stored by core `field_key`, not display name). Frontend acceptance tests, the Playwright e2e walkthrough, and the focused a11y notes file are part of the frontend drop. |
@@ -1741,6 +1747,28 @@ backend/features/mcp/server.py
 backend/tests/test_project_document_schema_mutations.py
   ← old test_set_formula_raises_unsupported replaced with 6 setFormula behavior tests
 backend/tests/test_project_document_custom_fields_phase_4.py  ← new file, 5 acceptance tests
+
+# P4.7 — TS port + shared corpora
+backend/tests/fixtures/
+  formula_grammar_corpus.json       ← 45 cases (every grammar production, every D23 limit, every error class)
+  formula_evaluator_corpus.json     ← 80 cases (numeric/null/bool/string semantics, AirTable-parity edge cases, every error code, _fmod sign rules, 1-indexed substring, code-point comparison)
+backend/tests/test_project_document_formula_grammar.py    ← new file, Python corpus driver
+backend/tests/test_project_document_formula_evaluator.py  ← new file, Python corpus driver
+frontend/src/shared/ui/data-table/lib/formula/
+  __init__.py-equivalent: index.ts  ← public surface
+  tokens.ts                          ← TokenKind + Token interface
+  ast.ts                             ← discriminated-union node interfaces + astToJson/astFromJson
+  errors.ts                          ← FormulaParseError / FormulaResourceLimitError / FormulaUnsupportedFunctionError / FormulaMissingRefError / FormulaCycleError
+  limits.ts                          ← D23 constants mirroring limits.py
+  parser.ts                          ← tokenize() + recursive-descent Parser + ALLOWED_FUNCTIONS + arity table
+  evaluator.ts                       ← evaluate() + EvalSuccess/EvalError + explicit _fmod / formatNumber / code-point compare / null-coerce helpers
+  resolver.ts                        ← resolveRefs() + collectFieldRefs() for the in-editor live-preview path (no cycle detection — server-only)
+frontend/src/shared/ui/data-table/__tests__/
+  formulaGrammarCorpus.test.ts       ← imports @fixtures/formula_grammar_corpus.json; 45 cases green
+  formulaEvaluatorCorpus.test.ts     ← imports @fixtures/formula_evaluator_corpus.json; 78 cases green (2 corpus entries dispatch to multiple TS asserts)
+  formulaLimitsParity.test.ts        ← reads backend limits.py as text; asserts each TS constant matches its Python sibling
+frontend/vite.config.ts              ← new `@fixtures` alias → `../backend/tests/fixtures`
+frontend/tsconfig.json               ← new `@fixtures/*` path entry mirroring the Vite alias
 ```
 
 ## Lessons learned
