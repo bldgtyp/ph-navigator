@@ -1044,3 +1044,298 @@ def test_duplicate_single_select_field_deep_copies_option_list() -> None:
     # Fresh ids
     assert {o.id for o in dup_options}.isdisjoint({o.id for o in src_options})
     assert audit["duplicated_option_count"] == len(src_options)
+
+
+# ---------------------------------------------------------------------------
+# editFieldBundle (plan-21 P5a.0)
+# ---------------------------------------------------------------------------
+
+
+from features.project_document.schema_mutations import EditFieldBundleMutation  # noqa: E402
+
+
+def _make_bundle_after(
+    field: CustomFieldDef,
+    *,
+    display_name: str | None = None,
+    description: str | None | object = ...,
+    field_type: CustomFieldType | None = None,
+    config: dict[str, object] | None = None,
+) -> CustomFieldDef:
+    return field.model_copy(
+        update={
+            "display_name": display_name if display_name is not None else field.display_name,
+            "description": (
+                field.description if description is ... else cast(str | None, description)
+            ),
+            "field_type": field_type or field.field_type,
+            "config": dict(field.config) if config is None else config,
+        }
+    )
+
+
+def test_edit_field_bundle_renames_and_updates_description() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_notes", display_name="Notes", description="old")
+    body = _with_field(body, field)
+    body = _with_room(body, custom={"cf_notes": "needs paint"})
+    after = _make_bundle_after(field, display_name="Punch list", description="updated")
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_notes",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    f = next_body.tables.rooms.custom_fields[0]
+    assert f.display_name == "Punch list"
+    assert f.description == "updated"
+    assert next_body.tables.rooms.rows[0].custom == {"cf_notes": "needs paint"}
+    assert audit["kind"] == "editFieldBundle"
+    changed = cast(list[str], audit["properties_changed"])
+    assert set(changed) == {"display_name", "description"}
+
+
+def test_edit_field_bundle_noop_when_diff_empty() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_notes", display_name="Notes")
+    body = _with_field(body, field)
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_notes",
+        after=_make_bundle_after(field),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert next_body == body
+    assert audit["properties_changed"] == []
+
+
+def test_edit_field_bundle_rejects_stale_fingerprint() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_notes", display_name="Notes")
+    body = _with_field(body, field)
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_notes",
+        after=_make_bundle_after(field, display_name="Renamed"),
+        expected_schema_fingerprint="stale",
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    assert excinfo.value.status_code == 409
+
+
+def test_edit_field_bundle_rejects_identity_violation() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_notes", display_name="Notes")
+    body = _with_field(body, field)
+    after = field.model_copy(update={"id": "cf_other", "display_name": "X"})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_notes",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_invalid_field_id"
+
+
+def test_edit_field_bundle_rejects_duplicate_display_name() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_a", display_name="A"))
+    body = _with_field(body, _make_custom_field("cf_b", display_name="B"))
+    target = body.tables.rooms.custom_fields[1]
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_b",
+        after=_make_bundle_after(target, display_name="a"),  # case-insensitive collision
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_duplicate_name"
+
+
+def test_edit_field_bundle_clamps_description() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_notes", display_name="Notes")
+    body = _with_field(body, field)
+    long_desc = "x" * (CUSTOM_FIELD_DESCRIPTION_MAX + 50)
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_notes",
+        after=_make_bundle_after(field, description=long_desc),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    f = next_body.tables.rooms.custom_fields[0]
+    assert f.description is not None
+    assert len(f.description) == CUSTOM_FIELD_DESCRIPTION_MAX
+
+
+def test_edit_field_bundle_changes_type_with_ack() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_v", display_name="Value", field_type=CustomFieldType.short_text)
+    body = _with_field(body, field)
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_v": "abc"})  # incompatible
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_v": "42"})
+
+    after = _make_bundle_after(field, field_type=CustomFieldType.number, config={})
+    # Without ack: should be rejected with preflight required.
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_v",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_coercion_preflight_required"
+
+    # With ack: applies, clears incompatible rows.
+    mutation_ack = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_v",
+        after=after,
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation_ack)
+    f = next_body.tables.rooms.custom_fields[0]
+    assert f.field_type is CustomFieldType.number
+    changed = cast(list[str], audit["properties_changed"])
+    assert "field_type" in changed
+    assert audit["cleared_row_count"] == 1
+
+
+def test_edit_field_bundle_rejects_forbidden_type_change() -> None:
+    # short_text -> formula is not in CONVERSION_MATRIX.
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_t", display_name="T", field_type=CustomFieldType.short_text)
+    body = _with_field(body, field)
+    after = _make_bundle_after(field, field_type=CustomFieldType.formula, config={})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_t",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_illegal_type_conversion"
+
+
+def test_edit_field_bundle_edits_options_and_sets_default() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+    field = body.tables.rooms.custom_fields[0]
+    next_options = [
+        SingleSelectOption(id="opt_a", label="A", color="#111111", order=1.0),
+        SingleSelectOption(id="opt_b", label="B", color="#222222", order=2.0),
+        SingleSelectOption(id="opt_c", label="C", color="#333333", order=3.0),
+    ]
+    after = _make_bundle_after(field, config={"default_option_id": "opt_b"})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=after,
+        next_options=next_options,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    final_field = next_body.tables.rooms.custom_fields[0]
+    assert final_field.config.get("default_option_id") == "opt_b"
+    final_options = next_body.single_select_options["rooms.cf_ss"]
+    assert [o.id for o in final_options] == ["opt_a", "opt_b", "opt_c"]
+    changed = cast(list[str], audit["properties_changed"])
+    assert "options" in changed
+    assert "default_option_id" in changed
+
+
+def test_edit_field_bundle_rejects_default_not_in_options() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+    field = body.tables.rooms.custom_fields[0]
+    after = _make_bundle_after(field, config={"default_option_id": "opt_nonexistent"})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_option_list_invalid"
+    details = cast(dict[str, object], detail["details"])
+    assert details["reason"] == "default_option_id_not_in_options"
+
+
+def test_edit_field_bundle_rejects_default_outside_single_select() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_t", display_name="T", field_type=CustomFieldType.short_text)
+    body = _with_field(body, field)
+    after = _make_bundle_after(field, config={"default_option_id": "opt_a"})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_t",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_option_list_invalid"
+
+
+def test_edit_field_bundle_rename_plus_options_plus_default_single_audit() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+    field = body.tables.rooms.custom_fields[0]
+    next_options = [
+        SingleSelectOption(id="opt_a", label="Alpha", color="#111111", order=1.0),
+        SingleSelectOption(id="opt_b", label="Beta", color="#222222", order=2.0),
+    ]
+    after = _make_bundle_after(
+        field,
+        display_name="Status (renamed)",
+        description="now with default",
+        config={"default_option_id": "opt_a"},
+    )
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=after,
+        next_options=next_options,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    final_field = next_body.tables.rooms.custom_fields[0]
+    assert final_field.display_name == "Status (renamed)"
+    assert final_field.description == "now with default"
+    assert final_field.config.get("default_option_id") == "opt_a"
+    changed = cast(list[str], audit["properties_changed"])
+    # All four properties should be present in a single audit row.
+    assert "display_name" in changed
+    assert "description" in changed
+    assert "options" in changed  # option labels changed (A->Alpha)
+    assert "default_option_id" in changed

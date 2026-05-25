@@ -130,6 +130,45 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     rooms_payload = cast(RoomsSliceReplaceRequest, payload)
     room_options = rooms_payload.single_select_options.by_option_key()
     custom_option_lists = rooms_payload.single_select_options.custom_option_lists()
+
+    # plan-21 P5a.0 — default_option_id forward fill. For any room in
+    # the incoming payload whose `id` did not exist in the previous
+    # body, pre-fill `custom.<cf_id>` for every single_select custom
+    # field that carries a `config.default_option_id` AND whose key is
+    # absent from that row's custom dict. Explicit `None` in `custom`
+    # is preserved (per R5 — paste / MCP / JSON import keeps null).
+    # Pre-existing rows are never backfilled (R6 — forward-only).
+    prior_row_ids = {room.id for room in body.tables.rooms.rows}
+    defaults_by_cf_id: dict[str, str] = {}
+    for field in rooms_payload.custom_fields:
+        if field.field_type.value != "single_select":
+            continue
+        default_raw = field.config.get("default_option_id")
+        if isinstance(default_raw, str) and default_raw:
+            defaults_by_cf_id[field.id] = default_raw
+
+    if defaults_by_cf_id:
+        filled_rooms: list[RoomRow] = []
+        any_filled = False
+        for room in rooms_payload.rooms:
+            if room.id in prior_row_ids:
+                filled_rooms.append(room)
+                continue
+            missing = {
+                cf_id: default
+                for cf_id, default in defaults_by_cf_id.items()
+                if cf_id not in room.custom
+            }
+            if not missing:
+                filled_rooms.append(room)
+                continue
+            any_filled = True
+            next_custom = dict(room.custom)
+            next_custom.update(missing)
+            filled_rooms.append(room.model_copy(update={"custom": next_custom}))
+        if any_filled:
+            rooms_payload = rooms_payload.model_copy(update={"rooms": filled_rooms})
+
     if (
         body.tables.rooms.rows == rooms_payload.rooms
         and body.tables.rooms.custom_fields == rooms_payload.custom_fields

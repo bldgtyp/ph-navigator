@@ -388,6 +388,34 @@ class ProjectDocumentV1(BaseModel):
                         f"Invalid custom value for {custom_field.display_name!r} on room {room.id}: {exc}"
                     ) from exc
 
+        # default_option_id (plan-21 P5a.0) integrity check: every
+        # single_select custom field's `config.default_option_id`,
+        # if set, must reference an option in its namespaced list.
+        # Non-single_select fields may not carry default_option_id.
+        for custom_field in custom_field_ids.values():
+            default_raw = custom_field.config.get("default_option_id")
+            if default_raw is None:
+                continue
+            if custom_field.field_type.value != "single_select":
+                raise ValueError(
+                    f"default_option_id is only valid for single_select fields "
+                    f"(field {custom_field.id!r}, type {custom_field.field_type.value!r})"
+                )
+            if not isinstance(default_raw, str):
+                raise ValueError(
+                    f"default_option_id for {custom_field.id!r} must be a string option id"
+                )
+            namespace_key = f"rooms.{custom_field.id}"
+            default_option_ids = {
+                option.id
+                for option in self.single_select_options.get(namespace_key, [])
+            }
+            if default_raw not in default_option_ids:
+                raise ValueError(
+                    f"default_option_id {default_raw!r} for {custom_field.id!r} "
+                    "does not reference an option in the field's option list"
+                )
+
         # Phase 4: formula cycle detection across the Rooms table's
         # custom formula fields. Missing refs are *silently absorbed*
         # (per plan-13 D2) — the evaluator surfaces them per-row at
