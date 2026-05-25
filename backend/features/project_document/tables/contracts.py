@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
@@ -13,6 +14,12 @@ from features.project_document.custom_fields import CustomFieldDef, CustomValue
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import ProjectDocumentSource
 from features.shared.errors import api_error
+
+if TYPE_CHECKING:
+    # Forward reference: schema_mutations.py imports this module for
+    # `CustomFieldCapability` so the typed callable on the dataclass
+    # cannot import the DTO union eagerly.
+    from features.project_document.schema_mutations import FieldSchemaMutation
 
 
 @dataclass(frozen=True)
@@ -38,7 +45,20 @@ class CustomFieldCapability:
     read_row_custom: Callable[[object], dict[str, CustomValue]]
     set_row_custom: Callable[[object, dict[str, CustomValue]], object]
     compute_schema_fingerprint: Callable[[ProjectDocumentV1], str]
-    # Phase 2 will add `apply_schema_mutation` and `validate_schema_mutation`.
+    # Plan-15 P2.1 — the schema-editor surface. Both hooks raise
+    # `api_error` from `features.shared.errors` on rejection so REST
+    # and MCP share one envelope. The `actor_user_id` on apply is
+    # stamped onto added / duplicated `CustomFieldDef.created_by`
+    # (D11; the fixture/dev path passes `None` and is never routed
+    # through here).
+    apply_schema_mutation: Callable[
+        [ProjectDocumentV1, FieldSchemaMutation, str],
+        tuple[ProjectDocumentV1, dict[str, object]],
+    ]
+    validate_schema_mutation: Callable[
+        [ProjectDocumentV1, FieldSchemaMutation],
+        None,
+    ]
 
 
 @dataclass(frozen=True)

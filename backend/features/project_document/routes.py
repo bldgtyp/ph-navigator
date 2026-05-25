@@ -23,7 +23,9 @@ from features.project_document.refresh import (
     WindowTypesRefreshReport,
     get_window_types_refresh_report,
 )
+from features.project_document.schema_mutations import FieldSchemaMutation
 from features.project_document.service import (
+    apply_schema_mutation_to_draft,
     discard_draft,
     get_draft_summary_or_read_safe,
     get_draft_table_slice,
@@ -107,6 +109,38 @@ def put_draft_table(
         if_match=if_match,
         if_match_version=if_match_version,
     )
+
+
+# Plan-15 P2.2 — typed schema-mutation endpoint. The `:mutate` URL
+# suffix keeps this distinct from the existing whole-table replace
+# PUT so the two write surfaces stay legible in the OpenAPI spec.
+# FastAPI handles the discriminated `FieldSchemaMutation` body via
+# Pydantic v2's discriminator support.
+@router.post(
+    "/draft/tables/{table_name}/custom-fields:mutate",
+    response_model=RegisteredTableResponse,
+)
+def post_schema_mutation(
+    version_id: UUID,
+    table_name: str,
+    payload: FieldSchemaMutation,
+    access: ProjectEditAccess,
+    request: Request,
+    if_match: Annotated[str | None, Header()] = None,
+    if_match_version: Annotated[str | None, Header()] = None,
+) -> Any:
+    # REST surfaces only the updated table envelope; the audit
+    # payload is consumed inside `apply_schema_mutation_to_draft`.
+    response, _ = apply_schema_mutation_to_draft(
+        version_id,
+        table_name,
+        payload,
+        access,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        request=request,
+    )
+    return response
 
 
 @router.get("/refresh/window-types", response_model=WindowTypesRefreshReport)

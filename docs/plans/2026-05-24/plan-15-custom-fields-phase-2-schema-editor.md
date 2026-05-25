@@ -1,8 +1,17 @@
 ---
 DATE: 2026-05-24
 TIME: planning (detailed implementation phasing)
-STATUS: Draft. Phase 2 of plan-13 (custom fields). Builds on the
-        completed Phase 1 envelope (plan-14): Rooms already carries
+STATUS: In progress. Phase 2 of plan-13 (custom fields). 4/8 sub-
+        phases shipped (P2.0 scaffold + ADR, P2.1 backend mutation
+        DTOs + apply service, P2.2 REST endpoint, P2.3 MCP write
+        tools). All backend Phase-2 surfaces are now live; the
+        frontend slate (P2.4–P2.7) and acceptance pass (P2.8) are
+        what remains. Next up: P2.4 — frontend `schemaMutation`
+        WriteOp + dispatcher. See **Progress log** at the bottom
+        for the latest checkpoint, what's green, and the resume
+        pointer.
+        Builds on the completed Phase 1 envelope (plan-14): Rooms
+        already carries
         `{custom_fields, rows}`, `CustomFieldDef` is closed, the
         `CustomFieldCapability` block on Rooms exposes the accessors
         Phase 2 needs, the frontend `useTableSchema` hook synthesizes
@@ -1245,6 +1254,304 @@ design).
   `@mcp.tool()` decorators if a security finding surfaces
   post-merge; the underlying service remains intact for the
   REST surface.
+
+## Progress log
+
+| Sub-phase | Status | Landed |
+|-----------|--------|--------|
+| P2.0 — Story promotion + scaffold + ADR | ✅ Done | 2026-05-24 |
+| P2.1 — Backend: `FieldSchemaMutation` DTOs + apply service | ✅ Done | 2026-05-24 |
+| P2.2 — Backend: REST schema-mutation endpoint | ✅ Done | 2026-05-24 |
+| P2.3 — Backend: MCP `*_custom_field` write tools | ✅ Done | 2026-05-24 |
+| P2.4 — Frontend: `schemaMutation` WriteOp + dispatcher | ⏭️ Next | — |
+| P2.5 — Frontend: locked indicator + tooltip + `<HeaderContextMenu>` skeleton | ⏳ Pending | — |
+| P2.6 — Frontend: add-field popover + tail `+` cell wire-up | ⏳ Pending | — |
+| P2.7 — Frontend: rename + delete + duplicate + edit-description | ⏳ Pending | — |
+| P2.8 — Exit-criteria acceptance tests + Playwright + a11y pass | ⏳ Pending | — |
+
+### Resume pointer
+
+**Next sub-phase: P2.4 — Frontend: `schemaMutation` WriteOp +
+dispatcher + `useTableSchema.mutate`** (see phase block above for
+full spec). This is the bridge between the now-live backend
+schema-mutation pipeline (REST + MCP) and the editor UI shipping in
+P2.5–P2.7. Concretely:
+
+1. Rename `WriteOp.fieldDefMutation` → `WriteOp.schemaMutation` in
+   `frontend/src/shared/ui/data-table/types.ts`. Keep the legacy
+   `before` / `after` / `cellWrites` slots on the renamed variant
+   for the single-select option editor (plan-16 / Phase 3 splits
+   that into its own kind).
+2. Add the TS `FieldSchemaMutation` discriminated union matching
+   the backend (`backend/features/project_document/schema_mutations.py`).
+3. Build the typed builder functions in
+   `frontend/src/shared/ui/data-table/lib/customFieldMutations.ts`
+   (placeholder shipped in P2.0).
+4. Add `postRoomsSchemaMutation` API client targeting
+   `POST .../draft/tables/{table_name}/custom-fields:mutate`.
+5. Extend `useTableSchema` with `mintCustomFieldId()` and the
+   `mutate(op)` helper.
+6. Wire the dispatcher into `RoomsTable`'s `onWrite` handler.
+
+No new UI in P2.4; the existing single-select option editor
+should keep working through the renamed WriteOp.
+
+### P2.0 (2026-05-24) — Story promotion + scaffold + ADR
+
+**What landed:**
+
+- `context/user-stories/32-custom-fields.md` — promoted US-CF-1,
+  US-CF-2, US-CF-3, US-CF-5, US-CF-6, US-CF-9, US-CF-11, US-CF-12,
+  US-CF-13, US-CF-14 from Draft → Phase 2 (US-CF-2 notes
+  `single_select` Phase 3 / `formula` Phase 4 deferrals).
+- `context/technical-requirements/data-table.md` — added
+  implementation note flagging the P2.4 `WriteOp.fieldDefMutation`
+  → `WriteOp.schemaMutation` rename.
+- `docs/plans/2026-05-24/adr-custom-fields-phase-2-errors.md` —
+  new ADR pinning the 8 Phase-2 structured error codes (5 active +
+  3 deferred placeholders), HTTP statuses, MCP `recoverability`
+  values, `details` keys, and user-facing message templates. The
+  P2.3 security checkpoint paragraph is a TODO slot at the bottom
+  of the ADR.
+- Backend scaffold:
+  `backend/features/project_document/schema_mutations.py` and
+  `backend/tests/test_project_document_schema_mutations.py`
+  (single `test_module_imports` smoke).
+- Frontend scaffold:
+  `frontend/src/shared/ui/data-table/components/HeaderContextMenu.tsx`,
+  `AddFieldPopover.tsx`, `CustomFieldDescriptionTooltip.tsx`, and
+  `frontend/src/shared/ui/data-table/lib/customFieldMutations.ts`
+  (all inert placeholders so subsequent PRs only touch behavior).
+
+**Gates green:** `make lint`, `make typecheck`,
+`cd frontend && pnpm tsc --noEmit`, `make test`
+(55 frontend test files / 595 frontend tests + full backend
+suite).
+
+### P2.1 (2026-05-24) — Backend: `FieldSchemaMutation` DTOs + apply service
+
+**What landed:**
+
+- `backend/features/project_document/schema_mutations.py`:
+  - Discriminated `FieldSchemaMutation` Pydantic union with 7
+    kinds — 5 active (`addField`, `renameField`, `deleteField`,
+    `duplicateField`, `setDescription`) and 2 reserved
+    (`changeType` Phase 3, `setFormula` Phase 4).
+  - `apply_schema_mutation(body, mutation, *, actor_user_id,
+    capability) -> (next_body, audit_payload)`. Runs the
+    fingerprint optimistic-concurrency gate first, then dispatches
+    on `kind`, then re-validates via `validate_document`
+    (immediate validation per save-versioning.md §8.3).
+  - Per-mutation rules: dup-name preflight (case-insensitive
+    trimmed across core + custom, structured error names the
+    offender + origin); id-collision check; `insert_after_field_id`
+    resolution; `actor_user_id` stamped onto `created_by` for
+    add/duplicate; row stripping for delete with `cleared_row_count`
+    in audit; description clamp to 280; `setDescription` accepts
+    `None` to clear.
+  - `validate_schema_mutation` hook — Phase 2 has no caller yet;
+    delegates to apply and discards so validation parity is
+    enforced by one code path.
+  - `AUDIT_KIND_BY_MUTATION` table for P2.2/P2.3 to consume.
+- `backend/features/project_document/tables/contracts.py` —
+  extended `CustomFieldCapability` with the two new callables,
+  typed via `TYPE_CHECKING` forward reference to
+  `FieldSchemaMutation` to keep contracts.py
+  schema_mutations-independent.
+- `backend/features/project_document/tables/rooms.py` — wired
+  `_apply_rooms_schema_mutation` + `_validate_rooms_schema_mutation`
+  onto `rooms_custom_fields`. **Lazy import** of
+  `schema_mutations` inside the function bodies, because
+  `tables/__init__.py` eagerly imports `rooms`, and a top-level
+  import from `schema_mutations` (which itself imports
+  `tables.contracts`) closes the cycle at `tables/__init__.py`
+  load time.
+- `backend/tests/test_project_document_schema_mutations.py` —
+  22 service-internal tests covering every accept branch and
+  every reject code from the ADR.
+
+**Gates green:** `make lint`, `make typecheck`, backend pytest
+(162 passed including the 22 new). Frontend test suite is
+unchanged in P2.1 (no frontend code touched); one pre-existing
+flake in `App.test.tsx` (status-timeline "Set CAD files received"
+button) — clean on retry.
+
+**Architectural notes for the next visitor:**
+
+- The capability callable indirection (`capability.apply_schema_mutation`)
+  is intentional. drafts.py / MCP can either call
+  `contract.custom_fields.apply_schema_mutation(...)` (delegates
+  to the generic via the Rooms-bound closure) or call
+  `schema_mutations.apply_schema_mutation(..., capability=...)`
+  directly. Both produce identical results.
+- The `validate_schema_mutation` hook has no consumer in Phase 2 —
+  it's reserved for a future LLM dry-run / preview-write surface.
+  P2.3's MCP tools call `apply_schema_mutation` via drafts.py,
+  not the validate hook.
+- `CustomFieldDef.created_by` is overwritten by
+  `actor_user_id` on add / duplicate — clients send `None` (or
+  any value, it's ignored) and the server is authoritative.
+- The dispatch is `isinstance(mutation, ...)` rather than
+  `match mutation.kind: case ...` because ty (and mypy) narrow
+  the union per-branch more reliably with isinstance. The final
+  `else` branch is defensive; the union is closed.
+- One pre-existing `HTTP_422_UNPROCESSABLE_ENTITY` deprecation
+  warning surfaces in tests (Starlette 0.36+ renamed it to
+  `_CONTENT`). Out of scope to fix in plan-15; the existing
+  `drafts.py` and `validation.py` use the same constant.
+
+### P2.2 (2026-05-24) — Backend: REST schema-mutation endpoint
+
+**What landed:**
+
+- `backend/features/project_document/drafts.py` —
+  `apply_schema_mutation_to_draft(version_id, table_name,
+  mutation, access, *, if_match, if_match_version, request)`.
+  Mirrors `replace_table_slice`'s pipeline: editor-only auth,
+  contract lookup, `custom_field_unsupported_table` 422 if the
+  table has no `CustomFieldCapability`, sanity gate on
+  `mutation.table_key == table_name`, locked-version 409, version
+  / draft ETag gating, lazy draft creation, no-op short-circuit
+  for `setDescription` to same value, fresh draft etag on
+  upsert, per-mutation audit-log row.
+- `backend/features/project_document/audit.py` —
+  `log_document_action` grew an `extra_details` kwarg that merges
+  into the base details (`project_id`, `version_id`) so the
+  schema-mutation audit_payload from P2.1 lands in
+  `user_action_log.details`.
+- `backend/features/project_document/routes.py` — new endpoint
+  `POST /api/v1/projects/{project_id}/versions/{version_id}/draft/tables/{table_name}/custom-fields:mutate`,
+  body is the discriminated `FieldSchemaMutation` Pydantic union,
+  headers `If-Match` (draft etag) and `If-Match-Version` (version
+  etag, draft-not-yet-created path), response is
+  `RegisteredTableResponse`. The `:mutate` URL suffix follows
+  REST sub-action style and keeps this distinct from
+  `PUT /draft/tables/{table_name}` in the OpenAPI spec; verified
+  via `app.openapi()`.
+- `backend/features/project_document/service.py` — re-exports
+  `apply_schema_mutation_to_draft`.
+- `backend/tests/test_project_document_schema_mutation_endpoint.py`
+  — 7 end-to-end tests:
+  - `test_post_schema_mutation_adds_field_round_trip` (also
+    verifies server-side `created_by` stamping),
+  - `test_post_schema_mutation_returns_409_on_stale_fingerprint`,
+  - `test_post_schema_mutation_returns_422_on_duplicate_name`
+    (against the core "Number" field),
+  - `test_post_schema_mutation_returns_409_on_locked_version`
+    (covers Save-As + sibling success on the unlocked version),
+  - `test_post_schema_mutation_returns_409_on_stale_draft_etag`,
+  - `test_post_schema_mutation_rejects_change_type_in_phase_2`
+    (asserts the `available_in_phase: Phase 3` details key),
+  - `test_post_schema_mutation_emits_audit_log` (selects
+    `user_action_log` by action `project_version_custom_field_add`
+    and asserts the audit_payload keys).
+
+**Gates green:** `make lint`, `make typecheck`, backend pytest
+(169 passed; 162 before P2.2 + 7 new).
+
+**Notes for the next visitor:**
+
+- The route uses `user.id.hex` as `actor_user_id`. UUID hex string
+  is what existing audit log rows store; if MCP starts attributing
+  schema mutations to a non-user actor (e.g. background job),
+  decide on a separate convention then.
+- The no-op short-circuit on `setDescription` to the same value is
+  deliberate — it skips the draft upsert and the audit-log row.
+  Other mutation kinds produce a structurally different
+  `next_body` so the equality check fires only for true no-ops.
+- The audit details payload is the raw `audit_payload` returned by
+  `apply_schema_mutation`. P2.3 (MCP) and P2.8 (acceptance tests)
+  both read these fields; do not rename keys without updating both
+  surfaces.
+- Test `test_post_schema_mutation_returns_409_on_locked_version`
+  documents the recovery flow (Save-As to the unlocked version
+  succeeds). This is the editor-mode mirror of save-versioning.md
+  §"locked-version routing"; P2.5+'s frontend conflict UI should
+  surface a Save-As affordance when this 409 lands in the popover.
+
+### P2.3 (2026-05-24) — Backend: MCP `*_custom_field` write tools
+
+**What landed:**
+
+- `backend/features/mcp/server.py` — five new MCP tools:
+  `add_custom_field`, `rename_custom_field`, `delete_custom_field`,
+  `duplicate_custom_field`, `set_custom_field_description`. Each
+  tool builds the typed `FieldSchemaMutation` Pydantic model from
+  its args via `_build_schema_mutation` (centralizes
+  `ValidationError → validation_error fatal` translation), then
+  delegates to `_apply_mcp_schema_mutation_with_audit` which
+  resolves the token, gates on `project:write`, dispatches through
+  `apply_schema_mutation_to_draft` with `updated_via='mcp'` and
+  `request=None`, and translates `HTTPException` via
+  `raise_http_exception_as_mcp_error` with the
+  `_SCHEMA_MUTATION_RECOVERABILITY` per-code map (pinned to the
+  P2 ADR).
+- `backend/features/project_document/audit.py` — `log_document_action`
+  accepts `request: Request | None`. MCP callers pass `None`; the
+  audit row stores `NULL` for `ip_address` / `user_agent`.
+- `backend/features/project_document/drafts.py` —
+  `apply_schema_mutation_to_draft` gained `updated_via:
+  Literal["browser", "mcp"] = "browser"` (threaded through
+  `repository.upsert_draft` and into the audit details), and its
+  return type changed to `tuple[BaseModel, dict[str, object]]` so
+  MCP tools can read `cleared_row_count` from the audit payload
+  for `delete_custom_field`. The REST route now discards the
+  audit payload (`response, _ = apply_schema_mutation_to_draft(...)`).
+- `backend/tests/test_mcp_custom_fields.py` — one combined
+  `test_mcp_custom_field_tools_full_surface` async test (single
+  test per FastMCP instance — `StreamableHTTPSessionManager.run()`
+  is single-shot). Builds a **fresh** FastMCP via
+  `build_mcp_server()` so the new test stays isolated from the
+  module-level `phn_mcp` consumed by `test_mcp.py`. The single
+  test phases through: (1) add round-trip + server-stamped
+  `created_by`, (2) stale fingerprint → `refresh`, (3) duplicate
+  name → `fatal`, (4) rename preserves `cf_*` id, (5)
+  `set_custom_field_description` round-trip, (6) duplicate
+  produces independent def, (7) delete returns
+  `cleared_row_count=1` against a populated row; viewer-token
+  scope rejection in a second session; audit-log assertions
+  outside the MCP context confirming `updated_via='mcp'` and
+  `NULL` IP / user-agent.
+- `docs/plans/2026-05-24/adr-custom-fields-phase-2-errors.md` —
+  security-checkpoint paragraph filled in (no blocking findings).
+
+**Gates green:** `make lint`, `make typecheck`, backend pytest
+(170 passed; 169 before P2.3 + 1 new combined MCP test).
+
+**Notes for the next visitor:**
+
+- **MCP edit-lease scope.** The Phase-2 minimum-viable lease is
+  the `updated_via='mcp'` channel — it tags the draft row plus
+  the audit log so a browser-side draft-summary surface can react.
+  Richer lease semantics (a real `lease_id`, expiration window,
+  Browser-visible "MCP editing" indicator UI, mutual exclusion
+  between browser + MCP writes inside the lease window) are
+  **deferred** to a follow-up plan. Search for `updated_via` to
+  find the integration points.
+- **Two MCP test files coexist** because the second test (this
+  one) builds a fresh FastMCP via `build_mcp_server()` and
+  routes through that fresh ASGI app at `http://127.0.0.1:8000/`
+  (no `/mcp/` prefix; the standalone app isn't mounted under
+  `/mcp`). The token system is shared via the DB so cross-test
+  state is consistent. The pytest-asyncio session-scoped-loop
+  alternative was tried first and failed on the anyio cancel
+  scope (cross-task exit); the fresh-MCP approach is simpler and
+  test-isolated. If a third MCP test file is needed later, do
+  the same — don't reuse `phn_mcp.session_manager`.
+- **`build_mcp_server(allow_env_token=False)`** is the right
+  call for tests — the env-token path is for local dev only.
+- **Tool signatures.** All five tools take optional `if_match`
+  and `if_match_version` kwargs. MCP clients pass the value they
+  received from the most recent `get_table` / draft fetch. The
+  draft pipeline rejects on stale etag with structured
+  `draft_etag_mismatch` / `version_etag_mismatch`, both mapped
+  to `recoverability: refresh`.
+- **Audit row distinguishes browser vs MCP** via
+  `details["updated_via"]`. If a future surface needs to filter
+  the action log by channel, query
+  `details->>'updated_via' = 'mcp'`.
+
+---
 
 ## Out of scope (Phase 3+)
 

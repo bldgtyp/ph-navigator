@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import NoReturn
+from typing import NoReturn, TypeVar, cast
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -13,7 +13,7 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.streamable_http import TransportSecuritySettings
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, BaseModel, ValidationError
 
 from config import settings
 from features.mcp.models import (
@@ -36,7 +36,18 @@ from features.mcp.service import (
     require_token_scope,
 )
 from features.project_document.models import ProjectDocumentView
-from features.project_document.service import get_current_document_view
+from features.project_document.schema_mutations import (
+    AddFieldMutation,
+    DeleteFieldMutation,
+    DuplicateFieldMutation,
+    FieldSchemaMutation,
+    RenameFieldMutation,
+    SetDescriptionMutation,
+)
+from features.project_document.service import (
+    apply_schema_mutation_to_draft,
+    get_current_document_view,
+)
 from features.project_document.tables import TableContract, get_table_contract
 from features.project_status.service import list_project_status_items
 from features.projects.access import ProjectAccess
@@ -181,6 +192,200 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
             ctx,
         )
 
+    @mcp.tool()
+    def add_custom_field(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        after: dict[str, object],
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        insert_after_field_id: str | None = None,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Add a custom field to the token owner's draft (plan-15 P2.3).
+
+        `after` is the full ``CustomFieldDef`` payload (id, display_name,
+        field_type, config, description, created_at, created_by). The
+        token's user id overwrites ``created_by`` on the server side
+        (D11). Optimistic concurrency rides on
+        ``expected_schema_fingerprint``; per
+        ``llm-mcp-schema.md`` §10.3 a stale fingerprint returns
+        ``custom_field_stale_schema_fingerprint`` with recoverability
+        ``refresh``.
+        """
+        mutation = _build_schema_mutation(
+            ctx,
+            AddFieldMutation,
+            kind="addField",
+            table_key=table_key,
+            after=after,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+            insert_after_field_id=insert_after_field_id,
+        )
+        response = _apply_mcp_schema_mutation(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return _custom_field_response(response, mutation.after.id, ctx)
+
+    @mcp.tool()
+    def rename_custom_field(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        field_id: str,
+        display_name: str,
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Rename a custom field. The stable ``cf_*`` id is preserved."""
+        mutation = _build_schema_mutation(
+            ctx,
+            RenameFieldMutation,
+            kind="renameField",
+            table_key=table_key,
+            field_id=field_id,
+            display_name=display_name,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+        )
+        response = _apply_mcp_schema_mutation(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return _custom_field_response(response, field_id, ctx)
+
+    @mcp.tool()
+    def delete_custom_field(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        field_id: str,
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Delete a custom field and strip its values from every row.
+
+        Returns ``{ removed_field_id, cleared_row_count }`` per
+        ``llm-mcp-schema.md`` §10.3.
+        """
+        mutation = _build_schema_mutation(
+            ctx,
+            DeleteFieldMutation,
+            kind="deleteField",
+            table_key=table_key,
+            field_id=field_id,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+        )
+        _response, audit_payload = _apply_mcp_schema_mutation_with_audit(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return {
+            "removed_field_id": field_id,
+            "cleared_row_count": audit_payload.get("cleared_row_count", 0),
+        }
+
+    @mcp.tool()
+    def duplicate_custom_field(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        source_field_id: str,
+        after: dict[str, object],
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Duplicate an existing custom field with a fresh ``cf_*`` id.
+
+        ``after`` is the full duplicate ``CustomFieldDef`` payload —
+        caller deep-copies ``field_type`` / ``config`` / ``description``
+        from the source. Row values are not copied (US-CF-13 criterion 2).
+        """
+        mutation = _build_schema_mutation(
+            ctx,
+            DuplicateFieldMutation,
+            kind="duplicateField",
+            table_key=table_key,
+            source_field_id=source_field_id,
+            after=after,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+        )
+        response = _apply_mcp_schema_mutation(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return _custom_field_response(response, mutation.after.id, ctx)
+
+    @mcp.tool()
+    def set_custom_field_description(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        field_id: str,
+        description: str | None,
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Set or clear a custom field's description (US-CF-14).
+
+        ``None`` clears the description; over-long values are clamped
+        to ``CUSTOM_FIELD_DESCRIPTION_MAX`` (280) server-side.
+        """
+        mutation = _build_schema_mutation(
+            ctx,
+            SetDescriptionMutation,
+            kind="setDescription",
+            table_key=table_key,
+            field_id=field_id,
+            description=description,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+        )
+        response = _apply_mcp_schema_mutation(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return _custom_field_response(response, field_id, ctx)
+
     return mcp
 
 
@@ -283,6 +488,154 @@ def raise_http_exception_as_mcp_error(
         recoverability,
         ctx,
         details if isinstance(details, dict) else {},
+    )
+
+
+# Per-error-code recoverability map for the schema-mutation tools.
+# Pinned by `docs/plans/2026-05-24/adr-custom-fields-phase-2-errors.md`.
+# Codes not listed default to `"fatal"` (plan-13 R6: don't auto-retry
+# on caller errors).
+_SCHEMA_MUTATION_RECOVERABILITY: dict[str, McpRecoverability] = {
+    "custom_field_stale_schema_fingerprint": "refresh",
+    "version_locked": "refresh",
+    "draft_etag_mismatch": "refresh",
+    "version_etag_mismatch": "refresh",
+}
+
+
+_MutationT = TypeVar("_MutationT", bound=BaseModel)
+
+
+def _build_schema_mutation(
+    ctx: Context,
+    mutation_cls: type[_MutationT],
+    **fields: object,
+) -> _MutationT:
+    """Build a typed `FieldSchemaMutation` member or raise a structured MCP error.
+
+    Centralizes the ``ValidationError → mcp_error("validation_error",
+    "fatal")`` translation so every schema-mutation tool surfaces
+    malformed args identically. `None` values are dropped from
+    `fields` so a missing optional kwarg falls back to the Pydantic
+    default — except `description`, where `None` is the explicit
+    "clear" signal for `SetDescriptionMutation`.
+    """
+    cleaned = {key: value for key, value in fields.items() if value is not None or key == "description"}
+    try:
+        return mutation_cls.model_validate(cleaned)
+    except ValidationError as exc:
+        raise_mcp_error(
+            "validation_error",
+            "Custom-field mutation failed validation.",
+            "fatal",
+            ctx,
+            {"errors": [str(error["msg"]) for error in exc.errors()]},
+        )
+
+
+def _apply_mcp_schema_mutation(
+    ctx: Context,
+    project_id: str,
+    version_id: str,
+    table_key: str,
+    mutation: BaseModel,
+    *,
+    if_match: str | None,
+    if_match_version: str | None,
+    allow_env_token: bool,
+) -> BaseModel:
+    """Variant that discards the audit payload for tools that don't need it."""
+    response, _ = _apply_mcp_schema_mutation_with_audit(
+        ctx,
+        project_id,
+        version_id,
+        table_key,
+        mutation,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        allow_env_token=allow_env_token,
+    )
+    return response
+
+
+def _apply_mcp_schema_mutation_with_audit(
+    ctx: Context,
+    project_id: str,
+    version_id: str,
+    table_key: str,
+    mutation: BaseModel,
+    *,
+    if_match: str | None,
+    if_match_version: str | None,
+    allow_env_token: bool,
+) -> tuple[BaseModel, dict[str, object]]:
+    """Resolve the token, gate on `project:write`, dispatch through
+    ``apply_schema_mutation_to_draft`` with ``updated_via='mcp'``, and
+    map any ``HTTPException`` to a structured MCP error envelope.
+
+    The ``updated_via`` channel is the Phase-2 minimum-viable MCP
+    edit-lease primitive (save-versioning.md §8.5 / plan-15 P2.3).
+    Browser-side lease indicator is consumed from the existing draft
+    summary surface.
+    """
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    parsed_version_id = parse_uuid(version_id, "version_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
+    try:
+        response, audit_payload = apply_schema_mutation_to_draft(
+            parsed_version_id,
+            table_key,
+            cast(FieldSchemaMutation, mutation),
+            access,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            request=None,
+            updated_via="mcp",
+        )
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_document_error",
+            default_message="Custom-field schema mutation failed.",
+            default_recoverability="fatal",
+            recoverability_by_code=_SCHEMA_MUTATION_RECOVERABILITY,
+        )
+    return response, audit_payload
+
+
+def _custom_field_response(
+    response: BaseModel,
+    field_id: str,
+    ctx: Context,
+) -> dict[str, object]:
+    """Pull the named `CustomFieldDef` out of the table envelope.
+
+    Returns the JSON-serializable dict shape per ``llm-mcp-schema.md``
+    §10.3. Raises ``custom_field_invalid_field_id`` (shouldn't fire —
+    the apply step already validated the id exists) if the field
+    can't be found in the response — defensive guard so test-only
+    drift surfaces as a structured error rather than a KeyError.
+    """
+    custom_fields = getattr(response, "custom_fields", None)
+    if custom_fields is None:
+        raise_mcp_error(
+            "custom_field_unsupported_table",
+            "Response envelope does not expose custom_fields.",
+            "fatal",
+            ctx,
+            {"field_id": field_id},
+        )
+    for field in custom_fields:
+        if field.id == field_id:
+            return field.model_dump(mode="json")
+    raise_mcp_error(
+        "custom_field_invalid_field_id",
+        "Mutated field id not present in the response envelope.",
+        "fatal",
+        ctx,
+        {"field_id": field_id},
     )
 
 

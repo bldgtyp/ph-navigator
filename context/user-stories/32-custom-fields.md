@@ -35,26 +35,26 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 | Story | Title | Status |
 |---|---|---|
-| US-CF-1  | Right-click context menu on column headers | Draft |
-| US-CF-2  | Add a custom field (text / long_text / number / url) | Draft |
-| US-CF-3  | Rename a custom field | Draft |
+| US-CF-1  | Right-click context menu on column headers | Phase 2 |
+| US-CF-2  | Add a custom field (text / long_text / number / url) | Phase 2 (four simple types only; single_select Phase 3, formula Phase 4) |
+| US-CF-3  | Rename a custom field | Phase 2 |
 | US-CF-4  | Change a custom field's type (preflight + convert anyway) | Draft |
-| US-CF-5  | Delete a custom field | Draft |
-| US-CF-6  | Core fields show a reduced context menu | Draft |
+| US-CF-5  | Delete a custom field | Phase 2 |
+| US-CF-6  | Core fields show a reduced context menu | Phase 2 |
 | US-CF-7  | Custom single-select fields | Draft |
 | US-CF-8  | Formula fields | Draft |
-| US-CF-9  | Viewers see custom fields, never the schema-mutation menu | Draft |
+| US-CF-9  | Viewers see custom fields, never the schema-mutation menu | Phase 2 |
 | US-CF-10 | LLM/MCP discovers and writes custom fields via the document | Phase 1 (read criteria 1, 2, 4); Phase 2 (write) |
-| US-CF-11 | Locked / unlocked visual indicator on header cells | Draft |
-| US-CF-12 | Duplicate field-name protection | Draft |
-| US-CF-13 | Duplicate an existing field | Draft |
-| US-CF-14 | Field description / tooltip | Draft |
+| US-CF-11 | Locked / unlocked visual indicator on header cells | Phase 2 |
+| US-CF-12 | Duplicate field-name protection | Phase 2 |
+| US-CF-13 | Duplicate an existing field | Phase 2 |
+| US-CF-14 | Field description / tooltip | Phase 2 |
 
 ---
 
 ## US-CF-1 — Right-click context menu on column headers
 
-**Status:** Draft · **Priority:** Foundational for US-CF-2..8
+**Status:** Phase 2 · **Priority:** Foundational for US-CF-2..8
 
 ### Story
 > As an editor, I want to right-click a column header and see a menu
@@ -87,7 +87,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-2 — Add a custom field
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 (four simple types: `short_text`, `long_text`, `number`, `url`; `single_select` lands in Phase 3, `formula` in Phase 4) · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want to add a new field to a table by choosing its
@@ -122,7 +122,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-3 — Rename a custom field
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want to rename a custom field without losing its
@@ -176,7 +176,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-5 — Delete a custom field
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want to delete a custom field I no longer need,
@@ -203,7 +203,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-6 — Core fields show a reduced context menu
 
-**Status:** Draft · **Priority:** Foundational (Phase 2 ships this)
+**Status:** Phase 2 · **Priority:** Foundational (Phase 2 ships this)
 
 ### Story
 > As an editor, I want core fields to clearly communicate that they
@@ -298,7 +298,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-9 — Viewers see custom fields
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As a viewer (unauthenticated reader of a project URL), I want to
@@ -351,7 +351,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-11 — Locked / unlocked visual indicator
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want to tell at a glance which fields are core
@@ -376,7 +376,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-12 — Duplicate field-name protection
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want the app to refuse duplicate field names in
@@ -404,7 +404,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-13 — Duplicate an existing field
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want to duplicate an existing custom field (with
@@ -437,7 +437,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-14 — Field description / tooltip
 
-**Status:** Draft · **Priority:** Phase 2
+**Status:** Phase 2 · **Priority:** Phase 2
 
 ### Story
 > As an editor, I want to attach a short description to any custom
