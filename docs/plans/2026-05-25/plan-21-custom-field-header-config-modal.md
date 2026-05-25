@@ -723,13 +723,177 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
 
 Its own plan. Out of scope for the consolidation PRs.
 
-### Phase 5c — Unify with Add Field (deferred, optional)
+### Phase 5c — Unify with Add Field (implemented)
 
-Once Phase 5a ships, evaluate whether `AddFieldPopover` should also
-become "the same modal in 'create' mode" (with no `before`
-`FieldDef`). The form bodies are already 80% identical; the open
-question is whether double-clicking-to-edit and clicking-`+`-to-add
-should share a single chrome.
+**Implemented 2026-05-25.** The create flow now uses
+`CreateFieldConfigModal` plus shared field-config sections, and the
+legacy `AddFieldPopover` component/test were removed. The mutation
+boundary stayed unchanged: create dispatches `addField`; edit
+dispatches `editFieldBundle`.
+
+Phase 5a has shipped, so the evaluation gate is resolved: the add
+flow should move onto the same `FieldConfigModal` chrome in **create
+mode**. Keep the backend mutation paths distinct:
+
+- Create mode still dispatches `addField` through
+  `AddCustomFieldRequest` / `onAddCustomField`.
+- Edit mode still dispatches `editFieldBundle` through
+  `EditCustomFieldBundleRequest` / `onEditCustomFieldBundle`.
+- The shared surface is the modal shell + form model, not a shared
+  write mutation.
+
+#### Pre-implementation review (2026-05-25)
+
+Before Phase 5c, `AddFieldPopover.tsx` was the last custom-field
+popover. It owned:
+
+- Radix `Popover` shell anchored to the tail `+` cell or header
+  insert menu.
+- Add-specific draft state (`displayName`, `fieldType`,
+  `descriptionEnabled`, `description`, `numberPrecision`, `options`,
+  `defaultOptionId`, `formulaSource`).
+- Its own type-pill row and validation.
+- Its own single-select option editor, which is simpler than the
+  edit modal's `FieldConfigSectionOptions` and lacks the richer
+  modal section behavior.
+- Its own inline formula source input, even though edit mode now
+  uses `FieldConfigSectionFormula`.
+- Its own optional-description toggle, while edit mode always shows
+  the Description section.
+
+`FieldConfigModal.tsx` already owned the better shell and the reusable
+sections:
+
+- Radix `Dialog` focus trap, pending-save lock, close behavior, and
+  footer.
+- Name + Type + type-specific section + Description order.
+- `FieldConfigSectionOptions`, `FieldConfigSectionNumber`,
+  `FieldConfigSectionFormula`, and `SingleSelectDefaultPicker`.
+- Edit-only guards: source snapshot, R-S1 removed-field close, R-S2
+  external conflict banner, R-S3 type-change preflight, R-S4 formula
+  preview staleness.
+
+Therefore Phase 5c was an extraction/refactor PR, not a backend PR.
+The main risk was accidentally pulling edit-only concurrency and
+type-conversion semantics into create mode. Create mode has no source
+field, no stale field, no type-change preflight, and no dirty-vs-source
+comparison; its Save gate is simply `name valid && type config valid &&
+!pending`.
+
+#### P5c.1 — Extract shared form constants and draft helpers
+
+Create a small shared module, for example
+`components/fieldConfigModel.ts`, that contains:
+
+- `FIELD_TYPE_CHOICES` (the current enabled type list; one source for
+  add + edit labels).
+- `FieldConfigDraft` or `CreateFieldDraft` helpers for the add-mode
+  defaults.
+- Pure helpers to build add-mode config:
+  `buildCreateFieldConfig(draft, formulaState)` and
+  `buildInitialOptions(draft)`.
+- Shared validation helpers for display-name length, duplicate-name,
+  option-list validity, and formula validity.
+
+Keep mutation builders in `lib/customFieldMutations.ts`; do not move
+wire-shape construction into React components.
+
+#### P5c.2 — Extract create-mode form body
+
+Replace `AddFieldPopover`'s inline form with a create-mode body that
+uses the same visual sections as edit mode:
+
+- Name input.
+- Type pill row.
+- Conditional type-specific section:
+  - Number -> `FieldConfigSectionNumber`.
+  - Single select -> either a create-capable
+    `FieldConfigSectionOptions` mode, or a small
+    `FieldConfigSectionCreateOptions` that shares lower-level option
+    row/default-picker helpers. Prefer extending the existing section
+    only if the props stay clear; it currently assumes edit-mode
+    `sourceOptions`, `sourceDefaultOptionId`, row cascade checks, and
+    dirty reporting.
+  - Formula -> `FieldConfigSectionFormula` with no preview row and a
+    create-mode empty initial source.
+  - Text / URL -> no section.
+- Description section, always visible, with empty value by default.
+  Drop the `descriptionEnabled` checkbox unless there is a UX reason
+  to preserve it; empty text still serializes to `null`.
+
+This removes the duplicated option editor and inline formula editor
+from `AddFieldPopover.tsx`.
+
+#### P5c.3 — Convert add shell from popover to modal
+
+Replace `<AddFieldPopover>` with a modal component, either:
+
+- `FieldConfigModal mode="create"` / `mode="edit"` discriminated
+  props, if the edit-only effects can stay cleanly isolated, or
+- `CreateFieldConfigModal` plus shared lower-level
+  `FieldConfigDialogShell` and form sections.
+
+Prefer the second option if `FieldConfigModal` starts accumulating
+too many nullable edit-only props. The important outcome is shared
+chrome and shared sections, not one overloaded component.
+
+Opening behavior stays unchanged:
+
+- Tail `+` and `Insert field left/right` open create mode.
+- Create mode still stores `insertAfterFieldKey`.
+- Save still awaits `onAddCustomField`, closes only on success, and
+  sets `pendingFocusFieldKey` from `{ newFieldKey }`.
+- Pending save suppresses Esc / backdrop / Cancel, matching edit
+  mode's R-S5 behavior.
+- Close returns focus to the originating tail/header trigger.
+
+#### P5c.4 — DataTable wiring cleanup
+
+Replace `addFieldPopover` state with `createFieldModal` state:
+
+```ts
+type CreateFieldModalState = {
+  triggerElement: HTMLElement | null;
+  insertAfterFieldKey: string | null;
+};
+```
+
+Keep `openAddFieldPopover`'s call sites conceptually intact but
+rename them to modal language. Remove `useElementAnchorRef` from the
+add flow once no popover remains.
+
+`DataTableProps.onAddCustomField` does not change. This avoids
+touching Rooms/Equipment mutation assembly except for any import
+rename if `AddCustomFieldRequest` moves out of
+`AddFieldPopover.tsx` into `types.ts` or a shared model file.
+
+#### P5c.5 — Tests and acceptance
+
+Update tests in the same PR:
+
+- Rename or rewrite `AddFieldPopover.test.tsx` as
+  `CreateFieldConfigModal.test.tsx`.
+- Preserve current add coverage: happy path, type selection, number
+  precision, duplicate-name preflight, server duplicate/stale errors,
+  single-select initial options + default, formula config, and
+  insert-after key.
+- Add modal-shell coverage for create mode: focus lands on Name,
+  Esc/backdrop close when idle, pending save suppresses dismissal,
+  Cancel keeps dispatch uncalled, and failed save leaves the modal
+  open with draft intact.
+- Update `AddFieldTailCell` / `HeaderContextMenu` integration tests
+  only where accessible role/name changes from popover-dialog to
+  modal-dialog affect queries.
+- Run `pnpm run format`, `pnpm test`, `pnpm run build`, and the
+  custom-field e2e/spec subset that covers add + edit flows.
+
+#### Not in P5c
+
+- No backend changes.
+- No changes to `addField` / `editFieldBundle` semantics.
+- No formatting section from Phase 5b.
+- No create-mode type-change preflight; create mode has no existing
+  row values to coerce.
 
 ---
 
@@ -754,10 +918,10 @@ This plan adds:
    on the existing `kind: "schemaMutation", variant: "typed"`
    discriminator and the existing `/custom-fields:mutate` endpoint.
 6. **Shared `MAX_DESCRIPTION` constant** — surface the backend's
-   `CUSTOM_FIELD_DESCRIPTION_MAX` (280) into the frontend so the
-   modal, `AddFieldPopover`, and the backend `setDescription` clamp
-   all use one source of truth. If a frontend mirror does not exist
-   yet, add it in P5a.1 alongside the Description section.
+   `CUSTOM_FIELD_DESCRIPTION_MAX` (280) into the frontend so the edit
+   modal, create modal, and the backend `setDescription` clamp all use
+   one source of truth. If a frontend mirror does not exist yet, add it
+   in P5a.1 alongside the Description section.
 
 The app is pre-deploy with no live users, so there is **no
 backwards-compatibility requirement** for documents or saved

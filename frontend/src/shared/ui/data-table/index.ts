@@ -1,5 +1,4 @@
 export { DataTable } from "./DataTable";
-export type { AddCustomFieldRequest } from "./components/AddFieldPopover";
 export { coerceCustomValue } from "./lib/coerceCustomFieldType";
 export type { CoerceResult } from "./lib/coerceCustomFieldType";
 export {
@@ -71,6 +70,7 @@ export {
 export type { FieldRegistryEntry } from "./lib/formula";
 export { emptyViewState } from "./types";
 export type {
+  AddCustomFieldRequest,
   BuildEmptyRow,
   CellWrite,
   DataTableColumnDef,

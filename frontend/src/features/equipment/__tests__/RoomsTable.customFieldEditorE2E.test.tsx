@@ -221,7 +221,7 @@ function applySchemaMutation(
 async function addField(displayName: string) {
   fireEvent.click(await screen.findByRole("button", { name: "Add field" }));
   const dialog = await screen.findByRole("dialog", { name: "Add field" });
-  fireEvent.change(within(dialog).getByLabelText("Field name"), {
+  fireEvent.change(within(dialog).getByLabelText("Name"), {
     target: { value: displayName },
   });
   fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));

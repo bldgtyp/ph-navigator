@@ -38,6 +38,7 @@ import {
   type FormulaDraftState,
   type FormulaPreviewRowSnapshot,
 } from "./FieldConfigSectionFormula";
+import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
 
 function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {
   if (a.length !== b.length) return false;
@@ -48,16 +49,6 @@ function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOptio
   return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
 }
 
-type TargetCandidate = { kind: CustomFieldType; label: string };
-
-const TARGET_CANDIDATES: ReadonlyArray<TargetCandidate> = [
-  { kind: "short_text", label: "Short text" },
-  { kind: "long_text", label: "Long text" },
-  { kind: "number", label: "Number" },
-  { kind: "url", label: "URL" },
-  { kind: "single_select", label: "Single select" },
-  { kind: "formula", label: "Formula" },
-];
 const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
 
 export type FieldConfigFormulaPreviewContext = {
@@ -522,7 +513,7 @@ export function FieldConfigModal({
                   role="radiogroup"
                   aria-label="Field type"
                 >
-                  {TARGET_CANDIDATES.map((candidate) => {
+                  {FIELD_TYPE_CHOICES.map((candidate) => {
                     // Current type pill stays selectable so the user can
                     // revert a staged change.
                     const isCurrent = candidate.kind === sourceCustomFieldType;
@@ -652,7 +643,7 @@ function cloneRecord(record: Record<string, unknown>): Record<string, unknown> {
 }
 
 function typeCandidateTitle(
-  candidate: TargetCandidate,
+  candidate: (typeof FIELD_TYPE_CHOICES)[number],
   sourceCustomFieldType: CustomFieldType,
   allowed: boolean,
 ): string {

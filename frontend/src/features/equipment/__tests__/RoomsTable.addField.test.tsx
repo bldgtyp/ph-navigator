@@ -113,7 +113,7 @@ function Harness({
 }
 
 describe("RoomsTable add custom field (plan-15 P2.6)", () => {
-  test("tail + button opens the add-field popover", async () => {
+  test("tail + button opens the add-field modal", async () => {
     const slice = buildSlice({ rooms: [buildRoom()] });
     render(<Harness initialSlice={slice} />);
     const tailButton = screen.getByRole("button", { name: "Add field" });
@@ -121,13 +121,13 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
     expect(await screen.findByRole("dialog", { name: "Add field" })).toBeInTheDocument();
   });
 
-  test("happy-path add dispatches the request and closes the popover", async () => {
+  test("happy-path add dispatches the request and closes the modal", async () => {
     const slice = buildSlice({ rooms: [buildRoom()] });
     const dispatch = vi.fn().mockResolvedValue({ newFieldKey: "cf_notes" });
     render(<Harness initialSlice={slice} onDispatch={dispatch} />);
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
-    fireEvent.change(within(dialog).getByLabelText("Field name"), {
+    fireEvent.change(within(dialog).getByLabelText("Name"), {
       target: { value: "Notes" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
@@ -164,7 +164,7 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
     render(<Harness initialSlice={initialSlice} postAddSlice={postSlice} />);
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
-    fireEvent.change(within(dialog).getByLabelText("Field name"), {
+    fireEvent.change(within(dialog).getByLabelText("Name"), {
       target: { value: "Notes" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
