@@ -4,14 +4,12 @@ import type { FieldDef } from "../types";
 
 // Per-column overflow menu opened from the header's `⋯` trigger.
 // Plan 06 retired the `Aggregation: …` entry — the SummaryBar at the
-// table bottom is now the single picker. Remaining items: `Edit
-// options…` (single_select + editable), then any `extraItems?` the
-// caller plugs in. Returns null when none would render so the caller
-// can mount unconditionally.
+// table bottom is now the single picker. Plan 21 P5a.3 maps the
+// editable custom-field action to the unified field config modal.
 
 export type ColumnHeaderMenuProps = {
   fieldDef: FieldDef;
-  // `Edit options…` is hidden when the column is read-only / has no
+  // `Edit field…` is hidden when the column is read-only / has no
   // write handler.
   canEditOptions: boolean;
   onEditOptions: () => void;
@@ -25,9 +23,9 @@ export function ColumnHeaderMenu({
   extraItems,
 }: ColumnHeaderMenuProps) {
   const [open, setOpen] = useState(false);
-  const showEditOptions = canEditOptions && fieldDef.field_type === "single_select";
+  const showEditField = canEditOptions && fieldDef.read_only_schema !== true;
   const extraContent = extraItems?.(fieldDef);
-  if (!showEditOptions && !extraContent) return null;
+  if (!showEditField && !extraContent) return null;
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
@@ -48,7 +46,7 @@ export function ColumnHeaderMenu({
           sideOffset={6}
           aria-label={`${fieldDef.display_name} column actions`}
         >
-          {showEditOptions ? (
+          {showEditField ? (
             <button
               type="button"
               className="data-table-column-menu-item"
@@ -57,7 +55,7 @@ export function ColumnHeaderMenu({
                 onEditOptions();
               }}
             >
-              Edit options…
+              Edit field…
             </button>
           ) : null}
           {extraContent}

@@ -186,6 +186,11 @@ function applySchemaMutation(
   if (mutation.kind === "addField") {
     if (mutation.after)
       customFields.push({ ...mutation.after, config: { ...mutation.after.config } });
+  } else if (mutation.kind === "editFieldBundle") {
+    const index = customFields.findIndex((item) => item.id === mutation.fieldId);
+    if (index >= 0 && mutation.after) {
+      customFields[index] = { ...mutation.after, config: { ...mutation.after.config } };
+    }
   } else if (mutation.kind === "renameField") {
     const field = customFields.find((item) => item.id === mutation.fieldId);
     if (field && mutation.displayName) field.display_name = mutation.displayName;
@@ -252,10 +257,10 @@ describe("RoomsTable custom-field editor E2E acceptance", () => {
     );
 
     await openHeaderMenu("Paint");
-    fireEvent.click(screen.getByRole("menuitem", { name: "Rename field" }));
-    const renameInput = await screen.findByLabelText("Rename Paint");
-    fireEvent.change(renameInput, { target: { value: "  Finish  " } });
-    fireEvent.submit(renameInput.closest("form") as HTMLFormElement);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "  Finish  " } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() =>
       expect(screen.getByRole("columnheader", { name: /^Finish\b/ })).toBeVisible(),
     );
@@ -276,7 +281,7 @@ describe("RoomsTable custom-field editor E2E acceptance", () => {
 
     expect(postBodies.map((body) => (body as { kind: string }).kind)).toEqual([
       "addField",
-      "renameField",
+      "editFieldBundle",
       "duplicateField",
       "deleteField",
     ]);
@@ -287,9 +292,9 @@ describe("RoomsTable custom-field editor E2E acceptance", () => {
       after: { display_name: "Paint", field_type: "short_text" },
     });
     expect(postBodies[1]).toMatchObject({
-      kind: "renameField",
+      kind: "editFieldBundle",
       tableKey: ROOMS_TABLE_NAME,
-      displayName: "Finish",
+      after: { display_name: "Finish" },
     });
     expect(postBodies[2]).toMatchObject({
       kind: "duplicateField",

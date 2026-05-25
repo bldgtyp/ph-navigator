@@ -56,7 +56,6 @@ import {
   type EditCustomFieldDescriptionRequest,
 } from "./components/EditFieldDescriptionPopover";
 import { FieldConfigModal } from "./components/FieldConfigModal";
-import { FieldEditorPopover } from "./components/FieldEditorPopover";
 import { FormulaEditorPopover } from "./components/FormulaEditorPopover";
 import { astFromJson, rebuildSourceFromStoredAst } from "./lib/formula";
 import type { FormulaAST } from "./lib/formula";
@@ -174,13 +173,7 @@ export function DataTable<TRow>({
   );
 
   const [announce, setAnnounce] = useState("");
-  const [fieldEditorOpenForFieldKey, setFieldEditorOpenForFieldKey] = useState<string | null>(null);
   const headerCellRefByFieldKey = useRef(new Map<string, HTMLTableCellElement>()).current;
-  // Discard a staged field-editor edit when fieldDefs reidentifies
-  // (post-save refetch, remote broadcast, session switch).
-  useEffect(() => {
-    setFieldEditorOpenForFieldKey(null);
-  }, [fieldDefs]);
   const history = useGridHistory();
   const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
   const selection = useGridSelection({ rowIds, fieldKeys });
@@ -1003,13 +996,6 @@ export function DataTable<TRow>({
     [fieldDefs],
   );
 
-  const fieldEditorContext = useMemo(() => {
-    if (!fieldEditorOpenForFieldKey) return null;
-    const fieldDef = fieldDefByKey.get(fieldEditorOpenForFieldKey);
-    const column = columnDefs.find((c) => c.fieldKey === fieldEditorOpenForFieldKey);
-    if (!fieldDef || !column) return null;
-    return { fieldDef, column };
-  }, [columnDefs, fieldDefByKey, fieldEditorOpenForFieldKey]);
   const descriptionFieldDef = descriptionFieldKey
     ? fieldDefByKey.get(descriptionFieldKey)
     : undefined;
@@ -1112,23 +1098,6 @@ export function DataTable<TRow>({
         overflowMenuActions={overflowMenuActions}
         actions={toolbarActions}
       />
-      {fieldEditorContext ? (
-        <FieldEditorPopover<TRow>
-          open
-          onOpenChange={(next) => {
-            if (!next) {
-              setFieldEditorOpenForFieldKey(null);
-              focusGrid();
-            }
-          }}
-          fieldDef={fieldEditorContext.fieldDef}
-          rows={rows}
-          getRowId={getRowId}
-          accessor={fieldEditorContext.column.accessor}
-          anchorElement={headerCellRefByFieldKey.get(fieldEditorContext.fieldDef.field_key) ?? null}
-          dispatchWrite={dispatchWrite}
-        />
-      ) : null}
       <ConfirmDestructiveDialog
         open={deleteDialogOpen}
         title={rowSelection.count === 1 ? "Delete 1 row?" : `Delete ${rowSelection.count} rows?`}
@@ -1195,6 +1164,7 @@ export function DataTable<TRow>({
           }}
           sourceCustomFieldType={configModalFieldDef?.custom_field_type}
           preflightRows={configModalPreflightRows}
+          optionRows={configModalPreflightRows}
         />
       ) : null}
       {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (
@@ -1270,8 +1240,6 @@ export function DataTable<TRow>({
                 onColumnMouseDown={pointerDrag.onColumnMouseDown}
                 readOnly={readOnly}
                 hasWriteHandler={Boolean(onWrite)}
-                onEditField={setFieldEditorOpenForFieldKey}
-                openFieldKey={fieldEditorOpenForFieldKey}
                 renamingFieldKey={renamingFieldKey}
                 existingFieldLabels={existingFieldLabels}
                 onRenameCustomFieldSubmit={handleRenameCustomFieldSubmit}

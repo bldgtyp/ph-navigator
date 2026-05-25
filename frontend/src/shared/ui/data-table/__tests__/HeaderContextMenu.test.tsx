@@ -76,7 +76,7 @@ describe("HeaderContextMenu", () => {
     expect(items).not.toContain("Delete field");
   });
 
-  test("right-click on a custom-field header shows schema items before view-state items", () => {
+  test("right-click on a custom-field header shows unified edit before view-state items", () => {
     render(
       <Wrapper
         onEditFieldConfig={vi.fn()}
@@ -90,10 +90,8 @@ describe("HeaderContextMenu", () => {
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       "Edit field…",
-      "Rename field",
       "Delete field",
       "Duplicate field",
-      "Edit description",
       "Sort A → Z",
       "Sort Z → A",
       "Filter by this field",
@@ -158,15 +156,14 @@ describe("HeaderContextMenu", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
-  test("clicking Rename field does not restore focus to the header trigger", async () => {
+  test("clicking Edit field opens the modal handler and closes the menu", async () => {
     const user = userEvent.setup();
-    const onRenameField = vi.fn();
-    render(<Wrapper onRenameField={onRenameField} />);
+    const onEditFieldConfig = vi.fn();
+    render(<Wrapper onEditFieldConfig={onEditFieldConfig} />);
     openViaContextMenu();
-    await user.click(screen.getByRole("menuitem", { name: "Rename field" }));
-    expect(onRenameField).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+    expect(onEditFieldConfig).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu")).toBeNull();
-    expect(screen.getByTestId("header-trigger")).not.toHaveFocus();
   });
 
   test("clicking a view-state item still restores focus to the header trigger", async () => {
@@ -259,20 +256,20 @@ describe("HeaderContextMenu", () => {
     expect(onHide).toHaveBeenCalledTimes(1);
   });
 
-  test("Edit formula… is rendered only when onEditFieldFormula is provided", () => {
+  test("formula fields use the same Edit field… item", () => {
     const formulaField: FieldDef = {
       field_key: "cf_label",
       field_type: "computed",
       display_name: "Label",
     };
-    const onEditFieldFormula = vi.fn();
-    render(<Wrapper fieldDef={formulaField} onEditFieldFormula={onEditFieldFormula} />);
+    const onEditFieldConfig = vi.fn();
+    render(<Wrapper fieldDef={formulaField} onEditFieldConfig={onEditFieldConfig} />);
     openViaContextMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Edit formula…" }));
-    expect(onEditFieldFormula).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+    expect(onEditFieldConfig).toHaveBeenCalledTimes(1);
   });
 
-  test("Edit formula… is absent when handler is omitted", () => {
+  test("Edit field… is absent when handler is omitted", () => {
     const formulaField: FieldDef = {
       field_key: "cf_label",
       field_type: "computed",
@@ -280,6 +277,6 @@ describe("HeaderContextMenu", () => {
     };
     render(<Wrapper fieldDef={formulaField} />);
     openViaContextMenu();
-    expect(screen.queryByRole("menuitem", { name: "Edit formula…" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Edit field…" })).toBeNull();
   });
 });

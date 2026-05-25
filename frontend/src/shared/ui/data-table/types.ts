@@ -52,6 +52,10 @@ export type FieldDef = {
   // When false, single_select pills render with a neutral background
   // even when each option still carries a color. Default true.
   colorCodeOptions?: boolean;
+  // Custom single-select only. Stored as
+  // `CustomFieldDef.config.default_option_id`; row creation applies it
+  // only when the row omits this field.
+  defaultOptionId?: string | null;
   // Plan-13 §4.5 / US-CF-6: when true, header context-menu hides
   // schema-mutation items (rename / change type / delete / edit
   // formula). Core fields set this to true; user-defined custom fields
@@ -339,6 +343,14 @@ export type EditCustomFieldBundleRequest = {
   // True when the type change has incompatible rows the user
   // acknowledged in the inline preflight panel.
   acknowledgeDestructive?: boolean;
+  // Set by the single-select options section. The consumer sends this
+  // as `editFieldBundle.nextOptions`.
+  options?: FieldOption[];
+  // Set for custom single-selects. `null` means "no default".
+  defaultOptionId?: string | null;
+  // Stored in CustomFieldDef.config so custom select columns keep the
+  // same color-code toggle behavior as the legacy editor.
+  colorCodeOptions?: boolean;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

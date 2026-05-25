@@ -672,7 +672,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   the same `editFieldBundle`. Implement R-S3 here (preflight re-run
   on row mutation, ack invalidation).
 
-- [ ] **P5a.3 — Options section + Default picker.** Port
+- [x] **P5a.3 — Options section + Default picker.** Port
   `FieldEditorPopover` into `FieldConfigSectionOptions` (drag-handles,
   color swatches, Color-code toggle, Alphabetize, delete-with-
   cascade). Build `SingleSelectDefaultPicker` (shared per §3.7);
@@ -685,7 +685,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   modal and **delete** the in-grid options popover that today opens
   on chevron-click / single-select-header double-click.
 
-- [ ] **P5a.3b — Default picker in `AddFieldPopover`.** Drop the shared
+- [x] **P5a.3b — Default picker in `AddFieldPopover`.** Drop the shared
   `SingleSelectDefaultPicker` into `AddFieldPopover`'s
   `single_select` branch; carry `default_option_id` through
   `AddCustomFieldRequest.config`. `AddFieldPopover` stays a

@@ -13,6 +13,7 @@ export type ConfirmDeleteOptionDialogProps = {
   required: boolean;
   fieldDisplayName: string;
   replacementOptions: FieldOption[];
+  allowReplacement?: boolean;
   onCancel: () => void;
   onConfirm: (choice: CascadeChoice) => void;
 };
@@ -24,6 +25,7 @@ export function ConfirmDeleteOptionDialog({
   required,
   fieldDisplayName,
   replacementOptions,
+  allowReplacement = true,
   onCancel,
   onConfirm,
 }: ConfirmDeleteOptionDialogProps) {
@@ -89,34 +91,36 @@ export function ConfirmDeleteOptionDialog({
                   {fieldDisplayName} is required — pick a replacement option.
                 </p>
               ) : null}
-              <label className="data-table-field-editor-cascade-row">
-                <input
-                  type="radio"
-                  name="cascade-mode"
-                  value="replace"
-                  checked={selectionKind === "replace"}
-                  onChange={() => setSelectionKind("replace")}
-                />
-                <span className="data-table-field-editor-cascade-replace">
-                  Replace with:
-                  <select
-                    aria-label="Replacement option"
-                    value={replacementId}
-                    onChange={(event) => {
-                      setSelectionKind("replace");
-                      setReplacementId(event.target.value);
-                    }}
-                    disabled={replacementOptions.length === 0}
-                  >
-                    <option value="">Pick an option…</option>
-                    {replacementOptions.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id}>
-                        {candidate.label}
-                      </option>
-                    ))}
-                  </select>
-                </span>
-              </label>
+              {allowReplacement ? (
+                <label className="data-table-field-editor-cascade-row">
+                  <input
+                    type="radio"
+                    name="cascade-mode"
+                    value="replace"
+                    checked={selectionKind === "replace"}
+                    onChange={() => setSelectionKind("replace")}
+                  />
+                  <span className="data-table-field-editor-cascade-replace">
+                    Replace with:
+                    <select
+                      aria-label="Replacement option"
+                      value={replacementId}
+                      onChange={(event) => {
+                        setSelectionKind("replace");
+                        setReplacementId(event.target.value);
+                      }}
+                      disabled={replacementOptions.length === 0}
+                    >
+                      <option value="">Pick an option…</option>
+                      {replacementOptions.map((candidate) => (
+                        <option key={candidate.id} value={candidate.id}>
+                          {candidate.label}
+                        </option>
+                      ))}
+                    </select>
+                  </span>
+                </label>
+              ) : null}
             </div>
           ) : null}
           <div className="data-table-alert-actions">

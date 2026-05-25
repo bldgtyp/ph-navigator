@@ -36,6 +36,7 @@ type HarnessProps = {
   siblingDisplayNames?: string[];
   sourceCustomFieldType?: CustomFieldType;
   preflightRows?: ReadonlyArray<PreflightSourceRow>;
+  optionRows?: ReadonlyArray<PreflightSourceRow>;
 };
 
 function Harness({
@@ -45,6 +46,7 @@ function Harness({
   siblingDisplayNames = [],
   sourceCustomFieldType,
   preflightRows,
+  optionRows,
 }: HarnessProps) {
   const [open, setOpen] = useState(true);
   const [fieldDef, setFieldDef] = useState<FieldDef | undefined>(initialField);
@@ -97,6 +99,7 @@ function Harness({
         onFieldRemoved={onFieldRemoved}
         sourceCustomFieldType={sourceCustomFieldType ?? fieldDef?.custom_field_type}
         preflightRows={rows}
+        optionRows={optionRows ?? rows}
       />
     </div>
   );
@@ -390,6 +393,79 @@ describe("FieldConfigModal", () => {
     ) as HTMLInputElement;
     expect(ackAfter.checked).toBe(false);
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  test("single-select options section saves options and default option in the bundle", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "single_select",
+          custom_field_type: "single_select",
+          options: [
+            { id: "opt_a", label: "A", color: "#3b82f6", order: 1 },
+            { id: "opt_b", label: "B", color: "#10b981", order: 2 },
+          ],
+          defaultOptionId: "opt_a",
+        })}
+        optionRows={[
+          { rowId: "rm_1", rawValue: "opt_a" },
+          { rowId: "rm_2", rawValue: "opt_b" },
+        ]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Default option"), { target: { value: "opt_b" } });
+    fireEvent.change(screen.getByLabelText("Option label for A"), {
+      target: { value: "Alpha" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        options: [
+          { id: "opt_a", label: "Alpha", color: "#3b82f6", order: 0 },
+          { id: "opt_b", label: "B", color: "#10b981", order: 1 },
+        ],
+        defaultOptionId: "opt_b",
+        colorCodeOptions: true,
+      }),
+    );
+  });
+
+  test("deleting the selected default option clears the draft default", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "single_select",
+          custom_field_type: "single_select",
+          options: [
+            { id: "opt_a", label: "A", color: "#3b82f6", order: 1 },
+            { id: "opt_b", label: "B", color: "#10b981", order: 2 },
+          ],
+          defaultOptionId: "opt_a",
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete option A" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fieldKey: "cf_notes",
+          defaultOptionId: null,
+          options: [{ id: "opt_b", label: "B", color: "#10b981", order: 0 }],
+        }),
+      ),
+    );
   });
 
   test("Server preflight envelope re-renders the sub-panel against the server row list", async () => {

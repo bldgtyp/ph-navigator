@@ -129,6 +129,9 @@ function customFieldToFieldDef(
   };
   if (custom.field_type === "single_select") {
     fieldDef.options = [...(optionsByFieldId[custom.id] ?? EMPTY_OPTIONS)];
+    const defaultOptionId = custom.config.default_option_id;
+    fieldDef.defaultOptionId = typeof defaultOptionId === "string" ? defaultOptionId : null;
+    fieldDef.colorCodeOptions = custom.config.color_code_options !== false;
   }
   if (custom.field_type === "formula") {
     const config = custom.config ?? {};
