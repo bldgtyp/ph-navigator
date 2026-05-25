@@ -179,7 +179,9 @@ function simulateFormula(
   const refs = [...source.matchAll(/\{([^}]+)\}/g)]
     .map((m) => m[1])
     .filter((ref): ref is string => typeof ref === "string");
-  const knownCustomDisplayNames = new Set(Object.values(customByFieldId).map((f) => f.display_name));
+  const knownCustomDisplayNames = new Set(
+    Object.values(customByFieldId).map((f) => f.display_name),
+  );
   for (const ref of refs) {
     if (!ROOMS_CORE_DISPLAY_NAMES.has(ref) && !knownCustomDisplayNames.has(ref)) {
       return { error: "missing_ref" };
@@ -318,9 +320,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     });
     fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
 
-    expect(
-      await screen.findByRole("columnheader", { name: /^Label\b/ }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("columnheader", { name: /^Label\b/ })).toBeInTheDocument();
     expect(await screen.findByText("101 — LIVING ROOM")).toBeInTheDocument();
 
     expect(postBodies).toHaveLength(1);
@@ -367,9 +367,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
 
     await openHeaderMenu("Label");
     fireEvent.click(screen.getByRole("menuitem", { name: "Duplicate field" }));
-    expect(
-      await screen.findByRole("columnheader", { name: /^Label copy\b/ }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("columnheader", { name: /^Label copy\b/ })).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getAllByText("101 — LIVING ROOM").length).toBeGreaterThanOrEqual(2),
     );
@@ -415,13 +413,13 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     const confirm = await screen.findByRole("alertdialog");
     fireEvent.click(within(confirm).getByRole("button", { name: "Delete field" }));
 
-    await waitFor(() =>
-      expect(screen.queryByRole("columnheader", { name: /^Tag\b/ })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("columnheader", { name: /^Tag\b/ })).toBeNull());
     // <ComputedCell> encodes the structured `missing_ref` overlay as an
     // aria-labelled #ERROR glyph; the wire copy is pinned here.
     expect(
-      await screen.findByLabelText(/Formula error: Formula references a field that no longer exists/),
+      await screen.findByLabelText(
+        /Formula error: Formula references a field that no longer exists/,
+      ),
     ).toBeInTheDocument();
 
     expect(postBodies.map((b) => b.kind)).toEqual(["deleteField"]);

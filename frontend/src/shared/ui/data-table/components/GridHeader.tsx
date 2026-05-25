@@ -48,6 +48,11 @@ export type HeaderActionHandlers = {
   // the DataTable can mount the formula-editor popover against the
   // clicked header.
   onEditCustomFieldFormula?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
+  // plan-21 P5a.1 — opens the unified field-config modal for a custom
+  // field. Wired to double-click on a custom header and to the new
+  // "Edit field…" menu item. The anchor element is stashed so the
+  // modal can return focus on close.
+  onEditCustomFieldConfig?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
   // The anchor is the clicked `<th>` (captured by the menu's triggerRef)
   // so the DataTable can mount the add-field popover against it.
   onInsertFieldLeft?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
@@ -236,11 +241,22 @@ function DataTableHeaderCell<TRow>({
   const onInsertFieldRight = headerActions.onInsertFieldRight
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
-  const doubleClickAction = isEditableSingleSelect
-    ? () => onEditField?.(column.fieldKey)
-    : canRenameCustomField
-      ? onRenameCustomField
+  // plan-21 P5a.1 — any custom field's double-click opens the unified
+  // config modal. The chevron-click for single-selects continues to
+  // open the legacy options popover until P5a.3 rewires it.
+  const canEditCustomFieldConfig =
+    isCustomField && !readOnly && hasWriteHandler && !!headerActions.onEditCustomFieldConfig;
+  const onEditCustomFieldConfig =
+    canEditCustomFieldConfig && headerActions.onEditCustomFieldConfig
+      ? () => headerActions.onEditCustomFieldConfig?.(column.fieldKey, triggerRef.current)
       : undefined;
+  const doubleClickAction = canEditCustomFieldConfig
+    ? onEditCustomFieldConfig
+    : isEditableSingleSelect
+      ? () => onEditField?.(column.fieldKey)
+      : canRenameCustomField
+        ? onRenameCustomField
+        : undefined;
   return (
     <SortableHeaderCell
       id={column.id}
@@ -329,6 +345,7 @@ function DataTableHeaderCell<TRow>({
           onDuplicateField={onDuplicateCustomField}
           onEditDescription={onEditCustomFieldDescription}
           onEditFieldFormula={onEditCustomFieldFormula}
+          onEditFieldConfig={onEditCustomFieldConfig}
           onInsertFieldLeft={onInsertFieldLeft}
           onInsertFieldRight={onInsertFieldRight}
         />

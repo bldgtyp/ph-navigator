@@ -7,6 +7,7 @@ import {
   buildAddFieldMutation,
   buildDeleteFieldMutation,
   buildDuplicateFieldMutation,
+  buildEditFieldBundleMutation,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
   buildSetFormulaMutation,
@@ -52,6 +53,7 @@ import {
 import type {
   AddCustomFieldRequest,
   BuildEmptyRow,
+  EditCustomFieldBundleRequest,
   EditCustomFieldDescriptionRequest,
   EditCustomFieldFormulaRequest,
   FieldRegistryEntry,
@@ -432,6 +434,30 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     await commitSchemaMutation(mutation);
   };
 
+  // plan-21 P5a.1 — unified field-config modal Save handler. Looks up
+  // the source CustomFieldDef and builds an `editFieldBundle` mutation
+  // carrying the user's display_name + description diff. Later
+  // sub-phases extend `request` (type-change / options / formula) and
+  // this builder picks them up without churning the rest of the wiring.
+  const handleEditCustomFieldBundle = async (request: EditCustomFieldBundleRequest) => {
+    if (!canEdit) return;
+    const source = roomsSlice.custom_fields.find((field) => field.id === request.fieldKey);
+    if (!source) {
+      throw new Error("That custom field no longer exists. Refresh to see the current fields.");
+    }
+    const mutation = buildEditFieldBundleMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      fieldId: request.fieldKey,
+      after: {
+        ...source,
+        display_name: request.displayName,
+        description: request.description,
+      },
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+  };
+
   const handleEditCustomFieldFormula = async (request: EditCustomFieldFormulaRequest) => {
     if (!canEdit) return;
     const mutation = buildSetFormulaMutation({
@@ -603,6 +629,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           onRenameCustomField={canEdit ? handleRenameCustomField : undefined}
           onDuplicateCustomField={canEdit ? handleDuplicateCustomField : undefined}
           onSetCustomFieldDescription={canEdit ? handleSetCustomFieldDescription : undefined}
+          onEditCustomFieldBundle={canEdit ? handleEditCustomFieldBundle : undefined}
           onEditCustomFieldFormula={canEdit ? handleEditCustomFieldFormula : undefined}
           formulaFieldRegistry={formulaFieldRegistry}
           getFormulaRowValues={buildRoomFormulaRowValues}
