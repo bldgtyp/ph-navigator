@@ -59,12 +59,8 @@ export function HeaderContextMenu({
   fieldDef,
   triggerRef,
   isViewer,
-  onRenameField,
   onDeleteField,
   onDuplicateField,
-  onEditDescription,
-  onChangeFieldType,
-  onEditFieldFormula,
   onEditFieldConfig,
   onInsertFieldLeft,
   onInsertFieldRight,
@@ -87,14 +83,6 @@ export function HeaderContextMenu({
       onSelect: onEditFieldConfig,
     });
   }
-  if (isCustomField && onRenameField) {
-    items.push({
-      key: "rename-field",
-      label: "Rename field",
-      restoreFocus: false,
-      onSelect: onRenameField,
-    });
-  }
   if (isCustomField && onDeleteField) {
     items.push({
       key: "delete-field",
@@ -105,27 +93,6 @@ export function HeaderContextMenu({
   }
   if (isCustomField && onDuplicateField) {
     items.push({ key: "duplicate-field", label: "Duplicate field", onSelect: onDuplicateField });
-  }
-  if (isCustomField && onEditDescription) {
-    items.push({
-      key: "edit-description",
-      label: "Edit description",
-      onSelect: onEditDescription,
-    });
-  }
-  if (isCustomField && onEditFieldFormula) {
-    items.push({
-      key: "edit-formula",
-      label: "Edit formula…",
-      onSelect: onEditFieldFormula,
-    });
-  }
-  if (isCustomField && onChangeFieldType) {
-    items.push({
-      key: "change-type",
-      label: "Change type",
-      onSelect: onChangeFieldType,
-    });
   }
   items.push(
     { key: "sort-asc", label: "Sort A → Z", onSelect: onSortAsc },

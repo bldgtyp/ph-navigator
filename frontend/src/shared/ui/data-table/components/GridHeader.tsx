@@ -20,7 +20,7 @@ import { SortableHeaderCell } from "./SortableHeaderCell";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 
 // Header onMouseDown owns column-select; double-click on editable
-// single_select headers opens the field editor via `onEditField`.
+// custom headers opens the field config modal.
 // Header `<th>` refs are captured into `headerCellRefByFieldKey` so
 // the popover can anchor to them. `<ColumnHeaderMenu>` owns the
 // show/hide decision for the `⋯` trigger internally.
@@ -67,8 +67,6 @@ export type GridHeaderProps<TRow> = {
   onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   readOnly: boolean;
   hasWriteHandler: boolean;
-  onEditField?: (fieldKey: string) => void;
-  openFieldKey?: string | null;
   renamingFieldKey?: string | null;
   existingFieldLabels?: ReadonlyArray<FieldDisplayName>;
   onRenameCustomFieldSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
@@ -94,8 +92,6 @@ export function GridHeader<TRow>({
   onColumnMouseDown,
   readOnly,
   hasWriteHandler,
-  onEditField,
-  openFieldKey,
   renamingFieldKey,
   existingFieldLabels = [],
   onRenameCustomFieldSubmit,
@@ -128,8 +124,6 @@ export function GridHeader<TRow>({
                 isPrimary={columnIndex === 0}
                 readOnly={readOnly}
                 hasWriteHandler={hasWriteHandler}
-                onEditField={onEditField}
-                openFieldKey={openFieldKey ?? null}
                 renamingFieldKey={renamingFieldKey ?? null}
                 existingFieldLabels={existingFieldLabels}
                 onRenameCustomFieldSubmit={onRenameCustomFieldSubmit}
@@ -159,8 +153,6 @@ type DataTableHeaderCellProps<TRow> = {
   isPrimary: boolean;
   readOnly: boolean;
   hasWriteHandler: boolean;
-  onEditField?: (fieldKey: string) => void;
-  openFieldKey: string | null;
   renamingFieldKey: string | null;
   existingFieldLabels: ReadonlyArray<FieldDisplayName>;
   onRenameCustomFieldSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
@@ -182,8 +174,6 @@ function DataTableHeaderCell<TRow>({
   isPrimary,
   readOnly,
   hasWriteHandler,
-  onEditField,
-  openFieldKey,
   renamingFieldKey,
   existingFieldLabels,
   onRenameCustomFieldSubmit,
@@ -196,12 +186,9 @@ function DataTableHeaderCell<TRow>({
   headerActions,
 }: DataTableHeaderCellProps<TRow>) {
   const triggerRef = useRef<HTMLTableCellElement | null>(null);
-  const isEditableSingleSelect =
-    fieldDef?.field_type === "single_select" && !readOnly && hasWriteHandler && !!onEditField;
   const isCustomField = fieldDef ? fieldDef.read_only_schema !== true : false;
   const canRenameCustomField =
     isCustomField && !readOnly && hasWriteHandler && !!onRenameCustomFieldSubmit;
-  const isEditorOpen = openFieldKey !== null && openFieldKey === column.fieldKey;
   const isRenaming = renamingFieldKey !== null && renamingFieldKey === column.fieldKey;
   const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
     .filter(Boolean)
@@ -241,22 +228,16 @@ function DataTableHeaderCell<TRow>({
   const onInsertFieldRight = headerActions.onInsertFieldRight
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
-  // plan-21 P5a.1 — any custom field's double-click opens the unified
-  // config modal. The chevron-click for single-selects continues to
-  // open the legacy options popover until P5a.3 rewires it.
+  // plan-21 P5a.3 — any custom field's double-click or chevron opens
+  // the unified config modal. The legacy single-select options popover
+  // is no longer an entry point.
   const canEditCustomFieldConfig =
     isCustomField && !readOnly && hasWriteHandler && !!headerActions.onEditCustomFieldConfig;
   const onEditCustomFieldConfig =
     canEditCustomFieldConfig && headerActions.onEditCustomFieldConfig
       ? () => headerActions.onEditCustomFieldConfig?.(column.fieldKey, triggerRef.current)
       : undefined;
-  const doubleClickAction = canEditCustomFieldConfig
-    ? onEditCustomFieldConfig
-    : isEditableSingleSelect
-      ? () => onEditField?.(column.fieldKey)
-      : canRenameCustomField
-        ? onRenameCustomField
-        : undefined;
+  const doubleClickAction = canEditCustomFieldConfig ? onEditCustomFieldConfig : undefined;
   return (
     <SortableHeaderCell
       id={column.id}
@@ -264,8 +245,8 @@ function DataTableHeaderCell<TRow>({
       ariaColIndex={columnIndex + 1}
       className={className}
       axisTint={axisTint}
-      fieldEditable={isEditableSingleSelect}
-      fieldEditorOpen={isEditorOpen}
+      fieldEditable={canEditCustomFieldConfig}
+      fieldEditorOpen={false}
       isPickedUp={pickedUp}
       schemaLocked={schemaLocked}
       cellRef={(node) => {
@@ -311,7 +292,7 @@ function DataTableHeaderCell<TRow>({
             {flexRender(header.column.columnDef.header, header.getContext())}
           </span>
         )}
-        {isEditableSingleSelect ? (
+        {canEditCustomFieldConfig ? (
           <span aria-hidden className="data-table-header-edit-chevron">
             ▾
           </span>
@@ -325,8 +306,8 @@ function DataTableHeaderCell<TRow>({
         {fieldDef ? (
           <ColumnHeaderMenu
             fieldDef={fieldDef}
-            canEditOptions={isEditableSingleSelect}
-            onEditOptions={() => onEditField?.(column.fieldKey)}
+            canEditOptions={canEditCustomFieldConfig}
+            onEditOptions={() => onEditCustomFieldConfig?.()}
           />
         ) : null}
       </div>

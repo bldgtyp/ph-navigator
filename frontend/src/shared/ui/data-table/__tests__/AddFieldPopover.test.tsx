@@ -192,6 +192,46 @@ describe("AddFieldPopover", () => {
     expect(formula.disabled).toBe(false);
   });
 
+  test("single_select default picker lands in config.default_option_id", async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined);
+    render(<Harness dispatch={dispatch} />);
+    typeName("Status");
+    clickPill("Single select");
+    fireEvent.change(within(dialog()).getByLabelText("Option label 1"), {
+      target: { value: "Open" },
+    });
+    const defaultSelect = within(dialog()).getByLabelText("Default option") as HTMLSelectElement;
+    const optionId = Array.from(defaultSelect.options).find(
+      (option) => option.text === "Open",
+    )?.value;
+    expect(optionId).toBeTruthy();
+    fireEvent.change(within(dialog()).getByLabelText("Default option"), {
+      target: { value: optionId },
+    });
+    clickAdd();
+    await waitFor(() => expect(dispatch).toHaveBeenCalled());
+    const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
+    expect(request.fieldType).toBe("single_select");
+    expect(request.config).toEqual({ default_option_id: optionId });
+    expect(request.initialOptions).toEqual([
+      expect.objectContaining({ id: optionId, label: "Open", order: 1 }),
+    ]);
+  });
+
+  test("single_select defaults to null when no default is picked", async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined);
+    render(<Harness dispatch={dispatch} />);
+    typeName("Status");
+    clickPill("Single select");
+    fireEvent.change(within(dialog()).getByLabelText("Option label 1"), {
+      target: { value: "Open" },
+    });
+    clickAdd();
+    await waitFor(() => expect(dispatch).toHaveBeenCalled());
+    const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
+    expect(request.config).toEqual({ default_option_id: null });
+  });
+
   test("Cancel closes the popover without dispatching", () => {
     const dispatch = vi.fn();
     render(<Harness dispatch={dispatch} />);

@@ -16,7 +16,7 @@ const numberField: FieldDef = {
   display_name: "iCFA",
 };
 
-describe("ColumnHeaderMenu — plan 06 retirement of the Aggregation entry", () => {
+describe("ColumnHeaderMenu — plan 21 field config entry", () => {
   test("number column with no editable options renders nothing", () => {
     const { container } = render(
       <ColumnHeaderMenu fieldDef={numberField} canEditOptions={false} onEditOptions={vi.fn()} />,
@@ -24,13 +24,13 @@ describe("ColumnHeaderMenu — plan 06 retirement of the Aggregation entry", () 
     expect(container).toBeEmptyDOMElement();
   });
 
-  test("editable single_select still surfaces Edit options… but no Aggregation entry", () => {
+  test("editable custom field surfaces Edit field… but no Aggregation entry", () => {
     render(
       <ColumnHeaderMenu fieldDef={singleSelectField} canEditOptions onEditOptions={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /More actions/ }));
     const labels = screen.getAllByRole("button").map((b) => b.textContent?.trim() ?? "");
-    expect(labels).toEqual(expect.arrayContaining(["Edit options…"]));
+    expect(labels).toEqual(expect.arrayContaining(["Edit field…"]));
     expect(labels).not.toEqual(
       expect.arrayContaining(["Aggregation:", "Aggregation: None", "Aggregate by…"]),
     );

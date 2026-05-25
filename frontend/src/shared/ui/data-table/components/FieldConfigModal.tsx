@@ -13,7 +13,12 @@ import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import type { CustomFieldType, EditCustomFieldBundleRequest, FieldDef } from "../types";
+import type {
+  CustomFieldType,
+  EditCustomFieldBundleRequest,
+  FieldDef,
+  FieldOption,
+} from "../types";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
@@ -23,6 +28,16 @@ import {
   FieldConfigSectionTypeChange,
   type ServerPreflightPayload,
 } from "./FieldConfigSectionTypeChange";
+import { FieldConfigSectionOptions, type OptionSourceRow } from "./FieldConfigSectionOptions";
+
+function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {
+  if (a.length !== b.length) return false;
+  const normalize = (options: readonly FieldOption[]) =>
+    options
+      .map((option, index) => ({ ...option, order: index + 1 }))
+      .sort((left, right) => left.order - right.order);
+  return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
+}
 
 type TargetCandidate = { kind: CustomFieldType; label: string };
 
@@ -63,6 +78,7 @@ export type FieldConfigModalProps = {
   // Pre-mapped {rowId, rawValue} pairs so the modal stays non-generic
   // over TRow. Drives the local change-type preflight.
   preflightRows?: ReadonlyArray<PreflightSourceRow>;
+  optionRows?: ReadonlyArray<OptionSourceRow>;
 };
 
 export function FieldConfigModal({
@@ -75,6 +91,7 @@ export function FieldConfigModal({
   onFieldRemoved,
   sourceCustomFieldType,
   preflightRows,
+  optionRows,
 }: FieldConfigModalProps) {
   // Source-of-truth FieldDef captured at modal open. Used for the
   // change-detection diff and for R-S2 comparison against the live
@@ -91,6 +108,13 @@ export function FieldConfigModal({
   const [externalConflict, setExternalConflict] = useState<FieldDef | null>(null);
   const [draftType, setDraftType] = useState<CustomFieldType | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [optionsDraft, setOptionsDraft] = useState<{
+    options: FieldOption[];
+    colorCodeOptions: boolean;
+    defaultOptionId: string | null;
+    valid: boolean;
+    dirty: boolean;
+  } | null>(null);
   // Populated from the backend's `custom_field_coercion_preflight_required`
   // 422 envelope; overrides the local preflight in the sub-panel.
   const [serverPreflight, setServerPreflight] = useState<ServerPreflightPayload | null>(null);
@@ -111,6 +135,7 @@ export function FieldConfigModal({
       setExternalConflict(null);
       setDraftType(null);
       setAcknowledged(false);
+      setOptionsDraft(null);
       setServerPreflight(null);
       return;
     }
@@ -126,6 +151,7 @@ export function FieldConfigModal({
     setExternalConflict(null);
     setDraftType(seededSource.custom_field_type ?? null);
     setAcknowledged(false);
+    setOptionsDraft(null);
     setServerPreflight(null);
   }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -159,7 +185,10 @@ export function FieldConfigModal({
     const changed =
       fieldDef.display_name !== source.display_name ||
       (fieldDef.description ?? null) !== (source.description ?? null) ||
-      currentCustomFieldType !== (source.custom_field_type ?? null);
+      currentCustomFieldType !== (source.custom_field_type ?? null) ||
+      !optionListsEquivalent(fieldDef.options ?? [], source.options ?? []) ||
+      (fieldDef.defaultOptionId ?? null) !== (source.defaultOptionId ?? null) ||
+      (fieldDef.colorCodeOptions !== false) !== (source.colorCodeOptions !== false);
     if (changed) setExternalConflict(fieldDef);
   }, [open, source, fieldDef, sourceCustomFieldType, externalConflict]);
 
@@ -213,9 +242,11 @@ export function FieldConfigModal({
     !nameValidationError &&
     (trimmedName !== initialName.trim() ||
       normalizedDescription !== normalizedInitialDescription ||
-      typeChanged);
+      typeChanged ||
+      Boolean(draftType === "single_select" && optionsDraft?.dirty));
 
-  const canSave = dirty && !pending && !externalConflict && ackSatisfied;
+  const optionsValid = draftType !== "single_select" || optionsDraft?.valid !== false;
+  const canSave = dirty && optionsValid && !pending && !externalConflict && ackSatisfied;
 
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
@@ -228,6 +259,13 @@ export function FieldConfigModal({
         description: normalizedDescription,
         ...(typeChanged && draftType !== null ? { fieldType: draftType } : {}),
         ...(typeChanged && needsAck ? { acknowledgeDestructive: true } : {}),
+        ...(draftType === "single_select" && optionsDraft
+          ? {
+              options: optionsDraft.options,
+              defaultOptionId: optionsDraft.defaultOptionId,
+              colorCodeOptions: optionsDraft.colorCodeOptions,
+            }
+          : {}),
       });
       onOpenChange(false);
     } catch (error) {
@@ -264,6 +302,7 @@ export function FieldConfigModal({
     draftType,
     needsAck,
     dispatchBundle,
+    optionsDraft,
     onOpenChange,
     preflightRows,
   ]);
@@ -304,6 +343,7 @@ export function FieldConfigModal({
     setDescription(externalConflict.description ?? "");
     setDraftType(externalConflict.custom_field_type ?? sourceCustomFieldType ?? null);
     setAcknowledged(false);
+    setOptionsDraft(null);
     setServerPreflight(null);
     setExternalConflict(null);
     setSubmitError(null);
@@ -452,6 +492,17 @@ export function FieldConfigModal({
                 acknowledged={acknowledged}
                 onAcknowledgeChange={setAcknowledged}
                 disabled={pending}
+              />
+            ) : null}
+            {draftType === "single_select" && source ? (
+              <FieldConfigSectionOptions
+                fieldDisplayName={source.display_name}
+                sourceOptions={source.options ?? []}
+                sourceColorCodeOptions={source.colorCodeOptions !== false}
+                sourceDefaultOptionId={source.defaultOptionId ?? null}
+                rows={optionRows ?? []}
+                disabled={pending}
+                onDraftChange={setOptionsDraft}
               />
             ) : null}
             <div className="data-table-field-config-modal-section">

@@ -23,6 +23,7 @@ import {
   type LocalFormulaState,
 } from "../lib/formula";
 import { FormulaFieldPalette } from "./FormulaFieldPalette";
+import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";
 import type { FieldOption } from "../types";
 
 const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint: string }> = [
@@ -79,6 +80,7 @@ type FormState = {
   description: string;
   numberPrecision: number;
   options: FieldOption[];
+  defaultOptionId: string | null;
   formulaSource: string;
 };
 
@@ -89,6 +91,7 @@ const INITIAL_STATE: FormState = {
   description: "",
   numberPrecision: DEFAULT_PRECISION,
   options: [],
+  defaultOptionId: null,
   formulaSource: "",
 };
 
@@ -194,6 +197,8 @@ export function AddFieldPopover({
     let config: Record<string, unknown> = {};
     if (state.fieldType === "number") {
       config = { precision: state.numberPrecision };
+    } else if (state.fieldType === "single_select") {
+      config = { default_option_id: state.defaultOptionId };
     } else if (state.fieldType === "formula") {
       if (formulaState.kind !== "ok") return;
       config = {
@@ -304,7 +309,12 @@ export function AddFieldPopover({
                           isSelect && !wasSelect && prev.options.length === 0
                             ? [createFieldOption("", [])]
                             : prev.options;
-                        return { ...prev, fieldType: option.kind, options: nextOptions };
+                        return {
+                          ...prev,
+                          fieldType: option.kind,
+                          options: nextOptions,
+                          defaultOptionId: isSelect ? prev.defaultOptionId : null,
+                        };
                       })
                     }
                   >
@@ -441,6 +451,8 @@ export function AddFieldPopover({
                           setState((prev) => ({
                             ...prev,
                             options: prev.options.filter((opt) => opt.id !== option.id),
+                            defaultOptionId:
+                              prev.defaultOptionId === option.id ? null : prev.defaultOptionId,
                           }))
                         }
                       >
@@ -461,6 +473,12 @@ export function AddFieldPopover({
                 >
                   + Add option
                 </button>
+                <SingleSelectDefaultPicker
+                  options={state.options.filter((option) => option.label.trim())}
+                  value={state.defaultOptionId}
+                  onChange={(defaultOptionId) => setState((prev) => ({ ...prev, defaultOptionId }))}
+                  disabled={pending}
+                />
                 {!optionsValid ? (
                   <p className="form-error data-table-add-field-inline-error" role="alert">
                     Each option needs a unique non-empty label.
