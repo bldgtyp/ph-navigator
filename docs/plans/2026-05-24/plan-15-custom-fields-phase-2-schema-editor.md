@@ -1,15 +1,16 @@
 ---
 DATE: 2026-05-24
 TIME: planning (detailed implementation phasing)
-STATUS: In progress. Phase 2 of plan-13 (custom fields). 4/8 sub-
+STATUS: In progress. Phase 2 of plan-13 (custom fields). 5/8 sub-
         phases shipped (P2.0 scaffold + ADR, P2.1 backend mutation
         DTOs + apply service, P2.2 REST endpoint, P2.3 MCP write
-        tools). All backend Phase-2 surfaces are now live; the
-        frontend slate (P2.4–P2.7) and acceptance pass (P2.8) are
-        what remains. Next up: P2.4 — frontend `schemaMutation`
-        WriteOp + dispatcher. See **Progress log** at the bottom
-        for the latest checkpoint, what's green, and the resume
-        pointer.
+        tools, P2.4 frontend dispatcher + builders). Backend Phase-2
+        surfaces are live; the typed `WriteOp.schemaMutation`
+        pipeline is wired through `useRoomsSchemaMutation` and
+        ready for editor-popover consumers. Next up: P2.5 —
+        locked indicator + description tooltip + `<HeaderContextMenu>`
+        skeleton. See **Progress log** at the bottom for the
+        latest checkpoint, what's green, and the resume pointer.
         Builds on the completed Phase 1 envelope (plan-14): Rooms
         already carries
         `{custom_fields, rows}`, `CustomFieldDef` is closed, the
@@ -1263,38 +1264,34 @@ design).
 | P2.1 — Backend: `FieldSchemaMutation` DTOs + apply service | ✅ Done | 2026-05-24 |
 | P2.2 — Backend: REST schema-mutation endpoint | ✅ Done | 2026-05-24 |
 | P2.3 — Backend: MCP `*_custom_field` write tools | ✅ Done | 2026-05-24 |
-| P2.4 — Frontend: `schemaMutation` WriteOp + dispatcher | ⏭️ Next | — |
-| P2.5 — Frontend: locked indicator + tooltip + `<HeaderContextMenu>` skeleton | ⏳ Pending | — |
+| P2.4 — Frontend: `schemaMutation` WriteOp + dispatcher | ✅ Done | 2026-05-24 |
+| P2.5 — Frontend: locked indicator + tooltip + `<HeaderContextMenu>` skeleton | ⏭️ Next | — |
 | P2.6 — Frontend: add-field popover + tail `+` cell wire-up | ⏳ Pending | — |
 | P2.7 — Frontend: rename + delete + duplicate + edit-description | ⏳ Pending | — |
 | P2.8 — Exit-criteria acceptance tests + Playwright + a11y pass | ⏳ Pending | — |
 
 ### Resume pointer
 
-**Next sub-phase: P2.4 — Frontend: `schemaMutation` WriteOp +
-dispatcher + `useTableSchema.mutate`** (see phase block above for
-full spec). This is the bridge between the now-live backend
-schema-mutation pipeline (REST + MCP) and the editor UI shipping in
-P2.5–P2.7. Concretely:
+**Next sub-phase: P2.5 — Frontend: locked indicator + description
+tooltip + `<HeaderContextMenu>` skeleton** (see phase block above
+for full spec). This is the first phase that lands user-visible
+UI. Concretely:
 
-1. Rename `WriteOp.fieldDefMutation` → `WriteOp.schemaMutation` in
-   `frontend/src/shared/ui/data-table/types.ts`. Keep the legacy
-   `before` / `after` / `cellWrites` slots on the renamed variant
-   for the single-select option editor (plan-16 / Phase 3 splits
-   that into its own kind).
-2. Add the TS `FieldSchemaMutation` discriminated union matching
-   the backend (`backend/features/project_document/schema_mutations.py`).
-3. Build the typed builder functions in
-   `frontend/src/shared/ui/data-table/lib/customFieldMutations.ts`
-   (placeholder shipped in P2.0).
-4. Add `postRoomsSchemaMutation` API client targeting
-   `POST .../draft/tables/{table_name}/custom-fields:mutate`.
-5. Extend `useTableSchema` with `mintCustomFieldId()` and the
-   `mutate(op)` helper.
-6. Wire the dispatcher into `RoomsTable`'s `onWrite` handler.
+1. Add the `--phn-header-border-locked` CSS token and lock-glyph
+   plumbing in `SortableHeaderCell`.
+2. Replace the `HeaderContextMenu.tsx` placeholder (from P2.0)
+   with the real Radix `DropdownMenu` (right-click + Shift+F10,
+   viewer-mode suppressed, core vs custom variants per US-CF-6).
+3. Replace the `CustomFieldDescriptionTooltip.tsx` placeholder
+   with the real Radix `Tooltip` (visible in viewer mode).
+4. Wire a **Delete field** modal confirm that builds
+   `buildDeleteFieldMutation` and dispatches via the
+   `WriteOp.schemaMutation` pipeline shipped in P2.4. The
+   dispatcher in `EquipmentTab.tsx::handleTableWrite` is already
+   wired (`op.mutation` branch).
 
-No new UI in P2.4; the existing single-select option editor
-should keep working through the renamed WriteOp.
+No add / rename / duplicate / edit-description popovers in P2.5
+— those land in P2.6 / P2.7.
 
 ### P2.0 (2026-05-24) — Story promotion + scaffold + ADR
 
@@ -1550,6 +1547,96 @@ button) — clean on retry.
   `details["updated_via"]`. If a future surface needs to filter
   the action log by channel, query
   `details->>'updated_via' = 'mcp'`.
+
+### P2.4 (2026-05-24) — Frontend: `schemaMutation` WriteOp + dispatcher + builders
+
+**What landed:**
+
+- `frontend/src/shared/ui/data-table/types.ts` — renamed
+  `WriteOp.fieldDefMutation` → `WriteOp.schemaMutation`. The new
+  variant carries both an optional typed `mutation:
+  FieldSchemaMutation` slot (the P2.4 add/rename/delete pipeline)
+  and the legacy `before` / `after` / `cellWrites` slots for the
+  single-select option editor (kept as-is until plan-16 splits it).
+- `frontend/src/shared/ui/data-table/lib/customFieldMutations.ts`
+  (P2.0 placeholder replaced) — the typed `FieldSchemaMutation`
+  TS discriminated union mirrors the backend Pydantic union, and
+  five typed builders (`buildAddFieldMutation`,
+  `buildRenameFieldMutation`, `buildDeleteFieldMutation`,
+  `buildDuplicateFieldMutation`, `buildSetDescriptionMutation`)
+  centralize wire-shape construction + inline preflight
+  (non-empty trimmed display_name, valid `cf_*` id, dup-id
+  check on duplicate). The new `SchemaMutationBuildError` is the
+  preflight exception popovers catch in P2.6 / P2.7.
+- `frontend/src/shared/ui/data-table/hooks/useTableSchema.ts` —
+  exports `mintCustomFieldId()` (uses `crypto.randomUUID()` when
+  available; jsdom-safe fallback) and adds it to the `TableSchema`
+  return so popovers don't reach for ad-hoc id generators.
+- `frontend/src/features/project_document/table-slice.ts` —
+  factory grew `mutateSchema(projectId, versionId, current,
+  mutation)` (targets `POST .../draft/tables/{table_name}/custom-fields:mutate`)
+  and `useSchemaMutationMutation` (mirrors `useReplaceSliceMutation`'s
+  onSuccess — same `applyAcceptedSlice` helper updates the cache,
+  marks the draft touched, invalidates the draft summary, and
+  fires `onAcceptedSlice` on boundary crossings). Both methods
+  use a shared `draftWriteHeaders(current)` helper to pick
+  `If-Match` vs `If-Match-Version`.
+- `frontend/src/features/equipment/hooks.ts` — exports
+  `useRoomsSchemaMutation` for Rooms.
+- `frontend/src/features/equipment/routes/EquipmentTab.tsx` —
+  `handleTableWrite` switches on `op.kind === "schemaMutation"`:
+  if `op.mutation` is set, the new `commitSchemaMutation` helper
+  POSTs through `useRoomsSchemaMutation` (with the same stale-
+  draft + locked-version recovery as `commitRoomsPayload`);
+  otherwise the legacy option-editor path runs as before. Imports
+  the typed `FieldSchemaMutation` from the shared data-table
+  barrel.
+- `frontend/src/shared/ui/data-table/index.ts` — barrel exports
+  `mintCustomFieldId`, every typed mutation member, every builder,
+  and `SchemaMutationBuildError`.
+- `frontend/src/shared/ui/data-table/__tests__/customFieldMutations.test.ts`
+  — 11 tests over the typed builders (wire-shape snapshot per
+  builder + every reject branch).
+- `frontend/src/features/project_document/table-slice.test.ts`
+  — added `mutateSchema posts to the :mutate endpoint with the
+  typed mutation body` (URL + method + headers + JSON-encoded
+  body all asserted).
+- Renamed `fieldDefMutation` callsites in
+  `FieldEditorPopover.tsx` (2), `EquipmentTab.tsx` (1), and the
+  two existing tests (`FieldEditorPopover.test.tsx` ×11,
+  `useGridWriteReducer.test.ts` ×3). The legacy single-select
+  option editor still rides the renamed variant via its
+  `before`/`after`/`cellWrites` slots.
+
+**Gates green:** `pnpm tsc --noEmit`, `make lint`, `make test`
+(backend 170 unchanged; frontend 609 passed — 595 before P2.4
++ 14 new tests: 11 builder tests + 1 mutateSchema test + 2
+test files added in earlier phases that are unrelated). No
+behavior regression in the existing FieldEditorPopover or
+useGridWriteReducer tests.
+
+**Notes for the next visitor:**
+
+- **`WriteOp.schemaMutation` is dual-shape on purpose.** The
+  legacy option editor and the new typed pipeline coexist on the
+  same kind so undo/redo, write-queue routing, and grid
+  re-render stay aligned. P2.5+ popovers always set `mutation`
+  and never touch `before`/`after`/`cellWrites`; the option
+  editor never sets `mutation`. Plan-16 / Phase 3 splits them.
+- **`mintCustomFieldId`** uses 32 hex chars from
+  `crypto.randomUUID()`. The backend's `CUSTOM_FIELD_ID_PATTERN`
+  (`^cf_[A-Za-z0-9_-]+$`) accepts this; if you ever want
+  user-recognisable ids (e.g. `cf_notes_01HX...`) the slug part
+  is advisory only — identity stays the `cf_*` id.
+- **`commitSchemaMutation`** lives next to `commitRoomsPayload`
+  in EquipmentTab and shares its stale-draft / locked-version
+  recovery semantics. If P2.5+ popovers need finer-grained error
+  surfaces (e.g. inline "Someone else added a field"), they
+  should catch the thrown `Error` and inspect via
+  `isDraftStaleError` etc.
+- **No new UI shipped in P2.4** — the pipeline is fully wired
+  but unreachable from the user surface until P2.5/P2.6 ship
+  the header menu + add-field popover.
 
 ---
 

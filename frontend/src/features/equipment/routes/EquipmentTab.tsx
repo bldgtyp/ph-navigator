@@ -11,7 +11,12 @@ import type { ProjectDetail } from "../../projects/types";
 import { projectQueryKeys } from "../../projects/query-keys";
 import { RoomModal } from "../components/RoomModal";
 import { RoomsTable } from "../components/RoomsTable";
-import { useReplaceRoomsSliceMutation, useRoomsDraftBroadcast, useRoomsSliceQuery } from "../hooks";
+import {
+  useReplaceRoomsSliceMutation,
+  useRoomsDraftBroadcast,
+  useRoomsSchemaMutation,
+  useRoomsSliceQuery,
+} from "../hooks";
 import {
   deleteRoomPayload,
   emptyRoom,
@@ -32,7 +37,7 @@ import {
   roomsTableFieldDefs,
   validateRoomsPayload,
 } from "../lib";
-import type { BuildEmptyRow, WriteOp } from "../../../shared/ui/data-table";
+import type { BuildEmptyRow, FieldSchemaMutation, WriteOp } from "../../../shared/ui/data-table";
 import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_KEY,
@@ -120,6 +125,11 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     activeVersionId,
     publishRoomsSlice,
   );
+  const schemaMutationMutation = useRoomsSchemaMutation(
+    project.id,
+    activeVersionId,
+    publishRoomsSlice,
+  );
 
   useEffect(() => {
     setEditBlocker(null);
@@ -176,33 +186,21 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   }
 
   const roomsSlice = roomsQuery.data;
-  const commitRoomsPayload = async (
+  const commitRoomsPayload = (
     payload: ReturnType<typeof nextRoomsPayload>,
     conflictMessage: string,
     fallbackMessage: string,
   ) => {
-    if (!canEdit) return;
-    setActionError(null);
     const validationMessage = validateRoomsPayload(payload);
     if (validationMessage) {
       setActionError(validationMessage);
       throw new Error(validationMessage);
     }
-    try {
-      await replaceRoomsMutation.mutateAsync({ current: roomsSlice, payload });
-    } catch (error) {
-      if (isDraftStaleError(error)) {
-        await handleStaleDraftConflict(conflictMessage);
-        throw error;
-      }
-      if (isVersionLockedError(error)) {
-        await handleVersionLockedConflict();
-        throw error;
-      }
-      const message = errorMessage(error, fallbackMessage);
-      setActionError(message);
-      throw new Error(message);
-    }
+    return withDraftConflictHandling(
+      () => replaceRoomsMutation.mutateAsync({ current: roomsSlice, payload }),
+      conflictMessage,
+      fallbackMessage,
+    );
   };
 
   const saveRoom = async (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => {
@@ -289,12 +287,16 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       );
       return;
     }
-    if (op.kind === "fieldDefMutation") {
-      const optionKey = op.after.field_key;
-      if (!isRoomOptionKey(optionKey)) return;
-      // replaceRoomOptionsPayload takes a per-option-id replacement
-      // map; the op's cellWrites carry per-row target values. Collapse
-      // by reading each row's prior option id from the live slice.
+    if (op.kind === "schemaMutation") {
+      if (op.variant === "typed") {
+        await commitSchemaMutation(op.mutation);
+        return;
+      }
+      // Single-select option editor — Phase 2 still rides through the
+      // whole-table replace path; plan-16 splits it into its own kind.
+      const { after } = op;
+      if (!isRoomOptionKey(after.field_key)) return;
+      const optionKey = after.field_key;
       const replacements = collapseRoomCellWritesToReplacements(
         roomsSlice,
         optionKey,
@@ -305,7 +307,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         payload = replaceRoomOptionsPayload(
           roomsSlice,
           optionKey,
-          op.after.options ?? [],
+          after.options ?? [],
           replacements,
         );
       } catch (error) {
@@ -319,6 +321,37 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         "Could not update room options.",
       );
       return;
+    }
+  };
+
+  const commitSchemaMutation = (mutation: FieldSchemaMutation) =>
+    withDraftConflictHandling(
+      () => schemaMutationMutation.mutateAsync({ current: roomsSlice, mutation }),
+      ACTIVE_ROOM_CONFLICT_MESSAGE,
+      "Could not update custom-field schema.",
+    );
+
+  const withDraftConflictHandling = async <T,>(
+    run: () => Promise<T>,
+    conflictMessage: string,
+    fallbackMessage: string,
+  ): Promise<T | undefined> => {
+    if (!canEdit) return undefined;
+    setActionError(null);
+    try {
+      return await run();
+    } catch (error) {
+      if (isDraftStaleError(error)) {
+        await handleStaleDraftConflict(conflictMessage);
+        throw error;
+      }
+      if (isVersionLockedError(error)) {
+        await handleVersionLockedConflict();
+        throw error;
+      }
+      const message = errorMessage(error, fallbackMessage);
+      setActionError(message);
+      throw new Error(message);
     }
   };
 

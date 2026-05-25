@@ -4,6 +4,7 @@
 // Fans tables) consume this hook so the schema-editor surface and the
 // view-state fingerprint live in one place.
 import { useMemo } from "react";
+import { generatedId } from "../../../lib/ids";
 import type { FieldDef, FieldType } from "../types";
 
 // Mirror of backend `CustomFieldType` (plan-14 P1.1). Closed v1 set so
@@ -39,6 +40,7 @@ export type TableSchema = {
   // alongside their state payload so opening a different schema does
   // not overwrite a saved record from a different schema fingerprint.
   schemaFingerprint: string;
+  mintCustomFieldId: () => string;
 };
 
 export type UseTableSchemaArgs = {
@@ -93,9 +95,16 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
       coreFieldKeys,
       customFields: customList,
       schemaFingerprint,
+      mintCustomFieldId,
     }),
     [fieldDefs, coreFieldKeys, customList, schemaFingerprint],
   );
+}
+
+// Backend `CUSTOM_FIELD_ID_PATTERN = /^cf_[A-Za-z0-9_-]+$/`; `generatedId`
+// strips non-alphanumerics so the result is always valid.
+export function mintCustomFieldId(): string {
+  return generatedId("cf");
 }
 
 function customFieldToFieldDef(custom: CustomFieldDef): FieldDef {

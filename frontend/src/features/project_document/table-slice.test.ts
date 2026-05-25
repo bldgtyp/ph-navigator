@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
 import { createTableSliceFeature, type BaseTableSlice } from "./table-slice";
 
 type FakeSlice = BaseTableSlice & { rows: string[] };
@@ -65,6 +66,32 @@ describe("createTableSliceFeature", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(makeSlice()));
     await feature.fetchSlice(projectId, versionId, "viewer");
     expect(fetchMock.mock.calls[1]?.[0]).toContain(`/document/tables/fake_table`);
+  });
+
+  it("mutateSchema posts to the :mutate endpoint with the typed mutation body", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(makeSlice({ draft_etag: "d-mut" })));
+    const mutation: FieldSchemaMutation = {
+      kind: "addField",
+      tableKey: "fake_table",
+      after: {
+        id: "cf_x",
+        field_key: null,
+        display_name: "X",
+        field_type: "short_text",
+        config: {},
+        description: null,
+        created_at: "2026-05-24T12:00:00Z",
+        created_by: null,
+      },
+      expectedSchemaFingerprint: "fp-abc",
+    };
+    await feature.mutateSchema(projectId, versionId, makeSlice(), mutation);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/draft/tables/fake_table/custom-fields:mutate");
+    expect(init.method).toBe("POST");
+    const headers = new Headers(init.headers);
+    expect(headers.get("If-Match-Version")).toBe("ver-etag-1");
+    expect(JSON.parse(String(init.body))).toEqual(mutation);
   });
 
   it("replaceSlice sends If-Match-Version when there is no draft, and If-Match when a draft exists", async () => {

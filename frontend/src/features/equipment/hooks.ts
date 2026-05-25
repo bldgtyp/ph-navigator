@@ -19,6 +19,7 @@ export const roomsQueryKeys = roomsSliceFeature.queryKeys;
 
 export const useRoomsSliceQuery = roomsSliceFeature.useSliceQuery;
 export const useReplaceRoomsSliceMutation = roomsSliceFeature.useReplaceSliceMutation;
+export const useRoomsSchemaMutation = roomsSliceFeature.useSchemaMutationMutation;
 
 export function useRoomsDraftBroadcast(
   projectId: string,
