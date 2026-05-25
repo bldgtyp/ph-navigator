@@ -20,6 +20,7 @@ dependencies = [
     "jsonpatch>=1.33",
     "argon2-cffi>=25.1.0",
     "mcp>=1.27.1",
+    "structlog>=25.5.0",
 ]
 
 [dependency-groups]

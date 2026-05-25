@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import NoReturn
 from uuid import UUID
 
+import structlog
 from pydantic import BaseModel
 from starlette import status
 
@@ -31,7 +31,7 @@ from features.project_document.validation import (
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
-logger = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -239,15 +239,13 @@ def read_safe_envelope(
     row_schema_version: object,
 ) -> ProjectDocumentReadSafeEnvelope:
     schema_version = schema_version_from_raw(raw_body, row_schema_version)
-    logger.warning(
-        "Project document entered read-safe mode.",
-        extra={
-            "error_code": "schema_validation_failed_after_migration",
-            "project_id": str(project_id),
-            "version_id": str(version_id),
-            "schema_version": schema_version,
-            "request_id": request_id,
-        },
+    log.warning(
+        "project_document.read_safe_mode",
+        error_code="schema_validation_failed_after_migration",
+        project_id=str(project_id),
+        version_id=str(version_id),
+        schema_version=schema_version,
+        request_id=request_id,
     )
     return ProjectDocumentReadSafeEnvelope(
         project_id=project_id,
