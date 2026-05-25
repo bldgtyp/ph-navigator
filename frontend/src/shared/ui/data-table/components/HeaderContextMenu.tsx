@@ -45,6 +45,7 @@ type MenuItem = {
   key: string;
   label: string;
   danger?: boolean;
+  restoreFocus?: boolean;
   onSelect: () => void;
 };
 
@@ -70,11 +71,17 @@ export function HeaderContextMenu({
 }: HeaderContextMenuProps) {
   const [open, setOpen] = useState<OpenState | null>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const restoreFocusOnCloseRef = useRef(true);
 
   const isCustomField = fieldDef.read_only_schema !== true;
   const items: MenuItem[] = [];
   if (isCustomField && onRenameField) {
-    items.push({ key: "rename-field", label: "Rename field", onSelect: onRenameField });
+    items.push({
+      key: "rename-field",
+      label: "Rename field",
+      restoreFocus: false,
+      onSelect: onRenameField,
+    });
   }
   if (isCustomField && onDeleteField) {
     items.push({
@@ -211,7 +218,8 @@ export function HeaderContextMenu({
           onOpenAutoFocus={(event) => event.preventDefault()}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            triggerRef.current?.focus();
+            if (restoreFocusOnCloseRef.current) triggerRef.current?.focus();
+            restoreFocusOnCloseRef.current = true;
           }}
           onKeyDown={handleMenuKeyDown}
         >
@@ -227,6 +235,7 @@ export function HeaderContextMenu({
               }}
               onClick={(event) => {
                 event.preventDefault();
+                restoreFocusOnCloseRef.current = item.restoreFocus !== false;
                 setOpen(null);
                 item.onSelect();
               }}

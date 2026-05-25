@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
-import { test, expect, type Page } from "@playwright/test";
-import { createProject, signIn } from "./_helpers";
+import { test, expect } from "@playwright/test";
+import { createProject, openHeaderMenu, signIn } from "./_helpers";
 
 const SCREENSHOT_DIR = "../docs/plans/2026-05-24/screenshots/custom-fields-phase-2";
 
@@ -47,14 +47,3 @@ test("custom-field Phase 2 editor walkthrough", async ({ page }) => {
   await expect(page.getByRole("columnheader", { name: /^Finish copy\b/ })).toHaveCount(0);
 });
 
-async function openHeaderMenu(page: Page, headerName: string): Promise<void> {
-  const escaped = headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const header = page.locator('th[role="columnheader"]').filter({
-    has: page.locator(".data-table-header-label", {
-      hasText: new RegExp(`^${escaped}$`),
-    }),
-  });
-  await expect(header).toHaveCount(1);
-  await header.click({ button: "right" });
-  await expect(page.getByRole("menu")).toBeVisible();
-}

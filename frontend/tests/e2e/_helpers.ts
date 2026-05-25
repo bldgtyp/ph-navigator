@@ -84,6 +84,18 @@ export async function updateCatalogRow(
   expect(response.status(), await response.text()).toBe(200);
 }
 
+export async function openHeaderMenu(page: Page, headerName: string): Promise<void> {
+  const escaped = headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const header = page.locator('th[role="columnheader"]').filter({
+    has: page.locator(".data-table-header-label", {
+      hasText: new RegExp(`^${escaped}$`),
+    }),
+  });
+  await expect(header).toHaveCount(1);
+  await header.click({ button: "right" });
+  await expect(page.getByRole("menu")).toBeVisible();
+}
+
 export async function readWindowTypesSlice(
   request: APIRequestContext,
   baseURL: string | undefined,

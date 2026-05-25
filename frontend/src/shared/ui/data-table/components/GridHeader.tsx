@@ -362,11 +362,13 @@ function HeaderRenameEditor({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const pendingRef = useRef(false);
 
   useEffect(() => {
     setValue(initialName);
     setError(null);
     setPending(false);
+    pendingRef.current = false;
     const handle = window.setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
@@ -375,7 +377,7 @@ function HeaderRenameEditor({
   }, [initialName]);
 
   const submit = async () => {
-    if (pending || !onSubmit) return;
+    if (pendingRef.current || !onSubmit) return;
     const trimmed = value.trim();
     if (!trimmed) {
       setError("Field name cannot be empty.");
@@ -390,6 +392,7 @@ function HeaderRenameEditor({
       setError(`A field named "${trimmed}" already exists in this table.`);
       return;
     }
+    pendingRef.current = true;
     setPending(true);
     setError(null);
     try {
@@ -399,6 +402,7 @@ function HeaderRenameEditor({
         caught instanceof Error && caught.message ? caught.message : "Could not rename field.",
       );
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   };
@@ -418,16 +422,21 @@ function HeaderRenameEditor({
         disabled={pending}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && !pending) {
+          event.stopPropagation();
+          if (event.key === "Enter" && !pendingRef.current) {
             event.preventDefault();
             void submit();
             return;
           }
-          if (event.key === "Escape" && !pending) {
+          if (event.key === "Escape" && !pendingRef.current) {
             event.preventDefault();
             onCancel?.();
           }
         }}
+        onBlur={() => {
+          void submit();
+        }}
+        onPaste={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
         onMouseDown={(event) => event.stopPropagation()}
         onDoubleClick={(event) => event.stopPropagation()}

@@ -205,6 +205,19 @@ describe("GridBody — fill handle (Phase 7)", () => {
     expect(within(active).getByRole("button", { name: "Drag to fill" })).toBeInTheDocument();
   });
 
+  test("the bottom visible data row exposes a row-edge marker for unclipped active chrome", () => {
+    renderTable({ onWrite: vi.fn() });
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown" });
+    fireEvent.keyDown(grid, { key: "ArrowDown" });
+
+    const active = getBodyCell(2, 0);
+    expect(active).toHaveClass("data-table-cell-active");
+    expect(active.dataset.rowEdge).toBe("bottom");
+    expect(active.dataset.fillHandle).toBe("true");
+    expect(within(active).getByRole("button", { name: "Drag to fill" })).toBeInTheDocument();
+  });
+
   test("no handle when the table is read-only (no onWrite handler)", () => {
     renderTable();
     const active = getBodyCell(0, 0);

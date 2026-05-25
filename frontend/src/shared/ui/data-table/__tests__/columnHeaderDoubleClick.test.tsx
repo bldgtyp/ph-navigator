@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
 import {
@@ -10,6 +11,7 @@ import {
 } from "../types";
 
 type Row = { id: string; number: string; floor: string | null; count: number };
+type CustomRow = Row & { custom: Record<string, unknown> };
 
 const ROWS: Row[] = [
   { id: "rm_1", number: "101", floor: "opt_ground", count: 1 },
@@ -33,6 +35,23 @@ const COLUMN_DEFS: DataTableColumnDef<Row>[] = [
   { id: "floor", fieldKey: "floor", header: "Floor", accessor: (row) => row.floor },
   { id: "count", fieldKey: "count", header: "Count", accessor: (row) => row.count },
 ];
+const CUSTOM_ROWS: CustomRow[] = ROWS.map((row) => ({
+  ...row,
+  custom: { cf_notes: "" },
+}));
+const CUSTOM_FIELD_DEFS: FieldDef[] = [
+  { field_key: "number", field_type: "text", display_name: "Number", read_only_schema: true },
+  { field_key: "cf_notes", field_type: "text", display_name: "Notes" },
+];
+const CUSTOM_COLUMN_DEFS: DataTableColumnDef<CustomRow>[] = [
+  { id: "number", fieldKey: "number", header: "Number", accessor: (row) => row.number },
+  {
+    id: "cf_notes",
+    fieldKey: "cf_notes",
+    header: "Notes",
+    accessor: (row) => row.custom.cf_notes,
+  },
+];
 
 function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
   const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
@@ -53,6 +72,24 @@ function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
 
 function getColumnHeader(name: string): HTMLElement {
   return screen.getByRole("columnheader", { name: new RegExp(name) });
+}
+
+function renderCustomFieldTable(overrides: Partial<DataTableProps<CustomRow>> = {}) {
+  const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
+  render(
+    <DataTable<CustomRow>
+      rows={CUSTOM_ROWS}
+      getRowId={(row) => row.id}
+      fieldDefs={CUSTOM_FIELD_DEFS}
+      columnDefs={CUSTOM_COLUMN_DEFS}
+      view={view}
+      onViewChange={setView}
+      emptyMessage="No rows yet."
+      onWrite={vi.fn()}
+      onRenameCustomField={vi.fn().mockResolvedValue(undefined)}
+      {...overrides}
+    />,
+  );
 }
 
 describe("DataTable column header double-click trigger (Phase 5 §4.2)", () => {
@@ -120,5 +157,39 @@ describe("DataTable column header double-click trigger (Phase 5 §4.2)", () => {
     // verifying the dbl-click then opens the editor cleanly.
     fireEvent.doubleClick(floor);
     expect(floor).toHaveAttribute("data-field-editor-open", "true");
+  });
+
+  test("double-click rename editor accepts typed custom-field names", async () => {
+    const user = userEvent.setup();
+    const onRenameCustomField = vi.fn().mockResolvedValue(undefined);
+    renderCustomFieldTable({ onRenameCustomField });
+    await user.dblClick(getColumnHeader("Notes"));
+    const input = screen.getByRole("textbox", { name: "Rename Notes" });
+    await user.clear(input);
+    await user.type(input, "Area");
+    expect(input).toHaveValue("Area");
+    await user.keyboard("{Enter}");
+    expect(onRenameCustomField).toHaveBeenCalledWith({
+      fieldKey: "cf_notes",
+      displayName: "Area",
+    });
+  });
+
+  test("focus-away submits and closes the custom-field rename editor", async () => {
+    const user = userEvent.setup();
+    const onRenameCustomField = vi.fn().mockResolvedValue(undefined);
+    renderCustomFieldTable({ onRenameCustomField });
+    await user.dblClick(getColumnHeader("Notes"));
+    const input = screen.getByRole("textbox", { name: "Rename Notes" });
+    await user.clear(input);
+    await user.type(input, "Zone");
+    await user.tab();
+    expect(onRenameCustomField).toHaveBeenCalledWith({
+      fieldKey: "cf_notes",
+      displayName: "Zone",
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("textbox", { name: "Rename Notes" })).toBeNull();
+    });
   });
 });

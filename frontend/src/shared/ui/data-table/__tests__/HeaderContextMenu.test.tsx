@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useRef, type RefObject } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { HeaderContextMenu, type HeaderContextMenuProps } from "../components/HeaderContextMenu";
@@ -129,6 +130,26 @@ describe("HeaderContextMenu", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete field" }));
     expect(onDeleteField).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  test("clicking Rename field does not restore focus to the header trigger", async () => {
+    const user = userEvent.setup();
+    const onRenameField = vi.fn();
+    render(<Wrapper onRenameField={onRenameField} />);
+    openViaContextMenu();
+    await user.click(screen.getByRole("menuitem", { name: "Rename field" }));
+    expect(onRenameField).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.getByTestId("header-trigger")).not.toHaveFocus();
+  });
+
+  test("clicking a view-state item still restores focus to the header trigger", async () => {
+    const user = userEvent.setup();
+    render(<Wrapper />);
+    openViaContextMenu();
+    await user.click(screen.getByRole("menuitem", { name: "Sort A → Z" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.getByTestId("header-trigger")).toHaveFocus();
   });
 
   test("ArrowDown / ArrowUp move focus across items; Escape closes the menu", () => {
