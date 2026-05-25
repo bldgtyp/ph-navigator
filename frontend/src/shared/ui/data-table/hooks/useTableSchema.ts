@@ -1,14 +1,11 @@
-// Plan-13 §4.5 / plan-14 P1.4: the seam where per-table column code
-// and the document's user-defined custom fields are merged into a
-// single ordered FieldDef[]. RoomsTable (and future ERVs / Pumps /
-// Fans tables) consume this hook so the schema-editor surface and the
-// view-state fingerprint live in one place.
+// Merges per-table core column defs with the document's user-defined
+// custom fields into a single ordered FieldDef[]. One call per table.
 import { useMemo } from "react";
 import { generatedId } from "../../../lib/ids";
+import { sha256Hex } from "../../../lib/sha256";
 import type { FieldDef, FieldType } from "../types";
 
-// Mirror of backend `CustomFieldType` (plan-14 P1.1). Closed v1 set so
-// the JSON Schema and TS type stay in lockstep.
+// Closed v1 set, mirrored from backend `CustomFieldType`.
 export type CustomFieldType =
   | "short_text"
   | "long_text"
@@ -17,9 +14,9 @@ export type CustomFieldType =
   | "single_select"
   | "formula";
 
-// Mirror of backend `CustomFieldDef`. `id` is the immutable identity
-// (D12) — everything that needs identity (writes, view state, formula
-// refs) uses `id`, never `field_key` or `display_name`.
+// Mirror of backend `CustomFieldDef`. `id` is the immutable identity —
+// writes, view state, and formula refs always key off `id`, never
+// `field_key` (advisory export slug) or `display_name` (user-editable).
 export type CustomFieldDef = {
   id: string;
   field_key: string | null;
@@ -35,10 +32,10 @@ export type TableSchema = {
   fieldDefs: FieldDef[];
   coreFieldKeys: Set<string>;
   customFields: CustomFieldDef[];
-  // Hex digest matching backend `compute_table_schema_fingerprint`
-  // (plan-14 §4.6 / P1.5). Persisted view-state records carry this
-  // alongside their state payload so opening a different schema does
-  // not overwrite a saved record from a different schema fingerprint.
+  // Hex digest matching backend `compute_table_schema_fingerprint`.
+  // Persisted view-state records carry this alongside their state so
+  // opening a version with a different schema does not overwrite a
+  // saved record under another fingerprint.
   schemaFingerprint: string;
   mintCustomFieldId: () => string;
 };
@@ -46,13 +43,14 @@ export type TableSchema = {
 export type UseTableSchemaArgs = {
   tableKey: string;
   coreFieldDefs: FieldDef[];
+  // Optional backend registry order for schema fingerprints. Some
+  // tables intentionally hide core document fields from the grid, but
+  // the schema-editor fingerprint must still match the backend's
+  // full table capability.
+  fingerprintCoreFieldKeys?: readonly string[];
   customFields: CustomFieldDef[] | null | undefined;
 };
 
-// Browser FieldType per CustomFieldType. Phase 1 wires only
-// `short_text` end-to-end; the rest map to their natural renderer so
-// the schema is consistent even though the editor UI / per-type config
-// validation lands later.
 const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
   short_text: "text",
   long_text: "text",
@@ -63,7 +61,7 @@ const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
 };
 
 export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
-  const { coreFieldDefs, customFields } = args;
+  const { coreFieldDefs, customFields, fingerprintCoreFieldKeys } = args;
   const customList = useMemo(() => customFields ?? [], [customFields]);
 
   const synthesizedFieldDefs = useMemo<FieldDef[]>(
@@ -80,8 +78,8 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
   }, [coreFieldDefs, synthesizedFieldDefs]);
 
   const coreFieldKeys = useMemo(
-    () => new Set(coreFieldDefs.map((fieldDef) => fieldDef.field_key)),
-    [coreFieldDefs],
+    () => new Set(fingerprintCoreFieldKeys ?? coreFieldDefs.map((fieldDef) => fieldDef.field_key)),
+    [coreFieldDefs, fingerprintCoreFieldKeys],
   );
 
   const schemaFingerprint = useMemo(
@@ -101,29 +99,23 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
   );
 }
 
-// Backend `CUSTOM_FIELD_ID_PATTERN = /^cf_[A-Za-z0-9_-]+$/`; `generatedId`
-// strips non-alphanumerics so the result is always valid.
 export function mintCustomFieldId(): string {
   return generatedId("cf");
 }
 
 function customFieldToFieldDef(custom: CustomFieldDef): FieldDef {
+  // `read_only_schema` is intentionally absent for custom fields — the
+  // header context menu reads its absence to enable schema-mutation items.
   return {
     field_key: custom.id,
     field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[custom.field_type],
     display_name: custom.display_name,
     description: custom.description ?? undefined,
-    // `read_only_schema` is absent on custom fields by design — the
-    // (Phase 2) header context menu uses its absence to enable the
-    // schema-mutation items (rename / change type / delete / duplicate).
   };
 }
 
-// Mirror of `compute_table_schema_fingerprint` in
-// backend/features/project_document/tables/_fingerprint.py. Both sides
-// must agree to the byte — the digest is the matchkey for persisted
-// view state across version/schema switches. Algorithm version "v1"
-// matches FINGERPRINT_ALGORITHM_VERSION on the backend.
+// Must agree to the byte with backend `compute_table_schema_fingerprint`.
+// The digest is the matchkey for persisted view state across schema switches.
 export const FINGERPRINT_ALGORITHM_VERSION = "v1";
 
 export function computeTableSchemaFingerprint(
@@ -138,122 +130,5 @@ export function computeTableSchemaFingerprint(
       field_type: field.field_type,
     })),
   };
-  const encoded = JSON.stringify(payload);
-  return sha256Hex(encoded);
-}
-
-// Tiny pure-JS SHA-256 so the fingerprint works in jsdom (no SubtleCrypto in
-// some test envs) and stays deterministic across browsers. The corpus is
-// short (a handful of field ids) so the perf cost is negligible.
-function sha256Hex(input: string): string {
-  const bytes = utf8Encode(input);
-  const hash = sha256Bytes(bytes);
-  return Array.from(hash, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function utf8Encode(input: string): Uint8Array {
-  if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(input);
-  const out: number[] = [];
-  for (let i = 0; i < input.length; i += 1) {
-    const code = input.charCodeAt(i);
-    if (code < 0x80) out.push(code);
-    else if (code < 0x800) {
-      out.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
-    } else {
-      out.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
-    }
-  }
-  return Uint8Array.from(out);
-}
-
-const K = [
-  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-];
-
-function sha256Bytes(message: Uint8Array): Uint8Array {
-  const bitLen = message.length * 8;
-  const padLen = (message.length + 9 + 63) & ~63;
-  const padded = new Uint8Array(padLen);
-  padded.set(message);
-  padded[message.length] = 0x80;
-  const dv = new DataView(padded.buffer);
-  dv.setUint32(padLen - 4, bitLen >>> 0);
-  dv.setUint32(padLen - 8, Math.floor(bitLen / 0x100000000));
-
-  let h0 = 0x6a09e667,
-    h1 = 0xbb67ae85,
-    h2 = 0x3c6ef372,
-    h3 = 0xa54ff53a,
-    h4 = 0x510e527f,
-    h5 = 0x9b05688c,
-    h6 = 0x1f83d9ab,
-    h7 = 0x5be0cd19;
-
-  const w = new Uint32Array(64);
-  const read = (arr: Uint32Array, i: number): number => arr[i] as number;
-  for (let chunk = 0; chunk < padLen; chunk += 64) {
-    for (let i = 0; i < 16; i += 1) w[i] = dv.getUint32(chunk + i * 4);
-    for (let i = 16; i < 64; i += 1) {
-      const w15 = read(w, i - 15);
-      const w2 = read(w, i - 2);
-      const s0 = rotr(w15, 7) ^ rotr(w15, 18) ^ (w15 >>> 3);
-      const s1 = rotr(w2, 17) ^ rotr(w2, 19) ^ (w2 >>> 10);
-      w[i] = (read(w, i - 16) + s0 + read(w, i - 7) + s1) >>> 0;
-    }
-    let a = h0,
-      b = h1,
-      c = h2,
-      d = h3,
-      e = h4,
-      f = h5,
-      g = h6,
-      h = h7;
-    for (let i = 0; i < 64; i += 1) {
-      const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
-      const ch = (e & f) ^ (~e & g);
-      const temp1 = (h + s1 + ch + (K[i] as number) + read(w, i)) >>> 0;
-      const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
-      const maj = (a & b) ^ (a & c) ^ (b & c);
-      const temp2 = (s0 + maj) >>> 0;
-      h = g;
-      g = f;
-      f = e;
-      e = (d + temp1) >>> 0;
-      d = c;
-      c = b;
-      b = a;
-      a = (temp1 + temp2) >>> 0;
-    }
-    h0 = (h0 + a) >>> 0;
-    h1 = (h1 + b) >>> 0;
-    h2 = (h2 + c) >>> 0;
-    h3 = (h3 + d) >>> 0;
-    h4 = (h4 + e) >>> 0;
-    h5 = (h5 + f) >>> 0;
-    h6 = (h6 + g) >>> 0;
-    h7 = (h7 + h) >>> 0;
-  }
-
-  const out = new Uint8Array(32);
-  const outView = new DataView(out.buffer);
-  outView.setUint32(0, h0);
-  outView.setUint32(4, h1);
-  outView.setUint32(8, h2);
-  outView.setUint32(12, h3);
-  outView.setUint32(16, h4);
-  outView.setUint32(20, h5);
-  outView.setUint32(24, h6);
-  outView.setUint32(28, h7);
-  return out;
-}
-
-function rotr(x: number, n: number): number {
-  return ((x >>> n) | (x << (32 - n))) >>> 0;
+  return sha256Hex(JSON.stringify(payload));
 }

@@ -11,6 +11,7 @@ from features.project_document.custom_fields import (
     CustomFieldDef,
     CustomValue,
     coerce_custom_value,
+    normalize_display_name,
 )
 from features.projects.models import CertificationProgram
 
@@ -27,12 +28,11 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
 )
 CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 2
 
-# Hard-coded core field display names for the Rooms table. Used by
+# Core field display names for Rooms — used by
 # `validate_document_references` to enforce duplicate-name uniqueness
-# across core + custom fields (D5; case-insensitive, trimmed). The
-# canonical source is the frontend `roomsTableFieldDefs` registry; this
-# duplicate exists until P1.2 moves the core-key list onto the
-# registered table contract.
+# across core + custom fields (case-insensitive, trimmed). Canonical
+# source is the frontend `roomsTableFieldDefs` registry; kept here too
+# because the validator must enforce the same rule server-side.
 ROOMS_CORE_DISPLAY_NAMES: tuple[str, ...] = (
     "Number",
     "Name",
@@ -275,13 +275,10 @@ class WindowTypeEntry(BaseModel):
 class RoomsTableEnvelope(BaseModel):
     """`{ custom_fields, rows }` envelope around the Rooms table.
 
-    Plan-13 §4.1: project-document tables wrap their rows in a
-    `custom_fields`-aware envelope so editor-defined fields ride the
-    same version / draft / save / lock lifecycle as the rows
-    themselves. The shape is additive — core fields stay strongly
-    typed in `RoomRow`; `custom_fields` declares user-defined
-    extensions; each row's `custom` dict carries the sparse values
-    keyed by stable `cf_*` ids.
+    Core fields stay strongly typed in `RoomRow`; `custom_fields`
+    declares user-defined extensions; each row's `custom` dict carries
+    the sparse values keyed by stable `cf_*` ids. Editor-defined fields
+    ride the same version / draft / save / lock lifecycle as the rows.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -334,7 +331,7 @@ class ProjectDocumentV1(BaseModel):
                 if option.id in option_ids:
                     raise ValueError(f"Duplicate option id in {key}: {option.id}")
                 option_ids.add(option.id)
-                normalized_label = option.label.strip().casefold()
+                normalized_label = normalize_display_name(option.label)
                 if normalized_label in labels:
                     raise ValueError(f"Duplicate option label in {key}: {option.label}")
                 labels.add(normalized_label)
@@ -342,13 +339,13 @@ class ProjectDocumentV1(BaseModel):
         rooms_table = self.tables.rooms
         custom_field_ids: dict[str, CustomFieldDef] = {}
         name_seen: dict[str, str] = {
-            display_name.strip().casefold(): display_name for display_name in ROOMS_CORE_DISPLAY_NAMES
+            normalize_display_name(display_name): display_name for display_name in ROOMS_CORE_DISPLAY_NAMES
         }
         for custom_field in rooms_table.custom_fields:
             if custom_field.id in custom_field_ids:
                 raise ValueError(f"Duplicate custom field id in rooms: {custom_field.id}")
             custom_field_ids[custom_field.id] = custom_field
-            normalized_name = custom_field.display_name.strip().casefold()
+            normalized_name = normalize_display_name(custom_field.display_name)
             if normalized_name in name_seen:
                 existing = name_seen[normalized_name]
                 raise ValueError(
@@ -365,7 +362,7 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate room id: {room.id}")
             room_ids.add(room.id)
 
-            normalized_number = room.number.strip().casefold()
+            normalized_number = normalize_display_name(room.number)
             if normalized_number in room_numbers:
                 raise ValueError(f"Duplicate room number: {room.number}")
             room_numbers.add(normalized_number)
@@ -395,7 +392,7 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate window type id: {window_type.id}")
             window_type_ids.add(window_type.id)
 
-            normalized_name = window_type.name.strip().casefold()
+            normalized_name = normalize_display_name(window_type.name)
             if normalized_name in window_type_names:
                 raise ValueError(f"Duplicate window type name: {window_type.name}")
             window_type_names.add(normalized_name)

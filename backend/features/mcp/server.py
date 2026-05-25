@@ -143,9 +143,8 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         This TB-04b read primitive is intentionally narrower than the future typed `query_table` tool.
 
         Custom-field-capable tables (e.g. Rooms) ship the
-        ``{custom_fields, rows}`` envelope under the `rows` field
-        (plan-13 §4.1 / plan-14 P1.3): callers must look at
-        ``response.rows.rows`` for the row list and
+        ``{custom_fields, rows}`` envelope under the `rows` field:
+        callers must look at ``response.rows.rows`` for the row list and
         ``response.rows.custom_fields`` for the per-table custom-field
         registry. Tables without custom fields still emit a bare row
         list under `rows`.
@@ -204,16 +203,14 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         if_match: str | None = None,
         if_match_version: str | None = None,
     ) -> dict[str, object]:
-        """Add a custom field to the token owner's draft (plan-15 P2.3).
+        """Add a custom field to the token owner's draft.
 
         `after` is the full ``CustomFieldDef`` payload (id, display_name,
         field_type, config, description, created_at, created_by). The
-        token's user id overwrites ``created_by`` on the server side
-        (D11). Optimistic concurrency rides on
-        ``expected_schema_fingerprint``; per
-        ``llm-mcp-schema.md`` §10.3 a stale fingerprint returns
-        ``custom_field_stale_schema_fingerprint`` with recoverability
-        ``refresh``.
+        token's user id overwrites ``created_by`` server-side.
+        Optimistic concurrency rides on ``expected_schema_fingerprint``;
+        a stale fingerprint returns ``custom_field_stale_schema_fingerprint``
+        with recoverability ``refresh``.
         """
         mutation = _build_schema_mutation(
             ctx,
@@ -283,8 +280,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     ) -> dict[str, object]:
         """Delete a custom field and strip its values from every row.
 
-        Returns ``{ removed_field_id, cleared_row_count }`` per
-        ``llm-mcp-schema.md`` §10.3.
+        Returns ``{ removed_field_id, cleared_row_count }``.
         """
         mutation = _build_schema_mutation(
             ctx,
@@ -325,7 +321,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
         ``after`` is the full duplicate ``CustomFieldDef`` payload —
         caller deep-copies ``field_type`` / ``config`` / ``description``
-        from the source. Row values are not copied (US-CF-13 criterion 2).
+        from the source. Row values are not copied.
         """
         mutation = _build_schema_mutation(
             ctx,
@@ -360,7 +356,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         if_match: str | None = None,
         if_match_version: str | None = None,
     ) -> dict[str, object]:
-        """Set or clear a custom field's description (US-CF-14).
+        """Set or clear a custom field's description.
 
         ``None`` clears the description; over-long values are clamped
         to ``CUSTOM_FIELD_DESCRIPTION_MAX`` (280) server-side.
@@ -492,9 +488,8 @@ def raise_http_exception_as_mcp_error(
 
 
 # Per-error-code recoverability map for the schema-mutation tools.
-# Pinned by `docs/plans/2026-05-24/adr-custom-fields-phase-2-errors.md`.
-# Codes not listed default to `"fatal"` (plan-13 R6: don't auto-retry
-# on caller errors).
+# Codes not listed default to `"fatal"` so callers don't auto-retry on
+# their own bugs.
 _SCHEMA_MUTATION_RECOVERABILITY: dict[str, McpRecoverability] = {
     "custom_field_stale_schema_fingerprint": "refresh",
     "version_locked": "refresh",
@@ -573,10 +568,8 @@ def _apply_mcp_schema_mutation_with_audit(
     ``apply_schema_mutation_to_draft`` with ``updated_via='mcp'``, and
     map any ``HTTPException`` to a structured MCP error envelope.
 
-    The ``updated_via`` channel is the Phase-2 minimum-viable MCP
-    edit-lease primitive (save-versioning.md §8.5 / plan-15 P2.3).
-    Browser-side lease indicator is consumed from the existing draft
-    summary surface.
+    ``updated_via='mcp'`` tags the draft row and audit log so the
+    browser-side lease indicator can show that an MCP agent is editing.
     """
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     parsed_version_id = parse_uuid(version_id, "version_id", ctx)
@@ -612,11 +605,8 @@ def _custom_field_response(
 ) -> dict[str, object]:
     """Pull the named `CustomFieldDef` out of the table envelope.
 
-    Returns the JSON-serializable dict shape per ``llm-mcp-schema.md``
-    §10.3. Raises ``custom_field_invalid_field_id`` (shouldn't fire —
-    the apply step already validated the id exists) if the field
-    can't be found in the response — defensive guard so test-only
-    drift surfaces as a structured error rather than a KeyError.
+    Raises ``custom_field_invalid_field_id`` if the field is missing —
+    defensive guard, shouldn't fire since apply validated id existence.
     """
     custom_fields = getattr(response, "custom_fields", None)
     if custom_fields is None:

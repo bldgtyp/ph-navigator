@@ -43,6 +43,7 @@ import {
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowInsert,
+  ROOMS_SCHEMA_CORE_FIELD_KEYS,
   roomsTableColumnsForSanitize,
   roomsTableFieldDefs,
   validateRoomsPayload,
@@ -97,6 +98,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   const roomsTableSchema = useTableSchema({
     tableKey: ROOMS_TABLE_NAME,
     coreFieldDefs: roomsFieldDefsForSanitize,
+    fingerprintCoreFieldKeys: ROOMS_SCHEMA_CORE_FIELD_KEYS,
     customFields: roomsQuery.data?.custom_fields,
   });
   const {
@@ -392,7 +394,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           roomsTableSchema.fieldDefs.map((fieldDef) => fieldDef.display_name),
         ),
         field_type: source.field_type,
-        config: deepCloneRecord(source.config),
+        config: structuredClone(source.config),
         description: source.description,
         created_at: new Date().toISOString(),
         created_by: null,
@@ -666,8 +668,4 @@ function insertAfterColumnOrder(
     insertedFieldKey,
     ...filtered.slice(anchorIndex + 1),
   ];
-}
-
-function deepCloneRecord(record: Record<string, unknown>): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(record)) as Record<string, unknown>;
 }

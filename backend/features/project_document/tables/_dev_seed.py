@@ -1,24 +1,21 @@
 """Developer-only helpers for seeding custom fields onto Rooms.
 
-Plan-14 P1.6 acceptance: lets the test suite (and a manual CLI smoke)
-inject a `short_text` (or any v1 type) custom field on the Rooms table
-without exposing a real schema-editor HTTP / MCP surface in Phase 1.
-
-NEVER import this from production code paths — it deliberately
-side-steps the editor-login gating that Phase 2 schema mutations will
-honour. The fixture path (D11) accepts `created_by=None`; the API /
-MCP paths must require a real user id.
+Lets the test suite (and manual CLI smoke) inject a custom field
+without going through the real schema-editor HTTP / MCP surface — it
+deliberately side-steps editor-login gating, so NEVER import from
+production code paths. The fixture path accepts `created_by=None`;
+real API / MCP paths must supply a user id.
 """
 
 from __future__ import annotations
 
-import secrets
 import sys
 from datetime import UTC, datetime
 
 from features.project_document.custom_fields import (
     CustomFieldDef,
     CustomFieldType,
+    mint_custom_field_id,
 )
 from features.project_document.document import (
     ProjectDocumentV1,
@@ -32,10 +29,6 @@ def _is_dev_or_test() -> bool:
     return "pytest" in sys.modules or __name__ == "__main__"
 
 
-def _generate_cf_id() -> str:
-    return f"cf_{secrets.token_hex(8)}"
-
-
 def seed_rooms_custom_field(
     body: ProjectDocumentV1,
     *,
@@ -45,17 +38,16 @@ def seed_rooms_custom_field(
     field_id: str | None = None,
     created_at: datetime | None = None,
 ) -> tuple[ProjectDocumentV1, CustomFieldDef]:
-    """TEST/DEV ONLY. Append a custom field to Rooms with created_by=None (D11).
+    """TEST/DEV ONLY. Append a custom field to Rooms with created_by=None.
 
     Returns the validated next document body and the appended
-    CustomFieldDef so callers can write `row.custom[id]` values against
-    the new field.
+    CustomFieldDef so callers can write `row.custom[id]` values.
     """
     if not _is_dev_or_test():
         raise RuntimeError("seed_rooms_custom_field is dev/test only and must not be imported in production")
 
     custom_field = CustomFieldDef(
-        id=field_id or _generate_cf_id(),
+        id=field_id or mint_custom_field_id(),
         display_name=display_name,
         field_type=field_type,
         description=description,

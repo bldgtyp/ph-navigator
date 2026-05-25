@@ -24,6 +24,7 @@ import {
   normalizeOptionOrders,
   optionReferenceCounts,
 } from "../lib";
+import { useElementAnchorRef } from "../lib/popoverAnchor";
 import type { CellWrite, FieldDef, FieldOption, WriteOp } from "../types";
 import { ConfirmDeleteOptionDialog, type CascadeChoice } from "./ConfirmDeleteOptionDialog";
 
@@ -245,10 +246,12 @@ export function FieldEditorPopover<TRow>({
     if (target?.closest('[role="alertdialog"]')) event.preventDefault();
   };
 
+  const virtualAnchorRef = useElementAnchorRef(anchorElement);
+
   return (
     <>
       <Popover.Root open={open} onOpenChange={onOpenChange}>
-        {anchorElement ? <FieldEditorAnchor anchor={anchorElement} /> : null}
+        {virtualAnchorRef ? <Popover.Anchor virtualRef={virtualAnchorRef} /> : null}
         <Popover.Portal>
           <Popover.Content
             className="data-table-view-popover data-table-field-editor"
@@ -356,14 +359,6 @@ export function FieldEditorPopover<TRow>({
       />
     </>
   );
-}
-
-function FieldEditorAnchor({ anchor }: { anchor: HTMLElement }) {
-  const virtualRef = useMemo(
-    () => ({ current: { getBoundingClientRect: () => anchor.getBoundingClientRect() } }),
-    [anchor],
-  );
-  return <Popover.Anchor virtualRef={virtualRef} />;
 }
 
 type OptionRowProps = {

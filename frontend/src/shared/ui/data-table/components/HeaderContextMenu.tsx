@@ -7,6 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type RefObject,
 } from "react";
+import { pointAnchorRef } from "../lib/popoverAnchor";
 import type { FieldDef } from "../types";
 
 // Right-click / Shift+F10 / ContextMenu key opens a per-header menu
@@ -169,25 +170,7 @@ export function HeaderContextMenu({
     }
   };
 
-  // Virtual anchor (Radix pattern): a synthetic rect at the pointer for
-  // right-click, or the trigger's bottom-left for keyboard invocation.
-  // Avoids a real DOM node + dedicated CSS rule for positioning.
-  const virtualRef = open
-    ? {
-        getBoundingClientRect: () =>
-          ({
-            x: open.x,
-            y: open.y,
-            top: open.y,
-            left: open.x,
-            right: open.x,
-            bottom: open.y,
-            width: 0,
-            height: 0,
-            toJSON: () => ({}),
-          }) as DOMRect,
-      }
-    : null;
+  const anchorRef = open ? pointAnchorRef(open.x, open.y) : null;
 
   return (
     <Popover.Root
@@ -196,7 +179,7 @@ export function HeaderContextMenu({
         if (!next) setOpen(null);
       }}
     >
-      {virtualRef ? <Popover.Anchor virtualRef={{ current: virtualRef }} /> : null}
+      {anchorRef ? <Popover.Anchor virtualRef={anchorRef} /> : null}
       <Popover.Portal>
         <Popover.Content
           className="data-table-column-menu"

@@ -1,7 +1,6 @@
-// Plan-13 §4.1 / R1 mitigation: typed accessors for custom-field
-// values. Render code must NEVER touch `row.custom[id]` directly —
-// always go through these helpers so the `cf_*` identity rule is the
-// only path into custom values.
+// Typed accessors for custom-field row values. Render code MUST go
+// through these helpers — never read `row.custom[id]` directly — so the
+// `cf_*` identity rule has a single enforced entry point.
 import type { FieldDef } from "../types";
 
 export const CUSTOM_FIELD_KEY_PREFIX = "cf_";

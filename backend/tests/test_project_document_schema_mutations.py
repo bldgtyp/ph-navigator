@@ -559,11 +559,6 @@ def test_apply_schema_mutation_runs_full_document_validation(
     assert isinstance(next_body, ProjectDocumentV1)
 
 
-# ---------------------------------------------------------------------------
-# validate_schema_mutation hook parity
-# ---------------------------------------------------------------------------
-
-
 def test_validate_schema_mutation_delegates_to_apply() -> None:
     body = _empty_body()
     mutation = AddFieldMutation(
@@ -583,6 +578,5 @@ def test_validate_schema_mutation_delegates_to_apply() -> None:
 
 
 def test_capability_hook_is_wired_on_rooms_contract() -> None:
-    """Plan-15 P2.1 exit — Rooms capability exposes both Phase-2 hooks."""
     assert rooms_custom_fields.apply_schema_mutation is not None
     assert rooms_custom_fields.validate_schema_mutation is not None

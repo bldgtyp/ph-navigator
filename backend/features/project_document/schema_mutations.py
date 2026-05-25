@@ -1,19 +1,12 @@
-"""Custom-field schema-mutation DTOs + per-mutation apply service.
+"""Typed `FieldSchemaMutation` union + `apply_schema_mutation` dispatcher.
 
-Plan-15 P2.1 lands the typed `FieldSchemaMutation` discriminated
-union (data-table.md "Write Pipeline") and the `apply_schema_mutation`
-service entry every `CustomFieldCapability.apply_schema_mutation`
-hook delegates to. The function dispatches on the mutation
-discriminator, runs the optimistic-concurrency check against the
-table's schema fingerprint, applies per-mutation rules through the
-capability accessors, and re-validates the resulting document.
-
-Error codes raised here are the canonical sheet in
-`docs/plans/2026-05-24/adr-custom-fields-phase-2-errors.md`.
-Phase-2 deferrals (`changeType` Phase 3, `setFormula` Phase 4) are
-declared in the discriminated union so the wire contract is closed
-from day one; the dispatcher rejects them with
-`custom_field_unsupported_mutation`.
+Each mutation kind carries an `expected_schema_fingerprint` for
+optimistic-concurrency; the dispatcher rejects stale fingerprints,
+validates per-mutation rules through the capability accessors, then
+re-validates the resulting document. `changeType` / `setFormula` are
+declared in the discriminator so the wire contract is closed; the
+dispatcher rejects them with `custom_field_unsupported_mutation`
+until later phases implement them.
 """
 
 from __future__ import annotations
@@ -26,15 +19,15 @@ from starlette import status
 from features.project_document.custom_fields import (
     CUSTOM_FIELD_DESCRIPTION_MAX,
     CustomFieldDef,
+    normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.tables.contracts import CustomFieldCapability
 from features.project_document.validation import validate_document
 from features.shared.errors import api_error
 
-# Per-discriminator audit kind reserved by save-versioning.md §8.3 +
-# the ADR. drafts.py / MCP append these as the audit-log `kind` so the
-# action log is filterable by schema-mutation type.
+# Audit-log action kind per mutation discriminator. drafts.py / MCP
+# write the matching key so the action log is filterable.
 AUDIT_KIND_BY_MUTATION: dict[str, str] = {
     "addField": "project_version_custom_field_add",
     "renameField": "project_version_custom_field_rename",
@@ -43,9 +36,6 @@ AUDIT_KIND_BY_MUTATION: dict[str, str] = {
     "setDescription": "project_version_custom_field_set_description",
 }
 
-# changeType + setFormula land in later phases; the table here keeps
-# the wire codes consistent and lets MCP clients ship error handling
-# that already knows about the deferred mutations.
 _DEFERRED_MUTATION_PHASES: dict[str, str] = {
     "changeType": "Phase 3",
     "setFormula": "Phase 4",
@@ -126,9 +116,8 @@ class SetDescriptionMutation(BaseModel):
 
 
 class ChangeTypeMutation(BaseModel):
-    """Phase 3 (US-CF-4). Declared in Phase 2 so the discriminator is
-    closed from day one; the dispatcher rejects with
-    `custom_field_unsupported_mutation`."""
+    """Declared up front to close the discriminator; rejected by the
+    dispatcher with `custom_field_unsupported_mutation` until Phase 3."""
 
     model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
@@ -141,9 +130,8 @@ class ChangeTypeMutation(BaseModel):
 
 
 class SetFormulaMutation(BaseModel):
-    """Phase 4 (US-CF-8). Declared in Phase 2 so the discriminator is
-    closed from day one; the dispatcher rejects with
-    `custom_field_unsupported_mutation`."""
+    """Declared up front to close the discriminator; rejected by the
+    dispatcher with `custom_field_unsupported_mutation` until Phase 4."""
 
     model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
@@ -175,10 +163,9 @@ def apply_schema_mutation(
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     """Apply one `FieldSchemaMutation` to `body`, return (next_body, audit).
 
-    Validation is immediate (save-versioning.md §8.3 / plan-13 D16):
-    a rejected mutation does not produce a partial body. Every reject
-    path raises through `features.shared.errors.api_error` with one of
-    the codes pinned in the Phase 2 ADR.
+    Rejections raise `features.shared.errors.api_error`; no partial body
+    is produced. Final `validate_document` ensures any per-table check
+    that slipped past the preflight surfaces here.
     """
     _check_stale_fingerprint(body, mutation, capability)
 
@@ -205,9 +192,6 @@ def apply_schema_mutation(
             {"kind": getattr(mutation, "kind", "unknown")},
         )
 
-    # Immediate full-document re-validation. `validate_document` raises
-    # `invalid_project_document` (422) on failure — any per-table check
-    # that slipped past our preflight surfaces here.
     validated = validate_document(next_body.model_dump(mode="json"))
     return validated, audit
 
@@ -218,13 +202,10 @@ def validate_schema_mutation(
     *,
     capability: CustomFieldCapability,
 ) -> None:
-    """Run apply preflight without committing the resulting body.
+    """Run schema-mutation preflight without committing the result.
 
-    Phase 2 has no caller yet; the hook exists on `CustomFieldCapability`
-    so future surfaces (LLM dry-run, schema-editor preview, JSON-Schema
-    validate endpoint) can preflight without producing a draft write.
-    Delegates to `apply_schema_mutation` so validation parity is enforced
-    by sharing one code path.
+    Delegating to `apply_schema_mutation` keeps dry-run validation in
+    lockstep with the write path.
     """
     apply_schema_mutation(
         body,
@@ -235,11 +216,6 @@ def validate_schema_mutation(
 
 
 _VALIDATE_ONLY_ACTOR = "__validate_only__"
-
-
-# ---------------------------------------------------------------------------
-# Per-mutation implementations
-# ---------------------------------------------------------------------------
 
 
 def _apply_add_field(
@@ -395,11 +371,6 @@ def _apply_set_description(
     return next_body, audit
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
-
 def _check_stale_fingerprint(
     body: ProjectDocumentV1,
     mutation: FieldSchemaMutation,
@@ -466,9 +437,9 @@ def _reject_duplicate_display_name(
     *,
     skip_field_id: str | None = None,
 ) -> None:
-    normalized_candidate = candidate.strip().casefold()
+    normalized_candidate = normalize_display_name(candidate)
     for core_name in core_display_names:
-        if core_name.strip().casefold() == normalized_candidate:
+        if normalize_display_name(core_name) == normalized_candidate:
             raise api_error(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "custom_field_duplicate_name",
@@ -482,7 +453,7 @@ def _reject_duplicate_display_name(
     for field in custom_fields:
         if field.id == skip_field_id:
             continue
-        if field.display_name.strip().casefold() == normalized_candidate:
+        if normalize_display_name(field.display_name) == normalized_candidate:
             raise api_error(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "custom_field_duplicate_name",
@@ -519,11 +490,7 @@ def _strip_field_from_rows(
     field_id: str,
     capability: CustomFieldCapability,
 ) -> tuple[list[object], int]:
-    """Return (next_rows, cleared_row_count) for the deleted field.
-
-    Goes through the capability row accessors so future tables (ERVs /
-    Pumps / Fans) reuse this without per-table branching.
-    """
+    """Return (next_rows, cleared_row_count) for the deleted field."""
     rows = _read_rows_from_envelope(body, table_key)
     cleared = 0
     next_rows: list[object] = []

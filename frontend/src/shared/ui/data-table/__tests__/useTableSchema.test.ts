@@ -105,6 +105,26 @@ describe("useTableSchema", () => {
     expect(empty).not.toEqual(withField);
   });
 
+  test("fingerprint can use backend core keys without rendering hidden core fields", () => {
+    const { result } = renderHook(() =>
+      useTableSchema({
+        tableKey: "rooms",
+        coreFieldDefs,
+        fingerprintCoreFieldKeys: ["id", "number", "name", "notes"],
+        customFields: [customField("cf_notes")],
+      }),
+    );
+
+    expect(result.current.fieldDefs.map((field) => field.field_key)).toEqual([
+      "number",
+      "name",
+      "cf_notes",
+    ]);
+    expect(result.current.schemaFingerprint).toBe(
+      computeTableSchemaFingerprint(["id", "number", "name", "notes"], [customField("cf_notes")]),
+    );
+  });
+
   // Parity smoke against the backend: the SHA-256 of the canonical
   // payload {"version":"v1","core":[],"custom":[]} must equal what
   // backend `compute_table_schema_fingerprint([], [])` produces. The

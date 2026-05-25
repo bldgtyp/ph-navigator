@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { App } from "./app/App";
@@ -792,12 +792,13 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Password"), "password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(
-      await screen.findByRole("link", { name: "2426 - West Stockbridge House" }),
-    ).toBeVisible();
+    await waitFor(() => expect(projectFetchCount).toBeGreaterThanOrEqual(2));
+    expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
     expect(screen.queryByText("Editor")).not.toBeInTheDocument();
     expect(screen.queryByText("Read-only public view")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
+    expect(
+      await screen.findByRole("button", { name: /Set CAD files received to Done/ }),
+    ).toBeVisible();
   });
 
   test("routes the Catalogs dropdown to the live Materials catalog page", async () => {

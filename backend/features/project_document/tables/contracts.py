@@ -26,15 +26,13 @@ if TYPE_CHECKING:
 class CustomFieldCapability:
     """Per-table custom-field accessors for the schema-editor surface.
 
-    Plan-13 §4.3.1: every custom-field-capable table registers its
-    accessors here so generic routes / services never branch by
-    `table_name`. Phase-2 schema mutations and the schema fingerprint
-    consult this block.
+    Every custom-field-capable table registers its accessors here so
+    generic routes / services never branch by `table_name`.
 
     `core_field_keys` is the canonical tuple of python attribute names
-    on the row model (used for formula refs and the field-key registry).
+    on the row model (used for formula refs and the field-key registry);
     `core_display_names` is the parallel tuple of header labels used by
-    the duplicate-name uniqueness check (D5).
+    the duplicate-name uniqueness check.
     """
 
     core_field_keys: tuple[str, ...]
@@ -42,15 +40,15 @@ class CustomFieldCapability:
     option_list_namespace_prefix: str
     read_custom_fields: Callable[[ProjectDocumentV1], list[CustomFieldDef]]
     replace_custom_fields: Callable[[ProjectDocumentV1, list[CustomFieldDef]], ProjectDocumentV1]
+    # read_row_custom returns the row's live `custom` mapping — callers
+    # must not mutate the result. Pass a fresh dict to set_row_custom.
     read_row_custom: Callable[[object], dict[str, CustomValue]]
     set_row_custom: Callable[[object, dict[str, CustomValue]], object]
     compute_schema_fingerprint: Callable[[ProjectDocumentV1], str]
-    # Plan-15 P2.1 — the schema-editor surface. Both hooks raise
-    # `api_error` from `features.shared.errors` on rejection so REST
-    # and MCP share one envelope. The `actor_user_id` on apply is
-    # stamped onto added / duplicated `CustomFieldDef.created_by`
-    # (D11; the fixture/dev path passes `None` and is never routed
-    # through here).
+    # Schema-editor surface. Hooks raise `api_error` on rejection so
+    # REST and MCP share one envelope. `actor_user_id` on apply is
+    # stamped onto added / duplicated `CustomFieldDef.created_by`;
+    # the fixture/dev path passes `None` and is never routed here.
     apply_schema_mutation: Callable[
         [ProjectDocumentV1, FieldSchemaMutation, str],
         tuple[ProjectDocumentV1, dict[str, object]],
@@ -71,16 +69,15 @@ class TableContract:
     replace_request_model: type[BaseModel]
     build_response: Callable[[UUID, UUID, ProjectDocumentSource, str, str | None, ProjectDocumentV1], BaseModel]
     apply_replace: Callable[[ProjectDocumentV1, BaseModel], ProjectDocumentV1]
-    # Plan-13 §4.1: custom-field-capable tables (e.g. Rooms) return the
-    # `{custom_fields, rows}` envelope as a dict; other tables still
-    # return a bare row list. Callers (downloads, MCP `get_table`,
-    # diff) must accept both shapes.
+    # Custom-field-capable tables return the `{custom_fields, rows}`
+    # envelope as a dict; other tables return a bare row list. Callers
+    # (downloads, MCP `get_table`, diff) must accept both shapes.
     extract_rows: Callable[[ProjectDocumentV1], object]
     extract_diff_value: Callable[[ProjectDocumentV1], object]
-    # JSON document path, including nested paths like ("equipment", "ervs").
-    # Phase 5 fan-out reads this without branching on `name`.
+    # JSON document path, e.g. ("equipment", "ervs"). Generic routes
+    # read this without branching on `name`.
     table_path: tuple[str, ...] = ()
-    # None on tables that have not opted into custom fields (plan-13 §4.3.1).
+    # None on tables that have not opted into custom fields.
     custom_fields: CustomFieldCapability | None = None
 
     def parse_replace_payload(self, raw_payload: object) -> BaseModel:
