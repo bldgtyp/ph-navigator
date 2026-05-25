@@ -96,7 +96,6 @@ export function FieldConfigModal({
   const [serverPreflight, setServerPreflight] = useState<ServerPreflightPayload | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const titleId = useId();
   const nameId = useId();
   const descriptionId = useId();
   const errorId = useId();
@@ -116,15 +115,19 @@ export function FieldConfigModal({
       return;
     }
     if (!fieldDef) return;
-    setSource(fieldDef);
+    const seededSource =
+      fieldDef.custom_field_type === undefined && sourceCustomFieldType !== undefined
+        ? { ...fieldDef, custom_field_type: sourceCustomFieldType }
+        : fieldDef;
+    setSource(seededSource);
     setDisplayName(fieldDef.display_name);
     setDescription(fieldDef.description ?? "");
     setSubmitError(null);
     setExternalConflict(null);
-    setDraftType(sourceCustomFieldType ?? null);
+    setDraftType(seededSource.custom_field_type ?? null);
     setAcknowledged(false);
     setServerPreflight(null);
-  }, [open, fieldDef?.field_key, sourceCustomFieldType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus + select Name on open so rename stays a one-gesture-plus-
   // one-keystroke action (plan-21 Q4 resolution).
@@ -152,12 +155,13 @@ export function FieldConfigModal({
   // so don't re-fire while a conflict is already pending.
   useEffect(() => {
     if (!open || !source || !fieldDef || externalConflict) return;
+    const currentCustomFieldType = fieldDef.custom_field_type ?? sourceCustomFieldType ?? null;
     const changed =
       fieldDef.display_name !== source.display_name ||
       (fieldDef.description ?? null) !== (source.description ?? null) ||
-      (fieldDef.custom_field_type ?? null) !== (source.custom_field_type ?? null);
+      currentCustomFieldType !== (source.custom_field_type ?? null);
     if (changed) setExternalConflict(fieldDef);
-  }, [open, source, fieldDef, externalConflict]);
+  }, [open, source, fieldDef, sourceCustomFieldType, externalConflict]);
 
   // R-S3 — row data changed while a type change is staged. Invalidate
   // the ack so the user re-confirms against the new preflight.
@@ -298,9 +302,12 @@ export function FieldConfigModal({
     setSource(externalConflict);
     setDisplayName(externalConflict.display_name);
     setDescription(externalConflict.description ?? "");
+    setDraftType(externalConflict.custom_field_type ?? sourceCustomFieldType ?? null);
+    setAcknowledged(false);
+    setServerPreflight(null);
     setExternalConflict(null);
     setSubmitError(null);
-  }, [externalConflict]);
+  }, [externalConflict, sourceCustomFieldType]);
 
   const handleCloseAutoFocus = (event: Event) => {
     if (!returnFocusTo) return;
@@ -320,14 +327,13 @@ export function FieldConfigModal({
         />
         <Dialog.Content
           className="data-table-field-config-modal"
-          aria-labelledby={titleId}
           aria-describedby={submitError ? errorId : undefined}
           onEscapeKeyDown={handleEscape}
           onPointerDownOutside={handleInteractOutside}
           onInteractOutside={handleInteractOutside}
           onCloseAutoFocus={handleCloseAutoFocus}
         >
-          <Dialog.Title id={titleId} className="data-table-field-config-modal-title">
+          <Dialog.Title className="data-table-field-config-modal-title">
             {source ? `Edit field — ${source.display_name}` : "Edit field"}
           </Dialog.Title>
           {externalConflict ? (
