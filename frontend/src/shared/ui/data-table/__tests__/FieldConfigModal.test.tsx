@@ -13,7 +13,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { FieldConfigModal } from "../components/FieldConfigModal";
-import type { FieldDef } from "../types";
+import type { CustomFieldType, FieldDef } from "../types";
 
 function baseField(overrides: Partial<FieldDef> = {}): FieldDef {
   return {
@@ -25,6 +25,8 @@ function baseField(overrides: Partial<FieldDef> = {}): FieldDef {
   };
 }
 
+type PreflightSourceRow = { rowId: string; rawValue: unknown };
+
 type HarnessProps = {
   initialField?: FieldDef;
   dispatchBundle?: ReturnType<typeof vi.fn>;
@@ -32,6 +34,8 @@ type HarnessProps = {
   // Names of other fields in the table; the editing field is excluded
   // by field_key in the helper, so callers only pass siblings.
   siblingDisplayNames?: string[];
+  sourceCustomFieldType?: CustomFieldType;
+  preflightRows?: ReadonlyArray<PreflightSourceRow>;
 };
 
 function Harness({
@@ -39,9 +43,12 @@ function Harness({
   dispatchBundle = vi.fn().mockResolvedValue(undefined),
   onFieldRemoved,
   siblingDisplayNames = [],
+  sourceCustomFieldType,
+  preflightRows,
 }: HarnessProps) {
   const [open, setOpen] = useState(true);
   const [fieldDef, setFieldDef] = useState<FieldDef | undefined>(initialField);
+  const [rows, setRows] = useState<ReadonlyArray<PreflightSourceRow> | undefined>(preflightRows);
   return (
     <div>
       <button data-testid="trigger" onClick={() => setOpen(true)}>
@@ -56,6 +63,14 @@ function Harness({
       <button data-testid="external-delete" onClick={() => setFieldDef(undefined)}>
         ext delete
       </button>
+      <button
+        data-testid="rows-mutate"
+        onClick={() =>
+          setRows((current) => [...(current ?? []), { rowId: "rm_new", rawValue: "x" }])
+        }
+      >
+        mutate rows
+      </button>
       <FieldConfigModal
         open={open}
         onOpenChange={setOpen}
@@ -66,6 +81,8 @@ function Harness({
         }))}
         dispatchBundle={dispatchBundle}
         onFieldRemoved={onFieldRemoved}
+        sourceCustomFieldType={sourceCustomFieldType}
+        preflightRows={rows}
       />
     </div>
   );
@@ -193,6 +210,160 @@ describe("FieldConfigModal", () => {
 
     resolveDispatch();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  // ---- plan-21 P5a.2 — Type picker + change-type sub-panel ----
+
+  test("Type picker hidden when sourceCustomFieldType omitted (P5a.1 back-compat)", () => {
+    render(<Harness />);
+    expect(screen.queryByRole("radiogroup", { name: "Field type" })).toBeNull();
+  });
+
+  test("Type picker renders all candidates with the current type selected", () => {
+    render(<Harness sourceCustomFieldType="short_text" preflightRows={[]} />);
+    const picker = screen.getByRole("radiogroup", { name: "Field type" });
+    const current = screen.getByRole("radio", { name: "Short text" });
+    expect(picker).toBeInTheDocument();
+    expect(current).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("Forbidden conversion target is aria-disabled with a tooltip", () => {
+    // number → url is forbidden by CONVERSION_MATRIX.
+    render(<Harness sourceCustomFieldType="number" preflightRows={[]} />);
+    const urlPill = screen.getByRole("radio", { name: "URL" }) as HTMLButtonElement;
+    expect(urlPill.disabled).toBe(true);
+    expect(urlPill.title.toLowerCase()).toContain("cannot convert number");
+  });
+
+  test("Selecting a compatible target mounts the inline preflight sub-panel", () => {
+    render(
+      <Harness
+        sourceCustomFieldType="short_text"
+        preflightRows={[
+          { rowId: "rm_1", rawValue: "42" },
+          { rowId: "rm_2", rawValue: "7.5" },
+        ]}
+      />,
+    );
+    expect(screen.queryByRole("group", { name: /Type change preflight/ })).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    expect(screen.getByRole("group", { name: /short_text → number/ })).toBeInTheDocument();
+    // Clean preflight: 2 of 2 keep.
+    expect(screen.getByText(/2 of 2 rows will keep their value\./)).toBeInTheDocument();
+  });
+
+  test("Reverting type to source unmounts the sub-panel", () => {
+    render(<Harness sourceCustomFieldType="short_text" preflightRows={[]} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    expect(screen.getByRole("group", { name: /Type change preflight/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Short text" }));
+    expect(screen.queryByRole("group", { name: /Type change preflight/ })).toBeNull();
+  });
+
+  test("Save with type change emits fieldType + (no ack needed) on clean preflight", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        sourceCustomFieldType="short_text"
+        preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        fieldType: "number",
+      }),
+    );
+  });
+
+  test("Save is gated on the ack when the preflight has incompatible rows", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        sourceCustomFieldType="short_text"
+        preflightRows={[
+          { rowId: "rm_1", rawValue: "42" },
+          { rowId: "rm_2", rawValue: "abc" },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    expect(
+      screen.getByText(/1 of 2 rows will keep their value; 1 will be cleared\./),
+    ).toBeInTheDocument();
+    const save = screen.getByRole("button", { name: "Save" });
+    expect(save).toBeDisabled();
+    const ack = screen.getByLabelText(/I understand the listed values will be cleared/);
+    fireEvent.click(ack);
+    expect(save).not.toBeDisabled();
+    fireEvent.click(save);
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        fieldType: "number",
+        acknowledgeDestructive: true,
+      }),
+    );
+  });
+
+  test("R-S3 — row mutation while preflight visible invalidates the ack", () => {
+    render(
+      <Harness
+        sourceCustomFieldType="short_text"
+        preflightRows={[
+          { rowId: "rm_1", rawValue: "42" },
+          { rowId: "rm_2", rawValue: "abc" },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    const ack = screen.getByLabelText(
+      /I understand the listed values will be cleared/,
+    ) as HTMLInputElement;
+    fireEvent.click(ack);
+    expect(ack.checked).toBe(true);
+    // External row mutation re-runs preflight and clears the ack.
+    fireEvent.click(screen.getByTestId("rows-mutate"));
+    const ackAfter = screen.getByLabelText(
+      /I understand the listed values will be cleared/,
+    ) as HTMLInputElement;
+    expect(ackAfter.checked).toBe(false);
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  test("Server preflight envelope re-renders the sub-panel against the server row list", async () => {
+    const error = Object.assign(new Error("preflight"), {
+      details: {
+        incompatible_rows: [{ rowId: "rm_x", rawValue: "from-server", reason: "type_mismatch" }],
+        total_row_count: 4,
+      },
+    });
+    const dispatchBundle = vi.fn().mockRejectedValueOnce(error);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        sourceCustomFieldType="short_text"
+        preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(/3 of 4 rows will keep their value; 1 will be cleared\./),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.getByText("rm_x")).toBeInTheDocument();
+    // Ack appears for the server payload; Save remains gated.
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
   test("rejection keeps modal open and surfaces error inline", async () => {

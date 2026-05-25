@@ -3,16 +3,10 @@
 import { useMemo } from "react";
 import { generatedId } from "../../../lib/ids";
 import { sha256Hex } from "../../../lib/sha256";
-import type { FieldDef, FieldOption, FieldType } from "../types";
+import type { CustomFieldType, FieldDef, FieldOption, FieldType } from "../types";
 
-// Closed v1 set, mirrored from backend `CustomFieldType`.
-export type CustomFieldType =
-  | "short_text"
-  | "long_text"
-  | "number"
-  | "url"
-  | "single_select"
-  | "formula";
+// Re-export so existing imports from this module keep working.
+export type { CustomFieldType };
 
 // Mirror of backend `CustomFieldDef`. `id` is the immutable identity —
 // writes, view state, and formula refs always key off `id`, never
@@ -129,6 +123,7 @@ function customFieldToFieldDef(
   const fieldDef: FieldDef = {
     field_key: custom.id,
     field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[custom.field_type],
+    custom_field_type: custom.field_type,
     display_name: custom.display_name,
     description: custom.description ?? undefined,
   };
