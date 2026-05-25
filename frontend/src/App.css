@@ -2188,6 +2188,11 @@ button:disabled {
   text-align: right;
 }
 
+.data-table thead .data-table-gutter {
+  z-index: 6;
+  background: var(--data-table-header-bg, var(--bg-card));
+}
+
 .data-table-gutter-inner {
   display: flex;
   align-items: center;
