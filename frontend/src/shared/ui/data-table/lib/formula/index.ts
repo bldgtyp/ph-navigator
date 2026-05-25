@@ -67,3 +67,11 @@ export type {
 
 export { TokenKind } from "./tokens";
 export type { Token, TokenValue } from "./tokens";
+
+export {
+  COMPUTED_ERROR_MESSAGES,
+  isComputedErrorValue,
+} from "./computedValues";
+export type { ComputedCellValue } from "./computedValues";
+
+export { rebuildSourceFromStoredAst } from "./displayName";
