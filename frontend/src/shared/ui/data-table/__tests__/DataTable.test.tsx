@@ -221,6 +221,35 @@ describe("DataTable", () => {
     });
   });
 
+  test("type-to-edit: printable key after a multi-select edits the anchor cell and clears the range", () => {
+    const onWrite = vi.fn();
+    renderTable({
+      rowsOverride: [
+        { id: "rm_1", number: "101", name: "Living Room", count: 2 },
+        { id: "rm_2", number: "102", name: "Kitchen", count: 1 },
+      ],
+      onWrite,
+    });
+
+    const grid = screen.getByRole("grid");
+    const anchorCell = getBodyCell(0, 1);
+    const rangeEndCell = getBodyCell(1, 1);
+
+    fireEvent.click(anchorCell);
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+
+    expect(anchorCell).toHaveClass("data-table-cell-active", "data-table-cell-selected");
+    expect(rangeEndCell).toHaveClass("data-table-cell-selected");
+    expect(rangeEndCell).not.toHaveClass("data-table-cell-active");
+
+    fireEvent.keyDown(grid, { key: "K" });
+
+    const editor = within(anchorCell).getByRole("textbox") as HTMLInputElement;
+    expect(editor.value).toBe("K");
+    expect(grid.querySelectorAll(".data-table-cell-selected")).toHaveLength(0);
+    expect(rangeEndCell).not.toHaveClass("data-table-cell-active");
+  });
+
   test("type-to-edit: printable key on a number cell seeds the typed digit", () => {
     const onWrite = vi.fn();
     renderTable({ onWrite });
@@ -678,4 +707,12 @@ function renderTable({
       emptyMessage="No rooms yet."
     />,
   );
+}
+
+function getBodyCell(rowIndex: number, columnIndex: number): HTMLTableCellElement {
+  const rowGroup = screen.getAllByRole("rowgroup")[1];
+  if (!rowGroup) throw new Error("body rowgroup missing");
+  const row = within(rowGroup).getAllByRole("row")[rowIndex];
+  if (!row) throw new Error(`body row ${rowIndex} missing`);
+  return within(row).getAllByRole("gridcell")[columnIndex] as HTMLTableCellElement;
 }

@@ -122,7 +122,7 @@ describe("GridBody — selection fill rendering", () => {
     expect(active).not.toHaveClass("data-table-cell-selected");
   });
 
-  test("dragging Shift+ArrowDown produces a 2x1 range with selected fill classes only", () => {
+  test("dragging Shift+ArrowDown keeps the anchor active and paints the range edge", () => {
     renderTable();
 
     const grid = screen.getByRole("grid");
@@ -133,12 +133,20 @@ describe("GridBody — selection fill rendering", () => {
     const bottom = getBodyCell(1, 0);
 
     expect(top).toHaveClass("data-table-cell-selected");
+    expect(top).toHaveClass("data-table-cell-active");
+    expect(top).toHaveClass("data-table-selection-edge-top");
+    expect(top).toHaveClass("data-table-selection-edge-left");
+    expect(top).toHaveClass("data-table-selection-edge-right");
     expect(bottom).toHaveClass("data-table-cell-selected");
+    expect(bottom).not.toHaveClass("data-table-cell-active");
+    expect(bottom).toHaveClass("data-table-selection-edge-bottom");
+    expect(bottom).toHaveClass("data-table-selection-edge-left");
+    expect(bottom).toHaveClass("data-table-selection-edge-right");
     expect(top.style.boxShadow).toBe("");
     expect(bottom.style.boxShadow).toBe("");
   });
 
-  test("a 2x2 range marks all selected cells without inline edge shadows", () => {
+  test("a 2x2 range marks all selected cells and outer boundary edges", () => {
     renderTable();
 
     const grid = screen.getByRole("grid");
@@ -154,6 +162,23 @@ describe("GridBody — selection fill rendering", () => {
       expect(cell).toHaveClass("data-table-cell-selected");
       expect(cell.style.boxShadow).toBe("");
     }
+    expect(topLeft).toHaveClass(
+      "data-table-cell-active",
+      "data-table-selection-edge-top",
+      "data-table-selection-edge-left",
+    );
+    expect(topRight).toHaveClass(
+      "data-table-selection-edge-top",
+      "data-table-selection-edge-right",
+    );
+    expect(bottomLeft).toHaveClass(
+      "data-table-selection-edge-bottom",
+      "data-table-selection-edge-left",
+    );
+    expect(bottomRight).toHaveClass(
+      "data-table-selection-edge-bottom",
+      "data-table-selection-edge-right",
+    );
   });
 
   test("a 3x1 range marks the middle cell without inline edge shadows", () => {

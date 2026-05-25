@@ -171,6 +171,12 @@ export function GridBody<TRow>({
               const selected =
                 hasMultiCellRange &&
                 isCellInNormalizedRange({ rowIndex, columnIndex }, normalizedActiveRange);
+              const selectionEdgeTop = selected && rowIndex === normalizedActiveRange.rowStart;
+              const selectionEdgeRight =
+                selected && columnIndex === normalizedActiveRange.columnEnd;
+              const selectionEdgeBottom = selected && rowIndex === normalizedActiveRange.rowEnd;
+              const selectionEdgeLeft =
+                selected && columnIndex === normalizedActiveRange.columnStart;
               const active =
                 activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex;
               const fieldKey = fieldKeys[columnIndex] ?? "";
@@ -214,6 +220,10 @@ export function GridBody<TRow>({
                     visibleColumnDefs[columnIndex]?.className,
                     columnIndex === 0 ? "data-table-frozen" : "",
                     selected ? "data-table-cell-selected" : "",
+                    selectionEdgeTop ? "data-table-selection-edge-top" : "",
+                    selectionEdgeRight ? "data-table-selection-edge-right" : "",
+                    selectionEdgeBottom ? "data-table-selection-edge-bottom" : "",
+                    selectionEdgeLeft ? "data-table-selection-edge-left" : "",
                     active ? "data-table-cell-active" : "",
                     editing ? "data-table-cell-editing" : "",
                   ]

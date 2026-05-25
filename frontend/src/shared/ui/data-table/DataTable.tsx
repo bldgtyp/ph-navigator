@@ -434,27 +434,9 @@ export function DataTable<TRow>({
     startInlineEdit(row, selection.activeCell.columnIndex);
   };
 
-  // Multi-cell typing announce is de-duplicated per selection-change so
-  // a held-down key doesn't spam the live region. Reset whenever the
-  // active range changes shape.
-  const multiCellAnnouncedRef = useRef(false);
-  const { rowStart, rowEnd, columnStart, columnEnd } = selection.normalizedRange;
-  useEffect(() => {
-    multiCellAnnouncedRef.current = false;
-  }, [rowStart, rowEnd, columnStart, columnEnd]);
-
   // Replace-mode entry point for type-to-edit. `initialKey` is the typed
   // character ("K", "7", " ") or empty string for Backspace / Delete.
   const typeToEditActiveCell = (initialKey: string) => {
-    const isSingleCell =
-      rowStart === rowEnd && columnStart === columnEnd && !selection.hasExplicitRange;
-    if (!isSingleCell) {
-      if (!multiCellAnnouncedRef.current) {
-        setAnnounce("Select a single cell to start typing.");
-        multiCellAnnouncedRef.current = true;
-      }
-      return;
-    }
     const row = visibleDataRows[selection.activeCell.rowIndex];
     const column = visibleColumnDefs[selection.activeCell.columnIndex];
     if (!row || !column) return;
@@ -464,6 +446,7 @@ export function DataTable<TRow>({
       setAnnounce("This cell is read-only.");
       return;
     }
+    selection.setActive({ rowId: getRowId(row), fieldKey: column.fieldKey });
     // Plan 05: single-select cells route through SingleSelectPopover
     // with the typed char pre-filling the search input. Trim the seed
     // so Space — which the keyboard hook treats as a printable char —

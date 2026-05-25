@@ -46,6 +46,7 @@ describe("useGridSelection", () => {
       columnStart: 0,
       columnEnd: 0,
     });
+    expect(result.current.activeCell).toEqual({ rowIndex: 0, columnIndex: 0 });
   });
 
   test("moveBy without shift moves the active cell and collapses", () => {

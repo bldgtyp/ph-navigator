@@ -64,6 +64,8 @@ export function useGridSelection(args: { rowIds: string[]; fieldKeys: string[] }
 
   const origin: CellCoord = { rowIndex: 0, columnIndex: 0 };
   const focusCoord = resolveCoord(focus, origin);
+  // AirTable-style range selection keeps the starting cell active while
+  // the focus endpoint moves with drag / Shift+Arrow.
   const anchorCoord = resolveCoord(anchor, focusCoord);
   const range: CellRange = { anchor: anchorCoord, focus: focusCoord };
   const normalizedRange = normalizeRange(range);
@@ -191,7 +193,7 @@ export function useGridSelection(args: { rowIds: string[]; fieldKeys: string[] }
   return {
     anchor,
     focus,
-    activeCell: focusCoord,
+    activeCell: anchorCoord,
     range,
     normalizedRange,
     hasExplicitRange: explicit,
