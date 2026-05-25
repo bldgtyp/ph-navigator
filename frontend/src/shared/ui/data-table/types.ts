@@ -280,6 +280,13 @@ export type DataTableProps<TRow> = {
   onRenameCustomField?: (request: RenameCustomFieldRequest) => Promise<void>;
   onDuplicateCustomField?: (fieldKey: string) => Promise<{ newFieldKey: string } | void>;
   onSetCustomFieldDescription?: (request: EditCustomFieldDescriptionRequest) => Promise<void>;
+  // plan-21 P5a.1: the consumer builds the `editFieldBundle` WriteOp
+  // from this request (it knows the schema fingerprint). Modal Save
+  // calls this and awaits resolution; rejection leaves the modal open
+  // with the error surfaced inline. P5a.1 ships name + description
+  // only; later sub-phases extend the request shape with type-change,
+  // options/default, and formula source.
+  onEditCustomFieldBundle?: (request: EditCustomFieldBundleRequest) => Promise<void>;
   // Commit the new formula `source` for a custom formula field.
   // Backend re-parses + resolves + cycle-checks. Omit to hide the
   // `Edit formula…` menu item entirely.
@@ -303,6 +310,17 @@ export type EditCustomFieldFormulaRequest = {
 export type RenameCustomFieldRequest = {
   fieldKey: string;
   displayName: string;
+};
+
+// plan-21 P5a.1 request shape for the unified field-config modal Save.
+// The consumer turns this into one `editFieldBundle` WriteOp. Only
+// properties the user actually changed need to differ from the current
+// FieldDef; the consumer is responsible for assembling the full
+// `after: CustomFieldDef` it ships to the backend.
+export type EditCustomFieldBundleRequest = {
+  fieldKey: string;
+  displayName: string;
+  description: string | null;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

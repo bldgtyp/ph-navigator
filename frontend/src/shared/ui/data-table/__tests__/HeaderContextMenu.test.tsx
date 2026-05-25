@@ -42,6 +42,7 @@ function Wrapper(props: RenderArgs) {
         onDuplicateField={props.onDuplicateField}
         onEditDescription={props.onEditDescription}
         onEditFieldFormula={props.onEditFieldFormula}
+        onEditFieldConfig={props.onEditFieldConfig}
         onInsertFieldLeft={props.onInsertFieldLeft}
         onInsertFieldRight={props.onInsertFieldRight}
       />
@@ -78,6 +79,7 @@ describe("HeaderContextMenu", () => {
   test("right-click on a custom-field header shows schema items before view-state items", () => {
     render(
       <Wrapper
+        onEditFieldConfig={vi.fn()}
         onRenameField={vi.fn()}
         onDeleteField={vi.fn()}
         onDuplicateField={vi.fn()}
@@ -87,6 +89,7 @@ describe("HeaderContextMenu", () => {
     openViaContextMenu();
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
+      "Edit field…",
       "Rename field",
       "Delete field",
       "Duplicate field",
@@ -97,6 +100,29 @@ describe("HeaderContextMenu", () => {
       "Group by this field",
       "Hide field",
     ]);
+  });
+
+  test("Edit field… opens the unified config modal handler on custom fields", () => {
+    const onEditFieldConfig = vi.fn();
+    render(<Wrapper onEditFieldConfig={onEditFieldConfig} />);
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items[0]).toBe("Edit field…");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+    expect(onEditFieldConfig).toHaveBeenCalledTimes(1);
+  });
+
+  test("Edit field… is absent on core fields", () => {
+    const coreField: FieldDef = {
+      field_key: "name",
+      field_type: "text",
+      display_name: "Name",
+      read_only_schema: true,
+    };
+    render(<Wrapper fieldDef={coreField} onEditFieldConfig={vi.fn()} />);
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).not.toContain("Edit field…");
   });
 
   test("viewer mode never opens the menu (browser default surfaces instead)", () => {

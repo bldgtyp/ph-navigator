@@ -175,6 +175,27 @@ describe("DataTable column header double-click trigger (Phase 5 §4.2)", () => {
     });
   });
 
+  test("plan-21: double-click opens the FieldConfigModal when onEditCustomFieldBundle is wired", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderCustomFieldTable({ onEditCustomFieldBundle });
+    await user.dblClick(getColumnHeader("Notes"));
+    // Modal is a Radix dialog; assert by role + the seeded Name input.
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Notes");
+    // The legacy inline-rename input is not used in this path.
+    expect(screen.queryByRole("textbox", { name: "Rename Notes" })).toBeNull();
+  });
+
+  test("plan-21: viewer mode (readOnly) suppresses the modal-open double-click", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn();
+    renderCustomFieldTable({ onEditCustomFieldBundle, readOnly: true });
+    await user.dblClick(getColumnHeader("Notes"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
+  });
+
   test("focus-away submits and closes the custom-field rename editor", async () => {
     const user = userEvent.setup();
     const onRenameCustomField = vi.fn().mockResolvedValue(undefined);

@@ -32,6 +32,10 @@ export type HeaderContextMenuProps = {
   // Only forwarded when the field is a custom formula field — the
   // menu omits the item otherwise (US-CF-8 criterion 2).
   onEditFieldFormula?: () => void;
+  // plan-21 P5a.1 — "Edit field…" entry that opens the unified
+  // field-config modal. Forwarded for any custom field when the
+  // DataTable consumer wired `onEditCustomFieldBundle`.
+  onEditFieldConfig?: () => void;
   onInsertFieldLeft?: () => void;
   onInsertFieldRight?: () => void;
   onSortAsc: () => void;
@@ -61,6 +65,7 @@ export function HeaderContextMenu({
   onEditDescription,
   onChangeFieldType,
   onEditFieldFormula,
+  onEditFieldConfig,
   onInsertFieldLeft,
   onInsertFieldRight,
   onSortAsc,
@@ -75,6 +80,13 @@ export function HeaderContextMenu({
 
   const isCustomField = fieldDef.read_only_schema !== true;
   const items: MenuItem[] = [];
+  if (isCustomField && onEditFieldConfig) {
+    items.push({
+      key: "edit-field",
+      label: "Edit field…",
+      onSelect: onEditFieldConfig,
+    });
+  }
   if (isCustomField && onRenameField) {
     items.push({
       key: "rename-field",

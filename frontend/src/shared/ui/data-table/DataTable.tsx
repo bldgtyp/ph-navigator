@@ -55,6 +55,7 @@ import {
   EditFieldDescriptionPopover,
   type EditCustomFieldDescriptionRequest,
 } from "./components/EditFieldDescriptionPopover";
+import { FieldConfigModal } from "./components/FieldConfigModal";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
 import { FormulaEditorPopover } from "./components/FormulaEditorPopover";
 import { astFromJson, rebuildSourceFromStoredAst } from "./lib/formula";
@@ -64,6 +65,7 @@ import type {
   AxisRoleSubset,
   CellCoord,
   DataTableProps,
+  EditCustomFieldBundleRequest,
   FieldDef,
   FilterCondition,
   GroupRule,
@@ -98,6 +100,7 @@ export function DataTable<TRow>({
   onRenameCustomField,
   onDuplicateCustomField,
   onSetCustomFieldDescription,
+  onEditCustomFieldBundle,
   onEditCustomFieldFormula,
   formulaFieldRegistry,
   getFormulaRowValues,
@@ -668,6 +671,13 @@ export function DataTable<TRow>({
   const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
   const [renamingFieldKey, setRenamingFieldKey] = useState<string | null>(null);
   const [descriptionFieldKey, setDescriptionFieldKey] = useState<string | null>(null);
+  // plan-21 P5a.1: which custom field's config modal is open (if any).
+  // The originating header element is stashed at open time so focus
+  // returns there on close (US-CF-15 criterion 5).
+  const [configModalState, setConfigModalState] = useState<{
+    fieldKey: string;
+    triggerEl: HTMLElement | null;
+  } | null>(null);
   type FormulaEditorState = { fieldKey: string; anchorElement: HTMLElement | null };
   const [formulaEditorState, setFormulaEditorState] = useState<FormulaEditorState | null>(null);
   const tailCellRef = useRef<HTMLTableCellElement | null>(null);
@@ -708,6 +718,26 @@ export function DataTable<TRow>({
       setPendingFocusFieldKey(newFieldKey);
     },
     [onAddCustomField],
+  );
+
+  // plan-21 P5a.1 — open the unified field-config modal on any custom
+  // header (double-click, chevron, or context-menu "Edit field…").
+  // Core fields and viewer mode pass through unchanged.
+  const editConfigEnabled = !readOnly && Boolean(onWrite) && Boolean(onEditCustomFieldBundle);
+  const openConfigModal = useCallback(
+    (fieldKey: string, triggerEl: HTMLElement | null) => {
+      if (!editConfigEnabled) return;
+      setConfigModalState({ fieldKey, triggerEl });
+    },
+    [editConfigEnabled],
+  );
+
+  const handleEditCustomFieldBundle = useCallback(
+    async (request: EditCustomFieldBundleRequest) => {
+      if (!onEditCustomFieldBundle) return;
+      await onEditCustomFieldBundle(request);
+    },
+    [onEditCustomFieldBundle],
   );
 
   const handleRenameCustomFieldSubmit = useCallback(
@@ -804,6 +834,7 @@ export function DataTable<TRow>({
         ? setDescriptionFieldKey
         : undefined,
       onEditCustomFieldFormula: formulaEditorEnabled ? requestEditCustomFieldFormula : undefined,
+      onEditCustomFieldConfig: editConfigEnabled ? openConfigModal : undefined,
       onInsertFieldLeft: addFieldEnabled ? requestInsertFieldLeft : undefined,
       onInsertFieldRight: addFieldEnabled ? requestInsertFieldRight : undefined,
     }),
@@ -820,6 +851,8 @@ export function DataTable<TRow>({
       requestDuplicateCustomField,
       formulaEditorEnabled,
       requestEditCustomFieldFormula,
+      editConfigEnabled,
+      openConfigModal,
       addFieldEnabled,
       requestInsertFieldLeft,
       requestInsertFieldRight,
@@ -980,6 +1013,16 @@ export function DataTable<TRow>({
   const descriptionFieldDef = descriptionFieldKey
     ? fieldDefByKey.get(descriptionFieldKey)
     : undefined;
+  // plan-21 P5a.1 — modal source FieldDef. Resolves only when the
+  // modal is open; core columns (`read_only_schema: true`) collapse
+  // to `undefined` so the modal won't render against an app-managed
+  // field if a stale gesture slipped through.
+  const configModalFieldDef = useMemo(() => {
+    if (!configModalState) return undefined;
+    const fieldDef = fieldDefByKey.get(configModalState.fieldKey);
+    if (!fieldDef || fieldDef.read_only_schema === true) return undefined;
+    return fieldDef;
+  }, [configModalState, fieldDefByKey]);
 
   // Split the editor context into two memos: the AST rebuild is
   // expensive but depends only on the stored AST + registry; the
@@ -1119,6 +1162,25 @@ export function DataTable<TRow>({
           focusedRow={formulaEditorFocusedRow}
           initialSource={formulaEditorFieldContext.initialSource}
           onSubmit={handleEditFormulaSubmit}
+        />
+      ) : null}
+      {onEditCustomFieldBundle ? (
+        <FieldConfigModal
+          open={configModalState !== null}
+          onOpenChange={(next) => {
+            if (!next) {
+              setConfigModalState(null);
+              // Defer grid refocus; the modal's onCloseAutoFocus
+              // already returns focus to the originating header cell.
+            }
+          }}
+          fieldDef={configModalFieldDef}
+          existingFieldLabels={existingFieldLabels}
+          dispatchBundle={handleEditCustomFieldBundle}
+          returnFocusTo={configModalState?.triggerEl ?? null}
+          onFieldRemoved={(message) => {
+            setAnnounce(message);
+          }}
         />
       ) : null}
       {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (
