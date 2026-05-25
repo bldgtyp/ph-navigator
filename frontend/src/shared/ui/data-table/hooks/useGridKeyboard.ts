@@ -28,8 +28,8 @@ export type GridKeyboardArgs = {
   // ("edit, don't replace"). When the active cell is not editable,
   // `onBeginEdit` falls through to `onRowOpen` inside the shell.
   onBeginEdit?: () => void;
-  // A printable character typed on a single-cell selection while no
-  // editor is open replaces the cell's value and enters edit mode.
+  // A printable character typed while no editor is open replaces the
+  // active cell's value and enters edit mode.
   // The shell-level handler gates further (read-only, single-select
   // routing, multi-cell announce) — the keyboard hook only checks that
   // the keystroke is a single printable char with no modifiers and not
@@ -172,7 +172,7 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
 
       // Backspace / Delete on the active cell clears the value via the
       // type-to-edit replace path. The shell's handler enforces
-      // single-cell, editable-cell, and write-handler gates.
+      // editable-cell and write-handler gates.
       if (
         (event.key === "Backspace" || event.key === "Delete") &&
         !event.metaKey &&
@@ -187,7 +187,7 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
 
       // Printable single-character keystroke with no modifiers and no
       // IME composition → route to the type-to-edit handler. The shell
-      // applies the multi-cell / read-only / single-select gates.
+      // applies the range-collapse / read-only / single-select gates.
       // `isComposing` lives on the native KeyboardEvent, not React's
       // synthetic event wrapper.
       if (

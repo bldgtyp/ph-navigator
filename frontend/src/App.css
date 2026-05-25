@@ -2661,7 +2661,30 @@ button:disabled {
    Single active cells keep the normal bordered cursor treatment below. */
 .data-table td.data-table-cell-selected {
   background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
-  box-shadow: none !important;
+  --data-table-selection-border: color-mix(in oklab, var(--accent-text) 46%, transparent);
+  --data-table-selection-edge-top-shadow: inset 0 0 0 0 transparent;
+  --data-table-selection-edge-right-shadow: inset 0 0 0 0 transparent;
+  --data-table-selection-edge-bottom-shadow: inset 0 0 0 0 transparent;
+  --data-table-selection-edge-left-shadow: inset 0 0 0 0 transparent;
+  box-shadow:
+    var(--data-table-selection-edge-top-shadow), var(--data-table-selection-edge-right-shadow),
+    var(--data-table-selection-edge-bottom-shadow), var(--data-table-selection-edge-left-shadow) !important;
+}
+
+.data-table td.data-table-selection-edge-top {
+  --data-table-selection-edge-top-shadow: inset 0 1px 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-selection-edge-right {
+  --data-table-selection-edge-right-shadow: inset -1px 0 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-selection-edge-bottom {
+  --data-table-selection-edge-bottom-shadow: inset 0 -1px 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-selection-edge-left {
+  --data-table-selection-edge-left-shadow: inset 1px 0 0 var(--data-table-selection-border);
 }
 
 .data-table td.data-table-cell-active {
@@ -2681,7 +2704,7 @@ button:disabled {
 
 .data-table td.data-table-cell-active.data-table-cell-selected {
   background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
-  box-shadow: none !important;
+  box-shadow: inset 0 0 0 2px var(--accent-text) !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-selected,

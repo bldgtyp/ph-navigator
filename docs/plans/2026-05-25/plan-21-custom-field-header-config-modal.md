@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-25
 TIME: planning (proposal — ready to scope into PRs)
-STATUS: Proposal. Open questions Q1–Q5 resolved 2026-05-25 (see §7).
+STATUS: Proposal. Open questions Q1–Q6 resolved 2026-05-25 (see §7).
         Ready to break Phase 5a into PR-sized sub-phases.
 PARENT-STORIES:
   - context/user-stories/32-custom-fields.md
@@ -156,9 +156,20 @@ surface.
         `FieldEditorPopover`; same DnD UX. This **fully replaces**
         the current chevron-anchored single-select management
         popover — there is no separate "Edit options…" surface
-        after Phase 5a. Also adds a new **Default option** picker
-        (see Q6 in §7) — this is the one piece of the AirTable
-        screenshot that has no v2 counterpart today.
+        after Phase 5a. Adds a new **Default option** picker
+        (resolved Q6.A — AirTable parity): selecting an option in
+        the picker pre-fills it into every newly-created row's
+        `custom.<cf_id>` value. The picker shows a blank entry
+        (meaning "no default — leave new rows null") plus every
+        option in the current draft list. Reordering / renaming /
+        recoloring options does not unset the default. Deleting
+        the currently-selected default clears it back to blank.
+        Defaults are forward-only: pre-existing rows with `null`
+        values are **not** backfilled when a Default is set
+        (R6 — AirTable parity). MCP / paste / JSON-import requests
+        that explicitly send `null` keep `null` — defaults only
+        fire when the request omits `custom.<cf_id>` entirely
+        (R5).
       - *Formula* (a.k.a. `computed` in the merged schema) → source
         textarea + field palette + live preview against the
         **preview row** (snapshot of the last-focused row at
@@ -356,6 +367,25 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
 
 ### Phase 5a — Modal shell, single entry point
 
+- **P5a.0 — Backend: `default_option_id` on single-select config.**
+  Extend `CustomFieldDef.config` for `field_type === "single_select"`
+  to accept an optional `default_option_id` (validated against the
+  field's own option list — typed `FieldSchemaMutation` rejects any
+  id not present in the option set, atomic with option mutations
+  per US-CF-7 criterion 5). Update the row-creation paths
+  (`POST /tables/<table>/rows`, optimistic insertion in the
+  frontend) to pre-fill `custom.<cf_id> = default_option_id` **only
+  when the incoming request omits the key entirely** (R5 rule —
+  explicit `null` from MCP / paste / JSON-import is preserved as
+  `null`, never silently overwritten by the default). Defaults are
+  **forward-only**: setting a Default does **not** backfill any
+  existing row with a `null` value for that column (R6, AirTable
+  parity). Pure-backend PR; no UI surface yet.
+  **Scope guard:** only custom single-selects get a configurable
+  default. Core single-selects (`floor_level`, etc.) keep their
+  current required-or-null behavior — defaults for core fields are
+  out of scope (their `required: true` semantics interact with row
+  validation in ways that belong in their own plan).
 - **P5a.1 — Skeleton modal.** Build `FieldConfigModal` + empty
   `FieldConfigForm` with only the Name + Description sections wired.
   Hook double-click + chevron + a new `Edit field…` menu item to it.
@@ -365,14 +395,27 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   `ChangeTypePopover`'s preflight + ack into
   `FieldConfigSectionTypeChange`. Save batches the changeType
   mutation alongside any name/description edit.
-- **P5a.3 — Options section.** Port `FieldEditorPopover` into
-  `FieldConfigSectionOptions` (drag-handles, color swatches,
-  Color-code toggle, Alphabetize, delete-with-cascade). Re-mount
+- **P5a.3 — Options section + Default picker.** Port
+  `FieldEditorPopover` into `FieldConfigSectionOptions` (drag-handles,
+  color swatches, Color-code toggle, Alphabetize, delete-with-
+  cascade). Add the new **Default** picker below the option list,
+  surfaced as a labelled `<select>` whose entries are `(blank)` + the
+  current draft options. Wire it to the backend
+  `config.default_option_id` from P5a.0. Re-mount
   `ConfirmDeleteOptionDialog` as the same nested alert it is today.
-  Save batches the `legacyOptions` mutation. Also: rewire the
+  Save batches the `legacyOptions` mutation (now also carrying
+  `default_option_id` in the `after` `FieldDef`). Also: rewire the
   header chevron + the menu's old "Edit options" entry to the new
   modal and **delete** the in-grid options popover that today opens
   on chevron-click / single-select-header double-click.
+- **P5a.3b — Default picker in `AddFieldPopover`.** AirTable parity
+  requires the Default picker in the Create flow too (see Q6
+  resolution and the user-supplied "starting" single-select
+  screenshot). Add the same `<select>` to `AddFieldPopover`'s
+  `single_select` branch; carry `default_option_id` through
+  `AddCustomFieldRequest.config`. `AddFieldPopover` stays a
+  separate component in 5a — true unification with the modal is
+  still Phase 5c per §1's out-of-scope note.
 - **P5a.4 — Number precision section.** Port from `AddFieldPopover`
   inline; trivially small.
 - **P5a.5 — Formula section.** Port `FormulaEditorPopover` into
@@ -406,11 +449,27 @@ should share a single chrome.
 
 ## 5. Data shape & contracts
 
-No backend schema change in Phase 5a (per §3.3 Q1.B). The modal is a
-pure frontend refactor over the existing typed `FieldSchemaMutation`
-variants. Phase 5b/c may add a `schemaMutation/full` variant and a
-`format` slice on `CustomFieldDef.config`; those decisions belong in
-their own plans.
+The modal is a frontend refactor over the existing typed
+`FieldSchemaMutation` variants (per §3.3 Q1.B), with **one** backend
+schema addition driven by Q6: `CustomFieldDef.config` for
+`field_type === "single_select"` gains an optional
+`default_option_id: string | null`. Validated against the field's
+own option list inside the same `legacyOptions` mutation that
+mutates the options themselves (atomic — no way to commit a default
+that points at a missing option). Row-creation paths read it and
+pre-fill `custom.<cf_id>` on the new row **only when the incoming
+request omits the key** (R5); defaults are forward-only and never
+backfill existing nulls (R6).
+
+The app is pre-deploy with no live users, so there is **no
+backwards-compatibility requirement** for documents or saved
+Versions written before P5a.0 — if simpler code falls out of
+breaking older fixtures, take it. Drop or regenerate any test
+fixtures that would otherwise pin the old shape.
+
+Phase 5b/c may add a `schemaMutation/full` variant and a `format`
+slice on `CustomFieldDef.config`; those decisions belong in their
+own plans.
 
 ---
 
@@ -456,33 +515,7 @@ Append to `docs/plans/2026-05-25/plan-17-a11y-notes.md`:
 
 ---
 
-## 7. Decisions
-
-### Open
-
-**Q6 — Default option picker for single-select.** The AirTable
-field-config modal includes a `Default` picker that pre-fills the
-chosen option into every newly-created row of the table. Today's
-V2 `CustomFieldDef` has no `default` field on its `config` for
-single-select, and `useTableSchema` + the row-creation paths don't
-read one. Scope choices:
-
-- **Q6.A — Include in Phase 5a.** Add `config.default_option_id`
-  to single-select `CustomFieldDef`, surface the picker in the
-  options section, and wire row-creation (frontend optimistic
-  apply + backend `INSERT` defaults) to honor it. Adds backend
-  schema work to an otherwise frontend-only Phase 5a.
-- **Q6.B — Defer to Phase 5b/c.** Ship the modal in 5a without
-  the picker; add a TODO callout in the options section. Lets
-  Phase 5a stay a pure frontend consolidation.
-
-**Recommendation: Q6.B.** Keep Phase 5a frontend-only; Default
-opens a backend schema change (and possibly a row-default story
-for core single-selects like `floor_level` too — those have
-`required: true` semantics that interact with defaults). Worth
-its own plan once Phase 5a ships.
-
-### Resolved (2026-05-25)
+## 7. Resolved decisions (2026-05-25)
 
 **Q1 — One WriteOp or many?** §3.3. **Resolved: many.** Phase 5a
 client-side batches multiple existing typed `FieldSchemaMutation`s
@@ -513,23 +546,67 @@ visible row) when no row has been focused yet.** Snapshot is held
 for the lifetime of the modal session — the preview does not retarget
 even if the underlying focus state changes while the modal is open.
 
+**Q6 — Default option picker for single-select.** **Resolved: Q6.A
+(include in Phase 5a) — AirTable parity.** Adds an optional
+`config.default_option_id` to single-select `CustomFieldDef`,
+validated atomically with the option-list mutation. Surfaces in
+both the new modal's options section (P5a.3) **and** the existing
+`AddFieldPopover`'s Create flow (P5a.3b) — the AirTable "starting
+single-select" screenshot is the Create form, so parity requires
+the picker in both surfaces. Scope guard recorded in P5a.0: only
+custom single-selects get a configurable default; core
+single-selects (`floor_level`, etc.) keep current
+required-or-null behavior and are out of scope.
+
 ---
 
 ## 8. Risks
 
+All risks below were walked through with the user on 2026-05-25;
+responses are recorded inline.
+
 - **R1 — Bundle size.** The new modal pulls in
   `@radix-ui/react-dialog`. We already use it transitively via
   `ConfirmDestructiveDialog`, so this is a no-op.
-- **R2 — Lost discoverability for view-state actions.** Users who
-  today double-click a header expecting it to "do something visible"
-  now get a heavy modal. Mitigation: the modal opens fast (no async
-  data fetch — every property is already in the merged `FieldDef`),
-  and Esc dismisses it cleanly.
+  *Resolution: accepted as housekeeping; no action.*
+- **R2 — Behavior change on header double-click.** Today's
+  double-click on a custom header runs either the inline rename
+  editor or the single-select options popover; after Phase 5a it
+  opens the new modal instead. AirTable parity is explicitly the
+  goal, and users expect AirTable behavior on this surface.
+  *Resolution: accepted as desired UX; no mitigation needed.*
 - **R3 — Test churn.** Every custom-fields unit/e2e test today
-  asserts against a specific popover's DOM. P5a.6 explicitly budgets
-  for rewriting them. Estimated: ~12 unit specs + 4 e2e specs.
-- **R4 — Migration window.** While the popovers and the modal both
-  exist (between P5a.1 and P5a.6), two paths can dispatch
-  `FieldSchemaMutation`s for the same field. Mitigation: behind a
-  Settings flag (`custom_field_config_modal_enabled`) that defaults
-  off until P5a.6.
+  asserts against a specific popover's DOM and will need to be
+  rewritten against the modal. Q6.A also adds backend tests for
+  `default_option_id` validation + row-creation defaults. Revised
+  estimate: **~14 unit specs + ~6 backend pytest specs + ~4 e2e
+  specs.** P5a.6 explicitly budgets for this.
+  *Resolution: accepted; tests will be updated as part of each
+  sub-phase rather than batched at the end.*
+- **R4 — Migration window during P5a.1 → P5a.6.** Between the
+  modal landing and the legacy popovers being deleted, two
+  dispatcher paths exist for the same `FieldSchemaMutation`s.
+  The original draft proposed a Settings feature flag to gate
+  the modal's gesture wiring. **The app is pre-deploy with no
+  live users, so the flag is unnecessary** — sub-phases can ship
+  the modal as the *only* path the moment it covers a given
+  property, deleting the matching popover in the same PR.
+  *Resolution: drop the feature flag from the phasing. Each
+  P5a.N PR is a hard cut-over for the property it covers.*
+- **R5 — Default-fill semantics for non-UI row creation.** A row
+  created via MCP / JSON import / paste must not have an
+  explicit `null` silently overwritten by a column's Default.
+  *Resolution: the backend applies a Default **only when the
+  request omits `custom.<cf_id>` entirely**; explicit `null` is
+  preserved. Recorded as a hard rule in P5a.0 and US-CF-16
+  1.iii.b.*
+- **R6 — Backfill of existing rows when Default is set.** Setting
+  a Default on a field with pre-existing null rows could either
+  backfill those rows or leave them untouched.
+  *Resolution: **no backfill — defaults are forward-only.**
+  Matches AirTable. Recorded in P5a.0 and US-CF-16 1.iii.b.*
+- **~~R7 — Backwards-compatibility for documents saved before
+  P5a.0.~~** *Resolution: dropped. The app is in early dev with
+  no users and no deploy — there is no requirement to read
+  pre-P5a.0 documents. §5 now explicitly allows breaking old
+  fixtures if it simplifies the code.*
