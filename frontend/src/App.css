@@ -2060,7 +2060,8 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: var(--bg-card);
+  --data-table-header-bg: var(--bg-card);
+  background: var(--data-table-header-bg);
   color: var(--text-secondary);
   font-family: var(--font-table, var(--font-primary));
   font-size: 0.72rem;
@@ -2099,14 +2100,18 @@ button:disabled {
   height: 32px;
   min-height: 32px;
   padding: 6px 8px;
-  background: var(--bg-card);
+  --data-table-cell-bg: var(--bg-card);
+  background: var(--data-table-cell-bg);
   font-family: var(--font-table, var(--font-primary));
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0;
 }
 
-.data-table tbody tr:hover td,
+.data-table tbody tr:hover td {
+  background: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
+}
+
 .data-table tbody tr:hover .data-table-gutter {
   background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
 }
@@ -2565,47 +2570,61 @@ button:disabled {
 }
 
 .data-table th[data-axis-tint="f"] {
-  background: var(--data-table-tint-f-header);
+  --data-table-header-bg: var(--data-table-tint-f-header);
+  background: var(--data-table-header-bg);
 }
 .data-table th[data-axis-tint="s"] {
-  background: var(--data-table-tint-s-header);
+  --data-table-header-bg: var(--data-table-tint-s-header);
+  background: var(--data-table-header-bg);
 }
 .data-table th[data-axis-tint="g"] {
-  background: var(--data-table-tint-g-header);
+  --data-table-header-bg: var(--data-table-tint-g-header);
+  background: var(--data-table-header-bg);
 }
 .data-table th[data-axis-tint="fs"] {
-  background: var(--data-table-tint-fs-header);
+  --data-table-header-bg: var(--data-table-tint-fs-header);
+  background: var(--data-table-header-bg);
 }
 .data-table th[data-axis-tint="fg"] {
-  background: var(--data-table-tint-fg-header);
+  --data-table-header-bg: var(--data-table-tint-fg-header);
+  background: var(--data-table-header-bg);
 }
 .data-table th[data-axis-tint="sg"] {
-  background: var(--data-table-tint-sg-header);
+  --data-table-header-bg: var(--data-table-tint-sg-header);
+  background: var(--data-table-header-bg);
 }
 .data-table th[data-axis-tint="fsg"] {
-  background: var(--data-table-tint-fsg-header);
+  --data-table-header-bg: var(--data-table-tint-fsg-header);
+  background: var(--data-table-header-bg);
 }
 
 .data-table td[data-axis-tint="f"] {
-  background: var(--data-table-tint-f-body);
+  --data-table-cell-bg: var(--data-table-tint-f-body);
+  background: var(--data-table-cell-bg);
 }
 .data-table td[data-axis-tint="s"] {
-  background: var(--data-table-tint-s-body);
+  --data-table-cell-bg: var(--data-table-tint-s-body);
+  background: var(--data-table-cell-bg);
 }
 .data-table td[data-axis-tint="g"] {
-  background: var(--data-table-tint-g-body);
+  --data-table-cell-bg: var(--data-table-tint-g-body);
+  background: var(--data-table-cell-bg);
 }
 .data-table td[data-axis-tint="fs"] {
-  background: var(--data-table-tint-fs-body);
+  --data-table-cell-bg: var(--data-table-tint-fs-body);
+  background: var(--data-table-cell-bg);
 }
 .data-table td[data-axis-tint="fg"] {
-  background: var(--data-table-tint-fg-body);
+  --data-table-cell-bg: var(--data-table-tint-fg-body);
+  background: var(--data-table-cell-bg);
 }
 .data-table td[data-axis-tint="sg"] {
-  background: var(--data-table-tint-sg-body);
+  --data-table-cell-bg: var(--data-table-tint-sg-body);
+  background: var(--data-table-cell-bg);
 }
 .data-table td[data-axis-tint="fsg"] {
-  background: var(--data-table-tint-fsg-body);
+  --data-table-cell-bg: var(--data-table-tint-fsg-body);
+  background: var(--data-table-cell-bg);
 }
 
 .data-table-header-action {
@@ -2632,7 +2651,7 @@ button:disabled {
   position: sticky;
   left: var(--gutter-width);
   z-index: 2;
-  background: var(--bg-card);
+  background: var(--data-table-cell-bg, var(--data-table-header-bg, var(--bg-card)));
 }
 
 .data-table th.data-table-frozen {
@@ -2642,7 +2661,7 @@ button:disabled {
 /* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
    Single active cells keep the normal bordered cursor treatment below. */
 .data-table td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 4%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
   box-shadow: none !important;
 }
 
@@ -2652,18 +2671,18 @@ button:disabled {
 }
 
 .data-table td.data-table-cell-active:not(.data-table-cell-selected) {
-  background: var(--bg-card);
+  background: var(--data-table-cell-bg);
   box-shadow: inset 0 0 0 2px var(--accent-text);
 }
 
 .data-table td.data-table-cell-active.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
   box-shadow: none !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 4%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-active.data-table-cell-selected,
@@ -2671,7 +2690,7 @@ button:disabled {
   tbody
   tr:has(.data-table-gutter-selected)
   td.data-table-cell-active.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 8%, var(--bg-card)) !important;
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the
