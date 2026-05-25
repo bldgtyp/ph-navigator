@@ -47,6 +47,11 @@
 - `backend/.env` (gitignored) — copy from `backend/.env.example`
 - `frontend/.env.local` (gitignored) — copy from `frontend/.env.example`
 - No second `.env`. No `.env.poc`. No overlays.
+- Logging-related backend env keys (see `context/LOGGING.md` for the
+  full reference): `LOG_LEVEL` (default `INFO`), `LOG_FORMAT`
+  (`console` locally, `json` on Render), `LOG_SQL`
+  (default `false`), `LOG_SAMPLE_HEALTH` (default `false`),
+  `GIT_SHA` (Render's `RENDER_GIT_COMMIT`).
 - Local backend defaults:
   - `DATABASE_URL=postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2`
   - `SESSION_COOKIE_NAME=phn_session`
@@ -93,6 +98,9 @@ under the `Staging` environment.
   - Env:
     - `ENVIRONMENT=staging`
     - `APP_VERSION=0.1.0`
+    - `LOG_FORMAT=json`
+    - `LOG_LEVEL=INFO`
+    - `GIT_SHA` mapped from Render's `RENDER_GIT_COMMIT`
     - `DATABASE_URL=<Render internal database URL>`
     - `CORS_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
     - `SESSION_COOKIE_NAME=phn_session`
@@ -152,6 +160,15 @@ password was shared in chat or another durable channel, rotate it.
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).
+
+## Logging
+
+- Canonical reference: `context/LOGGING.md`.
+- Backend uses `structlog` over stdlib `logging`. JSON output in
+  `staging`/`production`, colorized key=value in local dev.
+- Every API error response carries a `request_id` that matches the
+  log lines emitted while handling it — paste it into Render's log
+  search to reconstruct the request.
 
 ## Coding standards
 

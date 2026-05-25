@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-12
 STATUS: CANONICAL ENGINEERING STANDARD
-RELATED: context/ENVIRONMENT.md, context/TECH_STACK.md, backend/README.md, frontend/package.json
+RELATED: context/ENVIRONMENT.md, context/TECH_STACK.md, context/LOGGING.md, backend/README.md, frontend/package.json
 ---
 
 # PH-Navigator V2 Coding Standards
@@ -136,6 +136,19 @@ on a function named `create_project`.
 
 Use short inline comments only where they prevent misreading a non-obvious
 block. Do not narrate ordinary Python.
+
+### Logging Standard
+
+Use `structlog` with a module-level logger:
+`log = structlog.get_logger(__name__)`. Event names are
+`snake_case.dotted` (`project_document.saved`, `auth.session_created`)
+so they aggregate cleanly in log search. Levels: INFO for significant
+successes, WARNING for expected deviations, ERROR for 5xx and
+unrecoverable failures. Never log document bodies, JSON-Patch payloads,
+passwords, session-cookie values, MCP bearer tokens, or PII. Log
+identifiers, not contents. `request_id` is bound automatically by
+`request_context_middleware` — do not pass it manually. Full reference:
+`context/LOGGING.md`.
 
 ### Backend Controls
 
