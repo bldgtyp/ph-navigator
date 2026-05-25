@@ -17,10 +17,7 @@ export function rebuildSourceFromStoredAst(
   return serialise(ast, byId);
 }
 
-function serialise(
-  node: FormulaAST,
-  byId: ReadonlyMap<string, FieldRegistryEntry>,
-): string {
+function serialise(node: FormulaAST, byId: ReadonlyMap<string, FieldRegistryEntry>): string {
   switch (node.kind) {
     case "literal":
       return serialiseLiteral(node.value);

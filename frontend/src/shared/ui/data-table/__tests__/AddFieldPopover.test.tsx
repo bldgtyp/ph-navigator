@@ -9,6 +9,12 @@ type HarnessProps = {
   existingFieldNames?: ReadonlyArray<string>;
   insertAfterFieldKey?: string | null;
   initialOpen?: boolean;
+  formulaFieldRegistry?: ReadonlyArray<{
+    field_id: string;
+    display_name: string;
+    origin: "core" | "custom";
+    field_type: "text" | "number" | "single_select" | "formula" | "bool";
+  }>;
 };
 
 function Harness({
@@ -16,6 +22,7 @@ function Harness({
   existingFieldNames = ["Number", "Floor"],
   insertAfterFieldKey = null,
   initialOpen = true,
+  formulaFieldRegistry,
 }: HarnessProps) {
   const [open, setOpen] = useState(initialOpen);
   const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -31,6 +38,7 @@ function Harness({
         insertAfterFieldKey={insertAfterFieldKey}
         existingFieldNames={existingFieldNames}
         dispatchAddField={dispatch}
+        formulaFieldRegistry={formulaFieldRegistry}
       />
     </>
   );
@@ -172,7 +180,7 @@ describe("AddFieldPopover", () => {
     );
   });
 
-  test("Phase 3 enables single_select; Formula remains disabled", () => {
+  test("Phase 4 enables Formula alongside single_select", () => {
     render(<Harness />);
     const single = within(dialog()).getByRole("radio", {
       name: "Single select",
@@ -181,8 +189,7 @@ describe("AddFieldPopover", () => {
       name: "Formula",
     }) as HTMLButtonElement;
     expect(single.disabled).toBe(false);
-    expect(formula.disabled).toBe(true);
-    expect(formula.title).toMatch(/Phase 4/);
+    expect(formula.disabled).toBe(false);
   });
 
   test("Cancel closes the popover without dispatching", () => {
@@ -208,5 +215,62 @@ describe("AddFieldPopover", () => {
     await waitFor(() => expect(dispatch).toHaveBeenCalled());
     const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
     expect(request.insertAfterFieldKey).toBe("cf_existing");
+  });
+
+  describe("formula pill (P4.9)", () => {
+    const registry = [
+      { field_id: "name", display_name: "Name", origin: "core", field_type: "text" },
+      { field_id: "number", display_name: "Number", origin: "core", field_type: "text" },
+    ] as const;
+
+    test("selecting Formula reveals the expression input", () => {
+      render(<Harness formulaFieldRegistry={registry} />);
+      clickPill("Formula");
+      expect(within(dialog()).getByLabelText("Expression")).toBeInTheDocument();
+    });
+
+    test("Submit dispatches a formula request with parsed AST + deps", async () => {
+      const dispatch = vi.fn().mockResolvedValue(undefined);
+      render(<Harness dispatch={dispatch} formulaFieldRegistry={registry} />);
+      typeName("Label");
+      clickPill("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
+      fireEvent.change(expression, { target: { value: "upper({Name})" } });
+      clickAdd();
+      await waitFor(() => expect(dispatch).toHaveBeenCalled());
+      const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
+      expect(request.fieldType).toBe("formula");
+      expect(request.config.source).toBe("upper({Name})");
+      expect(Array.isArray((request.config as { deps?: unknown[] }).deps)).toBe(true);
+      expect((request.config as { deps: string[] }).deps).toEqual(["name"]);
+      expect((request.config as { ast: unknown }).ast).toBeTruthy();
+    });
+
+    test("Submit stays disabled while the formula is unparseable", () => {
+      const dispatch = vi.fn();
+      render(<Harness dispatch={dispatch} formulaFieldRegistry={registry} />);
+      typeName("Label");
+      clickPill("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
+      fireEvent.change(expression, { target: { value: "upper(" } });
+      const submit = within(dialog()).getByRole("button", {
+        name: /Add field/,
+      }) as HTMLButtonElement;
+      expect(submit.disabled).toBe(true);
+      expect(within(dialog()).getByRole("alert")).toBeInTheDocument();
+    });
+
+    test("Submit surfaces missing-ref errors locally", () => {
+      render(<Harness formulaFieldRegistry={registry} />);
+      typeName("Label");
+      clickPill("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
+      fireEvent.change(expression, { target: { value: "upper({Nonexistent})" } });
+      const submit = within(dialog()).getByRole("button", {
+        name: /Add field/,
+      }) as HTMLButtonElement;
+      expect(submit.disabled).toBe(true);
+      expect(within(dialog()).getByRole("alert")).toHaveTextContent(/Nonexistent/);
+    });
   });
 });

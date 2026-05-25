@@ -38,6 +38,7 @@ export {
   buildEditOptionsMutation,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
+  buildSetFormulaMutation,
 } from "./lib/customFieldMutations";
 export { uniqueCopyDisplayName } from "./lib/fieldDisplayNames";
 export type {
@@ -73,10 +74,12 @@ export type {
   CellWrite,
   DataTableColumnDef,
   DataTableProps,
+  EditCustomFieldFormulaRequest,
   FieldDef,
   FieldOption,
   FilterCondition,
   FilterOperator,
+  FormulaFieldRegistryEntry,
   GroupRule,
   RowDeletePayload,
   RowInsertPayload,

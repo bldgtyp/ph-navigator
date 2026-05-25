@@ -119,9 +119,7 @@ describe("RoomsTable cell-write on a custom field (plan-18 §5.6)", () => {
       rooms: [buildRoom({ custom: { cf_paint: "old" } })],
       custom_fields: [buildCustomField()],
     });
-    const writes: RoomCellWrite[] = [
-      { rowId: "rm_1", fieldKey: "cf_paint", value: "blue" },
-    ];
+    const writes: RoomCellWrite[] = [{ rowId: "rm_1", fieldKey: "cf_paint", value: "blue" }];
 
     const payload = roomsPayloadFromCellWrites(slice, writes, {});
 

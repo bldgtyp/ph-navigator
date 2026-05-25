@@ -6,6 +6,7 @@
 import type { CustomFieldDef } from "../hooks/useTableSchema";
 import type { FieldOption } from "../types";
 import { CUSTOM_FIELD_KEY_PREFIX, isCustomFieldKey } from "./customFieldAccessor";
+import { SOURCE_LENGTH_MAX } from "./formula";
 
 export type AddFieldMutation = {
   kind: "addField";
@@ -73,7 +74,12 @@ export type SetFormulaMutation = {
   kind: "setFormula";
   tableKey: string;
   fieldId: string;
-  config: Record<string, unknown>;
+  // User-typed expression source. Backend re-parses, resolves refs,
+  // and cycle-checks on commit (the wire shape that survives is
+  // {source, ast, deps, result_type} in `config`, but the request
+  // only ships the source string — defence-in-depth against a
+  // client-side AST that doesn't match what the server would parse).
+  source: string;
   expectedSchemaFingerprint: string;
 };
 
@@ -292,6 +298,33 @@ export type BuildChangeTypeArgs = {
   acknowledgeDestructive?: boolean;
   schemaFingerprint: string;
 };
+
+export type BuildSetFormulaArgs = {
+  tableKey: string;
+  fieldId: string;
+  source: string;
+  schemaFingerprint: string;
+};
+
+export function buildSetFormulaMutation(args: BuildSetFormulaArgs): SetFormulaMutation {
+  assertCustomFieldId(args.fieldId, "setFormula.fieldId");
+  const source = args.source;
+  if (source.trim() === "") {
+    throw new SchemaMutationBuildError("setFormula.source cannot be empty.");
+  }
+  if (source.length > SOURCE_LENGTH_MAX) {
+    throw new SchemaMutationBuildError(
+      `setFormula.source must be ${SOURCE_LENGTH_MAX} characters or fewer (got ${source.length}).`,
+    );
+  }
+  return {
+    kind: "setFormula",
+    tableKey: args.tableKey,
+    fieldId: args.fieldId,
+    source,
+    expectedSchemaFingerprint: args.schemaFingerprint,
+  };
+}
 
 export function buildChangeTypeMutation(args: BuildChangeTypeArgs): ChangeTypeMutation {
   assertCustomFieldId(args.fieldId, "changeType.fieldId");

@@ -19,9 +19,7 @@ export type EvalErrorCode =
 
 export type EvalValue = string | number | boolean | null;
 
-export type EvalResult =
-  | { ok: true; value: EvalValue }
-  | { ok: false; code: EvalErrorCode };
+export type EvalResult = { ok: true; value: EvalValue } | { ok: false; code: EvalErrorCode };
 
 export interface EvalFuse {
   nodesEvaluated: number;
@@ -279,10 +277,7 @@ function evalNode(node: FormulaAST, state: State): unknown {
   }
 }
 
-function evalBinary(
-  node: Extract<FormulaAST, { kind: "binary_op" }>,
-  state: State,
-): unknown {
+function evalBinary(node: Extract<FormulaAST, { kind: "binary_op" }>, state: State): unknown {
   const op = node.op;
   if (op === "and") {
     const left = evalNode(node.left, state);
@@ -347,10 +342,7 @@ function evalBinary(
   throw new EvalErrorSignal("type_mismatch");
 }
 
-function evalCall(
-  node: Extract<FormulaAST, { kind: "func_call" }>,
-  state: State,
-): unknown {
+function evalCall(node: Extract<FormulaAST, { kind: "func_call" }>, state: State): unknown {
   const args = node.args.map((arg) => evalNode(arg, state));
   switch (node.name) {
     case "concat":

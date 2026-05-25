@@ -33,11 +33,7 @@ export function FormulaFieldPalette({
     );
   }
   return (
-    <div
-      className="formula-field-palette"
-      role="group"
-      aria-label="Insert field reference"
-    >
+    <div className="formula-field-palette" role="group" aria-label="Insert field reference">
       {entries.map((entry) => {
         const token = `{${entry.display_name}}`;
         const a11yLabel = `${FIELD_TYPE_LABEL[entry.field_type]} ${entry.display_name}`;

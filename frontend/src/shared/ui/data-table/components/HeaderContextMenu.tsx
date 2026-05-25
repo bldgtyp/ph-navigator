@@ -29,6 +29,9 @@ export type HeaderContextMenuProps = {
   onDuplicateField?: () => void;
   onEditDescription?: () => void;
   onChangeFieldType?: () => void;
+  // Only forwarded when the field is a custom formula field — the
+  // menu omits the item otherwise (US-CF-8 criterion 2).
+  onEditFieldFormula?: () => void;
   onInsertFieldLeft?: () => void;
   onInsertFieldRight?: () => void;
   onSortAsc: () => void;
@@ -56,6 +59,7 @@ export function HeaderContextMenu({
   onDuplicateField,
   onEditDescription,
   onChangeFieldType,
+  onEditFieldFormula,
   onInsertFieldLeft,
   onInsertFieldRight,
   onSortAsc,
@@ -88,6 +92,13 @@ export function HeaderContextMenu({
       key: "edit-description",
       label: "Edit description",
       onSelect: onEditDescription,
+    });
+  }
+  if (isCustomField && onEditFieldFormula) {
+    items.push({
+      key: "edit-formula",
+      label: "Edit formula…",
+      onSelect: onEditFieldFormula,
     });
   }
   if (isCustomField && onChangeFieldType) {

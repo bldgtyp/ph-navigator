@@ -120,10 +120,9 @@ describe("formula evaluator corpus parity", () => {
       const result = evaluate(resolved, (fieldId) => row.get(fieldId) ?? null);
 
       if (testCase.expected.ok) {
-        expect(
-          result.ok,
-          `${testCase.name}: expected ok=true, got ${JSON.stringify(result)}`,
-        ).toBe(true);
+        expect(result.ok, `${testCase.name}: expected ok=true, got ${JSON.stringify(result)}`).toBe(
+          true,
+        );
         if (result.ok) {
           expect(
             valuesEqual(result.value, testCase.expected.value),

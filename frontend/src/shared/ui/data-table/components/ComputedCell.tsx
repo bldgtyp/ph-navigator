@@ -41,10 +41,7 @@ export function ComputedCell({
     );
   }
   return (
-    <span
-      className={joinClassNames("computed-cell", className)}
-      style={style}
-    >
+    <span className={joinClassNames("computed-cell", className)} style={style}>
       {formatComputedValue(value, computedType, numberPrecision)}
     </span>
   );

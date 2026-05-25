@@ -56,6 +56,9 @@ import {
   type EditCustomFieldDescriptionRequest,
 } from "./components/EditFieldDescriptionPopover";
 import { FieldEditorPopover } from "./components/FieldEditorPopover";
+import { FormulaEditorPopover } from "./components/FormulaEditorPopover";
+import { astFromJson, rebuildSourceFromStoredAst } from "./lib/formula";
+import type { FormulaAST } from "./lib/formula";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
   AxisRoleSubset,
@@ -95,6 +98,9 @@ export function DataTable<TRow>({
   onRenameCustomField,
   onDuplicateCustomField,
   onSetCustomFieldDescription,
+  onEditCustomFieldFormula,
+  formulaFieldRegistry,
+  getFormulaRowValues,
 }: DataTableProps<TRow>) {
   const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
   // Hide-fields panel needs hidden columns too, so users can toggle
@@ -679,6 +685,8 @@ export function DataTable<TRow>({
   const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
   const [renamingFieldKey, setRenamingFieldKey] = useState<string | null>(null);
   const [descriptionFieldKey, setDescriptionFieldKey] = useState<string | null>(null);
+  type FormulaEditorState = { fieldKey: string; anchorElement: HTMLElement | null };
+  const [formulaEditorState, setFormulaEditorState] = useState<FormulaEditorState | null>(null);
   const tailCellRef = useRef<HTMLTableCellElement | null>(null);
   const [pendingFocusFieldKey, setPendingFocusFieldKey] = useState<string | null>(null);
 
@@ -749,6 +757,30 @@ export function DataTable<TRow>({
     [onSetCustomFieldDescription],
   );
 
+  const formulaEditorEnabled =
+    !readOnly &&
+    Boolean(onEditCustomFieldFormula) &&
+    Boolean(formulaFieldRegistry && formulaFieldRegistry.length > 0);
+
+  const requestEditCustomFieldFormula = useCallback(
+    (fieldKey: string, anchorElement: HTMLElement | null) => {
+      if (!formulaEditorEnabled) return;
+      setFormulaEditorState({ fieldKey, anchorElement });
+    },
+    [formulaEditorEnabled],
+  );
+
+  const handleEditFormulaSubmit = useCallback(
+    async (payload: { source: string }) => {
+      if (!onEditCustomFieldFormula || !formulaEditorState) return;
+      await onEditCustomFieldFormula({
+        fieldKey: formulaEditorState.fieldKey,
+        source: payload.source,
+      });
+    },
+    [onEditCustomFieldFormula, formulaEditorState],
+  );
+
   // Once the consumer's refetch reidentifies fieldDefs and the new column
   // lands in the visible set, jump the selection to row 0 of that column
   // and refocus the grid. Narrow the deps to `selection.setActive` so an
@@ -788,6 +820,7 @@ export function DataTable<TRow>({
       onEditCustomFieldDescription: onSetCustomFieldDescription
         ? setDescriptionFieldKey
         : undefined,
+      onEditCustomFieldFormula: formulaEditorEnabled ? requestEditCustomFieldFormula : undefined,
       onInsertFieldLeft: addFieldEnabled ? requestInsertFieldLeft : undefined,
       onInsertFieldRight: addFieldEnabled ? requestInsertFieldRight : undefined,
     }),
@@ -802,6 +835,8 @@ export function DataTable<TRow>({
       onSetCustomFieldDescription,
       requestDeleteCustomField,
       requestDuplicateCustomField,
+      formulaEditorEnabled,
+      requestEditCustomFieldFormula,
       addFieldEnabled,
       requestInsertFieldLeft,
       requestInsertFieldRight,
@@ -963,6 +998,50 @@ export function DataTable<TRow>({
     ? fieldDefByKey.get(descriptionFieldKey)
     : undefined;
 
+  const formulaEditorContext = useMemo(() => {
+    if (!formulaEditorState) return null;
+    const fieldDef = fieldDefByKey.get(formulaEditorState.fieldKey);
+    if (!fieldDef || !fieldDef.formula_config) return null;
+    const registry = formulaFieldRegistry ?? [];
+    let initialSource = fieldDef.formula_config.source ?? "";
+    const storedAst = fieldDef.formula_config.ast;
+    if (storedAst && registry.length > 0) {
+      try {
+        const ast = astFromJson(storedAst) as FormulaAST;
+        initialSource = rebuildSourceFromStoredAst(ast, registry);
+      } catch {
+        // Stored AST is malformed (pre-P4.5 fixture, hand-edited
+        // document, or rollback survivor) — fall back to the raw
+        // `config.source` string so the user can still edit and
+        // re-commit the formula.
+      }
+    }
+    let focusedRow: { id: string; values: Record<string, unknown> } | null = null;
+    const activeRowId = rowIds[selection.activeCell.rowIndex];
+    if (activeRowId !== undefined && getFormulaRowValues) {
+      const row = visibleDataRows.find((candidate) => getRowId(candidate) === activeRowId);
+      if (row) {
+        focusedRow = { id: activeRowId, values: getFormulaRowValues(row) };
+      }
+    }
+    return {
+      fieldDef: { id: fieldDef.field_key, display_name: fieldDef.display_name },
+      anchorElement: formulaEditorState.anchorElement,
+      registry,
+      initialSource,
+      focusedRow,
+    };
+  }, [
+    formulaEditorState,
+    fieldDefByKey,
+    formulaFieldRegistry,
+    selection.activeCell,
+    rowIds,
+    visibleDataRows,
+    getRowId,
+    getFormulaRowValues,
+  ]);
+
   const toolbarActions =
     !readOnly && rowSelection.count > 0 ? (
       <button
@@ -1038,6 +1117,24 @@ export function DataTable<TRow>({
           insertAfterFieldKey={addFieldPopover?.insertAfterFieldKey ?? null}
           existingFieldNames={existingFieldNames}
           dispatchAddField={handleAddFieldSubmit}
+          formulaFieldRegistry={formulaFieldRegistry}
+        />
+      ) : null}
+      {formulaEditorEnabled && formulaEditorContext ? (
+        <FormulaEditorPopover
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              setFormulaEditorState(null);
+              focusGrid();
+            }
+          }}
+          anchorElement={formulaEditorContext.anchorElement}
+          fieldDef={formulaEditorContext.fieldDef}
+          fieldRegistry={formulaEditorContext.registry}
+          focusedRow={formulaEditorContext.focusedRow}
+          initialSource={formulaEditorContext.initialSource}
+          onSubmit={handleEditFormulaSubmit}
         />
       ) : null}
       {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (
