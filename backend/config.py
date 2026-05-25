@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     git_sha: str = ""
+    render_instance_id: str = ""
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    log_format: Literal["json", "console"] = "console"
+    log_sql: bool = False
+    log_sample_health: bool = False
     session_lifetime_minutes: int = 60
     session_cookie_name: str = "phn_session"
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"

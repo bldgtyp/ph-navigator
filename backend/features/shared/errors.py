@@ -7,12 +7,15 @@ from __future__ import annotations
 
 from typing import Any
 
+import structlog
 from fastapi import HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette import status
+
+log = structlog.get_logger(__name__)
 
 
 class ErrorEnvelope(BaseModel):
@@ -66,6 +69,7 @@ async def http_exception_handler(request: Request, exc: Exception) -> JSONRespon
         error_code = str(detail.get("error_code", "http_error"))
         message = str(detail.get("message", "Request failed."))
         details = detail.get("details", {})
+        _log_http_error(exc.status_code, error_code, message)
         return error_response(
             request=request,
             status_code=exc.status_code,
@@ -74,11 +78,13 @@ async def http_exception_handler(request: Request, exc: Exception) -> JSONRespon
             details=details if isinstance(details, dict) else {},
         )
 
+    message = str(detail)
+    _log_http_error(exc.status_code, "http_error", message)
     return error_response(
         request=request,
         status_code=exc.status_code,
         error_code="http_error",
-        message=str(detail),
+        message=message,
     )
 
 
@@ -86,10 +92,17 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
     if not isinstance(exc, RequestValidationError):
         raise exc
 
+    errors = jsonable_encoder(exc.errors())
+    log.warning("api.validation_error", status=status.HTTP_422_UNPROCESSABLE_ENTITY, errors=errors)
     return error_response(
         request=request,
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         error_code="validation_error",
         message="Request validation failed.",
-        details={"errors": jsonable_encoder(exc.errors())},
+        details={"errors": errors},
     )
+
+
+def _log_http_error(status_code: int, error_code: str, message: str) -> None:
+    level = log.warning if status_code < 500 else log.error
+    level("api.http_error", status=status_code, error_code=error_code, message=message)

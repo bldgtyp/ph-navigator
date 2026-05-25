@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
+import structlog
 from fastapi import Request, Response
 from starlette import status
 
@@ -158,6 +159,7 @@ def authenticate(email: str, password: str, request: Request) -> tuple[UserPubli
 
     if result is None:
         raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_credentials", GENERIC_LOGIN_ERROR)
+    structlog.contextvars.bind_contextvars(user_id=str(result[0].id))
     return result
 
 
@@ -209,6 +211,7 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
 
     if result is None:
         raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
+    structlog.contextvars.bind_contextvars(user_id=str(result[0].id))
     return result
 
 
@@ -227,6 +230,7 @@ def sign_out(request: Request) -> None:
         session = repository.get_session_for_update(conn, session_id)
         if session is None:
             return
+        structlog.contextvars.bind_contextvars(user_id=str(session["user_id"]))
         repository.invalidate_session(conn, session_id, reason="signed_out", invalidated_at=now)
         user = repository.get_user_by_id(conn, session["user_id"])
         repository.log_action(

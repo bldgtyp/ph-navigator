@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-25
 TIME: planning (single-PR implementation phasing)
-STATUS: Draft. Phase 1 of the logging rollout described in
+STATUS: Implemented on `main`. Phase 1 of the logging rollout described in
         context/LOGGING.md. Subsequent phases (frontend logger +
         error boundary; optional Sentry; optional Log Stream drain)
         are scoped only at the end of this doc as forward pointers,
@@ -455,9 +455,6 @@ Document the result in `context/ENVIRONMENT.md` Render staging block
   `shared/api/client.ts` (log on `!response.ok`). Add a top-level
   React error boundary that surfaces `request_id` to the user. See
   `context/LOGGING.md` §"Frontend Stack".
-- **Phase 3 — auth-resolved `user_id` binding.** Wire
-  `structlog.contextvars.bind_contextvars(user_id=...)` into the
-  session-loading dependency once TB-01 auth lands or is updated.
 - **Phase 4 (optional) — Render Log Stream drain.** Configure a drain
   to Better Stack / Logtail / Datadog once retention demands it. Pure
   Render-side config; no app code.
@@ -485,3 +482,20 @@ Document the result in `context/ENVIRONMENT.md` Render staging block
    change in the diff. If a new sensitive-kwarg name surfaces, prefer
    renaming the call site to a key the processor already covers
    rather than broadening the list.
+
+## 11. Implementation notes — 2026-05-25
+
+- `structlog` is configured through `ProcessorFormatter` with
+  `wrap_for_formatter` semantics so stdlib records and app records
+  share the same renderer while pytest `caplog` can still assert on
+  structured event names.
+- Deploy identity (`environment`, `git_sha`, `app_version`,
+  `instance_id`) is added by a processor rather than request
+  contextvars so `clear_contextvars()` at request start/end cannot
+  erase global log context.
+- Auth-resolved `user_id` binding landed in this Phase 1 branch because
+  the auth/session dependency already exists.
+- Full backend tests passed via `make test-backend`; `make smoke`
+  passed. Full `ruff check .`, `ruff format --check .`, and
+  `ty check` remain blocked by pre-existing custom-field/formula
+  diagnostics outside this logging slice.

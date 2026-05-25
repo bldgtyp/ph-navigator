@@ -25,6 +25,9 @@ from features.shared.errors import http_exception_handler, validation_exception_
 from features.shared.middleware import request_context_middleware
 from features.system.routes import router as system_router
 from features.table_views.routes import router as table_views_router
+from logging_config import configure_logging
+
+configure_logging(settings)
 
 
 @asynccontextmanager
