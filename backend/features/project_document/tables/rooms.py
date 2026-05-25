@@ -26,7 +26,11 @@ from features.project_document.options import (
     replace_option_list,
 )
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.contracts import CustomFieldCapability, TableContract
+from features.project_document.tables.contracts import (
+    CustomFieldCapability,
+    TableContract,
+    default_attach_computed_overlay,
+)
 from features.project_document.validation import validate_document
 
 if TYPE_CHECKING:
@@ -90,6 +94,10 @@ class RoomsSliceResponse(BaseModel):
     # String-keyed so `rooms.<cf_id>` custom option lists ride alongside
     # the two core option keys in one response envelope.
     single_select_options: dict[str, list[SingleSelectOption]]
+    # Plan-17 P4.4 computed read overlay: `{row_id: {cf_id: value}}`
+    # for every formula custom field. Always present; empty per-row
+    # dict when no formula fields exist.
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -132,6 +140,11 @@ def rooms_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> RoomsSliceResponse:
+    # Lazy-import to avoid a Rooms→formula→Rooms circular at module
+    # load time.
+    from features.project_document.formula import evaluate_table_formulas
+
+    rows_computed = evaluate_table_formulas(rooms_custom_fields, body)
     return RoomsSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -141,6 +154,7 @@ def rooms_response(
         rooms=body.tables.rooms.rows,
         custom_fields=body.tables.rooms.custom_fields,
         single_select_options=_rooms_single_select_options(body),
+        rows_computed=rows_computed,
     )
 
 
@@ -151,10 +165,18 @@ def extract_rooms_envelope(body: ProjectDocumentV1) -> dict[str, object]:
     `{custom_fields, rows}` shape; MCP's `McpTableEnvelope.rows` is
     typed `object` to accept this envelope alongside the bare row lists
     used by tables that don't opt into custom fields.
+
+    Phase 4 P4.4: every row carries a `computed` overlay (`{}` when
+    no formula fields exist) holding evaluated formula values.
     """
+    from features.project_document.formula import evaluate_table_formulas
+
+    overlay = evaluate_table_formulas(rooms_custom_fields, body)
+    row_dicts = [room.model_dump(mode="json") for room in body.tables.rooms.rows]
+    rows_with_overlay = rooms_custom_fields.attach_computed_overlay(row_dicts, overlay)
     return {
         "custom_fields": [field.model_dump(mode="json") for field in body.tables.rooms.custom_fields],
-        "rows": [room.model_dump(mode="json") for room in body.tables.rooms.rows],
+        "rows": rows_with_overlay,
     }
 
 
@@ -243,6 +265,60 @@ def _read_rooms_core_option_value(row: object, field_id: str) -> str | None:
     raise ValueError(f"unknown core single-select field: {field_id}")
 
 
+# Formula-facing types for each core Rooms field. The registry uses
+# this to type-check formula refs against core fields. List-valued or
+# struct-valued cores (`erv_unit_ids`, `catalog_origin`) return None;
+# the parser still accepts a `{ERVs}` ref but the evaluator will treat
+# the value as opaque ("text") for now.
+_MISSING = object()  # sentinel for the assertion below
+
+
+ROOMS_CORE_FORMULA_TYPES: dict[str, str] = {
+    "id": "text",
+    "number": "text",
+    "name": "text",
+    "floor_level": "single_select",
+    "building_zone": "single_select",
+    "num_people": "number",
+    "num_bedrooms": "number",
+    "icfa_factor": "number",
+    "erv_unit_ids": "text",
+    "catalog_origin": "text",
+    "notes": "text",
+}
+
+
+_missing_formula_type_keys = [
+    key for key in ROOMS_CORE_FIELD_KEYS if ROOMS_CORE_FORMULA_TYPES.get(key, _MISSING) is _MISSING
+]
+if _missing_formula_type_keys:
+    raise RuntimeError(
+        f"ROOMS_CORE_FORMULA_TYPES missing entries for: {_missing_formula_type_keys!r}"
+    )
+
+
+def _read_rooms_core_field_for_formula(row: object, field_id: str) -> object | None:
+    if not isinstance(row, RoomRow):
+        return None
+    if field_id not in ROOMS_CORE_FIELD_KEYS:
+        return None
+    value = getattr(row, field_id, None)
+    # Render list-valued cores as a comma-joined string so they have a
+    # tractable formula type. Phase 5 may revisit this for richer
+    # collection support.
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value)
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def _rooms_core_field_type_for_formula(field_id: str) -> str | None:
+    return ROOMS_CORE_FORMULA_TYPES.get(field_id)
+
+
 def _set_rooms_core_option_value(row: object, field_id: str, value: str | None) -> object:
     if not isinstance(row, RoomRow):
         raise TypeError(f"expected RoomRow, got {type(row).__name__}")
@@ -303,6 +379,9 @@ rooms_custom_fields = CustomFieldCapability(
     required_core_select_fields=ROOMS_REQUIRED_CORE_SELECT_FIELDS,
     read_core_option_value=_read_rooms_core_option_value,
     set_core_option_value=_set_rooms_core_option_value,
+    core_field_value_for_formula=_read_rooms_core_field_for_formula,
+    core_field_type_for_formula=_rooms_core_field_type_for_formula,  # type: ignore[arg-type]
+    attach_computed_overlay=default_attach_computed_overlay,
 )
 
 

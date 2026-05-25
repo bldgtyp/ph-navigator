@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
@@ -75,6 +75,46 @@ class CustomFieldCapability:
     required_core_select_fields: frozenset[str]
     read_core_option_value: Callable[[object, str], str | None]
     set_core_option_value: Callable[[object, str, str | None], object]
+    # Phase 4 formula accessors. `core_field_value_for_formula` returns
+    # a core field's value for the row indexed by its python attribute
+    # key; the evaluator reads only through this callable so cross-
+    # table fan-out (Phase 5) needs no evaluator changes.
+    # `core_field_type_for_formula` returns the evaluator-facing type
+    # ("text" / "number" / "single_select") of a core field, used by
+    # the field registry; returns None for keys the formula grammar
+    # should treat as opaque (e.g. list-valued or struct-valued core
+    # fields).
+    core_field_value_for_formula: Callable[[object, str], object | None]
+    core_field_type_for_formula: Callable[
+        [str],
+        Literal["text", "number", "single_select", "bool"] | None,
+    ]
+    # Read-overlay attach helper (plan-17 P4.4). Default
+    # implementation lives in `contracts.default_attach_computed_overlay`;
+    # tables override only when their wire shape is non-dict rows.
+    attach_computed_overlay: Callable[
+        [list[dict[str, object]], dict[str, dict[str, object]]],
+        list[dict[str, object]],
+    ]
+
+
+def default_attach_computed_overlay(
+    rows: list[dict[str, object]],
+    overlay: dict[str, dict[str, object]],
+) -> list[dict[str, object]]:
+    """Attach `row["computed"] = overlay.get(row.id, {})` on every row.
+
+    Used by every custom-field-capable contract whose download / slice
+    response emits a list of row dicts. Tables that emit non-dict rows
+    can override with a custom helper.
+    """
+    out: list[dict[str, object]] = []
+    for row in rows:
+        row_id = str(row.get("id", ""))
+        next_row = dict(row)
+        next_row["computed"] = overlay.get(row_id, {})
+        out.append(next_row)
+    return out
 
 
 @dataclass(frozen=True)

@@ -24,6 +24,21 @@ from features.project_document.custom_fields import (
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
+from features.project_document.formula import (
+    SOURCE_LENGTH_MAX,
+    FormulaCycleError,
+    FormulaMissingRefError,
+    FormulaParseError,
+    FormulaResourceLimitError,
+    FormulaUnsupportedFunctionError,
+    ast_from_json,
+    ast_to_json,
+    build_field_registry,
+    detect_cycles,
+    parse,
+    resolve_refs,
+)
+from features.project_document.formula.resolver import collect_field_refs
 from features.project_document.options import (
     OPTION_COLOR_PALETTE,
     mint_option_id,
@@ -45,11 +60,10 @@ AUDIT_KIND_BY_MUTATION: dict[str, str] = {
     "setDescription": "project_version_custom_field_set_description",
     "editOptions": "project_version_custom_field_edit_options",
     "changeType": "project_version_custom_field_change_type",
+    "setFormula": "project_version_custom_field_set_formula",
 }
 
-_DEFERRED_MUTATION_PHASES: dict[str, str] = {
-    "setFormula": "Phase 4",
-}
+_DEFERRED_MUTATION_PHASES: dict[str, str] = {}
 
 # Convertibility matrix: (from, to) -> ConversionPolicy. Pairs absent
 # from this map are forbidden. Frontend `typeConversionMatrix.ts`
@@ -206,15 +220,24 @@ class EditOptionsMutation(BaseModel):
 
 
 class SetFormulaMutation(BaseModel):
-    """Declared up front to close the discriminator; rejected by the
-    dispatcher with `custom_field_unsupported_mutation` until Phase 4."""
+    """Set / replace the formula source on a custom formula field.
+
+    The server parses + resolves + cycle-checks `source` and stores
+    `config = {"source": source, "ast": ast_to_json(...), "deps":
+    [field_id, ...], "result_type": <inferred>}`. Existing field
+    identity / metadata (id, display_name, description, field_key,
+    created_at, created_by) is preserved.
+    """
 
     model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["setFormula"]
     table_key: str
     field_id: str
-    config: dict[str, object]
+    # User-facing source string; bounded by `SOURCE_LENGTH_MAX` from
+    # `formula/limits.py`. Empty / whitespace-only sources are
+    # rejected at parse time.
+    source: str = Field(min_length=1, max_length=SOURCE_LENGTH_MAX)
     expected_schema_fingerprint: str
 
 
@@ -246,9 +269,6 @@ def apply_schema_mutation(
     """
     _check_stale_fingerprint(body, mutation, capability)
 
-    if isinstance(mutation, SetFormulaMutation):
-        _raise_unsupported_mutation(mutation.kind)
-
     if isinstance(mutation, AddFieldMutation):
         next_body, audit = _apply_add_field(body, mutation, actor_user_id, capability)
     elif isinstance(mutation, RenameFieldMutation):
@@ -263,6 +283,8 @@ def apply_schema_mutation(
         next_body, audit = _apply_edit_options(body, mutation, capability)
     elif isinstance(mutation, ChangeTypeMutation):
         next_body, audit = _apply_change_type(body, mutation, capability)
+    elif isinstance(mutation, SetFormulaMutation):
+        next_body, audit = _apply_set_formula(body, mutation, capability)
     else:
         # Defensive — every discriminator branch is handled above; this
         # only fires if the union grows without a matching dispatcher.
@@ -1078,3 +1100,260 @@ def _apply_change_type(
     if generated_options is not None:
         audit["created_option_count"] = len(generated_options)
     return next_body, audit
+
+
+# ---------------------------------------------------------------------------
+# setFormula (Phase 4)
+# ---------------------------------------------------------------------------
+
+
+def _raise_formula_parse_error(
+    exc: FormulaParseError, field_id: str
+) -> None:
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "custom_field_formula_parse_error",
+        f"Couldn't parse the formula: {exc.message} (position {exc.offset}).",
+        {
+            "field_id": field_id,
+            "parse_error": exc.message,
+            "offset": exc.offset,
+            "source": exc.source,
+        },
+    )
+
+
+def _raise_formula_resource_limit(
+    exc: FormulaResourceLimitError, field_id: str
+) -> None:
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "custom_field_formula_resource_limit",
+        f"Formula exceeds {exc.limit_name} limit ({exc.actual}/{exc.max_value}). "
+        "Simplify the expression and try again.",
+        {
+            "field_id": field_id,
+            "limit_name": exc.limit_name,
+            "actual": exc.actual,
+            "max": exc.max_value,
+        },
+    )
+
+
+def _raise_formula_unsupported_function(
+    exc: FormulaUnsupportedFunctionError, field_id: str
+) -> None:
+    available = sorted(exc.available)
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "custom_field_formula_unsupported_function",
+        f"Function {exc.function_name!r} is not supported. Available: "
+        + ", ".join(available)
+        + ".",
+        {
+            "field_id": field_id,
+            "function_name": exc.function_name,
+            "available_functions": available,
+        },
+    )
+
+
+def _raise_formula_missing_ref(
+    exc: FormulaMissingRefError, field_id: str, missing_ref_id: str | None = None
+) -> None:
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "custom_field_formula_missing_ref",
+        f"Formula references a field that doesn't exist in this table: "
+        f"{exc.display_name}.",
+        {
+            "field_id": field_id,
+            "missing_ref_display_name": exc.display_name,
+            "missing_ref_id": missing_ref_id,
+        },
+    )
+
+
+def _raise_formula_cycle(
+    exc: FormulaCycleError, field_id: str
+) -> None:
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "custom_field_formula_cycle",
+        f"This formula creates a cycle: {' -> '.join(exc.cycle_path)}. "
+        "Remove the loop and try again.",
+        {
+            "field_id": field_id,
+            "cycle_path": list(exc.cycle_path),
+        },
+    )
+
+
+def _apply_set_formula(
+    body: ProjectDocumentV1,
+    mutation: SetFormulaMutation,
+    capability: CustomFieldCapability,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    current_fields = capability.read_custom_fields(body)
+    index, existing = _find_field(current_fields, mutation.field_id, mutation.table_key)
+    if existing.field_type is not CustomFieldType.formula:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_invalid_field_id",
+            "setFormula target is not a formula field.",
+            {
+                "field_id": mutation.field_id,
+                "table_key": mutation.table_key,
+                "reason": "field_type_not_formula",
+            },
+        )
+
+    # Parse.
+    try:
+        ast = parse(mutation.source)
+    except FormulaParseError as exc:
+        _raise_formula_parse_error(exc, mutation.field_id)
+        raise  # pragma: no cover — _raise_* always raises
+    except FormulaResourceLimitError as exc:
+        _raise_formula_resource_limit(exc, mutation.field_id)
+        raise  # pragma: no cover
+    except FormulaUnsupportedFunctionError as exc:
+        _raise_formula_unsupported_function(exc, mutation.field_id)
+        raise  # pragma: no cover
+
+    # Resolve refs against the current registry.
+    registry = build_field_registry(capability, body)
+    try:
+        resolved = resolve_refs(ast, registry)
+    except FormulaMissingRefError as exc:
+        _raise_formula_missing_ref(exc, mutation.field_id)
+        raise  # pragma: no cover
+
+    # Cycle-check against every other formula field's stored AST.
+    asts_by_id: dict[str, object] = {}
+    for f in current_fields:
+        if f.id == mutation.field_id:
+            continue
+        if f.field_type is not CustomFieldType.formula:
+            continue
+        stored = f.config.get("ast")
+        if stored is None:
+            continue
+        try:
+            asts_by_id[f.id] = ast_from_json(stored)
+        except (ValueError, TypeError):
+            # Skip malformed stored ASTs — the per-row evaluator will
+            # surface missing_ref at read time.
+            continue
+
+    try:
+        detect_cycles(mutation.field_id, resolved, asts_by_id)  # type: ignore[arg-type]
+    except FormulaCycleError as exc:
+        _raise_formula_cycle(exc, mutation.field_id)
+        raise  # pragma: no cover
+
+    deps = collect_field_refs(resolved)
+    new_config: dict[str, object] = {
+        "source": mutation.source,
+        "ast": ast_to_json(resolved),
+        "deps": deps,
+        "result_type": _infer_result_type(resolved),
+    }
+
+    next_field = existing.model_copy(update={"config": new_config})
+    next_fields = list(current_fields)
+    next_fields[index] = next_field
+    next_body = capability.replace_custom_fields(body, next_fields)
+
+    audit: dict[str, object] = {
+        "kind": "setFormula",
+        "table_key": mutation.table_key,
+        "field_id": mutation.field_id,
+        "source_length": len(mutation.source),
+        "ast_node_count": _count_ast_nodes(resolved),
+        "deps": deps,
+    }
+    return next_body, audit
+
+
+def _count_ast_nodes(node: object) -> int:
+    from features.project_document.formula.ast_nodes import (
+        BinaryOp as _BinaryOp,
+    )
+    from features.project_document.formula.ast_nodes import (
+        FieldRef as _FieldRef,
+    )
+    from features.project_document.formula.ast_nodes import (
+        FuncCall as _FuncCall,
+    )
+    from features.project_document.formula.ast_nodes import (
+        IfExpr as _IfExpr,
+    )
+    from features.project_document.formula.ast_nodes import (
+        Literal_ as _Literal,
+    )
+    from features.project_document.formula.ast_nodes import (
+        UnaryOp as _UnaryOp,
+    )
+
+    if isinstance(node, _Literal) or isinstance(node, _FieldRef):
+        return 1
+    if isinstance(node, _UnaryOp):
+        return 1 + _count_ast_nodes(node.operand)
+    if isinstance(node, _BinaryOp):
+        return 1 + _count_ast_nodes(node.left) + _count_ast_nodes(node.right)
+    if isinstance(node, _IfExpr):
+        return (
+            1
+            + _count_ast_nodes(node.condition)
+            + _count_ast_nodes(node.then_branch)
+            + _count_ast_nodes(node.else_branch)
+        )
+    if isinstance(node, _FuncCall):
+        return 1 + sum(_count_ast_nodes(a) for a in node.args)
+    return 1
+
+
+def _infer_result_type(node: object) -> str:
+    """Best-effort static result type used for downstream filter
+    operators (number aggregations, text comparisons). Falls back to
+    "text" for dynamic / mixed-typed expressions."""
+    from features.project_document.formula.ast_nodes import (
+        BinaryOp as _BinaryOp,
+    )
+    from features.project_document.formula.ast_nodes import (
+        FuncCall as _FuncCall,
+    )
+    from features.project_document.formula.ast_nodes import (
+        IfExpr as _IfExpr,
+    )
+    from features.project_document.formula.ast_nodes import (
+        Literal_ as _Literal,
+    )
+    from features.project_document.formula.ast_nodes import (
+        UnaryOp as _UnaryOp,
+    )
+
+    if isinstance(node, _Literal):
+        return node.inferred_type
+    if isinstance(node, _UnaryOp):
+        if node.op == "-":
+            return "number"
+        if node.op == "not":
+            return "bool"
+    if isinstance(node, _BinaryOp):
+        if node.op in ("+", "-", "*", "/", "%"):
+            return "number"
+        if node.op in ("=", "!=", "<", "<=", ">", ">=", "and", "or"):
+            return "bool"
+    if isinstance(node, _IfExpr):
+        # Use the then-branch type when both branches agree.
+        then_t = _infer_result_type(node.then_branch)
+        else_t = _infer_result_type(node.else_branch)
+        return then_t if then_t == else_t else "text"
+    if isinstance(node, _FuncCall):
+        if node.name in ("upper", "lower", "trim", "replace", "substring", "concat", "text"):
+            return "text"
+        if node.name in ("len", "number"):
+            return "number"
+    return "text"
