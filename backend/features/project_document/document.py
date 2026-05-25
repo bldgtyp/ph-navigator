@@ -388,6 +388,15 @@ class ProjectDocumentV1(BaseModel):
                         f"Invalid custom value for {custom_field.display_name!r} on room {room.id}: {exc}"
                     ) from exc
 
+        # Phase 4: formula cycle detection across the Rooms table's
+        # custom formula fields. Missing refs are *silently absorbed*
+        # (per plan-13 D2) — the evaluator surfaces them per-row at
+        # read time as `{"error": "missing_ref"}` so the user can fix
+        # the formula by reopening the editor. Cycles, however, are a
+        # hard validation failure: the document refuses to validate
+        # until the cycle is broken.
+        self._validate_rooms_formula_cycles(custom_field_ids)
+
         window_type_ids: set[str] = set()
         window_type_names: set[str] = set()
         for window_type in self.tables.window_types:
@@ -401,3 +410,47 @@ class ProjectDocumentV1(BaseModel):
             window_type_names.add(normalized_name)
 
         return self
+
+    def _validate_rooms_formula_cycles(
+        self, custom_field_ids: dict[str, CustomFieldDef]
+    ) -> None:
+        # Lazy-import to keep the document module free of formula deps
+        # for callers that don't touch custom formula fields.
+        from features.project_document.formula import (
+            FormulaCycleError,
+            ast_from_json,
+            detect_cycles,
+        )
+
+        formula_fields = [
+            f for f in custom_field_ids.values()
+            if f.field_type.value == "formula"
+        ]
+        if not formula_fields:
+            return
+
+        asts_by_id: dict[str, object] = {}
+        for f in formula_fields:
+            stored = f.config.get("ast")
+            if stored is None:
+                continue
+            try:
+                asts_by_id[f.id] = ast_from_json(stored)
+            except (ValueError, TypeError):
+                continue
+
+        for f in formula_fields:
+            stored = asts_by_id.get(f.id)
+            if stored is None:
+                continue
+            # Build a deps map that excludes this field, then re-run
+            # cycle detection rooted at this field. `detect_cycles`
+            # composes its own asts map.
+            others = {k: v for k, v in asts_by_id.items() if k != f.id}
+            try:
+                detect_cycles(f.id, stored, others)  # type: ignore[arg-type]
+            except FormulaCycleError as exc:
+                raise ValueError(
+                    f"Rooms formula cycle for {f.display_name!r}: "
+                    f"{' -> '.join(exc.cycle_path)}"
+                ) from exc

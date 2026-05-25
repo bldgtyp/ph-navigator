@@ -489,26 +489,123 @@ def test_set_description_round_trips_and_clamps_max_length() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Unsupported (Phase 3 / 4) mutations
+# Phase 4 — setFormula
 # ---------------------------------------------------------------------------
 
 
-def test_set_formula_raises_unsupported() -> None:
-    body = _with_field(_empty_body(), _make_custom_field("cf_a", display_name="A"))
+def test_set_formula_round_trip() -> None:
+    """Happy path: setFormula parses, resolves, and stores
+    {source, ast, deps, result_type} atomically."""
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="Label", field_type=CustomFieldType.formula),
+    )
 
-    formula = SetFormulaMutation(
+    mutation = SetFormulaMutation(
         kind="setFormula",
         table_key="rooms",
         field_id="cf_a",
-        config={"source": "{Name}"},
+        source='concat({Number}, " - ", upper({Name}))',
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    config = next_body.tables.rooms.custom_fields[0].config
+    assert config["source"] == 'concat({Number}, " - ", upper({Name}))'
+    assert isinstance(config["ast"], dict)
+    assert sorted(config["deps"]) == ["name", "number"]  # type: ignore[arg-type]
+    assert config["result_type"] == "text"
+    assert audit["kind"] == "setFormula"
+    assert audit["deps"] == config["deps"]
+
+
+def test_set_formula_rejects_parse_error() -> None:
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="Label", field_type=CustomFieldType.formula),
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_a",
+        source="concat({Name}, ",
         expected_schema_fingerprint=_fingerprint(body),
     )
     with pytest.raises(HTTPException) as excinfo:
-        _apply(body, formula)
+        _apply(body, mutation)
     detail = cast(dict[str, object], excinfo.value.detail)
-    assert detail["error_code"] == "custom_field_unsupported_mutation"
-    details = cast(dict[str, object], detail["details"])
-    assert details["available_in_phase"] == "Phase 4"
+    assert detail["error_code"] == "custom_field_formula_parse_error"
+
+
+def test_set_formula_rejects_missing_ref() -> None:
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="Label", field_type=CustomFieldType.formula),
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_a",
+        source="{Does Not Exist}",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_formula_missing_ref"
+
+
+def test_set_formula_rejects_self_reference_cycle() -> None:
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="Self", field_type=CustomFieldType.formula),
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_a",
+        source="{Self}",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_formula_cycle"
+
+
+def test_set_formula_rejects_non_formula_field() -> None:
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="Plain Text"),  # short_text default
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_a",
+        source="{Name}",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_invalid_field_id"
+
+
+def test_set_formula_rejects_unsupported_function() -> None:
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="F", field_type=CustomFieldType.formula),
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_a",
+        source="sum({Name})",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_formula_unsupported_function"
 
 
 # ---------------------------------------------------------------------------

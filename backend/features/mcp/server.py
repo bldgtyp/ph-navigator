@@ -45,6 +45,7 @@ from features.project_document.schema_mutations import (
     FieldSchemaMutation,
     RenameFieldMutation,
     SetDescriptionMutation,
+    SetFormulaMutation,
 )
 from features.project_document.service import (
     apply_schema_mutation_to_draft,
@@ -475,6 +476,45 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         )
         return _custom_field_response(response, field_id, ctx)
 
+    @mcp.tool()
+    def set_custom_field_formula(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        field_id: str,
+        source: str,
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Set or replace the formula source on a custom formula field.
+
+        The server parses, resolves refs, and cycle-checks before
+        accepting. The response carries the updated `CustomFieldDef`
+        with the resolved AST + dep list in `config`.
+        """
+        mutation = _build_schema_mutation(
+            ctx,
+            SetFormulaMutation,
+            kind="setFormula",
+            table_key=table_key,
+            field_id=field_id,
+            source=source,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+        )
+        response = _apply_mcp_schema_mutation(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return _custom_field_response(response, field_id, ctx)
+
     return mcp
 
 
@@ -592,6 +632,11 @@ _SCHEMA_MUTATION_RECOVERABILITY: dict[str, McpRecoverability] = {
     "custom_field_coercion_preflight_required": "fatal",
     "custom_field_option_id_unknown": "fatal",
     "custom_field_option_list_invalid": "fatal",
+    "custom_field_formula_parse_error": "fatal",
+    "custom_field_formula_cycle": "fatal",
+    "custom_field_formula_missing_ref": "fatal",
+    "custom_field_formula_resource_limit": "fatal",
+    "custom_field_formula_unsupported_function": "fatal",
 }
 
 
