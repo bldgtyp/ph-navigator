@@ -333,6 +333,7 @@ describe("FieldConfigModal", () => {
         displayName: "Notes",
         description: "old description",
         fieldType: "number",
+        numberPrecision: 2,
       }),
     );
   });
@@ -366,7 +367,88 @@ describe("FieldConfigModal", () => {
         description: "old description",
         fieldType: "number",
         acknowledgeDestructive: true,
+        numberPrecision: 2,
       }),
+    );
+  });
+
+  test("number fields mount the precision section and save precision in the bundle", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 4,
+        })}
+      />,
+    );
+
+    const precision = screen.getByLabelText("Decimal precision") as HTMLInputElement;
+    expect(precision.value).toBe("4");
+    fireEvent.change(precision, { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        numberPrecision: 1,
+      }),
+    );
+  });
+
+  test("number fields do not resend precision when only another property changes", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 4,
+        })}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Score" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Score",
+        description: "old description",
+      }),
+    );
+  });
+
+  test("precision input clamps values to the supported range", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 4,
+        })}
+      />,
+    );
+
+    const precision = screen.getByLabelText("Decimal precision") as HTMLInputElement;
+    fireEvent.change(precision, { target: { value: "99" } });
+    expect(precision.value).toBe("10");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          numberPrecision: 10,
+        }),
+      ),
     );
   });
 

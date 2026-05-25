@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { generatedId } from "../../../lib/ids";
 import { sha256Hex } from "../../../lib/sha256";
+import { clampNumberPrecision } from "../lib/numberPrecision";
 import type { CustomFieldType, FieldDef, FieldOption, FieldType } from "../types";
 
 // Re-export so existing imports from this module keep working.
@@ -132,6 +133,9 @@ function customFieldToFieldDef(
     const defaultOptionId = custom.config.default_option_id;
     fieldDef.defaultOptionId = typeof defaultOptionId === "string" ? defaultOptionId : null;
     fieldDef.colorCodeOptions = custom.config.color_code_options !== false;
+  }
+  if (custom.field_type === "number") {
+    fieldDef.numberPrecision = clampNumberPrecision(custom.config.precision);
   }
   if (custom.field_type === "formula") {
     const config = custom.config ?? {};

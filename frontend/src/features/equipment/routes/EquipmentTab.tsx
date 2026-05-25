@@ -11,6 +11,7 @@ import {
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
   buildSetFormulaMutation,
+  clampNumberPrecision,
   emptyViewState,
   isCustomFieldKey,
   uniqueCopyDisplayName,
@@ -457,6 +458,11 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         default_option_id: request.defaultOptionId ?? null,
         color_code_options: request.colorCodeOptions ?? true,
       };
+    }
+    if (nextFieldType === "number" && (request.numberPrecision !== undefined || typeChanged)) {
+      nextConfig.precision = clampNumberPrecision(request.numberPrecision);
+    } else if (nextFieldType !== "number") {
+      delete nextConfig.precision;
     }
     const mutation = buildEditFieldBundleMutation({
       tableKey: ROOMS_TABLE_NAME,

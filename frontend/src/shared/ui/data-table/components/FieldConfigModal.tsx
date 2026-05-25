@@ -29,6 +29,8 @@ import {
   type ServerPreflightPayload,
 } from "./FieldConfigSectionTypeChange";
 import { FieldConfigSectionOptions, type OptionSourceRow } from "./FieldConfigSectionOptions";
+import { FieldConfigSectionNumber } from "./FieldConfigSectionNumber";
+import { DEFAULT_NUMBER_PRECISION, clampNumberPrecision } from "../lib/numberPrecision";
 
 function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {
   if (a.length !== b.length) return false;
@@ -115,6 +117,7 @@ export function FieldConfigModal({
     valid: boolean;
     dirty: boolean;
   } | null>(null);
+  const [numberPrecision, setNumberPrecision] = useState(DEFAULT_NUMBER_PRECISION);
   // Populated from the backend's `custom_field_coercion_preflight_required`
   // 422 envelope; overrides the local preflight in the sub-panel.
   const [serverPreflight, setServerPreflight] = useState<ServerPreflightPayload | null>(null);
@@ -136,6 +139,7 @@ export function FieldConfigModal({
       setDraftType(null);
       setAcknowledged(false);
       setOptionsDraft(null);
+      setNumberPrecision(DEFAULT_NUMBER_PRECISION);
       setServerPreflight(null);
       return;
     }
@@ -152,6 +156,7 @@ export function FieldConfigModal({
     setDraftType(seededSource.custom_field_type ?? null);
     setAcknowledged(false);
     setOptionsDraft(null);
+    setNumberPrecision(clampNumberPrecision(seededSource.numberPrecision));
     setServerPreflight(null);
   }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -186,6 +191,8 @@ export function FieldConfigModal({
       fieldDef.display_name !== source.display_name ||
       (fieldDef.description ?? null) !== (source.description ?? null) ||
       currentCustomFieldType !== (source.custom_field_type ?? null) ||
+      clampNumberPrecision(fieldDef.numberPrecision) !==
+        clampNumberPrecision(source.numberPrecision) ||
       !optionListsEquivalent(fieldDef.options ?? [], source.options ?? []) ||
       (fieldDef.defaultOptionId ?? null) !== (source.defaultOptionId ?? null) ||
       (fieldDef.colorCodeOptions !== false) !== (source.colorCodeOptions !== false);
@@ -237,16 +244,24 @@ export function FieldConfigModal({
   const needsAck = typeChanged && incompatibleCount > 0;
   const ackSatisfied = !needsAck || acknowledged;
 
-  const dirty =
+  const numberDirty =
+    draftType === "number" &&
+    numberPrecision !== clampNumberPrecision(source?.numberPrecision ?? DEFAULT_NUMBER_PRECISION);
+
+  const hasTypeSpecificDirty = Boolean(
+    (draftType === "single_select" && optionsDraft?.dirty) || numberDirty,
+  );
+
+  const formDirty =
     !!source &&
     !nameValidationError &&
     (trimmedName !== initialName.trim() ||
       normalizedDescription !== normalizedInitialDescription ||
       typeChanged ||
-      Boolean(draftType === "single_select" && optionsDraft?.dirty));
+      hasTypeSpecificDirty);
 
   const optionsValid = draftType !== "single_select" || optionsDraft?.valid !== false;
-  const canSave = dirty && optionsValid && !pending && !externalConflict && ackSatisfied;
+  const canSave = formDirty && optionsValid && !pending && !externalConflict && ackSatisfied;
 
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
@@ -266,6 +281,7 @@ export function FieldConfigModal({
               colorCodeOptions: optionsDraft.colorCodeOptions,
             }
           : {}),
+        ...(draftType === "number" && (typeChanged || numberDirty) ? { numberPrecision } : {}),
       });
       onOpenChange(false);
     } catch (error) {
@@ -299,10 +315,12 @@ export function FieldConfigModal({
     trimmedName,
     normalizedDescription,
     typeChanged,
+    numberDirty,
     draftType,
     needsAck,
     dispatchBundle,
     optionsDraft,
+    numberPrecision,
     onOpenChange,
     preflightRows,
   ]);
@@ -344,6 +362,7 @@ export function FieldConfigModal({
     setDraftType(externalConflict.custom_field_type ?? sourceCustomFieldType ?? null);
     setAcknowledged(false);
     setOptionsDraft(null);
+    setNumberPrecision(clampNumberPrecision(externalConflict.numberPrecision));
     setServerPreflight(null);
     setExternalConflict(null);
     setSubmitError(null);
@@ -503,6 +522,13 @@ export function FieldConfigModal({
                 rows={optionRows ?? []}
                 disabled={pending}
                 onDraftChange={setOptionsDraft}
+              />
+            ) : null}
+            {draftType === "number" ? (
+              <FieldConfigSectionNumber
+                precision={numberPrecision}
+                onPrecisionChange={setNumberPrecision}
+                disabled={pending}
               />
             ) : null}
             <div className="data-table-field-config-modal-section">

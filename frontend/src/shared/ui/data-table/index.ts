@@ -11,6 +11,7 @@ export {
   isConversionAllowed,
 } from "./lib/typeConversionMatrix";
 export type { ConversionPolicy } from "./lib/typeConversionMatrix";
+export { clampNumberPrecision } from "./lib/numberPrecision";
 export {
   CUSTOM_FIELD_KEY_PREFIX,
   getCustomValue,
