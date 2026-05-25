@@ -303,9 +303,7 @@ def _apply_delete_field(
     # remove the schema entry. Doing rows before schema keeps the
     # intermediate body's `validate_document_references` happy
     # (custom values must reference a known field id).
-    next_rows, cleared_row_count = _strip_field_from_rows(
-        body, mutation.table_key, mutation.field_id, capability
-    )
+    next_rows, cleared_row_count = _strip_field_from_rows(body, mutation.table_key, mutation.field_id, capability)
     body_with_stripped_rows = _replace_rows_in_envelope(body, mutation.table_key, next_rows)
 
     next_fields = [field for field in current_fields if field.id != mutation.field_id]
@@ -326,9 +324,7 @@ def _apply_duplicate_field(
     capability: CustomFieldCapability,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     current_fields = capability.read_custom_fields(body)
-    source_index, source = _find_field(
-        current_fields, mutation.source_field_id, mutation.table_key
-    )
+    source_index, source = _find_field(current_fields, mutation.source_field_id, mutation.table_key)
     if mutation.after.id == mutation.source_field_id:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_ENTITY,

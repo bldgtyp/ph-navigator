@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { AddCustomFieldRequest } from "./components/AddFieldPopover";
 import type { AggregationKind } from "./fields/aggregations";
 import type { FieldSchemaMutation } from "./lib/customFieldMutations";
 
@@ -253,6 +254,22 @@ export type DataTableProps<TRow> = {
   // that own the view state externally use this slot to coordinate
   // their own reset semantics.
   onResetView?: () => void;
+  // Consumer owns the schema fingerprint, so it builds and dispatches
+  // the `WriteOp.schemaMutation`. Omit to hide the Delete-field menu
+  // item.
+  onDeleteCustomField?: (fieldKey: string) => Promise<void> | void;
+  // Plan-15 P2.6 — when provided, the tail "+" cell becomes a
+  // focusable button and the header context menu surfaces `Insert
+  // field left` / `Insert field right`. The DataTable owns the
+  // popover surface and forwards the validated form input to this
+  // callback; the consumer builds the typed mutation, dispatches
+  // through the schema-mutation pipeline, and syncs view.columnOrder.
+  // A rejected promise leaves the popover open and surfaces the
+  // message inline (US-CF-12). On success, the consumer returns the
+  // minted `cf_*` id so DataTable can focus the first cell of the
+  // new column after the refetch (US-CF-2 criterion 4). Omit in
+  // viewer mode.
+  onAddCustomField?: (request: AddCustomFieldRequest) => Promise<{ newFieldKey: string }>;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

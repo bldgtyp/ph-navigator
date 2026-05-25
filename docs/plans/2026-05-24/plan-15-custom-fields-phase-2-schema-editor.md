@@ -1,16 +1,20 @@
 ---
 DATE: 2026-05-24
 TIME: planning (detailed implementation phasing)
-STATUS: In progress. Phase 2 of plan-13 (custom fields). 5/8 sub-
+STATUS: In progress. Phase 2 of plan-13 (custom fields). 7/8 sub-
         phases shipped (P2.0 scaffold + ADR, P2.1 backend mutation
         DTOs + apply service, P2.2 REST endpoint, P2.3 MCP write
-        tools, P2.4 frontend dispatcher + builders). Backend Phase-2
-        surfaces are live; the typed `WriteOp.schemaMutation`
-        pipeline is wired through `useRoomsSchemaMutation` and
-        ready for editor-popover consumers. Next up: P2.5 —
-        locked indicator + description tooltip + `<HeaderContextMenu>`
-        skeleton. See **Progress log** at the bottom for the
-        latest checkpoint, what's green, and the resume pointer.
+        tools, P2.4 frontend dispatcher + builders, P2.5 locked
+        indicator + description tooltip + `<HeaderContextMenu>` +
+        delete-field flow, P2.6 add-field popover + tail `+` cell
+        wire-up + Insert-left/right header items). Editors can now
+        add custom fields end-to-end through the browser for the
+        four Phase 2 types (`short_text`, `long_text`, `number`,
+        `url`) with optional description + `number.precision`
+        config. Next up: P2.7 — rename inline + duplicate +
+        edit-description. See **Progress log** at the bottom for
+        the latest checkpoint, what's green, and the resume
+        pointer.
         Builds on the completed Phase 1 envelope (plan-14): Rooms
         already carries
         `{custom_fields, rows}`, `CustomFieldDef` is closed, the
@@ -1265,33 +1269,42 @@ design).
 | P2.2 — Backend: REST schema-mutation endpoint | ✅ Done | 2026-05-24 |
 | P2.3 — Backend: MCP `*_custom_field` write tools | ✅ Done | 2026-05-24 |
 | P2.4 — Frontend: `schemaMutation` WriteOp + dispatcher | ✅ Done | 2026-05-24 |
-| P2.5 — Frontend: locked indicator + tooltip + `<HeaderContextMenu>` skeleton | ⏭️ Next | — |
-| P2.6 — Frontend: add-field popover + tail `+` cell wire-up | ⏳ Pending | — |
-| P2.7 — Frontend: rename + delete + duplicate + edit-description | ⏳ Pending | — |
+| P2.5 — Frontend: locked indicator + tooltip + `<HeaderContextMenu>` skeleton | ✅ Done | 2026-05-24 |
+| P2.6 — Frontend: add-field popover + tail `+` cell wire-up | ✅ Done | 2026-05-24 |
+| P2.7 — Frontend: rename + delete + duplicate + edit-description | ⏭️ Next | — |
 | P2.8 — Exit-criteria acceptance tests + Playwright + a11y pass | ⏳ Pending | — |
 
 ### Resume pointer
 
-**Next sub-phase: P2.5 — Frontend: locked indicator + description
-tooltip + `<HeaderContextMenu>` skeleton** (see phase block above
-for full spec). This is the first phase that lands user-visible
-UI. Concretely:
+**Next sub-phase: P2.7 — Frontend: rename inline + delete confirm
++ duplicate + edit-description** (see phase block above for full
+spec). P2.6 closed the add-field surface; P2.7 rounds out the
+custom-field menu so every US-CF-1 / US-CF-3 / US-CF-13 / US-CF-14
+write criterion (excluding type-change Phase 3 and edit-formula
+Phase 4) is reachable from the browser. Concretely:
 
-1. Add the `--phn-header-border-locked` CSS token and lock-glyph
-   plumbing in `SortableHeaderCell`.
-2. Replace the `HeaderContextMenu.tsx` placeholder (from P2.0)
-   with the real Radix `DropdownMenu` (right-click + Shift+F10,
-   viewer-mode suppressed, core vs custom variants per US-CF-6).
-3. Replace the `CustomFieldDescriptionTooltip.tsx` placeholder
-   with the real Radix `Tooltip` (visible in viewer mode).
-4. Wire a **Delete field** modal confirm that builds
-   `buildDeleteFieldMutation` and dispatches via the
-   `WriteOp.schemaMutation` pipeline shipped in P2.4. The
-   dispatcher in `EquipmentTab.tsx::handleTableWrite` is already
-   wired (`op.mutation` branch).
+1. Add an inline header-label edit primitive (or reuse the
+   `InlineCellEditor`) wired to a new `Rename field` menu item on
+   custom-field headers and to a header double-click affordance.
+   Build via `buildRenameFieldMutation`, dispatch via
+   `commitSchemaMutation`. Preserve the `cf_*` id.
+2. Refine the delete-field confirm copy already shipped in P2.5 to
+   mention the row-value count and the fact that older locked
+   versions retain the field (US-CF-5 criterion 4).
+3. Add a `Duplicate field` menu item on custom fields. Compute a
+   uniquified `<source> copy` / `copy 2` / ... display name,
+   mint a fresh id, deep-copy `field_type` / `config` /
+   `description`, build via `buildDuplicateFieldMutation`.
+4. Add an `Edit description` menu item on custom fields that opens
+   a small popover (textarea, 280 max). Build via
+   `buildSetDescriptionMutation`; empty trimmed input sends
+   `description: null`. Core fields don't expose this item.
 
-No add / rename / duplicate / edit-description popovers in P2.5
-— those land in P2.6 / P2.7.
+All of the typed-mutation plumbing is in place: every builder
+exists, `commitSchemaMutation` in EquipmentTab routes WriteOps,
+the `HeaderContextMenu` already grows by adding entries to its
+items array, and the `AddFieldPopover` shipped in P2.6 is a good
+visual template for the per-mutation popovers.
 
 ### P2.0 (2026-05-24) — Story promotion + scaffold + ADR
 
@@ -1637,6 +1650,298 @@ useGridWriteReducer tests.
 - **No new UI shipped in P2.4** — the pipeline is fully wired
   but unreachable from the user surface until P2.5/P2.6 ship
   the header menu + add-field popover.
+
+### P2.5 (2026-05-24) — Frontend: locked indicator + description tooltip + `<HeaderContextMenu>` skeleton + delete-field flow
+
+**What landed:**
+
+- `frontend/src/App.css` — new `--phn-header-border-locked` token
+  (color-mixed against `--accent`) plus styles for
+  `.data-table-th[data-schema-locked]` (left-edge accent), the lock
+  glyph, the description-tooltip trigger / popover, the
+  header-context anchor (zero-size positioned element), and a
+  `data-danger` variant on `.data-table-column-menu-item`.
+- `frontend/src/shared/ui/data-table/components/SortableHeaderCell.tsx`
+  — new optional `schemaLocked` prop that surfaces as the
+  `data-schema-locked="true"` attribute on the `<th>`.
+- `frontend/src/shared/ui/data-table/components/CustomFieldDescriptionTooltip.tsx`
+  — real component (was a P2.0 placeholder). Renders nothing when
+  `description` is empty / whitespace; otherwise renders a `?`
+  button that opens a Radix `Popover` (reuse — no new dep) on
+  hover, focus, or keyboard activation. Trimmed text only,
+  `role="tooltip"`, `Description for {fieldDisplayName}` ARIA
+  label. Visible in both editor and viewer mode (US-CF-9 + US-CF-14).
+- `frontend/src/shared/ui/data-table/components/HeaderContextMenu.tsx`
+  — real component (was a P2.0 placeholder). Built on
+  `@radix-ui/react-popover` (already in the bundle for
+  `ColumnHeaderMenu`) rather than introducing
+  `@radix-ui/react-dropdown-menu`. Listens for `contextmenu` /
+  `keydown` (Shift+F10, `ContextMenu` key) on a `triggerRef` —
+  see the architectural note below for why. Opens at the pointer
+  for right-click or below the header for keyboard invocation.
+  Hand-rolled ArrowUp/ArrowDown/Home/End focus management on the
+  items (~25 LOC). View-state items: Sort A→Z, Sort Z→A, Group by
+  this field, Hide field — all always present. `Delete field`
+  added only when the field is custom (`read_only_schema !== true`)
+  AND `onDeleteField` is provided. Viewer-mode (`isViewer`) short-
+  circuits the effect so right-click falls through to the
+  browser's native menu (US-CF-9 criterion 2). On close, focus
+  returns to the trigger.
+- `frontend/src/shared/ui/data-table/components/ConfirmDeleteFieldDialog.tsx`
+  — new `AlertDialog` (template: `ConfirmRowDeleteDialog`) that
+  shows the field's display name and the count of rows currently
+  holding a value for it. Defaults to Cancel focus.
+- `frontend/src/shared/ui/data-table/components/GridHeader.tsx` —
+  extracted per-column rendering into a `<DataTableHeaderCell>`
+  subcomponent so each cell can own its own `triggerRef` without
+  bending React's hook rules. The subcomponent assembles the lock
+  glyph (Lucide `Lock` icon, `aria-hidden` so the column-header
+  accessible name stays just the label), the description tooltip,
+  the existing `ColumnHeaderMenu`, and the new `HeaderContextMenu`.
+  New required prop `headerActions: HeaderActionHandlers` carries
+  the per-column callbacks (`onSortAsc`, `onSortDesc`, `onGroupBy`,
+  `onHide`, optional `onDeleteCustomField`).
+- `frontend/src/shared/ui/data-table/DataTable.tsx` — new optional
+  prop `onDeleteCustomField?: (fieldKey: string) => Promise<void>
+  | void`. DataTable owns the confirm-dialog state and the
+  populated-row count (via `getCustomValue`), then calls the
+  consumer's callback on confirm. Per-column view-state callbacks
+  (`handleHeaderSortAsc` / `Desc` / `GroupBy` / `Hide`) all route
+  through the existing `onViewChange`.
+- `frontend/src/shared/ui/data-table/types.ts` — `DataTableProps`
+  grew the optional `onDeleteCustomField` slot.
+- `frontend/src/features/equipment/components/RoomsTable.tsx` —
+  passes `onDeleteCustomField` through to DataTable.
+- `frontend/src/features/equipment/routes/EquipmentTab.tsx` — new
+  `handleDeleteCustomField(fieldKey)` builds `buildDeleteFieldMutation`
+  with `roomsTableSchema.schemaFingerprint` and dispatches via
+  `commitSchemaMutation` (the existing pipeline from P2.4). The
+  callback is gated on `canEdit` so locked / viewer-mode users
+  never get the chance to invoke it.
+- Three new test files:
+  - `__tests__/CustomFieldDescriptionTooltip.test.tsx` (5 tests):
+    empty / whitespace renders nothing; non-empty surfaces the
+    accessible `?` trigger; hover reveals the trimmed text in a
+    `role=tooltip`; keyboard focus reveals; blur closes.
+  - `__tests__/HeaderContextMenu.test.tsx` (8 tests): right-click
+    on core-field opens menu with view-state items only; right-
+    click on custom-field adds `Delete field`; viewer-mode never
+    opens; Shift+F10 + `ContextMenu` key both open; clicking
+    `Delete field` invokes the callback and closes; ArrowDown /
+    ArrowUp move focus, Escape closes; each view-state item
+    routes to its callback.
+  - `__tests__/RoomsTable.lockedIndicator.test.tsx` (6 tests):
+    every core column carries `data-schema-locked="true"` + the
+    lock glyph; a seeded custom column doesn't; description
+    tooltip surfaces from a custom field with a description;
+    viewer mode still renders glyph + tooltip; custom-field
+    Delete-field flow opens the confirm dialog with the right
+    populated-row count and dispatches `onDeleteCustomField`
+    with the `cf_*` id on confirm; viewer mode suppresses the
+    context menu.
+
+**Gates green:** `make lint`, `make typecheck`, `make smoke`,
+`make test` (backend 170 unchanged; frontend 628 — 609 before P2.5
++ 19 new). One pre-existing flake in `App.test.tsx`
+("Set CAD files received" button) clean on retry.
+
+**Notes for the next visitor:**
+
+- **Radix divergence (recorded in plan-15 §Open questions item c).**
+  P2.5 ships on `@radix-ui/react-popover` rather than adding
+  `@radix-ui/react-dropdown-menu` + `@radix-ui/react-tooltip`. The
+  trade is two new top-level dependencies (with their transitive
+  surface area) vs. ~25 LOC of hand-rolled arrow-key focus
+  management inside `HeaderContextMenu`. The dependency-light path
+  matches the project's pnpm supply-chain stance and the existing
+  `ColumnHeaderMenu` precedent. Plan-13 §3 doesn't mandate
+  DropdownMenu specifically; this divergence is fully contained
+  inside P2.5's two new components.
+- **Per-cell `triggerRef`.** Each header cell mounts its own
+  `useRef` inside the new `<DataTableHeaderCell>` subcomponent in
+  `GridHeader.tsx`. That ref is set by `SortableHeaderCell.cellRef`
+  (alongside the existing `headerCellRefByFieldKey` map mutation,
+  which the field-editor popover still consumes for anchoring).
+  The subcomponent extraction is the React-idiomatic way to give
+  every cell its own hook state inside a loop — bare `useRef`
+  inside the loop body would violate rules-of-hooks.
+- **Lock glyph uses `lucide-react`'s `Lock`** with `aria-hidden`
+  size 12. The original emoji approach (`🔒`) tripped Testing
+  Library's accessible-name calculation in a way that depended on
+  span-level `aria-hidden` propagating to text children. The SVG
+  approach is bulletproof and matches how Lucide is used
+  elsewhere in the data-table tree (`GridGutter.tsx`,
+  `HideFieldsPanel.tsx`, etc.).
+- **Header accessible name now ends with "Resize column"** when
+  the column is resizable, because the `ColumnResizeHandle`
+  button sits inside the `<th>`. Tests that match the header by
+  role use a prefix regex like `/^Number\b/` rather than
+  `/^Number$/`. Plumb this convention through to P2.6+ tests
+  that query headers by name.
+- **View-state items in the menu are intentionally minimal** —
+  Sort A→Z, Sort Z→A, Group by, Hide field. Filter-by is
+  deliberately skipped from the P2.5 skeleton; the toolbar's
+  `FilterPopover` remains the way to add filter rules with
+  per-operator config. P2.6 / P2.7 can add `Insert field left`
+  / `Insert field right` / `Rename field` / `Duplicate field` /
+  `Edit description` to the same component; the menu items
+  array is the only thing that needs to grow.
+- **`onDeleteCustomField` is async-aware.** The DataTable closes
+  the confirm dialog before awaiting the callback, then
+  `setAnnounce`s on rejection. EquipmentTab's
+  `commitSchemaMutation` already routes the stale-fingerprint /
+  locked-version errors through `handleStaleDraftConflict` /
+  `handleVersionLockedConflict`. No new error-surface UI was
+  added in P2.5 — the existing banner handles both cases.
+
+### P2.6 (2026-05-24) — Frontend: add-field popover + tail `+` cell wire-up
+
+**What landed:**
+
+- `frontend/src/shared/ui/data-table/components/AddFieldPopover.tsx`
+  — real component (P2.0 placeholder replaced). Built on
+  `@radix-ui/react-popover` (matching P2.5's dependency-light
+  stance). Surface: required Field-name input with case-insensitive
+  trimmed dup-name preflight against the caller-supplied
+  `existingFieldNames` (US-CF-12); a four-pill type picker for
+  `short_text` / `long_text` / `number` / `url` plus two disabled-
+  with-tooltip pills for `single_select` (Phase 3) and `formula`
+  (Phase 4) so the eventual full set is visible; collapsed-by-
+  default description toggle (US-CF-14, 280 max with a live
+  counter); per-type config — only `number` exposes
+  `precision` (0–10, default 2) in Phase 2. On submit, the
+  popover hands the consumer a typed `AddCustomFieldRequest`
+  (display_name, field_type, config, description,
+  insertAfterFieldKey) and stays open on failure with an inline
+  `role="alert"` band. Recognised `ApiRequestError.errorCode`
+  values surface friendly copy per the P2.0 ADR
+  (`custom_field_duplicate_name`,
+  `custom_field_stale_schema_fingerprint`, `version_locked`);
+  anything else falls back to `error.message` / "Could not add
+  field."
+- `frontend/src/shared/ui/data-table/components/AddFieldTailCell.tsx`
+  — `th` variant now switches between the original disabled
+  preview (no `onClick` — viewer mode + Phase 0 callers) and a
+  focusable `<button>` that opens the popover when `onClick` is
+  set. The `td` variant is unchanged. Now a `forwardRef` so
+  DataTable can capture the cell as the popover anchor.
+- `frontend/src/shared/ui/data-table/components/HeaderContextMenu.tsx`
+  — grew two new optional props (`onInsertFieldLeft`,
+  `onInsertFieldRight`) that render `Insert field left` /
+  `Insert field right` items. Available on **both** core and
+  custom fields per US-CF-6 criterion 3.
+- `frontend/src/shared/ui/data-table/components/GridHeader.tsx` —
+  `HeaderActionHandlers` accepts the two new insert callbacks
+  (typed `(fieldKey, anchorElement)`); the per-cell
+  `<DataTableHeaderCell>` captures its `triggerRef` and passes it
+  to the menu's insert items so the popover anchors to the same
+  `<th>` cell the menu opened over. `GridHeader` itself now takes
+  `onAddFieldFromTail` + `tailCellRef` and forwards them to
+  `<AddFieldTailCell variant="th">`.
+- `frontend/src/shared/ui/data-table/DataTable.tsx` — new prop
+  `onAddCustomField?: (request) => Promise<{ newFieldKey: string }>`.
+  When provided and `!readOnly`, the DataTable owns the popover
+  open state (`{ anchorElement, insertAfterFieldKey }`),
+  computes `existingFieldNames` from `fieldDefs`, exposes
+  per-cell `requestInsertFieldLeft` / `requestInsertFieldRight`
+  callbacks that resolve "insert left of N" to "insert right of
+  N-1", and forwards the validated request to the consumer.
+  After a successful add, a one-shot effect watches for the new
+  cf_* id to appear in `visibleColumnDefs`, sets the active cell
+  to row 0 of that column, and refocuses the grid wrapper
+  (US-CF-2 criterion 4).
+- `frontend/src/shared/ui/data-table/types.ts` — `DataTableProps`
+  carries the new optional `onAddCustomField` slot; the
+  `AddCustomFieldRequest` type is re-exported from the data-table
+  barrel.
+- `frontend/src/features/equipment/components/RoomsTable.tsx` —
+  passes `onAddCustomField` through to DataTable.
+- `frontend/src/features/equipment/routes/EquipmentTab.tsx` — new
+  `handleAddCustomField(request)`. Mints the cf_* id via
+  `roomsTableSchema.mintCustomFieldId()`, filters the
+  visual-anchor fieldKey to a cf_* id (so the backend's
+  `insert_after_field_id` only ever receives valid custom-field
+  ids — core fields collapse to `null` = append at end), builds
+  the typed `AddFieldMutation`, dispatches via the existing
+  `commitSchemaMutation`. On success, if a visual anchor was
+  supplied AND `view.columnOrder` is already non-empty, splices
+  the new cf_* id into `columnOrder` right after the anchor and
+  fires a single `onViewChange`. Returns `{ newFieldKey }` so
+  DataTable can focus the new column.
+- `frontend/src/App.css` — new `.data-table-add-field-button` /
+  `.data-table-add-field-popover` / `.data-table-add-field-*`
+  rules. The disabled-preview rules from Phase 0 are preserved
+  (the active button uses a separate selector).
+- Tests — three files:
+  - `__tests__/AddFieldPopover.test.tsx` (13 tests): happy path
+    for `short_text`; type pill changes flow through to the wire;
+    `number.precision` config; description toggle + trim;
+    inline duplicate-name preflight; blank-name keeps the Add
+    button disabled; server-side `custom_field_duplicate_name`
+    keeps the popover open with the inline message; server-side
+    `custom_field_stale_schema_fingerprint` shows the retry
+    message; disabled Phase-3 / 4 pills carry the planned-phase
+    tooltip; Cancel and Escape both close without dispatching;
+    `insertAfterFieldKey` forwards verbatim.
+  - `__tests__/AddFieldTailCell.test.tsx` (updated, 3 tests):
+    th-without-onClick preserves the disabled-preview behaviour;
+    th-with-onClick renders an `Add field` button that invokes
+    the callback; td variant unchanged.
+  - `__tests__/HeaderContextMenu.test.tsx` (extended, 9 tests):
+    new test asserts `Insert field left` + `Insert field right`
+    appear on both core and custom fields when wired and route
+    to their callbacks.
+  - `frontend/src/features/equipment/__tests__/RoomsTable.addField.test.tsx`
+    (new, 4 tests): tail `+` button opens the popover; happy-path
+    dispatch closes the popover and carries the right request;
+    viewer mode hides the tail `+` cell button entirely (no
+    `onAddCustomField` callback wired); a post-dispatch slice
+    refresh surfaces the new column in the grid.
+
+**Gates green:** `make lint`, `make typecheck`, `make test`
+(backend 170 unchanged; frontend 647 — 628 before P2.6 + 19 new
+tests across the four files above, less one removed assertion from
+the AddFieldTailCell rename). The pre-existing App.test.tsx flake
+that earlier phases noted is also clean on this run.
+
+**Notes for the next visitor:**
+
+- **Two anchor concepts kept distinct.** `insertAfterFieldKey`
+  on the popover request is the *visual* anchor (the user's
+  position intent in `view.columnOrder`). EquipmentTab maps that
+  to the backend's `insert_after_field_id`, which only accepts
+  cf_* ids — so anchoring on a core field collapses to `null`
+  on the wire. The visible position is then enforced via the
+  one-shot `view.columnOrder` splice. If a future phase
+  generalises the backend to support an `insert_at_index` form
+  this two-step dance can be flattened.
+- **Focus after add** is driven by a `pendingFocusFieldKey`
+  state on DataTable plus an effect that watches
+  `visibleColumnDefs`. The effect fires once the consumer's
+  refetch reidentifies fieldDefs and the new column lands in the
+  visible set; it then calls `selection.setActive(row=0,
+  field=newKey)` and `wrapperRef.current?.focus()`. If a
+  future phase wants to land users *inside* the cell editor
+  rather than just on the cell, queue an `edit.start(...)`
+  instead — see the rowInsert pattern in
+  `insertRowBelowActive` for precedent.
+- **Existing field names** are derived from `fieldDefs` inside
+  DataTable. Consumers don't pass them through; the data-table
+  is the source of truth for what's currently in the schema.
+  Future tables (ERVs / Pumps / Fans) get the same preflight
+  for free.
+- **ApiRequestError import** is the first time the data-table
+  reaches across into `shared/api/client`. The dependency is
+  light — only the error class — and it sits at the same
+  `shared/` level as `data-table` itself, so this isn't a layer
+  break. If a third use-case appears, consider a tiny
+  `shared/ui/data-table/lib/errorCodes.ts` translator owned by
+  the consumer.
+- **No new Radix dep.** Followed P2.5's precedent of reusing
+  `@radix-ui/react-popover` rather than adding
+  `@radix-ui/react-dialog`. The popover's `role="dialog"`
+  on the `Popover.Content` is the minimum a11y handle and is
+  sufficient for the form-popover pattern at this scale.
 
 ---
 

@@ -52,9 +52,7 @@ def seed_rooms_custom_field(
     the new field.
     """
     if not _is_dev_or_test():
-        raise RuntimeError(
-            "seed_rooms_custom_field is dev/test only and must not be imported in production"
-        )
+        raise RuntimeError("seed_rooms_custom_field is dev/test only and must not be imported in production")
 
     custom_field = CustomFieldDef(
         id=field_id or _generate_cf_id(),

@@ -18,11 +18,9 @@ export function getCustomValue(
   return row.custom?.[fieldDef.field_key];
 }
 
-export function setCustomValue<TRow extends { custom?: Record<string, unknown> | null | undefined }>(
-  row: TRow,
-  fieldDef: Pick<FieldDef, "field_key">,
-  value: unknown,
-): TRow {
+export function setCustomValue<
+  TRow extends { custom?: Record<string, unknown> | null | undefined },
+>(row: TRow, fieldDef: Pick<FieldDef, "field_key">, value: unknown): TRow {
   if (!isCustomFieldKey(fieldDef.field_key)) {
     throw new Error(`setCustomValue called with non-custom field_key: ${fieldDef.field_key}`);
   }

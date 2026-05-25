@@ -1,4 +1,5 @@
 export { DataTable } from "./DataTable";
+export type { AddCustomFieldRequest } from "./components/AddFieldPopover";
 export {
   CUSTOM_FIELD_KEY_PREFIX,
   getCustomValue,

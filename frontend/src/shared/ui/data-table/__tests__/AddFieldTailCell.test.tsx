@@ -1,9 +1,9 @@
-import { render } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import { AddFieldTailCell } from "../components/AddFieldTailCell";
 
 describe("AddFieldTailCell", () => {
-  test("th variant renders an aria-disabled header cell with a + glyph", () => {
+  test("th variant without onClick renders an aria-disabled preview cell", () => {
     const { container } = render(
       <table>
         <thead>
@@ -18,7 +18,24 @@ describe("AddFieldTailCell", () => {
     expect(th.tagName).toBe("TH");
     expect(th.getAttribute("aria-disabled")).toBe("true");
     expect(th.textContent).toContain("+");
-    expect((th as HTMLElement & { onclick?: unknown }).onclick).toBeFalsy();
+    expect(th.querySelector("button")).toBeNull();
+  });
+
+  test("th variant with onClick renders a focusable button that invokes the callback", () => {
+    const onClick = vi.fn();
+    render(
+      <table>
+        <thead>
+          <tr>
+            <AddFieldTailCell variant="th" onClick={onClick} />
+          </tr>
+        </thead>
+      </table>,
+    );
+    const button = screen.getByRole("button", { name: "Add field" }) as HTMLButtonElement;
+    expect(button).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   test("td variant renders an empty body cell", () => {

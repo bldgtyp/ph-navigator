@@ -3,7 +3,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../../../shared/lib/errors";
 import { generatedId } from "../../../shared/lib/ids";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { emptyViewState, useTableSchema } from "../../../shared/ui/data-table";
+import {
+  buildAddFieldMutation,
+  buildDeleteFieldMutation,
+  emptyViewState,
+  isCustomFieldKey,
+  useTableSchema,
+} from "../../../shared/ui/data-table";
 import { useProjectTableViewState } from "../../table_views/useProjectTableViewState";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import { projectDocumentQueryKeys } from "../../project_document/hooks";
@@ -37,7 +43,12 @@ import {
   roomsTableFieldDefs,
   validateRoomsPayload,
 } from "../lib";
-import type { BuildEmptyRow, FieldSchemaMutation, WriteOp } from "../../../shared/ui/data-table";
+import type {
+  AddCustomFieldRequest,
+  BuildEmptyRow,
+  FieldSchemaMutation,
+  WriteOp,
+} from "../../../shared/ui/data-table";
 import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_KEY,
@@ -331,6 +342,70 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       "Could not update custom-field schema.",
     );
 
+  const handleDeleteCustomField = async (fieldKey: string) => {
+    if (!canEdit) return;
+    const mutation = buildDeleteFieldMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      fieldId: fieldKey,
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+  };
+
+  const handleAddCustomField = async (
+    request: AddCustomFieldRequest,
+  ): Promise<{ newFieldKey: string }> => {
+    if (!canEdit) {
+      throw new Error("Cannot add a field while editing is disabled.");
+    }
+    const newFieldId = roomsTableSchema.mintCustomFieldId();
+    // The backend's `insert_after_field_id` only references existing
+    // custom fields. When the visual anchor is a core column, forward
+    // null so the new field appends to `custom_fields`; the
+    // columnOrder splice below still places it in the visible slot
+    // the user asked for.
+    const backendAnchor =
+      request.insertAfterFieldKey && isCustomFieldKey(request.insertAfterFieldKey)
+        ? request.insertAfterFieldKey
+        : null;
+    const mutation = buildAddFieldMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      newField: {
+        id: newFieldId,
+        field_key: null,
+        display_name: request.displayName,
+        field_type: request.fieldType,
+        config: request.config,
+        description: request.description,
+        created_at: new Date().toISOString(),
+        created_by: null,
+      },
+      insertAfterFieldId: backendAnchor,
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+    if (request.insertAfterFieldKey) {
+      // Place the new cf_* id right after the visual anchor in
+      // `view.columnOrder`. When the anchor isn't in the order list
+      // (typical on a fresh project — order is empty until the user
+      // reorders), append at the end and let the table render in
+      // schema order. Existing entries are de-duplicated so a
+      // re-add can't double-insert.
+      const filtered = roomsTableView.columnOrder.filter((id) => id !== newFieldId);
+      const anchorIndex = filtered.indexOf(request.insertAfterFieldKey);
+      const nextOrder =
+        anchorIndex >= 0
+          ? [...filtered.slice(0, anchorIndex + 1), newFieldId, ...filtered.slice(anchorIndex + 1)]
+          : filtered.length > 0
+            ? [...filtered, newFieldId]
+            : filtered;
+      if (nextOrder !== roomsTableView.columnOrder) {
+        handleRoomsViewChange({ ...roomsTableView, columnOrder: nextOrder });
+      }
+    }
+    return { newFieldKey: newFieldId };
+  };
+
   const withDraftConflictHandling = async <T,>(
     run: () => Promise<T>,
     conflictMessage: string,
@@ -436,6 +511,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           sessionKey={`${project.id}:${activeVersionId ?? "none"}:${ROOMS_TABLE_NAME}`}
           overflowMenuActions={roomsDownloadAction}
           footerAction={addRoomAction}
+          onDeleteCustomField={canEdit ? handleDeleteCustomField : undefined}
+          onAddCustomField={canEdit ? handleAddCustomField : undefined}
         />
       )}
       {roomModal && isEditor ? (
