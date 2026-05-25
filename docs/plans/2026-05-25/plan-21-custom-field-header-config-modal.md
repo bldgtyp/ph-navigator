@@ -618,7 +618,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
 
 ### Phase 5a — Modal shell, single entry point
 
-- **P5a.0 — Backend: `editFieldBundle` mutation + `default_option_id`
+- [x] **P5a.0 — Backend: `editFieldBundle` mutation + `default_option_id`
   on single-select config.** Two backend changes in one PR (both are
   pure-additions to the wire contract):
 
@@ -657,7 +657,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   `editFieldBundle` Pydantic shape in `types.ts` so the next
   sub-phase can dispatch it.
 
-- **P5a.1 — Skeleton modal.** Build `FieldConfigModal` +
+- [x]  **P5a.1 — Skeleton modal.** Build `FieldConfigModal` +
   `FieldConfigForm` with only the Name + Description sections wired.
   Hook double-click + chevron + a new `Edit field…` menu item to it
   via the new `onEditCustomField` prop on `DataTableProps`. Save
@@ -666,13 +666,13 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   of the modal because the dispatcher is real. R-S3 / R-S4 land in
   P5a.2 / P5a.5 alongside the features they protect.
 
-- **P5a.2 — Type picker + change-type sub-panel.** Port
+- [x] **P5a.2 — Type picker + change-type sub-panel.** Port
   `ChangeTypePopover`'s preflight + ack into
   `FieldConfigSectionTypeChange`. Save bundles the type change into
   the same `editFieldBundle`. Implement R-S3 here (preflight re-run
   on row mutation, ack invalidation).
 
-- **P5a.3 — Options section + Default picker.** Port
+- [ ] **P5a.3 — Options section + Default picker.** Port
   `FieldEditorPopover` into `FieldConfigSectionOptions` (drag-handles,
   color swatches, Color-code toggle, Alphabetize, delete-with-
   cascade). Build `SingleSelectDefaultPicker` (shared per §3.7);
@@ -685,24 +685,24 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   modal and **delete** the in-grid options popover that today opens
   on chevron-click / single-select-header double-click.
 
-- **P5a.3b — Default picker in `AddFieldPopover`.** Drop the shared
+- [ ] **P5a.3b — Default picker in `AddFieldPopover`.** Drop the shared
   `SingleSelectDefaultPicker` into `AddFieldPopover`'s
   `single_select` branch; carry `default_option_id` through
   `AddCustomFieldRequest.config`. `AddFieldPopover` stays a
   separate component in 5a — true unification with the modal is
   still Phase 5c per §1's out-of-scope note.
 
-- **P5a.4 — Number precision section.** Port from `AddFieldPopover`
+- [ ] **P5a.4 — Number precision section.** Port from `AddFieldPopover`
   inline; trivially small.
 
-- **P5a.5 — Formula section.** Port `FormulaEditorPopover` into
+- [ ] **P5a.5 — Formula section.** Port `FormulaEditorPopover` into
   `FieldConfigSectionFormula`. Live preview against the snapshot
   row works the same. Implement R-S4 here (value-copy snapshot,
   stale indicator after any row mutation). Also implement US-CF-16
   criterion 9 (change-type-away-from-formula auto-clears
   `config.source` / `ast` / `deps` / `result_type`).
 
-- **P5a.6 — Decommission popovers.** Delete the four superseded
+- [ ] **P5a.6 — Decommission popovers.** Delete the four superseded
   popover components, their tests, and their menu-item handlers.
   Update `__tests__/HeaderContextMenu.test.tsx` and
   `columnHeaderDoubleClick.test.tsx` to assert the new modal
@@ -712,7 +712,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   is replaced entirely by the bundle path) and that no production
   code still imports the deleted components.
 
-- **P5a.7 — Acceptance.** Wire the new modal into every
+- [ ] **P5a.7 — Acceptance.** Wire the new modal into every
   `<DataTable>` consumer (Rooms today, Pumps when plan-20 lands).
   Manual QA pass per US-CF-15 / US-CF-16 / US-CF-17. Append the
   modal's focus-trap + Esc + screen-reader behavior to

@@ -1023,6 +1023,18 @@ export function DataTable<TRow>({
     if (!fieldDef || fieldDef.read_only_schema === true) return undefined;
     return fieldDef;
   }, [configModalState, fieldDefByKey]);
+  // Pre-mapped row data for the change-type preflight. Gated on modal
+  // open so unrelated cell writes don't drag the per-row map onto the
+  // hot path.
+  const configModalPreflightRows = useMemo(() => {
+    if (!configModalState) return undefined;
+    const column = columnDefs.find((entry) => entry.fieldKey === configModalState.fieldKey);
+    if (!column) return undefined;
+    return rows.map((row) => ({
+      rowId: getRowId(row),
+      rawValue: column.accessor(row),
+    }));
+  }, [configModalState, columnDefs, rows, getRowId]);
 
   // Split the editor context into two memos: the AST rebuild is
   // expensive but depends only on the stored AST + registry; the
@@ -1181,6 +1193,8 @@ export function DataTable<TRow>({
           onFieldRemoved={(message) => {
             setAnnounce(message);
           }}
+          sourceCustomFieldType={configModalFieldDef?.custom_field_type}
+          preflightRows={configModalPreflightRows}
         />
       ) : null}
       {onSetCustomFieldDescription && descriptionFieldKey && descriptionFieldDef ? (

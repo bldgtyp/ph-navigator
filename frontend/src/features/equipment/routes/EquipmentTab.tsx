@@ -445,6 +445,11 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     if (!source) {
       throw new Error("That custom field no longer exists. Refresh to see the current fields.");
     }
+    // On type change, reset `config` — the backend dispatcher re-derives
+    // type-specific config (e.g. materializes options for the
+    // `create_options` text→single_select policy).
+    const nextFieldType = request.fieldType ?? source.field_type;
+    const typeChanged = nextFieldType !== source.field_type;
     const mutation = buildEditFieldBundleMutation({
       tableKey: ROOMS_TABLE_NAME,
       fieldId: request.fieldKey,
@@ -452,7 +457,10 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         ...source,
         display_name: request.displayName,
         description: request.description,
+        field_type: nextFieldType,
+        config: typeChanged ? {} : source.config,
       },
+      acknowledgeDestructive: request.acknowledgeDestructive ?? false,
       schemaFingerprint: roomsTableSchema.schemaFingerprint,
     });
     await commitSchemaMutation(mutation);

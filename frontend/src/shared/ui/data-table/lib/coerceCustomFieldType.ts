@@ -5,10 +5,37 @@
 
 import type { CustomFieldType } from "../hooks/useTableSchema";
 import type { FieldOption } from "../types";
+import { conversionPolicy } from "./typeConversionMatrix";
 
 export type CoerceOk = { ok: true; value: string | number | null };
 export type CoerceFail = { ok: false; reason: string };
 export type CoerceResult = CoerceOk | CoerceFail;
+
+export type PreflightRow = { rowId: string; rawValue: unknown; reason: string };
+export type PreflightSourceRow = { rowId: string; rawValue: unknown };
+export type LocalPreflightResult = { incompatible: PreflightRow[]; total: number };
+
+// Returns null when the conversion is forbidden by the matrix.
+export function computeLocalPreflight(
+  fromType: CustomFieldType,
+  toType: CustomFieldType,
+  rows: ReadonlyArray<PreflightSourceRow>,
+  targetOptionList?: ReadonlyArray<FieldOption>,
+): LocalPreflightResult | null {
+  const policy = conversionPolicy(fromType, toType);
+  if (policy === null) return null;
+  // create_options materializes options server-side from row text
+  // values, so the local preview reports no incompatibilities.
+  if (policy === "create_options") return { incompatible: [], total: rows.length };
+  const incompatible: PreflightRow[] = [];
+  for (const row of rows) {
+    const result = coerceCustomValue(row.rawValue, toType, { optionList: targetOptionList ?? [] });
+    if (!result.ok) {
+      incompatible.push({ rowId: row.rowId, rawValue: row.rawValue, reason: result.reason });
+    }
+  }
+  return { incompatible, total: rows.length };
+}
 
 function formatNumberForText(value: number): string {
   if (Number.isInteger(value)) return String(value);

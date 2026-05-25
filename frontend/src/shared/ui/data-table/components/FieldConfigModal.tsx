@@ -1,19 +1,7 @@
-// Unified field-config modal (plan-21 P5a.1).
-//
-// Replaces the inline-rename + EditFieldDescriptionPopover entry paths
-// for editing a custom field's name and description. Later sub-phases
-// extend the form with Type / Options+Default / Number-precision /
-// Formula / Description sections; the wire shape (`editFieldBundle`)
-// stays the same so each sub-phase is a hard cut-over for the
-// property it covers (plan-21 R4).
-//
-// Concurrency guards live in this component, not the consumer:
-//   R-S1 — source field disappears (deleted in another write) →
-//     close + announce a toast.
-//   R-S2 — external edit to the same field while open → suspend Save,
-//     show a banner with "Keep my changes" / "Discard my changes".
-//   R-S5 — pending Save suppresses Esc / backdrop / Cancel and disables
-//     re-submit until the dispatch promise resolves.
+// Unified field-config modal. Owns the concurrency guards (R-S1 field
+// disappears, R-S2 external edit, R-S3 row mutation during preflight,
+// R-S5 pending-save re-entrancy) so consumers wire only the dispatch
+// callback.
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   useCallback,
@@ -25,10 +13,28 @@ import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import type { EditCustomFieldBundleRequest, FieldDef } from "../types";
+import type { CustomFieldType, EditCustomFieldBundleRequest, FieldDef } from "../types";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
+import { computeLocalPreflight, type PreflightSourceRow } from "../lib/coerceCustomFieldType";
+import { isConversionAllowed } from "../lib/typeConversionMatrix";
+import {
+  FieldConfigSectionTypeChange,
+  type ServerPreflightPayload,
+} from "./FieldConfigSectionTypeChange";
+
+type TargetCandidate = { kind: CustomFieldType; label: string };
+
+// `formula` is excluded — forbidden in/out per CONVERSION_MATRIX. The
+// current type is included so the pill row always renders the source.
+const TARGET_CANDIDATES: ReadonlyArray<TargetCandidate> = [
+  { kind: "short_text", label: "Short text" },
+  { kind: "long_text", label: "Long text" },
+  { kind: "number", label: "Number" },
+  { kind: "url", label: "URL" },
+  { kind: "single_select", label: "Single select" },
+];
 
 export type FieldConfigModalProps = {
   open: boolean;
@@ -51,6 +57,12 @@ export type FieldConfigModalProps = {
   // R-S1 hook so the parent can mirror the toast on its own announce
   // surface. Falls back to a console warn when omitted (tests).
   onFieldRemoved?: (message: string) => void;
+  // When omitted, the Type picker is hidden — used by tests that
+  // pre-date the type-change wiring.
+  sourceCustomFieldType?: CustomFieldType;
+  // Pre-mapped {rowId, rawValue} pairs so the modal stays non-generic
+  // over TRow. Drives the local change-type preflight.
+  preflightRows?: ReadonlyArray<PreflightSourceRow>;
 };
 
 export function FieldConfigModal({
@@ -61,6 +73,8 @@ export function FieldConfigModal({
   dispatchBundle,
   returnFocusTo,
   onFieldRemoved,
+  sourceCustomFieldType,
+  preflightRows,
 }: FieldConfigModalProps) {
   // Source-of-truth FieldDef captured at modal open. Used for the
   // change-detection diff and for R-S2 comparison against the live
@@ -75,6 +89,11 @@ export function FieldConfigModal({
   // user's diff property-by-property) or Discard (re-seed draft
   // from new source). Save is suspended until resolved.
   const [externalConflict, setExternalConflict] = useState<FieldDef | null>(null);
+  const [draftType, setDraftType] = useState<CustomFieldType | null>(null);
+  const [acknowledged, setAcknowledged] = useState(false);
+  // Populated from the backend's `custom_field_coercion_preflight_required`
+  // 422 envelope; overrides the local preflight in the sub-panel.
+  const [serverPreflight, setServerPreflight] = useState<ServerPreflightPayload | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const titleId = useId();
@@ -91,6 +110,9 @@ export function FieldConfigModal({
       setSubmitError(null);
       setPending(false);
       setExternalConflict(null);
+      setDraftType(null);
+      setAcknowledged(false);
+      setServerPreflight(null);
       return;
     }
     if (!fieldDef) return;
@@ -99,7 +121,10 @@ export function FieldConfigModal({
     setDescription(fieldDef.description ?? "");
     setSubmitError(null);
     setExternalConflict(null);
-  }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
+    setDraftType(sourceCustomFieldType ?? null);
+    setAcknowledged(false);
+    setServerPreflight(null);
+  }, [open, fieldDef?.field_key, sourceCustomFieldType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus + select Name on open so rename stays a one-gesture-plus-
   // one-keystroke action (plan-21 Q4 resolution).
@@ -123,18 +148,25 @@ export function FieldConfigModal({
     onOpenChange(false);
   }, [open, source, fieldDef, onFieldRemoved, onOpenChange]);
 
-  // R-S2 — external edit to the same field. Detect by comparing
-  // the live fieldDef against the captured source on the editable
-  // properties P5a.1 ships (display_name, description); later
-  // sub-phases extend this comparator. Don't re-fire while a
-  // conflict is already pending — the banner gates resolution.
+  // R-S2 — external edit to the same field. Banner gates resolution
+  // so don't re-fire while a conflict is already pending.
   useEffect(() => {
     if (!open || !source || !fieldDef || externalConflict) return;
     const changed =
       fieldDef.display_name !== source.display_name ||
-      (fieldDef.description ?? null) !== (source.description ?? null);
+      (fieldDef.description ?? null) !== (source.description ?? null) ||
+      (fieldDef.custom_field_type ?? null) !== (source.custom_field_type ?? null);
     if (changed) setExternalConflict(fieldDef);
   }, [open, source, fieldDef, externalConflict]);
+
+  // R-S3 — row data changed while a type change is staged. Invalidate
+  // the ack so the user re-confirms against the new preflight.
+  useEffect(() => {
+    if (!open || !source) return;
+    if (draftType === null || draftType === sourceCustomFieldType) return;
+    setAcknowledged(false);
+    setServerPreflight(null);
+  }, [preflightRows, draftType, sourceCustomFieldType, open, source]);
 
   const trimmedName = displayName.trim();
   const initialName = source?.display_name ?? "";
@@ -156,12 +188,30 @@ export function FieldConfigModal({
     return null;
   }, [source, trimmedName, existingFieldLabels]);
 
+  const typeChanged =
+    sourceCustomFieldType !== undefined &&
+    draftType !== null &&
+    draftType !== sourceCustomFieldType;
+
+  // One pass over preflight rows per render — shared with the sub-panel.
+  const localPreflight = useMemo(() => {
+    if (!typeChanged || draftType === null || sourceCustomFieldType === undefined) return null;
+    return computeLocalPreflight(sourceCustomFieldType, draftType, preflightRows ?? []);
+  }, [typeChanged, draftType, sourceCustomFieldType, preflightRows]);
+
+  const incompatibleCount =
+    serverPreflight?.rows.length ?? localPreflight?.incompatible.length ?? 0;
+  const needsAck = typeChanged && incompatibleCount > 0;
+  const ackSatisfied = !needsAck || acknowledged;
+
   const dirty =
     !!source &&
     !nameValidationError &&
-    (trimmedName !== initialName.trim() || normalizedDescription !== normalizedInitialDescription);
+    (trimmedName !== initialName.trim() ||
+      normalizedDescription !== normalizedInitialDescription ||
+      typeChanged);
 
-  const canSave = dirty && !pending && !externalConflict;
+  const canSave = dirty && !pending && !externalConflict && ackSatisfied;
 
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
@@ -172,14 +222,47 @@ export function FieldConfigModal({
         fieldKey: source.field_key,
         displayName: trimmedName,
         description: normalizedDescription,
+        ...(typeChanged && draftType !== null ? { fieldType: draftType } : {}),
+        ...(typeChanged && needsAck ? { acknowledgeDestructive: true } : {}),
       });
       onOpenChange(false);
     } catch (error) {
+      // If the backend returned a structured preflight envelope, swap
+      // the inline panel to the server's authoritative payload so the
+      // user can re-ack against the real incompatible rows.
+      const maybeDetails = (
+        error as
+          | {
+              details?: {
+                incompatible_rows?: ServerPreflightPayload["rows"];
+                total_row_count?: number;
+              };
+            }
+          | undefined
+      )?.details;
+      if (maybeDetails?.incompatible_rows && typeChanged) {
+        setServerPreflight({
+          rows: maybeDetails.incompatible_rows,
+          total: maybeDetails.total_row_count ?? preflightRows?.length ?? 0,
+        });
+        setAcknowledged(false);
+      }
       setSubmitError(schemaMutationErrorMessage(error, "Could not save field changes."));
     } finally {
       setPending(false);
     }
-  }, [canSave, source, trimmedName, normalizedDescription, dispatchBundle, onOpenChange]);
+  }, [
+    canSave,
+    source,
+    trimmedName,
+    normalizedDescription,
+    typeChanged,
+    draftType,
+    needsAck,
+    dispatchBundle,
+    onOpenChange,
+    preflightRows,
+  ]);
 
   // Esc handling — Radix Dialog's onEscapeKeyDown fires before the
   // open-change. Suppress dismissal while saving (R-S5) or while
@@ -307,6 +390,64 @@ export function FieldConfigModal({
                 </p>
               ) : null}
             </div>
+            {sourceCustomFieldType !== undefined ? (
+              <div
+                className="data-table-field-config-modal-section data-table-field-config-type-section"
+                role="group"
+                aria-label="Field type"
+              >
+                <span className="data-table-add-field-label">Type</span>
+                <div
+                  className="data-table-add-field-type-row"
+                  role="radiogroup"
+                  aria-label="Field type"
+                >
+                  {TARGET_CANDIDATES.map((candidate) => {
+                    // Current type pill stays selectable so the user can
+                    // revert a staged change.
+                    const isCurrent = candidate.kind === sourceCustomFieldType;
+                    const allowed =
+                      isCurrent || isConversionAllowed(sourceCustomFieldType, candidate.kind);
+                    const selected = draftType === candidate.kind;
+                    return (
+                      <button
+                        key={candidate.kind}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        aria-disabled={!allowed}
+                        disabled={!allowed || pending}
+                        data-active={selected ? "true" : undefined}
+                        title={
+                          allowed
+                            ? candidate.label
+                            : `Cannot convert ${sourceCustomFieldType} values to ${candidate.label.toLowerCase()}.`
+                        }
+                        className="data-table-add-field-type-pill"
+                        onClick={() => {
+                          setDraftType(candidate.kind);
+                          setAcknowledged(false);
+                          setServerPreflight(null);
+                        }}
+                      >
+                        {candidate.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+            {typeChanged && draftType !== null && sourceCustomFieldType !== undefined ? (
+              <FieldConfigSectionTypeChange
+                fromType={sourceCustomFieldType}
+                toType={draftType}
+                localPreflight={localPreflight}
+                serverPreflight={serverPreflight}
+                acknowledged={acknowledged}
+                onAcknowledgeChange={setAcknowledged}
+                disabled={pending}
+              />
+            ) : null}
             <div className="data-table-field-config-modal-section">
               <label className="data-table-add-field-label" htmlFor={descriptionId}>
                 Description

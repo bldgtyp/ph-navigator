@@ -20,6 +20,15 @@ export type FieldType =
   | "attachment"
   | "argb_color";
 
+// Closed v1 set, mirrored from backend `CustomFieldType`.
+export type CustomFieldType =
+  | "short_text"
+  | "long_text"
+  | "number"
+  | "url"
+  | "single_select"
+  | "formula";
+
 export type FieldDef = {
   field_key: string;
   field_type: FieldType;
@@ -32,6 +41,9 @@ export type FieldDef = {
   // back to the field-type natural zero (text: "", number: null,
   // single_select: null) when omitted.
   default?: unknown;
+  // Set only for custom (non-`read_only_schema`) fields. Drives the
+  // field-config modal's type picker.
+  custom_field_type?: CustomFieldType;
   // Phase 4: for `field_type === "computed"`, declare the underlying
   // value type so the filter-operator registry knows which catalogue to
   // expose. Defaults to "text" when omitted (preserves Phase 0–3
@@ -321,6 +333,12 @@ export type EditCustomFieldBundleRequest = {
   fieldKey: string;
   displayName: string;
   description: string | null;
+  // Set when the user changed the field's type. The consumer rebuilds
+  // `after.field_type` and resets `after.config` accordingly.
+  fieldType?: CustomFieldType;
+  // True when the type change has incompatible rows the user
+  // acknowledged in the inline preflight panel.
+  acknowledgeDestructive?: boolean;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`
