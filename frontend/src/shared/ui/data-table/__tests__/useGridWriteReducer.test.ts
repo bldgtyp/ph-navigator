@@ -81,11 +81,12 @@ describe("useGridWriteReducer", () => {
     expect(result.current.history.canUndo).toBe(false);
   });
 
-  test("fieldDefMutation with cellWrites round-trips through undo / redo", async () => {
+  test("schemaMutation with cellWrites round-trips through undo / redo", async () => {
     const onWrite = vi.fn();
     const { result } = renderHook(() => useHarness(onWrite));
     const fieldDefForward: WriteOp = {
-      kind: "fieldDefMutation",
+      kind: "schemaMutation",
+      variant: "legacyOptions",
       before: {
         field_key: "floor",
         field_type: "single_select",
@@ -104,7 +105,8 @@ describe("useGridWriteReducer", () => {
       cellWrites: [{ rowId: "rm_1", fieldKey: "floor", value: null }],
     };
     const fieldDefInverse: WriteOp = {
-      kind: "fieldDefMutation",
+      kind: "schemaMutation",
+      variant: "legacyOptions",
       before: fieldDefForward.after,
       after: fieldDefForward.before,
       cellWrites: [{ rowId: "rm_1", fieldKey: "floor", value: "opt_b" }],

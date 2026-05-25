@@ -59,12 +59,10 @@ function Harness({
       emptyMessage="No rows."
       onWrite={(op) => {
         onWrite(op);
-        if (op.kind === "fieldDefMutation") {
-          // Apply the new field def in-memory so the post-save UI
-          // reflects the new state (the consumer would normally do
-          // this via its mutation hook).
+        if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
+          const { after } = op;
           setFieldDefs((prev) =>
-            prev.map((def) => (def.field_key === op.after.field_key ? op.after : def)),
+            prev.map((def) => (def.field_key === after.field_key ? after : def)),
           );
         }
       }}
@@ -95,7 +93,7 @@ describe("FieldEditorPopover", () => {
     ]);
   });
 
-  test("editing a label, then Save, dispatches fieldDefMutation with the new label", async () => {
+  test("editing a label, then Save, dispatches schemaMutation with the new label", async () => {
     const onWrite = vi.fn();
     render(<Harness onWrite={onWrite} />);
     openEditor();
@@ -108,8 +106,8 @@ describe("FieldEditorPopover", () => {
     });
     expect(onWrite).toHaveBeenCalledTimes(1);
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    expect(op.kind).toBe("fieldDefMutation");
-    if (op.kind === "fieldDefMutation") {
+    expect(op.kind).toBe("schemaMutation");
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       const after = op.after.options ?? [];
       expect(after.find((o) => o.id === "opt_first")?.label).toBe("First Floor");
       // No cellWrites for a pure rename.
@@ -170,7 +168,7 @@ describe("FieldEditorPopover", () => {
     });
     expect(onWrite).toHaveBeenCalledTimes(1);
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    if (op.kind === "fieldDefMutation") {
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       const after = op.after.options ?? [];
       expect(after.map((o) => o.label)).toEqual(["1st", "Ground", "Roof"]);
       expect(after.map((o) => o.order)).toEqual([0, 1, 2]);
@@ -191,11 +189,10 @@ describe("FieldEditorPopover", () => {
       fireEvent.click(within(popoverContent()).getByRole("button", { name: "Save" }));
     });
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    if (op.kind === "fieldDefMutation") {
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       expect(op.after.colorCodeOptions).toBe(false);
-      expect(op.before.colorCodeOptions === undefined || op.before.colorCodeOptions === true).toBe(
-        true,
-      );
+      const beforeColor = op.before.colorCodeOptions;
+      expect(beforeColor === undefined || beforeColor === true).toBe(true);
     }
   });
 
@@ -214,7 +211,7 @@ describe("FieldEditorPopover", () => {
       fireEvent.click(within(popoverContent()).getByRole("button", { name: "Save" }));
     });
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    if (op.kind === "fieldDefMutation") {
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       const after = op.after.options ?? [];
       expect(after.find((o) => o.id === "opt_roof")).toBeUndefined();
       expect(op.cellWrites).toBeUndefined();
@@ -243,8 +240,8 @@ describe("FieldEditorPopover", () => {
       fireEvent.click(within(popoverContent()).getByRole("button", { name: "Save" }));
     });
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    expect(op.kind).toBe("fieldDefMutation");
-    if (op.kind === "fieldDefMutation") {
+    expect(op.kind).toBe("schemaMutation");
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       const cellWrites = op.cellWrites ?? [];
       expect(cellWrites).toHaveLength(2);
       expect(cellWrites.every((w) => w.value === null && w.fieldKey === "floor")).toBe(true);
@@ -267,7 +264,7 @@ describe("FieldEditorPopover", () => {
       fireEvent.click(within(popoverContent()).getByRole("button", { name: "Save" }));
     });
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    if (op.kind === "fieldDefMutation") {
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       const cellWrites = op.cellWrites ?? [];
       expect(cellWrites).toHaveLength(2);
       expect(cellWrites.every((w) => w.value === "opt_roof")).toBe(true);
@@ -319,7 +316,7 @@ describe("FieldEditorPopover", () => {
     // tests (useGridWriteReducer.test.ts) — here we sanity-check that
     // the forward arrived with the expected shape.
     const op = onWrite.mock.calls[0]![0] as WriteOp;
-    if (op.kind === "fieldDefMutation") {
+    if (op.kind === "schemaMutation" && op.variant === "legacyOptions") {
       expect(op.cellWrites).toBeDefined();
       expect(op.cellWrites?.length).toBe(2);
     }

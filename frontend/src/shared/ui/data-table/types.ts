@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { AggregationKind } from "./fields/aggregations";
+import type { FieldSchemaMutation } from "./lib/customFieldMutations";
 
 // Phase 6 §4.3.1: subset codes for the 7 non-empty subsets of
 // {filter, sort, group}. Encoded as lowercase concatenations of the
@@ -180,8 +181,15 @@ export type WriteOp =
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: RowInsertPayload[] }
   | { kind: "rowDelete"; rows: RowDeletePayload[] }
+  // `schemaMutation` carries two sub-shapes. `typed` is the
+  // custom-field pipeline that POSTs to `/custom-fields:mutate`;
+  // `legacyOptions` is the single-select option editor that still
+  // rides the whole-table replace path until plan-16 splits it into
+  // its own kind.
+  | { kind: "schemaMutation"; variant: "typed"; mutation: FieldSchemaMutation }
   | {
-      kind: "fieldDefMutation";
+      kind: "schemaMutation";
+      variant: "legacyOptions";
       before: FieldDef;
       after: FieldDef;
       // Dependent cell writes ride in the same op so ⌘Z reverts the

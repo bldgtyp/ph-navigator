@@ -194,13 +194,15 @@ export function FieldEditorPopover<TRow>({
       inverseCellWrites.push({ rowId, fieldKey: fieldDef.field_key, value: originalValue });
     }
     const forward: WriteOp = {
-      kind: "fieldDefMutation",
+      kind: "schemaMutation",
+      variant: "legacyOptions",
       before,
       after,
       ...(forwardCellWrites.length > 0 ? { cellWrites: forwardCellWrites } : {}),
     };
     const inverse: WriteOp = {
-      kind: "fieldDefMutation",
+      kind: "schemaMutation",
+      variant: "legacyOptions",
       before: after,
       after: before,
       ...(inverseCellWrites.length > 0 ? { cellWrites: inverseCellWrites } : {}),

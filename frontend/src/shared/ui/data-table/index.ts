@@ -8,6 +8,7 @@ export {
 export {
   FINGERPRINT_ALGORITHM_VERSION,
   computeTableSchemaFingerprint,
+  mintCustomFieldId,
   useTableSchema,
 } from "./hooks/useTableSchema";
 export type {
@@ -16,6 +17,24 @@ export type {
   TableSchema,
   UseTableSchemaArgs,
 } from "./hooks/useTableSchema";
+export {
+  SchemaMutationBuildError,
+  buildAddFieldMutation,
+  buildDeleteFieldMutation,
+  buildDuplicateFieldMutation,
+  buildRenameFieldMutation,
+  buildSetDescriptionMutation,
+} from "./lib/customFieldMutations";
+export type {
+  AddFieldMutation,
+  ChangeTypeMutation,
+  DeleteFieldMutation,
+  DuplicateFieldMutation,
+  FieldSchemaMutation,
+  RenameFieldMutation,
+  SetDescriptionMutation,
+  SetFormulaMutation,
+} from "./lib/customFieldMutations";
 export {
   OPTION_COLOR_PALETTE,
   missingOptionReferences,
