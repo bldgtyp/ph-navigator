@@ -47,6 +47,7 @@ Use a boring, explicit stack:
 | Object storage | Cloudflare R2 |
 | Quality gates | Ty + Ruff for backend static checks; pytest, Vitest, Playwright for tests |
 | MCP auth | Project-scoped bearer tokens stored hashed in `mcp_tokens` |
+| Logging | stdlib `logging` + `structlog`, JSON in prod / console in dev, stdout sink for Render — see `context/LOGGING.md` |
 
 ## Backend Decision
 

@@ -32,6 +32,10 @@ Load these only when the task touches the relevant surface:
 - `CODING_STANDARDS.md` — backend Python and frontend TypeScript
   engineering standards: layer/feature boundaries, typing, module-size,
   documentation, state ownership, and quality gates.
+- `LOGGING.md` — canonical logging architecture: structlog config,
+  request-id propagation, dev vs Render production behavior, security
+  rules, and the convention for event names and levels. Load when
+  adding/changing log output or troubleshooting deployed runs.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `user-stories/30-tables-equipment.md` when touching table behavior.
