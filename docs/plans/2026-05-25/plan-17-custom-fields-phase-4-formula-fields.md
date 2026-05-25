@@ -1,7 +1,11 @@
 ---
 DATE: 2026-05-25
 TIME: planning (detailed implementation phasing)
-STATUS: Draft. Phase 4 of plan-13 (custom fields). Builds on the
+STATUS: Draft + open decisions D22–D26 resolved in chat 2026-05-25
+        (recorded in plan-13 §3). P4.0 scaffold + ADR addendum is
+        the next concrete step; P4.1 grammar implementation can
+        start as soon as P4.0 lands.
+        Phase 4 of plan-13 (custom fields). Builds on the
         completed Phase 1 envelope (plan-14), Phase 2 schema-editor
         surface (plan-15), and Phase 3 type-change + custom
         single-select work (plan-16). Phase 4 lights up the
@@ -1680,31 +1684,47 @@ These belong to subsequent plans, not Phase 4:
   X was renamed" warnings (D2's silent absorb is the v1
   contract).
 
-## Open questions
+## Resolved questions
 
-These must be **closed in chat before P4.1 starts** (P4.0
-prerequisite). Record the resolution as decisions D22 / D23 /
-D24 / D25 / D26 in plan-13 §3 and as a one-paragraph note here
-once resolved.
+All five open questions resolved in chat 2026-05-25 (see decisions
+D22–D26 in plan-13 §3). P4.0's closing tasks (recording the
+decisions in plan-13 and updating the ADR copy templates) are
+done; P4.1 can start.
 
-- **D22. Numeric semantics.** Strawman in P4.0 Tasks §4.
-  Confirm or override per item (binary64 only, no separate
-  integer type, division always float, structured error for
-  div-by-zero, `math.fmod`-style modulo).
-- **D23. Hard resource limits.** Strawman defaults in the
-  P4.0 table. Confirm or tune each number (source / nodes /
-  depth / deps / output / fuse). Particularly: the
-  `per_row_budget_ms` name is a fuse on node-count, not
-  wall-clock — confirm acceptable.
-- **D24. `substring` indexing convention.** Recommendation:
-  1-indexed, inclusive end (AirTable parity). Confirm.
-- **D25. Structured error values shape.** Recommendation:
-  `{"error": "<token>"}` per cell in the read overlay;
-  grid renders via the existing `computed` field type's
-  error state. Confirm.
-- **D26. `concat` / string-fn null coercion.** Recommendation:
-  AirTable parity — `null → ""` inside string functions;
-  arithmetic on `null` produces `null`. Confirm.
+- ~~**D22. Numeric semantics.**~~ **Resolved:** AirTable parity,
+  ease-of-use prioritized over power. Binary64 only; no separate
+  integer type. `/` always returns float. Division by zero →
+  `{"error": "div_by_zero"}` (never `Infinity`/`NaN`). Non-finite
+  overflow → `{"error": "type_mismatch"}`. Modulo via explicit
+  `_fmod` helper on both sides (sign follows dividend). Explicit
+  `round()` deferred.
+
+- ~~**D23. Hard resource limits.**~~ **Resolved:** strawman
+  defaults accepted —
+  `source_length=1024`, `ast_node_count=256`, `ast_depth=24`,
+  `dep_count=16`, `output_length=8000`,
+  `per_row_budget=1024 nodes-evaluated` (deterministic
+  node-count fuse, not wall-clock). Loosen during Phase 5 only
+  if real usage hits a limit.
+
+- ~~**D24. `substring` indexing.**~~ **Resolved:** AirTable
+  parity. 1-indexed, inclusive end. `substring("hello", 1, 3)
+  == "hel"`. Out-of-range clamps to `[1, len(s)]`. Negative
+  indices rejected at parse time (literals) or evaluate time
+  (expressions).
+
+- ~~**D25. Structured error values.**~~ **Resolved:**
+  `{"error": "<token>"}` per cell in the read overlay; tokens
+  are `div_by_zero` / `type_mismatch` / `missing_ref` /
+  `fuse_tripped` / `output_too_long`. Grid maps to existing
+  `computed` error state with tooltip.
+
+- ~~**D26. Null coercion in string functions.**~~ **Resolved:**
+  AirTable parity. String functions coerce `null → ""`.
+  `number(null) == null` and `text(null) == null` preserve the
+  error tier on explicit casts. Arithmetic on `null` propagates
+  to `null`. `null = null` is true; `null = 0` is false. Boolean
+  `and` / `or` short-circuit `null` like `false`.
 
 If a question surfaces *during* implementation that wasn't
 anticipated in P4.0 (most likely candidates: (a) whether
