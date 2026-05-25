@@ -998,7 +998,12 @@ export function DataTable<TRow>({
     ? fieldDefByKey.get(descriptionFieldKey)
     : undefined;
 
-  const formulaEditorContext = useMemo(() => {
+  // Split the editor context into two memos: the AST rebuild is
+  // expensive but depends only on the stored AST + registry; the
+  // focused-row resolution flips on every arrow keypress. Keeping them
+  // together would re-parse + re-walk the stored AST on every cursor
+  // move while the popover is open.
+  const formulaEditorFieldContext = useMemo(() => {
     if (!formulaEditorState) return null;
     const fieldDef = fieldDefByKey.get(formulaEditorState.fieldKey);
     if (!fieldDef || !fieldDef.formula_config) return null;
@@ -1010,18 +1015,8 @@ export function DataTable<TRow>({
         const ast = astFromJson(storedAst) as FormulaAST;
         initialSource = rebuildSourceFromStoredAst(ast, registry);
       } catch {
-        // Stored AST is malformed (pre-P4.5 fixture, hand-edited
-        // document, or rollback survivor) — fall back to the raw
-        // `config.source` string so the user can still edit and
-        // re-commit the formula.
-      }
-    }
-    let focusedRow: { id: string; values: Record<string, unknown> } | null = null;
-    const activeRowId = rowIds[selection.activeCell.rowIndex];
-    if (activeRowId !== undefined && getFormulaRowValues) {
-      const row = visibleDataRows.find((candidate) => getRowId(candidate) === activeRowId);
-      if (row) {
-        focusedRow = { id: activeRowId, values: getFormulaRowValues(row) };
+        // Stored AST didn't round-trip; fall back to raw source so
+        // the user can still edit + re-commit.
       }
     }
     return {
@@ -1029,14 +1024,20 @@ export function DataTable<TRow>({
       anchorElement: formulaEditorState.anchorElement,
       registry,
       initialSource,
-      focusedRow,
     };
+  }, [formulaEditorState, fieldDefByKey, formulaFieldRegistry]);
+
+  const formulaEditorFocusedRow = useMemo<{
+    id: string;
+    values: Record<string, unknown>;
+  } | null>(() => {
+    if (!formulaEditorFieldContext || !getFormulaRowValues) return null;
+    const row = visibleDataRows[selection.activeCell.rowIndex];
+    if (!row) return null;
+    return { id: getRowId(row), values: getFormulaRowValues(row) };
   }, [
-    formulaEditorState,
-    fieldDefByKey,
-    formulaFieldRegistry,
-    selection.activeCell,
-    rowIds,
+    formulaEditorFieldContext,
+    selection.activeCell.rowIndex,
     visibleDataRows,
     getRowId,
     getFormulaRowValues,
@@ -1120,7 +1121,7 @@ export function DataTable<TRow>({
           formulaFieldRegistry={formulaFieldRegistry}
         />
       ) : null}
-      {formulaEditorEnabled && formulaEditorContext ? (
+      {formulaEditorEnabled && formulaEditorFieldContext ? (
         <FormulaEditorPopover
           open
           onOpenChange={(next) => {
@@ -1129,11 +1130,11 @@ export function DataTable<TRow>({
               focusGrid();
             }
           }}
-          anchorElement={formulaEditorContext.anchorElement}
-          fieldDef={formulaEditorContext.fieldDef}
-          fieldRegistry={formulaEditorContext.registry}
-          focusedRow={formulaEditorContext.focusedRow}
-          initialSource={formulaEditorContext.initialSource}
+          anchorElement={formulaEditorFieldContext.anchorElement}
+          fieldDef={formulaEditorFieldContext.fieldDef}
+          fieldRegistry={formulaEditorFieldContext.registry}
+          focusedRow={formulaEditorFocusedRow}
+          initialSource={formulaEditorFieldContext.initialSource}
           onSubmit={handleEditFormulaSubmit}
         />
       ) : null}

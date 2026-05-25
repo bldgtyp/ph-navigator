@@ -55,3 +55,6 @@ export { COMPUTED_ERROR_MESSAGES, isComputedErrorValue } from "./computedValues"
 export type { ComputedCellValue } from "./computedValues";
 
 export { rebuildSourceFromStoredAst } from "./displayName";
+
+export { formatLocalFormulaError, parseFormulaSource } from "./localState";
+export type { LocalFormulaState, ParseFormulaOptions } from "./localState";
