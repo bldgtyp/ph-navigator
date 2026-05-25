@@ -51,16 +51,19 @@ function makeViewState(overrides: Partial<ViewState> = {}): ViewState {
   return { ...emptyViewState(), ...overrides };
 }
 
+const DEFAULT_FINGERPRINT = "fp-active";
+
 function renderHarness(
   args: {
     enabled?: boolean;
     defaults?: ViewState;
     debounceMs?: number;
     projectId?: string;
+    schemaFingerprint?: string;
   } = {},
 ) {
   return renderHook(
-    (props: { projectId: string; enabled: boolean }) =>
+    (props: { projectId: string; enabled: boolean; schemaFingerprint: string }) =>
       useProjectTableViewState({
         projectId: props.projectId,
         tableKey: TABLE_KEY,
@@ -68,12 +71,14 @@ function renderHarness(
         enabled: props.enabled,
         columns,
         fieldDefs,
+        schemaFingerprint: props.schemaFingerprint,
         debounceMs: args.debounceMs ?? 50,
       }),
     {
       initialProps: {
         projectId: args.projectId ?? PROJECT_ID,
         enabled: args.enabled ?? true,
+        schemaFingerprint: args.schemaFingerprint ?? DEFAULT_FINGERPRINT,
       },
     },
   );
@@ -131,7 +136,7 @@ describe("useProjectTableViewState", () => {
     act(() =>
       resolveFetch({
         view_state_schema_version: 1,
-        view_state: saved,
+        view_state: { schema_fingerprint: DEFAULT_FINGERPRINT, view_state: saved },
         updated_at: "2026-05-24T00:00:00Z",
       }),
     );
@@ -185,8 +190,13 @@ describe("useProjectTableViewState", () => {
     });
 
     expect(saveTableViewMock).toHaveBeenCalledTimes(1);
-    const [, , savedView] = saveTableViewMock.mock.calls[0]!;
-    expect((savedView as ViewState).sort).toEqual([{ fieldKey: "floor", direction: "asc" }]);
+    const [, , savedEnvelope] = saveTableViewMock.mock.calls[0]!;
+    expect((savedEnvelope as { view_state: ViewState }).view_state.sort).toEqual([
+      { fieldKey: "floor", direction: "asc" },
+    ]);
+    expect((savedEnvelope as { schema_fingerprint: string }).schema_fingerprint).toBe(
+      DEFAULT_FINGERPRINT,
+    );
   });
 
   test("newer view that arrives during in-flight PUT flushes after settle", async () => {
@@ -225,15 +235,20 @@ describe("useProjectTableViewState", () => {
     // Resolve the first save — the queued newer state should flush.
     act(() => completions[0]?.({}));
     await waitFor(() => expect(saveTableViewMock).toHaveBeenCalledTimes(2));
-    const [, , secondView] = saveTableViewMock.mock.calls[1]!;
-    expect((secondView as ViewState).sort).toEqual([{ fieldKey: "name", direction: "desc" }]);
+    const [, , secondEnvelope] = saveTableViewMock.mock.calls[1]!;
+    expect((secondEnvelope as { view_state: ViewState }).view_state.sort).toEqual([
+      { fieldKey: "name", direction: "desc" },
+    ]);
   });
 
   test("reset cancels pending save and fires DELETE", async () => {
     vi.useFakeTimers();
     fetchTableViewMock.mockResolvedValue({
       view_state_schema_version: 1,
-      view_state: makeViewState({ sort: [{ fieldKey: "name", direction: "asc" }] }),
+      view_state: {
+        schema_fingerprint: DEFAULT_FINGERPRINT,
+        view_state: makeViewState({ sort: [{ fieldKey: "name", direction: "asc" }] }),
+      },
       updated_at: "2026-05-24T00:00:00Z",
     });
     const { result } = renderHarness({ debounceMs: 100 });
@@ -275,13 +290,20 @@ describe("useProjectTableViewState", () => {
     );
 
     const { result, rerender } = renderHarness();
-    rerender({ projectId: "00000000-0000-0000-0000-000000000002", enabled: true });
+    rerender({
+      projectId: "00000000-0000-0000-0000-000000000002",
+      enabled: true,
+      schemaFingerprint: DEFAULT_FINGERPRINT,
+    });
 
     // Now resolve the FIRST (stale) GET with a different saved view.
     act(() =>
       resolveFirst({
         view_state_schema_version: 1,
-        view_state: makeViewState({ sort: [{ fieldKey: "name", direction: "asc" }] }),
+        view_state: {
+          schema_fingerprint: DEFAULT_FINGERPRINT,
+          view_state: makeViewState({ sort: [{ fieldKey: "name", direction: "asc" }] }),
+        },
         updated_at: "2026-05-24T00:00:00Z",
       }),
     );
@@ -301,9 +323,12 @@ describe("useProjectTableViewState", () => {
   test("sanitized load does not auto-save when no user change occurred", async () => {
     fetchTableViewMock.mockResolvedValue({
       view_state_schema_version: 1,
-      view_state: makeViewState({
-        sort: [{ fieldKey: "deleted_field", direction: "asc" }],
-      }),
+      view_state: {
+        schema_fingerprint: DEFAULT_FINGERPRINT,
+        view_state: makeViewState({
+          sort: [{ fieldKey: "deleted_field", direction: "asc" }],
+        }),
+      },
       updated_at: "2026-05-24T00:00:00Z",
     });
     const { result } = renderHarness({ debounceMs: 30 });
@@ -314,5 +339,53 @@ describe("useProjectTableViewState", () => {
     // …but no auto-save should occur.
     await new Promise((resolve) => setTimeout(resolve, 80));
     expect(saveTableViewMock).not.toHaveBeenCalled();
+  });
+
+  // Plan-14 P1.5 / D13: switching to a version with a different schema
+  // fingerprint applies the stored state for render but must not
+  // overwrite the saved record until the user changes view state under
+  // the active fingerprint.
+  test("loading with a mismatched fingerprint renders state without saving", async () => {
+    fetchTableViewMock.mockResolvedValue({
+      view_state_schema_version: 1,
+      view_state: {
+        schema_fingerprint: "fp-other-version",
+        view_state: makeViewState({ sort: [{ fieldKey: "name", direction: "asc" }] }),
+      },
+      updated_at: "2026-05-24T00:00:00Z",
+    });
+    const { result } = renderHarness({ debounceMs: 30 });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.view.sort).toEqual([{ fieldKey: "name", direction: "asc" }]);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(saveTableViewMock).not.toHaveBeenCalled();
+  });
+
+  test("first user gesture after mismatched load saves under the active fingerprint", async () => {
+    fetchTableViewMock.mockResolvedValue({
+      view_state_schema_version: 1,
+      view_state: {
+        schema_fingerprint: "fp-other-version",
+        view_state: makeViewState({ sort: [{ fieldKey: "name", direction: "asc" }] }),
+      },
+      updated_at: "2026-05-24T00:00:00Z",
+    });
+    const { result } = renderHarness({ debounceMs: 20 });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() =>
+      result.current.onViewChange(
+        makeViewState({ sort: [{ fieldKey: "name", direction: "desc" }] }),
+      ),
+    );
+    await waitFor(() => expect(saveTableViewMock).toHaveBeenCalledTimes(1));
+    const [, , savedEnvelope] = saveTableViewMock.mock.calls[0]!;
+    expect((savedEnvelope as { schema_fingerprint: string }).schema_fingerprint).toBe(
+      DEFAULT_FINGERPRINT,
+    );
+    expect((savedEnvelope as { view_state: ViewState }).view_state.sort).toEqual([
+      { fieldKey: "name", direction: "desc" },
+    ]);
   });
 });

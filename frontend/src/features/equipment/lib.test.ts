@@ -28,6 +28,7 @@ const baseSlice: RoomsSlice = {
   version_etag: "version-etag",
   draft_etag: null,
   rooms: [],
+  custom_fields: [],
   single_select_options: {
     "rooms.floor_level": [],
     "rooms.building_zone": [],
@@ -51,6 +52,7 @@ describe("equipment room helpers", () => {
       erv_unit_ids: [],
       catalog_origin: null,
       notes: null,
+      custom: {},
     };
 
     const payload = nextRoomsPayload(baseSlice, room, {
@@ -390,6 +392,7 @@ describe("equipment room helpers", () => {
           erv_unit_ids: [],
           catalog_origin: null,
           notes: null,
+          custom: {},
         },
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
@@ -438,6 +441,7 @@ describe("equipment room helpers", () => {
           erv_unit_ids: [],
           catalog_origin: null,
           notes: null,
+          custom: {},
         },
         {
           id: "rm_2",
@@ -451,6 +455,7 @@ describe("equipment room helpers", () => {
           erv_unit_ids: [],
           catalog_origin: null,
           notes: null,
+          custom: {},
         },
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },

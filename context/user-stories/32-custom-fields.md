@@ -44,7 +44,7 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 | US-CF-7  | Custom single-select fields | Draft |
 | US-CF-8  | Formula fields | Draft |
 | US-CF-9  | Viewers see custom fields, never the schema-mutation menu | Draft |
-| US-CF-10 | LLM/MCP discovers and writes custom fields via the document | Draft |
+| US-CF-10 | LLM/MCP discovers and writes custom fields via the document | Phase 1 (read criteria 1, 2, 4); Phase 2 (write) |
 | US-CF-11 | Locked / unlocked visual indicator on header cells | Draft |
 | US-CF-12 | Duplicate field-name protection | Draft |
 | US-CF-13 | Duplicate an existing field | Draft |
@@ -320,7 +320,8 @@ intact (see GLOSSARY: Version, Draft, Save / Save As).
 
 ## US-CF-10 — LLM / MCP discovers and writes custom fields
 
-**Status:** Draft · **Priority:** Phase 1 (read) + Phase 2 (write)
+**Status:** Phase 1 (read criteria 1, 2, 4) · Phase 2 (write criteria 5, 6) · remaining criteria Draft
+**Priority:** Phase 1 (read) + Phase 2 (write)
 
 ### Story
 > As an MCP client (Claude Desktop / Code), I want the project

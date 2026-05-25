@@ -95,9 +95,9 @@ def test_create_project_inserts_initial_working_version(clean_project_tables: No
         ).fetchone()
 
     assert version is not None
-    assert version["body"]["schema_version"] == 1
+    assert version["body"]["schema_version"] == 2
     assert version["body"]["project"]["cert_programs"] == ["phi", "phius"]
-    assert version["body"]["tables"]["rooms"] == []
+    assert version["body"]["tables"]["rooms"] == {"custom_fields": [], "rows": []}
     assert action == {"action": "project_create", "bt_number": "2426"}
 
 

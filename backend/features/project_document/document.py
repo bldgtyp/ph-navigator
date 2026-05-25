@@ -7,6 +7,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from features.project_document.custom_fields import (
+    CustomFieldDef,
+    CustomValue,
+    coerce_custom_value,
+)
 from features.projects.models import CertificationProgram
 
 CatalogTableName = Literal["materials", "frame_types", "glazing_types"]
@@ -20,7 +25,24 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_BUILDING_ZONE_OPTION_KEY,
 )
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 1
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 2
+
+# Hard-coded core field display names for the Rooms table. Used by
+# `validate_document_references` to enforce duplicate-name uniqueness
+# across core + custom fields (D5; case-insensitive, trimmed). The
+# canonical source is the frontend `roomsTableFieldDefs` registry; this
+# duplicate exists until P1.2 moves the core-key list onto the
+# registered table contract.
+ROOMS_CORE_DISPLAY_NAMES: tuple[str, ...] = (
+    "Number",
+    "Name",
+    "Floor",
+    "Zone",
+    "People",
+    "Bedrooms",
+    "iCFA",
+    "ERVs",
+)
 
 
 class EmptyEquipmentTables(BaseModel):
@@ -61,6 +83,7 @@ class RoomRow(BaseModel):
     erv_unit_ids: list[str] = Field(default_factory=list)
     catalog_origin: dict[str, object] | None = None
     notes: str | None = Field(default=None, max_length=4000)
+    custom: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("number", "name", mode="before")
     @classmethod
@@ -249,6 +272,24 @@ class WindowTypeEntry(BaseModel):
         return self
 
 
+class RoomsTableEnvelope(BaseModel):
+    """`{ custom_fields, rows }` envelope around the Rooms table.
+
+    Plan-13 §4.1: project-document tables wrap their rows in a
+    `custom_fields`-aware envelope so editor-defined fields ride the
+    same version / draft / save / lock lifecycle as the rows
+    themselves. The shape is additive — core fields stay strongly
+    typed in `RoomRow`; `custom_fields` declares user-defined
+    extensions; each row's `custom` dict carries the sparse values
+    keyed by stable `cf_*` ids.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    custom_fields: list[CustomFieldDef] = Field(default_factory=list)
+    rows: list[RoomRow] = Field(default_factory=list)
+
+
 class ProjectDocumentProject(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -265,7 +306,7 @@ class ProjectDocumentTables(BaseModel):
     assemblies: list[dict[str, object]] = Field(default_factory=list)
     project_materials: list[dict[str, object]] = Field(default_factory=list)
     window_types: list[WindowTypeEntry] = Field(default_factory=list)
-    rooms: list[RoomRow] = Field(default_factory=list)
+    rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     thermal_bridges: list[dict[str, object]] = Field(default_factory=list)
     equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
     manufacturer_filters: list[dict[str, object]] = Field(default_factory=list)
@@ -274,7 +315,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[1] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[2] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -298,11 +339,29 @@ class ProjectDocumentV1(BaseModel):
                     raise ValueError(f"Duplicate option label in {key}: {option.label}")
                 labels.add(normalized_label)
 
+        rooms_table = self.tables.rooms
+        custom_field_ids: dict[str, CustomFieldDef] = {}
+        name_seen: dict[str, str] = {
+            display_name.strip().casefold(): display_name for display_name in ROOMS_CORE_DISPLAY_NAMES
+        }
+        for custom_field in rooms_table.custom_fields:
+            if custom_field.id in custom_field_ids:
+                raise ValueError(f"Duplicate custom field id in rooms: {custom_field.id}")
+            custom_field_ids[custom_field.id] = custom_field
+            normalized_name = custom_field.display_name.strip().casefold()
+            if normalized_name in name_seen:
+                existing = name_seen[normalized_name]
+                raise ValueError(
+                    f"Duplicate field name in rooms: {custom_field.display_name!r} "
+                    f"collides with {existing!r}"
+                )
+            name_seen[normalized_name] = custom_field.display_name
+
         room_ids: set[str] = set()
         room_numbers: set[str] = set()
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
-        for room in self.tables.rooms:
+        for room in rooms_table.rows:
             if room.id in room_ids:
                 raise ValueError(f"Duplicate room id: {room.id}")
             room_ids.add(room.id)
@@ -318,6 +377,17 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")
             if room.erv_unit_ids:
                 raise ValueError(f"Room ERV assignments are deferred until the ERV table is available: {room.id}")
+
+            for cf_id, value in room.custom.items():
+                custom_field = custom_field_ids.get(cf_id)
+                if custom_field is None:
+                    raise ValueError(f"Unknown custom field id on room {room.id}: {cf_id}")
+                try:
+                    coerce_custom_value(value, custom_field.field_type)
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Invalid custom value for {custom_field.display_name!r} on room {room.id}: {exc}"
+                    ) from exc
 
         window_type_ids: set[str] = set()
         window_type_names: set[str] = set()

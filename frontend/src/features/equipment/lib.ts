@@ -96,6 +96,7 @@ export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
     erv_unit_ids: [],
     catalog_origin: null,
     notes: null,
+    custom: {},
   };
 }
 

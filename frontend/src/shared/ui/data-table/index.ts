@@ -1,5 +1,22 @@
 export { DataTable } from "./DataTable";
 export {
+  CUSTOM_FIELD_KEY_PREFIX,
+  getCustomValue,
+  isCustomFieldKey,
+  setCustomValue,
+} from "./lib/customFieldAccessor";
+export {
+  FINGERPRINT_ALGORITHM_VERSION,
+  computeTableSchemaFingerprint,
+  useTableSchema,
+} from "./hooks/useTableSchema";
+export type {
+  CustomFieldDef,
+  CustomFieldType,
+  TableSchema,
+  UseTableSchemaArgs,
+} from "./hooks/useTableSchema";
+export {
   OPTION_COLOR_PALETTE,
   missingOptionReferences,
   normalizeOptionOrders,

@@ -69,7 +69,7 @@ def make_window_type(
 
 def base_document_body(project: dict[str, Any]) -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "project": {
             "name": project["name"],
             "bt_number": project["bt_number"],
@@ -139,7 +139,7 @@ def test_window_element_span_must_be_in_bounds_and_ordered() -> None:
 
 def test_document_rejects_duplicate_window_type_names_trim_case_insensitive() -> None:
     body = {
-        "schema_version": 1,
+        "schema_version": 2,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "window_types": [

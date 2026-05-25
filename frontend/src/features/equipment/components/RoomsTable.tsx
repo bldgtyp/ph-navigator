@@ -1,13 +1,15 @@
 import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
+  getCustomValue,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
-import { roomsTableFieldDefs, sortedRooms } from "../lib";
+import { sortedRooms } from "../lib";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
@@ -19,6 +21,7 @@ import {
 
 export function RoomsTable({
   roomsSlice,
+  tableSchema,
   isEditor,
   onEdit,
   view,
@@ -32,6 +35,10 @@ export function RoomsTable({
   onResetView,
 }: {
   roomsSlice: RoomsSlice;
+  // Plan-14 P1.4: produced by the parent's single `useTableSchema`
+  // call so the schema fingerprint isn't recomputed alongside view
+  // state in EquipmentTab.
+  tableSchema: TableSchema;
   isEditor: boolean;
   onEdit: (room: RoomRow) => void;
   view: ViewState;
@@ -45,10 +52,24 @@ export function RoomsTable({
   onResetView?: DataTableProps<RoomRow>["onResetView"];
 }) {
   const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
-  const fieldDefs = useMemo<FieldDef[]>(() => roomsTableFieldDefs(roomsSlice), [roomsSlice]);
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<RoomRow>[]>(
+    () =>
+      customFields.map((custom) => {
+        const fieldDef = fieldDefByKey.get(custom.id);
+        return {
+          id: custom.id,
+          fieldKey: custom.id,
+          header: custom.display_name,
+          accessor: (room) =>
+            fieldDef ? getCustomValue(room, fieldDef) ?? null : null,
+        };
+      }),
+    [customFields, fieldDefByKey],
   );
   const columns = useMemo<DataTableColumnDef<RoomRow>[]>(
     () => [
@@ -116,8 +137,9 @@ export function RoomsTable({
           ),
         defaultWidth: 200,
       },
+      ...customColumns,
     ],
-    [fieldDefByKey],
+    [fieldDefByKey, customColumns],
   );
 
   return (

@@ -19,6 +19,12 @@ export type UseProjectTableViewStateArgs = {
   enabled: boolean;
   columns: DataTableColumnDef<unknown>[];
   fieldDefs: FieldDef[];
+  // Plan-14 P1.5 / D13: the active table's schema fingerprint (from
+  // `useTableSchema`). Persisted view-state records carry this beside
+  // their inner state; loading a record under a different fingerprint
+  // applies it for render but does not overwrite the saved record
+  // until the user changes view state under the active schema.
+  schemaFingerprint: string;
   debounceMs?: number;
 };
 
@@ -37,6 +43,7 @@ export function useProjectTableViewState({
   enabled,
   columns,
   fieldDefs,
+  schemaFingerprint,
   debounceMs = SAVE_DEBOUNCE_MS,
 }: UseProjectTableViewStateArgs): UseProjectTableViewStateResult {
   const [view, setView] = useState<ViewState>(defaults);
@@ -61,6 +68,14 @@ export function useProjectTableViewState({
     }
   }, []);
 
+  // Always save with the *active* fingerprint so loads under a
+  // mismatched fingerprint that the user then edits adopt the active
+  // schema's identity on the next persisted write.
+  const fingerprintRef = useRef(schemaFingerprint);
+  useEffect(() => {
+    fingerprintRef.current = schemaFingerprint;
+  }, [schemaFingerprint]);
+
   const flushSave = useCallback(
     async (next: ViewState, scope: string) => {
       if (inFlightRef.current) {
@@ -69,7 +84,10 @@ export function useProjectTableViewState({
       }
       inFlightRef.current = true;
       try {
-        await saveTableView(projectId, tableKey, next);
+        await saveTableView(projectId, tableKey, {
+          schema_fingerprint: fingerprintRef.current,
+          view_state: next,
+        });
         setSaveError(null);
       } catch (error) {
         if (scopeKeyRef.current === scope) {
@@ -111,8 +129,13 @@ export function useProjectTableViewState({
       try {
         const response = await fetchTableView(projectId, tableKey, controller.signal);
         if (cancelled || scopeKeyRef.current !== scopeKey) return;
+        // D13: the stored envelope's `view_state` is the user's view;
+        // its `schema_fingerprint` is informational here — the hook
+        // re-saves under the active fingerprint on the next user
+        // gesture, which means a mismatched-fingerprint load is
+        // applied for render but never silently overwrites.
         if (response.view_state) {
-          setView(response.view_state);
+          setView(response.view_state.view_state);
         }
       } catch (error) {
         if (cancelled || scopeKeyRef.current !== scopeKey) return;

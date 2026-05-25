@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
+from pydantic import ValidationError
 
 from database import connection, transaction
 from features.auth.service import create_or_update_user
@@ -184,7 +186,8 @@ def test_empty_project_document_has_rooms_and_option_lists() -> None:
     )
 
     assert body == ProjectDocumentV1.model_validate(body.model_dump(mode="json"))
-    assert body.tables.rooms == []
+    assert body.tables.rooms.rows == []
+    assert body.tables.rooms.custom_fields == []
     assert body.single_select_options["rooms.floor_level"] == []
     assert body.single_select_options["rooms.building_zone"] == []
 
@@ -230,9 +233,9 @@ def test_first_rooms_replace_lazily_creates_draft(clean_document_tables: None) -
         ).fetchone()
 
     assert draft is not None
-    assert draft["body"]["tables"]["rooms"][0]["name"] == "Living Room"
+    assert draft["body"]["tables"]["rooms"]["rows"][0]["name"] == "Living Room"
     assert version is not None
-    assert version["body"]["tables"]["rooms"] == []
+    assert version["body"]["tables"]["rooms"] == {"custom_fields": [], "rows": []}
 
     reloaded = client.get(draft_rooms_url(project_id, version_id))
     assert reloaded.status_code == 200
@@ -560,11 +563,13 @@ def test_save_as_creates_active_version_from_draft_and_downloads_json(
     project_json = client.get(download_url(project_id, new_version["id"]))
     assert project_json.status_code == 200
     assert project_json.headers["content-disposition"].startswith("attachment;")
-    assert project_json.json()["tables"]["rooms"][0]["id"] == "rm_living"
+    assert project_json.json()["tables"]["rooms"]["rows"][0]["id"] == "rm_living"
+    assert project_json.json()["tables"]["rooms"]["custom_fields"] == []
 
     rooms_json = client.get(rooms_download_url(project_id, new_version["id"]))
     assert rooms_json.status_code == 200
-    assert rooms_json.json()["rooms"][0]["name"] == "Living Room"
+    assert rooms_json.json()["rooms"]["rows"][0]["name"] == "Living Room"
+    assert rooms_json.json()["rooms"]["custom_fields"] == []
 
 
 def test_project_download_returns_raw_body_when_schema_is_invalid(
@@ -586,7 +591,7 @@ def test_project_download_returns_raw_body_when_schema_is_invalid(
     document_body = document.json()
     assert document_body["schema_version_unsupported"] is True
     assert document_body["schema_version"] == 999
-    assert document_body["current_schema_version"] == 1
+    assert document_body["current_schema_version"] == 2
     assert document_body["error_code"] == "schema_validation_failed_after_migration"
     assert document_body["request_id"] == "schema-safe"
     assert document_body["body"]["schema_version"] == 999
@@ -752,7 +757,7 @@ def test_diff_reports_room_field_changes(clean_document_tables: None) -> None:
     rooms_diff = diff.json()["tables"][0]
     assert rooms_diff["table"] == "rooms"
     assert rooms_diff["change_count"] > 0
-    assert "rooms.rooms[rm_living]" in rooms_diff["changed_paths"]
+    assert "rooms.rooms.rows[rm_living]" in rooms_diff["changed_paths"]
 
 
 def test_draft_summary_and_diff_include_rooms_option_only_changes(
@@ -788,3 +793,155 @@ def test_draft_summary_and_diff_include_rooms_option_only_changes(
     assert rooms_diff["table"] == "rooms"
     assert rooms_diff["change_count"] > 0
     assert "rooms.single_select_options.rooms.floor_level[opt_ground]" in rooms_diff["changed_paths"]
+
+
+# ---------------------------------------------------------------------------
+# Plan-14 P1.1 — Rooms `{custom_fields, rows}` envelope
+# ---------------------------------------------------------------------------
+
+
+def test_rooms_envelope_empty_round_trips(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    saved = client.get(saved_rooms_url(project_id, version_id))
+    assert saved.status_code == 200
+    body = saved.json()
+    assert body["rooms"] == []
+    assert body["custom_fields"] == []
+
+
+def test_rooms_envelope_rejects_unknown_custom_key(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+
+    invalid = room_payload()
+    invalid["rooms"][0]["custom"] = {"cf_unknown": "x"}
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=invalid,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "invalid_project_document"
+
+
+def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
+    body = {
+        "schema_version": 2,
+        "project": {"name": "p", "bt_number": "1", "cert_programs": []},
+        "tables": {
+            "rooms": {
+                "custom_fields": [
+                    {
+                        "id": "cf_one",
+                        "display_name": "Notes",
+                        "field_type": "short_text",
+                        "created_at": "2026-05-24T12:00:00Z",
+                        "created_by": None,
+                    },
+                    {
+                        "id": "cf_two",
+                        "display_name": " notes ",
+                        "field_type": "short_text",
+                        "created_at": "2026-05-24T12:00:00Z",
+                        "created_by": None,
+                    },
+                ],
+                "rows": [],
+            }
+        },
+        "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": []},
+    }
+    with pytest.raises(ValidationError, match="Duplicate field name in rooms"):
+        ProjectDocumentV1.model_validate(body)
+
+
+def test_rooms_custom_field_collides_with_core_display_name_rejected() -> None:
+    body = {
+        "schema_version": 2,
+        "project": {"name": "p", "bt_number": "1", "cert_programs": []},
+        "tables": {
+            "rooms": {
+                "custom_fields": [
+                    {
+                        "id": "cf_name",
+                        "display_name": "name",
+                        "field_type": "short_text",
+                        "created_at": "2026-05-24T12:00:00Z",
+                        "created_by": None,
+                    }
+                ],
+                "rows": [],
+            }
+        },
+        "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": []},
+    }
+    with pytest.raises(ValidationError, match="Duplicate field name in rooms"):
+        ProjectDocumentV1.model_validate(body)
+
+
+def test_download_rooms_includes_empty_custom_fields_and_omits_computed_overlay(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    response = client.get(rooms_download_url(project_id, version_id))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["rooms"] == {"custom_fields": [], "rows": []}
+
+    # Phase 1: no formula support, so the read overlay must NOT add a
+    # `computed` key on any row — Phase 4 introduces it deliberately.
+    full_download = client.get(download_url(project_id, version_id))
+    assert full_download.status_code == 200
+    rooms_block = full_download.json()["tables"]["rooms"]
+    for row in rooms_block["rows"]:
+        assert "computed" not in row
+
+
+def test_rooms_envelope_round_trips_custom_field_through_replace(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+
+    payload = room_payload()
+    payload["custom_fields"] = [
+        {
+            "id": "cf_paint",
+            "display_name": "Paint",
+            "field_type": "short_text",
+            "config": {},
+            "description": None,
+            "created_at": "2026-05-24T12:00:00Z",
+            "created_by": None,
+        }
+    ]
+    payload["rooms"][0]["custom"] = {"cf_paint": "needs paint"}
+
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["custom_fields"][0]["id"] == "cf_paint"
+    assert body["rooms"][0]["custom"] == {"cf_paint": "needs paint"}

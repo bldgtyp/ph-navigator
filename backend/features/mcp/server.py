@@ -130,6 +130,14 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         """Return one project-document table from the token owner's current document view.
 
         This TB-04b read primitive is intentionally narrower than the future typed `query_table` tool.
+
+        Custom-field-capable tables (e.g. Rooms) ship the
+        ``{custom_fields, rows}`` envelope under the `rows` field
+        (plan-13 §4.1 / plan-14 P1.3): callers must look at
+        ``response.rows.rows`` for the row list and
+        ``response.rows.custom_fields`` for the per-table custom-field
+        registry. Tables without custom fields still emit a bare row
+        list under `rows`.
         """
         parsed_project_id = parse_uuid(project_id, "project_id", ctx)
         parsed_version_id = parse_uuid(version_id, "version_id", ctx)

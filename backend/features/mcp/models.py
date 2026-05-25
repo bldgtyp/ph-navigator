@@ -131,7 +131,10 @@ class McpTableEnvelope(BaseModel):
     version_body_etag: str
     draft_etag: str | None
     table_name: str
-    rows: list[object]
+    # Plan-13 §4.1 / plan-14 P1.3: custom-field-capable tables (e.g.
+    # Rooms) ship the `{custom_fields, rows}` envelope under this key;
+    # tables without custom fields still emit a bare row list.
+    rows: object
 
 
 class McpStructuredError(BaseModel):
