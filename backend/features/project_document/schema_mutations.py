@@ -52,8 +52,20 @@ _DEFERRED_MUTATION_PHASES: dict[str, str] = {
 }
 
 
+def _to_lower_camel(value: str) -> str:
+    head, *tail = value.split("_")
+    return head + "".join(part[:1].upper() + part[1:] for part in tail)
+
+
+_SCHEMA_MUTATION_MODEL_CONFIG = ConfigDict(
+    extra="forbid",
+    populate_by_name=True,
+    alias_generator=_to_lower_camel,
+)
+
+
 class AddFieldMutation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["addField"]
     table_key: str
@@ -63,7 +75,7 @@ class AddFieldMutation(BaseModel):
 
 
 class RenameFieldMutation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["renameField"]
     table_key: str
@@ -73,7 +85,7 @@ class RenameFieldMutation(BaseModel):
 
 
 class DeleteFieldMutation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["deleteField"]
     table_key: str
@@ -87,7 +99,7 @@ class DeleteFieldMutation(BaseModel):
 
 
 class DuplicateFieldMutation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["duplicateField"]
     table_key: str
@@ -101,7 +113,7 @@ class DuplicateFieldMutation(BaseModel):
 
 
 class SetDescriptionMutation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["setDescription"]
     table_key: str
@@ -118,7 +130,7 @@ class ChangeTypeMutation(BaseModel):
     closed from day one; the dispatcher rejects with
     `custom_field_unsupported_mutation`."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["changeType"]
     table_key: str
@@ -133,7 +145,7 @@ class SetFormulaMutation(BaseModel):
     closed from day one; the dispatcher rejects with
     `custom_field_unsupported_mutation`."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
 
     kind: Literal["setFormula"]
     table_key: str
