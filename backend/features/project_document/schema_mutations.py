@@ -63,6 +63,7 @@ AUDIT_KIND_BY_MUTATION: dict[str, str] = {
     "editOptions": "project_version_custom_field_edit_options",
     "changeType": "project_version_custom_field_change_type",
     "setFormula": "project_version_custom_field_set_formula",
+    "editFieldBundle": "project_version_custom_field_edit_bundle",
 }
 
 _DEFERRED_MUTATION_PHASES: dict[str, str] = {}
@@ -221,6 +222,46 @@ class EditOptionsMutation(BaseModel):
     expected_schema_fingerprint: str
 
 
+class EditFieldBundleMutation(BaseModel):
+    """Edit any subset of a custom field's properties in one transactional save.
+
+    The modal field-config UI (plan-21) emits this as a single WriteOp.
+    The server diffs `after` against the stored `FieldDef` and applies
+    rename, description, options, type-change, formula source, and
+    single-select default in one atomic step — one audit row, one undo
+    entry on the client. Per-property dispatchers' semantics are
+    composed in `_apply_edit_field_bundle`; this mutation never widens
+    the set of allowed changes.
+    """
+
+    model_config = _SCHEMA_MUTATION_MODEL_CONFIG
+
+    kind: Literal["editFieldBundle"]
+    table_key: str
+    field_id: str
+    after: CustomFieldDef
+    # Optional next-options list. Required when the bundle edits the
+    # option list of a single_select field (covers add/rename/reorder/
+    # color/delete just like `EditOptionsMutation.next_options`); also
+    # required when changing TYPE *into* `single_select` and supplying
+    # an explicit list rather than relying on text→materialize.
+    next_options: list[SingleSelectOption] | None = None
+    # Required when `after.field_type` differs from the stored
+    # field_type AND the per-row preflight is non-empty. Mirrors
+    # `ChangeTypeMutation.acknowledge_destructive` semantics.
+    acknowledge_destructive: bool = False
+    # Replacement option-id map for required-core deletes (mirrors
+    # `EditOptionsMutation.replacements`). Always empty for custom
+    # fields — custom single-selects never have required-core deletes.
+    option_replacements: dict[str, str] = Field(default_factory=dict)
+    # When `after.field_type == "formula"` AND the formula source
+    # changed, the bundle carries the new source string; the
+    # dispatcher reparses + resolves + cycle-checks just like
+    # `setFormula`. None means "keep the stored formula source".
+    formula_source: str | None = Field(default=None, max_length=SOURCE_LENGTH_MAX)
+    expected_schema_fingerprint: str
+
+
 class SetFormulaMutation(BaseModel):
     """Set / replace the formula source on a custom formula field.
 
@@ -251,7 +292,8 @@ FieldSchemaMutation = Annotated[
     | SetDescriptionMutation
     | EditOptionsMutation
     | ChangeTypeMutation
-    | SetFormulaMutation,
+    | SetFormulaMutation
+    | EditFieldBundleMutation,
     Field(discriminator="kind"),
 ]
 
@@ -287,6 +329,8 @@ def apply_schema_mutation(
         next_body, audit = _apply_change_type(body, mutation, capability)
     elif isinstance(mutation, SetFormulaMutation):
         next_body, audit = _apply_set_formula(body, mutation, capability)
+    elif isinstance(mutation, EditFieldBundleMutation):
+        next_body, audit = _apply_edit_field_bundle(body, mutation, capability)
     else:
         # Defensive — every discriminator branch is handled above; this
         # only fires if the union grows without a matching dispatcher.
@@ -709,6 +753,44 @@ def _resolve_option_target(
     )
 
 
+def _validate_default_option_id(
+    field: CustomFieldDef, next_option_ids: set[str]
+) -> None:
+    """Ensure single-select `config.default_option_id` (if set) is a real option.
+
+    Atomically validated with option-list mutations so a pending
+    default cannot survive an option deletion in the same write.
+    Called from `_apply_edit_options`, `_apply_change_type` (when
+    target is single_select), and `_apply_edit_field_bundle`.
+    """
+    if field.field_type is not CustomFieldType.single_select:
+        return
+    raw = field.config.get("default_option_id")
+    if raw is None:
+        return
+    if not isinstance(raw, str):
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_option_list_invalid",
+            "default_option_id must be a string option id or null.",
+            {
+                "field_id": field.id,
+                "reason": "default_option_id_not_string",
+            },
+        )
+    if raw not in next_option_ids:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_option_list_invalid",
+            "default_option_id must reference an option in the field's option list.",
+            {
+                "field_id": field.id,
+                "reason": "default_option_id_not_in_options",
+                "default_option_id": raw,
+            },
+        )
+
+
 def _apply_edit_options(
     body: ProjectDocumentV1,
     mutation: EditOptionsMutation,
@@ -722,6 +804,19 @@ def _apply_edit_options(
     current_ids = {option.id for option in current_options}
     next_ids = {option.id for option in mutation.next_options}
     deleted_ids = current_ids - next_ids
+
+    # If this is a custom single-select with a configured default,
+    # validate the default still exists in next_options. If the
+    # default was deleted, this is a hard error — the caller (the
+    # modal) is expected to strip the default in the same write via
+    # `editFieldBundle`; the raw `editOptions` mutation refuses to
+    # silently clear it.
+    if is_custom:
+        current_fields = capability.read_custom_fields(body)
+        for field in current_fields:
+            if field.id == mutation.field_id:
+                _validate_default_option_id(field, next_ids)
+                break
 
     # Required core single-select fields cannot be cleared on referenced
     # deletes — caller must supply replacement option ids.
@@ -1046,6 +1141,29 @@ def _apply_change_type(
             },
         )
 
+    # Default-option-id validation against the destination state. When
+    # the target is single_select, the new option list is either the
+    # materialized list (create_options) or the existing namespaced
+    # list (already-single_select branch doesn't reach here because
+    # changeType requires from != to). When leaving single_select,
+    # `after.config.default_option_id` must be unset — defense in
+    # depth against a stale draft (the modal strips this per
+    # US-CF-16 criterion 9).
+    if to_type is CustomFieldType.single_select:
+        target_ids = {opt.id for opt in (target_option_list or [])}
+        _validate_default_option_id(mutation.after, target_ids)
+    elif "default_option_id" in mutation.after.config:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_option_list_invalid",
+            "default_option_id is only valid for single_select fields.",
+            {
+                "field_id": mutation.field_id,
+                "reason": "default_option_id_outside_single_select",
+                "to_type": to_type.value,
+            },
+        )
+
     # Apply: replace field def, rewrite rows, update option lists.
     # Preserve created_at / created_by from the existing field so a
     # client doesn't need to round-trip them exactly.
@@ -1276,6 +1394,218 @@ def _apply_set_formula(
         "source_length": len(mutation.source),
         "ast_node_count": _count_ast_nodes(resolved),
         "deps": deps,
+    }
+    return next_body, audit
+
+
+# ---------------------------------------------------------------------------
+# editFieldBundle (plan-21)
+# ---------------------------------------------------------------------------
+
+
+def _apply_edit_field_bundle(
+    body: ProjectDocumentV1,
+    mutation: EditFieldBundleMutation,
+    capability: CustomFieldCapability,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    """Apply rename + description + options + type-change + formula in one tx.
+
+    Composes the existing per-property dispatchers' cores so behavior
+    stays identical to the matching one-property mutations. Order:
+    identity → name uniqueness → description clamp → (type-change OR
+    same-type option diff) → field-def replace → formula → default
+    validation. Final document validation runs in the outer
+    `apply_schema_mutation`.
+    """
+    current_fields = capability.read_custom_fields(body)
+    index, existing = _find_field(current_fields, mutation.field_id, mutation.table_key)
+    after = mutation.after
+
+    # --- 1. Identity ---
+    if after.id != mutation.field_id:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_invalid_field_id",
+            "editFieldBundle target id must equal field_id.",
+            {"field_id": after.id, "expected_field_id": mutation.field_id},
+        )
+    if after.field_key != existing.field_key:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_invalid_field_id",
+            "editFieldBundle may not modify field_key.",
+            {"field_id": mutation.field_id, "disallowed_attribute": "field_key"},
+        )
+
+    properties_changed: list[str] = []
+
+    # --- 2. Display-name uniqueness (only when the name actually changed) ---
+    if after.display_name != existing.display_name:
+        _reject_duplicate_display_name(
+            current_fields,
+            capability.core_display_names,
+            after.display_name,
+            skip_field_id=mutation.field_id,
+        )
+        properties_changed.append("display_name")
+
+    # --- 3. Description clamp ---
+    raw_description = after.description
+    clamped_description = (
+        None if raw_description is None else raw_description[:CUSTOM_FIELD_DESCRIPTION_MAX]
+    )
+    if clamped_description != existing.description:
+        properties_changed.append("description")
+
+    # We'll build the next field def progressively; start from `after`
+    # with metadata preserved and the description clamped.
+    next_field = after.model_copy(
+        update={
+            "description": clamped_description,
+            "created_by": existing.created_by,
+            "created_at": existing.created_at,
+        }
+    )
+
+    type_changed = after.field_type != existing.field_type
+    next_body = body
+    cleared_row_count = 0
+    created_option_count = 0
+    audit_extras: dict[str, object] = {}
+
+    if type_changed:
+        # Reuse the changeType core by constructing the equivalent
+        # mutation; its validations (forbidden conversion, identity,
+        # metadata-only field_type/config differ, preflight ack)
+        # mirror plan-21 §3.3a step 5.
+        change_type_mutation = ChangeTypeMutation(
+            kind="changeType",
+            table_key=mutation.table_key,
+            field_id=mutation.field_id,
+            after=next_field.model_copy(
+                update={
+                    # _apply_change_type rejects metadata changes besides
+                    # field_type/config; rebuild `after` to match `existing`
+                    # for those, since rename/description are applied below.
+                    "display_name": existing.display_name,
+                    "description": existing.description,
+                }
+            ),
+            acknowledge_destructive=mutation.acknowledge_destructive,
+            expected_schema_fingerprint=mutation.expected_schema_fingerprint,
+        )
+        next_body, ct_audit = _apply_change_type(next_body, change_type_mutation, capability)
+        cleared_row_count = cast(int, ct_audit.get("cleared_row_count") or 0)
+        created_option_count = cast(int, ct_audit.get("created_option_count") or 0)
+        properties_changed.append("field_type")
+        # After change_type ran, re-read fields so we can layer the
+        # display_name / description / final config changes on top.
+        current_fields = capability.read_custom_fields(next_body)
+        index, existing = _find_field(current_fields, mutation.field_id, mutation.table_key)
+    elif (
+        after.field_type is CustomFieldType.single_select
+        and mutation.next_options is not None
+    ):
+        # Same-type single_select option-list edit. Reuse editOptions.
+        edit_options_mutation = EditOptionsMutation(
+            kind="editOptions",
+            table_key=mutation.table_key,
+            field_id=mutation.field_id,
+            next_options=mutation.next_options,
+            replacements=mutation.option_replacements,
+            expected_schema_fingerprint=mutation.expected_schema_fingerprint,
+        )
+        # Detect any list diff (incl. label/color/order changes) by
+        # comparing pre/post snapshots — the editOptions audit only
+        # reports id-set deltas.
+        namespace_key = option_list_key(capability.table_path, mutation.field_id)
+        pre_list = next_body.single_select_options.get(namespace_key, [])
+        next_body, eo_audit = _apply_edit_options(next_body, edit_options_mutation, capability)
+        post_list = next_body.single_select_options.get(namespace_key, [])
+        cleared_row_count = cast(int, eo_audit.get("cleared_row_count") or 0)
+        if pre_list != post_list:
+            properties_changed.append("options")
+        # Re-read after the option list change.
+        current_fields = capability.read_custom_fields(next_body)
+        index, existing = _find_field(current_fields, mutation.field_id, mutation.table_key)
+
+    # --- 4. Field def replace (display_name / description / config) ---
+    # Re-anchor on the post-mutation `existing` (which has the new
+    # field_type/config from changeType when type changed). We layer
+    # display_name + description + the user's intended config on top.
+    target_config: dict[str, object] = dict(after.config)
+    final_field = existing.model_copy(
+        update={
+            "display_name": after.display_name,
+            "description": clamped_description,
+            "config": target_config,
+        }
+    )
+    next_fields = list(current_fields)
+    next_fields[index] = final_field
+    next_body = capability.replace_custom_fields(next_body, next_fields)
+
+    # --- 5. Formula source change (when target is formula) ---
+    if (
+        final_field.field_type is CustomFieldType.formula
+        and mutation.formula_source is not None
+    ):
+        set_formula_mutation = SetFormulaMutation(
+            kind="setFormula",
+            table_key=mutation.table_key,
+            field_id=mutation.field_id,
+            source=mutation.formula_source,
+            expected_schema_fingerprint=mutation.expected_schema_fingerprint,
+        )
+        # _apply_set_formula re-reads fields and replaces config with
+        # {source, ast, deps, result_type} — that wipes whatever we
+        # just wrote into config; that's the intended behavior since
+        # the bundle's `after.config.source` is the user's input and
+        # the parsed AST is server-derived.
+        next_body, sf_audit = _apply_set_formula(next_body, set_formula_mutation, capability)
+        properties_changed.append("formula_source")
+        audit_extras["formula_source_length"] = sf_audit.get("source_length")
+
+    # --- 6. Default-option-id validation (single_select only) ---
+    if final_field.field_type is CustomFieldType.single_select:
+        namespace_key = option_list_key(capability.table_path, mutation.field_id)
+        final_options = next_body.single_select_options.get(namespace_key, [])
+        final_ids = {opt.id for opt in final_options}
+        # Re-read final field after potential rewrites.
+        post_fields = capability.read_custom_fields(next_body)
+        _, post_field = _find_field(post_fields, mutation.field_id, mutation.table_key)
+        _validate_default_option_id(post_field, final_ids)
+        if (
+            existing.field_type is CustomFieldType.single_select
+            and existing.config.get("default_option_id")
+            != post_field.config.get("default_option_id")
+        ):
+            properties_changed.append("default_option_id")
+        elif (
+            existing.field_type is not CustomFieldType.single_select
+            and post_field.config.get("default_option_id") is not None
+        ):
+            properties_changed.append("default_option_id")
+    elif "default_option_id" in final_field.config:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_option_list_invalid",
+            "default_option_id is only valid for single_select fields.",
+            {
+                "field_id": mutation.field_id,
+                "reason": "default_option_id_outside_single_select",
+                "field_type": final_field.field_type.value,
+            },
+        )
+
+    audit: dict[str, object] = {
+        "kind": "editFieldBundle",
+        "table_key": mutation.table_key,
+        "field_id": mutation.field_id,
+        "properties_changed": properties_changed,
+        "cleared_row_count": cleared_row_count,
+        "created_option_count": created_option_count,
+        **audit_extras,
     }
     return next_body, audit
 

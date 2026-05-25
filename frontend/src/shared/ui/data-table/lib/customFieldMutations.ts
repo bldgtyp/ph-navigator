@@ -80,6 +80,28 @@ export type SetFormulaMutation = {
   expectedSchemaFingerprint: string;
 };
 
+// Single-WriteOp save for the plan-21 field config modal. The backend
+// diffs `after` against the stored FieldDef and applies rename,
+// description, options, type-change, formula source, and single-select
+// `config.default_option_id` in one transactional step.
+export type EditFieldBundleMutation = {
+  kind: "editFieldBundle";
+  tableKey: string;
+  fieldId: string;
+  after: CustomFieldDef;
+  // Required when the bundle edits the option list of a single_select
+  // field, or when changing TYPE *into* single_select with an explicit
+  // list (rather than relying on text→materialize).
+  nextOptions?: FieldOption[];
+  acknowledgeDestructive?: boolean;
+  // Mirror of `EditOptionsMutation.replacements` — required-core
+  // delete replacements; always empty for custom single-selects.
+  optionReplacements?: Record<string, string>;
+  // Set when target field_type is "formula" AND the source changed.
+  formulaSource?: string;
+  expectedSchemaFingerprint: string;
+};
+
 export type FieldSchemaMutation =
   | AddFieldMutation
   | RenameFieldMutation
@@ -88,7 +110,8 @@ export type FieldSchemaMutation =
   | SetDescriptionMutation
   | EditOptionsMutation
   | ChangeTypeMutation
-  | SetFormulaMutation;
+  | SetFormulaMutation
+  | EditFieldBundleMutation;
 
 // Popovers catch this and surface the message inline rather than
 // shipping a doomed POST.
@@ -321,6 +344,69 @@ export function buildSetFormulaMutation(args: BuildSetFormulaArgs): SetFormulaMu
     source,
     expectedSchemaFingerprint: args.schemaFingerprint,
   };
+}
+
+export type BuildEditFieldBundleArgs = {
+  tableKey: string;
+  fieldId: string;
+  after: CustomFieldDef;
+  nextOptions?: FieldOption[];
+  acknowledgeDestructive?: boolean;
+  optionReplacements?: Record<string, string>;
+  formulaSource?: string;
+  schemaFingerprint: string;
+};
+
+export function buildEditFieldBundleMutation(
+  args: BuildEditFieldBundleArgs,
+): EditFieldBundleMutation {
+  assertCustomFieldId(args.fieldId, "editFieldBundle.fieldId");
+  assertCustomFieldDef(args.after, "editFieldBundle.after");
+  if (args.after.id !== args.fieldId) {
+    throw new SchemaMutationBuildError(
+      "editFieldBundle.after.id must equal fieldId (identity is preserved).",
+    );
+  }
+  if (args.after.description !== null && args.after.description !== undefined) {
+    if (args.after.description.length > MAX_DESCRIPTION) {
+      throw new SchemaMutationBuildError(
+        `editFieldBundle.after.description must be ${MAX_DESCRIPTION} characters or fewer.`,
+      );
+    }
+  }
+  if (args.nextOptions !== undefined) {
+    validateOptionList(args.nextOptions);
+  }
+  if (args.formulaSource !== undefined) {
+    if (args.formulaSource.trim() === "") {
+      throw new SchemaMutationBuildError("editFieldBundle.formulaSource cannot be empty.");
+    }
+    if (args.formulaSource.length > SOURCE_LENGTH_MAX) {
+      throw new SchemaMutationBuildError(
+        `editFieldBundle.formulaSource must be ${SOURCE_LENGTH_MAX} characters or fewer.`,
+      );
+    }
+  }
+  const op: EditFieldBundleMutation = {
+    kind: "editFieldBundle",
+    tableKey: args.tableKey,
+    fieldId: args.fieldId,
+    after: args.after,
+    expectedSchemaFingerprint: args.schemaFingerprint,
+  };
+  if (args.nextOptions !== undefined) {
+    op.nextOptions = args.nextOptions.map((option) => ({ ...option }));
+  }
+  if (args.acknowledgeDestructive) {
+    op.acknowledgeDestructive = true;
+  }
+  if (args.optionReplacements && Object.keys(args.optionReplacements).length > 0) {
+    op.optionReplacements = { ...args.optionReplacements };
+  }
+  if (args.formulaSource !== undefined) {
+    op.formulaSource = args.formulaSource;
+  }
+  return op;
 }
 
 export function buildChangeTypeMutation(args: BuildChangeTypeArgs): ChangeTypeMutation {
