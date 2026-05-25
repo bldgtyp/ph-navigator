@@ -37,11 +37,8 @@ function Wrapper(props: RenderArgs) {
         onFilterBy={props.onFilterBy ?? vi.fn()}
         onGroupBy={props.onGroupBy ?? vi.fn()}
         onHide={props.onHide ?? vi.fn()}
-        onRenameField={props.onRenameField}
         onDeleteField={props.onDeleteField}
         onDuplicateField={props.onDuplicateField}
-        onEditDescription={props.onEditDescription}
-        onEditFieldFormula={props.onEditFieldFormula}
         onEditFieldConfig={props.onEditFieldConfig}
         onInsertFieldLeft={props.onInsertFieldLeft}
         onInsertFieldRight={props.onInsertFieldRight}
@@ -78,13 +75,7 @@ describe("HeaderContextMenu", () => {
 
   test("right-click on a custom-field header shows unified edit before view-state items", () => {
     render(
-      <Wrapper
-        onEditFieldConfig={vi.fn()}
-        onRenameField={vi.fn()}
-        onDeleteField={vi.fn()}
-        onDuplicateField={vi.fn()}
-        onEditDescription={vi.fn()}
-      />,
+      <Wrapper onEditFieldConfig={vi.fn()} onDeleteField={vi.fn()} onDuplicateField={vi.fn()} />,
     );
     openViaContextMenu();
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");

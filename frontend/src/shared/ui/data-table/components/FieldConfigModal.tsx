@@ -75,9 +75,8 @@ export type FieldConfigModalProps = {
   // the caller is responsible for filtering out `read_only_schema`.
   fieldDef: FieldDef | undefined;
   // Every field in the table (core + custom). The uniqueness preflight
-  // excludes the field being edited by `field_key`; same shape the
-  // inline-rename editor consumes so callers can pass the existing
-  // `existingFieldLabels` memo verbatim.
+  // excludes the field being edited by `field_key`; callers pass the
+  // same `existingFieldLabels` memo used by add-field validation.
   existingFieldLabels: ReadonlyArray<FieldDisplayName>;
   dispatchBundle: (request: EditCustomFieldBundleRequest) => Promise<void>;
   // Element to return focus to on close (the originating header <th>).
@@ -194,7 +193,7 @@ export function FieldConfigModal({
   }, [source, draftType, formulaFieldRegistry]);
 
   // Focus + select Name on open so rename stays a one-gesture-plus-
-  // one-keystroke action (plan-21 Q4 resolution).
+  // one-keystroke action.
   useEffect(() => {
     if (!open || !source) return;
     const handle = window.setTimeout(() => {

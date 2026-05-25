@@ -25,10 +25,11 @@ test("custom-field Phase 2 editor walkthrough", async ({ page }) => {
   await page.screenshot({ path: `${SCREENSHOT_DIR}/01-added-field.png`, fullPage: false });
 
   await openHeaderMenu(page, "Paint");
-  await page.getByRole("menuitem", { name: "Rename field" }).click();
-  await page.getByLabel("Rename Paint").fill("Finish");
-  await page.getByLabel("Rename Paint").press("Enter");
-  await expect(page.getByLabel("Rename Paint")).toHaveCount(0);
+  await page.getByRole("menuitem", { name: "Edit field…" }).click();
+  const editDialog = page.getByRole("dialog", { name: /Edit field/ });
+  await editDialog.getByLabel("Name").fill("Finish");
+  await editDialog.getByRole("button", { name: "Save" }).click();
+  await expect(editDialog).toBeHidden();
   await expect(page.getByRole("columnheader", { name: /^Finish\b/ })).toBeVisible();
 
   await openHeaderMenu(page, "Finish");
@@ -46,4 +47,3 @@ test("custom-field Phase 2 editor walkthrough", async ({ page }) => {
   await deleteDialog.getByRole("button", { name: "Delete field" }).click();
   await expect(page.getByRole("columnheader", { name: /^Finish copy\b/ })).toHaveCount(0);
 });
-

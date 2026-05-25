@@ -22,9 +22,7 @@ import type { ProjectDetail } from "../../projects/types";
 
 // Plan-17 P4.10 — exit-criteria acceptance tests for formula custom
 // fields, exercised through the rendered EquipmentTab UI. Pairs with
-// the isolation coverage in
-// `frontend/src/shared/ui/data-table/__tests__/FormulaEditorPopover.test.tsx`
-// and the backend round-trip coverage in
+// the isolation coverage in FieldConfigModal's formula section and the backend round-trip coverage in
 // `backend/tests/test_project_document_custom_fields_phase_4.py`.
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000001";
@@ -333,7 +331,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     expect(config.ast).toBeTruthy();
   });
 
-  test("the header context menu exposes Edit formula… on formula custom fields and the popover seeds the stored source", async () => {
+  test("the header context menu opens the unified editor for formula custom fields and seeds the stored source", async () => {
     const seeded = buildSlice({
       custom_fields: [buildFormulaField()],
       rows_computed: { rm_1: { cf_label: "101 — LIVING ROOM" } },
@@ -344,15 +342,15 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     expect(await screen.findByText("101 — LIVING ROOM")).toBeInTheDocument();
 
     await openHeaderMenu("Label");
-    fireEvent.click(screen.getByRole("menuitem", { name: "Edit formula…" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
 
-    const editDialog = await screen.findByRole("dialog", { name: /Edit formula for Label/ });
+    const editDialog = await screen.findByRole("dialog", { name: /Edit field/ });
     const expression = within(editDialog).getByLabelText("Expression") as HTMLInputElement;
     expect(expression.value).toBe(LABEL_FORMULA_SOURCE);
 
     fireEvent.keyDown(editDialog, { key: "Escape" });
     await openHeaderMenu("Name");
-    expect(screen.queryByRole("menuitem", { name: "Edit formula…" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Edit field…" })).toBeNull();
   });
 
   test("duplicating a formula via the header context menu dispatches duplicateField and the duplicate column renders the same computed value", async () => {
@@ -449,7 +447,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     const labelHeader = screen.getByRole("columnheader", { name: /^Label\b/ });
     fireEvent.contextMenu(labelHeader, { clientX: 100, clientY: 50 });
     expect(screen.queryByRole("menu")).toBeNull();
-    expect(screen.queryByRole("menuitem", { name: "Edit formula…" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Edit field…" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "Delete field" })).toBeNull();
   });
 });

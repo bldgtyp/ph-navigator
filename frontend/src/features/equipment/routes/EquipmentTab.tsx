@@ -8,9 +8,6 @@ import {
   buildDeleteFieldMutation,
   buildDuplicateFieldMutation,
   buildEditFieldBundleMutation,
-  buildRenameFieldMutation,
-  buildSetDescriptionMutation,
-  buildSetFormulaMutation,
   clampNumberPrecision,
   emptyViewState,
   isCustomFieldKey,
@@ -55,11 +52,8 @@ import type {
   AddCustomFieldRequest,
   BuildEmptyRow,
   EditCustomFieldBundleRequest,
-  EditCustomFieldDescriptionRequest,
-  EditCustomFieldFormulaRequest,
   FieldRegistryEntry,
   FieldSchemaMutation,
-  RenameCustomFieldRequest,
   WriteOp,
 } from "../../../shared/ui/data-table";
 import {
@@ -378,17 +372,6 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     await commitSchemaMutation(mutation);
   };
 
-  const handleRenameCustomField = async (request: RenameCustomFieldRequest) => {
-    if (!canEdit) return;
-    const mutation = buildRenameFieldMutation({
-      tableKey: ROOMS_TABLE_NAME,
-      fieldId: request.fieldKey,
-      displayName: request.displayName,
-      schemaFingerprint: roomsTableSchema.schemaFingerprint,
-    });
-    await commitSchemaMutation(mutation);
-  };
-
   const handleDuplicateCustomField = async (fieldKey: string): Promise<{ newFieldKey: string }> => {
     if (!canEdit) {
       throw new Error("Cannot duplicate a field while editing is disabled.");
@@ -424,22 +407,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     return { newFieldKey: newFieldId };
   };
 
-  const handleSetCustomFieldDescription = async (request: EditCustomFieldDescriptionRequest) => {
-    if (!canEdit) return;
-    const mutation = buildSetDescriptionMutation({
-      tableKey: ROOMS_TABLE_NAME,
-      fieldId: request.fieldKey,
-      description: request.description,
-      schemaFingerprint: roomsTableSchema.schemaFingerprint,
-    });
-    await commitSchemaMutation(mutation);
-  };
-
-  // plan-21 P5a.1 — unified field-config modal Save handler. Looks up
-  // the source CustomFieldDef and builds an `editFieldBundle` mutation
-  // carrying the user's display_name + description diff. Later
-  // sub-phases extend `request` (type-change / options / formula) and
-  // this builder picks them up without churning the rest of the wiring.
+  // The modal emits user intent; this handler rebuilds the full target
+  // CustomFieldDef because the route owns the current schema fingerprint.
   const handleEditCustomFieldBundle = async (request: EditCustomFieldBundleRequest) => {
     if (!canEdit) return;
     const source = roomsSlice.custom_fields.find((field) => field.id === request.fieldKey);
@@ -485,17 +454,6 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       nextOptions: request.options,
       acknowledgeDestructive: request.acknowledgeDestructive ?? false,
       formulaSource: request.formulaSource,
-      schemaFingerprint: roomsTableSchema.schemaFingerprint,
-    });
-    await commitSchemaMutation(mutation);
-  };
-
-  const handleEditCustomFieldFormula = async (request: EditCustomFieldFormulaRequest) => {
-    if (!canEdit) return;
-    const mutation = buildSetFormulaMutation({
-      tableKey: ROOMS_TABLE_NAME,
-      fieldId: request.fieldKey,
-      source: request.source,
       schemaFingerprint: roomsTableSchema.schemaFingerprint,
     });
     await commitSchemaMutation(mutation);
@@ -658,11 +616,8 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           footerAction={addRoomAction}
           onDeleteCustomField={canEdit ? handleDeleteCustomField : undefined}
           onAddCustomField={canEdit ? handleAddCustomField : undefined}
-          onRenameCustomField={canEdit ? handleRenameCustomField : undefined}
           onDuplicateCustomField={canEdit ? handleDuplicateCustomField : undefined}
-          onSetCustomFieldDescription={canEdit ? handleSetCustomFieldDescription : undefined}
           onEditCustomFieldBundle={canEdit ? handleEditCustomFieldBundle : undefined}
-          onEditCustomFieldFormula={canEdit ? handleEditCustomFieldFormula : undefined}
           formulaFieldRegistry={formulaFieldRegistry}
           getFormulaRowValues={buildRoomFormulaRowValues}
           rowsComputed={roomsSlice.rows_computed}

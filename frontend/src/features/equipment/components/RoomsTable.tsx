@@ -37,11 +37,8 @@ export function RoomsTable({
   onResetView,
   onDeleteCustomField,
   onAddCustomField,
-  onRenameCustomField,
   onDuplicateCustomField,
-  onSetCustomFieldDescription,
   onEditCustomFieldBundle,
-  onEditCustomFieldFormula,
   formulaFieldRegistry,
   getFormulaRowValues,
   rowsComputed,
@@ -64,11 +61,8 @@ export function RoomsTable({
   onResetView?: DataTableProps<RoomRow>["onResetView"];
   onDeleteCustomField?: DataTableProps<RoomRow>["onDeleteCustomField"];
   onAddCustomField?: DataTableProps<RoomRow>["onAddCustomField"];
-  onRenameCustomField?: DataTableProps<RoomRow>["onRenameCustomField"];
   onDuplicateCustomField?: DataTableProps<RoomRow>["onDuplicateCustomField"];
-  onSetCustomFieldDescription?: DataTableProps<RoomRow>["onSetCustomFieldDescription"];
   onEditCustomFieldBundle?: DataTableProps<RoomRow>["onEditCustomFieldBundle"];
-  onEditCustomFieldFormula?: DataTableProps<RoomRow>["onEditCustomFieldFormula"];
   formulaFieldRegistry?: DataTableProps<RoomRow>["formulaFieldRegistry"];
   getFormulaRowValues?: DataTableProps<RoomRow>["getFormulaRowValues"];
   rowsComputed?: Record<string, Record<string, unknown>>;
@@ -201,11 +195,8 @@ export function RoomsTable({
       onResetView={onResetView}
       onDeleteCustomField={onDeleteCustomField}
       onAddCustomField={onAddCustomField}
-      onRenameCustomField={onRenameCustomField}
       onDuplicateCustomField={onDuplicateCustomField}
-      onSetCustomFieldDescription={onSetCustomFieldDescription}
       onEditCustomFieldBundle={onEditCustomFieldBundle}
-      onEditCustomFieldFormula={onEditCustomFieldFormula}
       formulaFieldRegistry={formulaFieldRegistry}
       getFormulaRowValues={getFormulaRowValues}
     />

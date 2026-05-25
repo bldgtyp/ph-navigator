@@ -702,7 +702,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   criterion 9 (change-type-away-from-formula auto-clears
   `config.source` / `ast` / `deps` / `result_type`).
 
-- [ ] **P5a.6 — Decommission popovers.** Delete the four superseded
+- [x] **P5a.6 — Decommission popovers.** Delete the four superseded
   popover components, their tests, and their menu-item handlers.
   Update `__tests__/HeaderContextMenu.test.tsx` and
   `columnHeaderDoubleClick.test.tsx` to assert the new modal

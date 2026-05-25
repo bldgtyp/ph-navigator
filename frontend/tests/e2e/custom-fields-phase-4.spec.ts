@@ -6,7 +6,7 @@ import { createProject, openHeaderMenu, signIn } from "./_helpers";
 // formula custom-field UX against a running dev stack. Mirrors the
 // scope of `custom-fields-phase-2.spec.ts` but exercises the
 // Phase 4 gestures: add a formula via the AddField popover, observe
-// the computed overlay in the grid, open `Edit formula…`, duplicate
+// the computed overlay in the grid, open the unified field editor, duplicate
 // the formula, and delete a referenced custom field to surface the
 // `missing_ref` overlay.
 //
@@ -36,9 +36,7 @@ test("custom-fields Phase 4 formula walkthrough", async ({ page }) => {
   const addDialog = page.getByRole("dialog", { name: "Add field" });
   await addDialog.getByLabel("Field name").fill("Label");
   await addDialog.getByRole("radio", { name: "Formula" }).click();
-  await addDialog
-    .getByLabel("Expression")
-    .fill('concat({Number}, " — ", upper({Name}))');
+  await addDialog.getByLabel("Expression").fill('concat({Number}, " — ", upper({Name}))');
   await addDialog.getByRole("button", { name: /Add field/ }).click();
   await expect(page.getByRole("columnheader", { name: /^Label\b/ })).toBeVisible();
   await page.screenshot({
@@ -46,16 +44,14 @@ test("custom-fields Phase 4 formula walkthrough", async ({ page }) => {
     fullPage: false,
   });
 
-  // 3. Open Edit formula… from the header context menu and confirm
-  //    the popover seeds the stored source.
-  await openHeaderMenu(page, "Label");
-  await page.getByRole("menuitem", { name: "Edit formula…" }).click();
-  const editDialog = page.getByRole("dialog", { name: /Edit formula for Label/ });
+  // 3. Open Edit field… from the header context menu and confirm
+  //    the modal seeds the stored formula source.
+  const editDialog = await openFieldConfigDialog(page, "Label");
   await expect(editDialog.getByLabel("Expression")).toHaveValue(
     'concat({Number}, " — ", upper({Name}))',
   );
   await page.screenshot({
-    path: `${SCREENSHOT_DIR}/02-edit-formula-popover.png`,
+    path: `${SCREENSHOT_DIR}/02-edit-formula-modal.png`,
     fullPage: false,
   });
   await page.keyboard.press("Escape");
@@ -67,12 +63,10 @@ test("custom-fields Phase 4 formula walkthrough", async ({ page }) => {
 
   // 5. Replace Label's source so it now references Tag, then delete
   //    Tag and observe the missing_ref overlay on Label.
-  await openHeaderMenu(page, "Label");
-  await page.getByRole("menuitem", { name: "Edit formula…" }).click();
-  const editDialog2 = page.getByRole("dialog", { name: /Edit formula for Label/ });
+  const editDialog2 = await openFieldConfigDialog(page, "Label");
   const expr = editDialog2.getByLabel("Expression");
   await expr.fill('concat({Tag}, "-", {Name})');
-  await editDialog2.getByRole("button", { name: /Save formula/ }).click();
+  await editDialog2.getByRole("button", { name: "Save" }).click();
   await expect(editDialog2).toBeHidden();
 
   await openHeaderMenu(page, "Tag");
@@ -90,11 +84,9 @@ test("custom-fields Phase 4 formula walkthrough", async ({ page }) => {
   });
 
   // 6. Recover by editing Label back to a valid expression.
-  await openHeaderMenu(page, "Label");
-  await page.getByRole("menuitem", { name: "Edit formula…" }).click();
-  const recoverDialog = page.getByRole("dialog", { name: /Edit formula for Label/ });
+  const recoverDialog = await openFieldConfigDialog(page, "Label");
   await recoverDialog.getByLabel("Expression").fill("upper({Name})");
-  await recoverDialog.getByRole("button", { name: /Save formula/ }).click();
+  await recoverDialog.getByRole("button", { name: "Save" }).click();
   await expect(recoverDialog).toBeHidden();
   await expect(
     page.getByLabel(/Formula error: Formula references a field that no longer exists/),
@@ -113,3 +105,8 @@ async function addShortTextField(page: Page, name: string): Promise<void> {
   await expect(dialog).toBeHidden();
 }
 
+async function openFieldConfigDialog(page: Page, fieldName: string) {
+  await openHeaderMenu(page, fieldName);
+  await page.getByRole("menuitem", { name: "Edit field…" }).click();
+  return page.getByRole("dialog", { name: /Edit field/ });
+}

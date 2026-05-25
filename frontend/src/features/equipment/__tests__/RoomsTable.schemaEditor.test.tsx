@@ -5,9 +5,8 @@ import {
   emptyViewState,
   useTableSchema,
   type CustomFieldDef,
-  type EditCustomFieldDescriptionRequest,
-  type RenameCustomFieldRequest,
   type TableSchema,
+  type EditCustomFieldBundleRequest,
 } from "../../../shared/ui/data-table";
 import { roomsTableFieldDefs } from "../lib";
 import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
@@ -74,9 +73,8 @@ function schemaFor(slice: RoomsSlice): TableSchema {
 function renderEditorTable(
   slice: RoomsSlice,
   handlers: Partial<{
-    onRenameCustomField: (request: RenameCustomFieldRequest) => Promise<void>;
     onDuplicateCustomField: (fieldKey: string) => Promise<{ newFieldKey: string } | void>;
-    onSetCustomFieldDescription: (request: EditCustomFieldDescriptionRequest) => Promise<void>;
+    onEditCustomFieldBundle: (request: EditCustomFieldBundleRequest) => Promise<void>;
   }> = {},
 ) {
   return render(
@@ -88,9 +86,8 @@ function renderEditorTable(
       view={emptyViewState()}
       onViewChange={vi.fn()}
       onWrite={vi.fn()}
-      onRenameCustomField={handlers.onRenameCustomField}
       onDuplicateCustomField={handlers.onDuplicateCustomField}
-      onSetCustomFieldDescription={handlers.onSetCustomFieldDescription}
+      onEditCustomFieldBundle={handlers.onEditCustomFieldBundle}
     />,
   );
 }
@@ -99,65 +96,68 @@ function openPaintMenu() {
   fireEvent.contextMenu(screen.getByRole("columnheader", { name: /^Paint\b/ }));
 }
 
+async function openPaintConfigDialog(): Promise<HTMLElement> {
+  openPaintMenu();
+  fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+  return screen.findByRole("dialog", { name: /Edit field/ });
+}
+
 describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
-  test("Rename field submits a trimmed display name", async () => {
-    const onRenameCustomField = vi.fn().mockResolvedValue(undefined);
+  test("Edit field modal submits a trimmed display name through the bundle path", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
     const slice = buildSlice({
       rooms: [buildRoom()],
       custom_fields: [buildCustomField()],
     });
-    renderEditorTable(slice, { onRenameCustomField });
+    renderEditorTable(slice, { onEditCustomFieldBundle });
 
-    openPaintMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Rename field" }));
-    const input = await screen.findByLabelText("Rename Paint");
+    const dialog = await openPaintConfigDialog();
+    const input = within(dialog).getByLabelText("Name");
     fireEvent.change(input, { target: { value: "  Finish  " } });
-    fireEvent.submit(input.closest("form") as HTMLFormElement);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
     await waitFor(() =>
-      expect(onRenameCustomField).toHaveBeenCalledWith({
+      expect(onEditCustomFieldBundle).toHaveBeenCalledWith({
         fieldKey: "cf_paint",
         displayName: "Finish",
+        description: null,
       }),
     );
   });
 
-  test("Rename field rejects duplicate names before dispatch", async () => {
-    const onRenameCustomField = vi.fn().mockResolvedValue(undefined);
+  test("Edit field modal rejects duplicate names before dispatch", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
     const slice = buildSlice({
       rooms: [buildRoom()],
       custom_fields: [buildCustomField()],
     });
-    renderEditorTable(slice, { onRenameCustomField });
+    renderEditorTable(slice, { onEditCustomFieldBundle });
 
-    openPaintMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Rename field" }));
-    const input = await screen.findByLabelText("Rename Paint");
+    const dialog = await openPaintConfigDialog();
+    const input = within(dialog).getByLabelText("Name");
     fireEvent.change(input, { target: { value: "Name" } });
-    fireEvent.submit(input.closest("form") as HTMLFormElement);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       'A field named "Name" already exists in this table.',
     );
-    expect(onRenameCustomField).not.toHaveBeenCalled();
+    expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
   });
 
-  test("Rename field closes without dispatching when the name is unchanged", async () => {
-    const onRenameCustomField = vi.fn().mockResolvedValue(undefined);
+  test("Edit field modal keeps Save disabled when the field is unchanged", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
     const slice = buildSlice({
       rooms: [buildRoom()],
       custom_fields: [buildCustomField()],
     });
-    renderEditorTable(slice, { onRenameCustomField });
+    renderEditorTable(slice, { onEditCustomFieldBundle });
 
-    openPaintMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Rename field" }));
-    const input = await screen.findByLabelText("Rename Paint");
+    const dialog = await openPaintConfigDialog();
+    const input = within(dialog).getByLabelText("Name");
     fireEvent.change(input, { target: { value: "  Paint  " } });
-    fireEvent.submit(input.closest("form") as HTMLFormElement);
 
-    await waitFor(() => expect(screen.queryByLabelText("Rename Paint")).toBeNull());
-    expect(onRenameCustomField).not.toHaveBeenCalled();
+    expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
   });
 
   test("Duplicate field routes through the custom-field callback", async () => {
@@ -174,8 +174,8 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
     await waitFor(() => expect(onDuplicateCustomField).toHaveBeenCalledWith("cf_paint"));
   });
 
-  test("Edit description opens the field-description popover", async () => {
-    const onSetCustomFieldDescription = vi.fn().mockResolvedValue(undefined);
+  test("Edit field modal seeds the current description", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
     const slice = buildSlice({
       rooms: [buildRoom()],
       custom_fields: [
@@ -184,34 +184,9 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
         }),
       ],
     });
-    renderEditorTable(slice, { onSetCustomFieldDescription });
+    renderEditorTable(slice, { onEditCustomFieldBundle });
 
-    openPaintMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Edit description" }));
-    const dialog = await screen.findByRole("dialog", { name: "Edit description for Paint" });
+    const dialog = await openPaintConfigDialog();
     expect(within(dialog).getByLabelText("Description")).toHaveValue("Existing note");
-  });
-
-  test("Edit description closes without dispatching when unchanged", async () => {
-    const onSetCustomFieldDescription = vi.fn().mockResolvedValue(undefined);
-    const slice = buildSlice({
-      rooms: [buildRoom()],
-      custom_fields: [
-        buildCustomField({
-          description: "Existing note",
-        }),
-      ],
-    });
-    renderEditorTable(slice, { onSetCustomFieldDescription });
-
-    openPaintMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Edit description" }));
-    const dialog = await screen.findByRole("dialog", { name: "Edit description for Paint" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Edit description for Paint" })).toBeNull(),
-    );
-    expect(onSetCustomFieldDescription).not.toHaveBeenCalled();
   });
 });
