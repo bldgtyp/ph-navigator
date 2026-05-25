@@ -38,8 +38,10 @@ from features.mcp.service import (
 from features.project_document.models import ProjectDocumentView
 from features.project_document.schema_mutations import (
     AddFieldMutation,
+    ChangeTypeMutation,
     DeleteFieldMutation,
     DuplicateFieldMutation,
+    EditOptionsMutation,
     FieldSchemaMutation,
     RenameFieldMutation,
     SetDescriptionMutation,
@@ -345,6 +347,97 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         return _custom_field_response(response, mutation.after.id, ctx)
 
     @mcp.tool()
+    def change_custom_field_type(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        field_id: str,
+        after: dict[str, object],
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        acknowledge_destructive: bool = False,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Change a custom field's type. If the conversion would clear
+        cells and ``acknowledge_destructive`` is False, returns a
+        structured ``custom_field_coercion_preflight_required`` error
+        carrying the preflight diagnostics so the caller can surface
+        them and re-issue with the ack flag."""
+        mutation = _build_schema_mutation(
+            ctx,
+            ChangeTypeMutation,
+            kind="changeType",
+            table_key=table_key,
+            field_id=field_id,
+            after=after,
+            expected_schema_fingerprint=expected_schema_fingerprint,
+            acknowledge_destructive=acknowledge_destructive,
+        )
+        response, audit_payload = _apply_mcp_schema_mutation_with_audit(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return {
+            "field": _custom_field_response(response, field_id, ctx),
+            "audit": audit_payload,
+        }
+
+    @mcp.tool()
+    def edit_custom_field_options(
+        project_id: str,
+        version_id: str,
+        table_key: str,
+        field_id: str,
+        next_options: list[dict[str, object]],
+        expected_schema_fingerprint: str,
+        ctx: Context,
+        replacements: dict[str, str] | None = None,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Add / rename / reorder / recolor / delete single-select options.
+
+        Works for both custom (``cf_*``) and core single-select fields.
+        Deletes cascade to row clears; the response carries
+        ``cleared_row_count``. Required core single-select fields
+        (e.g. ``rooms.floor_level``) reject deletes without an explicit
+        ``replacements[old_option_id] = new_option_id`` mapping.
+        """
+        mutation = _build_schema_mutation(
+            ctx,
+            EditOptionsMutation,
+            kind="editOptions",
+            table_key=table_key,
+            field_id=field_id,
+            next_options=next_options,
+            replacements=replacements or {},
+            expected_schema_fingerprint=expected_schema_fingerprint,
+        )
+        _response, audit_payload = _apply_mcp_schema_mutation_with_audit(
+            ctx,
+            project_id,
+            version_id,
+            table_key,
+            mutation,
+            if_match=if_match,
+            if_match_version=if_match_version,
+            allow_env_token=allow_env_token,
+        )
+        return {
+            "field_id": field_id,
+            "added_option_ids": audit_payload.get("added_option_ids", []),
+            "deleted_option_ids": audit_payload.get("deleted_option_ids", []),
+            "cleared_row_count": audit_payload.get("cleared_row_count", 0),
+        }
+
+    @mcp.tool()
     def set_custom_field_description(
         project_id: str,
         version_id: str,
@@ -495,6 +588,10 @@ _SCHEMA_MUTATION_RECOVERABILITY: dict[str, McpRecoverability] = {
     "version_locked": "refresh",
     "draft_etag_mismatch": "refresh",
     "version_etag_mismatch": "refresh",
+    "custom_field_illegal_type_conversion": "fatal",
+    "custom_field_coercion_preflight_required": "fatal",
+    "custom_field_option_id_unknown": "fatal",
+    "custom_field_option_list_invalid": "fatal",
 }
 
 

@@ -11,7 +11,7 @@ from pydantic import BaseModel, ValidationError
 from starlette import status
 
 from features.project_document.custom_fields import CustomFieldDef, CustomValue
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import ProjectDocumentV1, SingleSelectOption
 from features.project_document.models import ProjectDocumentSource
 from features.shared.errors import api_error
 
@@ -38,6 +38,9 @@ class CustomFieldCapability:
     core_field_keys: tuple[str, ...]
     core_display_names: tuple[str, ...]
     option_list_namespace_prefix: str
+    # Registered contract path (e.g. `("rooms",)`) used to derive the
+    # `<table_path>.<field_id>` option-list namespace key.
+    table_path: tuple[str, ...]
     read_custom_fields: Callable[[ProjectDocumentV1], list[CustomFieldDef]]
     replace_custom_fields: Callable[[ProjectDocumentV1, list[CustomFieldDef]], ProjectDocumentV1]
     # read_row_custom returns the row's live `custom` mapping — callers
@@ -57,6 +60,21 @@ class CustomFieldCapability:
         [ProjectDocumentV1, FieldSchemaMutation],
         None,
     ]
+    # Namespaced option-list helpers for custom single_select fields
+    # (`<table_path>.<cf_id>`).
+    read_field_option_list: Callable[
+        [ProjectDocumentV1, str],
+        list[SingleSelectOption],
+    ]
+    replace_field_option_list: Callable[
+        [ProjectDocumentV1, str, list[SingleSelectOption]],
+        ProjectDocumentV1,
+    ]
+    # Core single-select editing surface.
+    core_option_key_by_field_id: dict[str, str]
+    required_core_select_fields: frozenset[str]
+    read_core_option_value: Callable[[object, str], str | None]
+    set_core_option_value: Callable[[object, str, str | None], object]
 
 
 @dataclass(frozen=True)

@@ -33,6 +33,7 @@ from features.project_document.schema_mutations import (
     ChangeTypeMutation,
     DeleteFieldMutation,
     DuplicateFieldMutation,
+    EditOptionsMutation,
     RenameFieldMutation,
     SetDescriptionMutation,
     SetFormulaMutation,
@@ -492,25 +493,8 @@ def test_set_description_round_trips_and_clamps_max_length() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_change_type_and_set_formula_raise_unsupported() -> None:
+def test_set_formula_raises_unsupported() -> None:
     body = _with_field(_empty_body(), _make_custom_field("cf_a", display_name="A"))
-
-    change = ChangeTypeMutation(
-        kind="changeType",
-        table_key="rooms",
-        field_id="cf_a",
-        after=_make_custom_field("cf_a", display_name="A", field_type=CustomFieldType.number),
-        cell_writes=[],
-        expected_schema_fingerprint=_fingerprint(body),
-    )
-    with pytest.raises(HTTPException) as excinfo:
-        _apply(body, change)
-    assert excinfo.value.status_code == 422
-    detail = cast(dict[str, object], excinfo.value.detail)
-    assert detail["error_code"] == "custom_field_unsupported_mutation"
-    details = cast(dict[str, object], detail["details"])
-    assert details["kind"] == "changeType"
-    assert details["available_in_phase"] == "Phase 3"
 
     formula = SetFormulaMutation(
         kind="setFormula",
@@ -580,3 +564,384 @@ def test_validate_schema_mutation_delegates_to_apply() -> None:
 def test_capability_hook_is_wired_on_rooms_contract() -> None:
     assert rooms_custom_fields.apply_schema_mutation is not None
     assert rooms_custom_fields.validate_schema_mutation is not None
+
+
+# ---------------------------------------------------------------------------
+# editOptions (P3.2)
+# ---------------------------------------------------------------------------
+
+
+def _seed_custom_single_select(
+    body: ProjectDocumentV1,
+    *,
+    field_id: str = "cf_ss",
+    display_name: str = "Status",
+    options: list[SingleSelectOption] | None = None,
+) -> ProjectDocumentV1:
+    field = _make_custom_field(field_id, display_name=display_name, field_type=CustomFieldType.single_select)
+    body = _with_field(body, field)
+    next_options = dict(body.single_select_options)
+    next_options[f"rooms.{field_id}"] = options or [
+        SingleSelectOption(id="opt_a", label="A", color="#111111", order=1.0),
+        SingleSelectOption(id="opt_b", label="B", color="#222222", order=2.0),
+    ]
+    return body.model_copy(update={"single_select_options": next_options})
+
+
+def test_edit_options_adds_renames_recolors_reorders_no_row_impact() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+    body = _with_room(body, custom={"cf_ss": "opt_a"})
+
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="cf_ss",
+        next_options=[
+            SingleSelectOption(id="opt_a", label="Renamed", color="#333333", order=2.0),
+            SingleSelectOption(id="opt_b", label="B", color="#222222", order=1.0),
+            SingleSelectOption(id="opt_c", label="C", color="#444444", order=3.0),
+        ],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": "opt_a"}
+    assert audit["cleared_row_count"] == 0
+    assert audit["added_option_ids"] == ["opt_c"]
+    assert audit["deleted_option_ids"] == []
+
+
+def test_edit_options_delete_cascades_to_row_clears() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_ss": "opt_a"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_ss": "opt_a"})
+    body = _with_room(body, room_id="rm_3", number="103", custom={"cf_ss": "opt_b"})
+
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="cf_ss",
+        next_options=[
+            SingleSelectOption(id="opt_b", label="B", color="#222222", order=1.0),
+        ],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert audit["cleared_row_count"] == 2
+    assert audit["deleted_option_ids"] == ["opt_a"]
+    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": None}
+    assert next_body.tables.rooms.rows[1].custom == {"cf_ss": None}
+    assert next_body.tables.rooms.rows[2].custom == {"cf_ss": "opt_b"}
+
+
+def test_edit_options_rejects_duplicate_labels() -> None:
+    body = _seed_custom_single_select(_empty_body())
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="cf_ss",
+        next_options=[
+            SingleSelectOption(id="opt_a", label="Same", color="#111111", order=1.0),
+            SingleSelectOption(id="opt_b", label="same", color="#222222", order=2.0),
+        ],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_option_list_invalid"
+
+
+def test_edit_options_rejects_field_with_wrong_type() -> None:
+    body = _with_field(_empty_body(), _make_custom_field("cf_text", display_name="Text"))
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="cf_text",
+        next_options=[SingleSelectOption(id="opt_a", label="A", color="#111111", order=1.0)],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_invalid_field_id"
+
+
+def test_edit_options_works_for_core_single_select_rename_no_row_impact() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_room(body, custom={})
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="floor_level",
+        next_options=[
+            SingleSelectOption(id="opt_L1", label="Level 1 Renamed", color="#abcdef", order=1.0),
+        ],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert audit["cleared_row_count"] == 0
+    assert next_body.tables.rooms.rows[0].floor_level == "opt_L1"
+
+
+def test_edit_options_rejects_required_core_select_delete_without_replacement() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_room(body, custom={})
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="floor_level",
+        next_options=[],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_option_list_invalid"
+    details = cast(dict[str, object], detail["details"])
+    assert details["reason"] == "required_core_select_delete_without_replacement"
+
+
+# ---------------------------------------------------------------------------
+# changeType (P3.3)
+# ---------------------------------------------------------------------------
+
+
+def _make_change_type_target(
+    field_id: str,
+    from_field: CustomFieldDef,
+    to_type: CustomFieldType,
+) -> CustomFieldDef:
+    """Build a ChangeTypeMutation `after` preserving identity + metadata."""
+    return CustomFieldDef(
+        id=field_id,
+        field_key=from_field.field_key,
+        display_name=from_field.display_name,
+        field_type=to_type,
+        config={},
+        description=from_field.description,
+        created_at=from_field.created_at,
+        created_by=from_field.created_by,
+    )
+
+
+def test_change_type_text_to_number_preflight_clean() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_v", display_name="Val", field_type=CustomFieldType.short_text))
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_v": "12.5"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_v": "0"})
+
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_v",
+        after=_make_change_type_target("cf_v", field, CustomFieldType.number),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert next_body.tables.rooms.custom_fields[0].field_type is CustomFieldType.number
+    assert next_body.tables.rooms.rows[0].custom["cf_v"] == 12.5
+    assert next_body.tables.rooms.rows[1].custom["cf_v"] == 0
+    assert audit["cleared_row_count"] == 0
+
+
+def test_change_type_text_to_number_requires_acknowledgement_on_failure() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_v", display_name="Val"))
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_v": "abc"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_v": "42"})
+
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_v",
+        after=_make_change_type_target("cf_v", field, CustomFieldType.number),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    assert excinfo.value.status_code == 422
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_coercion_preflight_required"
+    details = cast(dict[str, object], detail["details"])
+    assert details["incompatible_row_count"] == 1
+    assert details["total_row_count"] == 2
+    assert details["incompatible_rows"][0]["row_id"] == "rm_1"
+
+    ack = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_v",
+        after=_make_change_type_target("cf_v", field, CustomFieldType.number),
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, ack)
+    assert audit["cleared_row_count"] == 1
+    # rm_1 cleared, rm_2 coerced
+    custom_by_id = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert "cf_v" not in custom_by_id["rm_1"]
+    assert custom_by_id["rm_2"]["cf_v"] == 42
+
+
+def test_change_type_text_to_url_validates_url() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_u", display_name="URL field"))
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_u": "https://example.com"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_u": "not a url"})
+
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_u",
+        after=_make_change_type_target("cf_u", field, CustomFieldType.url),
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert audit["cleared_row_count"] == 1
+    custom = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert custom["rm_1"]["cf_u"] == "https://example.com"
+    assert "cf_u" not in custom["rm_2"]
+
+
+def test_change_type_text_to_single_select_auto_creates_options() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_s", display_name="Status"))
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_s": "Open"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_s": "open"})  # dup label
+    body = _with_room(body, room_id="rm_3", number="103", custom={"cf_s": "Closed"})
+
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_s",
+        after=_make_change_type_target("cf_s", field, CustomFieldType.single_select),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    new_options = next_body.single_select_options["rooms.cf_s"]
+    assert [opt.label for opt in new_options] == ["Open", "Closed"]
+    open_id = new_options[0].id
+    closed_id = new_options[1].id
+    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert rows["rm_1"]["cf_s"] == open_id
+    assert rows["rm_2"]["cf_s"] == open_id
+    assert rows["rm_3"]["cf_s"] == closed_id
+    assert audit["created_option_count"] == 2
+
+
+def test_change_type_single_select_to_text_substitutes_label() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_ss": "opt_a"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_ss": "opt_b"})
+
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=_make_change_type_target("cf_ss", field, CustomFieldType.short_text),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert rows["rm_1"]["cf_ss"] == "A"
+    assert rows["rm_2"]["cf_ss"] == "B"
+    assert "rooms.cf_ss" not in next_body.single_select_options
+    assert audit["cleared_row_count"] == 0
+
+
+def test_change_type_rejects_illegal_pair_number_to_url() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_n", display_name="N", field_type=CustomFieldType.number))
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_n",
+        after=_make_change_type_target("cf_n", field, CustomFieldType.url),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_illegal_type_conversion"
+
+
+def test_change_type_rejects_no_op_same_type() -> None:
+    body = _with_field(_empty_body(), _make_custom_field("cf_a", display_name="A"))
+    field = body.tables.rooms.custom_fields[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_a",
+        after=_make_change_type_target("cf_a", field, CustomFieldType.short_text),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_invalid_field_id"
+
+
+def test_change_type_rejects_metadata_rewrite() -> None:
+    body = _with_field(_empty_body(), _make_custom_field("cf_a", display_name="A"))
+    field = body.tables.rooms.custom_fields[0]
+    # Attempt to rewrite display_name during changeType.
+    after = CustomFieldDef(
+        id="cf_a",
+        field_key=field.field_key,
+        display_name="A renamed",
+        field_type=CustomFieldType.number,
+        config={},
+        description=field.description,
+        created_at=field.created_at,
+        created_by=field.created_by,
+    )
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_a",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_invalid_field_id"
+    details = cast(dict[str, object], detail["details"])
+    assert details["disallowed_attribute"] == "display_name"
+
+
+def test_duplicate_single_select_field_deep_copies_option_list() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(body)
+
+    duplicate_after = _make_custom_field(
+        "cf_dup",
+        display_name="Status copy",
+        field_type=CustomFieldType.single_select,
+    )
+    mutation = DuplicateFieldMutation(
+        kind="duplicateField",
+        table_key="rooms",
+        source_field_id="cf_ss",
+        after=duplicate_after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    src_options = next_body.single_select_options["rooms.cf_ss"]
+    dup_options = next_body.single_select_options["rooms.cf_dup"]
+    assert len(dup_options) == len(src_options)
+    assert [o.label for o in dup_options] == [o.label for o in src_options]
+    assert [o.color for o in dup_options] == [o.color for o in src_options]
+    # Fresh ids
+    assert {o.id for o in dup_options}.isdisjoint({o.id for o in src_options})
+    assert audit["duplicated_option_count"] == len(src_options)

@@ -4,7 +4,7 @@
 // added to one side must land on the other in lockstep.
 
 import type { CustomFieldDef } from "../hooks/useTableSchema";
-import type { CellWrite } from "../types";
+import type { FieldOption } from "../types";
 import { CUSTOM_FIELD_KEY_PREFIX, isCustomFieldKey } from "./customFieldAccessor";
 
 export type AddFieldMutation = {
@@ -12,6 +12,7 @@ export type AddFieldMutation = {
   tableKey: string;
   after: CustomFieldDef;
   insertAfterFieldId?: string;
+  initialOptions?: FieldOption[];
   expectedSchemaFingerprint: string;
 };
 
@@ -47,14 +48,24 @@ export type SetDescriptionMutation = {
   expectedSchemaFingerprint: string;
 };
 
-// Declared up front so the discriminator is closed; deferred
-// implementations land in later phases.
+// Cell clears are derived server-side, not supplied by the client.
 export type ChangeTypeMutation = {
   kind: "changeType";
   tableKey: string;
   fieldId: string;
   after: CustomFieldDef;
-  cellWrites: CellWrite[];
+  acknowledgeDestructive?: boolean;
+  expectedSchemaFingerprint: string;
+};
+
+// One mutation covers add / rename / reorder / recolor / delete on a
+// single_select field's option list.
+export type EditOptionsMutation = {
+  kind: "editOptions";
+  tableKey: string;
+  fieldId: string;
+  nextOptions: FieldOption[];
+  replacements?: Record<string, string>;
   expectedSchemaFingerprint: string;
 };
 
@@ -72,6 +83,7 @@ export type FieldSchemaMutation =
   | DeleteFieldMutation
   | DuplicateFieldMutation
   | SetDescriptionMutation
+  | EditOptionsMutation
   | ChangeTypeMutation
   | SetFormulaMutation;
 
@@ -124,6 +136,7 @@ export type BuildAddFieldArgs = {
   tableKey: string;
   newField: CustomFieldDef;
   insertAfterFieldId: string | null;
+  initialOptions?: FieldOption[];
   schemaFingerprint: string;
 };
 
@@ -139,7 +152,38 @@ export function buildAddFieldMutation(args: BuildAddFieldArgs): AddFieldMutation
     assertCustomFieldId(args.insertAfterFieldId, "addField.insertAfterFieldId");
     op.insertAfterFieldId = args.insertAfterFieldId;
   }
+  if (args.initialOptions !== undefined) {
+    if (args.newField.field_type !== "single_select") {
+      throw new SchemaMutationBuildError(
+        "initialOptions is only valid for single_select fields.",
+      );
+    }
+    validateOptionList(args.initialOptions);
+    op.initialOptions = args.initialOptions.map((option) => ({ ...option }));
+  }
   return op;
+}
+
+function validateOptionList(options: ReadonlyArray<FieldOption>): void {
+  const ids = new Set<string>();
+  const labels = new Set<string>();
+  for (const option of options) {
+    if (ids.has(option.id)) {
+      throw new SchemaMutationBuildError(`Duplicate option id: ${option.id}`);
+    }
+    ids.add(option.id);
+    const normalized = option.label.trim().toLowerCase();
+    if (!normalized) {
+      throw new SchemaMutationBuildError("Option label cannot be empty.");
+    }
+    if (labels.has(normalized)) {
+      throw new SchemaMutationBuildError(`Duplicate option label: ${option.label}`);
+    }
+    labels.add(normalized);
+    if (!/^#[0-9A-Fa-f]{6}$/.test(option.color)) {
+      throw new SchemaMutationBuildError(`Option color must be a 6-digit hex: ${option.color}`);
+    }
+  }
 }
 
 export type BuildRenameFieldArgs = {
@@ -213,6 +257,57 @@ export function buildSetDescriptionMutation(args: BuildSetDescriptionArgs): SetD
     tableKey: args.tableKey,
     fieldId: args.fieldId,
     description: clampDescription(args.description),
+    expectedSchemaFingerprint: args.schemaFingerprint,
+  };
+}
+
+export type BuildEditOptionsArgs = {
+  tableKey: string;
+  // `fieldId` is the cf_* id for custom single-selects, or the core key
+  // (e.g. `floor_level`) for core single-selects — both share the same
+  // wire shape and apply path on the backend.
+  fieldId: string;
+  nextOptions: FieldOption[];
+  replacements?: Record<string, string>;
+  schemaFingerprint: string;
+};
+
+export function buildEditOptionsMutation(args: BuildEditOptionsArgs): EditOptionsMutation {
+  validateOptionList(args.nextOptions);
+  const op: EditOptionsMutation = {
+    kind: "editOptions",
+    tableKey: args.tableKey,
+    fieldId: args.fieldId,
+    nextOptions: args.nextOptions.map((option) => ({ ...option })),
+    expectedSchemaFingerprint: args.schemaFingerprint,
+  };
+  if (args.replacements && Object.keys(args.replacements).length > 0) {
+    op.replacements = { ...args.replacements };
+  }
+  return op;
+}
+
+export type BuildChangeTypeArgs = {
+  tableKey: string;
+  fieldId: string;
+  after: CustomFieldDef;
+  acknowledgeDestructive?: boolean;
+  schemaFingerprint: string;
+};
+
+export function buildChangeTypeMutation(args: BuildChangeTypeArgs): ChangeTypeMutation {
+  assertCustomFieldId(args.fieldId, "changeType.fieldId");
+  if (args.after.id !== args.fieldId) {
+    throw new SchemaMutationBuildError(
+      "changeType.after.id must equal fieldId (identity is preserved).",
+    );
+  }
+  return {
+    kind: "changeType",
+    tableKey: args.tableKey,
+    fieldId: args.fieldId,
+    after: args.after,
+    acknowledgeDestructive: args.acknowledgeDestructive ?? false,
     expectedSchemaFingerprint: args.schemaFingerprint,
   };
 }

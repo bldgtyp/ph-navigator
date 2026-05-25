@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { generatedId } from "../../../lib/ids";
 import { sha256Hex } from "../../../lib/sha256";
-import type { FieldDef, FieldType } from "../types";
+import type { FieldDef, FieldOption, FieldType } from "../types";
 
 // Closed v1 set, mirrored from backend `CustomFieldType`.
 export type CustomFieldType =
@@ -49,7 +49,13 @@ export type UseTableSchemaArgs = {
   // full table capability.
   fingerprintCoreFieldKeys?: readonly string[];
   customFields: CustomFieldDef[] | null | undefined;
+  // Namespaced single_select option lists keyed by their
+  // `<table_path>.<field_id>` namespace key (e.g. `rooms.cf_abc123`).
+  // When supplied, attached to custom single_select FieldDef entries.
+  singleSelectOptions?: Record<string, FieldOption[]> | null;
 };
+
+const EMPTY_OPTIONS: readonly FieldOption[] = [];
 
 const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
   short_text: "text",
@@ -61,12 +67,23 @@ const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
 };
 
 export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
-  const { coreFieldDefs, customFields, fingerprintCoreFieldKeys } = args;
+  const { coreFieldDefs, customFields, fingerprintCoreFieldKeys, singleSelectOptions, tableKey } =
+    args;
   const customList = useMemo(() => customFields ?? [], [customFields]);
 
+  const optionsByFieldId = useMemo<Record<string, readonly FieldOption[]>>(() => {
+    if (!singleSelectOptions) return {};
+    const prefix = `${tableKey}.`;
+    const out: Record<string, readonly FieldOption[]> = {};
+    for (const [key, value] of Object.entries(singleSelectOptions)) {
+      if (key.startsWith(prefix)) out[key.slice(prefix.length)] = value;
+    }
+    return out;
+  }, [singleSelectOptions, tableKey]);
+
   const synthesizedFieldDefs = useMemo<FieldDef[]>(
-    () => customList.map(customFieldToFieldDef),
-    [customList],
+    () => customList.map((custom) => customFieldToFieldDef(custom, optionsByFieldId)),
+    [customList, optionsByFieldId],
   );
 
   const fieldDefs = useMemo<FieldDef[]>(() => {
@@ -103,15 +120,22 @@ export function mintCustomFieldId(): string {
   return generatedId("cf");
 }
 
-function customFieldToFieldDef(custom: CustomFieldDef): FieldDef {
+function customFieldToFieldDef(
+  custom: CustomFieldDef,
+  optionsByFieldId: Record<string, readonly FieldOption[]>,
+): FieldDef {
   // `read_only_schema` is intentionally absent for custom fields — the
   // header context menu reads its absence to enable schema-mutation items.
-  return {
+  const fieldDef: FieldDef = {
     field_key: custom.id,
     field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[custom.field_type],
     display_name: custom.display_name,
     description: custom.description ?? undefined,
   };
+  if (custom.field_type === "single_select") {
+    fieldDef.options = [...(optionsByFieldId[custom.id] ?? EMPTY_OPTIONS)];
+  }
+  return fieldDef;
 }
 
 // Must agree to the byte with backend `compute_table_schema_fingerprint`.

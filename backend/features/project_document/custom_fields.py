@@ -13,8 +13,12 @@ from __future__ import annotations
 import secrets
 from datetime import datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from features.project_document.document import SingleSelectOption
 
 CUSTOM_FIELD_ID_PATTERN = r"^cf_[A-Za-z0-9_-]+$"
 CUSTOM_FIELD_DISPLAY_NAME_MAX = 120
@@ -82,19 +86,34 @@ class CustomFieldDef(BaseModel):
     created_by: str | None = None
 
 
-def coerce_custom_value(value: object, field_type: CustomFieldType) -> CustomValue:
+SHORT_TEXT_MAX_LENGTH = 4000
+
+
+def coerce_custom_value(
+    value: object,
+    field_type: CustomFieldType,
+    *,
+    option_list: "list[SingleSelectOption] | None" = None,
+) -> CustomValue:
     """Coerce / validate a row's `custom[cf_id]` value against its declared type.
 
+    `option_list` is required for strict single_select validation; when
+    omitted, Phase 1/2 permissive behaviour is preserved (any string id
+    is accepted). Phase 3 schema-mutation and document-reference passes
+    supply the resolved option list and gain the stricter check.
+
     Raises ValueError on a hard mismatch — caller surfaces this through
-    the `invalid_project_document` error code.
+    the `invalid_project_document` error code at the validator boundary;
+    Phase 3 schema-mutation services translate it into the more specific
+    `custom_field_option_id_unknown` envelope.
     """
     if value is None:
         return None
     if field_type is CustomFieldType.short_text:
         if not isinstance(value, str):
             raise ValueError(f"short_text value must be a string, got {type(value).__name__}")
-        if len(value) > 4000:
-            raise ValueError("short_text value exceeds 4000 characters")
+        if len(value) > SHORT_TEXT_MAX_LENGTH:
+            raise ValueError(f"short_text value exceeds {SHORT_TEXT_MAX_LENGTH} characters")
         return value
     if field_type is CustomFieldType.long_text:
         if not isinstance(value, str):
@@ -109,8 +128,12 @@ def coerce_custom_value(value: object, field_type: CustomFieldType) -> CustomVal
             raise ValueError(f"url value must be a string, got {type(value).__name__}")
         return value
     if field_type is CustomFieldType.single_select:
+        if value == "":
+            return None
         if not isinstance(value, str):
             raise ValueError(f"single_select value must be an option id string, got {type(value).__name__}")
+        if option_list is not None and not any(option.id == value for option in option_list):
+            raise ValueError(f"single_select value {value!r} is not a known option id")
         return value
     if field_type is CustomFieldType.formula:
         raise ValueError("formula custom fields are computed; stored row values are not permitted")

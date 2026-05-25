@@ -20,6 +20,11 @@ from features.project_document.document import (
     SingleSelectOption,
 )
 from features.project_document.models import ProjectDocumentSource
+from features.project_document.options import (
+    option_list_key,
+    read_option_list,
+    replace_option_list,
+)
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.project_document.tables.contracts import CustomFieldCapability, TableContract
 from features.project_document.validation import validate_document
@@ -82,7 +87,9 @@ class RoomsSliceResponse(BaseModel):
     draft_etag: str | None
     rooms: list[RoomRow]
     custom_fields: list[CustomFieldDef]
-    single_select_options: dict[RoomOptionKey, list[SingleSelectOption]]
+    # String-keyed so `rooms.<cf_id>` custom option lists ride alongside
+    # the two core option keys in one response envelope.
+    single_select_options: dict[str, list[SingleSelectOption]]
 
 
 def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -107,6 +114,16 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     return validate_document(next_body.model_dump(mode="json"))
 
 
+def _rooms_single_select_options(body: ProjectDocumentV1) -> dict[str, list[SingleSelectOption]]:
+    """Return all `rooms.*` option lists — core keys plus custom `rooms.cf_*`."""
+    custom_keys = {f"rooms.{field.id}" for field in body.tables.rooms.custom_fields}
+    out: dict[str, list[SingleSelectOption]] = {key: [] for key in ROOM_OPTION_KEYS}
+    for key, value in body.single_select_options.items():
+        if key in ROOM_OPTION_KEYS or key in custom_keys:
+            out[key] = list(value)
+    return out
+
+
 def rooms_response(
     project_id: UUID,
     version_id: UUID,
@@ -123,7 +140,7 @@ def rooms_response(
         draft_etag=draft_etag,
         rooms=body.tables.rooms.rows,
         custom_fields=body.tables.rooms.custom_fields,
-        single_select_options={key: body.single_select_options.get(key, []) for key in ROOM_OPTION_KEYS},
+        single_select_options=_rooms_single_select_options(body),
     )
 
 
@@ -142,11 +159,11 @@ def extract_rooms_envelope(body: ProjectDocumentV1) -> dict[str, object]:
 
 
 def extract_rooms_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
+    options = _rooms_single_select_options(body)
     return {
         "rooms": extract_rooms_envelope(body),
         "single_select_options": {
-            key: [option.model_dump(mode="json") for option in body.single_select_options.get(key, [])]
-            for key in ROOM_OPTION_KEYS
+            key: [option.model_dump(mode="json") for option in values] for key, values in options.items()
         },
     }
 
@@ -187,6 +204,57 @@ def _compute_rooms_schema_fingerprint(body: ProjectDocumentV1) -> str:
     )
 
 
+_ROOMS_TABLE_PATH: tuple[str, ...] = (ROOMS_TABLE_NAME,)
+
+
+# Maps core single-select field id (python attribute on RoomRow) to the
+# namespaced option-list key. EditOptionsMutation dispatches by
+# `field_id` for both core and custom single-selects.
+ROOMS_CORE_OPTION_KEY_BY_FIELD_ID: dict[str, str] = {
+    "floor_level": ROOM_FLOOR_LEVEL_OPTION_KEY,
+    "building_zone": ROOM_BUILDING_ZONE_OPTION_KEY,
+}
+
+# Required core single-selects reject deletes-to-clear; the apply path
+# must require an explicit replacement option id.
+ROOMS_REQUIRED_CORE_SELECT_FIELDS: frozenset[str] = frozenset({"floor_level"})
+
+
+def _read_rooms_field_option_list(body: ProjectDocumentV1, field_id: str) -> list[SingleSelectOption]:
+    """Read a custom single-select field's option list under the Rooms namespace."""
+    return read_option_list(body, option_list_key(_ROOMS_TABLE_PATH, field_id))
+
+
+def _replace_rooms_field_option_list(
+    body: ProjectDocumentV1,
+    field_id: str,
+    options: list[SingleSelectOption],
+) -> ProjectDocumentV1:
+    return replace_option_list(body, option_list_key(_ROOMS_TABLE_PATH, field_id), options)
+
+
+def _read_rooms_core_option_value(row: object, field_id: str) -> str | None:
+    if not isinstance(row, RoomRow):
+        raise TypeError(f"expected RoomRow, got {type(row).__name__}")
+    if field_id == "floor_level":
+        return row.floor_level
+    if field_id == "building_zone":
+        return row.building_zone
+    raise ValueError(f"unknown core single-select field: {field_id}")
+
+
+def _set_rooms_core_option_value(row: object, field_id: str, value: str | None) -> object:
+    if not isinstance(row, RoomRow):
+        raise TypeError(f"expected RoomRow, got {type(row).__name__}")
+    if field_id == "floor_level":
+        if value is None:
+            raise ValueError("rooms.floor_level cannot be set to None")
+        return row.model_copy(update={"floor_level": value})
+    if field_id == "building_zone":
+        return row.model_copy(update={"building_zone": value})
+    raise ValueError(f"unknown core single-select field: {field_id}")
+
+
 def _apply_rooms_schema_mutation(
     body: ProjectDocumentV1,
     mutation: FieldSchemaMutation,
@@ -221,6 +289,7 @@ rooms_custom_fields = CustomFieldCapability(
     core_field_keys=ROOMS_CORE_FIELD_KEYS,
     core_display_names=ROOMS_CORE_DISPLAY_NAMES,
     option_list_namespace_prefix="rooms",
+    table_path=_ROOMS_TABLE_PATH,
     read_custom_fields=_read_rooms_custom_fields,
     replace_custom_fields=_replace_rooms_custom_fields,
     read_row_custom=_read_room_row_custom,
@@ -228,6 +297,12 @@ rooms_custom_fields = CustomFieldCapability(
     compute_schema_fingerprint=_compute_rooms_schema_fingerprint,
     apply_schema_mutation=_apply_rooms_schema_mutation,
     validate_schema_mutation=_validate_rooms_schema_mutation,
+    read_field_option_list=_read_rooms_field_option_list,
+    replace_field_option_list=_replace_rooms_field_option_list,
+    core_option_key_by_field_id=ROOMS_CORE_OPTION_KEY_BY_FIELD_ID,
+    required_core_select_fields=ROOMS_REQUIRED_CORE_SELECT_FIELDS,
+    read_core_option_value=_read_rooms_core_option_value,
+    set_core_option_value=_set_rooms_core_option_value,
 )
 
 

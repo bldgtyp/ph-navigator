@@ -28,6 +28,7 @@ export type HeaderContextMenuProps = {
   onDeleteField?: () => void;
   onDuplicateField?: () => void;
   onEditDescription?: () => void;
+  onChangeFieldType?: () => void;
   onInsertFieldLeft?: () => void;
   onInsertFieldRight?: () => void;
   onSortAsc: () => void;
@@ -54,6 +55,7 @@ export function HeaderContextMenu({
   onDeleteField,
   onDuplicateField,
   onEditDescription,
+  onChangeFieldType,
   onInsertFieldLeft,
   onInsertFieldRight,
   onSortAsc,
@@ -86,6 +88,13 @@ export function HeaderContextMenu({
       key: "edit-description",
       label: "Edit description",
       onSelect: onEditDescription,
+    });
+  }
+  if (isCustomField && onChangeFieldType) {
+    items.push({
+      key: "change-type",
+      label: "Change type",
+      onSelect: onChangeFieldType,
     });
   }
   items.push(

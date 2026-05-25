@@ -172,7 +172,7 @@ describe("AddFieldPopover", () => {
     );
   });
 
-  test("Phase-3 / 4 type pills render disabled with planned-phase tooltip", () => {
+  test("Phase 3 enables single_select; Formula remains disabled", () => {
     render(<Harness />);
     const single = within(dialog()).getByRole("radio", {
       name: "Single select",
@@ -180,9 +180,8 @@ describe("AddFieldPopover", () => {
     const formula = within(dialog()).getByRole("radio", {
       name: "Formula",
     }) as HTMLButtonElement;
-    expect(single.disabled).toBe(true);
+    expect(single.disabled).toBe(false);
     expect(formula.disabled).toBe(true);
-    expect(single.title).toMatch(/Phase 3/);
     expect(formula.title).toMatch(/Phase 4/);
   });
 

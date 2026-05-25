@@ -44,11 +44,19 @@ export type RoomsSlice = {
   // Plan-14 P1.1: parallel to `rooms`. Always present (defaults to [])
   // so callers don't branch.
   custom_fields: CustomFieldDef[];
-  single_select_options: Record<RoomOptionKey, SingleSelectOption[]>;
+  // String-keyed so custom single_select fields' `rooms.<cf_id>` lists
+  // ride alongside the two core keys. The intersection preserves the
+  // type-level guarantee that the two core keys are always present (the
+  // backend always emits them).
+  single_select_options: RoomsOptionMap;
+};
+
+export type RoomsOptionMap = Record<RoomOptionKey, SingleSelectOption[]> & {
+  [key: string]: SingleSelectOption[];
 };
 
 export type RoomsReplacePayload = {
   rooms: RoomRow[];
   custom_fields?: CustomFieldDef[];
-  single_select_options: Record<RoomOptionKey, SingleSelectOption[]>;
+  single_select_options: RoomsOptionMap;
 };
