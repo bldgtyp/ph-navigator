@@ -692,7 +692,7 @@ Each phase is one PR that leaves `make typecheck`, `make test`,
   separate component in 5a — true unification with the modal is
   still Phase 5c per §1's out-of-scope note.
 
-- [ ] **P5a.4 — Number precision section.** Port from `AddFieldPopover`
+- [x] **P5a.4 — Number precision section.** Port from `AddFieldPopover`
   inline; trivially small.
 
 - [ ] **P5a.5 — Formula section.** Port `FormulaEditorPopover` into

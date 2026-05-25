@@ -49,6 +49,10 @@ export type FieldDef = {
   // expose. Defaults to "text" when omitted (preserves Phase 0–3
   // behaviour for existing computed columns).
   computed_type?: "text" | "number";
+  // Custom number fields only. Mirrored from
+  // `CustomFieldDef.config.precision` so the field-config modal can edit
+  // number display precision without reaching into the document model.
+  numberPrecision?: number;
   // When false, single_select pills render with a neutral background
   // even when each option still carries a color. Default true.
   colorCodeOptions?: boolean;
@@ -351,6 +355,8 @@ export type EditCustomFieldBundleRequest = {
   // Stored in CustomFieldDef.config so custom select columns keep the
   // same color-code toggle behavior as the legacy editor.
   colorCodeOptions?: boolean;
+  // Set for custom number fields. Stored in CustomFieldDef.config.
+  numberPrecision?: number;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

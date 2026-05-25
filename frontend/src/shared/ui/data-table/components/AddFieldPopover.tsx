@@ -12,6 +12,7 @@ import type { CustomFieldType } from "../hooks/useTableSchema";
 import { createFieldOption, OPTION_COLOR_PALETTE } from "../lib";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { normalizeDisplayName } from "../lib/fieldDisplayNames";
+import { DEFAULT_NUMBER_PRECISION } from "../lib/numberPrecision";
 import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 import {
@@ -23,6 +24,7 @@ import {
   type LocalFormulaState,
 } from "../lib/formula";
 import { FormulaFieldPalette } from "./FormulaFieldPalette";
+import { FieldConfigSectionNumber } from "./FieldConfigSectionNumber";
 import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";
 import type { FieldOption } from "../types";
 
@@ -39,10 +41,6 @@ const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint:
   },
 ];
 const DISABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; planned: string }> = [];
-
-const MIN_PRECISION = 0;
-const MAX_PRECISION = 10;
-const DEFAULT_PRECISION = 2;
 
 export type AddCustomFieldRequest = {
   displayName: string;
@@ -89,7 +87,7 @@ const INITIAL_STATE: FormState = {
   fieldType: "short_text",
   descriptionEnabled: false,
   description: "",
-  numberPrecision: DEFAULT_PRECISION,
+  numberPrecision: DEFAULT_NUMBER_PRECISION,
   options: [],
   defaultOptionId: null,
   formulaSource: "",
@@ -110,7 +108,6 @@ export function AddFieldPopover({
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const nameInputId = useId();
   const descriptionId = useId();
-  const precisionId = useId();
 
   // Re-seed only on open transitions so a parent refetch mid-edit can't
   // wipe the user's in-progress draft.
@@ -340,27 +337,13 @@ export function AddFieldPopover({
             </fieldset>
 
             {state.fieldType === "number" ? (
-              <div className="data-table-add-field-config">
-                <label className="data-table-add-field-label" htmlFor={precisionId}>
-                  Decimal precision
-                </label>
-                <input
-                  id={precisionId}
-                  type="number"
-                  className="data-table-add-field-input"
-                  min={MIN_PRECISION}
-                  max={MAX_PRECISION}
-                  step={1}
-                  value={state.numberPrecision}
-                  onChange={(event) => {
-                    const raw = Number.parseInt(event.target.value, 10);
-                    const next = Number.isFinite(raw)
-                      ? Math.min(Math.max(raw, MIN_PRECISION), MAX_PRECISION)
-                      : DEFAULT_PRECISION;
-                    setState((prev) => ({ ...prev, numberPrecision: next }));
-                  }}
-                />
-              </div>
+              <FieldConfigSectionNumber
+                className="data-table-add-field-config"
+                precision={state.numberPrecision}
+                onPrecisionChange={(numberPrecision) =>
+                  setState((prev) => ({ ...prev, numberPrecision }))
+                }
+              />
             ) : null}
 
             {state.fieldType === "formula" ? (
