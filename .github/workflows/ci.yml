@@ -11,18 +11,18 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: ph_navigator_v2
+          POSTGRES_DB: ph_navigator_v2_test
           POSTGRES_USER: phn
           POSTGRES_PASSWORD: phn_local_only
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U phn"
+          --health-cmd "pg_isready -U phn -d ph_navigator_v2_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2
+      DATABASE_URL: postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test
     defaults:
       run:
         working-directory: backend
