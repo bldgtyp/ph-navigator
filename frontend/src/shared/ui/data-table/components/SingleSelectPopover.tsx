@@ -48,13 +48,17 @@ export function SingleSelectPopover({
 
   // Keep the highlight valid as the filter narrows: if the current
   // target is no longer in the cycle, snap to the first available.
+  // Guard against repeated firing when the parent recomputes `options`
+  // identity on every render (regression: a fresh [] anchor would loop
+  // setState until React threw "Maximum update depth exceeded").
   useEffect(() => {
     if (cycleTargets.length === 0) return;
     const currentValid =
       highlightedOptionId === null ? showCreate : cycleTargets.includes(highlightedOptionId);
-    if (!currentValid) {
-      onHighlight(cycleTargets[0] ?? null);
-    }
+    if (currentValid) return;
+    const next = cycleTargets[0] ?? null;
+    if (next === highlightedOptionId) return;
+    onHighlight(next);
   }, [cycleTargets, highlightedOptionId, onHighlight, showCreate]);
 
   const moveHighlight = (direction: 1 | -1) => {

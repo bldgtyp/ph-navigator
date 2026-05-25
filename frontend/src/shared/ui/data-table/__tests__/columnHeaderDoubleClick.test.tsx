@@ -97,22 +97,21 @@ function renderCustomFieldTable(overrides: Partial<DataTableProps<CustomRow>> = 
 }
 
 describe("DataTable column header double-click trigger (plan 21)", () => {
-  test("editable custom headers expose data-field-editable + chevron", () => {
+  test("editable custom headers expose data-field-editable without legacy chevron", () => {
     renderCustomFieldTable({ onEditCustomFieldBundle: vi.fn().mockResolvedValue(undefined) });
     const notes = getColumnHeader("Notes");
     expect(notes).toHaveAttribute("data-field-editable", "true");
-    // The chevron lives inside the header row as an aria-hidden span.
-    expect(notes.querySelector(".data-table-header-edit-chevron")).not.toBeNull();
+    expect(notes.querySelector(".data-table-header-edit-chevron")).toBeNull();
   });
 
-  test("core headers do not expose data-field-editable or chevron", () => {
+  test("core headers do not expose data-field-editable or legacy chevron", () => {
     renderCustomFieldTable({ onEditCustomFieldBundle: vi.fn().mockResolvedValue(undefined) });
     const header = getColumnHeader("Number");
     expect(header).not.toHaveAttribute("data-field-editable");
     expect(header.querySelector(".data-table-header-edit-chevron")).toBeNull();
   });
 
-  test("readOnly removes the chevron and the data-field-editable attribute", () => {
+  test("readOnly removes the data-field-editable attribute and legacy chevron", () => {
     renderCustomFieldTable({
       readOnly: true,
       onEditCustomFieldBundle: vi.fn().mockResolvedValue(undefined),
@@ -122,7 +121,7 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     expect(notes.querySelector(".data-table-header-edit-chevron")).toBeNull();
   });
 
-  test("missing onWrite removes the chevron and the data-field-editable attribute", () => {
+  test("missing onWrite removes the data-field-editable attribute and legacy chevron", () => {
     renderCustomFieldTable({
       onWrite: undefined,
       onEditCustomFieldBundle: vi.fn().mockResolvedValue(undefined),
@@ -156,7 +155,7 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     // First click selects the column.
     fireEvent.mouseDown(notes, { button: 0, detail: 1 });
     // Second mousedown of the dbl-click sequence must short-circuit
-    // before the column-select extend logic runs. The chevron-bearing
+    // before the column-select extend logic runs. The editable custom
     // column is selected; subsequent ranges (held shift) would extend
     // — but a detail===2 mousedown should not.
     fireEvent.mouseDown(notes, { button: 0, detail: 2, shiftKey: true });
