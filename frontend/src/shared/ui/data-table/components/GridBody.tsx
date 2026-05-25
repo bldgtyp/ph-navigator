@@ -7,8 +7,16 @@ import type {
   CellCoord,
   DataTableColumnDef,
   FieldDef,
+  FieldOption,
   FillRect,
 } from "../types";
+
+// Stable empty-options reference. Using `[]` inline forces a fresh array
+// identity each render, which would cascade through SingleSelectPopover's
+// memoized cycleTargets and re-fire its highlight effect every commit
+// (— "Maximum update depth exceeded" after a text→single_select change
+// when fieldDef.options is briefly missing).
+const EMPTY_OPTIONS: FieldOption[] = [];
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { AddFieldTailCell } from "./AddFieldTailCell";
@@ -315,7 +323,7 @@ function renderCellContent(args: {
   if (editor.kind === "single_select") {
     return (
       <SingleSelectPopover
-        options={fieldDef?.options ?? []}
+        options={fieldDef?.options ?? EMPTY_OPTIONS}
         searchText={editor.searchText}
         highlightedOptionId={editor.highlightedOptionId}
         onSearchTextChange={edit.draft}

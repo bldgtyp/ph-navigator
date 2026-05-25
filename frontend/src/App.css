@@ -2336,24 +2336,10 @@ button:disabled {
   line-height: 1.2;
 }
 
-/* Phase 5 §4.2: editable single_select headers reveal a chevron on
-   hover and switch the cursor to a pointer. The chevron stays
-   visible while the field-editor popover is open so the affordance
-   doesn't disappear when the cursor moves off the header into the
-   popover content. */
+/* Editable custom headers keep pointer cursor because double-click and
+   Enter open field config. Sorting lives only in the toolbar Sort popover. */
 .data-table-th[data-field-editable="true"] {
   cursor: pointer;
-}
-.data-table-header-edit-chevron {
-  opacity: 0;
-  font-size: 10px;
-  color: var(--muted, #6b7280);
-  transition: opacity 0.1s ease-out;
-  margin-left: 4px;
-}
-.data-table-th[data-field-editable="true"]:hover .data-table-header-edit-chevron,
-.data-table-th[data-field-editor-open="true"] .data-table-header-edit-chevron {
-  opacity: 1;
 }
 
 /* Locked-schema indicator, description tooltip, and header context-
@@ -3913,10 +3899,10 @@ td.data-table-cell-editing {
   outline: none;
 }
 
-/* Plan 06 follow-up — picker chevron mirrors
-   `.data-table-header-edit-chevron`. Always visible when an aggregate
-   is set (the picker is the only way to change it) and on cell hover
-   / popover-open so empty cells still advertise their affordance. */
+/* Plan 06 follow-up — the summary picker chevron is always visible
+   when an aggregate is set (the picker is the only way to change it)
+   and on cell hover / popover-open so empty cells still advertise
+   their affordance. */
 .data-table-summary-chevron {
   opacity: 0;
   font-size: 10px;

@@ -179,7 +179,7 @@ function DataTableHeaderCell<TRow>({
   const onInsertFieldRight = headerActions.onInsertFieldRight
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
-  // Any custom field's double-click or chevron opens the unified config
+  // Any custom field's double-click or Enter opens the unified config
   // modal. Core fields and viewer mode have no field-config entry point.
   const canEditCustomFieldConfig =
     isCustomField && !readOnly && hasWriteHandler && !!headerActions.onEditCustomFieldConfig;
@@ -248,11 +248,6 @@ function DataTableHeaderCell<TRow>({
         <span className="data-table-header-label">
           {flexRender(header.column.columnDef.header, header.getContext())}
         </span>
-        {canEditCustomFieldConfig ? (
-          <span aria-hidden className="data-table-header-edit-chevron">
-            ▾
-          </span>
-        ) : null}
         {description && fieldDef ? (
           <CustomFieldDescriptionTooltip
             description={description}
