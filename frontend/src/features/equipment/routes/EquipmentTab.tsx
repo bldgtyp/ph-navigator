@@ -6,8 +6,12 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import {
   buildAddFieldMutation,
   buildDeleteFieldMutation,
+  buildDuplicateFieldMutation,
+  buildRenameFieldMutation,
+  buildSetDescriptionMutation,
   emptyViewState,
   isCustomFieldKey,
+  uniqueCopyDisplayName,
   useTableSchema,
 } from "../../../shared/ui/data-table";
 import { useProjectTableViewState } from "../../table_views/useProjectTableViewState";
@@ -46,7 +50,9 @@ import {
 import type {
   AddCustomFieldRequest,
   BuildEmptyRow,
+  EditCustomFieldDescriptionRequest,
   FieldSchemaMutation,
+  RenameCustomFieldRequest,
   WriteOp,
 } from "../../../shared/ui/data-table";
 import {
@@ -352,6 +358,66 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     await commitSchemaMutation(mutation);
   };
 
+  const handleRenameCustomField = async (request: RenameCustomFieldRequest) => {
+    if (!canEdit) return;
+    const mutation = buildRenameFieldMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      fieldId: request.fieldKey,
+      displayName: request.displayName,
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+  };
+
+  const handleDuplicateCustomField = async (fieldKey: string): Promise<{ newFieldKey: string }> => {
+    if (!canEdit) {
+      throw new Error("Cannot duplicate a field while editing is disabled.");
+    }
+    const source = roomsSlice.custom_fields.find((field) => field.id === fieldKey);
+    if (!source) {
+      throw new Error("That custom field no longer exists. Refresh to see the current fields.");
+    }
+    if (source.field_type === "single_select" || source.field_type === "formula") {
+      throw new Error("Duplicate is not available for that custom field type yet.");
+    }
+    const newFieldId = roomsTableSchema.mintCustomFieldId();
+    const mutation = buildDuplicateFieldMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      sourceFieldId: fieldKey,
+      newField: {
+        id: newFieldId,
+        field_key: null,
+        display_name: uniqueCopyDisplayName(
+          source.display_name,
+          roomsTableSchema.fieldDefs.map((fieldDef) => fieldDef.display_name),
+        ),
+        field_type: source.field_type,
+        config: deepCloneRecord(source.config),
+        description: source.description,
+        created_at: new Date().toISOString(),
+        created_by: null,
+      },
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+    const nextOrder = insertAfterColumnOrder(roomsTableView.columnOrder, fieldKey, newFieldId);
+    if (nextOrder) {
+      handleRoomsViewChange({ ...roomsTableView, columnOrder: nextOrder });
+    }
+    return { newFieldKey: newFieldId };
+  };
+
+  const handleSetCustomFieldDescription = async (request: EditCustomFieldDescriptionRequest) => {
+    if (!canEdit) return;
+    const mutation = buildSetDescriptionMutation({
+      tableKey: ROOMS_TABLE_NAME,
+      fieldId: request.fieldKey,
+      description: request.description,
+      schemaFingerprint: roomsTableSchema.schemaFingerprint,
+    });
+    await commitSchemaMutation(mutation);
+  };
+
   const handleAddCustomField = async (
     request: AddCustomFieldRequest,
   ): Promise<{ newFieldKey: string }> => {
@@ -384,22 +450,17 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       schemaFingerprint: roomsTableSchema.schemaFingerprint,
     });
     await commitSchemaMutation(mutation);
+    // On a fresh project `columnOrder` is `[]` and the grid renders in
+    // schema order — splicing into an empty list would write `[newId]`,
+    // which freezes the order. Only sync when the user has already
+    // reordered (list non-empty) AND the anchor is in that list.
     if (request.insertAfterFieldKey) {
-      // Place the new cf_* id right after the visual anchor in
-      // `view.columnOrder`. When the anchor isn't in the order list
-      // (typical on a fresh project — order is empty until the user
-      // reorders), append at the end and let the table render in
-      // schema order. Existing entries are de-duplicated so a
-      // re-add can't double-insert.
-      const filtered = roomsTableView.columnOrder.filter((id) => id !== newFieldId);
-      const anchorIndex = filtered.indexOf(request.insertAfterFieldKey);
-      const nextOrder =
-        anchorIndex >= 0
-          ? [...filtered.slice(0, anchorIndex + 1), newFieldId, ...filtered.slice(anchorIndex + 1)]
-          : filtered.length > 0
-            ? [...filtered, newFieldId]
-            : filtered;
-      if (nextOrder !== roomsTableView.columnOrder) {
+      const nextOrder = insertAfterColumnOrder(
+        roomsTableView.columnOrder,
+        request.insertAfterFieldKey,
+        newFieldId,
+      );
+      if (nextOrder) {
         handleRoomsViewChange({ ...roomsTableView, columnOrder: nextOrder });
       }
     }
@@ -513,6 +574,9 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           footerAction={addRoomAction}
           onDeleteCustomField={canEdit ? handleDeleteCustomField : undefined}
           onAddCustomField={canEdit ? handleAddCustomField : undefined}
+          onRenameCustomField={canEdit ? handleRenameCustomField : undefined}
+          onDuplicateCustomField={canEdit ? handleDuplicateCustomField : undefined}
+          onSetCustomFieldDescription={canEdit ? handleSetCustomFieldDescription : undefined}
         />
       )}
       {roomModal && isEditor ? (
@@ -586,4 +650,24 @@ function collapseRoomCellWritesToReplacements(
     }
   }
   return replacements;
+}
+
+function insertAfterColumnOrder(
+  columnOrder: ReadonlyArray<string>,
+  anchorFieldKey: string,
+  insertedFieldKey: string,
+): string[] | null {
+  if (columnOrder.length === 0) return null;
+  const filtered = columnOrder.filter((id) => id !== insertedFieldKey);
+  const anchorIndex = filtered.indexOf(anchorFieldKey);
+  if (anchorIndex < 0) return null;
+  return [
+    ...filtered.slice(0, anchorIndex + 1),
+    insertedFieldKey,
+    ...filtered.slice(anchorIndex + 1),
+  ];
+}
+
+function deepCloneRecord(record: Record<string, unknown>): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(record)) as Record<string, unknown>;
 }

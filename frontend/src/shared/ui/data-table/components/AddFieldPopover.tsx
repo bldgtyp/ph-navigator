@@ -8,12 +8,11 @@ import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { ApiRequestError } from "../../../api/client";
 import type { CustomFieldType } from "../hooks/useTableSchema";
+import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
+import { normalizeDisplayName } from "../lib/fieldDisplayNames";
+import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 
-// Phase-2 surface. `single_select` (Phase 3) and `formula` (Phase 4)
-// appear as disabled pills so the eventual full set is visible — see
-// US-CF-2. Order matches plan-15 §P2.6.
 const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint: string }> = [
   { kind: "short_text", label: "Short text", hint: "Single-line text." },
   { kind: "long_text", label: "Long text", hint: "Multi-line text." },
@@ -25,8 +24,6 @@ const DISABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; plan
   { kind: "formula", label: "Formula", planned: "Phase 4" },
 ];
 
-const MAX_DISPLAY_NAME = 120;
-const MAX_DESCRIPTION = 280;
 const MIN_PRECISION = 0;
 const MAX_PRECISION = 10;
 const DEFAULT_PRECISION = 2;
@@ -36,6 +33,10 @@ export type AddCustomFieldRequest = {
   fieldType: CustomFieldType;
   config: Record<string, unknown>;
   description: string | null;
+  // Visual anchor in `view.columnOrder` ("insert this new field right
+  // after this fieldKey"). Null means "append at end". Any fieldKey is
+  // accepted — the consumer decides what subset (custom-only) to
+  // forward to the backend's `insert_after_field_id`.
   insertAfterFieldKey: string | null;
 };
 
@@ -43,10 +44,6 @@ export type AddFieldPopoverProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   anchorElement: HTMLElement | null;
-  // Visual anchor in `view.columnOrder` ("insert this new field right
-  // after this fieldKey"). Null means "append at end". Any fieldKey is
-  // accepted — the consumer decides what subset (custom-only) to
-  // forward to the backend's `insert_after_field_id`.
   insertAfterFieldKey: string | null;
   // Used for case-insensitive trimmed duplicate-name preflight per
   // US-CF-12. Includes both core and custom display names.
@@ -106,7 +103,7 @@ export function AddFieldPopover({
 
   const trimmedName = state.displayName.trim();
   const normalizedNames = useMemo(
-    () => new Set(existingFieldNames.map((name) => name.trim().toLowerCase())),
+    () => new Set(existingFieldNames.map(normalizeDisplayName)),
     [existingFieldNames],
   );
   const localNameError = useMemo(() => {
@@ -114,13 +111,21 @@ export function AddFieldPopover({
     if (trimmedName.length > MAX_DISPLAY_NAME) {
       return `Field name must be ${MAX_DISPLAY_NAME} characters or fewer.`;
     }
-    if (normalizedNames.has(trimmedName.toLowerCase())) {
+    if (normalizedNames.has(normalizeDisplayName(trimmedName))) {
       return `A field named "${trimmedName}" already exists in this table.`;
     }
     return null;
   }, [trimmedName, normalizedNames]);
 
   const canSubmit = Boolean(trimmedName) && !localNameError && !pending;
+
+  const virtualAnchorRef = useMemo(
+    () =>
+      anchorElement
+        ? { current: { getBoundingClientRect: () => anchorElement.getBoundingClientRect() } }
+        : null,
+    [anchorElement],
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -141,14 +146,10 @@ export function AddFieldPopover({
       await dispatchAddField(request);
       onOpenChange(false);
     } catch (error) {
-      setSubmitError(messageForError(error));
+      setSubmitError(schemaMutationErrorMessage(error, "Could not add field."));
     } finally {
       setPending(false);
     }
-  };
-
-  const handleCancel = () => {
-    onOpenChange(false);
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -160,7 +161,7 @@ export function AddFieldPopover({
 
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
-      {anchorElement ? <AddFieldAnchor anchor={anchorElement} /> : null}
+      {virtualAnchorRef ? <Popover.Anchor virtualRef={virtualAnchorRef} /> : null}
       <Popover.Portal>
         <Popover.Content
           className="data-table-add-field-popover"
@@ -172,7 +173,10 @@ export function AddFieldPopover({
           onOpenAutoFocus={(event) => event.preventDefault()}
           onKeyDown={handleKeyDown}
         >
-          <form className="data-table-add-field-form" onSubmit={(event) => void handleSubmit(event)}>
+          <form
+            className="data-table-add-field-form"
+            onSubmit={(event) => void handleSubmit(event)}
+          >
             <label className="data-table-add-field-label" htmlFor={nameInputId}>
               Field name
             </label>
@@ -202,7 +206,11 @@ export function AddFieldPopover({
 
             <fieldset className="data-table-add-field-types">
               <legend className="data-table-add-field-label">Field type</legend>
-              <div className="data-table-add-field-type-row" role="radiogroup" aria-label="Field type">
+              <div
+                className="data-table-add-field-type-row"
+                role="radiogroup"
+                aria-label="Field type"
+              >
                 {ENABLED_TYPES.map((option) => (
                   <button
                     key={option.kind}
@@ -302,7 +310,7 @@ export function AddFieldPopover({
               <button
                 type="button"
                 className="secondary-button"
-                onClick={handleCancel}
+                onClick={() => onOpenChange(false)}
                 disabled={pending}
               >
                 Cancel
@@ -316,36 +324,4 @@ export function AddFieldPopover({
       </Popover.Portal>
     </Popover.Root>
   );
-}
-
-function AddFieldAnchor({ anchor }: { anchor: HTMLElement }) {
-  const virtualRef = useMemo(
-    () => ({ current: { getBoundingClientRect: () => anchor.getBoundingClientRect() } }),
-    [anchor],
-  );
-  return <Popover.Anchor virtualRef={virtualRef} />;
-}
-
-// `custom_field_*` codes from the P2.0 ADR. The inline error band names
-// the offending field when the server reports a dup, and tells the user
-// to refresh when the schema fingerprint went stale.
-function messageForError(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    const code = error.errorCode;
-    if (code === "custom_field_duplicate_name") {
-      const colliding = typeof error.details.field_name === "string" ? error.details.field_name : null;
-      return colliding
-        ? `A field named "${colliding}" already exists in this table.`
-        : "A field with that name already exists in this table.";
-    }
-    if (code === "custom_field_stale_schema_fingerprint") {
-      return "Someone else added or changed a field on this table. Refresh and try again.";
-    }
-    if (code === "version_locked") {
-      return "This version is locked. Save As to start an editable copy and try again.";
-    }
-    if (error.message) return error.message;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return "Could not add field.";
 }

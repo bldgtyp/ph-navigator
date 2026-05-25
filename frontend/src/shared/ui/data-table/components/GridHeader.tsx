@@ -1,7 +1,10 @@
 import { flexRender, type Header, type Table } from "@tanstack/react-table";
 import { Lock } from "lucide-react";
 import {
+  useEffect,
   useRef,
+  useState,
+  type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -14,6 +17,7 @@ import { ColumnResizeHandle } from "./ColumnResizeHandle";
 import { CustomFieldDescriptionTooltip } from "./CustomFieldDescriptionTooltip";
 import { HeaderContextMenu } from "./HeaderContextMenu";
 import { SortableHeaderCell } from "./SortableHeaderCell";
+import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 
 // Header onMouseDown owns column-select; double-click on editable
 // single_select headers opens the field editor via `onEditField`.
@@ -33,13 +37,15 @@ import { SortableHeaderCell } from "./SortableHeaderCell";
 export type HeaderActionHandlers = {
   onSortAsc: (fieldKey: string) => void;
   onSortDesc: (fieldKey: string) => void;
+  onFilterBy: (fieldKey: string) => void;
   onGroupBy: (fieldKey: string) => void;
   onHide: (fieldKey: string) => void;
+  onRenameCustomField?: (fieldKey: string) => void;
   onDeleteCustomField?: (fieldKey: string) => void;
-  // Phase 2.6 — the header context menu's `Insert field left/right`
-  // routes here. The DataTable anchors the popover to the supplied
-  // element (the clicked `<th>` cell, captured by the menu's own
-  // triggerRef).
+  onDuplicateCustomField?: (fieldKey: string) => void;
+  onEditCustomFieldDescription?: (fieldKey: string) => void;
+  // The anchor is the clicked `<th>` (captured by the menu's triggerRef)
+  // so the DataTable can mount the add-field popover against it.
   onInsertFieldLeft?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
   onInsertFieldRight?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
 };
@@ -54,6 +60,10 @@ export type GridHeaderProps<TRow> = {
   hasWriteHandler: boolean;
   onEditField?: (fieldKey: string) => void;
   openFieldKey?: string | null;
+  renamingFieldKey?: string | null;
+  existingFieldLabels?: ReadonlyArray<FieldDisplayName>;
+  onRenameCustomFieldSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
+  onRenameCustomFieldCancel?: () => void;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
   // Plan 08 §4.3 — Space/Arrow/Esc on a focused non-primary header
   // routes here. When omitted, header keyboard reorder is disabled.
@@ -61,9 +71,8 @@ export type GridHeaderProps<TRow> = {
   // When omitted, no resize handle is rendered on any column.
   columnResize?: GridColumnResize;
   headerActions: HeaderActionHandlers;
-  // Plan-15 P2.6 — when set, the tail `+` cell becomes a focusable
-  // button that opens the add-field popover; when omitted the cell
-  // renders as the original Phase-0 disabled preview.
+  // When set, the tail `+` cell becomes a focusable button that opens
+  // the add-field popover; otherwise it renders as a disabled preview.
   onAddFieldFromTail?: () => void;
   tailCellRef?: { current: HTMLTableCellElement | null };
 };
@@ -78,6 +87,10 @@ export function GridHeader<TRow>({
   hasWriteHandler,
   onEditField,
   openFieldKey,
+  renamingFieldKey,
+  existingFieldLabels = [],
+  onRenameCustomFieldSubmit,
+  onRenameCustomFieldCancel,
   headerCellRefByFieldKey,
   columnDragKeyboard,
   columnResize,
@@ -108,6 +121,10 @@ export function GridHeader<TRow>({
                 hasWriteHandler={hasWriteHandler}
                 onEditField={onEditField}
                 openFieldKey={openFieldKey ?? null}
+                renamingFieldKey={renamingFieldKey ?? null}
+                existingFieldLabels={existingFieldLabels}
+                onRenameCustomFieldSubmit={onRenameCustomFieldSubmit}
+                onRenameCustomFieldCancel={onRenameCustomFieldCancel}
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
                 columnDragKeyboard={columnDragKeyboard}
                 pickedUp={pickedUpColumnIndex === columnIndex}
@@ -135,6 +152,10 @@ type DataTableHeaderCellProps<TRow> = {
   hasWriteHandler: boolean;
   onEditField?: (fieldKey: string) => void;
   openFieldKey: string | null;
+  renamingFieldKey: string | null;
+  existingFieldLabels: ReadonlyArray<FieldDisplayName>;
+  onRenameCustomFieldSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
+  onRenameCustomFieldCancel?: () => void;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
   columnDragKeyboard?: GridColumnDragKeyboard;
   pickedUp: boolean;
@@ -154,6 +175,10 @@ function DataTableHeaderCell<TRow>({
   hasWriteHandler,
   onEditField,
   openFieldKey,
+  renamingFieldKey,
+  existingFieldLabels,
+  onRenameCustomFieldSubmit,
+  onRenameCustomFieldCancel,
   headerCellRefByFieldKey,
   columnDragKeyboard,
   pickedUp,
@@ -164,7 +189,11 @@ function DataTableHeaderCell<TRow>({
   const triggerRef = useRef<HTMLTableCellElement | null>(null);
   const isEditableSingleSelect =
     fieldDef?.field_type === "single_select" && !readOnly && hasWriteHandler && !!onEditField;
+  const isCustomField = fieldDef ? fieldDef.read_only_schema !== true : false;
+  const canRenameCustomField =
+    isCustomField && !readOnly && hasWriteHandler && !!onRenameCustomFieldSubmit;
   const isEditorOpen = openFieldKey !== null && openFieldKey === column.fieldKey;
+  const isRenaming = renamingFieldKey !== null && renamingFieldKey === column.fieldKey;
   const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
     .filter(Boolean)
     .join(" ");
@@ -174,10 +203,21 @@ function DataTableHeaderCell<TRow>({
       : undefined;
   const schemaLocked = fieldDef?.read_only_schema === true;
   const description = fieldDef?.description?.trim() ?? "";
-  const isCustomField = fieldDef ? fieldDef.read_only_schema !== true : false;
+  const onRenameCustomField =
+    canRenameCustomField && headerActions.onRenameCustomField
+      ? () => headerActions.onRenameCustomField?.(column.fieldKey)
+      : undefined;
   const onDeleteCustomField =
     isCustomField && headerActions.onDeleteCustomField
       ? () => headerActions.onDeleteCustomField?.(column.fieldKey)
+      : undefined;
+  const onDuplicateCustomField =
+    isCustomField && isPhase2DuplicableCustomField(fieldDef) && headerActions.onDuplicateCustomField
+      ? () => headerActions.onDuplicateCustomField?.(column.fieldKey)
+      : undefined;
+  const onEditCustomFieldDescription =
+    isCustomField && headerActions.onEditCustomFieldDescription
+      ? () => headerActions.onEditCustomFieldDescription?.(column.fieldKey)
       : undefined;
   const onInsertFieldLeft = headerActions.onInsertFieldLeft
     ? () => headerActions.onInsertFieldLeft?.(column.fieldKey, triggerRef.current)
@@ -207,13 +247,19 @@ function DataTableHeaderCell<TRow>({
         onColumnMouseDown ? (event) => onColumnMouseDown(event, column.fieldKey) : undefined
       }
       onDoubleClick={
-        isEditableSingleSelect
+        canRenameCustomField
           ? (event) => {
               event.preventDefault();
               event.stopPropagation();
-              onEditField?.(column.fieldKey);
+              onRenameCustomField?.();
             }
-          : undefined
+          : isEditableSingleSelect
+            ? (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onEditField?.(column.fieldKey);
+              }
+            : undefined
       }
     >
       <div className="data-table-header-row">
@@ -226,9 +272,19 @@ function DataTableHeaderCell<TRow>({
             <Lock aria-hidden size={12} />
           </span>
         ) : null}
-        <span className="data-table-header-label">
-          {flexRender(header.column.columnDef.header, header.getContext())}
-        </span>
+        {isRenaming && fieldDef ? (
+          <HeaderRenameEditor
+            fieldKey={column.fieldKey}
+            initialName={fieldDef.display_name}
+            existingFieldLabels={existingFieldLabels}
+            onSubmit={onRenameCustomFieldSubmit}
+            onCancel={onRenameCustomFieldCancel}
+          />
+        ) : (
+          <span className="data-table-header-label">
+            {flexRender(header.column.columnDef.header, header.getContext())}
+          </span>
+        )}
         {isEditableSingleSelect ? (
           <span aria-hidden className="data-table-header-edit-chevron">
             ▾
@@ -255,9 +311,13 @@ function DataTableHeaderCell<TRow>({
           isViewer={readOnly}
           onSortAsc={() => headerActions.onSortAsc(column.fieldKey)}
           onSortDesc={() => headerActions.onSortDesc(column.fieldKey)}
+          onFilterBy={() => headerActions.onFilterBy(column.fieldKey)}
           onGroupBy={() => headerActions.onGroupBy(column.fieldKey)}
           onHide={() => headerActions.onHide(column.fieldKey)}
+          onRenameField={onRenameCustomField}
           onDeleteField={onDeleteCustomField}
+          onDuplicateField={onDuplicateCustomField}
+          onEditDescription={onEditCustomFieldDescription}
           onInsertFieldLeft={onInsertFieldLeft}
           onInsertFieldRight={onInsertFieldRight}
         />
@@ -272,6 +332,101 @@ function DataTableHeaderCell<TRow>({
       ) : null}
     </SortableHeaderCell>
   );
+}
+
+function HeaderRenameEditor({
+  fieldKey,
+  initialName,
+  existingFieldLabels,
+  onSubmit,
+  onCancel,
+}: {
+  fieldKey: string;
+  initialName: string;
+  existingFieldLabels: ReadonlyArray<FieldDisplayName>;
+  onSubmit?: (fieldKey: string, displayName: string) => Promise<void>;
+  onCancel?: () => void;
+}) {
+  const [value, setValue] = useState(initialName);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setValue(initialName);
+    setError(null);
+    setPending(false);
+    const handle = window.setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, [initialName]);
+
+  const submit = async () => {
+    if (pending || !onSubmit) return;
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setError("Field name cannot be empty.");
+      return;
+    }
+    if (trimmed === initialName.trim()) {
+      onCancel?.();
+      return;
+    }
+    const duplicate = findDuplicateDisplayName(trimmed, existingFieldLabels, fieldKey);
+    if (duplicate) {
+      setError(`A field named "${trimmed}" already exists in this table.`);
+      return;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      await onSubmit(fieldKey, trimmed);
+    } catch (caught) {
+      setError(
+        caught instanceof Error && caught.message ? caught.message : "Could not rename field.",
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void submit();
+  };
+
+  return (
+    <form className="data-table-header-rename" onSubmit={handleSubmit}>
+      <input
+        ref={inputRef}
+        className="data-table-header-rename-input"
+        aria-label={`Rename ${initialName}`}
+        value={value}
+        disabled={pending}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !pending) {
+            event.preventDefault();
+            onCancel?.();
+          }
+        }}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onDoubleClick={(event) => event.stopPropagation()}
+      />
+      {error ? (
+        <span className="data-table-header-rename-error" role="alert">
+          {error}
+        </span>
+      ) : null}
+    </form>
+  );
+}
+
+function isPhase2DuplicableCustomField(fieldDef: FieldDef | undefined): boolean {
+  return fieldDef?.field_type === "text" || fieldDef?.field_type === "number";
 }
 
 // Routes Space / ←→ / Esc on a focused non-primary header to the

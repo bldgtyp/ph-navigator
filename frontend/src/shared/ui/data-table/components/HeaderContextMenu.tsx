@@ -23,11 +23,15 @@ export type HeaderContextMenuProps = {
   fieldDef: FieldDef;
   triggerRef: RefObject<HTMLElement | null>;
   isViewer: boolean;
+  onRenameField?: () => void;
   onDeleteField?: () => void;
+  onDuplicateField?: () => void;
+  onEditDescription?: () => void;
   onInsertFieldLeft?: () => void;
   onInsertFieldRight?: () => void;
   onSortAsc: () => void;
   onSortDesc: () => void;
+  onFilterBy?: () => void;
   onGroupBy: () => void;
   onHide: () => void;
 };
@@ -45,23 +49,55 @@ export function HeaderContextMenu({
   fieldDef,
   triggerRef,
   isViewer,
+  onRenameField,
   onDeleteField,
+  onDuplicateField,
+  onEditDescription,
   onInsertFieldLeft,
   onInsertFieldRight,
   onSortAsc,
   onSortDesc,
+  onFilterBy,
   onGroupBy,
   onHide,
 }: HeaderContextMenuProps) {
   const [open, setOpen] = useState<OpenState | null>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const items: MenuItem[] = [
+  const isCustomField = fieldDef.read_only_schema !== true;
+  const items: MenuItem[] = [];
+  if (isCustomField && onRenameField) {
+    items.push({ key: "rename-field", label: "Rename field", onSelect: onRenameField });
+  }
+  if (isCustomField && onDeleteField) {
+    items.push({
+      key: "delete-field",
+      label: "Delete field",
+      danger: true,
+      onSelect: onDeleteField,
+    });
+  }
+  if (isCustomField && onDuplicateField) {
+    items.push({ key: "duplicate-field", label: "Duplicate field", onSelect: onDuplicateField });
+  }
+  if (isCustomField && onEditDescription) {
+    items.push({
+      key: "edit-description",
+      label: "Edit description",
+      onSelect: onEditDescription,
+    });
+  }
+  items.push(
     { key: "sort-asc", label: "Sort A → Z", onSelect: onSortAsc },
     { key: "sort-desc", label: "Sort Z → A", onSelect: onSortDesc },
+  );
+  if (onFilterBy) {
+    items.push({ key: "filter-by", label: "Filter by this field", onSelect: onFilterBy });
+  }
+  items.push(
     { key: "group-by", label: "Group by this field", onSelect: onGroupBy },
     { key: "hide", label: "Hide field", onSelect: onHide },
-  ];
+  );
   // US-CF-6 criterion 3 — `Insert field left/right` is available on
   // both core and custom fields. Viewer mode never opens the menu at
   // all, so no extra gating here.
@@ -77,14 +113,6 @@ export function HeaderContextMenu({
       key: "insert-field-right",
       label: "Insert field right",
       onSelect: onInsertFieldRight,
-    });
-  }
-  if (fieldDef.read_only_schema !== true && onDeleteField) {
-    items.push({
-      key: "delete-field",
-      label: "Delete field",
-      danger: true,
-      onSelect: onDeleteField,
     });
   }
 
