@@ -9,6 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { MAX_DESCRIPTION } from "../lib/customFieldMutations";
+import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 
 export type EditCustomFieldDescriptionRequest = {
@@ -87,6 +88,10 @@ export function EditFieldDescriptionPopover({
     void submitCurrent();
   };
 
+  const handleDescriptionInput = (event: FormEvent<HTMLTextAreaElement>) => {
+    setDescription(event.currentTarget.value.slice(0, MAX_DESCRIPTION));
+  };
+
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape" && !pending) {
       event.preventDefault();
@@ -94,9 +99,11 @@ export function EditFieldDescriptionPopover({
     }
   };
 
+  const virtualAnchorRef = useElementAnchorRef(anchorElement);
+
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
-      {anchorElement ? <DescriptionAnchor anchor={anchorElement} /> : null}
+      {virtualAnchorRef ? <Popover.Anchor virtualRef={virtualAnchorRef} /> : null}
       <Popover.Portal>
         <Popover.Content
           className="data-table-add-field-popover data-table-description-popover"
@@ -122,7 +129,7 @@ export function EditFieldDescriptionPopover({
               value={description}
               maxLength={MAX_DESCRIPTION}
               rows={4}
-              onChange={(event) => setDescription(event.target.value.slice(0, MAX_DESCRIPTION))}
+              onChange={handleDescriptionInput}
             />
             <span className="data-table-add-field-counter" aria-hidden>
               {description.trim().length}/{MAX_DESCRIPTION}
@@ -150,12 +157,4 @@ export function EditFieldDescriptionPopover({
       </Popover.Portal>
     </Popover.Root>
   );
-}
-
-function DescriptionAnchor({ anchor }: { anchor: HTMLElement }) {
-  const virtualRef = useMemo(
-    () => ({ current: { getBoundingClientRect: () => anchor.getBoundingClientRect() } }),
-    [anchor],
-  );
-  return <Popover.Anchor virtualRef={virtualRef} />;
 }

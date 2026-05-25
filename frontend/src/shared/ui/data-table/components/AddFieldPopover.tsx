@@ -11,6 +11,7 @@ import {
 import type { CustomFieldType } from "../hooks/useTableSchema";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { normalizeDisplayName } from "../lib/fieldDisplayNames";
+import { useElementAnchorRef } from "../lib/popoverAnchor";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 
 const ENABLED_TYPES: ReadonlyArray<{ kind: CustomFieldType; label: string; hint: string }> = [
@@ -119,13 +120,7 @@ export function AddFieldPopover({
 
   const canSubmit = Boolean(trimmedName) && !localNameError && !pending;
 
-  const virtualAnchorRef = useMemo(
-    () =>
-      anchorElement
-        ? { current: { getBoundingClientRect: () => anchorElement.getBoundingClientRect() } }
-        : null,
-    [anchorElement],
-  );
+  const virtualAnchorRef = useElementAnchorRef(anchorElement);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

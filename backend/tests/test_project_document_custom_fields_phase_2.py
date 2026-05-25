@@ -207,9 +207,7 @@ def _rooms_payload(custom_fields: list[dict[str, Any]], rooms: list[dict[str, An
         "rooms": rooms,
         "custom_fields": custom_fields,
         "single_select_options": {
-            "rooms.floor_level": [
-                {"id": "opt_ground", "label": "Ground", "color": "#3b82f6", "order": 0}
-            ],
+            "rooms.floor_level": [{"id": "opt_ground", "label": "Ground", "color": "#3b82f6", "order": 0}],
             "rooms.building_zone": [],
         },
     }
@@ -260,7 +258,7 @@ def test_phase_2_adds_four_types_then_cell_writes_and_save_round_trip(
     ]:
         current = _add_field(client, project_id, version_id, current, field)
 
-    values = {
+    values: dict[str, object] = {
         "cf_short": "ok",
         "cf_long": "Line one\nLine two",
         "cf_number": 0.6,
@@ -276,7 +274,7 @@ def test_phase_2_adds_four_types_then_cell_writes_and_save_round_trip(
 
     saved = client.post(
         _save_url(project_id, version_id),
-        headers={"Origin": ORIGIN, "If-Match": write.json()["draft_etag"]},
+        headers={"Origin": ORIGIN, "If-Match": write.json()["version_etag"]},
     )
     assert saved.status_code == 200, saved.text
 
@@ -455,7 +453,7 @@ def test_phase_2_delete_clears_values_and_persists_clean_rows(clean_document_tab
 
     saved = client.post(
         _save_url(project_id, version_id),
-        headers={"Origin": ORIGIN, "If-Match": deleted.json()["draft_etag"]},
+        headers={"Origin": ORIGIN, "If-Match": deleted.json()["version_etag"]},
     )
     assert saved.status_code == 200, saved.text
     persisted = client.get(_saved_rooms_url(project_id, version_id)).json()
@@ -513,11 +511,11 @@ def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: Non
             """
             SELECT action, details
             FROM user_action_log
-            WHERE version_id = %(version_id)s
-              AND action LIKE 'project_version_custom_field_%'
+            WHERE details->>'version_id' = %(version_id)s
+              AND action LIKE 'project_version_custom_field_%%'
             ORDER BY created_at ASC
             """,
-            {"version_id": UUID(str(version_id))},
+            {"version_id": str(UUID(str(version_id)))},
         ).fetchall()
     assert [row["action"] for row in rows] == [
         "project_version_custom_field_add",

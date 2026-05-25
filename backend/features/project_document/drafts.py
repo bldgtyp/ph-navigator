@@ -219,10 +219,7 @@ def apply_schema_mutation_to_draft(
             updated_via=updated_via,
         )
 
-        action = AUDIT_KIND_BY_MUTATION.get(
-            str(audit_payload.get("kind", "")),
-            "project_version_custom_field_unknown",
-        )
+        action = AUDIT_KIND_BY_MUTATION[mutation.kind]
         log_document_action(
             conn,
             action,

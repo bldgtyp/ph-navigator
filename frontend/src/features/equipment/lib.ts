@@ -35,6 +35,20 @@ export {
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
+export const ROOMS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  "number",
+  "name",
+  "floor_level",
+  "building_zone",
+  "num_people",
+  "num_bedrooms",
+  "icfa_factor",
+  "erv_unit_ids",
+  "catalog_origin",
+  "notes",
+] as const;
+
 // Shared by RoomsTable (renderer) and useProjectTableViewState (sanitizer)
 // so view-state persistence doesn't depend on the live React tree.
 export function roomsTableFieldDefs(roomsSlice: RoomsSlice): FieldDef[] {

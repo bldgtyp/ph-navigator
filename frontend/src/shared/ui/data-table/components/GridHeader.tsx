@@ -225,6 +225,11 @@ function DataTableHeaderCell<TRow>({
   const onInsertFieldRight = headerActions.onInsertFieldRight
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
+  const doubleClickAction = isEditableSingleSelect
+    ? () => onEditField?.(column.fieldKey)
+    : canRenameCustomField
+      ? onRenameCustomField
+      : undefined;
   return (
     <SortableHeaderCell
       id={column.id}
@@ -247,19 +252,13 @@ function DataTableHeaderCell<TRow>({
         onColumnMouseDown ? (event) => onColumnMouseDown(event, column.fieldKey) : undefined
       }
       onDoubleClick={
-        canRenameCustomField
+        doubleClickAction
           ? (event) => {
               event.preventDefault();
               event.stopPropagation();
-              onRenameCustomField?.();
+              doubleClickAction();
             }
-          : isEditableSingleSelect
-            ? (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onEditField?.(column.fieldKey);
-              }
-            : undefined
+          : undefined
       }
     >
       <div className="data-table-header-row">
@@ -407,6 +406,11 @@ function HeaderRenameEditor({
         disabled={pending}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
+          if (event.key === "Enter" && !pending) {
+            event.preventDefault();
+            void submit();
+            return;
+          }
           if (event.key === "Escape" && !pending) {
             event.preventDefault();
             onCancel?.();

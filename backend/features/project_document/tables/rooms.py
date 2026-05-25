@@ -25,17 +25,13 @@ from features.project_document.tables.contracts import CustomFieldCapability, Ta
 from features.project_document.validation import validate_document
 
 if TYPE_CHECKING:
-    # `schema_mutations` imports `CustomFieldCapability` from
-    # `tables.contracts`, which is loaded as part of the `tables`
-    # package initialization. Importing eagerly here would close the
-    # cycle. The apply/validate hooks in this module lazy-import the
-    # functions inside their bodies — by call time both modules are
-    # fully loaded.
+    # schema_mutations imports CustomFieldCapability from contracts at
+    # module load; the apply/validate hooks here lazy-import to avoid
+    # the cycle at module init time.
     from features.project_document.schema_mutations import FieldSchemaMutation
 
-# Canonical core field-key tuple for Rooms — mirrors `RoomRow` attribute
-# order and is consumed by the schema fingerprint and (Phase 2+) the
-# formula-ref / schema-editor registry.
+# Mirrors `RoomRow` attribute order — consumed by the schema fingerprint
+# and the formula-ref / schema-editor registry.
 ROOMS_CORE_FIELD_KEYS: tuple[str, ...] = (
     "id",
     "number",
@@ -58,10 +54,8 @@ class RoomsSliceReplaceRequest(BaseModel):
 
     rooms: list[RoomRow]
     single_select_options: RoomsSliceOptions
-    # P1.1: the existing whole-table replace route now also accepts the
-    # custom_fields envelope verbatim. The typed FieldSchemaMutation
-    # surface (plan-13 §4.3.2) ships in phase 2 — this is the read-side
-    # contract only.
+    # Whole-table replace accepts the `custom_fields` envelope verbatim;
+    # schema-mutation writes use the typed `FieldSchemaMutation` surface.
     custom_fields: list[CustomFieldDef] = Field(default_factory=list)
 
 
@@ -136,10 +130,10 @@ def rooms_response(
 def extract_rooms_envelope(body: ProjectDocumentV1) -> dict[str, object]:
     """Return the Rooms table envelope as a JSON-serializable dict.
 
-    Plan-13 §4.1: downloads / MCP `get_table` / diff input all consume
-    the `{custom_fields, rows}` shape. MCP's `McpTableEnvelope.rows`
-    field is typed `object` to accept this envelope alongside the bare
-    row lists used by tables that don't opt into custom fields.
+    Downloads / MCP `get_table` / diff inputs consume the
+    `{custom_fields, rows}` shape; MCP's `McpTableEnvelope.rows` is
+    typed `object` to accept this envelope alongside the bare row lists
+    used by tables that don't opt into custom fields.
     """
     return {
         "custom_fields": [field.model_dump(mode="json") for field in body.tables.rooms.custom_fields],
@@ -165,16 +159,19 @@ def _replace_rooms_custom_fields(
     body: ProjectDocumentV1,
     custom_fields: list[CustomFieldDef],
 ) -> ProjectDocumentV1:
+    # No validate_document here — apply_schema_mutation runs a single
+    # final validation pass over the fully-mutated body.
     next_envelope = body.tables.rooms.model_copy(update={"custom_fields": list(custom_fields)})
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
-    next_body = body.model_copy(update={"tables": next_tables})
-    return validate_document(next_body.model_dump(mode="json"))
+    return body.model_copy(update={"tables": next_tables})
 
 
 def _read_room_row_custom(row: object) -> dict[str, CustomValue]:
     if not isinstance(row, RoomRow):
         raise TypeError(f"expected RoomRow, got {type(row).__name__}")
-    return dict(row.custom)
+    # Return the live dict (read-only contract). Callers must not mutate it —
+    # construct a new dict and pass it to `set_row_custom` instead.
+    return row.custom
 
 
 def _set_room_row_custom(row: object, custom: dict[str, CustomValue]) -> object:
@@ -210,9 +207,14 @@ def _validate_rooms_schema_mutation(
     body: ProjectDocumentV1,
     mutation: FieldSchemaMutation,
 ) -> None:
+    # Lazy import — see the `TYPE_CHECKING` block above for why.
     from features.project_document.schema_mutations import validate_schema_mutation
 
-    validate_schema_mutation(body, mutation, capability=rooms_custom_fields)
+    validate_schema_mutation(
+        body,
+        mutation,
+        capability=rooms_custom_fields,
+    )
 
 
 rooms_custom_fields = CustomFieldCapability(

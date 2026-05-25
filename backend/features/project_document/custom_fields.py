@@ -1,18 +1,16 @@
 """Custom field definitions for project-document tables.
 
-Phase 1 (plan-14 P1.1) lands the closed `CustomFieldDef` shape and the
-`CustomFieldType` enum that the JSON Schema and document validators
-consume. Per-type `config` validation, formula evaluation, and the
-schema-mutation DTOs are deferred to phase 2/3/4.
-
-`CustomValue` is the value side: each row's `custom` dict maps a
-`cf_*` id to a scalar. The narrow scalar set keeps round-trips
-deterministic across JSON serialization. Richer types (e.g. computed
-overlays, attachments) ride on read paths only.
+`CustomFieldDef` is the closed shape of a user-defined column; the
+`CustomFieldType` enum is the closed v1 type set consumed by the JSON
+Schema and document validators. `CustomValue` is the value side: each
+row's `custom` dict maps a `cf_*` id to one of a narrow set of scalars
+so JSON round-trips stay deterministic. Computed/formula values ride
+read paths only and never enter stored rows.
 """
 
 from __future__ import annotations
 
+import secrets
 from datetime import datetime
 from enum import StrEnum
 
@@ -23,6 +21,26 @@ CUSTOM_FIELD_DISPLAY_NAME_MAX = 120
 CUSTOM_FIELD_DESCRIPTION_MAX = 280
 CUSTOM_FIELD_KEY_MAX = 80
 
+
+def normalize_display_name(value: str) -> str:
+    """Canonical form for case-insensitive, trimmed name comparison.
+
+    Used by every duplicate-name check across core + custom fields,
+    option labels, room numbers, and window-type names. Frontend mirror
+    lives in `frontend/.../lib/fieldDisplayNames.ts::normalizeDisplayName`.
+    """
+    return value.strip().casefold()
+
+
+def mint_custom_field_id() -> str:
+    """Single mint for `cf_*` identifiers used by dev seed / fixtures.
+
+    Wire shape matches `CUSTOM_FIELD_ID_PATTERN`. The frontend mints via
+    `generatedId("cf")` for browser-originated adds; this helper is for
+    backend-side seed paths.
+    """
+    return f"cf_{secrets.token_hex(8)}"
+
 # Scalar set permitted inside `RoomRow.custom`. Per-type validation
 # against the field's declared `field_type` runs in
 # `validate_document_references` (document.py); this alias is the JSON
@@ -31,13 +49,8 @@ CustomValue = str | int | float | bool | None
 
 
 class CustomFieldType(StrEnum):
-    """Closed v1 set of custom field types.
-
-    Phase 1 exercises `short_text` end-to-end. The enum closes the v1
-    set up front so the published JSON Schema is authoritative from day
-    one; per-type config validation and runtime support for `formula`,
-    `single_select`, etc. land in later phases.
-    """
+    """Closed v1 set of custom field types — kept closed up front so the
+    published JSON Schema is authoritative."""
 
     short_text = "short_text"
     long_text = "long_text"
@@ -50,13 +63,11 @@ class CustomFieldType(StrEnum):
 class CustomFieldDef(BaseModel):
     """One user-defined field on a project-document table.
 
-    Identity is the `cf_*` id (D12) — every row value, view-state
-    column id, write op, and formula reference uses it. `field_key`
-    is an advisory export slug for JSON readability only.
-
-    `created_by` accepts None for fixture / dev-seed callers (D11);
-    the API and MCP write surfaces (phase 2) must supply a real user
-    id.
+    `id` is the immutable identity — every row value, view-state column
+    id, write op, and formula reference uses it. `field_key` is an
+    advisory export slug; never use it for identity. `created_by`
+    accepts None for fixture / dev-seed callers; the API and MCP write
+    paths supply a real user id.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -73,11 +84,6 @@ class CustomFieldDef(BaseModel):
 
 def coerce_custom_value(value: object, field_type: CustomFieldType) -> CustomValue:
     """Coerce / validate a row's `custom[cf_id]` value against its declared type.
-
-    Phase 1 only ships the `short_text` path end-to-end; other branches
-    accept JSON scalars matching the field type so existing
-    schema-mutation tests can seed fixtures without per-type validators.
-    Phase 3/4 tighten the per-type contracts.
 
     Raises ValueError on a hard mismatch — caller surfaces this through
     the `invalid_project_document` error code.
