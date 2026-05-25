@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../../../shared/lib/errors";
 import { generatedId } from "../../../shared/lib/ids";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { emptyViewState } from "../../../shared/ui/data-table";
+import { emptyViewState, useTableSchema } from "../../../shared/ui/data-table";
 import { useProjectTableViewState } from "../../table_views/useProjectTableViewState";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import { projectDocumentQueryKeys } from "../../project_document/hooks";
@@ -72,6 +72,11 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     () => roomsTableColumnsForSanitize(roomsFieldDefsForSanitize),
     [roomsFieldDefsForSanitize],
   );
+  const roomsTableSchema = useTableSchema({
+    tableKey: ROOMS_TABLE_NAME,
+    coreFieldDefs: roomsFieldDefsForSanitize,
+    customFields: roomsQuery.data?.custom_fields,
+  });
   const {
     view: roomsTableView,
     onViewChange: handleRoomsViewChange,
@@ -84,6 +89,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     enabled: isEditor,
     columns: roomsColumnsForSanitize,
     fieldDefs: roomsFieldDefsForSanitize,
+    schemaFingerprint: roomsTableSchema.schemaFingerprint,
   });
   const isLocked =
     editBlocker?.kind === "version-locked" || (project.active_version?.locked ?? false);
@@ -247,6 +253,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       erv_unit_ids: [],
       catalog_origin: null,
       notes: null,
+      custom: {},
     };
   };
 
@@ -384,6 +391,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       ) : (
         <RoomsTable
           roomsSlice={roomsSlice}
+          tableSchema={roomsTableSchema}
           isEditor={canEdit}
           onEdit={(room) => setRoomModal({ mode: "edit", room })}
           view={roomsTableView}

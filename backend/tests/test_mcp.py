@@ -296,7 +296,8 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     assert draft_document_result.isError is False
                     draft_document = json.loads(tool_text(draft_document_result))
                     assert draft_document["source"] == "draft"
-                    assert draft_document["body"]["tables"]["rooms"][0]["name"] == "Living Room"
+                    assert draft_document["body"]["tables"]["rooms"]["rows"][0]["name"] == "Living Room"
+                    assert draft_document["body"]["tables"]["rooms"]["custom_fields"] == []
 
                     table_result = await session.call_tool(
                         "get_table",
@@ -305,7 +306,10 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     assert table_result.isError is False
                     table = json.loads(tool_text(table_result))
                     assert table["source"] == "draft"
-                    assert table["rows"][0]["name"] == "Living Room"
+                    # Rooms is custom-field-capable, so `rows` carries the
+                    # {custom_fields, rows} envelope (plan-13 §4.1).
+                    assert table["rows"]["rows"][0]["name"] == "Living Room"
+                    assert table["rows"]["custom_fields"] == []
 
                     missing_table_result = await session.call_tool(
                         "get_table",

@@ -36,6 +36,12 @@ export type FieldDef = {
   // When false, single_select pills render with a neutral background
   // even when each option still carries a color. Default true.
   colorCodeOptions?: boolean;
+  // Plan-13 §4.5 / US-CF-6: when true, header context-menu hides
+  // schema-mutation items (rename / change type / delete / edit
+  // formula). Core fields set this to true; user-defined custom fields
+  // leave it absent. The flag ships in plan-14 P1.4 so the schema is
+  // consistent; the menu component that consumes it lands in Phase 2.
+  read_only_schema?: boolean;
 };
 
 export type FieldOption = {

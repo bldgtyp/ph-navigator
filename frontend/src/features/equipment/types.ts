@@ -1,4 +1,4 @@
-import type { FieldOption } from "../../shared/ui/data-table";
+import type { CustomFieldDef, FieldOption } from "../../shared/ui/data-table";
 
 export type SingleSelectOption = FieldOption;
 
@@ -14,6 +14,10 @@ export type RoomRow = {
   erv_unit_ids: string[];
   catalog_origin: Record<string, unknown> | null;
   notes: string | null;
+  // Plan-13 §4.1 / plan-14 P1.1: sparse user-defined values keyed by
+  // the custom field's stable `cf_*` id. Always present (defaults to
+  // {}) so consumers can spread without a null check.
+  custom: Record<string, unknown>;
 };
 
 export const ROOM_FLOOR_LEVEL_KEY = "rooms.floor_level";
@@ -37,10 +41,14 @@ export type RoomsSlice = {
   version_etag: string;
   draft_etag: string | null;
   rooms: RoomRow[];
+  // Plan-14 P1.1: parallel to `rooms`. Always present (defaults to [])
+  // so callers don't branch.
+  custom_fields: CustomFieldDef[];
   single_select_options: Record<RoomOptionKey, SingleSelectOption[]>;
 };
 
 export type RoomsReplacePayload = {
   rooms: RoomRow[];
+  custom_fields?: CustomFieldDef[];
   single_select_options: Record<RoomOptionKey, SingleSelectOption[]>;
 };

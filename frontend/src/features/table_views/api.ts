@@ -1,9 +1,9 @@
 import { fetchJson } from "../../shared/api/client";
-import type { ViewState } from "../../shared/ui/data-table";
 import {
   TABLE_VIEW_SCHEMA_VERSION,
   type TableViewResponse,
   type TableViewUpsertRequest,
+  type ViewStateEnvelope,
 } from "./types";
 
 function endpoint(projectId: string, tableKey: string): string {
@@ -21,12 +21,12 @@ export async function fetchTableView(
 export async function saveTableView(
   projectId: string,
   tableKey: string,
-  viewState: ViewState,
+  envelope: ViewStateEnvelope,
   signal?: AbortSignal,
 ): Promise<TableViewResponse> {
   const body: TableViewUpsertRequest = {
     view_state_schema_version: TABLE_VIEW_SCHEMA_VERSION,
-    view_state: viewState,
+    view_state: envelope,
   };
   return fetchJson<TableViewResponse>(endpoint(projectId, tableKey), {
     method: "PUT",

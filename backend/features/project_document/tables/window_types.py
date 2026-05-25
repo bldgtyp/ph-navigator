@@ -75,4 +75,6 @@ window_types_contract = TableContract(
     apply_replace=apply_window_types_replace,
     extract_rows=extract_window_type_rows,
     extract_diff_value=extract_window_type_rows,
+    table_path=(WINDOW_TYPES_TABLE_NAME,),
+    custom_fields=None,
 )
