@@ -49,12 +49,13 @@ import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
 import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
-import { AddFieldPopover, type AddCustomFieldRequest } from "./components/AddFieldPopover";
+import { CreateFieldConfigModal } from "./components/CreateFieldConfigModal";
 import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
 import { FieldConfigModal } from "./components/FieldConfigModal";
 import type { FieldRegistryEntry } from "./lib/formula";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
+  AddCustomFieldRequest,
   AxisRoleSubset,
   CellCoord,
   DataTableProps,
@@ -649,20 +650,20 @@ export function DataTable<TRow>({
     }
   }, [onDeleteCustomField, pendingDeleteFieldKey]);
   const addFieldEnabled = !readOnly && Boolean(onAddCustomField);
-  type AddFieldPopoverState = {
-    anchorElement: HTMLElement | null;
+  type CreateFieldModalState = {
+    triggerElement: HTMLElement | null;
     insertAfterFieldKey: string | null;
   };
-  const [addFieldPopover, setAddFieldPopover] = useState<AddFieldPopoverState | null>(null);
+  const [createFieldModal, setCreateFieldModal] = useState<CreateFieldModalState | null>(null);
   const [configModalState, setConfigModalState] = useState<{ fieldKey: string } | null>(null);
   const configModalReturnFocusRef = useRef<HTMLElement | null>(null);
   const tailCellRef = useRef<HTMLTableCellElement | null>(null);
   const [pendingFocusFieldKey, setPendingFocusFieldKey] = useState<string | null>(null);
 
-  const openAddFieldPopover = useCallback(
-    (anchor: HTMLElement | null, insertAfterFieldKey: string | null) => {
-      if (!addFieldEnabled || !anchor) return;
-      setAddFieldPopover({ anchorElement: anchor, insertAfterFieldKey });
+  const openCreateFieldModal = useCallback(
+    (triggerElement: HTMLElement | null, insertAfterFieldKey: string | null) => {
+      if (!addFieldEnabled || !triggerElement) return;
+      setCreateFieldModal({ triggerElement, insertAfterFieldKey });
     },
     [addFieldEnabled],
   );
@@ -670,9 +671,9 @@ export function DataTable<TRow>({
   const requestInsertFieldRight = useCallback(
     (fieldKey: string, anchorElement: HTMLElement | null) => {
       if (!addFieldEnabled) return;
-      openAddFieldPopover(anchorElement, fieldKey);
+      openCreateFieldModal(anchorElement, fieldKey);
     },
-    [addFieldEnabled, openAddFieldPopover],
+    [addFieldEnabled, openCreateFieldModal],
   );
   const requestInsertFieldLeft = useCallback(
     (fieldKey: string, anchorElement: HTMLElement | null) => {
@@ -682,9 +683,9 @@ export function DataTable<TRow>({
       // collapses that to a null backend `insert_after_field_id`.
       const index = visibleColumnDefs.findIndex((column) => column.fieldKey === fieldKey);
       const previous = index > 0 ? (visibleColumnDefs[index - 1]?.fieldKey ?? null) : null;
-      openAddFieldPopover(anchorElement, previous);
+      openCreateFieldModal(anchorElement, previous);
     },
-    [addFieldEnabled, openAddFieldPopover, visibleColumnDefs],
+    [addFieldEnabled, openCreateFieldModal, visibleColumnDefs],
   );
 
   const handleAddFieldSubmit = useCallback(
@@ -753,8 +754,8 @@ export function DataTable<TRow>({
   const openAddFieldFromTail = useCallback(() => {
     if (!addFieldEnabled) return;
     const lastVisible = visibleColumnDefs[visibleColumnDefs.length - 1] ?? null;
-    openAddFieldPopover(tailCellRef.current, lastVisible?.fieldKey ?? null);
-  }, [addFieldEnabled, openAddFieldPopover, visibleColumnDefs]);
+    openCreateFieldModal(tailCellRef.current, lastVisible?.fieldKey ?? null);
+  }, [addFieldEnabled, openCreateFieldModal, visibleColumnDefs]);
 
   const headerActions = useMemo(
     () => ({
@@ -917,10 +918,6 @@ export function DataTable<TRow>({
     void clipboard.pasteText(tsv);
   };
 
-  const existingFieldNames = useMemo(
-    () => fieldDefs.map((fieldDef) => fieldDef.display_name),
-    [fieldDefs],
-  );
   const existingFieldLabels = useMemo(
     () =>
       fieldDefs.map((fieldDef) => ({
@@ -1025,18 +1022,17 @@ export function DataTable<TRow>({
         }}
       />
       {addFieldEnabled ? (
-        <AddFieldPopover
-          open={addFieldPopover !== null}
+        <CreateFieldConfigModal
+          open={createFieldModal !== null}
           onOpenChange={(next) => {
             if (!next) {
-              setAddFieldPopover(null);
-              focusGrid();
+              setCreateFieldModal(null);
             }
           }}
-          anchorElement={addFieldPopover?.anchorElement ?? null}
-          insertAfterFieldKey={addFieldPopover?.insertAfterFieldKey ?? null}
-          existingFieldNames={existingFieldNames}
+          insertAfterFieldKey={createFieldModal?.insertAfterFieldKey ?? null}
+          existingFieldLabels={existingFieldLabels}
           dispatchAddField={handleAddFieldSubmit}
+          returnFocusTo={createFieldModal?.triggerElement ?? null}
           formulaFieldRegistry={formulaFieldRegistry}
         />
       ) : null}

@@ -1,5 +1,5 @@
 // Shared parse + classify pipeline for the in-editor formula state.
-// Both the add-field popover and the edit-formula popover consume this
+// Both create-field and edit-field formula sections consume this
 // so wording and error tiers stay in lockstep.
 
 import type { FormulaAST } from "./ast";

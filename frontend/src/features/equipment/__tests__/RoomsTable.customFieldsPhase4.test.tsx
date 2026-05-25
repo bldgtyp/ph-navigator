@@ -304,14 +304,14 @@ async function openHeaderMenu(headerLabel: string) {
 }
 
 describe("RoomsTable custom-fields Phase 4 — formula acceptance through rendered UI", () => {
-  test("adding a formula via popover dispatches the wire shape and surfaces computed values in the grid", async () => {
+  test("adding a formula via modal dispatches the wire shape and surfaces computed values in the grid", async () => {
     const { postBodies } = renderEquipmentTab(buildSlice());
 
     await waitFor(() => expect(screen.queryByText("Loading table view…")).toBeNull());
 
     fireEvent.click(await screen.findByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
-    fireEvent.change(within(dialog).getByLabelText("Field name"), { target: { value: "Label" } });
+    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Label" } });
     fireEvent.click(within(dialog).getByRole("radio", { name: "Formula" }));
     fireEvent.change(within(dialog).getByLabelText("Expression"), {
       target: { value: LABEL_FORMULA_SOURCE },

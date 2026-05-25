@@ -43,7 +43,7 @@ export type HeaderActionHandlers = {
   // element is stashed so the modal can return focus on close.
   onEditCustomFieldConfig?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
   // The anchor is the clicked `<th>` (captured by the menu's triggerRef)
-  // so the DataTable can mount the add-field popover against it.
+  // so the DataTable can return focus to it after create mode closes.
   onInsertFieldLeft?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
   onInsertFieldRight?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
 };
@@ -64,7 +64,7 @@ export type GridHeaderProps<TRow> = {
   columnResize?: GridColumnResize;
   headerActions: HeaderActionHandlers;
   // When set, the tail `+` cell becomes a focusable button that opens
-  // the add-field popover; otherwise it renders as a disabled preview.
+  // the create-field modal; otherwise it renders as a disabled preview.
   onAddFieldFromTail?: () => void;
   tailCellRef?: { current: HTMLTableCellElement | null };
 };

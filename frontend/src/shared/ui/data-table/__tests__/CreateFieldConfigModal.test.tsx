@@ -1,12 +1,13 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { describe, expect, test, vi } from "vitest";
-import { AddFieldPopover, type AddCustomFieldRequest } from "../components/AddFieldPopover";
+import { CreateFieldConfigModal } from "../components/CreateFieldConfigModal";
+import type { AddCustomFieldRequest } from "../types";
 import { ApiRequestError } from "../../../api/client";
 
 type HarnessProps = {
   dispatch?: (request: AddCustomFieldRequest) => Promise<void>;
-  existingFieldNames?: ReadonlyArray<string>;
+  existingFieldLabels?: ReadonlyArray<string>;
   insertAfterFieldKey?: string | null;
   initialOpen?: boolean;
   formulaFieldRegistry?: ReadonlyArray<{
@@ -19,7 +20,7 @@ type HarnessProps = {
 
 function Harness({
   dispatch = async () => undefined,
-  existingFieldNames = ["Number", "Floor"],
+  existingFieldLabels = ["Number", "Floor"],
   insertAfterFieldKey = null,
   initialOpen = true,
   formulaFieldRegistry,
@@ -31,13 +32,16 @@ function Harness({
       <button ref={anchorRef} type="button" onClick={() => setOpen(true)}>
         anchor
       </button>
-      <AddFieldPopover
+      <CreateFieldConfigModal
         open={open}
         onOpenChange={setOpen}
-        anchorElement={anchorRef.current}
         insertAfterFieldKey={insertAfterFieldKey}
-        existingFieldNames={existingFieldNames}
+        existingFieldLabels={existingFieldLabels.map((displayName, index) => ({
+          fieldKey: `field_${index}`,
+          displayName,
+        }))}
         dispatchAddField={dispatch}
+        returnFocusTo={anchorRef.current}
         formulaFieldRegistry={formulaFieldRegistry}
       />
     </>
@@ -49,7 +53,7 @@ function dialog(): HTMLElement {
 }
 
 function typeName(value: string) {
-  const nameInput = within(dialog()).getByLabelText("Field name") as HTMLInputElement;
+  const nameInput = within(dialog()).getByLabelText("Name") as HTMLInputElement;
   fireEvent.change(nameInput, { target: { value } });
 }
 
@@ -62,7 +66,7 @@ function clickAdd() {
   fireEvent.click(within(dialog()).getByRole("button", { name: /Add field/ }));
 }
 
-describe("AddFieldPopover", () => {
+describe("CreateFieldConfigModal", () => {
   test("dispatches a short_text request for the happy path", async () => {
     const dispatch = vi.fn().mockResolvedValue(undefined);
     render(<Harness dispatch={dispatch} />);
@@ -108,12 +112,11 @@ describe("AddFieldPopover", () => {
     expect(request.config).toEqual({ precision: 3 });
   });
 
-  test("optional description flows into the request when expanded", async () => {
+  test("optional description flows into the request", async () => {
     const dispatch = vi.fn().mockResolvedValue(undefined);
     render(<Harness dispatch={dispatch} />);
     typeName("Notes");
-    fireEvent.click(within(dialog()).getByLabelText("Add description"));
-    const textarea = within(dialog()).getByLabelText("Field description") as HTMLTextAreaElement;
+    const textarea = within(dialog()).getByLabelText("Description") as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: "  Free-form notes about the room.  " } });
     clickAdd();
     await waitFor(() => expect(dispatch).toHaveBeenCalled());
@@ -123,7 +126,7 @@ describe("AddFieldPopover", () => {
 
   test("inline duplicate-name preflight blocks submit with the offending name", () => {
     const dispatch = vi.fn();
-    render(<Harness dispatch={dispatch} existingFieldNames={["Notes", "Number"]} />);
+    render(<Harness dispatch={dispatch} existingFieldLabels={["Notes", "Number"]} />);
     typeName("  notes  ");
     expect(within(dialog()).getByText(/A field named "notes" already exists/i)).toBeInTheDocument();
     const addButton = within(dialog()).getByRole("button", {
@@ -143,7 +146,7 @@ describe("AddFieldPopover", () => {
     expect(addButton.disabled).toBe(true);
   });
 
-  test("server-side custom_field_duplicate_name leaves the popover open with an inline message", async () => {
+  test("server-side custom_field_duplicate_name leaves the modal open with an inline message", async () => {
     const response = new Response(null, { status: 422, statusText: "Unprocessable Entity" });
     const error = new ApiRequestError(response, {
       error_code: "custom_field_duplicate_name",
@@ -152,7 +155,7 @@ describe("AddFieldPopover", () => {
       details: { field_name: "Notes" },
     });
     const dispatch = vi.fn().mockRejectedValue(error);
-    render(<Harness dispatch={dispatch} existingFieldNames={["Number"]} />);
+    render(<Harness dispatch={dispatch} existingFieldLabels={["Number"]} />);
     typeName("Notes");
     clickAdd();
     await waitFor(() =>
@@ -232,7 +235,7 @@ describe("AddFieldPopover", () => {
     expect(request.config).toEqual({ default_option_id: null });
   });
 
-  test("Cancel closes the popover without dispatching", () => {
+  test("Cancel closes the modal without dispatching", () => {
     const dispatch = vi.fn();
     render(<Harness dispatch={dispatch} />);
     typeName("Notes");
@@ -241,7 +244,7 @@ describe("AddFieldPopover", () => {
     expect(screen.queryByRole("dialog", { name: "Add field" })).toBeNull();
   });
 
-  test("Escape closes the popover", () => {
+  test("Escape closes the modal", () => {
     render(<Harness />);
     fireEvent.keyDown(dialog(), { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "Add field" })).toBeNull();
@@ -297,7 +300,7 @@ describe("AddFieldPopover", () => {
         name: /Add field/,
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
-      expect(within(dialog()).getByRole("alert")).toBeInTheDocument();
+      expect(within(dialog()).getByRole("status")).toHaveTextContent(/parse/i);
     });
 
     test("Submit surfaces missing-ref errors locally", () => {
@@ -310,7 +313,7 @@ describe("AddFieldPopover", () => {
         name: /Add field/,
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
-      expect(within(dialog()).getByRole("alert")).toHaveTextContent(/Nonexistent/);
+      expect(within(dialog()).getByRole("status")).toHaveTextContent(/Nonexistent/);
     });
   });
 });

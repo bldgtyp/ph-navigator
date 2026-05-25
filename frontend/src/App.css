@@ -1910,23 +1910,6 @@ button:disabled {
   outline: none;
 }
 
-.data-table-add-field-popover {
-  background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  box-shadow: var(--shadow-popover, 0 8px 24px rgba(0, 0, 0, 0.12));
-  padding: 12px;
-  min-width: 280px;
-  max-width: 360px;
-  z-index: 50;
-}
-
-.data-table-add-field-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .data-table-add-field-label {
   font-size: 0.78rem;
   font-weight: 600;
@@ -1953,15 +1936,6 @@ button:disabled {
 .data-table-add-field-inline-error {
   margin: 0;
   font-size: 0.85rem;
-}
-
-.data-table-add-field-types {
-  border: 0;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .data-table-add-field-type-row {
@@ -1997,10 +1971,29 @@ button:disabled {
   gap: 4px;
 }
 
-.data-table-add-field-description-row {
+.data-table-add-field-options {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.data-table-add-field-option-row {
+  display: grid;
+  grid-template-columns: 8rem minmax(8rem, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.data-table-add-field-option-color {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-strong);
 }
 
 .data-table-add-field-toggle {
@@ -2033,13 +2026,6 @@ button:disabled {
 .data-table-add-field-error {
   margin: 0;
   font-size: 0.85rem;
-}
-
-.data-table-add-field-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  padding-top: 4px;
 }
 
 .data-table-field-config-modal-overlay {

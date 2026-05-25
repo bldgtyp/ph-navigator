@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import type { AddCustomFieldRequest } from "./components/AddFieldPopover";
 import type { AggregationKind } from "./fields/aggregations";
 import type { FieldSchemaMutation } from "./lib/customFieldMutations";
 import type { FieldRegistryEntry } from "./lib/formula/resolver";
@@ -82,6 +81,21 @@ export type FieldOption = {
   label: string;
   color: string;
   order: number;
+};
+
+export type AddCustomFieldRequest = {
+  displayName: string;
+  fieldType: CustomFieldType;
+  config: Record<string, unknown>;
+  description: string | null;
+  // Only set when `fieldType === "single_select"`. Carries the initial
+  // option list so add-with-options is one atomic POST.
+  initialOptions?: FieldOption[];
+  // Visual anchor in `view.columnOrder` ("insert this new field right
+  // after this fieldKey"). Null means "append at end". Any fieldKey is
+  // accepted — the consumer decides what subset (custom-only) to
+  // forward to the backend's `insert_after_field_id`.
+  insertAfterFieldKey: string | null;
 };
 
 export type DataTableColumnDef<TRow> = {
@@ -293,7 +307,7 @@ export type DataTableProps<TRow> = {
   // the header context menu surfaces `Insert field left/right`. The
   // consumer returns the minted `cf_*` id so DataTable can focus the
   // first cell of the new column after the refetch. A rejected
-  // promise leaves the popover open and surfaces the error inline.
+  // promise leaves the modal open and surfaces the error inline.
   // Omit in viewer mode.
   onAddCustomField?: (request: AddCustomFieldRequest) => Promise<{ newFieldKey: string }>;
   onDuplicateCustomField?: (fieldKey: string) => Promise<{ newFieldKey: string } | void>;

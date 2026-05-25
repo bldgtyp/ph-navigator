@@ -165,7 +165,7 @@ describe("RoomsTable cell-write persistence (regression)", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
-    fireEvent.change(within(dialog).getByLabelText("Field name"), { target: { value: "Notes" } });
+    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Notes" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
 
     await waitFor(() => {
