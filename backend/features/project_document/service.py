@@ -6,7 +6,13 @@ download, and table-contract behavior can evolve independently.
 
 from features.project_document.diff import get_project_diff
 from features.project_document.downloads import table_download_body
-from features.project_document.drafts import discard_draft, replace_table_slice, save_draft, save_draft_as
+from features.project_document.drafts import (
+    apply_schema_mutation_to_draft,
+    discard_draft,
+    replace_table_slice,
+    save_draft,
+    save_draft_as,
+)
 from features.project_document.store import (
     get_current_document_view,
     get_draft_summary,
@@ -22,6 +28,7 @@ from features.project_document.validation import document_etag, next_draft_etag,
 from features.project_document.versions import patch_version
 
 __all__ = [
+    "apply_schema_mutation_to_draft",
     "discard_draft",
     "document_etag",
     "get_current_document_view",

@@ -179,6 +179,15 @@ type WriteOp =
   | { kind: "schemaMutation"; mutation: FieldSchemaMutation };
 ```
 
+> **Implementation note (plan-15 P2.4):** the legacy
+> `WriteOp.fieldDefMutation` shape — currently consumed only by the
+> single-select option editor (`FieldEditorPopover`) — is renamed to
+> `WriteOp.schemaMutation` in plan-15 phase 2.4. No shim chain
+> (pre-deploy, CLAUDE.md §16). The single-select option editor
+> continues to ride the renamed variant via the legacy `before` /
+> `after` / `cellWrites` slots until plan-16 / Phase 3 splits it into
+> its own `editOptions` mutation kind.
+
 `FieldSchemaMutation` is the discriminated DTO for user-defined field
 schema changes. It is shared by browser writes, REST, and MCP so that
 add / rename / delete / duplicate / change-type / describe / set-formula

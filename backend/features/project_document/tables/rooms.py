@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,6 +23,15 @@ from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.project_document.tables.contracts import CustomFieldCapability, TableContract
 from features.project_document.validation import validate_document
+
+if TYPE_CHECKING:
+    # `schema_mutations` imports `CustomFieldCapability` from
+    # `tables.contracts`, which is loaded as part of the `tables`
+    # package initialization. Importing eagerly here would close the
+    # cycle. The apply/validate hooks in this module lazy-import the
+    # functions inside their bodies — by call time both modules are
+    # fully loaded.
+    from features.project_document.schema_mutations import FieldSchemaMutation
 
 # Canonical core field-key tuple for Rooms — mirrors `RoomRow` attribute
 # order and is consumed by the schema fingerprint and (Phase 2+) the
@@ -181,6 +190,31 @@ def _compute_rooms_schema_fingerprint(body: ProjectDocumentV1) -> str:
     )
 
 
+def _apply_rooms_schema_mutation(
+    body: ProjectDocumentV1,
+    mutation: FieldSchemaMutation,
+    actor_user_id: str,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    # Lazy import — see the `TYPE_CHECKING` block above for why.
+    from features.project_document.schema_mutations import apply_schema_mutation
+
+    return apply_schema_mutation(
+        body,
+        mutation,
+        actor_user_id=actor_user_id,
+        capability=rooms_custom_fields,
+    )
+
+
+def _validate_rooms_schema_mutation(
+    body: ProjectDocumentV1,
+    mutation: FieldSchemaMutation,
+) -> None:
+    from features.project_document.schema_mutations import validate_schema_mutation
+
+    validate_schema_mutation(body, mutation, capability=rooms_custom_fields)
+
+
 rooms_custom_fields = CustomFieldCapability(
     core_field_keys=ROOMS_CORE_FIELD_KEYS,
     core_display_names=ROOMS_CORE_DISPLAY_NAMES,
@@ -190,6 +224,8 @@ rooms_custom_fields = CustomFieldCapability(
     read_row_custom=_read_room_row_custom,
     set_row_custom=_set_room_row_custom,
     compute_schema_fingerprint=_compute_rooms_schema_fingerprint,
+    apply_schema_mutation=_apply_rooms_schema_mutation,
+    validate_schema_mutation=_validate_rooms_schema_mutation,
 )
 
 
