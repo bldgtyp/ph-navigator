@@ -1864,30 +1864,96 @@ frontend/tsconfig.json               ← new `@fixtures/*` path entry mirroring 
    small follow-up that grep-renames the constant repo-wide once
    our starlette pin moves.
 
-### What to bring forward into P4.7 (TS port)
+### P4.7 — pragmatic deviations + what to bring forward into P4.8 / P4.9
 
-- **The corpus files are the contract.** Seed
-  `backend/tests/fixtures/formula_grammar_corpus.json` and
-  `formula_evaluator_corpus.json` *first*, exercising every edge
-  the Python tests already cover. Write the TS port against the
-  corpus, not against the Python source.
-- **Pin `_fmod` semantics in the TS port.** JS `%` is sign-of-dividend
-  which *happens* to match Python's `math.fmod`, but writing an
-  explicit `_fmod(a, b)` helper on both sides is the contract — the
-  helper makes the parity intent visible, and isolates the codebase
-  from a future engine drift.
-- **String comparison: code-point ordering on both sides.** Python
-  string `<` / `>` is already code-point; JS string `<` / `>` is
-  also code-point for code units. The corpus must exercise non-ASCII
-  inputs (review amendment #2). When the corpus diverges, the
-  divergence will be in surrogate-pair handling — write the helper
-  to iterate code points, not code units.
-- **`text(n)` number formatting.** Python `repr(float)` matches V8
-  `Number.prototype.toString` for the corpus subset we exercise.
-  Edge cases to pin: `0`, `-0`, `1.5`, very small / very large
-  values, integer-valued floats (no trailing `.0`). The Python
-  helper is `_format_number`; mirror it on the TS side as
-  `_formatNumber`.
+1. **The corpus files ARE the contract.** Seeded
+   `backend/tests/fixtures/formula_grammar_corpus.json` (45 cases)
+   and `formula_evaluator_corpus.json` (80 cases) BEFORE writing the
+   TS port. Both Python and TS test drivers consume the same JSON;
+   CI now fails on the first divergence. Future evaluator / parser
+   edits must extend the corpus first; the implementation chases the
+   corpus, not the other way around.
+
+2. **`source_spec` mini-DSL inside the grammar corpus.** Resource-limit
+   cases would otherwise embed kilobyte strings in JSON; instead
+   the corpus carries a discriminated `source_spec: {kind: "repeat"
+   \| "balanced_parens" \| "many_field_refs", …}` and both drivers
+   expand it identically. The Python expander lives in
+   `tests/test_project_document_formula_grammar.py::_expand_source`;
+   the TS expander lives in
+   `__tests__/formulaGrammarCorpus.test.ts::expandSource`. Add a new
+   spec kind only in lockstep across both drivers.
+
+3. **`substring` clamp-then-slice surprise.** The Python implementation
+   of `substring("hello", 6, 9)` returns `"o"` (start clamps to
+   `len(s)`, end clamps to `len(s)`, range `[5,5]` inclusive = the
+   last char). Intuitive AirTable users may expect `""` because the
+   start index is past the string. The corpus pins the implementation
+   behavior, not the intuition. If P4.8's popover field palette ever
+   exposes a runnable example, it should not advertise this case as
+   "documented behavior" — it's a footgun.
+
+4. **Module name collisions in Python AST helpers.** `ast.py` shadows
+   stdlib `import ast`; `dataclasses.Literal` shadows
+   `typing.Literal`. Python sources use `ast_nodes.py` + `Literal_`
+   (trailing underscore) + `LiteralNode` re-export. The TS port has
+   no such constraint — `ast.ts` + `LiteralNode` are clean. But the
+   `kind` discriminator wire values (`"literal"`, `"field_ref"`,
+   `"func_call"`, `"binary_op"`, `"unary_op"`, `"if"`) ARE the
+   corpus contract; do not rename them in either language.
+
+5. **`_fmod` helper, explicitly, on both sides.** JS `%` happens to
+   match Python's `math.fmod` for sign-of-dividend, but the TS
+   helper uses `a - Math.trunc(a / b) * b` explicitly so the parity
+   intent is visible in the source. Future engine drift won't break
+   the corpus silently.
+
+6. **`text(n)` number formatting.** Python `repr(float)` matches V8
+   `Number.prototype.toString` for the corpus subset we exercise.
+   Edge cases pinned: `0` / `-0` → `"0"`, `1.5` → `"1.5"`,
+   integer-valued floats render without trailing `.0`. The Python
+   helper is `_format_number`; the TS mirror is `formatNumber` in
+   `evaluator.ts`. Diverging values (e.g. very-small scientific
+   like `1e-7`, which Python `repr` zero-pads as `"1e-07"` and JS
+   does not) are NOT in the corpus today — if a P4.9 user-visible
+   value lands on one of those edges, extend the formatter to match
+   Python before extending the corpus.
+
+7. **`@fixtures` Vite alias is now shared infrastructure.** Future
+   cross-language corpus efforts (e.g. a custom-field coercion
+   corpus, which plan-16 originally referenced but never seeded)
+   should land under `backend/tests/fixtures/` and import on the TS
+   side via `@fixtures/...`. The alias is wired up in both
+   `vite.config.ts` and `tsconfig.json` `paths`.
+
+8. **`formulaLimitsParity.test.ts` reads Python source as text.**
+   The D23 constants live in two languages; the parity test
+   re-reads `backend/.../formula/limits.py` and regex-extracts each
+   integer to compare with its TS sibling. Cheaper than a code-gen
+   step, and the failure surfaces immediately if anyone changes one
+   side without the other.
+
+### What to bring forward into P4.8 (popover) / P4.9 (grid wiring)
+
+- The TS `evaluate(...)` returns a discriminated `EvalResult` —
+  `{ok: true, value: ...}` or `{ok: false, code: ...}`. The
+  `<FormulaEditorPopover>` live preview should render the error
+  states using the same `EvalErrorCode` tokens the backend sends
+  in the `computed[cf_id] = {"error": "<token>"}` overlay; one
+  shared map from token → user-facing copy keeps the popover and
+  `<ComputedCell>` in lockstep.
+- The TS `resolveRefs(...)` raises `FormulaMissingRefError` —
+  catch it in the popover's preview pane and surface the missing
+  display name. The browser resolver does NOT do cycle detection;
+  the popover must rely on the server's `custom_field_formula_cycle`
+  envelope after submit.
+- `parse()` raises `FormulaParseError` / `FormulaResourceLimitError`
+  / `FormulaUnsupportedFunctionError` — the popover's "Submit
+  disabled while local parser reports any error" gate (P4.8 plan)
+  should funnel all three through a single error-band component.
+- The shared corpus is the SAFE place to add new edge cases; the
+  TS implementation will pick them up automatically and any
+  divergence fails CI before reaching review.
 
 ## Resolved questions
 
