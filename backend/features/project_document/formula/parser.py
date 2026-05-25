@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
+    BinaryOperator,
     FieldRef,
     FormulaAST,
     FuncCall,
@@ -344,7 +345,7 @@ class _Parser:
     def _cmp(self) -> FormulaAST:
         left = self._add()
         kind = self._peek().kind
-        cmp_op_by_kind: dict[TokenKind, str] = {
+        cmp_op_by_kind: dict[TokenKind, BinaryOperator] = {
             TokenKind.EQ: "=",
             TokenKind.NEQ: "!=",
             TokenKind.LT: "<",
@@ -365,26 +366,31 @@ class _Parser:
                     self.source,
                 )
             self._bump_node()
-            return BinaryOp(kind="binary_op", op=op, left=left, right=right)  # type: ignore[arg-type]
+            return BinaryOp(kind="binary_op", op=op, left=left, right=right)
         return left
 
     def _add(self) -> FormulaAST:
         left = self._mul()
         while self._peek().kind in (TokenKind.PLUS, TokenKind.MINUS):
-            op = "+" if self._advance().kind is TokenKind.PLUS else "-"
+            op: BinaryOperator = "+" if self._advance().kind is TokenKind.PLUS else "-"
             right = self._mul()
             self._bump_node()
-            left = BinaryOp(kind="binary_op", op=op, left=left, right=right)  # type: ignore[arg-type]
+            left = BinaryOp(kind="binary_op", op=op, left=left, right=right)
         return left
 
     def _mul(self) -> FormulaAST:
         left = self._unary()
         while self._peek().kind in (TokenKind.STAR, TokenKind.SLASH, TokenKind.PERCENT):
             kind = self._advance().kind
-            op = {"STAR": "*", "SLASH": "/", "PERCENT": "%"}[kind.value]
+            op_by_kind: dict[TokenKind, BinaryOperator] = {
+                TokenKind.STAR: "*",
+                TokenKind.SLASH: "/",
+                TokenKind.PERCENT: "%",
+            }
+            op = op_by_kind[kind]
             right = self._unary()
             self._bump_node()
-            left = BinaryOp(kind="binary_op", op=op, left=left, right=right)  # type: ignore[arg-type]
+            left = BinaryOp(kind="binary_op", op=op, left=left, right=right)
         return left
 
     def _unary(self) -> FormulaAST:

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from features.project_document.custom_fields import CustomFieldDef, CustomValue
 from features.project_document.document import (
@@ -69,16 +69,42 @@ class RoomsSliceReplaceRequest(BaseModel):
 
 
 class RoomsSliceOptions(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    # `extra="allow"` to admit namespaced custom single-select keys
+    # (`rooms.cf_*`). The model_validator below coerces those extras to
+    # `list[SingleSelectOption]` and rejects any other key — keeps the
+    # forbid-by-default discipline while letting custom option lists
+    # round-trip through cell / row / option whole-table replace.
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     rooms_floor_level: list[SingleSelectOption] = Field(alias=ROOM_FLOOR_LEVEL_OPTION_KEY)
     rooms_building_zone: list[SingleSelectOption] = Field(alias=ROOM_BUILDING_ZONE_OPTION_KEY)
+
+    @model_validator(mode="after")
+    def _validate_namespaced_extras(self) -> RoomsSliceOptions:
+        extras = self.__pydantic_extra__ or {}
+        coerced: dict[str, list[SingleSelectOption]] = {}
+        for key, raw_value in extras.items():
+            if not key.startswith(f"{ROOMS_TABLE_NAME}.cf_"):
+                raise ValueError(
+                    f"Unsupported option key in rooms slice payload: {key!r} "
+                    "(only the two core keys and `rooms.cf_*` are accepted)"
+                )
+            if not isinstance(raw_value, list):
+                raise ValueError(f"Option list for {key!r} must be a list")
+            coerced[key] = [SingleSelectOption.model_validate(option) for option in raw_value]
+        if coerced:
+            self.__pydantic_extra__ = coerced
+        return self
 
     def by_option_key(self) -> dict[RoomOptionKey, list[SingleSelectOption]]:
         return {
             ROOM_FLOOR_LEVEL_OPTION_KEY: self.rooms_floor_level,
             ROOM_BUILDING_ZONE_OPTION_KEY: self.rooms_building_zone,
         }
+
+    def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
+        """Return the `rooms.cf_*` option lists from the payload, if any."""
+        return dict(self.__pydantic_extra__ or {})
 
 
 class RoomsSliceResponse(BaseModel):
@@ -103,16 +129,27 @@ class RoomsSliceResponse(BaseModel):
 def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
     rooms_payload = cast(RoomsSliceReplaceRequest, payload)
     room_options = rooms_payload.single_select_options.by_option_key()
+    custom_option_lists = rooms_payload.single_select_options.custom_option_lists()
     if (
         body.tables.rooms.rows == rooms_payload.rooms
         and body.tables.rooms.custom_fields == rooms_payload.custom_fields
         and all(body.single_select_options.get(key, []) == room_options[key] for key in ROOM_OPTION_KEYS)
+        and all(
+            body.single_select_options.get(key, []) == value
+            for key, value in custom_option_lists.items()
+        )
     ):
         return body
 
     options = dict(body.single_select_options)
     for key in ROOM_OPTION_KEYS:
         options[key] = room_options[key]
+    # Overwrite each `rooms.cf_*` key the payload carries. Custom option
+    # lists not mentioned in the payload are preserved from `body` —
+    # schema-mutation endpoints remain the authoritative path for
+    # creating / deleting them.
+    for key, value in custom_option_lists.items():
+        options[key] = value
     next_envelope = RoomsTableEnvelope(
         custom_fields=rooms_payload.custom_fields,
         rows=rooms_payload.rooms,
@@ -273,7 +310,8 @@ def _read_rooms_core_option_value(row: object, field_id: str) -> str | None:
 _MISSING = object()  # sentinel for the assertion below
 
 
-ROOMS_CORE_FORMULA_TYPES: dict[str, str] = {
+RoomFormulaType = Literal["text", "number", "single_select", "bool"]
+ROOMS_CORE_FORMULA_TYPES: dict[str, RoomFormulaType] = {
     "id": "text",
     "number": "text",
     "name": "text",
@@ -315,7 +353,7 @@ def _read_rooms_core_field_for_formula(row: object, field_id: str) -> object | N
     return str(value)
 
 
-def _rooms_core_field_type_for_formula(field_id: str) -> str | None:
+def _rooms_core_field_type_for_formula(field_id: str) -> RoomFormulaType | None:
     return ROOMS_CORE_FORMULA_TYPES.get(field_id)
 
 

@@ -1,0 +1,474 @@
+{
+  "comment": "Shared formula evaluator corpus. Both backend Python evaluator and frontend TS evaluator MUST produce identical EvalResult for every case. Each case parses `source`, resolves field refs by using display_name as field_id directly (case-insensitive), then evaluates against `row` (a {field_id -> value} mapping; keys are display_name.casefold()). expected.ok=true / value=<scalar | null>, or expected.ok=false / code=<error_code>. Numeric values compare via floating-point equality (a corpus assertion never compares 0.1+0.2 to 0.3 directly; results that involve binary fp drift are pinned by the corpus value to whatever both languages produce).",
+  "cases": [
+    {
+      "name": "literal_number",
+      "source": "42",
+      "row": {},
+      "expected": {"ok": true, "value": 42}
+    },
+    {
+      "name": "literal_string",
+      "source": "\"hello\"",
+      "row": {},
+      "expected": {"ok": true, "value": "hello"}
+    },
+    {
+      "name": "literal_null",
+      "source": "null",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "field_ref_number",
+      "source": "{Count}",
+      "row": {"count": 7},
+      "expected": {"ok": true, "value": 7}
+    },
+    {
+      "name": "field_ref_string",
+      "source": "{Name}",
+      "row": {"name": "Alice"},
+      "expected": {"ok": true, "value": "Alice"}
+    },
+    {
+      "name": "field_ref_unset_returns_null",
+      "source": "{Name}",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "arith_add",
+      "source": "1 + 2",
+      "row": {},
+      "expected": {"ok": true, "value": 3}
+    },
+    {
+      "name": "arith_sub",
+      "source": "10 - 4",
+      "row": {},
+      "expected": {"ok": true, "value": 6}
+    },
+    {
+      "name": "arith_mul",
+      "source": "3 * 4",
+      "row": {},
+      "expected": {"ok": true, "value": 12}
+    },
+    {
+      "name": "arith_div_yields_float",
+      "source": "1 / 2",
+      "row": {},
+      "expected": {"ok": true, "value": 0.5}
+    },
+    {
+      "name": "arith_div_by_zero",
+      "source": "1 / 0",
+      "row": {},
+      "expected": {"ok": false, "code": "div_by_zero"}
+    },
+    {
+      "name": "arith_zero_div_by_zero",
+      "source": "0 / 0",
+      "row": {},
+      "expected": {"ok": false, "code": "div_by_zero"}
+    },
+    {
+      "name": "arith_mod_positive",
+      "source": "7 % 3",
+      "row": {},
+      "expected": {"ok": true, "value": 1}
+    },
+    {
+      "name": "arith_mod_negative_dividend",
+      "source": "-7 % 3",
+      "row": {},
+      "expected": {"ok": true, "value": -1}
+    },
+    {
+      "name": "arith_mod_negative_divisor",
+      "source": "7 % -3",
+      "row": {},
+      "expected": {"ok": true, "value": 1}
+    },
+    {
+      "name": "arith_mod_by_zero",
+      "source": "7 % 0",
+      "row": {},
+      "expected": {"ok": false, "code": "div_by_zero"}
+    },
+    {
+      "name": "arith_unary_minus",
+      "source": "-5",
+      "row": {},
+      "expected": {"ok": true, "value": -5}
+    },
+    {
+      "name": "arith_string_plus_rejected",
+      "source": "\"a\" + \"b\"",
+      "row": {},
+      "expected": {"ok": false, "code": "type_mismatch"}
+    },
+    {
+      "name": "arith_bool_plus_rejected",
+      "source": "true + 1",
+      "row": {},
+      "expected": {"ok": false, "code": "type_mismatch"}
+    },
+    {
+      "name": "arith_null_add_propagates",
+      "source": "null + 1",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "arith_field_null_propagates",
+      "source": "{X} * 2",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "cmp_eq_true",
+      "source": "1 = 1",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_eq_int_float_match",
+      "source": "42 = 42.0",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_eq_null_null",
+      "source": "null = null",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_eq_null_zero_false",
+      "source": "null = 0",
+      "row": {},
+      "expected": {"ok": true, "value": false}
+    },
+    {
+      "name": "cmp_eq_bool_vs_number_false",
+      "source": "true = 1",
+      "row": {},
+      "expected": {"ok": true, "value": false}
+    },
+    {
+      "name": "cmp_neq",
+      "source": "1 != 2",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_lt_numbers",
+      "source": "1 < 2",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_lt_strings_codepoint",
+      "source": "\"a\" < \"b\"",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_lt_strings_non_ascii_codepoint",
+      "source": "\"z\" < \"á\"",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "cmp_lt_null_propagates",
+      "source": "null < 1",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "cmp_lt_mixed_types_rejected",
+      "source": "1 < \"a\"",
+      "row": {},
+      "expected": {"ok": false, "code": "type_mismatch"}
+    },
+    {
+      "name": "bool_and_true_true",
+      "source": "true and true",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "bool_and_short_circuit_false",
+      "source": "false and true",
+      "row": {},
+      "expected": {"ok": true, "value": false}
+    },
+    {
+      "name": "bool_or_short_circuit_true",
+      "source": "true or false",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "bool_not_true",
+      "source": "not true",
+      "row": {},
+      "expected": {"ok": true, "value": false}
+    },
+    {
+      "name": "bool_not_null",
+      "source": "not null",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "bool_and_null_propagates",
+      "source": "null and true",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "bool_and_left_false_short_circuit_skips_null",
+      "source": "false and null",
+      "row": {},
+      "expected": {"ok": true, "value": false}
+    },
+    {
+      "name": "bool_or_left_true_short_circuit_skips_null",
+      "source": "true or null",
+      "row": {},
+      "expected": {"ok": true, "value": true}
+    },
+    {
+      "name": "bool_truthy_empty_string_falsy",
+      "source": "if(\"\", 1, 2)",
+      "row": {},
+      "expected": {"ok": true, "value": 2}
+    },
+    {
+      "name": "bool_truthy_zero_falsy",
+      "source": "if(0, 1, 2)",
+      "row": {},
+      "expected": {"ok": true, "value": 2}
+    },
+    {
+      "name": "bool_truthy_nonempty_string_truthy",
+      "source": "if(\"x\", 1, 2)",
+      "row": {},
+      "expected": {"ok": true, "value": 1}
+    },
+    {
+      "name": "if_null_condition_propagates",
+      "source": "if(null, 1, 2)",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "concat_basic",
+      "source": "concat(\"a\", \"b\", \"c\")",
+      "row": {},
+      "expected": {"ok": true, "value": "abc"}
+    },
+    {
+      "name": "concat_null_coerces_to_empty",
+      "source": "concat(\"a\", null, \"b\")",
+      "row": {},
+      "expected": {"ok": true, "value": "ab"}
+    },
+    {
+      "name": "concat_non_string_rejected",
+      "source": "concat(\"a\", 1)",
+      "row": {},
+      "expected": {"ok": false, "code": "type_mismatch"}
+    },
+    {
+      "name": "upper_basic",
+      "source": "upper(\"hello\")",
+      "row": {},
+      "expected": {"ok": true, "value": "HELLO"}
+    },
+    {
+      "name": "upper_null_to_empty",
+      "source": "upper(null)",
+      "row": {},
+      "expected": {"ok": true, "value": ""}
+    },
+    {
+      "name": "lower_basic",
+      "source": "lower(\"HELLO\")",
+      "row": {},
+      "expected": {"ok": true, "value": "hello"}
+    },
+    {
+      "name": "trim_basic",
+      "source": "trim(\"  hi  \")",
+      "row": {},
+      "expected": {"ok": true, "value": "hi"}
+    },
+    {
+      "name": "len_basic",
+      "source": "len(\"hello\")",
+      "row": {},
+      "expected": {"ok": true, "value": 5}
+    },
+    {
+      "name": "len_null_zero",
+      "source": "len(null)",
+      "row": {},
+      "expected": {"ok": true, "value": 0}
+    },
+    {
+      "name": "replace_basic",
+      "source": "replace(\"abcabc\", \"b\", \"X\")",
+      "row": {},
+      "expected": {"ok": true, "value": "aXcaXc"}
+    },
+    {
+      "name": "replace_empty_needle_returns_haystack",
+      "source": "replace(\"abc\", \"\", \"X\")",
+      "row": {},
+      "expected": {"ok": true, "value": "abc"}
+    },
+    {
+      "name": "substring_two_arg",
+      "source": "substring(\"hello\", 2)",
+      "row": {},
+      "expected": {"ok": true, "value": "ello"}
+    },
+    {
+      "name": "substring_three_arg_inclusive_end",
+      "source": "substring(\"hello\", 1, 3)",
+      "row": {},
+      "expected": {"ok": true, "value": "hel"}
+    },
+    {
+      "name": "substring_clamps_high_end",
+      "source": "substring(\"hello\", 1, 99)",
+      "row": {},
+      "expected": {"ok": true, "value": "hello"}
+    },
+    {
+      "name": "substring_start_past_end_clamps_to_last_char",
+      "source": "substring(\"hello\", 6, 9)",
+      "row": {},
+      "expected": {"ok": true, "value": "o"}
+    },
+    {
+      "name": "substring_inverted_range_returns_empty",
+      "source": "substring(\"hello\", 4, 2)",
+      "row": {},
+      "expected": {"ok": true, "value": ""}
+    },
+    {
+      "name": "substring_negative_rejected",
+      "source": "substring(\"hello\", -1, 2)",
+      "row": {},
+      "expected": {"ok": false, "code": "type_mismatch"}
+    },
+    {
+      "name": "number_cast_from_string",
+      "source": "number(\"42\")",
+      "row": {},
+      "expected": {"ok": true, "value": 42}
+    },
+    {
+      "name": "number_cast_from_bool_returns_null",
+      "source": "number(true)",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "number_cast_from_null_returns_null",
+      "source": "number(null)",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "number_cast_from_non_numeric_string_returns_null",
+      "source": "number(\"abc\")",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "number_cast_from_empty_string_returns_null",
+      "source": "number(\"  \")",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "text_cast_integer_no_trailing_zero",
+      "source": "text(42)",
+      "row": {},
+      "expected": {"ok": true, "value": "42"}
+    },
+    {
+      "name": "text_cast_fractional",
+      "source": "text(1.5)",
+      "row": {},
+      "expected": {"ok": true, "value": "1.5"}
+    },
+    {
+      "name": "text_cast_zero",
+      "source": "text(0)",
+      "row": {},
+      "expected": {"ok": true, "value": "0"}
+    },
+    {
+      "name": "text_cast_negative_integer",
+      "source": "text(-3)",
+      "row": {},
+      "expected": {"ok": true, "value": "-3"}
+    },
+    {
+      "name": "text_cast_bool_true",
+      "source": "text(true)",
+      "row": {},
+      "expected": {"ok": true, "value": "true"}
+    },
+    {
+      "name": "text_cast_bool_false",
+      "source": "text(false)",
+      "row": {},
+      "expected": {"ok": true, "value": "false"}
+    },
+    {
+      "name": "text_cast_null_returns_null",
+      "source": "text(null)",
+      "row": {},
+      "expected": {"ok": true, "value": null}
+    },
+    {
+      "name": "text_cast_string_passthrough",
+      "source": "text(\"already\")",
+      "row": {},
+      "expected": {"ok": true, "value": "already"}
+    },
+    {
+      "name": "concat_rooms_label",
+      "source": "concat({Number}, \" - \", upper({Name}))",
+      "row": {"number": "101", "name": "Bedroom"},
+      "expected": {"ok": true, "value": "101 - BEDROOM"}
+    },
+    {
+      "name": "if_expr_picks_then",
+      "source": "if({Count} > 0, \"some\", \"none\")",
+      "row": {"count": 3},
+      "expected": {"ok": true, "value": "some"}
+    },
+    {
+      "name": "if_expr_picks_else",
+      "source": "if({Count} > 0, \"some\", \"none\")",
+      "row": {"count": 0},
+      "expected": {"ok": true, "value": "none"}
+    },
+    {
+      "name": "missing_ref_after_resolution_failure",
+      "source": "{Ghost}",
+      "row": {},
+      "resolve_drop": ["Ghost"],
+      "expected": {"ok": false, "code": "missing_ref"}
+    }
+  ]
+}

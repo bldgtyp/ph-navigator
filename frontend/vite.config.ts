@@ -10,6 +10,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // Shared cross-language fixtures (formula corpora, etc.). The
+      // Python suite reads the same JSON files; CI fails on the first
+      // parity divergence.
+      "@fixtures": path.resolve(__dirname, "../backend/tests/fixtures"),
     },
   },
   server: {

@@ -22,7 +22,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@fixtures/*": ["../backend/tests/fixtures/*"]
     },
     "types": ["vite/client", "node"]
   },

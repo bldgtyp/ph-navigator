@@ -290,6 +290,222 @@ def test_phase_2_adds_four_types_then_cell_writes_and_save_round_trip(
     assert body["rooms"][0]["custom"] == values
 
 
+def test_phase_2_put_rejects_mistyped_custom_values(clean_document_tables: None) -> None:
+    """Plan-18 §5b B1 — whole-table replace must reject custom values
+    whose runtime type does not match the declared `field_type`. Each
+    sub-case re-adds the field with a clean draft so the rejection is
+    on the value, not the schema.
+    """
+    client = _signed_in_client()
+    project = _create_project(client, bt_number="p28-mistype")
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    cases: list[tuple[str, str, object, dict[str, object] | None]] = [
+        # (field_id, field_type, bad_value, config)
+        ("cf_short", "short_text", 42, None),
+        ("cf_number", "number", "not-a-number", {"precision": 1}),
+        ("cf_url", "url", "not a url", None),  # plan-18 §5c Bug 2 — URL scheme guard
+        ("cf_ss", "single_select", "opt_does_not_exist", None),
+    ]
+
+    for field_id, field_type, bad_value, config in cases:
+        current = client.get(_draft_rooms_url(project_id, version_id)).json()
+        added = _add_field(
+            client,
+            project_id,
+            version_id,
+            current,
+            _new_field(field_id, f"Mistyped {field_type}", field_type, config=config),
+        )
+        write = client.put(
+            _draft_rooms_url(project_id, version_id),
+            headers={"Origin": ORIGIN, "If-Match": added["draft_etag"]},
+            json=_rooms_payload(
+                added["custom_fields"],
+                [_room("rm_101", "101", {field_id: bad_value})],
+            ),
+        )
+        assert write.status_code == 422, (field_type, write.text)
+        assert write.json()["error_code"] == "invalid_project_document"
+
+        # Tear the field back out so the next iteration starts clean.
+        refreshed = client.get(_draft_rooms_url(project_id, version_id)).json()
+        deleted = client.post(
+            _mutate_url(project_id, version_id),
+            headers={"Origin": ORIGIN, "If-Match": refreshed["draft_etag"]},
+            json=_delete_mutation(
+                fingerprint=_fingerprint(refreshed["custom_fields"]),
+                field_id=field_id,
+            ),
+        )
+        assert deleted.status_code == 200, deleted.text
+
+
+def test_phase_2_download_surfaces_populated_custom_values(clean_document_tables: None) -> None:
+    """Plan-18 §5b B2 — download endpoint contains the full
+    `custom_fields` block and per-row values for every phase-2 type
+    (text, long_text, number, url) plus a custom `single_select`.
+    Pins the download-shape contract in plan-13 §4.9.
+    """
+    client = _signed_in_client()
+    project = _create_project(client, bt_number="p28-dl")
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    current = client.get(_draft_rooms_url(project_id, version_id)).json()
+    for field in [
+        _new_field("cf_short", "Short note", "short_text"),
+        _new_field("cf_long", "Long note", "long_text"),
+        _new_field("cf_number", "Target ACH50", "number", config={"precision": 1}),
+        _new_field("cf_url", "Submittal URL", "url"),
+    ]:
+        current = _add_field(client, project_id, version_id, current, field)
+
+    # Add a single_select via the schema mutation endpoint so the
+    # option list lives under `rooms.cf_status`. Mirrors plan-16 P3.5.
+    add_ss = client.post(
+        _mutate_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
+        json={
+            "kind": "addField",
+            "tableKey": "rooms",
+            "after": _new_field("cf_status", "Status", "single_select"),
+            "initialOptions": [
+                {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
+                {"id": "opt_done", "label": "Done", "color": "#10b981", "order": 2},
+            ],
+            "expectedSchemaFingerprint": _fingerprint(current["custom_fields"]),
+        },
+    )
+    assert add_ss.status_code == 200, add_ss.text
+    current = add_ss.json()
+
+    values: dict[str, object] = {
+        "cf_short": "ok",
+        "cf_long": "Line one\nLine two",
+        "cf_number": 0.6,
+        "cf_url": "https://example.com/submittal.pdf",
+        "cf_status": "opt_done",
+    }
+    # Slice-replace payload only carries the two core option keys.
+    # `rooms.cf_status` is preserved server-side from the saved body.
+    payload = _rooms_payload(current["custom_fields"], [_room("rm_101", "101", values)])
+    write = client.put(
+        _draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
+        json=payload,
+    )
+    assert write.status_code == 200, write.text
+
+    save = client.post(
+        _save_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": write.json()["version_etag"]},
+    )
+    assert save.status_code == 200, save.text
+
+    download = client.get(
+        f"/api/v1/projects/{project_id}/versions/{version_id}/download/tables/rooms"
+    )
+    assert download.status_code == 200, download.text
+    body = download.json()["rooms"]
+    assert [field["id"] for field in body["custom_fields"]] == [
+        "cf_short",
+        "cf_long",
+        "cf_number",
+        "cf_url",
+        "cf_status",
+    ]
+    assert [field["field_type"] for field in body["custom_fields"]] == [
+        "short_text",
+        "long_text",
+        "number",
+        "url",
+        "single_select",
+    ]
+    assert body["rows"][0]["custom"] == values
+    # No formula in this fixture → the per-row read overlay is empty.
+    assert body["rows"][0]["computed"] == {}
+
+
+def test_phase_2_slice_replace_accepts_rooms_cf_option_lists(
+    clean_document_tables: None,
+) -> None:
+    """Plan-18 §5c — `cloneOptions` on the frontend spreads the full
+    `single_select_options` record (including `rooms.cf_*`) into every
+    slice-replace payload. The backend `RoomsSliceOptions` envelope now
+    accepts that namespace; the payload's option list takes precedence
+    over the saved body's, and core keys plus custom keys both round-
+    trip in a single PUT.
+    """
+    client = _signed_in_client()
+    project = _create_project(client, bt_number="p28-ss-replace")
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(_draft_rooms_url(project_id, version_id)).json()
+    add_ss = client.post(
+        _mutate_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json={
+            "kind": "addField",
+            "tableKey": "rooms",
+            "after": _new_field("cf_status", "Status", "single_select"),
+            "initialOptions": [
+                {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
+            ],
+            "expectedSchemaFingerprint": _fingerprint(initial["custom_fields"]),
+        },
+    )
+    assert add_ss.status_code == 200, add_ss.text
+    current = add_ss.json()
+
+    # Mirrors what the frontend `cloneOptions` builds after plan-18:
+    # the full record, including the `rooms.cf_status` namespace.
+    payload = _rooms_payload(
+        current["custom_fields"],
+        [_room("rm_101", "101", {"cf_status": "opt_open"})],
+    )
+    payload["single_select_options"]["rooms.cf_status"] = current["single_select_options"][
+        "rooms.cf_status"
+    ]
+    response = client.put(
+        _draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["rooms"][0]["custom"] == {"cf_status": "opt_open"}
+    # The custom option list round-trips through the response envelope.
+    assert response.json()["single_select_options"]["rooms.cf_status"] == [
+        {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
+    ]
+
+
+def test_phase_2_slice_replace_rejects_non_namespaced_extras(
+    clean_document_tables: None,
+) -> None:
+    """Companion to the slice-replace acceptance test: any option key
+    that is neither a core key nor a `rooms.cf_*` namespace is rejected
+    at the request boundary.
+    """
+    client = _signed_in_client()
+    project = _create_project(client, bt_number="p28-extras")
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(_draft_rooms_url(project_id, version_id)).json()
+    payload = _rooms_payload(initial["custom_fields"], [_room("rm_101", "101", {})])
+    payload["single_select_options"]["window_types.foo"] = []
+    response = client.put(
+        _draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "validation_error"
+
+
 def test_phase_2_duplicate_name_recovery_sequence(clean_document_tables: None) -> None:
     client = _signed_in_client()
     project = _create_project(client, bt_number="p28-dups")

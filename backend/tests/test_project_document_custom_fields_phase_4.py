@@ -14,7 +14,6 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 
 from features.auth.service import create_or_update_user

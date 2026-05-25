@@ -46,8 +46,8 @@ class FieldRegistryEntry:
 
 
 def build_field_registry(
-    capability: "CustomFieldCapability",
-    body: "ProjectDocumentV1",
+    capability: CustomFieldCapability,
+    body: ProjectDocumentV1,
 ) -> tuple[FieldRegistryEntry, ...]:
     """Snapshot the resolvable refs for this table at this moment.
 
@@ -88,7 +88,7 @@ def build_field_registry(
     return tuple(entries)
 
 
-def _core_display_name_for(capability: "CustomFieldCapability", key: str) -> str:
+def _core_display_name_for(capability: CustomFieldCapability, key: str) -> str:
     """Map a core python attribute key to a human-readable label.
 
     Pairs `core_field_keys` and `core_display_names` index-wise where
@@ -253,7 +253,7 @@ def detect_cycles(
 
 
 def resolve_stored_ast(
-    field: "CustomFieldDef",
+    field: CustomFieldDef,
     registry: Iterable[FieldRegistryEntry],
 ) -> FormulaAST | None:
     """Re-resolve a stored formula's AST against the current registry.
