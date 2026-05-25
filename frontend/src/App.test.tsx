@@ -84,6 +84,7 @@ const roomsSlicePayload = {
   version_etag: "version-etag",
   draft_etag: null,
   rooms: [],
+  custom_fields: [],
   single_select_options: {
     "rooms.floor_level": [],
     "rooms.building_zone": [],

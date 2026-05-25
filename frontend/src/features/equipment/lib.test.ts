@@ -19,6 +19,7 @@ import {
   validateRoomsPayload,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
+import type { CustomFieldDef } from "../../shared/ui/data-table";
 import { ROOM_BUILDING_ZONE_COLUMN_ID, ROOM_FLOOR_LEVEL_COLUMN_ID, type RoomsSlice } from "./types";
 
 const baseSlice: RoomsSlice = {
@@ -488,5 +489,268 @@ describe("equipment room helpers", () => {
     ]);
     expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");
     expect(ROOM_BUILDING_ZONE_COLUMN_ID).toBe("building_zone");
+  });
+
+  // ---------------------------------------------------------------
+  // Plan-18 regression: every RoomsReplacePayload builder must carry
+  // `custom_fields` so the backend whole-table-replace path does not
+  // wipe user-added columns. Plan-13 D16 + plan-14 §1.5 keep type
+  // coercion server-authoritative, so these tests do not assert any
+  // per-type validation on the client.
+  // ---------------------------------------------------------------
+
+  const cfText: CustomFieldDef = {
+    id: "cf_text",
+    field_key: "u_test",
+    display_name: "Test",
+    field_type: "short_text",
+    config: {},
+    description: null,
+    created_at: "2026-05-25T00:00:00Z",
+    created_by: null,
+  };
+  const cfPalette: CustomFieldDef = {
+    id: "cf_palette",
+    field_key: "u_palette",
+    display_name: "Palette",
+    field_type: "single_select",
+    config: {},
+    description: null,
+    created_at: "2026-05-25T00:00:00Z",
+    created_by: null,
+  };
+
+  function sliceWithCustomFields(custom: CustomFieldDef[], extra: Partial<RoomsSlice> = {}) {
+    return {
+      ...baseSlice,
+      custom_fields: custom,
+      ...extra,
+    } satisfies RoomsSlice;
+  }
+
+  test("roomsPayloadFromCellWrites preserves custom_fields on a core-field write", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "num_people", value: 4 }],
+      {},
+    );
+
+    expect(payload.custom_fields).toEqual([cfText]);
+    // Cloned reference — mutating the input slice's custom_fields must
+    // not leak into the produced payload.
+    expect(payload.custom_fields).not.toBe(current.custom_fields);
+  });
+
+  test("roomsPayloadFromCellWrites routes cf_* writes through setCustomValue", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "cf_text", value: "hello" }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom).toEqual({ cf_text: "hello" });
+    expect(payload.custom_fields).toEqual([cfText]);
+  });
+
+  test("roomsPayloadFromCellWrites clears a cf_* value when written undefined", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [
+        {
+          ...emptyRoom("opt_ground"),
+          id: "rm_1",
+          number: "101",
+          name: "Living",
+          custom: { cf_text: "old" },
+        },
+      ],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "cf_text", value: undefined }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom).toEqual({});
+  });
+
+  test("roomsPayloadFromCellWrites drops writes to unknown cf_* keys without synthesizing the field", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "cf_ghost", value: "drift" }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom).toEqual({});
+    expect(payload.custom_fields).toEqual([cfText]);
+  });
+
+  test("roomsPayloadFromCellWrites preserves namespaced rooms.cf_* option lists", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const paletteRed = { id: "opt_red", label: "Red", color: "#ef4444", order: 0 };
+    const current = sliceWithCustomFields([cfPalette], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      single_select_options: {
+        "rooms.floor_level": [ground],
+        "rooms.building_zone": [],
+        "rooms.cf_palette": [paletteRed],
+      } as RoomsSlice["single_select_options"],
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "num_people", value: 1 }],
+      {},
+    );
+
+    expect(payload.single_select_options["rooms.cf_palette"]).toEqual([paletteRed]);
+    expect(payload.custom_fields).toEqual([cfPalette]);
+  });
+
+  test("roomsPayloadFromCellWrites merges newOptions into a rooms.cf_* list", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const paletteRed = { id: "opt_red", label: "Red", color: "#ef4444", order: 0 };
+    const paletteBlue = { id: "opt_blue", label: "Blue", color: "#3b82f6", order: 1 };
+    const current = sliceWithCustomFields([cfPalette], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      single_select_options: {
+        "rooms.floor_level": [ground],
+        "rooms.building_zone": [],
+        "rooms.cf_palette": [paletteRed],
+      } as RoomsSlice["single_select_options"],
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "cf_palette", value: "opt_blue" }],
+      { "rooms.cf_palette": [paletteBlue] },
+    );
+
+    expect(payload.single_select_options["rooms.cf_palette"]).toEqual([paletteRed, paletteBlue]);
+    expect(payload.rooms[0]?.custom).toEqual({ cf_palette: "opt_blue" });
+  });
+
+  test("roomsPayloadFromCellWrites strips removed ids from a rooms.cf_* list", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const paletteRed = { id: "opt_red", label: "Red", color: "#ef4444", order: 0 };
+    const paletteBlue = { id: "opt_blue", label: "Blue", color: "#3b82f6", order: 1 };
+    const current = sliceWithCustomFields([cfPalette], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      single_select_options: {
+        "rooms.floor_level": [ground],
+        "rooms.building_zone": [],
+        "rooms.cf_palette": [paletteRed, paletteBlue],
+      } as RoomsSlice["single_select_options"],
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "num_people", value: 1 }],
+      {},
+      { "rooms.cf_palette": ["opt_red"] },
+    );
+
+    expect(payload.single_select_options["rooms.cf_palette"]).toEqual([
+      { ...paletteBlue, order: 0 },
+    ]);
+  });
+
+  test("nextRoomsPayload preserves custom_fields", () => {
+    const room = { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" };
+    const current = sliceWithCustomFields([cfText]);
+
+    const payload = nextRoomsPayload(current, room, {
+      floorLevel: "Ground",
+      buildingZone: "Residential",
+    });
+
+    expect(payload.custom_fields).toEqual([cfText]);
+  });
+
+  test("deleteRoomPayload preserves custom_fields", () => {
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+    });
+
+    const payload = deleteRoomPayload(current, "rm_1");
+
+    expect(payload.rooms).toEqual([]);
+    expect(payload.custom_fields).toEqual([cfText]);
+  });
+
+  test("roomsPayloadFromRowInsert preserves custom_fields", () => {
+    const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_5", number: "5", name: "Living" }],
+      single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
+    });
+
+    const payload = roomsPayloadFromRowInsert(
+      current,
+      [{ rowId: "tmp_row_1", anchorRowId: "rm_5", fieldDefaults: {} }],
+      ({ rowId, anchorRow }) => ({
+        ...(anchorRow ?? emptyRoom()),
+        id: rowId,
+        number: nextFreeRoomNumber(current.rooms, anchorRow?.number ?? ""),
+      }),
+    );
+
+    expect(payload.custom_fields).toEqual([cfText]);
+  });
+
+  test("roomsPayloadFromRowDelete preserves custom_fields", () => {
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "1", name: "Living" }],
+    });
+
+    const payload = roomsPayloadFromRowDelete(current, [
+      { rowId: "rm_1", row: current.rooms[0], anchorRowId: null },
+    ]);
+
+    expect(payload.custom_fields).toEqual([cfText]);
+  });
+
+  test("replaceRoomOptionsPayload preserves custom_fields", () => {
+    const current = sliceWithCustomFields([cfText], {
+      rooms: [
+        {
+          ...emptyRoom("opt_ground"),
+          id: "rm_1",
+          number: "101",
+          name: "Living",
+          floor_level: "opt_ground",
+        },
+      ],
+      single_select_options: {
+        "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
+        "rooms.building_zone": [],
+      },
+    });
+
+    const payload = replaceRoomOptionsPayload(current, "rooms.floor_level", [
+      { id: "opt_ground", label: "Cellar", color: "#10b981", order: 0 },
+    ]);
+
+    expect(payload.custom_fields).toEqual([cfText]);
   });
 });

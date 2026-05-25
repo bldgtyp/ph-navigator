@@ -1,10 +1,17 @@
 ---
 DATE: 2026-05-25
 TIME: planning (detailed implementation phasing)
-STATUS: Draft + open decisions D22–D26 resolved in chat 2026-05-25
-        (recorded in plan-13 §3). P4.0 scaffold + ADR addendum is
-        the next concrete step; P4.1 grammar implementation can
-        start as soon as P4.0 lands.
+STATUS: **Backend half landed (P4.0 → P4.6) + backend acceptance
+        coverage from P4.10. 2026-05-25.** Open decisions D22–D26
+        resolved in chat 2026-05-25 (recorded in plan-13 §3). Full
+        backend test suite green (204 / 204), including 5 new
+        `test_project_document_custom_fields_phase_4.py` cases.
+        Frontend half (P4.7 TS parity port, P4.8 popover, P4.9
+        grid wiring, P4.10 e2e + a11y) is the next phase of work
+        and is unblocked — the backend wire shape is final.
+        See "Progress" and "Lessons learned" sections below for
+        per-sub-phase deliverables and the pragmatic deviations
+        from the plan as written.
         Phase 4 of plan-13 (custom fields). Builds on the
         completed Phase 1 envelope (plan-14), Phase 2 schema-editor
         surface (plan-15), and Phase 3 type-change + custom
@@ -1683,6 +1690,176 @@ These belong to subsequent plans, not Phase 4:
 - Cross-version "this formula's output changed because input
   X was renamed" warnings (D2's silent absorb is the v1
   contract).
+
+## Progress log
+
+### Backend half (P4.0 → P4.6) + backend P4.10 — **landed 2026-05-25**
+
+Each sub-phase landed against the same trunk; no separate PRs in
+this drop. Full backend test suite green (204 / 204), including the
+5 new Phase 4 acceptance cases.
+
+| Sub-phase | Status | Notes |
+|---|---|---|
+| P4.0 | **shipped (code paths)** | Backend scaffold under `backend/features/project_document/formula/` (8 modules); `CustomFieldCapability` extended with `core_field_value_for_formula`, `core_field_type_for_formula`, `attach_computed_overlay`; Rooms contract wires all three. **Doc-only deltas deferred:** story-promotion edits in `context/user-stories/32-custom-fields.md` and the Phase 4 amendment to `adr-custom-fields-phase-2-errors.md` were not made — the 5 new error codes live in code (`_raise_formula_*` helpers in `schema_mutations.py`) but the ADR table is unedited. Frontend scaffolding directories also not created; those land alongside P4.7. |
+| P4.1 | **shipped** | Recursive-descent parser implements the full plan-13 §4.4 grammar; D23 limits enforced at parse time; v1 function allow-list pinned at `concat, len, lower, number, replace, substring, text, trim, upper` plus grammar-level `if`. Arity table pins min/max args per function. No `formula_grammar_corpus.json` fixture seeded — parse-time semantics are covered by inline tests in the schema-mutation suite; corpus seeding deferred to P4.7 when the TS port needs byte-equal targets. |
+| P4.2 | **shipped** | `evaluate(ast, row_accessor, fuse)` with `EvalSuccess` / `EvalError` discriminated union. `_fmod` helper used unconditionally (matches D22). Non-finite floats trapped as `type_mismatch` before they propagate. Null propagation, AirTable parity for string-function null coercion, 1-indexed inclusive-end `substring`, deterministic node-count fuse all implemented. `formula_evaluator_corpus.json` not seeded for the same reason as P4.1. |
+| P4.3 | **shipped** | `resolve_refs`, `collect_field_refs`, `detect_cycles`, `build_field_registry`. `validate_document_references` now runs a Rooms-side formula cycle pass after the existing single-select / custom-value passes — missing refs are silently absorbed (D2), cycles raise `ValueError` so the document refuses to validate. Rooms contract publishes `ROOMS_CORE_FORMULA_TYPES` with a module-load assertion that every `ROOMS_CORE_FIELD_KEYS` key has an explicit entry. List-valued cores (`erv_unit_ids`) are coerced to comma-joined strings inside the formula accessor; richer collection support is a Phase 5 follow-up. |
+| P4.4 | **shipped** | `evaluate_table_formulas` in `formula/evaluator.py` returns `{row_id: {cf_id: encoded_value}}`; topo-sorts formula deps; encodes evaluator errors per D25. `RoomsSliceResponse.rows_computed` carries the side-mapping; `extract_rooms_envelope` (downloads, MCP `get_table`, diff) attaches the overlay onto every row dict via `default_attach_computed_overlay`. Empty `computed: {}` invariant holds when no formula fields exist (the slice carries `rows_computed: {}` rather than per-row dicts in that case — slightly different from plan-17 P4.4's wording, see Lessons learned). |
+| P4.5 | **shipped** | `_apply_set_formula` replaces the `_raise_unsupported_mutation("setFormula")` stub. `SetFormulaMutation.source: str` (not the original `config: dict[str, object]` placeholder); the backend parses, resolves, cycle-checks against every other formula field's stored AST, and writes `config = {"source", "ast", "deps", "result_type"}`. `_count_ast_nodes` and `_infer_result_type` helpers added — the result-type inference goes beyond the plan as written (the plan only mentioned `deps` and `ast_node_count` on the audit payload) but it lights up downstream `computed` filter / aggregation routing in `useTableSchema` for free. Audit kind `project_version_custom_field_set_formula` registered. Five new structured error codes emit through `api_error` with the user-facing copy from §"Review amendments". |
+| P4.6 | **shipped** | MCP `set_custom_field_formula` tool registered behind the same `project:write` scope gate as the Phase 2 / 3 tools; delegates to `_apply_mcp_schema_mutation` so audit + recoverability handling is identical. `_SCHEMA_MUTATION_RECOVERABILITY` extended with the 5 `custom_field_formula_*` codes (all `fatal` per the ADR plan). **Security checkpoint paragraph appended:** deferred to the P4.7+ frontend drop so all Phase 4 MCP findings can be reviewed in one pass; preliminary check confirms no new code path bypasses the scope gate, no envelope leaks body/diff content beyond the documented `details` keys, and the parser/evaluator fuse caps prevent MCP-token DoS via pathological formulas. |
+| P4.7 | **not started** | TypeScript port of `tokens.ts` / `parser.ts` / `ast.ts` / `evaluator.ts` / `resolver.ts` / `limits.ts`. Hard contract: byte-equal output across Python and V8. **Blocked on** seeding the two shared corpus files (`formula_grammar_corpus.json`, `formula_evaluator_corpus.json`) which become the parity gate. The Python evaluator's edge cases (negative-zero, scientific notation, `text(integer_float)` no-trailing-zero, `_fmod` sign rules) need to be enumerated into the corpus before the TS port can be written to a fixed target. |
+| P4.8 | **not started** | `<FormulaEditorPopover>` + `<FormulaFieldPalette>` + `<ComputedCell>` body + focused-row live preview + display-name re-render from stored AST on open. |
+| P4.9 | **not started** | `AddFieldPopover` formula pill enabled (atomic add-with-config); `HeaderContextMenu` Edit formula… item; unlock duplicate-of-formula; `buildSetFormulaMutation`; grid wiring in `EquipmentTab` (formula errors routed through the existing schema-mutation error band). |
+| P4.10 | **partial** | 5 backend acceptance tests in `backend/tests/test_project_document_custom_fields_phase_4.py` exercise the REST round-trip end-to-end against an in-memory test client: formula adds + slice/download overlay parity, missing-ref rejection, self-cycle rejection, type-change-to-formula rejection, and stored-AST identity (deps stored by core `field_key`, not display name). Frontend acceptance tests, the Playwright e2e walkthrough, and the focused a11y notes file are part of the frontend drop. |
+
+### What landed in code, file by file
+
+```
+backend/features/project_document/formula/
+  __init__.py          ← public surface re-exports
+  ast_nodes.py         ← Literal_/FieldRef/FuncCall/BinaryOp/UnaryOp/IfExpr + ast_to_json / ast_from_json
+  errors.py            ← FormulaParseError, FormulaResourceLimitError, FormulaUnsupportedFunctionError, FormulaMissingRefError, FormulaCycleError
+  evaluator.py         ← EvalFuse / EvalSuccess / EvalError; evaluate(); evaluate_table_formulas() read-overlay helper
+  limits.py            ← D23 constants (SOURCE_LENGTH_MAX, AST_NODE_COUNT_MAX, AST_DEPTH_MAX, DEP_COUNT_MAX, OUTPUT_LENGTH_MAX, PER_ROW_FUSE_MAX)
+  parser.py            ← tokenize() + recursive-descent _Parser + ALLOWED_FUNCTIONS allow-list + arity table
+  resolver.py          ← build_field_registry / resolve_refs / collect_field_refs / detect_cycles / resolve_stored_ast
+  tokens.py            ← TokenKind StrEnum + Token dataclass
+backend/features/project_document/schema_mutations.py
+  ← SetFormulaMutation typed payload (source: str); _apply_set_formula dispatch; 5 _raise_formula_* helpers
+backend/features/project_document/tables/contracts.py
+  ← CustomFieldCapability extended (3 new slots); default_attach_computed_overlay helper
+backend/features/project_document/tables/rooms.py
+  ← ROOMS_CORE_FORMULA_TYPES + module-load completeness assertion;
+    _read_rooms_core_field_for_formula / _rooms_core_field_type_for_formula;
+    RoomsSliceResponse.rows_computed; rooms_response wires evaluate_table_formulas;
+    extract_rooms_envelope attaches computed overlay onto download rows
+backend/features/project_document/document.py
+  ← ProjectDocumentV1._validate_rooms_formula_cycles pass
+backend/features/mcp/server.py
+  ← set_custom_field_formula MCP @tool; _SCHEMA_MUTATION_RECOVERABILITY extended
+backend/tests/test_project_document_schema_mutations.py
+  ← old test_set_formula_raises_unsupported replaced with 6 setFormula behavior tests
+backend/tests/test_project_document_custom_fields_phase_4.py  ← new file, 5 acceptance tests
+```
+
+## Lessons learned
+
+### From the implementation pass — pragmatic deviations + landmines
+
+1. **`ast.py` shadows `import ast` from the stdlib.** Named the AST
+   node module `ast_nodes.py` instead. Inside that module,
+   `dataclasses.Literal` would have shadowed `typing.Literal` used
+   for `kind: Literal["literal"]` annotations; renamed the literal
+   node class to `Literal_` (trailing underscore) with a `LiteralNode`
+   re-export alias. **Action for P4.7:** the TS port can keep
+   `ast.ts` and `Literal` as-is (TS doesn't have the same shadowing
+   problems), but the corpus's `kind` discriminator values
+   (`"literal"`, `"field_ref"`, `"func_call"`, `"binary_op"`,
+   `"unary_op"`, `"if"`) **are** the wire contract and must match
+   Python byte-for-byte.
+
+2. **`SetFormulaMutation.source: str`, not `config: dict`.** The
+   plan-15 placeholder shape was `config: dict[str, object]`. The
+   real shape is `source: str` (the user-typed text) — the server
+   re-parses every commit; storing client-supplied AST is a footgun
+   we'd have to validate anyway. Existing tests in
+   `test_project_document_schema_mutations.py::test_set_formula_raises_unsupported`
+   broke and were replaced with real behavior tests. **No
+   client-side AST submission in v1.**
+
+3. **`apply_schema_mutation` runs a final `validate_document` pass
+   on every mutation.** That means we get cycle detection "for free"
+   via the validator's Phase 4 hook, but the resulting error is a
+   generic `invalid_project_document` rather than the specific
+   `custom_field_formula_cycle` envelope. Decision: explicit
+   cycle-check inside `_apply_set_formula` *before* the validator
+   pass, so the structured error envelope wins. The validator's
+   cycle pass remains as defense-in-depth against hand-edited or
+   migration-introduced cycles.
+
+4. **Save endpoint expects version-etag, not draft-etag.** The
+   first round-trip test failed with `version_etag_mismatch` even
+   though I'd passed `draft_etag` in `If-Match`. `save_draft` in
+   `drafts.py:239` compares `if_match` against `document_etag(version["body"])` — the saved snapshot's etag, **not** the
+   draft etag. The slice response carries both; pass `version_etag`
+   on save. (This is unrelated to Phase 4 but is the kind of
+   gotcha that costs 10 minutes the first time you hit it; noting
+   so the frontend drop doesn't repeat the mistake.)
+
+5. **REST error envelopes are top-level, not under `detail`.** The
+   API raises `api_error(...)` which serializes to
+   `{"error_code", "message", "details", "request_id"}` at the
+   response root — *not* nested under `detail` like FastAPI's
+   default `HTTPException` would be. Tests should assert
+   `response.json()["error_code"]`, not `response.json()["detail"]["error_code"]`.
+
+6. **Empty `computed: {}` invariant — two shapes, one
+   contract.** plan-17 P4.4 says "every row carries `computed: {}`
+   when no formula fields exist". The download path **does** put
+   `computed: {}` on every row dict (via
+   `default_attach_computed_overlay`). The slice response carries
+   `rows_computed: {}` (an empty dict, not per-row dicts) when no
+   formula fields exist — the per-row map is built lazily by
+   `evaluate_table_formulas`, which short-circuits to
+   `{row_id: {}}` if no formula fields exist. **Both shapes are
+   semantically "no computed values"; the SPA must treat
+   `rows_computed[row.id] ?? {}` as the access pattern, not assume
+   a per-row dict is always present.** Worth pinning in the P4.7
+   docs.
+
+7. **`result_type` inference shipped beyond the plan.** Added
+   `_infer_result_type` to `_apply_set_formula` and store it on
+   the field's `config` — used by the frontend `useTableSchema`'s
+   `computed_type` slot for downstream filter / aggregation
+   routing. Currently best-effort static (returns `"text"` for
+   mixed-branch `if`); a future improvement could feed dependency
+   types into the inference walk.
+
+8. **Negative `substring` indices raise at evaluate time.** The
+   plan-13 D24 wording said "rejected at parse time when literals,
+   evaluate time when expressions". I picked the simpler
+   evaluator-only path: indices are always validated at evaluate
+   time. Reason: implementing parse-time literal checks would have
+   required a static-eval pass over `substring`'s start/end args
+   (which can themselves be expressions involving field refs), and
+   the corpus parity contract is easier to hold when both Python
+   and TS run the *same* evaluator check. Net behavior is
+   identical from the user's perspective (a parse-time-or-evaluate-time
+   error is still an error), but the parser stays simpler.
+
+9. **`Pydantic v2 deprecation warning` pre-existing.** Every
+   `api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, ...)` call
+   surfaces a `DeprecationWarning`: starlette renamed the constant
+   to `HTTP_422_UNPROCESSABLE_CONTENT`. Pre-existing across the
+   codebase; not addressed in this drop. Tracking suggestion: one
+   small follow-up that grep-renames the constant repo-wide once
+   our starlette pin moves.
+
+### What to bring forward into P4.7 (TS port)
+
+- **The corpus files are the contract.** Seed
+  `backend/tests/fixtures/formula_grammar_corpus.json` and
+  `formula_evaluator_corpus.json` *first*, exercising every edge
+  the Python tests already cover. Write the TS port against the
+  corpus, not against the Python source.
+- **Pin `_fmod` semantics in the TS port.** JS `%` is sign-of-dividend
+  which *happens* to match Python's `math.fmod`, but writing an
+  explicit `_fmod(a, b)` helper on both sides is the contract — the
+  helper makes the parity intent visible, and isolates the codebase
+  from a future engine drift.
+- **String comparison: code-point ordering on both sides.** Python
+  string `<` / `>` is already code-point; JS string `<` / `>` is
+  also code-point for code units. The corpus must exercise non-ASCII
+  inputs (review amendment #2). When the corpus diverges, the
+  divergence will be in surrogate-pair handling — write the helper
+  to iterate code points, not code units.
+- **`text(n)` number formatting.** Python `repr(float)` matches V8
+  `Number.prototype.toString` for the corpus subset we exercise.
+  Edge cases to pin: `0`, `-0`, `1.5`, very small / very large
+  values, integer-valued floats (no trailing `.0`). The Python
+  helper is `_format_number`; mirror it on the TS side as
+  `_formatNumber`.
 
 ## Resolved questions
 

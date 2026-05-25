@@ -111,8 +111,7 @@ export function ChangeTypePopover<TRow>({
   const totalRows = serverPreflight?.total ?? localPreflight?.total ?? rows.length;
   const compatibleCount = totalRows - incompatible.length;
   const needsAck = incompatible.length > 0;
-  const canSubmit =
-    !!toType && policy !== null && !pending && (!needsAck || acknowledged);
+  const canSubmit = !!toType && policy !== null && !pending && (!needsAck || acknowledged);
 
   const virtualAnchorRef = useElementAnchorRef(anchorElement);
 
@@ -132,7 +131,11 @@ export function ChangeTypePopover<TRow>({
     } catch (error) {
       // If the server returned a structured preflight envelope, re-show
       // its rows in this popover so the user can ack.
-      const maybeDetails = (error as { details?: { incompatible_rows?: PreflightRow[]; total_row_count?: number } } | undefined)?.details;
+      const maybeDetails = (
+        error as
+          | { details?: { incompatible_rows?: PreflightRow[]; total_row_count?: number } }
+          | undefined
+      )?.details;
       if (maybeDetails?.incompatible_rows) {
         setServerPreflight({
           rows: maybeDetails.incompatible_rows,
@@ -160,7 +163,10 @@ export function ChangeTypePopover<TRow>({
           aria-label={`Change type of ${fieldDef.display_name}`}
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
-          <form className="data-table-add-field-form" onSubmit={(event) => void handleSubmit(event)}>
+          <form
+            className="data-table-add-field-form"
+            onSubmit={(event) => void handleSubmit(event)}
+          >
             <div className="data-table-view-popover-heading">
               {fromType} → {toType ?? "?"}
             </div>
@@ -206,9 +212,7 @@ export function ChangeTypePopover<TRow>({
               <p>
                 {compatibleCount} of {totalRows} row{totalRows === 1 ? "" : "s"} will keep their
                 value
-                {needsAck
-                  ? `; ${incompatible.length} will be cleared.`
-                  : "."}
+                {needsAck ? `; ${incompatible.length} will be cleared.` : "."}
               </p>
               {needsAck ? (
                 <ul className="data-table-add-field-options" role="list">
@@ -257,8 +261,8 @@ export function ChangeTypePopover<TRow>({
                 {pending
                   ? "Converting…"
                   : needsAck
-                  ? `Convert anyway (${incompatible.length} cleared)`
-                  : "Convert"}
+                    ? `Convert anyway (${incompatible.length} cleared)`
+                    : "Convert"}
               </button>
             </div>
           </form>
