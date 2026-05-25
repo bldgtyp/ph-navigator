@@ -2295,14 +2295,13 @@ button:disabled {
 /* Locked-schema indicator, description tooltip, and header context-
    menu trigger. Both glyphs render in viewer and editor mode. */
 .data-table-th[data-schema-locked="true"] {
-  border-left: 2px solid var(--phn-header-border-locked);
+  border-bottom: 2px solid var(--phn-header-border-locked);
 }
 
 .data-table-header-lock {
   display: inline-flex;
   align-items: center;
-  color: var(--text-secondary);
-  opacity: 0.6;
+  color: var(--phn-header-border-locked);
   font-size: 0.78rem;
   line-height: 1;
 }
