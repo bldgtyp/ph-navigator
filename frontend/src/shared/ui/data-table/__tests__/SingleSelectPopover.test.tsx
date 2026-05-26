@@ -129,9 +129,7 @@ describe("SingleSelectPopover", () => {
     function Harness() {
       // Mirror useGridEdit: onHighlight commits the new id to state, so
       // the next render sees a valid highlight and the effect bails.
-      const [highlight, setHighlight] = useState<string | null>(
-        "opt_orphan_does_not_exist",
-      );
+      const [highlight, setHighlight] = useState<string | null>("opt_orphan_does_not_exist");
       return (
         <SingleSelectPopover
           options={[...OPTIONS]}

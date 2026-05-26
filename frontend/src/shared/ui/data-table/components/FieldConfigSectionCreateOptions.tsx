@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  OPTION_COLOR_PALETTE,
-  createFieldOption,
-  hasDuplicateFieldOptionLabels,
-  normalizeOptionOrders,
-} from "../lib";
+import { OPTION_COLOR_PALETTE, createFieldOption } from "../lib/options/create";
+import { hasDuplicateFieldOptionLabels } from "../lib/options/references";
+import { normalizeOptionOrders } from "../lib/options/normalize";
 import type { FieldOption } from "../types";
 import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";
 

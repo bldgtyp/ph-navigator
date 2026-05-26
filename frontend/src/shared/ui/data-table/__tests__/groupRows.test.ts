@@ -1,11 +1,7 @@
 import { describe, expect, test } from "vitest";
-import {
-  buildBodyPlan,
-  effectiveSortFromView,
-  firstDivergeIndex,
-  groupPathKey,
-  pruneExpandedGroups,
-} from "../lib";
+import { buildBodyPlan, firstDivergeIndex, groupPathKey } from "../lib/body/plan";
+import { pruneExpandedGroups } from "../lib/body/prune";
+import { effectiveSortFromView } from "../lib/view/sanitize";
 import type { BodyPlanItem, DataTableColumnDef, FieldDef, ViewState } from "../types";
 
 type Room = {
