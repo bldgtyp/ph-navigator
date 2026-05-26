@@ -87,21 +87,19 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
     from features.project_document.formula import (
         FieldRegistryEntry,
         ast_to_json,
+        formula_facing_field_type,
         parse,
         resolve_refs,
     )
     from features.project_document.formula.resolver import collect_field_refs
+    from features.project_document.mutations.formula_ops import infer_result_type
 
     registry = tuple(
         FieldRegistryEntry(
             field_id=f.field_key,
             display_name=f.display_name,
             origin="built_in",
-            field_type="text" if f.field_type.value in ("short_text", "long_text", "url") else (
-                "number" if f.field_type.value == "number" else (
-                    "single_select" if f.field_type.value == "single_select" else "text"
-                )
-            ),
+            field_type=formula_facing_field_type(f.field_type.value),
         )
         for f in _ROOMS_NON_RECORD_ID_FIELD_DEFS
     )
@@ -110,7 +108,7 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
         "source": ROOMS_RECORD_ID_FORMULA_SOURCE,
         "ast": ast_to_json(resolved),
         "deps": collect_field_refs(resolved),
-        "result_type": "text",
+        "result_type": infer_result_type(resolved),
     }
     return built_in_field_def(
         field_key=RESERVED_FIELD_KEY_RECORD_ID,

@@ -1,7 +1,22 @@
 ---
 DATE: 2026-05-26
 TIME: 11:48 ET (rev 2026-05-26 — decisions resolved)
-STATUS: Phase C landed 2026-05-26 — Rooms adopts a computed
+STATUS: SUPERSEDED 2026-05-26 by `plan-31-phase-2-record-id-field.md`.
+        Plan-30's `IdentifierConfig<TRow>` prop and synthetic
+        `__record_id__` column retire in Phase 2 of plan-31 in favor
+        of a real persisted `record_id` FieldDef on every table.
+        Backend cohort landed 2026-05-26 (record_id seeds on Rooms +
+        Pumps, "exactly one record_id" validator, schema_version 3→4,
+        reserved-key guard on add/duplicate dispatchers). Frontend
+        retirement (identifier abstraction deletion, pin-by-field_key,
+        ROOMS_IDENTIFIER / PUMPS_IDENTIFIER removal) is deferred and
+        bundles with the Phase 1c frontend reshape (plan-31 tasks
+        #10/#11) — see `docs/plans/2026-05-26/plan-31-phase-2-record-
+        id-field.md` §P4.3. Historic plan-30 status preserved below
+        for archaeology.
+
+[Historic status, pre-supersession:]
+Phase C landed 2026-05-26 — Rooms adopts a computed
         identifier (`{kind: "computed", deps: ["number", "name"],
         compute: (r) => [r.number, r.name].filter(Boolean).join(" — ")}`
         on `RoomsTable`); room-number uniqueness validator removed
