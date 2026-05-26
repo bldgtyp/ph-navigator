@@ -1,5 +1,6 @@
 import "../attachments.css";
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { assetDownloadPath } from "../api";
 import { uploadAsset, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
@@ -143,19 +144,24 @@ export function AttachmentCell({
           ))}
         </div>
       )}
-      {modalIndex !== null && value[modalIndex] ? (
-        <AttachmentModal
-          projectId={projectId}
-          assetId={value[modalIndex]}
-          asset={urlById.get(value[modalIndex])}
-          readOnly={readOnly}
-          onClose={() => setModalIndex(null)}
-          onPrev={() => setModalIndex((current) => Math.max(0, (current ?? 0) - 1))}
-          onNext={() => setModalIndex((current) => Math.min(value.length - 1, (current ?? 0) + 1))}
-          onDetach={() => void detachSelected()}
-          onReplace={replaceSelected}
-        />
-      ) : null}
+      {modalIndex !== null && value[modalIndex]
+        ? createPortal(
+            <AttachmentModal
+              projectId={projectId}
+              assetId={value[modalIndex]}
+              asset={urlById.get(value[modalIndex])}
+              readOnly={readOnly}
+              onClose={() => setModalIndex(null)}
+              onPrev={() => setModalIndex((current) => Math.max(0, (current ?? 0) - 1))}
+              onNext={() =>
+                setModalIndex((current) => Math.min(value.length - 1, (current ?? 0) + 1))
+              }
+              onDetach={() => void detachSelected()}
+              onReplace={replaceSelected}
+            />,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

@@ -284,6 +284,8 @@ Defects found during manual staging:
 - double-clicking the PDF chip opened the preview modal but also triggered
   a download;
 - PDF preview modal opened, but the iframe area was blank.
+- after the preview/download URL fix, PDF preview rendered correctly, but
+  sticky/frozen table cells painted through the modal/iframe.
 
 Root cause/fix: the frontend used `download_url` for PDF/image preview
 and "Open in new tab"; the backend signs `download_url` with
@@ -292,6 +294,12 @@ and prevents reliable iframe preview. Added a separate `preview_url` /
 `preview_expires_at` without attachment disposition and changed the modal
 preview/open paths to use `preview_url`. The explicit Download button
 continues to use the API download route.
+
+Modal layering fix: `<AttachmentModal>` originally rendered inside the
+table cell subtree, so the DataTable's sticky/frozen cell stacking
+contexts could paint above it. The modal now renders through a React
+portal into `document.body`, keeping the attachment preview above the
+grid.
 
 Remaining staging acceptance items after the core PDF path:
 
