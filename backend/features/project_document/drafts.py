@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import Request
+from psycopg import Connection
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel
 from starlette import status
@@ -13,6 +14,7 @@ from starlette import status
 from database import transaction
 from features.project_document import repository
 from features.project_document.audit import log_document_action
+from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     AUTO_LOCKED_VERSION_KINDS,
     DiscardDraftResponse,
@@ -31,6 +33,63 @@ from features.projects.service import version_public
 from features.shared.errors import api_error
 
 
+def _load_draft_context(
+    conn: Connection[Any],
+    project_id: UUID,
+    version_id: UUID,
+    user_id: UUID,
+    if_match: str | None,
+    if_match_version: str | None,
+    *,
+    draft_etag_mismatch_message: str,
+) -> tuple[ProjectDocumentV1, str, str, dict[str, Any] | None]:
+    """Load + ETag-gate the draft basis used by every mutating draft op.
+
+    Locks the version row, rejects writes against a locked version, then
+    decides whether the basis is the saved version body (no draft yet) or
+    the current draft. The right ETag header is checked depending on which
+    basis we're using.
+
+    Returns ``(base_body, base_version_etag, version_etag, draft_or_none)``.
+    `version_etag` is always the hash of the *saved* version body — useful
+    for the no-op response branch that still needs to advertise it.
+    """
+    version = repository.get_project_version_for_update(conn, project_id, version_id)
+    if version is None:
+        raise_project_version_not_found()
+    if version["locked"]:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "version_locked",
+            "Locked versions cannot be edited.",
+        )
+
+    version_body = validate_document(version["body"])
+    version_etag = document_etag(version_body)
+    draft = repository.get_draft_for_update(conn, version_id, user_id)
+
+    if draft is None:
+        if if_match_version != version_etag:
+            raise api_error(
+                status.HTTP_409_CONFLICT,
+                "version_etag_mismatch",
+                "The saved version changed before this draft was created.",
+                {"expected": version_etag},
+            )
+        return version_body, version_etag, version_etag, None
+
+    if if_match != draft["draft_etag"]:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "draft_etag_mismatch",
+            draft_etag_mismatch_message,
+            {"expected": draft["draft_etag"]},
+        )
+    base_body = validate_document(draft["body"])
+    base_version_etag = str(draft["base_version_etag"])
+    return base_body, base_version_etag, version_etag, draft
+
+
 def replace_table_slice(
     version_id: UUID,
     table_name: str,
@@ -44,40 +103,15 @@ def replace_table_slice(
     payload = contract.parse_replace_payload(raw_payload)
 
     with transaction() as conn:
-        version = repository.get_project_version_for_update(conn, access.project_id, version_id)
-        if version is None:
-            raise_project_version_not_found()
-        if version["locked"]:
-            raise api_error(
-                status.HTTP_409_CONFLICT,
-                "version_locked",
-                "Locked versions cannot be edited.",
-            )
-
-        version_body = validate_document(version["body"])
-        version_etag = document_etag(version_body)
-        draft = repository.get_draft_for_update(conn, version_id, user.id)
-
-        if draft is None:
-            if if_match_version != version_etag:
-                raise api_error(
-                    status.HTTP_409_CONFLICT,
-                    "version_etag_mismatch",
-                    "The saved version changed before this draft was created.",
-                    {"expected": version_etag},
-                )
-            base_body = version_body
-            base_version_etag = version_etag
-        else:
-            if if_match != draft["draft_etag"]:
-                raise api_error(
-                    status.HTTP_409_CONFLICT,
-                    "draft_etag_mismatch",
-                    "The draft changed before this table update was applied.",
-                    {"expected": draft["draft_etag"]},
-                )
-            base_body = validate_document(draft["body"])
-            base_version_etag = draft["base_version_etag"]
+        base_body, base_version_etag, version_etag, draft = _load_draft_context(
+            conn,
+            access.project_id,
+            version_id,
+            user.id,
+            if_match,
+            if_match_version,
+            draft_etag_mismatch_message="The draft changed before this table update was applied.",
+        )
 
         next_body = contract.apply_replace(base_body, payload)
         if next_body == base_body:
@@ -156,40 +190,15 @@ def apply_schema_mutation_to_draft(
         )
 
     with transaction() as conn:
-        version = repository.get_project_version_for_update(conn, access.project_id, version_id)
-        if version is None:
-            raise_project_version_not_found()
-        if version["locked"]:
-            raise api_error(
-                status.HTTP_409_CONFLICT,
-                "version_locked",
-                "Locked versions cannot be edited.",
-            )
-
-        version_body = validate_document(version["body"])
-        version_etag = document_etag(version_body)
-        draft = repository.get_draft_for_update(conn, version_id, user.id)
-
-        if draft is None:
-            if if_match_version != version_etag:
-                raise api_error(
-                    status.HTTP_409_CONFLICT,
-                    "version_etag_mismatch",
-                    "The saved version changed before this draft was created.",
-                    {"expected": version_etag},
-                )
-            base_body = version_body
-            base_version_etag = version_etag
-        else:
-            if if_match != draft["draft_etag"]:
-                raise api_error(
-                    status.HTTP_409_CONFLICT,
-                    "draft_etag_mismatch",
-                    "The draft changed before this schema mutation was applied.",
-                    {"expected": draft["draft_etag"]},
-                )
-            base_body = validate_document(draft["body"])
-            base_version_etag = draft["base_version_etag"]
+        base_body, base_version_etag, version_etag, draft = _load_draft_context(
+            conn,
+            access.project_id,
+            version_id,
+            user.id,
+            if_match,
+            if_match_version,
+            draft_etag_mismatch_message="The draft changed before this schema mutation was applied.",
+        )
 
         next_body, audit_payload = contract.custom_fields.apply_schema_mutation(base_body, mutation, user.id.hex)
 

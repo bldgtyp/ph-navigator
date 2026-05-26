@@ -15,6 +15,7 @@ from features.auth import repository
 from features.auth.models import UserPublic
 from features.auth.passwords import hash_password, verify_password
 from features.shared.errors import api_error
+from features.shared.http import client_ip
 
 GENERIC_LOGIN_ERROR = "Email or password is incorrect."
 DUMMY_PASSWORD_HASH = (
@@ -28,10 +29,6 @@ def now_utc() -> datetime:
 
 def session_expires_at(now: datetime | None = None) -> datetime:
     return (now or now_utc()) + timedelta(minutes=settings.session_lifetime_minutes)
-
-
-def client_ip(request: Request) -> str | None:
-    return request.client.host if request.client else None
 
 
 def user_agent(request: Request) -> str | None:
