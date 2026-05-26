@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response
 
@@ -20,6 +21,12 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 def require_current_user(request: Request) -> tuple[UserPublic, datetime]:
     return current_user_from_request(request)
+
+
+# Canonical `CurrentUser` dependency alias. Every feature router that
+# needs the authenticated user imports this rather than redeclaring the
+# `Annotated[..., Depends(require_current_user)]` shape locally.
+CurrentUser = Annotated[tuple[UserPublic, datetime], Depends(require_current_user)]
 
 
 @router.post("/login", response_model=AuthSessionResponse)
