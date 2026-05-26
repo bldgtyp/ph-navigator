@@ -1,5 +1,9 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import type {
+  PumpOptionKey,
+  PumpRow,
+  PumpsReplacePayload,
+  PumpsSlice,
   RoomOptionKey,
   RoomRow,
   RoomsReplacePayload,
@@ -7,6 +11,8 @@ import type {
   SingleSelectOption,
 } from "./types";
 import {
+  PUMP_DEVICE_TYPE_COLUMN_ID,
+  PUMP_DEVICE_TYPE_KEY,
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
@@ -44,8 +50,10 @@ export const ROOM_ID_PREFIX = "rm";
 // "(copy N)" ladder are exhausted. Kept distinct from
 // `ROOM_ID_PREFIX` because this seeds a `number` slug, not a row id.
 const ROOM_ROW_FALLBACK_PREFIX = "row";
+export const PUMP_ID_PREFIX = "pmp";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type PumpCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
 // Namespace prefix for custom single-select option lists scoped to the
 // Rooms table. Mirrors backend `option_list_key((ROOMS_TABLE_NAME,), cf_id)`.
@@ -63,6 +71,24 @@ export const ROOMS_SCHEMA_CORE_FIELD_KEYS = [
   "erv_unit_ids",
   "catalog_origin",
   "notes",
+] as const;
+
+export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  "device_type",
+  "use",
+  "tag",
+  "manufacturer",
+  "model",
+  "volts",
+  "phase",
+  "horse_power",
+  "wattage",
+  "flow_gpm",
+  "runtime_khr_yr",
+  "notes",
+  "link",
+  "datasheet_asset_ids",
 ] as const;
 
 // Shared by RoomsTable (renderer) and useProjectTableViewState (sanitizer)
@@ -113,6 +139,61 @@ export function roomsTableColumnsForSanitize(
   }));
 }
 
+export function pumpsTableFieldDefs(pumpsSlice: PumpsSlice): FieldDef[] {
+  return [
+    {
+      field_key: PUMP_DEVICE_TYPE_KEY,
+      field_type: "single_select",
+      display_name: "Device Type",
+      options: pumpsSlice.single_select_options[PUMP_DEVICE_TYPE_KEY],
+    },
+    { field_key: "use", field_type: "text", display_name: "Use" },
+    { field_key: "tag", field_type: "text", display_name: "Tag" },
+    { field_key: "manufacturer", field_type: "text", display_name: "Manufacturer" },
+    { field_key: "model", field_type: "text", display_name: "Model" },
+    { field_key: "volts", field_type: "number", display_name: "Volts" },
+    { field_key: "phase", field_type: "number", display_name: "Phase" },
+    { field_key: "horse_power", field_type: "number", display_name: "Horse Power" },
+    { field_key: "wattage", field_type: "number", display_name: "Wattage" },
+    { field_key: "flow_gpm", field_type: "number", display_name: "Flow - GPM" },
+    { field_key: "runtime_khr_yr", field_type: "number", display_name: "Runtime - kHR/YEAR" },
+    { field_key: "notes", field_type: "text", display_name: "Notes" },
+    { field_key: "link", field_type: "text", display_name: "Link" },
+  ];
+}
+
+export function pumpsTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id:
+      fieldDef.field_key === PUMP_DEVICE_TYPE_KEY ? PUMP_DEVICE_TYPE_COLUMN_ID : fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
+export function emptyPump(): PumpRow {
+  return {
+    id: generatedId(PUMP_ID_PREFIX),
+    device_type: null,
+    use: null,
+    tag: null,
+    manufacturer: null,
+    model: null,
+    volts: null,
+    phase: null,
+    horse_power: null,
+    wattage: null,
+    flow_gpm: null,
+    runtime_khr_yr: null,
+    notes: null,
+    link: null,
+    datasheet_asset_ids: [],
+  };
+}
+
 export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
   return {
     id: generatedId(ROOM_ID_PREFIX),
@@ -142,6 +223,15 @@ export function optionLabel(options: SingleSelectOption[], optionId: string | nu
 export function sortedRooms(rooms: RoomRow[]): RoomRow[] {
   return [...rooms].sort((a, b) =>
     a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: "base" }),
+  );
+}
+
+export function sortedPumps(pumps: PumpRow[]): PumpRow[] {
+  return [...pumps].sort((a, b) =>
+    (a.tag ?? a.use ?? a.id).localeCompare(b.tag ?? b.use ?? b.id, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
   );
 }
 
@@ -227,6 +317,40 @@ export function roomsPayloadFromRowDelete(
   };
 }
 
+export function pumpsPayloadFromRowInsert(
+  current: PumpsSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<PumpRow>,
+): PumpsReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.pumps.find((pump) => pump.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizePumpForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    pumps: sortedPumps([...current.pumps, ...built]),
+    single_select_options: clonePumpOptions(current),
+  };
+}
+
+export function pumpsPayloadFromRowDelete(
+  current: PumpsSlice,
+  deletes: RowDeletePayload[],
+): PumpsReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    pumps: current.pumps.filter((pump) => !toDelete.has(pump.id)),
+    single_select_options: clonePumpOptions(current),
+  };
+}
+
 // Pick the next free room number, starting from the anchor row's
 // `number`. Numeric anchors increment by one until free; non-numeric
 // (or numeric collisions exhausted) fall through to a "(copy)" /
@@ -299,6 +423,42 @@ export function roomsPayloadFromCellWrites(
   };
 }
 
+export function pumpsPayloadFromCellWrites(
+  current: PumpsSlice,
+  writes: PumpCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
+): PumpsReplacePayload {
+  const options = clonePumpOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    if (!isPumpOptionKey(fieldKey) || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[fieldKey] = normalizeOptionOrders(
+      options[fieldKey].filter((option) => !remove.has(option.id)),
+    );
+  }
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    if (!isPumpOptionKey(fieldKey)) continue;
+    options[fieldKey] = normalizeOptionOrders([...options[fieldKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, PumpCellWrite[]>());
+  const pumps = current.pumps.map((pump) =>
+    applyWritesToPump(pump, writesByRowId.get(pump.id) ?? []),
+  );
+  return {
+    pumps: sortedPumps(pumps),
+    single_select_options: options,
+  };
+}
+
 export function validateRoomsPayload(payload: RoomsReplacePayload): string | null {
   const roomNumbers = new Set<string>();
   const floorOptionIds = new Set(
@@ -329,6 +489,66 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
     }
   }
   return null;
+}
+
+export function validatePumpsPayload(payload: PumpsReplacePayload): string | null {
+  const ids = new Set<string>();
+  const tags = new Set<string>();
+  const deviceTypeIds = new Set(
+    payload.single_select_options[PUMP_DEVICE_TYPE_KEY].map((option) => option.id),
+  );
+  for (const pump of payload.pumps) {
+    if (ids.has(pump.id)) return "Pump id already exists in this project.";
+    ids.add(pump.id);
+    if (pump.tag) {
+      const normalizedTag = normalize(pump.tag);
+      if (tags.has(normalizedTag)) return "Pump tag already exists in this project.";
+      tags.add(normalizedTag);
+    }
+    if (pump.device_type && !deviceTypeIds.has(pump.device_type)) {
+      return "Pump device type option is missing.";
+    }
+    if (pump.phase !== null && pump.phase !== 1 && pump.phase !== 3) {
+      return "Phase must be 1 or 3.";
+    }
+    if (pump.link && !/^https?:\/\//.test(pump.link)) {
+      return "Pump link must start with http:// or https://.";
+    }
+  }
+  return null;
+}
+
+export function replacePumpOptionsPayload(
+  current: PumpsSlice,
+  key: PumpOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): PumpsReplacePayload {
+  const options = clonePumpOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.pumps
+      .map((pump) => pump.device_type)
+      .filter(
+        (optionId): optionId is string =>
+          optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
+      ),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const pumps = current.pumps.map((pump) => {
+    const currentOptionId = pump.device_type;
+    if (!currentOptionId || !(currentOptionId in replacements)) return pump;
+    return { ...pump, device_type: replacements[currentOptionId] ?? null };
+  });
+  return {
+    pumps: sortedPumps(pumps),
+    single_select_options: options,
+  };
 }
 
 export function replaceRoomOptionsPayload(
@@ -448,12 +668,44 @@ function applyWriteToRoom(
   return room;
 }
 
+function applyWritesToPump(pump: PumpRow, writes: PumpCellWrite[]): PumpRow {
+  if (writes.length === 0) return pump;
+  let next = pump;
+  for (const write of writes) {
+    next = applyWriteToPump(next, write.fieldKey, write.value);
+  }
+  return normalizePumpForPayload(next);
+}
+
+function applyWriteToPump(pump: PumpRow, fieldKey: string, value: unknown): PumpRow {
+  if (fieldKey === PUMP_DEVICE_TYPE_KEY && isNullableOptionId(value)) {
+    return { ...pump, device_type: value };
+  }
+  if (
+    ["use", "tag", "manufacturer", "model", "notes", "link"].includes(fieldKey) &&
+    (value === null || typeof value === "string")
+  ) {
+    return { ...pump, [fieldKey]: value };
+  }
+  if (
+    ["volts", "phase", "horse_power", "wattage", "flow_gpm", "runtime_khr_yr"].includes(fieldKey) &&
+    isNullableNumber(value)
+  ) {
+    return { ...pump, [fieldKey]: value };
+  }
+  return pump;
+}
+
 function isNullableOptionId(value: unknown): value is string | null {
   return value === null || (typeof value === "string" && value.startsWith("opt_"));
 }
 
 function isNullableNumber(value: unknown): value is number | null {
   return value === null || typeof value === "number";
+}
+
+export function isPumpOptionKey(key: string): key is PumpOptionKey {
+  return key === PUMP_DEVICE_TYPE_KEY;
 }
 
 export function isRoomOptionKey(key: string): key is RoomOptionKey {
@@ -499,6 +751,38 @@ function normalizeRoomForPayload(room: RoomRow): RoomRow {
     num_bedrooms: Math.max(0, Math.trunc(room.num_bedrooms || 0)),
     icfa_factor: clamp(room.icfa_factor || 0, 0, 1),
     notes: room.notes?.trim() || null,
+  };
+}
+
+function normalizePumpForPayload(pump: PumpRow): PumpRow {
+  const phase =
+    pump.phase === null || pump.phase === undefined ? null : Math.trunc(Number(pump.phase));
+  return {
+    ...pump,
+    use: pump.use?.trim() || null,
+    tag: pump.tag?.trim() || null,
+    manufacturer: pump.manufacturer?.trim() || null,
+    model: pump.model?.trim() || null,
+    volts: nonNegativeOrNull(pump.volts),
+    phase: phase === 1 || phase === 3 ? phase : pump.phase,
+    horse_power: nonNegativeOrNull(pump.horse_power),
+    wattage: nonNegativeOrNull(pump.wattage),
+    flow_gpm: nonNegativeOrNull(pump.flow_gpm),
+    runtime_khr_yr: nonNegativeOrNull(pump.runtime_khr_yr),
+    notes: pump.notes?.trim() || null,
+    link: pump.link?.trim() || null,
+    datasheet_asset_ids: Array.isArray(pump.datasheet_asset_ids) ? pump.datasheet_asset_ids : [],
+  };
+}
+
+function nonNegativeOrNull(value: number | null): number | null {
+  if (value === null || value === undefined) return null;
+  return Math.max(0, value);
+}
+
+function clonePumpOptions(current: PumpsSlice): PumpsReplacePayload["single_select_options"] {
+  return {
+    [PUMP_DEVICE_TYPE_KEY]: [...current.single_select_options[PUMP_DEVICE_TYPE_KEY]],
   };
 }
 

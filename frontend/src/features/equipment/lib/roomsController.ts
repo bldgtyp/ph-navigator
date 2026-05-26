@@ -46,7 +46,7 @@ export const roomsPayloadBuilders: SlicePayloadBuilders<RoomsSlice, RoomRow, Roo
     },
   };
 
-// Re-export the row-delete payload shape so EquipmentTab can call the
+// Re-export the row-delete payload shape so RoomsPage can call the
 // modal "Delete room" handler without round-tripping through the
 // controller's write op.
 export { deleteRoomPayload };

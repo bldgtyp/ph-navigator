@@ -62,7 +62,7 @@ function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
 }
 
 function schemaFor(slice: RoomsSlice): TableSchema {
-  // Mirror EquipmentTab's wiring: one `useTableSchema` call seeded
+  // Mirror RoomsPage's wiring: one `useTableSchema` call seeded
   // with the table's core field defs + the slice's custom fields.
   return renderHook(() =>
     useTableSchema({

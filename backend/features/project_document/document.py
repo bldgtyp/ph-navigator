@@ -26,6 +26,9 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_BUILDING_ZONE_OPTION_KEY,
 )
+PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type"
+PumpOptionKey = Literal["pumps.device_type"]
+PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY,)
 CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 2
 
 # Core field display names for Rooms — used by
@@ -43,14 +46,6 @@ ROOMS_CORE_DISPLAY_NAMES: tuple[str, ...] = (
     "iCFA",
     "ERVs",
 )
-
-
-class EmptyEquipmentTables(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    fans: list[dict[str, object]] = Field(default_factory=list)
-    pumps: list[dict[str, object]] = Field(default_factory=list)
-    ervs: list[dict[str, object]] = Field(default_factory=list)
 
 
 class SingleSelectOption(BaseModel):
@@ -99,6 +94,56 @@ class RoomRow(BaseModel):
             stripped = value.strip()
             return stripped or None
         return value
+
+
+class PumpRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^pmp_[A-Za-z0-9_-]+$", max_length=80)
+    device_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    use: str | None = Field(default=None, max_length=200)
+    tag: str | None = Field(default=None, max_length=80)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    model: str | None = Field(default=None, max_length=200)
+    volts: float | None = Field(default=None, ge=0)
+    phase: int | None = None
+    horse_power: float | None = Field(default=None, ge=0)
+    wattage: float | None = Field(default=None, ge=0)
+    flow_gpm: float | None = Field(default=None, ge=0)
+    runtime_khr_yr: float | None = Field(default=None, ge=0)
+    notes: str | None = Field(default=None, max_length=4000)
+    link: str | None = Field(default=None, max_length=2000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("use", "tag", "manufacturer", "model", "notes", "link", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("phase")
+    @classmethod
+    def validate_phase(cls, value: int | None) -> int | None:
+        if value is not None and value not in {1, 3}:
+            raise ValueError("phase must be 1 or 3")
+        return value
+
+    @field_validator("link")
+    @classmethod
+    def validate_link(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("link must start with http:// or https://")
+        return value
+
+
+class EmptyEquipmentTables(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fans: list[dict[str, object]] = Field(default_factory=list)
+    pumps: list[PumpRow] = Field(default_factory=list)
+    ervs: list[dict[str, object]] = Field(default_factory=list)
 
 
 class CatalogOrigin(BaseModel):
@@ -316,12 +361,18 @@ class ProjectDocumentV1(BaseModel):
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
-        default_factory=lambda: {ROOM_FLOOR_LEVEL_OPTION_KEY: [], ROOM_BUILDING_ZONE_OPTION_KEY: []}
+        default_factory=lambda: {
+            ROOM_FLOOR_LEVEL_OPTION_KEY: [],
+            ROOM_BUILDING_ZONE_OPTION_KEY: [],
+            PUMP_DEVICE_TYPE_OPTION_KEY: [],
+        }
     )
 
     @model_validator(mode="after")
     def validate_document_references(self) -> ProjectDocumentV1:
         for key in ROOM_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in PUMP_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
 
         for key, options in self.single_select_options.items():
@@ -402,14 +453,9 @@ class ProjectDocumentV1(BaseModel):
                     f"(field {custom_field.id!r}, type {custom_field.field_type.value!r})"
                 )
             if not isinstance(default_raw, str):
-                raise ValueError(
-                    f"default_option_id for {custom_field.id!r} must be a string option id"
-                )
+                raise ValueError(f"default_option_id for {custom_field.id!r} must be a string option id")
             namespace_key = f"rooms.{custom_field.id}"
-            default_option_ids = {
-                option.id
-                for option in self.single_select_options.get(namespace_key, [])
-            }
+            default_option_ids = {option.id for option in self.single_select_options.get(namespace_key, [])}
             if default_raw not in default_option_ids:
                 raise ValueError(
                     f"default_option_id {default_raw!r} for {custom_field.id!r} "
@@ -425,6 +471,23 @@ class ProjectDocumentV1(BaseModel):
         # until the cycle is broken.
         self._validate_rooms_formula_cycles(custom_field_ids)
 
+        pump_ids: set[str] = set()
+        pump_tags: set[str] = set()
+        pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
+        for pump in self.tables.equipment.pumps:
+            if pump.id in pump_ids:
+                raise ValueError(f"Duplicate pump id: {pump.id}")
+            pump_ids.add(pump.id)
+
+            if pump.tag is not None:
+                normalized_tag = normalize_display_name(pump.tag)
+                if normalized_tag in pump_tags:
+                    raise ValueError(f"Duplicate pump tag: {pump.tag}")
+                pump_tags.add(normalized_tag)
+
+            if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
+                raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")
+
         window_type_ids: set[str] = set()
         window_type_names: set[str] = set()
         for window_type in self.tables.window_types:
@@ -439,9 +502,7 @@ class ProjectDocumentV1(BaseModel):
 
         return self
 
-    def _validate_rooms_formula_cycles(
-        self, custom_field_ids: dict[str, CustomFieldDef]
-    ) -> None:
+    def _validate_rooms_formula_cycles(self, custom_field_ids: dict[str, CustomFieldDef]) -> None:
         # Lazy-import to keep the document module free of formula deps
         # for callers that don't touch custom formula fields.
         from features.project_document.formula import (
@@ -451,10 +512,7 @@ class ProjectDocumentV1(BaseModel):
             detect_cycles,
         )
 
-        formula_fields = [
-            f for f in custom_field_ids.values()
-            if f.field_type.value == "formula"
-        ]
+        formula_fields = [f for f in custom_field_ids.values() if f.field_type.value == "formula"]
         if not formula_fields:
             return
 
@@ -479,7 +537,4 @@ class ProjectDocumentV1(BaseModel):
             try:
                 detect_cycles(f.id, stored, others)
             except FormulaCycleError as exc:
-                raise ValueError(
-                    f"Rooms formula cycle for {f.display_name!r}: "
-                    f"{' -> '.join(exc.cycle_path)}"
-                ) from exc
+                raise ValueError(f"Rooms formula cycle for {f.display_name!r}: {' -> '.join(exc.cycle_path)}") from exc

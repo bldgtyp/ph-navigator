@@ -67,3 +67,45 @@ export type RoomsReplacePayload = {
   custom_fields?: CustomFieldDef[];
   single_select_options: RoomsOptionMap;
 };
+
+export const PUMPS_TABLE_NAME = "pumps";
+export const PUMP_DEVICE_TYPE_KEY = "pumps.device_type";
+export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
+export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_KEY] as const;
+
+export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];
+
+export type PumpRow = {
+  id: string;
+  device_type: string | null;
+  use: string | null;
+  tag: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  volts: number | null;
+  phase: number | null;
+  horse_power: number | null;
+  wattage: number | null;
+  flow_gpm: number | null;
+  runtime_khr_yr: number | null;
+  notes: string | null;
+  link: string | null;
+  datasheet_asset_ids: string[];
+};
+
+export type PumpsOptionMap = Record<PumpOptionKey, SingleSelectOption[]>;
+
+export type PumpsSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  pumps: PumpRow[];
+  single_select_options: PumpsOptionMap;
+};
+
+export type PumpsReplacePayload = {
+  pumps: PumpRow[];
+  single_select_options: PumpsOptionMap;
+};

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { EquipmentTab } from "../routes/EquipmentTab";
+import { RoomsPage } from "../routes/RoomsPage";
 import { RoomsTable } from "../components/RoomsTable";
 import {
   emptyViewState,
@@ -21,7 +21,7 @@ import {
 import type { ProjectDetail } from "../../projects/types";
 
 // Plan-17 P4.10 — exit-criteria acceptance tests for formula custom
-// fields, exercised through the rendered EquipmentTab UI. Pairs with
+// fields, exercised through the rendered RoomsPage UI. Pairs with
 // the isolation coverage in FieldConfigModal's formula section and the backend round-trip coverage in
 // `backend/tests/test_project_document_custom_fields_phase_4.py`.
 
@@ -246,7 +246,7 @@ function applySchemaMutation(
   };
 }
 
-function renderEquipmentTab(initialSlice: RoomsSlice) {
+function renderRoomsPage(initialSlice: RoomsSlice) {
   let current = initialSlice;
   let draftCounter = 0;
   const postBodies: SchemaMutationBody[] = [];
@@ -279,7 +279,7 @@ function renderEquipmentTab(initialSlice: RoomsSlice) {
   });
   const rendered = render(
     <QueryClientProvider client={queryClient}>
-      <EquipmentTab project={buildProject()} />
+      <RoomsPage project={buildProject()} />
     </QueryClientProvider>,
   );
   return { ...rendered, postBodies };
@@ -305,7 +305,7 @@ async function openHeaderMenu(headerLabel: string) {
 
 describe("RoomsTable custom-fields Phase 4 — formula acceptance through rendered UI", () => {
   test("adding a formula via modal dispatches the wire shape and surfaces computed values in the grid", async () => {
-    const { postBodies } = renderEquipmentTab(buildSlice());
+    const { postBodies } = renderRoomsPage(buildSlice());
 
     await waitFor(() => expect(screen.queryByText("Loading table view…")).toBeNull());
 
@@ -337,7 +337,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
       rows_computed: { rm_1: { cf_label: "101 — LIVING ROOM" } },
     });
 
-    renderEquipmentTab(seeded);
+    renderRoomsPage(seeded);
     await waitFor(() => expect(screen.queryByText("Loading table view…")).toBeNull());
     expect(await screen.findByText("101 — LIVING ROOM")).toBeInTheDocument();
 
@@ -359,7 +359,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
       rows_computed: { rm_1: { cf_label: "101 — LIVING ROOM" } },
     });
 
-    const { postBodies } = renderEquipmentTab(seeded);
+    const { postBodies } = renderRoomsPage(seeded);
     await waitFor(() => expect(screen.queryByText("Loading table view…")).toBeNull());
     expect(await screen.findByText("101 — LIVING ROOM")).toBeInTheDocument();
 
@@ -402,7 +402,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
       rows_computed: { rm_1: { cf_label: "blue-Living Room" } },
     });
 
-    const { postBodies } = renderEquipmentTab(seeded);
+    const { postBodies } = renderRoomsPage(seeded);
     await waitFor(() => expect(screen.queryByText("Loading table view…")).toBeNull());
     expect(await screen.findByText("blue-Living Room")).toBeInTheDocument();
 

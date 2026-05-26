@@ -23,8 +23,8 @@ test("custom-fields Phase 4 formula walkthrough", async ({ page }) => {
 
   const btNumber = `cf4-${Date.now().toString().slice(-8)}`;
   await createProject(page, { name: `Custom Fields Phase 4 ${btNumber}`, btNumber });
-  await page.getByRole("link", { name: "Equipment" }).click();
-  await expect(page.getByRole("region", { name: "Equipment" })).toBeVisible();
+  await page.getByRole("link", { name: "Rooms" }).click();
+  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
 
   // 1. Seed a Tag short_text field so a later step can reference it
   //    from a formula and observe missing_ref when Tag is deleted.

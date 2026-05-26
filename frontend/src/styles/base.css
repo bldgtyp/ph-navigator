@@ -77,7 +77,7 @@ textarea {
 .read-safe-versions,
 .read-safe-version-list,
 .status-panel,
-.equipment-panel,
+.rooms-panel,
 .status-timeline {
   display: grid;
   gap: 16px;

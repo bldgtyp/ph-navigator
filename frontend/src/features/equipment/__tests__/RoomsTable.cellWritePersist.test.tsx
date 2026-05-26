@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { EquipmentTab } from "../routes/EquipmentTab";
+import { RoomsPage } from "../routes/RoomsPage";
 import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 import type { CustomFieldDef } from "../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../projects/types";
@@ -150,7 +150,7 @@ function renderWithStatefulBackend(initialSlice: RoomsSlice) {
   });
   const rendered = render(
     <QueryClientProvider client={queryClient}>
-      <EquipmentTab project={buildProject()} />
+      <RoomsPage project={buildProject()} />
     </QueryClientProvider>,
   );
   return { ...rendered, requestLog, getCurrent: () => current };

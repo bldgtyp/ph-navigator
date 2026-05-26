@@ -22,3 +22,13 @@
   cursor: pointer;
   font-weight: 650;
 }
+
+.equipment-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.equipment-attachment-panels {
+  display: grid;
+  gap: 14px;
+}

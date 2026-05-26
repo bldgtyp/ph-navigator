@@ -356,6 +356,9 @@ describe("App", () => {
     expect(await screen.findByRole("button", { name: "Save" })).toBeVisible();
     expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
+    const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
+    expect(within(projectTabs).getByRole("link", { name: "Rooms" })).toBeVisible();
+    expect(within(projectTabs).getByRole("link", { name: "Thermal Bridges" })).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
   });
 
@@ -705,7 +708,7 @@ describe("App", () => {
   });
 
   test("renders read-safe recovery when the editor draft summary is unsupported", async () => {
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/rooms`);
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
@@ -730,14 +733,14 @@ describe("App", () => {
     );
     expect(screen.getByText("schema-safe")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Equipment" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Rooms" })).not.toBeInTheDocument();
   });
 
   test("renders public read-safe recovery without editor diagnostics", async () => {
     window.history.pushState(
       {},
       "",
-      `/projects/${projectPayload.id}/equipment?version=${projectPayload.active_version_id}#viewer`,
+      `/projects/${projectPayload.id}/rooms?version=${projectPayload.active_version_id}#viewer`,
     );
     const documentUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/document`;
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -917,9 +920,9 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: /Set CAD files received to Done/ })).toBeVisible();
   });
 
-  test("adds a room through the Equipment tab draft path", async () => {
+  test("adds a room through the Rooms page draft path", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/rooms`);
     const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
@@ -959,7 +962,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("region", { name: "Equipment" })).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Rooms" })).toBeVisible();
     await user.click(await screen.findByRole("button", { name: "More view actions" }));
     expect(screen.getByRole("link", { name: "Rooms JSON" })).toBeVisible();
     await user.keyboard("{Escape}");
@@ -984,7 +987,7 @@ describe("App", () => {
 
   test("downgrades an open room edit when the version is locked elsewhere", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/equipment`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/rooms`);
     const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
     const draftUrl = draftSummaryUrl();
     const room = {
