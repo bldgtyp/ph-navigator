@@ -105,6 +105,33 @@ attach_asset(project_id, version_id, asset_id, target_path)
 detach_asset(project_id, version_id, asset_id, target_path)
                                      → JSON-Patch detach from token owner's draft
 
+# Bulk asset tools — wrap the §9.10.1/2 REST surface. See
+# `attachments.md` for the full contract.
+list_assets(project_id, version_id?, filter)
+                                     → page of asset metadata
+                                       filter: kind, table_key, column_key,
+                                               row_ids, content_type, ...
+
+resolve_asset_urls(project_id, asset_ids[])
+                                     → batch signed download + thumbnail
+                                       URLs (≤ 100 ids per call)
+
+start_bulk_download(project_id, filter, filename_pattern?,
+                    include_manifest_csv?)
+                                     → job_id
+
+get_job(project_id, job_id)          → job status; embeds
+                                       result_asset_id when complete
+
+bulk_attach(project_id, version_id, attachments[])
+                                     → atomic multi-attach across cells
+                                       (one undo entry on the draft;
+                                        partial-failure structured error
+                                        returns per-item indexes)
+
+bulk_detach(project_id, version_id, asset_refs[])
+                                     → atomic multi-detach
+
 # Custom field schema mutations (Phase 2 of plan-13; project-document
 # tables only — catalog tables are not custom-field-capable in v1).
 # Each tool maps to the same backend FieldSchemaMutation service used

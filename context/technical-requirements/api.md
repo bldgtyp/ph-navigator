@@ -272,6 +272,70 @@ API. They require `project:write` plus `asset:write`, obey the same ETag
 rules as other draft writes, and only mutate asset-id arrays in the
 project document. They do not mutate saved versions directly.
 
+#### 9.10.1 Bulk asset endpoints
+
+These complement the single-asset routes above. Used by multi-file drop
+in the browser and by LLM agents through MCP (`llm-mcp-schema.md`
+§10.3). Full contract: `attachments.md`.
+
+```
+POST   /api/v1/projects/{pid}/assets/bulk-upload-intent
+       body: { items: [ { asset_kind, original_filename, content_type,
+                          size_bytes, content_hash_sha256, display_name? }
+                        ... ] }
+       returns: { items: [ { asset_id, upload_url, expires_at,
+                             duplicate_of? } ... ] }
+```
+Batch version of `upload-intent` for multi-file drop. Each item is
+idempotent on `(project_id, content_hash_sha256)` via the existing
+`Idempotency-Key` header rule (§9.5). Items resolving to an existing
+asset return that `asset_id` plus `duplicate_of` instead of issuing a
+new upload URL.
+
+```
+GET    /api/v1/projects/{pid}/assets/bulk-urls?ids=<csv>
+       returns: { items: [ { asset_id, download_url, download_expires_at,
+                             thumbnail_url, thumbnail_status,
+                             thumbnail_expires_at, content_type,
+                             original_filename, size_bytes } ... ] }
+```
+Batch URL resolver. Used by `<AttachmentCell>` to render all of a
+cell's thumbnails in one HTTP call. Cap: 100 ids per call; over-cap
+returns `400 asset_bulk_overflow`.
+
+```
+POST   /api/v1/projects/{pid}/assets/bulk-download
+       body: { filter: { table_key?, column_key?, asset_ids?, kind? },
+               filename_pattern?: "{table}/{row.name}__{filename}",
+               include_manifest_csv?: true }
+       returns: 202 + { job_id, status_url }
+```
+Async zip job. The server streams each asset from R2, packages a zip
+with the resolved per-file paths (default pattern
+`{table}/{row.name}__{filename}`), prepends a top-level
+`MANIFEST.csv` mapping rows to filenames, uploads the zip back to R2
+as `asset_kind = 'export_bundle'`, and exposes it through normal asset
+download routes. The client polls `status_url` (see §9.10.2) until the
+job reports `completed`, then GETs the export bundle's asset.
+
+Template variables available in `filename_pattern`:
+`{table}`, `{row.id}`, `{row.name}`, `{row.<core_key>}`,
+`{filename}`, `{ext}`, `{kind}`.
+
+#### 9.10.2 Jobs
+
+Generic async-job polling. Shared with HBJSON extraction; reused by
+bulk-download.
+
+```
+GET    /api/v1/projects/{pid}/jobs/{job_id}
+       returns: { id, kind, status, progress, result_asset_id?,
+                  error?, created_at, updated_at }
+```
+
+`status` ∈ `'queued' | 'running' | 'completed' | 'failed'`.
+`progress` is a 0.0–1.0 float, advisory only.
+
 ### 9.10a Window Type Catalog Refresh
 
 ```

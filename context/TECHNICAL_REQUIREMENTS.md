@@ -37,6 +37,10 @@ load only the file that matches the active implementation surface.
 - `technical-requirements/stack-auth-migration.md` — stack/deployment,
   raw-SQL persistence pattern, repo layout, auth/session baseline, and V1
   migration plan.
+- `technical-requirements/attachments.md` — pre-set v1 attachment-field
+  roster, `<AttachmentCell>` UX contract, upload coordinator, save /
+  version invariants and edge-case test targets, thumbnail pipeline,
+  errors, and security.
 
 ## Maintenance Rule
 
