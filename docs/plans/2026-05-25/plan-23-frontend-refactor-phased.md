@@ -1,13 +1,23 @@
 ---
 DATE: 2026-05-25
 TIME: planning (multi-PR phased implementation)
-STATUS: Proposed. Phased refactor of the frontend ahead of the next
-        feature wave (ERV/Pumps/Fans/Thermal-Bridge DataTables,
-        Windows/Assemblies builder pages, 3D-Model-Viewer feature).
-        Each phase below is a single reviewable PR that lands on
-        `main` independently. Ordering reflects "cheapest wins first,
-        then the leverage abstractions, then large file splits,
-        then convention cleanup."
+STATUS: In progress (3 of 8 phases merged to main; Phase 2 done in
+        worktree, awaiting review). Phased refactor of the frontend
+        ahead of the next feature wave (ERV/Pumps/Fans/Thermal-Bridge
+        DataTables, Windows/Assemblies builder pages, 3D-Model-Viewer
+        feature). Each phase below is a single reviewable PR that
+        lands on `main` independently. Ordering reflects "cheapest
+        wins first, then the leverage abstractions, then large file
+        splits, then convention cleanup."
+PROGRESS:
+  - [x] Phase 7 — Naming, sentinels, ID-prefix constants (merged ee7a221, 2026-05-25)
+  - [x] Phase 6 — Feature-shape standardization (merged 0384d60, 2026-05-25)
+  - [x] Phase 1 — Split `data-table/lib.ts` (merged 67e5416, 2026-05-25)
+  - [~] Phase 2 — Extract `useSliceTableController` (committed f34183c on `refactor/p2-slice-table-controller`, awaiting merge)
+  - [ ] Phase 3 — Split `WindowsTab.tsx`
+  - [ ] Phase 4 — Split `VersionControls.tsx`
+  - [ ] Phase 5 — CSS tokenization + per-feature CSS split
+  - [ ] Phase 8 — CI guards
 PARENT-DOC: docs/code-reviews/2026-05-25/frontend-code-review.md
 SIBLING-DOC: docs/plans/2026-05-25/plan-22-backend-refactor-phased.md
 RELATED:
@@ -106,16 +116,16 @@ its own §V.
 
 **Land the PRs in this order:**
 
-| Execute | Phase | Title | Rationale |
-|---|---|---|---|
-| **1st** | Phase 7 | Naming, sentinels, ID-prefix constants | Cheapest wins, smallest review surface, no risk |
-| **2nd** | Phase 6 | Feature-shape standardization | Locks in the four/seven-layer pattern before any new feature lands |
-| **3rd** | Phase 1 | Split `data-table/lib.ts` into `lib/{concern}/` | Pure file move; prerequisite for Phase 2 import targets |
-| **4th** | Phase 2 | Extract `useSliceTableController` + split `EquipmentTab.tsx` | **Biggest leverage** — must precede ERV/Pumps/Fans/TB tabs |
-| **5th** | Phase 3 | Split `WindowsTab.tsx` into `components/` | Must precede Assemblies builder |
-| **6th** | Phase 4 | Split `VersionControls.tsx` + extract state machine | Independent; do before more modals stack |
-| **7th** | Phase 5 | CSS tokenization + per-feature CSS split | **Must precede** 3D-Model-Viewer |
-| **8th** | Phase 8 | CI guards (file size, module shape) | Locks in everything above |
+| Execute | Phase | Title | Rationale | Status |
+|---|---|---|---|---|
+| **1st** | Phase 7 | Naming, sentinels, ID-prefix constants | Cheapest wins, smallest review surface, no risk | ✅ merged `ee7a221` |
+| **2nd** | Phase 6 | Feature-shape standardization | Locks in the four/seven-layer pattern before any new feature lands | ✅ merged `0384d60` |
+| **3rd** | Phase 1 | Split `data-table/lib.ts` into `lib/{concern}/` | Pure file move; prerequisite for Phase 2 import targets | ✅ merged `67e5416` |
+| **4th** | Phase 2 | Extract `useSliceTableController` + split `EquipmentTab.tsx` | **Biggest leverage** — must precede ERV/Pumps/Fans/TB tabs | ⏸ committed `f34183c`, awaiting merge |
+| **5th** | Phase 3 | Split `WindowsTab.tsx` into `components/` | Must precede Assemblies builder | ⏳ pending |
+| **6th** | Phase 4 | Split `VersionControls.tsx` + extract state machine | Independent; do before more modals stack | ⏳ pending |
+| **7th** | Phase 5 | CSS tokenization + per-feature CSS split | **Must precede** 3D-Model-Viewer | ⏳ pending |
+| **8th** | Phase 8 | CI guards (file size, module shape) | Locks in everything above | ⏳ pending |
 
 ### 3.2 Dependency Map
 
@@ -157,7 +167,7 @@ Phase 8 (CI guards) ─────────────────┘──
 
 ---
 
-## Phase 1 — Split `shared/ui/data-table/lib.ts` *(execute 3rd)*
+## Phase 1 — Split `shared/ui/data-table/lib.ts` *(execute 3rd)* — ✅ COMPLETE (merged 67e5416)
 
 ### 1.1 Scope
 
@@ -253,7 +263,7 @@ on the shim. Phase 1.5 migrates those and deletes the shim.
 
 ---
 
-## Phase 2 — Extract `useSliceTableController` and split `EquipmentTab.tsx` *(execute 4th)*
+## Phase 2 — Extract `useSliceTableController` and split `EquipmentTab.tsx` *(execute 4th)* — ⏸ COMMITTED, AWAITING MERGE (branch `refactor/p2-slice-table-controller`, f34183c)
 
 ### 2.1 Scope
 
@@ -603,7 +613,7 @@ the remaining un-claimed selectors (gradually drain to zero).
 
 ---
 
-## Phase 6 — Feature-shape standardization *(execute 2nd)*
+## Phase 6 — Feature-shape standardization *(execute 2nd)* — ✅ COMPLETE (merged 0384d60)
 
 ### 6.1 Scope
 
@@ -666,7 +676,7 @@ function.
 
 ---
 
-## Phase 7 — Naming, sentinels, ID-prefix constants *(execute 1st)*
+## Phase 7 — Naming, sentinels, ID-prefix constants *(execute 1st)* — ✅ COMPLETE (merged ee7a221)
 
 ### 7.1 Scope
 
