@@ -35,7 +35,8 @@ class FakeR2Client:
         expires_in_seconds: int,
         response_content_disposition: str | None = None,
     ) -> str:
-        return f"https://fake-r2.test/{object_key}?method=get"
+        disposition = "&disposition=attachment" if response_content_disposition else ""
+        return f"https://fake-r2.test/{object_key}?method=get{disposition}"
 
     def head_object(self, object_key: str) -> dict[str, object]:
         body, _content_type = self.objects[object_key]
@@ -163,7 +164,10 @@ def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean
 
         urls = client.get(_asset_url(project_id, asset_id, "/url"))
         assert urls.status_code == 200
+        assert urls.json()["preview_url"].startswith("https://fake-r2.test/")
         assert urls.json()["download_url"].startswith("https://fake-r2.test/")
+        assert "disposition=attachment" not in urls.json()["preview_url"]
+        assert "disposition=attachment" in urls.json()["download_url"]
         assert urls.json()["thumbnail_status"] == "pending"
 
         attach = client.post(

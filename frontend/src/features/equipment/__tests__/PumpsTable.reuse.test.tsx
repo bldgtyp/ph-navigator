@@ -21,6 +21,8 @@ beforeEach(() => {
         items: [
           {
             asset_id: "asset_pdf_1",
+            preview_url: "https://fake-r2.test/file-preview.pdf",
+            preview_expires_at: "2026-05-26T13:15:00Z",
             download_url: "https://fake-r2.test/file.pdf",
             download_expires_at: "2026-05-26T14:00:00Z",
             thumbnail_url: null,

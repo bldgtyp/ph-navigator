@@ -193,10 +193,10 @@ function AttachmentModal({
           </button>
         </header>
         <div className="attachment-preview">
-          {isImage && asset?.download_url ? (
-            <img src={asset.download_url} alt={asset.original_filename} />
-          ) : asset?.content_type === "application/pdf" && asset.download_url ? (
-            <iframe title={asset.original_filename} src={asset.download_url} />
+          {isImage && asset?.preview_url ? (
+            <img src={asset.preview_url} alt={asset.original_filename} />
+          ) : asset?.content_type === "application/pdf" && asset.preview_url ? (
+            <iframe title={asset.original_filename} src={asset.preview_url} />
           ) : (
             <div className="attachment-file-panel">
               <span>{fileGlyph(asset?.content_type)}</span>
@@ -212,8 +212,8 @@ function AttachmentModal({
             →
           </button>
           <a href={assetDownloadPath(projectId, assetId)}>Download</a>
-          {asset?.download_url ? (
-            <a href={asset.download_url} target="_blank" rel="noreferrer">
+          {asset?.preview_url ? (
+            <a href={asset.preview_url} target="_blank" rel="noreferrer">
               Open in new tab
             </a>
           ) : null}

@@ -217,6 +217,92 @@ application or creating project-document state.
 Render staging should be the final acceptance gate, after Layers 1-3
 pass.
 
+Status on 2026-05-26: **core PDF path complete; broader checklist
+partially complete**. Render was redeployed with the Cloudflare R2 env
+vars and the live browser upload path was verified against staging using
+the Pumps table.
+
+Live staging evidence:
+
+- frontend: `https://ph-navigator-v2-staging.onrender.com`;
+- backend: `https://ph-navigator-v2.onrender.com`;
+- backend health `GET /api/v1/health` returned `200`;
+- login as the staging seed editor returned `200` with a secure
+  `SameSite=none` session cookie;
+- staging project created:
+  `42e4e17e-1f4d-4819-998b-20a3a40516a1`
+  (`R2-701939 - R2 Render Smoke 701939`);
+- Pumps row inserted in the working draft;
+- PDF datasheet uploaded from the browser:
+  `phn-render-r2-smoke.pdf`;
+- `POST /assets/upload-intent` returned `200`;
+- signed browser `PUT` to
+  `f9d264cceb6b9b13ad80ff784318975f.r2.cloudflarestorage.com/ph-navigator-v2-dev/.../file.pdf`
+  returned `200`;
+- `POST /assets/{asset_id}/complete-upload` returned `200`;
+- `GET /assets/bulk-urls?...` returned `200`;
+- reload in the same browser session kept the attachment thumbnail;
+- preview modal opened with the expected filename;
+- signed R2 `GET` for the original PDF returned `200`;
+- console warnings/errors: none.
+
+Screenshots saved outside the repo:
+
+- `/tmp/phn-render-after-attach.png`;
+- `/tmp/phn-render-preview.png`;
+- `/tmp/phn-render-detach-debug.png`.
+
+Repeatable upload/download fixture:
+
+- `backend/tests/fixtures/attachments/phn-attachment-upload-verification-v1.pdf`;
+- visible text:
+  `PH-Navigator attachment upload verification fixture v1`;
+- size: 646 bytes;
+- SHA-256:
+  `be829e43656e29afb319822b4b5758fe356daad0fc332677e41f29522fa47253`;
+- verified with `file` as PDF 1.4, one page, and loaded with
+  `pypdfium2.PdfDocument`.
+
+Manual staging continuation on 2026-05-26:
+
+- tested project:
+  `https://ph-navigator-v2-staging.onrender.com/projects/c9c152fb-ab96-491b-b982-238450d5e584/equipment`;
+- used Pumps row `P-01` with an empty Datasheet field;
+- uploaded
+  `backend/tests/fixtures/attachments/phn-attachment-upload-verification-v1.pdf`
+  by drag/drop into the active Datasheet cell;
+- UI flashed upload state, then rendered the `PDF` attachment chip;
+- download worked;
+- Cloudflare dashboard confirmed `projects/` plus project/object folders,
+  with `file.pdf` at 646 B and `thumb.png`;
+- project was saved;
+- after logout/login, the attachment was still present in the Datasheet
+  cell.
+
+Defects found during manual staging:
+
+- double-clicking the PDF chip opened the preview modal but also triggered
+  a download;
+- PDF preview modal opened, but the iframe area was blank.
+
+Root cause/fix: the frontend used `download_url` for PDF/image preview
+and "Open in new tab"; the backend signs `download_url` with
+`Content-Disposition: attachment`, which causes browser download behavior
+and prevents reliable iframe preview. Added a separate `preview_url` /
+`preview_expires_at` without attachment disposition and changed the modal
+preview/open paths to use `preview_url`. The explicit Download button
+continues to use the API download route.
+
+Remaining staging acceptance items after the core PDF path:
+
+- redeploy the preview/download fix and re-test double-click PDF preview
+  without an automatic download;
+- upload one image and confirm image preview/thumbnail behavior;
+- replace an attachment and confirm ordering/selection behavior;
+- run bulk download and inspect the zip manifest;
+- use an MCP token to `list_assets`, `resolve_asset_urls`, and
+  `start_bulk_download`.
+
 Staging setup:
 
 - Render backend connected to dev Postgres;

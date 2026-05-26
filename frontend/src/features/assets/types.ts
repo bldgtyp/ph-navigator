@@ -37,6 +37,8 @@ export type UploadIntentResponse = {
 
 export type AssetUrls = {
   asset_id: string;
+  preview_url: string;
+  preview_expires_at: string;
   download_url: string;
   download_expires_at: string;
   thumbnail_url: string | null;

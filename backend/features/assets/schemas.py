@@ -90,6 +90,8 @@ class AssetUrlsResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     asset_id: str
+    preview_url: str
+    preview_expires_at: datetime
     download_url: str
     download_expires_at: datetime
     thumbnail_url: str | None = None

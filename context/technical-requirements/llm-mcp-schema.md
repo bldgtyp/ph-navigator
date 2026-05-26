@@ -99,7 +99,7 @@ create_asset_upload_intent(project_id, asset_kind, filename, content_type,
                                      → asset id + signed PUT URL + expires_at
 complete_asset_upload(project_id, asset_id)
                                      → uploaded asset metadata
-get_asset_url(project_id, asset_id)  → signed GET URL + expires_at
+get_asset_url(project_id, asset_id)  → signed preview/download URLs + expires_at
 attach_asset(project_id, version_id, asset_id, target_path)
                                      → JSON-Patch attach into token owner's draft
 detach_asset(project_id, version_id, asset_id, target_path)
@@ -113,8 +113,8 @@ list_assets(project_id, version_id?, filter)
                                                row_ids, content_type, ...
 
 resolve_asset_urls(project_id, asset_ids[])
-                                     → batch signed download + thumbnail
-                                       URLs (≤ 100 ids per call)
+                                     → batch signed preview/download +
+                                       thumbnail URLs (≤ 100 ids per call)
 
 start_bulk_download(project_id, filter, filename_pattern?,
                     include_manifest_csv?)
