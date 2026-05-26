@@ -28,20 +28,27 @@ from features.mcp.models import (
 from features.mcp.service import PhNavigatorTokenVerifier
 from features.mcp.tools import (
     tool_add_custom_field,
+    tool_bulk_attach,
+    tool_bulk_detach,
     tool_change_custom_field_type,
     tool_delete_custom_field,
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
+    tool_get_asset_url,
     tool_get_document,
+    tool_get_job,
     tool_get_project,
     tool_get_table,
+    tool_list_assets,
     tool_list_projects,
     tool_list_status_items,
     tool_list_versions,
     tool_rename_custom_field,
     tool_replace_table,
+    tool_resolve_asset_urls,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
+    tool_start_bulk_download,
 )
 
 __all__ = ["build_mcp_server", "mcp"]
@@ -111,6 +118,69 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         list under `rows`.
         """
         return tool_get_table(project_id, version_id, table_name, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_assets(
+        project_id: str,
+        ctx: Context,
+        version_id: str | None = None,
+        filter: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        """List uploaded project assets, optionally filtered by kind."""
+        return tool_list_assets(project_id, ctx, allow_env_token=allow_env_token, version_id=version_id, filter=filter)
+
+    @mcp.tool()
+    def get_asset_url(project_id: str, asset_id: str, ctx: Context) -> dict[str, object]:
+        """Return signed download and thumbnail URLs for one asset."""
+        return tool_get_asset_url(project_id, asset_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def resolve_asset_urls(project_id: str, asset_ids: list[str], ctx: Context) -> dict[str, object]:
+        """Return signed download and thumbnail URLs for up to 100 assets."""
+        return tool_resolve_asset_urls(project_id, asset_ids, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def start_bulk_download(
+        project_id: str,
+        ctx: Context,
+        filter: dict[str, object] | None = None,
+        filename_pattern: str | None = None,
+        include_manifest_csv: bool = True,
+    ) -> dict[str, object]:
+        """Start a deterministic zip export for matching project assets."""
+        return tool_start_bulk_download(
+            project_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            filter=filter,
+            filename_pattern=filename_pattern,
+            include_manifest_csv=include_manifest_csv,
+        )
+
+    @mcp.tool()
+    def get_job(project_id: str, job_id: str, ctx: Context) -> dict[str, object]:
+        """Return project-scoped asset job status."""
+        return tool_get_job(project_id, job_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def bulk_attach(
+        project_id: str,
+        version_id: str,
+        attachments: list[dict[str, object]],
+        ctx: Context,
+    ) -> dict[str, object]:
+        """Attach multiple uploaded assets to locked PHN attachment fields."""
+        return tool_bulk_attach(project_id, version_id, attachments, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def bulk_detach(
+        project_id: str,
+        version_id: str,
+        asset_refs: list[dict[str, object]],
+        ctx: Context,
+    ) -> dict[str, object]:
+        """Detach multiple uploaded assets from locked PHN attachment fields."""
+        return tool_bulk_detach(project_id, version_id, asset_refs, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def replace_table(

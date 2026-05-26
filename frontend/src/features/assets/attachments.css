@@ -1,0 +1,155 @@
+.attachment-cell {
+  align-items: center;
+  display: flex;
+  min-height: 34px;
+  outline: none;
+  width: 100%;
+}
+
+.attachment-workbench {
+  display: grid;
+  gap: 18px;
+}
+
+.attachment-panel {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.attachment-panel h3 {
+  font-size: 14px;
+  font-weight: 650;
+  margin: 0 0 10px;
+}
+
+.attachment-file-input {
+  display: none;
+}
+
+.attachment-drop-button {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  display: flex;
+  font: inherit;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.data-table-cell-active .attachment-drop-button {
+  visibility: visible;
+}
+
+.attachment-drop-button:disabled {
+  display: none;
+}
+
+.attachment-strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: 100%;
+}
+
+.attachment-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.attachment-thumb {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #334155;
+  display: flex;
+  flex: 0 0 36px;
+  font-size: 10px;
+  height: 28px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+}
+
+.attachment-thumb.selected {
+  box-shadow: 0 0 0 2px var(--phn-selection-ring, #2563eb);
+}
+
+.attachment-thumb img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.attachment-pending {
+  align-items: center;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  border-radius: 4px;
+  color: #075985;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  height: 28px;
+  padding: 0 8px;
+}
+
+.attachment-modal {
+  align-items: center;
+  background: rgb(15 23 42 / 0.45);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 50;
+}
+
+.attachment-modal-panel {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgb(15 23 42 / 0.35);
+  display: grid;
+  grid-template-rows: auto minmax(280px, 78vh) auto;
+  max-width: 980px;
+  min-width: min(900px, 92vw);
+  overflow: hidden;
+}
+
+.attachment-modal-panel header,
+.attachment-modal-panel footer {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.attachment-modal-panel footer {
+  justify-content: flex-end;
+}
+
+.attachment-preview {
+  align-items: center;
+  background: #f8fafc;
+  display: flex;
+  justify-content: center;
+  min-height: 280px;
+}
+
+.attachment-preview img,
+.attachment-preview iframe {
+  border: 0;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.attachment-file-panel {
+  color: #475569;
+  text-align: center;
+}

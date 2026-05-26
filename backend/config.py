@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket: str = "ph-navigator-v2-dev"
     r2_endpoint_url: str = ""
+    asset_signed_url_ttl_preview_seconds: int = 15 * 60
+    asset_signed_url_ttl_download_seconds: int = 60 * 60
+    asset_thumbnail_render_timeout_seconds: int = 10
+    asset_max_file_size_mb_hard_cap: int = 100
 
     # Future at-rest field encryption. Not used by TB-01 session cookies,
     # which are opaque pointers to rows in the sessions table.

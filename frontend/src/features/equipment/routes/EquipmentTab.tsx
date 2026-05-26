@@ -1,5 +1,6 @@
 import "../equipment.css";
 import { useMemo, useState } from "react";
+import { AttachmentTablePanel } from "../../assets/components/AttachmentTablePanel";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
 import { EquipmentSubTabBar } from "../components/EquipmentSubTabBar";
@@ -158,6 +159,63 @@ function EquipmentTabBody(props: {
         )}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
       />
+      <div className="attachment-workbench" aria-label="Equipment attachment tables">
+        <AttachmentTablePanel
+          projectId={project.id}
+          versionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
+          tableName="equipment_ervs"
+          title="ERV Datasheets"
+          fieldKey="datasheet_asset_ids"
+          fieldLabel="Datasheet"
+          config={DATASHEET_CONFIG}
+        />
+        <AttachmentTablePanel
+          projectId={project.id}
+          versionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
+          tableName="equipment_pumps"
+          title="Pump Datasheets"
+          fieldKey="datasheet_asset_ids"
+          fieldLabel="Datasheet"
+          config={DATASHEET_CONFIG}
+        />
+        <AttachmentTablePanel
+          projectId={project.id}
+          versionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
+          tableName="equipment_fans"
+          title="Fan Datasheets"
+          fieldKey="datasheet_asset_ids"
+          fieldLabel="Datasheet"
+          config={DATASHEET_CONFIG}
+        />
+        <AttachmentTablePanel
+          projectId={project.id}
+          versionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
+          tableName="thermal_bridges"
+          title="Thermal Bridge Datasheets"
+          fieldKey="datasheet_asset_ids"
+          fieldLabel="Datasheet"
+          config={DATASHEET_CONFIG}
+        />
+        <AttachmentTablePanel
+          projectId={project.id}
+          versionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
+          tableName="thermal_bridges"
+          title="Thermal Bridge Simulation Files"
+          fieldKey="simulation_file_asset_ids"
+          fieldLabel="Simulation File"
+          config={SIM_FILE_CONFIG}
+        />
+      </div>
       <RoomDialogStack
         isEditor={isEditor}
         roomsSlice={roomsSlice}
@@ -179,3 +237,23 @@ function EquipmentTabBody(props: {
     </SliceTableShell>
   );
 }
+
+const DATASHEET_CONFIG = {
+  assetKind: "datasheet" as const,
+  allowedTypes: ["application/pdf", "image/png", "image/jpeg", "image/webp"],
+  maxCount: 5,
+  maxFileSizeMb: 25,
+};
+
+const SIM_FILE_CONFIG = {
+  assetKind: "simulation_file" as const,
+  allowedTypes: [
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "application/json",
+    "application/octet-stream",
+  ],
+  maxCount: 5,
+  maxFileSizeMb: 25,
+};
