@@ -1,6 +1,6 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import { isCellInNormalizedRange, type NormalizedRange } from "../lib";
+import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
 import type {
   AxisRoleSubset,
   BodyPlanItem,

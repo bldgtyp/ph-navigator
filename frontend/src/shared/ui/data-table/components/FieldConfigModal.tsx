@@ -29,7 +29,7 @@ import {
   isConversionAllowed,
   TEXT_TO_SINGLE_SELECT_OPTION_CAP,
 } from "../lib/typeConversionMatrix";
-import { deriveCandidateOptionsFromRows } from "../lib";
+import { deriveCandidateOptionsFromRows } from "../lib/options/create";
 import { formulaSourceFromFieldDef } from "../lib/formulaFieldSource";
 import {
   FieldConfigSectionTypeChange,
@@ -317,11 +317,7 @@ export function FieldConfigModal({
       return EMPTY_FIELD_OPTIONS;
     }
     const cached = derivedSourceOptionsRef.current;
-    if (
-      cached &&
-      cached.fieldKey === source.field_key &&
-      cached.draftType === draftType
-    ) {
+    if (cached && cached.fieldKey === source.field_key && cached.draftType === draftType) {
       return cached.options;
     }
     const derived = deriveCandidateOptionsFromRows(

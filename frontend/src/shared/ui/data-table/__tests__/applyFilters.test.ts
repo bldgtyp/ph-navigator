@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { applyFilters } from "../lib";
+import { applyFilters } from "../lib/filter/apply";
 import type { DataTableColumnDef, FieldDef } from "../types";
 
 type Row = {

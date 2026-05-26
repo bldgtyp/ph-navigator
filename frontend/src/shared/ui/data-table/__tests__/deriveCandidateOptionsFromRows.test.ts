@@ -1,15 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { deriveCandidateOptionsFromRows } from "../lib";
+import { deriveCandidateOptionsFromRows } from "../lib/options/create";
 
 describe("deriveCandidateOptionsFromRows", () => {
   test("dedupes by case-insensitive trimmed label and preserves first-seen order", () => {
     const options = deriveCandidateOptionsFromRows(
-      [
-        { rawValue: "Open" },
-        { rawValue: " open " },
-        { rawValue: "Closed" },
-        { rawValue: "OPEN" },
-      ],
+      [{ rawValue: "Open" }, { rawValue: " open " }, { rawValue: "Closed" }, { rawValue: "OPEN" }],
       50,
     );
     expect(options.map((o) => o.label)).toEqual(["Open", "Closed"]);
@@ -47,10 +42,7 @@ describe("deriveCandidateOptionsFromRows", () => {
   });
 
   test("assigns ascending order and cycles palette colors", () => {
-    const options = deriveCandidateOptionsFromRows(
-      [{ rawValue: "a" }, { rawValue: "b" }],
-      50,
-    );
+    const options = deriveCandidateOptionsFromRows([{ rawValue: "a" }, { rawValue: "b" }], 50);
     expect(options[0]?.order).toBe(0);
     expect(options[1]?.order).toBe(1);
     expect(options[0]?.color).toBeTruthy();

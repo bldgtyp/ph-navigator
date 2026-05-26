@@ -1,11 +1,9 @@
 import { useCallback, useRef, useState } from "react";
-import {
-  coerceFieldValue,
-  createFieldOption,
-  findFieldOptionByLabel,
-  formatClipboardValue,
-  singleSelectOption,
-} from "../lib";
+import { coerceFieldValue } from "../lib/rows/defaults";
+import { createFieldOption } from "../lib/options/create";
+import { findFieldOptionByLabel } from "../lib/options/references";
+import { formatClipboardValue } from "../lib/paste/tsv";
+import { singleSelectOption } from "../lib/rows/format";
 import { getFieldEditor } from "../fields/registry";
 import type { CellWrite, FieldDef, FieldOption, WriteOp } from "../types";
 import type { DispatchWrite } from "./useGridWriteReducer";
