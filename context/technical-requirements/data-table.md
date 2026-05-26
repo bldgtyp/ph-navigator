@@ -128,7 +128,7 @@ V2 v1 field types:
 | `number` | SI in document; render/input through active unit context where relevant. |
 | `single_select` | Project-defined options, pill renderer, popover editor, match-or-create paste, sort by option order. |
 | `computed` | Backend-owned read overlay; frontend renders ready/stale/loading/error states and never reimplements PH calculations. |
-| `attachment` | R2-backed asset preview through an injected renderer. Full attachment UX lands with the Envelope/assets slice. |
+| `attachment` | Cell value is `string[]` of `asset_id`s referencing `project_assets` rows (`data-model.md` §6.5). Rendered by `<AttachmentCell>` — mousewheel-scrolled thumbnail strip, fixed cell height, "📎 Drop files here" pill-button in the empty active state, preview modal on double-click, select-and-Delete detach gesture. **Pre-set core fields only in v1** — not in the user-extensible custom-field set; the roster of attachment-capable cells lives in `attachments.md` §A2. **Clipboard semantics in v1: copy/paste of attachment cells is disabled.** Fill propagates the array verbatim within the same column. Aggregations: Count, Count Unique. Sort: by array length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. **No** schema-mutation menu entries — `addField` / `deleteField` / `changeType` / `setFormula` do not apply. Full UX contract: `attachments.md`. |
 | `argb_color` | Post-v1 typed field. Treat legacy ARGB strings as text until needed. |
 
 Clipboard coercion must preflight the whole paste range. If any cell

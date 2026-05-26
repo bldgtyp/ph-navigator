@@ -543,9 +543,13 @@ project_assets (
                           -- server-generated asset_<ULID>
     project_id            UUID NOT NULL REFERENCES projects(id),
     asset_kind            TEXT NOT NULL,
-                          -- v1: 'datasheet' | 'site_photo' | 'hbjson'
-                          -- future: 'simulation_file' | 'export_bundle' |
-                          -- 'other'
+                          -- v1: 'datasheet' | 'site_photo' | 'hbjson' |
+                          --     'simulation_file'
+                          -- future: 'export_bundle' | 'other'
+                          -- `attachments.md` §A2 maps each kind to its
+                          -- referencing core fields. No generic
+                          -- `attachment` kind exists in v1 because there
+                          -- is no user-extensible attachment surface.
     object_key            TEXT NOT NULL UNIQUE,
                           -- R2 key, e.g.
                           -- projects/{project_id}/assets/{asset_id}/file.pdf
@@ -604,6 +608,33 @@ Rules:
   when it is soft-deleted or failed/pending-expired **and** no saved
   version or active draft references its asset id. Default retention for
   purge candidates is 90 days.
+
+#### 6.5.1 `metadata` JSONB shape
+
+The `metadata` column is the kind-specific escape hatch. v1 keys used
+by the attachment pipeline (`attachments.md`):
+
+```jsonc
+{
+  "thumbnail_object_key": "projects/{pid}/assets/{aid}/thumb.png",
+  "thumbnail_status": "ready" | "pending" | "failed" | "na",
+  "thumbnail_failure_reason": null | "render_timeout" | "render_error" | ...,
+  "page_count": 12,            // PDFs only
+  "image_dimensions": [w, h]   // images only
+}
+```
+
+Thumbnails are server-generated as a FastAPI background task on
+`complete-upload` (`pypdfium2` for PDFs, `Pillow` for images). HBJSON
+and unknown types render with a generic glyph and carry
+`thumbnail_status = "na"`. Full pipeline contract:
+`attachments.md` §A7.
+
+#### 6.5.2 Cross-reference
+
+The fixed v1 roster of attachment-capable core fields, the per-field
+caps, the upload UX, and the save/version invariants live in
+`attachments.md`. This section owns the row schema only.
 
 ### 6.6 Custom fields on project-document tables
 

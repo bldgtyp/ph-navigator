@@ -408,7 +408,7 @@ Rules:
   drop target; the "Drop files here" button is not rendered even
   when selected.
 
-### 7.2 Selection inside the cell
+### 7.2 Thumbnail selection inside the cell
 
 - Clicking a thumbnail **once** selects it: the tile gains a 2 px
   focus ring (uses an existing token, e.g.
@@ -421,7 +421,7 @@ Rules:
 - Selection is local to the cell — it does not affect grid-level
   active-cell or range-select state.
 
-### 7.2 Drop interaction
+### 7.3 Drop interaction
 
 - Dragging files over a cell (active or not) shows a strong drop
   overlay on that cell. Other cells dim.
@@ -438,7 +438,7 @@ Rules:
   so a single ⌘Z removes the whole drop. (Implementation: an
   `op_group_id` on the cell writes; undo collapses a group.)
 
-### 7.3 Preview modal
+### 7.4 Preview modal
 
 - Triggered by click on any thumbnail tile.
 - Layout: large preview area (~80vw × 80vh), filename strip top,
@@ -453,7 +453,7 @@ Rules:
 - Image preview: native `<img>` with `loading="eager"`, fit-to-frame.
 - Other types: download-only fallback panel.
 
-### 7.4 Reorder inside the modal
+### 7.5 Reorder inside the modal
 
 - Below the main preview, a small thumbnail rail mirrors the cell's
   strip.
@@ -462,16 +462,30 @@ Rules:
   added/removed).
 - One semantic op; one undo entry.
 
-### 7.5 Detach (delete from cell)
+### 7.6 Detach (delete from cell)
 
-- The `Detach` button removes the current attachment from the cell's
-  array. The modal advances to the next attachment, or closes if it was
-  the last.
-- The underlying `project_assets` row is **not** soft-deleted by this
-  gesture; it follows the existing PRD §6.5 rule (asset stays
+- **Gesture (AirTable parity):** select a thumbnail (in the cell
+  strip or in the modal's rail) → press **Delete** (or Backspace) →
+  attachment detaches. No confirm dialog (defer to v1.1 per Q-ATT-6).
+- The CellWrite drops the `asset_id` from the cell array; one undo
+  entry. ⌘Z restores.
+- The underlying `project_assets` row is **not** soft-deleted by
+  this gesture; it follows the existing PRD §6.5 rule (asset stays
   available; 90-day GC only after no saved-version-or-active-draft
   references). If the user undoes the detach, the asset_id is
   re-appended.
+
+### 7.7 Replace (Q-ATT-13)
+
+- In the preview modal, an editor sees a `Replace…` button alongside
+  Download.
+- Replace opens a file picker; the selected file is uploaded as a
+  new asset and **swapped in place** for the currently-viewed
+  attachment in the cell array (one semantic op: append new + remove
+  old at the same index).
+- One undo entry.
+- The old asset is detached but not hard-deleted; the saved version's
+  body that referenced it still resolves correctly (§9.5 invariant).
 
 ## 8. Thumbnail pipeline
 
@@ -523,139 +537,187 @@ both return:
 ### 9.1 Existing `project_assets` (no shape changes)
 
 The table in `data-model.md` §6.5 already covers everything. v1
-attachment work adds these `asset_kind` values to its closed set:
-- `datasheet`, `site_photo`, `hbjson` — already specified.
-- `simulation_file` — promoted from "future" to v1 for TB sim files.
-- `attachment` — **new** generic kind for custom-field attachment
-  columns. (Discriminator for "user-driven attachment, not a known
-  domain artifact.")
+attachment work uses these `asset_kind` values:
+- `datasheet` — manufacturer product PDFs / images.
+- `site_photo` — per-segment installation photos.
+- `simulation_file` — thermal-bridge sim files (HBJSON or other) —
+  promoted from "future" to v1.
+- `hbjson` — already specified for the 3D viewer; **also valid** for
+  TB simulation files (the same kind serves both surfaces; the
+  *referencing field* is what distinguishes the use).
 - `export_bundle`, `other` — kept future.
+
+> Note: we do NOT introduce a generic `attachment` asset_kind, because
+> there is no generic user-extensible attachment surface in v1. Every
+> attachment cell maps to one of the kinds above through its declared
+> core field (§9.2).
 
 A `metadata` JSONB column on `project_assets` (already there) is the
 escape hatch for kind-specific extras; the v1 set is:
 ```jsonc
 {
   "thumbnail_object_key": "projects/{pid}/assets/{aid}/thumb.png",
-  "thumbnail_status": "ready" | "pending" | "failed",
+  "thumbnail_status": "ready" | "pending" | "failed" | "na",
   "thumbnail_failure_reason": null | "render_timeout" | ...,
   "page_count": 12,            // PDFs only
   "image_dimensions": [w, h]   // images only
 }
 ```
 
-### 9.2 `attachment` as a v1 custom-field type
+### 9.2 The fixed v1 attachment-field roster
 
-**This is the single largest change to the existing canon.**
+Attachment cells live ONLY on these PHN-declared core fields. None of
+these are added or removed by users; the schema is owned by PHN.
 
-Today `data-model.md` §6.6.3 says v1 types = `{short_text, long_text,
-number, url, single_select, formula}` and explicitly defers
-`attachment` to plan-13 §6 "future types." This PRD proposes
-**promoting `attachment` into the v1 closed set**, conditional on the
-storage + thumbnail + asset API work landing first (Phase 0).
+| Document path | Core field | asset_kind | Allowed MIME | Max files / cell | Max file size |
+|---|---|---|---|---|---|
+| `tables.project_materials[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.assemblies[*].layers[*].segments[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp` | 10 | 25 MB |
+| `tables.equipment.ervs[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.pumps[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.fans[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.thermal_bridges[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.thermal_bridges[*]` | `simulation_file_asset_ids[]` | `simulation_file` / `hbjson` | `application/pdf`, `image/png`, `image/jpeg`, `application/json` (`.hbjson` ext), `application/octet-stream` (`.hbjson` ext) | 5 | 25 MB |
 
-Custom-field shape:
+Cell value shape is uniform — an ordered array of `asset_id` strings:
 ```jsonc
-{
-  "id": "cf_01HX…",
-  "field_key": "u_cut_sheets",
-  "display_name": "Cut Sheets",
-  "field_type": "attachment",
-  "config": {
-    "max_count": 10,                 // soft cap; UI warns at limit
-    "allowed_mime_types": ["application/pdf",
-                           "image/png", "image/jpeg", "image/webp"],
-    "max_file_size_mb": 25
-  }
-}
+"datasheet_asset_ids": ["asset_01HX…", "asset_01HX…"]
 ```
 
-Cell value shape (per row, under `row.custom[cf_id]`):
-```jsonc
-["asset_01HX…", "asset_01HX…", "asset_01HX…"]
-```
+Empty = `[]`. `null` reads coerce to `[]`. Writes normalize to `[]`.
 
-Stored as an ordered array of `asset_id` strings. Empty = no
-attachments. `null` and `[]` are equivalent on read; writes normalize
-to `[]`.
-
-#### 9.2.1 Why elevate to custom field rather than keep core-only
-
-The user's stated workflow (drag-drop attachment column on equipment
-tables like AirTable's Appliance Data → CUT SHEETS) cannot be served by
-core fields alone, because:
-- It must work on tables that **don't yet have an attachment field
-  in the document schema** (equipment subtypes, future tables);
-- Adding a core attachment field today is a schema-version bump +
-  shim + frontend column registration — a full code-and-deploy event;
-- Different projects need different attachment columns ("warranty
-  PDF", "submittal", "RFI response") — these are project-shaped
-  vocabulary, not platform vocabulary.
-
-Core-field attachments (`project_materials.datasheet_asset_ids`,
-`segment.photo_asset_ids`, `equipment.*.datasheet_asset_ids`,
-`thermal_bridges.simulation_file_asset_ids`,
-`thermal_bridges.datasheet_asset_ids`) **remain** for the domain
-artifacts where PHN has a strong opinion. Both core and custom render
-through the same `<AttachmentCell>` and emit the same write shape.
+The per-field config (allowed MIME, `max_count`, `max_file_size_mb`)
+lives in code on each registered table contract (per `data-model.md`
+§6.6.7 — registered table contract pattern), NOT as user-editable JSON
+in the document body. Adding a new attachment cell in v1.1+ is a code
+change, not a runtime change.
 
 ### 9.3 Validation rules (Pydantic)
 
-On schema-mutation (add/change to `attachment`):
-- `max_count` ∈ [1, 50]; default 10.
-- `max_file_size_mb` ∈ [1, 100]; default 25.
-- `allowed_mime_types` is non-empty; defaults to PDF + standard
-  image types.
-
 On cell write:
-- value is an array of strings (`asset_id` shape: `asset_<ULID>`).
-- Each id must resolve to a non-deleted `project_assets` row in the
-  same `project_id`.
-- Each asset's `content_type` must satisfy the field's `allowed_mime_types`.
-- Array length ≤ `max_count`; otherwise structured `attachment_count_exceeded`.
+- value is an array of strings (`asset_id` shape: `asset_<ULID>`);
+- each id must resolve to a non-deleted `project_assets` row in the
+  same `project_id`;
+- each asset's `content_type` (or `original_filename` extension for
+  HBJSON) must satisfy the field's declared allow-list;
+- array length ≤ the field's `max_count`; otherwise structured
+  `asset_count_exceeded`.
 
-`changeType` rules:
-- `attachment ↔ anything else` is **always** `illegal_type_conversion`.
-  Converting away from attachment would orphan the asset references;
-  converting *to* attachment would have no source data to migrate.
-- The user converts by deleting and re-adding (`deleteField` ⇒
-  `addField`).
+Schema-mutation rules are **N/A** in v1 — attachment fields aren't
+user-mutable (no `addField`, `deleteField`, `changeType`, `setFormula`
+for attachment cells).
 
 ### 9.4 File size, count, and quota caps
 
-- **Per file:** 25 MB v1 default. Configurable per field via
-  `max_file_size_mb`. Hard backend cap 100 MB (single-PUT comfort
-  zone on R2; multipart deferred).
-- **Per cell:** 10 attachments soft default; 50 hard cap.
+- **Per file:** 25 MB v1 default for every pre-set field. Backend hard
+  cap 100 MB (single-PUT comfort zone on R2; multipart deferred).
+- **Per cell:** as declared per-field in §9.2 (typically 5 or 10).
 - **Per project:** no enforcement v1. Logged in `user_action_log`.
   Quotas land if a project exceeds ~5 GB.
-- **Per upload batch (drop):** no explicit cap; backed by per-cell cap.
+- **Per upload batch (drop):** no explicit cap; backed by per-cell
+  cap.
 
-### 9.5 Save / version interaction
+### 9.5 Save / version interaction (Q-ATT-13 invariant)
 
 Attachment cell writes go through the **draft buffer** like every
-other write (`save-versioning.md` §8.3):
-- Upload happens out-of-band (direct PUT to R2 against a signed URL).
-- `complete-upload` marks the asset row `uploaded`. **The asset row
-  exists in `project_assets` from this point** regardless of whether
-  the draft is later saved or discarded.
-- Appending the `asset_id` into the cell array is the *cell* write
-  through the draft. On Save, the version body includes the
-  `asset_id`; on Discard, the asset becomes an orphan.
-- Orphan handling: per PRD §6.5 the 90-day GC sweeps assets that no
-  saved version *and* no active draft references. This already covers
-  the "uploaded then discarded" case.
+other cell write (`save-versioning.md` §8.3). The core invariants:
 
-### 9.6 Schema fingerprint and view state
+1. **Bytes are immutable** per `asset_id`. There is no in-place
+   replacement of a single asset's content.
+2. **A saved version body is frozen.** Once a version is saved, the
+   `asset_id` strings it references never change.
+3. **Save As clones the body verbatim.** When you Save As V1 → V2,
+   V2's cell arrays start as exact copies of V1's. No R2 objects are
+   duplicated; both versions point to the same asset_ids (and
+   therefore the same R2 objects).
+4. **Detach/attach in V2 only mutates V2's body.** V1's frozen body
+   continues to reference the original asset_ids regardless of
+   whatever V2 does.
+5. **GC is reference-aware** (per PRD §6.5). An asset is purged only
+   when no saved version *and* no active draft references it.
+   Therefore, **as long as V1 exists, its referenced assets are
+   reachable**, even if V2 detached them.
 
-`data-table.md` §View State requires fingerprinting the schema for
-view-state persistence. Adding `attachment` as a custom-field type:
-- The fingerprint already includes `field_type`, so it captures
-  attachment columns without changes.
-- `columnWidths`, `hiddenColumns`, `columnOrder`, etc. apply to
-  attachment columns identically.
-- Aggregations on attachment columns: only `Count` and
-  `Count Unique` make sense; the FieldDef declares the supported set
-  per type.
+#### 9.5.1 Replace semantics
+
+When the user clicks `Replace…` in V2's preview modal and chooses a
+new file:
+
+- A new asset is uploaded (gets `asset_B`).
+- V2's cell array swaps `asset_A` → `asset_B` in place (one semantic
+  op).
+- V1's cell array (frozen) still references `asset_A`.
+- Both R2 objects remain reachable.
+
+This is exactly the audit-trail behavior Ed described (2026-05-25):
+"If a user opens an old project version, they want to be able to
+access the datasheets uploaded at that time… but when the user does a
+'Save as' and is working on a NEW version, if they upload a NEW doc,
+that should replace the existing one FOR THAT VERSION."
+
+#### 9.5.2 Edge cases worth naming
+
+Version isolation handles most of the surface automatically. These
+are the edge cases worth documenting before implementation so the
+test plan covers them:
+
+- **E1: Upload completes after the user navigates away from the
+  version.** The upload coordinator persists the pending CellWrite
+  in memory and posts it to `/draft` for V2 regardless of the
+  current UI focus. The cell write lands on V2's draft buffer
+  correctly. The frontend surfaces a small toast: *"Datasheet
+  attached to <project>/<table>/<row> (Working draft)"* with a
+  click-to-return link. **Test:** drop a PDF in V2, switch the
+  dropdown to V1 mid-upload; verify V2's draft contains the new
+  asset_id when reopened.
+- **E2: Upload completes after the user discards the draft.** The
+  asset row exists (`upload_status = uploaded`); the draft body it
+  should have been attached to is gone. The asset becomes an orphan
+  and is GC'd 90 days later. **Test:** drop a file; discard before
+  complete-upload returns; verify the asset row exists in
+  `project_assets` but is unreferenced.
+- **E3: Same file dropped twice in the same cell.** Server-side
+  dedup returns the same `asset_id`. The cell write would append a
+  duplicate id. **Lean (Q-ATT-21):** frontend filters the duplicate
+  before emitting the CellWrite; tooltip "already attached." Confirm.
+- **E4: Same file dropped into V2 cell when V1 already references
+  it.** Dedup returns the existing `asset_id` (the one V1 already
+  uses). V2's array gains it. Both versions now reference the same
+  id. Detach from V2 does not affect V1.
+- **E5: Detach asset_A from V2 while V1 still references it,
+  then 90 days pass.** Asset_A still referenced by V1 → not GC'd
+  → still downloadable from V1's perspective. ✓ correct.
+- **E6: Save As V1 → V2 with an upload in V1's draft buffer
+  pending.** Save As must flush V1's draft first, then clone to V2.
+  Pending uploads' CellWrites must drain before the version clone.
+  **Test:** in V1 draft, drop 3 files; immediately click Save As;
+  verify all 3 land in V1 *and* the new V2.
+- **E7: Asset replaced in V2 (via §7.7) while V1's saved body
+  still references the old asset.** Old asset survives because V1
+  references it. V2's body references the new asset. Both are
+  reachable. ✓ exactly the audit-trail invariant.
+- **E8: ETag conflict on attach.** User A in browser, User B via
+  MCP attach concurrently to the same V2 draft cell. Whoever lands
+  second gets 409 stale-draft-etag; client refreshes and retries.
+  ✓ existing draft concurrency model (US-Concurrency).
+- **E9: Cross-project asset reference.** Disallowed at the API
+  layer — every cell write validates that the asset's `project_id`
+  matches the version's project. Returns
+  `asset_cross_project_reference`. **Test:** craft a PATCH with
+  another project's asset_id; expect rejection.
+- **E10: Version-diff renders attachments.** `/diff?from=V1&to=V2`
+  returns `{ added: [asset_id], removed: [asset_id] }` per cell.
+  The diff modal renders each side's thumbnails. **Test:** detach
+  one asset and replace with another in V2; diff against V1 shows
+  both changes.
+
+### 9.6 No schema-fingerprint plumbing
+
+Because attachment cells are core fields whose shape lives in code,
+not in the document body, the `expectedSchemaFingerprint` plumbing
+used by custom-field schema mutations (`data-table.md` §Write
+Pipeline) does NOT apply to attachment cells. Attachment cell writes
+are ordinary CellWrites — no fingerprint, no schema-mutation kind.
 
 ## 10. API surface
 
@@ -802,7 +864,7 @@ All conform to the §10.3 minimal envelope (`code`, `message`,
 
 | Type | Requirement |
 |---|---|
-| `attachment` | Cell value is `string[]` of `asset_id`s. Rendered by `<AttachmentCell>` (cell strip + drop target). Inline edit opens the preview modal. Clipboard semantics: copy serializes a TSV cell as a JSON array of asset ids prefixed `[attach:…]`; paste accepts the same shape only (cross-project paste rejected with structured error `asset_cross_project_paste`). Fill propagates the array verbatim. Aggregations: Count, Count Unique. Sort: by length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. |
+| `attachment` | Cell value is `string[]` of `asset_id`s. Rendered by `<AttachmentCell>` (mousewheel-scrolled cell strip, drop target, empty-state "📎 Drop files here" button). Inline edit opens the preview modal. **Clipboard semantics in v1: copy/paste of attachment cells is disabled** — the cross-project / cross-cell rules add complexity without a real workflow. Fill propagates the array verbatim within the same column. Aggregations: Count, Count Unique. Sort: by length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. **No** schema-mutation menu entries (the field type is not user-mutable). |
 
 ### 12.2 `<AttachmentCell>` API
 
@@ -842,188 +904,166 @@ type UploadCoordinator = {
 - Dedupes client-side by SHA-256 of the file content before
   upload-intent (so two cells dropping the same file in quick
   succession share a single intent call).
+- Survives navigation (per §9.5.2 E1): pending CellWrites are
+  buffered against the originating `(project_id, version_id)` and
+  posted to the draft API regardless of what version is on screen
+  when complete-upload returns.
 
 ### 12.4 Preview modal
 
 - Lazy-loaded route-level chunk (`pdfjs-dist` is heavy ~1.2 MB gzip;
-  must not be in the table's main bundle).
+  must not be in the table's main bundle) — confirmed per Q-ATT-9.
 - PDF: `pdfjs-dist` worker bundle preloaded on first attachment
   modal open per session.
 - Image: native `<img>`.
-- Keyboard: Esc, ←/→, ⌘D download.
+- Keyboard: Esc, ←/→, Delete/Backspace (detach selected), ⌘D
+  download.
 - Mobile: out of scope per PRD §3 non-goals.
 
 ## 13. Phasing
 
-This is too large for one slice. Proposed five phases; each is
-independently shippable and produces a manually-verifiable surface.
+Each phase is independently shippable and produces a
+manually-verifiable surface.
 
 | Phase | Slice | Scope | Verification target |
 |---|---|---|---|
-| **0. Storage + asset backbone** | Backend-only foundation | R2 buckets created + CORS configured; `project_assets` table + repository + service + R2 storage client (`storage_r2.py`); `upload-intent` / `complete-upload` / `delete` / `download` / `url` endpoints; thumbnailer (`pypdfium2` + `Pillow`); content-hash dedup; basic structured errors; pytest covering upload flow end-to-end with a localstack-style R2 mock. | curl upload-intent → PUT → complete-upload → GET url → file roundtrips; thumb.png materialized for PDF + PNG. |
-| **1. Site-photo core-field cell (envelope segments)** | First user-facing cell | `<AttachmentCell>` for the existing `segment.photo_asset_ids[]` core field. Drag-drop, upload coordinator, in-cell thumbnail strip, preview modal with download. Single cell type (photo only, no PDFs yet). | Open WALL-C3 assembly, drag two JPGs onto a segment cell, see them upload + preview; reload, see them persist; download. |
-| **2. Datasheet core-field cell (project_materials, equipment)** | PDF support + per-product semantics | Extend `<AttachmentCell>` to PDFs via the thumbnailer. Wire to `project_materials.datasheet_asset_ids[]` and `equipment.*.datasheet_asset_ids[]`. Per-row detach, undo, bulk paste/fill across cells of the same column. NEW-DATASHEET-1 column-level zip download. | Build a wall assembly with three project_materials; drag a PDF onto each; verify PDF thumbnail renders; download all from Specifications sub-tab. |
-| **3. `attachment` as v1 custom-field type** | The AirTable parity feature | Promote `attachment` into the closed v1 custom-field set; wire schema mutations (addField/deleteField with cell-clear; changeType blocked); custom-field config (max_count, allowed_mime_types, max_file_size_mb); single CellWrite shape consumed by both core and custom attachment cells; viewer-mode read-only. | On Equipment → Pumps table, add an "Attachments" custom column; drop multiple PDFs; close and reopen; preview/download; remove column → cells cleared; assets orphaned + GC scheduled. |
-| **4. Bulk-download jobs + MCP ergonomics** | Cross-project / cross-LLM workflows | Bulk download job endpoint + worker + zip packager (template-based filename pattern); MCP `list_assets`, `resolve_asset_urls`, `start_bulk_download`, `bulk_attach`, `bulk_detach`; OpenAPI publishes the full schema. | From Claude Desktop: `list every datasheet on Project Foo with manufacturer = "Mitsubishi" and start a bulk download named by Tag`; receive a zip URL; download. |
-| 5. Polish + v1.1 candidates (post-MVP) | — | Recently-deleted UI, clipboard paste-image, cross-cell drop target, gallery view, reorder UX polish, multipart upload for > 25 MB, Cloudflare Worker–rendered thumbnails. | — |
+| **0. Storage + asset backbone** | Backend-only foundation | R2 buckets created (ENAM) + CORS configured; `project_assets` table + repository + service + R2 storage client (`storage_r2.py`); `upload-intent` / `complete-upload` / `delete` / `download` / `url` endpoints; thumbnailer (`pypdfium2` + `Pillow`) as a FastAPI background task; content-hash dedup; basic structured errors; pytest covering upload flow end-to-end with a localstack-style R2 mock. | curl upload-intent → PUT → complete-upload → GET url → file roundtrips; `thumb.png` materialized for PDF + PNG. |
+| **1. Site-photo cell (envelope segments)** | First user-facing cell | `<AttachmentCell>` for `tables.assemblies[*].layers[*].segments[*].photo_asset_ids[]`. Drag-drop, upload coordinator, mousewheel-scrolled thumbnail strip, "📎 Drop files here" empty-selected state, preview modal with download. Image only (PNG/JPG/WebP), no PDFs yet. | Open WALL-C3, drag two JPGs onto a segment cell, see them upload + preview; reload, see they persist; select + Delete one to detach; ⌘Z restores. |
+| **2. Datasheet cells (project_materials, equipment)** | PDF support + per-product semantics | Extend `<AttachmentCell>` to PDFs via the thumbnailer. Wire to `project_materials.datasheet_asset_ids[]`, `equipment.ervs[*].datasheet_asset_ids[]`, `equipment.pumps[*].datasheet_asset_ids[]`, `equipment.fans[*].datasheet_asset_ids[]`. Replace… affordance in modal. NEW-DATASHEET-1 column-level zip download. | Build a wall assembly with three project_materials; drag a PDF onto each; verify PDF thumbnail renders; download all from Specifications sub-tab as a zip with `MANIFEST.csv`. |
+| **3. Thermal-bridge cells (datasheet + simulation_file)** | TB-specific surface; HBJSON support | Wire `tables.thermal_bridges[*].datasheet_asset_ids[]` and `simulation_file_asset_ids[]`. Allow-list adds HBJSON for sim_file cells; generic glyph render for HBJSON (no thumbnail). Locked-version read-only path verified across all attachment cells. | On TB row, attach a PDF (datasheet) and an HBJSON (sim file); preview both; download both. Lock the version; verify Delete key is a no-op and "Drop files here" doesn't render. |
+| **4. Bulk-download jobs + MCP ergonomics** | Cross-project / cross-LLM workflows | Bulk download job endpoint + worker + zip packager (template-based filename pattern + MANIFEST.csv); MCP `list_assets`, `resolve_asset_urls`, `start_bulk_download`, `bulk_attach`, `bulk_detach`; OpenAPI publishes the full schema; structured errors complete. | From Claude Desktop: list every datasheet on Project Foo with manufacturer = "Mitsubishi" and start a bulk download named by Tag; receive a zip URL; download. |
+| 5. Polish + v1.1 candidates (post-MVP) | — | User-extensible attachment columns (custom-field type); Recently-deleted UI; clipboard paste-image; cross-cell drop target; gallery view; reorder UX polish; multipart upload for > 25 MB; Cloudflare Worker–rendered thumbnails. | — |
 
-Phases 0–2 are blocking for any envelope-tab work (US-ENV-2). Phase 3
-is blocking for the user's stated AirTable-column-on-Pumps workflow.
-Phase 4 unlocks the LLM-driven workflows in NEW-DATASHEET-1 and
-NEW-LLM-API-1.
+Phases 0–2 are blocking for any envelope-tab work (US-ENV-2).
+Phase 3 unlocks Thermal Bridge entry. Phase 4 unlocks the LLM-driven
+workflows in NEW-DATASHEET-1 and NEW-LLM-API-1.
 
 Estimated rough sequencing: Phase 0 in 1 PR slice; Phase 1 in 1 slice;
-Phase 2 in 2 slices (datasheet UX + bulk-zip for column); Phase 3 in
-2 slices (custom field type + schema mutations + viewer); Phase 4 in
-1-2 slices.
+Phase 2 in 2 slices (datasheet cell + column-level zip); Phase 3 in
+1 slice; Phase 4 in 1–2 slices. Net: ~6–7 PR slices for the full
+feature.
 
 ## 14. Cross-cutting decisions to ratify in this PRD
 
 Each line is a deliberate position, not a question. Move to §15 if it
 becomes contentious.
 
-1. **R2 stays.** No backend swap. (§6)
-2. **Server-side thumbnails on `complete-upload`.** Python deps:
-   `pypdfium2`, `Pillow`. (§8)
-3. **Elevate `attachment` to v1 custom-field type.** Closed set
-   becomes 7. (§9.2)
-4. **Core attachment fields remain** for the four known PH artifacts
-   (material datasheets, segment photos, equipment datasheets, TB
-   sim/datasheets). Both render through the same cell. (§9.2.1)
-5. **Detach != delete.** v1 ships 90-day GC; in-app "Recently
-   deleted" UI is v1.1. (§7.5)
+1. **R2 stays.** ENAM region. No backend swap. (§6)
+2. **Server-side thumbnails on `complete-upload`** as a FastAPI
+   background task. Python deps: `pypdfium2`, `Pillow`. (§8)
+3. **Pre-set core fields only — no user-extensible attachment
+   columns in v1.** Closed v1 custom-field set stays at 6 types.
+   Attachment cells live on the §9.2 roster. (§9.2 / §1)
+4. **Both PDF/image datasheets and HBJSON sim files share the same
+   `<AttachmentCell>`.** The cell renders a generic glyph for
+   non-previewable formats. (§7.1, §8.2)
+5. **Detach != delete.** Select-and-Delete gesture; 90-day
+   server-side GC; in-app "Recently deleted" UI is v1.1. (§7.6)
 6. **One undo per drop gesture.** Multi-file drop is one logical
-   group; ⌘Z removes the whole batch. (§7.2)
+   group; ⌘Z removes the whole batch. (§7.3)
 7. **Bytes are immutable.** Replacing an attachment = upload new +
-   detach old. No in-place version chain on a single asset_id. (§2.2)
-8. **MCP is the bulk-download backbone for LLM workflows.** Browser
+   detach old (or use the Replace… modal affordance for atomicity).
+   Audit trail comes from PHN's own Save / Save As. (§9.5)
+8. **Version isolation is automatic.** Save As clones cell arrays;
+   detach/attach in V2 cannot mutate V1's frozen body. GC is
+   reference-aware. (§9.5)
+9. **MCP is the bulk-download backbone for LLM workflows.** Browser
    uses the same async-job endpoint. (§10.1, §10.2)
-9. **No SVG, no .exe-family MIMEs, no scripts.** (§11)
-10. **Public viewers** preview and download referenced assets only;
+10. **No SVG, no .exe-family MIMEs, no scripts.** HBJSON allowed
+    only on TB simulation_file cells. (§9.2, §11)
+11. **Public viewers** preview and download referenced assets only;
     cannot enumerate. (§11)
 
 ## 15. Open questions for discussion
 
 ### 15.1 Resolved 2026-05-25
 
-- **Q-ATT-1 (custom-field elevation):** RESOLVED — **promote
-  `attachment` into the v1 closed custom-field set** (Phase 3 ships
-  as scoped). AirTable parity is the whole point of this feature;
-  core-field-only attachments would force a code-and-deploy per new
-  column. Closed set becomes 7 types.
+- **Q-ATT-1 (custom-field elevation):** RESOLVED (rev 2 reversal) —
+  **NO custom-field attachment type in v1.** Attachment cells are
+  pre-set core fields on the fixed v1 roster (§9.2). User-extensible
+  attachment columns are deferred to v1.1+. Rationale: the user's
+  AirTable-parity ask is fully served by the existing PHN-shaped
+  fields (datasheets on materials, ERV/Pump/Fan; site photos on
+  segments; datasheet + sim file on TB), without the schema-mutation
+  complexity (changeType, fingerprint, add-field UI).
 - **Q-ATT-2 (thumbnail pipeline):** RESOLVED — **server-side on
   `complete-upload`** (Option A). Python deps `pypdfium2` + `Pillow`.
   PDF first-page render at 320×400 px stored as `thumb.png` sibling
   R2 object. Render-time cap 10 s; failures fall back to generic
   type icon and mark `thumbnail_status = failed` without blocking
-  the upload. Run as a FastAPI background task on
-  `complete-upload`; promote to a real job queue later if pool
-  starvation appears (Q-ATT-18).
+  the upload. Run as a FastAPI background task on `complete-upload`;
+  promote to a real job queue later if pool starvation appears
+  (Q-ATT-18).
 - **Q-ATT-3 (file-size cap):** RESOLVED — **25 MB per file** as the
-  v1 soft default; backend hard cap 100 MB; per-field configurable
-  in `config.max_file_size_mb`. Multipart upload stays deferred.
-- **Q-ATT-4 (per-cell count cap):** RESOLVED — **10 attachments per
-  cell** soft default; hard cap 50. Per-field configurable in
-  `config.max_count`.
+  v1 default for every pre-set field; backend hard cap 100 MB.
+  Multipart upload stays deferred.
+- **Q-ATT-4 (per-cell count cap):** RESOLVED — per-field caps in
+  §9.2 (5 for datasheet/sim cells, 10 for site_photo).
+- **Q-ATT-5 (bulk-download filename convention):** RESOLVED — default
+  pattern `{table}/{row.name}__{filename}`, top-level `MANIFEST.csv`
+  mapping rows → filenames. Pattern is user-overridable in the
+  bulk-download endpoint body.
 - **Q-ATT-6 (trash UI):** RESOLVED — **detach silently; 90-day
   server-side GC.** No in-app "Recently deleted" pane in v1.
-  Restoration is admin/SQL only. v1.1 candidate per §17.
+  Restoration is admin/SQL only. v1.1 candidate. Risk of accidental
+  loss is acceptable because saved-version bodies still reference
+  the asset (so the only way to actually lose it is to detach in
+  every saved version *and* the active draft, then wait 90 days).
+- **Q-ATT-7 (cross-cell drop target):** RESOLVED — **defer to v1.1.**
+  v1 is cell-only drop.
+- **Q-ATT-8 (clipboard paste-image):** RESOLVED — **defer to v1.1.**
+- **Q-ATT-9 (pdfjs-dist footprint):** RESOLVED — **lazy chunk** is
+  acceptable. Only loads on first modal open.
+- **Q-ATT-10 (Add-Field UI for Attachment):** RESOLVED — moot.
+  Attachment is pre-set only; no Add-Field UI exists.
+- **Q-ATT-11 (changeType policy):** RESOLVED — moot. Attachment
+  fields aren't user-mutable; there is no changeType path.
+- **Q-ATT-12 (per-attachment caption):** RESOLVED — no captions.
+  Captions belong in sibling text columns.
+- **Q-ATT-13 (versioning + replace semantics):** RESOLVED — version
+  isolation is automatic through the existing Save / Save As model
+  (§9.5). The `Replace…` modal affordance (§7.7) provides atomic
+  "upload new + detach old in this version only." Old asset stays
+  reachable as long as any saved version references it. Edge cases
+  enumerated in §9.5.2 (E1–E10) — each becomes a test target.
+- **Q-ATT-14 (bucket region):** RESOLVED — **ENAM** (Brooklyn).
+  Single bucket per env (`-dev`, `-prod`).
+- **Q-ATT-15 (locked-version attachments):** RESOLVED — moot under
+  pre-set-fields-only. Locked versions are read-only end-to-end:
+  Delete key is a no-op; "Drop files here" doesn't render even when
+  selected; preview + download remain available.
+- **Q-ATT-16 (refresh-from-catalog + attachments):** RESOLVED — moot.
+  Catalog rows don't carry attachments; attachment cells live only
+  on project-document tables. No cross-impact.
+- **Q-ATT-17 (asset reuse across projects):** RESOLVED — assets are
+  `project_id`-scoped in v1; each project's contractor submittals
+  are its own QA record per Q-ENV-2.1, even if bit-identical.
+- **Q-ATT-18 (thumbnailing thread):** RESOLVED — **FastAPI
+  `BackgroundTasks` on `complete-upload`.** Promote to a real job
+  queue if the request pool ever blocks on render contention.
+- **Q-ATT-19 (idempotency):** RESOLVED — **same rule for both
+  single and batch upload-intent**: idempotent on
+  `(project_id, content_hash_sha256)` via the existing
+  `Idempotency-Key` header (api.md §9.5).
+- **Q-ATT-20 (per-row lock):** RESOLVED — **defer.** Per-row lock
+  isn't a v1 concept; locked-version is the only lock surface.
+- **Q-ATT-21 (duplicate-in-cell):** RESOLVED — **silent no-op on
+  duplicate within the same cell.** Server-side dedup returns the
+  existing `asset_id`; the frontend filters the duplicate before
+  emitting the CellWrite and shows a "already attached" tooltip.
+  Behavior covers both drag-drop and click-to-pick.
+- **Q-ATT-22 (Replace… metadata):** RESOLVED — **start fresh.** The
+  new asset's `display_name` and `original_filename` come from the
+  uploaded file; nothing is inherited from the replaced asset. The
+  replaced asset is detached, not modified.
+- **Q-ATT-23 (DXF / Flixo / 2D-sim formats):** RESOLVED — **defer
+  beyond v1.** HBJSON is the only sim-file format supported in v1.
+  Flixo `.dxf` and other 2D-sim formats will be added to the
+  per-field allow-list when a concrete workflow surfaces.
 
 ### 15.2 Still open
 
-5. **Q-ATT-5 — Bulk download filename convention.** (Open.) Template
-   variables available: `{table}`, `{row.name}`, `{row.<core_key>}`,
-   `{filename}`, `{ext}`, `{kind}`, `{cf_id}`. Default for the
-   project-wide datasheet zip (NEW-DATASHEET-1)?  Proposal:
-   `{table}/{row.name}__{filename}` and a top-level `MANIFEST.csv`
-   mapping rows to filenames.
-
-6. **Q-ATT-6 — Trash UI (Recently deleted).** v1 has none (server
-   GC only). When the first user accidentally deletes a datasheet
-   and asks "where did it go?", do we add a per-project "Recently
-   deleted assets" pane, or surface restoration only through the
-   admin/SQL path? **Lean: v1.1.**
-
-7. **Q-ATT-7 — Cross-cell drop target.** AirTable lets you drag a
-   file *anywhere* in the table and every Attachment cell becomes a
-   drop target; you release over the cell you want. Worth the
-   complexity? **Lean: cell-only drop in v1; cross-cell in v1.1.**
-
-8. **Q-ATT-8 — Clipboard paste-image.** Cmd+V on a focused
-   attachment cell when an image is in the clipboard auto-uploads.
-   AirTable supports. **Lean: v1.1.**
-
-9. **Q-ATT-9 — PDF preview library footprint.** `pdfjs-dist` adds
-   ~1.2 MB gzip. Acceptable as a lazy chunk (only loads when modal
-   opens)? Alternative: server-rendered preview PNGs at multiple
-   resolutions. **Lean: pdfjs-dist lazy chunk.**
-
-10. **Q-ATT-10 — Where does "Add Attachment field" live in the
-    UI?**  Same Add-Field popover used by text/number/select, OR
-    its own surface? **Lean: same popover.**
-
-11. **Q-ATT-11 — `changeType` policy.** §9.3 proposes
-    `attachment ↔ anything else = illegal`. Worth confirming Ed has
-    no real use case for "convert this URL column to attachment by
-    fetching each URL." **Lean: confirm illegal; the fetch workflow
-    is an MCP task, not a column type change.**
-
-12. **Q-ATT-12 — Per-attachment description / caption.** AirTable
-    has none; Notion has captions. Each attachment in v1 is just
-    `asset_id`; if the user wants to caption "as-built south wall,
-    2026-04-15", they put that in a sibling text column. **Lean:
-    no caption per attachment in v1.**
-
-13. **Q-ATT-13 — Versioning of the same logical attachment.**
-    Ed uploads `Walltite_v1.pdf` and later receives
-    `Walltite_v2.pdf`; what's the workflow? Today the answer is
-    "upload v2 + detach v1," with v1 still in the saved version's
-    history. Worth a explicit "Replace" UX in the modal that does
-    both atomically? **Lean: yes, "Replace…" in the modal in v1
-    (cheap to add).**
-
-14. **Q-ATT-14 — Bucket region and residency.** R2 supports
-    `automatic`, `WEUR`, `EEUR`, `ENAM`, `WNAM`, `APAC`. Default for
-    PHN is `ENAM` (Brooklyn, NYC) but Phius/EU work could change
-    this. **Lean: `ENAM` for v1, single-bucket.**
-
-15. **Q-ATT-15 — Custom-field attachment on locked versions.**
-    Locked versions reject all writes per §8 of the save model. A
-    custom Attachment column added in version V then locked: viewer
-    sees the thumbnails and can download. Editor switching back to
-    V sees them but cannot attach more. Confirmed by §8 already;
-    flagging because it's the first user-visible "you can browse
-    but not append" surface where the contrast with AirTable's
-    "anywhere editable" model is sharp.
-
-16. **Q-ATT-16 — Custom-field attachment and refresh-from-catalog.**
-    Catalog tables don't carry custom fields (§9.2 limit), and
-    catalog rows don't carry datasheets (Q-ENV-2.1). So
-    refresh-from-catalog never has to merge attachment cells. No
-    cross-impact. **Resolved by composition; no decision needed.**
-
-17. **Q-ATT-17 — Asset reuse across projects.** Today an asset is
-    `project_id`-scoped. Two projects using the same Walltite
-    datasheet each get their own asset row + R2 object. Reasonable
-    for now; future "PH-Materials shared workspace" parity might
-    want a cross-project asset library. **Out of scope for v1.**
-
-18. **Q-ATT-18 — Web Worker thumbnailing vs. main thread.** PDF
-    render is CPU-bound. Server-side runs in a worker pool; the
-    backend should not block the request loop. Use FastAPI
-    `BackgroundTasks` or a real `Celery`/`RQ` worker? **Lean: start
-    with FastAPI background task on `complete-upload`; promote to a
-    proper job queue when concurrency justifies.**
-
-19. **Q-ATT-19 — Idempotency for upload-intent.** §10 says batch
-    intent is idempotent on `(project_id, content_hash_sha256)`.
-    Confirm single-intent is also keyed on the same tuple via
-    `Idempotency-Key` header semantics (api.md §9.5). **Lean: yes;
-    same rule for both endpoints.**
-
-20. **Q-ATT-20 — Drop on locked-row vs. locked-version.** Locked
-    *version* clearly read-only. Per-row lock isn't a v1 concept.
-    Note for the future.
+_None as of 2026-05-25. All §15 questions resolved._
 
 ## 16. Risks
 
@@ -1036,19 +1076,25 @@ becomes contentious.
 - **R3: Thumbnail render queue starvation.** A spike of large PDFs
   could pin the background workers. Bound the queue; on overflow,
   mark `thumbnail_status = pending` and render lazily on first GET.
-- **R4: Custom-field attachment + locked versions.** If a user adds an
-  attachment column in version V_working, fills it, then Save-As'es to
-  V_locked, and later wants to remove the column — the
-  `deleteField` flow needs to clear cells across the unlocked draft
-  cleanly. Tests must cover this.
+- **R4: Cross-version GC bug.** A bug that marks an asset as orphaned
+  despite a saved-version reference would silently destroy audit
+  trail (Q-ATT-13 invariant). The GC pass MUST scan every non-deleted
+  `project_versions.body` for asset_id references; tests must cover
+  the "asset referenced by V1, detached in V2" scenario end-to-end
+  (E5 in §9.5.2).
 - **R5: Signed-URL leakage via Viewer.** A Viewer who downloads a
   signed URL retains the URL until expiry. Mitigation: short TTL,
   and never embed signed URLs in cached HTML.
 - **R6: Cost surprise from a malicious uploader.** Auth gates writes;
   there is no anonymous upload. Quota work tracked as v1.1.
+- **R7: HBJSON content sniff false-positives/negatives.** Naive
+  "valid JSON" sniff passes any JSON, not just HBJSON. Mitigation:
+  pair with the `.hbjson` filename extension; full schema validation
+  happens at viewer render time.
 
 ## 17. Out-of-scope reminders (visibility)
 
+- User-extensible Attachment columns (custom-field type).
 - In-app PDF annotation.
 - Per-attachment captions / metadata fields.
 - Cross-project shared asset library.
@@ -1056,20 +1102,23 @@ becomes contentious.
 - Multipart / resumable upload (> 25 MB).
 - Mobile attachment UX.
 - Auto-extract spec values from datasheets (agentic, post-v1).
+- DXF / Flixo 2D simulation files (Q-ATT-23).
 
 ## 18. Next steps
 
-1. Walk through §15 open questions with Ed; record resolutions inline
-   here as a Resolved section (mirrors PRD §17 style).
-2. Once §14 + §15 stabilize, graduate the durable shape into:
+1. ~~Resolve §15.2 stragglers (Q-ATT-21/22/23).~~ **Done
+   2026-05-25.** All §15 questions resolved.
+2. Graduate the durable shape into:
    - `context/technical-requirements/attachments.md` (NEW canonical
      contract);
-   - small additions to `data-model.md` §6.5 + §6.6 (attachment as
-     custom-field type; metadata extras);
-   - small additions to `api.md` §9.10 (bulk endpoints) and
+   - small additions to `data-model.md` §6.5 (kind enum, metadata
+     extras);
+   - small additions to `api.md` §9.10 (bulk endpoints, jobs) and
      `llm-mcp-schema.md` §10.3 (bulk + list_assets tools);
-   - one row added to the `FieldDef` table in `data-table.md`.
-3. Write the first phase plan (`plan-23-attachments-phase-0-storage-backbone.md`)
-   covering Phase 0 only — backend + R2 + thumbnailer + endpoints +
-   tests. No frontend.
+   - one row added to the `FieldDef` table in `data-table.md`
+     (attachment cell rendering; no schema-mutation entries).
+3. Write the first phase plan
+   (`plan-23-attachments-phase-0-storage-backbone.md`) covering
+   Phase 0 only — backend + R2 + thumbnailer + endpoints + tests.
+   No frontend.
 4. Bring Phases 1–4 into individually-dated plans as they begin.
