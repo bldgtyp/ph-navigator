@@ -40,7 +40,7 @@ from features.project_document.formula.ast_nodes import (
 from features.project_document.formula.resolver import collect_field_refs
 from features.project_document.mutations.guards import find_field
 from features.project_document.mutations.models import SetFormulaMutation
-from features.project_document.tables.contracts import CustomFieldCapability
+from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = ["apply_set_formula", "count_ast_nodes", "infer_result_type"]
@@ -167,9 +167,9 @@ def infer_result_type(node: object) -> str:
 def apply_set_formula(
     body: ProjectDocumentV1,
     mutation: SetFormulaMutation,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    current_fields = capability.read_custom_fields(body)
+    current_fields = capability.read_field_defs(body)
     index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
     if existing.field_type is not CustomFieldType.formula:
         raise api_error(
@@ -207,7 +207,7 @@ def apply_set_formula(
     # Cycle-check against every other formula field's stored AST.
     asts_by_id: dict[str, FormulaAST] = {}
     for f in current_fields:
-        if f.id == mutation.field_id:
+        if f.field_key == mutation.field_id:
             continue
         if f.field_type is not CustomFieldType.formula:
             continue
@@ -215,7 +215,7 @@ def apply_set_formula(
         if stored is None:
             continue
         try:
-            asts_by_id[f.id] = ast_from_json(stored)
+            asts_by_id[f.field_key] = ast_from_json(stored)
         except (ValueError, TypeError):
             # Skip malformed stored ASTs — the per-row evaluator will
             # surface missing_ref at read time.
@@ -238,7 +238,7 @@ def apply_set_formula(
     next_field = existing.model_copy(update={"config": new_config})
     next_fields = list(current_fields)
     next_fields[index] = next_field
-    next_body = capability.replace_custom_fields(body, next_fields)
+    next_body = capability.replace_field_defs(body, next_fields)
 
     audit: dict[str, object] = {
         "kind": "setFormula",

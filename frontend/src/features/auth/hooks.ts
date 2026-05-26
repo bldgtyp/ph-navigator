@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mcpTokenQueryKeys } from "../mcp/hooks";
 import { projectDocumentTableQueryKeys } from "../project_document/query-keys";
 import { projectQueryKeys } from "../projects/query-keys";
-import { fetchCurrentSession, signIn, signOut } from "./api";
+import type { UnitSystem } from "../../lib/units/types";
+import { fetchCurrentSession, signIn, signOut, updateUnitsPreference } from "./api";
 
 export const authQueryKeys = {
   session: ["auth", "session"] as const,
@@ -38,6 +39,16 @@ export function useSignOutMutation() {
       queryClient.removeQueries({ queryKey: projectQueryKeys.all });
       queryClient.removeQueries({ queryKey: projectDocumentTableQueryKeys.all });
       queryClient.removeQueries({ queryKey: mcpTokenQueryKeys.all });
+    },
+  });
+}
+
+export function useUpdateUnitsPreferenceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (unitsPreference: UnitSystem) => updateUnitsPreference(unitsPreference),
+    onSuccess: (session) => {
+      queryClient.setQueryData(authQueryKeys.session, session);
     },
   });
 }

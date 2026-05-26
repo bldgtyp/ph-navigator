@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { formatNumber } from "../lib/formatters";
+import { formatUValueFromWm2K, parseUValueToWm2K, useUnitPreference } from "../../../lib/units";
+
+function uValueLabel(unitSystem: "SI" | "IP"): string {
+  return unitSystem === "IP" ? "Btu/(h-ft2-F)" : "W/m2-K";
+}
 
 export function UValueOverrideInput({
   value,
@@ -14,15 +18,19 @@ export function UValueOverrideInput({
   onChange: (next: number | null) => void;
   ariaLabel: string;
 }) {
-  const [draft, setDraft] = useState(formatNumber(value));
+  const { unitSystem } = useUnitPreference();
+  const [draft, setDraft] = useState(
+    formatUValueFromWm2K(value, { unitSystem, showUnit: false, empty: "" }),
+  );
   useEffect(() => {
-    setDraft(formatNumber(value));
-  }, [value]);
+    setDraft(formatUValueFromWm2K(value, { unitSystem, showUnit: false, empty: "" }));
+  }, [value, unitSystem]);
   return (
     <label className="window-slot-uvalue">
-      <span>U-value (W/m²K)</span>
+      <span>U-value ({uValueLabel(unitSystem)})</span>
       <input
-        type="number"
+        type="text"
+        inputMode="decimal"
         step="0.001"
         min="0"
         aria-label={ariaLabel}
@@ -30,8 +38,9 @@ export function UValueOverrideInput({
         disabled={!canEdit}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => {
-          const parsed = draft.trim() === "" ? null : Number.parseFloat(draft);
-          const next = parsed !== null && Number.isFinite(parsed) ? parsed : null;
+          const parsed =
+            draft.trim() === "" ? null : parseUValueToWm2K(draft, { unitSystem, showUnit: false });
+          const next = parsed === null ? null : parsed.ok ? parsed.valueSi : null;
           if (next !== value) onChange(next);
         }}
       />

@@ -1,12 +1,16 @@
 """Field-ref resolution + cycle detection for formula ASTs.
 
 The parser produces `FieldRef(display_name=..., field_id=None)`.
-`resolve_refs` walks the AST against a snapshot of the table's field
-registry (core + custom) and returns a new AST whose every `FieldRef`
+`resolve_refs` walks the AST against a snapshot of the table's
+persisted FieldDef list and returns a new AST whose every `FieldRef`
 carries a resolved `field_id`. `detect_cycles` runs a DFS over the
 dep graph; both helpers raise the matching internal exception from
 `errors.py`, which the schema-mutation service translates into the
 `custom_field_formula_*` REST envelope.
+
+Locked-type built-in fields resolve their formula-facing type through
+the registry's `field_type_for_formula` hook; mutable-type built-ins
+and customs resolve theirs from the FieldDef's own `field_type`.
 """
 
 from __future__ import annotations
@@ -32,74 +36,48 @@ from features.project_document.formula.errors import (
 )
 
 if TYPE_CHECKING:
-    from features.project_document.custom_fields import CustomFieldDef
+    from features.project_document.custom_fields import TableFieldDef
     from features.project_document.document import ProjectDocumentV1
-    from features.project_document.tables.contracts import CustomFieldCapability
+    from features.project_document.tables.contracts import TableFieldRegistry
 
 
 @dataclass(frozen=True, slots=True)
 class FieldRegistryEntry:
     field_id: str
     display_name: str
-    origin: Literal["core", "custom"]
+    origin: Literal["built_in", "custom"]
     field_type: Literal["text", "number", "single_select", "formula", "bool"]
 
 
 def build_field_registry(
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
     body: ProjectDocumentV1,
 ) -> tuple[FieldRegistryEntry, ...]:
     """Snapshot the resolvable refs for this table at this moment.
 
-    Core fields come first (in `core_field_keys` order), followed by
-    custom fields in declared order. Custom formula fields are
-    included so the cycle detector can see them.
+    Walks the unified `read_field_defs(body)` list in declared order.
+    Locked-type built-ins resolve their formula type through
+    `field_type_for_formula`; other entries resolve theirs from the
+    FieldDef's own `field_type`. Custom formula fields are included so
+    the cycle detector can see them.
     """
     entries: list[FieldRegistryEntry] = []
-
-    core_type_lookup = getattr(capability, "core_field_type_for_formula", None)
-    for core_key in capability.core_field_keys:
-        core_type = "text"
-        if core_type_lookup is not None:
-            mapped = core_type_lookup(core_key)
-            if mapped is not None:
-                core_type = mapped
-        # Use the human-readable display name where known, falling
-        # back to the python attribute key.
-        display_name = _core_display_name_for(capability, core_key)
+    typed_column_type_lookup = capability.field_type_for_formula
+    for field in capability.read_field_defs(body):
+        typed_column_type = typed_column_type_lookup(field.field_key)
+        if typed_column_type is not None:
+            formula_type: Literal["text", "number", "single_select", "formula", "bool"] = typed_column_type
+        else:
+            formula_type = _formula_facing_field_type(field.field_type.value)
         entries.append(
             FieldRegistryEntry(
-                field_id=core_key,
-                display_name=display_name,
-                origin="core",
-                field_type=core_type,  # type: ignore[arg-type]
-            )
-        )
-
-    for cf in capability.read_custom_fields(body):
-        entries.append(
-            FieldRegistryEntry(
-                field_id=cf.id,
-                display_name=cf.display_name,
-                origin="custom",
-                field_type=_formula_facing_field_type(cf.field_type.value),
+                field_id=field.field_key,
+                display_name=field.display_name,
+                origin=field.origin,
+                field_type=formula_type,
             )
         )
     return tuple(entries)
-
-
-def _core_display_name_for(capability: CustomFieldCapability, key: str) -> str:
-    """Map a core python attribute key to a human-readable label.
-
-    Pairs `core_field_keys` and `core_display_names` index-wise where
-    they exist; otherwise returns the key itself."""
-    core_keys = capability.core_field_keys
-    core_names = capability.core_display_names
-    if len(core_names) == len(core_keys):
-        for k, n in zip(core_keys, core_names, strict=False):
-            if k == key:
-                return n
-    return key
 
 
 def _formula_facing_field_type(
@@ -251,7 +229,7 @@ def detect_cycles(
 
 
 def resolve_stored_ast(
-    field: CustomFieldDef,
+    field: TableFieldDef,
     registry: Iterable[FieldRegistryEntry],
 ) -> FormulaAST | None:
     """Re-resolve a stored formula's AST against the current registry.

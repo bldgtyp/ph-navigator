@@ -1,12 +1,13 @@
 ---
 DATE: 2026-05-26
 TIME: 18:00 ET
-STATUS: PHASE PLAN — depends on Phase 1b backbone landed
-        (`docs/plans/2026-05-26/plan-31-phase-1b-persistence-reshape.md`,
-        STATUS: BACKBONE LANDED). Mechanical rename cascade + fixture
-        rewrites + frontend reshape + backend tests/typecheck green.
-        No new wire-format change; all decisions already locked by
-        Phase 1b. Pre-deploy posture preserved.
+STATUS: P4.1 BACKEND CASCADE LANDED (2026-05-26) — `uv run ty check
+        features/` reports 0 errors across `features/project_document/**`
+        and the rest of `features/**`. Remaining: P4.2 backend tests
+        (~101 ty errors in `tests/*.py`), P4.3 frontend reshape, P4.4
+        frontend tests, P4.5 docs, then alias drop. No new wire-format
+        change; all decisions already locked by Phase 1b. Pre-deploy
+        posture preserved.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Finish what Phase 1b started. Phase 1b reshaped the canonical
        types (`TableFieldDef`, `RoomRow`, `PumpRow`,
@@ -180,6 +181,18 @@ Every fixture / test that constructs a project body:
   feature code (do not duplicate the seed).
 - Audit-log kind string-literal assertions update to drop
   `_custom_field_`.
+- Additional wire-vocabulary renames discovered during the P4.1
+  cascade (test fixtures must match — these are NOT in the §P2.1.1
+  rename table because they're inside error/audit payloads):
+  - `editOptions` audit payload key `is_custom` → `in_custom_values`
+    (see `mutations/options_ops.py`).
+  - Reason code `required_core_select_delete_without_replacement` →
+    `required_built_in_select_delete_without_replacement` (same file,
+    `custom_field_option_list_invalid` envelope).
+  - `colliding_field_origin` envelope value `"core"` → `"built_in"`
+    in `custom_field_duplicate_name` errors (see
+    `mutations/guards.py`); mirrors `TableFieldDef.origin`. Frontend
+    tests that key off the literal `"core"` need updating too.
 
 Files (every backend test under `backend/tests/test_project_document*`,
 `test_mcp*`, `test_schemas.py`, `test_projects.py`,

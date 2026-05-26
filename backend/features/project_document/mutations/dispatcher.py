@@ -32,7 +32,7 @@ from features.project_document.mutations.guards import check_stale_fingerprint
 from features.project_document.mutations.models import FieldSchemaMutation
 from features.project_document.mutations.options_ops import apply_edit_options
 from features.project_document.mutations.type_conversion import apply_change_type
-from features.project_document.tables.contracts import CustomFieldCapability
+from features.project_document.tables.contracts import TableFieldRegistry
 from features.project_document.validation import validate_document
 from features.shared.errors import api_error
 
@@ -42,10 +42,10 @@ _VALIDATE_ONLY_ACTOR = "__validate_only__"
 
 # Handler signature: every dispatcher accepts the body, the (already
 # discriminated) mutation, the actor user id, and the table's
-# `CustomFieldCapability`. Handlers that don't need the actor accept it
+# `TableFieldRegistry`. Handlers that don't need the actor accept it
 # anyway so dispatch is uniform.
 _Handler = Callable[
-    [ProjectDocumentV1, FieldSchemaMutation, str, CustomFieldCapability],
+    [ProjectDocumentV1, FieldSchemaMutation, str, TableFieldRegistry],
     tuple[ProjectDocumentV1, dict[str, object]],
 ]
 
@@ -104,7 +104,7 @@ def apply_schema_mutation(
     mutation: FieldSchemaMutation,
     *,
     actor_user_id: str,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     """Apply one `FieldSchemaMutation` to `body`, return (next_body, audit).
 
@@ -134,7 +134,7 @@ def validate_schema_mutation(
     body: ProjectDocumentV1,
     mutation: FieldSchemaMutation,
     *,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> None:
     """Run schema-mutation preflight without committing the result.
 

@@ -17,7 +17,7 @@ def normalize_email(email: str) -> str:
 def get_user_by_email(conn: Connection[Any], email: str) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, email, display_name, password_hash, is_active
+        SELECT id, email, display_name, password_hash, is_active, units_preference
         FROM users
         WHERE lower(email) = %(email)s
         """,
@@ -28,7 +28,7 @@ def get_user_by_email(conn: Connection[Any], email: str) -> dict[str, Any] | Non
 def get_user_by_email_for_update(conn: Connection[Any], email: str) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, email, display_name, password_hash, is_active
+        SELECT id, email, display_name, password_hash, is_active, units_preference
         FROM users
         WHERE lower(email) = %(email)s
         FOR UPDATE
@@ -40,7 +40,7 @@ def get_user_by_email_for_update(conn: Connection[Any], email: str) -> dict[str,
 def get_user_by_id(conn: Connection[Any], user_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, email, display_name, is_active
+        SELECT id, email, display_name, is_active, units_preference
         FROM users
         WHERE id = %(user_id)s
         """,
@@ -59,7 +59,7 @@ def upsert_user(conn: Connection[Any], email: str, display_name: str, password_h
             password_hash = EXCLUDED.password_hash,
             is_active = true,
             updated_at = now()
-        RETURNING id, email, display_name, is_active
+        RETURNING id, email, display_name, is_active, units_preference
         """,
         {
             "email": normalize_email(email),
@@ -69,6 +69,22 @@ def upsert_user(conn: Connection[Any], email: str, display_name: str, password_h
     ).fetchone()
     if row is None:
         raise RuntimeError("User upsert did not return a row.")
+    return row
+
+
+def update_user_units_preference(conn: Connection[Any], user_id: UUID, units_preference: str) -> dict[str, Any]:
+    row = conn.execute(
+        """
+        UPDATE users
+        SET units_preference = %(units_preference)s,
+            updated_at = now()
+        WHERE id = %(user_id)s
+        RETURNING id, email, display_name, is_active, units_preference
+        """,
+        {"user_id": user_id, "units_preference": units_preference},
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("User preference update did not return a row.")
     return row
 
 

@@ -21,6 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+from features.project_document.custom_fields import CustomFieldType
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
     FieldRef,
@@ -37,9 +38,9 @@ from features.project_document.formula.limits import (
 )
 
 if TYPE_CHECKING:
-    from features.project_document.custom_fields import CustomFieldDef
+    from features.project_document.custom_fields import TableFieldDef
     from features.project_document.document import ProjectDocumentV1
-    from features.project_document.tables.contracts import CustomFieldCapability
+    from features.project_document.tables.contracts import TableFieldRegistry
 
 EvalValue = str | int | float | bool | None
 
@@ -441,10 +442,10 @@ def _format_number(value: float) -> str:
 
 
 def evaluate_table_formulas(
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
     body: ProjectDocumentV1,
 ) -> dict[str, dict[str, object]]:
-    """Return `{row_id: {cf_id: encoded_value}}` for every formula
+    """Return `{row_id: {field_key: encoded_value}}` for every formula
     field on this table.
 
     Topologically sorts formula deps so a formula referring to another
@@ -453,73 +454,71 @@ def evaluate_table_formulas(
     time, but a hand-edited document could carry) are encoded per
     cell as `{"error": "missing_ref"}`.
     """
-    custom_fields = capability.read_custom_fields(body)
-    formula_fields = [f for f in custom_fields if f.field_type.value == "formula"]
+    field_defs = capability.read_field_defs(body)
+    formula_fields = [f for f in field_defs if f.field_type is CustomFieldType.formula]
     if not formula_fields:
-        # Cheap early-out; the caller treats absence as `{}` per
-        # plan-17 §4.4 contract.
+        # plan-17 §4.4: caller treats `{}` as "no formulas to overlay".
         rows = _read_envelope_rows(capability, body)
         return {str(getattr(row, "id", "")): {} for row in rows}
 
-    # Build an ordering of formula fields by topological dep order.
-    ordered_formula_ids = _topo_order_formulas(formula_fields)
+    ordered_formula_keys = _topo_order_formulas(formula_fields)
+    formula_field_by_key = {f.field_key: f for f in formula_fields}
 
-    # Field registry — needed to map field_id → field_type for nested
-    # formula references.
-    formula_field_by_id = {f.id: f for f in formula_fields}
+    # Parse each formula's AST once; the AST does not depend on the row.
+    # Encode a permanent `{"error": "missing_ref"}` sentinel for keys
+    # whose stored payload is missing or malformed.
+    ast_by_key: dict[str, FormulaAST] = {}
+    parse_error_keys: set[str] = set()
+    for field_key in ordered_formula_keys:
+        ast_payload = formula_field_by_key[field_key].config.get("ast")
+        if ast_payload is None:
+            parse_error_keys.add(field_key)
+            continue
+        try:
+            ast_by_key[field_key] = ast_from_json(ast_payload)
+        except (ValueError, TypeError):
+            parse_error_keys.add(field_key)
 
+    typed_lookup = capability.field_value_for_formula
     rows = _read_envelope_rows(capability, body)
     out: dict[str, dict[str, object]] = {}
 
     for row in rows:
         row_id = str(getattr(row, "id", ""))
-        custom = capability.read_row_custom(row)
+        custom_values = capability.read_row_custom_values(row)
         per_row_computed: dict[str, object] = {}
 
-        def accessor(field_id: str, *, row_for_core: object = row) -> object | None:
+        def accessor(field_id: str, *, row_for_typed: object = row) -> object | None:
             if field_id in per_row_computed:  # noqa: B023 — intended closure over per_row_computed
                 stored = per_row_computed[field_id]  # noqa: B023
                 if isinstance(stored, dict) and "error" in stored:
                     raise _EvalErrorSignal("missing_ref")
                 return stored
-            if field_id in formula_field_by_id:  # noqa: B023
-                # Formula referenced before it was computed for this row.
-                # `_topo_order_formulas` should have prevented this; if
-                # we got here, treat as missing_ref.
+            if field_id in formula_field_by_key:  # noqa: B023
+                # Topo order should have computed this already; if we
+                # see it now we hit a cycle the commit-time check missed.
                 raise _EvalErrorSignal("missing_ref")
-            if field_id in custom:  # noqa: B023
-                return custom[field_id]  # noqa: B023
-            # Core field accessor through the capability.
-            getter = getattr(capability, "core_field_value_for_formula", None)
-            if getter is not None:
-                return getter(row_for_core, field_id)
-            return None
+            if field_id in custom_values:  # noqa: B023
+                return custom_values[field_id]  # noqa: B023
+            return typed_lookup(row_for_typed, field_id)
 
-        for cf_id in ordered_formula_ids:
-            field = formula_field_by_id[cf_id]
-            ast_payload = field.config.get("ast")
-            if ast_payload is None:
-                per_row_computed[cf_id] = {"error": "missing_ref"}
+        for field_key in ordered_formula_keys:
+            if field_key in parse_error_keys:
+                per_row_computed[field_key] = {"error": "missing_ref"}
                 continue
-            try:
-                ast = ast_from_json(ast_payload)
-            except (ValueError, TypeError):
-                per_row_computed[cf_id] = {"error": "missing_ref"}
-                continue
-            fuse = EvalFuse()
-            result = evaluate(ast, accessor, fuse=fuse)
+            result = evaluate(ast_by_key[field_key], accessor, fuse=EvalFuse())
             if isinstance(result, EvalSuccess):
-                per_row_computed[cf_id] = result.value
+                per_row_computed[field_key] = result.value
             else:
-                per_row_computed[cf_id] = {"error": result.code}
+                per_row_computed[field_key] = {"error": result.code}
 
         out[row_id] = per_row_computed
 
     return out
 
 
-def _read_envelope_rows(capability: CustomFieldCapability, body: ProjectDocumentV1) -> list[object]:
-    envelope = body.tables
+def _read_envelope_rows(capability: TableFieldRegistry, body: ProjectDocumentV1) -> list[object]:
+    envelope: object = body.tables
     for path_part in capability.table_path:
         envelope = getattr(envelope, path_part)
     rows = getattr(envelope, "rows", None)
@@ -528,8 +527,8 @@ def _read_envelope_rows(capability: CustomFieldCapability, body: ProjectDocument
     return list(rows)
 
 
-def _topo_order_formulas(formula_fields: list[CustomFieldDef]) -> list[str]:
-    """Return formula `cf_*` ids in dependency order.
+def _topo_order_formulas(formula_fields: list[TableFieldDef]) -> list[str]:
+    """Return formula `field_key`s in dependency order.
 
     Each formula's `config["deps"]` is the resolved id list. Non-formula
     deps don't need ordering; formula→formula deps must be evaluated
@@ -538,31 +537,31 @@ def _topo_order_formulas(formula_fields: list[CustomFieldDef]) -> list[str]:
     remains and letting the per-row evaluator surface
     `missing_ref` for the cycle.
     """
-    by_id = {f.id: f for f in formula_fields}
-    deps_by_id: dict[str, list[str]] = {}
+    by_key = {f.field_key: f for f in formula_fields}
+    deps_by_key: dict[str, list[str]] = {}
     for f in formula_fields:
         raw_deps = f.config.get("deps") or []
         if isinstance(raw_deps, list):
-            deps_by_id[f.id] = [d for d in raw_deps if isinstance(d, str) and d in by_id]
+            deps_by_key[f.field_key] = [d for d in raw_deps if isinstance(d, str) and d in by_key]
         else:
-            deps_by_id[f.id] = []
+            deps_by_key[f.field_key] = []
 
     visited: set[str] = set()
     in_progress: set[str] = set()
     order: list[str] = []
 
-    def visit(fid: str) -> None:
-        if fid in visited:
+    def visit(key: str) -> None:
+        if key in visited:
             return
-        if fid in in_progress:
+        if key in in_progress:
             return  # cycle — bail; eval will surface missing_ref
-        in_progress.add(fid)
-        for dep in deps_by_id.get(fid, []):
+        in_progress.add(key)
+        for dep in deps_by_key.get(key, []):
             visit(dep)
-        in_progress.discard(fid)
-        visited.add(fid)
-        order.append(fid)
+        in_progress.discard(key)
+        visited.add(key)
+        order.append(key)
 
     for f in formula_fields:
-        visit(f.id)
+        visit(f.field_key)
     return order

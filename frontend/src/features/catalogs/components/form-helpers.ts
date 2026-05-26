@@ -1,10 +1,22 @@
 /** Small helpers shared by every catalog editor modal. */
 
+import type { UnitFormatOptions, UnitParseResult } from "../../../lib/units";
+
 export function parseOptionalNumber(value: string): number | null {
   const trimmed = value.trim();
   if (trimmed === "") return null;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+export function parseOptionalUnitNumber(
+  value: string,
+  parser: (input: string, options: UnitFormatOptions) => UnitParseResult,
+  options: UnitFormatOptions,
+): number | null {
+  if (value.trim() === "") return null;
+  const parsed = parser(value, options);
+  return parsed.ok ? parsed.valueSi : Number.NaN;
 }
 
 export function numberOrEmpty(value: number | null): string {

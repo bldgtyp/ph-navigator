@@ -1,17 +1,26 @@
 import { type FormEvent, useEffect, useState } from "react";
+import {
+  formatLengthFromMm,
+  formatLinearPsiFromWmK,
+  formatUValueFromWm2K,
+  parseLengthToMm,
+  parseLinearPsiToWmK,
+  parseUValueToWm2K,
+  useUnitPreference,
+  type UnitFormatOptions,
+} from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateFrameTypeMutation, useUpdateFrameTypeMutation } from "../hooks";
 import type { CatalogFrameType, CatalogFrameTypeCreatePayload } from "../types";
 import {
   editorSubmitLabel,
-  hasInvalidNumber,
-  numberOrEmpty,
-  parseOptionalNumber,
+  parseOptionalUnitNumber,
   stringOrEmpty,
   todayIso,
   trimToNull,
 } from "./form-helpers";
+import { lengthUnitLabel, psiUnitLabel, uValueUnitLabel } from "./unit-labels";
 
 type FormState = {
   name: string;
@@ -45,33 +54,33 @@ function emptyForm(): FormState {
   };
 }
 
-function formFromRecord(record: CatalogFrameType): FormState {
+function formFromRecord(record: CatalogFrameType, unitOptions: UnitFormatOptions): FormState {
   return {
     name: record.name,
     manufacturer: stringOrEmpty(record.manufacturer),
     brand: stringOrEmpty(record.brand),
     version_label: record.version_label,
     version_date: record.version_date,
-    width_mm: numberOrEmpty(record.width_mm),
-    u_value_w_m2k: numberOrEmpty(record.u_value_w_m2k),
-    psi_g_w_mk: numberOrEmpty(record.psi_g_w_mk),
-    psi_install_w_mk: numberOrEmpty(record.psi_install_w_mk),
+    width_mm: formatLengthFromMm(record.width_mm, unitOptions),
+    u_value_w_m2k: formatUValueFromWm2K(record.u_value_w_m2k, unitOptions),
+    psi_g_w_mk: formatLinearPsiFromWmK(record.psi_g_w_mk, unitOptions),
+    psi_install_w_mk: formatLinearPsiFromWmK(record.psi_install_w_mk, unitOptions),
     argb_color: stringOrEmpty(record.argb_color),
     notes: stringOrEmpty(record.notes),
     source_provenance: stringOrEmpty(record.source_provenance),
   };
 }
 
-function toCreatePayload(form: FormState): CatalogFrameTypeCreatePayload {
+function toCreatePayload(form: FormState, unitOptions: UnitFormatOptions): CatalogFrameTypeCreatePayload {
   const payload: CatalogFrameTypeCreatePayload = {
     name: form.name.trim(),
     manufacturer: trimToNull(form.manufacturer),
     brand: trimToNull(form.brand),
     version_label: form.version_label.trim() || "v1",
-    width_mm: parseOptionalNumber(form.width_mm),
-    u_value_w_m2k: parseOptionalNumber(form.u_value_w_m2k),
-    psi_g_w_mk: parseOptionalNumber(form.psi_g_w_mk),
-    psi_install_w_mk: parseOptionalNumber(form.psi_install_w_mk),
+    width_mm: parseOptionalUnitNumber(form.width_mm, parseLengthToMm, unitOptions),
+    u_value_w_m2k: parseOptionalUnitNumber(form.u_value_w_m2k, parseUValueToWm2K, unitOptions),
+    psi_g_w_mk: parseOptionalUnitNumber(form.psi_g_w_mk, parseLinearPsiToWmK, unitOptions),
+    psi_install_w_mk: parseOptionalUnitNumber(form.psi_install_w_mk, parseLinearPsiToWmK, unitOptions),
     argb_color: trimToNull(form.argb_color),
     notes: trimToNull(form.notes),
     source_provenance: trimToNull(form.source_provenance),
@@ -91,8 +100,15 @@ export function FrameTypeEditorModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { unitSystem } = useUnitPreference();
+  const [formUnitSystem] = useState(unitSystem);
+  const unitOptions: UnitFormatOptions = {
+    unitSystem: formUnitSystem,
+    showUnit: false,
+    empty: "",
+  };
   const [form, setForm] = useState<FormState>(() =>
-    record ? formFromRecord(record) : emptyForm(),
+    record ? formFromRecord(record, unitOptions) : emptyForm(),
   );
   const isEdit = record !== null;
   const createMutation = useCreateFrameTypeMutation();
@@ -100,23 +116,26 @@ export function FrameTypeEditorModal({
   const activeMutation = isEdit ? updateMutation : createMutation;
 
   useEffect(() => {
-    setForm(record ? formFromRecord(record) : emptyForm());
+    setForm(record ? formFromRecord(record, unitOptions) : emptyForm());
+    // Unit system is intentionally frozen while the modal is open so an
+    // in-progress edit is not rewritten under the cursor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record]);
 
   const canSubmit =
     form.name.trim().length > 0 &&
-    !hasInvalidNumber([
-      form.width_mm,
-      form.u_value_w_m2k,
-      form.psi_g_w_mk,
-      form.psi_install_w_mk,
-    ]) &&
+    ![
+      parseOptionalUnitNumber(form.width_mm, parseLengthToMm, unitOptions),
+      parseOptionalUnitNumber(form.u_value_w_m2k, parseUValueToWm2K, unitOptions),
+      parseOptionalUnitNumber(form.psi_g_w_mk, parseLinearPsiToWmK, unitOptions),
+      parseOptionalUnitNumber(form.psi_install_w_mk, parseLinearPsiToWmK, unitOptions),
+    ].some((field) => Number.isNaN(field)) &&
     !activeMutation.isPending;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
-    const payload = toCreatePayload(form);
+    const payload = toCreatePayload(form, unitOptions);
     if (isEdit && record) {
       updateMutation.mutate({ id: record.id, payload }, { onSuccess: onSaved });
     } else {
@@ -181,7 +200,7 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>Width (mm)</span>
+          <span>Width ({lengthUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.width_mm}
@@ -189,7 +208,7 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>U-value (W/m²·K)</span>
+          <span>U-value ({uValueUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.u_value_w_m2k}
@@ -199,7 +218,7 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>Ψ-glazing (W/m·K)</span>
+          <span>Ψ-glazing ({psiUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.psi_g_w_mk}
@@ -207,7 +226,7 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>Ψ-install (W/m·K)</span>
+          <span>Ψ-install ({psiUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.psi_install_w_mk}

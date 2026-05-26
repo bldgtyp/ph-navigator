@@ -4,7 +4,9 @@ These helpers are deliberately lightweight: fingerprint match, field
 lookup, display-name / id collision checks, insert-position resolution,
 and row read/write through the table envelope. Every guard raises
 `features.shared.errors.api_error` on failure; none return error
-sentinels.
+sentinels. The `origin` slot on each FieldDef carries the
+`"built_in"` / `"custom"` discriminator surfaced in
+`colliding_field_origin` envelopes.
 """
 
 from __future__ import annotations
@@ -12,12 +14,12 @@ from __future__ import annotations
 from starlette import status
 
 from features.project_document.custom_fields import (
-    CustomFieldDef,
+    TableFieldDef,
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.mutations.models import FieldSchemaMutation
-from features.project_document.tables.contracts import CustomFieldCapability
+from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = [
@@ -35,7 +37,7 @@ __all__ = [
 def check_stale_fingerprint(
     body: ProjectDocumentV1,
     mutation: FieldSchemaMutation,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> None:
     actual = capability.compute_schema_fingerprint(body)
     expected = mutation.expected_schema_fingerprint
@@ -53,104 +55,93 @@ def check_stale_fingerprint(
 
 
 def find_field(
-    custom_fields: list[CustomFieldDef],
-    field_id: str,
+    field_defs: list[TableFieldDef],
+    field_key: str,
     table_key: str,
-) -> tuple[int, CustomFieldDef]:
-    for index, field in enumerate(custom_fields):
-        if field.id == field_id:
+) -> tuple[int, TableFieldDef]:
+    for index, field in enumerate(field_defs):
+        if field.field_key == field_key:
             return index, field
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_invalid_field_id",
         "Custom field id was not found in this table.",
-        {"field_id": field_id, "table_key": table_key},
+        {"field_id": field_key, "table_key": table_key},
     )
 
 
 def reject_field_id_collision(
-    custom_fields: list[CustomFieldDef],
-    new_field_id: str,
+    field_defs: list[TableFieldDef],
+    new_field_key: str,
 ) -> None:
-    if any(field.id == new_field_id for field in custom_fields):
+    if any(field.field_key == new_field_key for field in field_defs):
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "custom_field_invalid_field_id",
             "Custom field id is already in use on this table.",
-            {"field_id": new_field_id},
+            {"field_id": new_field_key},
         )
 
 
 def reject_duplicate_display_name(
-    custom_fields: list[CustomFieldDef],
-    core_display_names: tuple[str, ...],
+    field_defs: list[TableFieldDef],
     candidate: str,
     *,
-    skip_field_id: str | None = None,
+    skip_field_key: str | None = None,
 ) -> None:
     normalized_candidate = normalize_display_name(candidate)
-    for core_name in core_display_names:
-        if normalize_display_name(core_name) == normalized_candidate:
-            raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                "custom_field_duplicate_name",
-                f"Field name '{candidate}' already exists in this table (core field).",
-                {
-                    "field_name": candidate,
-                    "colliding_field_id": core_name,
-                    "colliding_field_origin": "core",
-                },
-            )
-    for field in custom_fields:
-        if field.id == skip_field_id:
+    for field in field_defs:
+        if field.field_key == skip_field_key:
             continue
-        if normalize_display_name(field.display_name) == normalized_candidate:
-            raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                "custom_field_duplicate_name",
-                f"Field name '{candidate}' already exists in this table (custom field).",
-                {
-                    "field_name": candidate,
-                    "colliding_field_id": field.id,
-                    "colliding_field_origin": "custom",
-                },
-            )
+        if normalize_display_name(field.display_name) != normalized_candidate:
+            continue
+        origin_label = "built-in" if field.origin == "built_in" else "custom"
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_duplicate_name",
+            f"Field name '{candidate}' already exists in this table ({origin_label} field).",
+            {
+                "field_name": candidate,
+                "colliding_field_id": field.field_key,
+                "colliding_field_origin": field.origin,
+            },
+        )
 
 
 def resolve_insert_position(
-    custom_fields: list[CustomFieldDef],
-    insert_after_field_id: str | None,
+    field_defs: list[TableFieldDef],
+    insert_after_field_key: str | None,
     table_key: str,
 ) -> int:
-    if insert_after_field_id is None:
-        return len(custom_fields)
-    for index, field in enumerate(custom_fields):
-        if field.id == insert_after_field_id:
+    if insert_after_field_key is None:
+        return len(field_defs)
+    for index, field in enumerate(field_defs):
+        if field.field_key == insert_after_field_key:
             return index + 1
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_invalid_field_id",
         "Anchor field id for insertion was not found in this table.",
-        {"field_id": insert_after_field_id, "table_key": table_key},
+        {"field_id": insert_after_field_key, "table_key": table_key},
     )
 
 
 def strip_field_from_rows(
     body: ProjectDocumentV1,
     table_key: str,
-    field_id: str,
-    capability: CustomFieldCapability,
+    field_key: str,
+    capability: TableFieldRegistry,
 ) -> tuple[list[object], int]:
     """Return (next_rows, cleared_row_count) for the deleted field."""
     rows = read_rows_from_envelope(body, table_key)
     cleared = 0
     next_rows: list[object] = []
     for row in rows:
-        custom = capability.read_row_custom(row)
-        if field_id in custom:
+        custom_values = capability.read_row_custom_values(row)
+        if field_key in custom_values:
             cleared += 1
-            stripped = {key: value for key, value in custom.items() if key != field_id}
-            next_rows.append(capability.set_row_custom(row, stripped))
+            stripped = {key: value for key, value in custom_values.items() if key != field_key}
+            next_rows.append(capability.set_row_custom_values(row, stripped))
         else:
             next_rows.append(row)
     return next_rows, cleared

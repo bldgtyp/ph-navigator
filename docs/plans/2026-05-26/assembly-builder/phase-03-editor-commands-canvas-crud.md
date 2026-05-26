@@ -100,6 +100,8 @@ Backend:
 - locked version;
 - last-layer and last-segment guards;
 - duplicate assembly name;
+- duplicate assembly clears segment photos and use-site notes while
+  preserving project-material references;
 - layer/segment order contiguity after insert/delete;
 - destructive commands preserve project-material rows.
 

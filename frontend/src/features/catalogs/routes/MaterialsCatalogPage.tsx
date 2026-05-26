@@ -1,5 +1,11 @@
 import "../catalogs.css";
 import { type ReactNode, useState } from "react";
+import {
+  formatConductivityFromWmK,
+  formatDensityFromKgM3,
+  formatSpecificHeatFromJKgK,
+  useUnitPreference,
+} from "../../../lib/units";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
@@ -7,6 +13,11 @@ import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import { formatNumber } from "../components/form-helpers";
 import { MaterialEditorModal } from "../components/MaterialEditorModal";
+import {
+  conductivityUnitLabel,
+  densityUnitLabel,
+  specificHeatUnitLabel,
+} from "../components/unit-labels";
 import {
   useDeactivateMaterialMutation,
   useMaterialsQuery,
@@ -21,6 +32,7 @@ type EditorState =
   | { kind: "edit"; material: CatalogMaterial };
 
 export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
+  const { unitSystem } = useUnitPreference();
   const [includeInactive, setIncludeInactive] = useState(false);
   const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
   const materialsQuery = useMaterialsQuery(includeInactive);
@@ -71,9 +83,9 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             <tr>
               <th scope="col">Name</th>
               <th scope="col">Category</th>
-              <th scope="col">Conductivity (W/m·K)</th>
-              <th scope="col">Density (kg/m³)</th>
-              <th scope="col">Specific heat (J/kg·K)</th>
+              <th scope="col">Conductivity ({conductivityUnitLabel(unitSystem)})</th>
+              <th scope="col">Density ({densityUnitLabel(unitSystem)})</th>
+              <th scope="col">Specific heat ({specificHeatUnitLabel(unitSystem)})</th>
               <th scope="col">Emissivity</th>
               <th scope="col">Version</th>
               <th scope="col">Status</th>
@@ -85,9 +97,24 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
               <tr key={material.id} className={material.is_active ? "" : "catalog-row-inactive"}>
                 <td>{material.name}</td>
                 <td>{material.category}</td>
-                <td>{formatNumber(material.conductivity_w_mk)}</td>
-                <td>{formatNumber(material.density_kg_m3, 1)}</td>
-                <td>{formatNumber(material.specific_heat_j_kgk, 0)}</td>
+                <td>
+                  {formatConductivityFromWmK(material.conductivity_w_mk, {
+                    unitSystem,
+                    showUnit: false,
+                  })}
+                </td>
+                <td>
+                  {formatDensityFromKgM3(material.density_kg_m3, {
+                    unitSystem,
+                    showUnit: false,
+                  })}
+                </td>
+                <td>
+                  {formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, {
+                    unitSystem,
+                    showUnit: false,
+                  })}
+                </td>
                 <td>{formatNumber(material.emissivity, 2)}</td>
                 <td>
                   {material.version_label} · {material.version_date}

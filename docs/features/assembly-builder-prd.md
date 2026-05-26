@@ -586,8 +586,9 @@ Duplicating an assembly deep-copies the assembly, layers, and segments
 with new IDs.
 
 It preserves `project_material_id` references because the duplicate uses
-the same products. It does not duplicate segment photos because photos
-document an installation slot, not an abstract product.
+the same products. It does not duplicate segment photos or use-site
+notes because they document an installation slot, not an abstract
+product.
 
 The duplicate becomes active. Default name is `<source> (Copy)`, with
 collision suffixing.

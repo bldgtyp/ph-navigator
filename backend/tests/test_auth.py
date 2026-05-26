@@ -54,10 +54,12 @@ def test_login_session_and_logout_flow(clean_auth_tables: None) -> None:
     assert "HttpOnly" in login.headers["set-cookie"]
     assert "SameSite=lax" in login.headers["set-cookie"]
     assert login.json()["user"]["email"] == "ed@example.com"
+    assert login.json()["user"]["units_preference"] == "SI"
 
     session = client.get("/api/v1/auth/session")
     assert session.status_code == 200
     assert session.json()["user"]["display_name"] == "Ed May"
+    assert session.json()["user"]["units_preference"] == "SI"
 
     logout = client.post("/api/v1/auth/logout", headers={"Origin": ORIGIN})
     assert logout.status_code == 204
@@ -65,6 +67,81 @@ def test_login_session_and_logout_flow(clean_auth_tables: None) -> None:
     after_logout = client.get("/api/v1/auth/session")
     assert after_logout.status_code == 401
     assert after_logout.json()["error_code"] == "not_authenticated"
+
+
+def test_units_preference_can_be_updated_and_is_logged(clean_auth_tables: None) -> None:
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+    login = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login.status_code == 200
+
+    update = client.patch(
+        "/api/v1/auth/preferences",
+        headers={"Origin": ORIGIN},
+        json={"units_preference": "IP"},
+    )
+
+    assert update.status_code == 200
+    assert update.json()["user"]["units_preference"] == "IP"
+
+    session = client.get("/api/v1/auth/session")
+    assert session.status_code == 200
+    assert session.json()["user"]["units_preference"] == "IP"
+
+    with connection() as conn:
+        user = conn.execute("SELECT units_preference FROM users WHERE email = 'ed@example.com'").fetchone()
+        log = conn.execute(
+            """
+            SELECT action, details
+            FROM user_action_log
+            WHERE action = 'auth.units_preference.updated'
+            ORDER BY created_at DESC
+            LIMIT 1
+            """
+        ).fetchone()
+    assert user == {"units_preference": "IP"}
+    assert log is not None
+    assert log["action"] == "auth.units_preference.updated"
+    assert log["details"] == {"before": "SI", "after": "IP"}
+
+
+def test_units_preference_rejects_invalid_values(clean_auth_tables: None) -> None:
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+    login = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login.status_code == 200
+
+    response = client.patch(
+        "/api/v1/auth/preferences",
+        headers={"Origin": ORIGIN},
+        json={"units_preference": "METRIC"},
+    )
+
+    assert response.status_code == 422
+    with connection() as conn:
+        user = conn.execute("SELECT units_preference FROM users WHERE email = 'ed@example.com'").fetchone()
+    assert user == {"units_preference": "SI"}
+
+
+def test_units_preference_requires_authentication(clean_auth_tables: None) -> None:
+    client = TestClient(app)
+
+    response = client.patch(
+        "/api/v1/auth/preferences",
+        headers={"Origin": ORIGIN},
+        json={"units_preference": "IP"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "not_authenticated"
 
 
 def test_session_cookie_samesite_is_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
