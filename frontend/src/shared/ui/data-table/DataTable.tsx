@@ -14,18 +14,14 @@ import {
   horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import {
-  applyFilters,
-  buildBodyPlan,
-  buildEmptyRowDefaults,
-  computeAggregatesByPath,
-  effectiveSortFromView,
-  extractRowDefaults,
-  formatDisplayCellValue,
-  groupPathByRowIdFromBodyPlan,
-  pruneExpandedGroups,
-  sortRows,
-} from "./lib";
+import { applyFilters } from "./lib/filter/apply";
+import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
+import { computeAggregatesByPath } from "./lib/body/aggregates";
+import { pruneExpandedGroups } from "./lib/body/prune";
+import { effectiveSortFromView } from "./lib/view/sanitize";
+import { buildEmptyRowDefaults, extractRowDefaults } from "./lib/rows/defaults";
+import { formatDisplayCellValue } from "./lib/rows/format";
+import { sortRows } from "./lib/sort/sortRows";
 import { resolveColumnWidth } from "./lib/columnWidths";
 import { buildSubsetCode } from "./tokens/data-table-tints";
 import { generatedId } from "../../lib/ids";

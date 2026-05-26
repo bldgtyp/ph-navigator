@@ -1,21 +1,13 @@
 import { describe, expect, test } from "vitest";
-import {
-  applyFilters,
-  buildEmptyRowDefaults,
-  coercePasteWrites,
-  computeEdgeBits,
-  defaultOperatorForField,
-  extractRowDefaults,
-  formatClipboardCellValue,
-  formatDisplayCellValue,
-  isCellInRange,
-  moveActiveCell,
-  naturalZero,
-  parseTsv,
-  planPaste,
-  rangeToTsv,
-  sortRows,
-} from "../lib";
+import { applyFilters, defaultOperatorForField } from "../lib/filter/apply";
+import { buildEmptyRowDefaults, extractRowDefaults, naturalZero } from "../lib/rows/defaults";
+import { formatDisplayCellValue } from "../lib/rows/format";
+import { coercePasteWrites, planPaste } from "../lib/paste/plan";
+import { formatClipboardCellValue, parseTsv, rangeToTsv } from "../lib/paste/tsv";
+import { computeEdgeBits } from "../lib/range/edgeBits";
+import { isCellInRange } from "../lib/range/normalize";
+import { moveActiveCell } from "../lib/range/move";
+import { sortRows } from "../lib/sort/sortRows";
 import type { DataTableColumnDef, FieldDef } from "../types";
 
 type Row = { id: string; number: string; name: string };

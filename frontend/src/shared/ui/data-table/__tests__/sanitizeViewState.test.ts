@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { sanitizeViewStateForSchema } from "../lib";
+import { sanitizeViewStateForSchema } from "../lib/view/sanitize";
 import type { DataTableColumnDef, FieldDef, ViewState } from "../types";
 
 type Row = {

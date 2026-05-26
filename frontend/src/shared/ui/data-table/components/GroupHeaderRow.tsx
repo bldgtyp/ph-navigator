@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { formatDisplayCellValue, singleSelectOption } from "../lib";
+import { formatDisplayCellValue, singleSelectOption } from "../lib/rows/format";
 import type { DataTableColumnDef, FieldDef } from "../types";
 import { AddFieldTailCell } from "./AddFieldTailCell";
 

@@ -8,15 +8,17 @@ import {
 } from "react";
 import {
   buildFillTargetFromPointer,
+  clampRangeToGroup,
+  splitRangeByGroup,
+} from "../lib/fill/target";
+import {
   chooseFillAxis,
   chooseFillDirection,
-  clampRangeToGroup,
-  planFill,
-  splitRangeByGroup,
   type FillAxis,
   type FillDirection,
-  type NormalizedRange,
-} from "../lib";
+} from "../lib/fill/axis";
+import { planFill } from "../lib/fill/plan";
+import type { NormalizedRange } from "../lib/range/normalize";
 import { AXIS_THRESHOLD, EDGE_PX, SCROLL_PX } from "../tokens/pointerDragConstants";
 import type { CellWrite, DataTableColumnDef, FieldDef, FillState, WriteOp } from "../types";
 import type { GridSelection } from "./useGridSelection";

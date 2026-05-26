@@ -51,13 +51,10 @@ export type {
   SetDescriptionMutation,
   SetFormulaMutation,
 } from "./lib/customFieldMutations";
-export {
-  OPTION_COLOR_PALETTE,
-  missingOptionReferences,
-  normalizeOptionOrders,
-  optionReferenceCounts,
-  sanitizeViewStateForSchema,
-} from "./lib";
+export { OPTION_COLOR_PALETTE } from "./lib/options/create";
+export { missingOptionReferences, optionReferenceCounts } from "./lib/options/references";
+export { normalizeOptionOrders } from "./lib/options/normalize";
+export { sanitizeViewStateForSchema } from "./lib/view/sanitize";
 export {
   FIELD_TYPE_DEFAULT_WIDTH,
   GLOBAL_MAX_WIDTH,

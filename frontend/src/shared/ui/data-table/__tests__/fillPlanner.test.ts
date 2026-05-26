@@ -1,14 +1,13 @@
 import { describe, expect, test } from "vitest";
 import {
   buildFillTargetFromPointer,
-  chooseFillAxis,
-  chooseFillDirection,
   clampRangeToGroup,
-  groupPathByRowIdFromBodyPlan,
-  planFill,
   splitRangeByGroup,
-  type NormalizedRange,
-} from "../lib";
+} from "../lib/fill/target";
+import { chooseFillAxis, chooseFillDirection } from "../lib/fill/axis";
+import { planFill } from "../lib/fill/plan";
+import { groupPathByRowIdFromBodyPlan } from "../lib/body/plan";
+import type { NormalizedRange } from "../lib/range/normalize";
 import type { BodyPlanItem, DataTableColumnDef, FieldDef } from "../types";
 
 type Row = { id: string; name: string; floor: string; iCFA: number };

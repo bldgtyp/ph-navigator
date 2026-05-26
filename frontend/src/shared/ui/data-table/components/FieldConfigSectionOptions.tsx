@@ -16,13 +16,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import {
-  OPTION_COLOR_PALETTE,
-  createFieldOption,
-  hasDuplicateFieldOptionLabels,
-  missingOptionReferences,
-  normalizeOptionOrders,
-} from "../lib";
+import { OPTION_COLOR_PALETTE, createFieldOption } from "../lib/options/create";
+import { hasDuplicateFieldOptionLabels, missingOptionReferences } from "../lib/options/references";
+import { normalizeOptionOrders } from "../lib/options/normalize";
 import type { FieldOption } from "../types";
 import { ConfirmDeleteOptionDialog } from "./ConfirmDeleteOptionDialog";
 import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";

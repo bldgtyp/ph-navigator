@@ -14,6 +14,8 @@ import {
   uniqueCopyDisplayName,
   useTableSchema,
 } from "../../../shared/ui/data-table";
+import { mapToFormulaType } from "../../../shared/ui/data-table/lib/formula/mapToFormulaType";
+import { insertAfterColumnOrder } from "../../../shared/ui/data-table/lib/view/columnOrder";
 import { useProjectTableViewState } from "../../table_views/hooks";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
 import { projectDocumentQueryKeys } from "../../project_document/query-keys";
@@ -729,21 +731,6 @@ function buildRoomsFormulaRegistry(
   });
 }
 
-function mapToFormulaType(
-  fieldType: string,
-): "text" | "number" | "single_select" | "formula" | "bool" {
-  switch (fieldType) {
-    case "number":
-      return "number";
-    case "single_select":
-      return "single_select";
-    case "computed":
-      return "formula";
-    default:
-      return "text";
-  }
-}
-
 // Read a formula-side core value off a RoomRow, mirroring the
 // backend's `_read_rooms_core_field_for_formula` so the in-editor live
 // preview agrees with the server-side computed overlay. List-valued
@@ -767,20 +754,4 @@ function buildRoomFormulaRowValues(room: RoomRow): Record<string, unknown> {
     values[cfId] = value ?? null;
   }
   return values;
-}
-
-function insertAfterColumnOrder(
-  columnOrder: ReadonlyArray<string>,
-  anchorFieldKey: string,
-  insertedFieldKey: string,
-): string[] | null {
-  if (columnOrder.length === 0) return null;
-  const filtered = columnOrder.filter((id) => id !== insertedFieldKey);
-  const anchorIndex = filtered.indexOf(anchorFieldKey);
-  if (anchorIndex < 0) return null;
-  return [
-    ...filtered.slice(0, anchorIndex + 1),
-    insertedFieldKey,
-    ...filtered.slice(anchorIndex + 1),
-  ];
 }

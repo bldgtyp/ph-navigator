@@ -1,5 +1,5 @@
 import type { FieldDef, FilterCondition, FilterOperator } from "../types";
-import { formatClipboardCellValue } from "../lib";
+import { formatClipboardCellValue } from "../lib/paste/tsv";
 
 // Phase 4 §4.2: per-field-type operator catalogue. Each entry declares
 // its display label (verbatim AirTable phrasing per §12 Q8) and the
