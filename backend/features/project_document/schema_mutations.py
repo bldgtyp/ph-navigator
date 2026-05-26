@@ -98,6 +98,10 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     # single_select → *
     (CustomFieldType.single_select, CustomFieldType.short_text): "substitute_labels",
     (CustomFieldType.single_select, CustomFieldType.long_text): "substitute_labels",
+    # Single-select → number: substitute the label, then number-coerce.
+    # Labels that don't parse as numbers fall into the preflight incompatible
+    # set so the user acks the clear (existing lossy-conversion UX).
+    (CustomFieldType.single_select, CustomFieldType.number): "substitute_labels",
 }
 
 TEXT_TO_SINGLE_SELECT_OPTION_CAP = 50
@@ -1112,8 +1116,20 @@ def _apply_change_type(
                 incompatible.append(
                     {"row_id": row_id, "raw_value": raw_value, "reason": "no_matching_option"}
                 )
-            else:
+                continue
+            if to_type in (CustomFieldType.short_text, CustomFieldType.long_text):
                 compatible_writes.append((row_id, label))
+                continue
+            # single_select → number (or other future targets): re-coerce
+            # the label through the standard coercion path. Unparseable
+            # labels surface to preflight so the user acks the clear.
+            ok, coerced, reason = _try_coerce_for_change_type(
+                label, to_type, target_option_list=target_option_list
+            )
+            if ok:
+                compatible_writes.append((row_id, coerced))
+            else:
+                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
             continue
         ok, coerced, reason = _try_coerce_for_change_type(
             raw_value, to_type, target_option_list=target_option_list

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { SingleSelectPopover } from "../components/SingleSelectPopover";
 import type { FieldOption } from "../types";
@@ -115,6 +116,43 @@ describe("SingleSelectPopover", () => {
     fireEvent.click(screen.getByText("Mezzanine"));
     expect(handlers.onHighlight).toHaveBeenCalledWith("opt_mez");
     expect(handlers.onCommit).toHaveBeenCalled();
+  });
+
+  // Regression: a fresh-array `options` prop on every render (the bug
+  // pattern at GridBody before EMPTY_OPTIONS was introduced) cascaded
+  // through the memoized cycleTargets and re-fired the highlight effect
+  // every commit. With a stale orphan id as highlightedOptionId, the
+  // effect would snap-to-first repeatedly, exceeding React's update
+  // depth and rendering a blank screen.
+  test("does not infinite-loop when options identity changes each render with an orphan highlight", () => {
+    const highlightCalls: (string | null)[] = [];
+    function Harness() {
+      // Mirror useGridEdit: onHighlight commits the new id to state, so
+      // the next render sees a valid highlight and the effect bails.
+      const [highlight, setHighlight] = useState<string | null>(
+        "opt_orphan_does_not_exist",
+      );
+      return (
+        <SingleSelectPopover
+          options={[...OPTIONS]}
+          searchText=""
+          highlightedOptionId={highlight}
+          onSearchTextChange={() => undefined}
+          onHighlight={(id) => {
+            highlightCalls.push(id);
+            setHighlight(id);
+          }}
+          onCancel={() => undefined}
+          onCommit={() => undefined}
+          onCommitAndMove={() => undefined}
+          anchorChildren={<span>cell</span>}
+        />
+      );
+    }
+    expect(() => render(<Harness />)).not.toThrow();
+    // Effect snaps to the first option once, then quiesces — even though
+    // `options` identity flips on every render.
+    expect(highlightCalls).toEqual(["opt_ground"]);
   });
 
   test("clicking the Create footer highlights null then commits", () => {
