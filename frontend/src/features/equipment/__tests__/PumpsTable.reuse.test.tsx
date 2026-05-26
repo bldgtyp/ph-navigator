@@ -113,7 +113,7 @@ describe("PumpsTable DataTable reuse", () => {
       />,
     );
 
-    expect(screen.getByRole("columnheader", { name: /Tag/ })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /Record-ID/ })).toBeInTheDocument();
     expect(screen.getByText("P-1")).toBeInTheDocument();
     expect(screen.getByText("Circulator")).toBeInTheDocument();
   });

@@ -1,13 +1,17 @@
 ---
 DATE: 2026-05-26
 TIME: 11:48 ET (rev 2026-05-26 — decisions resolved)
-STATUS: Phase A landed 2026-05-26 — DataTable infrastructure
-        (`IdentifierConfig` type, pinned-column rendering, Shift-Enter
-        true-blank inserts, `__record_id__` sort plumbing, paste/fill
-        guards, broken-identifier ERROR state, duplicate-value warning
-        chip, unit tests at `__tests__/identifier*.{ts,tsx}`). Phases
-        B (Pumps adopt + uniqueness drop), C (Rooms), and D (catalog /
-        remaining tables) still pending. Durable contract written into
+STATUS: Phase B landed 2026-05-26 — Pumps adopts identifier
+        (`{kind: "field", field: "tag"}` on `PumpsTable`), pump.tag
+        uniqueness validator removed from `document.py`,
+        `validatePumpsPayload` no longer guards tag uniqueness,
+        `buildEmptyPumpRow` strips the anchor-clone path, and
+        `sortedPumps` gets an explicit `id` tiebreaker. Backend test
+        flipped to assert duplicates validate (previously rejected
+        them); frontend test now expects the universal "Record-ID"
+        header. Phase A landed in commit d33428d.
+        Phases C (Rooms) and D (catalog / remaining tables) still
+        pending. Durable contract in
         `context/technical-requirements/data-table.md` § Identifier
         Column.
 AUTHOR: Claude (Opus 4.7)

@@ -4,6 +4,7 @@ import {
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type IdentifierConfig,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
@@ -19,6 +20,8 @@ import {
   type PumpRow,
   type PumpsSlice,
 } from "../types";
+
+const PUMPS_IDENTIFIER: IdentifierConfig<PumpRow> = { kind: "field", field: "tag" };
 
 export function PumpsTable({
   pumpsSlice,
@@ -215,6 +218,7 @@ export function PumpsTable({
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}
+      identifier={PUMPS_IDENTIFIER}
       getRowId={(pump) => pump.id}
       emptyMessage={isEditor ? "No pumps yet." : "No pumps are published in this version."}
       readOnly={!isEditor}

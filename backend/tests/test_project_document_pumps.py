@@ -51,7 +51,7 @@ def test_pump_row_validates_phase_and_link() -> None:
         PumpRow.model_validate({**base, "link": "ftp://example.com/pump.pdf"})
 
 
-def test_document_rejects_duplicate_pump_tags_case_insensitive() -> None:
+def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
     body = {
         "schema_version": 2,
@@ -63,8 +63,8 @@ def test_document_rejects_duplicate_pump_tags_case_insensitive() -> None:
             "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
         },
     }
-    with pytest.raises(ValidationError, match="Duplicate pump tag"):
-        ProjectDocumentV1.model_validate(body)
+    doc = ProjectDocumentV1.model_validate(body)
+    assert [pump.tag for pump in doc.tables.equipment.pumps] == ["P-1", "p-1"]
 
 
 def test_first_pumps_replace_lazily_creates_draft(clean_document_tables: None) -> None:
