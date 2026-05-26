@@ -1,8 +1,8 @@
 ---
 DATE: 2026-05-26
 TIME: 07:53 ET
-STATUS: Parked strategy. Execute after the first real Equipment
-        attachment table lands.
+STATUS: Active verification strategy. Pumps now provides the first
+        real Equipment attachment table.
 AUTHOR: Codex
 SCOPE: Recommended local, mocked, Cloudflare R2, and Render staging
        verification strategy for the Attachments feature.
@@ -116,14 +116,20 @@ This layer should catch frontend state bugs, cell renderer issues,
 signed upload mechanics, and draft round-trip mistakes before deployment
 enters the picture.
 
-## P3. Real Equipment Table Requirement
+## P3. Real Equipment Table Surface
 
 Rooms is not a good attachment test surface because it has no attachment
 field.
 
 The right product-shaped test is a real Equipment table with a
-predefined locked attachment field. The current best candidate is the
-Pumps table from `docs/plans/plan-20-pumps-table-reuse-test.md`.
+predefined locked attachment field. Pumps is now that table.
+
+Current Pumps attachment surface:
+
+- document path: `tables.equipment.pumps[*].datasheet_asset_ids[]`;
+- table / registry key: `equipment_pumps.datasheet_asset_ids`;
+- frontend table: Equipment -> Pumps -> `Datasheet` column;
+- backend row field: `PumpRow.datasheet_asset_ids`.
 
 Recommended Pumps attachment shape:
 
@@ -143,8 +149,10 @@ Rationale:
 - it proves attachments in a proper DataTable-backed feature rather
   than a temporary panel-only surface.
 
-Once Pumps exists, return to this plan and execute the local app
-integration workflow against `equipment_pumps.datasheet_asset_ids`.
+Use Pumps for the next verification passes, starting with backend
+registry / reference tests for `equipment_pumps.datasheet_asset_ids`,
+then the local app integration workflow against the Equipment Pumps
+Datasheet column.
 
 ## P4. Cloudflare R2 Integration Smoke
 
@@ -220,7 +228,7 @@ Automate now:
 - MCP asset tool permission tests;
 - orphan sweeper dry-run tests.
 
-Automate after Pumps lands:
+Automate next, now that Pumps has landed:
 
 - frontend attachment cell tests against a real Equipment table;
 - Playwright local browser workflow for upload / preview / detach /
@@ -236,12 +244,12 @@ Keep manual / opt-in:
 
 ## P7. Recommended Next Step
 
-When work resumes, do this order:
+Current order:
 
-1. implement the first real Equipment table, preferably Pumps from
-   `plan-20`;
-2. add `datasheet_asset_ids` as a locked predefined field on that table;
-3. add fake-storage backend coverage for the attachment service;
+1. add focused backend coverage for the Pumps attachment registry and
+   document reference path;
+2. add fake-storage backend coverage for the attachment service;
+3. add frontend attachment cell tests against the real Pumps table;
 4. run local browser workflow against local object storage;
 5. add the opt-in R2 smoke;
 6. deploy to Render and run the staging acceptance checklist.
