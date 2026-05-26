@@ -221,8 +221,11 @@ availability.
 
 Automate now:
 
-- backend asset service tests with fake storage;
-- attachment field registry tests;
+- attachment field registry tests; **done for Pumps on 2026-05-26**
+  via `backend/tests/test_assets_registry.py`;
+- backend asset service tests with fake storage; **done for the Pumps
+  datasheet happy path on 2026-05-26** via
+  `backend/tests/test_assets_service.py`;
 - draft attach/detach tests;
 - bulk download zip/manifest tests;
 - MCP asset tool permission tests;
@@ -246,14 +249,97 @@ Keep manual / opt-in:
 
 Current order:
 
-1. add focused backend coverage for the Pumps attachment registry and
-   document reference path;
-2. add fake-storage backend coverage for the attachment service;
-3. add frontend attachment cell tests against the real Pumps table;
-4. run local browser workflow against local object storage;
-5. add the opt-in R2 smoke;
-6. deploy to Render and run the staging acceptance checklist.
+1. **Done 2026-05-26:** add focused backend coverage for the Pumps
+   attachment registry and document reference path.
+2. **Done 2026-05-26:** add fake-storage backend coverage for the
+   Pumps datasheet upload / attach / detach path.
+3. Add frontend attachment cell tests against the real Pumps table.
+4. Run local browser workflow against local object storage.
+5. Add the opt-in R2 smoke.
+6. Deploy to Render and run the staging acceptance checklist.
 
 This keeps the normal test suite fast and deterministic while still
 giving real evidence for the Cloudflare and deployment-specific parts of
 the feature.
+
+## P8. Progress Log
+
+### 2026-05-26 - Pumps registry / reference coverage
+
+Added `backend/tests/test_assets_registry.py` as the first Layer 1
+Pumps-specific attachment test. Coverage now asserts:
+
+- `equipment_pumps.datasheet_asset_ids` is a registered datasheet
+  field;
+- PDF and image datasheets are accepted by the field allow-list;
+- wrong asset kinds, unsupported MIME types, and oversized files are
+  rejected;
+- `list_asset_references()` discovers
+  `tables.equipment.pumps[*].datasheet_asset_ids[]`;
+- asset-id filtering and `asset_referenced_by_document()` work for
+  Pump datasheets.
+
+Verification run:
+
+```bash
+cd backend && uv run ruff check tests/test_assets_registry.py
+cd backend && uv run pytest tests/test_assets_registry.py tests/test_project_document_pumps.py
+```
+
+Result: `7 passed`.
+
+### 2026-05-26 - Fake-storage asset-service coverage
+
+Added `backend/tests/test_assets_service.py` with an in-memory fake R2
+client wired through the FastAPI `get_asset_service` dependency. The
+tests exercise the real routes, auth/project access, database rows, and
+draft mutation path while keeping object storage local to the test.
+
+Coverage now asserts:
+
+- upload intent creates a pending datasheet asset and fake signed PUT
+  URL;
+- fake object upload plus `complete-upload` marks the asset uploaded;
+- signed asset URL generation returns fake GET URLs and thumbnail
+  status;
+- attach writes the uploaded asset into
+  `tables.equipment.pumps[*].datasheet_asset_ids[]`;
+- detach removes the same asset from the Pump draft cell;
+- PDF magic mismatch marks the asset failed and returns
+  `asset_mime_not_allowed`;
+- duplicate content hash returns the existing asset without a new
+  upload URL.
+
+Verification run:
+
+```bash
+cd backend && \
+  DATABASE_URL=postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test \
+  uv run alembic upgrade head
+cd backend && uv run ruff check tests/test_assets_service.py tests/test_assets_registry.py
+cd backend && uv run pytest tests/test_assets_service.py tests/test_assets_registry.py tests/test_project_document_pumps.py
+```
+
+Result: `10 passed`, `1 warning` from Starlette's deprecated
+`HTTP_422_UNPROCESSABLE_ENTITY` symbol.
+
+## P9. Lessons Learned
+
+- Keep the document path and registry key explicit. The project
+  document stores Pump attachments at
+  `tables.equipment.pumps[*].datasheet_asset_ids[]`, while the backend
+  attachment registry addresses the same surface as
+  `equipment_pumps.datasheet_asset_ids`.
+- The first backend attachment test can stay below the storage layer.
+  Registry lookup, allow-list matching, and document-reference
+  extraction are deterministic enough to verify before adding fake S3
+  service coverage.
+- `PumpRow` already carries `datasheet_asset_ids`, so the remaining
+  backend work is not document-shape creation; it is upload completion,
+  draft mutation, and asset-service behavior around that existing
+  field.
+- Local asset-service tests require the `project_assets` migration in
+  the dedicated `_test` database. Running `uv run alembic upgrade head`
+  without `DATABASE_URL=...ph_navigator_v2_test` upgrades the default
+  environment instead and leaves pytest failing on a missing
+  `project_assets` relation.

@@ -619,7 +619,7 @@
   border-spacing: 0;
   background: var(--bg-card);
   font-family: var(--font-table, var(--font-primary));
-  font-size: 13px;
+  font-size: var(--data-table-font-size);
   font-feature-settings: "kern" 1;
   font-kerning: normal;
 }
@@ -913,11 +913,13 @@
 
 .data-table th,
 .data-table td {
+  box-sizing: border-box;
   border-right: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
-  min-height: 32px;
-  padding: 7px 10px;
+  height: var(--data-table-row-height);
+  padding: 0 var(--data-table-cell-padding-x);
   text-align: left;
+  vertical-align: middle;
 }
 
 .data-table th:last-child,
@@ -929,11 +931,13 @@
   position: sticky;
   top: 0;
   z-index: calc(var(--z-base) + 3);
+  height: var(--data-table-header-height);
+  padding: 0 var(--data-table-header-padding-x);
   --data-table-header-bg: var(--bg-card);
   background: var(--data-table-header-bg);
   color: var(--text-secondary);
   font-family: var(--font-table, var(--font-primary));
-  font-size: 0.72rem;
+  font-size: var(--data-table-header-font-size);
   font-weight: 500;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -966,9 +970,6 @@
 
 .data-table td {
   position: relative;
-  height: 32px;
-  min-height: 32px;
-  padding: 6px 8px;
   --data-table-cell-bg: var(--bg-card);
   background: var(--data-table-cell-bg);
   font-family: var(--font-table, var(--font-primary));
@@ -996,6 +997,11 @@
   background: var(--bg-card);
   color: var(--text-muted);
   text-align: right;
+}
+
+.data-table tbody .data-table-gutter {
+  height: var(--data-table-row-height);
+  padding: 0 var(--data-table-cell-padding-x);
 }
 
 .data-table thead .data-table-gutter {
@@ -1102,7 +1108,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  min-height: 28px;
+  min-height: calc(var(--data-table-header-height) - 2px);
 }
 
 .data-table-header-label {
@@ -1896,7 +1902,7 @@ td.data-table-cell-editing {
 }
 
 .data-table-summary-bar tr {
-  height: 32px;
+  height: var(--data-table-row-height);
 }
 
 .data-table-summary-gutter {
@@ -1909,7 +1915,8 @@ td.data-table-cell-editing {
    the row visually attached to the body rather than reading as a
    detached caption. */
 .data-table-summary-cell {
-  padding: 7px 10px;
+  height: var(--data-table-row-height);
+  padding: 0 var(--data-table-cell-padding-x);
   font-size: inherit;
   color: var(--text-secondary);
   background: var(--bg-card);

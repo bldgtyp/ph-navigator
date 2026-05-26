@@ -32,6 +32,12 @@
   --accent-edge: color-mix(in oklab, var(--accent) 60%, transparent);
   --gutter-width: 42px;
   --bg-table-outside: color-mix(in oklab, var(--accent) 4%, var(--bg-page));
+  --data-table-font-size: 13px;
+  --data-table-header-font-size: 0.72rem;
+  --data-table-row-height: 34px;
+  --data-table-header-height: 34px;
+  --data-table-cell-padding-x: 8px;
+  --data-table-header-padding-x: 10px;
   /* Left-edge tint on header cells with `read_only_schema` (core +
      system custom fields). User custom fields render without the
      accent so editors can tell which columns are schema-mutable. */
