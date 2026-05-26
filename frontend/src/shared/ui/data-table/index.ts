@@ -34,6 +34,7 @@ export {
   buildDuplicateFieldMutation,
   buildEditFieldBundleMutation,
   buildEditOptionsMutation,
+  buildNextConfigForFieldTypeChange,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
   buildSetFormulaMutation,

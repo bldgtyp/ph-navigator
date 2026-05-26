@@ -4,9 +4,10 @@
 // added to one side must land on the other in lockstep.
 
 import type { CustomFieldDef } from "../hooks/useTableSchema";
-import type { FieldOption } from "../types";
+import type { EditCustomFieldBundleRequest, FieldOption } from "../types";
 import { CUSTOM_FIELD_KEY_PREFIX, isCustomFieldKey } from "./customFieldAccessor";
 import { SOURCE_LENGTH_MAX } from "./formula";
+import { clampNumberPrecision } from "./numberPrecision";
 
 export type AddFieldMutation = {
   kind: "addField";
@@ -407,6 +408,46 @@ export function buildEditFieldBundleMutation(
     op.formulaSource = args.formulaSource;
   }
   return op;
+}
+
+// Diff a CustomFieldDef's `config` against a bundle edit request,
+// producing the next `config` blob that the route would pass to
+// buildEditFieldBundleMutation. Type changes reset the config to an
+// empty bag and re-add only the keys the new field_type owns;
+// non-type edits preserve the source config and patch in the changed
+// keys. Centralized so every feature-tab route can reuse it without
+// re-implementing the per-key delete/preserve ceremony.
+export function buildNextConfigForFieldTypeChange(
+  source: CustomFieldDef,
+  request: EditCustomFieldBundleRequest,
+): Record<string, unknown> {
+  const nextFieldType = request.fieldType ?? source.field_type;
+  const typeChanged = nextFieldType !== source.field_type;
+  let nextConfig: Record<string, unknown> = typeChanged ? {} : structuredClone(source.config);
+  if (nextFieldType !== "single_select") {
+    delete nextConfig.default_option_id;
+    delete nextConfig.color_code_options;
+  } else {
+    nextConfig = {
+      ...nextConfig,
+      default_option_id: request.defaultOptionId ?? null,
+      color_code_options: request.colorCodeOptions ?? true,
+    };
+  }
+  if (nextFieldType === "number" && (request.numberPrecision !== undefined || typeChanged)) {
+    nextConfig.precision = clampNumberPrecision(request.numberPrecision);
+  } else if (nextFieldType !== "number") {
+    delete nextConfig.precision;
+  }
+  if (nextFieldType !== "formula") {
+    delete nextConfig.source;
+    delete nextConfig.ast;
+    delete nextConfig.deps;
+    delete nextConfig.result_type;
+  } else if (request.formulaSource !== undefined) {
+    nextConfig.source = request.formulaSource;
+  }
+  return nextConfig;
 }
 
 export function buildChangeTypeMutation(args: BuildChangeTypeArgs): ChangeTypeMutation {
