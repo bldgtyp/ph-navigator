@@ -1,3 +1,4 @@
+import "../windows.css";
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useFrameTypesQuery, useGlazingTypesQuery } from "../../catalogs/hooks";

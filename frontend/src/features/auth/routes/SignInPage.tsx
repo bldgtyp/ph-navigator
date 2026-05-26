@@ -1,3 +1,4 @@
+import "../auth-page.css";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { SignInForm } from "../components/SignInForm";
 

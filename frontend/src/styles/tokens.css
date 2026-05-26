@@ -1,0 +1,74 @@
+/* Z-index contract: base < sticky headers < dropdowns/popovers < overlay HUD < modals < tooltips. */
+:root {
+  color-scheme: light;
+  --phn-radius: var(--radius-sm);
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 100;
+  --z-overlay-hud: 500;
+  --z-modal: 1000;
+  --z-tooltip: 2000;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --shadow-elev-1: 0 1px 2px rgb(0 0 0 / 6%);
+  --shadow-elev-2: 0 18px 40px rgb(0 0 0 / 12%);
+  --shadow-elev-3: 0 24px 60px rgb(0 0 0 / 18%);
+  --phn-shadow: var(--shadow-elev-2);
+  --phn-focus: 0 0 0 3px color-mix(in oklab, var(--accent) 24%, transparent);
+  --phn-success: var(--accent-dark);
+  --phn-success-bg: color-mix(in oklab, var(--phn-success) 12%, var(--bg-card));
+  --phn-warning: color-mix(in oklab, var(--highlight-text) 72%, black);
+  --phn-warning-bg: color-mix(in oklab, var(--phn-warning) 13%, var(--bg-card));
+  --phn-danger: color-mix(in oklab, crimson 70%, black);
+  --phn-danger-bg: color-mix(in oklab, var(--phn-danger) 11%, var(--bg-card));
+  --phn-control-height: 38px;
+  --accent-edge: color-mix(in oklab, var(--accent) 60%, transparent);
+  --gutter-width: 42px;
+  --bg-table-outside: color-mix(in oklab, var(--accent) 4%, var(--bg-page));
+  /* Left-edge tint on header cells with `read_only_schema` (core +
+     system custom fields). User custom fields render without the
+     accent so editors can tell which columns are schema-mutable. */
+  --phn-header-border-locked: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* Phase 6 §4.3.3: per-axis tint cascade. Seven non-empty subsets of
+   {filter, sort, group} × {body, header} = 14 tokens. Subset codes
+   concatenate axes' first letters in fixed order (f < s < g) so the
+   `data-axis-tint` HTML attribute composes deterministically. Single-
+   axis hues:
+     - f = green   (filter chip, sampled from AirTable 2026-05-23)
+     - s = peach   (active Sort button, sampled from AirTable 2026-05-23)
+     - g = lavender (active Group button + group-cell tint, sampled
+                    from AirTable 2026-05-24 — §12 Q4 + §12 Q15)
+   Two-axis blends shift the hue toward the midpoint of the two
+   single-axis tones; the three-axis blend (`fsg`) sits in a
+   desaturated cool grey so it reads as "everything" without competing
+   with cell content. Header variants are ~3% deeper saturation. */
+:root {
+  /* single axes */
+  --data-table-tint-f-body: oklch(96% 0.04 145);
+  --data-table-tint-f-header: oklch(93% 0.06 145);
+  --data-table-tint-s-body: oklch(95% 0.05 50);
+  --data-table-tint-s-header: oklch(91% 0.08 50);
+  --data-table-tint-g-body: oklch(96% 0.03 290);
+  --data-table-tint-g-header: oklch(92% 0.05 290);
+
+  /* two-axis blends */
+  --data-table-tint-fs-body: oklch(94% 0.04 95);
+  --data-table-tint-fs-header: oklch(90% 0.06 95);
+  --data-table-tint-fg-body: oklch(94% 0.04 220);
+  --data-table-tint-fg-header: oklch(90% 0.06 220);
+  --data-table-tint-sg-body: oklch(94% 0.04 350);
+  --data-table-tint-sg-header: oklch(90% 0.06 350);
+
+  /* three-axis blend */
+  --data-table-tint-fsg-body: oklch(93% 0.03 280);
+  --data-table-tint-fsg-header: oklch(89% 0.05 280);
+}

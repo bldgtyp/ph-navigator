@@ -1,0 +1,32 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dropdown);
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 48%);
+  padding: 20px;
+}
+
+.modal-panel {
+  width: min(100%, 560px);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 24px;
+  box-shadow: var(--phn-shadow);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.modal-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
