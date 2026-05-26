@@ -3,30 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict
 
 from config import settings
+from features.system.models import HealthResponse, VersionResponse
 
 router = APIRouter(prefix="/api/v1", tags=["system"])
-
-
-class HealthResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    status: str
-    service: str
-    phase: str
-    api_version: str
-
-
-class VersionResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    service: str
-    app_version: str
-    api_version: str
-    environment: str
-    git_sha: str | None
 
 
 @router.get("/health", response_model=HealthResponse)
