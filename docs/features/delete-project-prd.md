@@ -52,10 +52,11 @@ are tombstoned for 90 days, project routes stop resolving, public
 viewers lose access, MCP tools stop seeing the project, and all child
 data remains restorable.
 
-Editors can also choose a hard-delete mode for selected projects. This
-permanently removes the project row, all database children, all
-document-owned entities stored in saved versions/drafts, and all R2
-objects under the project's storage prefix.
+Hard-delete is not exposed in the normal dashboard UX. It is an
+admin/dev cleanup capability, available through backend tooling and MCP
+with explicit confirmation. It permanently removes the project row, all
+database children, all document-owned entities stored in saved
+versions/drafts, and all R2 objects under the project's storage prefix.
 
 ## 3. Current Backend Ownership Review
 
@@ -171,9 +172,11 @@ Rules:
 - Does not delete child rows.
 - Does not delete or move R2 objects.
 - Does not rewrite saved version bodies or drafts.
-- Existing `deleted_at IS NULL` project filters make dashboard,
-  project shell, public viewer, REST, and MCP reads return
-  `project_not_found`.
+- Dashboard list filters exclude deleted projects.
+- Direct REST/project-shell/public-viewer reads for a soft-deleted
+  project return `410 Gone` with error code `project_deleted`.
+- MCP active-project reads return structured `project_deleted` when
+  the scoped project is soft-deleted, except for the restore tool.
 - Appends `project_soft_delete` to `user_action_log` with project id,
   BT number, name, child counts, and hard-delete deadline.
 
@@ -182,7 +185,8 @@ Idempotency:
 - Repeating soft-delete on an already-deleted project returns success
   with `already_deleted: true` when the caller is an authenticated
   editor using a deleted-aware endpoint.
-- Normal public/view routes continue to return 404.
+- Normal public/view routes return `410 Gone` when the project exists
+  but is soft-deleted; unknown ids remain `404 project_not_found`.
 
 ### 4.2 Restore / undelete
 
@@ -211,7 +215,8 @@ Hard-delete permanently removes the project and all owned data.
 
 Rules:
 
-- Requires editor auth for REST/dashboard.
+- Requires admin/dev backend tooling or MCP; no normal dashboard
+  control exposes hard-delete.
 - Requires `project:write` plus an explicit confirmation token for MCP.
 - Should be available for active or soft-deleted projects, but the UI
   must make the destructive nature obvious.
@@ -251,7 +256,7 @@ R2 objects is not acceptable as a silent success.
 
 ## 5. REST API Contract
 
-### 5.1 Single-project delete
+### 5.1 Single-project soft-delete
 
 ```http
 POST /api/v1/projects/{project_id}:delete
@@ -261,13 +266,11 @@ Use a POST action endpoint rather than a DELETE request with a body
 because hard-delete confirmation needs structured body fields and some
 HTTP clients/proxies mishandle DELETE bodies.
 
-Default body:
+Request body:
 
 ```json
 {
-  "mode": "soft",
-  "confirm_project_name": "Optional exact name for hard mode",
-  "confirm_bt_number": "Optional exact BT number for hard mode"
+  "confirm": true
 }
 ```
 
@@ -292,10 +295,7 @@ Response:
 }
 ```
 
-Hard-delete response includes `storage.deleted_object_count` and
-`storage.failed_object_keys`.
-
-### 5.2 Bulk delete
+### 5.2 Bulk soft-delete
 
 ```http
 POST /api/v1/projects:bulk-delete
@@ -306,7 +306,6 @@ Request:
 ```json
 {
   "project_ids": ["uuid-1", "uuid-2"],
-  "mode": "soft",
   "confirm": true
 }
 ```
@@ -327,16 +326,16 @@ Response:
     {
       "project_id": "uuid-2",
       "ok": false,
-      "error_code": "project_not_found",
+      "error_code": "project_deleted",
       "message": "Project not found."
     }
   ]
 }
 ```
 
-Bulk hard-delete should be allowed, but the modal must require a second
-explicit acknowledgement because one click can permanently remove many
-projects.
+Bulk hard-delete is intentionally not part of the normal dashboard/API
+surface. Use the admin/dev script or MCP hard-delete tool for physical
+cleanup.
 
 ### 5.3 Deleted project list
 
@@ -360,6 +359,46 @@ Implementation note: this route must use a deleted-aware repository
 lookup. The current `require_project_access` seam cannot see deleted
 projects because it calls `get_project_by_id()` with
 `deleted_at IS NULL`.
+
+### 5.5 Deleted project reads
+
+Normal project reads should distinguish "unknown id" from "known but
+deleted":
+
+```http
+GET /api/v1/projects/{project_id}
+```
+
+Deleted response:
+
+```json
+{
+  "error_code": "project_deleted",
+  "message": "Project was deleted.",
+  "recoverability": "restore",
+  "details": {
+    "project_id": "uuid",
+    "deleted_at": "2026-05-26T23:24:00Z",
+    "hard_delete_after": "2026-08-24T23:24:00Z"
+  }
+}
+```
+
+HTTP status: `410 Gone`.
+
+### 5.6 Admin/dev hard-delete
+
+Hard-delete is available through backend admin/dev tooling, not the
+normal dashboard. Minimum v1 surface:
+
+```text
+cd backend && uv run python scripts/delete_project.py --hard <project_id>
+```
+
+If an admin REST endpoint is added later, keep it separate from the
+normal dashboard routes, require exact project name + BT number
+confirmation, and return `storage.deleted_object_count` plus
+`storage.failed_object_keys`.
 
 ## 6. MCP Contract
 
@@ -386,8 +425,8 @@ Rules:
   means token authentication must remain independent from project
   visibility; the deleted-aware restore service then checks scope and
   restores the project without using the active-only
-  `project_access_or_error` helper. If this feels too permissive,
-  defer MCP restore and keep restore REST/dashboard-only.
+  `project_access_or_error` helper. **Decision 2026-05-26: MCP restore
+  is allowed.**
 - No MCP bulk-delete in v1 because project-scoped tokens cannot see
   multiple projects.
 
@@ -397,6 +436,7 @@ Structured MCP errors:
 - `project_delete_already_deleted`
 - `project_delete_confirmation_required`
 - `project_delete_hard_confirmation_mismatch`
+- `project_deleted`
 - `project_restore_expired`
 - `project_hard_delete_storage_partial_failure`
 
@@ -431,11 +471,10 @@ The modal must show:
 - selected project count;
 - project names and BT numbers;
 - soft-delete deadline: "Can be restored for 90 days";
-- a hard-delete option labeled `Permanently delete now`;
-- for hard-delete, an acknowledgement checkbox plus exact typed phrase
-  such as `DELETE 4 PROJECTS`.
+- no hard-delete option in the normal dashboard modal.
 
-Default action is soft-delete. Hard-delete should never be the default.
+Dashboard delete is soft-delete only. Hard-delete is admin/dev tooling
+or MCP only.
 
 ### 7.3 Recently deleted surface
 
@@ -443,7 +482,8 @@ Minimum v1 restore UX:
 
 - Add a `Recently deleted` toggle or secondary section on the dashboard.
 - Show soft-deleted projects with `deleted_at` and `hard_delete_after`.
-- Provide Restore and Permanently delete actions.
+- Provide Restore. Do not expose Permanently delete in the normal
+  dashboard.
 
 If this is too much for the first implementation pass, the REST restore
 endpoint may ship before dashboard restore, but the plan must not call
@@ -476,7 +516,8 @@ the 90-day window complete without a user-accessible restore path.
 - Add `POST /api/v1/projects/{project_id}:restore`.
 - Log `project_soft_delete`, `project_restore`, and
   `project_hard_delete`.
-- Confirm existing project routes return 404 for soft-deleted projects.
+- Confirm existing active-project routes return `410 Gone` /
+  `project_deleted` for soft-deleted projects and 404 for unknown ids.
 
 ### Phase 3 - Hard-delete storage cleanup
 
@@ -484,8 +525,10 @@ the 90-day window complete without a user-accessible restore path.
 - Hard-delete all objects under `projects/{project_id}/assets/`.
 - Include thumbnails, export bundles, failed/pending uploads, and
   `_orphaned` objects.
-- Add dry-run support in a backend script for dev cleanup:
-  `cd backend && uv run python scripts/delete_project.py --dry-run <id>`.
+- Add dry-run and hard-delete support in a backend script for dev
+  cleanup:
+  `cd backend && uv run python scripts/delete_project.py --dry-run <id>`
+  and `cd backend && uv run python scripts/delete_project.py --hard <id>`.
 - Add tests with fake storage verifying DB rows and object keys are
   both removed.
 
@@ -498,7 +541,7 @@ the 90-day window complete without a user-accessible restore path.
 - Add hard-delete option behind explicit acknowledgement.
 - Add Recently deleted list/restore controls.
 - Add React tests for selection, navigation isolation, modal copy,
-  soft-delete success, and hard-delete acknowledgement.
+  soft-delete success, and absence of normal hard-delete controls.
 
 ### Phase 5 - MCP tools
 
@@ -512,7 +555,7 @@ the 90-day window complete without a user-accessible restore path.
   - project-boundary rejection;
   - hard-delete confirmation mismatch;
   - soft-deleted project disappearing from `list_projects`;
-  - restore behavior, or explicit deferral if REST-only.
+  - restore behavior.
 
 ## 9. Verification Gates
 
@@ -527,7 +570,7 @@ Frontend:
 
 - `cd frontend && pnpm test`
 - Add dashboard component tests for checkboxes, selected count, delete
-  modal, hard-delete acknowledgement, and row-link isolation.
+  modal, absence of hard-delete controls, and row-link isolation.
 - Run `pnpm run format` after edits.
 
 End-to-end:
@@ -540,8 +583,8 @@ End-to-end:
   4. verify they disappear;
   5. open Recently deleted;
   6. restore one;
-  7. hard-delete the other;
-  8. verify restored project opens and hard-deleted project 404s.
+  7. verify the still-deleted project route returns `410 Gone`;
+  8. verify restored project opens.
 
 Storage:
 
@@ -550,25 +593,23 @@ Storage:
 - In real/dev R2, hard-delete should report deleted/failed object
   counts.
 
-## 10. Open Decisions
+## 10. Resolved Decisions
 
-1. **MCP restore:** Should a project-scoped token be allowed to restore
-   its own soft-deleted project, or should restore be dashboard/REST
-   only? REST-only is simpler and safer; MCP restore is more symmetric.
-2. **Hard-delete UI exposure:** Should hard-delete be visible on the
-   normal dashboard delete modal, or hidden behind a dev/admin flag
-   until the app has production data?
-3. **Automatic purge:** Should a scheduled job hard-delete projects
-   after `hard_delete_after`, or should v1 only expose manual hard
-   delete and a script? The user need today is dev DB cleanup, so
-   manual hard-delete may be enough.
-4. **Audit manifest retention:** Is `user_action_log.details` enough for
-   a hard-delete manifest, or do we want a dedicated
-   `project_deletion_runs` table for retryable storage cleanup?
-5. **Deleted-project route status:** Normal project routes currently
-   return 404 via `project_not_found`. Do we want a separate 410 Gone
-   for deleted projects, or is 404 better because public project URLs
-   are capability links?
+Resolved 2026-05-26:
+
+1. **MCP restore is allowed.** A project-scoped token with
+   `project:write` may restore its own soft-deleted project through a
+   deleted-aware restore path.
+2. **Hard-delete is admin/MCP only.** Do not expose hard-delete in the
+   normal dashboard UX. Use it for dev DB cleanup and rare admin
+   cleanup, not routine project management.
+3. **No automatic purge in v1.** The 90-day timestamp is retained for
+   policy and UI clarity, but physical hard-delete is manual.
+4. **`user_action_log.details` is enough for v1 hard-delete manifests.**
+   No dedicated `project_deletion_runs` table is required now.
+5. **Deleted project reads return `410 Gone`.** Unknown ids remain
+   `404 project_not_found`; known soft-deleted ids return
+   `410 project_deleted`.
 
 ## 11. Implementation Notes
 
