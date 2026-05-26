@@ -192,19 +192,12 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
-  border-right: 1px solid var(--border-subtle);
-  padding-right: 22px;
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   font-weight: 400;
   letter-spacing: 0.06em;
   text-decoration: none;
-}
-
-.brand-version {
-  color: var(--text-muted);
-  margin-left: 10px;
 }
 
 .breadcrumbs {
@@ -215,6 +208,13 @@ a:focus-visible {
   color: var(--text-secondary);
   font-size: 0.86rem;
   overflow: hidden;
+}
+
+.breadcrumbs::before {
+  content: "/";
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .breadcrumb-segment {
@@ -395,6 +395,7 @@ a:focus-visible {
 }
 
 .version-trigger {
+  position: relative;
   max-width: min(320px, 42vw);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -402,6 +403,7 @@ a:focus-visible {
 }
 
 .project-actions-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;

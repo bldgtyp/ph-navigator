@@ -154,11 +154,7 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
             if room.id in prior_row_ids:
                 filled_rooms.append(room)
                 continue
-            missing = {
-                cf_id: default
-                for cf_id, default in defaults_by_cf_id.items()
-                if cf_id not in room.custom
-            }
+            missing = {cf_id: default for cf_id, default in defaults_by_cf_id.items() if cf_id not in room.custom}
             if not missing:
                 filled_rooms.append(room)
                 continue
@@ -173,10 +169,7 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
         body.tables.rooms.rows == rooms_payload.rooms
         and body.tables.rooms.custom_fields == rooms_payload.custom_fields
         and all(body.single_select_options.get(key, []) == room_options[key] for key in ROOM_OPTION_KEYS)
-        and all(
-            body.single_select_options.get(key, []) == value
-            for key, value in custom_option_lists.items()
-        )
+        and all(body.single_select_options.get(key, []) == value for key, value in custom_option_lists.items())
     ):
         return body
 
@@ -369,9 +362,7 @@ _missing_formula_type_keys = [
     key for key in ROOMS_CORE_FIELD_KEYS if ROOMS_CORE_FORMULA_TYPES.get(key, _MISSING) is _MISSING
 ]
 if _missing_formula_type_keys:
-    raise RuntimeError(
-        f"ROOMS_CORE_FORMULA_TYPES missing entries for: {_missing_formula_type_keys!r}"
-    )
+    raise RuntimeError(f"ROOMS_CORE_FORMULA_TYPES missing entries for: {_missing_formula_type_keys!r}")
 
 
 def _read_rooms_core_field_for_formula(row: object, field_id: str) -> object | None:

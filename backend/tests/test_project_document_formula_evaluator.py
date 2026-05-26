@@ -38,18 +38,14 @@ from features.project_document.formula.evaluator import (
 )
 from features.project_document.formula.parser import parse
 
-CORPUS_PATH = (
-    Path(__file__).parent / "fixtures" / "formula_evaluator_corpus.json"
-)
+CORPUS_PATH = Path(__file__).parent / "fixtures" / "formula_evaluator_corpus.json"
 
 
 def _normalize(display_name: str) -> str:
     return display_name.strip().casefold()
 
 
-def _resolve_for_test(
-    ast: FormulaAST, drop: set[str]
-) -> FormulaAST:
+def _resolve_for_test(ast: FormulaAST, drop: set[str]) -> FormulaAST:
     if isinstance(ast, Literal_):
         return ast
     if isinstance(ast, FieldRef):
@@ -127,15 +123,12 @@ def test_evaluator_corpus_case(case: dict[str, Any]) -> None:
             else f"{case['name']!r}: expected EvalSuccess, got {result!r}"
         )
         assert _values_equal(result.value, expected["value"]), (
-            f"{case['name']!r} value mismatch: "
-            f"expected {expected['value']!r}, got {result.value!r}"
+            f"{case['name']!r} value mismatch: expected {expected['value']!r}, got {result.value!r}"
         )
     else:
         assert isinstance(result, EvalError), (
-            f"{case['name']!r}: expected EvalError({expected['code']!r}), "
-            f"got {result!r}"
+            f"{case['name']!r}: expected EvalError({expected['code']!r}), got {result!r}"
         )
         assert result.code == expected["code"], (
-            f"{case['name']!r} error code mismatch: "
-            f"expected {expected['code']!r}, got {result.code!r}"
+            f"{case['name']!r} error code mismatch: expected {expected['code']!r}, got {result.code!r}"
         )

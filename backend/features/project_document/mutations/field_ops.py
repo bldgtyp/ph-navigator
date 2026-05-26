@@ -78,9 +78,7 @@ def apply_add_field(
     next_fields.insert(position, stamped)
     next_body = capability.replace_custom_fields(body, next_fields)
     if mutation.after.field_type is CustomFieldType.single_select:
-        next_body = capability.replace_field_option_list(
-            next_body, stamped.id, list(initial_options or [])
-        )
+        next_body = capability.replace_field_option_list(next_body, stamped.id, list(initial_options or []))
     audit: dict[str, object] = {
         "kind": "addField",
         "table_key": mutation.table_key,
@@ -132,9 +130,7 @@ def apply_delete_field(
     # remove the schema entry. Doing rows before schema keeps the
     # intermediate body's `validate_document_references` happy
     # (custom values must reference a known field id).
-    next_rows, cleared_row_count = strip_field_from_rows(
-        body, mutation.table_key, mutation.field_id, capability
-    )
+    next_rows, cleared_row_count = strip_field_from_rows(body, mutation.table_key, mutation.field_id, capability)
     body_with_stripped_rows = replace_rows_in_envelope(body, mutation.table_key, next_rows)
 
     next_fields = [field for field in current_fields if field.id != mutation.field_id]

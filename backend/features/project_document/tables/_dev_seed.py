@@ -98,7 +98,5 @@ def seed_rooms_custom_single_select(
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
     next_options = dict(body.single_select_options)
     next_options[f"rooms.{custom_field.id}"] = list(options)
-    next_body = body.model_copy(
-        update={"tables": next_tables, "single_select_options": next_options}
-    )
+    next_body = body.model_copy(update={"tables": next_tables, "single_select_options": next_options})
     return validate_document(next_body.model_dump(mode="json")), custom_field

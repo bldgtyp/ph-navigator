@@ -9,7 +9,7 @@ import json
 import re
 import zipfile
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
+from typing import Any, Protocol, cast
 from uuid import UUID
 
 from fastapi import BackgroundTasks
@@ -38,8 +38,7 @@ from features.assets.schemas import (
     UploadIntentRequest,
     UploadIntentResponse,
 )
-from features.assets.storage_r2 import R2Client, asset_object_key, orphaned_asset_object_key
-from features.assets.thumbnailer import Thumbnailer
+from features.assets.storage_r2 import asset_object_key, orphaned_asset_object_key
 from features.project_document.drafts import _load_draft_context
 from features.project_document.store import get_saved_document
 from features.project_document.validation import next_draft_etag, validate_document
@@ -55,8 +54,41 @@ def generated_job_id() -> str:
     return f"job_{datetime.now(tz=UTC).strftime('%Y%m%d%H%M%S%f')}"
 
 
+class AssetStorage(Protocol):
+    def generate_signed_put_url(
+        self,
+        object_key: str,
+        content_type: str,
+        size_bytes: int,
+        expires_in_seconds: int = 600,
+    ) -> str: ...
+
+    def generate_signed_get_url(
+        self,
+        object_key: str,
+        expires_in_seconds: int,
+        response_content_disposition: str | None = None,
+    ) -> str: ...
+
+    def head_object(self, object_key: str) -> dict[str, object]: ...
+
+    def get_object_prefix(self, object_key: str, byte_range: tuple[int, int]) -> bytes: ...
+
+    def get_object(self, object_key: str) -> bytes: ...
+
+    def put_object(self, object_key: str, body: bytes, content_type: str) -> str: ...
+
+    def copy_object(self, source_key: str, dest_key: str) -> None: ...
+
+    def delete_object(self, object_key: str) -> None: ...
+
+
+class AssetThumbnailer(Protocol):
+    def render_for_asset(self, project_id: UUID, asset_id: str) -> None: ...
+
+
 class AssetService:
-    def __init__(self, r2: R2Client, thumbnailer: Thumbnailer):
+    def __init__(self, r2: AssetStorage, thumbnailer: AssetThumbnailer):
         self.r2 = r2
         self.thumbnailer = thumbnailer
 

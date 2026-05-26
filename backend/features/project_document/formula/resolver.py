@@ -133,9 +133,7 @@ def resolve_refs(
     return _resolve_walk(ast, by_name)
 
 
-def _resolve_walk(
-    node: FormulaAST, by_name: Mapping[str, FieldRegistryEntry]
-) -> FormulaAST:
+def _resolve_walk(node: FormulaAST, by_name: Mapping[str, FieldRegistryEntry]) -> FormulaAST:
     if isinstance(node, Literal_):
         return node
     if isinstance(node, FieldRef):

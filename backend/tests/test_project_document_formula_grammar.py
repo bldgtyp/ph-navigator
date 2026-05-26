@@ -33,9 +33,7 @@ from features.project_document.formula.errors import (
 )
 from features.project_document.formula.parser import parse
 
-CORPUS_PATH = (
-    Path(__file__).parent / "fixtures" / "formula_grammar_corpus.json"
-)
+CORPUS_PATH = Path(__file__).parent / "fixtures" / "formula_grammar_corpus.json"
 
 
 def _expand_source(case: dict[str, Any]) -> str:
@@ -94,9 +92,7 @@ def test_grammar_corpus_case(case: dict[str, Any]) -> None:
         actual_json = ast_to_json(ast)
         expected = case["expected_ast"]
         assert _ast_equal(actual_json, expected), (
-            f"AST mismatch for {case['name']!r}\n"
-            f"  expected: {expected}\n"
-            f"  actual:   {actual_json}"
+            f"AST mismatch for {case['name']!r}\n  expected: {expected}\n  actual:   {actual_json}"
         )
         return
 
@@ -130,14 +126,10 @@ def test_corpus_has_no_orphan_keys() -> None:
     for case in CASES:
         has_source = "source" in case
         has_spec = "source_spec" in case
-        assert has_source ^ has_spec, (
-            f"{case['name']!r} must have exactly one of source/source_spec"
-        )
+        assert has_source ^ has_spec, f"{case['name']!r} must have exactly one of source/source_spec"
         has_ast = "expected_ast" in case
         has_err = "expected_error" in case
-        assert has_ast ^ has_err, (
-            f"{case['name']!r} must have exactly one of expected_ast/expected_error"
-        )
+        assert has_ast ^ has_err, f"{case['name']!r} must have exactly one of expected_ast/expected_error"
 
 
 def _walk_ast_with_field_ids(ast: FormulaAST) -> FormulaAST:

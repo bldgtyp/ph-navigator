@@ -19,8 +19,7 @@ export function WorkspaceTopbar({
   return (
     <header className="topbar">
       <Link className="brand" to="/dashboard" aria-label="PH-Navigator dashboard">
-        PH-Nav
-        <span className="brand-version">/ v2</span>
+        PH-NAV
       </Link>
       {breadcrumbs.length > 0 ? (
         <nav className="breadcrumbs" aria-label="Breadcrumb">
