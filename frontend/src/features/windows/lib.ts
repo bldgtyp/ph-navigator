@@ -10,6 +10,11 @@ import type {
   WindowTypeEntry,
 } from "./types";
 
+// Feature-scoped ID prefixes for `generatedId`. Centralized so future
+// tabs can't pick a colliding short prefix.
+export const WINDOW_TYPE_ID_PREFIX = "wt";
+const WINDOW_ELEMENT_ID_PREFIX = "winel";
+
 export const FRAME_SIDES: readonly FrameSide[] = ["top", "right", "bottom", "left"];
 
 export const OVERRIDE_TRACKER_FIELD: keyof FrameRef & keyof GlazingRef = "u_value_w_m2k";
@@ -38,7 +43,7 @@ export function newWindowType(
   baseName = DEFAULT_WINDOW_TYPE_NAME,
 ): WindowTypeEntry {
   return {
-    id: generatedId("win"),
+    id: generatedId(WINDOW_TYPE_ID_PREFIX),
     name: uniqueWindowTypeName(baseName, existing),
     row_heights_mm: [1000],
     column_widths_mm: [1000],
@@ -48,7 +53,7 @@ export function newWindowType(
 
 export function newWindowElement(): WindowElement {
   return {
-    id: generatedId("winel"),
+    id: generatedId(WINDOW_ELEMENT_ID_PREFIX),
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: null, right: null, bottom: null, left: null },
