@@ -21,6 +21,9 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "mcp>=1.27.1",
     "structlog>=25.5.0",
+    "pypdfium2>=5.8.0",
+    "pillow>=12.2.0",
+    "python-magic>=0.4.27",
 ]
 
 [dependency-groups]
@@ -31,6 +34,7 @@ dev = [
     "httpx>=0.28",
     "ruff>=0.7",
     "ty>=0.0.35",
+    "moto[s3]>=5.2.1",
 ]
 
 [tool.pytest.ini_options]

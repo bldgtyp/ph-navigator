@@ -17,6 +17,10 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
     return <EquipmentTab project={project} />;
   }
 
+  if (tab === "envelope") {
+    return <EnvelopeAttachmentsTab project={project} />;
+  }
+
   return (
     <section className="tab-panel" aria-labelledby={`${tab}-title`}>
       <h2 id={`${tab}-title`}>{TAB_LABELS[tab]}</h2>
@@ -34,3 +38,4 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
     </section>
   );
 }
+import { EnvelopeAttachmentsTab } from "../../assets/routes/EnvelopeAttachmentsTab";

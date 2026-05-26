@@ -277,8 +277,9 @@ specified:
 │    └─ storage_r2.py      (S3-compat client; signed URL gen)     │
 │                                                                 │
 │  features/project_document/                                     │
-│    └─ tables/registry.py (registers `attachment` as a v1        │
-│                           custom-field type alongside the rest) │
+│    └─ tables/registry.py (registers the fixed attachment-backed │
+│                           table contracts; no user-extensible   │
+│                           attachment custom field in v1)        │
 │                                                                 │
 │  features/mcp/                                                  │
 │    └─ tools/assets.py    (list_assets, get_asset_url,           │
@@ -298,9 +299,9 @@ specified:
 
 Existing pieces marked in `data-model.md` and `api.md`; this feature
 extends them. The single net-new system is the **thumbnail pipeline**
-(§8). The single most invasive code change is **elevating `attachment`
-into the v1 closed custom-field set** (data-table.md §"Field types"
-+ data-model.md §6.6.3).
+(§8). The single most invasive code change is **teaching the shared
+DataTable renderer about a locked `attachment` field type while keeping
+attachment columns out of the user-extensible custom-field set**.
 
 ## 6. Storage backend — Cloudflare R2 (reaffirmed)
 
