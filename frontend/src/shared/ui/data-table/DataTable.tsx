@@ -1,3 +1,4 @@
+import "./DataTable.css";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import {

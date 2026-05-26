@@ -1,3 +1,4 @@
+import "../version-controls.css";
 import { useEffect, useRef } from "react";
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import type { ProjectDetail } from "../../projects/types";

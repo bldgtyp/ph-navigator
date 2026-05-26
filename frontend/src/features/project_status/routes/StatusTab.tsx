@@ -1,3 +1,4 @@
+import "../project_status.css";
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";

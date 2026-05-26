@@ -1,0 +1,2134 @@
+.data-table-wrap {
+  overflow: auto;
+  max-height: 100%;
+  background: var(--bg-table-outside);
+}
+
+.data-table-wrap:focus {
+  outline: none;
+}
+
+.data-table-wrap:has(.room-option-popover) {
+  overflow: visible;
+}
+
+.data-table-wrap[data-column-resizing="true"] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.data-table-shell {
+  display: grid;
+  gap: 0;
+}
+
+.data-table-shell:has(.room-option-popover) {
+  position: relative;
+  z-index: var(--z-sticky);
+}
+
+.data-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--border-card);
+  border-bottom: 0;
+  border-radius: var(--phn-radius) var(--phn-radius) 0 0;
+  background: var(--bg-card);
+  padding: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.data-table-toolbar-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.data-table-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.data-table-toolbar span {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 5px 7px;
+  background: var(--bg-page);
+}
+
+.data-table-toolbar .project-actions-icon {
+  width: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.data-table-toolbar .project-actions-icon span {
+  height: 1px;
+  border: 0;
+  border-radius: 999px;
+  background: currentColor;
+  padding: 0;
+}
+
+.data-table-toolbar-actions button {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 5px 10px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.data-table-toolbar-actions button:hover {
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-page));
+}
+
+/* Phase 4 §4.8: right-aligned axis buttons (Filter / Sort / overflow).
+   The buttons live in their own container right of the status chips;
+   `.data-table-toolbar-actions` (row-delete) keeps `margin-left:auto`
+   and renders after, ensuring the destructive Delete button is never
+   side-by-side with Sort. */
+.data-table-toolbar-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.data-table-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 26px;
+  padding: 4px 10px;
+  border-radius: var(--phn-radius);
+  background: transparent;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.data-table-toolbar-button:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-toolbar-button[data-axis="filter"][data-axis-active="true"] {
+  background: var(--data-table-tint-f-body);
+}
+
+.data-table-toolbar-button[data-axis="sort"][data-axis-active="true"] {
+  background: var(--data-table-tint-s-body);
+}
+
+.data-table-toolbar-button[data-axis="group"][data-axis-active="true"] {
+  background: var(--data-table-tint-g-body);
+}
+
+.data-table-toolbar-button-icon {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.data-table-toolbar-button-icon svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+}
+
+/* Phase 4 §4.5 / §4.6: shared popover surface for Filter and Sort. */
+.data-table-view-popover {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 12px;
+  min-width: 380px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-dropdown);
+  font-family: var(--font-primary, inherit);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.data-table-view-popover.is-sort {
+  min-width: 300px;
+}
+
+.data-table-view-popover-heading {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.data-table-view-popover-subheading {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.data-table-view-popover-empty {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.data-table-view-popover-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-table-view-popover-rule {
+  display: grid;
+  grid-template-columns: 48px minmax(80px, 1fr) minmax(80px, 1fr) minmax(120px, 1.4fr) 24px 20px;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.data-table-view-popover-rule.is-sort,
+.data-table-view-popover-rule.is-group {
+  grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr) 24px 20px;
+}
+
+/* Phase 6 §4.2: Group popover header. Title left, Collapse / Expand
+   text actions right-aligned (matches AirTable walked 2026-05-24). */
+.data-table-view-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.data-table-view-popover-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.data-table-view-popover-text-action {
+  border: 0;
+  background: transparent;
+  color: var(--text-link, var(--accent-text));
+  padding: 0;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.data-table-view-popover-text-action:disabled {
+  color: var(--text-disabled, var(--text-secondary));
+  cursor: default;
+  opacity: 0.55;
+}
+
+.data-table-view-popover-text-action:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+.data-table-view-popover.is-group {
+  min-width: 340px;
+}
+
+/* Phase 6 §4.7: group-header row styling. Chevron + key (pill or
+   text) + count live in the first column with depth-based left
+   padding; per-column aggregation cells fill the rest of the row
+   right-aligned to mirror data-cell alignment. */
+.data-table-group-row {
+  background: var(--bg-card);
+  font-weight: 500;
+  height: 32px;
+}
+
+.data-table-group-row td {
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+}
+
+.data-table-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.data-table-group-chevron {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.7em;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-group-chevron:hover {
+  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+}
+
+.data-table-group-key {
+  font-weight: 600;
+}
+
+.data-table-group-count {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.data-table-group-aggregation {
+  text-align: right;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phase 6 §4.9: per-column overflow menu. Trigger sits in the header
+   row to the right of the label; hover-revealed to keep the chrome
+   quiet when the user isn't reaching for it. */
+.data-table-header-menu-trigger {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 0.9em;
+  border-radius: var(--phn-radius);
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+  margin-left: auto;
+}
+
+.data-table-th:hover .data-table-header-menu-trigger,
+.data-table-header-menu-trigger:focus-visible,
+.data-table-th[data-field-editor-open="true"] .data-table-header-menu-trigger {
+  opacity: 1;
+}
+
+.data-table-header-menu-trigger:hover {
+  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+}
+
+.data-table-column-menu,
+.data-table-column-menu-submenu {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 4px;
+  min-width: 180px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: calc(var(--z-dropdown) + 10);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-primary, inherit);
+  font-size: 0.78rem;
+}
+
+.data-table-column-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: var(--phn-radius);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: inherit;
+  width: 100%;
+}
+
+.data-table-column-menu-item:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-column-menu-item[data-active="true"] {
+  font-weight: 600;
+}
+
+.data-table-column-menu-item-value {
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.data-table-column-menu-divider {
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  margin: 4px 0;
+}
+
+.data-table-view-popover-rule[data-dragging="true"] {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+.data-table-view-popover-drag {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: grab;
+  padding: 0 2px;
+  font-size: 0.85em;
+  border-radius: var(--phn-radius);
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+}
+
+.data-table-view-popover-rule:hover .data-table-view-popover-drag,
+.data-table-view-popover-drag:focus-visible {
+  opacity: 1;
+}
+
+.data-table-view-popover-drag:active {
+  cursor: grabbing;
+}
+
+.data-table-view-popover-conjunction {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table-view-popover-select {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 3px 4px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  min-width: 0;
+}
+
+.data-table-view-popover-input {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 3px 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.data-table-view-popover-value {
+  min-width: 0;
+}
+
+.data-table-view-popover-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.data-table-view-popover-range-sep {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.data-table-view-popover-remove {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-view-popover-remove:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+}
+
+.data-table-view-popover-add {
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  color: var(--accent-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.data-table-view-popover-add:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.data-table-view-popover-disclosure {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-page);
+  padding: 0;
+  width: 100%;
+}
+
+.data-table-view-popover-disclosure > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 3px 6px;
+  font-size: 0.78rem;
+}
+
+.data-table-view-popover-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.data-table-view-popover-options {
+  list-style: none;
+  padding: 4px 6px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.data-table-view-popover-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.data-table-view-popover-options-empty {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+/* Phase 4 §4.7: toolbar overflow menu. Same surface tokens as the
+   filter / sort popovers so the cluster reads as one. */
+.data-table-overflow-menu {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 4px;
+  min-width: 160px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-dropdown);
+  font-family: var(--font-primary, inherit);
+  font-size: 0.8rem;
+}
+
+.data-table-overflow-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--phn-radius);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  text-decoration: none;
+}
+
+.data-table-overflow-menu-item:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-overflow-menu-item:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.data-table-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: var(--z-modal);
+}
+
+.data-table-alert-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 20px;
+  min-width: 320px;
+  max-width: 480px;
+  z-index: calc(var(--z-modal) + 1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.data-table-alert-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.data-table-alert-description {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.data-table-alert-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.data-table-shell .data-table-wrap {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.data-table {
+  width: max-content;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg-card);
+  font-family: var(--font-table, var(--font-primary));
+  font-size: 13px;
+  font-feature-settings: "kern" 1;
+  font-kerning: normal;
+}
+
+.data-table-footer-row {
+  display: flex;
+  width: max-content;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.data-table-add-row-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 42px;
+  height: 34px;
+  min-height: 34px;
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.data-table-add-row-button:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  color: var(--accent-text);
+  transform: none;
+}
+
+.data-table-gutter-col {
+  width: var(--gutter-width);
+}
+
+.data-table-tail-col {
+  width: var(--gutter-width);
+}
+
+/* Tail "+" cell. The header variant is styled as a clickable
+   affordance but has no behavior wired yet — the eventual "add field"
+   feature only needs to add behavior, not layout. */
+.data-table-add-field-cell {
+  border-right: 0;
+  background: var(--bg-card);
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.data-table-add-field-cell-body {
+  background: var(--bg-table-outside);
+  border-right: 0;
+}
+
+.data-table-add-field-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.data-table-add-field-cell[aria-disabled="true"]:hover .data-table-add-field-glyph {
+  color: var(--accent-text);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+}
+
+.data-table-add-field-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.data-table-add-field-button:hover,
+.data-table-add-field-button:focus-visible {
+  color: var(--accent-text);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+  outline: none;
+}
+
+.data-table-add-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table-add-field-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-strong);
+}
+
+.data-table-add-field-input:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.data-table-add-field-inline-error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.data-table-add-field-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.data-table-add-field-type-pill {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  color: var(--text-strong);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.data-table-add-field-type-pill[data-active="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+  color: var(--accent-text);
+}
+
+.data-table-add-field-type-pill[data-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.data-table-add-field-config {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-table-add-field-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.data-table-add-field-option-row {
+  display: grid;
+  grid-template-columns: 8rem minmax(8rem, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.data-table-add-field-option-color {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-strong);
+}
+
+.data-table-add-field-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.data-table-add-field-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-strong);
+}
+
+.data-table-add-field-counter {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  align-self: flex-end;
+}
+
+.data-table-add-field-error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.data-table-field-config-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: calc(var(--z-dropdown) + 30);
+}
+
+.data-table-field-config-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: calc(var(--z-dropdown) + 31);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-popover, 0 10px 32px rgba(0, 0, 0, 0.18));
+  padding: 16px;
+  min-width: 360px;
+  max-width: 480px;
+  width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.data-table-field-config-modal-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin: 0 0 12px;
+}
+
+.data-table-field-config-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.data-table-field-config-modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-table-field-config-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.data-table-field-config-modal-conflict {
+  border: 1px solid var(--warning, #c97a00);
+  background: color-mix(in oklab, var(--warning, #c97a00) 8%, var(--bg-card));
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.data-table-field-config-modal-conflict-text {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-strong);
+}
+
+.data-table-field-config-modal-conflict-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.data-table th,
+.data-table td {
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 32px;
+  padding: 7px 10px;
+  text-align: left;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+  border-right: 0;
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--z-base) + 3);
+  --data-table-header-bg: var(--bg-card);
+  background: var(--data-table-header-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-table, var(--font-primary));
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.data-table th:has(.room-option-popover) {
+  z-index: calc(var(--z-dropdown) - 70);
+}
+
+/* Column-resize grab zone on the right edge of each resizable header.
+   Half overlaps the cell border so the cursor + active state read like
+   AirTable. The parent <th>'s sticky/relative positioning establishes
+   the containing block. */
+.data-table-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -2px;
+  width: 4px;
+  cursor: col-resize;
+  z-index: calc(var(--z-base) + 6);
+  touch-action: none;
+  user-select: none;
+}
+
+.data-table-resize-handle:hover,
+.data-table-resize-handle[data-active="true"] {
+  background: color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.data-table td {
+  position: relative;
+  height: 32px;
+  min-height: 32px;
+  padding: 6px 8px;
+  --data-table-cell-bg: var(--bg-card);
+  background: var(--data-table-cell-bg);
+  font-family: var(--font-table, var(--font-primary));
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.data-table tbody tr:hover td {
+  background: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
+}
+
+.data-table tbody tr:hover .data-table-gutter {
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+}
+
+.data-table-gutter {
+  position: sticky;
+  left: 0;
+  z-index: calc(var(--z-base) + 5);
+  width: var(--gutter-width);
+  min-width: var(--gutter-width);
+  max-width: var(--gutter-width);
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.data-table thead .data-table-gutter {
+  z-index: calc(var(--z-base) + 6);
+  background: var(--data-table-header-bg, var(--bg-card));
+}
+
+.data-table-gutter-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.data-table-gutter-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.data-table-gutter-number {
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: inherit;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+/* AirTable-style row-expand affordance. Hidden by default; reveals on
+   row-hover (or when keyboard-focused). Positioned absolutely against
+   the gutter cell (which is already `position: sticky`) so it consumes
+   zero inline width — the column doesn't reflow between states. */
+.data-table-gutter-expand {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.data-table-gutter-expand:hover,
+.data-table-gutter-expand:focus-visible {
+  color: var(--accent-text, var(--text-primary));
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+}
+
+.data-table tbody tr:hover .data-table-gutter-expand,
+.data-table-gutter-expand:focus-visible {
+  display: inline-flex;
+}
+
+.data-table tbody tr:hover .data-table-gutter-number {
+  visibility: hidden;
+}
+
+.data-table-gutter-selected,
+.data-table tbody tr:has(.data-table-gutter-selected) td,
+.data-table tbody tr:has(.data-table-gutter-selected) .data-table-gutter {
+  background: color-mix(in oklab, var(--accent) 18%, var(--bg-card));
+}
+
+/* Phase 3 R1: whole-header click is the column-select gesture.
+   `cursor: cell` signals the hit target to the user. Phase 4 removed
+   the inner sort chevron — header label is a plain span now; sort
+   lives only in the toolbar Sort popover. */
+.data-table-th {
+  cursor: cell;
+}
+
+/* Plan 08 — non-primary headers become a drag handle on hover.
+   `data-draggable` is set by `SortableHeaderCell`; the primary column
+   omits it (and stays at `cursor: cell` for column-select). During an
+   active drag the cell goes translucent; the keyboard pickup state
+   gets an accent outline. */
+.data-table-th[data-draggable="true"]:hover {
+  cursor: grab;
+}
+.data-table-th[data-dragging="true"] {
+  opacity: 0.5;
+  cursor: grabbing;
+  z-index: calc(var(--z-base) + 2);
+}
+.data-table-th[data-picked-up="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.data-table-header-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+
+.data-table-header-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table-header-rename {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.data-table-header-rename-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 3px 5px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-input, var(--bg-card));
+}
+
+.data-table-header-rename-input:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent) 30%, transparent);
+  outline-offset: 0;
+}
+
+.data-table-header-rename-error {
+  color: var(--phn-danger, #9b2f24);
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+/* Editable custom headers keep pointer cursor because double-click and
+   Enter open field config. Sorting lives only in the toolbar Sort popover. */
+.data-table-th[data-field-editable="true"] {
+  cursor: pointer;
+}
+
+/* Locked-schema indicator, description tooltip, and header context-
+   menu trigger. Both glyphs render in viewer and editor mode. */
+.data-table-th[data-schema-locked="true"] {
+  border-bottom: 2px solid var(--phn-header-border-locked);
+}
+
+.data-table-header-lock {
+  display: inline-flex;
+  align-items: center;
+  color: var(--phn-header-border-locked);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.data-table-header-description-trigger {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: help;
+  padding: 0 2px;
+  font-size: 0.78rem;
+  line-height: 1;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-header-description-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.data-table-header-description-tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 6px 10px;
+  max-width: 280px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: calc(var(--z-dropdown) + 20);
+  font-family: var(--font-primary, inherit);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.data-table-column-menu-item[data-danger="true"] {
+  color: var(--phn-danger, #9b2f24);
+}
+
+.data-table-column-menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Phase 5 §4.3: field-editor popover. Re-uses
+   `.data-table-view-popover` for the base surface and adds a wider
+   min-width + AirTable-style stacked option list. */
+.data-table-view-popover.data-table-field-editor {
+  min-width: 320px;
+  max-width: 380px;
+}
+
+.data-table-field-editor-options-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px 0;
+  flex-wrap: wrap;
+}
+
+.data-table-field-editor-options-header .data-table-view-popover-subheading {
+  margin-bottom: 0;
+  flex: 1 1 auto;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.68rem;
+}
+
+.data-table-field-editor-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.data-table-field-editor-alphabetize {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  width: auto;
+  border-radius: var(--phn-radius);
+}
+
+.data-table-field-editor-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.data-table-field-editor-row {
+  display: grid;
+  grid-template-columns: 18px 28px 1fr auto 24px;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.data-table-field-editor-refcount {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.data-table-field-editor-warning {
+  margin: 4px 0 0 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.data-table-field-editor-cascade {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.data-table-field-editor-cascade-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.data-table-field-editor-cascade-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.data-table-field-editor-cascade-replace {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.data-table-field-editor-row[data-dragging="true"] {
+  opacity: 0.6;
+}
+
+.data-table-field-editor-color-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, #d1d5db);
+  background: var(--option-color, #6b7280);
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.data-table-field-editor-color-chevron {
+  font-size: 9px;
+  line-height: 1;
+}
+
+.data-table-field-editor-color-picker {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  grid-template-rows: repeat(2, 24px);
+  gap: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: calc(var(--z-dropdown) + 10);
+}
+
+.data-table-field-editor-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, #d1d5db);
+  background: var(--option-color);
+  cursor: pointer;
+  padding: 0;
+}
+
+.data-table-field-editor-color-swatch[aria-pressed="true"] {
+  outline: 2px solid var(--accent-edge, #2563eb);
+  outline-offset: 1px;
+}
+
+.data-table-field-editor-label-input {
+  border: 1px solid transparent;
+  border-radius: var(--phn-radius);
+  padding: 3px 6px;
+  font-size: 0.8rem;
+  background: transparent;
+  color: inherit;
+  min-width: 0;
+}
+
+.data-table-field-editor-label-input:focus {
+  outline: none;
+  border-color: var(--border-subtle, #d1d5db);
+  background: var(--bg-card);
+}
+
+.data-table-field-editor-add {
+  margin-top: 4px;
+}
+
+.data-table-field-editor-error {
+  margin: 4px 0 0 0;
+  font-size: 0.72rem;
+}
+
+.data-table-field-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+}
+
+.data-table th[data-axis-tint="f"] {
+  --data-table-header-bg: var(--data-table-tint-f-header);
+  background: var(--data-table-header-bg);
+}
+.data-table th[data-axis-tint="s"] {
+  --data-table-header-bg: var(--data-table-tint-s-header);
+  background: var(--data-table-header-bg);
+}
+.data-table th[data-axis-tint="g"] {
+  --data-table-header-bg: var(--data-table-tint-g-header);
+  background: var(--data-table-header-bg);
+}
+.data-table th[data-axis-tint="fs"] {
+  --data-table-header-bg: var(--data-table-tint-fs-header);
+  background: var(--data-table-header-bg);
+}
+.data-table th[data-axis-tint="fg"] {
+  --data-table-header-bg: var(--data-table-tint-fg-header);
+  background: var(--data-table-header-bg);
+}
+.data-table th[data-axis-tint="sg"] {
+  --data-table-header-bg: var(--data-table-tint-sg-header);
+  background: var(--data-table-header-bg);
+}
+.data-table th[data-axis-tint="fsg"] {
+  --data-table-header-bg: var(--data-table-tint-fsg-header);
+  background: var(--data-table-header-bg);
+}
+
+.data-table td[data-axis-tint="f"] {
+  --data-table-cell-bg: var(--data-table-tint-f-body);
+  background: var(--data-table-cell-bg);
+}
+.data-table td[data-axis-tint="s"] {
+  --data-table-cell-bg: var(--data-table-tint-s-body);
+  background: var(--data-table-cell-bg);
+}
+.data-table td[data-axis-tint="g"] {
+  --data-table-cell-bg: var(--data-table-tint-g-body);
+  background: var(--data-table-cell-bg);
+}
+.data-table td[data-axis-tint="fs"] {
+  --data-table-cell-bg: var(--data-table-tint-fs-body);
+  background: var(--data-table-cell-bg);
+}
+.data-table td[data-axis-tint="fg"] {
+  --data-table-cell-bg: var(--data-table-tint-fg-body);
+  background: var(--data-table-cell-bg);
+}
+.data-table td[data-axis-tint="sg"] {
+  --data-table-cell-bg: var(--data-table-tint-sg-body);
+  background: var(--data-table-cell-bg);
+}
+.data-table td[data-axis-tint="fsg"] {
+  --data-table-cell-bg: var(--data-table-tint-fsg-body);
+  background: var(--data-table-cell-bg);
+}
+
+.data-table-header-action {
+  margin-top: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  padding: 3px 6px;
+  font-size: 0.68rem;
+  text-transform: none;
+}
+
+.data-table-frozen {
+  border-right: 1px solid var(--border-subtle);
+}
+
+/* Pin the primary (first) data column to the left edge of the wrapper
+   so horizontal scroll keeps it visible. Sits just to the right of the
+   row-number gutter. Header lifts above the body header z-index (3) so
+   it covers non-frozen header cells as they scroll behind. */
+.data-table th.data-table-frozen,
+.data-table td.data-table-frozen {
+  position: sticky;
+  left: var(--gutter-width);
+  z-index: calc(var(--z-base) + 2);
+  background: var(--data-table-cell-bg, var(--data-table-header-bg, var(--bg-card)));
+}
+
+.data-table th.data-table-frozen {
+  z-index: calc(var(--z-base) + 4);
+}
+
+/* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
+   Single active cells keep the normal bordered cursor treatment below. */
+.data-table td.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
+  --data-table-selection-border: color-mix(in oklab, var(--accent-text) 46%, transparent);
+  --data-table-selection-edge-top-shadow: inset 0 0 0 0 transparent;
+  --data-table-selection-edge-right-shadow: inset 0 0 0 0 transparent;
+  --data-table-selection-edge-bottom-shadow: inset 0 0 0 0 transparent;
+  --data-table-selection-edge-left-shadow: inset 0 0 0 0 transparent;
+  box-shadow:
+    var(--data-table-selection-edge-top-shadow), var(--data-table-selection-edge-right-shadow),
+    var(--data-table-selection-edge-bottom-shadow), var(--data-table-selection-edge-left-shadow) !important;
+}
+
+.data-table td.data-table-selection-edge-top {
+  --data-table-selection-edge-top-shadow: inset 0 1px 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-selection-edge-right {
+  --data-table-selection-edge-right-shadow: inset -1px 0 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-selection-edge-bottom {
+  --data-table-selection-edge-bottom-shadow: inset 0 -1px 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-selection-edge-left {
+  --data-table-selection-edge-left-shadow: inset 1px 0 0 var(--data-table-selection-border);
+}
+
+.data-table td.data-table-cell-active {
+  z-index: calc(var(--z-base) + 2);
+  outline: 0;
+}
+
+/* Keep bottom-edge active chrome above the sticky summary row. */
+.data-table td.data-table-cell-active[data-row-edge="bottom"] {
+  z-index: calc(var(--z-base) + 4);
+}
+
+.data-table td.data-table-cell-active:not(.data-table-cell-selected) {
+  background: var(--data-table-cell-bg);
+  box-shadow: inset 0 0 0 2px var(--accent-text);
+}
+
+.data-table td.data-table-cell-active.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
+  box-shadow: inset 0 0 0 2px var(--accent-text) !important;
+}
+
+.data-table tbody tr:hover td.data-table-cell-selected,
+.data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
+}
+
+.data-table tbody tr:hover td.data-table-cell-active.data-table-cell-selected,
+.data-table
+  tbody
+  tr:has(.data-table-gutter-selected)
+  td.data-table-cell-active.data-table-cell-selected {
+  background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
+}
+
+/* Phase 7 §4.1 — fill handle. Small solid square anchored at the
+   bottom-right of the source rectangle's last cell; half overlaps the
+   cell interior, half overlaps the outside seam so it reads as a
+   grabbable corner of the active outline (matches the AirTable
+   reference Ed walked 2026-05-24). The `:has()` rule promotes the host
+   cell to `position: relative` so the absolutely-positioned handle
+   anchors there. */
+td:has(> .data-table-fill-handle) {
+  position: relative;
+}
+
+.data-table-fill-handle {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  box-sizing: border-box;
+  /* Override the global `button` rule's 38px min-height + 8/14 padding
+     + 1px transparent border, which would otherwise stretch the handle
+     to a thin vertical line. */
+  width: 6px;
+  min-width: 0;
+  height: 6px;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: var(--accent-text);
+  cursor: crosshair;
+  z-index: calc(var(--z-base) + 2);
+}
+
+.data-table td:last-child .data-table-fill-handle {
+  right: 0;
+}
+
+/* Plan 05 — chevron affordance on the active single-select cell.
+   Anchored at the cell's right edge, vertically centered. The
+   bottom-right fill handle (6×6, half-overlapping the seam) sits
+   below the chevron's vertical center on the default ~32 px row, so
+   they never overlap. */
+td:has(> .data-table-cell-chevron) {
+  position: relative;
+}
+
+.data-table-cell-chevron {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+  /* Override the global `button` rule's 38px min-height + padding
+     that would otherwise stretch the chevron and push the cell. */
+  width: 16px;
+  min-width: 0;
+  height: 16px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: calc(var(--z-base) + 1);
+  /* Chevron is rendered on every writable single-select cell. CSS
+     fades it in on hover OR active so the affordance is discoverable
+     without crowding every cell at rest. */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+}
+
+td:hover > .data-table-cell-chevron,
+td.data-table-cell-active > .data-table-cell-chevron {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.data-table-cell-chevron:hover {
+  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+.data-table-cell-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Reserve right padding on every cell that carries a chevron so the
+   pill doesn't run under it when the chevron fades in on hover. */
+td:has(> .data-table-cell-chevron) > .single-select-popover-anchor,
+td:has(> .data-table-cell-chevron) {
+  padding-right: 24px;
+}
+
+/* Phase 7 §4.1 — tint the cells inside the drag-preview target rect
+   while a fill drag is in flight. */
+td[data-fill-target="true"] {
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+/* Phase 7 §4.1 — keep the crosshair cursor across the whole document
+   while a fill drag is active; without this the cursor reverts to the
+   default outside the source cell. */
+body[data-grid-fill-active="true"] {
+  cursor: crosshair;
+}
+
+.numeric-cell {
+  text-align: right;
+}
+
+/* Plan 02 — pin editor to cell box so edit-start never reflows the
+   table. The cell carries `data-table-cell-editing` (position:
+   relative + overflow: hidden) so this absolutely-positioned input
+   anchors to the cell and clips overflow. `min-width: 0` overrides
+   the browser-default `<input>` intrinsic min — without it, the
+   input would widen the cell to fit `size="20"` chars. */
+td.data-table-cell-editing {
+  position: relative;
+  overflow: hidden;
+}
+
+.data-table-cell-editor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.single-select-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid color-mix(in oklab, var(--option-color) 52%, var(--border-subtle));
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--option-color) 16%, var(--bg-card));
+  color: var(--text-primary);
+  padding: 1px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.single-select-pill.missing {
+  border-color: var(--phn-danger);
+  background: color-mix(in oklab, var(--phn-danger) 12%, var(--bg-card));
+  color: var(--phn-danger);
+}
+
+.single-select-popover-anchor {
+  display: inline-block;
+  width: 100%;
+}
+
+.single-select-popover {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+  z-index: var(--z-dropdown);
+}
+
+.single-select-popover-search {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+}
+
+.single-select-popover-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.single-select-popover-option,
+.single-select-popover-create {
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.single-select-popover-option.highlighted,
+.single-select-popover-create.highlighted {
+  background: var(--bg-page);
+}
+
+.single-select-popover-create {
+  color: var(--text-muted);
+  font-style: italic;
+  border-top: 1px dashed var(--border-subtle);
+  margin-top: 4px;
+  padding-top: 6px;
+}
+
+.single-select-popover-empty {
+  padding: 4px 6px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.muted-cell {
+  color: var(--text-muted);
+}
+
+.room-option-manager {
+  position: relative;
+}
+
+.room-option-warning {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--phn-danger);
+  font-size: 0.68rem;
+  text-transform: none;
+}
+
+.room-option-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: calc(var(--z-dropdown) - 60);
+  display: grid;
+  gap: 10px;
+  width: min(520px, calc(100vw - 48px));
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  box-shadow: var(--phn-shadow);
+  padding: 12px;
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: 0.86rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.room-option-popover-header,
+.room-option-popover-footer,
+.room-option-delete-panel {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.room-option-list {
+  display: grid;
+  gap: 6px;
+}
+
+.room-option-row {
+  display: grid;
+  grid-template-columns: 36px minmax(110px, 1fr) 32px auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.room-option-row input[type="color"] {
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
+}
+
+.room-option-row span {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.room-option-delete-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-page);
+  padding: 8px;
+}
+
+.room-option-delete-panel label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table-filter-empty {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Plan 06 — AirTable-style summary bar. Pinned <tfoot> at the bottom
+   of the table; one cell per visible column. First cell shows
+   `Count: N` over the post-filter row set; subsequent cells either
+   show the picked aggregate or expose a "Calculate" click target. */
+.data-table-summary-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-card);
+  z-index: calc(var(--z-base) + 2);
+}
+
+.data-table-summary-bar tr {
+  height: 32px;
+}
+
+.data-table-summary-gutter {
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-subtle, #d4d4d8);
+}
+
+/* Match body `.data-table td` padding so the summary content baseline-
+   aligns with body cells in the same column. `font-size: inherit` keeps
+   the row visually attached to the body rather than reading as a
+   detached caption. */
+.data-table-summary-cell {
+  padding: 7px 10px;
+  font-size: inherit;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-subtle, #d4d4d8);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.data-table-summary-cell.data-table-frozen {
+  text-align: left;
+}
+
+.data-table-summary-count {
+  color: var(--text-primary);
+}
+
+.data-table-summary-count-inner {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.data-table-summary-count-label {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table-summary-count-value {
+  font-weight: 600;
+}
+
+.data-table-summary-trigger {
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  margin: 0;
+  border-radius: var(--phn-radius);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+  width: 100%;
+  min-height: 22px;
+}
+
+.data-table-summary-trigger:hover,
+.data-table-summary-trigger:focus-visible {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+  outline: none;
+}
+
+/* Plan 06 follow-up — the summary picker chevron is always visible
+   when an aggregate is set (the picker is the only way to change it)
+   and on cell hover / popover-open so empty cells still advertise
+   their affordance. */
+.data-table-summary-chevron {
+  opacity: 0;
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: opacity 0.1s ease-out;
+}
+
+.data-table-summary-cell-active .data-table-summary-chevron,
+.data-table-summary-cell:hover .data-table-summary-chevron,
+.data-table-summary-trigger:focus-visible .data-table-summary-chevron,
+.data-table-summary-cell[data-summary-open="true"] .data-table-summary-chevron {
+  opacity: 1;
+}
+
+.data-table-summary-kind {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.data-table-summary-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.data-table-summary-cell[data-readonly="true"] {
+  cursor: default;
+}
+
+/* Plan 07 — Hide / Show fields panel. Compact popover anchored under
+   the toolbar's "Hide fields" button. Mirrors AirTable's panel: search
+   input, vertical sortable list of all columns, Hide all / Show all
+   bulk actions. */
+
+/* The Radix Popover.Content wrapper. Sticky table headers (`.data-table
+   th`) sit at z-index 3 in their own stacking context, but Radix's
+   portal doesn't carry our inner-panel z-index up to its positioned
+   wrapper — without this rule the popover sometimes loses the
+   stacking-context race against the sticky headers when they overlap. */
+.data-table-hide-fields-popover {
+  z-index: var(--z-tooltip);
+}
+
+.data-table-hide-fields-panel {
+  width: 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  padding: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-dropdown);
+  font-family: var(--font-primary, inherit);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.data-table-hide-fields-search {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.data-table-hide-fields-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.data-table-hide-fields-row {
+  display: grid;
+  grid-template-columns: 18px 18px 1fr 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+
+.data-table-hide-fields-row:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-hide-fields-row[data-dragging="true"] {
+  background: color-mix(in oklab, var(--text-primary) 10%, transparent);
+}
+
+.data-table-hide-fields-drag {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: grab;
+}
+
+.data-table-hide-fields-drag:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.data-table-hide-fields-drag svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.data-table-hide-fields-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.data-table-hide-fields-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.data-table-hide-fields-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table-hide-fields-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+}
+
+.data-table-hide-fields-toggle input[disabled] {
+  cursor: not-allowed;
+}
+
+.data-table-hide-fields-empty {
+  padding: 12px 4px;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+.data-table-hide-fields-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-card);
+}
+
+.data-table-hide-fields-action {
+  flex: 1;
+  border: 1px solid var(--border-card);
+  background: transparent;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.data-table-hide-fields-action:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-hide-fields-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

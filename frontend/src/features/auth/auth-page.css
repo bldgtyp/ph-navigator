@@ -1,0 +1,58 @@
+.auth-page {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-panel,
+.empty-state,
+.project-list,
+.modal-panel,
+.version-popover,
+.tab-panel,
+.read-safe-panel,
+.data-table-wrap,
+.data-table-empty,
+.status-empty,
+.status-item,
+.metadata-grid div {
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+}
+
+.auth-panel {
+  position: relative;
+  width: min(100%, 420px);
+  overflow: hidden;
+  padding: 32px;
+  box-shadow: var(--phn-shadow);
+}
+
+.auth-panel::before,
+.status-empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--svg-line-faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--svg-line-faint) 1px, transparent 1px),
+    linear-gradient(var(--svg-line-light) 1px, transparent 1px),
+    linear-gradient(90deg, var(--svg-line-light) 1px, transparent 1px);
+  background-size:
+    12px 12px,
+    12px 12px,
+    60px 60px,
+    60px 60px;
+  opacity: 0.45;
+}
+
+.auth-panel > *,
+.status-empty > * {
+  position: relative;
+}
+
+.auth-form {
+  margin-top: 24px;
+}

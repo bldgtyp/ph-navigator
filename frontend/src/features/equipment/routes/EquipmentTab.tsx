@@ -1,3 +1,4 @@
+import "../equipment.css";
 import { useMemo, useState } from "react";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";

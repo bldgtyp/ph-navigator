@@ -1,3 +1,4 @@
+import "../catalogs.css";
 import { type ReactNode, useState } from "react";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
