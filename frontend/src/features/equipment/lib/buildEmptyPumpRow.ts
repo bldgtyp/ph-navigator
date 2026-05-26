@@ -1,6 +1,7 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyPump } from "../lib";
 import { PUMP_DEVICE_TYPE_KEY, type PumpRow } from "../types";
+import { readNumberDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -23,12 +24,4 @@ export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
       datasheet_asset_ids: [...base.datasheet_asset_ids],
     };
   };
-}
-
-function readStringDefault(value: unknown, fallback: string | null): string | null {
-  return value === null || typeof value === "string" ? value : fallback;
-}
-
-function readNumberDefault(value: unknown, fallback: number | null): number | null {
-  return value === null || typeof value === "number" ? value : fallback;
 }

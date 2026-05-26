@@ -47,11 +47,6 @@ export {
 // tabs (ERV, Pumps, Fans, TB) can't pick a colliding short prefix and
 // so a single grep tells you where Room IDs are minted.
 export const ROOM_ID_PREFIX = "rm";
-// Local prefix for the per-row fallback identifier used by
-// `nextFreeRoomNumber` when both the numeric ladder and the
-// "(copy N)" ladder are exhausted. Kept distinct from
-// `ROOM_ID_PREFIX` because this seeds a `number` slug, not a row id.
-const ROOM_ROW_FALLBACK_PREFIX = "row";
 export const PUMP_ID_PREFIX = "pmp";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
@@ -285,10 +280,9 @@ export function deleteRoomPayload(current: RoomsSlice, roomId: string): RoomsRep
 
 // Build a RoomsReplacePayload that adds the rows synthesized by the
 // <DataTable> Shift+Enter gesture. The consumer's buildEmptyRow has
-// already expanded fieldDefaults + anchorRow into a full RoomRow
-// (including any uniqueness remapping for `number` via
-// nextFreeRoomNumber) — this helper just merges into the current rooms
-// list and clones options unchanged.
+// already expanded fieldDefaults into a full RoomRow — this helper
+// just merges into the current rooms list and clones options
+// unchanged.
 export function roomsPayloadFromRowInsert(
   current: RoomsSlice,
   inserts: RowInsertPayload[],
@@ -359,38 +353,6 @@ export function pumpsPayloadFromRowDelete(
     pumps: current.pumps.filter((pump) => !toDelete.has(pump.id)),
     single_select_options: clonePumpOptions(current),
   };
-}
-
-// Pick the next free room number, starting from the anchor row's
-// `number`. Numeric anchors increment by one until free; non-numeric
-// (or numeric collisions exhausted) fall through to a "(copy)" /
-// "(copy 2)" ladder. The library-internal anchor-clone path
-// (extractRowDefaults) would otherwise produce a duplicate `number`,
-// which validateRoomsPayload rejects — this helper makes the cloned
-// row valid at first commit.
-// Find a unique room number starting from `from`. Returns `from` itself
-// when free (used by row-delete-undo, which re-inserts rows with their
-// pre-delete numbers into a slice that no longer holds them). For
-// numeric anchors, increments by one until free; otherwise falls back
-// to a "(copy)" / "(copy 2)" ladder. Comparisons are trim +
-// case-insensitive to match validateRoomsPayload's uniqueness rule.
-export function nextFreeRoomNumber(rooms: RoomRow[], from: string): string {
-  const taken = new Set(rooms.map((room) => room.number.trim().toLowerCase()));
-  const trimmed = from.trim();
-  if (trimmed && !taken.has(trimmed.toLowerCase())) return trimmed;
-  const parsed = Number(trimmed);
-  if (Number.isFinite(parsed) && trimmed !== "") {
-    for (let n = parsed + 1; n < parsed + 10_000; n += 1) {
-      const candidate = String(n);
-      if (!taken.has(candidate.toLowerCase())) return candidate;
-    }
-  }
-  const base = trimmed || "Untitled";
-  for (let i = 1; i < 1_000; i += 1) {
-    const candidate = i === 1 ? `${base} (copy)` : `${base} (copy ${i})`;
-    if (!taken.has(candidate.toLowerCase())) return candidate;
-  }
-  return `${base}-${generatedId(ROOM_ROW_FALLBACK_PREFIX).slice(-6)}`;
 }
 
 export function roomsPayloadFromCellWrites(
@@ -470,7 +432,6 @@ export function pumpsPayloadFromCellWrites(
 }
 
 export function validateRoomsPayload(payload: RoomsReplacePayload): string | null {
-  const roomNumbers = new Set<string>();
   const floorOptionIds = new Set(
     payload.single_select_options[ROOM_FLOOR_LEVEL_KEY].map((option) => option.id),
   );
@@ -479,9 +440,6 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
   );
   for (const room of payload.rooms) {
     if (!room.number.trim()) return "Room number is required.";
-    const normalizedNumber = normalize(room.number);
-    if (roomNumbers.has(normalizedNumber)) return "Room number already exists in this project.";
-    roomNumbers.add(normalizedNumber);
     if (!room.name.trim()) return "Room name is required.";
     if (!room.floor_level || !floorOptionIds.has(room.floor_level)) {
       return "Floor level is required.";
@@ -584,13 +542,6 @@ export function replaceRoomOptionsPayload(
     single_select_options: options,
     custom_fields: [...current.custom_fields],
   };
-}
-
-export function duplicateRoomNumber(rooms: RoomRow[], room: RoomRow): boolean {
-  const number = normalize(room.number);
-  return rooms.some(
-    (candidate) => candidate.id !== room.id && normalize(candidate.number) === number,
-  );
 }
 
 export function remoteSliceChangesActiveRoom(
@@ -795,10 +746,6 @@ function clonePumpOptions(current: PumpsSlice): PumpsReplacePayload["single_sele
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-function normalize(value: string): string {
-  return value.trim().toLocaleLowerCase();
 }
 
 function optionChanged(

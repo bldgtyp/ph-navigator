@@ -397,17 +397,6 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
     assert response.json()["error_code"] == "validation_error"
 
     invalid = room_payload()
-    invalid["rooms"].append({**invalid["rooms"][0], "id": "rm_kitchen", "name": "Kitchen"})
-    response = client.put(
-        draft_rooms_url(project_id, version_id),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=invalid,
-    )
-
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "invalid_project_document"
-
-    invalid = room_payload()
     del invalid["single_select_options"]["rooms.building_zone"]
     response = client.put(
         draft_rooms_url(project_id, version_id),
@@ -439,6 +428,33 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
 
     assert response.status_code == 422
     assert response.json()["error_code"] == "invalid_project_document"
+
+
+def test_rooms_validation_allows_duplicate_room_numbers(
+    clean_document_tables: None,
+) -> None:
+    # Plan-30 Phase C: duplicate room numbers are allowed — the
+    # identifier column is a label, not a key. The hidden id PK still
+    # provides row identity.
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+
+    duplicate_numbers = room_payload()
+    duplicate_numbers["rooms"].append(
+        {**duplicate_numbers["rooms"][0], "id": "rm_kitchen", "name": "Kitchen"}
+    )
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=duplicate_numbers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [room["number"] for room in body["rooms"]] == ["101", "101"]
 
 
 def test_public_viewer_can_read_rooms_but_not_write(

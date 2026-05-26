@@ -5,6 +5,7 @@ import {
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type IdentifierConfig,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
@@ -20,6 +21,19 @@ import {
   type RoomRow,
   type RoomsSlice,
 } from "../types";
+
+// `compute` is called per row by the accessor (sort, filter,
+// aggregates, duplicate scan) and the cell renderer — keep it
+// allocation-free.
+const ROOMS_IDENTIFIER: IdentifierConfig<RoomRow> = {
+  kind: "computed",
+  deps: ["number", "name"],
+  compute: (room) => {
+    const { number, name } = room;
+    if (number && name) return `${number} — ${name}`;
+    return number || name || "";
+  },
+};
 
 export function RoomsTable({
   roomsSlice,
@@ -180,6 +194,7 @@ export function RoomsTable({
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}
+      identifier={ROOMS_IDENTIFIER}
       getRowId={(room) => room.id}
       emptyMessage={isEditor ? "No rooms yet." : "No rooms are published in this version."}
       readOnly={!isEditor}

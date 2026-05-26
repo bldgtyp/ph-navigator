@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { duplicateRoomNumber, optionLabel } from "../lib";
+import { optionLabel } from "../lib";
 import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_KEY,
@@ -57,10 +57,6 @@ export function RoomModal({
     }
     if (!floorLevel.trim()) {
       setError("Floor level is required.");
-      return;
-    }
-    if (duplicateRoomNumber(roomsSlice.rooms, draft)) {
-      setError("Room number already exists in this project.");
       return;
     }
     setIsSaving(true);

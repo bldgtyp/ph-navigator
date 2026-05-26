@@ -1,42 +1,30 @@
 // Factory for the `buildEmptyRow` consumer callback that <DataTable>
-// invokes during Shift+Enter row insert. The anchored branch clones
-// from the anchor row (renumbering through `nextFreeRoomNumber`); the
-// no-anchor fallback (currently unreachable via Shift+Enter — the
-// empty-state branch short-circuits the grid) reads grid defaults
-// from `FieldDef.default` and fills the remaining RoomRow fields.
+// invokes during Shift+Enter row insert. Per plan-30 D10, Shift-Enter
+// creates a truly blank row — the anchor row's *position* still
+// matters (the new row inserts below it), but its *values* do not.
 
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
+import { emptyRoom, firstRoomFloorOptionId } from "../lib";
 import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_KEY,
   type RoomRow,
   type RoomsSlice,
 } from "../types";
-import { firstRoomFloorOptionId, nextFreeRoomNumber } from "../lib";
+import { readNumberDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyRoomRow(roomsSlice: RoomsSlice): BuildEmptyRow<RoomRow> {
-  return ({ rowId, fieldDefaults, anchorRow }) => {
-    if (anchorRow) {
-      return {
-        ...anchorRow,
-        id: rowId,
-        number: nextFreeRoomNumber(roomsSlice.rooms, anchorRow.number),
-      };
-    }
+  return ({ rowId, fieldDefaults }) => {
+    const base = { ...emptyRoom(firstRoomFloorOptionId(roomsSlice)), id: rowId };
     return {
-      id: rowId,
-      number: nextFreeRoomNumber(roomsSlice.rooms, String(fieldDefaults.number ?? "")),
-      name: String(fieldDefaults.name ?? "Untitled"),
-      floor_level: ((fieldDefaults[ROOM_FLOOR_LEVEL_KEY] as string | null | undefined) ??
-        firstRoomFloorOptionId(roomsSlice)) as string | null,
-      building_zone: (fieldDefaults[ROOM_BUILDING_ZONE_KEY] as string | null | undefined) ?? null,
-      num_people: Number(fieldDefaults.num_people ?? 0),
-      num_bedrooms: Number(fieldDefaults.num_bedrooms ?? 0),
-      icfa_factor: Number(fieldDefaults.icfa_factor ?? 1),
-      erv_unit_ids: [],
-      catalog_origin: null,
-      notes: null,
-      custom: {},
+      ...base,
+      number: readStringDefault(fieldDefaults.number, base.number) ?? "",
+      name: readStringDefault(fieldDefaults.name, base.name) ?? "",
+      floor_level: readStringDefault(fieldDefaults[ROOM_FLOOR_LEVEL_KEY], base.floor_level),
+      building_zone: readStringDefault(fieldDefaults[ROOM_BUILDING_ZONE_KEY], base.building_zone),
+      num_people: readNumberDefault(fieldDefaults.num_people, base.num_people) ?? 0,
+      num_bedrooms: readNumberDefault(fieldDefaults.num_bedrooms, base.num_bedrooms) ?? 0,
+      icfa_factor: readNumberDefault(fieldDefaults.icfa_factor, base.icfa_factor) ?? 1,
     };
   };
 }

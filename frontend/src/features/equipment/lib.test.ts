@@ -2,12 +2,10 @@
 import { describe, expect, test, vi } from "vitest";
 import {
   deleteRoomPayload,
-  duplicateRoomNumber,
   emptyRoom,
   firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
-  nextFreeRoomNumber,
   replaceRoomOptionsPayload,
   nextRoomsPayload,
   optionLabel,
@@ -108,12 +106,11 @@ describe("equipment room helpers", () => {
     expect(room.icfa_factor).toBe(1);
   });
 
-  test("detects duplicate room numbers and deletes rows without changing options", () => {
+  test("deletes rows without changing options", () => {
     const room = { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" };
     const other = { ...emptyRoom(), id: "rm_2", number: " 101 ", name: "Kitchen" };
     const current: RoomsSlice = { ...baseSlice, rooms: [room, other] };
 
-    expect(duplicateRoomNumber(current.rooms, room)).toBe(true);
     expect(deleteRoomPayload(current, "rm_1").rooms).toEqual([other]);
   });
 
@@ -246,7 +243,7 @@ describe("equipment room helpers", () => {
     ]);
   });
 
-  test("validates required floor and duplicate numbers before draft writes", () => {
+  test("validates required floor before draft writes and allows duplicate room numbers", () => {
     const missingFloor = {
       ...baseSlice,
       rooms: [{ ...emptyRoom(), id: "rm_1", number: "101", name: "Living" }],
@@ -264,7 +261,7 @@ describe("equipment room helpers", () => {
     };
 
     expect(validateRoomsPayload(missingFloor)).toBe("Floor level is required.");
-    expect(validateRoomsPayload(duplicate)).toBe("Room number already exists in this project.");
+    expect(validateRoomsPayload(duplicate)).toBeNull();
   });
 
   test("normalizes cleared numeric cell writes and blocks deferred ERV assignments", () => {
@@ -343,41 +340,7 @@ describe("equipment room helpers", () => {
     );
   });
 
-  test("nextFreeRoomNumber increments numeric anchors past taken values", () => {
-    const rooms = [
-      { ...emptyRoom(), id: "rm_1", number: "101" },
-      { ...emptyRoom(), id: "rm_2", number: "102" },
-      { ...emptyRoom(), id: "rm_3", number: "104" },
-    ];
-    expect(nextFreeRoomNumber(rooms, "101")).toBe("103");
-    expect(nextFreeRoomNumber(rooms, "104")).toBe("105");
-  });
-
-  test("nextFreeRoomNumber falls back to a (copy) ladder for non-numeric anchors", () => {
-    const rooms = [{ ...emptyRoom(), id: "rm_a", number: "A1" }];
-    expect(nextFreeRoomNumber(rooms, "A1")).toBe("A1 (copy)");
-    const next = [...rooms, { ...emptyRoom(), id: "rm_b", number: "A1 (copy)" }];
-    expect(nextFreeRoomNumber(next, "A1")).toBe("A1 (copy 2)");
-  });
-
-  test("nextFreeRoomNumber returns the input when it is already free (delete-undo path)", () => {
-    const rooms = [
-      { ...emptyRoom(), id: "rm_a", number: "5" },
-      { ...emptyRoom(), id: "rm_b", number: "6" },
-    ];
-    // After deleting "1", undo dispatches a rowInsert with anchor "1";
-    // since "1" is now free, the inverse insert should restore it
-    // verbatim rather than incrementing.
-    expect(nextFreeRoomNumber(rooms, "1")).toBe("1");
-    expect(nextFreeRoomNumber([], "1")).toBe("1");
-  });
-
-  test("nextFreeRoomNumber compares case-insensitively", () => {
-    const rooms = [{ ...emptyRoom(), id: "rm_a", number: "Foo" }];
-    expect(nextFreeRoomNumber(rooms, "foo")).toBe("foo (copy)");
-  });
-
-  test("roomsPayloadFromRowInsert appends rows built from the anchor", () => {
+  test("roomsPayloadFromRowInsert appends truly blank rows built from fieldDefaults only", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current: RoomsSlice = {
       ...baseSlice,
@@ -399,31 +362,23 @@ describe("equipment room helpers", () => {
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     };
+    // Plan-30 D10: Shift-Enter creates a truly blank row; anchor
+    // values are not cloned. fieldDefaults is empty for a default-only
+    // insert.
     const payload = roomsPayloadFromRowInsert(
       current,
-      [
-        {
-          rowId: "tmp_row_1",
-          anchorRowId: "rm_5",
-          fieldDefaults: {
-            number: "5",
-            name: "Living",
-            "rooms.floor_level": ground.id,
-          },
-        },
-      ],
-      ({ rowId, anchorRow }) => ({
-        ...(anchorRow ?? emptyRoom()),
+      [{ rowId: "tmp_row_1", anchorRowId: "rm_5", fieldDefaults: {} }],
+      ({ rowId }) => ({
+        ...emptyRoom(),
         id: rowId,
-        number: nextFreeRoomNumber(current.rooms, anchorRow?.number ?? ""),
       }),
     );
     expect(payload.rooms).toHaveLength(2);
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
-    expect(inserted?.number).toBe("6");
-    expect(inserted?.name).toBe("Living");
-    expect(inserted?.floor_level).toBe(ground.id);
-    expect(inserted?.icfa_factor).toBe(0.85);
+    expect(inserted?.number).toBe("");
+    expect(inserted?.name).toBe("");
+    expect(inserted?.floor_level).toBeNull();
+    expect(inserted?.icfa_factor).toBe(1);
   });
 
   test("roomsPayloadFromRowDelete removes by id and preserves the option lists", () => {
@@ -709,10 +664,9 @@ describe("equipment room helpers", () => {
     const payload = roomsPayloadFromRowInsert(
       current,
       [{ rowId: "tmp_row_1", anchorRowId: "rm_5", fieldDefaults: {} }],
-      ({ rowId, anchorRow }) => ({
-        ...(anchorRow ?? emptyRoom()),
+      ({ rowId }) => ({
+        ...emptyRoom(),
         id: rowId,
-        number: nextFreeRoomNumber(current.rooms, anchorRow?.number ?? ""),
       }),
     );
 

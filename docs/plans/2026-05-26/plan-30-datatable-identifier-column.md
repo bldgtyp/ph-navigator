@@ -1,17 +1,21 @@
 ---
 DATE: 2026-05-26
 TIME: 11:48 ET (rev 2026-05-26 — decisions resolved)
-STATUS: Phase B landed 2026-05-26 — Pumps adopts identifier
-        (`{kind: "field", field: "tag"}` on `PumpsTable`), pump.tag
-        uniqueness validator removed from `document.py`,
-        `validatePumpsPayload` no longer guards tag uniqueness,
-        `buildEmptyPumpRow` strips the anchor-clone path, and
-        `sortedPumps` gets an explicit `id` tiebreaker. Backend test
-        flipped to assert duplicates validate (previously rejected
-        them); frontend test now expects the universal "Record-ID"
-        header. Phase A landed in commit d33428d.
-        Phases C (Rooms) and D (catalog / remaining tables) still
-        pending. Durable contract in
+STATUS: Phase C landed 2026-05-26 — Rooms adopts a computed
+        identifier (`{kind: "computed", deps: ["number", "name"],
+        compute: (r) => [r.number, r.name].filter(Boolean).join(" — ")}`
+        on `RoomsTable`); room-number uniqueness validator removed
+        from `document.py`, `validateRoomsPayload` no longer guards
+        number uniqueness, the `nextFreeRoomNumber` helper and the
+        `ROOM_ROW_FALLBACK_PREFIX` constant were deleted along with
+        their tests, `duplicateRoomNumber` and the modal's pre-save
+        dup check were removed, and `makeBuildEmptyRoomRow` no longer
+        clones the anchor row (truly blank Shift-Enter per D10).
+        Backend test split into `test_rooms_validation_allows_
+        duplicate_room_numbers` (new) plus the existing rejects-
+        invalid-options case. Phase B landed earlier today (Pumps);
+        Phase A landed in commit d33428d. Phase D (catalog /
+        remaining tables) still pending. Durable contract in
         `context/technical-requirements/data-table.md` § Identifier
         Column.
 AUTHOR: Claude (Opus 4.7)
