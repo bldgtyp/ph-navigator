@@ -1,8 +1,7 @@
 ---
 DATE: 2026-05-25
 TIME: planning (multi-PR phased implementation)
-STATUS: In progress (3 of 8 phases merged to main; Phase 2 done in
-        worktree, awaiting review). Phased refactor of the frontend
+STATUS: In progress (4 of 8 phases merged to main). Phased refactor of the frontend
         ahead of the next feature wave (ERV/Pumps/Fans/Thermal-Bridge
         DataTables, Windows/Assemblies builder pages, 3D-Model-Viewer
         feature). Each phase below is a single reviewable PR that
@@ -13,7 +12,7 @@ PROGRESS:
   - [x] Phase 7 — Naming, sentinels, ID-prefix constants (merged ee7a221, 2026-05-25)
   - [x] Phase 6 — Feature-shape standardization (merged 0384d60, 2026-05-25)
   - [x] Phase 1 — Split `data-table/lib.ts` (merged 67e5416, 2026-05-25)
-  - [~] Phase 2 — Extract `useSliceTableController` (committed f34183c on `refactor/p2-slice-table-controller`, awaiting merge)
+  - [x] Phase 2 — Extract `useSliceTableController` (merged dd6dcc2, 2026-05-25)
   - [ ] Phase 3 — Split `WindowsTab.tsx`
   - [ ] Phase 4 — Split `VersionControls.tsx`
   - [ ] Phase 5 — CSS tokenization + per-feature CSS split
@@ -121,7 +120,7 @@ its own §V.
 | **1st** | Phase 7 | Naming, sentinels, ID-prefix constants | Cheapest wins, smallest review surface, no risk | ✅ merged `ee7a221` |
 | **2nd** | Phase 6 | Feature-shape standardization | Locks in the four/seven-layer pattern before any new feature lands | ✅ merged `0384d60` |
 | **3rd** | Phase 1 | Split `data-table/lib.ts` into `lib/{concern}/` | Pure file move; prerequisite for Phase 2 import targets | ✅ merged `67e5416` |
-| **4th** | Phase 2 | Extract `useSliceTableController` + split `EquipmentTab.tsx` | **Biggest leverage** — must precede ERV/Pumps/Fans/TB tabs | ⏸ committed `f34183c`, awaiting merge |
+| **4th** | Phase 2 | Extract `useSliceTableController` + split `EquipmentTab.tsx` | **Biggest leverage** — must precede ERV/Pumps/Fans/TB tabs | ✅ merged `dd6dcc2` |
 | **5th** | Phase 3 | Split `WindowsTab.tsx` into `components/` | Must precede Assemblies builder | ⏳ pending |
 | **6th** | Phase 4 | Split `VersionControls.tsx` + extract state machine | Independent; do before more modals stack | ⏳ pending |
 | **7th** | Phase 5 | CSS tokenization + per-feature CSS split | **Must precede** 3D-Model-Viewer | ⏳ pending |
@@ -263,7 +262,7 @@ on the shim. Phase 1.5 migrates those and deletes the shim.
 
 ---
 
-## Phase 2 — Extract `useSliceTableController` and split `EquipmentTab.tsx` *(execute 4th)* — ⏸ COMMITTED, AWAITING MERGE (branch `refactor/p2-slice-table-controller`, f34183c)
+## Phase 2 — Extract `useSliceTableController` and split `EquipmentTab.tsx` *(execute 4th)* — ✅ COMPLETE (merged dd6dcc2)
 
 ### 2.1 Scope
 
