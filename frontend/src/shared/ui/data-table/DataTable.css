@@ -1172,6 +1172,29 @@
   line-height: 1;
 }
 
+/* Plan 30 D9 — broken-identifier badge in the pinned header. Uses the
+   warning-colour token rather than the locked-schema accent so the
+   user reads "configuration error" rather than "frozen field". */
+.data-table-header-warning {
+  display: inline-flex;
+  align-items: center;
+  color: var(--phn-warning, #b45309);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+/* Plan 30 D13 — duplicate-value chip rendered next to the cell content
+   on identifier cells whose value collides with another row in the
+   same table. Non-blocking; informational only. */
+.data-table-identifier-duplicate {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: var(--phn-warning, #b45309);
+  vertical-align: middle;
+  pointer-events: auto;
+}
+
 .data-table-header-description-trigger {
   border: 0;
   background: transparent;

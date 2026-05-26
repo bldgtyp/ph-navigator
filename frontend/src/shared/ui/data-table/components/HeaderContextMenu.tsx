@@ -34,8 +34,11 @@ export type HeaderContextMenuProps = {
   onSortAsc: () => void;
   onSortDesc: () => void;
   onFilterBy?: () => void;
-  onGroupBy: () => void;
-  onHide: () => void;
+  // Optional so the pinned identifier column and the synthetic
+  // `__record_id__` field can suppress these without forcing the
+  // caller to wire no-op handlers (Plan 30 D7 / P7.5).
+  onGroupBy?: () => void;
+  onHide?: () => void;
 };
 
 type MenuItem = {
@@ -94,10 +97,12 @@ export function HeaderContextMenu({
   if (onFilterBy) {
     items.push({ key: "filter-by", label: "Filter by this field", onSelect: onFilterBy });
   }
-  items.push(
-    { key: "group-by", label: "Group by this field", onSelect: onGroupBy },
-    { key: "hide", label: "Hide field", onSelect: onHide },
-  );
+  if (onGroupBy) {
+    items.push({ key: "group-by", label: "Group by this field", onSelect: onGroupBy });
+  }
+  if (onHide) {
+    items.push({ key: "hide", label: "Hide field", onSelect: onHide });
+  }
   // US-CF-6 criterion 3 — `Insert field left/right` is available on
   // both core and custom fields. Viewer mode never opens the menu at
   // all, so no extra gating here.

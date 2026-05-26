@@ -23,9 +23,13 @@ const columnDefs: DataTableColumnDef<Row>[] = [
   { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
 ];
 
-const buildEmptyRow: BuildEmptyRow<Row> = ({ rowId, fieldDefaults, anchorRow }) => ({
+// Plan 30 D10 — Shift-Enter creates a truly blank row: `fieldDefaults`
+// is sourced from FieldDef.default / natural zero only, never from the
+// anchor row. `anchorRow` remains on the signature for the future
+// explicit "Duplicate record" gesture and is intentionally unused here.
+const buildEmptyRow: BuildEmptyRow<Row> = ({ rowId, fieldDefaults }) => ({
   id: rowId,
-  number: anchorRow ? `${anchorRow.number}-new` : String(fieldDefaults.number ?? ""),
+  number: String(fieldDefaults.number ?? ""),
   name: String(fieldDefaults.name ?? ""),
 });
 
@@ -69,7 +73,10 @@ describe("Shift+Enter row insert", () => {
     expect(op.rows).toHaveLength(1);
     expect(op.rows[0]?.anchorRowId).toBe("rm_1");
     expect(op.rows[0]?.rowId).toMatch(/^tmp_row_/);
-    expect(op.rows[0]?.fieldDefaults).toEqual({ number: "101", name: "Living" });
+    // Plan 30 D10 — defaults come from FieldDef.default / natural
+    // zero, NOT from the anchor row (P-01 / Living). Empty strings
+    // reflect the `default: ""` on both Field types above.
+    expect(op.rows[0]?.fieldDefaults).toEqual({ number: "", name: "" });
   });
 
   test("is a no-op when buildEmptyRow is not provided", async () => {

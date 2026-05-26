@@ -1,8 +1,15 @@
 ---
 DATE: 2026-05-26
 TIME: 11:48 ET (rev 2026-05-26 — decisions resolved)
-STATUS: Ready for implementation. All decisions in P10 are
-        resolved; phases in P6 reflect them.
+STATUS: Phase A landed 2026-05-26 — DataTable infrastructure
+        (`IdentifierConfig` type, pinned-column rendering, Shift-Enter
+        true-blank inserts, `__record_id__` sort plumbing, paste/fill
+        guards, broken-identifier ERROR state, duplicate-value warning
+        chip, unit tests at `__tests__/identifier*.{ts,tsx}`). Phases
+        B (Pumps adopt + uniqueness drop), C (Rooms), and D (catalog /
+        remaining tables) still pending. Durable contract written into
+        `context/technical-requirements/data-table.md` § Identifier
+        Column.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Decouple the DataTable's user-visible "ID" column from the
        hidden record PK, and let each feature declare how that

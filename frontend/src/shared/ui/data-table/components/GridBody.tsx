@@ -1,5 +1,7 @@
 import { flexRender, type Table } from "@tanstack/react-table";
+import { AlertTriangle } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import { describeDuplicateRows } from "../lib/identifier/resolve";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
 import type {
   AxisRoleSubset,
@@ -79,6 +81,13 @@ export type GridBodyProps<TRow> = {
   // (onCellOpen) already gate themselves on the same flag — this is
   // just the render-side mirror so the affordance matches the gesture.
   cellsWritable?: boolean;
+  // Plan 30 D13 — identifier-column id (slot 0 when the consumer
+  // configured an identifier) and a map of rowId → 1-indexed numbers
+  // of other rows sharing the same identifier value. Cells in the
+  // identifier column whose rowId is in the map render a non-blocking
+  // warning chip with a tooltip describing the conflict.
+  identifierColumnId?: string | null;
+  identifierDuplicates?: ReadonlyMap<string, number[]>;
 };
 
 export function GridBody<TRow>({
@@ -110,9 +119,18 @@ export function GridBody<TRow>({
   fillHandleVisible,
   onFillHandleMouseDown,
   cellsWritable = false,
+  identifierColumnId = null,
+  identifierDuplicates,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
+  // Plan 30 D13 — precompute the identifier column index so the
+  // per-cell duplicate-chip check is a single integer compare and
+  // the lookup is skipped entirely when no identifier is configured.
+  const identifierColumnIndex =
+    identifierColumnId === null
+      ? -1
+      : visibleColumnDefs.findIndex((column) => column.id === identifierColumnId);
   let ariaRowIndex = 1; // header row is 1; data + group rows start at 2.
   // TanStack receives `visibleDataRows` as its data source, so
   // `tableRows[i]` aligns with the i-th data item in `bodyPlan`. Walk
@@ -154,6 +172,17 @@ export function GridBody<TRow>({
         const tanstackRow = tableRows[rowIndex];
         if (!tanstackRow) return null;
         const isLastDataRow = rowIndex === rowIds.length - 1;
+        // Hoisted per-row identifier-duplicate lookup; only depends on
+        // rowId, so it doesn't belong inside the per-cell loop.
+        const rowIdForRow = rowIds[rowIndex];
+        const duplicateRowNumbers =
+          identifierColumnIndex >= 0 && rowIdForRow !== undefined
+            ? identifierDuplicates?.get(rowIdForRow)
+            : undefined;
+        const duplicateTooltip =
+          duplicateRowNumbers && duplicateRowNumbers.length > 0
+            ? describeDuplicateRows(duplicateRowNumbers)
+            : "";
         return (
           <tr
             key={tanstackRow.id}
@@ -212,6 +241,12 @@ export function GridBody<TRow>({
               const fieldDef = fieldKey ? fieldDefByKey.get(fieldKey) : undefined;
               const showSelectChevron =
                 !editing && cellsWritable && fieldDef?.field_type === "single_select";
+              // Plan 30 D13 — chip surfaces only on the identifier
+              // column cell of a row whose identifier value collides
+              // with another row. The duplicate lookup and tooltip
+              // formatting are hoisted to the per-row scope above.
+              const showDuplicateChip =
+                columnIndex === identifierColumnIndex && duplicateTooltip !== "";
               return (
                 <td
                   key={cell.id}
@@ -275,6 +310,17 @@ export function GridBody<TRow>({
                         if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
                       }),
                   })}
+                  {showDuplicateChip ? (
+                    <span
+                      className="data-table-identifier-duplicate"
+                      data-testid="data-table-identifier-duplicate"
+                      title={duplicateTooltip}
+                      role="img"
+                      aria-label={duplicateTooltip || "Duplicate identifier"}
+                    >
+                      <AlertTriangle aria-hidden size={12} />
+                    </span>
+                  ) : null}
                   {showSelectChevron ? (
                     <GridChevron
                       onMouseDown={() => onCellOpen(tanstackRow.original, columnIndex)}

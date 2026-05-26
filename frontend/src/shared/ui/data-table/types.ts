@@ -98,6 +98,45 @@ export type AddCustomFieldRequest = {
   insertAfterFieldKey: string | null;
 };
 
+// Plan 30 — declarative identifier column. The pinned column is a
+// user-facing label that is fully decoupled from the hidden record PK
+// (which still drives row identity via `getRowId`). Two resolution
+// shapes:
+//   - "field"    — promote one of the row's existing FieldDef-backed
+//                  columns to the pinned slot. Cell stays editable.
+//   - "computed" — a synthetic, read-only column whose value derives
+//                  from one or more dependency fields.
+//
+// The identifier is never unique-constrained — duplicate display values
+// are allowed; the hidden PK retains row identity.
+export type IdentifierConfig<TRow> =
+  | {
+      kind: "field";
+      // The grid-visible field whose value the pinned column renders.
+      // Must match one of the row's existing FieldDef `field_key`s.
+      field: keyof TRow & string;
+    }
+  | {
+      kind: "computed";
+      // The grid-visible fields the compute callback consults. Listed
+      // here so the broken-identifier ERROR state can surface when a
+      // referenced dep no longer exists in the schema. Empty array is
+      // valid (e.g. an identifier derived from row-level state outside
+      // the field set), but limits the ERROR-state guard.
+      deps: ReadonlyArray<keyof TRow & string>;
+      compute: (row: TRow) => string;
+    };
+
+// Reserved id for the synthetic identifier column. Whitelisted by
+// `sanitizeViewStateForSchema` so persisted ViewState entries (sort,
+// columnWidths) survive schema-fingerprint changes.
+export const IDENTIFIER_COLUMN_ID = "__record_id__";
+
+// Universal header label used by both `kind: "field"` (overrides the
+// backing FieldDef's display_name) and `kind: "computed"` (the
+// synthetic column has no FieldDef to draw from). Per D6.
+export const IDENTIFIER_HEADER_LABEL = "Record-ID";
+
 export type DataTableColumnDef<TRow> = {
   id: string;
   fieldKey: string;
@@ -255,10 +294,12 @@ export type CellRange = {
 };
 
 // Consumer callback used by Shift+Enter row insert (Phase 2). Receives
-// the library-generated tmp rowId, the field-default map (cloned from
-// the anchor row when present, otherwise from `FieldDef.default`), and
-// the anchor row itself so the consumer can copy non-grid fields
-// directly. Consumers that omit this prop disable row insert.
+// the library-generated tmp rowId and the field-default map (per
+// plan-30 D10 always sourced from `FieldDef.default` / natural zero —
+// never from anchor values). `anchorRow` is retained for the future
+// explicit "Duplicate record" right-click action, which will reuse this
+// builder; the Shift-Enter path never reads values from it. Consumers
+// that omit this prop disable row insert.
 export type BuildEmptyRow<TRow> = (args: {
   rowId: string;
   fieldDefaults: Record<string, unknown>;
@@ -274,6 +315,12 @@ export type DataTableProps<TRow> = {
   onViewChange: (next: ViewState) => void;
   onWrite?: (op: WriteOp) => void | Promise<void>;
   buildEmptyRow?: BuildEmptyRow<TRow>;
+  // Plan 30 — declarative identifier column. When provided, DataTable
+  // promotes (kind:"field") or synthesizes (kind:"computed") a pinned
+  // leading column rendered as the user-facing "Record-ID". When
+  // omitted, falls back to today's behavior (columnDefs[0] occupies the
+  // leading slot with no special semantics).
+  identifier?: IdentifierConfig<TRow>;
   // Generate a fresh row id for Shift+Enter inserts. Consumers whose
   // backend enforces a specific id prefix (Rooms: ^rm_...) should pass
   // their own; the library default is `tmp_<ulid>`. Whatever id this

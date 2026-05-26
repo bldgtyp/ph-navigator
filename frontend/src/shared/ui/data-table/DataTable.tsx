@@ -16,7 +16,9 @@ import {
   horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { applyIdentifierConfig, computeIdentifierDuplicates } from "./lib/identifier/resolve";
 import { applyFilters } from "./lib/filter/apply";
+import { IDENTIFIER_COLUMN_ID } from "./types";
 import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
 import { computeAggregatesByPath } from "./lib/body/aggregates";
 import { pruneExpandedGroups } from "./lib/body/prune";
@@ -76,12 +78,13 @@ const EMPTY_FORMULA_FIELD_REGISTRY = stableEmptyArray<FieldRegistryEntry>();
 export function DataTable<TRow>({
   rows,
   getRowId,
-  fieldDefs,
-  columnDefs,
+  fieldDefs: inputFieldDefs,
+  columnDefs: inputColumnDefs,
   view,
   onViewChange,
   onWrite,
   buildEmptyRow,
+  identifier,
   generateRowId,
   sessionKey,
   readOnly = false,
@@ -98,10 +101,42 @@ export function DataTable<TRow>({
   formulaFieldRegistry,
   getFormulaRowValues,
 }: DataTableProps<TRow>) {
-  const visibleColumnDefs = useGridColumns(columnDefs, view.columnOrder, view.hiddenColumns);
+  // Plan 30 — apply the identifier config before everything else. The
+  // returned arrays carry the (possibly promoted or synthesized)
+  // pinned identifier column in slot 0, plus a synthetic FieldDef for
+  // `kind: "computed"` so sort / clipboard / fill see a normal field
+  // entry rather than special-casing the synthetic column.
+  const { columnDefs, fieldDefs, identifierResolution } = useMemo(() => {
+    const result = applyIdentifierConfig<TRow>({
+      identifier,
+      columnDefs: inputColumnDefs,
+      fieldDefs: inputFieldDefs,
+    });
+    return {
+      columnDefs: result.columnDefs,
+      fieldDefs: result.fieldDefs,
+      identifierResolution: result.resolution,
+    };
+  }, [identifier, inputColumnDefs, inputFieldDefs]);
+  // Plan 30 — the identifier column (when configured) pins to slot 0
+  // regardless of `view.columnOrder`. For unconfigured tables, the
+  // legacy convention (columnDefs[0] is the primary) is preserved
+  // because `pinnedId === null` short-circuits the pinning logic.
+  const pinnedColumnId = identifierResolution.columnId;
+  const visibleColumnDefs = useGridColumns(
+    columnDefs,
+    view.columnOrder,
+    view.hiddenColumns,
+    pinnedColumnId,
+  );
   // Hide-fields panel needs hidden columns too, so users can toggle
   // them back on — same hook with no hidden list applied.
-  const orderedColumnsForHidePanel = useGridColumns(columnDefs, view.columnOrder, EMPTY_ID_LIST);
+  const orderedColumnsForHidePanel = useGridColumns(
+    columnDefs,
+    view.columnOrder,
+    EMPTY_ID_LIST,
+    pinnedColumnId,
+  );
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
@@ -116,6 +151,18 @@ export function DataTable<TRow>({
         effectiveSort,
       ),
     [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort],
+  );
+  // Plan 30 §P5 / D13 — duplicate-value warning chip. O(n) over the
+  // post-filter rows, keyed by identifier value; empty values do not
+  // warn. Map row id → 1-indexed numbers of conflicting rows.
+  const identifierDuplicates = useMemo(
+    () =>
+      computeIdentifierDuplicates({
+        resolution: identifierResolution,
+        rows: filteredRows,
+        getRowId,
+      }),
+    [filteredRows, getRowId, identifierResolution],
   );
   // Split aggregates and interleave into separate memos so a chevron
   // toggle (which only mutates `view.expandedGroups`) doesn't re-run
@@ -300,9 +347,13 @@ export function DataTable<TRow>({
     }
     const anchorRow = visibleDataRows[selection.activeCell.rowIndex] ?? null;
     const anchorRowId = anchorRow ? getRowId(anchorRow) : null;
-    const fieldDefaults = anchorRow
-      ? extractRowDefaults(anchorRow, fieldDefs, visibleColumnDefs)
-      : buildEmptyRowDefaults(fieldDefs);
+    // Plan 30 D10 — Shift-Enter creates a truly blank row. Field
+    // defaults are sourced from `FieldDef.default` / natural zero
+    // only — never cloned from the anchor row. The anchor's position
+    // still places the new row below it; the anchor's *values* don't
+    // travel. The explicit "Duplicate record" gesture (out of scope
+    // for this plan) will reuse `buildEmptyRow` with anchor values.
+    const fieldDefaults = buildEmptyRowDefaults(fieldDefs);
     const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
     const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
     const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
@@ -500,19 +551,31 @@ export function DataTable<TRow>({
 
   // `read_only` does NOT exclude a field — filtering on a computed
   // column is a real use case. attachment / argb_color are dropped
-  // because the registry returns no operators for them.
+  // because the registry returns no operators for them. The synthetic
+  // `__record_id__` identifier is **never** filterable (per P7.5 / D5
+  // — sort only; filter/group/aggregation drive through the dep
+  // columns instead).
   const filterableFieldDefs = useMemo(
-    () => fieldDefs.filter((fieldDef) => getFilterOperators(fieldDef).length > 0),
+    () =>
+      fieldDefs.filter(
+        (fieldDef) =>
+          fieldDef.field_key !== IDENTIFIER_COLUMN_ID && getFilterOperators(fieldDef).length > 0,
+      ),
     [fieldDefs],
   );
-  // Sortable and groupable share the same rule: drop only the field
-  // types with no meaningful order.
+  // Sortable picks up the synthetic identifier (lexical sort over
+  // compute output, per D5). Groupable does not — per P7.5 the
+  // computed identifier is not groupable.
   const sortableFieldDefs = useMemo(
     () =>
       fieldDefs.filter(
         (fieldDef) => fieldDef.field_type !== "attachment" && fieldDef.field_type !== "argb_color",
       ),
     [fieldDefs],
+  );
+  const groupableFieldDefs = useMemo(
+    () => sortableFieldDefs.filter((fieldDef) => fieldDef.field_key !== IDENTIFIER_COLUMN_ID),
+    [sortableFieldDefs],
   );
   const handleFilterChange = useCallback(
     (next: FilterCondition[]) => {
@@ -997,7 +1060,7 @@ export function DataTable<TRow>({
           fieldDefByKey={fieldDefByKey}
           filterableFieldDefs={filterableFieldDefs}
           sortableFieldDefs={sortableFieldDefs}
-          groupableFieldDefs={sortableFieldDefs}
+          groupableFieldDefs={groupableFieldDefs}
           orderedColumnsForHidePanel={orderedColumnsForHidePanel}
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
@@ -1124,6 +1187,7 @@ export function DataTable<TRow>({
                   headerActions={headerActions}
                   onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
                   tailCellRef={tailCellRef}
+                  identifierBroken={identifierResolution.broken}
                 />
                 <GridBody
                   table={table}
@@ -1163,6 +1227,8 @@ export function DataTable<TRow>({
                   fillHandleVisible={fill.handleVisible}
                   onFillHandleMouseDown={fill.onHandleMouseDown}
                   cellsWritable={!readOnly && Boolean(onWrite)}
+                  identifierColumnId={identifierResolution.columnId}
+                  identifierDuplicates={identifierDuplicates}
                 />
                 <SummaryBar
                   columns={visibleColumnDefs}
