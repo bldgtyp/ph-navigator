@@ -63,6 +63,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
+      - name: Frontend guards
+        run: pnpm run check:all
       - name: Test
         run: pnpm test
       - name: Build

@@ -1,3 +1,4 @@
+// @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
 import { act, renderHook } from "@testing-library/react";
 import { useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";

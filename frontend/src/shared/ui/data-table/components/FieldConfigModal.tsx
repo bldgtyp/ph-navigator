@@ -1,3 +1,4 @@
+// @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 // Unified field-config modal. Owns the concurrency guards (R-S1 field
 // disappears, R-S2 external edit, R-S3 row mutation during preflight,
 // R-S5 pending-save re-entrancy) so consumers wire only the dispatch

@@ -25,15 +25,15 @@
   width: 100%;
   text-align: left;
   background: transparent;
-  border: 1px solid var(--border-subtle, #d4d4d8);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 8px 10px;
   cursor: pointer;
 }
 
 .windows-sidebar button.active {
-  border-color: var(--accent, #2563eb);
-  background: var(--bg-emphasized, #eff6ff);
+  border-color: var(--accent);
+  background: var(--bg-elev);
 }
 
 .windows-detail-header h3 {
@@ -47,10 +47,10 @@
 }
 
 .window-element-card {
-  border: 1px solid var(--border-subtle, #d4d4d8);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px 16px;
-  background: var(--bg-surface, #fff);
+  background: var(--bg-card);
 }
 
 .window-element-card h4 {
@@ -74,7 +74,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
 }
 
 .window-slot-detail {
@@ -101,8 +101,8 @@
   padding: 1px 6px;
   font-size: 11px;
   border-radius: 4px;
-  background: var(--bg-emphasized, #eef2ff);
-  color: var(--accent, #2563eb);
+  background: var(--bg-elev);
+  color: var(--accent);
 }
 
 .override-badge {
@@ -110,8 +110,8 @@
   padding: 1px 6px;
   font-size: 11px;
   border-radius: 4px;
-  background: var(--bg-warning, #fef3c7);
-  color: #92400e;
+  background: var(--phn-warning-bg);
+  color: var(--phn-warning);
 }
 
 .refresh-slot-button {
@@ -145,11 +145,11 @@
   flex-direction: column;
   gap: 6px;
   padding-top: 10px;
-  border-top: 1px solid var(--border-subtle, #d4d4d8);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .refresh-review-group > span {
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -178,7 +178,7 @@
 
 .refresh-review-row-label,
 .refresh-review-row-meta {
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -196,7 +196,7 @@
   margin: 0;
   padding: 10px 0;
   border: 0;
-  border-top: 1px solid var(--border-subtle, #d4d4d8);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .refresh-field-row legend {
@@ -216,7 +216,7 @@
 .refresh-values code {
   padding: 2px 5px;
   border-radius: 4px;
-  background: var(--bg-muted, #f4f4f5);
+  background: var(--bg-elev);
   font-size: 12px;
 }
 

@@ -7,7 +7,7 @@
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
-        lint format smoke seed-dev-user e2e e2e-report clean
+        lint check-frontend format smoke seed-dev-user e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -107,6 +107,9 @@ e2e-report: ## Open the last Playwright HTML report
 lint: ## Run linters (ruff + eslint)
 	cd backend && uvx ruff check .
 	cd frontend && pnpm run lint
+
+check-frontend: ## Run frontend structural guard checks
+	cd frontend && pnpm run check:all
 
 format: ## Auto-format code
 	cd backend && uvx ruff format .
