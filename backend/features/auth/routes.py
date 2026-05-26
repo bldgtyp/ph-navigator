@@ -7,13 +7,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response
 
-from features.auth.models import AuthSessionResponse, LoginRequest, UserPublic
+from features.auth.models import AuthSessionResponse, LoginRequest, UserPreferencesUpdateRequest, UserPublic
 from features.auth.service import (
     authenticate,
     clear_session_cookie,
     current_user_from_request,
     set_session_cookie,
     sign_out,
+    update_units_preference,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -40,6 +41,16 @@ def login(payload: LoginRequest, request: Request, response: Response) -> AuthSe
 def session(auth: tuple[UserPublic, datetime] = Depends(require_current_user)) -> AuthSessionResponse:
     user, expires_at = auth
     return AuthSessionResponse(user=user, expires_at=expires_at)
+
+
+@router.patch("/preferences", response_model=AuthSessionResponse)
+def update_preferences(
+    payload: UserPreferencesUpdateRequest,
+    request: Request,
+    auth: tuple[UserPublic, datetime] = Depends(require_current_user),
+) -> AuthSessionResponse:
+    user, expires_at = auth
+    return update_units_preference(user, expires_at, payload.units_preference, request)
 
 
 @router.post("/logout", status_code=204)

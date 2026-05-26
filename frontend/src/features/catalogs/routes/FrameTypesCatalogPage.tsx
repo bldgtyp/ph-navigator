@@ -1,12 +1,18 @@
 import "../catalogs.css";
 import { type ReactNode, useState } from "react";
+import {
+  formatLengthFromMm,
+  formatLinearPsiFromWmK,
+  formatUValueFromWm2K,
+  useUnitPreference,
+} from "../../../lib/units";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import { FrameTypeEditorModal } from "../components/FrameTypeEditorModal";
-import { formatNumber } from "../components/form-helpers";
+import { lengthUnitLabel, psiUnitLabel, uValueUnitLabel } from "../components/unit-labels";
 import {
   useDeactivateFrameTypeMutation,
   useFrameTypesQuery,
@@ -21,6 +27,7 @@ type EditorState =
   | { kind: "edit"; record: CatalogFrameType };
 
 export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
+  const { unitSystem } = useUnitPreference();
   const [includeInactive, setIncludeInactive] = useState(false);
   const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
   const itemsQuery = useFrameTypesQuery(includeInactive);
@@ -72,10 +79,10 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
               <th scope="col">Name</th>
               <th scope="col">Manufacturer</th>
               <th scope="col">Brand</th>
-              <th scope="col">Width (mm)</th>
-              <th scope="col">U-value (W/m²·K)</th>
-              <th scope="col">Ψ-glazing (W/m·K)</th>
-              <th scope="col">Ψ-install (W/m·K)</th>
+              <th scope="col">Width ({lengthUnitLabel(unitSystem)})</th>
+              <th scope="col">U-value ({uValueUnitLabel(unitSystem)})</th>
+              <th scope="col">Ψ-glazing ({psiUnitLabel(unitSystem)})</th>
+              <th scope="col">Ψ-install ({psiUnitLabel(unitSystem)})</th>
               <th scope="col">Version</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
@@ -87,10 +94,17 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
                 <td>{record.name}</td>
                 <td>{record.manufacturer ?? "—"}</td>
                 <td>{record.brand ?? "—"}</td>
-                <td>{formatNumber(record.width_mm, 1)}</td>
-                <td>{formatNumber(record.u_value_w_m2k)}</td>
-                <td>{formatNumber(record.psi_g_w_mk)}</td>
-                <td>{formatNumber(record.psi_install_w_mk)}</td>
+                <td>{formatLengthFromMm(record.width_mm, { unitSystem, showUnit: false })}</td>
+                <td>{formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}</td>
+                <td>
+                  {formatLinearPsiFromWmK(record.psi_g_w_mk, { unitSystem, showUnit: false })}
+                </td>
+                <td>
+                  {formatLinearPsiFromWmK(record.psi_install_w_mk, {
+                    unitSystem,
+                    showUnit: false,
+                  })}
+                </td>
                 <td>
                   {record.version_label} · {record.version_date}
                 </td>

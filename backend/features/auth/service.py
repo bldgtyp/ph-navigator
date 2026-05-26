@@ -12,7 +12,7 @@ from starlette import status
 from config import settings
 from database import connection, transaction
 from features.auth import repository
-from features.auth.models import UserPublic
+from features.auth.models import AuthSessionResponse, UnitSystem, UserPublic
 from features.auth.passwords import hash_password, verify_password
 from features.shared.errors import api_error
 from features.shared.http import client_ip
@@ -39,7 +39,13 @@ def public_user(row: dict[str, object]) -> UserPublic:
     user_id = row["id"]
     if not isinstance(user_id, UUID):
         user_id = UUID(str(user_id))
-    return UserPublic(id=user_id, email=str(row["email"]), display_name=str(row["display_name"]))
+    units_preference = row.get("units_preference", "SI")
+    return UserPublic(
+        id=user_id,
+        email=str(row["email"]),
+        display_name=str(row["display_name"]),
+        units_preference="IP" if units_preference == "IP" else "SI",
+    )
 
 
 def set_session_cookie(response: Response, session_id: UUID, expires_at: datetime) -> None:
@@ -210,6 +216,31 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
         raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
     structlog.contextvars.bind_contextvars(user_id=str(result[0].id))
     return result
+
+
+def update_units_preference(
+    user: UserPublic,
+    expires_at: datetime,
+    units_preference: UnitSystem,
+    request: Request,
+) -> AuthSessionResponse:
+    with transaction() as conn:
+        current = repository.get_user_by_id(conn, user.id)
+        if current is None or not current["is_active"]:
+            raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
+        before = str(current["units_preference"])
+        updated = repository.update_user_units_preference(conn, user.id, units_preference)
+        repository.log_action(
+            conn,
+            action="auth.units_preference.updated",
+            user_id=user.id,
+            email=str(updated["email"]),
+            session_id=None,
+            ip_address=client_ip(request),
+            user_agent=user_agent(request),
+            details={"before": before, "after": units_preference},
+        )
+    return AuthSessionResponse(user=public_user(updated), expires_at=expires_at)
 
 
 def sign_out(request: Request) -> None:

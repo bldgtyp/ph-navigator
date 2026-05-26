@@ -7,7 +7,7 @@ existing per-property cores in the order that preserves their
 individual semantics; it never widens the allowed change set.
 
 Sub-step order (numbered comments below mirror plan-21 §3.3a):
-    1. Identity (id / field_key immutability)
+    1. Identity (field_key immutability)
     2. Display-name uniqueness
     3. Description clamp
     4. Field-def replace (display_name / description / config)
@@ -26,7 +26,7 @@ from typing import cast
 from starlette import status
 
 from features.project_document.custom_fields import (
-    CUSTOM_FIELD_DESCRIPTION_MAX,
+    FIELD_DESCRIPTION_MAX,
     CustomFieldType,
 )
 from features.project_document.document import ProjectDocumentV1
@@ -47,7 +47,7 @@ from features.project_document.mutations.options_ops import (
 )
 from features.project_document.mutations.type_conversion import apply_change_type
 from features.project_document.options import option_list_key
-from features.project_document.tables.contracts import CustomFieldCapability
+from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = ["apply_edit_field_bundle"]
@@ -56,7 +56,7 @@ __all__ = ["apply_edit_field_bundle"]
 def apply_edit_field_bundle(
     body: ProjectDocumentV1,
     mutation: EditFieldBundleMutation,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     """Apply rename + description + options + type-change + formula in one tx.
 
@@ -64,24 +64,17 @@ def apply_edit_field_bundle(
     stays identical to the matching one-property mutations. Final
     document validation runs in the outer `apply_schema_mutation`.
     """
-    current_fields = capability.read_custom_fields(body)
+    current_fields = capability.read_field_defs(body)
     index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
     after = mutation.after
 
     # --- 1. Identity ---
-    if after.id != mutation.field_id:
+    if after.field_key != mutation.field_id:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "custom_field_invalid_field_id",
             "editFieldBundle target id must equal field_id.",
-            {"field_id": after.id, "expected_field_id": mutation.field_id},
-        )
-    if after.field_key != existing.field_key:
-        raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "custom_field_invalid_field_id",
-            "editFieldBundle may not modify field_key.",
-            {"field_id": mutation.field_id, "disallowed_attribute": "field_key"},
+            {"field_id": after.field_key, "expected_field_id": mutation.field_id},
         )
 
     properties_changed: list[str] = []
@@ -90,15 +83,14 @@ def apply_edit_field_bundle(
     if after.display_name != existing.display_name:
         reject_duplicate_display_name(
             current_fields,
-            capability.core_display_names,
             after.display_name,
-            skip_field_id=mutation.field_id,
+            skip_field_key=mutation.field_id,
         )
         properties_changed.append("display_name")
 
     # --- 3. Description clamp ---
     raw_description = after.description
-    clamped_description = None if raw_description is None else raw_description[:CUSTOM_FIELD_DESCRIPTION_MAX]
+    clamped_description = None if raw_description is None else raw_description[:FIELD_DESCRIPTION_MAX]
     if clamped_description != existing.description:
         properties_changed.append("description")
 
@@ -160,7 +152,7 @@ def apply_edit_field_bundle(
         properties_changed.append("field_type")
         # After change_type ran, re-read fields so we can layer the
         # display_name / description / final config changes on top.
-        current_fields = capability.read_custom_fields(next_body)
+        current_fields = capability.read_field_defs(next_body)
         index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
     elif after.field_type is CustomFieldType.single_select and mutation.next_options is not None:
         # Same-type single_select option-list edit. Reuse editOptions.
@@ -183,7 +175,7 @@ def apply_edit_field_bundle(
         if pre_list != post_list:
             properties_changed.append("options")
         # Re-read after the option list change.
-        current_fields = capability.read_custom_fields(next_body)
+        current_fields = capability.read_field_defs(next_body)
         index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
 
     # --- 4. Field def replace (display_name / description / config) ---
@@ -200,7 +192,7 @@ def apply_edit_field_bundle(
     )
     next_fields = list(current_fields)
     next_fields[index] = final_field
-    next_body = capability.replace_custom_fields(next_body, next_fields)
+    next_body = capability.replace_field_defs(next_body, next_fields)
 
     # --- 5. Formula source change (when target is formula) ---
     if final_field.field_type is CustomFieldType.formula and mutation.formula_source is not None:
@@ -226,7 +218,7 @@ def apply_edit_field_bundle(
         final_options = next_body.single_select_options.get(namespace_key, [])
         final_ids = {opt.id for opt in final_options}
         # Re-read final field after potential rewrites.
-        post_fields = capability.read_custom_fields(next_body)
+        post_fields = capability.read_field_defs(next_body)
         _, post_field = find_field(post_fields, mutation.field_id, mutation.table_key)
         validate_default_option_id(post_field, final_ids)
         if existing.field_type is CustomFieldType.single_select and existing.config.get(

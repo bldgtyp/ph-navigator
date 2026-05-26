@@ -1,4 +1,5 @@
 import { fetchJson } from "../../shared/api/client";
+import type { UnitSystem } from "../../lib/units/types";
 import type { AuthSession } from "./types";
 
 export async function fetchCurrentSession(signal?: AbortSignal): Promise<AuthSession> {
@@ -14,4 +15,11 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
 
 export async function signOut(): Promise<void> {
   await fetchJson<void>("/api/v1/auth/logout", { method: "POST" });
+}
+
+export async function updateUnitsPreference(unitsPreference: UnitSystem): Promise<AuthSession> {
+  return fetchJson<AuthSession>("/api/v1/auth/preferences", {
+    method: "PATCH",
+    body: JSON.stringify({ units_preference: unitsPreference }),
+  });
 }

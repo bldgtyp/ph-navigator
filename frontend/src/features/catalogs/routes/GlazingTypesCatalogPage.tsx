@@ -1,5 +1,6 @@
 import "../catalogs.css";
 import { type ReactNode, useState } from "react";
+import { formatUValueFromWm2K, useUnitPreference } from "../../../lib/units";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
@@ -7,6 +8,7 @@ import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import { GlazingTypeEditorModal } from "../components/GlazingTypeEditorModal";
 import { formatNumber } from "../components/form-helpers";
+import { uValueUnitLabel } from "../components/unit-labels";
 import {
   useDeactivateGlazingTypeMutation,
   useGlazingTypesQuery,
@@ -21,6 +23,7 @@ type EditorState =
   | { kind: "edit"; record: CatalogGlazingType };
 
 export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
+  const { unitSystem } = useUnitPreference();
   const [includeInactive, setIncludeInactive] = useState(false);
   const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
   const itemsQuery = useGlazingTypesQuery(includeInactive);
@@ -72,7 +75,7 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
               <th scope="col">Name</th>
               <th scope="col">Manufacturer</th>
               <th scope="col">Brand</th>
-              <th scope="col">U-value (W/m²·K)</th>
+              <th scope="col">U-value ({uValueUnitLabel(unitSystem)})</th>
               <th scope="col">g-value</th>
               <th scope="col">Version</th>
               <th scope="col">Status</th>
@@ -85,7 +88,7 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
                 <td>{record.name}</td>
                 <td>{record.manufacturer ?? "—"}</td>
                 <td>{record.brand ?? "—"}</td>
-                <td>{formatNumber(record.u_value_w_m2k)}</td>
+                <td>{formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}</td>
                 <td>{formatNumber(record.g_value, 2)}</td>
                 <td>
                   {record.version_label} · {record.version_date}

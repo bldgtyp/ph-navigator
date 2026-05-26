@@ -1,9 +1,20 @@
 import { type FormEvent, useEffect, useState } from "react";
+import {
+  formatConductivityFromWmK,
+  formatDensityFromKgM3,
+  formatSpecificHeatFromJKgK,
+  parseConductivityToWmK,
+  parseDensityToKgM3,
+  parseSpecificHeatToJKgK,
+  useUnitPreference,
+  type UnitFormatOptions,
+} from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import type { CatalogMaterial, CatalogMaterialCreatePayload } from "../types";
-import { editorSubmitLabel, todayIso } from "./form-helpers";
+import { editorSubmitLabel, parseOptionalNumber, parseOptionalUnitNumber, todayIso } from "./form-helpers";
+import { conductivityUnitLabel, densityUnitLabel, specificHeatUnitLabel } from "./unit-labels";
 
 type FormState = {
   name: string;
@@ -35,7 +46,7 @@ function emptyForm(): FormState {
   };
 }
 
-function formFromMaterial(material: CatalogMaterial): FormState {
+function formFromMaterial(material: CatalogMaterial, unitOptions: UnitFormatOptions): FormState {
   const numberOrEmpty = (value: number | null): string =>
     value === null || value === undefined ? "" : String(value);
   const stringOrEmpty = (value: string | null): string => value ?? "";
@@ -44,9 +55,9 @@ function formFromMaterial(material: CatalogMaterial): FormState {
     category: material.category,
     version_label: material.version_label,
     version_date: material.version_date,
-    conductivity_w_mk: numberOrEmpty(material.conductivity_w_mk),
-    density_kg_m3: numberOrEmpty(material.density_kg_m3),
-    specific_heat_j_kgk: numberOrEmpty(material.specific_heat_j_kgk),
+    conductivity_w_mk: formatConductivityFromWmK(material.conductivity_w_mk, unitOptions),
+    density_kg_m3: formatDensityFromKgM3(material.density_kg_m3, unitOptions),
+    specific_heat_j_kgk: formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, unitOptions),
     emissivity: numberOrEmpty(material.emissivity),
     argb_color: stringOrEmpty(material.argb_color),
     notes: stringOrEmpty(material.notes),
@@ -54,21 +65,14 @@ function formFromMaterial(material: CatalogMaterial): FormState {
   };
 }
 
-function parseOptionalNumber(value: string): number | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-}
-
-function toCreatePayload(form: FormState): CatalogMaterialCreatePayload {
+function toCreatePayload(form: FormState, unitOptions: UnitFormatOptions): CatalogMaterialCreatePayload {
   const payload: CatalogMaterialCreatePayload = {
     name: form.name.trim(),
     category: form.category.trim(),
     version_label: form.version_label.trim() || "v1",
-    conductivity_w_mk: parseOptionalNumber(form.conductivity_w_mk),
-    density_kg_m3: parseOptionalNumber(form.density_kg_m3),
-    specific_heat_j_kgk: parseOptionalNumber(form.specific_heat_j_kgk),
+    conductivity_w_mk: parseOptionalUnitNumber(form.conductivity_w_mk, parseConductivityToWmK, unitOptions),
+    density_kg_m3: parseOptionalUnitNumber(form.density_kg_m3, parseDensityToKgM3, unitOptions),
+    specific_heat_j_kgk: parseOptionalUnitNumber(form.specific_heat_j_kgk, parseSpecificHeatToJKgK, unitOptions),
     emissivity: parseOptionalNumber(form.emissivity),
     argb_color: form.argb_color.trim() || null,
     notes: form.notes.trim() || null,
@@ -83,16 +87,13 @@ function toCreatePayload(form: FormState): CatalogMaterialCreatePayload {
   return payload;
 }
 
-function hasInvalidNumber(form: FormState): boolean {
+function hasInvalidNumber(form: FormState, unitOptions: UnitFormatOptions): boolean {
   return [
-    form.conductivity_w_mk,
-    form.density_kg_m3,
-    form.specific_heat_j_kgk,
-    form.emissivity,
-  ].some((field) => {
-    const parsed = parseOptionalNumber(field);
-    return Number.isNaN(parsed);
-  });
+    parseOptionalUnitNumber(form.conductivity_w_mk, parseConductivityToWmK, unitOptions),
+    parseOptionalUnitNumber(form.density_kg_m3, parseDensityToKgM3, unitOptions),
+    parseOptionalUnitNumber(form.specific_heat_j_kgk, parseSpecificHeatToJKgK, unitOptions),
+    parseOptionalNumber(form.emissivity),
+  ].some((field) => Number.isNaN(field));
 }
 
 export function MaterialEditorModal({
@@ -104,8 +105,15 @@ export function MaterialEditorModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { unitSystem } = useUnitPreference();
+  const [formUnitSystem] = useState(unitSystem);
+  const unitOptions: UnitFormatOptions = {
+    unitSystem: formUnitSystem,
+    showUnit: false,
+    empty: "",
+  };
   const [form, setForm] = useState<FormState>(() =>
-    material ? formFromMaterial(material) : emptyForm(),
+    material ? formFromMaterial(material, unitOptions) : emptyForm(),
   );
   const isEdit = material !== null;
   const createMutation = useCreateMaterialMutation();
@@ -113,19 +121,22 @@ export function MaterialEditorModal({
   const activeMutation = isEdit ? updateMutation : createMutation;
 
   useEffect(() => {
-    setForm(material ? formFromMaterial(material) : emptyForm());
+    setForm(material ? formFromMaterial(material, unitOptions) : emptyForm());
+    // Unit system is intentionally frozen while the modal is open so an
+    // in-progress edit is not rewritten under the cursor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [material]);
 
   const canSubmit =
     form.name.trim().length > 0 &&
     form.category.trim().length > 0 &&
-    !hasInvalidNumber(form) &&
+    !hasInvalidNumber(form, unitOptions) &&
     !activeMutation.isPending;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
-    const payload = toCreatePayload(form);
+    const payload = toCreatePayload(form, unitOptions);
     if (isEdit && material) {
       updateMutation.mutate({ id: material.id, payload }, { onSuccess: onSaved });
     } else {
@@ -183,7 +194,7 @@ export function MaterialEditorModal({
           />
         </label>
         <label>
-          <span>Conductivity (W/m·K)</span>
+          <span>Conductivity ({conductivityUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.conductivity_w_mk}
@@ -193,7 +204,7 @@ export function MaterialEditorModal({
           />
         </label>
         <label>
-          <span>Density (kg/m³)</span>
+          <span>Density ({densityUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.density_kg_m3}
@@ -203,7 +214,7 @@ export function MaterialEditorModal({
           />
         </label>
         <label>
-          <span>Specific heat (J/kg·K)</span>
+          <span>Specific heat ({specificHeatUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
             value={form.specific_heat_j_kgk}

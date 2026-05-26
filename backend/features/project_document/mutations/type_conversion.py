@@ -38,7 +38,7 @@ from features.project_document.options import (
     remove_option_list,
     validate_option_list,
 )
-from features.project_document.tables.contracts import CustomFieldCapability
+from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = ["apply_change_type"]
@@ -136,7 +136,7 @@ def _try_coerce_for_change_type(
 def _materialize_options_for_text_to_select(
     rows: list[object],
     field_id: str,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> tuple[list[SingleSelectOption], list[tuple[str, object, str]]]:
     """Enumerate distinct trimmed non-empty source values into options.
 
@@ -148,8 +148,8 @@ def _materialize_options_for_text_to_select(
     overflow: list[tuple[str, object, str]] = []
     order_index = 0
     for row in rows:
-        custom = capability.read_row_custom(row)
-        raw_value = custom.get(field_id)
+        custom_values = capability.read_row_custom_values(row)
+        raw_value = custom_values.get(field_id)
         if not isinstance(raw_value, str):
             continue
         stripped = raw_value.strip()
@@ -177,19 +177,19 @@ def _materialize_options_for_text_to_select(
 def apply_change_type(
     body: ProjectDocumentV1,
     mutation: ChangeTypeMutation,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
     *,
     client_options: list[SingleSelectOption] | None = None,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    current_fields = capability.read_custom_fields(body)
+    current_fields = capability.read_field_defs(body)
     index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
 
-    if mutation.after.id != mutation.field_id:
+    if mutation.after.field_key != mutation.field_id:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "custom_field_invalid_field_id",
             "changeType target id must equal the source field id.",
-            {"field_id": mutation.after.id, "expected_field_id": mutation.field_id},
+            {"field_id": mutation.after.field_key, "expected_field_id": mutation.field_id},
         )
     if mutation.after.field_type == existing.field_type:
         raise api_error(
@@ -201,9 +201,10 @@ def apply_change_type(
     # Disallow silent metadata rewrites during a type change — only
     # field_type and config may differ. `created_at` and `created_by`
     # are preserved server-side (clients aren't required to round-trip
-    # them exactly), but `display_name`, `field_key`, and `description`
-    # must match the stored field.
-    for attr in ("display_name", "field_key", "description"):
+    # them exactly), but `display_name` and `description` must match
+    # the stored field. `field_key` identity is already enforced by
+    # the equality check above.
+    for attr in ("display_name", "description"):
         if getattr(mutation.after, attr) != getattr(existing, attr):
             raise api_error(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -257,8 +258,8 @@ def apply_change_type(
     compatible_writes: list[tuple[str, object | None]] = []
     for row in rows:
         row_id = str(getattr(row, "id", ""))
-        custom = capability.read_row_custom(row)
-        raw_value = custom.get(mutation.field_id)
+        custom_values = capability.read_row_custom_values(row)
+        raw_value = custom_values.get(mutation.field_id)
         if policy == "substitute_labels" and label_lookup_for_substitute is not None:
             if raw_value is None or raw_value == "":
                 compatible_writes.append((row_id, None))
@@ -333,7 +334,7 @@ def apply_change_type(
     next_fields[index] = mutation.after.model_copy(
         update={"created_by": existing.created_by, "created_at": existing.created_at}
     )
-    next_body = capability.replace_custom_fields(body, next_fields)
+    next_body = capability.replace_field_defs(body, next_fields)
 
     # Handle option-list namespace changes.
     if policy == "create_options":
@@ -343,7 +344,7 @@ def apply_change_type(
         namespace_key = option_list_key(capability.table_path, mutation.field_id)
         next_body = remove_option_list(next_body, namespace_key)
 
-    # Apply row writes. `capability.replace_custom_fields` does not
+    # Apply row writes. `capability.replace_field_defs` does not
     # touch the row list, so we can reuse the `rows` we already iterated
     # for preflight and skip a second envelope read.
     write_by_row: dict[str, CustomValue] = {row_id: cast(CustomValue, value) for row_id, value in compatible_writes}
@@ -353,17 +354,17 @@ def apply_change_type(
     for row in rows:
         row_id = str(getattr(row, "id", ""))
         if row_id in write_by_row:
-            custom = dict(capability.read_row_custom(row))
+            custom = dict(capability.read_row_custom_values(row))
             value = write_by_row[row_id]
             if value is None:
                 custom.pop(mutation.field_id, None)
             else:
                 custom[mutation.field_id] = value
-            new_rows.append(capability.set_row_custom(row, custom))
+            new_rows.append(capability.set_row_custom_values(row, custom))
         elif row_id in incompatible_by_row:
-            custom = dict(capability.read_row_custom(row))
+            custom = dict(capability.read_row_custom_values(row))
             custom.pop(mutation.field_id, None)
-            new_rows.append(capability.set_row_custom(row, custom))
+            new_rows.append(capability.set_row_custom_values(row, custom))
         else:
             new_rows.append(row)
     next_body = replace_rows_in_envelope(next_body, mutation.table_key, new_rows)

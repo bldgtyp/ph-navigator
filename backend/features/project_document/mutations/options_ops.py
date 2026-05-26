@@ -1,6 +1,6 @@
 """`editOptions` dispatcher and the option-target / default-id helpers.
 
-Resolves a target field id to its option-list namespace (core or
+Resolves a target field key to its option-list namespace (built-in or
 custom), validates the next option list, cascades deletions to row
 values, and rewrites `body.single_select_options`. The helpers
 `resolve_option_target` and `validate_default_option_id` are reused by
@@ -12,17 +12,18 @@ from __future__ import annotations
 from starlette import status
 
 from features.project_document.custom_fields import (
-    CustomFieldDef,
     CustomFieldType,
+    TableFieldDef,
 )
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
 from features.project_document.mutations.guards import (
+    find_field,
     read_rows_from_envelope,
     replace_rows_in_envelope,
 )
 from features.project_document.mutations.models import EditOptionsMutation
 from features.project_document.options import option_list_key, validate_option_list
-from features.project_document.tables.contracts import CustomFieldCapability
+from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = [
@@ -34,43 +35,46 @@ __all__ = [
 
 def resolve_option_target(
     body: ProjectDocumentV1,
-    field_id: str,
+    field_key: str,
     table_key: str,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> tuple[bool, str, list[SingleSelectOption]]:
-    """Return (is_custom, namespace_key, current_options) for a field id.
+    """Return (in_custom_values, namespace_key, current_options) for a field key.
 
-    Raises `custom_field_invalid_field_id` if the field is neither a
-    core single-select nor a custom single-select.
+    `in_custom_values` is False for locked-type built-in single-selects
+    (typed columns); True for mutable-type built-ins and customs whose
+    values live in `row.custom_values`. Raises
+    `custom_field_invalid_field_id` if the field is neither a built-in
+    single-select nor a custom single-select.
     """
-    core_key = capability.core_option_key_by_field_id.get(field_id)
-    if core_key is not None:
-        return False, core_key, list(body.single_select_options.get(core_key, []))
-    custom_fields = capability.read_custom_fields(body)
-    for field in custom_fields:
-        if field.id == field_id:
+    built_in_namespace = capability.built_in_option_key_by_field_key.get(field_key)
+    if built_in_namespace is not None:
+        return False, built_in_namespace, list(body.single_select_options.get(built_in_namespace, []))
+    field_defs = capability.read_field_defs(body)
+    for field in field_defs:
+        if field.field_key == field_key:
             if field.field_type is not CustomFieldType.single_select:
                 raise api_error(
                     status.HTTP_422_UNPROCESSABLE_ENTITY,
                     "custom_field_invalid_field_id",
                     "Cannot edit options on a non-single_select field.",
                     {
-                        "field_id": field_id,
+                        "field_id": field_key,
                         "table_key": table_key,
                         "reason": "field_type_not_single_select",
                     },
                 )
-            namespace_key = option_list_key(capability.table_path, field_id)
+            namespace_key = option_list_key(capability.table_path, field_key)
             return True, namespace_key, list(body.single_select_options.get(namespace_key, []))
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_invalid_field_id",
         "Field id was not found as a single-select column.",
-        {"field_id": field_id, "table_key": table_key},
+        {"field_id": field_key, "table_key": table_key},
     )
 
 
-def validate_default_option_id(field: CustomFieldDef, next_option_ids: set[str]) -> None:
+def validate_default_option_id(field: TableFieldDef, next_option_ids: set[str]) -> None:
     """Ensure single-select `config.default_option_id` (if set) is a real option.
 
     Atomically validated with option-list mutations so a pending
@@ -89,7 +93,7 @@ def validate_default_option_id(field: CustomFieldDef, next_option_ids: set[str])
             "custom_field_option_list_invalid",
             "default_option_id must be a string option id or null.",
             {
-                "field_id": field.id,
+                "field_id": field.field_key,
                 "reason": "default_option_id_not_string",
             },
         )
@@ -99,7 +103,7 @@ def validate_default_option_id(field: CustomFieldDef, next_option_ids: set[str])
             "custom_field_option_list_invalid",
             "default_option_id must reference an option in the field's option list.",
             {
-                "field_id": field.id,
+                "field_id": field.field_key,
                 "reason": "default_option_id_not_in_options",
                 "default_option_id": raw,
             },
@@ -109,9 +113,9 @@ def validate_default_option_id(field: CustomFieldDef, next_option_ids: set[str])
 def apply_edit_options(
     body: ProjectDocumentV1,
     mutation: EditOptionsMutation,
-    capability: CustomFieldCapability,
+    capability: TableFieldRegistry,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    is_custom, namespace_key, current_options = resolve_option_target(
+    in_custom_values, namespace_key, current_options = resolve_option_target(
         body, mutation.field_id, mutation.table_key, capability
     )
     validate_option_list(mutation.next_options)
@@ -120,31 +124,27 @@ def apply_edit_options(
     next_ids = {option.id for option in mutation.next_options}
     deleted_ids = current_ids - next_ids
 
-    # If this is a custom single-select with a configured default,
-    # validate the default still exists in next_options. If the
-    # default was deleted, this is a hard error — the caller (the
-    # modal) is expected to strip the default in the same write via
-    # `editFieldBundle`; the raw `editOptions` mutation refuses to
-    # silently clear it.
-    if is_custom:
-        current_fields = capability.read_custom_fields(body)
-        for field in current_fields:
-            if field.id == mutation.field_id:
-                validate_default_option_id(field, next_ids)
-                break
+    # If this field stores its value in `custom_values` and has a
+    # configured default, validate the default still exists in
+    # next_options. The caller (the modal) is expected to strip the
+    # default in the same write via `editFieldBundle` when needed;
+    # the raw `editOptions` mutation refuses to silently clear it.
+    if in_custom_values:
+        _, field = find_field(capability.read_field_defs(body), mutation.field_id, mutation.table_key)
+        validate_default_option_id(field, next_ids)
 
-    # Required core single-select fields cannot be cleared on referenced
-    # deletes — caller must supply replacement option ids.
-    if not is_custom and mutation.field_id in capability.required_core_select_fields and deleted_ids:
+    # Required built-in single-select fields cannot be cleared on
+    # referenced deletes — caller must supply replacement option ids.
+    if not in_custom_values and mutation.field_id in capability.required_field_keys and deleted_ids:
         for deleted_id in deleted_ids:
             replacement = mutation.replacements.get(deleted_id)
             if replacement is None:
                 raise api_error(
                     status.HTTP_422_UNPROCESSABLE_ENTITY,
                     "custom_field_option_list_invalid",
-                    "Required core single-select option deletion requires a replacement.",
+                    "Required built-in single-select option deletion requires a replacement.",
                     {
-                        "reason": "required_core_select_delete_without_replacement",
+                        "reason": "required_built_in_select_delete_without_replacement",
                         "deleted_option_id": deleted_id,
                         "field_id": mutation.field_id,
                     },
@@ -168,22 +168,22 @@ def apply_edit_options(
         rows = read_rows_from_envelope(next_body, mutation.table_key)
         next_rows: list[object] = []
         for row in rows:
-            if is_custom:
-                custom = capability.read_row_custom(row)
-                current_value = custom.get(mutation.field_id)
+            if in_custom_values:
+                custom_values = capability.read_row_custom_values(row)
+                current_value = custom_values.get(mutation.field_id)
                 if isinstance(current_value, str) and current_value in deleted_ids:
                     cleared_row_count += 1
-                    new_custom = dict(custom)
+                    new_custom = dict(custom_values)
                     new_custom[mutation.field_id] = None
-                    next_rows.append(capability.set_row_custom(row, new_custom))
+                    next_rows.append(capability.set_row_custom_values(row, new_custom))
                 else:
                     next_rows.append(row)
             else:
-                current_value = capability.read_core_option_value(row, mutation.field_id)
+                current_value = capability.read_built_in_option_value(row, mutation.field_id)
                 if isinstance(current_value, str) and current_value in deleted_ids:
                     cleared_row_count += 1
                     replacement = mutation.replacements.get(current_value)
-                    next_rows.append(capability.set_core_option_value(row, mutation.field_id, replacement))
+                    next_rows.append(capability.set_built_in_option_value(row, mutation.field_id, replacement))
                 else:
                     next_rows.append(row)
         next_body = replace_rows_in_envelope(next_body, mutation.table_key, next_rows)
@@ -197,7 +197,7 @@ def apply_edit_options(
         "kind": "editOptions",
         "table_key": mutation.table_key,
         "field_id": mutation.field_id,
-        "is_custom": is_custom,
+        "in_custom_values": in_custom_values,
         "added_option_ids": sorted(next_ids - current_ids),
         "deleted_option_ids": sorted(deleted_ids),
         "cleared_row_count": cleared_row_count,
