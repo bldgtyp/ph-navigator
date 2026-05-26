@@ -218,8 +218,8 @@ Rules:
 - Requires admin/dev backend tooling or MCP; no normal dashboard
   control exposes hard-delete.
 - Requires `project:write` plus an explicit confirmation token for MCP.
-- Should be available for active or soft-deleted projects, but the UI
-  must make the destructive nature obvious.
+- Should be available for active or soft-deleted projects, but the
+  admin tool or MCP call must make the destructive nature obvious.
 - Soft-deletes the project first if it is still active, so any failure
   during physical cleanup leaves the project hidden rather than
   publicly readable with missing files.
@@ -262,9 +262,8 @@ R2 objects is not acceptable as a silent success.
 POST /api/v1/projects/{project_id}:delete
 ```
 
-Use a POST action endpoint rather than a DELETE request with a body
-because hard-delete confirmation needs structured body fields and some
-HTTP clients/proxies mishandle DELETE bodies.
+Use a POST action endpoint rather than a DELETE request with a body so
+the confirmation contract is explicit and consistent across clients.
 
 Request body:
 
@@ -327,7 +326,7 @@ Response:
       "project_id": "uuid-2",
       "ok": false,
       "error_code": "project_deleted",
-      "message": "Project not found."
+      "message": "Project was already deleted."
     }
   ]
 }
@@ -538,7 +537,6 @@ the 90-day window complete without a user-accessible restore path.
 - Add bulk Delete button.
 - Add confirmation modal.
 - Wire soft-delete mutation and list invalidation.
-- Add hard-delete option behind explicit acknowledgement.
 - Add Recently deleted list/restore controls.
 - Add React tests for selection, navigation isolation, modal copy,
   soft-delete success, and absence of normal hard-delete controls.
