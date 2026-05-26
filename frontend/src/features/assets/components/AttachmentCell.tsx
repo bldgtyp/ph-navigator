@@ -132,7 +132,12 @@ export function AttachmentCell({
                 {asset?.thumbnail_url ? (
                   <img src={asset.thumbnail_url} alt="" />
                 ) : (
-                  <span>{fileGlyph(asset?.content_type)}</span>
+                  <span
+                    className="attachment-doc-thumb"
+                    data-kind={fileGlyph(asset?.content_type).toLowerCase()}
+                  >
+                    <span>{fileGlyph(asset?.content_type)}</span>
+                  </span>
                 )}
               </button>
             );

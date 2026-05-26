@@ -51,6 +51,7 @@
 }
 
 .attachment-strip {
+  align-items: center;
   display: flex;
   gap: 4px;
   overflow-x: auto;
@@ -64,18 +65,21 @@
 
 .attachment-thumb {
   align-items: center;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  background: transparent;
+  border: 0;
   border-radius: 4px;
   color: var(--text-primary);
   display: flex;
-  flex: 0 0 36px;
-  font-size: 10px;
-  height: 28px;
+  flex: 0 0 30px;
+  height: 30px;
   min-height: 0;
   justify-content: center;
   overflow: hidden;
-  padding: 0;
+  padding: 2px;
+}
+
+.attachment-thumb:hover {
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 
 .attachment-thumb.selected {
@@ -86,6 +90,62 @@
   height: 100%;
   object-fit: cover;
   width: 100%;
+}
+
+.attachment-doc-thumb {
+  align-items: flex-end;
+  background: var(--bg-card);
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 82%, var(--text-secondary));
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.14);
+  color: var(--text-primary);
+  display: flex;
+  height: 25px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 2px 3px;
+  position: relative;
+  width: 20px;
+}
+
+.attachment-doc-thumb::after {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--bg-page) 88%, var(--border-subtle)) 50%,
+    transparent 50%
+  );
+  border-left: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  content: "";
+  height: 6px;
+  position: absolute;
+  right: -1px;
+  top: -1px;
+  width: 6px;
+}
+
+.attachment-doc-thumb::before {
+  background: color-mix(in oklab, var(--accent) 58%, transparent);
+  border-radius: 999px;
+  bottom: 2px;
+  content: "";
+  height: 2px;
+  left: 4px;
+  position: absolute;
+  right: 4px;
+}
+
+.attachment-doc-thumb[data-kind="pdf"]::before {
+  background: #d94f45;
+}
+
+.attachment-doc-thumb span {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0;
+  position: relative;
+  text-transform: uppercase;
+  z-index: 1;
 }
 
 .attachment-pending {

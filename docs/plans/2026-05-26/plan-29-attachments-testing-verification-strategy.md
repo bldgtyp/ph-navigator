@@ -286,6 +286,9 @@ Defects found during manual staging:
 - PDF preview modal opened, but the iframe area was blank.
 - after the preview/download URL fix, PDF preview rendered correctly, but
   sticky/frozen table cells painted through the modal/iframe.
+- after the portal fix, the modal stayed above the grid, and the
+  remaining visible issue was the fallback attachment chip rendering as
+  an ambiguous empty rounded square in the table cell.
 
 Root cause/fix: the frontend used `download_url` for PDF/image preview
 and "Open in new tab"; the backend signs `download_url` with
@@ -301,10 +304,16 @@ contexts could paint above it. The modal now renders through a React
 portal into `document.body`, keeping the attachment preview above the
 grid.
 
+Attachment-chip visual refinement: the no-thumbnail fallback previously
+rendered as a large empty rounded square with tiny text, which read
+poorly in a compact table row. It now renders as a small document-style
+thumbnail with a folded corner and PDF/JSON/FILE label, closer to the
+AirTable attachment-cell precedent.
+
 Remaining staging acceptance items after the core PDF path:
 
-- redeploy the preview/download fix and re-test double-click PDF preview
-  without an automatic download;
+- redeploy the attachment-chip visual refinement and re-check the Pump
+  Datasheet cell against the AirTable-style attachment precedent;
 - upload one image and confirm image preview/thumbnail behavior;
 - replace an attachment and confirm ordering/selection behavior;
 - run bulk download and inspect the zip manifest;
