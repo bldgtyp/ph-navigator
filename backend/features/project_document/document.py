@@ -472,18 +472,11 @@ class ProjectDocumentV1(BaseModel):
         self._validate_rooms_formula_cycles(custom_field_ids)
 
         pump_ids: set[str] = set()
-        pump_tags: set[str] = set()
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
         for pump in self.tables.equipment.pumps:
             if pump.id in pump_ids:
                 raise ValueError(f"Duplicate pump id: {pump.id}")
             pump_ids.add(pump.id)
-
-            if pump.tag is not None:
-                normalized_tag = normalize_display_name(pump.tag)
-                if normalized_tag in pump_tags:
-                    raise ValueError(f"Duplicate pump tag: {pump.tag}")
-                pump_tags.add(normalized_tag)
 
             if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
                 raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")

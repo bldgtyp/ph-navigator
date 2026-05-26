@@ -235,12 +235,14 @@ export function sortedRooms(rooms: RoomRow[]): RoomRow[] {
 }
 
 export function sortedPumps(pumps: PumpRow[]): PumpRow[] {
-  return [...pumps].sort((a, b) =>
-    (a.tag ?? a.use ?? a.id).localeCompare(b.tag ?? b.use ?? b.id, undefined, {
+  return [...pumps].sort((a, b) => {
+    const primary = (a.tag ?? a.use ?? a.id).localeCompare(b.tag ?? b.use ?? b.id, undefined, {
       numeric: true,
       sensitivity: "base",
-    }),
-  );
+    });
+    if (primary !== 0) return primary;
+    return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" });
+  });
 }
 
 export function firstRoomFloorOptionId(current: RoomsSlice): string | null {
@@ -501,18 +503,12 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
 
 export function validatePumpsPayload(payload: PumpsReplacePayload): string | null {
   const ids = new Set<string>();
-  const tags = new Set<string>();
   const deviceTypeIds = new Set(
     payload.single_select_options[PUMP_DEVICE_TYPE_KEY].map((option) => option.id),
   );
   for (const pump of payload.pumps) {
     if (ids.has(pump.id)) return "Pump id already exists in this project.";
     ids.add(pump.id);
-    if (pump.tag) {
-      const normalizedTag = normalize(pump.tag);
-      if (tags.has(normalizedTag)) return "Pump tag already exists in this project.";
-      tags.add(normalizedTag);
-    }
     if (pump.device_type && !deviceTypeIds.has(pump.device_type)) {
       return "Pump device type option is missing.";
     }

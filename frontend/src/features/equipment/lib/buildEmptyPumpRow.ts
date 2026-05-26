@@ -3,13 +3,13 @@ import { emptyPump } from "../lib";
 import { PUMP_DEVICE_TYPE_KEY, type PumpRow } from "../types";
 
 export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
-  return ({ rowId, fieldDefaults, anchorRow }) => {
-    const base = anchorRow ? { ...anchorRow, id: rowId } : { ...emptyPump(), id: rowId };
+  return ({ rowId, fieldDefaults }) => {
+    const base = { ...emptyPump(), id: rowId };
     return {
       ...base,
       device_type: readStringDefault(fieldDefaults[PUMP_DEVICE_TYPE_KEY], base.device_type),
       use: readStringDefault(fieldDefaults.use, base.use),
-      tag: readStringDefault(fieldDefaults.tag, null),
+      tag: readStringDefault(fieldDefaults.tag, base.tag),
       manufacturer: readStringDefault(fieldDefaults.manufacturer, base.manufacturer),
       model: readStringDefault(fieldDefaults.model, base.model),
       volts: readNumberDefault(fieldDefaults.volts, base.volts),
