@@ -1,3 +1,10 @@
+// Feature-scoped ID prefixes for `generatedId`. Centralized so future
+// catalog editors can't pick colliding short prefixes when minting
+// local IDs for in-progress drafts.
+export const MATERIAL_ID_PREFIX = "mat";
+export const FRAME_TYPE_ID_PREFIX = "frm";
+export const GLAZING_TYPE_ID_PREFIX = "glz";
+
 export const CATALOGS = [
   { slug: "materials", label: "Materials" },
   { slug: "frame-types", label: "Window-Frame Elements" },
