@@ -1,8 +1,8 @@
 ---
 DATE: 2026-05-26
-TIME: 11:48 ET (rev 2026-05-26 — post-review)
-STATUS: Draft. Open decisions in P10 must be resolved before
-        implementation.
+TIME: 11:48 ET (rev 2026-05-26 — decisions resolved)
+STATUS: Ready for implementation. All decisions in P10 are
+        resolved; phases in P6 reflect them.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Decouple the DataTable's user-visible "ID" column from the
        hidden record PK, and let each feature declare how that
@@ -109,21 +109,36 @@ When `identifier` is omitted, DataTable falls back to today's behavior
 
 ## P3. Insert-Row Behavior
 
-Update the row-insert builder so the identifier field is excluded from
-the anchor-clone defaults:
+**Per D10: Shift-Enter creates a truly blank row across ALL
+fields**, not just the identifier. This is a broader change than the
+original draft proposed — full AirTable parity for row insertion.
 
-- For `kind: "field"`, the new row's `row[field]` is set to `null` (or
-  `""` for non-nullable string fields) regardless of the anchor's
-  value.
-- For `kind: "computed"`, no carve-out is needed — the cell value is
-  derived, not stored, so cloning the dependency fields is fine. (Open
-  question: do we also want to clear the dependency fields on insert?
-  For Rooms, blank `number` + `name` is the right default. See P8.)
+Concretely:
 
-This logic lives in DataTable, not per-feature. Features can still
-override `buildEmptyRow` for feature-specific defaults, but the
-identifier-clearing rule applies before that override runs (and the
-override may opt back in by setting the field explicitly).
+- DataTable populates `RowInsertPayload.fieldDefaults` exclusively
+  from each `FieldDef.default` (or the field-type natural zero when
+  `default` is omitted) — **never** from the anchor row.
+- The `anchorRow` parameter on `BuildEmptyRow` stays in the
+  signature because a future "Duplicate record" right-click action
+  will reuse the same builder. For the Shift-Enter path, the
+  anchor's *position* still matters (so the new row inserts below
+  it), but its *values* do not.
+- Feature `buildEmptyRow` implementations must be **audited to
+  remove anchor-value-cloning code**. The current
+  `makeBuildEmptyPumpRow` (frontend/src/features/equipment/lib/
+  buildEmptyPumpRow.ts:6) clones the anchor row into `base` then
+  overlays fieldDefaults — that clone path must come out (or be
+  gated behind a future `mode: "duplicate"` flag the Duplicate
+  action will pass).
+- The identifier-specific clearing rule from the original draft is
+  redundant under D10 — the whole row is blank, so the identifier
+  is naturally blank too.
+
+**Out of scope (deferred to a follow-up plan):** the explicit
+"Duplicate record" command exposed via row-right-click context
+menu. That action reuses `buildEmptyRow` with `anchorRow` carrying
+the source row, and the builder clones non-identifier values from
+it (the identifier still starts blank under the new rules).
 
 ## P4. Backend Changes
 
@@ -207,15 +222,36 @@ DataTable core (`frontend/src/shared/ui/data-table/`):
 - Add `IdentifierConfig<TRow>` to `types.ts`.
 - Add `identifier?: IdentifierConfig<TRow>` to `DataTable` props in
   `DataTable.tsx`.
-- Wire the pinned-column renderer to read from the identifier config
-  when present, falling back to `columns[0]` otherwise.
-- Update the row-insert path to clear `row[identifier.field]` for
-  `kind: "field"` before invoking any feature-level `buildEmptyRow`.
-- For `kind: "computed"`, register the identifier as a synthetic
-  read-only column. Recomputation reuses the existing formula-field
-  infrastructure where possible (`roomsFormulaRegistry.ts` shows the
-  pattern for Rooms; the identifier can declare a `compute` callback
-  directly without requiring backend formula support).
+- Wire the pinned-column renderer:
+  - `kind: "field"`: promote the backing FieldDef's column to the
+    pinned leading slot (per D4). Header reads "Record-ID" (per D6,
+    overriding the FieldDef's `display_name`). The column inherits
+    the FieldDef's `field_key`, sort/filter/group registry entry,
+    and `ViewState.columnWidths` id.
+  - `kind: "computed"`: register a synthetic read-only column with
+    reserved id `__record_id__`. Recomputation invokes the
+    `compute` callback whenever any of `deps` changes. Compute runs
+    on every render; memoise per (rowId, dep-tuple) if profiling
+    shows it matters for large tables.
+- Update the row-insert path: populate `fieldDefaults` from
+  `FieldDef.default` only — no anchor cloning (per D10).
+- Suppress the hide-column menu item on the pinned slot. Clamp
+  column-drag-reorder to the second-leading drop target as the
+  minimum (per D7).
+- Sort plumbing for the synthetic `__record_id__` column (per D5):
+  minimal grid-local registry entry (`field_type: "text"`,
+  `read_only_schema: true`); the existing sort pipeline can resolve
+  it without round-tripping through the document store.
+- Clipboard / fill / paste guards for read-only identifier cells
+  (per D11): paste-rectangle planner skips them with a toast count;
+  fill propagates as no-op; copy emits compute output.
+- Broken-identifier ERROR state (per D9): when an identifier's
+  `kind: "field"` references a missing `field_key` (or a custom
+  field's `cf_*` id no longer in the schema), header shows the
+  warning glyph and cell bodies render `ERROR`.
+- Duplicate-value warning chip (per D13): O(n) pass per render over
+  visible rows; cells with conflicting values show a warning glyph
+  with tooltip "Also used on row N (and X more)". Non-blocking.
 
 Pumps feature (`frontend/src/features/equipment/`):
 
@@ -250,38 +286,87 @@ Catalog tables (Materials, Glazing, Frame):
 
 Phase A — DataTable infrastructure (no user-visible change):
 
-1. Add `IdentifierConfig<TRow>` type.
-2. Add `identifier` prop to `DataTable`, default behavior unchanged
-   when omitted.
-3. Wire pinned-column rendering.
-4. Wire insert-row identifier-clearing for `kind: "field"`.
-5. Unit tests in `frontend/src/shared/ui/data-table/__tests__/`
-   covering: identifier rendering for both kinds, insert-row clearing,
-   recomputation on dep change for `kind: "computed"`.
+1. Add `IdentifierConfig<TRow>` to `types.ts`.
+2. Add `identifier?: IdentifierConfig<TRow>` prop to `DataTable`,
+   default behavior unchanged when omitted.
+3. Wire pinned-column rendering:
+   - `kind: "field"` → promote-and-replace (D4).
+   - `kind: "computed"` → synthetic `__record_id__` column with
+     lexical sort (D5).
+   - Header label always "Record-ID" (D6).
+   - Hide / reorder suppressed on the pinned slot (D7).
+4. Flip Shift-Enter to true-blank inserts (D10): populate
+   `fieldDefaults` from `FieldDef.default` only — no anchor cloning.
+5. Sort plumbing for `__record_id__` (grid-local registry entry).
+6. Clipboard / fill / paste guards for read-only computed cells (D11).
+7. Broken-identifier ERROR state (D9).
+8. Duplicate-value warning chip (D13).
+9. Unit tests in `frontend/src/shared/ui/data-table/__tests__/`
+   covering: pinned-column rendering for both kinds, header label,
+   hide/reorder suppression, true-blank insert, computed sort,
+   read-only paste/fill toast, broken-identifier ERROR rendering,
+   duplicate warning chip on duplicate values, no warning on empty.
 
-Phase B — Pumps adopts identifier (fixes the screenshot):
+Phase B — Pumps adopts identifier + uniqueness drop (fixes the
+screenshot, ships the architecture together per D1):
 
-1. Declare `identifier: { kind: "field", field: "tag" }`.
-2. Remove `validatePumpsPayload()` tag-uniqueness branch.
-3. Audit and update any `tag`-as-join-key sites.
-4. Manual smoke via Playwright MCP: Shift-Enter on `P-02`, confirm a
-   blank row appears below with empty `tag`, confirm no error banner.
-5. Manual smoke: type `P-01` into the new row, confirm save succeeds
-   (duplicate allowed).
+1. Declare `identifier: { kind: "field", field: "tag" }` on the
+   Pumps DataTable mount.
+2. Remove the tag-uniqueness `model_validator` branch in
+   `backend/features/project_document/document.py` (lines 482–486).
+3. Remove the tag-uniqueness check from `validatePumpsPayload()`
+   (`frontend/src/features/equipment/lib.ts:511`).
+4. Audit `buildEmptyPumpRow.ts:6` and remove the
+   `{...anchorRow, id: rowId}` clone path so the Shift-Enter row
+   starts truly blank (D10). Verify no other code path depends on
+   the clone.
+5. Audit any `tag`-as-join-key sites: `sortedPumps()`
+   (`lib.ts:237–243`), clipboard / undo handlers, any
+   export / sync paths. Use hidden `id` (`pmp_…`) for identity;
+   `tag` may still drive display sort with `id` as tiebreaker.
+6. Update / remove tests: `lib.test.ts` "Pump tag already exists"
+   assertion, and any backend test asserting `Duplicate pump tag`.
+7. Manual smoke via Playwright MCP: Shift-Enter on `P-02` — confirm
+   a fully blank row appears with no error banner. Type `P-01` —
+   confirm save succeeds and the warning chip surfaces "Also used
+   on row N".
 
-Phase C — Rooms adopts computed identifier:
+Phase C — Rooms adopts computed identifier + uniqueness drop:
 
-1. Declare the computed identifier with `number`+`name`.
-2. Verify formula-registry interaction (the existing Rooms formula
-   machinery should not conflict — the identifier is a UI concern, not
-   a backend formula field).
-3. Manual smoke: insert a blank row, confirm pinned column shows blank
-   until `number` or `name` is typed, then updates live.
+1. Declare the computed identifier with
+   `deps: ["number", "name"]` and
+   `compute: (r) => [r.number, r.name].filter(Boolean).join(" — ")`.
+2. Remove the room-number-uniqueness `model_validator` branch in
+   `document.py` (lines 408–419).
+3. Remove the room-number branch in `validateRoomsPayload()`
+   (`lib.ts:481`).
+4. Remove `nextFreeRoomNumber` (`lib.ts:375–392`) and its callsites
+   — the helper exists only to work around the uniqueness rule.
+5. Audit `makeBuildEmptyRoomRow` (or its equivalent) for the same
+   anchor-clone path; remove it.
+6. Update tests: `lib.test.ts:267` ("Room number already exists")
+   and any backend test asserting `Duplicate room number`.
+7. Verify formula-registry interaction (`roomsFormulaRegistry.ts`)
+   — the identifier compute callback is grid-side only and does
+   not feed the backend formula resolver.
+8. Manual smoke: insert a blank row — pinned column shows blank
+   until `number` or `name` is typed, then updates live. Insert a
+   second blank row in the same table — warning chip should NOT
+   surface on either (empty identifiers do not warn, per D13).
 
-Phase D — Remaining tables (catalog, etc.):
+Phase D — Catalog tables and remaining project-document tables:
 
-1. Declare identifiers for each table in turn.
-2. No required ordering; each table is independent.
+1. Materials, Glazing, Frame: declare
+   `identifier: { kind: "field", field: "name" }` for pinned
+   rendering. **Do NOT drop catalog name uniqueness in this
+   phase** — that comes with the catalog rollout (see P4 catalog
+   note).
+2. Window Types: declare identifier, **do NOT drop name
+   uniqueness** (D12 — deferred).
+3. Other project-document tables (Fans, ERVs, Thermal Bridges as
+   they come online): declare identifiers per their feature; drop
+   any equivalent uniqueness validators in `document.py` at the
+   same time.
 
 ## P7. Downstream Audit
 
@@ -368,40 +453,60 @@ must either drop the `required` flag or override
 
 **Schema-mutation guards (`kind: "field"` against a custom field).**
 
-If the backing field is a user-defined custom field (`cf_*`), the
-header context-menu's Delete / Change-type / (rename is fine) items
-are suppressed for that field while it is wired as the identifier.
-The plan reuses `read_only_schema`-style suppression here rather than
-adding a new flag — the identifier-config registration sets a
-runtime guard the menu consults. Renaming the display name is still
-allowed (the field's `field_key` / `cf_*` id is what the identifier
-config references, not the display name).
+Per D9: no suppression. All header context-menu items (Delete,
+Change-type, rename) remain available for the identifier-backing
+field. Delete surfaces a confirmation modal listing the identifier
+as a dependency (AirTable parity); user can proceed. After
+deletion, the identifier column renders an **ERROR state** — a
+warning glyph in the header with tooltip "This field has a
+configuration error" and cell bodies show `ERROR`. Re-wiring the
+identifier through feature config clears the error.
 
-**AirTable-parity gap (Shift-Enter cloning).**
+**AirTable-parity: Shift-Enter behavior.**
 
-AirTable's blank-row insert produces an empty row across every
-column. PHN's current insert clones all non-identifier fields from
-the anchor row. The plan **does not close this gap** — it only
-carves out the identifier — and that is intentional because the
-clone-from-anchor behavior is load-bearing for several PHN
-workflows (e.g. duplicate a Pump's electrical specs and edit only
-the tag). Acknowledged as a deliberate divergence from AirTable
-parity. If a future plan wants full parity, the per-feature
-`buildEmptyRow` is the right knob.
+Per D10, Shift-Enter creates a **truly blank row** — all fields
+start at their `FieldDef.default` (or the field-type natural zero).
+Full AirTable parity. The previous clone-from-anchor
+"duplicate-and-edit" workflow moves to an explicit "Duplicate
+record" right-click action that is **out of scope for this plan**
+and tracked as a follow-up.
+
+**Duplicate-value warning chip.**
+
+Per D13, identifier cells that share a value with another row in
+the same table render a non-blocking warning chip (glyph +
+tooltip). Computation is per-render, O(n) over visible rows,
+keyed by identifier value. Applies to both kinds.
 
 ## P8. Out Of Scope
 
-- No DB schema migration. The hidden PKs already exist and are already
-  separate from user-typed fields at the data layer.
-- No rename of existing fields (Pump.tag stays `tag`; Room.number stays
-  `number`). The new identifier column is a UI projection, not a new
-  stored field.
-- No support for user-configurable identifier formulas at runtime. The
-  identifier config is declared in code per feature. A future plan
-  could expose this to end users (closer to AirTable formula fields),
-  but that is out of scope here.
-- No change to the catalog `rec…` PK generation or Pumps `pmp_…` PK
-  generation. Those continue as today.
+- **No SQL schema migration.** The relational schema (drafts /
+  versions / blob storage) is untouched. The Pydantic
+  `model_validator` relaxations in `document.py` are the
+  document-model schema change — they ride with the application
+  code, no Alembic migration needed.
+- **No rename of existing fields.** Pump.tag stays `tag`;
+  Room.number stays `number`. The identifier is a UI projection,
+  not a new stored field.
+- **No user-configurable identifier formulas at runtime.** The
+  identifier config is declared in code per feature. A future
+  plan could expose this to end users (closer to AirTable's
+  formula-field primary), but that is out of scope here.
+- **No change to PK generation.** Catalog `rec_…`, Pump `pmp_…`,
+  Room `rm_…` continue as today.
+- **No "Duplicate record" right-click context menu action in
+  Phase B.** The Shift-Enter → true-blank shift removes the
+  implicit duplicate workflow; the explicit replacement is
+  tracked as a follow-up plan.
+- **No catalog uniqueness relaxation in Phase D.** Catalog
+  uniqueness drops ride with the catalog rollout (which also
+  must update the bookshelf-picker UX and `catalog_origin`
+  provenance display to handle duplicate names).
+- **No Window Types uniqueness relaxation** (D12 — deferred).
+- **No visual treatment of the pinned column beyond what D7
+  requires** (no special tint, lock glyph, or "Record-ID" badge
+  beyond the header label itself). Defer to UX once the
+  structural changes ship.
 
 ## P9. Open Questions (resolved or absorbed)
 
@@ -482,37 +587,60 @@ both forbidden.** Hide menu item suppressed on the pinned slot;
 column-drag-reorder clamps the second-leading position as the
 minimum drop target. Matches AirTable's primary-field constraints.
 
-**D8. Required-field interaction (`kind: "field"`).** When the
-backing field has `required: true`, the cleared identifier on
-insert violates required.
-
-- **(a) Document as a known footgun.** Features must drop `required`
-  on the identifier field or override `buildEmptyRow` to seed.
-- (b) DataTable infers the required-clear conflict and refuses to
-  mount the config (loud failure).
+**D8. Required-field interaction (`kind: "field"`).** ✅
+**DECIDED: document as a known footgun.** Default expectation is
+`required: false` — true for ~99% of fields. Tables are designed
+for **maximum user flexibility**; downstream consumers must handle
+nulls gracefully. When a feature does mark an identifier field
+`required: true`, the feature owner is responsible for either
+dropping the flag or overriding `buildEmptyRow` to seed a value.
+DataTable does not enforce.
 
 **D9. Schema-mutation guards (`kind: "field"` against a custom
-field).**
+field).** ✅ **DECIDED: allow all schema mutations — AirTable
+parity, let it break gracefully.** No suppression of Delete /
+Change-type / rename in the header menu for the identifier-backing
+field. When a backing field is deleted (or changed in a way that
+breaks the identifier wiring):
 
-- **(a) Suppress Delete / Change-type for the identifier-backing
-  field while wired.** Rename stays allowed (identity is the
-  `cf_*` id, not the display name).
-- (b) Allow all schema mutations; let the user un-wire the
-  identifier first.
+- The header context-menu's "Delete field" surfaces a confirmation
+  modal listing the dependent identifier as an impacted dependency
+  (mirroring AirTable's "Deleting this field will impact N
+  dependencies" UX). The user can proceed.
+- After deletion (or breaking change), the identifier column
+  renders an **ERROR state** in each cell — a warning triangle
+  glyph in the header with tooltip "This field has a configuration
+  error. The identifier references a field that no longer exists,"
+  and cell bodies show `ERROR` (or the warning glyph), matching
+  AirTable's broken-formula visual treatment.
+- Re-wiring the identifier through the feature's config code clears
+  the error state on next mount.
 
-**D10. AirTable-parity gap on Shift-Enter cloning.**
+**D10. AirTable-parity gap on Shift-Enter cloning.** ✅ **DECIDED:
+Shift-Enter creates a truly blank row.** Full AirTable parity. All
+fields (not just the identifier) start at their `FieldDef.default`
+(or the field-type natural zero) instead of being cloned from the
+anchor.
 
-- **(a) Acknowledge the divergence; keep current clone-from-anchor
-  behavior for non-identifier fields.** Matches PHN's existing
-  "duplicate-and-edit" workflow.
-- (b) Move toward true blank-row inserts (separate, larger plan).
+The clone-from-anchor "duplicate-and-edit" workflow does not go
+away — it moves to an **explicit "Duplicate record" command**
+exposed through the row-level right-click context menu. The
+context-menu action is **deferred to a follow-up plan**; this plan
+only flips Shift-Enter to true-blank semantics.
+
+Implementation consequence: the `BuildEmptyRow` consumer signature
+keeps `anchorRow` (for the future Duplicate path) but the
+`fieldDefaults` map no longer includes anchor values for the
+Shift-Enter path. The DataTable populates `fieldDefaults` from
+`FieldDef.default` only. Feature `buildEmptyRow` implementations
+must be audited to ensure they don't reach into `anchorRow` for
+defaults.
 
 **D11. Clipboard / fill / paste over computed identifier cells.**
-
-- **(a) Drop with toast on paste; no-op on fill; copy emits compute
-  output as TSV.** Mirrors how read-only cells already behave.
-- (b) Whole-paste fails preflight if the rectangle covers any
-  computed identifier cell.
+✅ **DECIDED: drop with toast.** Paste lands the other cells in
+the rectangle; computed identifier cells are skipped and a toast
+surfaces the count. Fill is a no-op on those cells. Copy from a
+computed identifier emits the compute output as TSV.
 
 **D12. Window Types treatment.** ✅ **DECIDED: defer.** Keep the
 `window_type.name` validator in place. Window Types' relationship
@@ -524,11 +652,21 @@ Window Types in principle, but the Window Types data path (windows
 referencing catalog frame / glazing via `catalog_origin`) deserves
 its own pass before relaxing.
 
-**D13. Replacing the duplicate-error UX.** Today the user sees
-`"Pump tag already exists in this project."` — a workflow nudge that
-catches their own typos. After the rule drops, that nudge disappears.
+**D13. Replacing the duplicate-error UX.** ✅ **DECIDED: build
+the warning chip in this plan.** After the hard-error uniqueness
+rule drops, the identifier column surfaces a **non-blocking warning
+chip** on any cell whose value matches another row in the same
+table:
 
-- **(a) Ship without replacement.** Document as a deliberate
-  regression; follow up with the in-cell warning chip from P9 in a
-  later plan.
-- (b) Build the warning chip as part of this plan.
+- Visual: a small warning glyph (e.g. ⚠) in the cell's corner or
+  trailing inline area, not consuming a tint channel.
+- Tooltip: "Also used on row N" — where N is the user-visible
+  row position (1-indexed) of the conflicting row. If multiple
+  conflicts exist, say "Also used on rows N, M, K (and X more)"
+  capped at three explicit row numbers.
+- Computation: O(n) pass over the visible rows per table render,
+  keyed by the identifier value (or compute output for
+  `kind: "computed"`). Empty / null identifiers do not warn.
+- Behavior: non-blocking — saving a duplicate is still allowed. The
+  chip is purely informational.
+- Applies to both `kind: "field"` and `kind: "computed"`.
