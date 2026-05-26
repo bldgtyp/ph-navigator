@@ -916,6 +916,7 @@ def test_download_rooms_includes_empty_custom_fields_and_omits_computed_overlay(
     response = client.get(rooms_download_url(project_id, version_id))
 
     assert response.status_code == 200
+    assert response.text == '{\n  "rooms": {\n    "custom_fields": [],\n    "rows": []\n  }\n}'
     body = response.json()
     assert body["rooms"] == {"custom_fields": [], "rows": []}
 

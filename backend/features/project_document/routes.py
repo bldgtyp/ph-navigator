@@ -206,7 +206,7 @@ def download_table(
     access: ProjectViewAccess,
 ) -> Response:
     content = table_download_body(version_id, table_name, access)
-    return json_download_response(json.dumps(content, separators=(",", ":")), f"{table_name}-{version_id}.json")
+    return json_download_response(json.dumps(content, indent=2), f"{table_name}-{version_id}.json")
 
 
 def json_download_response(content: str, filename: str) -> Response:
