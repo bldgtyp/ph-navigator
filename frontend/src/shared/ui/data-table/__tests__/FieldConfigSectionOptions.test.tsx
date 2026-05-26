@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { describe, expect, test, vi } from "vitest";
 import {
   FieldConfigSectionOptions,
@@ -21,9 +21,14 @@ describe("FieldConfigSectionOptions", () => {
     const onDraftChange = vi.fn();
     function Harness() {
       // Every onDraftChange triggers a parent re-render. With stable
-      // sourceOptions/rows the reset effect must not refire, so the
-      // draft-change effect should fire a single time then quiesce.
+      // sourceOptions/rows AND a stable callback (mirroring how the
+      // modal passes setOptionsDraft directly), the reset effect must
+      // not refire and the draft-change effect should fire once.
       const [, setTick] = useState(0);
+      const handle = useCallback((draft: Parameters<typeof onDraftChange>[0]) => {
+        onDraftChange(draft);
+        setTick((n) => n + 1);
+      }, []);
       return (
         <FieldConfigSectionOptions
           fieldDisplayName="Status"
@@ -32,10 +37,7 @@ describe("FieldConfigSectionOptions", () => {
           sourceDefaultOptionId={null}
           rows={EMPTY_ROWS}
           disabled={false}
-          onDraftChange={(draft) => {
-            onDraftChange(draft);
-            setTick((n) => n + 1);
-          }}
+          onDraftChange={handle}
         />
       );
     }
