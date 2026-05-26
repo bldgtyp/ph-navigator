@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchJson } from "../../shared/api/client";
 import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
-import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "./hooks";
+import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "./query-keys";
 import { markLocalDraftTouched } from "./lib";
 
 export type TableSliceAccessMode = "editor" | "viewer";

@@ -7,12 +7,10 @@ import {
   updateStatusItem,
 } from "./api";
 import { sortStatusItems } from "./lib";
+import { statusQueryKeys } from "./query-keys";
 import type { StatusItem, StatusItemListResponse, StatusItemPayload } from "./types";
 
-export const statusQueryKeys = {
-  all: ["project-status"] as const,
-  list: (projectId: string) => [...statusQueryKeys.all, "list", projectId] as const,
-};
+export { statusQueryKeys };
 
 export function useStatusItemsQuery(projectId: string) {
   return useQuery({

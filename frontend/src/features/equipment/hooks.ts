@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { projectDocumentQueryKeys } from "../project_document/hooks";
+import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import { type TableSliceVersionGuard } from "../project_document/table-slice";
 import { roomsSliceFeature } from "./api";
+import { roomsQueryKeys } from "./query-keys";
 import { type RoomsSlice } from "./types";
 
 const ROOMS_DRAFT_CHANNEL = "phn-rooms-draft-v1";
@@ -15,7 +16,7 @@ type RoomsDraftBroadcastMessage = {
   slice: RoomsSlice;
 };
 
-export const roomsQueryKeys = roomsSliceFeature.queryKeys;
+export { roomsQueryKeys };
 
 export const useRoomsSliceQuery = roomsSliceFeature.useSliceQuery;
 export const useReplaceRoomsSliceMutation = roomsSliceFeature.useReplaceSliceMutation;

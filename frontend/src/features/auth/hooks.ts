@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mcpTokenQueryKeys } from "../mcp/hooks";
-import { projectDocumentTableQueryKeys } from "../project_document/hooks";
+import { projectDocumentTableQueryKeys } from "../project_document/query-keys";
 import { projectQueryKeys } from "../projects/query-keys";
 import { fetchCurrentSession, signIn, signOut } from "./api";
 
