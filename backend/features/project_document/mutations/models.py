@@ -60,11 +60,20 @@ AUDIT_KIND_BY_MUTATION: dict[str, str] = {
 # Convertibility matrix: (from, to) -> ConversionPolicy. Pairs absent
 # from this map are forbidden. Frontend `typeConversionMatrix.ts`
 # mirrors this — keep them in sync.
+#
+# `discard_then_author` (primitive → formula): the conversion drops every
+# stored cell value for the field and the user authors a fresh formula
+# source. There is no per-row preservation — the affected-row count is
+# simply the count of non-empty cells. Always destructive when any cell
+# is non-empty; user must ack before the change applies. The new
+# formula source rides in `EditFieldBundleMutation.formula_source` (or
+# `SetFormulaMutation.source` if the type change is committed first).
 ConversionPolicy = Literal[
     "lossless",
     "lossy",
     "create_options",
     "substitute_labels",
+    "discard_then_author",
 ]
 
 CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolicy] = {
@@ -73,17 +82,21 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     (CustomFieldType.short_text, CustomFieldType.number): "lossy",
     (CustomFieldType.short_text, CustomFieldType.url): "lossy",
     (CustomFieldType.short_text, CustomFieldType.single_select): "create_options",
+    (CustomFieldType.short_text, CustomFieldType.formula): "discard_then_author",
     # long_text → *
     (CustomFieldType.long_text, CustomFieldType.short_text): "lossy",
     (CustomFieldType.long_text, CustomFieldType.number): "lossy",
     (CustomFieldType.long_text, CustomFieldType.url): "lossy",
     (CustomFieldType.long_text, CustomFieldType.single_select): "create_options",
+    (CustomFieldType.long_text, CustomFieldType.formula): "discard_then_author",
     # number → *
     (CustomFieldType.number, CustomFieldType.short_text): "lossless",
     (CustomFieldType.number, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.number, CustomFieldType.formula): "discard_then_author",
     # url → *
     (CustomFieldType.url, CustomFieldType.short_text): "lossless",
     (CustomFieldType.url, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.url, CustomFieldType.formula): "discard_then_author",
     # single_select → *
     (CustomFieldType.single_select, CustomFieldType.short_text): "substitute_labels",
     (CustomFieldType.single_select, CustomFieldType.long_text): "substitute_labels",
@@ -91,6 +104,17 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     # Labels that don't parse as numbers fall into the preflight incompatible
     # set so the user acks the clear (existing lossy-conversion UX).
     (CustomFieldType.single_select, CustomFieldType.number): "substitute_labels",
+    (CustomFieldType.single_select, CustomFieldType.formula): "discard_then_author",
+    # formula → * (snapshot the computed overlay at the moment of conversion)
+    # The apply path re-evaluates the live document one last time and
+    # writes the computed value into `custom_values[field_key]` coerced
+    # to the target type. `formula → single_select` materializes options
+    # from the rendered text values (same as `long_text → single_select`).
+    (CustomFieldType.formula, CustomFieldType.short_text): "lossless",
+    (CustomFieldType.formula, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.formula, CustomFieldType.number): "lossy",
+    (CustomFieldType.formula, CustomFieldType.url): "lossy",
+    (CustomFieldType.formula, CustomFieldType.single_select): "create_options",
 }
 
 TEXT_TO_SINGLE_SELECT_OPTION_CAP = 50
