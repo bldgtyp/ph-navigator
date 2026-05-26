@@ -12,8 +12,8 @@ test("custom-field Phase 2 editor walkthrough", async ({ page }) => {
 
   const btNumber = `cf2-${Date.now().toString().slice(-8)}`;
   await createProject(page, { name: `Custom Fields ${btNumber}`, btNumber });
-  await page.getByRole("link", { name: "Equipment" }).click();
-  await expect(page.getByRole("region", { name: "Equipment" })).toBeVisible();
+  await page.getByRole("link", { name: "Rooms" }).click();
+  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
 
   await page.getByRole("button", { name: "Add field" }).click();
   const addDialog = page.getByRole("dialog", { name: "Add field" });

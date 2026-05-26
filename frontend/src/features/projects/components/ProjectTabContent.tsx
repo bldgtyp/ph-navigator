@@ -1,4 +1,7 @@
-import { EquipmentTab } from "../../equipment/routes/EquipmentTab";
+import { EnvelopeAttachmentsTab } from "../../assets/routes/EnvelopeAttachmentsTab";
+import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
+import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
+import { RoomsPage } from "../../equipment/routes/RoomsPage";
 import { StatusTab } from "../../project_status/routes/StatusTab";
 import { WindowsTab } from "../../windows/routes/WindowsTab";
 import { TAB_COPY, TAB_LABELS, type ProjectTab } from "../lib";
@@ -13,8 +16,16 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
     return <WindowsTab project={project} />;
   }
 
+  if (tab === "rooms") {
+    return <RoomsPage project={project} />;
+  }
+
   if (tab === "equipment") {
-    return <EquipmentTab project={project} />;
+    return <EquipmentPage project={project} />;
+  }
+
+  if (tab === "thermal-bridges") {
+    return <ThermalBridgesPage project={project} />;
   }
 
   if (tab === "envelope") {
@@ -38,4 +49,3 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
     </section>
   );
 }
-import { EnvelopeAttachmentsTab } from "../../assets/routes/EnvelopeAttachmentsTab";

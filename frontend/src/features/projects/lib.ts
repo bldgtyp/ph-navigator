@@ -1,13 +1,23 @@
 import { errorMessage } from "../../shared/lib/errors";
 
-export const PROJECT_TABS = ["status", "windows", "envelope", "equipment", "model"] as const;
+export const PROJECT_TABS = [
+  "status",
+  "windows",
+  "envelope",
+  "rooms",
+  "equipment",
+  "thermal-bridges",
+  "model",
+] as const;
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 
 export const TAB_LABELS: Record<ProjectTab, string> = {
   status: "Status",
   windows: "Windows",
   envelope: "Envelope",
+  rooms: "Rooms",
   equipment: "Equipment",
+  "thermal-bridges": "Thermal Bridges",
   model: "Model",
 };
 
@@ -15,7 +25,9 @@ export const TAB_COPY: Record<ProjectTab, string> = {
   status: "Track this project's lifecycle milestones.",
   windows: "Window type editing lands after the catalog tracer.",
   envelope: "Envelope assemblies land after the window catalog slices.",
-  equipment: "Rooms and equipment tables start with the Rooms draft slice.",
+  rooms: "Room schedules, iCFA factors, and occupancy assumptions.",
+  equipment: "Equipment datasheets for ERVs, pumps, and fans.",
+  "thermal-bridges": "Thermal bridge datasheets and simulation files.",
   model: "HBJSON upload and the R3F viewer land after the asset backbone.",
 };
 

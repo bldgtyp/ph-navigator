@@ -46,7 +46,7 @@ export function RoomsTable({
   roomsSlice: RoomsSlice;
   // Plan-14 P1.4: produced by the parent's single `useTableSchema`
   // call so the schema fingerprint isn't recomputed alongside view
-  // state in EquipmentTab.
+  // state in RoomsPage.
   tableSchema: TableSchema;
   isEditor: boolean;
   onEdit: (room: RoomRow) => void;

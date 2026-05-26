@@ -8,11 +8,11 @@ import { projectDownloadUrl } from "../../project_document/api";
 import type { ProjectDetail } from "../../projects/types";
 import { isInvalidProjectDocumentError } from "../lib";
 
-export function EquipmentTabError({ project, error }: { project: ProjectDetail; error: unknown }) {
+export function RoomsPageError({ project, error }: { project: ProjectDetail; error: unknown }) {
   const invalidDocument = isInvalidProjectDocumentError(error);
   const activeVersionId = project.active_version_id;
   return (
-    <section className="tab-panel" aria-label="Equipment">
+    <section className="tab-panel" aria-label="Rooms">
       <p role="alert">{errorMessage(error, "Could not load rooms.")}</p>
       {invalidDocument && activeVersionId ? (
         <p className="form-note">

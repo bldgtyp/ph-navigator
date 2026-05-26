@@ -1,5 +1,5 @@
 // User-facing copy for the three conflict states the Rooms slice can
-// land in. Centralized so EquipmentTab + the modal-save helpers all
+// land in. Centralized so RoomsPage + the modal-save helpers all
 // pull from the same strings; future tabs (ERV, Pumps, Fans, TB)
 // ship their own equivalents.
 

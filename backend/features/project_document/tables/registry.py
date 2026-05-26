@@ -15,6 +15,7 @@ from features.project_document.tables.attachments import (
     thermal_bridges_contract,
 )
 from features.project_document.tables.contracts import TableContract
+from features.project_document.tables.pumps import pumps_contract
 from features.project_document.tables.rooms import rooms_contract
 from features.project_document.tables.window_types import window_types_contract
 from features.shared.errors import api_error
@@ -58,6 +59,7 @@ _TABLES: dict[str, TableContract] = {
     assembly_segments_contract.name: assembly_segments_contract,
     project_materials_contract.name: project_materials_contract,
     rooms_contract.name: rooms_contract,
+    pumps_contract.name: pumps_contract,
     thermal_bridges_contract.name: thermal_bridges_contract,
     equipment_ervs_contract.name: equipment_ervs_contract,
     equipment_pumps_contract.name: equipment_pumps_contract,

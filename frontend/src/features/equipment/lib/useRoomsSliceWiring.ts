@@ -1,5 +1,5 @@
 // Wires the broadcast hook + slice mutations together for the
-// Equipment tab. Returns the two mutation objects EquipmentTab passes
+// Rooms page. Returns the two mutation objects RoomsPage passes
 // into `useSliceTableController`, plus a `setNotifyRemoteSlice` ref
 // setter the route uses after the controller is constructed (the
 // controller's `notifyRemoteSlice` callback is created after the

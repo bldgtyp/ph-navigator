@@ -1,6 +1,6 @@
 // The two action slots <DataTable> exposes for Rooms: the overflow
 // menu download link and the footer "+" add-room button. Returned
-// as fragments so EquipmentTab can pass them through as-is.
+// as fragments so RoomsPage can pass them through as-is.
 
 import { tableDownloadUrl } from "../../project_document/api";
 import { ROOMS_TABLE_NAME } from "../types";

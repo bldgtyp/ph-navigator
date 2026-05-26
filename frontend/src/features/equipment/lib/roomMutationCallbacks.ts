@@ -1,4 +1,4 @@
-// Builds the save/delete callbacks EquipmentTab passes to RoomModal
+// Builds the save/delete callbacks RoomsPage passes to RoomModal
 // and ConfirmDeleteRoomDialog. Both pipe through the controller's
 // `runWithConflictHandling` so the draft-conflict / version-locked
 // banners surface on the same code path as the inline cell writes.

@@ -1,6 +1,6 @@
 // The two modals stacked behind the rooms grid: the Room edit/add
 // modal (`RoomModal`) and the delete confirmation (`ConfirmDeleteRoomDialog`).
-// Kept together so EquipmentTab's render reads as a thin composer.
+// Kept together so RoomsPage's render reads as a thin composer.
 
 import { ConfirmDeleteRoomDialog } from "./ConfirmDeleteRoomDialog";
 import { RoomModal } from "./RoomModal";

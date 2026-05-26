@@ -1,10 +1,8 @@
 import "../equipment.css";
 import { useMemo, useState } from "react";
-import { AttachmentTablePanel } from "../../assets/components/AttachmentTablePanel";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
-import { EquipmentSubTabBar } from "../components/EquipmentSubTabBar";
-import { EquipmentTabError } from "../components/EquipmentTabError";
+import { RoomsPageError } from "../components/RoomsPageError";
 import { RoomDialogStack, type RoomModalState } from "../components/RoomDialogStack";
 import {
   buildAddRoomFooterAction,
@@ -31,27 +29,26 @@ import { buildRoomFormulaRowValues, buildRoomsFormulaRegistry } from "../lib/roo
 import { useRoomsSliceWiring } from "../lib/useRoomsSliceWiring";
 import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 
-export function EquipmentTab({ project }: { project: ProjectDetail }) {
+export function RoomsPage({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
   if (roomsQuery.isLoading) {
     return (
-      <section className="tab-panel" aria-label="Equipment">
+      <section className="tab-panel" aria-label="Rooms">
         <p>Loading rooms...</p>
       </section>
     );
   }
   if (roomsQuery.isError || !roomsQuery.data) {
-    return <EquipmentTabError project={project} error={roomsQuery.error} />;
+    return <RoomsPageError project={project} error={roomsQuery.error} />;
   }
   return (
-    <EquipmentTabBody project={project} roomsSlice={roomsQuery.data} refetch={roomsQuery.refetch} />
+    <RoomsPageBody project={project} roomsSlice={roomsQuery.data} refetch={roomsQuery.refetch} />
   );
 }
 
 // Inner body guarantees a non-null `roomsSlice` so the slice-bound
-// hooks (`useReplaceRoomsSliceMutation`, `useRoomsSchemaMutation`,
-// `useSliceTableController`) don't need to short-circuit on every render.
-function EquipmentTabBody(props: {
+// hooks don't need to short-circuit on every render.
+function RoomsPageBody(props: {
   project: ProjectDetail;
   roomsSlice: RoomsSlice;
   refetch: () => Promise<unknown>;
@@ -130,9 +127,8 @@ function EquipmentTabBody(props: {
 
   return (
     <SliceTableShell
-      ariaLabel="Equipment"
-      className="tab-panel equipment-panel"
-      subTabBar={<EquipmentSubTabBar />}
+      ariaLabel="Rooms"
+      className="tab-panel rooms-panel"
       showDraftRestoredBanner={
         roomsSlice.source === "draft" &&
         Boolean(activeVersionId) &&
@@ -159,63 +155,6 @@ function EquipmentTabBody(props: {
         )}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
       />
-      <div className="attachment-workbench" aria-label="Equipment attachment tables">
-        <AttachmentTablePanel
-          projectId={project.id}
-          versionId={activeVersionId}
-          accessMode={project.access_mode}
-          versionLocked={project.active_version?.locked ?? false}
-          tableName="equipment_ervs"
-          title="ERV Datasheets"
-          fieldKey="datasheet_asset_ids"
-          fieldLabel="Datasheet"
-          config={DATASHEET_CONFIG}
-        />
-        <AttachmentTablePanel
-          projectId={project.id}
-          versionId={activeVersionId}
-          accessMode={project.access_mode}
-          versionLocked={project.active_version?.locked ?? false}
-          tableName="equipment_pumps"
-          title="Pump Datasheets"
-          fieldKey="datasheet_asset_ids"
-          fieldLabel="Datasheet"
-          config={DATASHEET_CONFIG}
-        />
-        <AttachmentTablePanel
-          projectId={project.id}
-          versionId={activeVersionId}
-          accessMode={project.access_mode}
-          versionLocked={project.active_version?.locked ?? false}
-          tableName="equipment_fans"
-          title="Fan Datasheets"
-          fieldKey="datasheet_asset_ids"
-          fieldLabel="Datasheet"
-          config={DATASHEET_CONFIG}
-        />
-        <AttachmentTablePanel
-          projectId={project.id}
-          versionId={activeVersionId}
-          accessMode={project.access_mode}
-          versionLocked={project.active_version?.locked ?? false}
-          tableName="thermal_bridges"
-          title="Thermal Bridge Datasheets"
-          fieldKey="datasheet_asset_ids"
-          fieldLabel="Datasheet"
-          config={DATASHEET_CONFIG}
-        />
-        <AttachmentTablePanel
-          projectId={project.id}
-          versionId={activeVersionId}
-          accessMode={project.access_mode}
-          versionLocked={project.active_version?.locked ?? false}
-          tableName="thermal_bridges"
-          title="Thermal Bridge Simulation Files"
-          fieldKey="simulation_file_asset_ids"
-          fieldLabel="Simulation File"
-          config={SIM_FILE_CONFIG}
-        />
-      </div>
       <RoomDialogStack
         isEditor={isEditor}
         roomsSlice={roomsSlice}
@@ -237,23 +176,3 @@ function EquipmentTabBody(props: {
     </SliceTableShell>
   );
 }
-
-const DATASHEET_CONFIG = {
-  assetKind: "datasheet" as const,
-  allowedTypes: ["application/pdf", "image/png", "image/jpeg", "image/webp"],
-  maxCount: 5,
-  maxFileSizeMb: 25,
-};
-
-const SIM_FILE_CONFIG = {
-  assetKind: "simulation_file" as const,
-  allowedTypes: [
-    "application/pdf",
-    "image/png",
-    "image/jpeg",
-    "application/json",
-    "application/octet-stream",
-  ],
-  maxCount: 5,
-  maxFileSizeMb: 25,
-};
