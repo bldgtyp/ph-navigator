@@ -1272,6 +1272,49 @@ def test_edit_field_bundle_changes_type_with_ack() -> None:
     assert audit["cleared_row_count"] == 1
 
 
+def test_edit_field_bundle_text_to_single_select_uses_client_options() -> None:
+    # Modal pre-populates derived options and lets the user rename /
+    # drop them before saving. The bundle must use the client's list as
+    # authoritative instead of re-materializing from the raw row values.
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field("cf_s", display_name="Status", field_type=CustomFieldType.short_text)
+    body = _with_field(body, field)
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_s": "Open"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_s": "Closed"})
+    body = _with_room(body, room_id="rm_3", number="103", custom={"cf_s": "Pending"})
+
+    # User-edited list: kept "Open" but renamed "Closed" → "Done" and
+    # dropped "Pending" entirely. "Pending" rows should be cleared
+    # (covered by the preflight ack).
+    client_options = [
+        SingleSelectOption(id="opt_open", label="Open", color="#3b82f6", order=0.0),
+        SingleSelectOption(id="opt_done", label="Done", color="#10b981", order=1.0),
+    ]
+    after = _make_bundle_after(field, field_type=CustomFieldType.single_select, config={})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_s",
+        after=after,
+        next_options=client_options,
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    stored_options = next_body.single_select_options["rooms.cf_s"]
+    assert [(o.id, o.label) for o in stored_options] == [
+        ("opt_open", "Open"),
+        ("opt_done", "Done"),
+    ]
+    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert rows["rm_1"]["cf_s"] == "opt_open"
+    # "Closed" matches the renamed "Done"? No — label match is case-
+    # insensitive on the trimmed text; "Closed" ≠ "Done", so it clears.
+    assert rows["rm_2"].get("cf_s") is None
+    assert rows["rm_3"].get("cf_s") is None
+    assert audit["cleared_row_count"] == 2
+
+
 def test_edit_field_bundle_rejects_forbidden_type_change() -> None:
     # short_text -> formula is not in CONVERSION_MATRIX.
     body = _seed_floor_option(_empty_body())
