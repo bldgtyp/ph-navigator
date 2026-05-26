@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-25
 TIME: planning (multi-PR phased implementation)
-STATUS: In progress (4 of 8 phases merged to main). Phased refactor of the frontend
+STATUS: In progress (7 of 8 phases merged to main). Phased refactor of the frontend
         ahead of the next feature wave (ERV/Pumps/Fans/Thermal-Bridge
         DataTables, Windows/Assemblies builder pages, 3D-Model-Viewer
         feature). Each phase below is a single reviewable PR that
@@ -13,9 +13,9 @@ PROGRESS:
   - [x] Phase 6 — Feature-shape standardization (merged 0384d60, 2026-05-25)
   - [x] Phase 1 — Split `data-table/lib.ts` (merged 67e5416, 2026-05-25)
   - [x] Phase 2 — Extract `useSliceTableController` (merged dd6dcc2, 2026-05-25)
-  - [ ] Phase 3 — Split `WindowsTab.tsx`
-  - [ ] Phase 4 — Split `VersionControls.tsx`
-  - [ ] Phase 5 — CSS tokenization + per-feature CSS split
+  - [x] Phase 3 — Split `WindowsTab.tsx` (merged e3969d7, 2026-05-25)
+  - [x] Phase 4 — Split `VersionControls.tsx` (merged 0b4a362, 2026-05-25)
+  - [x] Phase 5 — CSS tokenization + per-feature CSS split (merged fa1ba8d, 2026-05-25)
   - [ ] Phase 8 — CI guards
 PARENT-DOC: docs/code-reviews/2026-05-25/frontend-code-review.md
 SIBLING-DOC: docs/plans/2026-05-25/plan-22-backend-refactor-phased.md
@@ -121,9 +121,9 @@ its own §V.
 | **2nd** | Phase 6 | Feature-shape standardization | Locks in the four/seven-layer pattern before any new feature lands | ✅ merged `0384d60` |
 | **3rd** | Phase 1 | Split `data-table/lib.ts` into `lib/{concern}/` | Pure file move; prerequisite for Phase 2 import targets | ✅ merged `67e5416` |
 | **4th** | Phase 2 | Extract `useSliceTableController` + split `EquipmentTab.tsx` | **Biggest leverage** — must precede ERV/Pumps/Fans/TB tabs | ✅ merged `dd6dcc2` |
-| **5th** | Phase 3 | Split `WindowsTab.tsx` into `components/` | Must precede Assemblies builder | ⏳ pending |
-| **6th** | Phase 4 | Split `VersionControls.tsx` + extract state machine | Independent; do before more modals stack | ⏳ pending |
-| **7th** | Phase 5 | CSS tokenization + per-feature CSS split | **Must precede** 3D-Model-Viewer | ⏳ pending |
+| **5th** | Phase 3 | Split `WindowsTab.tsx` into `components/` | Must precede Assemblies builder | ✅ merged `e3969d7` |
+| **6th** | Phase 4 | Split `VersionControls.tsx` + extract state machine | Independent; do before more modals stack | ✅ merged `0b4a362` |
+| **7th** | Phase 5 | CSS tokenization + per-feature CSS split | **Must precede** 3D-Model-Viewer | ✅ merged `fa1ba8d` |
 | **8th** | Phase 8 | CI guards (file size, module shape) | Locks in everything above | ⏳ pending |
 
 ### 3.2 Dependency Map
@@ -402,7 +402,7 @@ Equipment tab must be identical before and after**. Concretely:
 
 ---
 
-## Phase 3 — Split `WindowsTab.tsx` into `components/` *(execute 5th)*
+## Phase 3 — Split `WindowsTab.tsx` into `components/` *(execute 5th)* — ✅ COMPLETE (merged e3969d7)
 
 ### 3.1 Scope
 
@@ -457,7 +457,7 @@ of its own scope.
 
 ---
 
-## Phase 4 — Split `VersionControls.tsx` + extract state machine *(execute 6th)*
+## Phase 4 — Split `VersionControls.tsx` + extract state machine *(execute 6th)* — ✅ COMPLETE (merged 0b4a362)
 
 ### 4.1 Scope
 
@@ -509,7 +509,7 @@ features/project_document/
 
 ---
 
-## Phase 5 — CSS tokenization + per-feature CSS split *(execute 7th)*
+## Phase 5 — CSS tokenization + per-feature CSS split *(execute 7th)* — ✅ COMPLETE (merged fa1ba8d)
 
 ### 5.1 Scope
 
