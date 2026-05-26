@@ -1,15 +1,25 @@
-"""Backward-compatibility facade for the `mutations/` sub-package.
+"""Custom-field schema mutations.
 
-The mutation logic now lives in `features.project_document.mutations`;
-this module re-exports the public API so existing import paths
-(`from features.project_document.schema_mutations import …`) keep
-working without churn. New code should import from
-`features.project_document.mutations` directly.
+Wire contracts live in `models`; the per-kind dispatchers live in
+`field_ops`, `options_ops`, `type_conversion`, `formula_ops`, and
+`bundle`; shared validation guards live in `guards`; and the
+`apply_schema_mutation` / `validate_schema_mutation` entry points
+live in `dispatcher`.
+
+This package re-exports the public API used by `drafts.py`, `mcp/`,
+the routes layer, and tests. To add a new mutation kind: register
+its Pydantic model in `models.py`, write its `apply_*` handler in
+the appropriate ops module, and add one entry to `_HANDLERS` in
+`dispatcher.py`.
 """
 
 from __future__ import annotations
 
-from features.project_document.mutations import (
+from features.project_document.mutations.dispatcher import (
+    apply_schema_mutation,
+    validate_schema_mutation,
+)
+from features.project_document.mutations.models import (
     AUDIT_KIND_BY_MUTATION,
     CONVERSION_MATRIX,
     TEXT_TO_SINGLE_SELECT_OPTION_CAP,
@@ -24,14 +34,7 @@ from features.project_document.mutations import (
     RenameFieldMutation,
     SetDescriptionMutation,
     SetFormulaMutation,
-    apply_schema_mutation,
-    validate_schema_mutation,
 )
-
-# Some tests monkey-patch `schema_mutations.validate_document` to spy on
-# the post-mutation validation pass. Re-export it here so those patches
-# still resolve, even though the actual call lives in `mutations.dispatcher`.
-from features.project_document.validation import validate_document
 
 __all__ = [
     "AUDIT_KIND_BY_MUTATION",
@@ -49,6 +52,5 @@ __all__ = [
     "SetFormulaMutation",
     "TEXT_TO_SINGLE_SELECT_OPTION_CAP",
     "apply_schema_mutation",
-    "validate_document",
     "validate_schema_mutation",
 ]
