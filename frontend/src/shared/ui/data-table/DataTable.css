@@ -1598,6 +1598,10 @@ td:has(> .data-table-fill-handle) {
   right: 0;
 }
 
+.data-table td[data-row-edge="bottom"] .data-table-fill-handle {
+  bottom: 0;
+}
+
 /* Plan 05 — chevron affordance on the active single-select cell.
    Anchored at the cell's right edge, vertically centered. The
    bottom-right fill handle (6×6, half-overlapping the seam) sits
