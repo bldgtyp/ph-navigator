@@ -19,6 +19,7 @@ from features.project_document.mutations.guards import (
     find_field,
     reject_duplicate_display_name,
     reject_field_id_collision,
+    reject_reserved_field_key,
     replace_rows_in_envelope,
     resolve_insert_position,
     strip_field_from_rows,
@@ -50,6 +51,7 @@ def apply_add_field(
     capability: TableFieldRegistry,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     current_fields = capability.read_field_defs(body)
+    reject_reserved_field_key(mutation.after.field_key)
     reject_field_id_collision(current_fields, mutation.after.field_key)
     reject_duplicate_display_name(
         current_fields,
@@ -160,6 +162,7 @@ def apply_duplicate_field(
                 "table_key": mutation.table_key,
             },
         )
+    reject_reserved_field_key(mutation.after.field_key)
     reject_field_id_collision(current_fields, mutation.after.field_key)
     reject_duplicate_display_name(
         current_fields,

@@ -45,6 +45,8 @@ cannot land on the wrong entity after reorder/delete conflicts.
 - Copy/paste assignment command for material id + CI/stud fields,
   deliberately not copying width, use-site notes, or photos.
 - Frontend dialogs/modals for geometry and destructive actions.
+- Unit-aware layer thickness, segment width, and steel-stud spacing
+  editors using shared IP/SI length helpers.
 - Draft ETag handling, stale-conflict UI, locked-version rejection, and
   same-editor tab behavior for this feature.
 
@@ -80,6 +82,9 @@ Add editor controls to the Phase 2 shell:
 - assembly sidebar/header actions;
 - layer thickness modal;
 - segment properties modal for geometry/function fields;
+- unit-aware display/input for `thickness_mm`, `width_mm`, and
+  `steel_stud_spacing_mm`, including active-editor behavior when units
+  are toggled mid-edit;
 - hover add controls;
 - destructive confirmations with site-photo detach counts;
 - pick/paste mode state, target highlighting, paste pulse, Escape /
@@ -108,6 +113,9 @@ Backend:
 Frontend:
 
 - modal form behavior;
+- length parsing/formatting through shared unit helpers;
+- focused layer/segment numeric editors are not rewritten when IP/SI is
+  toggled, and still commit canonical mm;
 - command error handling;
 - copy/paste stale material id rejection;
 - copy/paste visual state and reset behavior;
@@ -119,12 +127,14 @@ Browser:
 1. Create a new assembly from empty state.
 2. Rename and reclassify it.
 3. Add layers/segments, edit dimensions, flip orientation/layers.
-4. Delete a segment/layer with guard behavior visible.
-5. Duplicate and delete an assembly.
-6. Save, reload, and verify geometry persists.
-7. Copy/paste an assignment; verify pulse, undo, Escape exit, and
+4. Toggle SI/IP while a thickness or segment-width modal is open; verify
+   the draft string is stable and commit writes canonical mm.
+5. Delete a segment/layer with guard behavior visible.
+6. Duplicate and delete an assembly.
+7. Save, reload, and verify geometry persists.
+8. Copy/paste an assignment; verify pulse, undo, Escape exit, and
    use-site notes/photos are unchanged.
-8. Lock version and verify commands reject/controls disappear.
+9. Lock version and verify commands reject/controls disappear.
 
 Commands:
 

@@ -29,6 +29,8 @@ many segments, with shared values and one QA status.
 - De-dupe by `catalog_table + catalog_record_id`.
 - Duplicate-name disambiguation in picker and Specifications cards.
 - Shared `ProjectMaterialEditor`.
+- Unit-aware display/input for conductivity / lambda, density, and
+  specific heat using shared IP/SI helpers.
 - Shared-use warning and affected-use count/list.
 - Tracking edited catalog fields in `catalog_origin.local_overrides`.
 - Detach-to-new-material.
@@ -81,6 +83,9 @@ Add:
 - catalog list/search/grouping by category;
 - hand-enter material dialog;
 - shared material values editor;
+- material picker/specification value formatting for conductivity /
+  lambda, density, specific heat, and emissivity, with only emissivity
+  remaining unitless;
 - use-site note editor on each segment row inside a material card;
 - detach flow;
 - Specifications card interactions;
@@ -98,6 +103,9 @@ Backend:
 - de-dupe happy path;
 - duplicate catalog-origin ambiguity path;
 - shared material update affects all use-sites;
+- IP/SI material editor values submit canonical SI and preserve
+  `catalog_origin.local_overrides` comparisons against canonical SI,
+  not rounded display strings;
 - use-site note update affects only the target segment;
 - detach copies values/datasheets/status/notes, clears
   `catalog_origin`, preserves segment photos and use-site notes;
@@ -107,6 +115,10 @@ Frontend:
 
 - picker grouping/search;
 - duplicate material display;
+- material physical values display in the active unit system in picker,
+  material preview, shared editor, and Specifications cards;
+- focused material numeric editors are not rewritten when IP/SI is
+  toggled, and still submit canonical SI;
 - shared warning appears from both edit entry points;
 - Specifications sorting and viewer hiding of `na`/unused.
 
@@ -117,11 +129,15 @@ Browser:
    project-material row is reused.
 3. Hand-enter a material with null physical values.
 4. Edit shared material values and verify all use-sites reflect it.
-5. Add a use-site note and verify it stays with that segment.
-6. Detach one segment to a custom material and verify the use-site note
+5. Toggle SI/IP and verify conductivity / lambda, density, and specific
+   heat displays update without changing canonical stored values.
+6. Edit a material value in IP mode and verify the command payload is
+   canonical SI.
+7. Add a use-site note and verify it stays with that segment.
+8. Detach one segment to a custom material and verify the use-site note
    stays on the segment.
-7. Delete a segment and remove unused material explicitly.
-8. Save, reload, verify material/use-site state persists.
+9. Delete a segment and remove unused material explicitly.
+10. Save, reload, verify material/use-site state persists.
 
 Commands:
 

@@ -26,7 +26,8 @@ clear incomplete-state behavior.
 
 - Backend thermal service for one active assembly.
 - Content-hash/cache strategy for thermal inputs.
-- Frontend thermal label in the assembly header.
+- Frontend thermal label in the assembly header using shared IP/SI
+  thermal helpers.
 - Missing-material / missing-conductivity / invalid-geometry states.
 - Golden fixtures for:
   - simple homogeneous assembly;
@@ -75,6 +76,8 @@ HBJSON export:
 ## Frontend Work
 
 - render effective R-value / U-value with tooltip;
+- choose R-value in IP and U-value in SI from the same SI canonical
+  backend response;
 - debounce/refetch on relevant envelope changes;
 - show unfinished/material-data-needed state;
 - add project-header overflow action for HBJSON download;
@@ -95,6 +98,7 @@ Backend:
 Frontend:
 
 - thermal label loading/valid/unfinished/error states;
+- SI/IP thermal label conversion and reciprocal fixture behavior;
 - dirty-draft export warning;
 - export error rendering.
 
@@ -102,11 +106,13 @@ Browser:
 
 1. Assign materials to a complete assembly and verify thermal value
    appears.
-2. Remove one material and verify unfinished state.
-3. Clear conductivity and verify material-data-needed state.
-4. Save a version, make dirty draft changes, export, and verify warning
+2. Toggle SI/IP and verify the label switches between SI U-value and IP
+   R-value without a backend unit-contract change.
+3. Remove one material and verify unfinished state.
+4. Clear conductivity and verify material-data-needed state.
+5. Save a version, make dirty draft changes, export, and verify warning
    states that export reads last saved version.
-5. Download HBJSON and inspect that expected constructions/material ids
+6. Download HBJSON and inspect that expected constructions/material ids
    and specification statuses are present.
 
 Commands:
@@ -138,6 +144,8 @@ pnpm run build
   hash from assembly subtree plus referenced material fields only.
 - **Duplicate names break Honeybee identifiers.** Mitigation: id-backed
   export identifiers and tests.
+- **Thermal helper misuse.** Mitigation: test R/U reciprocal formatting
+  directly and keep backend/export SI-only.
 
 ## Lessons To Capture
 

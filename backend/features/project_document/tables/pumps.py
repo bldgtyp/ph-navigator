@@ -19,6 +19,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from features.project_document.custom_fields import (
+    RESERVED_FIELD_KEY_RECORD_ID,
     CustomFieldType,
     TableFieldDef,
 )
@@ -38,12 +39,18 @@ from features.project_document.validation import validate_document
 PUMPS_TABLE_NAME = "pumps"
 
 
-# Pumps built-in FieldDef seeds. `tag` survives this phase so Phase 2
-# can rename it cleanly to `record_id`. The `datasheet` attachment is
-# NOT a TableFieldDef entry — attachment is a FE-only renderer type and
-# never round-trips through the schema-mutation pipeline (PRD §P5.5).
+# Pumps built-in FieldDef seeds. `record_id` replaces Phase 1b's `tag`
+# entry end-to-end (display name stays "Tag" — the domain term). The
+# `datasheet` attachment is NOT a TableFieldDef entry — attachment is
+# a FE-only renderer type and never round-trips through the schema-
+# mutation pipeline (PRD §P5.5).
 PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
-    built_in_field_def(field_key="tag", display_name="Tag", field_type=CustomFieldType.short_text),
+    built_in_field_def(
+        field_key=RESERVED_FIELD_KEY_RECORD_ID,
+        display_name="Tag",
+        field_type=CustomFieldType.short_text,
+        description="Drawing-schedule tag (Phase 2: replaces `tag`).",
+    ),
     built_in_field_def(field_key="device_type", display_name="Device", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="use", display_name="Use", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),
@@ -63,6 +70,12 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
 )
 
 PUMPS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in PUMPS_BUILT_IN_FIELD_DEFS)
+
+# Module-load assertion: every FieldDef-capable table contract module
+# guarantees a `record_id` seed (PRD §P4.3, plan-31 phase-2 P3.3).
+assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in PUMPS_BUILT_IN_FIELD_DEFS), (
+    "Pumps built-in seed must contain a record_id FieldDef"
+)
 
 
 class PumpsSliceOptions(BaseModel):

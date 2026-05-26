@@ -52,6 +52,10 @@ assembly segments.
   - `assembly_segments` flattened from nested assemblies.
 - JSON Schema exposure for envelope row shapes if the current schema
   endpoint pattern supports it.
+- Unit descriptors on registered built-in physical table fields if the
+  current table-contract pattern supports render-time metadata. These
+  descriptors are frontend hints only; backend schemas and payloads
+  remain SI canonical.
 - Backend fixtures with one realistic wall/roof/floor sample and one
   incomplete sample.
 
@@ -100,6 +104,15 @@ Implement the envelope read service with:
 Bring `project_materials` and `assembly_segments` into the registered
 table-contract pattern so downloads, diff, attachment resolution, and
 future MCP table reads all discover them through one registry.
+Physical built-in fields should be identifiable for frontend
+unit-aware rendering:
+
+- `thickness_mm`, `width_mm`, and `steel_stud_spacing_mm` as length;
+- `conductivity_w_mk` as conductivity;
+- `density_kg_m3` as density;
+- `specific_heat_j_kgk` as specific heat.
+
+Do not imply custom `number` fields have units.
 
 ### Fixtures
 
@@ -119,6 +132,8 @@ Backend:
 - targeted project-document validation tests;
 - table-contract registry tests for `project_materials` and
   `assembly_segments`;
+- table-contract tests that physical built-ins expose unit descriptors
+  where supported, while custom numbers stay unitless;
 - read endpoint tests for saved version and draft source;
 - schema endpoint tests if schema routes are added or changed.
 

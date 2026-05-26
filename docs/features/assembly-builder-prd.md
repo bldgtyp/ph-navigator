@@ -14,6 +14,7 @@ RELATED:
   - context/technical-requirements/save-versioning.md
   - context/technical-requirements/attachments.md
   - context/technical-requirements/frontend-viewer-units.md
+  - docs/features/ip-si-unit-switching-prd.md
   - context/technical-requirements/llm-mcp-schema.md
   - context/technical-requirements/api.md
   - research/v1-assembly-builder-reference.md
@@ -351,6 +352,32 @@ Minimum v1 MCP/read capabilities:
 - perform the same semantic mutations as the browser, behind ETag and
   draft-lease protection.
 
+### 5.10 Unit Switching Boundary
+
+Assembly Builder must follow the global IP/SI contract in
+`docs/features/ip-si-unit-switching-prd.md`:
+
+- project document fields, command payloads, table downloads, MCP
+  reads/writes, backend validation, thermal calculations, and HBJSON
+  export remain SI canonical;
+- all display/input conversion happens in React through shared helpers
+  exported from `frontend/src/lib/units/`;
+- no Assembly Builder component should carry V1-local conversion logic
+  or hard-code SI suffixes when the value is user-facing.
+
+Canonical SI fields in this feature include:
+
+- `thickness_mm`;
+- `width_mm`;
+- `steel_stud_spacing_mm`;
+- `conductivity_w_mk`;
+- `density_kg_m3`;
+- `specific_heat_j_kgk`;
+- backend thermal response values in `W/(m2-K)` and `m2-K/W`.
+
+Unitless fields include emissivity, specification status, notes,
+colors, ids, booleans, and all enum values.
+
 ## 6. Domain Model
 
 ### 6.0 Cross-Table Identity And Completeness Rules
@@ -632,6 +659,11 @@ Layer add controls appear as compact hover `+` buttons above and below
 the thickness cell, matching V1's interaction model.
 
 Editing thickness opens a modal with unit-aware input parsing.
+The modal seeds its draft from `thickness_mm`, displays the active
+unit-system label, and commits canonical mm through the semantic
+command. If the user toggles IP/SI while the field is focused, do not
+rewrite the draft string under the cursor; parse it on commit using the
+editor's visible unit context.
 
 Deleting a layer is only available when the assembly has more than one
 layer. The UI should disable the destructive action with an explanatory
@@ -663,6 +695,11 @@ owns geometry and assembly-function properties:
 - continuous-insulation flag;
 - steel-stud cavity flag;
 - steel-stud spacing.
+
+Segment width and steel-stud spacing follow the same unit-input rules as
+layer thickness: display in the active unit system, accept explicit
+suffixes where supported by the shared length parser, and commit
+canonical mm.
 
 Specification status, datasheets, and notes do not live in this modal.
 Project-material specification status, datasheets, and product notes
@@ -739,6 +776,15 @@ The shared editor owns product-value fields only:
 - emissivity;
 - ARGB/color;
 - any future ProjectMaterial physical-property fields.
+
+Physical values use the shared unit helpers:
+
+- conductivity / lambda displays as `W/(m-K)` in SI and as
+  `Btu/(h-ft-F)`, `R/in`, or both in IP through explicit thermal
+  helpers;
+- density displays as `kg/m3` in SI and `lb/ft3` in IP;
+- specific heat displays as `J/(kg-K)` in SI and `Btu/(lb-F)` in IP;
+- emissivity remains unitless.
 
 The shared editor does not own datasheets, site photos, specification
 status, or notes. Those remain in Specifications because they are QA and
@@ -875,6 +921,10 @@ copy and lets the user choose field by field:
 
 Fields in `local_overrides` default to keep mine.
 
+Physical value diffs display in the active unit system but compare and
+write canonical SI values. Local override tracking must compare
+canonical SI values, not rounded display strings.
+
 Drift detection must follow the canonical catalog rule:
 
 - drifted when `catalog_origin.catalog_version_id` differs from the
@@ -1003,6 +1053,11 @@ Layer height and segment width must share one `canvasZoom` scale so the
 assembly's aspect ratio is never distorted. Horizontal overflow should
 scroll instead of compressing segments.
 
+Canvas proportions are based on canonical mm values and `canvasZoom`.
+Toggling IP/SI changes labels, tooltips, and editor units only; it must
+not change the relative geometry, scroll position, zoom state, or dirty
+draft state.
+
 Null-material segments render as unfinished:
 
 - blank or neutral fill;
@@ -1061,6 +1116,8 @@ Display:
 
 This may be computed client-side from draft state because it is a simple
 display aggregation.
+Use the shared length formatter; do not duplicate conversion factors in
+the envelope feature.
 
 ### 9.2 Effective R-/U-value
 
@@ -1095,6 +1152,10 @@ Display:
 
 - IP: effective R-value, one decimal;
 - SI: effective U-value, three decimals.
+
+The backend thermal endpoint returns SI canonical values. The frontend
+chooses the active display quantity and unit suffix through shared
+thermal helpers.
 
 When any segment has no material, still display the value from assigned
 segments when valid, but mark the assembly as unfinished.
@@ -1248,6 +1309,7 @@ Frontend responsibilities:
 - local interaction state;
 - optimistic in-memory document updates;
 - unit display/input conversion;
+- IP/SI toggle behavior for every user-facing physical quantity;
 - modal/picker/canvas UI;
 - command / draft-write queueing and ETag handling through shared
   project-document infrastructure.
@@ -1288,6 +1350,7 @@ Pydantic models during implementation.
 - hover add-layer and add-segment controls;
 - three core edit modals;
 - total thickness and effective R-/U-value header labels;
+- IP/SI-aware layer, segment, material, and thermal displays;
 - separate flip-orientation and flip-layers actions;
 - copy/paste with pick/paste cursor modes and 20-step undo;
 - material legend;
@@ -1310,6 +1373,8 @@ Pydantic models during implementation.
 - No multi-PATCH segment save.
 - No horizontally squished canvas.
 - Catalog drift is explicit and reviewable.
+- No local Assembly Builder unit-conversion helpers; use the shared
+  IP/SI unit foundation.
 
 ### 12.3 V1 Parity Audit Decisions
 
@@ -1366,6 +1431,10 @@ The feature is acceptable when:
     after a concurrent reorder/delete.
 14. Destructive operations clearly report detached site-photo counts and
     never delete project asset bytes as a side effect.
+15. Toggling IP/SI updates layer thickness labels, segment width /
+    steel-stud spacing labels, material previews, material editor
+    labels/values, total thickness, and thermal labels without dirtying
+    the draft or changing canonical SI payloads.
 
 ## 14. Test Expectations
 
@@ -1395,6 +1464,12 @@ Future implementation plans should include tests for:
   cell, cross-project asset reference, and Save As while uploads are
   pending.
 - Viewer and locked-version permission rendering.
+- IP/SI conversion for layer height, segment width, steel-stud spacing,
+  material conductivity / lambda, density, specific heat, total
+  thickness, and thermal labels.
+- Unit toggling while a layer/segment/material numeric editor is focused
+  does not rewrite the active draft string and still commits canonical
+  SI values.
 - HBJSON export shape, no-surface-film steel-stud behavior, dirty-draft
   warning, `ph_nav` / `ref_status` metadata, and 422 failure report for
   incomplete assemblies.

@@ -20,6 +20,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from features.project_document.custom_fields import (
+    RESERVED_FIELD_KEY_RECORD_ID,
     CustomFieldType,
     CustomValue,
     TableFieldDef,
@@ -43,10 +44,12 @@ PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type"
 PumpOptionKey = Literal["pumps.device_type"]
 PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY,)
 
-# v3 wire shape: every built-in FieldDef is persisted in the document.
-# v2 readers are intentionally absent — the pre-deploy posture
-# (PRD §P3.6) is that dev DBs rebuild on the phase boundary.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 3
+# v4 wire shape: Phase 2 promotes the pinned identifier to a real
+# `record_id` FieldDef on every FieldDef-capable table; Pumps' `tag`
+# entry is renamed to `record_id` (display label stays "Tag"). Pre-
+# deploy posture (PRD §P3.6) — no v2/v3 reader is provided; dev DBs
+# rebuild on the phase boundary.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 4
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -358,7 +361,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[3] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[4] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -389,6 +392,7 @@ class ProjectDocumentV1(BaseModel):
                 labels.add(normalized_label)
 
         rooms_field_defs_by_key = _index_table_field_defs("rooms", self.tables.rooms.field_defs)
+        _require_exactly_one_record_id("rooms", rooms_field_defs_by_key)
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
         room_ids: set[str] = set()
@@ -423,6 +427,7 @@ class ProjectDocumentV1(BaseModel):
         self._validate_rooms_formula_cycles(rooms_field_defs_by_key)
 
         pumps_field_defs_by_key = _index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
+        _require_exactly_one_record_id("pumps", pumps_field_defs_by_key)
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
         pump_ids: set[str] = set()
         for pump in self.tables.equipment.pumps.rows:
@@ -487,6 +492,21 @@ class ProjectDocumentV1(BaseModel):
                 detect_cycles(f.field_key, stored, others)
             except FormulaCycleError as exc:
                 raise ValueError(f"Rooms formula cycle for {f.display_name!r}: {' -> '.join(exc.cycle_path)}") from exc
+
+
+def _require_exactly_one_record_id(
+    table_label: str,
+    field_defs_by_key: dict[str, TableFieldDef],
+) -> None:
+    """Enforce PRD §P4.3 invariant: every FieldDef-capable table must
+    carry exactly one entry whose `field_key == "record_id"`. Zero or
+    many is a structured validation failure.
+    """
+    matches = [key for key in field_defs_by_key if key == RESERVED_FIELD_KEY_RECORD_ID]
+    if len(matches) != 1:
+        raise ValueError(
+            f"{table_label}.field_defs must contain exactly one record_id entry, found {len(matches)}"
+        )
 
 
 def _index_table_field_defs(

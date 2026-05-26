@@ -11,6 +11,7 @@ RELATED:
   - context/technical-requirements/save-versioning.md
   - context/technical-requirements/attachments.md
   - context/technical-requirements/api.md
+  - docs/features/ip-si-unit-switching-prd.md
   - context/technical-requirements/llm-mcp-schema.md
   - context/CODING_STANDARDS.md
 ---
@@ -48,6 +49,10 @@ updated in the same pass.
   hand-author nested array JSON-Patch in UI components.
 - Keep attachment bytes in the generic `project_assets` backbone.
 - Keep calculations and HBJSON serialization in the backend.
+- Keep all stored/transported envelope numbers SI canonical; use the
+  shared IP/SI unit helpers for layer heights, segment widths,
+  steel-stud spacing, conductivity / lambda, density, specific heat,
+  total thickness, thermal labels, and material previews.
 - Keep frontend code under `frontend/src/features/envelope/` and
   backend code under `backend/features/envelope/`, unless a phase
   explicitly explains why existing feature packages own the work.
@@ -103,6 +108,8 @@ defaults are active unless a phase spike proves otherwise:
 - project-material names may duplicate;
 - envelope mutations use semantic commands;
 - segment widths normalize per layer;
+- unit toggling changes labels/input units only, never canonical
+  payloads, canvas proportions, zoom state, or draft dirtiness;
 - segment-owned `use_site_notes` preserve V1's per-segment note
   capability, while product notes and specification status stay on
   `project_materials[]`;
