@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Query, Request
 from starlette import status
 
-from features.auth.models import UserPublic
-from features.auth.routes import require_current_user
+from features.auth.routes import CurrentUser
 from features.catalogs.frame_types.models import (
     CatalogFrameTypeCreateRequest,
     CatalogFrameTypeListResponse,
@@ -23,8 +22,6 @@ from features.catalogs.frame_types.service import (
     reactivate_frame_type,
     update_frame_type,
 )
-
-CurrentUser = Annotated[tuple[UserPublic, object], Depends(require_current_user)]
 
 router = APIRouter(prefix="/api/v1/catalogs/frame-types", tags=["catalogs"])
 

@@ -8,8 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from starlette import status
 
-from features.auth.models import UserPublic
-from features.auth.routes import require_current_user
+from features.auth.routes import CurrentUser
 from features.projects.access import (
     ProjectAccess,
     require_editor_user,
@@ -34,7 +33,6 @@ from features.projects.service import (
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
-CurrentUser = Annotated[tuple[UserPublic, object], Depends(require_current_user)]
 ProjectViewAccess = Annotated[ProjectAccess, Depends(require_project_view_access)]
 ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access)]
 
