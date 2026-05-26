@@ -144,11 +144,12 @@ Properties:
   legality, option-list reference integrity, and formula parse /
   cycle / dependency rules. Rejected mutations do not modify the
   stored draft. Save re-runs full-document validation as a final gate.
-- **Schema version pinning (v3).** Drafts and saved versions tag the
-  body with `schema_version: 3` (Phase 1b cutover). Bodies posted with
-  `schema_version: 2` are rejected with a structured
-  `invalid_project_document` error — there is no v2 reader (pre-deploy
-  posture; dev DBs rebuild on the phase boundary).
+- **Schema version pinning (v4).** Drafts and saved versions tag the
+  body with `schema_version: 4` (Phase 2 cutover — promotes `record_id`
+  to a real per-table FieldDef). Bodies posted with any prior version
+  are rejected with a structured `invalid_project_document` error —
+  there is no v2 / v3 reader (pre-deploy posture; dev DBs rebuild on
+  each phase boundary).
 
 The draft/save state machine is consolidated here in §§8.3–8.6. The
 former standalone decision note is archived in `docs/REMOVED.md`.
