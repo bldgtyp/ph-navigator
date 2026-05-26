@@ -39,6 +39,8 @@ folded back into the PRD.
   needed.
 - Performance pass for canvas rendering, Specifications cards, and
   thermal refetch behavior.
+- Full IP/SI smoke across Assembly Builder surfaces, confirming display
+  conversion without document or MCP unit-contract changes.
 - Docs-pass updating PRD lessons and any context/API docs whose durable
   contract changed during implementation.
 - Final V1 parity audit against
@@ -72,6 +74,9 @@ Minimum tool outcomes:
 - Add realistic scale fixture.
 - Verify natural sort and duplicate material-name disambiguation.
 - Confirm canvas does not horizontally compress segments.
+- Confirm IP/SI toggling does not alter canvas proportions, zoom state,
+  scroll position, command payload SI values, downloads, or MCP
+  responses.
 - Confirm Specifications remains scan-friendly at dozens of materials.
 - Confirm thermal refetches are debounced and not per-keystroke.
 - Confirm viewer and locked-version behavior across all sub-surfaces.
@@ -98,6 +103,7 @@ Frontend:
   - attachments;
   - thermal/export;
   - catalog drift refresh;
+  - IP/SI toggle across layer, segment, material, and thermal surfaces;
   - viewer/locked mode.
 
 Repo:
@@ -124,9 +130,11 @@ Browser:
    surfaces.
 4. All phase-level deferred items are either closed or moved into a
    named post-v1.1 follow-up.
-5. HBJSON import remains either intentionally deferred with a named
+5. Unit switching is proven on every user-facing physical quantity
+   without mutating project document state.
+6. HBJSON import remains either intentionally deferred with a named
    follow-up or promoted into a new plan before release.
-6. PRD implementation lessons are updated with any durable discoveries.
+7. PRD implementation lessons are updated with any durable discoveries.
 
 ## Risks
 

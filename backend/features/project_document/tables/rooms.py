@@ -16,6 +16,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from features.project_document.custom_fields import (
+    RESERVED_FIELD_KEY_RECORD_ID,
     CustomFieldType,
     CustomValue,
     TableFieldDef,
@@ -57,11 +58,15 @@ ROOMS_TABLE_NAME = "rooms"
 _ROOMS_TABLE_PATH: tuple[str, ...] = (ROOMS_TABLE_NAME,)
 
 
-# Feature-author-declared built-in FieldDef seeds for Rooms. New
-# projects land this verbatim into `rooms.field_defs` on first save.
-# Order is fingerprint-significant (changes invalidate persisted view
-# state). Per PRD §P5.1; `record_id` lands in Phase 2.
-ROOMS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
+# Seed formula source for the Rooms `record_id` field. Resolved against
+# the seed's own Number/Name display names at module load; the resolved
+# AST is what lands in `config["ast"]`.
+ROOMS_RECORD_ID_FORMULA_SOURCE = 'concat({Number}, " — ", {Name})'
+
+# Built-in FieldDefs excluding `record_id`. The seed for `record_id`
+# parses + resolves against this tuple's display names below, then
+# `ROOMS_BUILT_IN_FIELD_DEFS` is assembled with `record_id` at index 0.
+_ROOMS_NON_RECORD_ID_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="number", display_name="Number", field_type=CustomFieldType.short_text, default=""),
     built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text, default=""),
     built_in_field_def(field_key="floor_level", display_name="Floor", field_type=CustomFieldType.single_select),
@@ -69,6 +74,70 @@ ROOMS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="num_people", display_name="People", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="num_bedrooms", display_name="Bedrooms", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="icfa_factor", display_name="iCFA", field_type=CustomFieldType.number, default=1.0),
+)
+
+
+def _build_rooms_record_id_seed() -> TableFieldDef:
+    """Build the Rooms `record_id` FieldDef with a pre-resolved formula AST.
+
+    The AST is resolved at module load against the other Rooms seed
+    entries so the persisted ref ids ("number", "name") stay stable
+    even if a user later renames the Number / Name display labels.
+    """
+    from features.project_document.formula import (
+        FieldRegistryEntry,
+        ast_to_json,
+        parse,
+        resolve_refs,
+    )
+    from features.project_document.formula.resolver import collect_field_refs
+
+    registry = tuple(
+        FieldRegistryEntry(
+            field_id=f.field_key,
+            display_name=f.display_name,
+            origin="built_in",
+            field_type="text" if f.field_type.value in ("short_text", "long_text", "url") else (
+                "number" if f.field_type.value == "number" else (
+                    "single_select" if f.field_type.value == "single_select" else "text"
+                )
+            ),
+        )
+        for f in _ROOMS_NON_RECORD_ID_FIELD_DEFS
+    )
+    resolved = resolve_refs(parse(ROOMS_RECORD_ID_FORMULA_SOURCE), registry)
+    config: dict[str, object] = {
+        "source": ROOMS_RECORD_ID_FORMULA_SOURCE,
+        "ast": ast_to_json(resolved),
+        "deps": collect_field_refs(resolved),
+        "result_type": "text",
+    }
+    return built_in_field_def(
+        field_key=RESERVED_FIELD_KEY_RECORD_ID,
+        display_name="Record-ID",
+        field_type=CustomFieldType.formula,
+        config=config,
+        description=(
+            "Computed identifier. Defaults to {Number} — {Name}; edit the "
+            "formula or change the type to enter values directly."
+        ),
+    )
+
+
+# Feature-author-declared built-in FieldDef seeds for Rooms. New
+# projects land this verbatim into `rooms.field_defs` on first save.
+# `record_id` is pinned at index 0; the renderer pins by `field_key`,
+# but seed order also drives the fingerprint and the column layout
+# default.
+ROOMS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
+    _build_rooms_record_id_seed(),
+    *_ROOMS_NON_RECORD_ID_FIELD_DEFS,
+)
+
+# Module-load assertion: every FieldDef-capable table contract module
+# guarantees a `record_id` seed (PRD §P4.3, plan-31 phase-2 P3.3).
+assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in ROOMS_BUILT_IN_FIELD_DEFS), (
+    "Rooms built-in seed must contain a record_id FieldDef"
 )
 
 # Canonical built-in field_keys in seed order. Drives the field-key

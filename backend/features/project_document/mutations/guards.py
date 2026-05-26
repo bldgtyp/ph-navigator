@@ -14,6 +14,7 @@ from __future__ import annotations
 from starlette import status
 
 from features.project_document.custom_fields import (
+    RESERVED_CUSTOM_FIELD_KEYS,
     TableFieldDef,
     normalize_display_name,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "read_rows_from_envelope",
     "reject_duplicate_display_name",
     "reject_field_id_collision",
+    "reject_reserved_field_key",
     "replace_rows_in_envelope",
     "resolve_insert_position",
     "strip_field_from_rows",
@@ -80,6 +82,23 @@ def reject_field_id_collision(
             "custom_field_invalid_field_id",
             "Custom field id is already in use on this table.",
             {"field_id": new_field_key},
+        )
+
+
+def reject_reserved_field_key(field_key: str) -> None:
+    """Reject `field_key`s reserved for built-in slots (PRD §P4.3).
+
+    Custom fields cannot claim `"record_id"` as their `field_key`; the
+    slot belongs to the per-table built-in identifier FieldDef. Phase
+    1a reserved the namespace before the semantics shipped; Phase 2
+    wires the guard into the add / duplicate dispatchers.
+    """
+    if field_key in RESERVED_CUSTOM_FIELD_KEYS:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_invalid_field_id",
+            f"Custom fields cannot use the reserved field_key {field_key!r}.",
+            {"field_id": field_key, "reason": "reserved_field_key"},
         )
 
 

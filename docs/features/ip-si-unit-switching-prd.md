@@ -546,18 +546,49 @@ Known future preferences:
 Do not add these columns in the foundation slice unless the dimensions
 panel is implemented at the same time.
 
-### 9.6 Envelope Builder surfaces
+### 9.6 Assembly Builder / Envelope surfaces
 
-Envelope Builder should use this foundation for:
+Assembly Builder and future Envelope surfaces should use this
+foundation for:
 
 - layer thickness in `thickness_mm`;
-- material conductivity in `conductivity_w_mk`;
+- segment width in `width_mm`;
+- steel-stud spacing in `steel_stud_spacing_mm`;
+- material conductivity / lambda in `conductivity_w_mk`;
+- material density in `density_kg_m3`;
+- material specific heat in `specific_heat_j_kgk`;
 - displayed R-value / U-value summaries;
-- segment widths and proportional canvas labels;
+- total-thickness summaries;
+- proportional canvas labels;
+- material picker, material preview, legend, and Specifications cards;
+- catalog-drift / refresh diff dialogs for physical material values;
 - future thermal-bridge psi-value display.
 
 The Assembly Builder must not hard-code SI labels the way V1's material
 detail modal did.
+
+Assembly Builder behavior is:
+
+- canonical document fields, command payloads, table downloads, MCP
+  reads/writes, thermal calculations, and HBJSON export remain SI;
+- canvas geometry uses canonical mm values plus `canvasZoom`, so
+  toggling units changes labels and numeric inputs, not the rendered
+  proportions or zoom state;
+- layer thickness, segment width, and steel-stud spacing editors seed
+  from canonical mm, display in the active unit system, parse explicit
+  suffixes where supported, and commit canonical mm through semantic
+  envelope commands;
+- if units are toggled while a layer/segment/material numeric input is
+  focused, the draft string under the cursor is not rewritten; on
+  commit it is parsed under that editor's visible unit context;
+- material editors and catalog pickers convert conductivity, density,
+  and specific heat for display/input, while emissivity, SHGC/g-values,
+  specification status, notes, and colors remain unitless;
+- IP material conductivity may show conductivity in
+  `Btu/(h-ft-F)`, `R/in`, or both, but `R/in` must use an explicit
+  named helper because it is not a generic conductivity conversion;
+- catalog refresh comparisons and local override tracking compare
+  canonical SI values even when the dialog displays converted values.
 
 ### 9.7 Model viewer surfaces
 
@@ -673,10 +704,15 @@ round-trip tests stricter than UI formatting.
 3. Window frame/glazing picker values render through unit helpers.
 4. Future Window Builder dimensions can reuse the length parser without
    reworking preference state.
-5. Future Envelope Builder layer/material/R-value surfaces can reuse the
-   thermal helpers without reworking preference state.
+5. Future envelope-related layer/material/R-value surfaces beyond
+   Assembly Builder can reuse the thermal helpers without reworking
+   preference state.
 6. Future Model viewer info fields can use unit descriptors without
    adding a second preference store.
+7. Assembly Builder plans consume the same helpers for layer heights,
+   segment widths, steel-stud spacing, conductivity / lambda, density,
+   specific heat, total thickness, material previews, thermal labels,
+   and catalog refresh diffs.
 
 ### 11.5 Verification gates
 
@@ -805,4 +841,3 @@ This feature is done when:
 - toggling units does not mutate project documents or dirty drafts;
 - tests prove API persistence, frontend state behavior, conversion
   round-trips, and at least one browser-level toggle flow.
-

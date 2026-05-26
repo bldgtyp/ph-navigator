@@ -33,6 +33,9 @@ and the basic assembly mental model before editor commands are added.
 - Assembly header with active picker, total thickness, placeholder
   thermal label, zoom controls, and disabled editor actions.
 - Proportional canvas rendering for layers and segments.
+- IP/SI-aware read-only labels for layer thickness, segment width,
+  material conductivity / lambda, total thickness, and placeholder
+  thermal states.
 - Null-material visual treatment.
 - Material legend.
 - Specifications scaffold with one card per project material, use-site
@@ -77,6 +80,9 @@ Render the visual assembly as the primary object, not as a decorative
 card. Preserve aspect ratio by sharing one zoom scale across layer
 height and segment width. Horizontal overflow scrolls instead of
 compressing segments.
+Unit toggling must not change canonical geometry, scroll position, or
+`canvasZoom`; it only changes labels, tooltips, and formatted physical
+values.
 
 ### Specifications Scaffold
 
@@ -84,6 +90,8 @@ Render material cards from derived use-sites. Keep upload/edit controls
 hidden for now. This phase should establish the sorting and viewer
 visibility rules that later evidence workflows reuse. Use-site notes are
 read-only in this phase but must appear on the correct segment row.
+Material physical values should already use shared unit helpers so
+Specifications does not start life with hard-coded SI labels.
 
 ## Verification Gates
 
@@ -92,6 +100,8 @@ Frontend:
 - route tests for redirects and active assembly id handling;
 - component tests for empty / populated / viewer / locked states;
 - component tests that use-site notes render with the expected segment;
+- component tests that toggling IP/SI changes labels/values without
+  changing canvas dimensions or dirty state;
 - build passes.
 
 Browser:
@@ -103,6 +113,8 @@ Browser:
 5. Switch to locked version; verify edit controls are absent/disabled.
 6. Open anonymous viewer; verify visible evidence/cards obey viewer
    rules.
+7. Toggle SI/IP and verify layer/segment/material labels update while
+   canvas proportions stay stable.
 
 Commands:
 

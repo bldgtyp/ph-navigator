@@ -358,6 +358,8 @@ Initial consumers:
   Windows tab;
 - any existing window value displays that show `width_mm`,
   `u_value_w_m2k`, `psi_g_w_mk`, `psi_install_w_mk`, or `g_value`.
+- any Assembly Builder UI that exists by the time this phase lands,
+  especially material previews/cards and thermal labels.
 
 ### 7.2 Target Files
 
@@ -417,7 +419,26 @@ built-in physical table column needs it. The consuming feature should
 own a non-persisted quantity descriptor; custom `number` fields remain
 unitless.
 
-### 7.6 Tests
+### 7.6 Assembly Builder Handoff Checklist
+
+Plan 32 does not need to build the Assembly Builder, but it must leave a
+foundation that the Assembly Builder plans can consume without local
+conversion code.
+
+- [ ] Length helpers support layer `thickness_mm`, segment `width_mm`,
+      and `steel_stud_spacing_mm` display/input.
+- [ ] Thermal helpers support effective U-value, effective R-value,
+      conductivity / lambda, and explicit `R/in` from conductivity.
+- [ ] Material helpers support density and specific heat display/input.
+- [ ] Active editor behavior is documented and tested well enough that
+      Assembly Builder modals can keep focused input strings stable
+      across unit toggles.
+- [ ] Helper APIs are exported through `frontend/src/lib/units/index.ts`
+      so Assembly Builder imports do not reach into helper internals.
+- [ ] Assembly Builder phase docs identify every physical UI surface
+      that must consume these helpers.
+
+### 7.7 Tests
 
 - [ ] Catalog list renders SI labels by default.
 - [ ] Toggle to IP updates catalog labels and displayed values.
@@ -428,7 +449,7 @@ unitless.
 - [ ] Window picker values update on toggle.
 - [ ] Toggling units does not mutate refresh override flags.
 
-### 7.7 Phase Gate
+### 7.8 Phase Gate
 
 Commands:
 
@@ -465,6 +486,9 @@ roadmap slice, repeat the meaningful checks against staging/Render.
       does not call `PATCH /api/v1/auth/preferences`.
 - [ ] Project JSON download after toggling still contains SI canonical
       field names and values.
+- [ ] If Assembly Builder routes exist, toggle units there and verify
+      layer/segment labels, material values, and thermal labels update
+      without creating a draft or changing canvas proportions.
 
 ### 8.2 E2E/Test Additions
 
@@ -561,8 +585,9 @@ stored preference plumbing.
 - [ ] Equipment schema cleanup for legacy IP-named fields such as
       `flow_gpm`.
 - [ ] Model viewer info-panel unit descriptor implementation.
-- [ ] Assembly Builder layer/material/thermal display consumers beyond
-      shared helper readiness.
+- [ ] Assembly Builder implementation itself; this plan provides helper
+      readiness and handoff gates, while the Assembly Builder phase docs
+      own the actual envelope UI consumers.
 
 ## 12. Lessons Learned
 
@@ -574,4 +599,3 @@ Append during implementation:
 - [ ] Any conversion-factor corrections compared with V1.
 - [ ] Any active-editor behavior surprises.
 - [ ] Any stale context/story docs found during closeout.
-

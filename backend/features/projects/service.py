@@ -12,7 +12,16 @@ from database import connection, transaction
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
-from features.project_document.document import ProjectDocumentProject, ProjectDocumentV1
+from features.project_document.document import (
+    EmptyEquipmentTables,
+    ProjectDocumentProject,
+    ProjectDocumentTables,
+    ProjectDocumentV1,
+    PumpsTableEnvelope,
+    RoomsTableEnvelope,
+)
+from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import body_size_bytes
 from features.projects import repository
 from features.projects.models import (
@@ -30,6 +39,10 @@ from features.shared.errors import api_error
 
 
 def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
+    # New projects land the built-in FieldDef seeds (incl. `record_id`)
+    # into each FieldDef-capable table verbatim. `validate_document_
+    # references` enforces "exactly one record_id" per table, so the
+    # seeding has to happen here rather than at first save.
     return ProjectDocumentV1(
         project=ProjectDocumentProject(
             name=payload.name,
@@ -37,7 +50,13 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
             cert_programs=payload.cert_programs,
             phius_number=payload.phius_number,
             phius_dropbox_url=payload.phius_dropbox_url,
-        )
+        ),
+        tables=ProjectDocumentTables(
+            rooms=RoomsTableEnvelope(field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS)),
+            equipment=EmptyEquipmentTables(
+                pumps=PumpsTableEnvelope(field_defs=list(PUMPS_BUILT_IN_FIELD_DEFS)),
+            ),
+        ),
     )
 
 

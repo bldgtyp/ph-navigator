@@ -64,6 +64,8 @@ field-by-field.
 - Assemblies active-assembly drift banner.
 - Specifications page drift summary.
 - Refresh dialog with keep mine / take catalog / edit value choices.
+- Unit-aware display of physical value diffs while all comparisons and
+  writes remain canonical SI.
 - Review-all report with per-material actions only.
 - Read-only behavior for viewer/locked versions.
 
@@ -78,6 +80,8 @@ Backend:
 - refresh writes chosen values and updates `catalog_version_id` /
   `synced_at`;
 - refresh preserves `local_overrides` verbatim.
+- displayed IP/SI values do not change drift predicates or local
+  override tracking.
 
 Frontend:
 
@@ -91,11 +95,13 @@ Browser:
 1. Pick catalog material into a segment.
 2. Modify catalog material current version.
 3. Verify drift badge/banner appears.
-4. Open refresh dialog; keep one field, take another, edit a third.
-5. Apply and verify project material values update only after explicit
+4. Toggle IP/SI and verify physical-value diffs reformat without
+   changing drift state.
+5. Open refresh dialog; keep one field, take another, edit a third.
+6. Apply and verify project material values update only after explicit
    confirmation.
-6. Deactivate source row and verify `source_deactivated` state.
-7. Open locked/viewer version and verify drift is visible but not
+7. Deactivate source row and verify `source_deactivated` state.
+8. Open locked/viewer version and verify drift is visible but not
    actionable.
 
 Commands:
