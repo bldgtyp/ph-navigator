@@ -234,6 +234,8 @@ Automate now:
 Automate next, now that Pumps has landed:
 
 - frontend attachment cell tests against a real Equipment table;
+  **done for Pumps delete/write behavior on 2026-05-26** via
+  `frontend/src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`;
 - Playwright local browser workflow for upload / preview / detach /
   reload;
 - Render staging checklist, possibly as a manual release checklist
@@ -253,7 +255,8 @@ Current order:
    attachment registry and document reference path.
 2. **Done 2026-05-26:** add fake-storage backend coverage for the
    Pumps datasheet upload / attach / detach path.
-3. Add frontend attachment cell tests against the real Pumps table.
+3. **Done 2026-05-26:** add frontend attachment cell tests against
+   the real Pumps table.
 4. Run local browser workflow against local object storage.
 5. Add the opt-in R2 smoke.
 6. Deploy to Render and run the staging acceptance checklist.
@@ -323,6 +326,31 @@ cd backend && uv run pytest tests/test_assets_service.py tests/test_assets_regis
 Result: `10 passed`, `1 warning` from Starlette's deprecated
 `HTTP_422_UNPROCESSABLE_ENTITY` symbol.
 
+### 2026-05-26 - Frontend Pumps attachment-cell coverage
+
+Extended `frontend/src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`
+so the real `PumpsTable` renders a Pump row with
+`datasheet_asset_ids: ["asset_pdf_1"]`, resolves fake asset URL
+metadata through the normal asset URL query, and exercises the embedded
+`AttachmentCell` delete path.
+
+Coverage now asserts:
+
+- the Pump `Datasheet` column renders the resolved PDF attachment;
+- Delete on the attachment cell emits a DataTable `cell` write with
+  `fieldKey: "datasheet_asset_ids"` and `value: []`;
+- the assertion runs through the actual `PumpsTable` column renderer
+  rather than a standalone attachment-cell fixture.
+
+Verification run:
+
+```bash
+cd frontend && pnpm exec prettier --check src/features/equipment/__tests__/PumpsTable.reuse.test.tsx
+cd frontend && pnpm test src/features/equipment/__tests__/PumpsTable.reuse.test.tsx
+```
+
+Result: `3 passed`.
+
 ## P9. Lessons Learned
 
 - Keep the document path and registry key explicit. The project
@@ -343,3 +371,7 @@ Result: `10 passed`, `1 warning` from Starlette's deprecated
   without `DATABASE_URL=...ph_navigator_v2_test` upgrades the default
   environment instead and leaves pytest failing on a missing
   `project_assets` relation.
+- For the component-level Pumps attachment test, firing Delete on the
+  `.attachment-cell` owner is more precise than sending keyboard input
+  to the thumbnail button, because the table focus layer can intercept
+  key events in the test harness.
