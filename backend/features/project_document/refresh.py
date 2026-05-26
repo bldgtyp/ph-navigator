@@ -197,7 +197,10 @@ def _load_catalog_rows(refs: list[_RefEntry]) -> dict[tuple[CatalogTableName, st
     needed: set[tuple[CatalogTableName, str]] = set()
     for _, _, _, ref in refs:
         origin = ref.catalog_origin
-        assert origin is not None  # _iter_catalog_refs guarantees this
+        if origin is None:
+            # _iter_catalog_refs only yields refs whose catalog_origin is set;
+            # reaching here means that invariant was broken upstream.
+            raise RuntimeError("Expected catalog_origin on ref from _iter_catalog_refs")
         needed.add((origin.catalog_table, origin.catalog_record_id))
 
     rows: dict[tuple[CatalogTableName, str], dict[str, Any] | None] = {}
@@ -216,7 +219,8 @@ def _slot_report(
 ) -> RefreshSlotReport:
     window_type, element, slot, ref = entry
     origin = ref.catalog_origin
-    assert origin is not None  # _iter_catalog_refs guarantees this
+    if origin is None:
+        raise RuntimeError("Expected catalog_origin on ref from _iter_catalog_refs")
     row = catalog_rows.get((origin.catalog_table, origin.catalog_record_id))
     is_deactivated = row is None or not row.get("is_active", False)
 

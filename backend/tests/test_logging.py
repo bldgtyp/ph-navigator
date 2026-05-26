@@ -20,7 +20,8 @@ from starlette.requests import Request
 
 import logging_config
 from config import Settings
-from features.shared.middleware import _accept_request_id, _client_ip, _int_or_none, request_context_middleware
+from features.shared.http import client_ip
+from features.shared.middleware import _accept_request_id, _int_or_none, request_context_middleware
 
 
 @pytest.fixture(autouse=True)
@@ -185,7 +186,7 @@ def test_client_ip_and_int_helpers() -> None:
             "client": ("127.0.0.1", 1234),
         }
     )
-    assert _client_ip(request) == "198.51.100.2"
+    assert client_ip(request) == "198.51.100.2"
     assert _int_or_none("42") == 42
     assert _int_or_none(None) is None
     assert _int_or_none("") is None
