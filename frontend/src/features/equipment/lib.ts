@@ -34,6 +34,16 @@ export {
   wasLocalDraftTouched,
 } from "../project_document/lib";
 
+// Feature-scoped ID prefix for `generatedId`. Centralized so future
+// tabs (ERV, Pumps, Fans, TB) can't pick a colliding short prefix and
+// so a single grep tells you where Room IDs are minted.
+export const ROOM_ID_PREFIX = "rm";
+// Local prefix for the per-row fallback identifier used by
+// `nextFreeRoomNumber` when both the numeric ladder and the
+// "(copy N)" ladder are exhausted. Kept distinct from
+// `ROOM_ID_PREFIX` because this seeds a `number` slug, not a row id.
+const ROOM_ROW_FALLBACK_PREFIX = "row";
+
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
 // Namespace prefix for custom single-select option lists scoped to the
@@ -104,7 +114,7 @@ export function roomsTableColumnsForSanitize(
 
 export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
   return {
-    id: generatedId("rm"),
+    id: generatedId(ROOM_ID_PREFIX),
     number: "",
     name: "",
     floor_level: defaultFloorLevel,
@@ -245,7 +255,7 @@ export function nextFreeRoomNumber(rooms: RoomRow[], from: string): string {
     const candidate = i === 1 ? `${base} (copy)` : `${base} (copy ${i})`;
     if (!taken.has(candidate.toLowerCase())) return candidate;
   }
-  return `${base}-${generatedId("row").slice(-6)}`;
+  return `${base}-${generatedId(ROOM_ROW_FALLBACK_PREFIX).slice(-6)}`;
 }
 
 export function roomsPayloadFromCellWrites(

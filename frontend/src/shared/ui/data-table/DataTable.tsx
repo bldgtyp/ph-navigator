@@ -29,6 +29,7 @@ import {
 import { resolveColumnWidth } from "./lib/columnWidths";
 import { buildSubsetCode } from "./tokens/data-table-tints";
 import { generatedId } from "../../lib/ids";
+import { stableEmptyArray } from "../../lib/stableEmpty";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
@@ -68,10 +69,11 @@ import type {
   SortRule,
   WriteOp,
 } from "./types";
-// Module-scope so identity is stable across renders — an inline `[]`
-// would invalidate `useGridColumns`'s memo every render.
-const EMPTY_ID_LIST: string[] = [];
-const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
+// Identity-stable empty arrays for memo deps. Inline `[]` literals would
+// invalidate `useGridColumns`'s memo and the formulaFieldRegistry default
+// every render. Shared sentinel lives in `shared/lib/stableEmpty`.
+const EMPTY_ID_LIST = stableEmptyArray<string>() as string[];
+const EMPTY_FORMULA_FIELD_REGISTRY = stableEmptyArray<FieldRegistryEntry>();
 
 export function DataTable<TRow>({
   rows,
@@ -990,194 +992,194 @@ export function DataTable<TRow>({
 
   return (
     <DataTableErrorBoundary>
-    <div className={`data-table-shell data-table-shell-${density}`}>
-      <GridToolbar
-        readOnly={readOnly}
-        view={view}
-        fieldDefByKey={fieldDefByKey}
-        filterableFieldDefs={filterableFieldDefs}
-        sortableFieldDefs={sortableFieldDefs}
-        groupableFieldDefs={sortableFieldDefs}
-        orderedColumnsForHidePanel={orderedColumnsForHidePanel}
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        onGroupChange={handleGroupChange}
-        onCollapseAllGroups={handleCollapseAllGroups}
-        onExpandAllGroups={handleExpandAllGroups}
-        onResetView={handleResetView}
-        onHideFieldsChange={handleHideFieldsChange}
-        overflowMenuActions={overflowMenuActions}
-        actions={toolbarActions}
-      />
-      <ConfirmDestructiveDialog
-        open={deleteDialogOpen}
-        title={rowSelection.count === 1 ? "Delete 1 row?" : `Delete ${rowSelection.count} rows?`}
-        description="This cannot be undone from a saved version. You can ⌘Z to restore within this session."
-        confirmLabel="Delete"
-        onCancel={() => {
-          setDeleteDialogOpen(false);
-          focusGrid();
-        }}
-        onConfirm={() => {
-          setDeleteDialogOpen(false);
-          void deleteSelectedRows().then(() => focusGrid());
-        }}
-      />
-      {addFieldEnabled ? (
-        <CreateFieldConfigModal
-          open={createFieldModal !== null}
-          onOpenChange={(next) => {
-            if (!next) {
-              setCreateFieldModal(null);
-            }
-          }}
-          insertAfterFieldKey={createFieldModal?.insertAfterFieldKey ?? null}
-          existingFieldLabels={existingFieldLabels}
-          dispatchAddField={handleAddFieldSubmit}
-          returnFocusTo={createFieldModal?.triggerElement ?? null}
-          formulaFieldRegistry={formulaFieldRegistry}
+      <div className={`data-table-shell data-table-shell-${density}`}>
+        <GridToolbar
+          readOnly={readOnly}
+          view={view}
+          fieldDefByKey={fieldDefByKey}
+          filterableFieldDefs={filterableFieldDefs}
+          sortableFieldDefs={sortableFieldDefs}
+          groupableFieldDefs={sortableFieldDefs}
+          orderedColumnsForHidePanel={orderedColumnsForHidePanel}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          onGroupChange={handleGroupChange}
+          onCollapseAllGroups={handleCollapseAllGroups}
+          onExpandAllGroups={handleExpandAllGroups}
+          onResetView={handleResetView}
+          onHideFieldsChange={handleHideFieldsChange}
+          overflowMenuActions={overflowMenuActions}
+          actions={toolbarActions}
         />
-      ) : null}
-      {onEditCustomFieldBundle ? (
-        <FieldConfigModal
-          open={configModalState !== null}
-          onOpenChange={(next) => {
-            if (!next) {
-              setConfigModalState(null);
-              // Defer grid refocus; the modal's onCloseAutoFocus
-              // already returns focus to the originating header cell.
-            }
+        <ConfirmDestructiveDialog
+          open={deleteDialogOpen}
+          title={rowSelection.count === 1 ? "Delete 1 row?" : `Delete ${rowSelection.count} rows?`}
+          description="This cannot be undone from a saved version. You can ⌘Z to restore within this session."
+          confirmLabel="Delete"
+          onCancel={() => {
+            setDeleteDialogOpen(false);
+            focusGrid();
           }}
-          fieldDef={configModalFieldDef}
-          existingFieldLabels={existingFieldLabels}
-          dispatchBundle={handleEditCustomFieldBundle}
-          returnFocusTo={configModalReturnFocusRef.current}
-          onFieldRemoved={(message) => {
-            setAnnounce(message);
+          onConfirm={() => {
+            setDeleteDialogOpen(false);
+            void deleteSelectedRows().then(() => focusGrid());
           }}
-          sourceCustomFieldType={configModalFieldDef?.custom_field_type}
-          preflightRows={configModalPreflightRows}
-          optionRows={configModalPreflightRows}
-          formulaPreview={configModalFormulaPreview}
         />
-      ) : null}
-      <ConfirmDestructiveDialog
-        open={pendingDeleteFieldKey !== null}
-        title={`Delete field “${pendingDeleteFieldDef?.display_name ?? ""}”?`}
-        description={`${describeDeleteImpact(pendingDeleteRowCount)} Older locked versions keep this field. This cannot be undone from a saved version.`}
-        confirmLabel="Delete field"
-        onCancel={() => {
-          setPendingDeleteFieldKey(null);
-          focusGrid();
-        }}
-        onConfirm={() => {
-          void confirmDeleteCustomField().then(() => focusGrid());
-        }}
-      />
-      <div className="sr-only" aria-live="polite">
-        {announce}
-      </div>
-      <DndContext
-        sensors={sortableSensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleColumnDragEnd}
-      >
-        <SortableContext items={sortableColumnIds} strategy={horizontalListSortingStrategy}>
-          <div
-            ref={wrapperRef}
-            className="data-table-wrap"
-            role="grid"
-            aria-rowcount={bodyPlan.length + 1}
-            aria-colcount={visibleColumnDefs.length}
-            tabIndex={0}
-            onKeyDown={keyboard.onKeyDown}
-            onPaste={handlePasteEvent}
-          >
-            <table className="data-table">
-              {/* Propagate column widths to every row so the sticky frozen
+        {addFieldEnabled ? (
+          <CreateFieldConfigModal
+            open={createFieldModal !== null}
+            onOpenChange={(next) => {
+              if (!next) {
+                setCreateFieldModal(null);
+              }
+            }}
+            insertAfterFieldKey={createFieldModal?.insertAfterFieldKey ?? null}
+            existingFieldLabels={existingFieldLabels}
+            dispatchAddField={handleAddFieldSubmit}
+            returnFocusTo={createFieldModal?.triggerElement ?? null}
+            formulaFieldRegistry={formulaFieldRegistry}
+          />
+        ) : null}
+        {onEditCustomFieldBundle ? (
+          <FieldConfigModal
+            open={configModalState !== null}
+            onOpenChange={(next) => {
+              if (!next) {
+                setConfigModalState(null);
+                // Defer grid refocus; the modal's onCloseAutoFocus
+                // already returns focus to the originating header cell.
+              }
+            }}
+            fieldDef={configModalFieldDef}
+            existingFieldLabels={existingFieldLabels}
+            dispatchBundle={handleEditCustomFieldBundle}
+            returnFocusTo={configModalReturnFocusRef.current}
+            onFieldRemoved={(message) => {
+              setAnnounce(message);
+            }}
+            sourceCustomFieldType={configModalFieldDef?.custom_field_type}
+            preflightRows={configModalPreflightRows}
+            optionRows={configModalPreflightRows}
+            formulaPreview={configModalFormulaPreview}
+          />
+        ) : null}
+        <ConfirmDestructiveDialog
+          open={pendingDeleteFieldKey !== null}
+          title={`Delete field “${pendingDeleteFieldDef?.display_name ?? ""}”?`}
+          description={`${describeDeleteImpact(pendingDeleteRowCount)} Older locked versions keep this field. This cannot be undone from a saved version.`}
+          confirmLabel="Delete field"
+          onCancel={() => {
+            setPendingDeleteFieldKey(null);
+            focusGrid();
+          }}
+          onConfirm={() => {
+            void confirmDeleteCustomField().then(() => focusGrid());
+          }}
+        />
+        <div className="sr-only" aria-live="polite">
+          {announce}
+        </div>
+        <DndContext
+          sensors={sortableSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleColumnDragEnd}
+        >
+          <SortableContext items={sortableColumnIds} strategy={horizontalListSortingStrategy}>
+            <div
+              ref={wrapperRef}
+              className="data-table-wrap"
+              role="grid"
+              aria-rowcount={bodyPlan.length + 1}
+              aria-colcount={visibleColumnDefs.length}
+              tabIndex={0}
+              onKeyDown={keyboard.onKeyDown}
+              onPaste={handlePasteEvent}
+            >
+              <table className="data-table">
+                {/* Propagate column widths to every row so the sticky frozen
               cell renders at the same horizontal position as its header.
               Without a colgroup, the body cell width is auto-derived and
               the sticky `left: 42px` cell overlaps the adjacent column. */}
-              <colgroup>
-                <col className="data-table-gutter-col" />
-                {visibleColumnDefs.map((column) => {
-                  const width = resolveColumnWidth(
-                    column,
-                    fieldDefByKey.get(column.fieldKey),
-                    view,
-                  );
-                  return <col key={column.id} style={{ width: `${width}px` }} />;
-                })}
-                <col className="data-table-tail-col" />
-              </colgroup>
-              <GridHeader
-                table={table}
-                visibleColumnDefs={visibleColumnDefs}
-                fieldDefByKey={fieldDefByKey}
-                axisRolesByFieldKey={axisRolesByFieldKey}
-                onColumnMouseDown={pointerDrag.onColumnMouseDown}
-                readOnly={readOnly}
-                hasWriteHandler={Boolean(onWrite)}
-                headerCellRefByFieldKey={headerCellRefByFieldKey}
-                columnDragKeyboard={columnDragKeyboard}
-                columnResize={columnResize}
-                headerActions={headerActions}
-                onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
-                tailCellRef={tailCellRef}
-              />
-              <GridBody
-                table={table}
-                visibleColumnDefs={visibleColumnDefs}
-                fieldDefByKey={fieldDefByKey}
-                rowIds={rowIds}
-                fieldKeys={fieldKeys}
-                normalizedActiveRange={selection.normalizedRange}
-                hasExplicitRange={selection.hasExplicitRange}
-                activeCell={selection.activeCell}
-                edit={edit}
-                rowSelection={rowSelection}
-                showRowCheckbox={!readOnly}
-                emptyMessage={emptyMessage}
-                totalRowCount={rows.length}
-                axisRolesByFieldKey={axisRolesByFieldKey}
-                bodyPlan={bodyPlan}
-                onGroupToggle={handleToggleGroup}
-                onCellActivate={(rowId, fieldKey) => {
-                  selection.setActive({ rowId, fieldKey });
-                  focusGrid();
-                }}
-                onCellMouseDown={pointerDrag.onCellMouseDown}
-                onCellOpen={startInlineEdit}
-                onRowSelect={(rowId) => {
-                  selection.selectRow(rowId);
-                  focusGrid();
-                }}
-                onRowToggleSelected={(rowId, mode) => {
-                  rowSelection.toggle(rowId, mode);
-                  focusGrid();
-                }}
-                onRowExpand={onRowOpen}
-                onCommitAndMove={handleCommitAndMove}
-                fillSource={fill.source}
-                fillTargetPreview={fill.targetPreview}
-                fillHandleVisible={fill.handleVisible}
-                onFillHandleMouseDown={fill.onHandleMouseDown}
-                cellsWritable={!readOnly && Boolean(onWrite)}
-              />
-              <SummaryBar
-                columns={visibleColumnDefs}
-                visibleRows={filteredRows}
-                aggregations={view.aggregations}
-                fieldDefByKey={fieldDefByKey}
-                readOnly={readOnly}
-                onAggregationChange={handleAggregationChange}
-              />
-            </table>
-            {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}
-          </div>
-        </SortableContext>
-      </DndContext>
-    </div>
+                <colgroup>
+                  <col className="data-table-gutter-col" />
+                  {visibleColumnDefs.map((column) => {
+                    const width = resolveColumnWidth(
+                      column,
+                      fieldDefByKey.get(column.fieldKey),
+                      view,
+                    );
+                    return <col key={column.id} style={{ width: `${width}px` }} />;
+                  })}
+                  <col className="data-table-tail-col" />
+                </colgroup>
+                <GridHeader
+                  table={table}
+                  visibleColumnDefs={visibleColumnDefs}
+                  fieldDefByKey={fieldDefByKey}
+                  axisRolesByFieldKey={axisRolesByFieldKey}
+                  onColumnMouseDown={pointerDrag.onColumnMouseDown}
+                  readOnly={readOnly}
+                  hasWriteHandler={Boolean(onWrite)}
+                  headerCellRefByFieldKey={headerCellRefByFieldKey}
+                  columnDragKeyboard={columnDragKeyboard}
+                  columnResize={columnResize}
+                  headerActions={headerActions}
+                  onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
+                  tailCellRef={tailCellRef}
+                />
+                <GridBody
+                  table={table}
+                  visibleColumnDefs={visibleColumnDefs}
+                  fieldDefByKey={fieldDefByKey}
+                  rowIds={rowIds}
+                  fieldKeys={fieldKeys}
+                  normalizedActiveRange={selection.normalizedRange}
+                  hasExplicitRange={selection.hasExplicitRange}
+                  activeCell={selection.activeCell}
+                  edit={edit}
+                  rowSelection={rowSelection}
+                  showRowCheckbox={!readOnly}
+                  emptyMessage={emptyMessage}
+                  totalRowCount={rows.length}
+                  axisRolesByFieldKey={axisRolesByFieldKey}
+                  bodyPlan={bodyPlan}
+                  onGroupToggle={handleToggleGroup}
+                  onCellActivate={(rowId, fieldKey) => {
+                    selection.setActive({ rowId, fieldKey });
+                    focusGrid();
+                  }}
+                  onCellMouseDown={pointerDrag.onCellMouseDown}
+                  onCellOpen={startInlineEdit}
+                  onRowSelect={(rowId) => {
+                    selection.selectRow(rowId);
+                    focusGrid();
+                  }}
+                  onRowToggleSelected={(rowId, mode) => {
+                    rowSelection.toggle(rowId, mode);
+                    focusGrid();
+                  }}
+                  onRowExpand={onRowOpen}
+                  onCommitAndMove={handleCommitAndMove}
+                  fillSource={fill.source}
+                  fillTargetPreview={fill.targetPreview}
+                  fillHandleVisible={fill.handleVisible}
+                  onFillHandleMouseDown={fill.onHandleMouseDown}
+                  cellsWritable={!readOnly && Boolean(onWrite)}
+                />
+                <SummaryBar
+                  columns={visibleColumnDefs}
+                  visibleRows={filteredRows}
+                  aggregations={view.aggregations}
+                  fieldDefByKey={fieldDefByKey}
+                  readOnly={readOnly}
+                  onAggregationChange={handleAggregationChange}
+                />
+              </table>
+              {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
     </DataTableErrorBoundary>
   );
 }

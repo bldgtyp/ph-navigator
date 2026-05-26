@@ -43,6 +43,7 @@ import {
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowInsert,
+  ROOM_ID_PREFIX,
   ROOMS_SCHEMA_CORE_FIELD_KEYS,
   roomsTableColumnsForSanitize,
   roomsTableFieldDefs,
@@ -156,7 +157,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
     activeVersionId,
     publishRoomsSlice,
   );
-  const schemaMutationMutation = useRoomsSchemaMutation(
+  const roomsSchemaMutation = useRoomsSchemaMutation(
     project.id,
     activeVersionId,
     publishRoomsSlice,
@@ -217,7 +218,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   }
 
   const roomsSlice = roomsQuery.data;
-  const commitRoomsPayload = (
+  const commitRoomsPayloadOrThrow = (
     payload: ReturnType<typeof nextRoomsPayload>,
     conflictMessage: string,
     fallbackMessage: string,
@@ -235,7 +236,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
   };
 
   const saveRoom = async (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => {
-    await commitRoomsPayload(
+    await commitRoomsPayloadOrThrow(
       nextRoomsPayload(roomsSlice, room, labels),
       ACTIVE_ROOM_CONFLICT_MESSAGE,
       "Could not save room.",
@@ -245,7 +246,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
 
   const deleteRoom = (room: RoomRow) => {
     if (!canEdit) return;
-    void commitRoomsPayload(
+    void commitRoomsPayloadOrThrow(
       deleteRoomPayload(roomsSlice, room.id),
       DELETE_CONFLICT_MESSAGE,
       "Could not delete room.",
@@ -295,7 +296,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       const newOptions =
         op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
       const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
-      await commitRoomsPayload(
+      await commitRoomsPayloadOrThrow(
         roomsPayloadFromCellWrites(roomsSlice, op.writes, newOptions, removedOptions),
         ACTIVE_ROOM_CONFLICT_MESSAGE,
         "Could not update rooms table values.",
@@ -303,7 +304,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       return;
     }
     if (op.kind === "rowInsert") {
-      await commitRoomsPayload(
+      await commitRoomsPayloadOrThrow(
         roomsPayloadFromRowInsert(roomsSlice, op.rows, buildEmptyRoomRow),
         ACTIVE_ROOM_CONFLICT_MESSAGE,
         "Could not insert room.",
@@ -311,7 +312,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
       return;
     }
     if (op.kind === "rowDelete") {
-      await commitRoomsPayload(
+      await commitRoomsPayloadOrThrow(
         roomsPayloadFromRowDelete(roomsSlice, op.rows),
         ACTIVE_ROOM_CONFLICT_MESSAGE,
         "Could not delete rooms.",
@@ -346,7 +347,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
         setActionError(message);
         throw new Error(message);
       }
-      await commitRoomsPayload(
+      await commitRoomsPayloadOrThrow(
         payload,
         ACTIVE_ROOM_CONFLICT_MESSAGE,
         "Could not update room options.",
@@ -357,7 +358,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
 
   const commitSchemaMutation = (mutation: FieldSchemaMutation) =>
     withDraftConflictHandling(
-      () => schemaMutationMutation.mutateAsync({ current: roomsSlice, mutation }),
+      () => roomsSchemaMutation.mutateAsync({ current: roomsSlice, mutation }),
       ACTIVE_ROOM_CONFLICT_MESSAGE,
       "Could not update custom-field schema.",
     );
@@ -610,7 +611,7 @@ export function EquipmentTab({ project }: { project: ProjectDetail }) {
           onResetView={resetRoomsView}
           onWrite={handleTableWrite}
           buildEmptyRow={canEdit ? buildEmptyRoomRow : undefined}
-          generateRowId={canEdit ? () => generatedId("rm") : undefined}
+          generateRowId={canEdit ? () => generatedId(ROOM_ID_PREFIX) : undefined}
           sessionKey={`${project.id}:${activeVersionId ?? "none"}:${ROOMS_TABLE_NAME}`}
           overflowMenuActions={roomsDownloadAction}
           footerAction={addRoomAction}
