@@ -132,19 +132,23 @@ Properties:
   `test` ops before mutating array positions. Unguarded array mutation
   is rejected with `unguarded_array_patch`. MCP helpers should prefer
   higher-level table/row tools that generate safe patches.
-- **Immediate draft validation for custom fields and schema mutations.**
-  Custom-field cell writes and `FieldSchemaMutation` ops
-  (see `data-table.md` "Write Pipeline" and `data-model.md` §6.6) are
-  validated by the backend at the moment the draft mutation is
-  accepted, **not** deferred to Save. The validator checks the
-  affected table envelope (rebuilt `{ custom_fields, rows }`) and
-  whole-document references touched by the change — duplicate field
-  names across core + custom, `cf_*` id existence, value coercion
-  against each field's declared type, type-conversion legality,
-  option-list reference integrity, and formula parse / cycle /
-  dependency rules. Rejected mutations do not modify the stored
-  draft. Save re-runs full-document validation as a final gate, but
-  malformed custom-field state must never accumulate in the draft.
+- **Immediate draft validation for field-config writes and schema
+  mutations.** Cell writes (built-in and custom) and
+  `FieldSchemaMutation` ops (see `data-table.md` "Write Pipeline" and
+  `data-model.md` §6.6) are validated by the backend at the moment the
+  draft mutation is accepted, **not** deferred to Save. The validator
+  checks the affected table envelope (rebuilt `{ field_defs, rows }`)
+  and whole-document references touched by the change — duplicate
+  field names across the registry, `field_key` existence, value
+  coercion against each field's declared type, type-conversion
+  legality, option-list reference integrity, and formula parse /
+  cycle / dependency rules. Rejected mutations do not modify the
+  stored draft. Save re-runs full-document validation as a final gate.
+- **Schema version pinning (v3).** Drafts and saved versions tag the
+  body with `schema_version: 3` (Phase 1b cutover). Bodies posted with
+  `schema_version: 2` are rejected with a structured
+  `invalid_project_document` error — there is no v2 reader (pre-deploy
+  posture; dev DBs rebuild on the phase boundary).
 
 The draft/save state machine is consolidated here in §§8.3–8.6. The
 former standalone decision note is archived in `docs/REMOVED.md`.

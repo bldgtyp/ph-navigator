@@ -120,25 +120,26 @@ def validate_option_list(options: Iterable[SingleSelectOption]) -> None:
 
 def find_cells_referencing_option(
     rows: Iterable[Mapping[str, object]],
-    field_id: str,
+    field_key: str,
     option_id: str,
     *,
-    is_custom: bool,
+    in_custom_values: bool,
 ) -> list[tuple[str, object]]:
     """Return `(row_id, raw_value)` for every row referencing `option_id`.
 
-    `is_custom=True` looks inside `row["custom"][field_id]`;
-    `is_custom=False` reads `row[field_id]` directly (core single-select
-    columns like `floor_level` / `building_zone`).
+    `in_custom_values=True` looks inside `row["custom_values"][field_key]`
+    (where mutable-type built-ins and custom fields store their values);
+    `in_custom_values=False` reads `row[field_key]` directly (locked-type
+    built-in columns like `floor_level` / `building_zone`).
     """
     found: list[tuple[str, object]] = []
     for row in rows:
         row_id = str(row.get("id", ""))
-        if is_custom:
-            custom = row.get("custom") or {}
-            value = cast(Mapping[str, object], custom).get(field_id) if isinstance(custom, Mapping) else None
+        if in_custom_values:
+            bag = row.get("custom_values") or {}
+            value = cast(Mapping[str, object], bag).get(field_key) if isinstance(bag, Mapping) else None
         else:
-            value = row.get(field_id)
+            value = row.get(field_key)
         if value == option_id:
             found.append((row_id, value))
     return found

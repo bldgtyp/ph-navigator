@@ -1,4 +1,16 @@
-"""Canonical ProjectDocumentV1 schema and table row contracts."""
+"""Canonical ProjectDocumentV1 schema and table row contracts (v3).
+
+Phase 1b: every built-in field-config lives in the persisted document
+under the same per-table `field_defs` array that previously only held
+custom fields. Mutable-type built-ins (Rooms: number/name/num_people/
+num_bedrooms; Pumps: tag/use/manufacturer/model/volts/horse_power/
+wattage/flow_gpm/runtime_khr_yr) live in the row's `custom_values` bag.
+Locked-type built-ins (floor_level, building_zone, icfa_factor;
+device_type, phase, link) keep their typed Pydantic columns so domain
+invariants (ge=0, le=1.0, opt_*, etc.) survive.
+
+Schema version is 3; no v2 reader is provided (pre-deploy posture).
+"""
 
 from __future__ import annotations
 
@@ -8,8 +20,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from features.project_document.custom_fields import (
-    CustomFieldDef,
+    CustomFieldType,
     CustomValue,
+    TableFieldDef,
     coerce_custom_value,
     normalize_display_name,
 )
@@ -29,22 +42,27 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
 PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type"
 PumpOptionKey = Literal["pumps.device_type"]
 PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY,)
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 2
 
-# Core field display names for Rooms — used by
-# `validate_document_references` to enforce duplicate-name uniqueness
-# across core + custom fields (case-insensitive, trimmed). Canonical
-# source is the frontend `roomsTableFieldDefs` registry; kept here too
-# because the validator must enforce the same rule server-side.
-ROOMS_CORE_DISPLAY_NAMES: tuple[str, ...] = (
-    "Number",
-    "Name",
-    "Floor",
-    "Zone",
-    "People",
-    "Bedrooms",
-    "iCFA",
-    "ERVs",
+# v3 wire shape: every built-in FieldDef is persisted in the document.
+# v2 readers are intentionally absent — the pre-deploy posture
+# (PRD §P3.6) is that dev DBs rebuild on the phase boundary.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 3
+
+# Field keys that have a typed Pydantic column on the row model. Used
+# to split read/write paths between typed columns and the
+# `custom_values` bag. Every field on the table NOT in this set lives
+# in `custom_values` — that includes all custom fields and any
+# mutable-type built-in (Rooms: number/name/num_people/num_bedrooms;
+# Pumps: tag/use/manufacturer/etc.).
+#
+# Source of truth is each row model's declared attribute set below;
+# these tuples enumerate the subset that the validator / formula
+# accessors / catalog-refresh path needs to branch on.
+ROOMS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "floor_level", "building_zone", "icfa_factor", "erv_unit_ids", "catalog_origin", "notes"}
+)
+PUMPS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "device_type", "phase", "link", "notes", "datasheet_asset_ids"}
 )
 
 
@@ -65,27 +83,24 @@ class SingleSelectOption(BaseModel):
 
 
 class RoomRow(BaseModel):
+    """A row in the Rooms table (v3 mixed-storage).
+
+    Only locked-type built-ins keep typed columns. Mutable-type built-ins
+    (`number`, `name`, `num_people`, `num_bedrooms`) and all custom
+    fields live in `custom_values`, keyed by `field_key`.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^rm_[A-Za-z0-9_-]+$", max_length=80)
-    number: str = Field(min_length=1, max_length=80)
-    name: str = Field(min_length=1, max_length=200)
     floor_level: str = Field(pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     building_zone: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    num_people: int = Field(default=0, ge=0)
-    num_bedrooms: int = Field(default=0, ge=0)
     icfa_factor: float = Field(default=1.0, ge=0.0, le=1.0)
     erv_unit_ids: list[str] = Field(default_factory=list)
     catalog_origin: dict[str, object] | None = None
     notes: str | None = Field(default=None, max_length=4000)
-    custom: dict[str, CustomValue] = Field(default_factory=dict)
-
-    @field_validator("number", "name", mode="before")
-    @classmethod
-    def strip_required_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip()
-        return value
+    # Mutable-type built-in + custom field values, keyed by `field_key`.
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("notes", mode="before")
     @classmethod
@@ -97,25 +112,25 @@ class RoomRow(BaseModel):
 
 
 class PumpRow(BaseModel):
+    """A row in the Pumps table (v3 mixed-storage).
+
+    Locked-type built-ins keep typed columns: `device_type`, `phase`,
+    `link`, `notes`, `datasheet_asset_ids`. Mutable-type built-ins
+    (`tag`, `use`, `manufacturer`, `model`, `volts`, `horse_power`,
+    `wattage`, `flow_gpm`, `runtime_khr_yr`) live in `custom_values`.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^pmp_[A-Za-z0-9_-]+$", max_length=80)
     device_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    use: str | None = Field(default=None, max_length=200)
-    tag: str | None = Field(default=None, max_length=80)
-    manufacturer: str | None = Field(default=None, max_length=200)
-    model: str | None = Field(default=None, max_length=200)
-    volts: float | None = Field(default=None, ge=0)
     phase: int | None = None
-    horse_power: float | None = Field(default=None, ge=0)
-    wattage: float | None = Field(default=None, ge=0)
-    flow_gpm: float | None = Field(default=None, ge=0)
-    runtime_khr_yr: float | None = Field(default=None, ge=0)
-    notes: str | None = Field(default=None, max_length=4000)
     link: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
-    @field_validator("use", "tag", "manufacturer", "model", "notes", "link", mode="before")
+    @field_validator("notes", "link", mode="before")
     @classmethod
     def strip_optional_strings(cls, value: object) -> object:
         if isinstance(value, str):
@@ -138,22 +153,30 @@ class PumpRow(BaseModel):
         return value
 
 
+class PumpsTableEnvelope(BaseModel):
+    """`{ field_defs, rows }` envelope around the Pumps table.
+
+    Phase 1b adds the persisted FieldDef registry on Pumps. Phase 1b is
+    storage-only for Pumps — schema-mutation capability is wired in a
+    follow-up phase when Pumps gets `record_id`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[PumpRow] = Field(default_factory=list)
+
+
 class EmptyEquipmentTables(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     fans: list[dict[str, object]] = Field(default_factory=list)
-    pumps: list[PumpRow] = Field(default_factory=list)
+    pumps: PumpsTableEnvelope = Field(default_factory=PumpsTableEnvelope)
     ervs: list[dict[str, object]] = Field(default_factory=list)
 
 
 class CatalogOrigin(BaseModel):
-    """Bookshelf-copy provenance stamped at pick time.
-
-    Values are inlined into the document; this block records where they came
-    from so refresh-from-catalog (US-WIN-11) can re-find the source row across
-    catalog versions. No live FK / join is enforced — `catalog_record_id` and
-    `catalog_version_id` are validated only as data shape.
-    """
+    """Bookshelf-copy provenance stamped at pick time."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -171,12 +194,6 @@ def _require_catalog_origin_family(
     expected_table: CatalogTableName,
     expected_version_prefix: str,
 ) -> None:
-    """Bookshelf-copy invariant: a ref's `catalog_origin` must point at the
-    right catalog family. Frame slots come from the Window-Frame catalog and
-    glazing slots from the Window-Glazing catalog; a glazing ref pointing at
-    `materials` or carrying a `matv_`/`framev_` version id is nonsense data,
-    not a future hand-enter case. `catalog_origin = None` (hand-entered) stays
-    allowed."""
     if origin is None:
         return
     if origin.catalog_table != expected_table:
@@ -186,13 +203,6 @@ def _require_catalog_origin_family(
 
 
 class FrameRef(BaseModel):
-    """Bookshelf-copied frame values inlined into a window element side.
-
-    Mirrors the Window-Frame catalog's typed value columns plus an optional
-    `catalog_origin` block. When `catalog_origin` is null the values were
-    hand-entered, not picked from a catalog.
-    """
-
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=200)
@@ -218,8 +228,6 @@ class FrameRef(BaseModel):
 
 
 class GlazingRef(BaseModel):
-    """Bookshelf-copied glazing values inlined into a window element's center."""
-
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=200)
@@ -243,8 +251,6 @@ class GlazingRef(BaseModel):
 
 
 class WindowElementFrames(BaseModel):
-    """Four-sided frame slots on a window element. Each side is nullable."""
-
     model_config = ConfigDict(extra="forbid")
 
     top: FrameRef | None = None
@@ -254,8 +260,6 @@ class WindowElementFrames(BaseModel):
 
 
 class WindowElement(BaseModel):
-    """One element on a window-type grid (US-WIN-2 / US-WIN-3)."""
-
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^winel_[A-Za-z0-9_-]+$", max_length=80)
@@ -276,8 +280,6 @@ class WindowElement(BaseModel):
 
 
 class WindowTypeEntry(BaseModel):
-    """One window type in `tables.window_types[]` (US-WIN-1 §8)."""
-
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^win_[A-Za-z0-9_-]+$", max_length=80)
@@ -318,17 +320,16 @@ class WindowTypeEntry(BaseModel):
 
 
 class RoomsTableEnvelope(BaseModel):
-    """`{ custom_fields, rows }` envelope around the Rooms table.
+    """`{ field_defs, rows }` envelope around the Rooms table.
 
-    Core fields stay strongly typed in `RoomRow`; `custom_fields`
-    declares user-defined extensions; each row's `custom` dict carries
-    the sparse values keyed by stable `cf_*` ids. Editor-defined fields
-    ride the same version / draft / save / lock lifecycle as the rows.
+    Phase 1b: every field on the table — built-in or custom — lives in
+    the persisted `field_defs` list. Mutable-type built-in values plus
+    all custom values live in each row's `custom_values` bag.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    custom_fields: list[CustomFieldDef] = Field(default_factory=list)
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
     rows: list[RoomRow] = Field(default_factory=list)
 
 
@@ -357,7 +358,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[2] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[3] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -387,27 +388,11 @@ class ProjectDocumentV1(BaseModel):
                     raise ValueError(f"Duplicate option label in {key}: {option.label}")
                 labels.add(normalized_label)
 
-        rooms_table = self.tables.rooms
-        custom_field_ids: dict[str, CustomFieldDef] = {}
-        name_seen: dict[str, str] = {
-            normalize_display_name(display_name): display_name for display_name in ROOMS_CORE_DISPLAY_NAMES
-        }
-        for custom_field in rooms_table.custom_fields:
-            if custom_field.id in custom_field_ids:
-                raise ValueError(f"Duplicate custom field id in rooms: {custom_field.id}")
-            custom_field_ids[custom_field.id] = custom_field
-            normalized_name = normalize_display_name(custom_field.display_name)
-            if normalized_name in name_seen:
-                existing = name_seen[normalized_name]
-                raise ValueError(
-                    f"Duplicate field name in rooms: {custom_field.display_name!r} collides with {existing!r}"
-                )
-            name_seen[normalized_name] = custom_field.display_name
-
-        room_ids: set[str] = set()
+        rooms_field_defs_by_key = _index_table_field_defs("rooms", self.tables.rooms.field_defs)
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
-        for room in rooms_table.rows:
+        room_ids: set[str] = set()
+        for room in self.tables.rooms.rows:
             if room.id in room_ids:
                 raise ValueError(f"Duplicate room id: {room.id}")
             room_ids.add(room.id)
@@ -419,61 +404,41 @@ class ProjectDocumentV1(BaseModel):
             if room.erv_unit_ids:
                 raise ValueError(f"Room ERV assignments are deferred until the ERV table is available: {room.id}")
 
-            for cf_id, value in room.custom.items():
-                custom_field = custom_field_ids.get(cf_id)
-                if custom_field is None:
-                    raise ValueError(f"Unknown custom field id on room {room.id}: {cf_id}")
-                option_list = None
-                if custom_field.field_type.value == "single_select":
-                    option_list = self.single_select_options.get(f"rooms.{cf_id}", [])
-                try:
-                    coerce_custom_value(value, custom_field.field_type, option_list=option_list)
-                except ValueError as exc:
-                    raise ValueError(
-                        f"Invalid custom value for {custom_field.display_name!r} on room {room.id}: {exc}"
-                    ) from exc
+        _validate_rows_custom_values(
+            table_label="rooms",
+            row_label="room",
+            rows=[(room.id, room.custom_values) for room in self.tables.rooms.rows],
+            field_defs_by_key=rooms_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+        _validate_default_option_ids(
+            table_label="rooms",
+            field_defs_by_key=rooms_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+        # Formula cycle detection across the Rooms table's formula
+        # fields. Missing refs are *silently absorbed* (per plan-13 D2)
+        # — the evaluator surfaces them per-row at read time. Cycles
+        # are a hard validation failure.
+        self._validate_rooms_formula_cycles(rooms_field_defs_by_key)
 
-        # default_option_id (plan-21 P5a.0) integrity check: every
-        # single_select custom field's `config.default_option_id`,
-        # if set, must reference an option in its namespaced list.
-        # Non-single_select fields may not carry default_option_id.
-        for custom_field in custom_field_ids.values():
-            default_raw = custom_field.config.get("default_option_id")
-            if default_raw is None:
-                continue
-            if custom_field.field_type.value != "single_select":
-                raise ValueError(
-                    f"default_option_id is only valid for single_select fields "
-                    f"(field {custom_field.id!r}, type {custom_field.field_type.value!r})"
-                )
-            if not isinstance(default_raw, str):
-                raise ValueError(f"default_option_id for {custom_field.id!r} must be a string option id")
-            namespace_key = f"rooms.{custom_field.id}"
-            default_option_ids = {option.id for option in self.single_select_options.get(namespace_key, [])}
-            if default_raw not in default_option_ids:
-                raise ValueError(
-                    f"default_option_id {default_raw!r} for {custom_field.id!r} "
-                    "does not reference an option in the field's option list"
-                )
-
-        # Phase 4: formula cycle detection across the Rooms table's
-        # custom formula fields. Missing refs are *silently absorbed*
-        # (per plan-13 D2) — the evaluator surfaces them per-row at
-        # read time as `{"error": "missing_ref"}` so the user can fix
-        # the formula by reopening the editor. Cycles, however, are a
-        # hard validation failure: the document refuses to validate
-        # until the cycle is broken.
-        self._validate_rooms_formula_cycles(custom_field_ids)
-
-        pump_ids: set[str] = set()
+        pumps_field_defs_by_key = _index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
-        for pump in self.tables.equipment.pumps:
+        pump_ids: set[str] = set()
+        for pump in self.tables.equipment.pumps.rows:
             if pump.id in pump_ids:
                 raise ValueError(f"Duplicate pump id: {pump.id}")
             pump_ids.add(pump.id)
-
             if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
                 raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")
+
+        _validate_rows_custom_values(
+            table_label="pumps",
+            row_label="pump",
+            rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
+            field_defs_by_key=pumps_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
 
         window_type_ids: set[str] = set()
         window_type_names: set[str] = set()
@@ -489,9 +454,9 @@ class ProjectDocumentV1(BaseModel):
 
         return self
 
-    def _validate_rooms_formula_cycles(self, custom_field_ids: dict[str, CustomFieldDef]) -> None:
+    def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
         # Lazy-import to keep the document module free of formula deps
-        # for callers that don't touch custom formula fields.
+        # for callers that don't touch formula fields.
         from features.project_document.formula import (
             FormulaAST,
             FormulaCycleError,
@@ -499,29 +464,112 @@ class ProjectDocumentV1(BaseModel):
             detect_cycles,
         )
 
-        formula_fields = [f for f in custom_field_ids.values() if f.field_type.value == "formula"]
+        formula_fields = [f for f in field_defs_by_key.values() if f.field_type is CustomFieldType.formula]
         if not formula_fields:
             return
 
-        asts_by_id: dict[str, FormulaAST] = {}
+        asts_by_key: dict[str, FormulaAST] = {}
         for f in formula_fields:
             stored = f.config.get("ast")
             if stored is None:
                 continue
             try:
-                asts_by_id[f.id] = ast_from_json(stored)
+                asts_by_key[f.field_key] = ast_from_json(stored)
             except (ValueError, TypeError):
                 continue
 
         for f in formula_fields:
-            stored = asts_by_id.get(f.id)
+            stored = asts_by_key.get(f.field_key)
             if stored is None:
                 continue
-            # Build a deps map that excludes this field, then re-run
-            # cycle detection rooted at this field. `detect_cycles`
-            # composes its own asts map.
-            others = {k: v for k, v in asts_by_id.items() if k != f.id}
+            others = {k: v for k, v in asts_by_key.items() if k != f.field_key}
             try:
-                detect_cycles(f.id, stored, others)
+                detect_cycles(f.field_key, stored, others)
             except FormulaCycleError as exc:
                 raise ValueError(f"Rooms formula cycle for {f.display_name!r}: {' -> '.join(exc.cycle_path)}") from exc
+
+
+def _index_table_field_defs(
+    table_label: str,
+    field_defs: list[TableFieldDef],
+) -> dict[str, TableFieldDef]:
+    """Build a `field_key → FieldDef` map while enforcing uniqueness of
+    both `field_key` (identity) and `display_name` (case-insensitive,
+    trimmed)."""
+    by_key: dict[str, TableFieldDef] = {}
+    name_seen: dict[str, str] = {}
+    for field_def in field_defs:
+        if field_def.field_key in by_key:
+            raise ValueError(f"Duplicate field_key in {table_label}.field_defs: {field_def.field_key}")
+        by_key[field_def.field_key] = field_def
+        normalized_name = normalize_display_name(field_def.display_name)
+        if normalized_name in name_seen:
+            existing = name_seen[normalized_name]
+            raise ValueError(
+                f"Duplicate field name in {table_label}: {field_def.display_name!r} collides with {existing!r}"
+            )
+        name_seen[normalized_name] = field_def.display_name
+    return by_key
+
+
+def _validate_rows_custom_values(
+    *,
+    table_label: str,
+    row_label: str,
+    rows: list[tuple[str, dict[str, CustomValue]]],
+    field_defs_by_key: dict[str, TableFieldDef],
+    single_select_options: dict[str, list[SingleSelectOption]],
+) -> None:
+    """Coerce every `(row_id, custom_values)` pair against its
+    FieldDef's declared type. Single-select option lists are resolved
+    once per field_key, not per row."""
+    option_list_by_field_key: dict[str, list[SingleSelectOption]] = {}
+    for field_key, field_def in field_defs_by_key.items():
+        if field_def.field_type is CustomFieldType.single_select:
+            option_list_by_field_key[field_key] = single_select_options.get(
+                f"{table_label}.{field_key}", []
+            )
+
+    for row_id, custom_values in rows:
+        for field_key, value in custom_values.items():
+            field_def = field_defs_by_key.get(field_key)
+            if field_def is None:
+                raise ValueError(f"Unknown field_key on {row_label} {row_id}: {field_key}")
+            try:
+                coerce_custom_value(
+                    value,
+                    field_def.field_type,
+                    option_list=option_list_by_field_key.get(field_key),
+                )
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid value for {field_def.display_name!r} on {row_label} {row_id}: {exc}"
+                ) from exc
+
+
+def _validate_default_option_ids(
+    *,
+    table_label: str,
+    field_defs_by_key: dict[str, TableFieldDef],
+    single_select_options: dict[str, list[SingleSelectOption]],
+) -> None:
+    """`config.default_option_id`, when set, must reference an option in
+    the field's namespaced list. Only valid on single_select fields."""
+    for field_def in field_defs_by_key.values():
+        default_raw = field_def.config.get("default_option_id")
+        if default_raw is None:
+            continue
+        if field_def.field_type is not CustomFieldType.single_select:
+            raise ValueError(
+                f"default_option_id is only valid for single_select fields "
+                f"(field {field_def.field_key!r}, type {field_def.field_type.value!r})"
+            )
+        if not isinstance(default_raw, str):
+            raise ValueError(f"default_option_id for {field_def.field_key!r} must be a string option id")
+        namespace_key = f"{table_label}.{field_def.field_key}"
+        default_option_ids = {option.id for option in single_select_options.get(namespace_key, [])}
+        if default_raw not in default_option_ids:
+            raise ValueError(
+                f"default_option_id {default_raw!r} for {field_def.field_key!r} "
+                "does not reference an option in the field's option list"
+            )
