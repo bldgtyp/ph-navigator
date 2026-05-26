@@ -36,15 +36,27 @@ export function reorderColumnIds(
   return next;
 }
 
+// Plan 30 — when a `pinnedColumnId` is provided, that column is forced
+// to slot 0 of the ordered/visible list regardless of `columnOrder` and
+// is never hidden. The primary-column constraints (slot 0 unhidable,
+// not drag-reorderable, hide-menu suppressed) apply to whichever
+// column ends up in slot 0; the `pinnedColumnId` slot just gives the
+// caller a way to nominate one explicitly when the identifier config
+// determines it.
 export function useGridColumns<TRow>(
   columnDefs: DataTableColumnDef<TRow>[],
   columnOrder: string[],
   hiddenColumns: string[],
+  pinnedColumnId?: string | null,
 ): DataTableColumnDef<TRow>[] {
   return useMemo(() => {
     const byId = new Map(columnDefs.map((column) => [column.id, column]));
     const orderedIds: string[] = [];
     const seen = new Set<string>();
+    if (pinnedColumnId && byId.has(pinnedColumnId)) {
+      orderedIds.push(pinnedColumnId);
+      seen.add(pinnedColumnId);
+    }
     for (const id of columnOrder) {
       if (byId.has(id) && !seen.has(id)) {
         orderedIds.push(id);
@@ -67,5 +79,5 @@ export function useGridColumns<TRow>(
         return hidden.has(id) ? null : column;
       })
       .filter((column): column is DataTableColumnDef<TRow> => column !== null);
-  }, [columnDefs, columnOrder, hiddenColumns]);
+  }, [columnDefs, columnOrder, hiddenColumns, pinnedColumnId]);
 }

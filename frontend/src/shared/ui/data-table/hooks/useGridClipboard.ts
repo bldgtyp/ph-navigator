@@ -154,7 +154,13 @@ async function pasteIntoSelection<TRow>(args: {
   };
   try {
     await dispatchWrite(op, inverse);
-    onAnnounce(`${plan.writes.length} cells pasted.`);
+    // Plan 30 D11 — surface the skipped-identifier count alongside
+    // the success message so the user knows the rectangle landed
+    // partially.
+    const skipped = coerced.skippedIdentifierCells;
+    const skippedSuffix =
+      skipped > 0 ? ` (${skipped} identifier cell${skipped === 1 ? "" : "s"} skipped)` : "";
+    onAnnounce(`${coerced.writes.length} cells pasted.${skippedSuffix}`);
   } catch (error) {
     onAnnounce(error instanceof Error ? error.message : "Paste failed.");
   }

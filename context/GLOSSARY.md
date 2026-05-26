@@ -80,6 +80,8 @@
 | **Builder**         | The collective editing surfaces inside the Project workspace (everything that writes to the document)          | Editor, authoring mode                            |
 | **Catalog manager** | The top-nav surface for editing Catalog entries (`/catalog/{slug}`)                                            | Library admin, catalog editor                     |
 | **DataTable**       | The shared React grid component used by every tabular surface (Catalog pages, Builder sub-tabs, picker, etc.) | Grid, table (lowercase "table" = data table)    |
+| **Record-ID**       | The user-facing label rendered in a DataTable's pinned leading column. Declared per-feature via `IdentifierConfig` (a direct field reference or a computed formula). Always non-unique — duplicates surface a non-blocking warning chip. | Primary field, ID column, key column |
+| **Database-ID**     | The hidden per-row PK (`pmp_…`, `rm_…`, `rec_…`) that drives FK joins, React keys, undo, and clipboard mapping. Never user-visible. Distinct from **Record-ID**, which is a label. | Row id, PK, internal id |
 | **Bookshelf picker**| The modal/inline UI for picking from a Catalog into a Project                                                  | Library picker, catalog browser                   |
 | **Version panel**   | The Version list + Save / Save As / Lock controls on the Project workspace                                     | History panel, revisions sidebar                  |
 

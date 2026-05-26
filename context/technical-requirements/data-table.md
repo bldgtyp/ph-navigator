@@ -296,10 +296,51 @@ Rules:
   them, back to version A with column order / width / hidden state
   preserved.
 
+## Identifier Column
+
+The DataTable's pinned leading column is a **label**, never a key. Each
+feature declares its identifier through an `IdentifierConfig<TRow>`
+prop; the hidden Database-ID (`pmp_…`, `rm_…`, `rec_…`) continues to
+own row identity.
+
+- **`kind: "field"`** — the named field is promoted into slot 0. The
+  cell stays editable; writes pass through the normal cell-edit path.
+- **`kind: "computed"`** — a synthetic read-only column with reserved
+  id `__record_id__` is prepended. `deps` declares the source fields;
+  `compute(row)` produces the rendered string.
+- Header label is always **"Record-ID"** (no per-feature override).
+- The pinned slot cannot be hidden or reordered (the "Hide field" and
+  "Filter by"/"Group by" menu items are suppressed for the synthetic
+  identifier; only sort remains).
+- The identifier is **never** unique-constrained. Cells whose value
+  matches another row in the same table render a non-blocking warning
+  chip ("Also used on row N…"). Empty / whitespace values do not warn.
+- Shift-Enter row insert produces a **truly blank row**: field
+  defaults come from `FieldDef.default` / natural zero only, never
+  cloned from the anchor row. The clone-from-anchor "Duplicate
+  record" workflow moves to an explicit context-menu action (not
+  yet wired).
+- Paste over the synthetic identifier column silently skips those
+  cells with a count in the toast; fill silently skips via the
+  synthetic FieldDef's `read_only: true`.
+- Broken state (a `kind: "field"` identifier whose backing field has
+  been deleted) renders a header warning glyph and `ERROR` cell
+  bodies; the grid stays functional until the consumer rewires the
+  identifier in code.
+- `__record_id__` is whitelisted by `sanitizeViewStateForSchema` so
+  persisted sort rules and column widths under that key round-trip
+  cleanly across schema-fingerprint changes.
+
+See `docs/plans/2026-05-26/plan-30-datatable-identifier-column.md`
+for the rollout phasing (catalog and remaining project-document
+tables drop their identifier uniqueness validators in later phases).
+
 ## Layout, Styling, And Accessibility
 
 - 32 px row height; 1 px dividers; row hover highlight.
-- Sticky first data column by default when it is the row identifier.
+- Sticky first data column by default; when an `IdentifierConfig` is
+  declared (see *Identifier column*), that column is pinned to slot 0
+  regardless of saved `columnOrder`.
 - Row numbers, row select, and drag handles live in table chrome, not in
   the backend schema or TanStack data column model.
 - Use explicit stacking lanes for sticky headers, frozen columns,

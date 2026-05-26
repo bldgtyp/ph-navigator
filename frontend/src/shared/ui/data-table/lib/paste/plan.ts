@@ -1,4 +1,5 @@
 import type { CellRange, CellWrite, DataTableColumnDef, FieldDef, FieldOption } from "../../types";
+import { IDENTIFIER_COLUMN_ID } from "../../types";
 import { fieldDefForColumn } from "../internal/fieldDefForColumn";
 import { fieldKeyFieldDefMap } from "../internal/fieldKeyFieldDefMap";
 import { normalizeRange } from "../range/normalize";
@@ -46,6 +47,10 @@ export type CoercePasteResult =
       ok: true;
       writes: CellWrite[];
       newOptions: Record<string, FieldOption[]>;
+      // Plan 30 D11 — count of cells silently skipped because they fell
+      // on the computed identifier column. Surfaced in the paste toast
+      // so the user knows the rectangle landed partially.
+      skippedIdentifierCells: number;
     }
   | {
       ok: false;
@@ -67,6 +72,7 @@ export function coercePasteWrites<TRow>({
 }): CoercePasteResult {
   const errors: { rowIndex: number; columnIndex: number; raw: string; message: string }[] = [];
   const writes: CellWrite[] = [];
+  let skippedIdentifierCells = 0;
   const optionsByField = new Map(
     fieldDefs.map((fieldDef) => [fieldDef.field_key, [...(fieldDef.options ?? [])]]),
   );
@@ -77,6 +83,13 @@ export function coercePasteWrites<TRow>({
     const row = rows[plannedWrite.rowIndex];
     const column = columns[plannedWrite.columnIndex];
     if (!row || !column) continue;
+    // Plan 30 D11 — the computed identifier column is silently skipped
+    // (not errored). The rest of the rectangle still lands; the toast
+    // surfaces the skipped count.
+    if (column.fieldKey === IDENTIFIER_COLUMN_ID) {
+      skippedIdentifierCells += 1;
+      continue;
+    }
     const fieldDef = fieldDefForColumn(column, fieldDefsByKey);
     if (fieldDef?.read_only) {
       errors.push({ ...plannedWrite, message: "Field is read-only." });
@@ -97,5 +110,7 @@ export function coercePasteWrites<TRow>({
     }
   }
 
-  return errors.length ? { ok: false, errors } : { ok: true, writes, newOptions };
+  return errors.length
+    ? { ok: false, errors }
+    : { ok: true, writes, newOptions, skippedIdentifierCells };
 }
