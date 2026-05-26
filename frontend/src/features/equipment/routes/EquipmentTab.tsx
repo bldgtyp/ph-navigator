@@ -14,9 +14,9 @@ import {
   uniqueCopyDisplayName,
   useTableSchema,
 } from "../../../shared/ui/data-table";
-import { useProjectTableViewState } from "../../table_views/useProjectTableViewState";
+import { useProjectTableViewState } from "../../table_views/hooks";
 import { projectDownloadUrl, tableDownloadUrl } from "../../project_document/api";
-import { projectDocumentQueryKeys } from "../../project_document/hooks";
+import { projectDocumentQueryKeys } from "../../project_document/query-keys";
 import type { ProjectDetail } from "../../projects/types";
 import { projectQueryKeys } from "../../projects/query-keys";
 import { RoomModal } from "../components/RoomModal";

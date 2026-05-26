@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { projectDocumentTableQueryKeys } from "../../project_document/hooks";
+import { projectDocumentTableQueryKeys } from "../../project_document/query-keys";
 import { WINDOW_TYPES_TABLE_NAME } from "../types";
 import { fetchWindowTypesRefreshReport } from "./api";
 

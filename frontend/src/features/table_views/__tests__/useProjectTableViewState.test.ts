@@ -11,7 +11,7 @@ vi.mock("../api", () => ({
 
 // Imported after the mock so the hook captures the mocked functions.
 import * as api from "../api";
-import { useProjectTableViewState } from "../useProjectTableViewState";
+import { useProjectTableViewState } from "../hooks";
 
 const fetchTableViewMock = api.fetchTableView as ReturnType<typeof vi.fn>;
 const saveTableViewMock = api.saveTableView as ReturnType<typeof vi.fn>;
