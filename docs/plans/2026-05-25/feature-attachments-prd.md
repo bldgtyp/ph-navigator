@@ -1,8 +1,9 @@
 ---
 DATE: 2026-05-25
-TIME: 21:00
-STATUS: DRAFT — feature-specific PRD for the Attachments cell type
-        and supporting upload/preview/download/delete pipeline.
+TIME: 21:30
+STATUS: DRAFT (rev 2 — pre-set fields only; no custom-field type) —
+        feature-specific PRD for the Attachments cell type and
+        supporting upload/preview/download/delete pipeline.
 AUTHOR: Ed May (with Claude)
 SCOPE: Multi-file attachments on project-document table cells
        (AirTable parity), the upload/preview/delete UX, the storage
@@ -36,12 +37,16 @@ V2 has the **building blocks** for this — the `project_assets` table,
 R2 bucket plumbing, signed-URL upload/download, attach/detach JSON-Patch
 wrappers, and stub `attachment` slots in `FieldDef` and
 `AttachmentRenderer` — but **no end-user surface and no implementation
-yet**. Worse, the v1 closed custom-field set
-(`{short_text, long_text, number, url, single_select, formula}`) does
-**not** include `attachment`, so today users can't add an Attachment
-column to a table; they get attachments only where we hard-coded them
-into the document model (project_materials datasheets, segment site
-photos, equipment datasheets, thermal-bridge sim files).
+yet**.
+
+**Scope decision (2026-05-25, Ed):** Attachments are **core fields on
+a fixed set of tables** in v1. The closed v1 custom-field set
+(`{short_text, long_text, number, url, single_select, formula}`) stays
+unchanged — `attachment` is NOT added as a user-extensible custom-field
+type. The AirTable-parity UX lives in the *cell*; the schema is
+pre-configured by PHN and not user-mutable. This keeps the cell + upload
+pipeline complexity but removes schema mutations, changeType handling,
+and the field-add UI.
 
 This PRD is the canonical authoring document for closing that gap. It
 collects the user stories already scattered across `20-envelope.md`,
@@ -60,9 +65,10 @@ model and API/MCP surface; and proposes a phased implementation.
 
 ### 2.1 Goal
 
-Make attaching one or more files (PDF / PNG / JPG primarily; other
-binary types secondarily) to any row of any project-document table feel
-**identical to AirTable**, while keeping the V2 architecture intact:
+Make attaching one or more files (PDF / PNG / JPG / WebP; HBJSON for
+thermal-bridge simulation files) to **pre-set attachment cells on the
+PH-shaped tables** feel **identical to AirTable**, while keeping the
+V2 architecture intact:
 
 - documents own structure; R2 owns bytes;
 - one upload backbone (`project_assets`) serves every surface;
@@ -74,30 +80,41 @@ binary types secondarily) to any row of any project-document table feel
 
 Concretely, after this feature ships:
 
-1. An editor can add an **Attachment column** to any custom-field-capable
-   table (Rooms, Pumps, Fans, ERVs, Thermal Bridges, future equipment
-   tables) via the same Hide/Add Field surface they already use for
-   text/number/select columns.
-2. Pre-existing core-field attachment surfaces
-   (`project_materials.datasheet_asset_ids`,
-   `segment.photo_asset_ids`, `equipment.*.datasheet_asset_ids`,
-   `thermal_bridges.simulation_file_asset_ids`,
-   `thermal_bridges.datasheet_asset_ids`) render through the same
-   `<AttachmentCell>` component used by custom attachment columns.
-3. The user can drag-drop one or many files into a cell; uploads run in
+1. The fixed v1 set of attachment cells (§9.2) renders through a single
+   `<AttachmentCell>` component on the corresponding tables:
+   - `project_materials.datasheet_asset_ids[]`
+   - `segments.photo_asset_ids[]`
+   - `equipment.ervs[*].datasheet_asset_ids[]`
+   - `equipment.pumps[*].datasheet_asset_ids[]`
+   - `equipment.fans[*].datasheet_asset_ids[]`
+   - `thermal_bridges[*].datasheet_asset_ids[]`
+   - `thermal_bridges[*].simulation_file_asset_ids[]`
+2. The user can drag-drop one or many files into a cell; uploads run in
    parallel with optimistic "uploading…" pills; on completion the cell
-   becomes a clickable thumbnail strip.
-4. Clicking a thumbnail opens a full-size preview modal with
-   pagination through the cell's attachments, a Download button, and a
-   Delete (detach) button.
-5. The user can mass-download attachments — at the cell, the column, the
-   table, or the project level — as a zip with deterministic filenames.
-6. The user can ask Claude to "grab me every datasheet on Project Foo's
+   shows a clickable thumbnail strip.
+3. Cell height is fixed (no expand-to-fit). Extra thumbnails are reached
+   by horizontal mouse-wheel scroll *inside the cell* with no visible
+   scrollbar — AirTable parity.
+4. An empty cell renders blank when unselected; the moment the cell
+   becomes active, a small bordered "📎 Drop files here" button
+   appears in the cell.
+5. Clicking a thumbnail opens a full-size preview modal with
+   pagination through the cell's attachments and a Download button.
+6. Selecting a thumbnail (in the cell strip or modal) and pressing
+   Delete detaches it — single keystroke, single undo entry.
+7. The user can mass-download attachments — at the cell, the column,
+   the table, or the project level — as a zip with deterministic
+   filenames.
+8. The user can ask Claude to "grab me every datasheet on Project Foo's
    ERVs and rename them by manufacturer" and have the MCP server hand
    back signed URLs (or stream bytes) for each.
 
 ### 2.2 Non-goals (v1 of this feature)
 
+- **User-extensible Attachment columns.** No `attachment` in the closed
+  v1 custom-field set. No Add-Field UI for Attachment. The cell type is
+  only ever set by PHN-controlled pre-set core fields (§9.2). Reaching
+  for "users add their own attachment columns" is a v1.1 candidate.
 - **In-app PDF annotation / markup / form-fill.** Preview is read-only.
 - **Image editing / cropping / rotation** beyond automatic EXIF
   orientation honoring.
@@ -108,16 +125,24 @@ Concretely, after this feature ships:
   column.** Defer to v1.1.
 - **Hard delete with "Recently deleted (7 days)" trash UI.** v1 ships
   detach + 90-day server-side GC per existing PRD §6.5; user-facing
-  trash is a v1.1 candidate.
+  trash is a v1.1 candidate (admin can pull files back via SQL if
+  genuinely needed).
+- **Cross-cell drop targets** (drop anywhere in the table → release over
+  destination cell). v1 is cell-only drop; cross-cell defer to v1.1.
+- **Clipboard paste-image** into attachment cells. Defer.
+- **Per-attachment captions / metadata fields.** Attachment is just an
+  `asset_id`; metadata lives in sibling cells.
 - **Per-attachment versioning** ("update this datasheet to v2 and keep
-  v1 archived"). v1 model: bytes are immutable, replacing means
-  uploading a second asset and detaching the first.
+  v1 archived"). v1 model: bytes are immutable; replacing means
+  uploading a new asset and detaching the old. Version isolation across
+  PHN's own Save / Save As gives the audit trail (§9.5).
 - **Per-project storage quota enforcement.** Logged but not enforced.
 - **Multi-part / resumable upload for very large files.** v1 caps file
   size below the single-PUT ceiling (see §9.4).
-- **Custom-field attachment column on _catalog_ tables.** Catalog rows
-  are not custom-field-capable in v1 (data-model.md §6.6); datasheets
-  on catalog Materials/Frame/Glazing remain out of scope.
+- **Attachments on catalog tables.** Datasheets on
+  `catalog_materials` / `catalog_frame_types` / `catalog_glazing_types`
+  remain out of scope (per Q-ENV-2.1: catalog rows carry product specs
+  only; datasheets are per-project QA artifacts).
 
 ## 3. User stories (collected)
 
@@ -139,12 +164,14 @@ PRD adds new acceptance criteria, those criteria are inlined.
 
 ### 3.2 New stories introduced by this PRD
 
-**US-ATT-1 — Attachment field type (custom-field).**
-> As an editor on any equipment / rooms / TB / future-equipment table,
-> I want to add a column with field type "Attachment" through the same
-> Add-Field affordance I use for text/number/select/url, so that any
-> table can grow ad-hoc file-attached metadata (cut sheets, warranties,
-> photos, manuals) without a code change.
+**US-ATT-1 — Pre-set Attachment cells on PH-shaped tables (no
+user-extensible columns).**
+> As an editor on the project_materials, segments, ERV, Pump, Fan, and
+> Thermal Bridge tables, I want the relevant PHN-defined attachment
+> cells (datasheet, site photo, simulation file) to render as
+> drag-drop AirTable-style attachment cells without my having to add
+> any column. I do NOT need a UI to add my own Attachment columns —
+> the set is fixed by PHN.
 
 **US-ATT-2 — Drag-drop multi-file upload into a cell.**
 > As an editor, I want to drag one or more files from my desktop onto
@@ -200,22 +227,22 @@ specified:
 
 | # | Behavior | Notes |
 |---|---|---|
-| 1 | Field type "Attachment" listed in the Add-Field type picker. | Sits alongside text/number/select/url. |
-| 2 | Empty cell shows a "+" affordance on hover. Click → open file picker. | We adopt; also full-cell drop target. |
-| 3 | Dragging files anywhere in the table highlights every Attachment cell as a drop target; releasing over a cell uploads there. | We adopt the *focused-cell* drop target; cross-cell drop is a v1.1 polish. |
+| 1 | Field type "Attachment" listed in the Add-Field type picker. | **Diverge.** No Add-Field UI for Attachment in v1; cells are pre-set by PHN (§9.2). |
+| 2 | Empty cell renders nothing when unselected; when the cell becomes active, a small bordered button with paperclip icon + "Drop files here" text appears inside the cell. Click → open file picker; drop → upload. | **Adopt exactly.** Matches the 2026-05-25 Ed screenshot of row 6. |
+| 3 | Dragging files anywhere in the table highlights every Attachment cell as a drop target; releasing over a cell uploads there. | We adopt the *focused-cell* drop target; cross-cell drop is v1.1 (Q-ATT-7 deferred). |
 | 4 | Multi-file drop = N attachments, one upload each, in parallel. | We adopt. |
 | 5 | While uploading, each attachment shows a placeholder pill ("uploading…") with a determinate or indeterminate progress indicator. | We adopt. |
-| 6 | On completion, the pill is replaced by a thumbnail. PDF → first-page render; image → resized image; other → generic file-type icon. | We adopt; thumbnail pipeline §8. |
-| 7 | Cell shows a horizontal strip of thumbnails (~2-3 visible at default column width); rest collapse to "+N". | We adopt. |
+| 6 | On completion, the pill is replaced by a thumbnail. PDF → first-page render; image → resized image; other (incl. HBJSON) → generic file-type icon. | We adopt; thumbnail pipeline §8. |
+| 7 | Cell shows a horizontal strip of thumbnails. **Cell height stays fixed; cell width is fixed. Overflowing thumbnails are reached by horizontal scrolling inside the cell with the mouse wheel; no visible scrollbar chrome.** | **Adopt exactly.** AirTable parity per Ed 2026-05-25. No "+N" collapse needed because mousewheel scroll handles overflow. |
 | 8 | Hover a thumbnail → tooltip with filename, size, MIME. | We adopt. |
-| 9 | Click thumbnail → modal preview with file name, ←/→ to paginate, Download, Delete, Esc to close. | We adopt; modal §7. |
-| 10 | Detach removes the attachment from the cell; the file is moved to "Recently deleted" for 7 days, then purged. | We adopt detach; differ on the user-visible trash UI — v1 ships *server-side* 90-day GC with no in-app trash. v1.1 candidate. |
-| 11 | Reorder attachments by drag inside the modal. | We adopt. |
+| 9 | Click thumbnail → modal preview with file name, ←/→ to paginate, Download, Esc to close. | We adopt; modal §7. |
+| 10 | **Detach**: click/select a thumbnail in the cell strip (or in the modal's rail); the selected thumbnail gains a focus ring; press **Delete** (or Backspace) → detach. No "Detach" button needed. | **Adopt exactly** per Ed 2026-05-25. Single keystroke; single undo entry. |
+| 11 | Reorder attachments by drag inside the modal. | We adopt (US-ATT-8). |
 | 12 | Same file dropped into a second cell does **not** re-upload; AirTable links to the existing attachment id. | We dedupe by `content_hash_sha256` server-side; the second cell gets the same `asset_id`. UI behavior matches: instant attach. |
-| 13 | Paste an image from clipboard into a focused cell uploads it as an attachment. | v1.1 candidate; not v1. |
+| 13 | Paste an image from clipboard into a focused cell uploads it as an attachment. | v1.1 candidate (Q-ATT-8 deferred). |
 | 14 | Per-attachment "Expand" opens the full-size in a new tab. | We adopt as the modal's Open-in-new-tab affordance, which simply opens the signed URL. |
 | 15 | Mass-download via the column header `⋯` menu → "Download all" → zip. | We adopt at column, table, and project scope. |
-| 16 | File size limit: 5GB (paid), 5MB (free attachments inline). | We start at 25 MB per file in v1 (single-PUT comfortable on R2); 100 MB upper bound is the *theoretical cap* per request; documented in §9.4. |
+| 16 | File size limit: 5GB (paid), 5MB (free attachments inline). | 25 MB per file v1 default (single-PUT comfortable on R2); per-field configurable; 100 MB hard backend cap. |
 
 ## 5. Architecture overview
 
@@ -334,26 +361,65 @@ Remaining ops work for Phase 0:
 ### 7.1 Cell rendering
 
 ```
-┌──────────────────────────────────┐
-│ [📄] [🖼] [📄] +3                │   ← thumbnails (28×36 px each)
-└──────────────────────────────────┘
+                       fixed cell width
+                  ◀──────────────────────────▶
+                  ┌──────────────────────────┐
+  populated cell  │ [📄][🖼][📄][📄][📄][📄]…│  (mousewheel-scrolls horizontally
+                  └──────────────────────────┘   inside the cell; no scrollbar
+                                                 chrome; cell height unchanged)
+
+                  ┌──────────────────────────┐
+  empty unselected│                          │  (renders blank)
+                  └──────────────────────────┘
+
+                  ┌──────────────────────────┐
+  empty selected  │  ┌────────────────────┐  │
+                  │  │ 📎  Drop files here│  │  (bordered light-gray button;
+                  │  └────────────────────┘  │   click → file picker;
+                  └──────────────────────────┘   cell is a drop target)
 ```
 
-- Strip lays out left-to-right, gap 4 px.
-- Each tile: small bordered card with a thumbnail image. Type-specific
-  fallbacks: PDF generic icon if rendering failed; file-type glyph for
-  non-previewable kinds.
-- When the strip exceeds the cell width, the last visible tile is
-  replaced with `+N` showing the overflow count.
-- Inactive cells render the strip non-interactively (no chevron).
-- Active cell: thumbnails become clickable; an additional "+" affordance
-  appears at the trailing edge to invite more attachments. The whole
-  cell is also a drop target.
-- Empty cell: subtle dashed border on hover with a centered "Drop files
-  or click to attach" hint, only visible on hover or when active.
-- Read-only mode (locked version, Viewer, formula columns N/A here):
-  thumbnails clickable for preview/download; no "+", no drop target,
-  no delete affordances inside the modal.
+Rules:
+
+- **Fixed cell height.** The cell does NOT grow vertically to fit
+  thumbnails (AirTable parity, Ed 2026-05-25).
+- **Fixed cell width** — driven by the existing column-width view
+  state (`data-table.md` §"Column widths").
+- **Horizontal mousewheel scroll inside the cell** when the thumbnail
+  strip overflows. No visible scrollbar; no `+N` collapse. (AirTable
+  parity.) Implementation: cell wrapper has `overflow-x: auto`,
+  `scrollbar-width: none`, `::-webkit-scrollbar { display: none }`,
+  and a wheel-listener that converts vertical wheel deltas to
+  `scrollLeft` when the cursor is over the cell.
+- **Each thumbnail tile**: small bordered card; image content scaled
+  to fit; PDF → first-page render; image → resized image; other types
+  (HBJSON, unknown) → generic file-type glyph. Tile width is uniform
+  (~36 px) so the layout is deterministic.
+- **Empty unselected cell**: renders nothing — totally blank.
+- **Empty selected (active) cell**: shows the "📎 Drop files here"
+  pill-button in the cell. Click opens a native file picker; drop
+  initiates upload. Matches the 2026-05-25 screenshot.
+- **Populated active cell** is also a drop target: dropping appends
+  to the existing strip. No additional "+" affordance — the whole
+  cell is the drop zone, and the file picker is reachable via the
+  preview modal's "Add more…" affordance (kept minimal).
+- **Read-only mode** (locked version, Viewer, formula N/A here):
+  thumbnails remain clickable for preview/download; no
+  drop target; the "Drop files here" button is not rendered even
+  when selected.
+
+### 7.2 Selection inside the cell
+
+- Clicking a thumbnail **once** selects it: the tile gains a 2 px
+  focus ring (uses an existing token, e.g.
+  `--phn-selection-ring`).
+- Clicking the same thumbnail **twice** (or pressing Enter / Space
+  on a selected tile) opens the preview modal.
+- Click outside the cell clears the thumbnail selection.
+- Arrow keys ←/→ inside the cell move the selection ring along the
+  strip (and scroll the cell horizontally if needed).
+- Selection is local to the cell — it does not affect grid-level
+  active-cell or range-select state.
 
 ### 7.2 Drop interaction
 
