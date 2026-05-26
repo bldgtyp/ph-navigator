@@ -21,15 +21,29 @@ export function computeLocalPreflight(
   toType: CustomFieldType,
   rows: ReadonlyArray<PreflightSourceRow>,
   targetOptionList?: ReadonlyArray<FieldOption>,
+  sourceOptionList?: ReadonlyArray<FieldOption>,
 ): LocalPreflightResult | null {
   const policy = conversionPolicy(fromType, toType);
   if (policy === null) return null;
   // create_options materializes options server-side from row text
   // values, so the local preview reports no incompatibilities.
   if (policy === "create_options") return { incompatible: [], total: rows.length };
+  // substitute_labels: rawValue is the option_id; the backend resolves
+  // it to the option label and then coerces the label into the target
+  // type. Mirror that here so the preflight count matches the server.
+  const substituteLabels = policy === "substitute_labels";
+  const sourceLookup =
+    substituteLabels && sourceOptionList
+      ? new Map(sourceOptionList.map((o) => [o.id, o.label]))
+      : null;
   const incompatible: PreflightRow[] = [];
   for (const row of rows) {
-    const result = coerceCustomValue(row.rawValue, toType, { optionList: targetOptionList ?? [] });
+    const coerceInput = substituteLabels
+      ? typeof row.rawValue === "string"
+        ? (sourceLookup?.get(row.rawValue) ?? null)
+        : null
+      : row.rawValue;
+    const result = coerceCustomValue(coerceInput, toType, { optionList: targetOptionList ?? [] });
     if (!result.ok) {
       incompatible.push({ rowId: row.rowId, rawValue: row.rawValue, reason: result.reason });
     }

@@ -1039,6 +1039,7 @@ def _apply_change_type(
     body: ProjectDocumentV1,
     mutation: ChangeTypeMutation,
     capability: CustomFieldCapability,
+    client_options: list[SingleSelectOption] | None = None,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     current_fields = capability.read_custom_fields(body)
     index, existing = _find_field(current_fields, mutation.field_id, mutation.table_key)
@@ -1089,10 +1090,21 @@ def _apply_change_type(
     overflow_diagnostics: list[tuple[str, object, str]] = []
     label_lookup_for_substitute: dict[str, str] | None = None
     if policy == "create_options":
-        generated_options, overflow_diagnostics = _materialize_options_for_text_to_select(
-            rows, mutation.field_id, capability
-        )
-        target_option_list = generated_options
+        if client_options is not None:
+            # Bundle path: the user previewed/edited the auto-derived
+            # option list in the field-config modal. Trust the client's
+            # list as authoritative; per-row coercion below maps source
+            # values onto these options by normalized label, and rows
+            # whose value has no matching option surface as preflight
+            # incompatibles (the user acks the clear).
+            validate_option_list(client_options)
+            generated_options = list(client_options)
+            target_option_list = generated_options
+        else:
+            generated_options, overflow_diagnostics = _materialize_options_for_text_to_select(
+                rows, mutation.field_id, capability
+            )
+            target_option_list = generated_options
     elif policy == "substitute_labels":
         # Build {option_id: label} from the existing namespaced list so
         # the per-row pass can substitute labels.
@@ -1510,7 +1522,22 @@ def _apply_edit_field_bundle(
             acknowledge_destructive=mutation.acknowledge_destructive,
             expected_schema_fingerprint=mutation.expected_schema_fingerprint,
         )
-        next_body, ct_audit = _apply_change_type(next_body, change_type_mutation, capability)
+        # When the bundle is changing INTO single_select and the client
+        # supplied an explicit option list (the modal pre-populates this
+        # from the source values for an Airtable-style preview), pass it
+        # through so the backend uses it as authoritative instead of
+        # re-materializing options from raw row values.
+        ct_client_options = (
+            mutation.next_options
+            if (
+                after.field_type is CustomFieldType.single_select
+                and mutation.next_options is not None
+            )
+            else None
+        )
+        next_body, ct_audit = _apply_change_type(
+            next_body, change_type_mutation, capability, client_options=ct_client_options
+        )
         cleared_row_count = cast(int, ct_audit.get("cleared_row_count") or 0)
         created_option_count = cast(int, ct_audit.get("created_option_count") or 0)
         properties_changed.append("field_type")

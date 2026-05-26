@@ -24,7 +24,12 @@ import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 import { computeLocalPreflight, type PreflightSourceRow } from "../lib/coerceCustomFieldType";
-import { isConversionAllowed } from "../lib/typeConversionMatrix";
+import {
+  conversionPolicy,
+  isConversionAllowed,
+  TEXT_TO_SINGLE_SELECT_OPTION_CAP,
+} from "../lib/typeConversionMatrix";
+import { deriveCandidateOptionsFromRows } from "../lib";
 import { formulaSourceFromFieldDef } from "../lib/formulaFieldSource";
 import {
   FieldConfigSectionTypeChange,
@@ -280,8 +285,56 @@ export function FieldConfigModal({
   // One pass over preflight rows per render — shared with the sub-panel.
   const localPreflight = useMemo(() => {
     if (!typeChanged || draftType === null || sourceCustomFieldType === undefined) return null;
-    return computeLocalPreflight(sourceCustomFieldType, draftType, preflightRows ?? []);
-  }, [typeChanged, draftType, sourceCustomFieldType, preflightRows]);
+    return computeLocalPreflight(
+      sourceCustomFieldType,
+      draftType,
+      preflightRows ?? [],
+      undefined,
+      source?.options,
+    );
+  }, [typeChanged, draftType, sourceCustomFieldType, preflightRows, source?.options]);
+
+  // Airtable-parity preview: when the user picks single_select as the
+  // new type for a text/number field, derive a candidate option list
+  // from the existing row values and seed the options section with it.
+  // The user can rename / recolor / remove before saving; the
+  // (possibly edited) list is sent through as `nextOptions` and the
+  // backend uses it as authoritative instead of re-materializing.
+  // Frozen at the moment the user enters single_select mode so editing
+  // options doesn't cause the section to reset.
+  const derivedSourceOptionsRef = useRef<{
+    fieldKey: string;
+    draftType: CustomFieldType;
+    options: FieldOption[];
+  } | null>(null);
+  const singleSelectSourceOptions = useMemo<readonly FieldOption[]>(() => {
+    if (draftType !== "single_select" || !source) return EMPTY_FIELD_OPTIONS;
+    const existing = source.options ?? EMPTY_FIELD_OPTIONS;
+    if (existing.length > 0) return existing;
+    if (sourceCustomFieldType === undefined) return EMPTY_FIELD_OPTIONS;
+    if (sourceCustomFieldType === draftType) return EMPTY_FIELD_OPTIONS;
+    if (conversionPolicy(sourceCustomFieldType, draftType) !== "create_options") {
+      return EMPTY_FIELD_OPTIONS;
+    }
+    const cached = derivedSourceOptionsRef.current;
+    if (
+      cached &&
+      cached.fieldKey === source.field_key &&
+      cached.draftType === draftType
+    ) {
+      return cached.options;
+    }
+    const derived = deriveCandidateOptionsFromRows(
+      preflightRows ?? [],
+      TEXT_TO_SINGLE_SELECT_OPTION_CAP,
+    );
+    derivedSourceOptionsRef.current = {
+      fieldKey: source.field_key,
+      draftType,
+      options: derived,
+    };
+    return derived;
+  }, [draftType, source, sourceCustomFieldType, preflightRows]);
 
   const incompatibleCount =
     serverPreflight?.rows.length ?? localPreflight?.incompatible.length ?? 0;
@@ -567,7 +620,7 @@ export function FieldConfigModal({
             {draftType === "single_select" && source ? (
               <FieldConfigSectionOptions
                 fieldDisplayName={source.display_name}
-                sourceOptions={source.options ?? EMPTY_FIELD_OPTIONS}
+                sourceOptions={singleSelectSourceOptions}
                 sourceColorCodeOptions={source.colorCodeOptions !== false}
                 sourceDefaultOptionId={source.defaultOptionId ?? null}
                 rows={optionRows ?? EMPTY_OPTION_SOURCE_ROWS}
