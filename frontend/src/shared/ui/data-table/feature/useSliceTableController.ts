@@ -1,0 +1,373 @@
+// Generic orchestrator for the "slice-backed DataTable" pattern. Every
+// feature tab that ships a JSON-document slice + DataTable composes
+// this hook with its own SlicePayloadBuilders, then renders the
+// returned controller through <SliceTableShell> + its own table.
+//
+// Out of scope for this controller (consumer-owned):
+//   - feature-specific modal state (e.g. RoomModal, ErvDetailDrawer)
+//   - feature-specific row id generation (`generatedId(prefix)`)
+//   - feature-specific footer actions, sub-tab bars, download menus
+//   - feature-specific formula-row-values shape — the controller forwards
+//     it through but never reads it
+//
+// ERV-tab consumption sketch (per plan §2.7 — pre-PR sanity check):
+//   - ErvSlice / ErvRow / ErvPayload triple plugs straight in.
+//   - `payloadBuilders.remoteSliceChangesActiveRow` stays undefined
+//     (ERV has no row-detail modal; the table is the editor).
+//   - `payloadBuilders.replaceOptions` stays undefined (ERV has no
+//     core single-select option editor; only custom single-selects,
+//     which route through `cell` ops with `newOptions` deltas).
+//   - The consumer passes `activeRow = null` because there is no
+//     active-row concept; the controller's optional gate skips the
+//     comparison.
+//   - `getFormulaRowValues` is feature-specific (different cf_/core
+//     field-id mapping) but the registry interface is identical.
+//   No leaky-abstraction props surfaced by that sketch.
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+import { errorMessage } from "../../../lib/errors";
+import { useTableSchema } from "../index";
+import { isDraftStaleError, isVersionLockedError } from "../../../../features/project_document/lib";
+import { projectDocumentQueryKeys } from "../../../../features/project_document/query-keys";
+import { projectQueryKeys } from "../../../../features/projects/query-keys";
+import { useProjectTableViewState } from "../../../../features/table_views/hooks";
+import type { TableSliceAccessMode } from "../../../../features/project_document/table-slice";
+import type { BuildEmptyRow, FieldDef, FieldOption, WriteOp } from "../types";
+import type { CustomFieldDef, FieldRegistryEntry } from "../index";
+import type { FieldSchemaMutation } from "../lib/customFieldMutations";
+import { useCustomFieldHandlers } from "./useCustomFieldHandlers";
+import type {
+  ConflictMessages,
+  EditBlocker,
+  SlicePayloadBuilders,
+  SliceTableController,
+} from "./types";
+import { emptyViewState } from "../types";
+
+export type SliceTableReplaceMutation<TSlice, TPayload> = UseMutationResult<
+  TSlice,
+  Error,
+  { current: TSlice; payload: TPayload }
+>;
+
+export type SliceTableSchemaMutation<TSlice> = UseMutationResult<
+  TSlice,
+  Error,
+  { current: TSlice; mutation: FieldSchemaMutation }
+>;
+
+export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPayload> = {
+  projectId: string;
+  activeVersionId: string | null;
+  accessMode: TableSliceAccessMode;
+  versionLocked: boolean;
+  tableKey: string;
+  // The latest accepted slice. The controller assumes the consumer has
+  // already short-circuited on loading / error so this is non-null.
+  slice: TSlice;
+  coreFieldDefs: FieldDef[];
+  fingerprintCoreFieldKeys: readonly string[];
+  customFields: CustomFieldDef[] | null | undefined;
+  singleSelectOptions: Record<string, FieldOption[]> | null;
+  // Stub columns whose `id` / `fieldKey` mirror the live grid's. The
+  // view-state sanitizer reads only `id` + `fieldKey`, so a slim list
+  // is fine. (See lib/view/sanitize.ts.)
+  columnsForSanitize: Parameters<typeof useProjectTableViewState>[0]["columns"];
+  payloadBuilders: SlicePayloadBuilders<TSlice, TRow, TPayload>;
+  conflictMessages: ConflictMessages;
+  buildEmptyRow: BuildEmptyRow<TRow>;
+  // The active "focused" row (e.g. the row open in a detail modal).
+  // Pass null when the tab has no active-row concept.
+  activeRow: TRow | null;
+  replaceMutation: SliceTableReplaceMutation<TSlice, TPayload>;
+  schemaMutation: SliceTableSchemaMutation<TSlice>;
+  // Returns a fresh slice from the network. Used by reload-draft and
+  // by the stale-draft conflict path.
+  refetch: () => Promise<unknown>;
+};
+
+export function useSliceTableController<TSlice, TRow extends { id: string }, TPayload>(
+  args: UseSliceTableControllerArgs<TSlice, TRow, TPayload>,
+): SliceTableController<TSlice> {
+  const queryClient = useQueryClient();
+  const {
+    projectId,
+    activeVersionId,
+    accessMode,
+    versionLocked,
+    tableKey,
+    slice,
+    coreFieldDefs,
+    fingerprintCoreFieldKeys,
+    customFields,
+    singleSelectOptions,
+    columnsForSanitize,
+    payloadBuilders,
+    conflictMessages,
+    buildEmptyRow,
+    activeRow,
+    replaceMutation,
+    schemaMutation,
+    refetch,
+  } = args;
+
+  const isEditor = accessMode === "editor";
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [editBlocker, setEditBlocker] = useState<EditBlocker | null>(null);
+
+  const viewDefaults = useMemo(() => emptyViewState(), []);
+  const tableSchema = useTableSchema({
+    tableKey,
+    coreFieldDefs,
+    fingerprintCoreFieldKeys,
+    customFields,
+    singleSelectOptions,
+  });
+
+  const {
+    view,
+    onViewChange,
+    isLoading: viewLoading,
+    reset: onResetView,
+  } = useProjectTableViewState({
+    projectId,
+    tableKey,
+    defaults: viewDefaults,
+    enabled: isEditor,
+    columns: columnsForSanitize,
+    fieldDefs: tableSchema.fieldDefs,
+    schemaFingerprint: tableSchema.schemaFingerprint,
+  });
+
+  const isLocked = editBlocker?.kind === "version-locked" || versionLocked;
+  const canEdit = isEditor && !isLocked && !editBlocker && Boolean(activeVersionId);
+
+  useEffect(() => {
+    setEditBlocker(null);
+  }, [activeVersionId]);
+
+  // Consumer hooks this into its broadcast subscription (e.g.
+  // `useRoomsDraftBroadcast`). Only fires the active-row conflict
+  // banner when the tab has an active row AND the payload builders
+  // define `remoteSliceChangesActiveRow`; tabs without a modal can
+  // pass `activeRow={null}` and the gate skips the comparison.
+  const notifyRemoteSlice = useCallback(
+    (incoming: TSlice) => {
+      if (!activeRow) return;
+      if (!payloadBuilders.remoteSliceChangesActiveRow) return;
+      if (payloadBuilders.remoteSliceChangesActiveRow(slice, incoming, activeRow)) {
+        setEditBlocker({
+          kind: "draft-conflict",
+          message: conflictMessages.activeRowConflict,
+        });
+      }
+    },
+    [activeRow, conflictMessages.activeRowConflict, payloadBuilders, slice],
+  );
+
+  const handleStaleDraftConflict = useCallback(
+    async (message: string) => {
+      setEditBlocker({ kind: "draft-conflict", message });
+      await refetch();
+    },
+    [refetch],
+  );
+
+  const handleVersionLockedConflict = useCallback(async () => {
+    setEditBlocker({
+      kind: "version-locked",
+      message: conflictMessages.versionLocked,
+    });
+    const invalidations = [
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.detail(projectId) }),
+    ];
+    if (activeVersionId) {
+      invalidations.push(
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(projectId, activeVersionId),
+        }),
+      );
+    }
+    await Promise.all(invalidations);
+  }, [activeVersionId, conflictMessages.versionLocked, projectId, queryClient]);
+
+  const reloadDraft = useCallback(async () => {
+    setEditBlocker(null);
+    setActionError(null);
+    await refetch();
+  }, [refetch]);
+
+  const runWithConflictHandling = useCallback(
+    async <T>(
+      run: () => Promise<T>,
+      conflictMessage: string,
+      fallbackMessage: string,
+    ): Promise<T | undefined> => {
+      if (!canEdit) return undefined;
+      setActionError(null);
+      try {
+        return await run();
+      } catch (error) {
+        if (isDraftStaleError(error)) {
+          await handleStaleDraftConflict(conflictMessage);
+          throw error;
+        }
+        if (isVersionLockedError(error)) {
+          await handleVersionLockedConflict();
+          throw error;
+        }
+        const message = errorMessage(error, fallbackMessage);
+        setActionError(message);
+        throw new Error(message);
+      }
+    },
+    [canEdit, handleStaleDraftConflict, handleVersionLockedConflict],
+  );
+
+  const commitPayloadOrThrow = useCallback(
+    (payload: TPayload, conflictMessage: string, fallbackMessage: string) => {
+      const validationMessage = payloadBuilders.validate(payload);
+      if (validationMessage) {
+        setActionError(validationMessage);
+        throw new Error(validationMessage);
+      }
+      return runWithConflictHandling(
+        () => replaceMutation.mutateAsync({ current: slice, payload }),
+        conflictMessage,
+        fallbackMessage,
+      );
+    },
+    [payloadBuilders, replaceMutation, runWithConflictHandling, slice],
+  );
+
+  const commitSchemaMutation = useCallback(
+    (mutation: FieldSchemaMutation) =>
+      runWithConflictHandling(
+        () => schemaMutation.mutateAsync({ current: slice, mutation }),
+        conflictMessages.activeRowConflict,
+        "Could not update custom-field schema.",
+      ),
+    [conflictMessages.activeRowConflict, runWithConflictHandling, schemaMutation, slice],
+  );
+
+  const onWrite = useCallback(
+    async (op: WriteOp) => {
+      if (!canEdit) return;
+      if (op.kind === "cell" || op.kind === "paste" || op.kind === "fill") {
+        // `fill` shares the CellWrite[] payload shape with `cell` /
+        // `paste` but carries no option-list delta (the source values
+        // are already in the table — fill never creates options).
+        const newOptions =
+          op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
+        const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
+        await commitPayloadOrThrow(
+          payloadBuilders.fromCellWrites(slice, op.writes, newOptions, removedOptions),
+          conflictMessages.activeRowConflict,
+          "Could not update table values.",
+        );
+        return;
+      }
+      if (op.kind === "rowInsert") {
+        await commitPayloadOrThrow(
+          payloadBuilders.fromRowInsert(slice, op.rows, buildEmptyRow),
+          conflictMessages.activeRowConflict,
+          "Could not insert row.",
+        );
+        return;
+      }
+      if (op.kind === "rowDelete") {
+        await commitPayloadOrThrow(
+          payloadBuilders.fromRowDelete(slice, op.rows),
+          conflictMessages.activeRowConflict,
+          conflictMessages.deleteConflict,
+        );
+        return;
+      }
+      if (op.kind === "schemaMutation") {
+        if (op.variant === "typed") {
+          await commitSchemaMutation(op.mutation);
+          return;
+        }
+        // Single-select option editor — still rides through the
+        // whole-table replace path. Only tabs that ship the legacy
+        // option editor implement these hooks; for tabs without it
+        // we treat the op as a no-op (the grid would never emit one).
+        if (!payloadBuilders.replaceOptions) return;
+        const { after } = op;
+        if (
+          payloadBuilders.isLegacyOptionKey &&
+          !payloadBuilders.isLegacyOptionKey(after.field_key)
+        ) {
+          return;
+        }
+        const collapse =
+          payloadBuilders.collapseCellWritesToReplacements ??
+          (() => ({}) as Record<string, string | null>);
+        const replacements = collapse(slice, after.field_key, op.cellWrites);
+        let payload: TPayload;
+        try {
+          payload = payloadBuilders.replaceOptions(
+            slice,
+            after.field_key,
+            after.options ?? [],
+            replacements,
+          );
+        } catch (error) {
+          const message = errorMessage(error, "Could not update options.");
+          setActionError(message);
+          throw new Error(message);
+        }
+        await commitPayloadOrThrow(
+          payload,
+          conflictMessages.activeRowConflict,
+          "Could not update options.",
+        );
+      }
+    },
+    [
+      buildEmptyRow,
+      canEdit,
+      commitPayloadOrThrow,
+      commitSchemaMutation,
+      conflictMessages.activeRowConflict,
+      conflictMessages.deleteConflict,
+      payloadBuilders,
+      slice,
+    ],
+  );
+
+  const customFieldHandlers = useCustomFieldHandlers({
+    tableKey,
+    canEdit,
+    customFields,
+    tableSchema,
+    view,
+    onViewChange,
+    commitSchemaMutation,
+  });
+
+  return {
+    tableSchema,
+    view,
+    onViewChange,
+    onResetView,
+    viewLoading,
+    onWrite,
+    ...customFieldHandlers,
+    editBlocker,
+    setEditBlocker,
+    actionError,
+    setActionError,
+    canEdit,
+    isLocked,
+    reloadDraft,
+    isReplacePending: replaceMutation.isPending,
+    runWithConflictHandling,
+    notifyRemoteSlice,
+  };
+}
+
+// Re-exported for consumers that want the canonical FieldRegistryEntry
+// without reaching across the data-table package boundary.
+export type { FieldRegistryEntry };
