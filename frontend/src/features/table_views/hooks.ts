@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../shared/lib/errors";
-import {
-  sanitizeViewStateForSchema,
-  type DataTableColumnDef,
-  type FieldDef,
-  type ViewState,
-} from "../../shared/ui/data-table";
+import { type DataTableColumnDef, type FieldDef, type ViewState } from "../../shared/ui/data-table";
 import { deleteTableView, fetchTableView, saveTableView } from "./api";
+import { SAVE_DEBOUNCE_MS, SAVE_FALLBACK_MESSAGE, sanitizeViewStateForSchema } from "./lib";
 
-export const SAVE_DEBOUNCE_MS = 500;
-
-const SAVE_FALLBACK_MESSAGE = "View persistence unavailable.";
+export { SAVE_DEBOUNCE_MS };
 
 export type UseProjectTableViewStateArgs = {
   projectId: string;

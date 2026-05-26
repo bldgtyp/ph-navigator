@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { issueMcpToken, listMcpTokens, revokeMcpToken } from "./api";
+import { mcpTokenQueryKeys } from "./query-keys";
 import type { McpTokenIssuePayload, McpTokenListResponse } from "./types";
 
-export const mcpTokenQueryKeys = {
-  all: ["mcp-tokens"] as const,
-  list: (projectId: string) => [...mcpTokenQueryKeys.all, projectId] as const,
-};
+export { mcpTokenQueryKeys };
 
 export function useMcpTokensQuery(projectId: string, enabled = true) {
   return useQuery({
