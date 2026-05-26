@@ -286,13 +286,18 @@ generation exists.
 
 ### 10.5 Schema versioning — open-old-projects safety
 
-**The hard guarantee:** a project version that was openable when it was
-saved must remain openable forever. No release of PHN-V2 ships if it
-breaks reads of any prior document `schema_version`.
+**The hard guarantee** (post-MVP): a project version that was openable
+when it was saved must remain openable forever. No production release
+ships if it breaks reads of any prior document `schema_version`.
 
-MVP contract: user data remains recoverable even when the current app
-cannot validate a saved document. Full forward migration behavior is
-post-MVP until a real `ProjectDocumentV2` exists.
+**Pre-MVP exception (active through Phase 1c of plan-31).** The MVP
+build is pre-deploy. Schema-version bumps land as clean cuts: the
+current `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` is `3` (Phase 1b
+cutover, 2026-05-26); bodies tagged `schema_version: 2` or below are
+rejected with a structured `invalid_project_document` error. Dev DBs
+rebuild on the phase boundary. The shim-chain machinery in items 5–9
+below is the post-MVP shape; before MVP, schema bumps simply assume
+no production data exists.
 
 Mechanisms:
 
@@ -342,33 +347,47 @@ This is the **only** migration path for project-side schema. No
 ALTER TABLE for project entities. All evolution flows through the
 shim chain.
 
-### 10.6 Custom-field read surface
+### 10.6 Field-config read surface
 
-Project-document tables that opt into custom fields advertise their
-schema inline in the document body (`tables.<name>.custom_fields`)
-so an MCP client reading the document can render and write custom
-values without out-of-band knowledge. See `data-model.md` §6.6 for
-the envelope and `CustomFieldDef` shape.
+Project-document tables that opt into the field-config registry
+advertise their schema inline in the document body
+(`tables.<name>.field_defs`) so an MCP client reading the document can
+render and write field values — built-in or custom — without out-of-
+band knowledge. See `data-model.md` §6.6 for the envelope and
+`TableFieldDef` shape.
 
-Contract gates for the read surface:
+Contract gates for the read surface (v3):
 
 - The published `ProjectDocumentV1` JSON Schema declares the
-  `CustomFieldDef` shape as **closed** (every field listed and
-  typed) and leaves each row's `custom` dict as
-  `additionalProperties: true` so user-defined keys are accepted
-  without a per-project schema. There is no per-project schema
-  endpoint in v1.
-- Project-JSON downloads include each table's `custom_fields` array
-  inline at `tables.<name>.custom_fields`. Each row's `custom`
-  dict is keyed by the same `cf_*` ids that appear in
-  `custom_fields[*].id`.
-- Formula computed values, when present, are inlined under a
-  separate per-row `computed` overlay keyed by the same `cf_*` id
-  (see `data-model.md` §6.6.6). Inbound writes that include
-  `computed` are rejected or stripped; formula fields remain
-  write-protected even though their values are visible in reads.
-- Field descriptions (US-CF-14) are included in `CustomFieldDef`
-  downloads and in the published schema. Plain text, max 280 chars,
-  no markdown rendering in v1.
-- Catalog tables are not custom-field-capable in v1; their
-  documents and reads keep their current rigid shape.
+  `TableFieldDef` shape as **closed** (every field listed and typed)
+  and leaves each row's `custom_values` dict as
+  `additionalProperties: true` so user-defined keys plus mutable-type
+  built-in keys are accepted without a per-project schema. There is
+  no per-project schema endpoint in v1.
+- Project-JSON downloads include each table's `field_defs` array
+  inline at `tables.<name>.field_defs`. Each row's `custom_values`
+  dict is keyed by the same `field_key`s that appear in
+  `field_defs[*].field_key` — built-in slugs (`"number"`, `"name"`,
+  …) for mutable-type built-ins and `cf_*` ids for custom fields.
+- Locked-type built-in values (e.g. Rooms' `floor_level`,
+  `icfa_factor`; Pumps' `device_type`, `phase`, `link`) remain typed
+  Pydantic columns on the row, not in `custom_values`. The published
+  schema documents which keys live in which slot.
+- Formula computed values, when present, are inlined under a separate
+  per-row `computed` overlay keyed by the same `field_key` (see
+  `data-model.md` §6.6.6). Inbound writes that include `computed`
+  are rejected or stripped; formula fields remain write-protected
+  even though their values are visible in reads.
+- Field descriptions are included in `TableFieldDef` downloads and in
+  the published schema. Plain text, max 280 chars, no markdown
+  rendering in v1.
+- Catalog tables do not carry the field-config registry in v1; their
+  documents and reads keep their rigid shape.
+- **JSON Schema regression on mutable-type built-ins.** Mutable-type
+  built-in fields (Rooms' `number`/`name`/`num_people`/
+  `num_bedrooms`; Pumps' `tag`/`use`/`manufacturer`/etc.) advertise
+  the `custom_values` union shape (`str | int | float | bool |
+  null`) rather than tight per-field types. This is the accepted
+  trade-off for AirTable-parity field-config editing (plan-31
+  §P0.1 / §P2.3). Locked-type built-ins keep their tight types
+  unchanged.

@@ -12,7 +12,9 @@ RELATED:
   - context/user-stories/20-envelope.md
   - context/technical-requirements/data-model.md
   - context/technical-requirements/save-versioning.md
+  - context/technical-requirements/attachments.md
   - context/technical-requirements/frontend-viewer-units.md
+  - context/technical-requirements/llm-mcp-schema.md
   - context/technical-requirements/api.md
   - research/v1-assembly-builder-reference.md
 ---
@@ -37,7 +39,8 @@ The feature has two inseparable sides:
 These surfaces must be developed together because they share the same
 data model. A segment references a project material. The project
 material owns product values, datasheets, notes, and specification
-status. The segment owns geometric/function flags and site photos.
+status. The segment owns geometric/function flags, site photos, and
+use-site notes.
 
 This PRD is intentionally feature-focused. It should guide future coding
 agents before they create implementation-phase plans. Detailed
@@ -127,6 +130,7 @@ Locked versions are read-only for document data. For this feature:
 - Asset attach/detach for datasheets and site photos through the generic
   asset backbone.
 - HBJSON construction export only.
+- Semantic envelope read/write surface for browser and MCP callers.
 
 ### 4.2 Adjacent, Referenced, But Not Fully Specced Here
 
@@ -151,6 +155,8 @@ Locked versions are read-only for document data. For this feature:
 - Automatic unused-material cleanup in the background or as a hidden
   side effect of export/download.
 - Cross-project material queries.
+- Runtime custom fields on assemblies, project materials, layers, or
+  segments. Envelope v1 uses fixed PHN-declared fields.
 - Real-time collaboration or merge UI.
 - Mobile/phone optimization.
 
@@ -171,15 +177,18 @@ through `project_version_drafts.body`.
 ### 5.2 Save Model
 
 Assembly Builder edits are draft edits, not saved-version edits. The
-frontend updates its in-memory document and syncs guarded JSON-Patch
-operations to the server-side draft buffer. Persistence happens only
-when the user clicks Save or Save As.
+frontend updates its in-memory document and syncs guarded semantic
+envelope commands to the server-side draft buffer. The backend command
+layer may apply safe JSON-Patch operations internally, but the canvas UI
+should not author nested array patches directly. Persistence happens
+only when the user clicks Save or Save As.
 
 Feature implementation must follow the project-wide draft/version rules:
 
 - first edit lazily creates a server draft;
-- patches are ETag guarded;
-- array mutations are guarded by stable-id `test` ops;
+- commands and lower-level patches are ETag guarded;
+- array mutations are guarded by stable-id checks before any positional
+  change is applied;
 - locked versions reject draft patches;
 - Save overwrites the active unlocked version;
 - Save As creates a new version and switches active.
@@ -223,11 +232,13 @@ The segment owns:
 - steel stud spacing;
 - continuous-insulation flag;
 - project material reference;
-- site photo asset ids.
+- site photo asset ids;
+- use-site notes.
 
 This split is a core V2 correction. One product used in ten segments
 needs one datasheet and one product commitment status, while each
-installation slot may still need its own photo evidence.
+installation slot may still need its own photo evidence and
+location-specific notes.
 
 ### 5.5 Catalog Is A Bookshelf
 
@@ -248,7 +259,127 @@ active draft. The uploaded asset row and bytes remain available to older
 saved versions and other references until backend GC determines they are
 safe to purge.
 
+### 5.7 Semantic Mutation Boundary
+
+The Assembly Builder should use a deep backend feature boundary instead
+of scattering nested JSON manipulation across React components.
+
+Default implementation shape:
+
+- backend package: `backend/features/envelope/`;
+- frontend package: `frontend/src/features/envelope/`;
+- semantic commands for every domain mutation;
+- project-document draft storage remains the persistence layer.
+
+The public write surface should be a typed command endpoint under the
+project-version draft namespace:
+
+```text
+POST /api/v1/projects/{project_id}/versions/{version_id}/draft/envelope/commands
+```
+
+The command endpoint uses the same editor auth, Origin checks,
+Idempotency-Key, `If-Match`, and `If-Match-Version` rules as the
+generic draft patch endpoint. Internally it may generate guarded
+JSON-Patch operations, but callers should not assemble fragile
+array-index patches for assembly/layer/segment workflows.
+
+Core command names:
+
+- `create_assembly`
+- `rename_assembly`
+- `update_assembly_type`
+- `duplicate_assembly`
+- `delete_assembly`
+- `add_layer`
+- `update_layer`
+- `delete_layer`
+- `add_segment`
+- `update_segment`
+- `update_segment_use_site_notes`
+- `delete_segment`
+- `pick_project_material`
+- `pick_catalog_material`
+- `hand_enter_material`
+- `update_project_material`
+- `detach_segment_material`
+- `remove_unused_project_materials`
+- `refresh_project_material_from_catalog`
+- `flip_orientation`
+- `flip_layers`
+- `paste_segment_assignment`
+
+Asset upload, preview, download, and detach still use the generic asset
+backbone. The envelope command layer may call the generic attach/detach
+services, but it must not invent a second asset pipeline.
+
+### 5.8 Read Models And Registered Table Contracts
+
+The visual builder is not a generic table, but the project-document
+surface still needs registered contracts for downloads, diff, MCP, and
+attachment-cell operations.
+
+Implementation should keep three separate read shapes:
+
+1. **Envelope document slice** - full `assemblies[]` +
+   `project_materials[]` for the visual builder and semantic commands.
+2. **Project-material table contract** - `project_materials` rows for
+   datasheet attachment cells, downloads, diff, and MCP tabular reads.
+3. **Assembly-segment table contract** - flattened segment rows for
+   site-photo attachment cells, downloads, diff, and MCP tabular reads.
+
+Do not make the visual canvas consume the flattened attachment table as
+its source of truth. Flattening is a view adapter over the nested
+assembly document, not the domain model.
+
+### 5.9 LLM / MCP Contract
+
+LLM-assisted inspection and edits are in scope, but only through the
+same typed envelope commands and registered read models used by the
+browser. MCP tools must not write raw JSON-Patch into nested assembly
+arrays unless they call a backend helper that produces stable-id
+guarded operations.
+
+Minimum v1 MCP/read capabilities:
+
+- list assemblies with layers, segments, and computed status;
+- list project materials with use-sites, datasheets, spec status, and
+  catalog drift state;
+- query unfinished envelope work: null materials, missing conductivity,
+  missing datasheets, missing site photos, unused materials, and drifted
+  catalog rows;
+- perform the same semantic mutations as the browser, behind ETag and
+  draft-lease protection.
+
 ## 6. Domain Model
+
+### 6.0 Cross-Table Identity And Completeness Rules
+
+Stable ids are the durable identity. Display names are labels, never
+references.
+
+Rules:
+
+- Assembly names are unique within a project version after trim and
+  case-insensitive comparison.
+- Project-material names are **not** required to be unique. Two project
+  materials may both be named "XPS" if the user intentionally keeps
+  different product records. Pickers and exports must disambiguate with
+  category, catalog badge, spec status, use count, and/or id.
+- `project_material_id` references are valid only within the same
+  project document body.
+- Use-sites are derived from `assemblies[]` and are never stored on
+  `project_materials[]`.
+- Physical product-value keys are required on the row, but values may be
+  `null` during early design. Present numeric values must be finite.
+- `conductivity_w_mk` must be greater than 0 when present. Missing or
+  invalid conductivity does not block Save / Save As, but it makes
+  affected thermal calculations and HBJSON export invalid until fixed.
+- `density_kg_m3`, `specific_heat_j_kgk`, and `emissivity` may be
+  `null`; if present they must be non-negative, and emissivity must be
+  between 0 and 1.
+- `argb_color` is advisory display metadata. Invalid or missing color
+  falls back to a neutral token in the UI; it should not block Save.
 
 ### 6.1 Assembly
 
@@ -326,7 +457,8 @@ Required fields:
   "is_continuous_insulation": false,
   "steel_stud_spacing_mm": null,
   "project_material_id": null,
-  "photo_asset_ids": []
+  "photo_asset_ids": [],
+  "use_site_notes": null
 }
 ```
 
@@ -338,6 +470,8 @@ Rules:
 - `project_material_id` may be `null` in a draft.
 - Null-material segments render as unfinished and are allowed during
   design work.
+- `use_site_notes` are segment-scoped installation / QA notes. They do
+  not follow a project material when assignments change.
 - Save and Save As do not warn or block because of null material
   assignments. The canvas and Specifications dashboard are the
   completeness surfaces; persistence should not nag during normal
@@ -366,6 +500,12 @@ Required fields:
 }
 ```
 
+The keys above are required for a `project_materials[]` row. Physical
+value fields may be `null` while the product is still being identified.
+The UI should surface missing physical values in Specifications and in
+the Segment Properties material preview, but Save / Save As should not
+block.
+
 Specification status uses the V1-compatible four-state enum:
 
 - `complete`
@@ -392,7 +532,7 @@ Catalog-picked project materials carry:
 ```jsonc
 {
   "catalog_table": "materials",
-  "catalog_record_id": "rec123abc456789",
+  "catalog_record_id": "rec123abc4567890X",
   "catalog_version_id": "matv_<token>",
   "catalog_schema_version": 1,
   "synced_at": "2026-05-26T21:44:00Z",
@@ -402,6 +542,12 @@ Catalog-picked project materials carry:
 
 Hand-entered and detached custom project materials have
 `catalog_origin: null`.
+
+For project materials, `catalog_origin.catalog_table` must be
+`"materials"` and `catalog_origin.catalog_version_id` must use the
+`matv_` version-family prefix. This mirrors the frame/glazing
+provenance-family rule and prevents accidentally refreshing a material
+from the wrong catalog family.
 
 ## 7. Core Workflows
 
@@ -455,6 +601,11 @@ Project-material rows are not auto-deleted. If no remaining segments
 reference a material, that material appears as unused in the
 Specifications sub-tab until explicitly removed.
 
+The delete confirmation must count the per-segment site-photo
+references that will be detached with the removed assembly. It should
+say that photos remain in project assets and older saved versions, but
+they will no longer be referenced by the active draft.
+
 The Specifications sub-tab should provide an explicit **Remove unused
 materials...** command. It is disabled when there are no unused
 materials. When enabled, it opens a confirmation dialog listing the
@@ -485,6 +636,10 @@ Deleting a layer is only available when the assembly has more than one
 layer. The UI should disable the destructive action with an explanatory
 tooltip before the backend has to reject it.
 
+Deleting a layer detaches all site-photo ids on segments inside that
+layer from the active draft. The confirmation dialog must count those
+photo references using the same wording pattern as assembly deletion.
+
 ### 7.6 Add/Edit/Delete Segment
 
 Segment add controls appear as compact hover `+` buttons on the left and
@@ -509,11 +664,15 @@ owns geometry and assembly-function properties:
 - steel-stud spacing.
 
 Specification status, datasheets, and notes do not live in this modal.
-They live in Specifications because they are project-material QA
-properties.
+Project-material specification status, datasheets, and product notes
+live in Specifications because they are product QA properties. Segment
+use-site notes also live in Specifications, attached to each use-site
+row beside its site photos.
 
 Deleting a segment is only available when the layer has more than one
 segment. Deleting a segment preserves the referenced project material.
+If the segment has site photos, the confirmation dialog must count the
+photo references that will be detached.
 
 ### 7.7 Pick Material
 
@@ -526,11 +685,27 @@ Picking an existing project material simply repoints the segment.
 
 Picking a catalog material de-dupes by `catalog_record_id`:
 
-- if an existing project material came from that catalog record, use it;
-- otherwise create a new project material with copied catalog values.
+- if exactly one existing project material came from the same
+  `catalog_table` + `catalog_record_id`, use it;
+- if no existing project material came from that catalog record, create
+  a new project material with copied catalog values.
+
+If multiple existing project materials point at the same catalog record,
+do not silently merge them. Show those project materials in the
+"In this project" section and require the user to pick one explicitly.
 
 Hand-entering creates a new project material with `catalog_origin: null`
 and does not de-dupe by name.
+
+Hand-enter defaults:
+
+- `name`: required user input;
+- `category`: defaults to `"Other"` unless the user chooses a category;
+- physical values: `null`;
+- `specification_status`: `missing`;
+- `datasheet_asset_ids`: `[]`;
+- `notes`: `null`;
+- `argb_color`: neutral fallback color if the user does not choose one.
 
 After any successful pick, update the assembly-local session default so
 later new segments can use the last-picked material.
@@ -591,12 +766,16 @@ When a user needs one segment to diverge from a shared product:
 1. create a fresh `project_materials[]` row;
 2. default name to `<source> (Custom)`, with collision suffixing;
 3. copy product values;
-4. copy datasheets and specification status;
+4. copy datasheets, specification status, and notes;
 5. set `catalog_origin: null`;
 6. repoint the current segment to the new row.
 
 Detach means "fork from catalog/shared identity." The detached material
 does not participate in refresh-from-catalog.
+
+Detach does not copy site photos. Photos remain on the segment because
+they document the installation slot, and the slot is not being
+duplicated.
 
 ### 7.10 Copy/Paste Assignments
 
@@ -616,11 +795,30 @@ Copy payload:
 Not copied:
 
 - segment width;
+- use-site notes;
 - photo asset ids.
+
+V1 copied per-segment specification status and notes because those
+fields lived on the segment. V2 does not copy those fields separately:
+specification status and product notes follow the referenced
+project-material row, while use-site notes stay on the target segment.
 
 The paste operation should be one atomic draft mutation for the target
 segment. Undo is a bounded in-memory stack of 20 paste entries per
 active assembly and is cleared on assembly/version/document switch.
+
+If the copied `project_material_id` no longer exists in the active
+document when the user tries to paste, the paste is rejected with a
+toast and no mutation is sent.
+
+Pick/paste interaction should keep the useful V1 affordances:
+
+- pick cursor and target outline;
+- paste cursor and target hover highlight;
+- 600 ms paste pulse after a successful paste;
+- Escape exits pick/paste mode;
+- clicking outside a segment exits pick/paste mode;
+- changing assembly, version, or document clears copied state.
 
 ### 7.11 Review Specifications
 
@@ -636,7 +834,7 @@ Each card shows:
 - notes;
 - datasheets;
 - use-sites by assembly/layer/segment;
-- per-use site-photo zones.
+- per-use site-photo zones and use-site notes.
 
 Cards sort pending QA work first:
 
@@ -648,7 +846,8 @@ Viewers do not see `na` material cards or unused materials.
 
 ### 7.12 Attach Evidence
 
-Datasheets attach to project materials. Site photos attach to segments.
+Datasheets attach to project materials. Site photos and use-site notes
+attach to segments.
 
 Upload flow uses the generic asset backbone:
 
@@ -675,6 +874,28 @@ copy and lets the user choose field by field:
 
 Fields in `local_overrides` default to keep mine.
 
+Drift detection must follow the canonical catalog rule:
+
+- drifted when `catalog_origin.catalog_version_id` differs from the
+  catalog identity row's `current_version_id`;
+- drifted when the current catalog-version field value differs from the
+  project-owned copied value, even if the version id is unchanged;
+- customized when a field key appears in `local_overrides`; customized
+  fields default to keep mine, but customization alone does not make the
+  row stale if no compared catalog value differs.
+
+If the catalog source row is deactivated, surface
+`source_deactivated`. The project material remains valid project data;
+refresh is unavailable until the user chooses a different catalog
+material or hand-edits the project material.
+
+Saving the refresh dialog writes chosen values into
+`project_materials[]`, sets `catalog_origin.catalog_version_id` to the
+current catalog version, sets `synced_at = now()`, and preserves
+`local_overrides` verbatim in v1. Recomputing or pruning
+`local_overrides` is deferred until a later field-level override
+management feature.
+
 No bulk auto-refresh ships in v1.
 
 ### 7.14 Download HBJSON Constructions
@@ -684,6 +905,22 @@ The project header overflow exposes `Download constructions (HBJSON)`.
 Export is read-only and per active version. It serializes the active
 version's assemblies and project materials into a Honeybee-compatible
 construction file.
+
+Export reads the saved version body, not the unsaved browser draft. If
+the editor has unsaved draft changes, the UI should warn that the
+download reflects the last saved version and offer Save / Save As first.
+
+Export writes project-material `specification_status` into the Honeybee
+Energy material PH ref properties (`ref_status`) so downstream tools
+can preserve design-commitment state. Because V2 v1 has no construction
+import action, this is export-only for now; the V1.1 import feature
+should read the same metadata back.
+
+If any assembly cannot be exported because of null material assignments,
+missing/invalid conductivity, broken project-material references, or
+other malformed thermal data, the backend returns a structured 422 with
+the affected assembly/layer/segment paths. Do not silently omit
+incomplete assemblies from an HBJSON deliverable.
 
 V2 v1 has no construction import action.
 
@@ -756,6 +993,10 @@ The canvas renders:
 - stacked layers;
 - bottom orientation label;
 - material legend.
+
+The material legend lists each unique project material used in the
+active assembly, sorted by display name, with color swatch and
+conductivity / missing-conductivity indicator.
 
 Layer height and segment width must share one `canvasZoom` scale so the
 assembly's aspect ratio is never distorted. Horizontal overflow should
@@ -837,6 +1078,18 @@ Algorithm:
 - steel-stud cavity layers use AISI S250-21 equivalent conductivity;
 - use `R_SE = 0` and `R_SI = 0` in the steel-stud subroutine.
 
+Geometry defaults:
+
+- V2 v1 supports one row of side-by-side segments per layer.
+- `segment.width_mm` is interpreted as an area-fraction weight within
+  that layer.
+- Each layer normalizes its own segment widths. Layer width totals do
+  not have to match across layers.
+- Width totals of zero are schema-invalid because every segment width
+  must be greater than 0.
+- Multi-row `PhDivisionGrid` behavior is deferred; no v1 import/export
+  path should try to infer multiple segment rows.
+
 Display:
 
 - IP: effective R-value, one decimal;
@@ -845,12 +1098,25 @@ Display:
 When any segment has no material, still display the value from assigned
 segments when valid, but mark the assembly as unfinished.
 
+If every segment is null-material, or if an assigned material required
+for the active assembly has missing/invalid conductivity, display no
+number and mark the assembly as unfinished / material data needed. The
+backend response should distinguish:
+
+- `missing_material` - at least one segment has
+  `project_material_id: null`;
+- `missing_conductivity` - an assigned project material lacks a valid
+  `conductivity_w_mk`;
+- `invalid_geometry` - widths, thicknesses, or stud spacing cannot be
+  used.
+
 ### 9.3 Validation Posture
 
 Drafts may contain incomplete design work. The user can save a working
 draft, Save, and Save As without warnings for:
 
 - null material assignments;
+- missing physical material values such as conductivity;
 - `missing`, `question`, or `na` specification status;
 - missing datasheets;
 - missing site photos;
@@ -867,8 +1133,12 @@ Hard validation should protect:
 - duplicate assembly names;
 - invalid enum values;
 - non-positive thickness/width/stud spacing;
-- broken project-material references;
-- broken asset references;
+- broken non-null project-material references;
+- broken, duplicate, cross-project, wrong-kind, or over-limit asset
+  references;
+- duplicate entity ids within their table/scope;
+- project-material `catalog_origin` values that point at the wrong
+  catalog family;
 - empty assemblies/layers after operations;
 - other schema-invalid values.
 
@@ -901,12 +1171,35 @@ Viewer-specific visibility:
 Implementation should prefer semantic backend services over duplicating
 complex document manipulation in the frontend.
 
+### 11.1 Backend Feature Package
+
+Expected package:
+
+```text
+backend/features/envelope/
+  routes.py
+  models.py
+  service.py
+  repository.py
+  mutations.py
+  selectors.py
+  thermal.py
+  hbjson_export.py
+  refresh.py
+```
+
+`repository.py` should stay thin because envelope data lives in the
+project document JSONB, not in envelope-owned relational tables. The
+service layer composes existing project-document, catalog, and asset
+repositories rather than bypassing them.
+
 Expected backend responsibilities:
 
 - Pydantic models for assemblies, layers, segments, project materials,
   and computed thermal results.
-- Draft mutation helpers that produce guarded JSON-Patch operations or
-  accept semantic mutations and apply safe patches server-side.
+- A semantic command dispatcher that applies typed envelope mutations to
+  the current user's draft and returns the updated envelope slice plus
+  draft/version ETags.
 - Material picker support: catalog list, project-material list, de-dup
   by catalog record id.
 - Refresh-from-catalog diff generation.
@@ -914,6 +1207,40 @@ Expected backend responsibilities:
   V2 document shape.
 - HBJSON construction export service.
 - Asset attach/detach and signed URL resolution.
+- Registered table-contract adapters for project materials and flattened
+  assembly segments.
+
+### 11.2 Endpoint Defaults
+
+Feature-specific reads:
+
+```text
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/assemblies/{assembly_id}/thermal?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/catalog-drift?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/export/hbjson
+```
+
+Feature-specific writes:
+
+```text
+POST /api/v1/projects/{pid}/versions/{vid}/draft/envelope/commands
+```
+
+The generic table routes remain available for registered table
+contracts:
+
+```text
+GET /api/v1/projects/{pid}/versions/{vid}/document/tables/project_materials
+GET /api/v1/projects/{pid}/versions/{vid}/document/tables/assembly_segments
+PUT /api/v1/projects/{pid}/versions/{vid}/draft/tables/project_materials
+PUT /api/v1/projects/{pid}/versions/{vid}/draft/tables/assembly_segments
+```
+
+The table routes are for DataTable/attachment/MCP table workflows. The
+canvas builder should use the semantic envelope reads and commands.
+
+### 11.3 Frontend Shape
 
 Frontend responsibilities:
 
@@ -921,8 +1248,34 @@ Frontend responsibilities:
 - optimistic in-memory document updates;
 - unit display/input conversion;
 - modal/picker/canvas UI;
-- patch queueing and ETag handling through shared project-document
-  infrastructure.
+- command / draft-write queueing and ETag handling through shared
+  project-document infrastructure.
+
+Expected frontend package:
+
+```text
+frontend/src/features/envelope/
+  api.ts
+  hooks.ts
+  types.ts
+  routes/
+  components/
+  stores/
+  lib/
+```
+
+State ownership defaults:
+
+- TanStack Query owns envelope reads, catalog reads, thermal overlays,
+  drift reports, command mutations, and asset URL resolution.
+- Zustand owns cross-component UI state: selected assembly id,
+  sidebar open state, canvas zoom, pick/paste mode, copied segment
+  assignment, and per-assembly paste undo stack.
+- Component-local state owns modal input drafts and hover/focus state.
+
+Do not put envelope command payload shapes inline in route components.
+Keep them in feature `types.ts` and reconcile them with backend
+Pydantic models during implementation.
 
 ## 12. V1 Parity And V2 Changes
 
@@ -948,13 +1301,32 @@ Frontend responsibilities:
 - No automatic material purge.
 - No default material hard-failure on fresh install.
 - No per-segment datasheet duplication.
-- No spec status or notes on segments.
+- No spec status on segments.
+- No product notes on segments; keep only segment-owned use-site notes.
 - No HBJSON construction import.
 - No surface films in steel-stud HBJSON export equivalent-conductivity.
 - No alert/confirm browser primitives.
 - No multi-PATCH segment save.
 - No horizontally squished canvas.
 - Catalog drift is explicit and reviewable.
+
+### 12.3 V1 Parity Audit Decisions
+
+The V1 reference checklist in
+`research/v1-assembly-builder-reference.md` remains useful, but several
+items are intentionally reshaped in V2:
+
+| V1 capability | V2 v1 decision |
+|---|---|
+| Per-segment notes in the Material-List view | Preserve as segment-owned `use_site_notes`, shown on Specifications use-site rows. |
+| Per-segment specification status | Move to project-material status because the product commitment is shared across use-sites. |
+| Per-segment datasheets | Move to project-material datasheets to avoid duplicate product evidence. |
+| Per-segment site photos | Preserve as segment-owned `photo_asset_ids`. |
+| HBJSON construction import | Defer as an explicit V1.1 parity gap; export must still preserve `ph_nav` and `ref_status` metadata so import can return later. |
+| Upload/download construction actions in assembly header | Keep download in project/header overflow; omit upload until import is promoted. |
+| AirTable material refresh | Replace with catalog copy-in, drift badges, and explicit field-level refresh. |
+| Browser `alert` / `confirm` | Replace with app dialogs and toasts. |
+| Multi-PATCH segment saves | Replace with atomic semantic commands. |
 
 ## 13. Acceptance Criteria - Feature Level
 
@@ -967,24 +1339,32 @@ The feature is acceptable when:
    use-site.
 3. A site photo attaches to a specific segment and does not move when a
    material assignment changes.
-4. A duplicated assembly shares project-material references but starts
-   with no copied site photos.
-5. A null-material segment is visually obvious and does not crash the
+4. A segment use-site note attaches to that segment and does not move
+   when a material assignment changes.
+5. A duplicated assembly shares project-material references but starts
+   with no copied site photos or copied use-site notes.
+6. A null-material segment is visually obvious and does not crash the
    builder.
-6. The effective R-/U-value matches V1's live thermal-resistance
+7. The effective R-/U-value matches V1's live thermal-resistance
    algorithm after adapting for the V2 document model and the no-films
    policy.
-7. Refresh-from-catalog never mutates project materials without explicit
+8. Refresh-from-catalog never mutates project materials without explicit
    user choice.
-8. Locked versions and Viewers render a coherent read-only feature with
+9. Locked versions and Viewers render a coherent read-only feature with
    write controls hidden or disabled.
-9. All writes go through the draft buffer and honor ETag/locked-version
+10. All writes go through the draft buffer and honor ETag/locked-version
    rules.
-10. HBJSON construction export emits the active version's assemblies
-   without importing anything back into PHN.
-11. The UI remains usable at expected BLDGTYP project scale: dozens of
+11. HBJSON construction export emits the active version's assemblies
+    with `ph_nav` project-material ids and `ref_status`, without
+    importing anything back into PHN.
+12. The UI remains usable at expected BLDGTYP project scale: dozens of
    assemblies, low hundreds of segments, and dozens of project
    materials.
+13. Same-editor browser tabs, MCP writes, and stale ETags fail safely:
+    no nested assembly mutation can apply to the wrong layer/segment
+    after a concurrent reorder/delete.
+14. Destructive operations clearly report detached site-photo counts and
+    never delete project asset bytes as a side effect.
 
 ## 14. Test Expectations
 
@@ -993,16 +1373,32 @@ Future implementation plans should include tests for:
 - ProjectDocument Pydantic validation for assemblies and materials.
 - Assembly/layer/segment add, delete, duplicate, and order preservation.
 - Stable-id guarded patches for nested array mutations.
+- Semantic envelope command endpoint conflict handling.
 - Material pick de-dup by catalog record id.
+- Duplicate project-material names and export id disambiguation.
 - Hand-enter and detach-to-new-material behavior.
 - Project-material sharing and use-site counts.
 - Last-layer and last-segment UI/backend guards.
+- Delete assembly/layer/segment confirmation counts for site-photo
+  detaches.
+- Segment use-site notes ownership, mutation, viewer visibility, and
+  copy/paste non-propagation.
 - Thermal-resistance golden fixtures, including steel-stud cases.
-- Null-material unfinished display and save warnings.
+- Null-material and missing-conductivity unfinished display and
+  no-warning Save / Save As.
 - Catalog drift detection and refresh choices.
+- Source-deactivated catalog refresh behavior.
 - Datasheet and site-photo attach/detach semantics.
+- Attachment races from the canonical attachment edge-case list:
+  upload-after-navigation, upload-after-discard, duplicate file in one
+  cell, cross-project asset reference, and Save As while uploads are
+  pending.
 - Viewer and locked-version permission rendering.
-- HBJSON export shape and no-surface-film steel-stud behavior.
+- HBJSON export shape, no-surface-film steel-stud behavior, dirty-draft
+  warning, `ph_nav` / `ref_status` metadata, and 422 failure report for
+  incomplete assemblies.
+- MCP read/query/write path coverage through the same semantic commands
+  as the browser.
 - Playwright coverage for core canvas workflows.
 
 ## 15. Resolved Questions
@@ -1035,10 +1431,56 @@ Resolved during the 2026-05-26 PRD review:
    completeness status.
 7. **Per-material status labels.** Simplify user-facing labels to
    "Complete", "Missing", "Question", and "N/A".
+8. **Mutation boundary.** Use semantic envelope commands backed by the
+   project-document draft buffer. Browser and MCP callers should not
+   hand-author nested JSON-Patch for assembly workflows.
+9. **Project-material names.** Names do not need to be unique. Stable
+   `pmat_*` ids are identity; pickers and exports disambiguate duplicate
+   display names.
+10. **Dirty-draft HBJSON export.** Export reads the saved version body.
+    Editors with unsaved draft changes get a warning and a Save /
+    Save As path before download.
+11. **Thermal incomplete states.** Null material assignments and missing
+    conductivity do not block Save, but they produce explicit unfinished
+    calculation/export states.
+12. **Catalog drift predicate.** Drift includes both version-id mismatch
+    and same-version field deltas. Source-deactivated catalog rows are
+    reported without mutating the project material.
+13. **Detach-to-new-material copy policy.** Detach copies product values,
+    datasheets, specification status, and notes, but clears
+    `catalog_origin` and leaves site photos on the segment.
+14. **Segment-width normalization.** Segment widths are normalized within
+    each layer for v1 thermal calculations and export; layer totals do
+    not have to match.
 
-## 15.1 Open Questions
+## 15.1 Implementation Lessons Log
 
-None for the current PRD pass.
+Use this section during phased implementation to feed real discoveries
+back into the feature contract. Keep entries short and actionable; move
+large analysis into the relevant phase plan or code-review artifact and
+link it here.
+
+Template:
+
+| Date | Phase | Lesson / Issue | Contract Impact | Follow-up |
+|---|---|---|---|---|
+| _TBD_ | _TBD_ | _Add implementation lesson here._ | _PRD / plan / context doc affected._ | _Owner or next slice._ |
+
+Entry rules:
+
+- Add a row when implementation exposes a non-obvious invariant,
+  repeated failure mode, useful test fixture, rejected shortcut, or
+  changed scope boundary.
+- Do not add routine progress notes; phase plans own status.
+- If a lesson changes the durable contract, update the relevant PRD
+  section in the same pass and mention that section in
+  `Contract Impact`.
+
+## 15.2 Open Questions
+
+No key product decisions require user input before implementation
+planning. The defaults above are binding unless a later implementation
+spike proves one of them technically wrong.
 
 ## 16. Deferred V1.1 Candidates
 
@@ -1055,3 +1497,7 @@ None for the current PRD pass.
 - Advanced canvas zoom gestures.
 - Per-project material catalog filters if catalog size grows beyond
   roughly 150-200 materials.
+- Field-level override manager that recomputes/prunes
+  `catalog_origin.local_overrides` after refresh.
+- Partial HBJSON export that intentionally omits selected incomplete
+  assemblies.

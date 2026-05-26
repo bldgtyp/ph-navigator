@@ -1,7 +1,20 @@
 ---
 DATE: 2026-05-26
 TIME: 15:30 ET
-STATUS: PHASE PLAN — depends on Phase 1a complete + PRD acceptance
+STATUS: BACKBONE LANDED (2026-05-26). Backend types/models reshaped,
+        schema_version=3, audit-log kinds renamed, docs updated. Phase
+        1b's wire-format and architectural decisions are final.
+        Mechanical follow-on work (cascade rename through callers,
+        fixture rewrites, frontend reshape, transitional-alias drop)
+        is tracked in
+        `docs/plans/2026-05-26/plan-31-phase-1c-rename-cascade-and-fixtures.md`.
+        Type-check is currently red (~45 errors) and test suite is
+        widely red by design until Phase 1c lands. Transitional
+        aliases (`CustomFieldDef`, `CustomFieldCapability`,
+        `TableFieldDef.id`, `TableContract.custom_fields`,
+        `rooms_custom_fields`, etc.) shipped to keep imports working
+        across the cutover; Phase 1c removes them.
+        DEPS: Phase 1a complete + PRD acceptance
         (`docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`).
         Wire-format reshape; bumps document schema version 2 → 3.
         Pre-deploy, no back-compat reader.

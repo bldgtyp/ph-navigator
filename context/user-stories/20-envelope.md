@@ -250,11 +250,12 @@ Pydantic models are written.
 
   1. **Initial state.** New assembly → first layer ships with
      one segment whose `project_material_id` is `null`. Document
-     validation tolerates nulls in `draft`; `Save` shows a soft
-     warning toast ("3 segments have no material assigned");
-     `Save As` to a `submitted`/`closed` version kind hard-fails
-     with the offending list. Mirrors Q-WIN-3 resolution for
-     window-elements.
+     validation tolerates nulls in `draft`, `Save`, and
+     `Save As` without warnings or blockers. Null materials,
+     missing datasheets, missing site photos, and open
+     specification statuses are normal until late in the
+     certification process; the canvas and Specifications
+     dashboard are the completeness surfaces, not the Save flow.
   2. **Visual cues for null-material segments** (so the user
      never wonders "why does my R-value say `--`?"):
      - **Canvas** (US-ENV-4): segment renders with **blank fill
@@ -427,7 +428,7 @@ Pydantic models are written.
   "Materials" is actually a per-segment design-spec / photo /
   datasheet view — V1 ref §13.16 calls out the misleading
   naming. **Lean: rename to "Specifications"** in V2 (matches
-  the per-row "Design Spec. Complete / Missing / Question / N/A"
+  the per-row "Complete / Missing / Question / N/A"
   status, and clearly distinguishes from the global Materials
   catalog reachable via the header "Catalogs ▾" dropdown). Page
   heading text inside the tab can stay "Project Materials" if
@@ -2188,7 +2189,7 @@ level.
    │  XPS                                            [📚][↻] · Spray Foam│   ← header
    │  Conductivity 0.034 W/(m·K) · Density 35 kg/m³                     │
    ├───────────────────────────────────────────────────────────────────┤
-   │  [Spec Missing ▾]   [+ Notes]                          ⋯           │   ← QA bar
+   │  [Missing ▾]        [+ Notes]                          ⋯           │   ← QA bar
    │                                                                    │
    │  Datasheets                                                        │
    │  ┌─────────────┬─────────────┐                                     │   ← per-material
@@ -2373,7 +2374,7 @@ level.
   V1. Workaround when an `na` segment legitimately needs
   documentation (e.g. existing-conditions photos before
   product selection): bump material spec-status to
-  `pending` first — acceptable friction.
+  `missing` first — acceptable friction.
 
 ---
 
@@ -2662,7 +2663,7 @@ storage shape and upload primitive
      per Q-ENV-13.3 resolved (matches US-ENV-13 semantics —
      "we don't know what this is yet, don't waste photos").
      Greyed-out drop zone with tooltip *"Set material spec
-     status to 'pending' to enable uploads."*
+     status to 'Missing' to enable uploads."*
 
 7. **Upload flow** (drag-drop + file picker, mirrors US-ENV-13):
    - File-type validation: image MIME types only

@@ -789,7 +789,17 @@ is accepted.
   click trigger; redeploy mid-edit retains user's draft text;
   `record_id` slug guard rejects offending writes.
 
-**Phase 1b — Persistence reshape & `TableFieldDef`.** *(plan-31-phase-1b)*
+**Phase 1b — Persistence reshape backbone.** *(plan-31-phase-1b)*
+
+*Note (2026-05-26): Phase 1b was split into two passes during
+implementation. Phase 1b landed the canonical v3 backbone (type
+shapes, row reshape, envelope rename, schema_version=3, audit-log
+kind renames, doc updates). The mechanical follow-on work —
+cascade rename through every caller, fixture rewrites, frontend
+reshape, transitional-alias removal — moved to
+`plan-31-phase-1c-rename-cascade-and-fixtures.md`. Items below
+describe the full Phase 1b scope; the 1b/1c split is execution-
+level, not architectural.*
 - Migrate `CustomFieldDef` → `TableFieldDef`; drop the advisory
   `field_key` slug on custom fields (identity is `field_key` for both
   built-in and custom).

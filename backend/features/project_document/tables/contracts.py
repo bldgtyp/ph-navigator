@@ -1,4 +1,12 @@
-"""Shared contract type for project-document table handlers."""
+"""Shared contract type for project-document table handlers (v3).
+
+Phase 1b: `CustomFieldCapability` reshaped into `TableFieldRegistry`.
+"Core vs custom" is no longer a meaningful distinction at the data
+layer — every field on the table is a persisted `TableFieldDef`. The
+registry's accessors read/write through `(field_defs, custom_values)`
+on each table, namespaced single-select option lists, and
+schema-mutation hooks.
+"""
 
 from __future__ import annotations
 
@@ -10,47 +18,52 @@ from uuid import UUID
 from pydantic import BaseModel, ValidationError
 from starlette import status
 
-from features.project_document.custom_fields import CustomFieldDef, CustomValue
+from features.project_document.custom_fields import CustomValue, TableFieldDef
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
 from features.project_document.models import ProjectDocumentSource
 from features.shared.errors import api_error
 
 if TYPE_CHECKING:
     # Forward reference: schema_mutations.py imports this module for
-    # `CustomFieldCapability` so the typed callable on the dataclass
+    # `TableFieldRegistry` so the typed callable on the dataclass
     # cannot import the DTO union eagerly.
     from features.project_document.schema_mutations import FieldSchemaMutation
 
 
 @dataclass(frozen=True)
-class CustomFieldCapability:
-    """Per-table custom-field accessors for the schema-editor surface.
+class TableFieldRegistry:
+    """Per-table field-config accessors for the schema-editor surface.
 
-    Every custom-field-capable table registers its accessors here so
+    Every field-config-capable table registers its accessors here so
     generic routes / services never branch by `table_name`.
 
-    `core_field_keys` is the canonical tuple of python attribute names
-    on the row model (used for formula refs and the field-key registry);
-    `core_display_names` is the parallel tuple of header labels used by
-    the duplicate-name uniqueness check.
+    `field_keys` is the canonical ordered tuple of `field_key`s
+    declared by the feature seed (built-ins + their order). It drives
+    the schema fingerprint's built-in slice.
+
+    `required_field_keys` lists built-in single-select fields where
+    delete-to-clear is rejected by the option-edit pipeline (must use
+    explicit replacement).
     """
 
-    core_field_keys: tuple[str, ...]
-    core_display_names: tuple[str, ...]
+    # Ordered tuple of built-in field_keys declared by the feature seed.
+    # Used by the fingerprint algorithm and the field-key registry.
+    field_keys: tuple[str, ...]
     option_list_namespace_prefix: str
     # Registered contract path (e.g. `("rooms",)`) used to derive the
-    # `<table_path>.<field_id>` option-list namespace key.
+    # `<table_path>.<field_key>` option-list namespace key.
     table_path: tuple[str, ...]
-    read_custom_fields: Callable[[ProjectDocumentV1], list[CustomFieldDef]]
-    replace_custom_fields: Callable[[ProjectDocumentV1, list[CustomFieldDef]], ProjectDocumentV1]
-    # read_row_custom returns the row's live `custom` mapping — callers
-    # must not mutate the result. Pass a fresh dict to set_row_custom.
-    read_row_custom: Callable[[object], dict[str, CustomValue]]
-    set_row_custom: Callable[[object, dict[str, CustomValue]], object]
+    read_field_defs: Callable[[ProjectDocumentV1], list[TableFieldDef]]
+    replace_field_defs: Callable[[ProjectDocumentV1, list[TableFieldDef]], ProjectDocumentV1]
+    # read_row_custom_values returns the row's live `custom_values`
+    # mapping — callers must not mutate the result. Pass a fresh dict
+    # to set_row_custom_values.
+    read_row_custom_values: Callable[[object], dict[str, CustomValue]]
+    set_row_custom_values: Callable[[object, dict[str, CustomValue]], object]
     compute_schema_fingerprint: Callable[[ProjectDocumentV1], str]
     # Schema-editor surface. Hooks raise `api_error` on rejection so
     # REST and MCP share one envelope. `actor_user_id` on apply is
-    # stamped onto added / duplicated `CustomFieldDef.created_by`;
+    # stamped onto added / duplicated `TableFieldDef.created_by`;
     # the fixture/dev path passes `None` and is never routed here.
     apply_schema_mutation: Callable[
         [ProjectDocumentV1, FieldSchemaMutation, str],
@@ -60,8 +73,10 @@ class CustomFieldCapability:
         [ProjectDocumentV1, FieldSchemaMutation],
         None,
     ]
-    # Namespaced option-list helpers for custom single_select fields
-    # (`<table_path>.<cf_id>`).
+    # Namespaced option-list helpers for single_select fields
+    # (`<table_path>.<field_key>`). Works for both built-in single-
+    # selects (e.g. `rooms.floor_level`) and custom single-selects
+    # (`rooms.cf_*`).
     read_field_option_list: Callable[
         [ProjectDocumentV1, str],
         list[SingleSelectOption],
@@ -70,44 +85,46 @@ class CustomFieldCapability:
         [ProjectDocumentV1, str, list[SingleSelectOption]],
         ProjectDocumentV1,
     ]
-    # Core single-select editing surface.
-    core_option_key_by_field_id: dict[str, str]
-    required_core_select_fields: frozenset[str]
-    read_core_option_value: Callable[[object, str], str | None]
-    set_core_option_value: Callable[[object, str, str | None], object]
-    # Phase 4 formula accessors. `core_field_value_for_formula` returns
-    # a core field's value for the row indexed by its python attribute
-    # key; the evaluator reads only through this callable so cross-
-    # table fan-out (Phase 5) needs no evaluator changes.
-    # `core_field_type_for_formula` returns the evaluator-facing type
-    # ("text" / "number" / "single_select") of a core field, used by
-    # the field registry; returns None for keys the formula grammar
-    # should treat as opaque (e.g. list-valued or struct-valued core
-    # fields).
-    core_field_value_for_formula: Callable[[object, str], object | None]
-    core_field_type_for_formula: Callable[
+    # Built-in single-select editing surface (typed columns like
+    # `floor_level`, `building_zone`). For built-ins whose field_type is
+    # mutable (and thus values live in `custom_values`), the schema
+    # mutation surface reaches into the bag directly.
+    built_in_option_key_by_field_key: dict[str, str]
+    required_field_keys: frozenset[str]
+    # Read/write a built-in single-select's typed column value (used by
+    # the option-edit cascade for locked-type built-in single_selects).
+    read_built_in_option_value: Callable[[object, str], str | None]
+    set_built_in_option_value: Callable[[object, str, str | None], object]
+    # Formula accessors. `field_value_for_formula` returns the row's
+    # value for a given `field_key`, reading through typed columns OR
+    # `custom_values` based on the persisted FieldDef's `field_type`.
+    # `field_type_for_formula` returns the evaluator-facing type
+    # ("text" / "number" / "single_select" / "bool") of a field;
+    # returns None for keys the formula grammar should treat as opaque.
+    field_value_for_formula: Callable[[object, str], object | None]
+    field_type_for_formula: Callable[
         [str],
         Literal["text", "number", "single_select", "bool"] | None,
     ]
-    # Read-overlay attach helper (plan-17 P4.4). Default
-    # implementation lives in `contracts.default_attach_computed_overlay`;
-    # tables override only when their wire shape is non-dict rows.
+    # Read-overlay attach helper (plan-17 P4.4). Default implementation
+    # lives in `contracts.default_attach_computed_overlay`; tables
+    # override only when their wire shape is non-dict rows.
     attach_computed_overlay: Callable[
         [list[dict[str, object]], dict[str, dict[str, object]]],
         list[dict[str, object]],
     ]
 
 
+# Back-compat alias for callers still importing the v2 name. Remove
+# once every callsite has migrated.
+CustomFieldCapability = TableFieldRegistry
+
+
 def default_attach_computed_overlay(
     rows: list[dict[str, object]],
     overlay: dict[str, dict[str, object]],
 ) -> list[dict[str, object]]:
-    """Attach `row["computed"] = overlay.get(row.id, {})` on every row.
-
-    Used by every custom-field-capable contract whose download / slice
-    response emits a list of row dicts. Tables that emit non-dict rows
-    can override with a custom helper.
-    """
+    """Attach `row["computed"] = overlay.get(row.id, {})` on every row."""
     out: list[dict[str, object]] = []
     for row in rows:
         row_id = str(row.get("id", ""))
@@ -127,7 +144,7 @@ class TableContract:
     replace_request_model: type[BaseModel]
     build_response: Callable[[UUID, UUID, ProjectDocumentSource, str, str | None, ProjectDocumentV1], BaseModel]
     apply_replace: Callable[[ProjectDocumentV1, BaseModel], ProjectDocumentV1]
-    # Custom-field-capable tables return the `{custom_fields, rows}`
+    # Field-config-capable tables return the `{field_defs, rows}`
     # envelope as a dict; other tables return a bare row list. Callers
     # (downloads, MCP `get_table`, diff) must accept both shapes.
     extract_rows: Callable[[ProjectDocumentV1], object]
@@ -135,8 +152,17 @@ class TableContract:
     # JSON document path, e.g. ("equipment", "ervs"). Generic routes
     # read this without branching on `name`.
     table_path: tuple[str, ...] = ()
-    # None on tables that have not opted into custom fields.
-    custom_fields: CustomFieldCapability | None = None
+    # None on tables that have not opted into the field registry.
+    field_registry: TableFieldRegistry | None = None
+
+    @property
+    def custom_fields(self) -> TableFieldRegistry | None:
+        """Back-compat alias for callers still reading `.custom_fields`.
+
+        New code should read `.field_registry` directly. Remove this
+        alias once every callsite has migrated.
+        """
+        return self.field_registry
 
     def parse_replace_payload(self, raw_payload: object) -> BaseModel:
         try:

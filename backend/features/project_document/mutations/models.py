@@ -13,9 +13,13 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from features.project_document.custom_fields import (
-    CustomFieldDef,
     CustomFieldType,
+    TableFieldDef,
 )
+
+# Back-compat alias so callers still importing `CustomFieldDef` keep
+# working through the Phase 1b cutover.
+CustomFieldDef = TableFieldDef
 from features.project_document.document import SingleSelectOption
 from features.project_document.formula import SOURCE_LENGTH_MAX
 
@@ -37,17 +41,20 @@ __all__ = [
 ]
 
 # Audit-log action kind per mutation discriminator. drafts.py / MCP
-# write the matching key so the action log is filterable.
+# write the matching key so the action log is filterable. Phase 1b
+# renamed these to drop the `_custom_field_` namespace — built-in
+# fields now ride the same mutation pipeline, so the audit kinds are
+# field-agnostic.
 AUDIT_KIND_BY_MUTATION: dict[str, str] = {
-    "addField": "project_version_custom_field_add",
-    "renameField": "project_version_custom_field_rename",
-    "deleteField": "project_version_custom_field_delete",
-    "duplicateField": "project_version_custom_field_duplicate",
-    "setDescription": "project_version_custom_field_set_description",
-    "editOptions": "project_version_custom_field_edit_options",
-    "changeType": "project_version_custom_field_change_type",
-    "setFormula": "project_version_custom_field_set_formula",
-    "editFieldBundle": "project_version_custom_field_edit_bundle",
+    "addField": "project_version_field_add",
+    "renameField": "project_version_field_rename",
+    "deleteField": "project_version_field_delete",
+    "duplicateField": "project_version_field_duplicate",
+    "setDescription": "project_version_field_set_description",
+    "editOptions": "project_version_field_edit_options",
+    "changeType": "project_version_field_change_type",
+    "setFormula": "project_version_field_set_formula",
+    "editFieldBundle": "project_version_field_edit_bundle",
 }
 
 # Convertibility matrix: (from, to) -> ConversionPolicy. Pairs absent

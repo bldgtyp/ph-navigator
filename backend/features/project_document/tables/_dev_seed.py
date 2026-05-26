@@ -1,4 +1,4 @@
-"""Developer-only helpers for seeding custom fields onto Rooms.
+"""Developer-only helpers for seeding fields onto Rooms.
 
 Lets the test suite (and manual CLI smoke) inject a custom field
 without going through the real schema-editor HTTP / MCP surface — it
@@ -13,9 +13,9 @@ import sys
 from datetime import UTC, datetime
 
 from features.project_document.custom_fields import (
-    CustomFieldDef,
     CustomFieldType,
-    mint_custom_field_id,
+    TableFieldDef,
+    mint_custom_field_key,
 )
 from features.project_document.document import (
     ProjectDocumentV1,
@@ -36,33 +36,35 @@ def seed_rooms_custom_field(
     display_name: str,
     field_type: CustomFieldType = CustomFieldType.short_text,
     description: str | None = None,
-    field_id: str | None = None,
+    field_key: str | None = None,
     created_at: datetime | None = None,
-) -> tuple[ProjectDocumentV1, CustomFieldDef]:
+) -> tuple[ProjectDocumentV1, TableFieldDef]:
     """TEST/DEV ONLY. Append a custom field to Rooms with created_by=None.
 
     Returns the validated next document body and the appended
-    CustomFieldDef so callers can write `row.custom[id]` values.
+    TableFieldDef so callers can write `row.custom_values[field_key]`
+    values.
     """
     if not _is_dev_or_test():
         raise RuntimeError("seed_rooms_custom_field is dev/test only and must not be imported in production")
 
-    custom_field = CustomFieldDef(
-        id=field_id or mint_custom_field_id(),
+    field_def = TableFieldDef(
+        field_key=field_key or mint_custom_field_key(),
         display_name=display_name,
         field_type=field_type,
         description=description,
+        origin="custom",
         created_at=created_at or datetime.now(tz=UTC),
         created_by=None,
     )
-    next_custom_fields = [*body.tables.rooms.custom_fields, custom_field]
+    next_field_defs = [*body.tables.rooms.field_defs, field_def]
     next_envelope = RoomsTableEnvelope(
-        custom_fields=next_custom_fields,
+        field_defs=next_field_defs,
         rows=list(body.tables.rooms.rows),
     )
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
     next_body = body.model_copy(update={"tables": next_tables})
-    return validate_document(next_body.model_dump(mode="json")), custom_field
+    return validate_document(next_body.model_dump(mode="json")), field_def
 
 
 def seed_rooms_custom_single_select(
@@ -71,32 +73,29 @@ def seed_rooms_custom_single_select(
     display_name: str,
     options: list[SingleSelectOption],
     description: str | None = None,
-    field_id: str | None = None,
+    field_key: str | None = None,
     created_at: datetime | None = None,
-) -> tuple[ProjectDocumentV1, CustomFieldDef]:
-    """TEST/DEV ONLY. Seed a custom single_select field + its option list.
-
-    The field is registered in `rooms.custom_fields` and the option list
-    is stored under `single_select_options["rooms.<cf_id>"]`.
-    """
+) -> tuple[ProjectDocumentV1, TableFieldDef]:
+    """TEST/DEV ONLY. Seed a custom single_select field + its option list."""
     if not _is_dev_or_test():
         raise RuntimeError("seed_rooms_custom_single_select is dev/test only")
 
-    custom_field = CustomFieldDef(
-        id=field_id or mint_custom_field_id(),
+    field_def = TableFieldDef(
+        field_key=field_key or mint_custom_field_key(),
         display_name=display_name,
         field_type=CustomFieldType.single_select,
         description=description,
+        origin="custom",
         created_at=created_at or datetime.now(tz=UTC),
         created_by=None,
     )
-    next_custom_fields = [*body.tables.rooms.custom_fields, custom_field]
+    next_field_defs = [*body.tables.rooms.field_defs, field_def]
     next_envelope = RoomsTableEnvelope(
-        custom_fields=next_custom_fields,
+        field_defs=next_field_defs,
         rows=list(body.tables.rooms.rows),
     )
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
     next_options = dict(body.single_select_options)
-    next_options[f"rooms.{custom_field.id}"] = list(options)
+    next_options[f"rooms.{field_def.field_key}"] = list(options)
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": next_options})
-    return validate_document(next_body.model_dump(mode="json")), custom_field
+    return validate_document(next_body.model_dump(mode="json")), field_def

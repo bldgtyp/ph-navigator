@@ -1035,7 +1035,7 @@ bottom.
 │  XPS                                                  📚  ↻          │
 │  Spray Foam · Conductivity 0.034 W/(m·K) · Density 35 kg/m³          │
 ├──────────────────────────────────────────────────────────────────────┤
-│  [Spec Missing ▾]   [+ Notes]                                  ⋯     │
+│  [Missing ▾]        [+ Notes]                                  ⋯     │
 │                                                                      │
 │  Datasheets                                                          │
 │  ┌─────────────────────────────────────┐                             │
