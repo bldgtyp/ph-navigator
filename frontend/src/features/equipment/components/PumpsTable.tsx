@@ -7,9 +7,13 @@ import {
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
+import { AttachmentCell } from "../../assets/components/AttachmentCell";
+import { useAssetUrls } from "../../assets/hooks";
+import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedPumps } from "../lib";
 import {
+  PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
   type PumpRow,
@@ -20,6 +24,7 @@ export function PumpsTable({
   pumpsSlice,
   tableSchema,
   isEditor,
+  projectId,
   view,
   onViewChange,
   onWrite,
@@ -33,6 +38,7 @@ export function PumpsTable({
   pumpsSlice: PumpsSlice;
   tableSchema: TableSchema;
   isEditor: boolean;
+  projectId: string;
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onWrite: NonNullable<DataTableProps<PumpRow>["onWrite"]>;
@@ -44,6 +50,15 @@ export function PumpsTable({
   onResetView?: DataTableProps<PumpRow>["onResetView"];
 }) {
   const sortedRows = useMemo(() => sortedPumps(pumpsSlice.pumps), [pumpsSlice.pumps]);
+  const datasheetAssetIds = useMemo(
+    () => Array.from(new Set(sortedRows.flatMap((pump) => pump.datasheet_asset_ids))),
+    [sortedRows],
+  );
+  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
+  const datasheetUrlById = useMemo(
+    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [datasheetUrls.data],
+  );
   const { fieldDefs } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
@@ -161,8 +176,38 @@ export function PumpsTable({
         measureText: (pump) => pump.link ?? "",
         defaultWidth: 180,
       },
+      {
+        id: PUMP_DATASHEET_FIELD_KEY,
+        fieldKey: PUMP_DATASHEET_FIELD_KEY,
+        header: "Datasheet",
+        accessor: (pump) => pump.datasheet_asset_ids.join(","),
+        render: (pump) => (
+          <AttachmentCell
+            projectId={projectId}
+            value={pump.datasheet_asset_ids}
+            config={DATASHEET_ATTACHMENT_CONFIG}
+            readOnly={!isEditor}
+            assetUrlById={datasheetUrlById}
+            onChange={(next) => {
+              if (sameAttachmentAssetIds(pump.datasheet_asset_ids, next)) return;
+              return onWrite({
+                kind: "cell",
+                writes: [
+                  {
+                    rowId: pump.id,
+                    fieldKey: PUMP_DATASHEET_FIELD_KEY,
+                    value: next,
+                  },
+                ],
+              });
+            }}
+          />
+        ),
+        measureText: (pump) => `${pump.datasheet_asset_ids.length} attachments`,
+        defaultWidth: 260,
+      },
     ],
-    [fieldDefByKey],
+    [datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
   );
 
   return (

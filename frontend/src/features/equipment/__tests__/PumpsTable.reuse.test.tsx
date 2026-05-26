@@ -1,12 +1,20 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
+import { createQueryClient } from "../../../app/query-client";
 import { emptyViewState, type TableSchema } from "../../../shared/ui/data-table";
 import { PumpsTable } from "../components/PumpsTable";
 import { pumpsTableFieldDefs } from "../lib";
 import type { PumpRow, PumpsSlice } from "../types";
 
 const option = { id: "opt_circ", label: "Circulator", color: "#3b82f6", order: 0 };
+
+function renderWithQueryClient(ui: ReactElement) {
+  const queryClient = createQueryClient();
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 function buildSlice(rows: PumpRow[]): PumpsSlice {
   return {
@@ -52,11 +60,12 @@ describe("PumpsTable DataTable reuse", () => {
       schemaFingerprint: "test",
       mintCustomFieldId: () => "cf_test",
     };
-    render(
+    renderWithQueryClient(
       <PumpsTable
         pumpsSlice={slice}
         tableSchema={tableSchema}
         isEditor={false}
+        projectId="proj_1"
         view={emptyViewState()}
         onViewChange={() => undefined}
         onWrite={vi.fn()}
@@ -80,11 +89,12 @@ describe("PumpsTable DataTable reuse", () => {
       mintCustomFieldId: () => "cf_test",
     };
     const onWrite = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithQueryClient(
       <PumpsTable
         pumpsSlice={slice}
         tableSchema={tableSchema}
         isEditor
+        projectId="proj_1"
         view={emptyViewState()}
         onViewChange={() => undefined}
         onWrite={onWrite}

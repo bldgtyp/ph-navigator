@@ -9,6 +9,7 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "./AttachmentCell";
 import { assetDownloadPath, startBulkDownload } from "../api";
+import { readAttachmentAssetIds } from "../lib";
 import type { AttachmentFieldConfig, AttachmentRow, AttachmentRowsSlice } from "../types";
 
 export function AttachmentRowsTable({
@@ -72,11 +73,11 @@ export function AttachmentRowsTable({
         id: fieldKey,
         fieldKey,
         header: fieldLabel,
-        accessor: (row) => readAssetIds(row[fieldKey]).join(","),
+        accessor: (row) => readAttachmentAssetIds(row[fieldKey]).join(","),
         render: (row) => (
           <AttachmentCell
             projectId={projectId}
-            value={readAssetIds(row[fieldKey])}
+            value={readAttachmentAssetIds(row[fieldKey])}
             config={config}
             readOnly={readOnly}
             onChange={(next) => replaceCell(row.id, fieldKey, next)}
@@ -129,10 +130,4 @@ export function AttachmentRowsTable({
       }
     />
   );
-}
-
-function readAssetIds(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
 }

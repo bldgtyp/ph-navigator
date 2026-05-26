@@ -1,7 +1,8 @@
 import "../attachments.css";
-import { useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { assetDownloadPath } from "../api";
 import { uploadAsset, useAssetUrls } from "../hooks";
+import { sameAttachmentAssetIds } from "../lib";
 import type { AssetUrls, AttachmentFieldConfig } from "../types";
 
 export function AttachmentCell({
@@ -10,21 +11,29 @@ export function AttachmentCell({
   config,
   readOnly,
   onChange,
+  assetUrlById,
 }: {
   projectId: string;
   value: string[];
   config: AttachmentFieldConfig;
   readOnly: boolean;
   onChange: (next: string[]) => Promise<void> | void;
+  assetUrlById?: ReadonlyMap<string, AssetUrls>;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [selected, setSelected] = useState(0);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [pending, setPending] = useState<string[]>([]);
-  const urls = useAssetUrls(projectId, value);
-  const urlById = new Map((urls.data ?? []).map((item) => [item.asset_id, item]));
+  const urls = useAssetUrls(projectId, assetUrlById ? [] : value);
+  const urlById = useMemo(
+    () => assetUrlById ?? new Map((urls.data ?? []).map((item) => [item.asset_id, item])),
+    [assetUrlById, urls.data],
+  );
 
   const accept = config.allowedTypes.join(",");
+  const commitChange = async (next: string[]) => {
+    if (!sameAttachmentAssetIds(value, next)) await onChange(next);
+  };
   const attachFiles = async (files: FileList | File[]) => {
     if (readOnly) return;
     const accepted = Array.from(files).filter((file) => {
@@ -44,7 +53,7 @@ export function AttachmentCell({
         const assetId = await uploadAsset(projectId, config.assetKind, file);
         if (!next.includes(assetId)) next.push(assetId);
       }
-      await onChange(next);
+      await commitChange(next);
     } finally {
       setPending([]);
     }
@@ -53,7 +62,7 @@ export function AttachmentCell({
   const detachSelected = async () => {
     if (readOnly || value.length === 0) return;
     const next = value.filter((_, index) => index !== selected);
-    await onChange(next);
+    await commitChange(next);
     setSelected(Math.max(0, Math.min(selected, next.length - 1)));
   };
 
@@ -62,7 +71,7 @@ export function AttachmentCell({
     if (!file || readOnly || modalIndex === null) return;
     const assetId = await uploadAsset(projectId, config.assetKind, file);
     const next = value.map((existing, index) => (index === modalIndex ? assetId : existing));
-    await onChange(next);
+    await commitChange(next);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {

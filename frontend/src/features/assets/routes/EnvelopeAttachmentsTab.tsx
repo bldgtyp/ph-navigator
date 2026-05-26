@@ -1,13 +1,7 @@
 import "../attachments.css";
 import type { ProjectDetail } from "../../projects/types";
 import { AttachmentTablePanel } from "../components/AttachmentTablePanel";
-
-const DATASHEET_CONFIG = {
-  assetKind: "datasheet" as const,
-  allowedTypes: ["application/pdf", "image/png", "image/jpeg", "image/webp"],
-  maxCount: 5,
-  maxFileSizeMb: 25,
-};
+import { DATASHEET_ATTACHMENT_CONFIG } from "../lib";
 
 const SITE_PHOTO_CONFIG = {
   assetKind: "site_photo" as const,
@@ -28,7 +22,7 @@ export function EnvelopeAttachmentsTab({ project }: { project: ProjectDetail }) 
         title="Project Material Datasheets"
         fieldKey="datasheet_asset_ids"
         fieldLabel="Datasheet"
-        config={DATASHEET_CONFIG}
+        config={DATASHEET_ATTACHMENT_CONFIG}
       />
       <AttachmentTablePanel
         projectId={project.id}
