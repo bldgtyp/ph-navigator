@@ -1212,29 +1212,7 @@ button:disabled {
   gap: 0;
 }
 
-.data-table-error-boundary {
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--color-danger, #c33);
-  border-radius: 6px;
-  background: var(--color-danger-bg, #fff5f5);
-  color: var(--color-danger-fg, #842029);
-  display: grid;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.data-table-error-boundary__title {
-  font-weight: 600;
-  margin: 0;
-}
-
-.data-table-error-boundary__message {
-  margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
-  word-break: break-word;
-}
-
 .data-table-shell:has(.room-option-popover) {
   position: relative;
   z-index: 10;

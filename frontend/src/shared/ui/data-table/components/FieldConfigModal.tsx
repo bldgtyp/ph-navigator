@@ -40,6 +40,15 @@ import {
 } from "./FieldConfigSectionFormula";
 import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
 
+// Stable empty references. Inline `?? []` fallbacks force a fresh array
+// identity on every render, which cascades through
+// FieldConfigSectionOptions's reset effect (setDraftOptions →
+// onDraftChange → parent setState → re-render → reset effect again) and
+// produces "Maximum update depth exceeded" when a type change flips
+// `source.options` from undefined to a real array mid-save.
+const EMPTY_FIELD_OPTIONS: readonly FieldOption[] = [];
+const EMPTY_OPTION_SOURCE_ROWS: readonly OptionSourceRow[] = [];
+
 function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {
   if (a.length !== b.length) return false;
   const normalize = (options: readonly FieldOption[]) =>
@@ -558,10 +567,10 @@ export function FieldConfigModal({
             {draftType === "single_select" && source ? (
               <FieldConfigSectionOptions
                 fieldDisplayName={source.display_name}
-                sourceOptions={source.options ?? []}
+                sourceOptions={source.options ?? EMPTY_FIELD_OPTIONS}
                 sourceColorCodeOptions={source.colorCodeOptions !== false}
                 sourceDefaultOptionId={source.defaultOptionId ?? null}
-                rows={optionRows ?? []}
+                rows={optionRows ?? EMPTY_OPTION_SOURCE_ROWS}
                 disabled={pending}
                 onDraftChange={setOptionsDraft}
               />
