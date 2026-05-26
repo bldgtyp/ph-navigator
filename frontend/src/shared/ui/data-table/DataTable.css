@@ -985,10 +985,10 @@
   background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
 }
 
-.data-table-gutter {
+.data-table .data-table-gutter {
   position: sticky;
   left: 0;
-  z-index: calc(var(--z-base) + 5);
+  z-index: calc(var(--z-base) + 7);
   width: var(--gutter-width);
   min-width: var(--gutter-width);
   max-width: var(--gutter-width);
@@ -999,7 +999,7 @@
 }
 
 .data-table thead .data-table-gutter {
-  z-index: calc(var(--z-base) + 6);
+  z-index: calc(var(--z-base) + 9);
   background: var(--data-table-header-bg, var(--bg-card));
 }
 
@@ -1468,18 +1468,36 @@
 
 /* Pin the primary (first) data column to the left edge of the wrapper
    so horizontal scroll keeps it visible. Sits just to the right of the
-   row-number gutter. Header lifts above the body header z-index (3) so
-   it covers non-frozen header cells as they scroll behind. */
+   row-number gutter. Body frozen cells stay above raised active cells,
+   including the bottom-row active state used to clear the summary bar.
+   Header lifts above the body header z-index (3) so it covers
+   non-frozen header cells as they scroll behind. */
 .data-table th.data-table-frozen,
 .data-table td.data-table-frozen {
   position: sticky;
   left: var(--gutter-width);
-  z-index: calc(var(--z-base) + 2);
+  z-index: calc(var(--z-base) + 5);
   background: var(--data-table-cell-bg, var(--data-table-header-bg, var(--bg-card)));
 }
 
 .data-table th.data-table-frozen {
-  z-index: calc(var(--z-base) + 4);
+  z-index: calc(var(--z-base) + 8);
+}
+
+.data-table th.data-table-frozen::after,
+.data-table td.data-table-frozen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -6px;
+  bottom: 0;
+  width: 6px;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--text-primary) 16%, transparent),
+    transparent
+  );
 }
 
 /* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
