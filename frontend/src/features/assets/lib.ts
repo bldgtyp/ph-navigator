@@ -1,0 +1,18 @@
+import type { AttachmentFieldConfig } from "./types";
+
+export const DATASHEET_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
+  assetKind: "datasheet",
+  allowedTypes: ["application/pdf", "image/png", "image/jpeg", "image/webp"],
+  maxCount: 5,
+  maxFileSizeMb: 25,
+};
+
+export function readAttachmentAssetIds(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+export function sameAttachmentAssetIds(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}

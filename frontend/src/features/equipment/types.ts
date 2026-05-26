@@ -71,6 +71,7 @@ export type RoomsReplacePayload = {
 export const PUMPS_TABLE_NAME = "pumps";
 export const PUMP_DEVICE_TYPE_KEY = "pumps.device_type";
 export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
+export const PUMP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_KEY] as const;
 
 export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];

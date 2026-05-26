@@ -26,7 +26,7 @@ export const TAB_COPY: Record<ProjectTab, string> = {
   windows: "Window type editing lands after the catalog tracer.",
   envelope: "Envelope assemblies land after the window catalog slices.",
   rooms: "Room schedules, iCFA factors, and occupancy assumptions.",
-  equipment: "Equipment datasheets for ERVs, pumps, and fans.",
+  equipment: "Equipment tables for ventilators, pumps, fans, hot-water tanks, and heaters.",
   "thermal-bridges": "Thermal bridge datasheets and simulation files.",
   model: "HBJSON upload and the R3F viewer land after the asset backbone.",
 };

@@ -1,9 +1,15 @@
 import "../../assets/attachments.css";
 import "../equipment.css";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import {
+  DataTable,
+  type DataTableColumnDef,
+  emptyViewState,
+  type FieldDef,
+  type ViewState,
+} from "../../../shared/ui/data-table";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
-import { AttachmentTablePanel } from "../../assets/components/AttachmentTablePanel";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { usePumpsSchemaMutation, usePumpsSliceQuery, useReplacePumpsSliceMutation } from "../hooks";
 import {
@@ -14,21 +20,77 @@ import {
 } from "../lib";
 import { makeBuildEmptyPumpRow } from "../lib/buildEmptyPumpRow";
 import { pumpsPayloadBuilders } from "../lib/pumpsController";
-import { PUMPS_TABLE_NAME, type PumpsSlice } from "../types";
+import { PUMP_DATASHEET_FIELD_KEY, PUMPS_TABLE_NAME, type PumpsSlice } from "../types";
 import { generatedId } from "../../../shared/lib/ids";
-
-const DATASHEET_CONFIG = {
-  assetKind: "datasheet" as const,
-  allowedTypes: ["application/pdf", "image/png", "image/jpeg", "image/webp"],
-  maxCount: 5,
-  maxFileSizeMb: 25,
-};
 
 const PUMPS_CONFLICT_MESSAGES = {
   activeRowConflict: "The Pumps draft changed in another tab. Reload the draft before editing.",
   deleteConflict: "Could not delete pump.",
   versionLocked: "This version is locked. Save As to copy it into a new version.",
 };
+
+const EQUIPMENT_TABS = [
+  { key: "ventilators", label: "Ventilators", emptyMessage: "Ventilators will be built later." },
+  { key: "pumps", label: "Pumps", emptyMessage: "No pumps yet." },
+  { key: "fans", label: "Fans", emptyMessage: "Fans will be built later." },
+  {
+    key: "hot-water-tanks",
+    label: "Hot-Water Tanks",
+    emptyMessage: "Hot-water tanks will be built later.",
+  },
+  {
+    key: "hot-water-heaters",
+    label: "Hot Water Heaters",
+    emptyMessage: "Hot water heaters will be built later.",
+  },
+] as const;
+
+type EquipmentTabKey = (typeof EQUIPMENT_TABS)[number]["key"];
+type EquipmentTab = (typeof EQUIPMENT_TABS)[number];
+type PlaceholderEquipmentTab = Exclude<EquipmentTab, { key: "pumps" }>;
+type PlaceholderEquipmentTabKey = PlaceholderEquipmentTab["key"];
+
+type PlaceholderEquipmentRow = {
+  id: string;
+  name: string;
+  datasheet_asset_ids: string[];
+};
+
+const PLACEHOLDER_FIELD_DEFS: FieldDef[] = [
+  { field_key: "name", field_type: "text", display_name: "Name", read_only_schema: true },
+  {
+    field_key: PUMP_DATASHEET_FIELD_KEY,
+    field_type: "attachment",
+    display_name: "Datasheet",
+    read_only_schema: true,
+  },
+];
+
+const PLACEHOLDER_COLUMN_DEFS: DataTableColumnDef<PlaceholderEquipmentRow>[] = [
+  {
+    id: "name",
+    fieldKey: "name",
+    header: "Name",
+    accessor: (row) => row.name,
+    defaultWidth: 220,
+  },
+  {
+    id: PUMP_DATASHEET_FIELD_KEY,
+    fieldKey: PUMP_DATASHEET_FIELD_KEY,
+    header: "Datasheet",
+    accessor: (row) => row.datasheet_asset_ids.join(","),
+    defaultWidth: 260,
+  },
+];
+
+function emptyPlaceholderViews(): Record<PlaceholderEquipmentTabKey, ViewState> {
+  return {
+    ventilators: emptyViewState(),
+    fans: emptyViewState(),
+    "hot-water-tanks": emptyViewState(),
+    "hot-water-heaters": emptyViewState(),
+  };
+}
 
 export function EquipmentPage({ project }: { project: ProjectDetail }) {
   const pumpsQuery = usePumpsSliceQuery(project.id, project.active_version_id, project.access_mode);
@@ -72,6 +134,11 @@ function EquipmentPageBody(props: {
   const buildEmptyPumpRow = useMemo(() => makeBuildEmptyPumpRow(), []);
   const replaceMutation = useReplacePumpsSliceMutation(project.id, activeVersionId);
   const schemaMutation = usePumpsSchemaMutation(project.id, activeVersionId);
+  const [activeTab, setActiveTab] = useState<EquipmentTabKey>("pumps");
+  const [placeholderViews, setPlaceholderViews] = useState(emptyPlaceholderViews);
+  const activePlaceholderTab = EQUIPMENT_TABS.find(
+    (tab): tab is PlaceholderEquipmentTab => tab.key === activeTab && tab.key !== "pumps",
+  );
 
   const controller = useSliceTableController({
     projectId: project.id,
@@ -98,6 +165,46 @@ function EquipmentPageBody(props: {
     await controller.reloadDraft();
   };
 
+  const renderActiveEquipmentTable = () => {
+    if (activeTab === "pumps") {
+      return (
+        <PumpsTableSlot
+          controller={controller}
+          pumpsSlice={pumpsSlice}
+          projectId={project.id}
+          activeVersionId={activeVersionId}
+          buildEmptyRow={buildEmptyPumpRow}
+          footerAction={
+            <AddPumpButton
+              canEdit={controller.canEdit}
+              onAdd={() =>
+                void controller.onWrite({
+                  kind: "rowInsert",
+                  rows: [{ rowId: generatedId("pmp"), fieldDefaults: {}, anchorRowId: null }],
+                })
+              }
+            />
+          }
+        />
+      );
+    }
+    if (activePlaceholderTab) {
+      return (
+        <PlaceholderEquipmentTable
+          tab={activePlaceholderTab}
+          view={placeholderViews[activePlaceholderTab.key]}
+          onViewChange={(next) =>
+            setPlaceholderViews((current) => {
+              if (current[activePlaceholderTab.key] === next) return current;
+              return { ...current, [activePlaceholderTab.key]: next };
+            })
+          }
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <SliceTableShell
       ariaLabel="Equipment"
@@ -114,38 +221,45 @@ function EquipmentPageBody(props: {
       onReloadDraft={() => void reloadDraft()}
       actionError={controller.actionError}
     >
-      <PumpsTableSlot
-        controller={controller}
-        pumpsSlice={pumpsSlice}
-        projectId={project.id}
-        activeVersionId={activeVersionId}
-        buildEmptyRow={buildEmptyPumpRow}
-        footerAction={
-          <AddPumpButton
-            canEdit={controller.canEdit}
-            onAdd={() =>
-              void controller.onWrite({
-                kind: "rowInsert",
-                rows: [{ rowId: generatedId("pmp"), fieldDefaults: {}, anchorRowId: null }],
-              })
-            }
-          />
-        }
-      />
-      <div className="equipment-attachment-panels">
-        <AttachmentTablePanel
-          projectId={project.id}
-          versionId={project.active_version_id}
-          accessMode={project.access_mode}
-          versionLocked={project.active_version?.locked ?? false}
-          tableName="equipment_pumps"
-          title="Pump Datasheets"
-          fieldKey="datasheet_asset_ids"
-          fieldLabel="Datasheet"
-          config={DATASHEET_CONFIG}
-        />
+      <div className="equipment-subtabs" role="tablist" aria-label="Equipment tables">
+        {EQUIPMENT_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className="equipment-subtab"
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
+      {renderActiveEquipmentTable()}
     </SliceTableShell>
+  );
+}
+
+function PlaceholderEquipmentTable({
+  tab,
+  view,
+  onViewChange,
+}: {
+  tab: PlaceholderEquipmentTab;
+  view: ViewState;
+  onViewChange: (next: ViewState) => void;
+}) {
+  return (
+    <DataTable<PlaceholderEquipmentRow>
+      rows={[]}
+      getRowId={(row) => row.id}
+      fieldDefs={PLACEHOLDER_FIELD_DEFS}
+      columnDefs={PLACEHOLDER_COLUMN_DEFS}
+      view={view}
+      onViewChange={onViewChange}
+      readOnly
+      emptyMessage={tab.emptyMessage}
+    />
   );
 }
 

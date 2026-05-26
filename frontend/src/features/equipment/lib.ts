@@ -11,6 +11,7 @@ import type {
   SingleSelectOption,
 } from "./types";
 import {
+  PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
   ROOM_BUILDING_ZONE_COLUMN_ID,
@@ -34,6 +35,7 @@ import {
   normalizeOptionOrders,
 } from "../../shared/ui/data-table/lib";
 import { generatedId } from "../../shared/lib/ids";
+import { readAttachmentAssetIds } from "../assets/lib";
 export {
   isDraftStaleError,
   isInvalidProjectDocumentError,
@@ -88,7 +90,7 @@ export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
   "runtime_khr_yr",
   "notes",
   "link",
-  "datasheet_asset_ids",
+  PUMP_DATASHEET_FIELD_KEY,
 ] as const;
 
 // Shared by RoomsTable (renderer) and useProjectTableViewState (sanitizer)
@@ -159,6 +161,12 @@ export function pumpsTableFieldDefs(pumpsSlice: PumpsSlice): FieldDef[] {
     { field_key: "runtime_khr_yr", field_type: "number", display_name: "Runtime - kHR/YEAR" },
     { field_key: "notes", field_type: "text", display_name: "Notes" },
     { field_key: "link", field_type: "text", display_name: "Link" },
+    {
+      field_key: PUMP_DATASHEET_FIELD_KEY,
+      field_type: "attachment",
+      display_name: "Datasheet",
+      read_only_schema: true,
+    },
   ];
 }
 
@@ -693,6 +701,9 @@ function applyWriteToPump(pump: PumpRow, fieldKey: string, value: unknown): Pump
   ) {
     return { ...pump, [fieldKey]: value };
   }
+  if (fieldKey === PUMP_DATASHEET_FIELD_KEY) {
+    return { ...pump, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
   return pump;
 }
 
@@ -771,7 +782,7 @@ function normalizePumpForPayload(pump: PumpRow): PumpRow {
     runtime_khr_yr: nonNegativeOrNull(pump.runtime_khr_yr),
     notes: pump.notes?.trim() || null,
     link: pump.link?.trim() || null,
-    datasheet_asset_ids: Array.isArray(pump.datasheet_asset_ids) ? pump.datasheet_asset_ids : [],
+    datasheet_asset_ids: readAttachmentAssetIds(pump.datasheet_asset_ids),
   };
 }
 
