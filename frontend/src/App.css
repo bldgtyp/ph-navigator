@@ -1212,7 +1212,6 @@ button:disabled {
   gap: 0;
 }
 
-  white-space: pre-wrap;
 .data-table-shell:has(.room-option-popover) {
   position: relative;
   z-index: 10;
