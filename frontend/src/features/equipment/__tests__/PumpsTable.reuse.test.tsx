@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { describe, expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { createQueryClient } from "../../../app/query-client";
@@ -10,10 +10,49 @@ import { pumpsTableFieldDefs } from "../lib";
 import type { PumpRow, PumpsSlice } from "../types";
 
 const option = { id: "opt_circ", label: "Circulator", color: "#3b82f6", order: 0 };
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  fetchMock.mockImplementation((input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("/assets/bulk-urls")) {
+      return jsonResponse({
+        items: [
+          {
+            asset_id: "asset_pdf_1",
+            download_url: "https://fake-r2.test/file.pdf",
+            download_expires_at: "2026-05-26T14:00:00Z",
+            thumbnail_url: null,
+            thumbnail_status: "pending",
+            thumbnail_expires_at: null,
+            content_type: "application/pdf",
+            original_filename: "pump-datasheet.pdf",
+            display_name: "Pump datasheet",
+            size_bytes: 512,
+          },
+        ],
+      });
+    }
+    return jsonResponse({ items: [] });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function renderWithQueryClient(ui: ReactElement) {
   const queryClient = createQueryClient();
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 function buildSlice(rows: PumpRow[]): PumpsSlice {
@@ -105,5 +144,41 @@ describe("PumpsTable DataTable reuse", () => {
     await user.keyboard("{Control>}a{/Control}P-2{Enter}");
 
     expect(onWrite).toHaveBeenCalled();
+  });
+
+  test("emits a cell write when deleting a datasheet attachment", async () => {
+    const slice = buildSlice([buildPump({ datasheet_asset_ids: ["asset_pdf_1"] })]);
+    const fieldDefs = pumpsTableFieldDefs(slice);
+    const tableSchema: TableSchema = {
+      fieldDefs,
+      customFields: [],
+      coreFieldKeys: new Set(fieldDefs.map((field) => field.field_key)),
+      schemaFingerprint: "test",
+      mintCustomFieldId: () => "cf_test",
+    };
+    const onWrite = vi.fn().mockResolvedValue(undefined);
+    renderWithQueryClient(
+      <PumpsTable
+        pumpsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={onWrite}
+      />,
+    );
+
+    const attachment = await screen.findByTitle("pump-datasheet.pdf · application/pdf");
+    const attachmentCell = attachment.closest(".attachment-cell");
+    expect(attachmentCell).not.toBeNull();
+    fireEvent.keyDown(attachmentCell as HTMLElement, { key: "Delete" });
+
+    await waitFor(() => {
+      expect(onWrite).toHaveBeenCalledWith({
+        kind: "cell",
+        writes: [{ rowId: "pmp_1", fieldKey: "datasheet_asset_ids", value: [] }],
+      });
+    });
   });
 });
