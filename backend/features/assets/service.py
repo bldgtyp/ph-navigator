@@ -399,6 +399,8 @@ class AssetService:
         thumbnail_key = asset.metadata.thumbnail_object_key
         return AssetUrlsResponse(
             asset_id=asset.id,
+            preview_url=self.r2.generate_signed_get_url(asset.object_key, preview_ttl),
+            preview_expires_at=now + timedelta(seconds=preview_ttl),
             download_url=self.r2.generate_signed_get_url(asset.object_key, download_ttl, disposition),
             download_expires_at=now + timedelta(seconds=download_ttl),
             thumbnail_url=self.r2.generate_signed_get_url(thumbnail_key, preview_ttl) if thumbnail_key else None,

@@ -242,8 +242,8 @@ DELETE /api/v1/projects/{pid}/assets/{aid}                      soft delete if
 GET    /api/v1/projects/{pid}/assets/{aid}/download             stable PHN route;
                                                                   redirects to
                                                                   signed R2 URL
-GET    /api/v1/projects/{pid}/assets/{aid}/url                  signed GET URL +
-                                                                  expires_at
+GET    /api/v1/projects/{pid}/assets/{aid}/url                  signed preview/download
+                                                                  URLs + expires_at
 POST   /api/v1/projects/{pid}/assets/{aid}/attach               JSON-Patch attach
                                                                   into current
                                                                   user's draft
@@ -262,10 +262,14 @@ size and MIME rules before signing. The signed URL is short-lived
 sets `upload_status = 'uploaded'`, and writes an action-log event. Failed
 or abandoned pending rows are GC candidates.
 
-`download` is the stable link to place in rendered Markdown or UI anchors;
-it performs access checks, then redirects to a short-lived signed R2 URL.
-`url` is for clients that need the signed URL JSON envelope directly
-(viewer fetches, MCP tools, and batch download flows).
+`download` is the stable link to place in rendered Markdown or explicit
+Download UI anchors; it performs access checks, then redirects to a
+short-lived signed R2 URL with attachment disposition. `url` is for
+clients that need the signed URL JSON envelope directly (viewer fetches,
+MCP tools, and batch download flows). That envelope includes a
+`preview_url` without attachment disposition for inline image/PDF
+preview and a `download_url` with attachment disposition for explicit
+download.
 
 `attach` and `detach` are convenience wrappers around the draft JSON-Patch
 API. They require `project:write` plus `asset:write`, obey the same ETag
@@ -294,7 +298,8 @@ new upload URL.
 
 ```
 GET    /api/v1/projects/{pid}/assets/bulk-urls?ids=<csv>
-       returns: { items: [ { asset_id, download_url, download_expires_at,
+       returns: { items: [ { asset_id, preview_url, preview_expires_at,
+                             download_url, download_expires_at,
                              thumbnail_url, thumbnail_status,
                              thumbnail_expires_at, content_type,
                              original_filename, size_bytes } ... ] }

@@ -131,12 +131,12 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
     @mcp.tool()
     def get_asset_url(project_id: str, asset_id: str, ctx: Context) -> dict[str, object]:
-        """Return signed download and thumbnail URLs for one asset."""
+        """Return signed preview, download, and thumbnail URLs for one asset."""
         return tool_get_asset_url(project_id, asset_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def resolve_asset_urls(project_id: str, asset_ids: list[str], ctx: Context) -> dict[str, object]:
-        """Return signed download and thumbnail URLs for up to 100 assets."""
+        """Return signed preview, download, and thumbnail URLs for up to 100 assets."""
         return tool_resolve_asset_urls(project_id, asset_ids, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
