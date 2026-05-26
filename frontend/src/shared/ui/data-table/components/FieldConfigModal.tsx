@@ -21,6 +21,7 @@ import type {
   FieldOption,
 } from "../types";
 import type { FieldRegistryEntry } from "../lib/formula";
+import { FIELD_LOCKED_TOOLTIP, isAttributeLocked, isBuiltInField } from "../lib/locks";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
@@ -77,8 +78,8 @@ export type FieldConfigModalProps = {
   onOpenChange: (open: boolean) => void;
   // Resolved FieldDef being edited (the merged-schema view from
   // `useTableSchema`). `undefined` means the field no longer exists in
-  // the merged schema (R-S1). Only custom fields should be passed in —
-  // the caller is responsible for filtering out `read_only_schema`.
+  // the merged schema (R-S1). Built-in + custom both accepted; section
+  // disabling is driven by `fieldDef.locked`.
   fieldDef: FieldDef | undefined;
   // Every field in the table (core + custom). The uniqueness preflight
   // excludes the field being edited by `field_key`; callers pass the
@@ -361,6 +362,12 @@ export function FieldConfigModal({
   const canSave =
     formDirty && optionsValid && formulaValid && !pending && !externalConflict && ackSatisfied;
 
+  // Phase 1a hard rule: type-picker stays disabled on every built-in
+  // regardless of `field_type` lock state — the storage path has not
+  // been reshaped yet, so a retype would strand stored values. Phase 3
+  // drops this rule and falls back to the lock-list signal alone.
+  const fieldTypeLocked = isBuiltInField(fieldDef) || isAttributeLocked(fieldDef, "field_type");
+
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
     setPending(true);
@@ -545,7 +552,10 @@ export function FieldConfigModal({
                 onChange={(event) =>
                   setDisplayName(event.currentTarget.value.slice(0, MAX_DISPLAY_NAME))
                 }
-                disabled={pending}
+                disabled={pending || isAttributeLocked(fieldDef, "display_name")}
+                title={
+                  isAttributeLocked(fieldDef, "display_name") ? FIELD_LOCKED_TOOLTIP : undefined
+                }
                 maxLength={MAX_DISPLAY_NAME}
                 aria-invalid={nameValidationError ? "true" : undefined}
                 aria-describedby={nameValidationError ? `${nameId}-error` : undefined}
@@ -579,16 +589,21 @@ export function FieldConfigModal({
                     const allowed =
                       isCurrent || isConversionAllowed(sourceCustomFieldType, candidate.kind);
                     const selected = draftType === candidate.kind;
+                    const buttonDisabled = fieldTypeLocked || !allowed || pending;
                     return (
                       <button
                         key={candidate.kind}
                         type="button"
                         role="radio"
                         aria-checked={selected}
-                        aria-disabled={!allowed}
-                        disabled={!allowed || pending}
+                        aria-disabled={buttonDisabled}
+                        disabled={buttonDisabled}
                         data-active={selected ? "true" : undefined}
-                        title={typeCandidateTitle(candidate, sourceCustomFieldType, allowed)}
+                        title={
+                          fieldTypeLocked
+                            ? FIELD_LOCKED_TOOLTIP
+                            : typeCandidateTitle(candidate, sourceCustomFieldType, allowed)
+                        }
                         className="data-table-add-field-type-pill"
                         onClick={() => {
                           setDraftType(candidate.kind);
@@ -621,7 +636,7 @@ export function FieldConfigModal({
                 sourceColorCodeOptions={source.colorCodeOptions !== false}
                 sourceDefaultOptionId={source.defaultOptionId ?? null}
                 rows={optionRows ?? EMPTY_OPTION_SOURCE_ROWS}
-                disabled={pending}
+                disabled={pending || isAttributeLocked(fieldDef, "options")}
                 onDraftChange={setOptionsDraft}
               />
             ) : null}
@@ -629,7 +644,9 @@ export function FieldConfigModal({
               <FieldConfigSectionNumber
                 precision={numberPrecision}
                 onPrecisionChange={setNumberPrecision}
-                disabled={pending}
+                // Number precision is part of the type config; the
+                // type lock implies the precision is frozen too.
+                disabled={pending || fieldTypeLocked}
               />
             ) : null}
             {draftType === "formula" && source ? (
@@ -639,7 +656,7 @@ export function FieldConfigModal({
                 fieldRegistry={formulaFieldRegistry}
                 previewRow={formulaPreviewSnapshot}
                 previewStale={formulaPreviewStale}
-                disabled={pending}
+                disabled={pending || isAttributeLocked(fieldDef, "formula")}
                 onDraftChange={setFormulaDraft}
               />
             ) : null}
@@ -655,7 +672,10 @@ export function FieldConfigModal({
                   setDescription(event.currentTarget.value.slice(0, MAX_DESCRIPTION))
                 }
                 rows={4}
-                disabled={pending}
+                disabled={pending || isAttributeLocked(fieldDef, "description")}
+                title={
+                  isAttributeLocked(fieldDef, "description") ? FIELD_LOCKED_TOOLTIP : undefined
+                }
                 maxLength={MAX_DESCRIPTION}
               />
               <span className="data-table-add-field-counter" aria-hidden>

@@ -350,7 +350,9 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
 
     fireEvent.keyDown(editDialog, { key: "Escape" });
     await openHeaderMenu("Name");
-    expect(screen.queryByRole("menuitem", { name: "Edit field…" })).toBeNull();
+    // Built-in fields also surface "Edit field…"; section disabling
+    // inside the modal is what enforces per-attribute locks.
+    expect(screen.queryByRole("menuitem", { name: "Edit field…" })).not.toBeNull();
   });
 
   test("duplicating a formula via the header context menu dispatches duplicateField and the duplicate column renders the same computed value", async () => {

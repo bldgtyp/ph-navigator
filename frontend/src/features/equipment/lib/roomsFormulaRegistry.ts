@@ -5,6 +5,7 @@
 // ids "floor_level" / "building_zone").
 
 import type { FieldRegistryEntry } from "../../../shared/ui/data-table";
+import { isBuiltInField } from "../../../shared/ui/data-table";
 import { mapToFormulaType } from "../../../shared/ui/data-table/lib/formula/mapToFormulaType";
 import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY, type RoomRow } from "../types";
 import { ROOMS_SCHEMA_CORE_FIELD_KEYS } from "../lib";
@@ -25,18 +26,16 @@ export function buildRoomsFormulaRegistry(
     field_key: string;
     display_name: string;
     field_type: string;
-    read_only_schema?: boolean;
+    built_in?: boolean;
   }>,
 ): FieldRegistryEntry[] {
   return fieldDefs.map((fieldDef) => {
-    const isCore = fieldDef.read_only_schema === true;
     const fieldId = ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY[fieldDef.field_key] ?? fieldDef.field_key;
-    const formulaType = mapToFormulaType(fieldDef.field_type);
     return {
       field_id: fieldId,
       display_name: fieldDef.display_name,
-      origin: isCore ? "core" : "custom",
-      field_type: formulaType,
+      origin: isBuiltInField(fieldDef) ? "core" : "custom",
+      field_type: mapToFormulaType(fieldDef.field_type),
     };
   });
 }

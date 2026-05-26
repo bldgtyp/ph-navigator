@@ -8,6 +8,7 @@ import {
   type RefObject,
 } from "react";
 import { pointAnchorRef } from "../lib/popoverAnchor";
+import { isFieldDeletable, isFieldDuplicable } from "../lib/locks";
 import type { FieldDef } from "../types";
 
 // Right-click / Shift+F10 / ContextMenu key opens a per-header menu
@@ -70,16 +71,18 @@ export function HeaderContextMenu({
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const restoreFocusOnCloseRef = useRef(true);
 
-  const isCustomField = fieldDef.read_only_schema !== true;
+  const canEditField = onEditFieldConfig !== undefined;
+  const canDeleteField = onDeleteField !== undefined && isFieldDeletable(fieldDef);
+  const canDuplicateField = onDuplicateField !== undefined && isFieldDuplicable(fieldDef);
   const items: MenuItem[] = [];
-  if (isCustomField && onEditFieldConfig) {
+  if (canEditField && onEditFieldConfig) {
     items.push({
       key: "edit-field",
       label: "Edit field…",
       onSelect: onEditFieldConfig,
     });
   }
-  if (isCustomField && onDeleteField) {
+  if (canDeleteField && onDeleteField) {
     items.push({
       key: "delete-field",
       label: "Delete field",
@@ -87,7 +90,7 @@ export function HeaderContextMenu({
       onSelect: onDeleteField,
     });
   }
-  if (isCustomField && onDuplicateField) {
+  if (canDuplicateField && onDuplicateField) {
     items.push({ key: "duplicate-field", label: "Duplicate field", onSelect: onDuplicateField });
   }
   items.push(

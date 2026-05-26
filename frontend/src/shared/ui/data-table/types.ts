@@ -27,6 +27,19 @@ export type CustomFieldType =
   | "single_select"
   | "formula";
 
+// Per-attribute lock keys. Each entry in `FieldDef.locked` forbids
+// one user edit through the field-config modal / header context menu.
+// Render-time overlay — never persisted in the document.
+export type FieldLockKey =
+  | "display_name"
+  | "field_type"
+  | "options"
+  | "default"
+  | "description"
+  | "formula"
+  | "delete"
+  | "duplicate";
+
 export type FieldDef = {
   field_key: string;
   field_type: FieldType;
@@ -39,8 +52,9 @@ export type FieldDef = {
   // back to the field-type natural zero (text: "", number: null,
   // single_select: null) when omitted.
   default?: unknown;
-  // Set only for custom (non-`read_only_schema`) fields. Drives the
-  // field-config modal's type picker.
+  // Drives the field-config modal's type picker. Built-ins set this so
+  // the picker has a source type to render from (the Phase 1a hard
+  // rule keeps the picker disabled regardless).
   custom_field_type?: CustomFieldType;
   // Phase 4: for `field_type === "computed"`, declare the underlying
   // value type so the filter-operator registry knows which catalogue to
@@ -58,12 +72,12 @@ export type FieldDef = {
   // `CustomFieldDef.config.default_option_id`; row creation applies it
   // only when the row omits this field.
   defaultOptionId?: string | null;
-  // Plan-13 §4.5 / US-CF-6: when true, header context-menu hides
-  // schema-mutation items (rename / change type / delete / edit
-  // formula). Core fields set this to true; user-defined custom fields
-  // leave it absent. The flag ships in plan-14 P1.4 so the schema is
-  // consistent; the menu component that consumes it lands in Phase 2.
-  read_only_schema?: boolean;
+  // Per-attribute lock list applied at render time. Built-ins default
+  // to `DEFAULT_BUILT_IN_LOCKS` per PRD §P5.0; custom fields omit it.
+  locked?: ReadonlyArray<FieldLockKey>;
+  // Marks a seed as feature-author-declared. Custom (`cf_*`) fields
+  // omit it. Drives the formula registry's `origin` classification.
+  built_in?: boolean;
   // Carries the stored source + AST + deps for a custom formula
   // field. Absent on core fields and non-formula custom fields. The
   // grid rebuilds the displayed expression from `ast` on each open so

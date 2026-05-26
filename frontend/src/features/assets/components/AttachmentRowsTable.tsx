@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from "react";
 import {
+  ALL_FIELD_LOCKS,
   DataTable,
+  DEFAULT_BUILT_IN_LOCKS,
   emptyViewState,
   type DataTableColumnDef,
   type FieldDef,
@@ -48,14 +50,16 @@ export function AttachmentRowsTable({
         field_type: "text",
         display_name: "Name",
         read_only: true,
-        read_only_schema: true,
+        built_in: true,
+        locked: DEFAULT_BUILT_IN_LOCKS,
       },
       {
         field_key: fieldKey,
         field_type: "attachment",
         display_name: fieldLabel,
         read_only: readOnly,
-        read_only_schema: true,
+        built_in: true,
+        locked: ALL_FIELD_LOCKS,
       },
     ],
     [fieldKey, fieldLabel, readOnly],

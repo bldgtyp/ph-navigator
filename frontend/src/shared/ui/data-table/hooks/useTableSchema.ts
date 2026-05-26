@@ -81,13 +81,10 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
     [customList, optionsByFieldId],
   );
 
-  const fieldDefs = useMemo<FieldDef[]>(() => {
-    const coreWithFlag = coreFieldDefs.map((fieldDef) => ({
-      ...fieldDef,
-      read_only_schema: true,
-    }));
-    return [...coreWithFlag, ...synthesizedFieldDefs];
-  }, [coreFieldDefs, synthesizedFieldDefs]);
+  const fieldDefs = useMemo<FieldDef[]>(
+    () => [...coreFieldDefs, ...synthesizedFieldDefs],
+    [coreFieldDefs, synthesizedFieldDefs],
+  );
 
   const coreFieldKeys = useMemo(
     () => new Set(fingerprintCoreFieldKeys ?? coreFieldDefs.map((fieldDef) => fieldDef.field_key)),
@@ -119,8 +116,6 @@ function customFieldToFieldDef(
   custom: CustomFieldDef,
   optionsByFieldId: Record<string, readonly FieldOption[]>,
 ): FieldDef {
-  // `read_only_schema` is intentionally absent for custom fields — the
-  // header context menu reads its absence to enable schema-mutation items.
   const fieldDef: FieldDef = {
     field_key: custom.id,
     field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[custom.field_type],

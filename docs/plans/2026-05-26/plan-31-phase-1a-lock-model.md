@@ -1,9 +1,10 @@
 ---
 DATE: 2026-05-26
 TIME: 15:30 ET
-STATUS: PHASE PLAN — depends on PRD acceptance
-        (`docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`).
-        First phase in the rollout. Ships *no* wire-format change.
+STATUS: IMPLEMENTED on 2026-05-26 — every P6 success criterion met
+        (lock model on FieldDef, header double-click for built-in +
+        custom, backend `record_id` slug guard, full test suite green,
+        no wire-format change). Phase 1b unblocks next.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Introduce the per-attribute lock-list model on `FieldDef`,
        migrate every consumer from `read_only_schema` to lock-list

@@ -38,9 +38,8 @@
   --data-table-header-height: 34px;
   --data-table-cell-padding-x: 8px;
   --data-table-header-padding-x: 10px;
-  /* Left-edge tint on header cells with `read_only_schema` (core +
-     system custom fields). User custom fields render without the
-     accent so editors can tell which columns are schema-mutable. */
+  /* Bottom-border tint on header cells whose FieldDef carries any
+     author-declared lock. Token name predates the lock-list model. */
   --phn-header-border-locked: color-mix(in oklab, var(--accent) 35%, transparent);
 }
 

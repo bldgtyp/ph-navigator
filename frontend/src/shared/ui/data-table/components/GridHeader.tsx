@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { GridColumnDragKeyboard } from "../hooks/useGridColumnDragKeyboard";
 import type { GridColumnResize } from "../hooks/useGridColumnResize";
+import { isAttributeLocked, isBuiltInField, isFieldDuplicable } from "../lib/locks";
 import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
 import { AddFieldTailCell } from "./AddFieldTailCell";
 import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
@@ -171,7 +172,11 @@ function DataTableHeaderCell<TRow>({
   headerActions,
 }: DataTableHeaderCellProps<TRow>) {
   const triggerRef = useRef<HTMLTableCellElement | null>(null);
-  const isCustomField = fieldDef ? fieldDef.read_only_schema !== true : false;
+  // Header lock glyph: today equivalent to "is built-in" (built-ins
+  // always carry at least delete + duplicate locks), but the signal is
+  // "has at least one author-declared lock" so it stays correct if a
+  // future custom-field author exposes locks.
+  const schemaLocked = isBuiltInField(fieldDef);
   const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
     .filter(Boolean)
     .join(" ");
@@ -179,14 +184,16 @@ function DataTableHeaderCell<TRow>({
     columnDragKeyboard && !isPrimary
       ? buildHeaderKeyDown(columnIndex, columnDragKeyboard)
       : undefined;
-  const schemaLocked = fieldDef?.read_only_schema === true;
   const description = fieldDef?.description?.trim() ?? "";
   const onDeleteCustomField =
-    isCustomField && headerActions.onDeleteCustomField
+    fieldDef && headerActions.onDeleteCustomField && !isAttributeLocked(fieldDef, "delete")
       ? () => headerActions.onDeleteCustomField?.(column.fieldKey)
       : undefined;
   const onDuplicateCustomField =
-    isCustomField && isDuplicableCustomField(fieldDef) && headerActions.onDuplicateCustomField
+    fieldDef &&
+    isFieldDuplicable(fieldDef) &&
+    fieldTypeSupportsDuplicate(fieldDef) &&
+    headerActions.onDuplicateCustomField
       ? () => headerActions.onDuplicateCustomField?.(column.fieldKey)
       : undefined;
   const onInsertFieldLeft = headerActions.onInsertFieldLeft
@@ -195,21 +202,20 @@ function DataTableHeaderCell<TRow>({
   const onInsertFieldRight = headerActions.onInsertFieldRight
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
-  // Any custom field's double-click or Enter opens the unified config
-  // modal. Core fields and viewer mode have no field-config entry point.
-  const canEditCustomFieldConfig =
-    isCustomField && !readOnly && hasWriteHandler && !!headerActions.onEditCustomFieldConfig;
+  const canEditFieldConfig = Boolean(
+    fieldDef && !readOnly && hasWriteHandler && headerActions.onEditCustomFieldConfig,
+  );
   const onEditCustomFieldConfig =
-    canEditCustomFieldConfig && headerActions.onEditCustomFieldConfig
+    canEditFieldConfig && headerActions.onEditCustomFieldConfig
       ? () => headerActions.onEditCustomFieldConfig?.(column.fieldKey, triggerRef.current)
       : undefined;
-  const doubleClickAction = canEditCustomFieldConfig ? onEditCustomFieldConfig : undefined;
+  const doubleClickAction = canEditFieldConfig ? onEditCustomFieldConfig : undefined;
   const headerKeyDown =
-    canEditCustomFieldConfig || columnDragKeyDown
+    canEditFieldConfig || columnDragKeyDown
       ? (event: ReactKeyboardEvent<HTMLTableCellElement>) => {
           if (
             event.key === "Enter" &&
-            canEditCustomFieldConfig &&
+            canEditFieldConfig &&
             (columnDragKeyboard?.pickedUpColumnIndex ?? null) === null
           ) {
             event.preventDefault();
@@ -227,7 +233,7 @@ function DataTableHeaderCell<TRow>({
       ariaColIndex={columnIndex + 1}
       className={className}
       axisTint={axisTint}
-      fieldEditable={canEditCustomFieldConfig}
+      fieldEditable={canEditFieldConfig}
       fieldEditorOpen={false}
       isPickedUp={pickedUp}
       schemaLocked={schemaLocked}
@@ -267,7 +273,7 @@ function DataTableHeaderCell<TRow>({
           <span
             className="data-table-header-lock"
             data-testid="data-table-header-lock"
-            title="This field is part of the table's built-in schema."
+            title="This field has built-in attributes the user cannot edit."
           >
             <Lock aria-hidden size={12} />
           </span>
@@ -284,7 +290,7 @@ function DataTableHeaderCell<TRow>({
         {fieldDef ? (
           <ColumnHeaderMenu
             fieldDef={fieldDef}
-            canEditOptions={canEditCustomFieldConfig}
+            canEditOptions={canEditFieldConfig}
             onEditOptions={() => onEditCustomFieldConfig?.()}
           />
         ) : null}
@@ -327,7 +333,11 @@ function DataTableHeaderCell<TRow>({
   );
 }
 
-function isDuplicableCustomField(fieldDef: FieldDef | undefined): boolean {
+// Per-type duplicability — single_select / attachment / argb_color
+// excluded because cloning their value (option list / attachment /
+// color slot) isn't defined yet. Independent of the `"duplicate"`
+// lock key, which is the author's policy switch.
+function fieldTypeSupportsDuplicate(fieldDef: FieldDef | undefined): boolean {
   return (
     fieldDef?.field_type === "text" ||
     fieldDef?.field_type === "number" ||

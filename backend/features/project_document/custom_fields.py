@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from features.project_document.document import SingleSelectOption
@@ -24,6 +24,12 @@ CUSTOM_FIELD_ID_PATTERN = r"^cf_[A-Za-z0-9_-]+$"
 CUSTOM_FIELD_DISPLAY_NAME_MAX = 120
 CUSTOM_FIELD_DESCRIPTION_MAX = 280
 CUSTOM_FIELD_KEY_MAX = 80
+
+# `record_id` is reserved for the Phase 2 identifier slot. Guard ships
+# now so an MCP / REST caller cannot land a custom field that collides
+# before the semantics arrive.
+RESERVED_FIELD_KEY_RECORD_ID = "record_id"
+RESERVED_CUSTOM_FIELD_KEYS: frozenset[str] = frozenset({RESERVED_FIELD_KEY_RECORD_ID})
 
 
 def normalize_display_name(value: str) -> str:
@@ -85,6 +91,17 @@ class CustomFieldDef(BaseModel):
     description: str | None = Field(default=None, max_length=CUSTOM_FIELD_DESCRIPTION_MAX)
     created_at: datetime
     created_by: str | None = None
+
+    @field_validator("field_key")
+    @classmethod
+    def _reject_reserved_field_key(cls, value: str | None) -> str | None:
+        # `id` is already `cf_*`-pattern-locked; the advisory `field_key`
+        # slug is the only surface MCP / REST callers can override.
+        if value is not None and value in RESERVED_CUSTOM_FIELD_KEYS:
+            raise ValueError(
+                f"field_key {value!r} is reserved and cannot be used on a custom field"
+            )
+        return value
 
 
 SHORT_TEXT_MAX_LENGTH = 4000
