@@ -405,18 +405,12 @@ class ProjectDocumentV1(BaseModel):
             name_seen[normalized_name] = custom_field.display_name
 
         room_ids: set[str] = set()
-        room_numbers: set[str] = set()
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
         for room in rooms_table.rows:
             if room.id in room_ids:
                 raise ValueError(f"Duplicate room id: {room.id}")
             room_ids.add(room.id)
-
-            normalized_number = normalize_display_name(room.number)
-            if normalized_number in room_numbers:
-                raise ValueError(f"Duplicate room number: {room.number}")
-            room_numbers.add(normalized_number)
 
             if room.floor_level not in floor_option_ids:
                 raise ValueError(f"Missing floor-level option for room {room.id}: {room.floor_level}")
