@@ -68,7 +68,7 @@ def build_field_registry(
         if typed_column_type is not None:
             formula_type: Literal["text", "number", "single_select", "formula", "bool"] = typed_column_type
         else:
-            formula_type = _formula_facing_field_type(field.field_type.value)
+            formula_type = formula_facing_field_type(field.field_type.value)
         entries.append(
             FieldRegistryEntry(
                 field_id=field.field_key,
@@ -80,9 +80,13 @@ def build_field_registry(
     return tuple(entries)
 
 
-def _formula_facing_field_type(
+def formula_facing_field_type(
     field_type: str,
 ) -> Literal["text", "number", "single_select", "formula", "bool"]:
+    """Map a stored `CustomFieldType` value to the evaluator-facing
+    type used by `FieldRegistryEntry.field_type`. Public so seed
+    builders (e.g. `tables/rooms.py::_build_rooms_record_id_seed`)
+    can reuse the same mapping instead of inlining it."""
     if field_type in ("short_text", "long_text", "url"):
         return "text"
     if field_type == "number":

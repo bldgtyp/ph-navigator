@@ -51,6 +51,7 @@ from features.project_document.formula.resolver import (
     FieldRegistryEntry,
     build_field_registry,
     detect_cycles,
+    formula_facing_field_type,
     resolve_refs,
 )
 
@@ -84,6 +85,7 @@ __all__ = [
     "detect_cycles",
     "evaluate",
     "evaluate_table_formulas",
+    "formula_facing_field_type",
     "parse",
     "resolve_refs",
 ]

@@ -1,10 +1,25 @@
 ---
 DATE: 2026-05-26
 TIME: 15:30 ET
-STATUS: PHASE PLAN — depends on Phase 1b complete + PRD acceptance
-        (`docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`).
-        Retires the Plan-30 `IdentifierConfig` abstraction. Bumps
-        document schema version 3 → 4.
+STATUS: BACKEND COHORT LANDED 2026-05-26 (P4.1 + P4.2). Frontend
+        (P4.3, P4.4) bundles with the deferred Phase 1c frontend
+        reshape — useTableSchema doesn't yet consume `body.tables.
+        <table>.field_defs`, so the data-table-level identifier
+        deletion would land inert until that lands too. Backend
+        artifacts: `record_id` formula seed on Rooms
+        (`concat({Number}, " — ", {Name})`); `record_id` seed on
+        Pumps replacing the Phase-1b `tag` entry (display_name "Tag");
+        module-load assertions in `tables/rooms.py` + `tables/
+        pumps.py`; `_require_exactly_one_record_id` validator in
+        `document.py::ProjectDocumentV1.validate_document_
+        references`; `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 4`
+        with `schema_version: Literal[4]` (rejects v3 bodies);
+        `reject_reserved_field_key` guard on `apply_add_field` +
+        `apply_duplicate_field`; `empty_project_document` seeds
+        Rooms + Pumps field_defs verbatim so the validator never
+        fires zero-record_id on a fresh document. `uv run ty check
+        features/` clean. Plan-30 superseded. Frontend P4.3 / P4.4
+        / P4.5 docs + Playwright + backend test rewrites all remain.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Promote the pinned identifier column from a prop-driven
        synthetic to a real persisted FieldDef whose `field_key` is

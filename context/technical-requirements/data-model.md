@@ -698,8 +698,15 @@ Rules (post-Phase 1b):
     - `locked` arrays — render-time overlay, NOT persisted (see §6.6.2);
     - the canonical ordered list of built-in `field_key`s — drives the
       schema fingerprint's built-in slice.
-- `schema_version: 3` is the v3 wire shape. No back-compat reader for
-  v2 — pre-deploy posture.
+- `schema_version: 4` is the v4 wire shape (Phase 2). v4 promotes the
+  pinned identifier to a real `record_id` FieldDef on every
+  FieldDef-capable table: Rooms ships a formula seed
+  (`concat({Number}, " — ", {Name})`); Pumps' Phase-1b `tag` seed is
+  renamed to `record_id` (display label "Tag"). `validate_document_
+  references` enforces that every FieldDef-capable table contains a
+  `record_id` entry, and `apply_add_field` / `apply_duplicate_field`
+  reject `field_key="record_id"` on custom-side writes. No back-compat
+  reader for v2 / v3 — pre-deploy posture.
 
 #### 6.6.2 `TableFieldDef` shape
 
