@@ -9,6 +9,7 @@ re-submits with `acknowledge_destructive=True`.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import cast
 
 from starlette import status
@@ -20,6 +21,7 @@ from features.project_document.custom_fields import (
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
+from features.project_document.formula import evaluate_table_formulas
 from features.project_document.mutations.guards import (
     find_field,
     read_rows_from_envelope,
@@ -30,6 +32,12 @@ from features.project_document.mutations.models import (
     TEXT_TO_SINGLE_SELECT_OPTION_CAP,
     ChangeTypeMutation,
 )
+
+# Cap on per-row before/after entries captured in the audit payload.
+# Beyond this, the payload carries `audit_rows_truncated: True` and the
+# first AUDIT_ROW_CAP entries — enough for after-the-fact recovery in
+# typical project sizes while keeping the action-log row bounded.
+AUDIT_ROW_CAP = 100
 from features.project_document.mutations.options_ops import validate_default_option_id
 from features.project_document.options import (
     OPTION_COLOR_PALETTE,
@@ -133,26 +141,87 @@ def _try_coerce_for_change_type(
     return False, None, f"unsupported_to_type:{to_type.value}"
 
 
+def _read_source_value(
+    row: object,
+    field_id: str,
+    from_type: CustomFieldType,
+    capability: TableFieldRegistry,
+    formula_overlay: dict[str, dict[str, object]],
+) -> object | None:
+    """Read the per-row source value for a type-change preflight.
+
+    For non-formula sources, reads from `custom_values[field_id]`.
+    For formula sources, reads the computed overlay re-evaluated against
+    the live document. Error overlays (`{"error": "..."}`) snapshot as
+    `None` — there's nothing meaningful to coerce — and they fall into
+    the incompatible-row preflight count for ack tracking.
+    """
+    if from_type is CustomFieldType.formula:
+        row_id = str(getattr(row, "id", ""))
+        per_row = formula_overlay.get(row_id, {})
+        value = per_row.get(field_id)
+        if isinstance(value, dict) and "error" in value:
+            return None
+        return value
+    custom_values = capability.read_row_custom_values(row)
+    return custom_values.get(field_id)
+
+
+def _coerce_formula_snapshot_to_text(value: object) -> str | None:
+    """Stringify a formula's computed value for the snapshot path.
+
+    The frontend evaluator and `evaluate_table_formulas` both emit
+    encoded values: numbers as int/float, text as str, bools as bool.
+    This helper produces the locale-independent canonical text form
+    that matches the wire-format we already use for number→text
+    coercion, so a formula→text→formula round-trip stays stable.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return _format_number_for_text(value)
+    return str(value)
+
+
 def _materialize_options_for_text_to_select(
     rows: list[object],
     field_id: str,
     capability: TableFieldRegistry,
+    *,
+    source_value_for: Callable[[object], object | None],
 ) -> tuple[list[SingleSelectOption], list[tuple[str, object, str]]]:
     """Enumerate distinct trimmed non-empty source values into options.
 
     Returns the new option list (capped at TEXT_TO_SINGLE_SELECT_OPTION_CAP)
     and the list of `(row_id, raw_value, reason)` diagnostics for rows
     whose value falls past the cap.
+
+    `source_value_for(row)` returns the raw cell value, abstracting the
+    custom_values vs formula-overlay split so this helper handles both
+    `text → single_select` and `formula → single_select` uniformly.
     """
     seen: dict[str, SingleSelectOption] = {}
     overflow: list[tuple[str, object, str]] = []
     order_index = 0
     for row in rows:
-        custom_values = capability.read_row_custom_values(row)
-        raw_value = custom_values.get(field_id)
-        if not isinstance(raw_value, str):
+        raw_value = source_value_for(row)
+        # Render numbers/bools into their canonical text form before
+        # materializing options so a `formula → single_select` build
+        # produces the same option list as `long_text → single_select`
+        # on the same logical values.
+        if isinstance(raw_value, str):
+            text_value = raw_value
+        elif isinstance(raw_value, bool):
+            text_value = "true" if raw_value else "false"
+        elif isinstance(raw_value, (int, float)):
+            text_value = _format_number_for_text(raw_value)
+        else:
             continue
-        stripped = raw_value.strip()
+        stripped = text_value.strip()
         if not stripped:
             continue
         normalized = normalize_display_name(stripped)
@@ -226,6 +295,18 @@ def apply_change_type(
 
     rows = read_rows_from_envelope(body, mutation.table_key)
 
+    # When converting FROM formula, re-evaluate the live document one
+    # last time so the snapshot pass reads the actual current computed
+    # value, not a stale overlay. Empty when from_type is not formula.
+    formula_overlay: dict[str, dict[str, object]] = {}
+    if from_type is CustomFieldType.formula:
+        formula_overlay = evaluate_table_formulas(capability, body)
+
+    # Source-value reader closes over `formula_overlay` so the rest of
+    # the function treats formula and custom_values sources uniformly.
+    def source_value(row: object) -> object | None:
+        return _read_source_value(row, mutation.field_id, from_type, capability, formula_overlay)
+
     target_option_list: list[SingleSelectOption] | None = None
     generated_options: list[SingleSelectOption] | None = None
     overflow_diagnostics: list[tuple[str, object, str]] = []
@@ -243,7 +324,7 @@ def apply_change_type(
             target_option_list = generated_options
         else:
             generated_options, overflow_diagnostics = _materialize_options_for_text_to_select(
-                rows, mutation.field_id, capability
+                rows, mutation.field_id, capability, source_value_for=source_value
             )
             target_option_list = generated_options
     elif policy == "substitute_labels":
@@ -258,8 +339,52 @@ def apply_change_type(
     compatible_writes: list[tuple[str, object | None]] = []
     for row in rows:
         row_id = str(getattr(row, "id", ""))
-        custom_values = capability.read_row_custom_values(row)
-        raw_value = custom_values.get(mutation.field_id)
+        raw_value = source_value(row)
+
+        # `discard_then_author` (primitive | formula → formula): every
+        # non-empty cell becomes an incompatible preflight entry; the
+        # ack discards them. The new formula source rides in the
+        # bundle's `formula_source` field — `apply_set_formula` writes
+        # the parsed config in the next bundle step.
+        if policy == "discard_then_author":
+            if raw_value is None or raw_value == "":
+                compatible_writes.append((row_id, None))
+                continue
+            incompatible.append(
+                {"row_id": row_id, "raw_value": raw_value, "reason": "discarded_for_formula_authoring"}
+            )
+            continue
+
+        # `formula → primitive`: read from overlay (above); then convert
+        # the computed value to canonical text and run target coercion.
+        # For text targets the snapshot is lossless; for number/url the
+        # coerce step surfaces failed parses to the preflight.
+        if from_type is CustomFieldType.formula and policy != "create_options":
+            snapshot_text = _coerce_formula_snapshot_to_text(raw_value)
+            ok, coerced, reason = _try_coerce_for_change_type(
+                snapshot_text, to_type, target_option_list=target_option_list
+            )
+            if ok:
+                compatible_writes.append((row_id, coerced))
+            else:
+                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
+            continue
+
+        # `formula → single_select` (policy "create_options"): the
+        # `_materialize_options_for_text_to_select` helper already saw
+        # the overlay values; here we coerce each row's text-form value
+        # against the just-built option list.
+        if from_type is CustomFieldType.formula and policy == "create_options":
+            snapshot_text = _coerce_formula_snapshot_to_text(raw_value)
+            ok, coerced, reason = _try_coerce_for_change_type(
+                snapshot_text, to_type, target_option_list=target_option_list
+            )
+            if ok:
+                compatible_writes.append((row_id, coerced))
+            else:
+                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
+            continue
+
         if policy == "substitute_labels" and label_lookup_for_substitute is not None:
             if raw_value is None or raw_value == "":
                 compatible_writes.append((row_id, None))
@@ -280,6 +405,7 @@ def apply_change_type(
             else:
                 incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
             continue
+
         ok, coerced, reason = _try_coerce_for_change_type(raw_value, to_type, target_option_list=target_option_list)
         if ok:
             compatible_writes.append((row_id, coerced))
