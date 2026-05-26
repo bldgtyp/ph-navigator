@@ -12,8 +12,8 @@ preflight in `ChangeTypeMutation`).
 from __future__ import annotations
 
 import re
+import secrets
 from collections.abc import Iterable, Mapping
-from collections.abc import Iterable as IterableT
 from typing import cast
 
 from starlette import status
@@ -119,7 +119,7 @@ def validate_option_list(options: Iterable[SingleSelectOption]) -> None:
 
 
 def find_cells_referencing_option(
-    rows: IterableT[Mapping[str, object]],
+    rows: Iterable[Mapping[str, object]],
     field_id: str,
     option_id: str,
     *,
@@ -159,6 +159,4 @@ OPTION_COLOR_PALETTE: tuple[str, ...] = (
 
 def mint_option_id() -> str:
     """Mint a fresh `opt_*` id matching the SingleSelectOption pattern."""
-    import secrets
-
     return f"opt_{secrets.token_hex(8)}"

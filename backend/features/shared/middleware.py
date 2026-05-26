@@ -12,6 +12,7 @@ from starlette import status
 
 from config import settings
 from features.shared.errors import error_response
+from features.shared.http import client_ip
 
 CallNext = Callable[[Request], Awaitable[Response]]
 
@@ -27,13 +28,6 @@ def _accept_request_id(raw: str | None) -> str:
     if len(raw) > _REQUEST_ID_MAX or not raw.isprintable():
         return str(uuid4())
     return raw
-
-
-def _client_ip(request: Request) -> str | None:
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip() or None
-    return request.client.host if request.client else None
 
 
 def _int_or_none(value: str | None) -> int | None:
@@ -57,7 +51,7 @@ async def request_context_middleware(request: Request, call_next: CallNext) -> R
         request_id=request_id,
         method=request.method,
         path=request.url.path,
-        client_ip=_client_ip(request),
+        client_ip=client_ip(request),
     )
 
     start = perf_counter()
