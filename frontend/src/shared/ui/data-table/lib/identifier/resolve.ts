@@ -1,5 +1,6 @@
 import type { DataTableColumnDef, FieldDef, IdentifierConfig } from "../../types";
 import { IDENTIFIER_COLUMN_ID, IDENTIFIER_HEADER_LABEL } from "../../types";
+import { ALL_FIELD_LOCKS } from "../locks";
 import { formatClipboardValue } from "../paste/tsv";
 
 // Plan 30 — pinned identifier column resolution. Two shapes
@@ -53,18 +54,18 @@ export type ApplyIdentifierResult<TRow> = {
   resolution: IdentifierResolution<TRow>;
 };
 
-// Synthetic FieldDef for the `__record_id__` slot. The field is
-// `read_only: true` so the field-editor registry returns `none` (no
-// inline edit) and `planFill` silently skips it (matches the paste
-// guard's intent in coercePasteWrites). `read_only_schema: true` keeps
-// the header context menu from offering rename / type-change / delete.
+// `read_only: true` makes the field-editor registry return `none` and
+// `planFill` skip the cell (matches the paste guard in
+// coercePasteWrites). Synthetic column retires in Phase 2 when
+// `record_id` becomes a real persisted FieldDef.
 function syntheticIdentifierFieldDef(): FieldDef {
   return {
     field_key: IDENTIFIER_COLUMN_ID,
     field_type: "text",
     display_name: IDENTIFIER_HEADER_LABEL,
     read_only: true,
-    read_only_schema: true,
+    built_in: true,
+    locked: ALL_FIELD_LOCKS,
   };
 }
 

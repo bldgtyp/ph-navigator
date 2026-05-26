@@ -75,6 +75,7 @@ export type {
   DataTableProps,
   EditCustomFieldBundleRequest,
   FieldDef,
+  FieldLockKey,
   FieldOption,
   FilterCondition,
   FilterOperator,
@@ -86,3 +87,12 @@ export type {
   ViewState,
   WriteOp,
 } from "./types";
+export {
+  ALL_FIELD_LOCKS,
+  DEFAULT_BUILT_IN_LOCKS,
+  FIELD_LOCKED_TOOLTIP,
+  isAttributeLocked,
+  isBuiltInField,
+  isFieldDeletable,
+  isFieldDuplicable,
+} from "./lib/locks";

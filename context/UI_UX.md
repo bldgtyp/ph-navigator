@@ -381,6 +381,18 @@ to new options, and reports the new options in a single toast:
 the paste rolls back the cell writes **and** the new options
 together.
 
+**Per-column field config.** Right-click on a column header (or
+double-click the header label — separate from the resize handle's
+fit-to-content double-click) opens the field-config modal. The modal
+is the unified entry point for renaming a column, editing its
+description, editing options on single-select columns, and editing
+formula source on formula columns. Built-in (feature-author-declared)
+fields and user-created custom fields both open the same modal;
+per-attribute locks (declared in feature code) disable individual
+sections with a uniform `"Field Locked"` tooltip rather than hiding
+the modal. Locked-attribute presence shows as a small lock glyph in
+the header.
+
 **Locked / read-only mode.** When the open version is locked, the
 visitor is a Viewer, or another permission boundary applies, the table
 renders in read-only mode: no toolbar mutations except sort/filter/group

@@ -110,15 +110,44 @@ type FieldDef = {
   display_name: string;
   config?: FieldConfig;
   read_only?: boolean;
-  read_only_schema?: boolean;   // true = core field; schema-mutation menu items hidden (US-CF-6)
+  // Plan-31 Phase 1a — per-attribute lock list. Built-in (feature-
+  // author-declared) seeds carry `built_in: true` plus a `locked`
+  // array naming the attributes the user cannot edit. Defaults to
+  // `["delete", "duplicate"]` for built-ins; user-created custom
+  // fields leave it absent (= fully editable). Not persisted —
+  // derived from feature code at load time so tightening / loosening
+  // locks in code takes effect on next render without rewriting
+  // documents.
+  built_in?: boolean;
+  locked?: ReadonlyArray<FieldLockKey>;
   required?: boolean;
   description?: string;
 };
+
+type FieldLockKey =
+  | "display_name"
+  | "field_type"
+  | "options"
+  | "default"
+  | "description"
+  | "formula"
+  | "delete"
+  | "duplicate";
 
 type CoerceResult<T> =
   | { ok: true; value: T | null }
   | { ok: false; error: string; raw: string };
 ```
+
+**Lock semantics.** Each `FieldDef` declares which attributes the user
+may *not* edit. The unified field-config modal opens for both built-in
+and custom fields; locked sections render disabled with the uniform
+`"Field Locked"` tooltip (per `plan-31` Q-F5). Default policy: built-ins
+ship `["delete", "duplicate"]`; attachments ship the all-locked array
+(no field is user-authorable). Phase 1a additionally enforces a hard
+rule that the type picker stays disabled on every built-in regardless
+of lock-list contents — Phase 3 lifts that rule once the storage path
+has been reshaped (see `data-model.md` §6.6 + `plan-31` PRD §P0.1).
 
 V2 v1 field types:
 
@@ -348,14 +377,18 @@ tables drop their identifier uniqueness validators in later phases).
 - Focus uses an outline channel. Selection and fill preview use separate
   border/box-shadow channels.
 - Tint palette is an explicit token set, not runtime HSL blending.
-- Locked / unlocked field state (core vs custom; US-CF-11) is a
-  **header-only** signal communicated through a non-background channel
-  (lock glyph and/or 2–3 px left border accent on a dedicated token,
-  e.g. `--phn-header-border-locked`). It must not consume a fifth
-  tint channel — the existing four header tints (filter / sort /
-  group / future) remain reserved for view state and layer on top
-  of the locked-state indicator. The indicator is visible to Viewers
-  as well as Editors.
+- Locked-attribute state (any `FieldDef` whose `locked` array is
+  non-empty — equivalently, every `built_in: true` seed under the
+  Plan-31 Phase 1a default policy) is a **header-only** signal
+  communicated through a non-background channel (lock glyph and/or
+  2–3 px bottom border accent on a dedicated token, e.g.
+  `--phn-header-border-locked`). It must not consume a fifth tint
+  channel — the existing four header tints (filter / sort / group /
+  future) remain reserved for view state and layer on top of the
+  locked-state indicator. The indicator is visible to Viewers as
+  well as Editors. The indicator says "this field has at least one
+  frozen attribute"; per-attribute granularity surfaces inside the
+  field-config modal via the `"Field Locked"` tooltip (Q-F5).
 - Container has `tabIndex={0}` and owns bubbled keyboard handling.
 - Use grid semantics: `role="grid"` plus visual
   `aria-rowindex`/`aria-colindex`.

@@ -23,7 +23,7 @@ export function ColumnHeaderMenu({
   extraItems,
 }: ColumnHeaderMenuProps) {
   const [open, setOpen] = useState(false);
-  const showEditField = canEditOptions && fieldDef.read_only_schema !== true;
+  const showEditField = canEditOptions;
   const extraContent = extraItems?.(fieldDef);
   if (!showEditField && !extraContent) return null;
   return (

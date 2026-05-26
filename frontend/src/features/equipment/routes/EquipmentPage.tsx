@@ -2,8 +2,10 @@ import "../../assets/attachments.css";
 import "../equipment.css";
 import { useMemo, useState } from "react";
 import {
+  ALL_FIELD_LOCKS,
   DataTable,
   type DataTableColumnDef,
+  DEFAULT_BUILT_IN_LOCKS,
   emptyViewState,
   type FieldDef,
   type ViewState,
@@ -57,12 +59,19 @@ type PlaceholderEquipmentRow = {
 };
 
 const PLACEHOLDER_FIELD_DEFS: FieldDef[] = [
-  { field_key: "name", field_type: "text", display_name: "Name", read_only_schema: true },
+  {
+    field_key: "name",
+    field_type: "text",
+    display_name: "Name",
+    built_in: true,
+    locked: DEFAULT_BUILT_IN_LOCKS,
+  },
   {
     field_key: PUMP_DATASHEET_FIELD_KEY,
     field_type: "attachment",
     display_name: "Datasheet",
-    read_only_schema: true,
+    built_in: true,
+    locked: ALL_FIELD_LOCKS,
   },
 ];
 

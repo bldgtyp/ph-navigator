@@ -88,10 +88,14 @@ describe("applyIdentifierConfig", () => {
     expect(result.resolution.columnId).toBe(IDENTIFIER_COLUMN_ID);
     expect(result.columnDefs[0]?.id).toBe(IDENTIFIER_COLUMN_ID);
     expect(result.columnDefs[0]?.accessor({ id: "p1", tag: "P-01", flow_lpm: 1 })).toBe("ERROR");
-    // Synthetic FieldDef registered for the ERROR slot.
+    // Synthetic FieldDef carries `built_in: true` + the all-locked
+    // array so the modal / menu suppress every schema mutation.
     expect(result.fieldDefs[0]?.field_key).toBe(IDENTIFIER_COLUMN_ID);
     expect(result.fieldDefs[0]?.read_only).toBe(true);
-    expect(result.fieldDefs[0]?.read_only_schema).toBe(true);
+    expect(result.fieldDefs[0]?.built_in).toBe(true);
+    expect(result.fieldDefs[0]?.locked).toContain("delete");
+    expect(result.fieldDefs[0]?.locked).toContain("display_name");
+    expect(result.fieldDefs[0]?.locked).toContain("field_type");
   });
 
   test("kind:'computed' prepends synthetic __record_id__ column and FieldDef", () => {

@@ -40,7 +40,14 @@ const CUSTOM_ROWS: CustomRow[] = ROWS.map((row) => ({
   custom: { cf_notes: "" },
 }));
 const CUSTOM_FIELD_DEFS: FieldDef[] = [
-  { field_key: "number", field_type: "text", display_name: "Number", read_only_schema: true },
+  {
+    field_key: "number",
+    field_type: "text",
+    custom_field_type: "short_text",
+    display_name: "Number",
+    built_in: true,
+    locked: ["delete", "duplicate"],
+  },
   {
     field_key: "cf_notes",
     field_type: "text",
@@ -104,11 +111,19 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     expect(notes.querySelector(".data-table-header-edit-chevron")).toBeNull();
   });
 
-  test("core headers do not expose data-field-editable or legacy chevron", () => {
+  test("built-in headers expose data-field-editable so the modal opens for them too", () => {
     renderCustomFieldTable({ onEditCustomFieldBundle: vi.fn().mockResolvedValue(undefined) });
     const header = getColumnHeader("Number");
-    expect(header).not.toHaveAttribute("data-field-editable");
+    expect(header).toHaveAttribute("data-field-editable", "true");
     expect(header.querySelector(".data-table-header-edit-chevron")).toBeNull();
+  });
+
+  test("double-click on a built-in header opens the FieldConfigModal", () => {
+    renderCustomFieldTable({ onEditCustomFieldBundle: vi.fn().mockResolvedValue(undefined) });
+    const number = getColumnHeader("Number");
+    fireEvent.doubleClick(number);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).not.toBeDisabled();
   });
 
   test("readOnly removes the data-field-editable attribute and legacy chevron", () => {

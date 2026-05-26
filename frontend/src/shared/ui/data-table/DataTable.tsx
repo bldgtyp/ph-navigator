@@ -991,14 +991,9 @@ export function DataTable<TRow>({
     [fieldDefs],
   );
 
-  // Modal source FieldDef. Core columns (`read_only_schema: true`)
-  // collapse to `undefined` so a stale gesture cannot render the
-  // config modal against an app-managed field.
   const configModalFieldDef = useMemo(() => {
     if (!configModalState) return undefined;
-    const fieldDef = fieldDefByKey.get(configModalState.fieldKey);
-    if (!fieldDef || fieldDef.read_only_schema === true) return undefined;
-    return fieldDef;
+    return fieldDefByKey.get(configModalState.fieldKey);
   }, [configModalState, fieldDefByKey]);
   // Pre-mapped row data for the change-type preflight. Gated on modal
   // open so unrelated cell writes don't drag the per-row map onto the

@@ -53,13 +53,16 @@ function openViaContextMenu() {
 }
 
 describe("HeaderContextMenu", () => {
-  test("right-click on a core-field header opens menu with view-state items only", () => {
+  test("right-click on a fully-locked built-in header surfaces only view-state items", () => {
     const coreField: FieldDef = {
       field_key: "name",
       field_type: "text",
       display_name: "Name",
-      read_only_schema: true,
+      built_in: true,
+      locked: ["delete", "duplicate"],
     };
+    // `onDeleteField` is wired but the lock list suppresses it. No
+    // `onEditFieldConfig` is wired, so Edit field… is also absent.
     render(<Wrapper fieldDef={coreField} onDeleteField={vi.fn()} />);
     openViaContextMenu();
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
@@ -101,17 +104,47 @@ describe("HeaderContextMenu", () => {
     expect(onEditFieldConfig).toHaveBeenCalledTimes(1);
   });
 
-  test("Edit field… is absent on core fields", () => {
+  test("Edit field… IS available on built-in fields (Phase 1a — modal disables locked sections)", () => {
     const coreField: FieldDef = {
       field_key: "name",
       field_type: "text",
       display_name: "Name",
-      read_only_schema: true,
+      built_in: true,
+      locked: ["delete", "duplicate"],
     };
     render(<Wrapper fieldDef={coreField} onEditFieldConfig={vi.fn()} />);
     openViaContextMenu();
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
-    expect(items).not.toContain("Edit field…");
+    expect(items[0]).toBe("Edit field…");
+  });
+
+  test("Delete field is suppressed when the lock list includes 'delete'", () => {
+    const built: FieldDef = {
+      field_key: "name",
+      field_type: "text",
+      display_name: "Name",
+      built_in: true,
+      locked: ["delete", "duplicate"],
+    };
+    render(<Wrapper fieldDef={built} onDeleteField={vi.fn()} onDuplicateField={vi.fn()} />);
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).not.toContain("Delete field");
+    expect(items).not.toContain("Duplicate field");
+  });
+
+  test("Delete field surfaces when the lock list omits 'delete'", () => {
+    const unlocked: FieldDef = {
+      field_key: "unlocked_builtin",
+      field_type: "text",
+      display_name: "Unlocked",
+      built_in: true,
+      locked: [],
+    };
+    render(<Wrapper fieldDef={unlocked} onDeleteField={vi.fn()} />);
+    openViaContextMenu();
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).toContain("Delete field");
   });
 
   test("viewer mode never opens the menu (browser default surfaces instead)", () => {
@@ -188,7 +221,8 @@ describe("HeaderContextMenu", () => {
       field_key: "name",
       field_type: "text",
       display_name: "Name",
-      read_only_schema: true,
+      built_in: true,
+      locked: ["delete", "duplicate"],
     };
     render(
       <Wrapper

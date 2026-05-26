@@ -45,18 +45,25 @@ describe("useTableSchema", () => {
     expect(result.current.fieldDefs[3]?.field_key).toBe("cf_owner");
   });
 
-  test("sets read_only_schema on core fields and omits it on custom fields", () => {
+  test("passes seed FieldDef shape through verbatim — no read_only_schema stamping", () => {
+    const seedWithLocks: FieldDef[] = coreFieldDefs.map((fieldDef) => ({
+      ...fieldDef,
+      built_in: true,
+      locked: ["delete", "duplicate"],
+    }));
     const { result } = renderHook(() =>
       useTableSchema({
         tableKey: "rooms",
-        coreFieldDefs,
+        coreFieldDefs: seedWithLocks,
         customFields: [customField("cf_notes")],
       }),
     );
 
-    expect(result.current.fieldDefs[0]?.read_only_schema).toBe(true);
-    expect(result.current.fieldDefs[1]?.read_only_schema).toBe(true);
-    expect(result.current.fieldDefs[2]?.read_only_schema).toBeUndefined();
+    expect(result.current.fieldDefs[0]?.built_in).toBe(true);
+    expect(result.current.fieldDefs[0]?.locked).toEqual(["delete", "duplicate"]);
+    expect(result.current.fieldDefs[1]?.built_in).toBe(true);
+    expect(result.current.fieldDefs[2]?.built_in).toBeUndefined();
+    expect(result.current.fieldDefs[2]?.locked).toBeUndefined();
   });
 
   test("custom FieldDef.field_key is the cf_* id", () => {
