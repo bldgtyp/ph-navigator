@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Query, Request
 from starlette import status
 
-from features.auth.models import UserPublic
-from features.auth.routes import require_current_user
+from features.auth.routes import CurrentUser
 from features.catalogs.glazing_types.models import (
     CatalogGlazingTypeCreateRequest,
     CatalogGlazingTypeListResponse,
@@ -23,8 +22,6 @@ from features.catalogs.glazing_types.service import (
     reactivate_glazing_type,
     update_glazing_type,
 )
-
-CurrentUser = Annotated[tuple[UserPublic, object], Depends(require_current_user)]
 
 router = APIRouter(prefix="/api/v1/catalogs/glazing-types", tags=["catalogs"])
 

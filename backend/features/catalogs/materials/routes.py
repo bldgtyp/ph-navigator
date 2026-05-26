@@ -9,11 +9,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Query, Request
 from starlette import status
 
-from features.auth.models import UserPublic
-from features.auth.routes import require_current_user
+from features.auth.routes import CurrentUser
 from features.catalogs.materials.models import (
     CatalogMaterialCreateRequest,
     CatalogMaterialListResponse,
@@ -28,8 +27,6 @@ from features.catalogs.materials.service import (
     reactivate_material,
     update_material,
 )
-
-CurrentUser = Annotated[tuple[UserPublic, object], Depends(require_current_user)]
 
 router = APIRouter(prefix="/api/v1/catalogs/materials", tags=["catalogs"])
 
