@@ -28,6 +28,7 @@ from features.project_document.document import (
     RoomsTableEnvelope,
     SingleSelectOption,
 )
+from features.project_document.mutations import dispatcher as mutations_dispatcher
 from features.project_document.schema_mutations import (
     AddFieldMutation,
     ChangeTypeMutation,
@@ -622,13 +623,13 @@ def test_apply_schema_mutation_runs_full_document_validation(
     preflight missed still fires before the draft is updated."""
     body = _empty_body()
     calls: list[object] = []
-    real_validate = schema_mutations.validate_document
+    real_validate = mutations_dispatcher.validate_document
 
     def spy(raw_body: object) -> ProjectDocumentV1:
         calls.append(raw_body)
         return real_validate(raw_body)
 
-    monkeypatch.setattr(schema_mutations, "validate_document", spy)
+    monkeypatch.setattr(mutations_dispatcher, "validate_document", spy)
 
     mutation = AddFieldMutation(
         kind="addField",
