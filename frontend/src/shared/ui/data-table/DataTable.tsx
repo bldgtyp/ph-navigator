@@ -44,6 +44,7 @@ import { useGridFill } from "./hooks/useGridFill";
 import { reorderColumnIds, useGridColumns } from "./hooks/useGridColumns";
 import { useGridColumnDragKeyboard } from "./hooks/useGridColumnDragKeyboard";
 import { useGridColumnResize } from "./hooks/useGridColumnResize";
+import { DataTableErrorBoundary } from "./components/DataTableErrorBoundary";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { SummaryBar } from "./components/SummaryBar";
@@ -988,6 +989,7 @@ export function DataTable<TRow>({
     ) : null;
 
   return (
+    <DataTableErrorBoundary>
     <div className={`data-table-shell data-table-shell-${density}`}>
       <GridToolbar
         readOnly={readOnly}
@@ -1176,6 +1178,7 @@ export function DataTable<TRow>({
         </SortableContext>
       </DndContext>
     </div>
+    </DataTableErrorBoundary>
   );
 }
 

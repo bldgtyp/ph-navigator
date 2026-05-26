@@ -957,6 +957,57 @@ def test_change_type_single_select_to_text_substitutes_label() -> None:
     assert audit["cleared_row_count"] == 0
 
 
+def test_change_type_single_select_to_number_coerces_numeric_labels() -> None:
+    # Labels "10" and "20" should parse as numbers; label "A" should clear.
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(
+        body,
+        options=[
+            SingleSelectOption(id="opt_ten", label="10", color="#111111", order=1.0),
+            SingleSelectOption(id="opt_twenty", label="20", color="#222222", order=2.0),
+            SingleSelectOption(id="opt_a", label="A", color="#333333", order=3.0),
+        ],
+    )
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_ss": "opt_ten"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_ss": "opt_twenty"})
+    body = _with_room(body, room_id="rm_3", number="103", custom={"cf_ss": "opt_a"})
+
+    field = body.tables.rooms.custom_fields[0]
+    # First call: ack required since "A" can't parse.
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=_make_change_type_target("cf_ss", field, CustomFieldType.number),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    assert excinfo.value.status_code == 422
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_coercion_preflight_required"
+    details = cast(dict[str, object], detail["details"])
+    assert details["incompatible_row_count"] == 1
+
+    ack = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=_make_change_type_target("cf_ss", field, CustomFieldType.number),
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, ack)
+    assert next_body.tables.rooms.custom_fields[0].field_type is CustomFieldType.number
+    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert rows["rm_1"]["cf_ss"] == 10
+    assert rows["rm_2"]["cf_ss"] == 20
+    assert "cf_ss" not in rows["rm_3"]
+    # Option list is dropped when leaving single_select.
+    assert "rooms.cf_ss" not in next_body.single_select_options
+    assert audit["cleared_row_count"] == 1
+
+
 def test_change_type_rejects_illegal_pair_number_to_url() -> None:
     body = _seed_floor_option(_empty_body())
     body = _with_field(body, _make_custom_field("cf_n", display_name="N", field_type=CustomFieldType.number))

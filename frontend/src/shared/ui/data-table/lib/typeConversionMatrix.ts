@@ -34,6 +34,9 @@ export const CONVERSION_MATRIX: Partial<
   single_select: {
     short_text: "substitute_labels",
     long_text: "substitute_labels",
+    // Substitute the option label, then number-coerce on the backend.
+    // Labels that don't parse as numbers are cleared (preflight ack).
+    number: "substitute_labels",
   },
 };
 
