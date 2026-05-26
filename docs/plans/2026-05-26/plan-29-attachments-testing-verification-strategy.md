@@ -158,10 +158,36 @@ Datasheet column.
 
 Add one opt-in test or script that exercises Cloudflare R2 directly.
 
+Status on 2026-05-26: **in progress**. Cloudflare R2 dashboard setup is
+complete for the staging/dev bucket:
+
+- bucket `ph-navigator-v2-dev` exists;
+- public access is disabled;
+- CORS allows `http://localhost:5173`, `http://127.0.0.1:5173`, and
+  `https://ph-navigator-v2-staging.onrender.com` for `PUT`, `GET`, and
+  `HEAD`;
+- lifecycle cleanup is enabled for objects under `projects/` after 90
+  days;
+- a scoped R2 token exists for `ph-navigator-v2-dev` with object
+  read/write permissions.
+
+Progress on 2026-05-26:
+
+- copied the rolled token's `Account ID`, `Access Key ID`, and
+  `Secret Access Key` into Render staging as `R2_ACCOUNT_ID`,
+  `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`;
+- confirmed the Cloudflare `Token value` is kept for token management
+  and is not the boto3 `R2_ACCESS_KEY_ID`;
+- added `backend/tests/integration/test_r2_assets.py` as the opt-in
+  provider smoke.
+
+Next gate: run the opt-in real R2 smoke with the Render/staging R2 env
+vars available, then move to the Render browser acceptance checklist.
+
 It should be disabled by default and require an explicit flag:
 
 ```bash
-RUN_R2_INTEGRATION=1 cd backend && uv run pytest tests/integration/test_r2_assets.py
+cd backend && RUN_R2_INTEGRATION=1 uv run pytest tests/integration/test_r2_assets.py
 ```
 
 Recommended behavior:
@@ -469,3 +495,10 @@ Screenshots saved outside the repo:
 - MinIO can reject boto3's `PutBucketCors` call with `NotImplemented` in
   this local setup. Server-level `MINIO_API_CORS_ALLOW_ORIGIN` is the
   practical local CORS control for the direct signed PUT flow.
+- Cloudflare's R2 credential UI can be misleading on first pass. The
+  token management flow may initially emphasize `Token value` and
+  `Account ID`, but rolling the R2 token exposes the full credential set:
+  `Token value`, `Access Key ID`, `Secret Access Key`, and `Account ID`.
+  PHN's boto3/SigV4 path uses `Access Key ID`, `Secret Access Key`, and
+  `Account ID`; the `Token value` is retained for Cloudflare token
+  management, not signed R2 object URLs.

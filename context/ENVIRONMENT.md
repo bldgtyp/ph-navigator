@@ -62,6 +62,78 @@
   `MINIO_API_CORS_ALLOW_ORIGIN=*` for local signed PUT/GET browser
   tests. Do not copy that wildcard to Cloudflare or Render.
 
+### Cloudflare R2
+
+Canonical PHN bucket plan:
+
+- Region: **ENAM**.
+- Staging/dev bucket: `ph-navigator-v2-dev`.
+- Production bucket: `ph-navigator-v2-prod`.
+- Public access: off. PHN uses signed PUT/GET URLs only.
+- Object keys are backend-controlled:
+  - `projects/{project_id}/assets/{asset_id}/file.{ext}`
+  - `projects/{project_id}/assets/{asset_id}/thumb.png`
+  - `projects/{project_id}/assets/_orphaned/{asset_id}/{filename}`
+- Lifecycle rule: auto-delete objects under
+  `projects/*/assets/_orphaned/` after 90 days.
+
+Required R2 environment variables for Render or an opt-in real-R2
+smoke test:
+
+- `R2_ACCOUNT_ID=<Cloudflare account id>`
+- `R2_ACCESS_KEY_ID=<R2 API token access key id>`
+- `R2_SECRET_ACCESS_KEY=<R2 API token secret access key>`
+- `R2_BUCKET=ph-navigator-v2-dev` for staging/dev, or
+  `ph-navigator-v2-prod` for production
+- `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
+
+Credential note: PHN uses boto3's S3-compatible client, so Render needs
+the R2 token's S3-style credentials, not the Cloudflare account API
+bearer token alone. In the Cloudflare dashboard, the R2 credential panel
+may show four values: `Token value`, `Access Key ID`,
+`Secret Access Key`, and `Account ID`. Map them this way:
+
+- `Account ID` -> `R2_ACCOUNT_ID`
+- `Access Key ID` -> `R2_ACCESS_KEY_ID`
+- `Secret Access Key` -> `R2_SECRET_ACCESS_KEY`
+- `Token value` -> store in 1Password for Cloudflare API/token
+  management; PHN does not use it for boto3 signed upload/download URLs.
+
+Capture these values once, then store them only in 1Password/Render.
+
+Bucket CORS for direct browser signed uploads/downloads:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "https://ph-navigator-v2-staging.onrender.com"
+    ],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Cloudflare dashboard setup confirmed on 2026-05-26:
+
+- bucket `ph-navigator-v2-dev` exists for dev/staging attachment work;
+- public access is disabled;
+- CORS allows local Vite origins plus
+  `https://ph-navigator-v2-staging.onrender.com` for `PUT`, `GET`, and
+  `HEAD`;
+- the default multipart abort rule is enabled after 7 days;
+- a staging/dev cleanup lifecycle rule deletes objects under `projects/`
+  after 90 days.
+
+Do not store `R2_SECRET_ACCESS_KEY` in this repo. Store the R2 token in
+1Password under the PH-Navigator R2 item and copy it only into Render or
+an ephemeral local shell for the opt-in smoke.
+
 ## Env files
 
 - `backend/.env` (gitignored) — copy from `backend/.env.example`
@@ -135,6 +207,11 @@ under the `Staging` environment.
     - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
     - `MCP_ALLOWED_HOSTS=ph-navigator-v2.onrender.com`
     - `MCP_ALLOWED_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
+    - `R2_ACCOUNT_ID=<Cloudflare account id>`
+    - `R2_ACCESS_KEY_ID=<Render secret>`
+    - `R2_SECRET_ACCESS_KEY=<Render secret>`
+    - `R2_BUCKET=ph-navigator-v2-dev`
+    - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
     - Render also sets `RENDER_EXTERNAL_URL` and
       `RENDER_EXTERNAL_HOSTNAME`; the backend derives MCP Host allowlist
       entries from them automatically.

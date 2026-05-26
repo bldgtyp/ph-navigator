@@ -1,13 +1,11 @@
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
 
-const VERSION_TRIGGER_HELP =
-  "Open the version list. Switch versions, or compare saved versions for this project.";
-const CLEAN_STATE_HELP = "No draft changes are pending. The open version matches the saved body.";
-const DIRTY_STATE_HELP =
-  "Draft changes are pending. Use Save to overwrite this version or Save As to branch.";
+const VERSION_TRIGGER_HELP = "Open the version list to switch or compare versions.";
+const CLEAN_STATE_HELP = "No unsaved draft changes.";
+const DIRTY_STATE_HELP = "Draft changes are pending.";
 const CHECKING_STATE_HELP = "Checking whether this version has pending draft changes.";
-const SAVE_HELP = "Write the current draft into the active unlocked version.";
+const SAVE_HELP = "Save this draft into the active unlocked version.";
 const SAVE_AS_HELP = "Create a new version from the current draft, then switch to it.";
 const PROJECT_ACTIONS_HELP = "Open project and version actions.";
 
@@ -47,18 +45,22 @@ export function VersionShellControls({
         className="secondary-button version-trigger"
         onClick={onToggleVersions}
         aria-expanded={versionsOpen}
-        title={VERSION_TRIGGER_HELP}
+        aria-description={VERSION_TRIGGER_HELP}
         data-tooltip={VERSION_TRIGGER_HELP}
       >
-        {activeVersionName}
-        {isLocked ? " · Locked" : ""}
+        <span className="version-trigger-label">
+          {activeVersionName}
+          {isLocked ? " · Locked" : ""}
+        </span>
       </button>
       <span
         className={hasDraft ? "save-state dirty" : "save-state"}
         data-tooltip={
           checkingDraft ? CHECKING_STATE_HELP : hasDraft ? DIRTY_STATE_HELP : CLEAN_STATE_HELP
         }
-        title={checkingDraft ? CHECKING_STATE_HELP : hasDraft ? DIRTY_STATE_HELP : CLEAN_STATE_HELP}
+        aria-description={
+          checkingDraft ? CHECKING_STATE_HELP : hasDraft ? DIRTY_STATE_HELP : CLEAN_STATE_HELP
+        }
       >
         {checkingDraft ? "Checking..." : hasDraft ? "Unsaved" : "Clean"}
       </span>
@@ -67,7 +69,7 @@ export function VersionShellControls({
           type="button"
           onClick={onSaveAs}
           disabled={!canSaveAs || busy}
-          title={SAVE_AS_HELP}
+          aria-description={SAVE_AS_HELP}
           data-tooltip={SAVE_AS_HELP}
         >
           Save As
@@ -77,7 +79,7 @@ export function VersionShellControls({
           type="button"
           onClick={onSave}
           disabled={!canSave || busy}
-          title={SAVE_HELP}
+          aria-description={SAVE_HELP}
           data-tooltip={SAVE_HELP}
         >
           Save
@@ -89,7 +91,7 @@ export function VersionShellControls({
         onClick={onToggleActions}
         aria-label="Project actions"
         aria-expanded={actionsOpen}
-        title={PROJECT_ACTIONS_HELP}
+        aria-description={PROJECT_ACTIONS_HELP}
         data-tooltip={PROJECT_ACTIONS_HELP}
       >
         <span className="project-actions-icon" aria-hidden="true">
@@ -134,7 +136,6 @@ export function ProjectActionsMenu({
           type="button"
           className="menu-action"
           role="menuitem"
-          title="Open project-level metadata, access, and MCP token settings."
           aria-description="Open project-level metadata, access, and MCP token settings."
           data-tooltip="Open project-level metadata, access, and MCP token settings."
           onClick={() => {
@@ -150,7 +151,6 @@ export function ProjectActionsMenu({
           type="button"
           className="menu-action"
           role="menuitem"
-          title={SAVE_AS_HELP}
           aria-description={SAVE_AS_HELP}
           data-tooltip={SAVE_AS_HELP}
           onClick={onSaveAs}
@@ -163,7 +163,6 @@ export function ProjectActionsMenu({
         type="button"
         className="menu-action"
         role="menuitem"
-        title="Drop the current draft and reload the saved version body."
         aria-description="Drop the current draft and reload the saved version body."
         data-tooltip="Drop the current draft and reload the saved version body."
         onClick={onDiscard}
@@ -175,11 +174,6 @@ export function ProjectActionsMenu({
         type="button"
         className="menu-action"
         role="menuitem"
-        title={
-          isLocked
-            ? "Allow this version to be edited and saved again."
-            : "Freeze this version so future edits must use Save As."
-        }
         aria-description={
           isLocked
             ? "Allow this version to be edited and saved again."
@@ -199,7 +193,6 @@ export function ProjectActionsMenu({
         type="button"
         className="menu-action"
         role="menuitem"
-        title="Compare the current draft or version against another saved version."
         aria-description="Compare the current draft or version against another saved version."
         data-tooltip="Compare the current draft or version against another saved version."
         onClick={onOpenDiff}
@@ -212,7 +205,6 @@ export function ProjectActionsMenu({
           className="menu-action download-link"
           role="menuitem"
           href={projectDownloadUrl(projectId, activeVersionId)}
-          title="Download the raw saved project document JSON for this version."
           aria-description="Download the raw saved project document JSON for this version."
           data-tooltip="Download the raw saved project document JSON for this version."
           onClick={onClose}
