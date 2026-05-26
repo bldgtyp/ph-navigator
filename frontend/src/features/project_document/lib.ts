@@ -59,6 +59,13 @@ export function isInvalidProjectDocumentError(error: unknown): boolean {
   return isDocumentWorkflowError(error, PROJECT_DOCUMENT_ERROR_CODES.invalidProjectDocument);
 }
 
+export function draftLooksRecovered(lastPatchedAt: string | null): boolean {
+  if (!lastPatchedAt) return true;
+  // Draft writes can land before the summary refetch observes their ETag.
+  // Treat very recent patches as active-session work, not crash recovery.
+  return Date.now() - Date.parse(lastPatchedAt) > 5_000;
+}
+
 function isDocumentWorkflowError(error: unknown, code: ProjectDocumentErrorCode): boolean {
   return error instanceof ApiRequestError && error.errorCode === code;
 }
