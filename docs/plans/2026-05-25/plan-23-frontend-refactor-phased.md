@@ -1,13 +1,10 @@
 ---
 DATE: 2026-05-25
 TIME: planning (multi-PR phased implementation)
-STATUS: In progress (7 of 8 phases merged to main). Phased refactor of the frontend
+STATUS: Complete (8 of 8 phases merged to main). Phased refactor of the frontend
         ahead of the next feature wave (ERV/Pumps/Fans/Thermal-Bridge
         DataTables, Windows/Assemblies builder pages, 3D-Model-Viewer
-        feature). Each phase below is a single reviewable PR that
-        lands on `main` independently. Ordering reflects "cheapest
-        wins first, then the leverage abstractions, then large file
-        splits, then convention cleanup."
+        feature). Each phase below landed on `main` independently.
 PROGRESS:
   - [x] Phase 7 — Naming, sentinels, ID-prefix constants (merged ee7a221, 2026-05-25)
   - [x] Phase 6 — Feature-shape standardization (merged 0384d60, 2026-05-25)
@@ -16,7 +13,20 @@ PROGRESS:
   - [x] Phase 3 — Split `WindowsTab.tsx` (merged e3969d7, 2026-05-25)
   - [x] Phase 4 — Split `VersionControls.tsx` (merged 0b4a362, 2026-05-25)
   - [x] Phase 5 — CSS tokenization + per-feature CSS split (merged fa1ba8d, 2026-05-25)
-  - [ ] Phase 8 — CI guards
+  - [x] Phase 8 — CI guards (merged 8e517c9, 2026-05-26)
+RESULT:
+  - Phase 7: `ee7a221` — naming, sentinels, ID-prefix constants.
+  - Phase 6: `0384d60` — feature-shape standardization.
+  - Phase 1: `67e5416` — split `data-table/lib.ts`.
+  - Phase 2: `dd6dcc2` — extract `useSliceTableController` and split `EquipmentTab.tsx`.
+  - Phase 3: `e3969d7` — split `WindowsTab.tsx`.
+  - Phase 4: `0b4a362` — split `VersionControls.tsx` and state logic.
+  - Phase 5: `fa1ba8d` — CSS tokenization and feature CSS split.
+  - Phase 8: `8e517c9` — CI frontend guard scripts, package/Make/CI wiring.
+  - Phase 8 verification: `pnpm run check:all`, `make check-frontend`,
+    `pnpm run format:check`, `pnpm run lint`, `pnpm exec tsc -b`,
+    `pnpm run build`, `pnpm test`, and deliberate guard-failure probes
+    all passed.
 PARENT-DOC: docs/code-reviews/2026-05-25/frontend-code-review.md
 SIBLING-DOC: docs/plans/2026-05-25/plan-22-backend-refactor-phased.md
 RELATED:
@@ -124,7 +134,7 @@ its own §V.
 | **5th** | Phase 3 | Split `WindowsTab.tsx` into `components/` | Must precede Assemblies builder | ✅ merged `e3969d7` |
 | **6th** | Phase 4 | Split `VersionControls.tsx` + extract state machine | Independent; do before more modals stack | ✅ merged `0b4a362` |
 | **7th** | Phase 5 | CSS tokenization + per-feature CSS split | **Must precede** 3D-Model-Viewer | ✅ merged `fa1ba8d` |
-| **8th** | Phase 8 | CI guards (file size, module shape) | Locks in everything above | ⏳ pending |
+| **8th** | Phase 8 | CI guards (file size, module shape) | Locks in everything above | ✅ merged `8e517c9` |
 
 ### 3.2 Dependency Map
 
@@ -729,7 +739,7 @@ exercise the same behavior under the new names.
 
 ---
 
-## Phase 8 — CI guards *(execute 8th — last)*
+## Phase 8 — CI guards *(execute 8th — last — complete, merged `8e517c9`)*
 
 ### 8.1 Scope
 
