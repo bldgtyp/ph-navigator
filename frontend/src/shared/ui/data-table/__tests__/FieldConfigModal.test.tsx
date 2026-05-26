@@ -1,3 +1,4 @@
+// @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
 // FieldConfigModal — plan-21 P5a.1 coverage.
 //
 // Asserts:

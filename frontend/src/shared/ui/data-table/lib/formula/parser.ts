@@ -1,3 +1,4 @@
+// @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 // Recursive-descent parser for the AirTable-style formula grammar.
 // Mirror of `backend/features/project_document/formula/parser.py`. The
 // shared grammar corpus pins both implementations to the same AST and

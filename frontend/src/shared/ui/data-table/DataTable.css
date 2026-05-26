@@ -263,7 +263,7 @@
 }
 
 .data-table-group-row td {
-  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .data-table-group-header {
@@ -376,7 +376,7 @@
 
 .data-table-column-menu-divider {
   border: 0;
-  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  border-top: 1px solid var(--border-subtle);
   margin: 4px 0;
 }
 
@@ -890,8 +890,8 @@
 }
 
 .data-table-field-config-modal-conflict {
-  border: 1px solid var(--warning, #c97a00);
-  background: color-mix(in oklab, var(--warning, #c97a00) 8%, var(--bg-card));
+  border: 1px solid var(--phn-warning);
+  background: color-mix(in oklab, var(--phn-warning) 8%, var(--bg-card));
   border-radius: 6px;
   padding: 8px 10px;
   margin-bottom: 8px;
@@ -1139,7 +1139,7 @@
 }
 
 .data-table-header-rename-error {
-  color: var(--phn-danger, #9b2f24);
+  color: var(--phn-danger);
   font-size: 0.72rem;
   font-weight: 500;
   white-space: normal;
@@ -1198,7 +1198,7 @@
 }
 
 .data-table-column-menu-item[data-danger="true"] {
-  color: var(--phn-danger, #9b2f24);
+  color: var(--phn-danger);
 }
 
 .data-table-column-menu-item:focus-visible {
@@ -1320,8 +1320,8 @@
   height: 20px;
   padding: 0;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle, #d1d5db);
-  background: var(--option-color, #6b7280);
+  border: 1px solid var(--border-subtle);
+  background: var(--option-color, var(--text-muted));
   cursor: pointer;
   color: rgba(0, 0, 0, 0.6);
 }
@@ -1348,14 +1348,14 @@
   width: 24px;
   height: 24px;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle, #d1d5db);
+  border: 1px solid var(--border-subtle);
   background: var(--option-color);
   cursor: pointer;
   padding: 0;
 }
 
 .data-table-field-editor-color-swatch[aria-pressed="true"] {
-  outline: 2px solid var(--accent-edge, #2563eb);
+  outline: 2px solid var(--accent-edge);
   outline-offset: 1px;
 }
 
@@ -1371,7 +1371,7 @@
 
 .data-table-field-editor-label-input:focus {
   outline: none;
-  border-color: var(--border-subtle, #d1d5db);
+  border-color: var(--border-subtle);
   background: var(--bg-card);
 }
 
@@ -1390,7 +1390,7 @@
   gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .data-table th[data-axis-tint="f"] {
@@ -1879,7 +1879,7 @@ td.data-table-cell-editing {
 
 .data-table-summary-gutter {
   background: var(--bg-card);
-  border-top: 2px solid var(--border-subtle, #d4d4d8);
+  border-top: 2px solid var(--border-subtle);
 }
 
 /* Match body `.data-table td` padding so the summary content baseline-
@@ -1891,7 +1891,7 @@ td.data-table-cell-editing {
   font-size: inherit;
   color: var(--text-secondary);
   background: var(--bg-card);
-  border-top: 2px solid var(--border-subtle, #d4d4d8);
+  border-top: 2px solid var(--border-subtle);
   text-align: right;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;

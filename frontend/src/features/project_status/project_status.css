@@ -76,7 +76,7 @@
 .status-state-static.done {
   border-color: var(--accent);
   background: var(--accent);
-  color: #ffffff;
+  color: white;
 }
 
 .status-state-button.na,
