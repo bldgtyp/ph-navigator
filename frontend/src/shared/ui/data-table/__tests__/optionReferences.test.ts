@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { missingOptionReferences, normalizeOptionOrders, optionReferenceCounts } from "../lib";
+import { missingOptionReferences, optionReferenceCounts } from "../lib/options/references";
+import { normalizeOptionOrders } from "../lib/options/normalize";
 import type { FieldOption } from "../types";
 
 type Row = { id: string; floor: string | null };

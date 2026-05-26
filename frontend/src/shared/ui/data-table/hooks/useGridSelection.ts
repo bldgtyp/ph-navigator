@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { moveActiveCell, normalizeRange, type NormalizedRange } from "../lib";
+import { normalizeRange, type NormalizedRange } from "../lib/range/normalize";
+import { moveActiveCell } from "../lib/range/move";
 import type { CellCoord, CellRange } from "../types";
 
 // A selection is anchored on stable identity (PoC L1.1). Visual indices

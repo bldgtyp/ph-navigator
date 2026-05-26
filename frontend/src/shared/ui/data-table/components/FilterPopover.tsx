@@ -8,7 +8,7 @@ import {
   getOperatorDef,
   type FilterOperatorDef,
 } from "../fields/filterOperators";
-import { defaultOperatorForField } from "../lib";
+import { defaultOperatorForField } from "../lib/filter/apply";
 import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, FilterCondition, FilterOperator } from "../types";
 

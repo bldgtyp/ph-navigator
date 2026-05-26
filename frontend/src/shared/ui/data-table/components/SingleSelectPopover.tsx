@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useEffect, useMemo, type CSSProperties, type KeyboardEvent } from "react";
-import { findFieldOptionByLabel } from "../lib";
+import { findFieldOptionByLabel } from "../lib/options/references";
 import type { FieldOption } from "../types";
 
 // Popover editor for single-select cells. Owns no domain state — every

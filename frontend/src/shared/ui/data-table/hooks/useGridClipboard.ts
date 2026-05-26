@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { coercePasteWrites, parseTsv, planPaste, rangeToHtml, rangeToTsv } from "../lib";
+import { parseTsv, rangeToHtml, rangeToTsv } from "../lib/paste/tsv";
+import { coercePasteWrites, planPaste } from "../lib/paste/plan";
 import type {
   CellRange,
   CellWrite,
