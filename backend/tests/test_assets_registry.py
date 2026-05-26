@@ -44,9 +44,7 @@ def _document_with_pump_datasheets() -> ProjectDocumentV1:
             "single_select_options": {
                 "rooms.floor_level": [],
                 "rooms.building_zone": [],
-                "pumps.device_type": [
-                    {"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}
-                ],
+                "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
             },
         }
     )
@@ -58,9 +56,7 @@ def test_equipment_pumps_datasheet_field_is_registered() -> None:
     assert field is not None
     assert field.key == "equipment_pumps.datasheet_asset_ids"
     assert field.asset_kinds == frozenset({"datasheet"})
-    assert field.allowed_content_types == frozenset(
-        {"application/pdf", "image/png", "image/jpeg", "image/webp"}
-    )
+    assert field.allowed_content_types == frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
     assert field.max_count == 5
     assert field.max_file_size_mb == 25
 

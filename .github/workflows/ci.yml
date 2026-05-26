@@ -35,6 +35,8 @@ jobs:
         run: uv python install 3.11
       - name: Sync dependencies
         run: uv sync --locked
+      - name: Ruff format
+        run: uv run ruff format --check .
       - name: Ruff
         run: uv run ruff check .
       - name: Ty
@@ -61,6 +63,8 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Format
+        run: pnpm run format:check
       - name: Lint
         run: pnpm run lint
       - name: Frontend guards

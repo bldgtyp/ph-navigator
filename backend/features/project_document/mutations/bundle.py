@@ -98,9 +98,7 @@ def apply_edit_field_bundle(
 
     # --- 3. Description clamp ---
     raw_description = after.description
-    clamped_description = (
-        None if raw_description is None else raw_description[:CUSTOM_FIELD_DESCRIPTION_MAX]
-    )
+    clamped_description = None if raw_description is None else raw_description[:CUSTOM_FIELD_DESCRIPTION_MAX]
     if clamped_description != existing.description:
         properties_changed.append("description")
 
@@ -148,10 +146,7 @@ def apply_edit_field_bundle(
         # re-materializing options from raw row values.
         ct_client_options = (
             mutation.next_options
-            if (
-                after.field_type is CustomFieldType.single_select
-                and mutation.next_options is not None
-            )
+            if (after.field_type is CustomFieldType.single_select and mutation.next_options is not None)
             else None
         )
         next_body, ct_audit = apply_change_type(
@@ -167,10 +162,7 @@ def apply_edit_field_bundle(
         # display_name / description / final config changes on top.
         current_fields = capability.read_custom_fields(next_body)
         index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
-    elif (
-        after.field_type is CustomFieldType.single_select
-        and mutation.next_options is not None
-    ):
+    elif after.field_type is CustomFieldType.single_select and mutation.next_options is not None:
         # Same-type single_select option-list edit. Reuse editOptions.
         edit_options_mutation = EditOptionsMutation(
             kind="editOptions",
@@ -211,10 +203,7 @@ def apply_edit_field_bundle(
     next_body = capability.replace_custom_fields(next_body, next_fields)
 
     # --- 5. Formula source change (when target is formula) ---
-    if (
-        final_field.field_type is CustomFieldType.formula
-        and mutation.formula_source is not None
-    ):
+    if final_field.field_type is CustomFieldType.formula and mutation.formula_source is not None:
         set_formula_mutation = SetFormulaMutation(
             kind="setFormula",
             table_key=mutation.table_key,
@@ -240,11 +229,9 @@ def apply_edit_field_bundle(
         post_fields = capability.read_custom_fields(next_body)
         _, post_field = find_field(post_fields, mutation.field_id, mutation.table_key)
         validate_default_option_id(post_field, final_ids)
-        if (
-            existing.field_type is CustomFieldType.single_select
-            and existing.config.get("default_option_id")
-            != post_field.config.get("default_option_id")
-        ):
+        if existing.field_type is CustomFieldType.single_select and existing.config.get(
+            "default_option_id"
+        ) != post_field.config.get("default_option_id"):
             properties_changed.append("default_option_id")
         elif (
             existing.field_type is not CustomFieldType.single_select

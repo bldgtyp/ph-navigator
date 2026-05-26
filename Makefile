@@ -5,9 +5,11 @@
 # the caller's working directory. See context/environment-setup.md §6.
 
 .PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
+        object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
-        lint check-frontend format smoke seed-dev-user e2e e2e-report clean
+        lint check check-backend check-frontend build-frontend format format-check \
+        smoke seed-dev-user e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -31,15 +33,25 @@ sync: ## Re-sync Python and Node deps from lockfiles
 
 # ─────────────── daily dev ───────────────
 
-dev: db-up ## Start Postgres + remind user how to launch backend + frontend
+LOCAL_R2_ENDPOINT_URL ?= http://localhost:9000
+LOCAL_R2_ACCESS_KEY_ID ?= phn_minio
+LOCAL_R2_SECRET_ACCESS_KEY ?= phn_minio_local_only
+LOCAL_R2_BUCKET ?= ph-navigator-v2-dev
+
+dev: db-up object-store-up object-store-init ## Start local services + remind user how to launch backend + frontend
 	@echo ""
-	@echo "Postgres is up. In separate terminals, run:"
+	@echo "Postgres and local object storage are up. In separate terminals, run:"
 	@echo "  make backend   # FastAPI dev server on http://localhost:8000"
 	@echo "  make frontend  # Vite dev server  on http://localhost:5173"
 	@echo ""
 
 backend: ## Run FastAPI dev server
-	cd backend && uv run uvicorn main:app --reload --port 8000; \
+	cd backend && \
+	R2_ENDPOINT_URL="$${R2_ENDPOINT_URL:-$(LOCAL_R2_ENDPOINT_URL)}" \
+	R2_ACCESS_KEY_ID="$${R2_ACCESS_KEY_ID:-$(LOCAL_R2_ACCESS_KEY_ID)}" \
+	R2_SECRET_ACCESS_KEY="$${R2_SECRET_ACCESS_KEY:-$(LOCAL_R2_SECRET_ACCESS_KEY)}" \
+	R2_BUCKET="$${R2_BUCKET:-$(LOCAL_R2_BUCKET)}" \
+	uv run uvicorn main:app --reload --port 8000; \
 	exit_code=$$?; \
 	if [ $$exit_code -eq 130 ]; then \
 		exit 0; \
@@ -63,6 +75,20 @@ db-down: ## Stop Postgres container
 	docker compose stop db
 
 db: db-up ## Alias for db-up
+
+object-store-up: ## Start local S3-compatible object storage for attachments
+	docker compose up -d object-store
+
+object-store-init: object-store-up ## Create the local attachment bucket + browser CORS policy
+	cd backend && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.init_object_store
+
+object-store-down: ## Stop local object storage
+	docker compose stop object-store
 
 db-reset: ## Destroy and recreate the Postgres volume (DANGER — wipes BOTH dev and test DBs)
 	docker compose down -v
@@ -98,6 +124,14 @@ test-frontend:
 typecheck: ## Run backend static type checker
 	cd backend && uv run ty check
 
+check: check-backend check-frontend test-frontend build-frontend ## Run local CI parity checks plus format checks
+
+check-backend: db-migrate-test ## Run backend CI parity checks against the dedicated *_test DB
+	cd backend && uv run ruff format --check .
+	cd backend && uv run ruff check .
+	cd backend && uv run ty check
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest
+
 e2e: ## Run Playwright end-to-end tests (frontend must be running)
 	cd frontend && pnpm run test:e2e
 
@@ -105,15 +139,24 @@ e2e-report: ## Open the last Playwright HTML report
 	cd frontend && pnpm exec playwright show-report
 
 lint: ## Run linters (ruff + eslint)
-	cd backend && uvx ruff check .
+	cd backend && uv run ruff check .
 	cd frontend && pnpm run lint
 
 check-frontend: ## Run frontend structural guard checks
+	cd frontend && pnpm run format:check
+	cd frontend && pnpm run lint
 	cd frontend && pnpm run check:all
 
+build-frontend: ## Build the frontend production bundle
+	cd frontend && pnpm run build
+
 format: ## Auto-format code
-	cd backend && uvx ruff format .
+	cd backend && uv run ruff format .
 	cd frontend && pnpm run format
+
+format-check: ## Check backend and frontend formatting without writing files
+	cd backend && uv run ruff format --check .
+	cd frontend && pnpm run format:check
 
 # ─────────────── misc ───────────────
 

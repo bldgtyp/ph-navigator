@@ -1117,9 +1117,7 @@ def _make_bundle_after(
     return field.model_copy(
         update={
             "display_name": display_name if display_name is not None else field.display_name,
-            "description": (
-                field.description if description is ... else cast(str | None, description)
-            ),
+            "description": (field.description if description is ... else cast(str | None, description)),
             "field_type": field_type or field.field_type,
             "config": dict(field.config) if config is None else config,
         }

@@ -45,6 +45,7 @@ def mint_custom_field_id() -> str:
     """
     return f"cf_{secrets.token_hex(8)}"
 
+
 # Scalar set permitted inside `RoomRow.custom`. Per-type validation
 # against the field's declared `field_type` runs in
 # `validate_document_references` (document.py); this alias is the JSON

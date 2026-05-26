@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from typing import Any
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 
@@ -61,7 +62,7 @@ class FakeR2Client:
 
 
 class NoopThumbnailer:
-    def render_for_asset(self, project_id: object, asset_id: str) -> None:
+    def render_for_asset(self, project_id: UUID, asset_id: str) -> None:
         return None
 
 

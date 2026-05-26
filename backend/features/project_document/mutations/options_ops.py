@@ -70,9 +70,7 @@ def resolve_option_target(
     )
 
 
-def validate_default_option_id(
-    field: CustomFieldDef, next_option_ids: set[str]
-) -> None:
+def validate_default_option_id(field: CustomFieldDef, next_option_ids: set[str]) -> None:
     """Ensure single-select `config.default_option_id` (if set) is a real option.
 
     Atomically validated with option-list mutations so a pending
@@ -137,11 +135,7 @@ def apply_edit_options(
 
     # Required core single-select fields cannot be cleared on referenced
     # deletes — caller must supply replacement option ids.
-    if (
-        not is_custom
-        and mutation.field_id in capability.required_core_select_fields
-        and deleted_ids
-    ):
+    if not is_custom and mutation.field_id in capability.required_core_select_fields and deleted_ids:
         for deleted_id in deleted_ids:
             replacement = mutation.replacements.get(deleted_id)
             if replacement is None:
@@ -189,9 +183,7 @@ def apply_edit_options(
                 if isinstance(current_value, str) and current_value in deleted_ids:
                     cleared_row_count += 1
                     replacement = mutation.replacements.get(current_value)
-                    next_rows.append(
-                        capability.set_core_option_value(row, mutation.field_id, replacement)
-                    )
+                    next_rows.append(capability.set_core_option_value(row, mutation.field_id, replacement))
                 else:
                     next_rows.append(row)
         next_body = replace_rows_in_envelope(next_body, mutation.table_key, next_rows)

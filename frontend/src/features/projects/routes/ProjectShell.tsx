@@ -84,11 +84,9 @@ export function ProjectShell() {
     }
     setSearchParams(next);
   };
-  const projectCrumbLabel = `${project.bt_number} - ${project.name}`;
-  const topbarBreadcrumbs = [
-    { label: projectCrumbLabel, to: projectStatusPath(project.id) },
-    { label: TAB_LABELS[activeTab ?? "status"] },
-  ];
+  const projectTitleLabel = `${project.bt_number} - ${project.name}`;
+  const projectCrumbLabel = projectTitleLabel;
+  const topbarBreadcrumbs = [{ label: projectCrumbLabel, to: projectStatusPath(project.id) }];
   const accountSlot = isViewer ? (
     <>
       <span className="read-only-pill">Read-only</span>
@@ -134,7 +132,7 @@ export function ProjectShell() {
       {topbar}
       <section
         className="project-page project-workspace"
-        aria-label={`${projectCrumbLabel} workspace`}
+        aria-label={`${projectTitleLabel} workspace`}
       >
         <nav className="tabbar" aria-label="Project tabs">
           {PROJECT_TABS.map((projectTab) => (

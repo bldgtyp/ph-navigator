@@ -433,9 +433,7 @@ class _Parser:
             normalized = display_name.strip().casefold()
             self.distinct_refs.add(normalized)
             if len(self.distinct_refs) > DEP_COUNT_MAX:
-                raise FormulaResourceLimitError(
-                    "dep_count", len(self.distinct_refs), DEP_COUNT_MAX
-                )
+                raise FormulaResourceLimitError("dep_count", len(self.distinct_refs), DEP_COUNT_MAX)
             return FieldRef(kind="field_ref", display_name=display_name, field_id=None)
         if tok.kind is TokenKind.LPAREN:
             self._advance()
@@ -500,9 +498,7 @@ _FUNCTION_ARITY: dict[str, tuple[int, int]] = {
 }
 
 
-def _validate_function_arity(
-    name: str, args: list[FormulaAST], offset: int, source: str
-) -> None:
+def _validate_function_arity(name: str, args: list[FormulaAST], offset: int, source: str) -> None:
     if name not in _FUNCTION_ARITY:
         return
     min_args, max_args = _FUNCTION_ARITY[name]

@@ -404,9 +404,7 @@ def test_phase_2_download_surfaces_populated_custom_values(clean_document_tables
     )
     assert save.status_code == 200, save.text
 
-    download = client.get(
-        f"/api/v1/projects/{project_id}/versions/{version_id}/download/tables/rooms"
-    )
+    download = client.get(f"/api/v1/projects/{project_id}/versions/{version_id}/download/tables/rooms")
     assert download.status_code == 200, download.text
     body = download.json()["rooms"]
     assert [field["id"] for field in body["custom_fields"]] == [
@@ -466,9 +464,7 @@ def test_phase_2_slice_replace_accepts_rooms_cf_option_lists(
         current["custom_fields"],
         [_room("rm_101", "101", {"cf_status": "opt_open"})],
     )
-    payload["single_select_options"]["rooms.cf_status"] = current["single_select_options"][
-        "rooms.cf_status"
-    ]
+    payload["single_select_options"]["rooms.cf_status"] = current["single_select_options"]["rooms.cf_status"]
     response = client.put(
         _draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},

@@ -257,8 +257,9 @@ Current order:
    Pumps datasheet upload / attach / detach path.
 3. **Done 2026-05-26:** add frontend attachment cell tests against
    the real Pumps table.
-4. Run local browser workflow against local object storage.
-5. Add the opt-in R2 smoke.
+4. **Done 2026-05-26:** run local browser workflow against local object
+   storage.
+5. **Next:** add the opt-in R2 smoke.
 6. Deploy to Render and run the staging acceptance checklist.
 
 This keeps the normal test suite fast and deterministic while still
@@ -351,6 +352,92 @@ cd frontend && pnpm test src/features/equipment/__tests__/PumpsTable.reuse.test.
 
 Result: `3 passed`.
 
+### 2026-05-26 - Local object-store setup for browser verification
+
+Added local S3-compatible object storage so the browser workflow can
+exercise the same signed-upload shape as R2 without using Cloudflare for
+the first meaningful end-to-end test.
+
+Changes:
+
+- added a `docker-compose.yml` `object-store` service using MinIO on
+  `localhost:9000` with console on `localhost:9001`;
+- added `backend/scripts/init_object_store.py` to create the local
+  `ph-navigator-v2-dev` bucket;
+- added `make object-store-up`, `make object-store-init`, and
+  `make object-store-down`;
+- updated `make dev` and `make backend` so local development defaults to
+  the MinIO-compatible `R2_*` settings while still allowing explicit
+  Cloudflare R2 environment overrides;
+- updated `backend/.env.example` to show the local MinIO defaults.
+
+Verification run:
+
+```bash
+cd backend && uv run ruff check scripts/init_object_store.py
+make object-store-init
+```
+
+Result: local MinIO started and bucket initialization completed. MinIO's
+current endpoint rejected explicit `PutBucketCors`, so the setup relies
+on server-level `MINIO_API_CORS_ALLOW_ORIGIN=*` for browser PUT/GET
+during local development.
+
+### 2026-05-26 - Local browser Pumps attachment workflow
+
+Ran the local browser workflow against a real frontend, real backend,
+local Postgres, and local MinIO object storage.
+
+Environment:
+
+- frontend: `http://localhost:5174`;
+- backend: `http://localhost:8002`;
+- object storage: MinIO at `http://localhost:9000`;
+- browser automation: Playwright fallback, because the Browser plugin
+  was listed but the in-app browser runtime reported `iab` unavailable.
+
+Workflow verified:
+
+- signed in as the local seeded editor;
+- created project `a4b3143d-1ded-48b9-b480-ed942b458e5b`;
+- opened Equipment / Pumps and inserted a Pump row;
+- attached `phn-pump-datasheet.pdf` via the attachment cell drag/drop
+  path;
+- observed upload intent, direct signed PUT to MinIO, complete-upload,
+  asset URL resolution, and thumbnail GET;
+- reloaded and confirmed the attachment still rendered;
+- opened the attachment modal and confirmed PDF preview iframe plus the
+  backend download link;
+- detached the asset and confirmed reload returned the cell to
+  `Drop files here`.
+
+Verification command:
+
+```bash
+cd frontend && pnpm exec node --input-type=module < /tmp/phn-pump-attachment-e2e.mjs
+```
+
+Key evidence:
+
+- `POST /assets/upload-intent` -> `200`;
+- signed `PUT http://localhost:9000/.../file.pdf` -> `200`;
+- `POST /assets/{asset_id}/complete-upload` -> `200`;
+- `GET /assets/bulk-urls?ids=asset_20260526134640321455` -> `200`;
+- signed thumbnail GET from MinIO -> `200`;
+- modal title: `phn-pump-datasheet.pdf`;
+- preview iframe count: `1`;
+- download href:
+  `http://localhost:8002/api/v1/projects/a4b3143d-1ded-48b9-b480-ed942b458e5b/assets/asset_20260526134640321455/download`;
+- after detach and reload: `0` attachment thumbs and `1`
+  `Drop files here` button;
+- console warnings/errors: none.
+
+Screenshots saved outside the repo:
+
+- `/tmp/phn-pumps-after-attach.png`;
+- `/tmp/phn-pumps-preview.png`;
+- `/tmp/phn-pumps-after-detach.png`.
+
 ## P9. Lessons Learned
 
 - Keep the document path and registry key explicit. The project
@@ -375,3 +462,10 @@ Result: `3 passed`.
   `.attachment-cell` owner is more precise than sending keyboard input
   to the thumbnail button, because the table focus layer can intercept
   key events in the test harness.
+- A browser-real local attachment test needs an actual browser-addressable
+  S3-compatible endpoint. `moto[s3]` is sufficient for backend tests but
+  does not install the standalone `moto_server` dependencies, and the
+  repo previously had no MinIO/LocalStack service.
+- MinIO can reject boto3's `PutBucketCors` call with `NotImplemented` in
+  this local setup. Server-level `MINIO_API_CORS_ALLOW_ORIGIN` is the
+  practical local CORS control for the direct signed PUT flow.

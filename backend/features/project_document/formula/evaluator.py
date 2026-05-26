@@ -454,9 +454,7 @@ def evaluate_table_formulas(
     cell as `{"error": "missing_ref"}`.
     """
     custom_fields = capability.read_custom_fields(body)
-    formula_fields = [
-        f for f in custom_fields if f.field_type.value == "formula"
-    ]
+    formula_fields = [f for f in custom_fields if f.field_type.value == "formula"]
     if not formula_fields:
         # Cheap early-out; the caller treats absence as `{}` per
         # plan-17 §4.4 contract.
@@ -520,9 +518,7 @@ def evaluate_table_formulas(
     return out
 
 
-def _read_envelope_rows(
-    capability: CustomFieldCapability, body: ProjectDocumentV1
-) -> list[object]:
+def _read_envelope_rows(capability: CustomFieldCapability, body: ProjectDocumentV1) -> list[object]:
     envelope = body.tables
     for path_part in capability.table_path:
         envelope = getattr(envelope, path_part)

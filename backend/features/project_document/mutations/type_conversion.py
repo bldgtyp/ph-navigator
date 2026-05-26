@@ -265,9 +265,7 @@ def apply_change_type(
                 continue
             label = label_lookup_for_substitute.get(str(raw_value))
             if label is None:
-                incompatible.append(
-                    {"row_id": row_id, "raw_value": raw_value, "reason": "no_matching_option"}
-                )
+                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": "no_matching_option"})
                 continue
             if to_type in (CustomFieldType.short_text, CustomFieldType.long_text):
                 compatible_writes.append((row_id, label))
@@ -275,17 +273,13 @@ def apply_change_type(
             # single_select → number (or other future targets): re-coerce
             # the label through the standard coercion path. Unparseable
             # labels surface to preflight so the user acks the clear.
-            ok, coerced, reason = _try_coerce_for_change_type(
-                label, to_type, target_option_list=target_option_list
-            )
+            ok, coerced, reason = _try_coerce_for_change_type(label, to_type, target_option_list=target_option_list)
             if ok:
                 compatible_writes.append((row_id, coerced))
             else:
                 incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
             continue
-        ok, coerced, reason = _try_coerce_for_change_type(
-            raw_value, to_type, target_option_list=target_option_list
-        )
+        ok, coerced, reason = _try_coerce_for_change_type(raw_value, to_type, target_option_list=target_option_list)
         if ok:
             compatible_writes.append((row_id, coerced))
         else:
@@ -343,9 +337,7 @@ def apply_change_type(
 
     # Handle option-list namespace changes.
     if policy == "create_options":
-        next_body = capability.replace_field_option_list(
-            next_body, mutation.field_id, generated_options or []
-        )
+        next_body = capability.replace_field_option_list(next_body, mutation.field_id, generated_options or [])
     elif from_type is CustomFieldType.single_select:
         # Field is no longer single_select — strip its option-list entry.
         namespace_key = option_list_key(capability.table_path, mutation.field_id)
@@ -354,9 +346,7 @@ def apply_change_type(
     # Apply row writes. `capability.replace_custom_fields` does not
     # touch the row list, so we can reuse the `rows` we already iterated
     # for preflight and skip a second envelope read.
-    write_by_row: dict[str, CustomValue] = {
-        row_id: cast(CustomValue, value) for row_id, value in compatible_writes
-    }
+    write_by_row: dict[str, CustomValue] = {row_id: cast(CustomValue, value) for row_id, value in compatible_writes}
     incompatible_by_row: set[str] = {str(entry["row_id"]) for entry in incompatible}
 
     new_rows: list[object] = []

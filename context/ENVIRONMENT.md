@@ -42,6 +42,26 @@
 - `make db-reset` wipes the Postgres volume — **both** dev and test
   databases are destroyed.
 
+## Object Storage
+
+- Local attachment development uses MinIO as an S3-compatible stand-in
+  for Cloudflare R2.
+- `make object-store-up` starts MinIO at `http://localhost:9000` with
+  console at `http://localhost:9001`.
+- `make object-store-init` creates the local
+  `ph-navigator-v2-dev` bucket.
+- `make dev` starts Postgres + MinIO and initializes the bucket.
+- `make backend` defaults local `R2_*` values to MinIO:
+  - `R2_ENDPOINT_URL=http://localhost:9000`
+  - `R2_ACCESS_KEY_ID=phn_minio`
+  - `R2_SECRET_ACCESS_KEY=phn_minio_local_only`
+  - `R2_BUCKET=ph-navigator-v2-dev`
+- Explicit shell `R2_*` values still override those Makefile defaults,
+  which is how one-off Cloudflare R2 smoke tests should be run.
+- MinIO CORS is configured at the service level with
+  `MINIO_API_CORS_ALLOW_ORIGIN=*` for local signed PUT/GET browser
+  tests. Do not copy that wildcard to Cloudflare or Render.
+
 ## Env files
 
 - `backend/.env` (gitignored) — copy from `backend/.env.example`
@@ -61,6 +81,10 @@
   - `PASSWORD_ARGON2_MEMORY_COST=65536`
   - `PASSWORD_ARGON2_PARALLELISM=4`
   - `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000`
+  - `R2_ENDPOINT_URL=http://localhost:9000`
+  - `R2_ACCESS_KEY_ID=phn_minio`
+  - `R2_SECRET_ACCESS_KEY=phn_minio_local_only`
+  - `R2_BUCKET=ph-navigator-v2-dev`
   - `MCP_ISSUER_URL=http://localhost:8000`
   - `MCP_RESOURCE_SERVER_URL=http://localhost:8000/mcp`
   - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
@@ -152,8 +176,11 @@ password was shared in chat or another durable channel, rotate it.
 ## Make recipes
 
 - `make setup` — first-time install
-- `make dev` — start Postgres; prints how to launch backend + frontend
+- `make dev` — start Postgres + local object storage; prints how to
+  launch backend + frontend
 - `make backend`, `make frontend`
+- `make object-store-up`, `make object-store-init`,
+  `make object-store-down`
 - `make test`, `make typecheck`, `make lint`, `make format`,
   `make migrate`, `make smoke`
 - `make seed-dev-user` — seed the local editor account for browser/E2E auth

@@ -38,6 +38,7 @@
 
 .save-state {
   --save-state-dot: var(--accent-text);
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -118,8 +119,9 @@
 
 .menu-action,
 .project-actions-menu .download-link {
+  position: relative;
   min-height: 34px;
-  justify-content: flex-start;
+  justify-content: flex-end;
   border: 0;
   border-radius: var(--phn-radius);
   background: transparent;
@@ -128,9 +130,58 @@
   font-family: var(--font-primary);
   font-size: 0.88rem;
   letter-spacing: 0;
-  text-align: left;
+  text-align: right;
   text-decoration: none;
   text-transform: none;
+}
+
+.shell-controls > button[data-tooltip] {
+  position: relative;
+}
+
+.menu-action[data-tooltip]::after,
+.project-actions-menu .download-link[data-tooltip]::after,
+.save-state[data-tooltip]::after,
+.version-trigger[data-tooltip]::after,
+.project-actions-trigger[data-tooltip]::after,
+.shell-controls > button[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: var(--z-tooltip);
+  bottom: calc(100% + 10px);
+  right: 0;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--text-primary);
+  color: var(--bg-card);
+  padding: 7px 9px;
+  box-shadow: var(--shadow-elev-2);
+  font-family: var(--font-primary);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(2px);
+  transition:
+    opacity 0.12s var(--ease) 0.9s,
+    transform 0.12s var(--ease) 0.9s;
+  white-space: normal;
+}
+
+.menu-action[data-tooltip]:hover::after,
+.project-actions-menu .download-link[data-tooltip]:hover::after,
+.save-state[data-tooltip]:hover::after,
+.version-trigger[data-tooltip]:hover::after,
+.project-actions-trigger[data-tooltip]:hover::after,
+.shell-controls > button[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .menu-action:hover:not(:disabled),

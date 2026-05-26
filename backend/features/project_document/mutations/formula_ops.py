@@ -60,9 +60,7 @@ def _raise_formula_parse_error(exc: FormulaParseError, field_id: str) -> None:
     )
 
 
-def _raise_formula_resource_limit(
-    exc: FormulaResourceLimitError, field_id: str
-) -> None:
+def _raise_formula_resource_limit(exc: FormulaResourceLimitError, field_id: str) -> None:
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_formula_resource_limit",
@@ -77,16 +75,12 @@ def _raise_formula_resource_limit(
     )
 
 
-def _raise_formula_unsupported_function(
-    exc: FormulaUnsupportedFunctionError, field_id: str
-) -> None:
+def _raise_formula_unsupported_function(exc: FormulaUnsupportedFunctionError, field_id: str) -> None:
     available = sorted(exc.available)
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_formula_unsupported_function",
-        f"Function {exc.function_name!r} is not supported. Available: "
-        + ", ".join(available)
-        + ".",
+        f"Function {exc.function_name!r} is not supported. Available: " + ", ".join(available) + ".",
         {
             "field_id": field_id,
             "function_name": exc.function_name,
@@ -103,8 +97,7 @@ def _raise_formula_missing_ref(
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_formula_missing_ref",
-        f"Formula references a field that doesn't exist in this table: "
-        f"{exc.display_name}.",
+        f"Formula references a field that doesn't exist in this table: {exc.display_name}.",
         {
             "field_id": field_id,
             "missing_ref_display_name": exc.display_name,
@@ -117,8 +110,7 @@ def _raise_formula_cycle(exc: FormulaCycleError, field_id: str) -> None:
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "custom_field_formula_cycle",
-        f"This formula creates a cycle: {' -> '.join(exc.cycle_path)}. "
-        "Remove the loop and try again.",
+        f"This formula creates a cycle: {' -> '.join(exc.cycle_path)}. Remove the loop and try again.",
         {
             "field_id": field_id,
             "cycle_path": list(exc.cycle_path),
@@ -135,10 +127,7 @@ def count_ast_nodes(node: object) -> int:
         return 1 + count_ast_nodes(node.left) + count_ast_nodes(node.right)
     if isinstance(node, IfExpr):
         return (
-            1
-            + count_ast_nodes(node.condition)
-            + count_ast_nodes(node.then_branch)
-            + count_ast_nodes(node.else_branch)
+            1 + count_ast_nodes(node.condition) + count_ast_nodes(node.then_branch) + count_ast_nodes(node.else_branch)
         )
     if isinstance(node, FuncCall):
         return 1 + sum(count_ast_nodes(a) for a in node.args)

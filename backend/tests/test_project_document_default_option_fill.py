@@ -58,9 +58,7 @@ def _body_with_default_field() -> ProjectDocumentV1:
             "rooms.cf_ss": cf_opts,
         },
     )
-    return body.model_copy(
-        update={"tables": body.tables.model_copy(update={"rooms": envelope})}
-    )
+    return body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
 
 
 def _make_room(
@@ -85,9 +83,7 @@ def _make_room(
     )
 
 
-def _build_payload(
-    body: ProjectDocumentV1, rooms: list[RoomRow]
-) -> RoomsSliceReplaceRequest:
+def _build_payload(body: ProjectDocumentV1, rooms: list[RoomRow]) -> RoomsSliceReplaceRequest:
     options = RoomsSliceOptions.model_validate(
         {
             ROOM_FLOOR_LEVEL_OPTION_KEY: [
@@ -136,9 +132,7 @@ def test_existing_row_not_backfilled_when_default_now_set() -> None:
     body = _body_with_default_field()
     pre_existing = _make_room("rm_existing", "101", "opt_L1", custom={})
     envelope = body.tables.rooms.model_copy(update={"rows": [pre_existing]})
-    body = body.model_copy(
-        update={"tables": body.tables.model_copy(update={"rooms": envelope})}
-    )
+    body = body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
     # Now apply a replace that contains the same pre-existing row with no
     # change — the default must not be silently injected.
     payload = _build_payload(body, [pre_existing])
@@ -152,9 +146,7 @@ def test_default_fill_skipped_when_no_default_configured() -> None:
     field = body.tables.rooms.custom_fields[0]
     next_field = field.model_copy(update={"config": {}})
     envelope = body.tables.rooms.model_copy(update={"custom_fields": [next_field]})
-    body = body.model_copy(
-        update={"tables": body.tables.model_copy(update={"rooms": envelope})}
-    )
+    body = body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
     new_room = _make_room("rm_new", "101", "opt_L1", custom={})
     payload = _build_payload(body, [new_room])
     next_body = apply_rooms_replace(body, payload)
