@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-26
 TIME: 18:21 EDT
-STATUS: Proposed implementation plan.
+STATUS: Active implementation; MCP envelope surface implemented first.
 AUTHOR: Codex
 SCOPE: MCP tools, hardening, performance, accessibility, release gates,
        and docs closeout.
@@ -155,3 +155,50 @@ At closeout, review every phase note and add PRD lesson rows for:
 - attachment/versioning failure modes;
 - browser/staging verification pitfalls.
 - V1 parity gaps that were accepted, deferred, or intentionally changed.
+
+## Implementation Progress
+
+2026-05-27 - MCP envelope first pass implemented on
+`codex/assembly-builder-phase-07`:
+
+- added MCP read tools:
+  - `list_envelope_assemblies`;
+  - `list_project_materials`;
+  - `query_unfinished_envelope_work`;
+  - `report_material_catalog_drift`;
+  - `report_missing_envelope_evidence`;
+- added MCP write tool `apply_envelope_command`, which validates the
+  same `EnvelopeCommandRequest` DTO as the browser and calls the
+  existing envelope command service;
+- added `updated_via="mcp"` support to the envelope command service so
+  MCP writes tag the persisted draft row while preserving existing
+  ETag and locked-version protections;
+- updated the MCP read smoke script to require the new envelope read
+  tools;
+- added backend tests proving:
+  - envelope MCP read reports load expected assembly/material state;
+  - unfinished work counts include missing materials, missing
+    conductivity, datasheets, photos, unused materials, and drift;
+  - MCP envelope writes update the draft through the semantic command
+    boundary;
+  - stale MCP writes return structured `draft_etag_mismatch` errors;
+  - FastMCP tool discovery exposes the new Assembly Builder tools.
+
+Verified:
+
+```bash
+cd backend && uv run ruff check features/envelope/service.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py
+cd backend && uv run ty check features/envelope/service.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py
+cd backend && uv run pytest tests/test_mcp.py
+```
+
+Remaining:
+
+- add the realistic scale fixture and browser-drive the large-project
+  canvas/Specifications workflows;
+- browser-smoke the accumulated Phase 4-7 deferred workflows;
+- run full frontend build/test/lint gates after any UI hardening;
+- run repo-level `make test`, `make typecheck`, `make lint`, and
+  `make smoke` once the known unrelated local blockers are cleared or
+  isolated;
+- complete V1 parity audit and final release docs closeout.

@@ -199,6 +199,7 @@ def apply_envelope_command(
     command: EnvelopeCommand,
     if_match: str | None,
     if_match_version: str | None,
+    updated_via: Literal["browser", "mcp"] = "browser",
 ) -> EnvelopeReadResponse:
     """Apply one semantic Assembly Builder command to the editor draft."""
     user = require_editor_user(access)
@@ -234,6 +235,7 @@ def apply_envelope_command(
             next_body,
             base_version_etag,
             next_draft_etag(next_body),
+            updated_via=updated_via,
         )
         log_document_action(
             conn,
