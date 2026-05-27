@@ -864,13 +864,16 @@ level, not architectural.*
 **Phase 3 — Built-in field type changes.** *(plan-31-phase-3)*
 *Status (2026-05-26): backend cohort landed (matrix + apply path +
 `TableFieldRegistry.field_type_locked_keys` guard + per-row before/after
-audit + circular-import fix). Frontend cohort (P4.3 conversion matrix
-mirror + P4.4 modal UX + P4.5 hard-rule removal + P4.6 catalog refresh
-skip) deferred to bundle with the still-pending Phase 1c frontend
-reshape (useTableSchema + feature pages) and Phase 2 frontend identifier
-deletion. See `plan-31-phase-3-built-in-type-changes.md` STATUS for the
-landed-artifact list and `data-model.md` §6.6.9 for the published
-matrix.*
+audit + circular-import fix). Frontend foundation slice landed
+2026-05-26 (commit `891d1c6` on `worktree-plan-31-frontend-bundle`):
+`TableFieldDef` canonical type, `slice.field_defs` rename on Rooms +
+Pumps, fingerprint v1 → v2 byte-matching backend. Remaining frontend
+slices (#28 useTableSchema reshape, #11 row-shape migration, #29
+IdentifierConfig deletion, #30–#32 small wins, #33 catalog refresh
+skip, #34 test rewrites, #36 verification) tracked in
+`plan-31-phase-3-frontend-bundle.md`; estimated 3–5 sessions remaining.
+See `plan-31-phase-3-built-in-type-changes.md` STATUS for the landed-
+artifact list and `data-model.md` §6.6.9 for the published matrix.*
 - Allow `field_type` change on unlocked built-in fields. Run the
   existing conversion matrix and preflight.
 - Extend the conversion matrix (frontend + backend) to cover
