@@ -166,7 +166,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
   };
 }
 
-function draftWriteHeaders(current: BaseTableSlice): Headers {
+export function draftWriteHeaders(current: BaseTableSlice): Headers {
   const headers = new Headers();
   if (current.draft_etag) {
     headers.set("If-Match", current.draft_etag);

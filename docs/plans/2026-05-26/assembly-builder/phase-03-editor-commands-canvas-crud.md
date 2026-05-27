@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-26
 TIME: 18:21 EDT
-STATUS: Proposed implementation plan.
+STATUS: Implemented; flattened into main with Phases 1-3.
 AUTHOR: Codex
 SCOPE: Semantic command endpoint and editor workflows for assembly,
        layer, and segment geometry.
@@ -159,6 +159,83 @@ Run `make smoke` plus a browser smoke before closeout.
 3. Draft/save behavior matches existing project-document controls.
 4. Conflict handling preserves user context rather than closing modals
    on failed writes.
+
+## Implementation Progress Notes
+
+2026-05-27 - Implemented on branch `codex/assembly-builder-phase-03`
+in worktree
+`/Users/em/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-v2-assembly-builder-phase-03`.
+
+Delivered:
+
+- backend `POST /draft/envelope/commands` with semantic command DTOs,
+  editor/locked guards, lazy draft creation, ETag conflict handling,
+  stable-id validation, full document validation, and updated envelope
+  response;
+- assembly create/rename/type/duplicate/delete commands;
+- layer add/update/delete commands with last-layer guard;
+- segment add/update/delete commands with last-segment guard;
+- orientation flip, layer-order flip, and paste-assignment commands;
+- frontend command mutation plumbing that replaces local envelope state
+  from the command response;
+- editor controls and dialogs for assembly, layer, and segment CRUD;
+- unit-aware modal inputs for layer thickness, segment width, and stud
+  spacing, including an in-modal IP/SI preference toggle that leaves
+  the active draft string and parser unit frozen until submit;
+- copy/paste assignment mode with target highlighting, Escape reset,
+  and Save/reload persistence through the project-document controls.
+
+Verification completed:
+
+- `git diff --check`
+- `cd backend && uv run ruff check features/envelope tests/test_envelope_phase03.py`
+- `cd backend && uv run ruff check .`
+- `cd backend && uv run ty check features/envelope tests/test_envelope_phase03.py`
+- `cd backend && uv run pytest tests/test_envelope_phase01.py tests/test_envelope_phase03.py`
+- `cd frontend && pnpm exec prettier --write 'src/features/envelope/**/*.{ts,tsx,css}'`
+- `cd frontend && pnpm exec tsc --noEmit`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm run lint`
+- `cd frontend && pnpm run check:shape && pnpm run build`
+- browser smoke on `http://127.0.0.1:5176`: restored the AB-02 draft,
+  renamed `WALL-C3`, edited layer thickness, toggled IP/SI while the
+  modal was open, copy/pasted a segment assignment, saved, reloaded,
+  and verified clean saved state.
+
+Known verification caveats:
+
+- `cd backend && uv run ty check` still fails on the pre-existing
+  custom-field / project-document baseline noted in Phase 1; the scoped
+  envelope Ty gate passes.
+- `make smoke` is blocked locally because the shared Docker container
+  name `phn-v2-postgres` is already owned by another worktree's running
+  compose stack.
+
+2026-05-27 - Simplify follow-up committed as `1d87078`. The follow-up
+kept Phase 3 behavior unchanged while reducing editor plumbing:
+
+- reused shared draft write header selection for envelope command
+  writes;
+- stored copied segment assignments as a small material/CI/stud-spacing
+  payload instead of the full segment object;
+- extracted a shared frozen-unit length draft helper for modal
+  thickness, width, and stud-spacing inputs;
+- avoided unnecessary sibling renumbering for in-place layer and
+  segment updates;
+- tightened backend insert-position helper types to preserve the
+  command `Literal` contract.
+
+Simplify verification repeated:
+
+- `git diff --check`
+- `cd backend && uv run ruff check features/envelope tests/test_envelope_phase03.py`
+- `cd backend && uv run ty check features/envelope tests/test_envelope_phase03.py`
+- `cd backend && uv run pytest tests/test_envelope_phase01.py tests/test_envelope_phase03.py`
+- `cd frontend && pnpm exec prettier --write 'src/features/envelope/**/*.{ts,tsx,css}' 'src/features/project_document/table-slice.ts'`
+- `cd frontend && pnpm exec tsc --noEmit`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm run lint`
+- `cd frontend && pnpm run check:shape && pnpm run build`
 
 ## Risks
 

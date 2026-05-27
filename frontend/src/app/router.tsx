@@ -35,7 +35,7 @@ export function AppRouter() {
         }
       />
       <Route path="/projects/:projectId" element={<ProjectTabRedirect />} />
-      <Route path="/projects/:projectId/:tab" element={<ProjectShell />} />
+      <Route path="/projects/:projectId/:tab/*" element={<ProjectShell />} />
       <Route path="/" element={<RootRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

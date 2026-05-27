@@ -1,0 +1,316 @@
+.envelope-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.envelope-topline,
+.assembly-header,
+.envelope-sidebar-header,
+.spec-card header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.envelope-topline h1,
+.envelope-sidebar h2,
+.material-legend h2,
+.spec-card h2 {
+  margin: 0;
+}
+
+.envelope-subtabs {
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 18px;
+}
+
+.envelope-subtabs a {
+  color: var(--text-secondary);
+  padding: 0 0 10px;
+  text-decoration: none;
+}
+
+.envelope-subtabs a.active {
+  border-bottom: 2px solid var(--accent);
+  color: var(--text-primary);
+}
+
+.envelope-workbench {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  min-height: 520px;
+}
+
+.envelope-sidebar {
+  border-right: 1px solid var(--border-subtle);
+  padding-right: 14px;
+}
+
+.envelope-sidebar-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.envelope-sidebar-list a {
+  border-radius: 6px;
+  color: var(--text-primary);
+  display: grid;
+  gap: 2px;
+  padding: 9px 10px;
+  text-decoration: none;
+}
+
+.envelope-sidebar-list a.active,
+.envelope-sidebar-list a:hover {
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+
+.envelope-sidebar-list small,
+.spec-card header p,
+.use-sites span {
+  color: var(--text-secondary);
+}
+
+.assembly-workspace {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.assembly-header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+}
+
+.assembly-header label,
+.assembly-header dt {
+  color: var(--text-secondary);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.assembly-header select {
+  min-width: 220px;
+}
+
+.assembly-header-metrics {
+  display: flex;
+  gap: 22px;
+  margin: 0;
+}
+
+.assembly-header-metrics dd {
+  margin: 0;
+}
+
+.assembly-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.assembly-canvas-scroll {
+  overflow: auto;
+}
+
+.assembly-canvas {
+  display: grid;
+  gap: 8px;
+  min-width: 360px;
+}
+
+.assembly-layer {
+  border: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+}
+
+.assembly-layer-label {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+}
+
+.layer-actions,
+.segment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.assembly-segments {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.assembly-segment {
+  border-right: 1px solid color-mix(in oklab, var(--border-subtle) 70%, var(--text-secondary));
+  color: var(--text-primary);
+  display: grid;
+  gap: 3px;
+  min-width: 72px;
+  padding: 8px;
+}
+
+.assembly-segment[data-paste-target="true"] {
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+}
+
+.assembly-segment.null-material {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--border-subtle) 55%, transparent) 0 8px,
+    transparent 8px 16px
+  );
+}
+
+.material-legend div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.material-chip {
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+.material-chip i {
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  height: 12px;
+  width: 12px;
+}
+
+.specifications-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.spec-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.spec-values {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.spec-values dd {
+  margin: 0;
+}
+
+.spec-notes {
+  margin: 0;
+}
+
+.use-sites h3 {
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+
+.use-sites ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.use-sites li {
+  display: grid;
+  gap: 2px;
+}
+
+.use-sites em {
+  color: var(--text-primary);
+  font-style: normal;
+}
+
+.envelope-empty {
+  border: 1px dashed var(--border-subtle);
+  border-radius: 8px;
+  padding: 28px;
+}
+
+.envelope-empty-action {
+  margin-top: 12px;
+}
+
+.envelope-command-banner {
+  align-items: center;
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--border-subtle));
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 8px 10px;
+}
+
+.modal-unit-toggle {
+  align-items: center;
+  align-self: flex-start;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+}
+
+.modal-unit-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 36px;
+  padding: 6px 8px;
+}
+
+.modal-unit-toggle button.active {
+  background: var(--text-primary);
+  color: var(--surface);
+}
+
+@media (max-width: 780px) {
+  .envelope-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .envelope-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 0 12px;
+  }
+
+  .assembly-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

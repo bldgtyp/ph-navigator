@@ -155,3 +155,32 @@ Add PRD lessons if the real UI changes:
 - duplicate material disambiguation;
 - viewer visibility rules;
 - empty-state copy or routing.
+
+## Implementation Progress Notes
+
+Updated 2026-05-27:
+
+- Added the read-only `frontend/src/features/envelope/` package with
+  API/query hooks, typed read contracts, assembly routing, canvas,
+  sidebar, legend, and Specifications scaffold.
+- Routed project nested tab paths through `/projects/:projectId/:tab/*`
+  so `/envelope/assemblies/...` and `/envelope/specifications` can be
+  handled inside the Envelope feature boundary.
+- Browser smoke used seeded project
+  `50e5bd2e-50cc-446d-8356-bfae4aba678e` at
+  `http://localhost:5175`, backend `http://localhost:8001`, and verified
+  redirect, deep link rendering, editor read-only affordances, SI/IP
+  label switching, and Specifications use-site display.
+- `make smoke` was not runnable from this worktree because the shared
+  Docker container name `phn-v2-postgres` was already owned by another
+  compose project. Equivalent local checks used the existing healthy DB,
+  `backend/scripts.check_db`, and the browser smoke above.
+- Simplify pass tightened frontend DTO unions to the backend contract,
+  centralized Envelope route path helpers, reused shared natural-name
+  sorting, sorted Specifications materials by completion/use state, and
+  added tests for invalid assembly ids and empty assemblies. Committed
+  as `bd77dee` on `codex/assembly-builder-phase-02`.
+- Post-simplify verification passed:
+  `pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx src/features/windows/lib.test.ts`,
+  `pnpm exec tsc --noEmit`, `pnpm run lint`, `pnpm run build`,
+  `pnpm run check:shape`, and `git diff --check`.

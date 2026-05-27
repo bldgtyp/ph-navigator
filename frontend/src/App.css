@@ -7,4 +7,5 @@
 @import "./features/project_status/project_status.css";
 @import "./features/catalogs/catalogs.css";
 @import "./features/windows/windows.css";
+@import "./features/envelope/envelope.css";
 @import "./shared/ui/data-table/DataTable.css";

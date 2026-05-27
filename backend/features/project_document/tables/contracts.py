@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 from starlette import status
 
 from features.project_document.custom_fields import CustomValue, TableFieldDef
@@ -28,6 +28,21 @@ if TYPE_CHECKING:
     # `TableFieldRegistry` so the typed callable on the dataclass
     # cannot import the DTO union eagerly.
     from features.project_document.schema_mutations import FieldSchemaMutation
+
+UnitQuantity = Literal["length", "conductivity", "density", "specific_heat"]
+
+
+class TableRowsResponse(BaseModel):
+    """Generic `{rows}` response envelope for non-FieldDef table contracts."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    version_etag: str
+    draft_etag: str | None
+    rows: list[dict[str, object]]
 
 
 @dataclass(frozen=True)
@@ -154,6 +169,8 @@ class TableContract:
     table_path: tuple[str, ...] = ()
     # None on tables that have not opted into the field registry.
     field_registry: TableFieldRegistry | None = None
+    # Non-persisted frontend hints for PHN-defined physical fields.
+    unit_fields: dict[str, UnitQuantity] | None = None
 
     @property
     def custom_fields(self) -> TableFieldRegistry | None:

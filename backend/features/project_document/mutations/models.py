@@ -16,12 +16,12 @@ from features.project_document.custom_fields import (
     CustomFieldType,
     TableFieldDef,
 )
+from features.project_document.document import SingleSelectOption
+from features.project_document.formula import SOURCE_LENGTH_MAX
 
 # Back-compat alias so callers still importing `CustomFieldDef` keep
 # working through the Phase 1b cutover.
 CustomFieldDef = TableFieldDef
-from features.project_document.document import SingleSelectOption
-from features.project_document.formula import SOURCE_LENGTH_MAX
 
 __all__ = [
     "AUDIT_KIND_BY_MUTATION",

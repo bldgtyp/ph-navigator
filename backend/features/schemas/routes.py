@@ -34,6 +34,6 @@ def rooms_table_v1_schema() -> dict[str, Any]:
     return model_schema(RoomsTableEnvelope)
 
 
-@router.get("/window-type/v1.json")
-def window_type_v1_schema() -> dict[str, Any]:
-    return model_schema(get_table_contract_by_schema_slug("window-type").schema_model)
+@router.get("/{schema_slug}/v1.json")
+def table_row_schema(schema_slug: str) -> dict[str, Any]:
+    return model_schema(get_table_contract_by_schema_slug(schema_slug).schema_model)

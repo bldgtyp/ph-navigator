@@ -126,9 +126,9 @@ defaults are active unless a phase spike proves otherwise:
 
 | Phase | Status | Evidence |
 |---|---|---|
-| 1 | Proposed | Plan drafted. |
-| 2 | Proposed | Plan drafted. |
-| 3 | Proposed | Plan drafted. |
+| 1 | Merged to main | Implemented on `codex/assembly-builder-phase-01`; flattened into main with the Phase 1-3 squash merge. Verified with `git diff --check`, `backend` Ruff, scoped Ty, `tests/test_envelope_phase01.py`, and `tests/test_schemas.py`. |
+| 2 | Merged to main | Read-only shell implemented on `codex/assembly-builder-phase-02` (`929f5b8`, simplify follow-up `bd77dee`); flattened into main with the Phase 1-3 squash merge. Verified with targeted Envelope/Windows tests, `tsc --noEmit`, frontend build, ESLint, feature-shape check, `git diff --check`, and local browser smoke on a seeded envelope project. |
+| 3 | Merged to main | Editor commands implemented on `codex/assembly-builder-phase-03` (`9e6c560`, simplify follow-up `1d87078`, docs-pass `0458eae`); flattened into main with the Phase 1-3 squash merge. Verified with backend envelope Ruff/Ty/Pytest gates, frontend Prettier/TS/Vitest/ESLint/shape/build gates, `git diff --check`, and browser smoke covering modal unit toggle, copy/paste assignment, Save, and reload. `make smoke` remains blocked by the local shared `phn-v2-postgres` Docker container name conflict. |
 | 4 | Proposed | Plan drafted. |
 | 5 | Proposed | Plan drafted. |
 | 6 | Proposed | Plan drafted. |

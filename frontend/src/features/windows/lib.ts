@@ -10,6 +10,8 @@ import type {
   WindowTypeEntry,
 } from "./types";
 
+export { naturalSortByName } from "../../shared/lib/sort";
+
 // Feature-scoped ID prefixes for `generatedId`. Centralized so future
 // tabs can't pick a colliding short prefix.
 export const WINDOW_TYPE_ID_PREFIX = "wt";
@@ -18,12 +20,6 @@ const WINDOW_ELEMENT_ID_PREFIX = "winel";
 export const FRAME_SIDES: readonly FrameSide[] = ["top", "right", "bottom", "left"];
 
 export const OVERRIDE_TRACKER_FIELD: keyof FrameRef & keyof GlazingRef = "u_value_w_m2k";
-
-export function naturalSortByName<T extends { name: string }>(items: T[]): T[] {
-  return [...items].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }),
-  );
-}
 
 export const DEFAULT_WINDOW_TYPE_NAME = "Unnamed Window Type";
 

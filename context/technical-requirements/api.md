@@ -388,13 +388,15 @@ stored in the metadata row.
 ```
 GET /api/v1/schemas/project-document/v1.json
 GET /api/v1/schemas/room/v1.json
-GET /api/v1/schemas/window-type/v1.json
+GET /api/v1/schemas/{schema_slug}/v1.json
 GET /api/v1/openapi.json
 ```
 
 Schemas are served from Pydantic-generated contracts. The `v1.json`
 suffix is the *document schema* version, independent of the API version
-(see §10.5). Phase 1 exposes the current project-document schema, the
-registered Rooms row schema, and the registered Window Type schema
-(TB-08.b). Catalog (Materials, Frame, Glazing) and Envelope schema
-endpoints will be added as those table contracts land.
+(see §10.5). Dedicated project-document, Room row, and Rooms table
+envelope endpoints remain for stable inspector links. Registered table
+row schemas are served through `{schema_slug}` from the table-contract
+registry; current slugs include `window-type`, `project-material`, and
+`assembly-segment`. Catalog (Materials, Frame, Glazing) schemas will be
+added as those table contracts land.
