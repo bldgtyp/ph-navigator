@@ -104,10 +104,7 @@ def test_hbjson_export_rejects_incomplete_saved_version_with_paths(
     assert response.status_code == 422
     payload = response.json()
     assert payload["error_code"] == "envelope_export_incomplete"
-    assert {
-        (error["code"], error["assembly_id"], error["segment_id"])
-        for error in payload["details"]["errors"]
-    } >= {
+    assert {(error["code"], error["assembly_id"], error["segment_id"]) for error in payload["details"]["errors"]} >= {
         ("missing_material", "asm_wall_c3", "seg_null"),
         ("missing_conductivity", "asm_roof_r1", "seg_roof_insul"),
     }
@@ -156,9 +153,7 @@ def test_hbjson_export_uses_saved_version_and_preserves_material_metadata(
     assert exported_material["conductivity"] == pytest.approx(0.04)
     assert exported_material["properties"]["ref"]["external_identifiers"]["ph_nav"] == "pmat_insul"
     assert exported_material["properties"]["ref"]["ref_status"] == "complete"
-    assert exported_material["properties"]["ref"]["document_refs"] == [
-        {"asset_id": "asset_01HXABCDEF0123456789ABCD"}
-    ]
+    assert exported_material["properties"]["ref"]["document_refs"] == [{"asset_id": "asset_01HXABCDEF0123456789ABCD"}]
 
 
 def test_hbjson_export_disambiguates_duplicate_material_and_cleaned_assembly_names(

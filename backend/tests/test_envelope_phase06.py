@@ -187,9 +187,7 @@ def test_project_material_datasheet_over_cap_is_rejected(clean_envelope_asset_ta
         version_id = project["active_version_id"]
         saved_body = envelope_body()
         raw = saved_body.model_dump(mode="json")
-        raw["tables"]["project_materials"][0]["datasheet_asset_ids"] = [
-            f"asset_existing_{index}" for index in range(5)
-        ]
+        raw["tables"]["project_materials"][0]["datasheet_asset_ids"] = [f"asset_existing_{index}" for index in range(5)]
         saved_body = saved_body.model_validate(raw)
         write_saved_body(version_id, saved_body)
         datasheet_id = _upload_asset(

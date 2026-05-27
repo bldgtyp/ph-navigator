@@ -157,9 +157,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
     assert noted.status_code == 200
     segment = noted.json()["assemblies"][0]["layers"][1]["segments"][0]
     assert segment["use_site_notes"] == "Use only at service cavity returns."
-    noted_material = next(
-        material for material in noted.json()["project_materials"] if material["id"] == custom["id"]
-    )
+    noted_material = next(material for material in noted.json()["project_materials"] if material["id"] == custom["id"])
     assert noted_material["notes"] == "Confirm final product submittal."
 
     detached = client.post(

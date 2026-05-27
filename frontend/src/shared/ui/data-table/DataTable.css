@@ -1178,7 +1178,7 @@
   display: inline-flex;
   align-items: center;
   margin-left: 4px;
-  color: var(--phn-warning, #b45309);
+  color: var(--phn-warning);
   vertical-align: middle;
   pointer-events: auto;
 }

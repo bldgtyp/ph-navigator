@@ -1,3 +1,4 @@
+// @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import "../../assets/attachments.css";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";

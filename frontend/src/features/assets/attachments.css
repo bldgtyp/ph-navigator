@@ -140,7 +140,7 @@
 }
 
 .attachment-doc-thumb[data-kind="pdf"]::before {
-  background: #d94f45;
+  background: var(--phn-danger);
 }
 
 .attachment-doc-thumb span {
@@ -149,7 +149,7 @@
   letter-spacing: 0;
   position: relative;
   text-transform: uppercase;
-  z-index: 1;
+  z-index: calc(var(--z-base) + 1);
 }
 
 .attachment-pending {

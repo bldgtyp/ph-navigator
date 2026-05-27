@@ -26,9 +26,7 @@ def load_catalog_material_rows(
 
 
 def catalog_material_record_ids(materials: list[ProjectMaterial]) -> set[str]:
-    return {
-        material.catalog_origin.catalog_record_id for material in materials if material.catalog_origin is not None
-    }
+    return {material.catalog_origin.catalog_record_id for material in materials if material.catalog_origin is not None}
 
 
 def project_material_drift_item(

@@ -504,9 +504,7 @@ def tool_query_unfinished_envelope_work(
         if material_id not in referenced_material_ids
     ]
     drifted = [
-        item
-        for item in _dict_items(drift.get("materials"))
-        if item.get("state") not in {"in_sync", "customized"}
+        item for item in _dict_items(drift.get("materials")) if item.get("state") not in {"in_sync", "customized"}
     ]
     return {
         "project_id": assemblies["project_id"],
