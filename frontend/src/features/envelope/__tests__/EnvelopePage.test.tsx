@@ -240,6 +240,48 @@ describe("EnvelopePage", () => {
     );
   });
 
+  test("specifications render datasheet and site-photo evidence in read-only mode", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            project_materials: [
+              {
+                ...envelopePayload.project_materials[0]!,
+                datasheet_asset_ids: ["asset_datasheet_1"],
+                use_sites: [
+                  {
+                    ...envelopePayload.project_materials[0]!.use_sites[0]!,
+                    photo_asset_ids: ["asset_photo_1"],
+                  },
+                ],
+              },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`, {
+      projectOverride: { access_mode: "viewer" },
+    });
+
+    expect(await screen.findByTitle("wood-fiber.pdf · application/pdf")).toBeInTheDocument();
+    expect(screen.getByTitle("install.png · image/png")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Drop files here/ })).not.toBeInTheDocument();
+  });
+
+  test("na material status hides datasheet upload controls", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`);
+
+    expect(await screen.findByText("Unused air barrier")).toBeInTheDocument();
+    const unusedCard = screen.getByText("Unused air barrier").closest("article");
+    expect(unusedCard).not.toBeNull();
+    expect(unusedCard!).not.toHaveTextContent("Drop files here");
+  });
+
   test("specifications sort incomplete materials before complete materials and unused materials last", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`);
 
@@ -436,6 +478,42 @@ function jsonResponse(body: unknown): Response {
 function defaultFetchImplementation(url: string): Promise<Response> {
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
+  if (url.includes("/assets/bulk-urls")) {
+    return Promise.resolve(
+      jsonResponse({
+        items: [
+          {
+            asset_id: "asset_datasheet_1",
+            preview_url: "https://assets.test/wood-fiber.pdf",
+            preview_expires_at: "2026-05-26T20:00:00Z",
+            download_url: "https://assets.test/wood-fiber-download.pdf",
+            download_expires_at: "2026-05-26T21:00:00Z",
+            thumbnail_url: null,
+            thumbnail_status: "na",
+            thumbnail_expires_at: null,
+            content_type: "application/pdf",
+            original_filename: "wood-fiber.pdf",
+            display_name: "wood-fiber.pdf",
+            size_bytes: 1234,
+          },
+          {
+            asset_id: "asset_photo_1",
+            preview_url: "https://assets.test/install.png",
+            preview_expires_at: "2026-05-26T20:00:00Z",
+            download_url: "https://assets.test/install-download.png",
+            download_expires_at: "2026-05-26T21:00:00Z",
+            thumbnail_url: "https://assets.test/install-thumb.png",
+            thumbnail_status: "ready",
+            thumbnail_expires_at: "2026-05-26T20:00:00Z",
+            content_type: "image/png",
+            original_filename: "install.png",
+            display_name: "install.png",
+            size_bytes: 4321,
+          },
+        ],
+      }),
+    );
+  }
   if (url.includes("/envelope/export/hbjson")) {
     return Promise.resolve(jsonResponse({ constructions: {} }));
   }

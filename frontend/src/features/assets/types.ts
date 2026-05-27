@@ -86,3 +86,21 @@ export type JobResponse = {
   error_code: string | null;
   status_url: string | null;
 };
+
+export type AttachmentMutationRequest = {
+  version_id: string;
+  table_key: string;
+  row_id: string;
+  field_key: string;
+  index?: number | null;
+  if_match?: string | null;
+  if_match_version?: string | null;
+  op_group_id?: string | null;
+};
+
+export type AttachmentMutationResponse = {
+  version_etag: string;
+  draft_etag: string;
+  source: "version" | "draft";
+  asset_ids: string[];
+};

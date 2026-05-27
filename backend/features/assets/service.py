@@ -23,6 +23,7 @@ from features.assets.registry import (
     all_asset_kinds,
     asset_matches_field,
     attachment_fields_for_asset_kind,
+    attachment_table_rows,
     filename_extension,
     get_attachment_field,
     list_asset_references,
@@ -629,7 +630,7 @@ def _find_row(document: dict[str, object], table_key: str, row_id: str) -> dict[
         equipment = tables.get("equipment")
         suffix = table_key.removeprefix("equipment_")
         equipment_rows = cast(dict[str, object], equipment) if isinstance(equipment, dict) else {}
-        rows = _dict_rows(equipment_rows.get(suffix))
+        rows = attachment_table_rows(equipment_rows.get(suffix))
     elif table_key == "assembly_segments":
         for assembly in _dict_rows(tables.get("assemblies")):
             for layer in _dict_rows(assembly.get("layers")):

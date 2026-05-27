@@ -1,7 +1,12 @@
+import "../../assets/attachments.css";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { attachAssetToDocument, detachAssetFromDocument } from "../../assets/api";
 import { useMaterialsQuery } from "../../catalogs/hooks";
+import { markLocalDraftTouched } from "../../project_document/lib";
+import { projectDocumentQueryKeys } from "../../project_document/query-keys";
 import type { ProjectDetail } from "../../projects/types";
 import {
   useAssemblyThermalQuery,
@@ -30,9 +35,11 @@ import {
 import { EnvelopeSidebar } from "../components/EnvelopeSidebar";
 import { MaterialLegend } from "../components/MaterialLegend";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
+import { envelopeQueryKeys } from "../query-keys";
 import type { AssemblyLayer, AssemblySegment, EnvelopeCommand } from "../types";
 
 export function EnvelopePage({ project }: { project: ProjectDetail }) {
+  const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isViewer = project.access_mode === "viewer";
@@ -46,6 +53,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
   const catalogMaterialsQuery = useMaterialsQuery(false, canEdit && dialog?.kind === "segment");
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
   const isAssembliesRoute = isEnvelopeSubroute(subpath, "assemblies");
@@ -156,6 +164,63 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     }
   }
 
+  async function applyAttachmentChange(args: {
+    tableKey: string;
+    rowId: string;
+    fieldKey: string;
+    currentAssetIds: string[];
+    nextAssetIds: string[];
+  }): Promise<void> {
+    const current = query.data;
+    if (!current || !project.active_version_id) return;
+    setCommandError(null);
+    setAttachmentBusy(true);
+    let draftEtag = current.draft_etag;
+    try {
+      const removed = args.currentAssetIds.filter(
+        (assetId) => !args.nextAssetIds.includes(assetId),
+      );
+      const added = args.nextAssetIds.filter((assetId) => !args.currentAssetIds.includes(assetId));
+      for (const assetId of removed) {
+        const response = await detachAssetFromDocument(project.id, assetId, {
+          version_id: project.active_version_id,
+          table_key: args.tableKey,
+          row_id: args.rowId,
+          field_key: args.fieldKey,
+          if_match: draftEtag,
+          if_match_version: draftEtag ? undefined : current.version_etag,
+        });
+        draftEtag = response.draft_etag;
+      }
+      for (const assetId of added) {
+        const response = await attachAssetToDocument(project.id, assetId, {
+          version_id: project.active_version_id,
+          table_key: args.tableKey,
+          row_id: args.rowId,
+          field_key: args.fieldKey,
+          index: args.nextAssetIds.indexOf(assetId),
+          if_match: draftEtag,
+          if_match_version: draftEtag ? undefined : current.version_etag,
+        });
+        draftEtag = response.draft_etag;
+      }
+      if (draftEtag) {
+        markLocalDraftTouched(project.id, project.active_version_id, draftEtag);
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(project.id, project.active_version_id),
+        });
+      }
+      await queryClient.invalidateQueries({
+        queryKey: envelopeQueryKeys.read(project.id, project.active_version_id, "draft"),
+      });
+    } catch (error) {
+      setCommandError(errorMessage(error, "Attachment update failed."));
+      throw error;
+    } finally {
+      setAttachmentBusy(false);
+    }
+  }
+
   function pasteAssignment(layer: AssemblyLayer, segment: AssemblySegment): void {
     if (!copiedAssignment || !activeAssembly) return;
     void applyCommand({
@@ -202,11 +267,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       {isSpecificationsRoute ? (
         <SpecificationsPanel
           materials={query.data.project_materials}
+          projectId={project.id}
           isViewer={isViewer}
           canEdit={canEdit}
-          busy={commandMutation.isPending}
+          busy={commandMutation.isPending || attachmentBusy}
           error={commandError}
           onCommand={(command) => void applyCommand(command)}
+          onAttachmentChange={(args) => applyAttachmentChange(args)}
         />
       ) : assemblies.length === 0 || !activeAssembly ? (
         <div>

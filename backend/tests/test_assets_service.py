@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
+from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from main import app
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
@@ -100,21 +101,23 @@ def _pump_payload() -> dict[str, Any]:
             {
                 "id": "pmp_1",
                 "device_type": "opt_circ",
-                "use": "DHW recirc",
-                "tag": "P-1",
-                "manufacturer": "Taco",
-                "model": "0015e3",
-                "volts": 120,
                 "phase": 1,
-                "horse_power": None,
-                "wattage": 45,
-                "flow_gpm": 4,
-                "runtime_khr_yr": 2.5,
                 "notes": None,
                 "link": "https://example.com/pump.pdf",
                 "datasheet_asset_ids": [],
+                "custom_values": {
+                    "use": "DHW recirc",
+                    "record_id": "P-1",
+                    "manufacturer": "Taco",
+                    "model": "0015e3",
+                    "volts": 120,
+                    "wattage": 45,
+                    "flow_gpm": 4,
+                    "runtime_khr_yr": 2.5,
+                },
             }
         ],
+        "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
         "single_select_options": {
             "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}]
         },

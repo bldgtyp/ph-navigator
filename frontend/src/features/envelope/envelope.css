@@ -225,9 +225,21 @@
   margin: 0;
 }
 
+.spec-evidence,
+.use-site-evidence {
+  display: grid;
+  gap: 6px;
+}
+
+.spec-evidence h3,
 .use-sites h3 {
   font-size: 13px;
   margin: 0 0 6px;
+}
+
+.use-site-evidence > span {
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 .use-sites ul {

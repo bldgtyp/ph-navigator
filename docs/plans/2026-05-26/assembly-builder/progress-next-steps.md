@@ -192,3 +192,20 @@ Remaining before Phase 5 closure:
 - decide whether the current hand-authored Honeybee-compatible JSON
   shape is enough for V1 export parity or whether V2 should add a
   Honeybee package dependency for stricter object serialization.
+
+## Phase 6 Progress - Evidence Attachments And Site Photos
+
+Implementation target:
+`docs/plans/2026-05-26/assembly-builder/phase-06-evidence-attachments-site-photos.md`.
+
+Phase 6 is active on `codex/assembly-builder-phase-06`, based on the
+Phase 5 branch tip.
+
+Current implementation notes, verification commands, and closure
+checklist live in
+`docs/plans/2026-05-26/assembly-builder/phase-06-evidence-attachments-site-photos.md`.
+
+Headline status: Specifications evidence UI is wired to the generic
+asset attach/detach backbone with backend/frontend tests. Browser smoke,
+Save As / prior-version resolution proof, and destructive photo-count
+dialogs remain before Phase 6 closure.

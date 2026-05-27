@@ -1,14 +1,7 @@
 import "../attachments.css";
 import type { ProjectDetail } from "../../projects/types";
 import { AttachmentTablePanel } from "../components/AttachmentTablePanel";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../lib";
-
-const SITE_PHOTO_CONFIG = {
-  assetKind: "site_photo" as const,
-  allowedTypes: ["image/png", "image/jpeg", "image/webp"],
-  maxCount: 10,
-  maxFileSizeMb: 25,
-};
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../lib";
 
 export function EnvelopeAttachmentsTab({ project }: { project: ProjectDetail }) {
   return (
@@ -33,7 +26,7 @@ export function EnvelopeAttachmentsTab({ project }: { project: ProjectDetail }) 
         title="Assembly Segment Site Photos"
         fieldKey="photo_asset_ids"
         fieldLabel="Photos"
-        config={SITE_PHOTO_CONFIG}
+        config={SITE_PHOTO_ATTACHMENT_CONFIG}
       />
     </section>
   );

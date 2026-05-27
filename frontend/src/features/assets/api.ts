@@ -2,6 +2,8 @@ import { fetchJson, getApiBaseUrl } from "../../shared/api/client";
 import type {
   AssetKind,
   AssetUrls,
+  AttachmentMutationRequest,
+  AttachmentMutationResponse,
   AttachmentRowsPayload,
   AttachmentRowsSlice,
   JobResponse,
@@ -73,6 +75,28 @@ export async function completeUpload(projectId: string, assetId: string): Promis
   await fetchJson(`/api/v1/projects/${projectId}/assets/${assetId}/complete-upload`, {
     method: "POST",
   });
+}
+
+export async function attachAssetToDocument(
+  projectId: string,
+  assetId: string,
+  payload: AttachmentMutationRequest,
+): Promise<AttachmentMutationResponse> {
+  return fetchJson<AttachmentMutationResponse>(
+    `/api/v1/projects/${projectId}/assets/${assetId}/attach`,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function detachAssetFromDocument(
+  projectId: string,
+  assetId: string,
+  payload: AttachmentMutationRequest,
+): Promise<AttachmentMutationResponse> {
+  return fetchJson<AttachmentMutationResponse>(
+    `/api/v1/projects/${projectId}/assets/${assetId}/detach`,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
 }
 
 export async function fetchAssetUrls(projectId: string, assetIds: string[]): Promise<AssetUrls[]> {

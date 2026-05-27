@@ -13,6 +13,7 @@ export function AttachmentCell({
   readOnly,
   onChange,
   assetUrlById,
+  showInlineEmptyButton = false,
 }: {
   projectId: string;
   value: string[];
@@ -20,6 +21,7 @@ export function AttachmentCell({
   readOnly: boolean;
   onChange: (next: string[]) => Promise<void> | void;
   assetUrlById?: ReadonlyMap<string, AssetUrls>;
+  showInlineEmptyButton?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [selected, setSelected] = useState(0);
@@ -60,11 +62,17 @@ export function AttachmentCell({
     }
   };
 
-  const detachSelected = async () => {
+  const detachAt = async (targetIndex: number) => {
     if (readOnly || value.length === 0) return;
-    const next = value.filter((_, index) => index !== selected);
+    const next = value.filter((_, index) => index !== targetIndex);
     await commitChange(next);
-    setSelected(Math.max(0, Math.min(selected, next.length - 1)));
+    const nextSelected = Math.max(0, Math.min(targetIndex, next.length - 1));
+    setSelected(nextSelected);
+    setModalIndex(next[nextSelected] ? nextSelected : null);
+  };
+
+  const detachSelected = async () => {
+    await detachAt(selected);
   };
 
   const replaceSelected = async (files: FileList | null) => {
@@ -87,10 +95,12 @@ export function AttachmentCell({
     event.preventDefault();
     void attachFiles(event.dataTransfer.files);
   };
+  const isEmpty = value.length === 0 && pending.length === 0;
+  const shouldRenderEmptyDropButton = isEmpty && !readOnly;
 
   return (
     <div
-      className="attachment-cell"
+      className={`attachment-cell ${showInlineEmptyButton ? "attachment-cell-inline" : ""}`}
       tabIndex={0}
       onKeyDown={onKeyDown}
       onDragOver={(event) => {
@@ -106,17 +116,16 @@ export function AttachmentCell({
         accept={accept}
         onChange={(event) => void attachFiles(event.target.files ?? [])}
       />
-      {value.length === 0 && pending.length === 0 ? (
+      {shouldRenderEmptyDropButton ? (
         <button
           type="button"
           className="attachment-drop-button"
-          disabled={readOnly}
           onClick={() => inputRef.current?.click()}
         >
           <span aria-hidden="true">📎</span>
           <span>Drop files here</span>
         </button>
-      ) : (
+      ) : isEmpty ? null : (
         <div className="attachment-strip">
           {value.map((assetId, index) => {
             const asset = urlById.get(assetId);
@@ -161,7 +170,7 @@ export function AttachmentCell({
               onNext={() =>
                 setModalIndex((current) => Math.min(value.length - 1, (current ?? 0) + 1))
               }
-              onDetach={() => void detachSelected()}
+              onDetach={() => void detachAt(modalIndex)}
               onReplace={replaceSelected}
             />,
             document.body,
