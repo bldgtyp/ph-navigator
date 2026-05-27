@@ -1,15 +1,23 @@
 ---
 DATE: 2026-05-26
-TIME: 15:30 ET (rev 2026-05-26 19:50 ET — backend cohort landed)
+TIME: 15:30 ET (rev 2026-05-26 19:50 ET — backend cohort landed;
+        rev 2026-05-26 — frontend foundation slice landed)
 STATUS: BACKEND COHORT LANDED 2026-05-26 — matrix extension, apply
         path, lock guard, audit-log per-row before/after, circular-
         import fix all shipped on `worktree-plan-31-phase-3-bundle`.
-        Frontend cohort (P4.3 / P4.4 / P4.5 / P4.6) bundles with the
-        deferred Phase 1c frontend reshape (tasks #10 / #11) and Phase
-        2 frontend identifier deletion (tasks #18 / #19); see
-        `plan-31-customizable-fields-prd.md` §P6 Phase 3 for the
-        original full-cohort intent and `complete/plan-31-phase-2-
-        record-id-field.md` for the predecessor.
+        FRONTEND FOUNDATION LANDED 2026-05-26 — commit `891d1c6` on
+        `worktree-plan-31-frontend-bundle` (branched from the Phase 3
+        backend). `TableFieldDef` canonical type, `slice.field_defs`
+        rename on Rooms + Pumps, fingerprint v1 → v2 to byte-match
+        backend `_fingerprint.py`. Frontend typecheck fails at the
+        consumer layer by design — cascade migrates in subsequent
+        slices (#28 useTableSchema reshape + #11 row-shape, #29
+        IdentifierConfig deletion, etc.). See
+        `plan-31-phase-3-frontend-bundle.md` for the multi-session
+        rollout plan. Original full-cohort intent in
+        `plan-31-customizable-fields-prd.md` §P6 Phase 3;
+        `complete/plan-31-phase-2-record-id-field.md` for the
+        predecessor.
         Lifts the Phase 1a hard rule that disables the type picker on
         built-in fields. Extends the conversion matrix to cover
         `formula` source and target.
