@@ -10,17 +10,22 @@ data model with versioned, immutable-by-discipline saves. V1
 ## Status
 
 **Planning / scaffold.** No feature code yet. The `context/` folder
-holds the canonical reference docs; `docs/plans/` holds transient
-reviews / phasing; `research/` holds POC artifacts from V1's catalog
-spike as precedent.
+holds the canonical reference docs; `planning/` holds feature PRDs,
+progress, reviews, and phasing; `research/` holds POC artifacts from
+V1's catalog spike as precedent.
 
 ## Project Structure
 
 - `/backend` — FastAPI server, raw SQL repositories, Alembic migrations
 - `/frontend` — Vite + React + TypeScript app
 - `/context` — **Read this first.** Canonical PRD + stable reference docs
+- `/planning` — feature PRDs, phase plans, status ledgers, reviews, and
+  planning archives. Read `planning/.instructions.md` before adding or
+  moving planning docs.
 - `/research` — POC artifacts kept as precedent (NOT on the import path)
-- `/docs` — dated plans, reviews, and removed-doc routing
+- `/docs` — stable supporting docs that do not belong in startup context
+- `/working` — gitignored local scratch for handoffs, logs, screenshots,
+  and temporary notes
 
 Start here in `context/`:
 - `README.md` — reading order and doc routing
@@ -117,11 +122,16 @@ interactive verification.
 ## Planning
 
 - Durable description docs live in `context/`.
-- In-progress plans, reviews, and implementation phasing live under
-  `docs/plans/<YYYY-MM-DD>/...`.
+- Tracked feature planning lives under `planning/features/<feature>/`.
+  Use `README.md`, `PRD.md`, `STATUS.md`, `phases/`, `reviews/`,
+  `assets/`, and `archive/` per `planning/.instructions.md`.
+- Dated historical plans live under `planning/archive/dated/`.
+- Dated review artifacts live under `planning/code-reviews/`.
+- Local scratch lives under gitignored `working/`; promote accepted
+  decisions into `planning/` or `context/`.
 - When generating a plan, add `DATE` and `TIME` headers at the top.
-- Removed / superseded planning material is routed through
-  `docs/REMOVED.md`.
+- Removed / superseded planning material is routed through the relevant
+  feature `archive/` folder or `planning/archive/dated/`.
 
 ## New Code
 

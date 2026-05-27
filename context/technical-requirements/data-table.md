@@ -360,7 +360,7 @@ own row identity.
   persisted sort rules and column widths under that key round-trip
   cleanly across schema-fingerprint changes.
 
-See `docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md`
+See `planning/features/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
 for the rollout phasing (catalog and remaining project-document
 tables drop their identifier uniqueness validators in later phases).
 
@@ -450,7 +450,7 @@ group / order / hidden columns (plan 09).
 - Linked-record / relation cells.
 - ~~User-created runtime schema editing (the tail "+" cell is laid out
   but unwired).~~ Replaced by user-defined custom fields — see
-  `data-model.md` §6.6 and `docs/plans/2026-05-24/plan-13-custom-fields-overview.md`.
+  `data-model.md` §6.6 and `planning/archive/dated/2026-05-24/plan-13-custom-fields-overview.md`.
   The tail `+` cell opens the field editor popover for Editors and
   remains hidden in Viewer mode.
 - Named/shareable table views.

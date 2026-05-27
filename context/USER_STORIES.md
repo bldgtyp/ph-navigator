@@ -36,7 +36,7 @@ phase. Avoid building large isolated subsystems that cannot be clicked
 through end-to-end.
 
 Active execution tracker:
-`docs/plans/2026-05-12/implementation-roadmap.md`.
+`planning/ROADMAP.html`.
 
 | Phase | Goal | Stories / docs to load | Manual verification target |
 |---|---|---|---|
@@ -47,7 +47,7 @@ Active execution tracker:
 | 4. Envelope + assets slice | Implement Assemblies, Project Materials, Specifications, datasheet/photo asset attach, effective R/U display, and envelope export. | `20-envelope.md`, `50-settings-ops-llm.md` | Build one wall assembly, pick material, attach datasheet/photo, verify Viewer read-only cards, download construction JSON/HBJSON export. |
 | 5. Model viewer slice | Upload HBJSON, parse/model-data endpoint, render R3F Model tab, file picker, color/viz/tool basics. | `40-model-viewer.md`, `50-settings-ops-llm.md` | Upload two HBJSONs, switch active file, see nonblank interactive 3D scene, use basic select/measure/color-by. |
 | 6. MCP + mechanical completion | Harden MCP read/write, asset ingestion, ERV/Fans tables, placeholders for pumps/TB, concurrency edge cases, audit trail. | `30-tables-equipment.md`, `50-settings-ops-llm.md`, `00-foundation-shell.md` | Claude/MCP uploads a datasheet and attaches it; browser shows MCP edit lease; ERV/Fan rows save and reload. |
-| 7. Release hardening | Resolve remaining open questions, security/ops baseline, bundle/performance budgets, e2e coverage, staging deployment. | `90-open-questions.md`, `docs/plans/2026-05-10/docs-review.md`, all story files as needed | Full MVP smoke on staging with seed and imported V1 project. |
+| 7. Release hardening | Resolve remaining open questions, security/ops baseline, bundle/performance budgets, e2e coverage, staging deployment. | `90-open-questions.md`, `planning/ROADMAP.html`, all story files as needed | Full MVP smoke on staging with seed and imported V1 project. |
 
 ## Loading Rules
 
@@ -59,4 +59,5 @@ Active execution tracker:
   resolved historical Q rows drive implementation against newer story
   text.
 - When a phase lands, update this routing table and any active
-  `docs/plans/<date>/...` implementation plan.
+  `planning/features/<feature>/STATUS.md` or `planning/ROADMAP.html`
+  tracker.

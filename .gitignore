@@ -63,3 +63,6 @@ postgres_data/
 .claude/scheduled_tasks.lock
 .claude/scheduled_tasks/
 phase3-walk/
+
+# ─── Local working notes / agent scratch ───
+working/

@@ -8,5 +8,5 @@ feature provides only the API + TanStack Query hooks.
 The empty `routes/` and `components/` directories (with `.gitkeep`) and the
 no-op `lib.ts` are kept for **structural consistency** with the canonical
 feature shape established by `features/catalogs/` and `features/projects/`
-(see `docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md` §Phase 6).
+(see `planning/archive/dated/2026-05-25/plan-23-frontend-refactor-phased.md` §Phase 6).
 They are placeholders — populate them when MCP grows a dedicated UI.

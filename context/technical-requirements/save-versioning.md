@@ -152,7 +152,7 @@ Properties:
   each phase boundary).
 
 The draft/save state machine is consolidated here in §§8.3–8.6. The
-former standalone decision note is archived in `docs/REMOVED.md`.
+former standalone decision note is archived in `planning/archive/dated/2026-05-14/REMOVED.md`.
 
 ### 8.4 Diff
 

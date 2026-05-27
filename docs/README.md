@@ -1,18 +1,13 @@
-# `docs/` — Planning, Reviews, And Archives
+# `docs/` - Stable Supporting Docs
 
-- `plans/<YYYY-MM-DD>/...` — transient planning, phasing, and
-  implementation notes. Add `DATE` and `TIME` headers.
-- `features/...` — feature-focused PRDs that are more durable than
-  dated plans but not part of the default `context/` startup set.
-  Use these as coding-agent reference documents when implementing
-  the corresponding feature cluster.
-- `code-reviews/<YYYY-MM-DD>/...` — dated review artifacts and their
-  supporting screenshots / contact sheets.
-- `REMOVED.md` — routing note for planning docs removed from active
-  context.
+`docs/` is no longer the working-planning surface. Keep this folder for
+stable supporting documents that are useful but do not belong in
+`context/`, such as schema-version logs.
+
+- `SCHEMA_VERSIONS.md` - running log of `ProjectDocumentV1` schema
+  bumps.
 
 Stable product, architecture, UI, stack, table, and glossary reference
-docs live in `context/`. If a doc should be loaded as durable project
-context after the work is complete, move it to `context/`; otherwise
-leave it in `docs/features/`, `docs/plans/`, or `docs/code-reviews/` as
-appropriate.
+docs live in `context/`. Tracked feature planning, implementation
+phasing, progress ledgers, reviews, and archives live in `planning/`.
+Local scratch lives in gitignored `working/`.

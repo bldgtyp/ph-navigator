@@ -10,13 +10,13 @@ SCOPE: User stories for adding AirTable-style user-defined fields
        project-document tables (Rooms, ERVs, Pumps, Fans, Thermal
        Bridges, ...). Catalog tables are explicitly out of scope for
        v1. Authoring source for the implementation plans under
-       docs/plans/2026-05-24/plan-13-custom-fields-overview.md.
+       planning/archive/dated/2026-05-24/plan-13-custom-fields-overview.md.
 RELATED: context/user-stories/30-tables-equipment.md (US-Builder-Tables),
          context/user-stories/31-data-table-enhancements.md (parity bar),
          context/technical-requirements/data-table.md,
          context/technical-requirements/data-model.md,
          context/PRD.md §6 (data model), §11 (frontend),
-         docs/plans/2026-05-24/plan-13-custom-fields-overview.md
+         planning/archive/dated/2026-05-24/plan-13-custom-fields-overview.md
 ---
 
 # PH-Navigator V2 — User Stories: Custom Fields (US-CF-*)
