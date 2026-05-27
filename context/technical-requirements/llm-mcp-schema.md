@@ -281,7 +281,7 @@ writes, and project asset attach flows are MCP-callable in v1.
 
 `context/` is the stable reference layer. It should stay tight:
 canonical product/architecture docs live here; dated working plans and
-implementation phasing stay under `docs/plans/`.
+implementation phasing stay under `planning/archive/dated/`.
 
 Current hand-written docs:
 

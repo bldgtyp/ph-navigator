@@ -489,9 +489,9 @@ ungrouped tables (total iCFA, total fan wattage, etc.).
 **Reference:** AirTable column-resize behavior (see attached
 screenshot, 2026-05-24).
 **Related plans:**
-`docs/plans/2026-05-24/plan-11-tbl-column-resize-overflow.md`
+`planning/archive/dated/2026-05-24/plan-11-tbl-column-resize-overflow.md`
 (guidelines) and
-`docs/plans/2026-05-24/plan-12-tbl-column-resize-implementation.md`
+`planning/archive/dated/2026-05-24/plan-12-tbl-column-resize-implementation.md`
 (phasing).
 
 ### Story

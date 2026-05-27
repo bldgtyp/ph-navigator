@@ -18,7 +18,7 @@ It is the reference for both dev-time feature work and production
 troubleshooting.
 
 Implementation phasing for the rollout lives in
-`docs/plans/<YYYY-MM-DD>/plan-19-logging-phase-1-backend-structlog.md`
+`planning/archive/dated/2026-05-25/plan-19-logging-phase-1-backend-structlog.md`
 and successor plans.
 
 ## Goals

@@ -11,5 +11,5 @@ This feature has **no route-level page components** of its own. Document
 state is surfaced through other features' routes (`ProjectShell`,
 `RoomsPage`, etc.) which consume the hooks and table-slice factory
 exposed here. The omission is intentional — see
-`docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md` §Phase 6
+`planning/archive/dated/2026-05-25/plan-23-frontend-refactor-phased.md` §Phase 6
 (§6.3) for the canonical shape and this documented exception.

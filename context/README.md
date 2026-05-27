@@ -1,9 +1,9 @@
 # PHN-V2 `context/` — Canonical Reference
 
 This folder is the stable description layer for PH-Navigator V2.
-Feature PRDs that are durable but not part of the default startup set
-live under `docs/features/`. Implementation plans, dated reviews, and
-temporary sequencing work stay under `docs/plans/`.
+Feature PRDs, implementation plans, dated reviews, progress ledgers,
+and temporary sequencing work live under `planning/` unless they have
+graduated into stable `context/` contracts.
 
 ## Default Startup Read
 
@@ -21,9 +21,10 @@ Load these only when the task touches the relevant surface:
 - `USER_STORIES.md` — routing document for story files and phasing.
 - `user-stories/*.md` — canonical story bodies; load only the file for
   the active phase / feature cluster.
-- `docs/features/*.md` — feature-focused PRDs for the corresponding
-  feature cluster; load with the matching user-story file when
-  implementation or review needs feature-level product intent.
+- `planning/features/<feature>/README.md`, `PRD.md`, and `STATUS.md` —
+  feature-focused product intent, active state, and phase routing. Load
+  with the matching user-story file when implementation or review needs
+  feature-level detail.
 - `TECHNICAL_REQUIREMENTS.md` — router for implementation-level
   requirements split out of the PRD.
 - `technical-requirements/*.md` — detailed contracts for data model,
@@ -46,8 +47,9 @@ Load these only when the task touches the relevant surface:
 
 ## Historical / Removed
 
-- `docs/REMOVED.md` — points to material intentionally removed from
-  active context.
+- `planning/archive/dated/` — historical dated plans preserved for
+  reference.
+- `planning/code-reviews/` — dated code-review artifacts.
 - `research/` — V1 reference and POC artifacts. Use as precedent only;
   nothing in `research/` is on the V2 import path.
 

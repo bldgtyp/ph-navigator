@@ -647,12 +647,13 @@ built-in fields whose locks permit it.
 
 Catalog tables (`catalog_materials`, frame, glazing) are **not** field-
 config-capable in v1 — catalog stability is foundational and revisited
-post-v1. Implementation plan: `docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md`.
+post-v1. Implementation plan: `planning/features/editable-fields/PRD.md`.
 
 The contract gates below are the durable record of decisions
 plan-31 §P3 made about identity, shape, validation timing, and export
-shape. Phase-specific implementation lives in dated plans under
-`docs/plans/2026-05-26/`.
+shape. Phase-specific implementation lives under
+`planning/features/editable-fields/phases/`, with completed predecessor
+plans under `planning/features/editable-fields/archive/complete/`.
 
 #### 6.6.1 Table envelope shape (v3)
 

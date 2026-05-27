@@ -7,7 +7,7 @@ RELATED: context/PRD.md §6.5 (asset backbone),
          context/technical-requirements/api.md §9.10,
          context/technical-requirements/data-table.md (FieldDef),
          context/technical-requirements/llm-mcp-schema.md §10.3,
-         docs/plans/2026-05-25/feature-attachments-prd.md
+         planning/features/attachments/PRD.md
          (decision archive — non-canonical)
 ---
 
@@ -20,7 +20,7 @@ context.
 
 The dated decision archive (with alternatives considered, rejected
 options, AirTable behavior comparison, and resolution history) lives at
-`docs/plans/2026-05-25/feature-attachments-prd.md`. This file is the
+`planning/features/attachments/PRD.md`. This file is the
 durable contract only.
 
 ## A1. Scope
@@ -331,4 +331,4 @@ Codes introduced by this feature:
 - Field-registry row for `attachment`: `data-table.md`.
 - Asset row schema + GC: `data-model.md §6.5`.
 - Decision archive (alternatives considered, AirTable parity baseline,
-  resolution history): `docs/plans/2026-05-25/feature-attachments-prd.md`.
+  resolution history): `planning/features/attachments/PRD.md`.

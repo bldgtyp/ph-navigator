@@ -49,8 +49,9 @@ See `Makefile` (`make help`) for the full recipe list.
 | `frontend/` | Vite + React + TypeScript app |
 | `context/` | **Read this first.** Canonical PRD and stable reference docs |
 | `research/` | POC artifacts from V1's catalog spike (precedent only — not on import path) |
-| `docs/plans/` | Dated reviews, phasing, and in-progress plans |
-| `docs/REMOVED.md` | Removed / archived planning-doc routing |
+| `planning/` | Feature PRDs, phase plans, status ledgers, reviews, and planning archives |
+| `docs/` | Stable supporting docs that do not belong in startup context |
+| `working/` | Gitignored local scratch for handoffs, logs, screenshots, and temporary notes |
 | `Makefile` | Discoverability layer — every command an agent needs |
 | `docker-compose.yml` | Postgres (local dev only) |
 | `CLAUDE.md` / `AGENTS.md` | Agent rules — Python via `uv` only, etc. |

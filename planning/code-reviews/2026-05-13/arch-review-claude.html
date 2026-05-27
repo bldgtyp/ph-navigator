@@ -1,0 +1,1662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PHN-V2 — Architectural review after Phase 1 (2026-05-13)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #fdfcf9;
+    --bg-panel: #f7f4ee;
+    --bg-code: #f0ece3;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --rule: #d8d2c4;
+    --accent: #8a4d22;
+    --severity-high: #b3261e;
+    --severity-med: #b3811e;
+    --severity-low: #5a7a35;
+    --severity-info: #2c5f8a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 28px 96px;
+  }
+  h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; }
+  h1 { font-size: 1.9rem; margin: 0 0 4px; }
+  h2 { font-size: 1.35rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+  h3 { font-size: 1.1rem; margin: 18px 0 6px; }
+  h4 { font-size: 1rem; margin: 14px 0 4px; }
+  p, ul, ol, pre, table { margin: 8px 0 12px; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 3px 0; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--bg-code);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--bg-code);
+    padding: 12px 14px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+  a { color: var(--accent); }
+  details {
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    margin: 10px 0;
+    padding: 0;
+  }
+  details > summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    list-style: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before {
+    content: "▸";
+    font-size: 0.85em;
+    color: var(--ink-soft);
+    width: 12px;
+    display: inline-block;
+    transition: transform 0.15s ease;
+  }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > div.body { padding: 4px 18px 14px; }
+  .toc {
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0 28px;
+  }
+  .toc h3 { margin-top: 0; }
+  .toc ol { padding-left: 22px; margin: 6px 0; }
+  .toc ol ol { padding-left: 18px; margin: 0; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .meta { color: var(--ink-soft); font-size: 0.9rem; }
+  .meta strong { color: var(--ink); }
+  .sev {
+    display: inline-block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    color: white;
+    vertical-align: 0.1em;
+    margin-right: 6px;
+  }
+  .sev-high { background: var(--severity-high); }
+  .sev-med  { background: var(--severity-med); }
+  .sev-low  { background: var(--severity-low); }
+  .sev-info { background: var(--severity-info); }
+  .ok { color: var(--severity-low); }
+  .warn { color: var(--severity-med); }
+  .bad { color: var(--severity-high); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 0.92rem;
+  }
+  th { background: var(--bg-panel); }
+  .adr-table td:first-child { white-space: nowrap; font-weight: 600; }
+  .adr-table td:nth-child(2) { font-size: 0.9rem; }
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--bg-panel);
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 0.93rem;
+  }
+  .callout.warn { border-left-color: var(--severity-med); }
+  .callout.bad { border-left-color: var(--severity-high); }
+  .callout.ok { border-left-color: var(--severity-low); }
+  figure.diagram {
+    margin: 14px 0 22px;
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 14px;
+    text-align: center;
+  }
+  figure.diagram svg { max-width: 100%; height: auto; }
+  figure.diagram figcaption {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .grade {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    margin-left: 6px;
+  }
+  .pillrow { margin: 8px 0; }
+  .pill {
+    display: inline-block;
+    padding: 1px 8px;
+    margin-right: 6px;
+    font-size: 0.78rem;
+    background: var(--bg-code);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    color: var(--ink-soft);
+  }
+  hr { border: none; border-top: 1px solid var(--rule); margin: 20px 0; }
+  .controls {
+    margin: 12px 0 4px;
+  }
+  .controls button {
+    font-family: inherit;
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-right: 6px;
+  }
+  .controls button:hover { background: var(--bg-code); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>PH-Navigator V2 — Architectural Review</h1>
+<p class="meta">
+  <strong>Date:</strong> 2026-05-13 &middot;
+  <strong>Reviewer:</strong> Claude (Opus 4.7) &middot;
+  <strong>Scope:</strong> End of Phase 1 (TB-00 … TB-06).
+</p>
+<p class="meta">
+  Triggered by the Phase-1 close-out request. Read against
+  <code>context/PRD.md</code>, <code>context/TECH_STACK.md</code>,
+  <code>context/CODING_STANDARDS.md</code>,
+  <code>context/technical-requirements/*</code>, and
+  <code>planning/ROADMAP.html</code>.
+  Excludes security and performance (separate dedicated reviews).
+</p>
+
+<div class="controls">
+  <button id="open-all" type="button">Expand all</button>
+  <button id="close-all" type="button">Collapse all</button>
+</div>
+
+<div class="toc" id="toc">
+  <h3>Index</h3>
+  <ol>
+    <li><a href="#summary">Executive summary</a></li>
+    <li><a href="#adr">ADR / HITL queue</a></li>
+    <li><a href="#primary">Primary review items</a>
+      <ol>
+        <li><a href="#p1">Architectural friction</a></li>
+        <li><a href="#p2">Plan vs. implementation alignment</a></li>
+        <li><a href="#p3">JSONB single-body persistence — still right?</a></li>
+        <li><a href="#p4">UI / frontend patterns</a></li>
+        <li><a href="#p5">Maintainability &amp; readability</a></li>
+      </ol>
+    </li>
+    <li><a href="#secondary">Secondary review items</a>
+      <ol>
+        <li><a href="#s1">Folder hierarchy &amp; organization</a></li>
+        <li><a href="#s2">Code reuse &amp; duplications</a></li>
+        <li><a href="#s3">Language &amp; nomenclature consistency</a></li>
+      </ol>
+    </li>
+    <li><a href="#appendix">Appendix: stats &amp; diagrams</a></li>
+  </ol>
+</div>
+
+<!-- ────────────────────────────────────────────────────────────── -->
+<h2 id="summary">1. Executive summary</h2>
+
+<p>
+  Phase 1 has landed on a solid skeleton: feature-first packages on
+  both sides, raw-SQL repositories, Pydantic v2 boundaries, TanStack
+  Query server-state ownership, working ETag/draft concurrency, an
+  MCP read surface, and a single source-of-truth JSONB body. The
+  build is healthy, the tests are real (not snapshot tar pits), and
+  there is no obvious detour from the PRD's load-bearing decisions.
+</p>
+
+<p>
+  The principal friction is concentrated in <em>one</em> feature
+  package: <code>features/project_document/</code> has absorbed
+  document schema, drafts, save/save-as/discard, version metadata
+  patch, diff, <em>and</em> downloads. This is now a single
+  ~525-line service module with two routers, and it draws the
+  <code>projects</code> ↔ <code>project_document</code> dependency
+  graph into a loop. Two more table types (Windows, Envelope) and
+  this package becomes very hard to navigate. Splitting it now,
+  while the only typed table is Rooms, costs almost nothing; doing
+  it after TB-08/TB-10 will require moving a lot more code.
+</p>
+
+<p>
+  The other notable gap is on the frontend: there is no Zustand,
+  no shadcn/Tailwind, no <code>&lt;DataTable&gt;</code>, no JSON
+  Schema endpoint, and no idempotency-key handling — all of which
+  the PRD/TECH_STACK calls out as v1 commitments. Each has been
+  deferred deliberately per slice. Two of them
+  (<code>RoomsSliceReplaceRequest</code> hardcoded shape,
+  per-table BroadcastChannel hook) need a design call <em>before</em>
+  Windows ships in TB-08, or the per-table pattern will be
+  copy-pasted three times before anyone notices.
+</p>
+
+<p>
+  Verdict: the JSONB-body bet still pays off for v1. The plan is
+  largely intact. Pause here, split <code>project_document</code>,
+  generalize the table-slice contract, and pick the
+  Zustand / styling cutover slice. Then proceed.
+</p>
+
+<!-- ────────────────────────────────────────────────────────────── -->
+<h2 id="adr">2. ADR / HITL queue</h2>
+
+<p>
+  Items that <em>require</em> a human decision (or at least an
+  explicit "no, defer") before the Phase 2 (TB-07 onward) work
+  starts. Ordered roughly by urgency.
+</p>
+
+<table class="adr-table">
+  <thead>
+    <tr><th>ADR</th><th>Question</th><th>Why it matters now</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ADR-1</td>
+      <td>Split <code>features/project_document/</code> into
+        <code>versions</code>, <code>drafts</code>,
+        <code>document</code>, <code>diff</code>,
+        <code>downloads</code>?</td>
+      <td>Service is 525 lines, mixes 4 domains, has a dual-router
+        file, and creates a circular import shape with
+        <code>features/projects</code>. Easier to split now (Rooms
+        only) than after Windows + Envelope.</td>
+    </tr>
+    <tr>
+      <td>ADR-2</td>
+      <td>Generalize the per-table slice contract before TB-08, or
+        per-feature later?</td>
+      <td><code>RoomsSliceReplaceRequest</code>,
+        <code>RoomsSliceResponse</code>,
+        <code>require_rooms_table()</code> are all hardcoded for
+        Rooms today. Windows will need the same shape. Without a
+        registry, we'll fork the route or build a per-table
+        endpoint.</td>
+    </tr>
+    <tr>
+      <td>ADR-3</td>
+      <td>shadcn/ui + Tailwind cutover slice — now, or post-Phase-2?</td>
+      <td>The frontend ships hand-rolled CSS (App.css = 918 lines).
+        PRD/TECH_STACK pins shadcn/ui + Tailwind. Each new
+        component is a future migration debt. Decide before
+        Window canvases / DataTable / 3D viewer add another N
+        hundred lines of vanilla CSS.</td>
+    </tr>
+    <tr>
+      <td>ADR-4</td>
+      <td>Zustand store: introduce before Windows/Envelope, or
+        defer until cross-component UI state actually appears?</td>
+      <td>Today active version lives in URL search params, dirty
+        state lives in TanStack Query (<code>source === "draft"</code>).
+        Workable for Rooms. Windows builder + Assembly canvas +
+        viewer state may push this past the point that ad-hoc
+        local state can carry.</td>
+    </tr>
+    <tr>
+      <td>ADR-5</td>
+      <td>Frontend types: hand-written or generated from OpenAPI?</td>
+      <td>CODING_STANDARDS says "prefer generated once OpenAPI
+        generation is adopted." We have hand-mirrored types in
+        every feature. Cost is small now; cost grows linearly.</td>
+    </tr>
+    <tr>
+      <td>ADR-6</td>
+      <td>Per-table BroadcastChannel coordination hook —
+        generalize before Windows, or copy-paste once first?</td>
+      <td><code>useRoomsDraftBroadcast</code> + its message types
+        will be repeated per table. Generalizing now is ~30 LOC;
+        deferring means three copies before refactor.</td>
+    </tr>
+    <tr>
+      <td>ADR-7</td>
+      <td>Backend audit-log / request-metadata helpers — keep in
+        <code>features/auth/</code>, or hoist to <code>features/shared/</code>?</td>
+      <td><code>auth.repository.log_action</code>,
+        <code>auth.service.client_ip</code>,
+        <code>auth.service.user_agent</code> are imported by
+        every feature that writes audit entries. Calling
+        <code>auth_repository.log_action</code> from
+        <code>project_document/service.py</code> is a labeling
+        accident.</td>
+    </tr>
+    <tr>
+      <td>ADR-8</td>
+      <td><code>body_size_bytes()</code> lives in
+        <code>features/projects/service.py</code> but is a
+        document-side calculation. Move?</td>
+      <td>Currently <code>project_document/service.py</code> imports
+        <code>body_size_bytes</code> from
+        <code>projects/service.py</code>. Reads backwards.</td>
+    </tr>
+    <tr>
+      <td>ADR-9</td>
+      <td>Schema-version fallback (PRD §10.5
+        <em>read-safe-mode</em>) — when does it ship?</td>
+      <td>Today an unparseable saved body returns 422. PRD says
+        we must still serve the raw body + a workspace banner. We
+        have a partial mitigation (raw JSON download from
+        <code>get_raw_saved_document</code>). The shell-wide
+        fallback is deferred — fine, but flag that <em>any</em>
+        future schema migration without this in place puts saved
+        data behind an error wall.</td>
+    </tr>
+    <tr>
+      <td>ADR-10</td>
+      <td>Idempotency-Key middleware: TB-17 (with MCP writes), or
+        earlier?</td>
+      <td>PRD §9.5 says every mutating REST write accepts the
+        key. We haven't implemented it yet. Save/Save-As is
+        already mutating. Late add = breaking change risk.</td>
+    </tr>
+    <tr>
+      <td>ADR-11</td>
+      <td>JSON Schema endpoint (<code>/api/v1/schemas/*</code>) —
+        ship before TB-04b MCP writes (TB-17)?</td>
+      <td>PRD §10.2/§9.12 says LLMs validate edits against this
+        schema. MCP write tools without it = unsafe edits or
+        hand-rolled validation duplication.</td>
+    </tr>
+    <tr>
+      <td>ADR-12</td>
+      <td>Frontend folder naming — UI domain
+        (<code>equipment</code>) vs. data domain
+        (<code>project_document</code>) for table-housing
+        features?</td>
+      <td>Today the Rooms UI lives in
+        <code>frontend/src/features/equipment/</code> (UI tab),
+        the Rooms data lives in
+        <code>backend/features/project_document/</code> (document
+        table). When Assembly/Window land, will frontend features
+        be <code>envelope</code>/<code>windows</code> (UI) and
+        backend stays <code>project_document</code>? Pick a rule
+        and stick to it.</td>
+    </tr>
+    <tr>
+      <td>ADR-13</td>
+      <td>Whole-document validation on every table-slice read —
+        accept the O(doc) tax, or short-circuit?</td>
+      <td>Every <code>GET /draft/tables/rooms</code> validates
+        the entire body. Trivial at 50 KB, painful at 5 MB. The
+        PRD already greenlights deferring; flag as
+        "instrumentation needed."</td>
+    </tr>
+    <tr>
+      <td>ADR-14</td>
+      <td>"Open another version" UX — <code>?version=</code> URL
+        only (current) vs. also setting
+        <code>active_version_id</code>?</td>
+      <td>TB-05 review flagged this. The
+        <code>usePatchVersionMutation</code> still exposes
+        <code>make_active</code>; nothing in the UI currently
+        calls it during "Open," but the API shape invites
+        misuse.</td>
+    </tr>
+    <tr>
+      <td>ADR-15</td>
+      <td>Rename <code>features/project_document</code> to match
+        api.md §9.3 nomenclature (<code>versions</code> +
+        <code>drafts</code> + <code>document</code>) once split?</td>
+      <td>The feature folder name doesn't match the SQL table
+        name, the API route group, or the user-facing concept.
+        Fix in the same PR that splits the package.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────────────────────────────── -->
+<h2 id="primary">3. Primary review items</h2>
+
+<!-- ───── P1 ───── -->
+<details id="p1" open>
+<summary>3.1 — Architectural friction emerging now <span class="grade">⚠ moderate</span></summary>
+<div class="body">
+
+<h3><span class="sev sev-high">High</span> A. <code>project_document</code> is becoming a god-feature</h3>
+<p>
+  By the end of TB-06, <code>backend/features/project_document/</code>
+  has accumulated:
+</p>
+<ul>
+  <li>document schema (<code>document.py</code>);</li>
+  <li>Rooms-slice read/replace (<code>service.py</code>);</li>
+  <li>draft buffer upsert / delete (<code>repository.py</code>,
+    <code>service.py</code>);</li>
+  <li>Save and Save As (<code>service.py</code>);</li>
+  <li>discard draft;</li>
+  <li><code>PATCH</code> version metadata (lock / make-active);</li>
+  <li>version-vs-version <em>and</em> version-vs-draft diff;</li>
+  <li>project JSON + per-table JSON downloads (read-safe raw
+    body recovery path).</li>
+</ul>
+
+<p>
+  <code>service.py</code> is now 525 lines — right at the
+  CODING_STANDARDS "split before 600" soft limit — and
+  <code>routes.py</code> mounts <em>two</em> routers
+  (<code>router</code> + <code>diff_router</code>) just to avoid
+  awkward prefix nesting. That dual-router file is a smell.
+</p>
+
+<p>The PRD/API contract actually distinguishes:</p>
+<ul>
+  <li>§9.3 Versions (lifecycle: PATCH, DELETE, save-as-new POST)</li>
+  <li>§9.4 Document read</li>
+  <li>§9.5 Drafts (autosave / save / save-as / discard)</li>
+  <li>§9.6 Diff</li>
+  <li>§9.7 Downloads</li>
+</ul>
+
+<p>
+  These are five domains. Today they all live in one folder, behind
+  one service module, exporting one set of helpers. The TB-05 code
+  review already flagged this; it's worth resolving before TB-08
+  piles Windows-slice logic and TB-17 piles MCP writes on top.
+</p>
+
+<div class="callout warn">
+  <strong>Recommendation:</strong> Split into
+  <code>features/versions/</code> (PATCH version, save-as-new clone),
+  <code>features/drafts/</code> (save, save-as, discard, draft
+  replace / patch),
+  <code>features/document/</code> (read endpoints +
+  <code>ProjectDocumentV1</code> + table-slice contract),
+  <code>features/diff/</code>, and
+  <code>features/downloads/</code> (or merge diff+downloads if
+  they stay thin). All five can share
+  <code>shared.errors.api_error</code> and
+  <code>shared.audit.log_action</code>.
+</div>
+
+<h3><span class="sev sev-high">High</span> B. <code>projects</code> ↔ <code>project_document</code> circular dependency</h3>
+<p>From the import graph:</p>
+<ul>
+  <li><code>projects/repository.py</code> imports
+      <code>ProjectDocumentV1</code> (for the empty initial
+      version body)</li>
+  <li><code>projects/service.py</code> imports
+      <code>ProjectDocumentProject</code>,
+      <code>ProjectDocumentV1</code> (for
+      <code>empty_project_document</code>)</li>
+  <li><code>project_document/document.py</code> imports
+      <code>CertificationProgram</code> from
+      <code>projects/models.py</code></li>
+  <li><code>project_document/models.py</code> imports
+      <code>ProjectVersionPublic</code>,
+      <code>VersionKind</code> from
+      <code>projects/models.py</code></li>
+  <li><code>project_document/service.py</code> imports
+      <code>ProjectDetail</code>, <code>body_size_bytes</code>,
+      <code>get_project_detail</code>, <code>version_public</code>
+      from <code>projects/service.py</code></li>
+  <li><code>project_document/routes.py</code> imports
+      <code>ProjectDetail</code> from <code>projects/models.py</code></li>
+</ul>
+
+<p>
+  Python doesn't raise — there are no module-load cycles — but
+  this is "package A and package B own halves of each other's
+  contracts." The fix is the same as ADR-1: when
+  <code>project_document</code> is split, document/version types
+  belong with the document feature, and
+  <code>features/projects/</code> can stay narrow (project
+  metadata, BT number availability, ownership, list/create/get).
+</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Backend feature dependency graph">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="arr-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b3261e"/>
+    </marker>
+  </defs>
+  <style>
+    .box  { fill:#f7f4ee; stroke:#8a4d22; stroke-width:1.2; }
+    .box-shared { fill:#eaeae0; stroke:#555; }
+    .box-bad  { fill:#fbe9e7; stroke:#b3261e; }
+    .lbl  { font:600 12px "Outfit",sans-serif; fill:#1a1a1a; }
+    .sub  { font:11px "Outfit",sans-serif; fill:#555; }
+    .edge { stroke:#1a1a1a; stroke-width:1.2; fill:none; }
+    .edge-bad { stroke:#b3261e; stroke-width:1.5; fill:none; }
+    .tag { font:600 10px "JetBrains Mono",monospace; fill:#b3261e; }
+  </style>
+  <!-- shared -->
+  <rect class="box-shared box" x="310" y="20"  width="160" height="40" rx="4"/>
+  <text class="lbl" x="390" y="44" text-anchor="middle">shared (errors, mw)</text>
+
+  <!-- auth -->
+  <rect class="box" x="40" y="110" width="160" height="60" rx="4"/>
+  <text class="lbl" x="120" y="135" text-anchor="middle">auth</text>
+  <text class="sub" x="120" y="152" text-anchor="middle">sessions · users · log_action</text>
+
+  <!-- projects -->
+  <rect class="box" x="240" y="110" width="160" height="60" rx="4"/>
+  <text class="lbl" x="320" y="135" text-anchor="middle">projects</text>
+  <text class="sub" x="320" y="152" text-anchor="middle">metadata · access · models</text>
+
+  <!-- project_document -->
+  <rect class="box-bad box" x="440" y="110" width="200" height="60" rx="4"/>
+  <text class="lbl" x="540" y="135" text-anchor="middle">project_document</text>
+  <text class="sub" x="540" y="152" text-anchor="middle">document · drafts · versions · diff · downloads</text>
+
+  <!-- project_status -->
+  <rect class="box" x="40" y="230" width="160" height="55" rx="4"/>
+  <text class="lbl" x="120" y="255" text-anchor="middle">project_status</text>
+  <text class="sub" x="120" y="272" text-anchor="middle">relational tracker</text>
+
+  <!-- mcp -->
+  <rect class="box" x="260" y="230" width="180" height="55" rx="4"/>
+  <text class="lbl" x="350" y="255" text-anchor="middle">mcp</text>
+  <text class="sub" x="350" y="272" text-anchor="middle">tokens · server · tools</text>
+
+  <!-- system -->
+  <rect class="box-shared box" x="500" y="230" width="140" height="55" rx="4"/>
+  <text class="lbl" x="570" y="255" text-anchor="middle">system</text>
+  <text class="sub" x="570" y="272" text-anchor="middle">health · version</text>
+
+  <!-- edges to shared from each feature -->
+  <path class="edge" d="M120 110 L360 60"  marker-end="url(#arr)"/>
+  <path class="edge" d="M320 110 L390 60"  marker-end="url(#arr)"/>
+  <path class="edge" d="M540 110 L420 60"  marker-end="url(#arr)"/>
+  <path class="edge" d="M120 230 L370 60"  marker-end="url(#arr)"/>
+  <path class="edge" d="M350 230 L400 60"  marker-end="url(#arr)"/>
+
+  <!-- projects -> auth -->
+  <path class="edge" d="M240 145 L200 145" marker-end="url(#arr)"/>
+  <!-- project_status -> projects -->
+  <path class="edge" d="M180 230 L290 170" marker-end="url(#arr)"/>
+  <!-- mcp -> auth/projects/project_document/project_status -->
+  <path class="edge" d="M280 230 L120 170" marker-end="url(#arr)"/>
+  <path class="edge" d="M320 230 L320 170" marker-end="url(#arr)"/>
+  <path class="edge" d="M380 230 L540 170" marker-end="url(#arr)"/>
+  <path class="edge" d="M310 230 L180 230" marker-end="url(#arr)"/>
+
+  <!-- circular projects <-> project_document -->
+  <path class="edge-bad" d="M400 130 L440 130" marker-end="url(#arr-bad)"/>
+  <path class="edge-bad" d="M440 150 L400 150" marker-end="url(#arr-bad)"/>
+  <text class="tag" x="420" y="195" text-anchor="middle">↺ circular</text>
+
+  <text class="sub" x="710" y="40" text-anchor="end">arrows = "imports from"</text>
+</svg>
+<figcaption>Backend feature import graph. Red double-edge between <code>projects</code> and <code>project_document</code> is the load-bearing issue. MCP intentionally cross-imports as a thin façade.</figcaption>
+</figure>
+
+<h3><span class="sev sev-med">Medium</span> C. The Rooms slice shape will not survive Windows/Envelope</h3>
+
+<p>
+  Today the table-slice contract is Rooms-shaped:
+</p>
+<ul>
+  <li><code>require_rooms_table(table_name)</code> rejects every
+      other table name with 404.</li>
+  <li><code>RoomsSliceReplaceRequest</code>,
+      <code>RoomsSliceOptions</code>,
+      <code>RoomsSliceResponse</code> are concrete Pydantic
+      classes per <em>Rooms</em>.</li>
+  <li><code>apply_rooms_replace</code>,
+      <code>rooms_response</code> are Rooms-specific helpers.</li>
+  <li>The frontend has parallel concrete
+      <code>RoomsSlice</code>, <code>RoomsReplacePayload</code>
+      types and a <code>useRoomsSliceQuery</code>,
+      <code>useRoomsDraftBroadcast</code> pair.</li>
+</ul>
+
+<p>
+  This is fine as a tracer-bullet for TB-04 but it will become
+  three or four near-copies the moment Windows
+  (<code>WindowTypesSliceReplaceRequest</code>) and Envelope
+  (<code>AssembliesSliceReplaceRequest</code>) arrive. Worth
+  generalizing now while the shape is small.
+</p>
+
+<p>Shape that would scale:</p>
+<pre>backend/features/document/tables/
+  registry.py        # name → SliceContract { payload, response, replace_fn }
+  rooms.py
+  window_types.py    # added in TB-08
+  assemblies.py      # added in TB-10
+
+# routes:
+PUT /draft/tables/{name}
+  → look up SliceContract by name → validate → call replace_fn</pre>
+
+<p>
+  On the frontend, the equivalent generalization is one
+  <code>useTableSliceQuery&lt;T&gt;</code> and one
+  <code>useTableDraftBroadcast&lt;T&gt;</code> parameterized on
+  the table name + the "is this remote slice in conflict with my
+  active edit" predicate.
+</p>
+
+<h3><span class="sev sev-med">Medium</span> D. MCP <code>server.py</code> imports from every feature</h3>
+
+<p>
+  This is by design (MCP wraps REST and reuses services), but
+  <code>features/mcp/server.py</code> already imports from
+  <code>features/project_document</code>,
+  <code>features/project_status</code>, and
+  <code>features/projects</code>. Each new MCP tool grows this
+  cross-feature dependency list. Acceptable for v1; just keep
+  the rule "MCP is a thin façade — it does not invent its own
+  service workflow" explicit in CODING_STANDARDS or the MCP
+  README, so the temptation to grow workflow logic in the MCP
+  service file stays low.
+</p>
+
+<h3><span class="sev sev-low">Low</span> E. <code>ProjectDocumentV1.validate_document_references</code> is hardcoded to Rooms</h3>
+
+<p>
+  The model-level validator currently:
+</p>
+<ul>
+  <li>seeds <code>rooms.floor_level</code> and
+      <code>rooms.building_zone</code> option lists if missing;</li>
+  <li>de-dupes option IDs and labels per option key;</li>
+  <li>walks <code>tables.rooms</code> looking for duplicate room
+      IDs, duplicate room numbers, and references to missing
+      option IDs.</li>
+</ul>
+
+<p>
+  This works because Rooms is the only typed table. When
+  <code>thermal_bridges.category</code>,
+  <code>equipment.ervs.manufacturer</code>, and friends arrive,
+  this validator will fork into per-table branches. A small
+  registry pattern (per-table option keys + per-table reference
+  validator) keeps it manageable.
+</p>
+
+</div>
+</details>
+
+<!-- ───── P2 ───── -->
+<details id="p2" open>
+<summary>3.2 — Plan vs. implementation alignment <span class="grade">✓ mostly aligned</span></summary>
+<div class="body">
+
+<h3>Aligned (no action)</h3>
+<ul>
+  <li>Versioned API prefix <code>/api/v1/...</code> with no
+      unversioned routes. <span class="ok">✓</span></li>
+  <li>Raw psycopg + Pydantic v2; no SQLAlchemy ORM/Core in app
+      code. <span class="ok">✓</span></li>
+  <li>Server-side editor sessions, Argon2id, single active
+      session, partial unique index. <span class="ok">✓</span></li>
+  <li>Public-readable projects via
+      <code>require_project_access(mode=...)</code> seam, with
+      no per-share-token table. <span class="ok">✓</span></li>
+  <li>MCP token model (issued, prefix, hash, scopes, revocable)
+      with read-only enforcement; write attempts return a
+      structured <code>mcp_write_deferred</code> error rather
+      than a silent no-op. <span class="ok">✓</span></li>
+  <li>File-app save model: explicit Save / Save As / Discard;
+      ETags on draft + saved body; locked versions reject Save;
+      Save-As from locked succeeds. <span class="ok">✓</span></li>
+  <li>Status tab is relational and outside
+      <code>ProjectDocumentV1</code>. <span class="ok">✓</span></li>
+  <li>Same-editor multi-tab via BroadcastChannel with causal
+      ETag guard. <span class="ok">✓</span></li>
+  <li>Structured error envelope with
+      <code>error_code</code>, <code>message</code>,
+      <code>request_id</code>, <code>details</code>.
+      <span class="ok">✓</span></li>
+  <li>X-Request-ID + browser-origin mutation protection
+      middleware. <span class="ok">✓</span></li>
+</ul>
+
+<h3>Deferred but acknowledged (no action this slice)</h3>
+<ul>
+  <li>Idempotency-Key handling (PRD §9.5). Still owed per
+      <code>stack-auth-migration.md §13.1</code>.</li>
+  <li>JSON Schema endpoint
+      (<code>/api/v1/schemas/project-document/v1.json</code>).</li>
+  <li>Workspace-level <em>read-safe-mode</em> banner for
+      schema-version mismatches (PRD §10.5). Today the only
+      mitigation is raw JSON download from
+      <code>get_raw_saved_document</code>.</li>
+  <li>Restore / Discard prompt on draft reopen (TB-05 review
+      flagged this; <em>banner</em>-only is what shipped).</li>
+  <li>Version-vs-version diff UI: backend supports it
+      (<code>get_project_diff</code> with a UUID
+      <code>to</code>), but the frontend
+      <code>useDiffQuery</code> only wires draft diffs (the
+      "Compare versions…" link in
+      <code>ProjectHeaderControls</code> opens the same
+      draft-only modal). This is a known TB-05 review item.</li>
+  <li>Argon2id installation fallback to bcrypt — currently
+      Argon2 is in <code>pyproject.toml</code> with cost
+      constants exposed; no bcrypt fallback observed but no
+      pressure to add one yet.</li>
+  <li>JSON-Patch on drafts (PRD §9.5). v1 uses whole-table
+      replacement instead — TB-04 lessons accept this. MCP
+      <code>update_document</code> tool (TB-17) will need JSON
+      Patch.</li>
+  <li>Schema-version upgrade-shim infrastructure (PRD §10.5).
+      <code>schema_version: Literal[1] = 1</code> is set, but no
+      <code>upgrade_v1_to_v2.py</code>, no fixture corpus, no
+      CI drill. Fine while there is only one version. Land
+      <em>before</em> bumping the schema for any reason.</li>
+</ul>
+
+<h3>Drift / divergence (action needed)</h3>
+<ul>
+  <li><strong>"Open another version" semantics.</strong> TB-05
+      code review flagged a regression where Open was changing
+      <code>active_version_id</code>. Current code uses
+      <code>?version=</code> URL params for local navigation
+      (<code>setSearchParams</code> in
+      <code>ProjectShell.tsx</code>) — good. But
+      <code>usePatchVersionMutation</code> still exposes
+      <code>make_active</code>, and no UI control surfaces a
+      distinct "Make default" action. The API shape invites
+      misuse and the UX of "preview only" vs. "save default"
+      isn't yet visible.</li>
+  <li><strong>Frontend stack is not on the planned styling
+      layer.</strong> TECH_STACK pins shadcn/ui + Tailwind +
+      BLDGTYP tokens; today the app is vanilla CSS in
+      <code>App.css</code> (918 lines, growing every slice).
+      No <code>tailwind.config.*</code>, no shadcn primitives,
+      no BLDGTYP tokens imported. Each ship-vertical-slice
+      decision adds CSS to the deferred-migration pile.</li>
+  <li><strong>No Zustand store.</strong> TECH_STACK pins it for
+      active version / tab / dirty state / queued patch ops /
+      R3F viewer state. Today: URL params + TanStack Query
+      cache + local <code>useState</code>. Workable for Rooms,
+      probably not for Windows builder + Assembly canvas.</li>
+  <li><strong>No JSON-Patch op queue on the frontend.</strong>
+      TECH_STACK lists <code>fast-json-patch</code> (frontend)
+      and <code>jsonpatch</code> (backend). Backend has neither
+      yet either. Whole-table replacement is the current write
+      primitive. This is deliberate and matches TB-04 lessons.</li>
+</ul>
+
+</div>
+</details>
+
+<!-- ───── P3 ───── -->
+<details id="p3" open>
+<summary>3.3 — JSONB single-body persistence: is it still the right move? <span class="grade">✓ yes for v1</span></summary>
+<div class="body">
+
+<p><strong>Short answer: yes, keep it.</strong> The PRD's
+   motivation (immutable per-version saves, file-format export,
+   LLM-friendly whole-document fetch, no relational-shadow
+   duality) is intact, and TB-04…TB-06 prove the model works
+   on a real Rooms slice with ETag/draft/save flows.
+   But the implementation has accrued some hot paths and
+   coupling that should be designed out <em>before</em> tables
+   multiply.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 780 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Document/draft/version state model">
+  <style>
+    .b { fill:#f7f4ee; stroke:#8a4d22; stroke-width:1.2; }
+    .b-warn { fill:#fbe9e7; stroke:#b3261e; stroke-width:1.2; }
+    .lbl { font:600 12px "Outfit",sans-serif; fill:#1a1a1a; }
+    .sub { font:11px "Outfit",sans-serif; fill:#555; }
+    .arr { stroke:#1a1a1a; stroke-width:1.2; fill:none; }
+    .arr-dim { stroke:#999; stroke-width:1; stroke-dasharray:3,3; fill:none; }
+    .ttl { font:600 13px "Outfit",sans-serif; fill:#8a4d22; }
+  </style>
+  <defs>
+    <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a1a"/>
+    </marker>
+  </defs>
+  <text class="ttl" x="40"  y="24">Saved version</text>
+  <text class="ttl" x="295" y="24">Draft buffer</text>
+  <text class="ttl" x="555" y="24">In-memory document</text>
+
+  <rect class="b" x="40"  y="40" width="200" height="180" rx="4"/>
+  <text class="sub" x="50" y="60">project_versions.body (JSONB)</text>
+  <text class="sub" x="50" y="78">+ schema_version, body_size_bytes</text>
+  <text class="sub" x="50" y="96">+ locked, kind, parent_version_id</text>
+  <text class="sub" x="50" y="120">immutable per save</text>
+  <text class="sub" x="50" y="138">etag = sha256(body)</text>
+  <text class="sub" x="50" y="170">recovery: /download → raw bytes</text>
+
+  <rect class="b" x="295" y="40" width="200" height="180" rx="4"/>
+  <text class="sub" x="305" y="60">project_version_drafts.body</text>
+  <text class="sub" x="305" y="78">PK (version_id, user_id)</text>
+  <text class="sub" x="305" y="96">base_version_etag · draft_etag</text>
+  <text class="sub" x="305" y="120">created lazily on first edit</text>
+  <text class="sub" x="305" y="138">GC ≥30 days untouched (TODO)</text>
+  <text class="sub" x="305" y="170">crash recovery, not persistence</text>
+
+  <rect class="b" x="555" y="40" width="200" height="180" rx="4"/>
+  <text class="sub" x="565" y="60">TanStack Query cache</text>
+  <text class="sub" x="565" y="78">RoomsSlice query data</text>
+  <text class="sub" x="565" y="96">BroadcastChannel mirror</text>
+  <text class="sub" x="565" y="120">no Zustand yet</text>
+  <text class="sub" x="565" y="138">no JSON-Patch queue yet</text>
+
+  <!-- arrows -->
+  <path class="arr" d="M495 70 L555 70" marker-end="url(#m1)"/>
+  <text class="sub" x="525" y="62" text-anchor="middle">fetch</text>
+
+  <path class="arr" d="M555 110 L495 110" marker-end="url(#m1)"/>
+  <text class="sub" x="525" y="102" text-anchor="middle">PUT slice</text>
+
+  <path class="arr" d="M295 90 L240 90" marker-end="url(#m1)"/>
+  <text class="sub" x="268" y="82" text-anchor="middle">Save</text>
+
+  <path class="arr-dim" d="M295 140 L240 140"/>
+  <text class="sub" x="268" y="132" text-anchor="middle">SaveAs → new row</text>
+
+  <path class="arr-dim" d="M240 200 L295 200"/>
+  <text class="sub" x="268" y="194" text-anchor="middle">lazy create</text>
+</svg>
+<figcaption>Three-layer state model. Today the in-memory layer is
+TanStack Query only; the planned Zustand slice for cross-component
+UI state is not yet present.</figcaption>
+</figure>
+
+<h3>The pros are still real</h3>
+<ul>
+  <li><em>One source of truth.</em> No relational shadow of
+      tables; no two-writes-per-edit problem.</li>
+  <li><em>Versions are trivially immutable.</em> One UUID, one
+      row, one byte-blob body.</li>
+  <li><em>Diff is just JSON-vs-JSON.</em> No need to walk
+      foreign keys across N tables.</li>
+  <li><em>Download = the body.</em> Project JSON download is a
+      single SELECT and a JSON serialize.</li>
+  <li><em>Bookshelf catalog model works naturally.</em>
+      <code>catalog_origin</code> sits inline on each copied
+      entry; refresh-from-catalog is a deterministic field-level
+      walk.</li>
+  <li><em>LLM-amenable.</em> Whole-document fetch + stable IDs
+      + schema-versioned + Pydantic-validated.</li>
+</ul>
+
+<h3>The cons that are showing up</h3>
+<ul>
+  <li><strong>O(whole document) Pydantic validation on every
+      slice read.</strong> Every <code>GET /draft/tables/rooms</code>
+      currently does
+      <code>ProjectDocumentV1.model_validate(version["body"])</code>
+      on the entire body to return one table. At 50 KB it's
+      negligible; at 5 MB it's a measurable tax on every
+      keystroke-debounce. Performance review owns this — flag
+      that the architecture <em>permits</em> a fast-path slice
+      reader (skip validating untouched tables) and that the
+      hot path is identifiable.</li>
+  <li><strong>Single draft_etag per document, not per
+      table.</strong> Same-editor "Rooms in tab A, Windows in
+      tab B" works today because there's only Rooms. Once a
+      second table ships, a Windows edit will bump the draft
+      etag and the Rooms tab will see "draft changed
+      elsewhere" — even though the change didn't touch its
+      table. The TB-06 broadcast machinery partially papers
+      over this for same-table-different-row, but not for
+      cross-table. PRD §15 already names "per-table draft
+      scoping if needed in v1.1" as a planned escape hatch.</li>
+  <li><strong>Whole-document apply-and-validate on every
+      table replace.</strong>
+      <code>apply_rooms_replace</code> does
+      <code>body.model_copy(update={...})</code> on the whole
+      document then revalidates. Acceptable. Same scalability
+      ceiling as point 1.</li>
+  <li><strong>No cross-project queries.</strong> Known, PRD
+      accepts.</li>
+</ul>
+
+<h3>Verdict</h3>
+<div class="callout ok">
+  Keep JSONB-as-source-of-truth. Do <em>not</em> add relational
+  shadows of project tables in v1.
+</div>
+
+<p>Two seams to design now to keep options open later:</p>
+<ol>
+  <li><strong>Slice contract registry</strong> (ADR-2) so each
+      table type has its own payload + response + replace fn,
+      and the route is generic.</li>
+  <li><strong>Lazy slice validation path</strong> in service
+      code: when only one table is needed, validate that
+      table's slice against its row-level model, not the whole
+      document. The whole-document validator is still the
+      authoritative gate on Save and Save As — those keep
+      <code>ProjectDocumentV1.model_validate(...)</code>.</li>
+</ol>
+
+</div>
+</details>
+
+<!-- ───── P4 ───── -->
+<details id="p4" open>
+<summary>3.4 — UI &amp; frontend patterns <span class="grade">⚠ on track, drift accumulating</span></summary>
+<div class="body">
+
+<h3>Good</h3>
+<ul>
+  <li><strong>Feature-first organization is in place.</strong>
+      <code>app/</code>, <code>shared/</code>, and
+      <code>features/&lt;name&gt;/</code> with the
+      <code>api.ts</code>/<code>hooks.ts</code>/<code>types.ts</code>/<code>components/</code>/<code>routes/</code>
+      shape from CODING_STANDARDS.</li>
+  <li><strong><code>App.tsx</code> = 11 lines, pure provider /
+      router composition.</strong></li>
+  <li><strong>TanStack Query owns server state.</strong> No
+      <code>useEffect</code>-fetch antipatterns spotted.</li>
+  <li><strong>Query keys are co-located and namespaced.</strong>
+      <code>projectQueryKeys</code>, <code>roomsQueryKeys</code>,
+      <code>statusQueryKeys</code>, <code>authQueryKeys</code>.</li>
+  <li><strong>One <code>fetchJson</code> wrapper in
+      <code>shared/api/client.ts</code></strong> that handles
+      X-Request-ID generation, JSON content-type defaulting, and
+      structured-error-envelope decoding into
+      <code>ApiRequestError</code>.</li>
+  <li><strong><code>BroadcastChannel</code> mirroring is
+      well-isolated</strong> inside
+      <code>features/equipment/hooks.ts</code> with a
+      <code>useRef</code>-based callback so subscriptions don't
+      churn on re-render.</li>
+  <li><strong>Sign-in/sign-out invalidates / removes project
+      and rooms caches</strong> so a public viewer cache cannot
+      survive a session boundary.</li>
+</ul>
+
+<h3>Friction</h3>
+
+<h4><span class="sev sev-med">Medium</span> <code>ProjectHeaderControls.tsx</code> is 342 lines</h4>
+<p>
+  Over the 300-line soft limit. Mixes five concerns: header
+  buttons, version popover, Save/Save-As modal form, Diff modal,
+  and draft-state derivation. Extract candidates:
+</p>
+<ul>
+  <li><code>VersionPopover.tsx</code> (the "Versions" list +
+      compare link)</li>
+  <li><code>SaveAsModal.tsx</code> (the "Save As" form with
+      version-kind select)</li>
+  <li><code>DiffModal.tsx</code> (the diff target selector +
+      table summary)</li>
+  <li><code>useDraftState</code> hook that returns
+      <code>{ hasDraft, versionEtag, isLocked, busy }</code>
+      derived from the Rooms slice + project + mutation states</li>
+</ul>
+
+<h4><span class="sev sev-med">Medium</span> Cross-feature import: <code>projects/hooks.ts</code> imports <code>roomsQueryKeys</code></h4>
+<p>
+  Save/Save-As/Discard mutations need to invalidate the Rooms
+  query cache. Today this is a direct import from
+  <code>features/equipment/hooks</code>. As Windows / Envelope /
+  Equipment-Fans / Equipment-ERVs grow their own queries, the
+  Projects feature will need to know all their cache keys. Two
+  options:
+</p>
+<ul>
+  <li>A small <em>table cache invalidation registry</em> in
+      <code>features/document/</code> (or wherever drafts move):
+      each table feature registers its query-key prefix.</li>
+  <li>Or: invalidate the <em>document</em> query key only, and
+      have each table query be a child of it. Today
+      <code>roomsQueryKeys.slice(projectId, versionId, ...)</code>
+      is not under a document key — making it one would let
+      <code>invalidateQueries(documentKey(projectId, versionId))</code>
+      cover all table caches.</li>
+</ul>
+
+<h4><span class="sev sev-low">Low</span> No Zustand yet</h4>
+<p>
+  TECH_STACK pins Zustand for active version, dirty state,
+  queued patches, and viewer state. Today URL params carry active
+  version, TanStack Query carries dirty state. This is fine
+  for Rooms. As Windows + Envelope + Model lands, the natural
+  cross-component state surfaces — undo stack, IP/SI toggle, viewer
+  selection — should be Zustand slices, not prop-drilled
+  through three layers.
+</p>
+
+<h4><span class="sev sev-low">Low</span> Per-table BroadcastChannel hook will repeat</h4>
+<p>
+  <code>useRoomsDraftBroadcast</code> is 60+ lines. Windows
+  will want its own. A
+  <code>useTableDraftBroadcast(channelName, predicate)</code>
+  generic would absorb all of it.
+</p>
+
+<h4><span class="sev sev-low">Low</span> Vanilla CSS in <code>App.css</code></h4>
+<p>
+  918 lines and growing. The PRD/TECH_STACK is explicit about
+  shadcn/ui + Tailwind + BLDGTYP tokens. Two paths:
+</p>
+<ul>
+  <li><strong>Migrate now.</strong> One slice to set up
+      Tailwind + shadcn + BLDGTYP tokens.css, port existing
+      styles. Cost: maybe a day. Cleared technical debt.</li>
+  <li><strong>Defer to a release-hardening slice (TB-???).</strong>
+      Ship features in vanilla CSS for now. Risk: every new
+      feature adds another N hundred lines of CSS, and the
+      eventual migration is forced into the polish phase.</li>
+</ul>
+
+<h4><span class="sev sev-info">Info</span> <code>TablePrimitiveStub</code> is a known placeholder</h4>
+<p>
+  The TB-04 lessons explicitly note this. Good. Watch that the
+  <code>RoomsTable</code> stays a thin wrapper around it —
+  today it does (72 lines, mostly column-definition memos).</p>
+
+<h4><span class="sev sev-info">Info</span> Forms use raw HTML inputs</h4>
+<p>
+  <code>&lt;input list="..."&gt;</code> with
+  <code>&lt;datalist&gt;</code> for the Floor / Zone option
+  fields is a clever workaround for "free-typing-or-pick"
+  semantics without a real combobox. Functional, accessible,
+  zero dependencies. Once shadcn lands, replace with a proper
+  combobox primitive.</p>
+
+</div>
+</details>
+
+<!-- ───── P5 ───── -->
+<details id="p5" open>
+<summary>3.5 — Maintainability &amp; readability <span class="grade">✓ generally good</span></summary>
+<div class="body">
+
+<h3>Good</h3>
+<ul>
+  <li>Strict typing throughout. Pydantic <code>extra="forbid"</code>
+      on every model — wire is exact.</li>
+  <li>Service functions own workflow and transaction boundaries
+      (<code>transaction()</code> / <code>connection()</code>
+      context managers). Repositories own raw SQL only.</li>
+  <li>Repository SQL is parameterized everywhere I looked. No
+      string-formatted user input.</li>
+  <li>Docstrings on most service-layer functions explain
+      <em>why</em>, not <em>what</em> — matches CODING_STANDARDS.
+      Examples: <code>apply_default_template</code>,
+      <code>require_token_scope</code>,
+      <code>project_access_for_token</code>.</li>
+  <li>Test files mirror feature structure. Real assertions, not
+      snapshots.</li>
+  <li><code>require_project_access(mode='view'|'edit')</code>
+      seam exists and is consistent across REST and MCP.</li>
+</ul>
+
+<h3>Friction</h3>
+
+<h4><span class="sev sev-med">Medium</span> Module-size pressure in <code>project_document/service.py</code> (525 lines)</h4>
+<p>
+  Per ADR-1 split. The file currently mixes
+  <code>document_etag</code> / <code>next_draft_etag</code>
+  helpers, Rooms slice read/replace, save/save-as/discard,
+  patch-version metadata, diff, table-row matching, validation,
+  and audit logging. Each is reviewable in isolation; together
+  they pass the soft limit and approach the hard limit.</p>
+
+<h4><span class="sev sev-low">Low</span> <code>ProjectHeaderControls.tsx</code> is 342 lines</h4>
+<p>Already covered above. Same fix: extract three modals + a
+  derived-state hook.</p>
+
+<h4><span class="sev sev-low">Low</span> Helpers that should live elsewhere</h4>
+<ul>
+  <li><code>body_size_bytes</code> in
+      <code>features/projects/service.py</code> is a document
+      calculation, imported by
+      <code>project_document/service.py</code>. Move to
+      <code>document.py</code> or
+      <code>document/calculations.py</code>.</li>
+  <li><code>client_ip</code>, <code>user_agent</code>,
+      <code>log_action</code> are request-utility / audit-log
+      helpers in <code>features/auth/</code> imported by every
+      feature that writes an audit row. Move to
+      <code>features/shared/request.py</code> +
+      <code>features/shared/audit.py</code>.</li>
+  <li><code>log_document_action</code> in
+      <code>project_document/service.py</code> wraps
+      <code>auth_repository.log_action</code> with extra
+      details. Pattern will repeat for every feature; subsume
+      into a shared <code>audit</code> helper that takes
+      <code>{action, access, request, **details}</code>.</li>
+</ul>
+
+<h4><span class="sev sev-info">Info</span> Validation called many times in the request lifecycle</h4>
+<p>
+  In <code>replace_rooms_slice</code>: validate the
+  pre-existing version body once (to compute its etag),
+  validate the draft body if present (to compute base body),
+  apply the rooms update + re-validate the resulting body.
+  Three validates per write. Performance review owns this;
+  flag the redundancy here for the reviewer's notes.</p>
+
+<h4><span class="sev sev-info">Info</span> Test surface area is healthy</h4>
+<p>Backend: ~1,500 lines of tests across auth, projects,
+  status, mcp, project_document. Frontend: a single
+  <code>App.test.tsx</code> doing integration-style flows (sign
+  in, create project, open Status, open Equipment, add room)
+  plus per-feature <code>lib.test.ts</code> for pure
+  helpers. The ratio is right for this phase. Add per-component
+  tests as components grow beyond presentational glue.</p>
+
+</div>
+</details>
+
+<!-- ────────────────────────────────────────────────────────────── -->
+<h2 id="secondary">4. Secondary review items</h2>
+
+<details id="s1" open>
+<summary>4.1 — Folder hierarchy &amp; organization</summary>
+<div class="body">
+
+<h3>Backend <span class="ok">✓</span></h3>
+<pre>backend/features/
+  auth/             routes models passwords repository service
+  mcp/              routes models repository server service
+  project_document/ routes models repository service document.py
+  project_status/   routes models repository service constants.py
+  projects/         routes models repository service access.py
+  shared/           errors middleware
+  system/           routes</pre>
+
+<p>Matches CODING_STANDARDS exactly. Optional modules
+   (<code>access.py</code>, <code>passwords.py</code>,
+   <code>constants.py</code>, <code>server.py</code>) are
+   reasonable boundary helpers per CODING_STANDARDS §"Optional
+   modules are allowed when they make a boundary clearer."</p>
+
+<h3>Frontend <span class="ok">✓</span></h3>
+<pre>frontend/src/
+  app/              App.tsx router providers query-client
+  shared/
+    api/            client.ts
+    lib/            dates.ts errors.ts
+    ui/             ModalDialog ShellMessage TablePrimitiveStub WorkspaceTopbar
+  features/
+    auth/           api hooks lib types routes/
+    equipment/      api hooks lib types components/ routes/ lib.test
+    project_status/ api hooks lib types components/ routes/ lib.test
+    projects/       api hooks lib types query-keys components/ routes/</pre>
+
+<p>Also matches CODING_STANDARDS. Minor inconsistency:</p>
+
+<h4><span class="sev sev-low">Low</span> UI-domain vs. data-domain feature naming</h4>
+<p>
+  <code>frontend/src/features/equipment/</code> houses Rooms
+  because Rooms <em>lives in the Equipment tab</em> (UI-domain
+  name). The backend equivalent is
+  <code>backend/features/project_document/</code> (data-domain
+  name). The frontend is making a tab-shape commitment in the
+  folder name; the backend is making a JSONB-document
+  commitment. This is fine if the rule is explicit. The PR
+  reviewer should be told "frontend features map to tabs +
+  modals; backend features map to API resources." Otherwise
+  there's no obvious answer to "where does the Windows builder
+  live?" — <code>features/windows</code> (UI) or
+  <code>features/window_types</code> (data)?</p>
+
+<div class="callout">
+  <strong>Suggested rule:</strong> frontend feature folder name
+  matches the tab/route (<code>equipment</code>, <code>windows</code>,
+  <code>envelope</code>, <code>model</code>, <code>catalog</code>).
+  Backend folders match the API resource group
+  (<code>versions</code>, <code>drafts</code>,
+  <code>document</code>, <code>diff</code>, <code>assets</code>,
+  <code>catalog</code>). Codify in CODING_STANDARDS.
+</div>
+
+<h3>Other observations</h3>
+<ul>
+  <li><code>research/</code> POC artifacts are <em>not</em> on
+      the import path. Good.</li>
+  <li><code>backend/features/project_status/</code> rightly
+      lives outside <code>project_document</code> — status is
+      relational + outside the document, per PRD §6.1.</li>
+  <li><code>features/project_status/constants.py</code> holds
+      the four-step default template. Cleanly scoped.</li>
+  <li>Alembic migrations are date+ordinal named
+      (<code>20260512_0001_baseline</code> →
+      <code>20260512_0006_mcp_tokens</code>) with clean
+      up/down. <span class="ok">✓</span></li>
+</ul>
+
+</div>
+</details>
+
+<details id="s2" open>
+<summary>4.2 — Code reuse / duplications</summary>
+<div class="body">
+
+<h3>Real duplications</h3>
+<ul>
+  <li><code>optionLabel</code> + option-id → label map appears
+      in <code>features/equipment/lib.ts</code> and again
+      (inlined) in
+      <code>features/equipment/components/RoomsTable.tsx</code>.
+      Tiny; consolidate.</li>
+  <li><code>model_validate(row)</code> "public Pydantic from
+      raw row" helpers
+      (<code>project_summary</code>, <code>version_public</code>,
+      <code>status_item_public</code>, <code>token_public</code>,
+      <code>token_record</code>) repeat the same pattern.
+      Acceptable; only flag if it grows into 10+.</li>
+</ul>
+
+<h3>Reuse that's working</h3>
+<ul>
+  <li><code>features/shared/errors.api_error</code> +
+      <code>ErrorEnvelope</code> are used uniformly by REST
+      and adapted to MCP (<code>raise_mcp_error</code>).</li>
+  <li><code>require_project_access</code> +
+      <code>require_editor_user</code> are the single auth seam
+      used by every project-scoped REST route and every MCP
+      tool.</li>
+  <li><code>require_rooms_table()</code> is correctly used as a
+      404 gate in the routes. Once the table-slice registry
+      lands, this becomes
+      <code>get_table_contract(table_name)</code>.</li>
+  <li><code>fetchJson</code> on the frontend handles content
+      type defaulting + X-Request-ID + error envelope
+      decoding in one place.</li>
+</ul>
+
+<h3>Reuse that could be improved</h3>
+<ul>
+  <li><strong>Audit logging.</strong> Every service that needs
+      to log calls <code>auth_repository.log_action</code> with
+      a hand-built kwargs dict. A
+      <code>audit.log(conn, action, access, request, **details)</code>
+      one-liner would replace ~5 call sites today and ~15 once
+      catalog / assets / HBJSON ship.</li>
+  <li><strong>Public-model from row.</strong> A
+      <code>row_to_model(Model, row, extra_fields=())</code>
+      generic would absorb the 5-6 one-liner helpers.</li>
+  <li><strong>Per-table broadcast hook.</strong> See
+      ADR-6 / P4.</li>
+</ul>
+
+</div>
+</details>
+
+<details id="s3" open>
+<summary>4.3 — Language &amp; nomenclature consistency</summary>
+<div class="body">
+
+<h3>Consistent</h3>
+<ul>
+  <li><code>snake_case</code> field names from Pydantic models
+      ship unchanged to the frontend (<code>bt_number</code>,
+      <code>version_etag</code>, <code>body_size_bytes</code>,
+      <code>last_saved_at</code>). No transformation layer.
+      Good.</li>
+  <li><strong>Version vocabulary:</strong>
+      <code>active_version</code> / <code>current draft</code> /
+      <code>saved version</code> /
+      <code>version_body_etag</code> / <code>draft_etag</code>
+      consistent across MCP, REST, and frontend.</li>
+  <li><strong>Access mode:</strong>
+      <code>"editor" | "viewer"</code> uniformly.</li>
+  <li><strong>Version kind:</strong>
+      <code>"working" | "submitted" | "closed" | "snapshot"</code>
+      uniformly.</li>
+  <li><strong>MCP scopes:</strong>
+      <code>project:read</code> / <code>project:write</code> /
+      <code>asset:read</code> / <code>asset:write</code> match
+      the PRD list exactly.</li>
+  <li><strong>Status state:</strong>
+      <code>"todo" | "done" | "na"</code> uniformly (with the
+      <code>in_progress</code> deferral honored).</li>
+  <li><strong>Diff <code>from</code>/<code>to</code> query
+      params</strong> match api.md §9.6.</li>
+</ul>
+
+<h3>Inconsistent</h3>
+<ul>
+  <li><strong>Feature folder name vs. API resource name.</strong>
+      <code>features/project_document/</code> mounts routes
+      under <code>/api/v1/projects/{pid}/versions/{vid}/...</code>
+      and a separate <code>/api/v1/projects/{pid}/diff</code>.
+      The folder name doesn't match the SQL table
+      (<code>project_versions</code> + <code>project_version_drafts</code>)
+      or the api.md group name (Versions / Drafts / Diff /
+      Downloads). Resolve in the ADR-1 / ADR-15 split.</li>
+  <li><strong>"Rooms" vs. "Equipment".</strong> The PRD
+      <code>USER_STORIES.md</code> calls it the "Equipment tab"
+      (and routes <code>30-tables-equipment.md</code> as the
+      story file), but the document table is
+      <code>tables.rooms</code>. Frontend folder
+      <code>features/equipment/</code> houses Rooms-only code
+      today. Fine, but when ERVs / Fans / Pumps land they'll
+      all live there too — confirm that intent.</li>
+  <li><strong>"Open" vs. "Make default" on versions.</strong>
+      User-facing UI calls it "Open"; the API endpoint
+      parameter is <code>make_active</code>. These are two
+      different concepts; lumping them under one button has
+      already caused a TB-05 review flag.</li>
+</ul>
+
+</div>
+</details>
+
+<!-- ────────────────────────────────────────────────────────────── -->
+<h2 id="appendix">5. Appendix: stats &amp; diagrams</h2>
+
+<details id="appx-stats">
+<summary>5.1 — File-size snapshot</summary>
+<div class="body">
+
+<h3>Backend (Python)</h3>
+<table>
+<thead><tr><th>File</th><th>Lines</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>features/project_document/service.py</code></td><td>525</td><td><span class="warn">⚠ at soft-limit; split candidate</span></td></tr>
+<tr><td><code>features/mcp/server.py</code></td><td>262</td><td>OK — MCP tool definitions</td></tr>
+<tr><td><code>features/project_document/repository.py</code></td><td>257</td><td>OK</td></tr>
+<tr><td><code>features/auth/service.py</code></td><td>240</td><td>OK</td></tr>
+<tr><td><code>features/auth/repository.py</code></td><td>196</td><td>OK</td></tr>
+<tr><td><code>features/mcp/service.py</code></td><td>174</td><td>OK</td></tr>
+<tr><td><code>features/project_document/routes.py</code></td><td>173</td><td>OK; dual-router</td></tr>
+<tr><td><code>features/project_status/repository.py</code></td><td>169</td><td>OK</td></tr>
+<tr><td><code>features/projects/repository.py</code></td><td>142</td><td>OK</td></tr>
+<tr><td><code>features/mcp/models.py</code></td><td>143</td><td>OK</td></tr>
+<tr><td><code>features/project_document/document.py</code></td><td>143</td><td>OK</td></tr>
+<tr><td><code>features/projects/service.py</code></td><td>124</td><td>OK</td></tr>
+<tr><td><code>features/mcp/repository.py</code></td><td>121</td><td>OK</td></tr>
+<tr><td><code>features/projects/models.py</code></td><td>113</td><td>OK</td></tr>
+<tr><td><code>features/project_document/models.py</code></td><td>112</td><td>OK</td></tr>
+<tr><td><code>features/project_status/service.py</code></td><td>110</td><td>OK</td></tr>
+<tr><td><code>features/shared/errors.py</code></td><td>95</td><td>OK</td></tr>
+<tr><td><code>features/project_status/models.py</code></td><td>83</td><td>OK</td></tr>
+<tr><td><code>features/projects/access.py</code></td><td>67</td><td>OK</td></tr>
+<tr><td><code>features/projects/routes.py</code></td><td>64</td><td>OK</td></tr>
+</tbody>
+</table>
+
+<h3>Frontend (TS/TSX)</h3>
+<table>
+<thead><tr><th>File</th><th>Lines</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>App.css</code></td><td>918</td><td><span class="warn">⚠ vanilla CSS where shadcn/Tailwind is planned</span></td></tr>
+<tr><td><code>features/projects/components/ProjectHeaderControls.tsx</code></td><td>342</td><td><span class="warn">⚠ over soft-limit; extract 3 modals</span></td></tr>
+<tr><td><code>features/equipment/routes/EquipmentTab.tsx</code></td><td>219</td><td>OK</td></tr>
+<tr><td><code>features/equipment/components/RoomModal.tsx</code></td><td>204</td><td>OK</td></tr>
+<tr><td><code>features/equipment/lib.ts</code></td><td>191</td><td>OK</td></tr>
+<tr><td><code>features/project_status/routes/StatusTab.tsx</code></td><td>150</td><td>OK</td></tr>
+<tr><td><code>features/projects/hooks.ts</code></td><td>139</td><td>OK</td></tr>
+<tr><td><code>features/equipment/hooks.ts</code></td><td>138</td><td>OK</td></tr>
+<tr><td><code>features/projects/components/NewProjectModal.tsx</code></td><td>134</td><td>OK</td></tr>
+<tr><td><code>features/project_status/components/StatusItemRow.tsx</code></td><td>124</td><td>OK</td></tr>
+<tr><td><code>features/projects/routes/ProjectShell.tsx</code></td><td>107</td><td>OK</td></tr>
+<tr><td><code>features/projects/api.ts</code></td><td>103</td><td>OK</td></tr>
+<tr><td><code>features/project_status/components/StatusItemModal.tsx</code></td><td>100</td><td>OK</td></tr>
+<tr><td><code>app/App.tsx</code></td><td>11</td><td><span class="ok">✓ providers + router only</span></td></tr>
+</tbody>
+</table>
+
+</div>
+</details>
+
+<details id="appx-layers">
+<summary>5.2 — Backend layer flow (one feature)</summary>
+<div class="body">
+<figure class="diagram">
+<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Backend layer flow">
+  <style>
+    .b { fill:#f7f4ee; stroke:#8a4d22; stroke-width:1.2; }
+    .lbl { font:600 12px "Outfit",sans-serif; fill:#1a1a1a; }
+    .sub { font:11px "Outfit",sans-serif; fill:#555; }
+    .arr { stroke:#1a1a1a; stroke-width:1.2; fill:none; }
+    .pill { fill:#eaeae0; stroke:#555; stroke-width:0.8; }
+  </style>
+  <defs>
+    <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a1a"/>
+    </marker>
+  </defs>
+
+  <rect class="b" x="20" y="40" width="170" height="60" rx="4"/>
+  <text class="lbl" x="105" y="62" text-anchor="middle">routes.py</text>
+  <text class="sub" x="105" y="80" text-anchor="middle">FastAPI APIRouter</text>
+  <text class="sub" x="105" y="94" text-anchor="middle">Annotated[Depends(access)]</text>
+
+  <rect class="b" x="230" y="40" width="170" height="60" rx="4"/>
+  <text class="lbl" x="315" y="62" text-anchor="middle">service.py</text>
+  <text class="sub" x="315" y="80" text-anchor="middle">workflow + transaction()</text>
+  <text class="sub" x="315" y="94" text-anchor="middle">api_error(...)</text>
+
+  <rect class="b" x="440" y="40" width="170" height="60" rx="4"/>
+  <text class="lbl" x="525" y="62" text-anchor="middle">repository.py</text>
+  <text class="sub" x="525" y="80" text-anchor="middle">raw psycopg SQL</text>
+  <text class="sub" x="525" y="94" text-anchor="middle">dict_row → Pydantic</text>
+
+  <rect class="b" x="650" y="40" width="90" height="60" rx="4"/>
+  <text class="lbl" x="695" y="62" text-anchor="middle">Postgres</text>
+  <text class="sub" x="695" y="80" text-anchor="middle">JSONB body</text>
+  <text class="sub" x="695" y="94" text-anchor="middle">+ relational</text>
+
+  <path class="arr" d="M190 70 L230 70" marker-end="url(#m2)"/>
+  <path class="arr" d="M400 70 L440 70" marker-end="url(#m2)"/>
+  <path class="arr" d="M610 70 L650 70" marker-end="url(#m2)"/>
+
+  <!-- side panel: models / shared -->
+  <rect class="b" x="230" y="170" width="170" height="50" rx="4"/>
+  <text class="lbl" x="315" y="192" text-anchor="middle">models.py</text>
+  <text class="sub" x="315" y="208" text-anchor="middle">Pydantic v2, extra="forbid"</text>
+
+  <rect class="b" x="440" y="170" width="170" height="50" rx="4"/>
+  <text class="lbl" x="525" y="192" text-anchor="middle">access.py</text>
+  <text class="sub" x="525" y="208" text-anchor="middle">require_project_access</text>
+
+  <rect class="pill" x="20" y="250" width="170" height="50" rx="4"/>
+  <text class="lbl" x="105" y="272" text-anchor="middle">shared/errors</text>
+  <text class="sub" x="105" y="288" text-anchor="middle">ErrorEnvelope, api_error</text>
+
+  <rect class="pill" x="230" y="250" width="170" height="50" rx="4"/>
+  <text class="lbl" x="315" y="272" text-anchor="middle">shared/middleware</text>
+  <text class="sub" x="315" y="288" text-anchor="middle">X-Request-ID, Origin</text>
+
+  <rect class="pill" x="440" y="250" width="170" height="50" rx="4"/>
+  <text class="lbl" x="525" y="272" text-anchor="middle">database.py</text>
+  <text class="sub" x="525" y="288" text-anchor="middle">psycopg_pool · transaction()</text>
+
+  <rect class="pill" x="650" y="250" width="90" height="50" rx="4"/>
+  <text class="lbl" x="695" y="272" text-anchor="middle">alembic</text>
+  <text class="sub" x="695" y="288" text-anchor="middle">manual SQL</text>
+</svg>
+<figcaption>Per-feature backend layer flow. <code>shared/</code> + <code>database.py</code> + Alembic are common infrastructure.</figcaption>
+</figure>
+</div>
+</details>
+
+<details id="appx-write">
+<summary>5.3 — Frontend write path (Rooms add/edit)</summary>
+<div class="body">
+<figure class="diagram">
+<svg viewBox="0 0 820 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Frontend Rooms write path">
+  <style>
+    .b { fill:#f7f4ee; stroke:#8a4d22; stroke-width:1.2; }
+    .b2 { fill:#eaeae0; stroke:#555; stroke-width:1; }
+    .lbl { font:600 12px "Outfit",sans-serif; fill:#1a1a1a; }
+    .sub { font:11px "Outfit",sans-serif; fill:#555; }
+    .arr { stroke:#1a1a1a; stroke-width:1.2; fill:none; }
+    .dim { stroke:#999; stroke-width:1; stroke-dasharray:3,3; fill:none; }
+  </style>
+  <defs>
+    <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a1a"/>
+    </marker>
+  </defs>
+
+  <!-- UI -->
+  <rect class="b" x="20" y="20" width="160" height="60" rx="4"/>
+  <text class="lbl" x="100" y="44" text-anchor="middle">RoomModal</text>
+  <text class="sub" x="100" y="62" text-anchor="middle">form draft state</text>
+  <text class="sub" x="100" y="76" text-anchor="middle">onSubmit(room, labels)</text>
+
+  <rect class="b" x="20" y="120" width="160" height="60" rx="4"/>
+  <text class="lbl" x="100" y="144" text-anchor="middle">EquipmentTab</text>
+  <text class="sub" x="100" y="162" text-anchor="middle">nextRoomsPayload(...)</text>
+  <text class="sub" x="100" y="176" text-anchor="middle">replaceRoomsMutation</text>
+
+  <!-- lib -->
+  <rect class="b" x="220" y="120" width="160" height="60" rx="4"/>
+  <text class="lbl" x="300" y="144" text-anchor="middle">equipment/lib.ts</text>
+  <text class="sub" x="300" y="162" text-anchor="middle">upsertOption(...)</text>
+  <text class="sub" x="300" y="176" text-anchor="middle">sortedRooms / clamp</text>
+
+  <!-- hooks -->
+  <rect class="b" x="220" y="220" width="160" height="60" rx="4"/>
+  <text class="lbl" x="300" y="244" text-anchor="middle">useReplaceRoomsMutation</text>
+  <text class="sub" x="300" y="262" text-anchor="middle">If-Match[-Version]</text>
+  <text class="sub" x="300" y="276" text-anchor="middle">cache.setQueryData</text>
+
+  <!-- broadcast -->
+  <rect class="b2 b" x="20" y="220" width="160" height="60" rx="4"/>
+  <text class="lbl" x="100" y="244" text-anchor="middle">useRoomsDraftBroadcast</text>
+  <text class="sub" x="100" y="262" text-anchor="middle">BroadcastChannel</text>
+  <text class="sub" x="100" y="276" text-anchor="middle">causal etag guard</text>
+
+  <!-- fetch -->
+  <rect class="b" x="430" y="220" width="160" height="60" rx="4"/>
+  <text class="lbl" x="510" y="244" text-anchor="middle">api.ts</text>
+  <text class="sub" x="510" y="262" text-anchor="middle">fetchJson(PUT ...)</text>
+  <text class="sub" x="510" y="276" text-anchor="middle">credentials: include</text>
+
+  <!-- backend -->
+  <rect class="b" x="640" y="220" width="160" height="60" rx="4"/>
+  <text class="lbl" x="720" y="244" text-anchor="middle">FastAPI</text>
+  <text class="sub" x="720" y="262" text-anchor="middle">replace_rooms_slice</text>
+  <text class="sub" x="720" y="276" text-anchor="middle">+ ETag check</text>
+
+  <!-- arrows -->
+  <path class="arr" d="M100 80 L100 120" marker-end="url(#m3)"/>
+  <path class="arr" d="M180 150 L220 150" marker-end="url(#m3)"/>
+  <path class="arr" d="M180 250 L220 250" marker-end="url(#m3)"/>
+  <path class="arr" d="M380 250 L430 250" marker-end="url(#m3)"/>
+  <path class="arr" d="M590 250 L640 250" marker-end="url(#m3)"/>
+
+  <!-- on success: broadcast -->
+  <path class="dim" d="M300 220 L300 180" />
+  <text class="sub" x="300" y="200" text-anchor="middle">on success</text>
+
+  <path class="dim" d="M220 250 L180 250" />
+  <text class="sub" x="195" y="244" text-anchor="middle">postMessage</text>
+</svg>
+<figcaption>Add/edit Rooms flow. Same-editor multi-tab support is the dotted-line BroadcastChannel cycle on the left; without it, two tabs would see each other's writes only after the next refetch.</figcaption>
+</figure>
+</div>
+</details>
+
+<details id="appx-test">
+<summary>5.4 — Test surface (lines)</summary>
+<div class="body">
+<table>
+<thead><tr><th>File</th><th>Lines</th></tr></thead>
+<tbody>
+<tr><td><code>backend/tests/test_project_document.py</code></td><td>581</td></tr>
+<tr><td><code>frontend/src/App.test.tsx</code></td><td>364</td></tr>
+<tr><td><code>backend/tests/test_mcp.py</code></td><td>296</td></tr>
+<tr><td><code>backend/tests/test_auth.py</code></td><td>258</td></tr>
+<tr><td><code>backend/tests/test_project_status.py</code></td><td>239</td></tr>
+<tr><td><code>backend/tests/test_projects.py</code></td><td>166</td></tr>
+<tr><td><code>frontend/src/features/equipment/lib.test.ts</code></td><td>159</td></tr>
+<tr><td><code>frontend/src/features/project_status/lib.test.ts</code></td><td>48</td></tr>
+<tr><td><code>backend/tests/test_health.py</code></td><td>35</td></tr>
+</tbody>
+</table>
+<p class="meta">~2,100 lines of backend tests + ~570 lines of
+   frontend tests for ~5,200 lines of feature code. Ratio is
+   healthy for this phase.</p>
+</div>
+</details>
+
+<details id="appx-spec-map">
+<summary>5.5 — Spec → implementation pointer map</summary>
+<div class="body">
+<table>
+<thead><tr><th>PRD section</th><th>Implemented in</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>§4.1 access seam</td><td><code>features/projects/access.py</code></td><td><span class="ok">✓</span></td></tr>
+<tr><td>§6.1 users, sessions, projects, project_versions, project_status_items, project_version_drafts, mcp_tokens, user_action_log</td><td>Alembic versions 0002–0006</td><td><span class="ok">✓</span></td></tr>
+<tr><td>§6.2 ProjectDocumentV1 (Rooms + options only)</td><td><code>features/project_document/document.py</code></td><td><span class="warn">⚠ partial — Rooms only</span></td></tr>
+<tr><td>§6.5 asset backbone</td><td>—</td><td>not yet (TB-12)</td></tr>
+<tr><td>§7 catalog bookshelf</td><td>—</td><td>not yet (TB-07+)</td></tr>
+<tr><td>§8.1–8.6 save / version / draft / ETag</td><td><code>features/project_document/service.py</code></td><td><span class="ok">✓</span></td></tr>
+<tr><td>§9.1 /api/v1 prefix</td><td>all routers</td><td><span class="ok">✓</span></td></tr>
+<tr><td>§9.2 projects</td><td><code>features/projects/routes.py</code></td><td><span class="ok">✓</span></td></tr>
+<tr><td>§9.3 versions (PATCH lock/active, soft-delete)</td><td><code>features/project_document/routes.py</code></td><td><span class="warn">⚠ partial — no DELETE, no clone POST</span></td></tr>
+<tr><td>§9.4 document read</td><td><code>features/project_document/routes.py</code></td><td><span class="ok">✓</span></td></tr>
+<tr><td>§9.5 drafts</td><td><code>features/project_document/routes.py</code></td><td><span class="warn">⚠ no JSON-Patch yet, no Idempotency-Key</span></td></tr>
+<tr><td>§9.6 diff</td><td><code>features/project_document/routes.py</code> (diff_router)</td><td><span class="ok">✓ backend; UI partial</span></td></tr>
+<tr><td>§9.7 downloads</td><td><code>features/project_document/routes.py</code></td><td><span class="ok">✓</span></td></tr>
+<tr><td>§9.8 catalog</td><td>—</td><td>not yet (TB-07+)</td></tr>
+<tr><td>§9.10 assets</td><td>—</td><td>not yet (TB-12)</td></tr>
+<tr><td>§9.11 HBJSON files</td><td>—</td><td>not yet (TB-14)</td></tr>
+<tr><td>§9.12 schemas</td><td>—</td><td>not yet</td></tr>
+<tr><td>§10.3 MCP server</td><td><code>features/mcp/server.py</code></td><td><span class="ok">✓ read-only (TB-04b)</span></td></tr>
+<tr><td>§10.5 schema fallback</td><td>partial — raw download only</td><td><span class="warn">⚠ no workspace banner yet</span></td></tr>
+<tr><td>§13 auth</td><td><code>features/auth/</code></td><td><span class="ok">✓</span></td></tr>
+<tr><td>§13.1 ops baseline (request-id, structured errors, JSON logs)</td><td><code>features/shared/middleware.py</code> + <code>shared/errors.py</code></td><td><span class="warn">⚠ JSON logs still owed</span></td></tr>
+</tbody>
+</table>
+</div>
+</details>
+
+<hr/>
+<p class="meta">End of review. Treat the ADR table as the actionable
+   queue — everything else is context. If you want me to follow
+   up on any single ADR with a more detailed implementation
+   sketch, ask for it by ID.</p>
+
+</div>
+
+<script>
+  document.getElementById("open-all").addEventListener("click", () => {
+    document.querySelectorAll("details").forEach((d) => (d.open = true));
+  });
+  document.getElementById("close-all").addEventListener("click", () => {
+    document.querySelectorAll("details").forEach((d) => (d.open = false));
+  });
+</script>
+</body>
+</html>
