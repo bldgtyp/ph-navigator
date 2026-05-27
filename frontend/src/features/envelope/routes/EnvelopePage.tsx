@@ -1,6 +1,7 @@
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { useMaterialsQuery } from "../../catalogs/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import { useEnvelopeCommandMutation, useEnvelopeReadQuery } from "../hooks";
 import { envelopeReadSource, naturalSortAssemblies } from "../lib";
@@ -37,6 +38,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
+  const catalogMaterialsQuery = useMaterialsQuery(false, canEdit && dialog?.kind === "segment");
   const [commandError, setCommandError] = useState<string | null>(null);
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
@@ -169,7 +171,14 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         </div>
       ) : null}
       {isSpecificationsRoute ? (
-        <SpecificationsPanel materials={query.data.project_materials} isViewer={isViewer} />
+        <SpecificationsPanel
+          materials={query.data.project_materials}
+          isViewer={isViewer}
+          canEdit={canEdit}
+          busy={commandMutation.isPending}
+          error={commandError}
+          onCommand={(command) => void applyCommand(command)}
+        />
       ) : assemblies.length === 0 || !activeAssembly ? (
         <div>
           <EnvelopeEmptyState />
@@ -258,6 +267,8 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       )}
       <EnvelopeEditorDialogs
         dialog={dialog}
+        materials={query.data.project_materials}
+        catalogMaterials={catalogMaterialsQuery.data ?? []}
         busy={commandMutation.isPending}
         error={commandError}
         onClose={() => {

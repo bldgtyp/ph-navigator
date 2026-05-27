@@ -31,10 +31,11 @@ function useInvalidateMaterials() {
   return () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.materials() });
 }
 
-export function useMaterialsQuery(includeInactive: boolean) {
+export function useMaterialsQuery(includeInactive: boolean, enabled = true) {
   return useQuery({
     queryKey: catalogQueryKeys.materialsList(includeInactive),
     queryFn: ({ signal }) => listMaterials(includeInactive, signal),
+    enabled,
     select: (payload) => payload.items,
   });
 }

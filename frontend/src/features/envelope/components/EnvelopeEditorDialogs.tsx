@@ -1,17 +1,16 @@
 import { FormEvent, useEffect, useState } from "react";
-import {
-  formatLengthFromMm,
-  parseLengthToMm,
-  useUnitPreference,
-  type UnitSystem,
-} from "../../../lib/units";
+import { formatLengthFromMm, parseLengthToMm, useUnitPreference } from "../../../lib/units";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import type { CatalogMaterial } from "../../catalogs/types";
+import { ModalUnitToggle } from "./ModalUnitToggle";
+import { ProjectMaterialEditor } from "./ProjectMaterialEditor";
 import type {
   Assembly,
   AssemblyLayer,
   AssemblySegment,
   AssemblyType,
   EnvelopeCommand,
+  ProjectMaterial,
 } from "../types";
 
 type DialogState =
@@ -39,12 +38,16 @@ const ASSEMBLY_TYPES: AssemblyType[] = ["wall", "floor", "roof", "other"];
 
 export function EnvelopeEditorDialogs({
   dialog,
+  materials,
+  catalogMaterials,
   busy,
   error,
   onClose,
   onCommand,
 }: {
   dialog: DialogState | null;
+  materials: ProjectMaterial[];
+  catalogMaterials: CatalogMaterial[];
   busy: boolean;
   error: string | null;
   onClose: () => void;
@@ -188,6 +191,8 @@ export function EnvelopeEditorDialogs({
       <SegmentDialog
         title="Segment properties"
         segment={dialog.segment}
+        materials={materials}
+        catalogMaterials={catalogMaterials}
         busy={busy}
         error={error}
         onClose={onClose}
@@ -200,6 +205,42 @@ export function EnvelopeEditorDialogs({
             ...values,
           })
         }
+        onPickProjectMaterial={(project_material_id) =>
+          onCommand({
+            kind: "pick_project_material",
+            assembly_id: dialog.assembly.id,
+            layer_id: dialog.layer.id,
+            segment_id: dialog.segment.id,
+            project_material_id,
+          })
+        }
+        onPickCatalogMaterial={(catalog_material_id) =>
+          onCommand({
+            kind: "pick_catalog_material",
+            assembly_id: dialog.assembly.id,
+            layer_id: dialog.layer.id,
+            segment_id: dialog.segment.id,
+            catalog_material_id,
+          })
+        }
+        onHandEnterMaterial={(name) =>
+          onCommand({
+            kind: "hand_enter_material",
+            assembly_id: dialog.assembly.id,
+            layer_id: dialog.layer.id,
+            segment_id: dialog.segment.id,
+            name,
+          })
+        }
+        onDetachSegmentMaterial={() =>
+          onCommand({
+            kind: "detach_segment_material",
+            assembly_id: dialog.assembly.id,
+            layer_id: dialog.layer.id,
+            segment_id: dialog.segment.id,
+          })
+        }
+        onUpdateProjectMaterial={(command) => onCommand(command)}
       />
     );
   }
@@ -350,13 +391,22 @@ function LengthDialog({
 function SegmentDialog({
   title,
   segment,
+  materials,
+  catalogMaterials,
   busy,
   error,
   onClose,
   onSubmit,
+  onPickProjectMaterial,
+  onPickCatalogMaterial,
+  onHandEnterMaterial,
+  onDetachSegmentMaterial,
+  onUpdateProjectMaterial,
 }: {
   title: string;
   segment: AssemblySegment;
+  materials: ProjectMaterial[];
+  catalogMaterials: CatalogMaterial[];
   busy: boolean;
   error: string | null;
   onClose: () => void;
@@ -365,11 +415,23 @@ function SegmentDialog({
     is_continuous_insulation: boolean;
     steel_stud_spacing_mm: number | null;
   }) => void;
+  onPickProjectMaterial: (projectMaterialId: string | null) => void;
+  onPickCatalogMaterial: (catalogMaterialId: string) => void;
+  onHandEnterMaterial: (name: string) => void;
+  onDetachSegmentMaterial: () => void;
+  onUpdateProjectMaterial: (
+    command: Extract<EnvelopeCommand, { kind: "update_project_material" }>,
+  ) => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
   const width = useLengthDraft(segment.width_mm);
   const [isContinuous, setIsContinuous] = useState(segment.is_continuous_insulation);
   const studSpacing = useLengthDraft(segment.steel_stud_spacing_mm);
+  const [newMaterialName, setNewMaterialName] = useState("");
+  const selectedMaterial =
+    segment.project_material_id === null
+      ? null
+      : (materials.find((material) => material.id === segment.project_material_id) ?? null);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -411,6 +473,77 @@ function SegmentDialog({
           />
           Continuous insulation
         </label>
+        <fieldset className="material-picker">
+          <legend>Material</legend>
+          <label>
+            In this project
+            <select
+              value={segment.project_material_id ?? ""}
+              onChange={(event) => onPickProjectMaterial(event.currentTarget.value || null)}
+            >
+              <option value="">No material</option>
+              {materials.map((material) => (
+                <option key={material.id} value={material.id}>
+                  {material.name} ({material.use_sites.length} uses)
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            From catalog
+            <select
+              value=""
+              onChange={(event) => {
+                const catalog_material_id = event.currentTarget.value;
+                if (catalog_material_id) onPickCatalogMaterial(catalog_material_id);
+              }}
+            >
+              <option value="">Choose catalog material</option>
+              {catalogMaterials.map((material) => (
+                <option key={material.id} value={material.id}>
+                  {material.category} / {material.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="inline-form-row">
+            <input
+              value={newMaterialName}
+              onChange={(event) => setNewMaterialName(event.currentTarget.value)}
+              placeholder="Hand-enter material"
+            />
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={!newMaterialName.trim() || busy}
+              onClick={() => {
+                onHandEnterMaterial(newMaterialName.trim());
+                setNewMaterialName("");
+              }}
+            >
+              Add
+            </button>
+          </div>
+          {segment.project_material_id ? (
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy}
+              onClick={onDetachSegmentMaterial}
+            >
+              Detach to custom material
+            </button>
+          ) : null}
+        </fieldset>
+        {selectedMaterial ? (
+          <ProjectMaterialEditor
+            material={selectedMaterial}
+            busy={busy}
+            error={error}
+            showNotes={false}
+            onCommand={onUpdateProjectMaterial}
+          />
+        ) : null}
         <DialogActions
           busy={busy}
           error={width.error ?? studSpacing.error ?? error}
@@ -461,33 +594,6 @@ function useLengthDraft(initialValueMm: number | null) {
     setDraft,
     unitLabel: editorUnitSystem === "IP" ? "in" : "mm",
   };
-}
-
-function ModalUnitToggle({
-  unitSystem,
-  setUnitSystem,
-}: {
-  unitSystem: UnitSystem;
-  setUnitSystem: (next: UnitSystem) => void;
-}) {
-  const options: UnitSystem[] = ["IP", "SI"];
-  return (
-    <div className="modal-unit-toggle" role="radiogroup" aria-label="Display units">
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          role="radio"
-          aria-label={`Set display units to ${option}`}
-          aria-checked={unitSystem === option}
-          className={unitSystem === option ? "active" : ""}
-          onClick={() => setUnitSystem(option)}
-        >
-          {option}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function ConfirmDialog({

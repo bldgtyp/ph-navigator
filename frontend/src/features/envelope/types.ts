@@ -1,7 +1,9 @@
 import type { BaseTableSlice } from "../project_document/table-slice";
+import type { CatalogOrigin } from "../project_document/catalog-origin";
 
 export type AssemblyType = "wall" | "floor" | "roof" | "other";
 export type AssemblyOrientation = "first_layer_outside" | "last_layer_outside";
+
 export type SpecificationStatus = "complete" | "missing" | "question" | "na";
 export type ThermalStatusFlag = "missing_material" | "missing_conductivity" | "invalid_geometry";
 export type EnvelopeReadSource = "draft" | "version";
@@ -29,7 +31,7 @@ export type ProjectMaterial = {
   specification_status: SpecificationStatus;
   datasheet_asset_ids: string[];
   notes: string | null;
-  catalog_origin: unknown | null;
+  catalog_origin: CatalogOrigin | null;
   use_sites: ProjectMaterialUseSite[];
 };
 
@@ -118,7 +120,61 @@ export type EnvelopeCommand =
       project_material_id: string | null;
       is_continuous_insulation: boolean;
       steel_stud_spacing_mm: number | null;
-    };
+    }
+  | {
+      kind: "pick_project_material";
+      assembly_id: string;
+      layer_id: string;
+      segment_id: string;
+      project_material_id: string | null;
+    }
+  | {
+      kind: "pick_catalog_material";
+      assembly_id: string;
+      layer_id: string;
+      segment_id: string;
+      catalog_material_id: string;
+    }
+  | {
+      kind: "hand_enter_material";
+      assembly_id: string;
+      layer_id: string;
+      segment_id: string;
+      name: string;
+      category?: string;
+      conductivity_w_mk?: number | null;
+      density_kg_m3?: number | null;
+      specific_heat_j_kgk?: number | null;
+      emissivity?: number | null;
+      argb_color?: string | null;
+    }
+  | {
+      kind: "update_project_material";
+      project_material_id: string;
+      name?: string | null;
+      category?: string | null;
+      conductivity_w_mk?: number | null;
+      density_kg_m3?: number | null;
+      specific_heat_j_kgk?: number | null;
+      emissivity?: number | null;
+      argb_color?: string | null;
+      specification_status?: SpecificationStatus | null;
+      notes?: string | null;
+    }
+  | {
+      kind: "update_segment_use_site_notes";
+      assembly_id: string;
+      layer_id: string;
+      segment_id: string;
+      use_site_notes: string | null;
+    }
+  | {
+      kind: "detach_segment_material";
+      assembly_id: string;
+      layer_id: string;
+      segment_id: string;
+    }
+  | { kind: "remove_unused_project_materials" };
 
 export type EnvelopeCommandBody = {
   command: EnvelopeCommand;

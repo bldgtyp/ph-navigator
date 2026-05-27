@@ -12,6 +12,7 @@ from features.project_document.document import (
     AssemblyOrientation,
     AssemblyType,
     ProjectMaterial,
+    SpecificationStatus,
 )
 from features.project_document.models import ProjectDocumentSource
 
@@ -199,6 +200,83 @@ class PasteAssignmentCommand(BaseModel):
     steel_stud_spacing_mm: float | None = Field(default=None, gt=0, allow_inf_nan=False)
 
 
+class PickProjectMaterialCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["pick_project_material"]
+    assembly_id: str
+    layer_id: str
+    segment_id: str
+    project_material_id: str | None
+
+
+class PickCatalogMaterialCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["pick_catalog_material"]
+    assembly_id: str
+    layer_id: str
+    segment_id: str
+    catalog_material_id: str
+
+
+class HandEnterMaterialCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["hand_enter_material"]
+    assembly_id: str
+    layer_id: str
+    segment_id: str
+    name: str = Field(min_length=1, max_length=200)
+    category: str = Field(default="Other", min_length=1, max_length=120)
+    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    argb_color: str | None = Field(default=None, max_length=40)
+
+
+class UpdateProjectMaterialCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["update_project_material"]
+    project_material_id: str
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    category: str | None = Field(default=None, min_length=1, max_length=120)
+    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    argb_color: str | None = Field(default=None, max_length=40)
+    specification_status: SpecificationStatus | None = None
+    notes: str | None = Field(default=None, max_length=4000)
+
+
+class UpdateSegmentUseSiteNotesCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["update_segment_use_site_notes"]
+    assembly_id: str
+    layer_id: str
+    segment_id: str
+    use_site_notes: str | None = Field(default=None, max_length=4000)
+
+
+class DetachSegmentMaterialCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["detach_segment_material"]
+    assembly_id: str
+    layer_id: str
+    segment_id: str
+
+
+class RemoveUnusedProjectMaterialsCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["remove_unused_project_materials"]
+
+
 EnvelopeCommand = Annotated[
     CreateAssemblyCommand
     | RenameAssemblyCommand
@@ -213,7 +291,14 @@ EnvelopeCommand = Annotated[
     | DeleteSegmentCommand
     | FlipOrientationCommand
     | FlipLayersCommand
-    | PasteAssignmentCommand,
+    | PasteAssignmentCommand
+    | PickProjectMaterialCommand
+    | PickCatalogMaterialCommand
+    | HandEnterMaterialCommand
+    | UpdateProjectMaterialCommand
+    | UpdateSegmentUseSiteNotesCommand
+    | DetachSegmentMaterialCommand
+    | RemoveUnusedProjectMaterialsCommand,
     Field(discriminator="kind"),
 ]
 

@@ -1,15 +1,7 @@
+import type { CatalogOrigin } from "../project_document/catalog-origin";
+export type { CatalogTableName } from "../project_document/catalog-origin";
+
 export const WINDOW_TYPES_TABLE_NAME = "window_types";
-
-export type CatalogTableName = "materials" | "frame_types" | "glazing_types";
-
-export type CatalogOrigin = {
-  catalog_table: CatalogTableName;
-  catalog_record_id: string;
-  catalog_version_id: string;
-  catalog_schema_version: number;
-  synced_at: string;
-  local_overrides: string[];
-};
 
 export type FrameRef = {
   name: string;
