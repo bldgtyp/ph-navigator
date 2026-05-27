@@ -32,12 +32,6 @@ from features.project_document.mutations.models import (
     TEXT_TO_SINGLE_SELECT_OPTION_CAP,
     ChangeTypeMutation,
 )
-
-# Cap on per-row before/after entries captured in the audit payload.
-# Beyond this, the payload carries `audit_rows_truncated: True` and the
-# first AUDIT_ROW_CAP entries — enough for after-the-fact recovery in
-# typical project sizes while keeping the action-log row bounded.
-AUDIT_ROW_CAP = 100
 from features.project_document.mutations.options_ops import validate_default_option_id
 from features.project_document.options import (
     OPTION_COLOR_PALETTE,
@@ -50,6 +44,12 @@ from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = ["apply_change_type"]
+
+# Cap on per-row before/after entries captured in the audit payload.
+# Beyond this, the payload carries `row_changes_truncated: True` and the
+# first AUDIT_ROW_CAP entries — enough for after-the-fact recovery in
+# typical project sizes while keeping the action-log row bounded.
+AUDIT_ROW_CAP = 100
 
 
 def _format_number_for_text(value: object) -> str:
@@ -260,6 +260,18 @@ def apply_change_type(
             "changeType target id must equal the source field id.",
             {"field_id": mutation.after.field_key, "expected_field_id": mutation.field_id},
         )
+    # Defense-in-depth: reject `field_type` changes on built-in fields
+    # whose `"field_type"` lock is set in feature code. The frontend
+    # already disables the picker; this guard catches MCP / hand-crafted
+    # writes that bypass the UI. Lock lists are not persisted, so this
+    # check consults the per-table registry rather than the FieldDef.
+    if mutation.field_id in capability.field_type_locked_keys:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_field_type_locked",
+            "This built-in field's type is locked by feature code.",
+            {"field_id": mutation.field_id, "reason": "field_type_locked"},
+        )
     if mutation.after.field_type == existing.field_type:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -334,12 +346,16 @@ def apply_change_type(
         existing_options = body.single_select_options.get(namespace_key, [])
         label_lookup_for_substitute = {opt.id: opt.label for opt in existing_options}
 
-    # Per-row preflight.
+    # Per-row preflight. `before_by_row` snapshots every source value
+    # so the audit log can record per-row before/after pairs without
+    # re-reading the document (and without re-evaluating formulas).
     incompatible: list[dict[str, object]] = []
     compatible_writes: list[tuple[str, object | None]] = []
+    before_by_row: dict[str, object | None] = {}
     for row in rows:
         row_id = str(getattr(row, "id", ""))
         raw_value = source_value(row)
+        before_by_row[row_id] = raw_value
 
         # `discard_then_author` (primitive | formula → formula): every
         # non-empty cell becomes an incompatible preflight entry; the
@@ -495,6 +511,27 @@ def apply_change_type(
             new_rows.append(row)
     next_body = replace_rows_in_envelope(next_body, mutation.table_key, new_rows)
 
+    # Per-row before/after for the audit payload. Captures every row
+    # whose value actually changed (skipping null→null no-ops). Capped
+    # at AUDIT_ROW_CAP entries with a `row_changes_truncated` flag past
+    # the cap so the action log row stays bounded on tables with many
+    # populated rows. The payload survives the action-log retention
+    # window, giving after-the-fact recovery for discard_then_author
+    # and the lossy snapshot branches.
+    row_changes: list[dict[str, object]] = []
+    for row in rows:
+        row_id = str(getattr(row, "id", ""))
+        before = before_by_row.get(row_id)
+        if row_id in write_by_row:
+            after: object | None = write_by_row[row_id]
+        elif row_id in incompatible_by_row:
+            after = None
+        else:
+            continue
+        if before == after:
+            continue
+        row_changes.append({"row_id": row_id, "before": before, "after": after})
+
     audit: dict[str, object] = {
         "kind": "changeType",
         "table_key": mutation.table_key,
@@ -506,4 +543,8 @@ def apply_change_type(
     }
     if generated_options is not None:
         audit["created_option_count"] = len(generated_options)
+    if row_changes:
+        audit["row_changes"] = row_changes[:AUDIT_ROW_CAP]
+        if len(row_changes) > AUDIT_ROW_CAP:
+            audit["row_changes_truncated"] = True
     return next_body, audit

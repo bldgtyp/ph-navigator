@@ -88,6 +88,7 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
         FieldRegistryEntry,
         ast_to_json,
         formula_facing_field_type,
+        infer_result_type,
         parse,
         resolve_refs,
     )
@@ -381,6 +382,13 @@ ROOMS_BUILT_IN_OPTION_KEY_BY_FIELD_KEY: dict[str, str] = {
 # path must require an explicit replacement option id.
 ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset({"floor_level"})
 
+# Built-in field_keys whose `field_type` is locked from user edits
+# (PRD §P5.1). These are the typed Pydantic columns on `RoomRow` —
+# their values live outside `custom_values` and a retype would strand
+# the typed column. Floor / Zone reference the project's namespaced
+# option list; iCFA carries the `ge=0, le=1.0` PH-domain invariant.
+ROOMS_FIELD_TYPE_LOCKED_KEYS: frozenset[str] = frozenset({"floor_level", "building_zone", "icfa_factor"})
+
 
 def _read_rooms_field_option_list(body: ProjectDocumentV1, field_key: str) -> list[SingleSelectOption]:
     """Read a single-select field's option list under the Rooms namespace."""
@@ -513,6 +521,7 @@ rooms_field_registry = TableFieldRegistry(
     replace_field_option_list=_replace_rooms_field_option_list,
     built_in_option_key_by_field_key=ROOMS_BUILT_IN_OPTION_KEY_BY_FIELD_KEY,
     required_field_keys=ROOMS_REQUIRED_FIELD_KEYS,
+    field_type_locked_keys=ROOMS_FIELD_TYPE_LOCKED_KEYS,
     read_built_in_option_value=_read_rooms_built_in_option_value,
     set_built_in_option_value=_set_rooms_built_in_option_value,
     field_value_for_formula=_read_rooms_field_for_formula,

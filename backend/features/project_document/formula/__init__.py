@@ -12,6 +12,10 @@ in `frontend/.../lib/formula/`; the shared corpora at
 `formula_evaluator_corpus.json` are the parity contract.
 """
 
+from features.project_document.formula.analysis import (
+    count_ast_nodes,
+    infer_result_type,
+)
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
     FieldRef,
@@ -82,10 +86,12 @@ __all__ = [
     "ast_from_json",
     "ast_to_json",
     "build_field_registry",
+    "count_ast_nodes",
     "detect_cycles",
     "evaluate",
     "evaluate_table_formulas",
     "formula_facing_field_type",
+    "infer_result_type",
     "parse",
     "resolve_refs",
 ]
