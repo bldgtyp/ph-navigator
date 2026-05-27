@@ -6,6 +6,7 @@ point boto3 at Cloudflare R2 via endpoint_url.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from uuid import UUID
 
 import boto3
@@ -26,6 +27,12 @@ def asset_thumbnail_object_key(project_id: UUID, asset_id: str) -> str:
 def orphaned_asset_object_key(project_id: UUID, asset_id: str, object_key: str) -> str:
     filename = object_key.rsplit("/", maxsplit=1)[-1] or "file.bin"
     return f"projects/{project_id}/assets/_orphaned/{asset_id}/{filename}"
+
+
+@dataclass(frozen=True)
+class DeleteObjectsResult:
+    deleted_object_count: int
+    failed_object_keys: list[str]
 
 
 class R2Client:
@@ -86,3 +93,31 @@ class R2Client:
 
     def delete_object(self, object_key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=object_key)
+
+    def list_object_keys(self, prefix: str) -> list[str]:
+        keys: list[str] = []
+        continuation_token: str | None = None
+        while True:
+            params: dict[str, object] = {"Bucket": self.bucket, "Prefix": prefix}
+            if continuation_token:
+                params["ContinuationToken"] = continuation_token
+            response = self.client.list_objects_v2(**params)
+            keys.extend(str(item["Key"]) for item in response.get("Contents", []))
+            if not response.get("IsTruncated"):
+                return keys
+            continuation_token = str(response.get("NextContinuationToken", ""))
+
+    def delete_objects(self, object_keys: list[str]) -> DeleteObjectsResult:
+        deleted = 0
+        failed: list[str] = []
+        for index in range(0, len(object_keys), 1000):
+            chunk = object_keys[index : index + 1000]
+            if not chunk:
+                continue
+            response = self.client.delete_objects(
+                Bucket=self.bucket,
+                Delete={"Objects": [{"Key": key} for key in chunk], "Quiet": False},
+            )
+            deleted += len(response.get("Deleted", []))
+            failed.extend(str(item.get("Key", "")) for item in response.get("Errors", []))
+        return DeleteObjectsResult(deleted_object_count=deleted, failed_object_keys=[key for key in failed if key])

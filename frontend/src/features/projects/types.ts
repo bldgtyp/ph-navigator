@@ -37,6 +37,43 @@ export type ProjectListResponse = {
   projects: ProjectSummary[];
 };
 
+export type ProjectDeleteCounts = {
+  versions: number;
+  drafts: number;
+  status_items: number;
+  assets: number;
+  jobs: number;
+  mcp_tokens: number;
+  table_views: number;
+};
+
+export type ProjectDeletedSummary = ProjectSummary & {
+  deleted_at: string;
+  deleted_by: string | null;
+  hard_delete_after: string | null;
+  counts: ProjectDeleteCounts;
+};
+
+export type ProjectDeletedListResponse = {
+  projects: ProjectDeletedSummary[];
+};
+
+export type ProjectBulkDeleteItem = {
+  project_id: string;
+  ok: boolean;
+  deleted_at: string | null;
+  hard_delete_after: string | null;
+  already_deleted: boolean;
+  counts: ProjectDeleteCounts | null;
+  error_code: string | null;
+  message: string | null;
+};
+
+export type ProjectBulkDeleteResponse = {
+  mode: "soft";
+  items: ProjectBulkDeleteItem[];
+};
+
 export type CreateProjectPayload = {
   name: string;
   bt_number: string;

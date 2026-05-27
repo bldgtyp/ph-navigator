@@ -52,6 +52,24 @@ const projectPayload = {
   ],
 };
 
+const projectDeleteCounts = {
+  versions: 1,
+  drafts: 0,
+  status_items: 0,
+  assets: 0,
+  jobs: 0,
+  mcp_tokens: 0,
+  table_views: 0,
+};
+
+const deletedProjectPayload = {
+  ...projectPayload,
+  deleted_at: "2026-05-26T20:00:00Z",
+  deleted_by: userPayload.id,
+  hard_delete_after: "2026-08-24T20:00:00Z",
+  counts: projectDeleteCounts,
+};
+
 const alternateVersion = {
   id: "9e07b34a-819d-4b65-bda4-d7fc43997f93",
   project_id: projectPayload.id,
@@ -283,6 +301,7 @@ describe("App", () => {
     fetchMock
       .mockImplementationOnce(sessionResponse)
       .mockImplementationOnce(sessionResponse)
+      .mockImplementationOnce(() => jsonResponse({ projects: [] }))
       .mockImplementationOnce(() => jsonResponse({ projects: [] }));
 
     render(<App />);
@@ -297,6 +316,7 @@ describe("App", () => {
     fetchMock
       .mockImplementationOnce(sessionResponse)
       .mockImplementationOnce(sessionResponse)
+      .mockImplementationOnce(() => jsonResponse({ projects: [] }))
       .mockImplementationOnce(() => jsonResponse({ projects: [] }));
 
     render(<App />);
@@ -323,6 +343,7 @@ describe("App", () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       const draftUrl = draftSummaryUrl();
+      if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") {
         const calls = fetchMock.mock.calls.filter(([path]) => String(path) === "/api/v1/projects");
@@ -360,6 +381,102 @@ describe("App", () => {
     expect(within(projectTabs).getByRole("link", { name: "Rooms" })).toBeVisible();
     expect(within(projectTabs).getByRole("link", { name: "Thermal Bridges" })).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
+  });
+
+  test("bulk soft-deletes selected dashboard projects and restores from Recently Deleted", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", "/dashboard");
+    let activeProjects = [projectPayload];
+    let deletedProjects: unknown[] = [];
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === "/api/v1/projects") return jsonResponse({ projects: activeProjects });
+      if (url === "/api/v1/projects/deleted") {
+        return jsonResponse({ projects: deletedProjects });
+      }
+      if (url === "/api/v1/projects:bulk-delete" && init?.method === "POST") {
+        expect(JSON.parse(String(init.body))).toEqual({
+          project_ids: [projectPayload.id],
+          confirm: true,
+        });
+        activeProjects = [];
+        deletedProjects = [deletedProjectPayload];
+        return jsonResponse({
+          mode: "soft",
+          items: [
+            {
+              project_id: projectPayload.id,
+              ok: true,
+              deleted_at: deletedProjectPayload.deleted_at,
+              hard_delete_after: deletedProjectPayload.hard_delete_after,
+              already_deleted: false,
+              counts: projectDeleteCounts,
+              error_code: null,
+              message: null,
+            },
+          ],
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}:restore` && init?.method === "POST") {
+        activeProjects = [projectPayload];
+        deletedProjects = [];
+        return jsonResponse(projectPayload);
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole("link", { name: "2426 - West Stockbridge House" }),
+    ).toBeVisible();
+    await user.click(screen.getByLabelText("Select project 2426 West Stockbridge House"));
+    expect(window.location.pathname).toBe("/dashboard");
+    expect(screen.getByRole("button", { name: "Delete selected (1)" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Delete selected (1)" }));
+    expect(screen.getByRole("dialog", { name: "Delete project" })).toBeVisible();
+    expect(screen.getByText("Can be restored for 90 days.")).toBeVisible();
+    expect(
+      within(screen.getByRole("list", { name: "Selected projects" })).getByText("2426"),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Delete project" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("link", { name: "2426 - West Stockbridge House" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(await screen.findByRole("button", { name: "Restore" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /Hard delete|Permanently delete/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Restore" }));
+    expect(
+      await screen.findByRole("link", { name: "2426 - West Stockbridge House" }),
+    ).toBeVisible();
+    expect(await screen.findByText("No deleted projects.")).toBeVisible();
+  });
+
+  test("renders a deleted project URL as gone", async () => {
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return apiErrorResponse(410, "project_deleted", "Project deleted.");
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("Project deleted")).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        name: "This project is deleted and no longer available from this URL.",
+      }),
+    ).toBeVisible();
   });
 
   test("renders a public project shell with edit controls hidden", async () => {
@@ -813,6 +930,7 @@ describe("App", () => {
       const url = String(input);
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
       if (url === "/api/v1/catalogs/materials") return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });
@@ -834,6 +952,7 @@ describe("App", () => {
       const url = String(input);
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
       return jsonResponse({}, 404);
     });
 
@@ -857,6 +976,7 @@ describe("App", () => {
       const url = String(input);
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
       if (url === "/api/v1/catalogs/frame-types") return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });
@@ -878,6 +998,7 @@ describe("App", () => {
       const url = String(input);
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
       if (url === "/api/v1/catalogs/glazing-types") return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });

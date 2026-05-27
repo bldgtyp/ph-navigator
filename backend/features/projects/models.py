@@ -158,6 +158,102 @@ class ProjectListResponse(BaseModel):
     projects: list[ProjectSummary]
 
 
+ProjectDeleteMode = Literal["soft"]
+
+
+class ProjectDeleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+
+
+class ProjectDeleteCounts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    versions: int = 0
+    drafts: int = 0
+    status_items: int = 0
+    assets: int = 0
+    jobs: int = 0
+    mcp_tokens: int = 0
+    table_views: int = 0
+
+
+class ProjectDeletedSummary(ProjectSummary):
+    deleted_at: datetime
+    deleted_by: UUID | None
+    hard_delete_after: datetime | None
+    counts: ProjectDeleteCounts
+
+
+class ProjectDeleteResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    mode: ProjectDeleteMode = "soft"
+    deleted_at: datetime
+    hard_delete_after: datetime | None
+    already_deleted: bool = False
+    counts: ProjectDeleteCounts
+
+
+class ProjectBulkDeleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_ids: list[UUID] = Field(min_length=1, max_length=100)
+    confirm: bool = False
+
+
+class ProjectBulkDeleteItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    ok: bool
+    deleted_at: datetime | None = None
+    hard_delete_after: datetime | None = None
+    already_deleted: bool = False
+    counts: ProjectDeleteCounts | None = None
+    error_code: str | None = None
+    message: str | None = None
+
+
+class ProjectBulkDeleteResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mode: ProjectDeleteMode = "soft"
+    items: list[ProjectBulkDeleteItem]
+
+
+class ProjectDeletedListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    projects: list[ProjectDeletedSummary]
+
+
+class ProjectHardDeleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm_project_name: str = Field(min_length=1)
+    confirm_bt_number: str = Field(min_length=1)
+
+
+class ProjectHardDeleteStorageSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    deleted_object_count: int = 0
+    failed_object_keys: list[str] = Field(default_factory=list)
+
+
+class ProjectHardDeleteResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    deleted: bool
+    counts: ProjectDeleteCounts
+    storage: ProjectHardDeleteStorageSummary
+    manifest: dict[str, object]
+
+
 class BtNumberConflict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
