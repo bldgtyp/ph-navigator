@@ -84,7 +84,7 @@ function RoomsPageBody(props: {
     slice: roomsSlice,
     coreFieldDefs,
     fingerprintCoreFieldKeys: ROOMS_SCHEMA_CORE_FIELD_KEYS,
-    customFields: roomsSlice.custom_fields,
+    customFields: roomsSlice.field_defs,
     singleSelectOptions: roomsSlice.single_select_options ?? null,
     columnsForSanitize,
     payloadBuilders: roomsPayloadBuilders,

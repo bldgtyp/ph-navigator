@@ -9,19 +9,25 @@ import type { CustomFieldType, FieldDef, FieldOption, FieldType } from "../types
 // Re-export so existing imports from this module keep working.
 export type { CustomFieldType };
 
-// Mirror of backend `CustomFieldDef`. `id` is the immutable identity —
-// writes, view state, and formula refs always key off `id`, never
-// `field_key` (advisory export slug) or `display_name` (user-editable).
-export type CustomFieldDef = {
-  id: string;
-  field_key: string | null;
+// Mirror of backend `TableFieldDef` (custom_fields.py:93). Phase 1b
+// unified identity on `field_key` for both built-in and custom fields —
+// writes, view state, and formula refs all key off `field_key`. `origin`
+// records whether the entry was declared by the feature seed
+// (`"built_in"`) or created by a user (`"custom"`).
+export type TableFieldDef = {
+  field_key: string;
   display_name: string;
   field_type: CustomFieldType;
   config: Record<string, unknown>;
   description: string | null;
+  origin: "built_in" | "custom";
   created_at: string;
   created_by: string | null;
 };
+
+// Back-compat alias for callers still importing `CustomFieldDef`.
+// Remove once every callsite migrates to `TableFieldDef`.
+export type CustomFieldDef = TableFieldDef;
 
 export type TableSchema = {
   fieldDefs: FieldDef[];
@@ -66,7 +72,7 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
     args;
   const customList = useMemo(() => customFields ?? [], [customFields]);
 
-  const optionsByFieldId = useMemo<Record<string, readonly FieldOption[]>>(() => {
+  const optionsByFieldKey = useMemo<Record<string, readonly FieldOption[]>>(() => {
     if (!singleSelectOptions) return {};
     const prefix = `${tableKey}.`;
     const out: Record<string, readonly FieldOption[]> = {};
@@ -77,8 +83,8 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
   }, [singleSelectOptions, tableKey]);
 
   const synthesizedFieldDefs = useMemo<FieldDef[]>(
-    () => customList.map((custom) => customFieldToFieldDef(custom, optionsByFieldId)),
-    [customList, optionsByFieldId],
+    () => customList.map((custom) => customFieldToFieldDef(custom, optionsByFieldKey)),
+    [customList, optionsByFieldKey],
   );
 
   const fieldDefs = useMemo<FieldDef[]>(
@@ -91,9 +97,34 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
     [coreFieldDefs, fingerprintCoreFieldKeys],
   );
 
+  // Backend fingerprint v2 walks every persisted FieldDef (built-in +
+  // custom) as one stream of `(field_key, field_type)`. Until the
+  // frontend collapses the `coreFieldDefs / customFields` split (task
+  // #28), synthesize the built-in side from `coreFieldDefs` and concat
+  // the custom side. `coreFieldDef.custom_field_type` is the backend
+  // `CustomFieldType` slug; falls back to `short_text` for the few
+  // built-ins (e.g. attachment, computed pinned identifier) that don't
+  // declare one.
+  const fingerprintInput = useMemo<TableFieldDef[]>(
+    () => [
+      ...coreFieldDefs.map<TableFieldDef>((field) => ({
+        field_key: field.field_key,
+        display_name: field.display_name,
+        field_type: field.custom_field_type ?? "short_text",
+        config: {},
+        description: field.description ?? null,
+        origin: "built_in",
+        created_at: "",
+        created_by: null,
+      })),
+      ...customList,
+    ],
+    [coreFieldDefs, customList],
+  );
+
   const schemaFingerprint = useMemo(
-    () => computeTableSchemaFingerprint(coreFieldKeys, customList),
-    [coreFieldKeys, customList],
+    () => computeTableSchemaFingerprint(fingerprintInput),
+    [fingerprintInput],
   );
 
   return useMemo(
@@ -113,18 +144,18 @@ export function mintCustomFieldId(): string {
 }
 
 function customFieldToFieldDef(
-  custom: CustomFieldDef,
-  optionsByFieldId: Record<string, readonly FieldOption[]>,
+  custom: TableFieldDef,
+  optionsByFieldKey: Record<string, readonly FieldOption[]>,
 ): FieldDef {
   const fieldDef: FieldDef = {
-    field_key: custom.id,
+    field_key: custom.field_key,
     field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[custom.field_type],
     custom_field_type: custom.field_type,
     display_name: custom.display_name,
     description: custom.description ?? undefined,
   };
   if (custom.field_type === "single_select") {
-    fieldDef.options = [...(optionsByFieldId[custom.id] ?? EMPTY_OPTIONS)];
+    fieldDef.options = [...(optionsByFieldKey[custom.field_key] ?? EMPTY_OPTIONS)];
     const defaultOptionId = custom.config.default_option_id;
     fieldDef.defaultOptionId = typeof defaultOptionId === "string" ? defaultOptionId : null;
     fieldDef.colorCodeOptions = custom.config.color_code_options !== false;
@@ -153,19 +184,18 @@ function customFieldToFieldDef(
   return fieldDef;
 }
 
-// Must agree to the byte with backend `compute_table_schema_fingerprint`.
-// The digest is the matchkey for persisted view state across schema switches.
-export const FINGERPRINT_ALGORITHM_VERSION = "v1";
+// Must agree to the byte with backend `compute_table_schema_fingerprint`
+// (backend/.../tables/_fingerprint.py). The digest is the matchkey for
+// persisted view state across schema switches. Phase 1b bumped this to
+// v2 — the payload now covers every persisted FieldDef (built-in +
+// custom) keyed by `(field_key, field_type)`.
+export const FINGERPRINT_ALGORITHM_VERSION = "v2";
 
-export function computeTableSchemaFingerprint(
-  coreFieldKeys: Iterable<string>,
-  customFields: Iterable<CustomFieldDef>,
-): string {
+export function computeTableSchemaFingerprint(fieldDefs: Iterable<TableFieldDef>): string {
   const payload = {
     version: FINGERPRINT_ALGORITHM_VERSION,
-    core: Array.from(coreFieldKeys),
-    custom: Array.from(customFields).map((field) => ({
-      id: field.id,
+    fields: Array.from(fieldDefs).map((field) => ({
+      field_key: field.field_key,
       field_type: field.field_type,
     })),
   };

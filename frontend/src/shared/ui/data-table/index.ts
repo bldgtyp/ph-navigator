@@ -23,6 +23,7 @@ export {
 export type {
   CustomFieldDef,
   CustomFieldType,
+  TableFieldDef,
   TableSchema,
   UseTableSchemaArgs,
 } from "./hooks/useTableSchema";
