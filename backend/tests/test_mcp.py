@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.server.fastmcp import Context
+from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import TextContent
 
 from config import Settings
@@ -20,8 +21,17 @@ from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.mcp.server import mcp as phn_mcp
 from features.mcp.service import authenticate_plaintext_token, project_access_for_token, require_token_scope
-from features.mcp.tools import tool_delete_project, tool_hard_delete_project, tool_restore_project
+from features.mcp.tools import (
+    tool_apply_envelope_command,
+    tool_delete_project,
+    tool_hard_delete_project,
+    tool_list_envelope_assemblies,
+    tool_query_unfinished_envelope_work,
+    tool_restore_project,
+)
+from features.project_document.validation import document_etag
 from main import app
+from tests.test_envelope_phase01 import envelope_body, write_saved_body
 
 ORIGIN = "http://localhost:5173"
 
@@ -247,6 +257,72 @@ def test_mcp_project_write_tools_soft_delete_and_restore(
     assert client.get(f"/api/v1/projects/{project_id}").status_code == 200
 
 
+def test_mcp_envelope_read_reports_and_semantic_command_write(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    saved_body = envelope_body()
+    write_saved_body(version_id, saved_body)
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Assembly Builder MCP", "scopes": ["project:read", "project:write"]},
+    )
+    monkeypatch.setenv("PHN_MCP_TOKEN", issued.json()["token"])
+
+    assemblies = tool_list_envelope_assemblies(project_id, version_id, cast(Context, None), allow_env_token=True)
+    assembly_rows = cast(list[dict[str, object]], assemblies["assemblies"])
+    assert assemblies["source"] == "version"
+    assert assembly_rows[0]["name"] == "WALL-C3"
+
+    unfinished = tool_query_unfinished_envelope_work(project_id, version_id, cast(Context, None), allow_env_token=True)
+    assert unfinished["counts"] == {
+        "missing_materials": 1,
+        "missing_conductivity": 1,
+        "missing_datasheets": 1,
+        "missing_site_photos": 1,
+        "unused_materials": 0,
+        "catalog_drift": 0,
+    }
+
+    updated = tool_apply_envelope_command(
+        project_id,
+        version_id,
+        {"kind": "rename_assembly", "assembly_id": "asm_wall_c3", "name": "WALL-C3 MCP"},
+        cast(Context, None),
+        allow_env_token=True,
+        if_match_version=document_etag(saved_body),
+    )
+    updated_assemblies = cast(list[dict[str, object]], updated["assemblies"])
+    assert updated["source"] == "draft"
+    assert updated_assemblies[0]["name"] == "WALL-C3 MCP"
+
+    with connection() as conn:
+        draft = conn.execute(
+            "SELECT updated_via FROM project_version_drafts WHERE version_id = %(version_id)s",
+            {"version_id": version_id},
+        ).fetchone()
+        audit = conn.execute("SELECT details FROM user_action_log WHERE action = 'envelope_command'").fetchone()
+    assert draft is not None
+    assert draft["updated_via"] == "mcp"
+    assert audit is not None
+    assert audit["details"]["command_kind"] == "rename_assembly"
+
+    with pytest.raises(ToolError, match="draft_etag_mismatch"):
+        tool_apply_envelope_command(
+            project_id,
+            version_id,
+            {"kind": "rename_assembly", "assembly_id": "asm_wall_c3", "name": "WALL-C3 stale"},
+            cast(Context, None),
+            allow_env_token=True,
+            if_match="stale",
+        )
+
+
 class _FakeR2DeleteResult:
     deleted_object_count = 0
     failed_object_keys: list[str] = []
@@ -352,6 +428,15 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
             ):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
+                    tool_names = {tool.name for tool in (await session.list_tools()).tools}
+                    assert {
+                        "list_envelope_assemblies",
+                        "list_project_materials",
+                        "query_unfinished_envelope_work",
+                        "report_material_catalog_drift",
+                        "report_missing_envelope_evidence",
+                        "apply_envelope_command",
+                    }.issubset(tool_names)
 
                     listed = await session.call_tool("list_projects", {})
                     assert listed.isError is False

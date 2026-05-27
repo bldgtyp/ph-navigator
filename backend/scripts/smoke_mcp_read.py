@@ -26,6 +26,11 @@ async def smoke(url: str, token: str) -> None:
                     "list_status_items",
                     "get_document",
                     "get_table",
+                    "list_envelope_assemblies",
+                    "list_project_materials",
+                    "query_unfinished_envelope_work",
+                    "report_material_catalog_drift",
+                    "report_missing_envelope_evidence",
                 }
                 missing = required - names
                 if missing:

@@ -28,6 +28,7 @@ from features.mcp.models import (
 from features.mcp.service import PhNavigatorTokenVerifier
 from features.mcp.tools import (
     tool_add_custom_field,
+    tool_apply_envelope_command,
     tool_bulk_attach,
     tool_bulk_detach,
     tool_change_custom_field_type,
@@ -42,11 +43,16 @@ from features.mcp.tools import (
     tool_get_table,
     tool_hard_delete_project,
     tool_list_assets,
+    tool_list_envelope_assemblies,
+    tool_list_project_materials,
     tool_list_projects,
     tool_list_status_items,
     tool_list_versions,
+    tool_query_unfinished_envelope_work,
     tool_rename_custom_field,
     tool_replace_table,
+    tool_report_material_catalog_drift,
+    tool_report_missing_envelope_evidence,
     tool_resolve_asset_urls,
     tool_restore_project,
     tool_set_custom_field_description,
@@ -149,6 +155,86 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         return tool_get_table(project_id, version_id, table_name, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
+    def list_envelope_assemblies(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """List Assembly Builder assemblies with layers, segments, and status flags."""
+        return tool_list_envelope_assemblies(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def list_project_materials(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """List Assembly Builder project materials with use-sites and evidence ids."""
+        return tool_list_project_materials(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def query_unfinished_envelope_work(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Report missing material, conductivity, evidence, unused material, and drift work."""
+        return tool_query_unfinished_envelope_work(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def report_material_catalog_drift(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Report material catalog drift for catalog-origin project materials without writing."""
+        return tool_report_material_catalog_drift(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def report_missing_envelope_evidence(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Report project materials without datasheets and segment use-sites without photos."""
+        return tool_report_missing_envelope_evidence(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
     def list_assets(
         project_id: str,
         ctx: Context,
@@ -210,6 +296,26 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     ) -> dict[str, object]:
         """Detach multiple uploaded assets from locked PHN attachment fields."""
         return tool_bulk_detach(project_id, version_id, asset_refs, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def apply_envelope_command(
+        project_id: str,
+        version_id: str,
+        command: dict[str, object],
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Apply one semantic Assembly Builder command through the same backend boundary as the browser."""
+        return tool_apply_envelope_command(
+            project_id,
+            version_id,
+            command,
+            ctx,
+            allow_env_token=allow_env_token,
+            if_match=if_match,
+            if_match_version=if_match_version,
+        )
 
     @mcp.tool()
     def replace_table(

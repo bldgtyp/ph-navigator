@@ -67,6 +67,26 @@ get_table(project_id, version_id, table_name)
                                      → TB-04b read primitive returning one
                                        full table; `query_table` remains the
                                        typed filtered table contract
+list_envelope_assemblies(project_id, version_id, source?)
+                                     → Assembly Builder assemblies with
+                                       layers, segments, and status flags
+list_project_materials(project_id, version_id, source?)
+                                     → project-owned materials with
+                                       use-sites and evidence ids
+query_unfinished_envelope_work(project_id, version_id, source?)
+                                     → null materials, missing conductivity,
+                                       missing datasheets, missing site photos,
+                                       unused materials, and catalog drift
+report_material_catalog_drift(project_id, version_id, source?)
+                                     → material catalog drift report without
+                                       writing project values
+report_missing_envelope_evidence(project_id, version_id, source?)
+                                     → datasheet and site-photo evidence gaps
+apply_envelope_command(project_id, version_id, command, if_match?, if_match_version?)
+                                     → validates the same discriminated
+                                       EnvelopeCommandRequest used by REST;
+                                       writes through the envelope command
+                                       service and tags the draft as MCP-edited
 update_document(project_id, version_id, json_patch, draft_etag | base_version_etag)
                                      → applies JSON-Patch to current draft,
                                        returns new draft etag
@@ -151,6 +171,13 @@ set_custom_field_description(project_id, version_id, table_key, field_id, descri
 set_custom_field_formula(project_id, version_id, table_key, field_id, config, expected_schema_fingerprint)
                                      → CustomFieldDef                # Phase 4
 ```
+
+Assembly Builder MCP writes are intentionally narrower than the generic
+document-write backlog: `apply_envelope_command` accepts one semantic
+command payload and calls the same backend service as the browser.
+It does not accept raw nested JSON-Patch into `tables.assemblies[]`.
+All physical quantity fields remain SI canonical in MCP requests and
+responses; IP/SI conversion is a browser display/input concern.
 
 Custom-field MCP rules:
 

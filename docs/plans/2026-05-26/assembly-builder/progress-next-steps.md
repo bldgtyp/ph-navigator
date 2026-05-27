@@ -19,7 +19,7 @@ Assembly Builder Phases 1-3 are flattened into `main` as commit
 `5c687c9` (`Add assembly builder phases 1-3`). The phase worktrees and
 remote phase branches were removed after the squash merge.
 
-Phases 4-7 are implemented on Assembly Builder feature branches after
+Phases 4-8 are implemented on Assembly Builder feature branches after
 the Phase 1-3 flatten. The active branch is
 `codex/assembly-builder-phase-07`.
 
@@ -47,6 +47,9 @@ Completed implementation surface:
   Specifications;
 - project-material catalog drift report, drift badges, review summary,
   and explicit per-material refresh command/dialog.
+- MCP envelope read/report tools and a semantic envelope command write
+  tool that shares the browser command boundary and tags drafts as
+  `updated_via='mcp'`.
 
 ## Verified Gates
 
@@ -146,13 +149,14 @@ Remaining before Phase 4 closure:
 
 ## Next Implementation Target
 
-After Phase 7 browser smoke, start with
+Continue Phase 8 from
 `docs/plans/2026-05-26/assembly-builder/phase-08-mcp-hardening-release.md`.
 
 Primary goal:
 
-- harden MCP tools, scale/performance behavior, accessibility, docs,
-  and release readiness across the accumulated Assembly Builder slices.
+- harden scale/performance behavior, accessibility, browser workflows,
+  docs, and release readiness across the accumulated Assembly Builder
+  slices.
 
 Phase 5 implemented so far on `codex/assembly-builder-phase-05`:
 
@@ -259,3 +263,41 @@ Remaining before Phase 7 closure:
   Windows and Assembly Builder;
 - decide during Phase 8 whether drift belongs in the Envelope read model
   or remains a separately gated catalog-origin query.
+
+## Phase 8 Progress - MCP, Hardening, And Release
+
+Implementation target:
+`docs/plans/2026-05-26/assembly-builder/phase-08-mcp-hardening-release.md`.
+
+Phase 8 is active on `codex/assembly-builder-phase-07`.
+
+Implemented:
+
+- MCP read/report tools for assemblies, project materials, unfinished
+  work, material catalog drift, and missing evidence;
+- MCP `apply_envelope_command` write tool routed through the same
+  backend `EnvelopeCommandRequest` DTO and envelope command service as
+  the browser;
+- envelope command service `updated_via="mcp"` support so MCP writes
+  tag the persisted draft while retaining ETag and locked-version
+  protections;
+- MCP smoke script updated to require the Assembly Builder read tools;
+- backend tests for read reports, unfinished counts, semantic command
+  writes, `updated_via='mcp'`, stale draft rejection, and FastMCP tool
+  discovery.
+
+Verified:
+
+- `cd backend && uv run ruff check features/envelope/service.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py`
+- `cd backend && uv run ty check features/envelope/service.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py`
+- `cd backend && uv run pytest tests/test_mcp.py`
+
+Remaining before Phase 8 closure:
+
+- realistic scale fixture and performance/browser evidence;
+- accumulated Phase 4-7 browser smoke workflows;
+- locked/viewer verification across all envelope sub-surfaces;
+- full IP/SI smoke across layer, segment, material, drift, thermal, and
+  MCP surfaces;
+- V1 parity audit closeout and final PRD lessons;
+- full repo gates once unrelated local blockers are isolated.
