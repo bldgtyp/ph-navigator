@@ -91,8 +91,8 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
         parse,
         resolve_refs,
     )
+    from features.project_document.formula.analysis import infer_result_type
     from features.project_document.formula.resolver import collect_field_refs
-    from features.project_document.mutations.formula_ops import infer_result_type
 
     registry = tuple(
         FieldRegistryEntry(

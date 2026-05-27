@@ -11,6 +11,16 @@ from psycopg.types.json import Jsonb
 from features.project_document.document import ProjectDocumentV1
 from features.projects.models import CreateProjectRequest, UpdateProjectRequest
 
+PROJECT_COLUMNS = """
+    id, name, bt_number, client, cert_programs, phius_number,
+    phius_dropbox_url, active_version_id, last_saved_at,
+    created_at, updated_at
+"""
+
+PROJECT_LIFECYCLE_COLUMNS = f"""
+    {PROJECT_COLUMNS}, owner_id, deleted_at, deleted_by, hard_delete_after
+"""
+
 
 def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:
     rows = conn.execute(
@@ -42,6 +52,17 @@ def get_project_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any]
     ).fetchone()
 
 
+def get_project_by_id_including_deleted(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        SELECT {PROJECT_LIFECYCLE_COLUMNS}
+        FROM projects
+        WHERE id = %(project_id)s
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+
+
 def get_project_detail_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         """
@@ -59,6 +80,20 @@ def get_project_detail_by_id(conn: Connection[Any], project_id: UUID) -> dict[st
     ).fetchone()
 
 
+def list_deleted_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        f"""
+        SELECT {PROJECT_LIFECYCLE_COLUMNS}
+        FROM projects
+        WHERE owner_id = %(owner_id)s
+          AND deleted_at IS NOT NULL
+        ORDER BY deleted_at DESC, bt_number DESC
+        """,
+        {"owner_id": owner_id},
+    ).fetchall()
+    return list(rows)
+
+
 def get_project_by_bt_number(conn: Connection[Any], bt_number: str) -> dict[str, Any] | None:
     return conn.execute(
         """
@@ -68,6 +103,142 @@ def get_project_by_bt_number(conn: Connection[Any], bt_number: str) -> dict[str,
         """,
         {"bt_number": bt_number},
     ).fetchone()
+
+
+def count_project_children(conn: Connection[Any], project_id: UUID) -> dict[str, int]:
+    row = conn.execute(
+        """
+        SELECT
+            (SELECT count(*) FROM project_versions WHERE project_id = %(project_id)s) AS versions,
+            (
+                SELECT count(*)
+                FROM project_version_drafts drafts
+                JOIN project_versions versions ON versions.id = drafts.version_id
+                WHERE versions.project_id = %(project_id)s
+            ) AS drafts,
+            (SELECT count(*) FROM project_status_items WHERE project_id = %(project_id)s) AS status_items,
+            (SELECT count(*) FROM project_assets WHERE project_id = %(project_id)s) AS assets,
+            (SELECT count(*) FROM project_jobs WHERE project_id = %(project_id)s) AS jobs,
+            (SELECT count(*) FROM mcp_tokens WHERE project_id = %(project_id)s) AS mcp_tokens,
+            (SELECT count(*) FROM user_table_views WHERE project_id = %(project_id)s) AS table_views
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+    if row is None:
+        return {
+            "versions": 0,
+            "drafts": 0,
+            "status_items": 0,
+            "assets": 0,
+            "jobs": 0,
+            "mcp_tokens": 0,
+            "table_views": 0,
+        }
+    return {key: int(row[key] or 0) for key in row.keys()}
+
+
+def list_project_storage_manifest(conn: Connection[Any], project_id: UUID) -> dict[str, Any]:
+    assets = conn.execute(
+        """
+        SELECT id, object_key, metadata
+        FROM project_assets
+        WHERE project_id = %(project_id)s
+        ORDER BY created_at ASC
+        """,
+        {"project_id": project_id},
+    ).fetchall()
+    jobs = conn.execute(
+        """
+        SELECT id, result_asset_id
+        FROM project_jobs
+        WHERE project_id = %(project_id)s
+        ORDER BY created_at ASC
+        """,
+        {"project_id": project_id},
+    ).fetchall()
+    versions = conn.execute(
+        """
+        SELECT id
+        FROM project_versions
+        WHERE project_id = %(project_id)s
+        ORDER BY created_at ASC
+        """,
+        {"project_id": project_id},
+    ).fetchall()
+    object_keys: list[str] = []
+    for asset in assets:
+        object_key = asset["object_key"]
+        if isinstance(object_key, str):
+            object_keys.append(object_key)
+        metadata = asset["metadata"] if isinstance(asset["metadata"], dict) else {}
+        thumbnail_key = metadata.get("thumbnail_object_key")
+        if isinstance(thumbnail_key, str):
+            object_keys.append(thumbnail_key)
+    return {
+        "asset_ids": [str(row["id"]) for row in assets],
+        "object_keys": object_keys,
+        "job_ids": [str(row["id"]) for row in jobs],
+        "result_asset_ids": [str(row["result_asset_id"]) for row in jobs if row["result_asset_id"] is not None],
+        "version_ids": [str(row["id"]) for row in versions],
+    }
+
+
+def soft_delete_project(conn: Connection[Any], project_id: UUID, deleted_by: UUID | None) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        UPDATE projects
+        SET deleted_at = COALESCE(deleted_at, now()),
+            deleted_by = COALESCE(deleted_by, %(deleted_by)s),
+            hard_delete_after = COALESCE(hard_delete_after, now() + interval '90 days'),
+            updated_at = now()
+        WHERE id = %(project_id)s
+        RETURNING {PROJECT_LIFECYCLE_COLUMNS}
+        """,
+        {"project_id": project_id, "deleted_by": deleted_by},
+    ).fetchone()
+
+
+def restore_project(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        UPDATE projects
+        SET deleted_at = NULL,
+            deleted_by = NULL,
+            hard_delete_after = NULL,
+            updated_at = now()
+        WHERE id = %(project_id)s
+          AND deleted_at IS NOT NULL
+          AND (hard_delete_after IS NULL OR hard_delete_after > now())
+        RETURNING {PROJECT_COLUMNS}
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+
+
+def hard_delete_project_rows(conn: Connection[Any], project_id: UUID) -> bool:
+    conn.execute("DELETE FROM project_jobs WHERE project_id = %(project_id)s", {"project_id": project_id})
+    conn.execute("DELETE FROM project_assets WHERE project_id = %(project_id)s", {"project_id": project_id})
+    conn.execute("DELETE FROM mcp_tokens WHERE project_id = %(project_id)s", {"project_id": project_id})
+    conn.execute("DELETE FROM user_table_views WHERE project_id = %(project_id)s", {"project_id": project_id})
+    conn.execute("DELETE FROM project_status_items WHERE project_id = %(project_id)s", {"project_id": project_id})
+    conn.execute(
+        """
+        DELETE FROM project_version_drafts
+        WHERE version_id IN (
+            SELECT id
+            FROM project_versions
+            WHERE project_id = %(project_id)s
+        )
+        """,
+        {"project_id": project_id},
+    )
+    conn.execute("UPDATE projects SET active_version_id = NULL WHERE id = %(project_id)s", {"project_id": project_id})
+    conn.execute("DELETE FROM project_versions WHERE project_id = %(project_id)s", {"project_id": project_id})
+    row = conn.execute(
+        "DELETE FROM projects WHERE id = %(project_id)s RETURNING id",
+        {"project_id": project_id},
+    ).fetchone()
+    return row is not None
 
 
 def list_versions_for_project(conn: Connection[Any], project_id: UUID) -> list[dict[str, Any]]:

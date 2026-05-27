@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
+from mcp.server.fastmcp import Context
 from mcp.types import TextContent
 
 from config import Settings
@@ -18,6 +20,7 @@ from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.mcp.server import mcp as phn_mcp
 from features.mcp.service import authenticate_plaintext_token, project_access_for_token, require_token_scope
+from features.mcp.tools import tool_delete_project, tool_hard_delete_project, tool_restore_project
 from main import app
 
 ORIGIN = "http://localhost:5173"
@@ -73,21 +76,24 @@ def create_project(client: TestClient) -> dict[str, object]:
     return response.json()
 
 
-def room_payload() -> dict[str, object]:
+def room_payload(field_defs: list[dict[str, object]]) -> dict[str, object]:
     return {
+        "field_defs": field_defs,
         "rooms": [
             {
                 "id": "rm_living",
-                "number": "101",
-                "name": "Living Room",
                 "floor_level": "opt_ground",
                 "building_zone": "opt_residential",
-                "num_people": 2,
-                "num_bedrooms": 0,
                 "icfa_factor": 1.0,
                 "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
+                "custom_values": {
+                    "number": "101",
+                    "name": "Living Room",
+                    "num_people": 2,
+                    "num_bedrooms": 0,
+                },
             }
         ],
         "single_select_options": {
@@ -106,7 +112,7 @@ def tool_text(result) -> str:
 def test_editor_can_issue_list_and_revoke_project_scoped_token(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
-    project_id = project["id"]
+    project_id = cast(str, project["id"])
 
     issued = client.post(
         f"/api/v1/projects/{project_id}/mcp-tokens",
@@ -148,7 +154,7 @@ def test_editor_can_issue_list_and_revoke_project_scoped_token(clean_mcp_tables:
 def test_token_issue_rejects_past_expiration(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
-    project_id = project["id"]
+    project_id = cast(str, project["id"])
 
     issued = client.post(
         f"/api/v1/projects/{project_id}/mcp-tokens",
@@ -167,7 +173,7 @@ def test_token_issue_rejects_past_expiration(clean_mcp_tables: None) -> None:
 def test_token_issue_requires_project_read_scope(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
-    project_id = project["id"]
+    project_id = cast(str, project["id"])
 
     issued = client.post(
         f"/api/v1/projects/{project_id}/mcp-tokens",
@@ -182,7 +188,7 @@ def test_token_issue_requires_project_read_scope(clean_mcp_tables: None) -> None
 def test_project_token_validates_scope_and_project_boundary(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
-    project_id = project["id"]
+    project_id = cast(str, project["id"])
     other = client.post(
         "/api/v1/projects",
         headers={"Origin": ORIGIN},
@@ -212,6 +218,89 @@ def test_project_token_validates_scope_and_project_boundary(clean_mcp_tables: No
         require_token_scope(token, token.project_id, "project:write")
     with pytest.raises(PermissionError, match="mcp_project_scope_mismatch"):
         require_token_scope(token, other.json()["id"], "project:read")
+
+
+def test_mcp_project_write_tools_soft_delete_and_restore(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "MCP delete tests", "scopes": ["project:read", "project:write"]},
+    )
+    token = issued.json()["token"]
+    monkeypatch.setenv("PHN_MCP_TOKEN", token)
+
+    deleted_body = tool_delete_project(project_id, cast(Context, None), allow_env_token=True)
+    assert deleted_body["mode"] == "soft"
+    assert deleted_body["project_id"] == project_id
+    gone = client.get(f"/api/v1/projects/{project_id}")
+    assert gone.status_code == 410
+    assert gone.json()["error_code"] == "project_deleted"
+
+    restored_body = tool_restore_project(project_id, cast(Context, None), allow_env_token=True)
+    assert restored_body["id"] == project_id
+    assert client.get(f"/api/v1/projects/{project_id}").status_code == 200
+
+
+class _FakeR2DeleteResult:
+    deleted_object_count = 0
+    failed_object_keys: list[str] = []
+
+
+class _FakeR2Client:
+    listed_prefixes: list[str]
+    deleted_keys: list[str]
+
+    def __init__(self) -> None:
+        self.listed_prefixes = []
+        self.deleted_keys = []
+
+    def list_object_keys(self, prefix: str) -> list[str]:
+        self.listed_prefixes.append(prefix)
+        return []
+
+    def delete_objects(self, object_keys: list[str]) -> _FakeR2DeleteResult:
+        self.deleted_keys = list(object_keys)
+        return _FakeR2DeleteResult()
+
+
+def test_mcp_hard_delete_tool_uses_exact_confirmation_and_storage(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    project_name = cast(str, project["name"])
+    bt_number = cast(str, project["bt_number"])
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "MCP hard delete", "scopes": ["project:read", "project:write"]},
+    )
+    fake_storage = _FakeR2Client()
+    monkeypatch.setenv("PHN_MCP_TOKEN", issued.json()["token"])
+    monkeypatch.setattr("features.projects.service.R2Client", lambda _settings: fake_storage)
+
+    result = tool_hard_delete_project(
+        project_id,
+        project_name,
+        bt_number,
+        cast(Context, None),
+        allow_env_token=True,
+    )
+
+    assert result["deleted"] is True
+    assert result["project_id"] == project_id
+    assert fake_storage.listed_prefixes == [f"projects/{project_id}/assets/"]
+    with connection() as conn:
+        project_count = conn.execute("SELECT count(*) AS count FROM projects").fetchone()
+    assert project_count == {"count": 0}
 
 
 def test_mcp_transport_security_settings_include_deployed_hosts() -> None:
@@ -285,7 +374,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     updated = client.put(
                         draft_url,
                         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-                        json=room_payload(),
+                        json=room_payload(initial.json()["field_defs"]),
                     )
                     assert updated.status_code == 200
 
@@ -296,8 +385,9 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     assert draft_document_result.isError is False
                     draft_document = json.loads(tool_text(draft_document_result))
                     assert draft_document["source"] == "draft"
-                    assert draft_document["body"]["tables"]["rooms"]["rows"][0]["name"] == "Living Room"
-                    assert draft_document["body"]["tables"]["rooms"]["custom_fields"] == []
+                    draft_room = draft_document["body"]["tables"]["rooms"]["rows"][0]
+                    assert draft_room["custom_values"]["name"] == "Living Room"
+                    assert draft_document["body"]["tables"]["rooms"]["field_defs"][0]["field_key"] == "record_id"
 
                     table_result = await session.call_tool(
                         "get_table",
@@ -306,10 +396,10 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     assert table_result.isError is False
                     table = json.loads(tool_text(table_result))
                     assert table["source"] == "draft"
-                    # Rooms is custom-field-capable, so `rows` carries the
-                    # {custom_fields, rows} envelope (plan-13 §4.1).
-                    assert table["rows"]["rows"][0]["name"] == "Living Room"
-                    assert table["rows"]["custom_fields"] == []
+                    # Rooms is field-def-capable, so `rows` carries the
+                    # {field_defs, rows} envelope.
+                    assert table["rows"]["rows"][0]["custom_values"]["name"] == "Living Room"
+                    assert table["rows"]["field_defs"][0]["field_key"] == "record_id"
 
                     missing_table_result = await session.call_tool(
                         "get_table",

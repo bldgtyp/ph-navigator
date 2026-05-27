@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
+  bulkDeleteProjects,
   checkBtNumber,
   createProject,
   fetchProject,
+  listDeletedProjects,
   listProjects,
   patchVersion,
+  restoreProject,
   updateProject,
 } from "./api";
 import { projectQueryKeys } from "./query-keys";
@@ -27,6 +30,14 @@ export function useProjectsQuery() {
   return useQuery({
     queryKey: projectQueryKeys.list(),
     queryFn: ({ signal }) => listProjects(signal),
+    select: (payload) => payload.projects,
+  });
+}
+
+export function useDeletedProjectsQuery() {
+  return useQuery({
+    queryKey: projectQueryKeys.deleted(),
+    queryFn: ({ signal }) => listDeletedProjects(signal),
     select: (payload) => payload.projects,
   });
 }
@@ -63,6 +74,29 @@ export function useCreateProjectMutation() {
         }),
       );
       queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
+    },
+  });
+}
+
+export function useBulkDeleteProjectsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectIds: string[]) => bulkDeleteProjects(projectIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.list() });
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.deleted() });
+    },
+  });
+}
+
+export function useRestoreProjectMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => restoreProject(projectId),
+    onSuccess: (project) => {
+      queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.list() });
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.deleted() });
     },
   });
 }
