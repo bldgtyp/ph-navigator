@@ -1,14 +1,21 @@
 ---
 DATE: 2026-05-27
-TIME: 21:30 EDT
-STATUS: Active progress and next-steps tracker.
-AUTHOR: Codex
+TIME: 22:30 EDT
+STATUS: Active progress and next-steps tracker. Phases 9-12 added as a
+       foundation refactor bundle ahead of UI/UX polish.
+AUTHOR: Codex / Claude (Opus 4.7)
 SCOPE: Assembly Builder implementation progress after Phases 1-3 were
-       flattened into main.
+       flattened into main, plus the foundation refactor bundle informed
+       by the 2026-05-27 code review.
 RELATED:
   - planning/features/assembly-builder/PRD.md
   - planning/features/assembly-builder/README.md
   - planning/features/assembly-builder/phases/phase-04-materials-picker-specifications.md
+  - planning/features/assembly-builder/phases/phase-09-backend-service-split.md
+  - planning/features/assembly-builder/phases/phase-10-frontend-page-dialog-split.md
+  - planning/features/assembly-builder/phases/phase-11-shared-constants-helpers.md
+  - planning/features/assembly-builder/phases/phase-12-docs-and-test-reorg.md
+  - planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md
 ---
 
 # Assembly Builder Progress And Next Steps
@@ -301,3 +308,82 @@ Remaining before Phase 8 closure:
   MCP surfaces;
 - V1 parity audit closeout and final PRD lessons;
 - full repo gates once unrelated local blockers are isolated.
+
+## Foundation Refactor - Phases 9-12
+
+A foundation code review on 2026-05-27 confirmed the feature has good
+bones (strict Pydantic v2 discriminated commands, SI-canonical
+persistence, correct ETag protocol, pure thermal layer, targeted query
+invalidation, no silent failures) but flagged three module-size /
+dispatch-shape issues plus a tail of named-constant and documentation
+gaps. The review and its prioritized recommendations live at:
+
+- `planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md`
+
+The fixes are organized into four phases that should land **before**
+serious UI/UX polish begins. Each phase is independent of the others
+and can ship as one focused PR.
+
+| Phase | Plan | Primary Goal | Code Review Items |
+|---|---|---|---|
+| 9 | `phase-09-backend-service-split.md` | Split the 1061-line `backend/features/envelope/service.py` along workflow lines and replace the `_apply_command` `isinstance` cascade with a typed dispatch registry. Thread the catalog-rows transaction through the drift report. | H1, H2, M3 |
+| 10 | `phase-10-frontend-page-dialog-split.md` | Decompose `EnvelopeEditorDialogs.tsx` (665), `EnvelopePage.tsx` (509), and `SpecificationsPanel.tsx` (389). Extract `useLengthDraft`, `useEnvelopeAttachmentMutation`, and the envelope subpath/redirect helper. Reuse the `EnvelopeReadSource` named type in query keys. | H3, H4, M5 |
+| 11 | `phase-11-shared-constants-helpers.md` | Name the canvas calibration values (`BASE_PX_PER_MM` etc.), share an `argbColor` parser, dedupe the "next free name" loops, name the default ARGB color, introduce a shared `downloadBlob` helper, and align the `hbjson_export` status-import style. | M1, M2, M4, L2, L3, L7, L8 |
+| 12 | `phase-12-docs-and-test-reorg.md` | Add "why"-bearing docstrings to the public service entry points and the thermal math, and rename `tests/test_envelope_phase01.py` through `_phase07.py` to topic-organized files. | L1, L4, L5, M6 |
+
+### Why This Sequence
+
+Phases 9 and 10 are the highest-leverage changes — they target the three
+files past the documented size limits in
+`context/CODING_STANDARDS.md` and the dispatch shape that will fight
+every future command addition. They are independent of each other and
+can land in parallel; together they unlock the natural module homes
+that Phase 11 names and Phase 12 documents.
+
+Phase 11 introduces shared helpers without migrating every caller.
+Catalog editors keep their hand-rolled `argb_color` inputs until
+opportunistically touched; envelope adopts the new helpers immediately.
+
+Phase 12 lands last on purpose: every docstring and renamed test gets
+to reference the post-refactor module layout, so the documented
+contract matches the implementation.
+
+### Open Decisions
+
+- **Test renaming scope.** Phase 12 renames the envelope test files
+  only. The parallel `test_project_document_custom_fields_phase_*.py`
+  files have the same problem but are out of scope for the Assembly
+  Builder bundle. Decide separately whether to fold the project-document
+  rename into Phase 12 or treat it as its own project-wide cleanup.
+- **Shared `downloadBlob` helper colocation.** Phase 11 will grep the
+  repo for an existing `URL.createObjectURL` helper before writing a
+  new one; if one exists, adopt it instead. Confirm at implementation
+  time.
+
+### Sequencing Against Phase 8
+
+Phase 8 (`MCP, hardening, release`) is still active on
+`codex/assembly-builder-phase-07` and owes the scale fixture, browser
+smoke catch-up, and PRD lessons closeout. Phases 9-12 do not block
+Phase 8 closure and Phase 8 does not block Phases 9-12. Practical
+suggestion: land Phase 9 first (it touches the same backend service file
+that Phase 8 may want to add MCP-test hooks to). Phase 10 can land any
+time; Phase 11 prefers to land after 9 and 10 so it touches only the
+post-refactor file layout; Phase 12 lands last.
+
+### Active Branch
+
+Phase 9 is implemented on `codex/assembly-builder-phase-09`. The
+backend envelope split is verified with:
+
+- `cd backend && uv run ruff check features/envelope`
+- `cd backend && uv run ty check features/envelope tests/test_envelope_phase0*.py tests/test_mcp.py`
+- `cd backend && DATABASE_URL="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test" uv run alembic upgrade head && uv run pytest tests/test_envelope_phase0*.py tests/test_mcp.py`
+
+Repo-level `make lint` passed. Repo-level `make test` and
+`make typecheck` are blocked by unrelated project-document custom-field
+test drift (`ROOMS_CORE_FIELD_KEYS`, stale `compute_table_schema_fingerprint`
+call shape, and old `RoomsTableEnvelope` / `RoomRow` field assumptions).
+
+Phases 10-12 remain proposed. Each remaining phase should begin on a
+fresh branch off `main` once the current phase branch has landed.
