@@ -18,6 +18,7 @@ RELATED:
   - context/technical-requirements/llm-mcp-schema.md
   - context/technical-requirements/api.md
   - research/v1-assembly-builder-reference.md
+  - docs/plans/2026-05-26/assembly-builder/progress-next-steps.md
 ---
 
 # PH-Navigator V2 - Assembly Builder Feature PRD

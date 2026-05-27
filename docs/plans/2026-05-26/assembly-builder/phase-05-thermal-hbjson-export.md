@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: Backend thermal calculation overlay and HBJSON construction
        export.
 RELATED:
-  - docs/features/assembly-builder-prd.md §§7.14, 9.2
+  - docs/plans/2026-05-26/assembly-builder/assembly-builder-prd.md §§7.14, 9.2
   - docs/plans/2026-05-26/assembly-builder/phase-04-materials-picker-specifications.md
   - context/user-stories/20-envelope.md US-ENV-10, US-ENV-12
   - context/technical-requirements/frontend-viewer-units.md
