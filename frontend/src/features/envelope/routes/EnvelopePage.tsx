@@ -3,7 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useMaterialsQuery } from "../../catalogs/hooks";
 import type { ProjectDetail } from "../../projects/types";
-import { useEnvelopeCommandMutation, useEnvelopeReadQuery } from "../hooks";
+import {
+  useAssemblyThermalQuery,
+  useEnvelopeCommandMutation,
+  useEnvelopeHbjsonExportMutation,
+  useEnvelopeReadQuery,
+} from "../hooks";
 import { envelopeReadSource, naturalSortAssemblies } from "../lib";
 import {
   envelopeAssembliesPath,
@@ -36,6 +41,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const source = envelopeReadSource(project);
   const query = useEnvelopeReadQuery(project.id, project.active_version_id, source);
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
+  const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
   const catalogMaterialsQuery = useMaterialsQuery(false, canEdit && dialog?.kind === "segment");
@@ -48,6 +54,16 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const assemblies = useMemo(
     () => naturalSortAssemblies(query.data?.assemblies ?? []),
     [query.data?.assemblies],
+  );
+  const activeAssembly = assemblyId
+    ? (assemblies.find((assembly) => assembly.id === assemblyId) ?? null)
+    : (assemblies[0] ?? null);
+  const thermalQuery = useAssemblyThermalQuery(
+    project.id,
+    project.active_version_id,
+    activeAssembly?.id ?? null,
+    source,
+    isAssembliesRoute && activeAssembly !== null,
   );
 
   useEffect(() => {
@@ -71,10 +87,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   if (query.isError || !query.data) {
     return <EnvelopeErrorState message={errorMessage(query.error, "Could not load envelope.")} />;
   }
-
-  const activeAssembly = assemblyId
-    ? (assemblies.find((assembly) => assembly.id === assemblyId) ?? null)
-    : (assemblies[0] ?? null);
 
   if (isAssembliesRoute && !assemblyId && activeAssembly) {
     return (
@@ -124,6 +136,23 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       setDialog(null);
     } catch (error) {
       setCommandError(errorMessage(error, "Envelope command failed."));
+    }
+  }
+
+  async function exportHbjson(): Promise<void> {
+    const current = query.data;
+    if (!current) return;
+    if (current.source === "draft" && current.draft_etag) {
+      const confirmed = window.confirm(
+        "Download constructions reads the last saved version, not your unsaved draft. Save or Save As first if the draft should be included. Continue with the saved version?",
+      );
+      if (!confirmed) return;
+    }
+    setCommandError(null);
+    try {
+      await exportMutation.mutateAsync();
+    } catch (error) {
+      setCommandError(exportErrorDetails(error) ?? errorMessage(error, "Could not export HBJSON."));
     }
   }
 
@@ -210,8 +239,12 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
               search={searchParams}
               zoom={zoom}
               canEdit={canEdit}
+              thermal={thermalQuery.data ?? null}
+              thermalLoading={thermalQuery.isFetching}
+              exportBusy={exportMutation.isPending}
               onZoomIn={() => setZoom((current) => Math.min(2, current + 0.1))}
               onZoomOut={() => setZoom((current) => Math.max(0.6, current - 0.1))}
+              onExportHbjson={() => void exportHbjson()}
               onRename={() => setDialog({ kind: "rename-assembly", assembly: activeAssembly })}
               onTypeChange={() => setDialog({ kind: "type-assembly", assembly: activeAssembly })}
               onDuplicate={() =>
@@ -288,6 +321,28 @@ function envelopeSubpath(pathname: string, projectId: string): string {
 function activeAssemblyIdFromSubpath(subpath: string): string | null {
   const match = subpath.match(/^\/assemblies\/([^/]+)(?:\/.*)?$/);
   return match?.[1] ?? null;
+}
+
+function exportErrorDetails(error: unknown): string | null {
+  if (!(error instanceof Error) || !("details" in error)) return null;
+  const details = (error as { details?: Record<string, unknown> }).details;
+  const errors = details?.errors;
+  if (!Array.isArray(errors) || errors.length === 0) return null;
+  const lines = errors
+    .slice(0, 5)
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const record = entry as Record<string, unknown>;
+      const assemblyName =
+        typeof record.assembly_name === "string" ? record.assembly_name : "Assembly";
+      const code =
+        typeof record.code === "string" ? record.code.replaceAll("_", " ") : "export issue";
+      return `${assemblyName}: ${code}`;
+    })
+    .filter(Boolean);
+  if (!lines.length) return null;
+  const suffix = errors.length > lines.length ? ` (${errors.length - lines.length} more)` : "";
+  return `HBJSON export needs attention: ${lines.join("; ")}${suffix}`;
 }
 
 function envelopeShellNotice({

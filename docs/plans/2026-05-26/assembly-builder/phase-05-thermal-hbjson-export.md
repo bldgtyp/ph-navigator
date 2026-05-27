@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-26
 TIME: 18:21 EDT
-STATUS: Proposed implementation plan.
+STATUS: Active implementation.
 AUTHOR: Codex
 SCOPE: Backend thermal calculation overlay and HBJSON construction
        export.
@@ -73,6 +73,22 @@ HBJSON export:
   `ref_status`;
 - reject incomplete assemblies with paths.
 
+Implemented in the first Phase 5 pass:
+
+- `thermal.py` calculates construction-only SI thermal values and
+  returns explicit unfinished flags instead of writing computed values
+  into the document;
+- thermal preview status and HBJSON export errors now share the same
+  thermal issue records, so missing material, missing conductivity,
+  broken project-material references, and invalid geometry cannot drift
+  between UI preview and export validation;
+- `hbjson_export.py` serializes saved-version assemblies only and
+  preserves project-material metadata under both Honeybee-style `ref`
+  properties and a V2 `ph_nav` metadata block;
+- the export rejects null materials, missing conductivity, broken
+  project-material references, and invalid geometry with structured
+  path entries.
+
 ## Frontend Work
 
 - render effective R-value / U-value with tooltip;
@@ -83,6 +99,20 @@ HBJSON export:
 - add project-header overflow action for HBJSON download;
 - warn if dirty draft exists before export;
 - surface export 422 as a concise, actionable dialog/list.
+
+Implemented in the first Phase 5 pass:
+
+- Assembly header thermal label uses the backend SI response and shared
+  IP/SI thermal helpers;
+- thermal query invalidation is scoped to the affected assembly for
+  assembly-local commands and broadened only for commands that can
+  change multiple assemblies or shared project-material values;
+- HBJSON download uses the shared API blob helper so request ids,
+  credentials, and backend error envelopes match normal JSON requests;
+- the HBJSON download action warns when the visible editor source is a
+  dirty draft because export reads the last saved version;
+- export 422 details are summarized in the existing Envelope command
+  error surface.
 
 ## Verification Gates
 
@@ -135,6 +165,32 @@ pnpm run build
 2. Incomplete states are explicit and do not block Save.
 3. HBJSON export is pure read and does not mutate draft/version data.
 4. Export does not silently omit bad assemblies.
+
+## Current Verification
+
+Passed on `codex/assembly-builder-phase-05`:
+
+```bash
+cd backend
+uv run ruff check features/envelope tests/test_envelope_phase04.py tests/test_envelope_phase05.py
+uv run ty check features/envelope tests/test_envelope_phase05.py
+uv run pytest tests/test_envelope_phase04.py tests/test_envelope_phase05.py
+uv run ruff check features/envelope features/shared features/project_document/routes.py tests/test_envelope_phase05.py
+uv run ty check features/envelope features/shared/responses.py tests/test_envelope_phase05.py
+
+cd ../frontend
+pnpm exec prettier --write src/shared/api/client.ts src/features/envelope/api.ts src/features/envelope/hooks.ts src/features/envelope/__tests__/EnvelopePage.test.tsx
+pnpm exec eslint src/features/envelope src/features/catalogs/hooks.ts src/features/project_document/catalog-origin.ts src/features/windows/types.ts
+pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx
+pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/features/catalogs/hooks|src/features/project_document/catalog-origin|src/features/windows/types" || true
+```
+
+Remaining gates:
+
+- steel-stud equivalent-conductivity regression;
+- browser acceptance checklist and downloaded HBJSON inspection;
+- final decision on hand-authored Honeybee-compatible JSON versus
+  adding a Honeybee serialization dependency.
 
 ## Risks
 

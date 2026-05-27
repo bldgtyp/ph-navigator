@@ -48,6 +48,23 @@ export async function fetchJson<T>(
   path: string,
   options: RequestInit & { signal?: AbortSignal } = {},
 ): Promise<T> {
+  const response = await fetchApiResponse(path, options);
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
+
+export async function fetchBlob(
+  path: string,
+  options: RequestInit & { signal?: AbortSignal } = {},
+): Promise<Blob> {
+  const response = await fetchApiResponse(path, options);
+  return response.blob();
+}
+
+async function fetchApiResponse(
+  path: string,
+  options: RequestInit & { signal?: AbortSignal } = {},
+): Promise<Response> {
   const headers = new Headers(options.headers);
   headers.set("X-Request-ID", requestId());
   if (options.body && !headers.has("Content-Type")) {
@@ -68,6 +85,5 @@ export async function fetchJson<T>(
     }
     throw new ApiRequestError(response, apiError);
   }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  return response;
 }

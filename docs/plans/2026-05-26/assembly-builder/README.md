@@ -133,8 +133,8 @@ defaults are active unless a phase spike proves otherwise:
 | 1 | Merged to main | Implemented on `codex/assembly-builder-phase-01`; flattened into main with the Phase 1-3 squash merge. Verified with `git diff --check`, `backend` Ruff, scoped Ty, `tests/test_envelope_phase01.py`, and `tests/test_schemas.py`. |
 | 2 | Merged to main | Read-only shell implemented on `codex/assembly-builder-phase-02` (`929f5b8`, simplify follow-up `bd77dee`); flattened into main with the Phase 1-3 squash merge. Verified with targeted Envelope/Windows tests, `tsc --noEmit`, frontend build, ESLint, feature-shape check, `git diff --check`, and local browser smoke on a seeded envelope project. |
 | 3 | Merged to main | Editor commands implemented on `codex/assembly-builder-phase-03` (`9e6c560`, simplify follow-up `1d87078`, docs-pass `0458eae`); flattened into main with the Phase 1-3 squash merge. Verified with backend envelope Ruff/Ty/Pytest gates, frontend Prettier/TS/Vitest/ESLint/shape/build gates, `git diff --check`, and browser smoke covering modal unit toggle, copy/paste assignment, Save, and reload. `make smoke` remains blocked by the local shared `phn-v2-postgres` Docker container name conflict. |
-| 4 | Proposed | Plan drafted. |
-| 5 | Proposed | Plan drafted. |
+| 4 | Implemented on branch | Implemented on `codex/assembly-builder-phase-04` with backend material commands, catalog copy-in, shared material editor, Specifications editing, detach, unused cleanup, simplify follow-up, and scoped backend/frontend gates. Browser smoke and direct material-flow frontend tests remain before closure. |
+| 5 | Active implementation | Started on `codex/assembly-builder-phase-05` from the Phase 4 branch tip. Backend thermal endpoint, shared thermal issue records, saved-version-only HBJSON export, metadata preservation, export 422 paths, frontend thermal label, shared download handling, and dirty-draft warning are implemented with scoped backend/frontend gates. Steel-stud regression, duplicate export-id test, browser smoke, and export-shape hardening remain. |
 | 6 | Proposed | Plan drafted. |
 | 7 | Proposed | Plan drafted. |
 | 8 | Proposed | Plan drafted. |

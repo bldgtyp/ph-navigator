@@ -46,6 +46,7 @@ from features.projects.access import (
     require_project_view_access,
 )
 from features.projects.models import ProjectDetail
+from features.shared.responses import json_download_response
 
 router = APIRouter(
     prefix="/api/v1/projects/{project_id}/versions/{version_id}",
@@ -207,14 +208,6 @@ def download_table(
 ) -> Response:
     content = table_download_body(version_id, table_name, access)
     return json_download_response(json.dumps(content, indent=2), f"{table_name}-{version_id}.json")
-
-
-def json_download_response(content: str, filename: str) -> Response:
-    return Response(
-        content=content,
-        media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
 
 
 def request_id(request: Request) -> str:
