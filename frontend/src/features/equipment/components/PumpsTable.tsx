@@ -71,15 +71,15 @@ export function PumpsTable({
     () => [
       {
         id: "tag",
-        fieldKey: "tag",
-        header: "Tag",
+        fieldKey: "record_id",
+        header: fieldDefByKey.get("record_id")?.display_name ?? "Tag",
         accessor: (pump) => pump.tag,
         defaultWidth: 100,
       },
       {
         id: PUMP_DEVICE_TYPE_COLUMN_ID,
         fieldKey: PUMP_DEVICE_TYPE_KEY,
-        header: "Device Type",
+        header: fieldDefByKey.get(PUMP_DEVICE_TYPE_KEY)?.display_name ?? "Device Type",
         accessor: (pump) => pump.device_type,
         render: (pump) => optionPill(pump.device_type, fieldDefByKey.get(PUMP_DEVICE_TYPE_KEY)),
         defaultWidth: 150,
@@ -87,28 +87,28 @@ export function PumpsTable({
       {
         id: "use",
         fieldKey: "use",
-        header: "Use",
+        header: fieldDefByKey.get("use")?.display_name ?? "Use",
         accessor: (pump) => pump.use,
         defaultWidth: 180,
       },
       {
         id: "manufacturer",
         fieldKey: "manufacturer",
-        header: "Manufacturer",
+        header: fieldDefByKey.get("manufacturer")?.display_name ?? "Manufacturer",
         accessor: (pump) => pump.manufacturer,
         defaultWidth: 160,
       },
       {
         id: "model",
         fieldKey: "model",
-        header: "Model",
+        header: fieldDefByKey.get("model")?.display_name ?? "Model",
         accessor: (pump) => pump.model,
         defaultWidth: 140,
       },
       {
         id: "volts",
         fieldKey: "volts",
-        header: "Volts",
+        header: fieldDefByKey.get("volts")?.display_name ?? "Volts",
         accessor: (pump) => pump.volts,
         defaultWidth: 80,
         className: "numeric-cell",
@@ -116,7 +116,7 @@ export function PumpsTable({
       {
         id: "phase",
         fieldKey: "phase",
-        header: "Phase",
+        header: fieldDefByKey.get("phase")?.display_name ?? "Phase",
         accessor: (pump) => pump.phase,
         defaultWidth: 80,
         className: "numeric-cell",
@@ -124,7 +124,7 @@ export function PumpsTable({
       {
         id: "horse_power",
         fieldKey: "horse_power",
-        header: "Horse Power",
+        header: fieldDefByKey.get("horse_power")?.display_name ?? "Horse Power",
         accessor: (pump) => pump.horse_power,
         defaultWidth: 120,
         className: "numeric-cell",
@@ -132,7 +132,7 @@ export function PumpsTable({
       {
         id: "wattage",
         fieldKey: "wattage",
-        header: "Wattage",
+        header: fieldDefByKey.get("wattage")?.display_name ?? "Wattage",
         accessor: (pump) => pump.wattage,
         defaultWidth: 110,
         className: "numeric-cell",
@@ -140,7 +140,7 @@ export function PumpsTable({
       {
         id: "flow_gpm",
         fieldKey: "flow_gpm",
-        header: "Flow - GPM",
+        header: fieldDefByKey.get("flow_gpm")?.display_name ?? "Flow - GPM",
         accessor: (pump) => pump.flow_gpm,
         defaultWidth: 120,
         className: "numeric-cell",
@@ -148,7 +148,7 @@ export function PumpsTable({
       {
         id: "runtime_khr_yr",
         fieldKey: "runtime_khr_yr",
-        header: "Runtime - kHR/YEAR",
+        header: fieldDefByKey.get("runtime_khr_yr")?.display_name ?? "Runtime - kHR/YEAR",
         accessor: (pump) => pump.runtime_khr_yr,
         defaultWidth: 160,
         className: "numeric-cell",
@@ -156,14 +156,14 @@ export function PumpsTable({
       {
         id: "notes",
         fieldKey: "notes",
-        header: "Notes",
+        header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (pump) => pump.notes,
         defaultWidth: 280,
       },
       {
         id: "link",
         fieldKey: "link",
-        header: "Link",
+        header: fieldDefByKey.get("link")?.display_name ?? "Link",
         accessor: (pump) => pump.link,
         render: (pump) =>
           pump.link ? (

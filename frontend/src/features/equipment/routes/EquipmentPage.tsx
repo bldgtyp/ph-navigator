@@ -14,12 +14,7 @@ import { SliceTableShell, useSliceTableController } from "../../../shared/ui/dat
 import type { ProjectDetail } from "../../projects/types";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { usePumpsSchemaMutation, usePumpsSliceQuery, useReplacePumpsSliceMutation } from "../hooks";
-import {
-  PUMPS_SCHEMA_CORE_FIELD_KEYS,
-  pumpsTableColumnsForSanitize,
-  pumpsTableFieldDefs,
-  wasLocalDraftTouched,
-} from "../lib";
+import { pumpsFieldOverlay, pumpsTableColumnsForSanitize, wasLocalDraftTouched } from "../lib";
 import { makeBuildEmptyPumpRow } from "../lib/buildEmptyPumpRow";
 import { pumpsPayloadBuilders } from "../lib/pumpsController";
 import { PUMP_DATASHEET_FIELD_KEY, PUMPS_TABLE_NAME, type PumpsSlice } from "../types";
@@ -135,10 +130,19 @@ function EquipmentPageBody(props: {
 }) {
   const { project, pumpsSlice, refetchPumps } = props;
   const activeVersionId = project.active_version_id;
-  const coreFieldDefs = useMemo(() => pumpsTableFieldDefs(pumpsSlice), [pumpsSlice]);
+  const fieldOverlay = useMemo(() => pumpsFieldOverlay(pumpsSlice), [pumpsSlice]);
+  const previewSchemaFieldDefs = useMemo<FieldDef[]>(
+    () =>
+      pumpsSlice.field_defs.map((fieldDef) => ({
+        field_key: fieldDef.field_key,
+        field_type: fieldDef.field_type === "number" ? "number" : "text",
+        display_name: fieldDef.display_name,
+      })),
+    [pumpsSlice.field_defs],
+  );
   const columnsForSanitize = useMemo(
-    () => pumpsTableColumnsForSanitize(coreFieldDefs),
-    [coreFieldDefs],
+    () => pumpsTableColumnsForSanitize(previewSchemaFieldDefs),
+    [previewSchemaFieldDefs],
   );
   const buildEmptyPumpRow = useMemo(() => makeBuildEmptyPumpRow(), []);
   const replaceMutation = useReplacePumpsSliceMutation(project.id, activeVersionId);
@@ -156,9 +160,8 @@ function EquipmentPageBody(props: {
     versionLocked: project.active_version?.locked ?? false,
     tableKey: PUMPS_TABLE_NAME,
     slice: pumpsSlice,
-    coreFieldDefs,
-    fingerprintCoreFieldKeys: PUMPS_SCHEMA_CORE_FIELD_KEYS,
-    customFields: null,
+    fieldDefs: pumpsSlice.field_defs,
+    fieldOverlay,
     singleSelectOptions: pumpsSlice.single_select_options,
     columnsForSanitize,
     payloadBuilders: pumpsPayloadBuilders,

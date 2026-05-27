@@ -3,8 +3,8 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { optionLabel } from "../lib";
 import {
-  ROOM_BUILDING_ZONE_KEY,
-  ROOM_FLOOR_LEVEL_KEY,
+  ROOM_BUILDING_ZONE_OPTION_KEY,
+  ROOM_FLOOR_LEVEL_OPTION_KEY,
   type RoomRow,
   type RoomsSlice,
 } from "../types";
@@ -32,10 +32,13 @@ export function RoomModal({
 }) {
   const [draft, setDraft] = useState(room);
   const [floorLevel, setFloorLevel] = useState(
-    optionLabel(roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY], room.floor_level),
+    optionLabel(roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY], room.floor_level),
   );
   const [buildingZone, setBuildingZone] = useState(
-    optionLabel(roomsSlice.single_select_options[ROOM_BUILDING_ZONE_KEY], room.building_zone),
+    optionLabel(
+      roomsSlice.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY],
+      room.building_zone,
+    ),
   );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -185,12 +188,12 @@ export function RoomModal({
           />
         </details>
         <datalist id="rooms-floor-level-options">
-          {roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY].map((option) => (
+          {roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY].map((option) => (
             <option key={option.id} value={option.label} />
           ))}
         </datalist>
         <datalist id="rooms-building-zone-options">
-          {roomsSlice.single_select_options[ROOM_BUILDING_ZONE_KEY].map((option) => (
+          {roomsSlice.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY].map((option) => (
             <option key={option.id} value={option.label} />
           ))}
         </datalist>

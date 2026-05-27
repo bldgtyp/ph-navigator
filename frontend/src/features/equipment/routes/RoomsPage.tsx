@@ -1,6 +1,7 @@
 import "../equipment.css";
 import { useMemo, useState } from "react";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
+import type { FieldDef } from "../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomsPageError } from "../components/RoomsPageError";
 import { RoomDialogStack, type RoomModalState } from "../components/RoomDialogStack";
@@ -10,12 +11,7 @@ import {
 } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
 import { useRoomsSliceQuery } from "../hooks";
-import {
-  ROOMS_SCHEMA_CORE_FIELD_KEYS,
-  roomsTableColumnsForSanitize,
-  roomsTableFieldDefs,
-  wasLocalDraftTouched,
-} from "../lib";
+import { roomsFieldOverlay, roomsTableColumnsForSanitize, wasLocalDraftTouched } from "../lib";
 import { makeBuildEmptyRoomRow } from "../lib/buildEmptyRoomRow";
 import { makeDeleteRoom, makeSaveRoom } from "../lib/roomMutationCallbacks";
 import {
@@ -60,10 +56,19 @@ function RoomsPageBody(props: {
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
 
-  const coreFieldDefs = useMemo(() => roomsTableFieldDefs(roomsSlice), [roomsSlice]);
+  const fieldOverlay = useMemo(() => roomsFieldOverlay(roomsSlice), [roomsSlice]);
+  const previewSchemaFieldDefs = useMemo<FieldDef[]>(
+    () =>
+      roomsSlice.field_defs.map((fieldDef) => ({
+        field_key: fieldDef.field_key,
+        field_type: fieldDef.field_type === "number" ? "number" : "text",
+        display_name: fieldDef.display_name,
+      })),
+    [roomsSlice.field_defs],
+  );
   const columnsForSanitize = useMemo(
-    () => roomsTableColumnsForSanitize(coreFieldDefs),
-    [coreFieldDefs],
+    () => roomsTableColumnsForSanitize(previewSchemaFieldDefs),
+    [previewSchemaFieldDefs],
   );
   const buildEmptyRoomRow = useMemo(() => makeBuildEmptyRoomRow(roomsSlice), [roomsSlice]);
 
@@ -82,9 +87,8 @@ function RoomsPageBody(props: {
     versionLocked: project.active_version?.locked ?? false,
     tableKey: ROOMS_TABLE_NAME,
     slice: roomsSlice,
-    coreFieldDefs,
-    fingerprintCoreFieldKeys: ROOMS_SCHEMA_CORE_FIELD_KEYS,
-    customFields: roomsSlice.field_defs,
+    fieldDefs: roomsSlice.field_defs,
+    fieldOverlay,
     singleSelectOptions: roomsSlice.single_select_options ?? null,
     columnsForSanitize,
     payloadBuilders: roomsPayloadBuilders,

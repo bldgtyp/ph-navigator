@@ -14,10 +14,14 @@ import {
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
+  PUMP_DEVICE_TYPE_OPTION_KEY,
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
+  ROOM_BUILDING_ZONE_OPTION_KEY,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
   ROOM_FLOOR_LEVEL_KEY,
+  ROOM_FLOOR_LEVEL_OPTION_KEY,
+  ROOMS_TABLE_NAME,
 } from "./types";
 import type {
   BuildEmptyRow,
@@ -93,82 +97,43 @@ export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
   PUMP_DATASHEET_FIELD_KEY,
 ] as const;
 
-// Shared by RoomsTable (renderer) and useProjectTableViewState (sanitizer)
-// so view-state persistence doesn't depend on the live React tree.
-export function roomsTableFieldDefs(roomsSlice: RoomsSlice): FieldDef[] {
-  return [
-    {
-      field_key: "number",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "Number",
+export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, Partial<FieldDef>> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    number: {
       required: true,
-      built_in: true,
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "name",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "Name",
+    name: {
       required: true,
-      built_in: true,
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: ROOM_FLOOR_LEVEL_KEY,
-      field_type: "single_select",
-      custom_field_type: "single_select",
-      display_name: "Floor",
+    [ROOM_FLOOR_LEVEL_KEY]: {
       required: true,
-      options: roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_KEY],
-      built_in: true,
+      options: roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
-    {
-      field_key: ROOM_BUILDING_ZONE_KEY,
-      field_type: "single_select",
-      custom_field_type: "single_select",
-      display_name: "Zone",
-      options: roomsSlice.single_select_options[ROOM_BUILDING_ZONE_KEY],
-      built_in: true,
+    [ROOM_BUILDING_ZONE_KEY]: {
+      options: roomsSlice.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
-    {
-      field_key: "num_people",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "People",
-      built_in: true,
+    num_people: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "num_bedrooms",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Bedrooms",
-      built_in: true,
+    num_bedrooms: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
+    icfa_factor: {
       // icfa_factor ∈ [0, 1] — domain invariant doesn't survive a retype.
-      field_key: "icfa_factor",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "iCFA",
-      built_in: true,
       locked: ["field_type", "delete", "duplicate"],
     },
-    {
-      field_key: "erv_unit_ids",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "ERVs",
+    erv_unit_ids: {
       read_only: true,
-      built_in: true,
       locked: ["field_type", "delete", "duplicate"],
     },
-  ];
+  };
 }
 
 // Stub columns for sanitization — sanitizer reads only `id` + `fieldKey`.
@@ -193,123 +158,54 @@ export function roomsTableColumnsForSanitize(
   }));
 }
 
-export function pumpsTableFieldDefs(pumpsSlice: PumpsSlice): FieldDef[] {
-  return [
-    {
-      field_key: PUMP_DEVICE_TYPE_KEY,
-      field_type: "single_select",
-      custom_field_type: "single_select",
-      display_name: "Device Type",
-      options: pumpsSlice.single_select_options[PUMP_DEVICE_TYPE_KEY],
-      built_in: true,
+export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, Partial<FieldDef>> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    [PUMP_DEVICE_TYPE_KEY]: {
+      options: pumpsSlice.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
-    {
-      field_key: "use",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "Use",
-      built_in: true,
+    use: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "tag",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "Tag",
-      built_in: true,
+    manufacturer: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "manufacturer",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "Manufacturer",
-      built_in: true,
+    model: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "model",
-      field_type: "text",
-      custom_field_type: "short_text",
-      display_name: "Model",
-      built_in: true,
+    volts: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "volts",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Volts",
-      built_in: true,
-      locked: DEFAULT_BUILT_IN_LOCKS,
-    },
-    {
+    phase: {
       // phase ∈ {1, 3} — row validator enforces it; doesn't survive retype.
-      field_key: "phase",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Phase",
-      built_in: true,
       locked: ["field_type", "delete", "duplicate"],
     },
-    {
-      field_key: "horse_power",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Horse Power",
-      built_in: true,
+    horse_power: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "wattage",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Wattage",
-      built_in: true,
+    wattage: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "flow_gpm",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Flow - GPM",
-      built_in: true,
+    flow_gpm: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "runtime_khr_yr",
-      field_type: "number",
-      custom_field_type: "number",
-      display_name: "Runtime - kHR/YEAR",
-      built_in: true,
+    runtime_khr_yr: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
-      field_key: "notes",
-      field_type: "text",
-      custom_field_type: "long_text",
-      display_name: "Notes",
-      built_in: true,
+    notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    {
+    link: {
       // URL validator runs at the cell-write boundary; retype would lose it.
-      field_key: "link",
-      field_type: "text",
-      custom_field_type: "url",
-      display_name: "Link",
-      built_in: true,
       locked: ["field_type", "delete", "duplicate"],
     },
-    {
-      field_key: PUMP_DATASHEET_FIELD_KEY,
-      field_type: "attachment",
-      display_name: "Datasheet",
-      built_in: true,
+    [PUMP_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
-  ];
+  };
 }
 
 export function pumpsTableColumnsForSanitize(
@@ -389,8 +285,9 @@ export function sortedPumps(pumps: PumpRow[]): PumpRow[] {
 
 export function firstRoomFloorOptionId(current: RoomsSlice): string | null {
   return (
-    [...current.single_select_options[ROOM_FLOOR_LEVEL_KEY]].sort((a, b) => a.order - b.order)[0]
-      ?.id ?? null
+    [...current.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]].sort(
+      (a, b) => a.order - b.order,
+    )[0]?.id ?? null
   );
 }
 
@@ -400,8 +297,8 @@ export function nextRoomsPayload(
   labels: { floorLevel: string; buildingZone: string },
 ): RoomsReplacePayload {
   const options = cloneOptions(current);
-  const floorLevel = upsertOption(options, ROOM_FLOOR_LEVEL_KEY, labels.floorLevel);
-  const buildingZone = upsertOption(options, ROOM_BUILDING_ZONE_KEY, labels.buildingZone);
+  const floorLevel = upsertOption(options, ROOM_FLOOR_LEVEL_OPTION_KEY, labels.floorLevel);
+  const buildingZone = upsertOption(options, ROOM_BUILDING_ZONE_OPTION_KEY, labels.buildingZone);
   const normalizedRoom = normalizeRoomForPayload({
     ...room,
     floor_level: floorLevel,
@@ -510,17 +407,19 @@ export function roomsPayloadFromCellWrites(
 ): RoomsReplacePayload {
   const options = cloneOptions(current);
   for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
-    if (!isRoomsOptionListKey(fieldKey) || removedIds.length === 0) continue;
+    const optionKey = roomsOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
     const remove = new Set(removedIds);
-    const currentList = options[fieldKey] ?? [];
-    options[fieldKey] = normalizeOptionOrders(
+    const currentList = options[optionKey] ?? [];
+    options[optionKey] = normalizeOptionOrders(
       currentList.filter((option) => !remove.has(option.id)),
     );
   }
   for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
-    if (!isRoomsOptionListKey(fieldKey)) continue;
-    const currentList = options[fieldKey] ?? [];
-    options[fieldKey] = normalizeOptionOrders([...currentList, ...createdOptions]);
+    const optionKey = roomsOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    const currentList = options[optionKey] ?? [];
+    options[optionKey] = normalizeOptionOrders([...currentList, ...createdOptions]);
   }
   const writesByRowId = writes.reduce((byRowId, write) => {
     const rowWrites = byRowId.get(write.rowId);
@@ -550,15 +449,17 @@ export function pumpsPayloadFromCellWrites(
 ): PumpsReplacePayload {
   const options = clonePumpOptions(current);
   for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
-    if (!isPumpOptionKey(fieldKey) || removedIds.length === 0) continue;
+    const optionKey = pumpOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
     const remove = new Set(removedIds);
-    options[fieldKey] = normalizeOptionOrders(
-      options[fieldKey].filter((option) => !remove.has(option.id)),
+    options[optionKey] = normalizeOptionOrders(
+      options[optionKey].filter((option) => !remove.has(option.id)),
     );
   }
   for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
-    if (!isPumpOptionKey(fieldKey)) continue;
-    options[fieldKey] = normalizeOptionOrders([...options[fieldKey], ...createdOptions]);
+    const optionKey = pumpOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    options[optionKey] = normalizeOptionOrders([...options[optionKey], ...createdOptions]);
   }
   const writesByRowId = writes.reduce((byRowId, write) => {
     const rowWrites = byRowId.get(write.rowId);
@@ -580,10 +481,10 @@ export function pumpsPayloadFromCellWrites(
 
 export function validateRoomsPayload(payload: RoomsReplacePayload): string | null {
   const floorOptionIds = new Set(
-    payload.single_select_options[ROOM_FLOOR_LEVEL_KEY].map((option) => option.id),
+    payload.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY].map((option) => option.id),
   );
   const zoneOptionIds = new Set(
-    payload.single_select_options[ROOM_BUILDING_ZONE_KEY].map((option) => option.id),
+    payload.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY].map((option) => option.id),
   );
   for (const room of payload.rooms) {
     if (!room.number.trim()) return "Room number is required.";
@@ -609,7 +510,7 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
 export function validatePumpsPayload(payload: PumpsReplacePayload): string | null {
   const ids = new Set<string>();
   const deviceTypeIds = new Set(
-    payload.single_select_options[PUMP_DEVICE_TYPE_KEY].map((option) => option.id),
+    payload.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY].map((option) => option.id),
   );
   for (const pump of payload.pumps) {
     if (ids.has(pump.id)) return "Pump id already exists in this project.";
@@ -702,8 +603,8 @@ export function remoteSliceChangesActiveRoom(
   if (roomFingerprint(currentRoom) !== roomFingerprint(incomingRoom)) return true;
 
   return (
-    optionChanged(current, incoming, ROOM_FLOOR_LEVEL_KEY, room.floor_level) ||
-    optionChanged(current, incoming, ROOM_BUILDING_ZONE_KEY, room.building_zone)
+    optionChanged(current, incoming, ROOM_FLOOR_LEVEL_OPTION_KEY, room.floor_level) ||
+    optionChanged(current, incoming, ROOM_BUILDING_ZONE_OPTION_KEY, room.building_zone)
   );
 }
 
@@ -713,11 +614,13 @@ function cloneOptions(current: RoomsSlice): RoomsReplacePayload["single_select_o
   // Without this, plan-16 P3.5 custom single_select fields would lose
   // their option lists on the next cell / row / option mutation.
   const out: RoomsReplacePayload["single_select_options"] = {
-    [ROOM_FLOOR_LEVEL_KEY]: [...current.single_select_options[ROOM_FLOOR_LEVEL_KEY]],
-    [ROOM_BUILDING_ZONE_KEY]: [...current.single_select_options[ROOM_BUILDING_ZONE_KEY]],
+    [ROOM_FLOOR_LEVEL_OPTION_KEY]: [...current.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]],
+    [ROOM_BUILDING_ZONE_OPTION_KEY]: [
+      ...current.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY],
+    ],
   };
   for (const [key, list] of Object.entries(current.single_select_options)) {
-    if (key === ROOM_FLOOR_LEVEL_KEY || key === ROOM_BUILDING_ZONE_KEY) continue;
+    if (key === ROOM_FLOOR_LEVEL_OPTION_KEY || key === ROOM_BUILDING_ZONE_OPTION_KEY) continue;
     out[key] = [...list];
   }
   return out;
@@ -810,11 +713,11 @@ function isNullableNumber(value: unknown): value is number | null {
 }
 
 export function isPumpOptionKey(key: string): key is PumpOptionKey {
-  return key === PUMP_DEVICE_TYPE_KEY;
+  return key === PUMP_DEVICE_TYPE_OPTION_KEY;
 }
 
 export function isRoomOptionKey(key: string): key is RoomOptionKey {
-  return key === ROOM_FLOOR_LEVEL_KEY || key === ROOM_BUILDING_ZONE_KEY;
+  return key === ROOM_FLOOR_LEVEL_OPTION_KEY || key === ROOM_BUILDING_ZONE_OPTION_KEY;
 }
 
 // Broader than `isRoomOptionKey`: accepts the two core rooms option
@@ -825,8 +728,23 @@ function isRoomsOptionListKey(key: string): boolean {
   return isRoomOptionKey(key) || key.startsWith(ROOMS_CUSTOM_OPTION_PREFIX);
 }
 
+function roomsOptionListKeyForFieldKey(fieldKey: string): string | null {
+  if (fieldKey === ROOM_FLOOR_LEVEL_KEY) return ROOM_FLOOR_LEVEL_OPTION_KEY;
+  if (fieldKey === ROOM_BUILDING_ZONE_KEY) return ROOM_BUILDING_ZONE_OPTION_KEY;
+  if (isRoomsOptionListKey(fieldKey)) return fieldKey;
+  if (isCustomFieldKey(fieldKey)) return `${ROOMS_TABLE_NAME}.${fieldKey}`;
+  return null;
+}
+
+function pumpOptionListKeyForFieldKey(fieldKey: string): PumpOptionKey | null {
+  if (fieldKey === PUMP_DEVICE_TYPE_KEY || fieldKey === PUMP_DEVICE_TYPE_OPTION_KEY) {
+    return PUMP_DEVICE_TYPE_OPTION_KEY;
+  }
+  return null;
+}
+
 function roomFieldForOptionKey(key: RoomOptionKey): "floor_level" | "building_zone" {
-  return key === ROOM_FLOOR_LEVEL_KEY ? "floor_level" : "building_zone";
+  return key === ROOM_FLOOR_LEVEL_OPTION_KEY ? "floor_level" : "building_zone";
 }
 
 function roomValueForOptionKey(room: RoomRow, key: RoomOptionKey): string | null {
@@ -887,7 +805,7 @@ function nonNegativeOrNull(value: number | null): number | null {
 
 function clonePumpOptions(current: PumpsSlice): PumpsReplacePayload["single_select_options"] {
   return {
-    [PUMP_DEVICE_TYPE_KEY]: [...current.single_select_options[PUMP_DEVICE_TYPE_KEY]],
+    [PUMP_DEVICE_TYPE_OPTION_KEY]: [...current.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]],
   };
 }
 

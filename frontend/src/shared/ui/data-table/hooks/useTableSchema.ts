@@ -1,5 +1,5 @@
-// Merges per-table core column defs with the document's user-defined
-// custom fields into a single ordered FieldDef[]. One call per table.
+// Converts the document's persisted table FieldDef stream into the
+// renderer's FieldDef[] shape. One call per table.
 import { useMemo } from "react";
 import { generatedId } from "../../../lib/ids";
 import { sha256Hex } from "../../../lib/sha256";
@@ -20,6 +20,7 @@ export type TableFieldDef = {
   field_type: CustomFieldType;
   config: Record<string, unknown>;
   description: string | null;
+  default?: unknown;
   origin: "built_in" | "custom";
   created_at: string;
   created_by: string | null;
@@ -32,7 +33,7 @@ export type CustomFieldDef = TableFieldDef;
 export type TableSchema = {
   fieldDefs: FieldDef[];
   coreFieldKeys: Set<string>;
-  customFields: CustomFieldDef[];
+  customFields: TableFieldDef[];
   // Hex digest matching backend `compute_table_schema_fingerprint`.
   // Persisted view-state records carry this alongside their state so
   // opening a version with a different schema does not overwrite a
@@ -43,13 +44,8 @@ export type TableSchema = {
 
 export type UseTableSchemaArgs = {
   tableKey: string;
-  coreFieldDefs: FieldDef[];
-  // Optional backend registry order for schema fingerprints. Some
-  // tables intentionally hide core document fields from the grid, but
-  // the schema-editor fingerprint must still match the backend's
-  // full table capability.
-  fingerprintCoreFieldKeys?: readonly string[];
-  customFields: CustomFieldDef[] | null | undefined;
+  fieldDefs: TableFieldDef[] | null | undefined;
+  fieldOverlay?: Record<string, Partial<FieldDef>> | null;
   // Namespaced single_select option lists keyed by their
   // `<table_path>.<field_id>` namespace key (e.g. `rooms.cf_abc123`).
   // When supplied, attached to custom single_select FieldDef entries.
@@ -68,74 +64,57 @@ const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
 };
 
 export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
-  const { coreFieldDefs, customFields, fingerprintCoreFieldKeys, singleSelectOptions, tableKey } =
-    args;
-  const customList = useMemo(() => customFields ?? [], [customFields]);
+  const { fieldDefs, fieldOverlay, singleSelectOptions, tableKey } = args;
+  const persistedFieldDefs = useMemo(() => fieldDefs ?? [], [fieldDefs]);
 
   const optionsByFieldKey = useMemo<Record<string, readonly FieldOption[]>>(() => {
     if (!singleSelectOptions) return {};
-    const prefix = `${tableKey}.`;
     const out: Record<string, readonly FieldOption[]> = {};
-    for (const [key, value] of Object.entries(singleSelectOptions)) {
-      if (key.startsWith(prefix)) out[key.slice(prefix.length)] = value;
+    for (const fieldDef of persistedFieldDefs) {
+      const namespacedKey = `${tableKey}.${fieldDef.field_key}`;
+      const options = singleSelectOptions[fieldDef.field_key] ?? singleSelectOptions[namespacedKey];
+      if (options) out[fieldDef.field_key] = options;
     }
     return out;
-  }, [singleSelectOptions, tableKey]);
+  }, [persistedFieldDefs, singleSelectOptions, tableKey]);
 
-  const synthesizedFieldDefs = useMemo<FieldDef[]>(
-    () => customList.map((custom) => customFieldToFieldDef(custom, optionsByFieldKey)),
-    [customList, optionsByFieldKey],
-  );
-
-  const fieldDefs = useMemo<FieldDef[]>(
-    () => [...coreFieldDefs, ...synthesizedFieldDefs],
-    [coreFieldDefs, synthesizedFieldDefs],
+  const renderedFieldDefs = useMemo<FieldDef[]>(
+    () =>
+      persistedFieldDefs.map((fieldDef) =>
+        tableFieldToFieldDef(fieldDef, optionsByFieldKey, fieldOverlay?.[fieldDef.field_key]),
+      ),
+    [fieldOverlay, optionsByFieldKey, persistedFieldDefs],
   );
 
   const coreFieldKeys = useMemo(
-    () => new Set(fingerprintCoreFieldKeys ?? coreFieldDefs.map((fieldDef) => fieldDef.field_key)),
-    [coreFieldDefs, fingerprintCoreFieldKeys],
+    () =>
+      new Set(
+        persistedFieldDefs
+          .filter((fieldDef) => fieldDef.origin === "built_in")
+          .map((fieldDef) => fieldDef.field_key),
+      ),
+    [persistedFieldDefs],
   );
 
-  // Backend fingerprint v2 walks every persisted FieldDef (built-in +
-  // custom) as one stream of `(field_key, field_type)`. Until the
-  // frontend collapses the `coreFieldDefs / customFields` split (task
-  // #28), synthesize the built-in side from `coreFieldDefs` and concat
-  // the custom side. `coreFieldDef.custom_field_type` is the backend
-  // `CustomFieldType` slug; falls back to `short_text` for the few
-  // built-ins (e.g. attachment, computed pinned identifier) that don't
-  // declare one.
-  const fingerprintInput = useMemo<TableFieldDef[]>(
-    () => [
-      ...coreFieldDefs.map<TableFieldDef>((field) => ({
-        field_key: field.field_key,
-        display_name: field.display_name,
-        field_type: field.custom_field_type ?? "short_text",
-        config: {},
-        description: field.description ?? null,
-        origin: "built_in",
-        created_at: "",
-        created_by: null,
-      })),
-      ...customList,
-    ],
-    [coreFieldDefs, customList],
+  const customList = useMemo(
+    () => persistedFieldDefs.filter((fieldDef) => fieldDef.origin === "custom"),
+    [persistedFieldDefs],
   );
 
   const schemaFingerprint = useMemo(
-    () => computeTableSchemaFingerprint(fingerprintInput),
-    [fingerprintInput],
+    () => computeTableSchemaFingerprint(persistedFieldDefs),
+    [persistedFieldDefs],
   );
 
   return useMemo(
     () => ({
-      fieldDefs,
+      fieldDefs: renderedFieldDefs,
       coreFieldKeys,
       customFields: customList,
       schemaFingerprint,
       mintCustomFieldId,
     }),
-    [fieldDefs, coreFieldKeys, customList, schemaFingerprint],
+    [coreFieldKeys, customList, renderedFieldDefs, schemaFingerprint],
   );
 }
 
@@ -143,28 +122,31 @@ export function mintCustomFieldId(): string {
   return generatedId("cf");
 }
 
-function customFieldToFieldDef(
-  custom: TableFieldDef,
+function tableFieldToFieldDef(
+  persisted: TableFieldDef,
   optionsByFieldKey: Record<string, readonly FieldOption[]>,
+  overlay: Partial<FieldDef> | undefined,
 ): FieldDef {
   const fieldDef: FieldDef = {
-    field_key: custom.field_key,
-    field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[custom.field_type],
-    custom_field_type: custom.field_type,
-    display_name: custom.display_name,
-    description: custom.description ?? undefined,
+    field_key: persisted.field_key,
+    field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[persisted.field_type],
+    custom_field_type: persisted.field_type,
+    display_name: persisted.display_name,
+    description: persisted.description ?? undefined,
+    default: persisted.default,
+    built_in: persisted.origin === "built_in" ? true : undefined,
   };
-  if (custom.field_type === "single_select") {
-    fieldDef.options = [...(optionsByFieldKey[custom.field_key] ?? EMPTY_OPTIONS)];
-    const defaultOptionId = custom.config.default_option_id;
+  if (persisted.field_type === "single_select") {
+    fieldDef.options = [...(optionsByFieldKey[persisted.field_key] ?? EMPTY_OPTIONS)];
+    const defaultOptionId = persisted.config.default_option_id;
     fieldDef.defaultOptionId = typeof defaultOptionId === "string" ? defaultOptionId : null;
-    fieldDef.colorCodeOptions = custom.config.color_code_options !== false;
+    fieldDef.colorCodeOptions = persisted.config.color_code_options !== false;
   }
-  if (custom.field_type === "number") {
-    fieldDef.numberPrecision = clampNumberPrecision(custom.config.precision);
+  if (persisted.field_type === "number") {
+    fieldDef.numberPrecision = clampNumberPrecision(persisted.config.precision);
   }
-  if (custom.field_type === "formula") {
-    const config = custom.config ?? {};
+  if (persisted.field_type === "formula") {
+    const config = persisted.config ?? {};
     const source = typeof config.source === "string" ? config.source : "";
     const deps = Array.isArray(config.deps)
       ? (config.deps as unknown[]).filter((entry): entry is string => typeof entry === "string")
@@ -181,7 +163,7 @@ function customFieldToFieldDef(
     // every other formula falls back to text.
     fieldDef.computed_type = resultType === "number" ? "number" : "text";
   }
-  return fieldDef;
+  return { ...fieldDef, ...overlay, display_name: persisted.display_name };
 }
 
 // Must agree to the byte with backend `compute_table_schema_fingerprint`

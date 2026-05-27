@@ -90,28 +90,28 @@ export function RoomsTable({
   const customColumns = useMemo<DataTableColumnDef<RoomRow>[]>(
     () =>
       customFields.map((custom) => {
-        const fieldDef = fieldDefByKey.get(custom.id);
+        const fieldDef = fieldDefByKey.get(custom.field_key);
         if (custom.field_type === "formula") {
           // Formula values live in `rows_computed`, never on the row.
           // The accessor returns the scalar (errors → null) so sorts
           // and aggregates stay clean; render shows the error glyph.
           const computedType = fieldDef?.computed_type ?? "text";
           return {
-            id: custom.id,
-            fieldKey: custom.id,
+            id: custom.field_key,
+            fieldKey: custom.field_key,
             header: custom.display_name,
-            accessor: (room) => readComputedScalar(rowsComputed, room.id, custom.id),
+            accessor: (room) => readComputedScalar(rowsComputed, room.id, custom.field_key),
             render: (room) => (
               <ComputedCell
-                value={readComputedRaw(rowsComputed, room.id, custom.id)}
+                value={readComputedRaw(rowsComputed, room.id, custom.field_key)}
                 computedType={computedType}
               />
             ),
           };
         }
         return {
-          id: custom.id,
-          fieldKey: custom.id,
+          id: custom.field_key,
+          fieldKey: custom.field_key,
           header: custom.display_name,
           accessor: (room) => (fieldDef ? (getCustomValue(room, fieldDef) ?? null) : null),
         };
@@ -123,49 +123,49 @@ export function RoomsTable({
       {
         id: "number",
         fieldKey: "number",
-        header: "Number",
+        header: fieldDefByKey.get("number")?.display_name ?? "Number",
         accessor: (room) => room.number,
         defaultWidth: 120,
       },
       {
         id: "name",
         fieldKey: "name",
-        header: "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Name",
         accessor: (room) => room.name,
         defaultWidth: 240,
       },
       {
         id: ROOM_FLOOR_LEVEL_COLUMN_ID,
         fieldKey: ROOM_FLOOR_LEVEL_KEY,
-        header: "Floor",
+        header: fieldDefByKey.get(ROOM_FLOOR_LEVEL_KEY)?.display_name ?? "Floor",
         accessor: (room) => room.floor_level,
         render: (room) => optionPill(room.floor_level, fieldDefByKey.get(ROOM_FLOOR_LEVEL_KEY)),
       },
       {
         id: ROOM_BUILDING_ZONE_COLUMN_ID,
         fieldKey: ROOM_BUILDING_ZONE_KEY,
-        header: "Zone",
+        header: fieldDefByKey.get(ROOM_BUILDING_ZONE_KEY)?.display_name ?? "Zone",
         accessor: (room) => room.building_zone,
         render: (room) => optionPill(room.building_zone, fieldDefByKey.get(ROOM_BUILDING_ZONE_KEY)),
       },
       {
         id: "num_people",
         fieldKey: "num_people",
-        header: "People",
+        header: fieldDefByKey.get("num_people")?.display_name ?? "People",
         accessor: (room) => room.num_people,
         className: "numeric-cell",
       },
       {
         id: "num_bedrooms",
         fieldKey: "num_bedrooms",
-        header: "Bedrooms",
+        header: fieldDefByKey.get("num_bedrooms")?.display_name ?? "Bedrooms",
         accessor: (room) => room.num_bedrooms,
         className: "numeric-cell",
       },
       {
         id: "icfa_factor",
         fieldKey: "icfa_factor",
-        header: "iCFA",
+        header: fieldDefByKey.get("icfa_factor")?.display_name ?? "iCFA",
         accessor: (room) => room.icfa_factor,
         render: (room) => room.icfa_factor.toFixed(2),
         measureText: (room) => room.icfa_factor.toFixed(2),

@@ -34,7 +34,7 @@ import { projectQueryKeys } from "../../../../features/projects/query-keys";
 import { useProjectTableViewState } from "../../../../features/table_views/hooks";
 import type { TableSliceAccessMode } from "../../../../features/project_document/table-slice";
 import type { BuildEmptyRow, FieldDef, FieldOption, WriteOp } from "../types";
-import type { CustomFieldDef, FieldRegistryEntry } from "../index";
+import type { FieldRegistryEntry, TableFieldDef } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import { useCustomFieldHandlers } from "./useCustomFieldHandlers";
 import type {
@@ -66,9 +66,8 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   // The latest accepted slice. The controller assumes the consumer has
   // already short-circuited on loading / error so this is non-null.
   slice: TSlice;
-  coreFieldDefs: FieldDef[];
-  fingerprintCoreFieldKeys: readonly string[];
-  customFields: CustomFieldDef[] | null | undefined;
+  fieldDefs: TableFieldDef[] | null | undefined;
+  fieldOverlay?: Record<string, Partial<FieldDef>> | null;
   singleSelectOptions: Record<string, FieldOption[]> | null;
   // Stub columns whose `id` / `fieldKey` mirror the live grid's. The
   // view-state sanitizer reads only `id` + `fieldKey`, so a slim list
@@ -98,9 +97,8 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     versionLocked,
     tableKey,
     slice,
-    coreFieldDefs,
-    fingerprintCoreFieldKeys,
-    customFields,
+    fieldDefs,
+    fieldOverlay,
     singleSelectOptions,
     columnsForSanitize,
     payloadBuilders,
@@ -119,9 +117,8 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
   const viewDefaults = useMemo(() => emptyViewState(), []);
   const tableSchema = useTableSchema({
     tableKey,
-    coreFieldDefs,
-    fingerprintCoreFieldKeys,
-    customFields,
+    fieldDefs,
+    fieldOverlay,
     singleSelectOptions,
   });
 
@@ -340,7 +337,6 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
   const customFieldHandlers = useCustomFieldHandlers({
     tableKey,
     canEdit,
-    customFields,
     tableSchema,
     view,
     onViewChange,
