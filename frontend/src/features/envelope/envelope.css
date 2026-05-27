@@ -161,6 +161,10 @@
   padding: 8px;
 }
 
+.assembly-segment .material-drift-badge {
+  justify-self: start;
+}
+
 .assembly-segment[data-paste-target="true"] {
   outline: 2px dashed var(--accent);
   outline-offset: -3px;
@@ -208,6 +212,66 @@
   display: grid;
   gap: 12px;
   padding: 14px;
+}
+
+.spec-card-badges {
+  align-items: flex-end;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.material-drift-badge {
+  background: color-mix(in oklab, var(--warning, #b7791f) 16%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--warning, #b7791f) 45%, var(--border-subtle));
+  border-radius: 999px;
+  color: var(--text-primary);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.material-drift-badge.source_deactivated,
+.material-drift-badge.source_missing {
+  background: color-mix(in oklab, var(--danger, #b42318) 12%, var(--surface));
+  border-color: color-mix(in oklab, var(--danger, #b42318) 45%, var(--border-subtle));
+}
+
+.material-drift-badge.customized {
+  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
+}
+
+.material-drift-summary {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.material-drift-summary header,
+.material-drift-summary li {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.material-drift-summary h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.material-drift-summary ul {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .spec-values {
@@ -279,6 +343,43 @@
   gap: 10px;
   justify-content: space-between;
   padding: 8px 10px;
+}
+
+.material-drift-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.material-drift-field {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px;
+}
+
+.material-drift-field legend {
+  font-weight: 700;
+}
+
+.material-drift-field legend span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.material-drift-field dl {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.material-drift-field dd {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .modal-unit-toggle {

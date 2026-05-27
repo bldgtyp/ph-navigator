@@ -9,8 +9,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query
 
 from features.envelope.hbjson_export import export_hbjson_constructions
-from features.envelope.models import AssemblyThermalResponse, EnvelopeCommandRequest, EnvelopeReadResponse
-from features.envelope.service import apply_envelope_command, get_assembly_thermal_model, get_envelope_read_model
+from features.envelope.models import (
+    AssemblyThermalResponse,
+    EnvelopeCommandRequest,
+    EnvelopeReadResponse,
+    ProjectMaterialDriftReport,
+)
+from features.envelope.service import (
+    apply_envelope_command,
+    get_assembly_thermal_model,
+    get_envelope_read_model,
+    get_project_material_drift_report,
+)
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import get_saved_document
 from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
@@ -42,6 +52,15 @@ def get_assembly_thermal(
     source: Annotated[ProjectDocumentSource, Query()] = "draft",
 ) -> AssemblyThermalResponse:
     return get_assembly_thermal_model(version_id, access, assembly_id, source)
+
+
+@router.get("/envelope/material-catalog-drift", response_model=ProjectMaterialDriftReport)
+def get_material_catalog_drift(
+    version_id: UUID,
+    access: ProjectViewAccess,
+    source: Annotated[ProjectDocumentSource, Query()] = "draft",
+) -> ProjectMaterialDriftReport:
+    return get_project_material_drift_report(version_id, access, source)
 
 
 @router.get("/envelope/export/hbjson")

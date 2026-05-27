@@ -57,6 +57,13 @@ def get_material(conn: Connection[Any], material_id: str) -> dict[str, Any] | No
     return conn.execute(query, {"id": material_id}).fetchone()
 
 
+def get_materials_by_ids(conn: Connection[Any], material_ids: list[str]) -> list[dict[str, Any]]:
+    if not material_ids:
+        return []
+    query = sql.SQL("{select} WHERE cm.id = ANY(%(ids)s)").format(select=sql.SQL(_SELECT_JOINED))
+    return list(conn.execute(query, {"ids": material_ids}).fetchall())
+
+
 def insert_material(
     conn: Connection[Any],
     *,

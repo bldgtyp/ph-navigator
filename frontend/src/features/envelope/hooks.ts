@@ -5,6 +5,7 @@ import {
   downloadEnvelopeHbjson,
   fetchAssemblyThermal,
   fetchEnvelopeReadModel,
+  fetchMaterialCatalogDrift,
   postEnvelopeCommand,
 } from "./api";
 import { envelopeQueryKeys } from "./query-keys";
@@ -39,6 +40,7 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
     },
     onSuccess: (slice, variables) => {
       queryClient.setQueryData(envelopeQueryKeys.read(projectId, slice.version_id, "draft"), slice);
+      invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);
       if (slice.draft_etag !== variables.current.draft_etag) {
         markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
@@ -64,6 +66,21 @@ export function useAssemblyThermalQuery(
     queryFn: ({ signal }) =>
       fetchAssemblyThermal(projectId, resolvedVersionId, resolvedAssemblyId, source, signal),
     enabled: enabled && resolvedVersionId.length > 0 && resolvedAssemblyId.length > 0,
+  });
+}
+
+export function useMaterialCatalogDriftQuery(
+  projectId: string,
+  versionId: string | null,
+  source: EnvelopeReadSource,
+  enabled = true,
+) {
+  const resolvedVersionId = versionId ?? "";
+  return useQuery({
+    queryKey: envelopeQueryKeys.materialDrift(projectId, resolvedVersionId, source),
+    queryFn: ({ signal }) =>
+      fetchMaterialCatalogDrift(projectId, resolvedVersionId, source, signal),
+    enabled: enabled && resolvedVersionId.length > 0,
   });
 }
 
@@ -102,10 +119,30 @@ function invalidateThermalQueries(
   queryClient.invalidateQueries({ queryKey: [...envelopeQueryKeys.all(projectId), "thermal"] });
 }
 
+function invalidateMaterialDriftQueries(
+  queryClient: QueryClient,
+  projectId: string,
+  versionId: string,
+  command: EnvelopeCommand,
+): void {
+  if (!materialDriftInvalidationCommands.has(command.kind)) return;
+  queryClient.invalidateQueries({
+    queryKey: envelopeQueryKeys.materialDrift(projectId, versionId, "draft"),
+  });
+}
+
 const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "create_assembly",
   "duplicate_assembly",
   "delete_assembly",
   "update_project_material",
+  "refresh_project_material_from_catalog",
+  "remove_unused_project_materials",
+]);
+
+const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
+  "pick_catalog_material",
+  "update_project_material",
+  "refresh_project_material_from_catalog",
   "remove_unused_project_materials",
 ]);

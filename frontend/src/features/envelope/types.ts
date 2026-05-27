@@ -91,6 +91,51 @@ export type AssemblyThermalResponse = {
   warnings: string[];
 };
 
+export type ProjectMaterialDriftState =
+  | "in_sync"
+  | "customized"
+  | "drifted"
+  | "source_deactivated"
+  | "source_missing";
+
+export type ProjectMaterialDriftFieldKey =
+  | "argb_color"
+  | "category"
+  | "conductivity_w_mk"
+  | "density_kg_m3"
+  | "emissivity"
+  | "name"
+  | "notes"
+  | "specific_heat_j_kgk";
+
+export type ProjectMaterialDriftField = {
+  key: ProjectMaterialDriftFieldKey;
+  project_value: unknown;
+  catalog_value: unknown;
+  is_overridden: boolean;
+  differs: boolean;
+};
+
+export type ProjectMaterialDriftItem = {
+  project_material_id: string;
+  state: ProjectMaterialDriftState;
+  catalog_record_id: string;
+  pinned_catalog_version_id: string;
+  current_catalog_version_id: string | null;
+  local_overrides: string[];
+  fields: ProjectMaterialDriftField[];
+};
+
+export type ProjectMaterialDriftReport = BaseTableSlice & {
+  materials: ProjectMaterialDriftItem[];
+};
+
+export type ProjectMaterialRefreshChoice = {
+  key: ProjectMaterialDriftFieldKey;
+  action: "keep_mine" | "take_catalog" | "use_value";
+  value?: unknown;
+};
+
 export type EnvelopeCommand =
   | {
       kind: "create_assembly";
@@ -195,7 +240,12 @@ export type EnvelopeCommand =
       layer_id: string;
       segment_id: string;
     }
-  | { kind: "remove_unused_project_materials" };
+  | { kind: "remove_unused_project_materials" }
+  | {
+      kind: "refresh_project_material_from_catalog";
+      project_material_id: string;
+      field_choices: ProjectMaterialRefreshChoice[];
+    };
 
 export type EnvelopeCommandBody = {
   command: EnvelopeCommand;
