@@ -14,6 +14,7 @@ export type RefreshFieldDelta = {
   ref_value: unknown;
   catalog_value: unknown;
   is_overridden: boolean;
+  skip_reason?: "field_type_changed";
 };
 
 export type RefreshSlotReport = {

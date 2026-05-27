@@ -1,13 +1,12 @@
-"""`"record_id"` reserved-slug guard.
+"""`"record_id"` reserved custom-field key guard.
 
-`record_id` is the field-key the Phase 2 identifier slot will occupy on
-every project-document table. Phase 1a reserves the namespace before
-the semantics ship so an MCP / REST caller cannot land a custom field
-whose advisory `field_key` collides with the upcoming reserved slot.
+`record_id` is the built-in identifier field-key on every
+project-document table. Custom-field mutations must not claim that
+slot, but the canonical `TableFieldDef` model must still accept it for
+built-in seeds.
 
-The Pydantic `field_validator` on `CustomFieldDef.field_key` runs at
-parse time, so every write path that constructs a `CustomFieldDef` from
-JSON (REST, MCP, fixtures, schema-mutation envelopes) is covered.
+The rejection therefore lives in the schema-mutation guard, where the
+field's custom-side origin is known.
 """
 
 from __future__ import annotations
@@ -15,18 +14,18 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from pydantic import ValidationError
+from fastapi import HTTPException
 
 from features.project_document.custom_fields import (
     RESERVED_FIELD_KEY_RECORD_ID,
-    CustomFieldDef,
     CustomFieldType,
+    TableFieldDef,
 )
+from features.project_document.mutations.guards import reject_reserved_field_key
 
 
-def _make_field(field_id: str, *, field_key: str | None = None) -> CustomFieldDef:
-    return CustomFieldDef(
-        id=field_id,
+def _make_field(field_key: str) -> TableFieldDef:
+    return TableFieldDef(
         field_key=field_key,
         display_name="Notes",
         field_type=CustomFieldType.short_text,
@@ -35,33 +34,38 @@ def _make_field(field_id: str, *, field_key: str | None = None) -> CustomFieldDe
     )
 
 
-def test_validator_rejects_reserved_record_id_slug() -> None:
-    with pytest.raises(ValidationError) as excinfo:
-        _make_field("cf_x", field_key=RESERVED_FIELD_KEY_RECORD_ID)
-    assert RESERVED_FIELD_KEY_RECORD_ID in str(excinfo.value)
+def test_guard_rejects_reserved_record_id_custom_field_key() -> None:
+    with pytest.raises(HTTPException) as excinfo:
+        reject_reserved_field_key(RESERVED_FIELD_KEY_RECORD_ID)
+
+    detail = excinfo.value.detail
+    assert isinstance(detail, dict)
+    assert detail["error_code"] == "custom_field_invalid_field_id"
+    assert detail["details"] == {
+        "field_id": RESERVED_FIELD_KEY_RECORD_ID,
+        "reason": "reserved_field_key",
+    }
 
 
-def test_validator_accepts_other_field_keys() -> None:
-    field = _make_field("cf_x", field_key="notes_export_key")
-    assert field.field_key == "notes_export_key"
+def test_guard_accepts_other_custom_field_keys() -> None:
+    reject_reserved_field_key("cf_notes")
 
 
-def test_validator_accepts_none_field_key() -> None:
-    field = _make_field("cf_x", field_key=None)
-    assert field.field_key is None
+def test_table_field_def_accepts_builtin_record_id_seed() -> None:
+    field = _make_field(RESERVED_FIELD_KEY_RECORD_ID)
+    assert field.field_key == RESERVED_FIELD_KEY_RECORD_ID
 
 
-def test_validator_runs_through_model_validate() -> None:
-    # Mirrors the REST / MCP path: JSON in → validated CustomFieldDef.
+def test_table_field_def_model_validate_accepts_builtin_record_id_seed() -> None:
     payload = {
-        "id": "cf_x",
         "field_key": RESERVED_FIELD_KEY_RECORD_ID,
-        "display_name": "Bogus",
-        "field_type": "short_text",
+        "display_name": "Record-ID",
+        "field_type": "formula",
         "config": {},
         "description": None,
+        "origin": "built_in",
         "created_at": "2026-05-26T12:00:00Z",
         "created_by": None,
     }
-    with pytest.raises(ValidationError):
-        CustomFieldDef.model_validate(payload)
+    field = TableFieldDef.model_validate(payload)
+    assert field.field_key == RESERVED_FIELD_KEY_RECORD_ID

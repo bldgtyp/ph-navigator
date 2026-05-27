@@ -36,13 +36,9 @@ export function reorderColumnIds(
   return next;
 }
 
-// Plan 30 — when a `pinnedColumnId` is provided, that column is forced
-// to slot 0 of the ordered/visible list regardless of `columnOrder` and
-// is never hidden. The primary-column constraints (slot 0 unhidable,
-// not drag-reorderable, hide-menu suppressed) apply to whichever
-// column ends up in slot 0; the `pinnedColumnId` slot just gives the
-// caller a way to nominate one explicitly when the identifier config
-// determines it.
+// When a `pinnedColumnId` is provided, that column is forced to slot 0
+// of the ordered/visible list regardless of `columnOrder` and is never
+// hidden. DataTable uses this for the real `record_id` column.
 export function useGridColumns<TRow>(
   columnDefs: DataTableColumnDef<TRow>[],
   columnOrder: string[],

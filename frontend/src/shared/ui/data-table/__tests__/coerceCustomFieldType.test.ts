@@ -1,6 +1,50 @@
 import { describe, expect, test } from "vitest";
 import { computeLocalPreflight } from "../lib/coerceCustomFieldType";
+import { CONVERSION_MATRIX } from "../lib/typeConversionMatrix";
 import type { FieldOption } from "../types";
+
+describe("type conversion matrix — formula parity", () => {
+  test("mirrors the backend formula conversion entries", () => {
+    const entries = Object.values(CONVERSION_MATRIX).flatMap((targets) => Object.entries(targets));
+    const formulaEntries = Object.entries(CONVERSION_MATRIX).flatMap(([from, targets]) =>
+      Object.entries(targets)
+        .filter(([to]) => from === "formula" || to === "formula")
+        .map(([to, policy]) => `${from}->${to}:${policy}`),
+    );
+
+    expect(entries).toHaveLength(25);
+    expect(formulaEntries.sort()).toEqual([
+      "formula->long_text:lossless",
+      "formula->number:lossy",
+      "formula->short_text:lossless",
+      "formula->single_select:create_options",
+      "formula->url:lossy",
+      "long_text->formula:discard_then_author",
+      "number->formula:discard_then_author",
+      "short_text->formula:discard_then_author",
+      "single_select->formula:discard_then_author",
+      "url->formula:discard_then_author",
+    ]);
+  });
+});
+
+describe("computeLocalPreflight — primitive → formula (discard_then_author)", () => {
+  test("flags non-empty source cells as discarded for formula authoring", () => {
+    const result = computeLocalPreflight("short_text", "formula", [
+      { rowId: "r1", rawValue: "101" },
+      { rowId: "r2", rawValue: "" },
+      { rowId: "r3", rawValue: null },
+      { rowId: "r4", rawValue: "102" },
+    ]);
+
+    expect(result).not.toBeNull();
+    expect(result!.total).toBe(4);
+    expect(result!.incompatible).toEqual([
+      { rowId: "r1", rawValue: "101", reason: "discarded_for_formula_authoring" },
+      { rowId: "r4", rawValue: "102", reason: "discarded_for_formula_authoring" },
+    ]);
+  });
+});
 
 describe("computeLocalPreflight — single_select → number (substitute_labels)", () => {
   // Mirrors the backend chain coercion: resolve option_id → label, then

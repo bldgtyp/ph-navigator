@@ -35,9 +35,7 @@ describe("FieldConfigModal — per-attribute lock list", () => {
     expect(screen.getByLabelText("Description")).not.toBeDisabled();
   });
 
-  // Phase 1a hard rule: type picker is disabled on every built-in
-  // regardless of lock-list contents (Phase 3 lifts this).
-  test("type picker is disabled on every built-in regardless of lock-list", () => {
+  test("type picker stays enabled on unlocked built-in field types", () => {
     const builtIn: FieldDef = {
       field_key: "number",
       field_type: "text",
@@ -45,6 +43,25 @@ describe("FieldConfigModal — per-attribute lock list", () => {
       display_name: "Number",
       built_in: true,
       locked: ["delete", "duplicate"],
+    };
+    render(<Harness field={builtIn} />);
+    const typePicker = screen.getByRole("radiogroup", { name: "Field type" });
+    const buttons = typePicker.querySelectorAll("button");
+    expect(buttons.length).toBeGreaterThan(0);
+    buttons.forEach((button) => {
+      expect(button).not.toBeDisabled();
+      expect(button.getAttribute("title")).not.toBe("Field Locked");
+    });
+  });
+
+  test("field_type in the lock list disables the type picker on built-ins", () => {
+    const builtIn: FieldDef = {
+      field_key: "floor_level",
+      field_type: "single_select",
+      custom_field_type: "single_select",
+      display_name: "Floor",
+      built_in: true,
+      locked: ["field_type", "delete", "duplicate"],
     };
     render(<Harness field={builtIn} />);
     const typePicker = screen.getByRole("radiogroup", { name: "Field type" });

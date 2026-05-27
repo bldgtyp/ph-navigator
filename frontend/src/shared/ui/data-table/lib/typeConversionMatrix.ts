@@ -6,7 +6,12 @@
 
 import type { CustomFieldType } from "../hooks/useTableSchema";
 
-export type ConversionPolicy = "lossless" | "lossy" | "create_options" | "substitute_labels";
+export type ConversionPolicy =
+  | "lossless"
+  | "lossy"
+  | "create_options"
+  | "substitute_labels"
+  | "discard_then_author";
 
 export const CONVERSION_MATRIX: Partial<
   Record<CustomFieldType, Partial<Record<CustomFieldType, ConversionPolicy>>>
@@ -16,20 +21,24 @@ export const CONVERSION_MATRIX: Partial<
     number: "lossy",
     url: "lossy",
     single_select: "create_options",
+    formula: "discard_then_author",
   },
   long_text: {
     short_text: "lossy",
     number: "lossy",
     url: "lossy",
     single_select: "create_options",
+    formula: "discard_then_author",
   },
   number: {
     short_text: "lossless",
     long_text: "lossless",
+    formula: "discard_then_author",
   },
   url: {
     short_text: "lossless",
     long_text: "lossless",
+    formula: "discard_then_author",
   },
   single_select: {
     short_text: "substitute_labels",
@@ -37,6 +46,14 @@ export const CONVERSION_MATRIX: Partial<
     // Substitute the option label, then number-coerce on the backend.
     // Labels that don't parse as numbers are cleared (preflight ack).
     number: "substitute_labels",
+    formula: "discard_then_author",
+  },
+  formula: {
+    short_text: "lossless",
+    long_text: "lossless",
+    number: "lossy",
+    url: "lossy",
+    single_select: "create_options",
   },
 };
 

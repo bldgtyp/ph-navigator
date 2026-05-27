@@ -72,6 +72,7 @@ SlotName = Literal[
     "glazing",
 ]
 SlotState = Literal["in_sync", "drifted", "source_deactivated"]
+RefreshSkipReason = Literal["field_type_changed"]
 
 _FRAME_SLOTS: tuple[tuple[SlotName, str], ...] = (
     ("frame.top", "top"),
@@ -98,6 +99,7 @@ class RefreshFieldDelta(BaseModel):
     ref_value: Any
     catalog_value: Any
     is_overridden: bool
+    skip_reason: RefreshSkipReason | None = None
 
 
 class RefreshSlotReport(BaseModel):

@@ -1,5 +1,4 @@
 import type { DataTableColumnDef, FieldDef, SortRule, ViewState } from "../../types";
-import { IDENTIFIER_COLUMN_ID } from "../../types";
 import { pruneExpandedGroups } from "../body/prune";
 import { fieldKeyFieldDefMap } from "../internal/fieldKeyFieldDefMap";
 
@@ -31,14 +30,6 @@ export function sanitizeViewStateForSchema(
   const fieldDefByKey = fieldKeyFieldDefMap(fieldDefs);
   const columnIds = new Set(columns.map((column) => column.id));
   const fieldKeys = new Set(columns.map((column) => column.fieldKey));
-  // Plan 30 — the synthetic identifier column (`kind: "computed"`)
-  // does not survive a `columns` snapshot taken before the identifier
-  // applies (e.g. a persistence layer that fingerprints the raw schema
-  // only). Whitelist its id / field_key so persisted sort rules and
-  // column widths under `__record_id__` round-trip cleanly.
-  columnIds.add(IDENTIFIER_COLUMN_ID);
-  fieldKeys.add(IDENTIFIER_COLUMN_ID);
-
   const validOptionIds = (fieldKey: string): Set<string> | null => {
     const fieldDef = fieldDefByKey.get(fieldKey);
     if (fieldDef?.field_type !== "single_select") return null;

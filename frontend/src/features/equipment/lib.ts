@@ -46,6 +46,7 @@ import {
 } from "../../shared/ui/data-table/lib";
 import { generatedId } from "../../shared/lib/ids";
 import { readAttachmentAssetIds } from "../assets/lib";
+import { customNumberValue, customTextValue } from "./lib/customValueReaders";
 export {
   isDraftStaleError,
   isInvalidProjectDocumentError,
@@ -68,35 +69,37 @@ const ROOMS_CUSTOM_OPTION_PREFIX = "rooms.cf_";
 
 export const ROOMS_SCHEMA_CORE_FIELD_KEYS = [
   "id",
-  "number",
-  "name",
   "floor_level",
   "building_zone",
-  "num_people",
-  "num_bedrooms",
   "icfa_factor",
   "erv_unit_ids",
   "catalog_origin",
   "notes",
+  "custom_values",
 ] as const;
 
 export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
   "id",
   "device_type",
+  "phase",
+  "notes",
+  "link",
+  PUMP_DATASHEET_FIELD_KEY,
+  "custom_values",
+] as const;
+
+const ROOM_CUSTOM_VALUE_FIELD_KEYS = new Set(["number", "name", "num_people", "num_bedrooms"]);
+const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
   "use",
-  "tag",
   "manufacturer",
   "model",
   "volts",
-  "phase",
   "horse_power",
   "wattage",
   "flow_gpm",
   "runtime_khr_yr",
-  "notes",
-  "link",
-  PUMP_DATASHEET_FIELD_KEY,
-] as const;
+]);
 
 export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableFieldRenderOverlay> {
   return {
@@ -225,36 +228,39 @@ export function emptyPump(): PumpRow {
   return {
     id: generatedId(PUMP_ID_PREFIX),
     device_type: null,
-    use: null,
-    tag: null,
-    manufacturer: null,
-    model: null,
-    volts: null,
     phase: null,
-    horse_power: null,
-    wattage: null,
-    flow_gpm: null,
-    runtime_khr_yr: null,
     notes: null,
     link: null,
     datasheet_asset_ids: [],
+    custom_values: {
+      record_id: null,
+      use: null,
+      manufacturer: null,
+      model: null,
+      volts: null,
+      horse_power: null,
+      wattage: null,
+      flow_gpm: null,
+      runtime_khr_yr: null,
+    },
   };
 }
 
 export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
   return {
     id: generatedId(ROOM_ID_PREFIX),
-    number: "",
-    name: "",
     floor_level: defaultFloorLevel,
     building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
     icfa_factor: 1,
     erv_unit_ids: [],
     catalog_origin: null,
     notes: null,
-    custom: {},
+    custom_values: {
+      number: "",
+      name: "",
+      num_people: 0,
+      num_bedrooms: 0,
+    },
   };
 }
 
@@ -268,20 +274,32 @@ export function optionLabel(options: SingleSelectOption[], optionId: string | nu
 }
 
 export function sortedRooms(rooms: RoomRow[]): RoomRow[] {
-  return [...rooms].sort((a, b) =>
-    a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: "base" }),
-  );
+  return rooms
+    .map((room) => ({ room, number: customTextValue(room, "number") }))
+    .sort((a, b) =>
+      a.number.localeCompare(b.number, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
+    )
+    .map(({ room }) => room);
 }
 
 export function sortedPumps(pumps: PumpRow[]): PumpRow[] {
-  return [...pumps].sort((a, b) => {
-    const primary = (a.tag ?? a.use ?? a.id).localeCompare(b.tag ?? b.use ?? b.id, undefined, {
-      numeric: true,
-      sensitivity: "base",
-    });
-    if (primary !== 0) return primary;
-    return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" });
-  });
+  return pumps
+    .map((pump) => ({
+      pump,
+      primary: customTextValue(pump, "record_id") || customTextValue(pump, "use") || pump.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.pump.id.localeCompare(b.pump.id, undefined, { numeric: true, sensitivity: "base" });
+    })
+    .map(({ pump }) => pump);
 }
 
 export function firstRoomFloorOptionId(current: RoomsSlice): string | null {
@@ -488,8 +506,8 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
     payload.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY].map((option) => option.id),
   );
   for (const room of payload.rooms) {
-    if (!room.number.trim()) return "Room number is required.";
-    if (!room.name.trim()) return "Room name is required.";
+    if (!customTextValue(room, "number").trim()) return "Room number is required.";
+    if (!customTextValue(room, "name").trim()) return "Room name is required.";
     if (!room.floor_level || !floorOptionIds.has(room.floor_level)) {
       return "Floor level is required.";
     }
@@ -499,8 +517,12 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
     if (room.erv_unit_ids.length > 0) {
       return "ERV assignments are deferred until ERV units are available.";
     }
-    if (room.num_people < 0) return "People must be zero or greater.";
-    if (room.num_bedrooms < 0) return "Bedrooms must be zero or greater.";
+    if ((customNumberValue(room, "num_people") ?? 0) < 0) {
+      return "People must be zero or greater.";
+    }
+    if ((customNumberValue(room, "num_bedrooms") ?? 0) < 0) {
+      return "Bedrooms must be zero or greater.";
+    }
     if (room.icfa_factor < 0 || room.icfa_factor > 1) {
       return "iCFA factor must be between 0 and 1.";
     }
@@ -646,22 +668,6 @@ function applyWriteToRoom(
   value: unknown,
   customFieldKeys: ReadonlySet<string>,
 ): RoomRow {
-  if (isCustomFieldKey(fieldKey)) {
-    // Schema-drift guard: an unknown `cf_*` cannot land in `row.custom`
-    // — backend validation would reject it and the cell would have no
-    // column. Returning unchanged is the same shape we get for any
-    // other unrecognized field key.
-    if (!customFieldKeys.has(fieldKey)) return room;
-    return setCustomValue(room, { field_key: fieldKey }, value);
-  }
-  if (fieldKey === "number" && typeof value === "string") return { ...room, number: value };
-  if (fieldKey === "name" && typeof value === "string") return { ...room, name: value };
-  if (fieldKey === "num_people" && isNullableNumber(value)) {
-    return { ...room, num_people: value ?? 0 };
-  }
-  if (fieldKey === "num_bedrooms" && isNullableNumber(value)) {
-    return { ...room, num_bedrooms: value ?? 0 };
-  }
   if (fieldKey === "icfa_factor" && isNullableNumber(value)) {
     return { ...room, icfa_factor: value ?? 0 };
   }
@@ -670,6 +676,9 @@ function applyWriteToRoom(
   }
   if (fieldKey === ROOM_BUILDING_ZONE_KEY && isNullableOptionId(value)) {
     return { ...room, building_zone: value };
+  }
+  if (ROOM_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey) || customFieldKeys.has(fieldKey)) {
+    return setCustomValue(room, fieldKey, value);
   }
   return room;
 }
@@ -687,20 +696,17 @@ function applyWriteToPump(pump: PumpRow, fieldKey: string, value: unknown): Pump
   if (fieldKey === PUMP_DEVICE_TYPE_KEY && isNullableOptionId(value)) {
     return { ...pump, device_type: value };
   }
-  if (
-    ["use", "tag", "manufacturer", "model", "notes", "link"].includes(fieldKey) &&
-    (value === null || typeof value === "string")
-  ) {
+  if (["notes", "link"].includes(fieldKey) && (value === null || typeof value === "string")) {
     return { ...pump, [fieldKey]: value };
   }
-  if (
-    ["volts", "phase", "horse_power", "wattage", "flow_gpm", "runtime_khr_yr"].includes(fieldKey) &&
-    isNullableNumber(value)
-  ) {
+  if (fieldKey === "phase" && isNullableNumber(value)) {
     return { ...pump, [fieldKey]: value };
   }
   if (fieldKey === PUMP_DATASHEET_FIELD_KEY) {
     return { ...pump, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (PUMP_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(pump, fieldKey, value);
   }
   return pump;
 }
@@ -769,10 +775,13 @@ function upsertOption(
 function normalizeRoomForPayload(room: RoomRow): RoomRow {
   return {
     ...room,
-    number: room.number.trim(),
-    name: room.name.trim(),
-    num_people: Math.max(0, Math.trunc(room.num_people || 0)),
-    num_bedrooms: Math.max(0, Math.trunc(room.num_bedrooms || 0)),
+    custom_values: {
+      ...room.custom_values,
+      number: customTextValue(room, "number").trim(),
+      name: customTextValue(room, "name").trim(),
+      num_people: Math.max(0, Math.trunc(customNumberValue(room, "num_people") || 0)),
+      num_bedrooms: Math.max(0, Math.trunc(customNumberValue(room, "num_bedrooms") || 0)),
+    },
     icfa_factor: clamp(room.icfa_factor || 0, 0, 1),
     notes: room.notes?.trim() || null,
   };
@@ -783,20 +792,27 @@ function normalizePumpForPayload(pump: PumpRow): PumpRow {
     pump.phase === null || pump.phase === undefined ? null : Math.trunc(Number(pump.phase));
   return {
     ...pump,
-    use: pump.use?.trim() || null,
-    tag: pump.tag?.trim() || null,
-    manufacturer: pump.manufacturer?.trim() || null,
-    model: pump.model?.trim() || null,
-    volts: nonNegativeOrNull(pump.volts),
     phase: phase === 1 || phase === 3 ? phase : pump.phase,
-    horse_power: nonNegativeOrNull(pump.horse_power),
-    wattage: nonNegativeOrNull(pump.wattage),
-    flow_gpm: nonNegativeOrNull(pump.flow_gpm),
-    runtime_khr_yr: nonNegativeOrNull(pump.runtime_khr_yr),
+    custom_values: {
+      ...pump.custom_values,
+      record_id: nullableTrimmed(customTextValue(pump, "record_id")),
+      use: nullableTrimmed(customTextValue(pump, "use")),
+      manufacturer: nullableTrimmed(customTextValue(pump, "manufacturer")),
+      model: nullableTrimmed(customTextValue(pump, "model")),
+      volts: nonNegativeOrNull(customNumberValue(pump, "volts")),
+      horse_power: nonNegativeOrNull(customNumberValue(pump, "horse_power")),
+      wattage: nonNegativeOrNull(customNumberValue(pump, "wattage")),
+      flow_gpm: nonNegativeOrNull(customNumberValue(pump, "flow_gpm")),
+      runtime_khr_yr: nonNegativeOrNull(customNumberValue(pump, "runtime_khr_yr")),
+    },
     notes: pump.notes?.trim() || null,
     link: pump.link?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(pump.datasheet_asset_ids),
   };
+}
+
+function nullableTrimmed(value: string): string | null {
+  return value.trim() || null;
 }
 
 function nonNegativeOrNull(value: number | null): number | null {
@@ -838,12 +854,9 @@ function findOption(
 function roomFingerprint(room: RoomRow): string {
   return JSON.stringify([
     room.id,
-    room.number,
-    room.name,
+    room.custom_values,
     room.floor_level,
     room.building_zone,
-    room.num_people,
-    room.num_bedrooms,
     room.icfa_factor,
     room.erv_unit_ids,
     room.catalog_origin,

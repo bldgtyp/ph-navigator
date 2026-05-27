@@ -5,6 +5,7 @@
 import { ConfirmDeleteRoomDialog } from "./ConfirmDeleteRoomDialog";
 import { RoomModal } from "./RoomModal";
 import { emptyRoom, firstRoomFloorOptionId } from "../lib";
+import { customTextValue } from "../lib/customValueReaders";
 import type { RoomRow, RoomsSlice } from "../types";
 
 export type RoomModalState = { mode: "add" } | { mode: "edit"; room: RoomRow };
@@ -52,7 +53,7 @@ export function RoomDialogStack(props: RoomDialogStackProps) {
           title={
             roomModal.mode === "add"
               ? "New room"
-              : `Room: ${roomModal.room.number} - ${roomModal.room.name}`
+              : `Room: ${customTextValue(roomModal.room, "number")} - ${customTextValue(roomModal.room, "name")}`
           }
           room={
             roomModal.mode === "add"

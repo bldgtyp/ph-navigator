@@ -14,12 +14,78 @@ import {
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowInsert,
   roomsTableColumnsForSanitize,
-  roomsTableFieldDefs,
   validateRoomsPayload,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
-import type { CustomFieldDef } from "../../shared/ui/data-table";
-import { ROOM_BUILDING_ZONE_COLUMN_ID, ROOM_FLOOR_LEVEL_COLUMN_ID, type RoomsSlice } from "./types";
+import type { TableFieldDef } from "../../shared/ui/data-table";
+import {
+  ROOM_BUILDING_ZONE_COLUMN_ID,
+  ROOM_FLOOR_LEVEL_COLUMN_ID,
+  type RoomRow,
+  type RoomsSlice,
+} from "./types";
+
+const createdAt = "2026-05-25T00:00:00Z";
+
+function builtInField(
+  fieldKey: string,
+  displayName: string,
+  fieldType: TableFieldDef["field_type"],
+): TableFieldDef {
+  return {
+    field_key: fieldKey,
+    display_name: displayName,
+    field_type: fieldType,
+    config: {},
+    description: null,
+    origin: "built_in",
+    created_at: createdAt,
+    created_by: null,
+  };
+}
+
+const roomsBuiltInFieldDefs: TableFieldDef[] = [
+  builtInField("record_id", "Record-ID", "formula"),
+  builtInField("number", "Number", "short_text"),
+  builtInField("name", "Name", "short_text"),
+  builtInField("floor_level", "Floor", "single_select"),
+  builtInField("building_zone", "Zone", "single_select"),
+  builtInField("num_people", "People", "number"),
+  builtInField("num_bedrooms", "Bedrooms", "number"),
+  builtInField("icfa_factor", "iCFA", "number"),
+];
+
+function customField(overrides: Partial<TableFieldDef> = {}): TableFieldDef {
+  const fieldKey = overrides.field_key ?? "cf_text";
+  return {
+    field_key: fieldKey,
+    display_name: "Test",
+    field_type: "short_text",
+    config: {},
+    description: null,
+    origin: "custom",
+    created_at: createdAt,
+    created_by: null,
+    ...overrides,
+  };
+}
+
+function withCustomValues(room: RoomRow, customValues: Partial<RoomRow["custom_values"]>): RoomRow {
+  return {
+    ...room,
+    custom_values: {
+      ...room.custom_values,
+      ...customValues,
+    },
+  };
+}
+
+function roomFixture(
+  overrides: Partial<Omit<RoomRow, "custom_values">> = {},
+  customValues: Partial<RoomRow["custom_values"]> = {},
+): RoomRow {
+  return withCustomValues({ ...emptyRoom(), ...overrides }, customValues);
+}
 
 const baseSlice: RoomsSlice = {
   project_id: "project-1",
@@ -28,7 +94,7 @@ const baseSlice: RoomsSlice = {
   version_etag: "version-etag",
   draft_etag: null,
   rooms: [],
-  custom_fields: [],
+  field_defs: roomsBuiltInFieldDefs,
   single_select_options: {
     "rooms.floor_level": [],
     "rooms.building_zone": [],
@@ -38,22 +104,18 @@ const baseSlice: RoomsSlice = {
 describe("equipment room helpers", () => {
   test("creates room options in the same Rooms payload as the row write", () => {
     vi.spyOn(globalThis.crypto, "randomUUID")
+      .mockReturnValueOnce("00000000-0000-4000-8000-000000000000")
       .mockReturnValueOnce("aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa")
       .mockReturnValueOnce("bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb");
-    const room = {
-      id: "rm_living",
-      number: " 101 ",
-      name: " Living Room ",
-      floor_level: null,
-      building_zone: null,
-      num_people: 2,
-      num_bedrooms: 0,
-      icfa_factor: 1,
-      erv_unit_ids: [],
-      catalog_origin: null,
-      notes: null,
-      custom: {},
-    };
+    const room = withCustomValues(
+      {
+        ...emptyRoom(),
+        id: "rm_living",
+        floor_level: null,
+        building_zone: null,
+      },
+      { number: " 101 ", name: " Living Room ", num_people: 2 },
+    );
 
     const payload = nextRoomsPayload(baseSlice, room, {
       floorLevel: "Ground",
@@ -61,8 +123,8 @@ describe("equipment room helpers", () => {
     });
 
     expect(payload.rooms).toHaveLength(1);
-    expect(payload.rooms[0]?.number).toBe("101");
-    expect(payload.rooms[0]?.name).toBe("Living Room");
+    expect(payload.rooms[0]?.custom_values.number).toBe("101");
+    expect(payload.rooms[0]?.custom_values.name).toBe("Living Room");
     expect(payload.rooms[0]?.floor_level).toBe("opt_aaaaaaaaaaaa4aaaaaaaaaaaaaaaaaaa");
     expect(payload.rooms[0]?.building_zone).toBe("opt_bbbbbbbbbbbb4bbbbbbbbbbbbbbbbbbb");
     expect(payload.single_select_options["rooms.floor_level"][0]?.label).toBe("Ground");
@@ -79,7 +141,7 @@ describe("equipment room helpers", () => {
     };
     const payload = nextRoomsPayload(
       current,
-      { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" },
+      roomFixture({ id: "rm_1" }, { number: "101", name: "Living" }),
       { floorLevel: " ground ", buildingZone: "" },
     );
 
@@ -107,8 +169,8 @@ describe("equipment room helpers", () => {
   });
 
   test("deletes rows without changing options", () => {
-    const room = { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" };
-    const other = { ...emptyRoom(), id: "rm_2", number: " 101 ", name: "Kitchen" };
+    const room = roomFixture({ id: "rm_1" }, { number: "101", name: "Living" });
+    const other = roomFixture({ id: "rm_2" }, { number: " 101 ", name: "Kitchen" });
     const current: RoomsSlice = { ...baseSlice, rooms: [room, other] };
 
     expect(deleteRoomPayload(current, "rm_1").rooms).toEqual([other]);
@@ -145,8 +207,8 @@ describe("equipment room helpers", () => {
   });
 
   test("detects whether a remote Rooms slice changes the active room scope", () => {
-    const room = { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" };
-    const otherRoom = { ...emptyRoom(), id: "rm_2", number: "102", name: "Kitchen" };
+    const room = roomFixture({ id: "rm_1" }, { number: "101", name: "Living" });
+    const otherRoom = roomFixture({ id: "rm_2" }, { number: "102", name: "Kitchen" });
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [room],
@@ -162,7 +224,7 @@ describe("equipment room helpers", () => {
     expect(
       remoteSliceChangesActiveRoom(
         current,
-        { ...current, rooms: [{ ...room, name: "Living Room" }] },
+        { ...current, rooms: [withCustomValues(room, { name: "Living Room" })] },
         room,
       ),
     ).toBe(true);
@@ -188,13 +250,13 @@ describe("equipment room helpers", () => {
   test("applies paste writes and created options in one Rooms payload", () => {
     const current: RoomsSlice = {
       ...baseSlice,
-      rooms: [{ ...emptyRoom(), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [roomFixture({ id: "rm_1" }, { number: "101", name: "Living" })],
     };
 
     const payload = roomsPayloadFromCellWrites(
       current,
       [
-        { rowId: "rm_1", fieldKey: "rooms.floor_level", value: "opt_ground" },
+        { rowId: "rm_1", fieldKey: "floor_level", value: "opt_ground" },
         { rowId: "rm_1", fieldKey: "num_people", value: 3 },
       ],
       {
@@ -203,7 +265,7 @@ describe("equipment room helpers", () => {
     );
 
     expect(payload.rooms[0]?.floor_level).toBe("opt_ground");
-    expect(payload.rooms[0]?.num_people).toBe(3);
+    expect(payload.rooms[0]?.custom_values.num_people).toBe(3);
     expect(payload.single_select_options["rooms.floor_level"]).toEqual([
       { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
     ]);
@@ -213,13 +275,7 @@ describe("equipment room helpers", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
-        {
-          ...emptyRoom("opt_ground"),
-          id: "rm_1",
-          number: "101",
-          name: "Living",
-          floor_level: "opt_mez",
-        },
+        roomFixture({ id: "rm_1", floor_level: "opt_mez" }, { number: "101", name: "Living" }),
       ],
       single_select_options: {
         "rooms.floor_level": [
@@ -232,7 +288,7 @@ describe("equipment room helpers", () => {
 
     const payload = roomsPayloadFromCellWrites(
       current,
-      [{ rowId: "rm_1", fieldKey: "rooms.floor_level", value: "opt_ground" }],
+      [{ rowId: "rm_1", fieldKey: "floor_level", value: "opt_ground" }],
       {},
       { "rooms.floor_level": ["opt_mez"] },
     );
@@ -246,13 +302,16 @@ describe("equipment room helpers", () => {
   test("validates required floor before draft writes and allows duplicate room numbers", () => {
     const missingFloor = {
       ...baseSlice,
-      rooms: [{ ...emptyRoom(), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [roomFixture({ id: "rm_1" }, { number: "101", name: "Living" })],
     };
     const duplicate = {
       ...baseSlice,
       rooms: [
-        { ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" },
-        { ...emptyRoom("opt_ground"), id: "rm_2", number: " 101 ", name: "Kitchen" },
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+        roomFixture(
+          { id: "rm_2", floor_level: "opt_ground" },
+          { number: " 101 ", name: "Kitchen" },
+        ),
       ],
       single_select_options: {
         "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
@@ -268,14 +327,10 @@ describe("equipment room helpers", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
-        {
-          ...emptyRoom("opt_ground"),
-          id: "rm_1",
-          number: "101",
-          name: "Living",
-          num_people: 3,
-          erv_unit_ids: ["erv_fake"],
-        },
+        roomFixture(
+          { id: "rm_1", floor_level: "opt_ground", erv_unit_ids: ["erv_fake"] },
+          { number: "101", name: "Living", num_people: 3 },
+        ),
       ],
       single_select_options: {
         "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
@@ -289,7 +344,7 @@ describe("equipment room helpers", () => {
       {},
     );
 
-    expect(payload.rooms[0]?.num_people).toBe(0);
+    expect(payload.rooms[0]?.custom_values.num_people).toBe(0);
     expect(validateRoomsPayload(payload)).toBe(
       "ERV assignments are deferred until ERV units are available.",
     );
@@ -299,7 +354,7 @@ describe("equipment room helpers", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
-        { ...emptyRoom(), id: "rm_1", number: "101", name: "Living", floor_level: "opt_ground" },
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
       ],
       single_select_options: {
         "rooms.floor_level": [
@@ -345,20 +400,10 @@ describe("equipment room helpers", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
-        {
-          id: "rm_5",
-          number: "5",
-          name: "Living",
-          floor_level: ground.id,
-          building_zone: null,
-          num_people: 2,
-          num_bedrooms: 1,
-          icfa_factor: 0.85,
-          erv_unit_ids: [],
-          catalog_origin: null,
-          notes: null,
-          custom: {},
-        },
+        roomFixture(
+          { id: "rm_5", floor_level: ground.id, icfa_factor: 0.85 },
+          { number: "5", name: "Living", num_people: 2, num_bedrooms: 1 },
+        ),
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     };
@@ -375,8 +420,8 @@ describe("equipment room helpers", () => {
     );
     expect(payload.rooms).toHaveLength(2);
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
-    expect(inserted?.number).toBe("");
-    expect(inserted?.name).toBe("");
+    expect(inserted?.custom_values.number).toBe("");
+    expect(inserted?.custom_values.name).toBe("");
     expect(inserted?.floor_level).toBeNull();
     expect(inserted?.icfa_factor).toBe(1);
   });
@@ -386,34 +431,8 @@ describe("equipment room helpers", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
-        {
-          id: "rm_1",
-          number: "1",
-          name: "Living",
-          floor_level: ground.id,
-          building_zone: null,
-          num_people: 0,
-          num_bedrooms: 0,
-          icfa_factor: 1,
-          erv_unit_ids: [],
-          catalog_origin: null,
-          notes: null,
-          custom: {},
-        },
-        {
-          id: "rm_2",
-          number: "2",
-          name: "Kitchen",
-          floor_level: ground.id,
-          building_zone: null,
-          num_people: 0,
-          num_bedrooms: 0,
-          icfa_factor: 1,
-          erv_unit_ids: [],
-          catalog_origin: null,
-          notes: null,
-          custom: {},
-        },
+        roomFixture({ id: "rm_1", floor_level: ground.id }, { number: "1", name: "Living" }),
+        roomFixture({ id: "rm_2", floor_level: ground.id }, { number: "2", name: "Kitchen" }),
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     };
@@ -431,9 +450,10 @@ describe("equipment room helpers", () => {
   // silently filters dragged-reorder entries out of view.columnOrder
   // and the user's drag is undone on render.
   test("roomsTableColumnsForSanitize emits ids that match RoomsTable column ids", () => {
-    const columns = roomsTableColumnsForSanitize(roomsTableFieldDefs(baseSlice));
+    const columns = roomsTableColumnsForSanitize(baseSlice.field_defs);
     const ids = columns.map((column) => column.id);
     expect(ids).toEqual([
+      "record_id",
       "number",
       "name",
       ROOM_FLOOR_LEVEL_COLUMN_ID,
@@ -441,7 +461,6 @@ describe("equipment room helpers", () => {
       "num_people",
       "num_bedrooms",
       "icfa_factor",
-      "erv_unit_ids",
     ]);
     expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");
     expect(ROOM_BUILDING_ZONE_COLUMN_ID).toBe("building_zone");
@@ -449,45 +468,33 @@ describe("equipment room helpers", () => {
 
   // ---------------------------------------------------------------
   // Plan-18 regression: every RoomsReplacePayload builder must carry
-  // `custom_fields` so the backend whole-table-replace path does not
+  // `field_defs` so the backend whole-table-replace path does not
   // wipe user-added columns. Plan-13 D16 + plan-14 §1.5 keep type
   // coercion server-authoritative, so these tests do not assert any
   // per-type validation on the client.
   // ---------------------------------------------------------------
 
-  const cfText: CustomFieldDef = {
-    id: "cf_text",
-    field_key: "u_test",
-    display_name: "Test",
-    field_type: "short_text",
-    config: {},
-    description: null,
-    created_at: "2026-05-25T00:00:00Z",
-    created_by: null,
-  };
-  const cfPalette: CustomFieldDef = {
-    id: "cf_palette",
-    field_key: "u_palette",
+  const cfText = customField({ field_key: "cf_text" });
+  const cfPalette = customField({
+    field_key: "cf_palette",
     display_name: "Palette",
     field_type: "single_select",
-    config: {},
-    description: null,
-    created_at: "2026-05-25T00:00:00Z",
-    created_by: null,
-  };
+  });
 
-  function sliceWithCustomFields(custom: CustomFieldDef[], extra: Partial<RoomsSlice> = {}) {
+  function sliceWithCustomFields(custom: TableFieldDef[], extra: Partial<RoomsSlice> = {}) {
     return {
       ...baseSlice,
-      custom_fields: custom,
+      field_defs: [...baseSlice.field_defs, ...custom],
       ...extra,
     } satisfies RoomsSlice;
   }
 
-  test("roomsPayloadFromCellWrites preserves custom_fields on a core-field write", () => {
+  test("roomsPayloadFromCellWrites preserves field_defs on a built-in field write", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current = sliceWithCustomFields([cfText], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     });
 
@@ -497,16 +504,18 @@ describe("equipment room helpers", () => {
       {},
     );
 
-    expect(payload.custom_fields).toEqual([cfText]);
-    // Cloned reference — mutating the input slice's custom_fields must
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
+    // Cloned reference — mutating the input slice's field_defs must
     // not leak into the produced payload.
-    expect(payload.custom_fields).not.toBe(current.custom_fields);
+    expect(payload.field_defs).not.toBe(current.field_defs);
   });
 
   test("roomsPayloadFromCellWrites routes cf_* writes through setCustomValue", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current = sliceWithCustomFields([cfText], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     });
 
@@ -516,21 +525,18 @@ describe("equipment room helpers", () => {
       {},
     );
 
-    expect(payload.rooms[0]?.custom).toEqual({ cf_text: "hello" });
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.rooms[0]?.custom_values.cf_text).toBe("hello");
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
   test("roomsPayloadFromCellWrites clears a cf_* value when written undefined", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current = sliceWithCustomFields([cfText], {
       rooms: [
-        {
-          ...emptyRoom("opt_ground"),
-          id: "rm_1",
-          number: "101",
-          name: "Living",
-          custom: { cf_text: "old" },
-        },
+        roomFixture(
+          { id: "rm_1", floor_level: "opt_ground" },
+          { number: "101", name: "Living", cf_text: "old" },
+        ),
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     });
@@ -541,13 +547,15 @@ describe("equipment room helpers", () => {
       {},
     );
 
-    expect(payload.rooms[0]?.custom).toEqual({});
+    expect(payload.rooms[0]?.custom_values.cf_text).toBeUndefined();
   });
 
   test("roomsPayloadFromCellWrites drops writes to unknown cf_* keys without synthesizing the field", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current = sliceWithCustomFields([cfText], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     });
 
@@ -557,15 +565,17 @@ describe("equipment room helpers", () => {
       {},
     );
 
-    expect(payload.rooms[0]?.custom).toEqual({});
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.rooms[0]?.custom_values.cf_ghost).toBeUndefined();
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
   test("roomsPayloadFromCellWrites preserves namespaced rooms.cf_* option lists", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const paletteRed = { id: "opt_red", label: "Red", color: "#ef4444", order: 0 };
     const current = sliceWithCustomFields([cfPalette], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
       single_select_options: {
         "rooms.floor_level": [ground],
         "rooms.building_zone": [],
@@ -580,7 +590,7 @@ describe("equipment room helpers", () => {
     );
 
     expect(payload.single_select_options["rooms.cf_palette"]).toEqual([paletteRed]);
-    expect(payload.custom_fields).toEqual([cfPalette]);
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfPalette]);
   });
 
   test("roomsPayloadFromCellWrites merges newOptions into a rooms.cf_* list", () => {
@@ -588,7 +598,9 @@ describe("equipment room helpers", () => {
     const paletteRed = { id: "opt_red", label: "Red", color: "#ef4444", order: 0 };
     const paletteBlue = { id: "opt_blue", label: "Blue", color: "#3b82f6", order: 1 };
     const current = sliceWithCustomFields([cfPalette], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
       single_select_options: {
         "rooms.floor_level": [ground],
         "rooms.building_zone": [],
@@ -603,7 +615,7 @@ describe("equipment room helpers", () => {
     );
 
     expect(payload.single_select_options["rooms.cf_palette"]).toEqual([paletteRed, paletteBlue]);
-    expect(payload.rooms[0]?.custom).toEqual({ cf_palette: "opt_blue" });
+    expect(payload.rooms[0]?.custom_values.cf_palette).toBe("opt_blue");
   });
 
   test("roomsPayloadFromCellWrites strips removed ids from a rooms.cf_* list", () => {
@@ -611,7 +623,9 @@ describe("equipment room helpers", () => {
     const paletteRed = { id: "opt_red", label: "Red", color: "#ef4444", order: 0 };
     const paletteBlue = { id: "opt_blue", label: "Blue", color: "#3b82f6", order: 1 };
     const current = sliceWithCustomFields([cfPalette], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
       single_select_options: {
         "rooms.floor_level": [ground],
         "rooms.building_zone": [],
@@ -631,8 +645,8 @@ describe("equipment room helpers", () => {
     ]);
   });
 
-  test("nextRoomsPayload preserves custom_fields", () => {
-    const room = { ...emptyRoom(), id: "rm_1", number: "101", name: "Living" };
+  test("nextRoomsPayload preserves field_defs", () => {
+    const room = roomFixture({ id: "rm_1" }, { number: "101", name: "Living" });
     const current = sliceWithCustomFields([cfText]);
 
     const payload = nextRoomsPayload(current, room, {
@@ -640,24 +654,28 @@ describe("equipment room helpers", () => {
       buildingZone: "Residential",
     });
 
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
-  test("deleteRoomPayload preserves custom_fields", () => {
+  test("deleteRoomPayload preserves field_defs", () => {
     const current = sliceWithCustomFields([cfText], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "101", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
+      ],
     });
 
     const payload = deleteRoomPayload(current, "rm_1");
 
     expect(payload.rooms).toEqual([]);
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
-  test("roomsPayloadFromRowInsert preserves custom_fields", () => {
+  test("roomsPayloadFromRowInsert preserves field_defs", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current = sliceWithCustomFields([cfText], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_5", number: "5", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_5", floor_level: "opt_ground" }, { number: "5", name: "Living" }),
+      ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     });
 
@@ -670,31 +688,27 @@ describe("equipment room helpers", () => {
       }),
     );
 
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
-  test("roomsPayloadFromRowDelete preserves custom_fields", () => {
+  test("roomsPayloadFromRowDelete preserves field_defs", () => {
     const current = sliceWithCustomFields([cfText], {
-      rooms: [{ ...emptyRoom("opt_ground"), id: "rm_1", number: "1", name: "Living" }],
+      rooms: [
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "1", name: "Living" }),
+      ],
     });
 
     const payload = roomsPayloadFromRowDelete(current, [
       { rowId: "rm_1", row: current.rooms[0], anchorRowId: null },
     ]);
 
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
-  test("replaceRoomOptionsPayload preserves custom_fields", () => {
+  test("replaceRoomOptionsPayload preserves field_defs", () => {
     const current = sliceWithCustomFields([cfText], {
       rooms: [
-        {
-          ...emptyRoom("opt_ground"),
-          id: "rm_1",
-          number: "101",
-          name: "Living",
-          floor_level: "opt_ground",
-        },
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
       ],
       single_select_options: {
         "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
@@ -706,6 +720,6 @@ describe("equipment room helpers", () => {
       { id: "opt_ground", label: "Cellar", color: "#10b981", order: 0 },
     ]);
 
-    expect(payload.custom_fields).toEqual([cfText]);
+    expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { FrameRef } from "../types";
-import { applyRefreshSelection, defaultRefreshSelection } from "./lib";
+import { applyRefreshSelection, canApplyRefresh, defaultRefreshSelection } from "./lib";
 import type { RefreshSlotReport } from "./types";
 
 const frameRef: FrameRef = {
@@ -80,6 +80,60 @@ describe("window refresh lib", () => {
     expect(next.catalog_origin?.catalog_version_id).toBe("framev_new");
     expect(next.catalog_origin?.synced_at).toBe("2026-05-14T12:00:00.000Z");
     expect(next.catalog_origin?.local_overrides).toEqual(["u_value_w_m2k"]);
+  });
+
+  test("skipped fields are neither selected nor applied", () => {
+    const slot = {
+      ...driftSlot([]),
+      fields: [
+        {
+          key: "name",
+          ref_value: "Old frame",
+          catalog_value: "New frame",
+          is_overridden: false,
+          skip_reason: "field_type_changed" as const,
+        },
+        {
+          key: "brand",
+          ref_value: "SR",
+          catalog_value: "SRX",
+          is_overridden: false,
+        },
+      ],
+    };
+
+    expect(defaultRefreshSelection(slot)).toEqual({
+      name: "keep",
+      brand: "update",
+    });
+    expect(canApplyRefresh(slot)).toBe(true);
+
+    const next = applyRefreshSelection(
+      frameRef,
+      slot,
+      { name: "update", brand: "update" },
+      "2026-05-14T12:00:00.000Z",
+    );
+
+    expect(next.name).toBe("Old frame");
+    expect(next.brand).toBe("SRX");
+  });
+
+  test("all-skipped drift slots cannot be applied", () => {
+    const slot = {
+      ...driftSlot([]),
+      fields: driftSlot([]).fields.map((field) => ({
+        ...field,
+        skip_reason: "field_type_changed" as const,
+      })),
+    };
+
+    expect(defaultRefreshSelection(slot)).toEqual({
+      name: "keep",
+      u_value_w_m2k: "keep",
+      width_mm: "keep",
+    });
+    expect(canApplyRefresh(slot)).toBe(false);
   });
 
   test("source_deactivated slots do not mutate the ref", () => {
