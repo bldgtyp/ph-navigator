@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: MCP tools, hardening, performance, accessibility, release gates,
        and docs closeout.
 RELATED:
-  - docs/features/assembly-builder-prd.md §§5.9, 13-15
+  - docs/plans/2026-05-26/assembly-builder/assembly-builder-prd.md §§5.9, 13-15
   - docs/plans/2026-05-26/assembly-builder/README.md
   - context/technical-requirements/llm-mcp-schema.md
   - context/technical-requirements/api.md

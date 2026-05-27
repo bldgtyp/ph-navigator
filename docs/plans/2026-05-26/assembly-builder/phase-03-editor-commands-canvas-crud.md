@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: Semantic command endpoint and editor workflows for assembly,
        layer, and segment geometry.
 RELATED:
-  - docs/features/assembly-builder-prd.md §§5.2, 5.7, 7.1-7.6, 7.10
+  - docs/plans/2026-05-26/assembly-builder/assembly-builder-prd.md §§5.2, 5.7, 7.1-7.6, 7.10
   - docs/plans/2026-05-26/assembly-builder/phase-01-backend-domain-contracts.md
   - docs/plans/2026-05-26/assembly-builder/phase-02-readonly-envelope-shell.md
   - context/technical-requirements/save-versioning.md

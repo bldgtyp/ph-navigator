@@ -5,7 +5,8 @@ STATUS: Proposed phased implementation roadmap.
 AUTHOR: Codex
 SCOPE: Assembly Builder implementation plan bundle.
 RELATED:
-  - docs/features/assembly-builder-prd.md
+  - docs/plans/2026-05-26/assembly-builder/assembly-builder-prd.md
+  - docs/plans/2026-05-26/assembly-builder/progress-next-steps.md
   - context/user-stories/20-envelope.md
   - context/technical-requirements/data-model.md
   - context/technical-requirements/save-versioning.md
@@ -18,13 +19,16 @@ RELATED:
 
 # Assembly Builder Implementation Plans
 
-This folder breaks `docs/features/assembly-builder-prd.md` into
+This folder breaks `docs/plans/2026-05-26/assembly-builder/assembly-builder-prd.md` into
 manageable implementation phases. Each phase should be treated as a
 verifiable slice with its own tests, browser checks, and docs-pass.
 
 The PRD remains the product contract. These plans describe execution
 order and gates; they should not override the PRD unless the PRD is
 updated in the same pass.
+
+Use `progress-next-steps.md` as the active handoff tracker for completed
+work, known caveats, and the next phase to pick up.
 
 ## Phase Map
 
@@ -90,7 +94,7 @@ browser-visible workflow.
 ## Lessons Workflow
 
 The main PRD now includes `Implementation Lessons Log`
-(`docs/features/assembly-builder-prd.md` §15.1). During each phase:
+(`docs/plans/2026-05-26/assembly-builder/assembly-builder-prd.md` §15.1). During each phase:
 
 - add a short lesson row when implementation reveals a durable
   invariant, repeated failure mode, rejected shortcut, or changed
