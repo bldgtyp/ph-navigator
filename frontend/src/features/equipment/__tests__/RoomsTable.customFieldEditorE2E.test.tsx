@@ -63,7 +63,7 @@ function buildProject(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
 function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
   return {
     id: "cf_paint",
-    field_key: null,
+    field_key: "cf_paint",
     display_name: "Paint",
     field_type: "short_text",
     config: {},
@@ -187,22 +187,22 @@ function applySchemaMutation(
     if (mutation.after)
       customFields.push({ ...mutation.after, config: { ...mutation.after.config } });
   } else if (mutation.kind === "editFieldBundle") {
-    const index = customFields.findIndex((item) => item.id === mutation.fieldId);
+    const index = customFields.findIndex((item) => item.field_key === mutation.fieldId);
     if (index >= 0 && mutation.after) {
       customFields[index] = { ...mutation.after, config: { ...mutation.after.config } };
     }
   } else if (mutation.kind === "renameField") {
-    const field = customFields.find((item) => item.id === mutation.fieldId);
+    const field = customFields.find((item) => item.field_key === mutation.fieldId);
     if (field && mutation.displayName) field.display_name = mutation.displayName;
   } else if (mutation.kind === "duplicateField") {
-    const sourceIndex = customFields.findIndex((item) => item.id === mutation.sourceFieldId);
+    const sourceIndex = customFields.findIndex((item) => item.field_key === mutation.sourceFieldId);
     if (mutation.after) customFields.splice(sourceIndex + 1, 0, mutation.after);
   } else if (mutation.kind === "setDescription") {
-    const field = customFields.find((item) => item.id === mutation.fieldId);
+    const field = customFields.find((item) => item.field_key === mutation.fieldId);
     if (field) field.description = mutation.description ?? null;
   } else if (mutation.kind === "deleteField") {
     const fieldId = mutation.fieldId ?? "";
-    const nextFields = customFields.filter((item) => item.id !== mutation.fieldId);
+    const nextFields = customFields.filter((item) => item.field_key !== mutation.fieldId);
     return {
       ...slice,
       source: "draft",

@@ -33,6 +33,7 @@ from features.project_document.mutations.models import (
     CONVERSION_MATRIX,
     ChangeTypeMutation,
     EditFieldBundleMutation,
+    FieldSchemaMutation,
 )
 from features.project_document.schema_mutations import apply_schema_mutation
 from features.project_document.tables.rooms import (
@@ -110,7 +111,7 @@ def _fingerprint(body: ProjectDocumentV1) -> str:
 def _apply(body: ProjectDocumentV1, mutation: object) -> tuple[ProjectDocumentV1, dict[str, object]]:
     return apply_schema_mutation(
         body,
-        cast("object", mutation),  # type: ignore[arg-type]
+        cast(FieldSchemaMutation, mutation),
         actor_user_id=ACTOR,
         capability=rooms_custom_fields,
     )

@@ -21,19 +21,21 @@ def pump_payload() -> dict[str, Any]:
             {
                 "id": "pmp_1",
                 "device_type": "opt_circ",
-                "use": "DHW recirc",
-                "tag": "P-1",
-                "manufacturer": "Taco",
-                "model": "0015e3",
-                "volts": 120,
                 "phase": 1,
-                "horse_power": None,
-                "wattage": 45,
-                "flow_gpm": 4,
-                "runtime_khr_yr": 2.5,
                 "notes": None,
                 "link": "https://example.com/pump.pdf",
                 "datasheet_asset_ids": [],
+                "custom_values": {
+                    "record_id": "P-1",
+                    "use": "DHW recirc",
+                    "manufacturer": "Taco",
+                    "model": "0015e3",
+                    "volts": 120,
+                    "horse_power": None,
+                    "wattage": 45,
+                    "flow_gpm": 4,
+                    "runtime_khr_yr": 2.5,
+                },
             }
         ],
         "single_select_options": {
@@ -44,7 +46,7 @@ def pump_payload() -> dict[str, Any]:
 
 def test_pump_row_validates_phase_and_link() -> None:
     base = pump_payload()["pumps"][0]
-    assert PumpRow.model_validate(base).tag == "P-1"
+    assert PumpRow.model_validate(base).custom_values["record_id"] == "P-1"
     with pytest.raises(ValidationError, match="phase must be 1 or 3"):
         PumpRow.model_validate({**base, "phase": 2})
     with pytest.raises(ValidationError, match="link must start"):
@@ -56,7 +58,20 @@ def test_document_allows_duplicate_pump_tags() -> None:
     body = {
         "schema_version": 2,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-        "tables": {"equipment": {"pumps": [first, {**first, "id": "pmp_2", "tag": " p-1 "}]}},
+        "tables": {
+            "equipment": {
+                "pumps": {
+                    "rows": [
+                        first,
+                        {
+                            **first,
+                            "id": "pmp_2",
+                            "custom_values": {**first["custom_values"], "record_id": "p-1"},
+                        },
+                    ]
+                }
+            }
+        },
         "single_select_options": {
             "rooms.floor_level": [],
             "rooms.building_zone": [],
@@ -64,7 +79,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
         },
     }
     doc = ProjectDocumentV1.model_validate(body)
-    assert [pump.tag for pump in doc.tables.equipment.pumps] == ["P-1", "p-1"]
+    assert [pump.custom_values["record_id"] for pump in doc.tables.equipment.pumps.rows] == ["P-1", "p-1"]
 
 
 def test_first_pumps_replace_lazily_creates_draft(clean_document_tables: None) -> None:

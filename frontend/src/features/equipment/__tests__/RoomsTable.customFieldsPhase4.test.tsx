@@ -76,7 +76,7 @@ const LABEL_FORMULA_SOURCE = 'concat({Number}, " — ", upper({Name}))';
 function buildFormulaField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
   return {
     id: "cf_label",
-    field_key: null,
+    field_key: "cf_label",
     display_name: "Label",
     field_type: "formula",
     config: {
@@ -211,7 +211,7 @@ function applySchemaMutation(
   if (mutation.kind === "addField" && mutation.after) {
     customFields.push({ ...mutation.after, config: { ...mutation.after.config } });
   } else if (mutation.kind === "duplicateField" && mutation.after) {
-    const sourceIndex = customFields.findIndex((item) => item.id === mutation.sourceFieldId);
+    const sourceIndex = customFields.findIndex((item) => item.field_key === mutation.sourceFieldId);
     customFields.splice(sourceIndex + 1, 0, {
       ...mutation.after,
       config: { ...mutation.after.config },
@@ -232,7 +232,7 @@ function applySchemaMutation(
     for (const field of customFields) {
       if (field.field_type !== "formula") continue;
       const source = String(field.config.source ?? "");
-      per[field.id] = simulateFormula(source, row, customByFieldId);
+      per[field.field_key] = simulateFormula(source, row, customByFieldId);
     }
     if (Object.keys(per).length > 0) rowsComputed[row.id] = per;
   }
@@ -382,7 +382,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
   test("deleting a referenced custom field surfaces the missing_ref error overlay on the formula column", async () => {
     const tag: CustomFieldDef = {
       id: "cf_tag",
-      field_key: null,
+      field_key: "cf_tag",
       display_name: "Tag",
       field_type: "short_text",
       config: {},

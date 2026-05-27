@@ -16,7 +16,7 @@ import { SOURCE_LENGTH_MAX } from "../lib/formula";
 
 const SAMPLE_FIELD: CustomFieldDef = {
   id: "cf_sample",
-  field_key: null,
+  field_key: "cf_sample",
   display_name: "Notes",
   field_type: "short_text",
   config: {},
@@ -69,7 +69,7 @@ describe("buildAddFieldMutation", () => {
     expect(() =>
       buildAddFieldMutation({
         tableKey: "rooms",
-        newField: { ...SAMPLE_FIELD, id: "notvalid" },
+        newField: { ...SAMPLE_FIELD, field_key: "notvalid" },
         insertAfterFieldId: null,
         schemaFingerprint: "fp",
       }),
@@ -139,14 +139,14 @@ describe("buildDuplicateFieldMutation", () => {
     const op = buildDuplicateFieldMutation({
       tableKey: "rooms",
       sourceFieldId: "cf_src",
-      newField: { ...SAMPLE_FIELD, id: "cf_dup", display_name: "Notes copy" },
+      newField: { ...SAMPLE_FIELD, field_key: "cf_dup", display_name: "Notes copy" },
       schemaFingerprint: "fp",
     });
     expect(op).toEqual({
       kind: "duplicateField",
       tableKey: "rooms",
       sourceFieldId: "cf_src",
-      after: { ...SAMPLE_FIELD, id: "cf_dup", display_name: "Notes copy" },
+      after: { ...SAMPLE_FIELD, field_key: "cf_dup", display_name: "Notes copy" },
       expectedSchemaFingerprint: "fp",
     });
   });
@@ -156,7 +156,7 @@ describe("buildDuplicateFieldMutation", () => {
       buildDuplicateFieldMutation({
         tableKey: "rooms",
         sourceFieldId: "cf_src",
-        newField: { ...SAMPLE_FIELD, id: "cf_src", display_name: "Notes copy" },
+        newField: { ...SAMPLE_FIELD, field_key: "cf_src", display_name: "Notes copy" },
         schemaFingerprint: "fp",
       }),
     ).toThrow(SchemaMutationBuildError);
@@ -260,7 +260,7 @@ describe("buildChangeTypeMutation", () => {
   });
 
   test("rejects identity mismatch", () => {
-    const after: CustomFieldDef = { ...SAMPLE_FIELD, id: "cf_other" };
+    const after: CustomFieldDef = { ...SAMPLE_FIELD, field_key: "cf_other" };
     expect(() =>
       buildChangeTypeMutation({
         tableKey: "rooms",

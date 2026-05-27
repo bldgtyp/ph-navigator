@@ -59,7 +59,9 @@ export type TableFieldRenderOverlays = Record<string, TableFieldRenderOverlay>;
 
 export type UseTableSchemaArgs = {
   tableKey: string;
-  fieldDefs: TableFieldDef[] | null | undefined;
+  fieldDefs?: TableFieldDef[] | null | undefined;
+  coreFieldDefs?: TableFieldDef[] | null | undefined;
+  customFields?: TableFieldDef[] | null | undefined;
   fieldOverlay?: TableFieldRenderOverlays | null;
   // Namespaced single_select option lists keyed by their
   // `<table_path>.<field_id>` namespace key (e.g. `rooms.cf_abc123`).
@@ -79,8 +81,15 @@ const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
 };
 
 export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
-  const { fieldDefs, fieldOverlay, singleSelectOptions, tableKey } = args;
-  const persistedFieldDefs = useMemo(() => fieldDefs ?? [], [fieldDefs]);
+  const { fieldDefs, coreFieldDefs, customFields, fieldOverlay, singleSelectOptions, tableKey } =
+    args;
+  const persistedFieldDefs = useMemo(
+    () =>
+      (fieldDefs ?? [...(coreFieldDefs ?? []), ...(customFields ?? [])]).map(
+        normalizeCompatTableFieldDef,
+      ),
+    [coreFieldDefs, customFields, fieldDefs],
+  );
 
   const renderedFieldDefs = useMemo<FieldDef[]>(
     () =>
@@ -127,6 +136,15 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
 
 export function mintCustomFieldId(): string {
   return generatedId("cf");
+}
+
+function normalizeCompatTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
+  const legacy = fieldDef as TableFieldDef & { id?: string; field_key?: string | null };
+  return {
+    ...fieldDef,
+    field_key: legacy.field_key ?? legacy.id ?? "",
+    origin: fieldDef.origin ?? "custom",
+  };
 }
 
 export function tableFieldDefsToFieldDefs(args: {

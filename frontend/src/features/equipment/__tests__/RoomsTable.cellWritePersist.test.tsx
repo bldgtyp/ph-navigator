@@ -173,7 +173,7 @@ describe("RoomsTable cell-write persistence (regression)", () => {
     });
 
     expect(getCurrent().custom_fields).toHaveLength(1);
-    const cfId = getCurrent().custom_fields[0]!.id;
+    const cfId = getCurrent().custom_fields[0]!.field_key;
 
     const cells = document.querySelectorAll(`[data-field-key="${cfId}"]`);
     expect(cells.length).toBeGreaterThan(0);

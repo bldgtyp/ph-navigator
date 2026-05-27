@@ -14,11 +14,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import cast
 
-from features.project_document.custom_fields import (
-    CustomFieldDef,
-    CustomFieldType,
-    CustomValue,
-)
+from features.project_document.custom_fields import CustomFieldType, CustomValue, TableFieldDef
 from features.project_document.document import (
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
@@ -41,15 +37,15 @@ def _body_with_default_field() -> ProjectDocumentV1:
         SingleSelectOption(id="opt_a", label="A", color="#111111", order=1.0),
         SingleSelectOption(id="opt_b", label="B", color="#222222", order=2.0),
     ]
-    field = CustomFieldDef(
-        id="cf_ss",
+    field = TableFieldDef(
+        field_key="cf_ss",
         display_name="Status",
         field_type=CustomFieldType.single_select,
         config={"default_option_id": "opt_b"},
         created_at=datetime(2026, 5, 25, 12, 0, tzinfo=UTC),
         created_by=None,
     )
-    envelope = RoomsTableEnvelope(custom_fields=[field], rows=[])
+    envelope = RoomsTableEnvelope(field_defs=[field], rows=[])
     body = ProjectDocumentV1(
         project=ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]),
         single_select_options={
@@ -69,17 +65,19 @@ def _make_room(
 ) -> RoomRow:
     return RoomRow(
         id=room_id,
-        number=number,
-        name=f"Room {number}",
         floor_level=floor_level,
         building_zone=None,
-        num_people=0,
-        num_bedrooms=0,
         icfa_factor=1.0,
         erv_unit_ids=[],
         catalog_origin=None,
         notes=None,
-        custom=cast(dict[str, str | int | float | bool | None], custom or {}),
+        custom_values={
+            "number": number,
+            "name": f"Room {number}",
+            "num_people": 0,
+            "num_bedrooms": 0,
+            **cast(dict[str, str | int | float | bool | None], custom or {}),
+        },
     )
 
 
@@ -98,7 +96,7 @@ def _build_payload(body: ProjectDocumentV1, rooms: list[RoomRow]) -> RoomsSliceR
     return RoomsSliceReplaceRequest(
         rooms=rooms,
         single_select_options=options,
-        custom_fields=body.tables.rooms.custom_fields,
+        field_defs=body.tables.rooms.field_defs,
     )
 
 
@@ -107,7 +105,7 @@ def test_new_row_omitting_custom_key_gets_default_filled() -> None:
     new_room = _make_room("rm_new", "101", "opt_L1", custom={})
     payload = _build_payload(body, [new_room])
     next_body = apply_rooms_replace(body, payload)
-    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": "opt_b"}
+    assert next_body.tables.rooms.rows[0].custom_values["cf_ss"] == "opt_b"
 
 
 def test_new_row_explicit_null_is_preserved() -> None:
@@ -116,7 +114,7 @@ def test_new_row_explicit_null_is_preserved() -> None:
     payload = _build_payload(body, [new_room])
     next_body = apply_rooms_replace(body, payload)
     # Explicit null wins — default does NOT overwrite (R5).
-    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": None}
+    assert next_body.tables.rooms.rows[0].custom_values["cf_ss"] is None
 
 
 def test_new_row_explicit_value_is_preserved() -> None:
@@ -124,7 +122,7 @@ def test_new_row_explicit_value_is_preserved() -> None:
     new_room = _make_room("rm_new", "101", "opt_L1", custom={"cf_ss": "opt_a"})
     payload = _build_payload(body, [new_room])
     next_body = apply_rooms_replace(body, payload)
-    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": "opt_a"}
+    assert next_body.tables.rooms.rows[0].custom_values["cf_ss"] == "opt_a"
 
 
 def test_existing_row_not_backfilled_when_default_now_set() -> None:
@@ -137,17 +135,17 @@ def test_existing_row_not_backfilled_when_default_now_set() -> None:
     # change — the default must not be silently injected.
     payload = _build_payload(body, [pre_existing])
     next_body = apply_rooms_replace(body, payload)
-    assert next_body.tables.rooms.rows[0].custom == {}
+    assert "cf_ss" not in next_body.tables.rooms.rows[0].custom_values
 
 
 def test_default_fill_skipped_when_no_default_configured() -> None:
     body = _body_with_default_field()
     # Clear the default on the field.
-    field = body.tables.rooms.custom_fields[0]
+    field = body.tables.rooms.field_defs[0]
     next_field = field.model_copy(update={"config": {}})
-    envelope = body.tables.rooms.model_copy(update={"custom_fields": [next_field]})
+    envelope = body.tables.rooms.model_copy(update={"field_defs": [next_field]})
     body = body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
     new_room = _make_room("rm_new", "101", "opt_L1", custom={})
     payload = _build_payload(body, [new_room])
     next_body = apply_rooms_replace(body, payload)
-    assert next_body.tables.rooms.rows[0].custom == {}
+    assert "cf_ss" not in next_body.tables.rooms.rows[0].custom_values

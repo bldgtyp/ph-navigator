@@ -2,6 +2,8 @@ import { getCustomValue } from "../../../shared/ui/data-table";
 
 export type RowWithCustomValues = {
   custom_values?: Record<string, unknown> | null | undefined;
+  custom?: Record<string, unknown> | null | undefined;
+  [key: string]: unknown;
 };
 
 export function customTextValue(row: RowWithCustomValues, fieldKey: string): string {

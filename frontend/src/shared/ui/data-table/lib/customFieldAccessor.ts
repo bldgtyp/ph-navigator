@@ -11,10 +11,15 @@ export function isCustomFieldKey(fieldKey: string | undefined | null): fieldKey 
 }
 
 export function getCustomValue(
-  row: { custom_values?: Record<string, unknown> | null | undefined },
+  row: {
+    custom_values?: Record<string, unknown> | null | undefined;
+    custom?: Record<string, unknown> | null | undefined;
+    [key: string]: unknown;
+  },
   fieldDef: FieldKeyRef,
 ): unknown {
-  return row.custom_values?.[fieldKeyOf(fieldDef)];
+  const fieldKey = fieldKeyOf(fieldDef);
+  return row.custom_values?.[fieldKey] ?? row.custom?.[fieldKey] ?? row[fieldKey];
 }
 
 export function setCustomValue<

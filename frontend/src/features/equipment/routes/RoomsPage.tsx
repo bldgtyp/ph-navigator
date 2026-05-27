@@ -11,7 +11,12 @@ import {
 } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
 import { useRoomsSliceQuery } from "../hooks";
-import { roomsFieldOverlay, roomsTableColumnsForSanitize, wasLocalDraftTouched } from "../lib";
+import {
+  roomsFieldOverlay,
+  roomsTableColumnsForSanitize,
+  roomsTableFieldDefs,
+  wasLocalDraftTouched,
+} from "../lib";
 import { makeBuildEmptyRoomRow } from "../lib/buildEmptyRoomRow";
 import { makeDeleteRoom, makeSaveRoom } from "../lib/roomMutationCallbacks";
 import {
@@ -57,15 +62,24 @@ function RoomsPageBody(props: {
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
 
   const fieldOverlay = useMemo(() => roomsFieldOverlay(roomsSlice), [roomsSlice]);
+  const fieldDefs = useMemo(
+    () =>
+      roomsSlice.field_defs ?? [
+        ...roomsTableFieldDefs(roomsSlice),
+        ...((roomsSlice as RoomsSlice & { custom_fields?: RoomsSlice["field_defs"] })
+          .custom_fields ?? []),
+      ],
+    [roomsSlice],
+  );
   const previewSchemaFieldDefs = useMemo(
     () =>
       tableFieldDefsToFieldDefs({
         tableKey: ROOMS_TABLE_NAME,
-        fieldDefs: roomsSlice.field_defs,
+        fieldDefs,
         fieldOverlay,
         singleSelectOptions: roomsSlice.single_select_options,
       }),
-    [fieldOverlay, roomsSlice.field_defs, roomsSlice.single_select_options],
+    [fieldDefs, fieldOverlay, roomsSlice.single_select_options],
   );
   const columnsForSanitize = useMemo(
     () => roomsTableColumnsForSanitize(previewSchemaFieldDefs),
@@ -88,7 +102,7 @@ function RoomsPageBody(props: {
     versionLocked: project.active_version?.locked ?? false,
     tableKey: ROOMS_TABLE_NAME,
     slice: roomsSlice,
-    fieldDefs: roomsSlice.field_defs,
+    fieldDefs,
     fieldOverlay,
     singleSelectOptions: roomsSlice.single_select_options ?? null,
     columnsForSanitize,
