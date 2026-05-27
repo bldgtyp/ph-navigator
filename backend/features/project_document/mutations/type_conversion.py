@@ -170,21 +170,15 @@ def _read_source_value(
 def _coerce_formula_snapshot_to_text(value: object) -> str | None:
     """Stringify a formula's computed value for the snapshot path.
 
-    The frontend evaluator and `evaluate_table_formulas` both emit
-    encoded values: numbers as int/float, text as str, bools as bool.
-    This helper produces the locale-independent canonical text form
-    that matches the wire-format we already use for number→text
-    coercion, so a formula→text→formula round-trip stays stable.
+    A formula→text→formula round-trip stays stable because the
+    serializer matches the canonical text form used for number→text
+    coercion (`_format_number_for_text`).
     """
     if value is None:
         return None
     if isinstance(value, str):
         return value
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, (int, float)):
-        return _format_number_for_text(value)
-    return str(value)
+    return _format_number_for_text(value)
 
 
 def _materialize_options_for_text_to_select(
@@ -314,8 +308,6 @@ def apply_change_type(
     if from_type is CustomFieldType.formula:
         formula_overlay = evaluate_table_formulas(capability, body)
 
-    # Source-value reader closes over `formula_overlay` so the rest of
-    # the function treats formula and custom_values sources uniformly.
     def source_value(row: object) -> object | None:
         return _read_source_value(row, mutation.field_id, from_type, capability, formula_overlay)
 
@@ -346,88 +338,75 @@ def apply_change_type(
         existing_options = body.single_select_options.get(namespace_key, [])
         label_lookup_for_substitute = {opt.id: opt.label for opt in existing_options}
 
-    # Per-row preflight. `before_by_row` snapshots every source value
-    # so the audit log can record per-row before/after pairs without
-    # re-reading the document (and without re-evaluating formulas).
+    # Per-row preflight. Each row produces one `(row, before, after)`
+    # decision and (when rejected) one `incompatible` entry. The apply
+    # pass below derives both `new_rows` and the audit `row_changes`
+    # from `decisions` — no separate `write_by_row` / `before_by_row`
+    # bridge dicts. `after = None` always means "clear the cell"
+    # (whether by lossy clear, ack-required discard, or empty-source
+    # no-op); `before == after` no-ops skip the row-rebuild path below.
     incompatible: list[dict[str, object]] = []
-    compatible_writes: list[tuple[str, object | None]] = []
-    before_by_row: dict[str, object | None] = {}
+    decisions: list[tuple[object, object | None, object | None]] = []
+
+    def _reject(row_obj: object, raw: object | None, reason: str) -> None:
+        incompatible.append({"row_id": str(getattr(row_obj, "id", "")), "raw_value": raw, "reason": reason})
+        decisions.append((row_obj, raw, None))
+
     for row in rows:
-        row_id = str(getattr(row, "id", ""))
         raw_value = source_value(row)
-        before_by_row[row_id] = raw_value
 
         # `discard_then_author` (primitive | formula → formula): every
-        # non-empty cell becomes an incompatible preflight entry; the
-        # ack discards them. The new formula source rides in the
-        # bundle's `formula_source` field — `apply_set_formula` writes
-        # the parsed config in the next bundle step.
+        # non-empty cell is destructively discarded; the ack moves the
+        # bundle forward and `apply_set_formula` writes the new config.
         if policy == "discard_then_author":
             if raw_value is None or raw_value == "":
-                compatible_writes.append((row_id, None))
-                continue
-            incompatible.append(
-                {"row_id": row_id, "raw_value": raw_value, "reason": "discarded_for_formula_authoring"}
-            )
+                decisions.append((row, raw_value, None))
+            else:
+                _reject(row, raw_value, "discarded_for_formula_authoring")
             continue
 
-        # `formula → primitive`: read from overlay (above); then convert
-        # the computed value to canonical text and run target coercion.
-        # For text targets the snapshot is lossless; for number/url the
-        # coerce step surfaces failed parses to the preflight.
-        if from_type is CustomFieldType.formula and policy != "create_options":
+        # `formula → primitive`: canonicalize the computed value to text
+        # and run the standard coercion. Text targets snapshot
+        # losslessly; number/url surface failed parses to the preflight.
+        if from_type is CustomFieldType.formula:
             snapshot_text = _coerce_formula_snapshot_to_text(raw_value)
             ok, coerced, reason = _try_coerce_for_change_type(
                 snapshot_text, to_type, target_option_list=target_option_list
             )
             if ok:
-                compatible_writes.append((row_id, coerced))
+                decisions.append((row, raw_value, coerced))
             else:
-                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
-            continue
-
-        # `formula → single_select` (policy "create_options"): the
-        # `_materialize_options_for_text_to_select` helper already saw
-        # the overlay values; here we coerce each row's text-form value
-        # against the just-built option list.
-        if from_type is CustomFieldType.formula and policy == "create_options":
-            snapshot_text = _coerce_formula_snapshot_to_text(raw_value)
-            ok, coerced, reason = _try_coerce_for_change_type(
-                snapshot_text, to_type, target_option_list=target_option_list
-            )
-            if ok:
-                compatible_writes.append((row_id, coerced))
-            else:
-                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
+                _reject(row, raw_value, reason)
             continue
 
         if policy == "substitute_labels" and label_lookup_for_substitute is not None:
             if raw_value is None or raw_value == "":
-                compatible_writes.append((row_id, None))
+                decisions.append((row, raw_value, None))
                 continue
             label = label_lookup_for_substitute.get(str(raw_value))
             if label is None:
-                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": "no_matching_option"})
+                _reject(row, raw_value, "no_matching_option")
                 continue
             if to_type in (CustomFieldType.short_text, CustomFieldType.long_text):
-                compatible_writes.append((row_id, label))
+                decisions.append((row, raw_value, label))
                 continue
-            # single_select → number (or other future targets): re-coerce
-            # the label through the standard coercion path. Unparseable
-            # labels surface to preflight so the user acks the clear.
             ok, coerced, reason = _try_coerce_for_change_type(label, to_type, target_option_list=target_option_list)
             if ok:
-                compatible_writes.append((row_id, coerced))
+                decisions.append((row, raw_value, coerced))
             else:
-                incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
+                _reject(row, raw_value, reason)
             continue
 
         ok, coerced, reason = _try_coerce_for_change_type(raw_value, to_type, target_option_list=target_option_list)
         if ok:
-            compatible_writes.append((row_id, coerced))
+            decisions.append((row, raw_value, coerced))
         else:
-            incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
-    # Overflow diagnostics from text→single_select cap are also incompatible.
+            _reject(row, raw_value, reason)
+    # Overflow diagnostics from text→single_select cap are surfaced in
+    # the preflight payload but do not produce a second decision — the
+    # per-row coerce above already emitted a `no_matching_option` reject
+    # for these rows when the materialized option list didn't include
+    # their value.
     for row_id, raw_value, reason in overflow_diagnostics:
         incompatible.append({"row_id": row_id, "raw_value": raw_value, "reason": reason})
 
@@ -486,59 +465,41 @@ def apply_change_type(
         namespace_key = option_list_key(capability.table_path, mutation.field_id)
         next_body = remove_option_list(next_body, namespace_key)
 
-    # Apply row writes. `capability.replace_field_defs` does not
-    # touch the row list, so we can reuse the `rows` we already iterated
-    # for preflight and skip a second envelope read.
-    write_by_row: dict[str, CustomValue] = {row_id: cast(CustomValue, value) for row_id, value in compatible_writes}
-    incompatible_by_row: set[str] = {str(entry["row_id"]) for entry in incompatible}
-
+    # Apply row writes and capture per-row audit pairs in one pass over
+    # `decisions`. `before == after` no-ops preserve the source row
+    # identity (no dict copy); rebuilds happen only when the cell
+    # actually changes. The audit `row_changes` payload is capped at
+    # AUDIT_ROW_CAP with a `row_changes_truncated` flag past the cap so
+    # the action log row stays bounded — the payload gives after-the-
+    # fact recovery for discard_then_author and lossy snapshots.
     new_rows: list[object] = []
-    for row in rows:
-        row_id = str(getattr(row, "id", ""))
-        if row_id in write_by_row:
-            custom = dict(capability.read_row_custom_values(row))
-            value = write_by_row[row_id]
-            if value is None:
-                custom.pop(mutation.field_id, None)
-            else:
-                custom[mutation.field_id] = value
-            new_rows.append(capability.set_row_custom_values(row, custom))
-        elif row_id in incompatible_by_row:
-            custom = dict(capability.read_row_custom_values(row))
-            custom.pop(mutation.field_id, None)
-            new_rows.append(capability.set_row_custom_values(row, custom))
-        else:
+    row_changes: list[dict[str, object]] = []
+    for row, before, after in decisions:
+        if before == after:
             new_rows.append(row)
+            continue
+        custom = dict(capability.read_row_custom_values(row))
+        if after is None:
+            custom.pop(mutation.field_id, None)
+        else:
+            custom[mutation.field_id] = cast(CustomValue, after)
+        new_rows.append(capability.set_row_custom_values(row, custom))
+        row_changes.append(
+            {"row_id": str(getattr(row, "id", "")), "before": before, "after": after}
+        )
     next_body = replace_rows_in_envelope(next_body, mutation.table_key, new_rows)
 
-    # Per-row before/after for the audit payload. Captures every row
-    # whose value actually changed (skipping null→null no-ops). Capped
-    # at AUDIT_ROW_CAP entries with a `row_changes_truncated` flag past
-    # the cap so the action log row stays bounded on tables with many
-    # populated rows. The payload survives the action-log retention
-    # window, giving after-the-fact recovery for discard_then_author
-    # and the lossy snapshot branches.
-    row_changes: list[dict[str, object]] = []
-    for row in rows:
-        row_id = str(getattr(row, "id", ""))
-        before = before_by_row.get(row_id)
-        if row_id in write_by_row:
-            after: object | None = write_by_row[row_id]
-        elif row_id in incompatible_by_row:
-            after = None
-        else:
-            continue
-        if before == after:
-            continue
-        row_changes.append({"row_id": row_id, "before": before, "after": after})
-
+    # `cleared_row_count` mirrors `len(incompatible)` (the preflight
+    # error payload size); `compatible_row_count` is everything else,
+    # matching the prior `len(compatible_writes)` semantic.
+    rejected_row_ids = {str(entry["row_id"]) for entry in incompatible}
     audit: dict[str, object] = {
         "kind": "changeType",
         "table_key": mutation.table_key,
         "field_id": mutation.field_id,
         "from_type": from_type.value,
         "to_type": to_type.value,
-        "compatible_row_count": len(compatible_writes),
+        "compatible_row_count": len(decisions) - len(rejected_row_ids),
         "cleared_row_count": len(incompatible),
     }
     if generated_options is not None:
