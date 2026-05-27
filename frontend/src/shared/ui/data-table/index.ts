@@ -70,7 +70,8 @@ export {
   sumColumnWidths,
 } from "./lib/columnWidths";
 export type { FieldRegistryEntry } from "./lib/formula";
-export { IDENTIFIER_COLUMN_ID, IDENTIFIER_HEADER_LABEL, emptyViewState } from "./types";
+export { RECORD_ID_FIELD_KEY } from "./lib/identifier/recordId";
+export { emptyViewState } from "./types";
 export type {
   AddCustomFieldRequest,
   BuildEmptyRow,
@@ -84,7 +85,6 @@ export type {
   FilterCondition,
   FilterOperator,
   GroupRule,
-  IdentifierConfig,
   RowDeletePayload,
   RowInsertPayload,
   SortRule,

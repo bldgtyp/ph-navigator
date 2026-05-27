@@ -11,7 +11,10 @@ export function defaultRefreshSelection(slot: RefreshSlotReport): RefreshSelecti
   const selection: RefreshSelection = {};
   for (const field of slot.fields) {
     selection[field.key] =
-      slot.state === "drifted" && !field.is_overridden && field.ref_value !== field.catalog_value
+      !field.skip_reason &&
+      slot.state === "drifted" &&
+      !field.is_overridden &&
+      field.ref_value !== field.catalog_value
         ? "update"
         : "keep";
   }
@@ -19,7 +22,11 @@ export function defaultRefreshSelection(slot: RefreshSlotReport): RefreshSelecti
 }
 
 export function canApplyRefresh(slot: RefreshSlotReport): boolean {
-  return slot.state === "drifted" && slot.current_catalog_version_id !== null;
+  return (
+    slot.state === "drifted" &&
+    slot.current_catalog_version_id !== null &&
+    slot.fields.some((field) => !field.skip_reason)
+  );
 }
 
 export function applyRefreshSelection<TRef extends FrameRef | GlazingRef>(
@@ -34,7 +41,7 @@ export function applyRefreshSelection<TRef extends FrameRef | GlazingRef>(
 
   const next = { ...ref } as TRef & Record<string, unknown>;
   for (const field of slot.fields) {
-    if (selection[field.key] === "update") {
+    if (!field.skip_reason && selection[field.key] === "update") {
       next[field.key] = field.catalog_value;
     }
   }

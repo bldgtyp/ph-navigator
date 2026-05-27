@@ -3,8 +3,9 @@ DATE: 2026-05-26
 TIME: 22:00 ET
 STATUS: IN PROGRESS — foundation slice landed 2026-05-26 (commit
         `891d1c6` on `worktree-plan-31-frontend-bundle`). P2.1
-        useTableSchema reshape landed 2026-05-27. Six follow-up slices
-        remain. Multi-session — estimate 3–5 sessions total.
+        useTableSchema reshape, P2.2 custom_values row shape, and P2.3
+        record_id pinning landed 2026-05-27. Four follow-up slices
+        remain.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Frontend cascade for Plan-31 Phases 1c, 2, and 3, deferred
        across earlier sessions while backend Phases 1b / 1c / 2 / 3
@@ -146,7 +147,7 @@ Closeout verification:
   `id`, old `coreFieldDefs/customFields` harness wiring), matching the
   accepted cascade state before P2.6.
 
-### P2.2 Slice — Row-shape migration to mixed-storage (#11)
+### P2.2 Slice — Row-shape migration to mixed-storage (#11) — LANDED 2026-05-27
 
 `RoomRow.number / name / num_people / num_bedrooms` and
 `PumpRow.tag / use / manufacturer / model / volts / horse_power /
@@ -171,7 +172,18 @@ Verification:
 - Playwright smoke: open Rooms, edit a `number` cell, save, reload,
   see the value.
 
-### P2.3 Slice — IdentifierConfig deletion + record_id pinning (#29 / #18)
+Shipped:
+- `RoomRow.number / name / num_people / num_bedrooms` and
+  `PumpRow.record_id / use / manufacturer / model / volts /
+  horse_power / wattage / flow_gpm / runtime_khr_yr` now read/write
+  through `custom_values`.
+- Equipment table accessors, validation, sorting, modal labels,
+  payload normalization, row builders, and formula row-value helpers
+  were migrated to shared custom-value accessors.
+- Known-broken remains limited to the deferred test fixture layer until
+  §P2.6.
+
+### P2.3 Slice — IdentifierConfig deletion + record_id pinning (#29 / #18) — LANDED 2026-05-27
 
 Delete the `IdentifierConfig<TRow>` abstraction and the synthetic
 identifier resolver. Pinning the leftmost column is keyed off
@@ -200,7 +212,29 @@ Verification:
 - Duplicate-value chip (Phase 2 visual) shows on duplicated record_id
   values.
 
-### P2.4 Slice — Small wins (#30, #31, #32)
+Shipped:
+- Deleted the `IdentifierConfig<TRow>` public prop and removed the
+  synthetic `__record_id__` constants / resolver path. Pinning now
+  derives from the real column whose `fieldKey === "record_id"`.
+- Rooms renders a real `record_id` formula column from
+  `rows_computed`; Pumps pins the real `record_id` custom_values
+  column.
+- Duplicate-value chips now scan the rendered `record_id` column
+  accessor for both direct text values and formula/computed values.
+- View sanitization and paste handling no longer whitelist or skip a
+  synthetic identifier column.
+- Follow-up simplify pass centralized `RECORD_ID_FIELD_KEY`, shared the
+  Rooms computed-column builder, removed stale synthetic-identifier CSS
+  / comments, and made duplicate-chip metadata compact for large
+  duplicate groups.
+- Closeout verification:
+  `pnpm exec vitest run src/shared/ui/data-table/__tests__/identifier.test.ts src/shared/ui/data-table/__tests__/identifierColumn.test.tsx`
+  passed (17 tests); eslint on touched files passed; filtered
+  production typecheck produced no non-test errors. Full frontend
+  typecheck still fails in the known stale fixture layer deferred to
+  §P2.6.
+
+### P2.4 Slice — Small wins (#30, #31, #32) — LANDED 2026-05-27
 
 Three isolated edits that can land in one commit:
 
@@ -235,7 +269,23 @@ Verification:
 - Backend round-trip of a Rooms `number` → `long_text` retype succeeds
   end-to-end.
 
-### P2.5 Slice — Catalog refresh skip (#33)
+Shipped:
+- Deleted `ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY`; Rooms formula
+  registry now uses FieldDef `field_key` as the formula `field_id`.
+- Mirrored backend formula conversion policies in the frontend matrix:
+  five primitive-to-formula `discard_then_author` entries and five
+  formula-to-primitive snapshot entries. Focused tests assert the 25
+  total matrix entries and the 10 formula edges.
+- Removed the modal's built-in-only type lock rule; the type picker now
+  follows only the FieldDef `locked` list. Focused modal tests cover
+  unlocked and locked built-ins.
+- Verification run: focused FieldConfigModal lock tests, focused
+  conversion/preflight tests, eslint on touched frontend files, and the
+  filtered production typecheck passed. The old Rooms formula acceptance
+  fixture file still fails on the known stale `custom_fields` /
+  `roomsTableFieldDefs` layer; leave it for §P2.6.
+
+### P2.5 Slice — Catalog refresh skip (#33) — LANDED 2026-05-27
 
 Refresh-from-catalog (US-WIN-11) must skip fields whose project-side
 `field_type` no longer matches the catalog-side type. Backend already
@@ -251,21 +301,66 @@ Spec gap: backend response shape for "field skipped" needs to be
 checked. Likely a separate sublist in the refresh-preview payload.
 Investigate before writing the slice.
 
+Investigation result:
+- The predecessor Phase 3 plan specifies the intended per-field flag
+  as `skip_reason: "field_type_changed"`; the refresh response model
+  now accepts that optional field so frontend fixtures match the API
+  contract.
+
+Shipped:
+- Frontend refresh types accept optional
+  `RefreshFieldDelta.skip_reason: "field_type_changed"`.
+- `defaultRefreshSelection()` leaves skipped fields as `"keep"`;
+  `canApplyRefresh()` disables all-skipped drift slots; and
+  `applyRefreshSelection()` refuses to write skipped fields even if a
+  caller passes `"update"`.
+- `RefreshDialog` renders skipped rows with an explanatory note and
+  disables both radio controls for that field.
+- Verification run: focused refresh lib/dialog tests and eslint on the
+  touched refresh files passed.
+- Simplify follow-up removed redundant `"skip"` selection state, made
+  formula-discard preflight single-pass, and added the optional
+  backend `RefreshFieldDelta.skip_reason` response field to keep the
+  frontend type aligned with the API contract.
+
 ### P2.6 Slice — Test rewrites (#34 / #12)
 
 The deferred backend + frontend test fixture rewrites:
-- ~102 backend tests in
-  `backend/tests/test_project_document_schema_mutations.py` still
-  reference v2 fixtures (`_empty_body()` doesn't seed `record_id`;
-  `_make_custom_field` uses pre-Phase-1c `id=` parameter). Phase 3
-  backend session wrote a new clean file
-  (`test_project_document_phase_3_type_conversion.py`) rather than fix
-  all 102 — those 102 still need to be brought to v4 or replaced.
+- Backend schema-mutation fixture rewrite landed 2026-05-27:
+  `backend/tests/test_project_document_schema_mutations.py` now builds
+  through `empty_project_document`, uses `TableFieldDef.field_key`, and
+  asserts against `field_defs` / `custom_values`. Verification:
+  `cd backend && uv run pytest tests/test_project_document_schema_mutations.py -q`
+  (56 passed) and `uv run ruff check
+  tests/test_project_document_schema_mutations.py`.
+- Frontend equipment payload helper fixture rewrite landed 2026-05-27:
+  `frontend/src/features/equipment/lib.test.ts` now builds Rooms test
+  rows with `field_defs` / `custom_values` and keeps the focused module
+  green. Verification: `cd frontend && pnpm exec vitest run
+  src/features/equipment/lib.test.ts` (28 passed) and `pnpm exec eslint
+  src/features/equipment/lib.test.ts`.
+- Backend reserved-slug guard fixture rewrite landed 2026-05-27:
+  `backend/tests/test_custom_fields_reserved_slug_guard.py` now asserts
+  the custom-only guard contract in `mutations.guards`, while allowing
+  the built-in `record_id` `TableFieldDef` seed. Verification:
+  `cd backend && uv run ruff check
+  tests/test_custom_fields_reserved_slug_guard.py`, `uv run ty check
+  tests/test_custom_fields_reserved_slug_guard.py`, and `uv run pytest
+  tests/test_custom_fields_reserved_slug_guard.py -q` (4 passed).
+- Backend custom-field contract fixture rewrite landed 2026-05-27:
+  `backend/tests/test_project_document_custom_fields.py` now asserts the
+  current `field_registry` / `field_defs` / one-argument fingerprint
+  contract and seeds documents through `empty_project_document`.
+  Verification: `cd backend && uv run ruff check
+  tests/test_project_document_custom_fields.py`, `uv run ty check
+  tests/test_project_document_custom_fields.py`, and `uv run pytest
+  tests/test_project_document_custom_fields.py -q` (6 passed).
 - ~55 frontend test files reference `slice.custom_fields` and
   typed-column row literals. Each needs the fixture update.
 
-Approach: rewrite-in-place per test module. Don't try to land all 102
-+ 55 in one commit; group by module and ship per-module commits.
+Approach: rewrite-in-place per test module. Don't try to land all
+remaining frontend fixtures in one commit; group by module and ship
+per-module commits.
 
 ### P2.7 Slice — Verification (#36 / #14)
 

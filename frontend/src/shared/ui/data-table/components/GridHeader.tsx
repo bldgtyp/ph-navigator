@@ -1,6 +1,5 @@
 import { flexRender, type Header, type Table } from "@tanstack/react-table";
-import { AlertTriangle, Lock } from "lucide-react";
-import { IDENTIFIER_COLUMN_ID } from "../types";
+import { Lock } from "lucide-react";
 import {
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -69,12 +68,6 @@ export type GridHeaderProps<TRow> = {
   // the create-field modal; otherwise it renders as a disabled preview.
   onAddFieldFromTail?: () => void;
   tailCellRef?: { current: HTMLTableCellElement | null };
-  // Plan 30 D9 — when an identifier of `kind: "field"` points at a
-  // missing backing field, surface a warning glyph in the pinned
-  // header. Cell bodies render `ERROR` via the synthetic column's
-  // accessor / render; this is just the visible heads-up for the
-  // header itself.
-  identifierBroken?: boolean;
 };
 
 export function GridHeader<TRow>({
@@ -91,7 +84,6 @@ export function GridHeader<TRow>({
   headerActions,
   onAddFieldFromTail,
   tailCellRef,
-  identifierBroken = false,
 }: GridHeaderProps<TRow>) {
   const pickedUpColumnIndex = columnDragKeyboard?.pickedUpColumnIndex ?? null;
   return (
@@ -104,7 +96,6 @@ export function GridHeader<TRow>({
             if (!column) return null;
             const fieldDef = fieldDefByKey.get(column.fieldKey);
             const isPrimary = columnIndex === 0;
-            const isSyntheticIdentifier = column.id === IDENTIFIER_COLUMN_ID;
             return (
               <DataTableHeaderCell
                 key={header.id}
@@ -114,8 +105,6 @@ export function GridHeader<TRow>({
                 fieldDef={fieldDef}
                 axisTint={axisRolesByFieldKey.get(column.fieldKey)}
                 isPrimary={isPrimary}
-                isSyntheticIdentifier={isSyntheticIdentifier}
-                identifierBroken={isPrimary && identifierBroken}
                 readOnly={readOnly}
                 hasWriteHandler={hasWriteHandler}
                 headerCellRefByFieldKey={headerCellRefByFieldKey}
@@ -141,8 +130,6 @@ type DataTableHeaderCellProps<TRow> = {
   fieldDef: FieldDef | undefined;
   axisTint: AxisRoleSubset | undefined;
   isPrimary: boolean;
-  isSyntheticIdentifier: boolean;
-  identifierBroken: boolean;
   readOnly: boolean;
   hasWriteHandler: boolean;
   headerCellRefByFieldKey?: Map<string, HTMLTableCellElement>;
@@ -160,8 +147,6 @@ function DataTableHeaderCell<TRow>({
   fieldDef,
   axisTint,
   isPrimary,
-  isSyntheticIdentifier,
-  identifierBroken,
   readOnly,
   hasWriteHandler,
   headerCellRefByFieldKey,
@@ -258,18 +243,7 @@ function DataTableHeaderCell<TRow>({
       }
     >
       <div className="data-table-header-row">
-        {identifierBroken ? (
-          <span
-            className="data-table-header-warning"
-            data-testid="data-table-identifier-broken"
-            title="This field has a configuration error. The identifier references a field that no longer exists."
-            role="img"
-            aria-label="Identifier field is missing"
-          >
-            <AlertTriangle aria-hidden size={12} />
-          </span>
-        ) : null}
-        {schemaLocked && !identifierBroken ? (
+        {schemaLocked ? (
           <span
             className="data-table-header-lock"
             data-testid="data-table-header-lock"
@@ -302,17 +276,9 @@ function DataTableHeaderCell<TRow>({
           isViewer={readOnly}
           onSortAsc={() => headerActions.onSortAsc(column.fieldKey)}
           onSortDesc={() => headerActions.onSortDesc(column.fieldKey)}
-          // Plan 30 P7.5 — the synthetic identifier column is not
-          // filterable or groupable; suppress those menu items so the
-          // user is not invited to attempt a no-op gesture.
-          onFilterBy={
-            isSyntheticIdentifier ? undefined : () => headerActions.onFilterBy(column.fieldKey)
-          }
-          onGroupBy={
-            isSyntheticIdentifier ? undefined : () => headerActions.onGroupBy(column.fieldKey)
-          }
-          // Plan 30 D7 — the pinned identifier slot is never hideable;
-          // suppress the menu item entirely (AirTable parity).
+          onFilterBy={() => headerActions.onFilterBy(column.fieldKey)}
+          onGroupBy={() => headerActions.onGroupBy(column.fieldKey)}
+          // The pinned record_id slot is never hideable.
           onHide={isPrimary ? undefined : () => headerActions.onHide(column.fieldKey)}
           onDeleteField={onDeleteCustomField}
           onDuplicateField={onDuplicateCustomField}

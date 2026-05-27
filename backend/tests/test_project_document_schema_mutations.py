@@ -17,15 +17,13 @@ from fastapi import HTTPException
 from features.project_document import schema_mutations
 from features.project_document.custom_fields import (
     CUSTOM_FIELD_DESCRIPTION_MAX,
-    CustomFieldDef,
     CustomFieldType,
+    TableFieldDef,
 )
 from features.project_document.document import (
     ROOM_FLOOR_LEVEL_OPTION_KEY,
-    ProjectDocumentProject,
     ProjectDocumentV1,
     RoomRow,
-    RoomsTableEnvelope,
     SingleSelectOption,
 )
 from features.project_document.mutations import dispatcher as mutations_dispatcher
@@ -40,7 +38,9 @@ from features.project_document.schema_mutations import (
     SetFormulaMutation,
     apply_schema_mutation,
 )
-from features.project_document.tables.rooms import rooms_custom_fields
+from features.project_document.tables.rooms import rooms_custom_fields, rooms_field_registry
+from features.projects.models import CreateProjectRequest
+from features.projects.service import empty_project_document
 
 ACTOR = "user_acceptance"
 
@@ -56,29 +56,39 @@ def test_module_imports() -> None:
 
 
 def _empty_body() -> ProjectDocumentV1:
-    return ProjectDocumentV1(
-        project=ProjectDocumentProject(
+    return empty_project_document(
+        CreateProjectRequest(
             name="t",
             bt_number="1",
             cert_programs=[],
-        ),
+        )
     )
 
 
 def _make_custom_field(
-    field_id: str,
+    field_key: str,
     display_name: str = "Notes",
     field_type: CustomFieldType = CustomFieldType.short_text,
     description: str | None = None,
-) -> CustomFieldDef:
-    return CustomFieldDef(
-        id=field_id,
+) -> TableFieldDef:
+    return TableFieldDef(
+        field_key=field_key,
         display_name=display_name,
         field_type=field_type,
         description=description,
+        origin="custom",
         created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
         created_by=None,
     )
+
+
+def _custom_fields(body: ProjectDocumentV1) -> list[TableFieldDef]:
+    return [field for field in rooms_field_registry.read_field_defs(body) if field.origin == "custom"]
+
+
+def _row_custom_values(body: ProjectDocumentV1, row: RoomRow) -> dict[str, object]:
+    custom_field_keys = {field.field_key for field in _custom_fields(body)}
+    return {key: value for key, value in row.custom_values.items() if key in custom_field_keys}
 
 
 def _seed_floor_option(body: ProjectDocumentV1, option_id: str = "opt_L1") -> ProjectDocumentV1:
@@ -102,17 +112,22 @@ def _with_room(
     rooms.append(
         RoomRow(
             id=room_id,
-            number=number,
-            name=f"Room {number}",
             floor_level=floor_opts[0].id,
             building_zone=None,
-            num_people=0,
-            num_bedrooms=0,
             icfa_factor=1.0,
             erv_unit_ids=[],
             catalog_origin=None,
             notes=None,
-            custom=cast(dict[str, str | int | float | bool | None], custom or {}),
+            custom_values=cast(
+                dict[str, str | int | float | bool | None],
+                {
+                    "number": number,
+                    "name": f"Room {number}",
+                    "num_people": 0,
+                    "num_bedrooms": 0,
+                    **(custom or {}),
+                },
+            ),
         )
     )
     envelope = body.tables.rooms.model_copy(update={"rows": rooms})
@@ -120,13 +135,11 @@ def _with_room(
     return body.model_copy(update={"tables": next_tables})
 
 
-def _with_field(body: ProjectDocumentV1, field: CustomFieldDef) -> ProjectDocumentV1:
-    envelope = RoomsTableEnvelope(
-        custom_fields=[*body.tables.rooms.custom_fields, field],
-        rows=list(body.tables.rooms.rows),
+def _with_field(body: ProjectDocumentV1, field: TableFieldDef) -> ProjectDocumentV1:
+    return rooms_field_registry.replace_field_defs(
+        body,
+        [*rooms_field_registry.read_field_defs(body), field],
     )
-    next_tables = body.tables.model_copy(update={"rooms": envelope})
-    return body.model_copy(update={"tables": next_tables})
 
 
 def _fingerprint(body: ProjectDocumentV1) -> str:
@@ -197,7 +210,7 @@ def test_add_field_rejects_duplicate_display_name_against_core() -> None:
     detail = cast(dict[str, object], excinfo.value.detail)
     assert detail["error_code"] == "custom_field_duplicate_name"
     details = cast(dict[str, object], detail["details"])
-    assert details["colliding_field_origin"] == "core"
+    assert details["colliding_field_origin"] == "built_in"
 
 
 def test_add_field_inserts_after_specified_field() -> None:
@@ -212,14 +225,14 @@ def test_add_field_inserts_after_specified_field() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    ids = [field.id for field in next_body.tables.rooms.custom_fields]
+    ids = [field.field_key for field in _custom_fields(next_body)]
     assert ids == ["cf_first", "cf_second", "cf_third"]
     assert audit["kind"] == "addField"
     assert audit["field_id"] == "cf_second"
 
     # actor_user_id is stamped onto the added field, overwriting the
-    # `None` the caller-built CustomFieldDef carried.
-    added = next_body.tables.rooms.custom_fields[1]
+    # `None` the caller-built TableFieldDef carried.
+    added = _custom_fields(next_body)[1]
     assert added.created_by == ACTOR
 
 
@@ -232,7 +245,7 @@ def test_add_field_appends_when_anchor_omitted() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, _ = _apply(body, mutation)
-    ids = [field.id for field in next_body.tables.rooms.custom_fields]
+    ids = [field.field_key for field in _custom_fields(next_body)]
     assert ids == ["cf_a", "cf_b"]
 
 
@@ -285,10 +298,10 @@ def test_rename_field_preserves_cf_id_and_row_values() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    field = next_body.tables.rooms.custom_fields[0]
-    assert field.id == "cf_notes"
+    field = _custom_fields(next_body)[0]
+    assert field.field_key == "cf_notes"
     assert field.display_name == "Punch list"
-    assert next_body.tables.rooms.rows[0].custom == {"cf_notes": "needs paint"}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[0]) == {"cf_notes": "needs paint"}
     assert audit["old_display_name"] == "Notes"
     assert audit["new_display_name"] == "Punch list"
 
@@ -324,7 +337,7 @@ def test_rename_field_allows_same_name_on_same_field() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, _ = _apply(body, mutation)
-    assert next_body.tables.rooms.custom_fields[0].display_name == "Notes"
+    assert _custom_fields(next_body)[0].display_name == "Notes"
 
 
 def test_rename_field_rejects_unknown_id() -> None:
@@ -361,8 +374,8 @@ def test_delete_field_strips_row_values() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    assert next_body.tables.rooms.custom_fields == []
-    assert all(row.custom == {} for row in next_body.tables.rooms.rows)
+    assert _custom_fields(next_body) == []
+    assert all(_row_custom_values(next_body, row) == {} for row in next_body.tables.rooms.rows)
     assert audit["cleared_row_count"] == 2
 
 
@@ -406,13 +419,13 @@ def test_duplicate_field_creates_independent_def_with_empty_row_values() -> None
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    ids = [field.id for field in next_body.tables.rooms.custom_fields]
+    ids = [field.field_key for field in _custom_fields(next_body)]
     assert ids == ["cf_src", "cf_dup"]  # inserted immediately after source
-    assert next_body.tables.rooms.custom_fields[1].description == "Original"
-    assert next_body.tables.rooms.custom_fields[1].created_by == ACTOR
+    assert _custom_fields(next_body)[1].description == "Original"
+    assert _custom_fields(next_body)[1].created_by == ACTOR
 
     # Row values are NOT copied — the destination field starts empty.
-    assert next_body.tables.rooms.rows[0].custom == {"cf_src": "value-on-source"}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[0]) == {"cf_src": "value-on-source"}
     assert audit["new_field_id"] == "cf_dup"
 
 
@@ -463,7 +476,7 @@ def test_set_description_round_trips_and_clamps_max_length() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, _ = _apply(body, mutation)
-    stored = next_body.tables.rooms.custom_fields[0].description
+    stored = _custom_fields(next_body)[0].description
     assert stored is not None
     assert len(stored) == CUSTOM_FIELD_DESCRIPTION_MAX
 
@@ -476,7 +489,7 @@ def test_set_description_round_trips_and_clamps_max_length() -> None:
         expected_schema_fingerprint=_fingerprint(next_body),
     )
     next_body, _ = _apply(next_body, mutation_sane)
-    assert next_body.tables.rooms.custom_fields[0].description == "What this column tracks."
+    assert _custom_fields(next_body)[0].description == "What this column tracks."
 
     mutation_clear = SetDescriptionMutation(
         kind="setDescription",
@@ -486,7 +499,7 @@ def test_set_description_round_trips_and_clamps_max_length() -> None:
         expected_schema_fingerprint=_fingerprint(next_body),
     )
     next_body, _ = _apply(next_body, mutation_clear)
-    assert next_body.tables.rooms.custom_fields[0].description is None
+    assert _custom_fields(next_body)[0].description is None
 
 
 # ---------------------------------------------------------------------------
@@ -510,7 +523,7 @@ def test_set_formula_round_trip() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    config = next_body.tables.rooms.custom_fields[0].config
+    config = _custom_fields(next_body)[0].config
     assert config["source"] == 'concat({Number}, " - ", upper({Name}))'
     assert isinstance(config["ast"], dict)
     deps = cast(list[str], config["deps"])
@@ -673,14 +686,14 @@ def test_capability_hook_is_wired_on_rooms_contract() -> None:
 def _seed_custom_single_select(
     body: ProjectDocumentV1,
     *,
-    field_id: str = "cf_ss",
+    field_key: str = "cf_ss",
     display_name: str = "Status",
     options: list[SingleSelectOption] | None = None,
 ) -> ProjectDocumentV1:
-    field = _make_custom_field(field_id, display_name=display_name, field_type=CustomFieldType.single_select)
+    field = _make_custom_field(field_key, display_name=display_name, field_type=CustomFieldType.single_select)
     body = _with_field(body, field)
     next_options = dict(body.single_select_options)
-    next_options[f"rooms.{field_id}"] = options or [
+    next_options[f"rooms.{field_key}"] = options or [
         SingleSelectOption(id="opt_a", label="A", color="#111111", order=1.0),
         SingleSelectOption(id="opt_b", label="B", color="#222222", order=2.0),
     ]
@@ -704,7 +717,7 @@ def test_edit_options_adds_renames_recolors_reorders_no_row_impact() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": "opt_a"}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[0]) == {"cf_ss": "opt_a"}
     assert audit["cleared_row_count"] == 0
     assert audit["added_option_ids"] == ["opt_c"]
     assert audit["deleted_option_ids"] == []
@@ -729,9 +742,9 @@ def test_edit_options_delete_cascades_to_row_clears() -> None:
     next_body, audit = _apply(body, mutation)
     assert audit["cleared_row_count"] == 2
     assert audit["deleted_option_ids"] == ["opt_a"]
-    assert next_body.tables.rooms.rows[0].custom == {"cf_ss": None}
-    assert next_body.tables.rooms.rows[1].custom == {"cf_ss": None}
-    assert next_body.tables.rooms.rows[2].custom == {"cf_ss": "opt_b"}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[0]) == {"cf_ss": None}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[1]) == {"cf_ss": None}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[2]) == {"cf_ss": "opt_b"}
 
 
 def test_edit_options_rejects_duplicate_labels() -> None:
@@ -799,7 +812,7 @@ def test_edit_options_rejects_required_core_select_delete_without_replacement() 
     detail = cast(dict[str, object], excinfo.value.detail)
     assert detail["error_code"] == "custom_field_option_list_invalid"
     details = cast(dict[str, object], detail["details"])
-    assert details["reason"] == "required_core_select_delete_without_replacement"
+    assert details["reason"] == "required_built_in_select_delete_without_replacement"
 
 
 # ---------------------------------------------------------------------------
@@ -808,18 +821,18 @@ def test_edit_options_rejects_required_core_select_delete_without_replacement() 
 
 
 def _make_change_type_target(
-    field_id: str,
-    from_field: CustomFieldDef,
+    field_key: str,
+    from_field: TableFieldDef,
     to_type: CustomFieldType,
-) -> CustomFieldDef:
+) -> TableFieldDef:
     """Build a ChangeTypeMutation `after` preserving identity + metadata."""
-    return CustomFieldDef(
-        id=field_id,
-        field_key=from_field.field_key,
+    return TableFieldDef(
+        field_key=field_key,
         display_name=from_field.display_name,
         field_type=to_type,
         config={},
         description=from_field.description,
+        origin=from_field.origin,
         created_at=from_field.created_at,
         created_by=from_field.created_by,
     )
@@ -831,7 +844,7 @@ def test_change_type_text_to_number_preflight_clean() -> None:
     body = _with_room(body, room_id="rm_1", number="101", custom={"cf_v": "12.5"})
     body = _with_room(body, room_id="rm_2", number="102", custom={"cf_v": "0"})
 
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -840,9 +853,9 @@ def test_change_type_text_to_number_preflight_clean() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    assert next_body.tables.rooms.custom_fields[0].field_type is CustomFieldType.number
-    assert next_body.tables.rooms.rows[0].custom["cf_v"] == 12.5
-    assert next_body.tables.rooms.rows[1].custom["cf_v"] == 0
+    assert _custom_fields(next_body)[0].field_type is CustomFieldType.number
+    assert next_body.tables.rooms.rows[0].custom_values["cf_v"] == 12.5
+    assert next_body.tables.rooms.rows[1].custom_values["cf_v"] == 0
     assert audit["cleared_row_count"] == 0
 
 
@@ -852,7 +865,7 @@ def test_change_type_text_to_number_requires_acknowledgement_on_failure() -> Non
     body = _with_room(body, room_id="rm_1", number="101", custom={"cf_v": "abc"})
     body = _with_room(body, room_id="rm_2", number="102", custom={"cf_v": "42"})
 
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -882,7 +895,7 @@ def test_change_type_text_to_number_requires_acknowledgement_on_failure() -> Non
     next_body, audit = _apply(body, ack)
     assert audit["cleared_row_count"] == 1
     # rm_1 cleared, rm_2 coerced
-    custom_by_id = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    custom_by_id = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
     assert "cf_v" not in custom_by_id["rm_1"]
     assert custom_by_id["rm_2"]["cf_v"] == 42
 
@@ -893,7 +906,7 @@ def test_change_type_text_to_url_validates_url() -> None:
     body = _with_room(body, room_id="rm_1", number="101", custom={"cf_u": "https://example.com"})
     body = _with_room(body, room_id="rm_2", number="102", custom={"cf_u": "not a url"})
 
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -904,7 +917,7 @@ def test_change_type_text_to_url_validates_url() -> None:
     )
     next_body, audit = _apply(body, mutation)
     assert audit["cleared_row_count"] == 1
-    custom = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    custom = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
     assert custom["rm_1"]["cf_u"] == "https://example.com"
     assert "cf_u" not in custom["rm_2"]
 
@@ -916,7 +929,7 @@ def test_change_type_text_to_single_select_auto_creates_options() -> None:
     body = _with_room(body, room_id="rm_2", number="102", custom={"cf_s": "open"})  # dup label
     body = _with_room(body, room_id="rm_3", number="103", custom={"cf_s": "Closed"})
 
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -929,7 +942,7 @@ def test_change_type_text_to_single_select_auto_creates_options() -> None:
     assert [opt.label for opt in new_options] == ["Open", "Closed"]
     open_id = new_options[0].id
     closed_id = new_options[1].id
-    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
     assert rows["rm_1"]["cf_s"] == open_id
     assert rows["rm_2"]["cf_s"] == open_id
     assert rows["rm_3"]["cf_s"] == closed_id
@@ -942,7 +955,7 @@ def test_change_type_single_select_to_text_substitutes_label() -> None:
     body = _with_room(body, room_id="rm_1", number="101", custom={"cf_ss": "opt_a"})
     body = _with_room(body, room_id="rm_2", number="102", custom={"cf_ss": "opt_b"})
 
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -951,7 +964,7 @@ def test_change_type_single_select_to_text_substitutes_label() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
     assert rows["rm_1"]["cf_ss"] == "A"
     assert rows["rm_2"]["cf_ss"] == "B"
     assert "rooms.cf_ss" not in next_body.single_select_options
@@ -973,7 +986,7 @@ def test_change_type_single_select_to_number_coerces_numeric_labels() -> None:
     body = _with_room(body, room_id="rm_2", number="102", custom={"cf_ss": "opt_twenty"})
     body = _with_room(body, room_id="rm_3", number="103", custom={"cf_ss": "opt_a"})
 
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     # First call: ack required since "A" can't parse.
     mutation = ChangeTypeMutation(
         kind="changeType",
@@ -999,8 +1012,8 @@ def test_change_type_single_select_to_number_coerces_numeric_labels() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, ack)
-    assert next_body.tables.rooms.custom_fields[0].field_type is CustomFieldType.number
-    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    assert _custom_fields(next_body)[0].field_type is CustomFieldType.number
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
     assert rows["rm_1"]["cf_ss"] == 10
     assert rows["rm_2"]["cf_ss"] == 20
     assert "cf_ss" not in rows["rm_3"]
@@ -1012,7 +1025,7 @@ def test_change_type_single_select_to_number_coerces_numeric_labels() -> None:
 def test_change_type_rejects_illegal_pair_number_to_url() -> None:
     body = _seed_floor_option(_empty_body())
     body = _with_field(body, _make_custom_field("cf_n", display_name="N", field_type=CustomFieldType.number))
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -1028,7 +1041,7 @@ def test_change_type_rejects_illegal_pair_number_to_url() -> None:
 
 def test_change_type_rejects_no_op_same_type() -> None:
     body = _with_field(_empty_body(), _make_custom_field("cf_a", display_name="A"))
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     mutation = ChangeTypeMutation(
         kind="changeType",
         table_key="rooms",
@@ -1044,15 +1057,15 @@ def test_change_type_rejects_no_op_same_type() -> None:
 
 def test_change_type_rejects_metadata_rewrite() -> None:
     body = _with_field(_empty_body(), _make_custom_field("cf_a", display_name="A"))
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     # Attempt to rewrite display_name during changeType.
-    after = CustomFieldDef(
-        id="cf_a",
+    after = TableFieldDef(
         field_key=field.field_key,
         display_name="A renamed",
         field_type=CustomFieldType.number,
         config={},
         description=field.description,
+        origin=field.origin,
         created_at=field.created_at,
         created_by=field.created_by,
     )
@@ -1107,13 +1120,13 @@ from features.project_document.schema_mutations import EditFieldBundleMutation  
 
 
 def _make_bundle_after(
-    field: CustomFieldDef,
+    field: TableFieldDef,
     *,
     display_name: str | None = None,
     description: str | None | object = ...,
     field_type: CustomFieldType | None = None,
     config: dict[str, object] | None = None,
-) -> CustomFieldDef:
+) -> TableFieldDef:
     return field.model_copy(
         update={
             "display_name": display_name if display_name is not None else field.display_name,
@@ -1138,10 +1151,10 @@ def test_edit_field_bundle_renames_and_updates_description() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    f = next_body.tables.rooms.custom_fields[0]
+    f = _custom_fields(next_body)[0]
     assert f.display_name == "Punch list"
     assert f.description == "updated"
-    assert next_body.tables.rooms.rows[0].custom == {"cf_notes": "needs paint"}
+    assert _row_custom_values(next_body, next_body.tables.rooms.rows[0]) == {"cf_notes": "needs paint"}
     assert audit["kind"] == "editFieldBundle"
     changed = cast(list[str], audit["properties_changed"])
     assert set(changed) == {"display_name", "description"}
@@ -1183,7 +1196,7 @@ def test_edit_field_bundle_rejects_identity_violation() -> None:
     body = _seed_floor_option(_empty_body())
     field = _make_custom_field("cf_notes", display_name="Notes")
     body = _with_field(body, field)
-    after = field.model_copy(update={"id": "cf_other", "display_name": "X"})
+    after = field.model_copy(update={"field_key": "cf_other", "display_name": "X"})
     mutation = EditFieldBundleMutation(
         kind="editFieldBundle",
         table_key="rooms",
@@ -1201,7 +1214,7 @@ def test_edit_field_bundle_rejects_duplicate_display_name() -> None:
     body = _seed_floor_option(_empty_body())
     body = _with_field(body, _make_custom_field("cf_a", display_name="A"))
     body = _with_field(body, _make_custom_field("cf_b", display_name="B"))
-    target = body.tables.rooms.custom_fields[1]
+    target = _custom_fields(body)[1]
     mutation = EditFieldBundleMutation(
         kind="editFieldBundle",
         table_key="rooms",
@@ -1228,7 +1241,7 @@ def test_edit_field_bundle_clamps_description() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, _ = _apply(body, mutation)
-    f = next_body.tables.rooms.custom_fields[0]
+    f = _custom_fields(next_body)[0]
     assert f.description is not None
     assert len(f.description) == CUSTOM_FIELD_DESCRIPTION_MAX
 
@@ -1264,7 +1277,7 @@ def test_edit_field_bundle_changes_type_with_ack() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation_ack)
-    f = next_body.tables.rooms.custom_fields[0]
+    f = _custom_fields(next_body)[0]
     assert f.field_type is CustomFieldType.number
     changed = cast(list[str], audit["properties_changed"])
     assert "field_type" in changed
@@ -1305,7 +1318,7 @@ def test_edit_field_bundle_text_to_single_select_uses_client_options() -> None:
         ("opt_open", "Open"),
         ("opt_done", "Done"),
     ]
-    rows = {row.id: row.custom for row in next_body.tables.rooms.rows}
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
     assert rows["rm_1"]["cf_s"] == "opt_open"
     # "Closed" matches the renamed "Done"? No — label match is case-
     # insensitive on the trimmed text; "Closed" ≠ "Done", so it clears.
@@ -1315,11 +1328,11 @@ def test_edit_field_bundle_text_to_single_select_uses_client_options() -> None:
 
 
 def test_edit_field_bundle_rejects_forbidden_type_change() -> None:
-    # short_text -> formula is not in CONVERSION_MATRIX.
+    # number -> url is not in CONVERSION_MATRIX.
     body = _seed_floor_option(_empty_body())
-    field = _make_custom_field("cf_t", display_name="T", field_type=CustomFieldType.short_text)
+    field = _make_custom_field("cf_t", display_name="T", field_type=CustomFieldType.number)
     body = _with_field(body, field)
-    after = _make_bundle_after(field, field_type=CustomFieldType.formula, config={})
+    after = _make_bundle_after(field, field_type=CustomFieldType.url, config={})
     mutation = EditFieldBundleMutation(
         kind="editFieldBundle",
         table_key="rooms",
@@ -1336,7 +1349,7 @@ def test_edit_field_bundle_rejects_forbidden_type_change() -> None:
 def test_edit_field_bundle_edits_options_and_sets_default() -> None:
     body = _seed_floor_option(_empty_body())
     body = _seed_custom_single_select(body)
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     next_options = [
         SingleSelectOption(id="opt_a", label="A", color="#111111", order=1.0),
         SingleSelectOption(id="opt_b", label="B", color="#222222", order=2.0),
@@ -1352,7 +1365,7 @@ def test_edit_field_bundle_edits_options_and_sets_default() -> None:
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    final_field = next_body.tables.rooms.custom_fields[0]
+    final_field = _custom_fields(next_body)[0]
     assert final_field.config.get("default_option_id") == "opt_b"
     final_options = next_body.single_select_options["rooms.cf_ss"]
     assert [o.id for o in final_options] == ["opt_a", "opt_b", "opt_c"]
@@ -1364,7 +1377,7 @@ def test_edit_field_bundle_edits_options_and_sets_default() -> None:
 def test_edit_field_bundle_rejects_default_not_in_options() -> None:
     body = _seed_floor_option(_empty_body())
     body = _seed_custom_single_select(body)
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     after = _make_bundle_after(field, config={"default_option_id": "opt_nonexistent"})
     mutation = EditFieldBundleMutation(
         kind="editFieldBundle",
@@ -1402,7 +1415,7 @@ def test_edit_field_bundle_rejects_default_outside_single_select() -> None:
 def test_edit_field_bundle_rename_plus_options_plus_default_single_audit() -> None:
     body = _seed_floor_option(_empty_body())
     body = _seed_custom_single_select(body)
-    field = body.tables.rooms.custom_fields[0]
+    field = _custom_fields(body)[0]
     next_options = [
         SingleSelectOption(id="opt_a", label="Alpha", color="#111111", order=1.0),
         SingleSelectOption(id="opt_b", label="Beta", color="#222222", order=2.0),
@@ -1422,7 +1435,7 @@ def test_edit_field_bundle_rename_plus_options_plus_default_single_audit() -> No
         expected_schema_fingerprint=_fingerprint(body),
     )
     next_body, audit = _apply(body, mutation)
-    final_field = next_body.tables.rooms.custom_fields[0]
+    final_field = _custom_fields(next_body)[0]
     assert final_field.display_name == "Status (renamed)"
     assert final_field.description == "now with default"
     assert final_field.config.get("default_option_id") == "opt_a"

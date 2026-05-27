@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import { setCustomValue } from "../../../shared/ui/data-table";
 import { optionLabel } from "../lib";
+import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   ROOM_BUILDING_ZONE_OPTION_KEY,
   ROOM_FLOOR_LEVEL_OPTION_KEY,
@@ -50,11 +52,11 @@ export function RoomModal({
       setError(frozenReason);
       return;
     }
-    if (!draft.number.trim()) {
+    if (!customTextValue(draft, "number").trim()) {
       setError("Room number is required.");
       return;
     }
-    if (!draft.name.trim()) {
+    if (!customTextValue(draft, "name").trim()) {
       setError("Room name is required.");
       return;
     }
@@ -99,8 +101,8 @@ export function RoomModal({
           <label>
             Number
             <input
-              value={draft.number}
-              onChange={(event) => setDraft({ ...draft, number: event.target.value })}
+              value={customTextValue(draft, "number")}
+              onChange={(event) => setDraft(setCustomValue(draft, "number", event.target.value))}
               disabled={isFrozen}
               required
             />
@@ -108,8 +110,8 @@ export function RoomModal({
           <label>
             Name
             <input
-              value={draft.name}
-              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+              value={customTextValue(draft, "name")}
+              onChange={(event) => setDraft(setCustomValue(draft, "name", event.target.value))}
               disabled={isFrozen}
               required
             />
@@ -139,9 +141,15 @@ export function RoomModal({
               type="number"
               min="0"
               step="1"
-              value={draft.num_people}
+              value={customNumberValue(draft, "num_people") ?? 0}
               onChange={(event) =>
-                setDraft({ ...draft, num_people: Number(event.target.value) || 0 })
+                setDraft(
+                  setCustomValue(
+                    draft,
+                    { field_key: "num_people" },
+                    Number(event.target.value) || 0,
+                  ),
+                )
               }
               disabled={isFrozen}
             />
@@ -152,9 +160,15 @@ export function RoomModal({
               type="number"
               min="0"
               step="1"
-              value={draft.num_bedrooms}
+              value={customNumberValue(draft, "num_bedrooms") ?? 0}
               onChange={(event) =>
-                setDraft({ ...draft, num_bedrooms: Number(event.target.value) || 0 })
+                setDraft(
+                  setCustomValue(
+                    draft,
+                    { field_key: "num_bedrooms" },
+                    Number(event.target.value) || 0,
+                  ),
+                )
               }
               disabled={isFrozen}
             />

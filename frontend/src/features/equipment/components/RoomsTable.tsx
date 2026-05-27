@@ -1,11 +1,11 @@
 import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
+  RECORD_ID_FIELD_KEY,
   getCustomValue,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
-  type IdentifierConfig,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
@@ -13,6 +13,7 @@ import { ComputedCell } from "../../../shared/ui/data-table/components/ComputedC
 import { isComputedErrorValue } from "../../../shared/ui/data-table/lib/formula";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedRooms } from "../lib";
+import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
@@ -21,19 +22,6 @@ import {
   type RoomRow,
   type RoomsSlice,
 } from "../types";
-
-// `compute` is called per row by the accessor (sort, filter,
-// aggregates, duplicate scan) and the cell renderer — keep it
-// allocation-free.
-const ROOMS_IDENTIFIER: IdentifierConfig<RoomRow> = {
-  kind: "computed",
-  deps: ["number", "name"],
-  compute: (room) => {
-    const { number, name } = room;
-    if (number && name) return `${number} — ${name}`;
-    return number || name || "";
-  },
-};
 
 export function RoomsTable({
   roomsSlice,
@@ -96,18 +84,12 @@ export function RoomsTable({
           // The accessor returns the scalar (errors → null) so sorts
           // and aggregates stay clean; render shows the error glyph.
           const computedType = fieldDef?.computed_type ?? "text";
-          return {
-            id: custom.field_key,
+          return computedColumnDef({
             fieldKey: custom.field_key,
             header: custom.display_name,
-            accessor: (room) => readComputedScalar(rowsComputed, room.id, custom.field_key),
-            render: (room) => (
-              <ComputedCell
-                value={readComputedRaw(rowsComputed, room.id, custom.field_key)}
-                computedType={computedType}
-              />
-            ),
-          };
+            computedType,
+            rowsComputed,
+          });
         }
         return {
           id: custom.field_key,
@@ -118,20 +100,28 @@ export function RoomsTable({
       }),
     [customFields, fieldDefByKey, rowsComputed],
   );
-  const columns = useMemo<DataTableColumnDef<RoomRow>[]>(
-    () => [
+  const columns = useMemo<DataTableColumnDef<RoomRow>[]>(() => {
+    const recordIdFieldDef = fieldDefByKey.get(RECORD_ID_FIELD_KEY);
+    return [
+      computedColumnDef({
+        fieldKey: RECORD_ID_FIELD_KEY,
+        header: recordIdFieldDef?.display_name ?? "Record-ID",
+        computedType: recordIdFieldDef?.computed_type ?? "text",
+        rowsComputed,
+        defaultWidth: 180,
+      }),
       {
         id: "number",
         fieldKey: "number",
         header: fieldDefByKey.get("number")?.display_name ?? "Number",
-        accessor: (room) => room.number,
+        accessor: (room) => customTextValue(room, "number"),
         defaultWidth: 120,
       },
       {
         id: "name",
         fieldKey: "name",
         header: fieldDefByKey.get("name")?.display_name ?? "Name",
-        accessor: (room) => room.name,
+        accessor: (room) => customTextValue(room, "name"),
         defaultWidth: 240,
       },
       {
@@ -152,14 +142,14 @@ export function RoomsTable({
         id: "num_people",
         fieldKey: "num_people",
         header: fieldDefByKey.get("num_people")?.display_name ?? "People",
-        accessor: (room) => room.num_people,
+        accessor: (room) => customNumberValue(room, "num_people"),
         className: "numeric-cell",
       },
       {
         id: "num_bedrooms",
         fieldKey: "num_bedrooms",
         header: fieldDefByKey.get("num_bedrooms")?.display_name ?? "Bedrooms",
-        accessor: (room) => room.num_bedrooms,
+        accessor: (room) => customNumberValue(room, "num_bedrooms"),
         className: "numeric-cell",
       },
       {
@@ -185,16 +175,14 @@ export function RoomsTable({
         defaultWidth: 200,
       },
       ...customColumns,
-    ],
-    [fieldDefByKey, customColumns],
-  );
+    ];
+  }, [fieldDefByKey, customColumns, rowsComputed]);
 
   return (
     <DataTable
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}
-      identifier={ROOMS_IDENTIFIER}
       getRowId={(room) => room.id}
       emptyMessage={isEditor ? "No rooms yet." : "No rooms are published in this version."}
       readOnly={!isEditor}
@@ -237,6 +225,30 @@ function readComputedScalar(
 ): unknown {
   const raw = readComputedRaw(overlay, rowId, fieldId);
   return isComputedErrorValue(raw) ? null : raw;
+}
+
+function computedColumnDef(args: {
+  fieldKey: string;
+  header: string;
+  computedType: "text" | "number";
+  rowsComputed: Record<string, Record<string, unknown>> | undefined;
+  defaultWidth?: number;
+}): DataTableColumnDef<RoomRow> {
+  const { fieldKey, header, computedType, rowsComputed, defaultWidth } = args;
+  return {
+    id: fieldKey,
+    fieldKey,
+    header,
+    accessor: (room) => readComputedScalar(rowsComputed, room.id, fieldKey),
+    render: (room) => (
+      <ComputedCell
+        value={readComputedRaw(rowsComputed, room.id, fieldKey)}
+        computedType={computedType}
+      />
+    ),
+    measureText: (room) => String(readComputedScalar(rowsComputed, room.id, fieldKey) ?? ""),
+    ...(defaultWidth !== undefined ? { defaultWidth } : {}),
+  };
 }
 
 function optionPill(value: string | null, fieldDef: FieldDef | undefined) {

@@ -1,64 +1,71 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
-import {
-  IDENTIFIER_COLUMN_ID,
-  IDENTIFIER_HEADER_LABEL,
-  emptyViewState,
-  type DataTableColumnDef,
-  type FieldDef,
-  type IdentifierConfig,
-} from "../types";
+import { RECORD_ID_FIELD_KEY } from "../lib/identifier/recordId";
+import { emptyViewState, type DataTableColumnDef, type FieldDef, type ViewState } from "../types";
 
-// Pumps-like row exercises `kind: "field"` (Tag is the identifier).
-type Pump = { id: string; tag: string | null; flow: number | null };
+type Pump = { id: string; record_id: string | null; flow: number | null };
 const pumpRows: Pump[] = [
-  { id: "pmp_1", tag: "P-01", flow: 10 },
-  { id: "pmp_2", tag: "P-02", flow: 20 },
-  { id: "pmp_3", tag: "P-01", flow: 30 }, // duplicate identifier
+  { id: "pmp_1", record_id: "P-01", flow: 10 },
+  { id: "pmp_2", record_id: "P-02", flow: 20 },
+  { id: "pmp_3", record_id: "P-01", flow: 30 },
 ];
 const pumpFieldDefs: FieldDef[] = [
-  { field_key: "tag", field_type: "text", display_name: "Tag", default: null },
+  { field_key: RECORD_ID_FIELD_KEY, field_type: "text", display_name: "Tag", default: null },
   { field_key: "flow", field_type: "number", display_name: "Flow", default: null },
 ];
 const pumpColumns: DataTableColumnDef<Pump>[] = [
-  // Tag is declared as the SECOND column. The identifier promotes it.
   { id: "col-flow", fieldKey: "flow", header: "Flow", accessor: (row) => row.flow },
-  { id: "col-tag", fieldKey: "tag", header: "Tag", accessor: (row) => row.tag },
+  {
+    id: "col-record-id",
+    fieldKey: RECORD_ID_FIELD_KEY,
+    header: "Tag",
+    accessor: (row) => row.record_id,
+  },
 ];
 
-function renderPumps(overrides: { identifier?: IdentifierConfig<Pump> }) {
+function renderPumps(view: ViewState = emptyViewState()) {
   return render(
     <DataTable<Pump>
       rows={pumpRows}
       getRowId={(row) => row.id}
       fieldDefs={pumpFieldDefs}
       columnDefs={pumpColumns}
-      view={emptyViewState()}
+      view={view}
       onViewChange={vi.fn()}
       onWrite={vi.fn()}
-      identifier={overrides.identifier}
       emptyMessage="No pumps."
     />,
   );
 }
 
-// Rooms-like row exercises `kind: "computed"`.
-type Room = { id: string; number: string; name: string };
+type Room = { id: string; number: string; name: string; record_id: string };
 const roomRows: Room[] = [
-  { id: "rm_1", number: "101", name: "Living" },
-  { id: "rm_2", number: "102", name: "Kitchen" },
+  { id: "rm_1", number: "101", name: "Living", record_id: "101 - Living" },
+  { id: "rm_2", number: "102", name: "Kitchen", record_id: "102 - Kitchen" },
 ];
 const roomFieldDefs: FieldDef[] = [
+  {
+    field_key: RECORD_ID_FIELD_KEY,
+    field_type: "computed",
+    display_name: "Record-ID",
+    default: null,
+  },
   { field_key: "number", field_type: "text", display_name: "Number", default: "" },
   { field_key: "name", field_type: "text", display_name: "Name", default: "" },
 ];
 const roomColumns: DataTableColumnDef<Room>[] = [
   { id: "col-number", fieldKey: "number", header: "Number", accessor: (row) => row.number },
+  {
+    id: "col-record-id",
+    fieldKey: RECORD_ID_FIELD_KEY,
+    header: "Record-ID",
+    accessor: (row) => row.record_id,
+  },
   { id: "col-name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
 ];
 
-function renderRooms(overrides: { identifier?: IdentifierConfig<Room> }) {
+function renderRooms() {
   return render(
     <DataTable<Room>
       rows={roomRows}
@@ -68,25 +75,29 @@ function renderRooms(overrides: { identifier?: IdentifierConfig<Room> }) {
       view={emptyViewState()}
       onViewChange={vi.fn()}
       onWrite={vi.fn()}
-      identifier={overrides.identifier}
       emptyMessage="No rooms."
     />,
   );
 }
 
-describe("DataTable identifier column — kind: 'field'", () => {
-  test("promotes the backing column to slot 0 with the 'Record-ID' header", () => {
-    renderPumps({ identifier: { kind: "field", field: "tag" } });
+describe("DataTable record_id column", () => {
+  test("pins the real record_id column to slot 0", () => {
+    renderPumps();
     const headers = screen.getAllByRole("columnheader");
-    // gutter is the first columnheader; the identifier column is next.
-    expect(headers[1]?.textContent).toContain(IDENTIFIER_HEADER_LABEL);
+    expect(headers[1]?.textContent).toContain("Tag");
+    expect(headers[2]?.textContent).toContain("Flow");
+  });
+
+  test("record_id pinning overrides saved column order", () => {
+    renderPumps({ ...emptyViewState(), columnOrder: ["col-flow", "col-record-id"] });
+    const headers = screen.getAllByRole("columnheader");
+    expect(headers[1]?.textContent).toContain("Tag");
     expect(headers[2]?.textContent).toContain("Flow");
   });
 
   test("renders the duplicate-value chip on conflicting rows only", () => {
-    renderPumps({ identifier: { kind: "field", field: "tag" } });
+    renderPumps();
     const chips = screen.getAllByTestId("data-table-identifier-duplicate");
-    // pmp_1 (P-01) and pmp_3 (P-01) collide; pmp_2 (P-02) does not.
     expect(chips).toHaveLength(2);
     for (const chip of chips) {
       expect(chip.getAttribute("title")).toMatch(/Also used on row/);
@@ -96,104 +107,45 @@ describe("DataTable identifier column — kind: 'field'", () => {
   test("no chip surfaces when no duplicates exist", () => {
     render(
       <DataTable<Pump>
-        rows={[{ id: "pmp_1", tag: "P-01", flow: 10 }]}
+        rows={[{ id: "pmp_1", record_id: "P-01", flow: 10 }]}
         getRowId={(row) => row.id}
         fieldDefs={pumpFieldDefs}
         columnDefs={pumpColumns}
         view={emptyViewState()}
         onViewChange={vi.fn()}
         onWrite={vi.fn()}
-        identifier={{ kind: "field", field: "tag" }}
         emptyMessage="None."
       />,
     );
     expect(screen.queryAllByTestId("data-table-identifier-duplicate")).toHaveLength(0);
   });
 
-  test("broken-identifier renders ERROR cells and a header warning glyph", () => {
-    renderPumps({
-      identifier: { kind: "field", field: "does_not_exist" as keyof Pump & string },
-    });
-    expect(screen.getByTestId("data-table-identifier-broken")).toBeTruthy();
-    expect(screen.getAllByText("ERROR").length).toBe(pumpRows.length);
-  });
-
-  test("right-click context menu omits 'Hide field' on the pinned slot", () => {
-    renderPumps({ identifier: { kind: "field", field: "tag" } });
-    const headers = screen.getAllByRole("columnheader");
-    const pinnedHeader = headers[1];
+  test("right-click context menu omits Hide field on the pinned slot", () => {
+    renderPumps();
+    const pinnedHeader = screen.getAllByRole("columnheader")[1];
     expect(pinnedHeader).toBeTruthy();
     if (!pinnedHeader) return;
     fireEvent.contextMenu(pinnedHeader);
     const menu = screen.getByRole("menu");
     expect(within(menu).queryByText("Hide field")).toBeNull();
-    // Sort items remain available.
     expect(within(menu).getByText("Sort A → Z")).toBeTruthy();
   });
 
-  test("right-click on a NON-pinned column still surfaces 'Hide field'", () => {
-    renderPumps({ identifier: { kind: "field", field: "tag" } });
-    const headers = screen.getAllByRole("columnheader");
-    const flowHeader = headers[2];
+  test("right-click on a non-pinned column still surfaces Hide field", () => {
+    renderPumps();
+    const flowHeader = screen.getAllByRole("columnheader")[2];
     expect(flowHeader).toBeTruthy();
     if (!flowHeader) return;
     fireEvent.contextMenu(flowHeader);
     const menu = screen.getByRole("menu");
     expect(within(menu).getByText("Hide field")).toBeTruthy();
   });
-});
 
-describe("DataTable identifier column — kind: 'computed'", () => {
-  test("prepends synthetic __record_id__ column showing the compute output", () => {
-    renderRooms({
-      identifier: {
-        kind: "computed",
-        deps: ["number", "name"],
-        compute: (room) => `${room.number} — ${room.name}`,
-      },
-    });
+  test("supports computed record_id values as a real column", () => {
+    renderRooms();
     const headers = screen.getAllByRole("columnheader");
-    expect(headers[1]?.textContent).toContain(IDENTIFIER_HEADER_LABEL);
-    // Per-row compute output rendered in the cells.
-    expect(screen.getByText("101 — Living")).toBeTruthy();
-    expect(screen.getByText("102 — Kitchen")).toBeTruthy();
-  });
-
-  test("context menu on synthetic identifier suppresses Filter and Group items", () => {
-    renderRooms({
-      identifier: {
-        kind: "computed",
-        deps: ["number", "name"],
-        compute: (room) => `${room.number} — ${room.name}`,
-      },
-    });
-    const headers = screen.getAllByRole("columnheader");
-    const pinnedHeader = headers[1];
-    expect(pinnedHeader).toBeTruthy();
-    if (!pinnedHeader) return;
-    fireEvent.contextMenu(pinnedHeader);
-    const menu = screen.getByRole("menu");
-    expect(within(menu).queryByText("Filter by this field")).toBeNull();
-    expect(within(menu).queryByText("Group by this field")).toBeNull();
-    expect(within(menu).queryByText("Hide field")).toBeNull();
-    // Sort items are kept (D5).
-    expect(within(menu).getByText("Sort A → Z")).toBeTruthy();
-  });
-
-  test("synthetic column id matches the reserved IDENTIFIER_COLUMN_ID", () => {
-    renderRooms({
-      identifier: {
-        kind: "computed",
-        deps: ["number", "name"],
-        compute: (room) => `${room.number} — ${room.name}`,
-      },
-    });
-    // The DOM exposes the field key on each cell via `data-field-key`.
-    // The summary-bar row emits its own td with the same field key —
-    // restrict the query to the body rows.
-    const identifierCells = document.querySelectorAll(
-      `tbody td[data-field-key="${IDENTIFIER_COLUMN_ID}"]`,
-    );
-    expect(identifierCells.length).toBe(roomRows.length);
+    expect(headers[1]?.textContent).toContain("Record-ID");
+    expect(screen.getByText("101 - Living")).toBeTruthy();
+    expect(screen.getByText("102 - Kitchen")).toBeTruthy();
   });
 });

@@ -39,17 +39,22 @@ export function RefreshDialog({
               <legend>
                 <span>{field.key}</span>
                 {field.is_overridden ? <span className="override-badge">Override</span> : null}
+                {field.skip_reason ? <span className="override-badge">Skipped</span> : null}
               </legend>
               <div className="refresh-values">
                 <code>{formatRefreshValue(field.ref_value)}</code>
                 <code>{formatRefreshValue(field.catalog_value)}</code>
               </div>
+              {field.skip_reason ? (
+                <p className="form-note">{skipReasonLabel(field.skip_reason)}</p>
+              ) : null}
               <label>
                 <input
                   type="radio"
                   name={`refresh-${field.key}`}
                   checked={(selection[field.key] ?? "keep") === "keep"}
                   onChange={() => setChoice(field.key, "keep")}
+                  disabled={field.skip_reason !== undefined}
                 />
                 Keep mine
               </label>
@@ -59,7 +64,7 @@ export function RefreshDialog({
                   name={`refresh-${field.key}`}
                   checked={selection[field.key] === "update"}
                   onChange={() => setChoice(field.key, "update")}
-                  disabled={!applyEnabled}
+                  disabled={!applyEnabled || field.skip_reason !== undefined}
                 />
                 Update from catalog
               </label>
@@ -85,4 +90,11 @@ export function RefreshDialog({
 
 function formatRefreshValue(value: unknown): string {
   return formatClipboardValue(value) || "(blank)";
+}
+
+function skipReasonLabel(reason: NonNullable<RefreshSlotReport["fields"][number]["skip_reason"]>) {
+  if (reason === "field_type_changed") {
+    return "Skipped because this project field's type no longer matches the catalog.";
+  }
+  return "Skipped.";
 }

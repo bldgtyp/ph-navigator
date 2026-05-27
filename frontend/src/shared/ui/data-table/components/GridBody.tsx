@@ -1,7 +1,8 @@
 import { flexRender, type Table } from "@tanstack/react-table";
 import { AlertTriangle } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import { describeDuplicateRows } from "../lib/identifier/resolve";
+import { describeDuplicateRows } from "../lib/identifier/recordId";
+import type { DuplicateIdentifierRows } from "../lib/identifier/recordId";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
 import type {
   AxisRoleSubset,
@@ -81,13 +82,10 @@ export type GridBodyProps<TRow> = {
   // (onCellOpen) already gate themselves on the same flag — this is
   // just the render-side mirror so the affordance matches the gesture.
   cellsWritable?: boolean;
-  // Plan 30 D13 — identifier-column id (slot 0 when the consumer
-  // configured an identifier) and a map of rowId → 1-indexed numbers
-  // of other rows sharing the same identifier value. Cells in the
-  // identifier column whose rowId is in the map render a non-blocking
-  // warning chip with a tooltip describing the conflict.
+  // The pinned record_id column shows a non-blocking warning chip when
+  // another visible row has the same non-empty identifier value.
   identifierColumnId?: string | null;
-  identifierDuplicates?: ReadonlyMap<string, number[]>;
+  identifierDuplicates?: ReadonlyMap<string, DuplicateIdentifierRows>;
 };
 
 export function GridBody<TRow>({
@@ -124,9 +122,8 @@ export function GridBody<TRow>({
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
-  // Plan 30 D13 — precompute the identifier column index so the
-  // per-cell duplicate-chip check is a single integer compare and
-  // the lookup is skipped entirely when no identifier is configured.
+  // Precompute the identifier column index so the per-cell duplicate
+  // chip check is a single integer compare.
   const identifierColumnIndex =
     identifierColumnId === null
       ? -1
@@ -172,16 +169,16 @@ export function GridBody<TRow>({
         const tanstackRow = tableRows[rowIndex];
         if (!tanstackRow) return null;
         const isLastDataRow = rowIndex === rowIds.length - 1;
-        // Hoisted per-row identifier-duplicate lookup; only depends on
-        // rowId, so it doesn't belong inside the per-cell loop.
+        // Hoisted per-row duplicate lookup; only depends on rowId, so
+        // it doesn't belong inside the per-cell loop.
         const rowIdForRow = rowIds[rowIndex];
-        const duplicateRowNumbers =
+        const duplicateIdentifier =
           identifierColumnIndex >= 0 && rowIdForRow !== undefined
             ? identifierDuplicates?.get(rowIdForRow)
             : undefined;
         const duplicateTooltip =
-          duplicateRowNumbers && duplicateRowNumbers.length > 0
-            ? describeDuplicateRows(duplicateRowNumbers)
+          duplicateIdentifier && duplicateIdentifier.totalOthers > 0
+            ? describeDuplicateRows(duplicateIdentifier)
             : "";
         return (
           <tr

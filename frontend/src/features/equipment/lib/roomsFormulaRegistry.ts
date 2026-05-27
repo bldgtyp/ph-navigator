@@ -1,25 +1,10 @@
-// Rooms-specific formula-field registry helpers. Lives next to
-// `roomsController.ts` because the formula field-id mapping is
-// feature-specific (the namespaced core single-select column keys
-// "rooms.floor_level" / "rooms.building_zone" map to backend formula
-// ids "floor_level" / "building_zone").
+// Rooms-specific formula-field registry helpers.
 
 import type { FieldRegistryEntry } from "../../../shared/ui/data-table";
-import { isBuiltInField } from "../../../shared/ui/data-table";
+import { getCustomValue, isBuiltInField } from "../../../shared/ui/data-table";
 import { mapToFormulaType } from "../../../shared/ui/data-table/lib/formula/mapToFormulaType";
-import { ROOM_BUILDING_ZONE_KEY, ROOM_FLOOR_LEVEL_KEY, type RoomRow } from "../types";
+import type { RoomRow } from "../types";
 import { ROOMS_SCHEMA_CORE_FIELD_KEYS } from "../lib";
-
-// Maps Rooms FieldDefs (whose `field_key`s use the column-side
-// namespaced ids for `rooms.floor_level` / `rooms.building_zone`) onto
-// formula-side `field_id`s that match the backend's
-// `ROOMS_CORE_FORMULA_TYPES` keys. Custom fields already use the
-// formula identity (their `cf_*` id), so the mapping is identity for
-// them.
-export const ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY: Record<string, string> = {
-  [ROOM_FLOOR_LEVEL_KEY]: "floor_level",
-  [ROOM_BUILDING_ZONE_KEY]: "building_zone",
-};
 
 export function buildRoomsFormulaRegistry(
   fieldDefs: ReadonlyArray<{
@@ -29,15 +14,12 @@ export function buildRoomsFormulaRegistry(
     built_in?: boolean;
   }>,
 ): FieldRegistryEntry[] {
-  return fieldDefs.map((fieldDef) => {
-    const fieldId = ROOMS_FORMULA_FIELD_ID_BY_COLUMN_KEY[fieldDef.field_key] ?? fieldDef.field_key;
-    return {
-      field_id: fieldId,
-      display_name: fieldDef.display_name,
-      origin: isBuiltInField(fieldDef) ? "core" : "custom",
-      field_type: mapToFormulaType(fieldDef.field_type),
-    };
-  });
+  return fieldDefs.map((fieldDef) => ({
+    field_id: fieldDef.field_key,
+    display_name: fieldDef.display_name,
+    origin: isBuiltInField(fieldDef) ? "core" : "custom",
+    field_type: mapToFormulaType(fieldDef.field_type),
+  }));
 }
 
 // Read a formula-side core value off a RoomRow, mirroring the backend's
@@ -45,9 +27,8 @@ export function buildRoomsFormulaRegistry(
 // agrees with the server-side computed overlay. List-valued cores are
 // joined with ", " for parity.
 export function readRoomsFormulaValue(room: RoomRow, fieldId: string): unknown {
-  if (fieldId.startsWith("cf_")) {
-    return room.custom[fieldId] ?? null;
-  }
+  const customValue = getCustomValue(room, fieldId);
+  if (customValue !== undefined) return customValue ?? null;
   const raw = (room as unknown as Record<string, unknown>)[fieldId];
   if (Array.isArray(raw)) return raw.map((v) => String(v)).join(", ");
   if (raw === undefined) return null;
@@ -57,10 +38,11 @@ export function readRoomsFormulaValue(room: RoomRow, fieldId: string): unknown {
 export function buildRoomFormulaRowValues(room: RoomRow): Record<string, unknown> {
   const values: Record<string, unknown> = {};
   for (const fieldId of ROOMS_SCHEMA_CORE_FIELD_KEYS) {
+    if (fieldId === "custom_values") continue;
     values[fieldId] = readRoomsFormulaValue(room, fieldId);
   }
-  for (const [cfId, value] of Object.entries(room.custom)) {
-    values[cfId] = value ?? null;
+  for (const [fieldKey, value] of Object.entries(room.custom_values)) {
+    values[fieldKey] = value ?? null;
   }
   return values;
 }

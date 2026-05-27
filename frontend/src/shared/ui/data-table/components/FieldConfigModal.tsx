@@ -21,7 +21,7 @@ import type {
   FieldOption,
 } from "../types";
 import type { FieldRegistryEntry } from "../lib/formula";
-import { FIELD_LOCKED_TOOLTIP, isAttributeLocked, isBuiltInField } from "../lib/locks";
+import { FIELD_LOCKED_TOOLTIP, isAttributeLocked } from "../lib/locks";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
@@ -362,11 +362,7 @@ export function FieldConfigModal({
   const canSave =
     formDirty && optionsValid && formulaValid && !pending && !externalConflict && ackSatisfied;
 
-  // Phase 1a hard rule: type-picker stays disabled on every built-in
-  // regardless of `field_type` lock state — the storage path has not
-  // been reshaped yet, so a retype would strand stored values. Phase 3
-  // drops this rule and falls back to the lock-list signal alone.
-  const fieldTypeLocked = isBuiltInField(fieldDef) || isAttributeLocked(fieldDef, "field_type");
+  const fieldTypeLocked = isAttributeLocked(fieldDef, "field_type");
 
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
@@ -727,8 +723,5 @@ function typeCandidateTitle(
   allowed: boolean,
 ): string {
   if (allowed) return candidate.label;
-  if (candidate.kind === "formula" || sourceCustomFieldType === "formula") {
-    return "Formula fields cannot be converted to or from another type.";
-  }
   return `Cannot convert ${sourceCustomFieldType} values to ${candidate.label.toLowerCase()}.`;
 }

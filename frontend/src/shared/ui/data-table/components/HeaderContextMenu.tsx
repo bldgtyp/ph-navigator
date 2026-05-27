@@ -35,10 +35,9 @@ export type HeaderContextMenuProps = {
   onSortAsc: () => void;
   onSortDesc: () => void;
   onFilterBy?: () => void;
-  // Optional so the pinned identifier column and the synthetic
-  // `__record_id__` field can suppress these without forcing the
-  // caller to wire no-op handlers (Plan 30 D7 / P7.5).
   onGroupBy?: () => void;
+  // Optional so the pinned record_id column can suppress this without
+  // forcing the caller to wire a no-op handler.
   onHide?: () => void;
 };
 

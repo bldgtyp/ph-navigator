@@ -867,10 +867,13 @@ level, not architectural.*
 audit + circular-import fix). Frontend foundation slice landed
 2026-05-26 (commit `891d1c6` on `worktree-plan-31-frontend-bundle`):
 `TableFieldDef` canonical type, `slice.field_defs` rename on Rooms +
-Pumps, fingerprint v1 → v2 byte-matching backend. Remaining frontend
-slices (#28 useTableSchema reshape, #11 row-shape migration, #29
-IdentifierConfig deletion, #30–#32 small wins, #33 catalog refresh
-skip, #34 test rewrites, #36 verification) tracked in
+Pumps, fingerprint v1 → v2 byte-matching backend. Frontend slices
+#28 useTableSchema reshape, #11 row-shape migration, #29
+IdentifierConfig deletion, #30–#32 small wins, and #33 catalog refresh
+skip UX landed 2026-05-27. #34 test rewrites started 2026-05-27 with
+the backend schema-mutation fixture module green on the Phase 3 shape;
+remaining frontend slices (#34 frontend fixtures, #36 verification)
+tracked in
 `docs/plans/2026-05-26/editable-fields/plan-31-phase-3-frontend-bundle.md`;
 estimated 3–5 sessions remaining.
 See `plan-31-phase-3-built-in-type-changes.md` STATUS for the landed-

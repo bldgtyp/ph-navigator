@@ -1,23 +1,19 @@
 import type { FieldOption, TableFieldDef } from "../../shared/ui/data-table";
 
 export type SingleSelectOption = FieldOption;
+export type CustomValue = string | number | boolean | null;
 
 export type RoomRow = {
   id: string;
-  number: string;
-  name: string;
   floor_level: string | null;
   building_zone: string | null;
-  num_people: number;
-  num_bedrooms: number;
   icfa_factor: number;
   erv_unit_ids: string[];
   catalog_origin: Record<string, unknown> | null;
   notes: string | null;
-  // Plan-13 §4.1 / plan-14 P1.1: sparse user-defined values keyed by
-  // the custom field's stable `cf_*` id. Always present (defaults to
-  // {}) so consumers can spread without a null check.
-  custom: Record<string, unknown>;
+  // Backend `custom_values` bag keyed by every mutable-type FieldDef
+  // (`number`, `name`, `num_people`, `num_bedrooms`, and `cf_*` fields).
+  custom_values: Record<string, CustomValue>;
 };
 
 export const ROOM_FLOOR_LEVEL_KEY = "floor_level";
@@ -85,19 +81,13 @@ export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];
 export type PumpRow = {
   id: string;
   device_type: string | null;
-  use: string | null;
-  tag: string | null;
-  manufacturer: string | null;
-  model: string | null;
-  volts: number | null;
   phase: number | null;
-  horse_power: number | null;
-  wattage: number | null;
-  flow_gpm: number | null;
-  runtime_khr_yr: number | null;
   notes: string | null;
   link: string | null;
   datasheet_asset_ids: string[];
+  // `record_id` replaces the old typed `tag`; the other mutable
+  // built-ins listed here share storage with custom `cf_*` fields.
+  custom_values: Record<string, CustomValue>;
 };
 
 export type PumpsOptionMap = Record<PumpOptionKey, SingleSelectOption[]>;

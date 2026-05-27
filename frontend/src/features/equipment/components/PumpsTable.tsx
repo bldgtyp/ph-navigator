@@ -1,10 +1,10 @@
 import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
+  RECORD_ID_FIELD_KEY,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
-  type IdentifierConfig,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
@@ -13,6 +13,7 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedPumps } from "../lib";
+import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
@@ -20,8 +21,6 @@ import {
   type PumpRow,
   type PumpsSlice,
 } from "../types";
-
-const PUMPS_IDENTIFIER: IdentifierConfig<PumpRow> = { kind: "field", field: "tag" };
 
 export function PumpsTable({
   pumpsSlice,
@@ -70,10 +69,10 @@ export function PumpsTable({
   const columns = useMemo<DataTableColumnDef<PumpRow>[]>(
     () => [
       {
-        id: "tag",
-        fieldKey: "record_id",
-        header: fieldDefByKey.get("record_id")?.display_name ?? "Tag",
-        accessor: (pump) => pump.tag,
+        id: RECORD_ID_FIELD_KEY,
+        fieldKey: RECORD_ID_FIELD_KEY,
+        header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
+        accessor: (pump) => customTextValue(pump, RECORD_ID_FIELD_KEY),
         defaultWidth: 100,
       },
       {
@@ -88,28 +87,28 @@ export function PumpsTable({
         id: "use",
         fieldKey: "use",
         header: fieldDefByKey.get("use")?.display_name ?? "Use",
-        accessor: (pump) => pump.use,
+        accessor: (pump) => customTextValue(pump, "use"),
         defaultWidth: 180,
       },
       {
         id: "manufacturer",
         fieldKey: "manufacturer",
         header: fieldDefByKey.get("manufacturer")?.display_name ?? "Manufacturer",
-        accessor: (pump) => pump.manufacturer,
+        accessor: (pump) => customTextValue(pump, "manufacturer"),
         defaultWidth: 160,
       },
       {
         id: "model",
         fieldKey: "model",
         header: fieldDefByKey.get("model")?.display_name ?? "Model",
-        accessor: (pump) => pump.model,
+        accessor: (pump) => customTextValue(pump, "model"),
         defaultWidth: 140,
       },
       {
         id: "volts",
         fieldKey: "volts",
         header: fieldDefByKey.get("volts")?.display_name ?? "Volts",
-        accessor: (pump) => pump.volts,
+        accessor: (pump) => customNumberValue(pump, "volts"),
         defaultWidth: 80,
         className: "numeric-cell",
       },
@@ -125,7 +124,7 @@ export function PumpsTable({
         id: "horse_power",
         fieldKey: "horse_power",
         header: fieldDefByKey.get("horse_power")?.display_name ?? "Horse Power",
-        accessor: (pump) => pump.horse_power,
+        accessor: (pump) => customNumberValue(pump, "horse_power"),
         defaultWidth: 120,
         className: "numeric-cell",
       },
@@ -133,7 +132,7 @@ export function PumpsTable({
         id: "wattage",
         fieldKey: "wattage",
         header: fieldDefByKey.get("wattage")?.display_name ?? "Wattage",
-        accessor: (pump) => pump.wattage,
+        accessor: (pump) => customNumberValue(pump, "wattage"),
         defaultWidth: 110,
         className: "numeric-cell",
       },
@@ -141,7 +140,7 @@ export function PumpsTable({
         id: "flow_gpm",
         fieldKey: "flow_gpm",
         header: fieldDefByKey.get("flow_gpm")?.display_name ?? "Flow - GPM",
-        accessor: (pump) => pump.flow_gpm,
+        accessor: (pump) => customNumberValue(pump, "flow_gpm"),
         defaultWidth: 120,
         className: "numeric-cell",
       },
@@ -149,7 +148,7 @@ export function PumpsTable({
         id: "runtime_khr_yr",
         fieldKey: "runtime_khr_yr",
         header: fieldDefByKey.get("runtime_khr_yr")?.display_name ?? "Runtime - kHR/YEAR",
-        accessor: (pump) => pump.runtime_khr_yr,
+        accessor: (pump) => customNumberValue(pump, "runtime_khr_yr"),
         defaultWidth: 160,
         className: "numeric-cell",
       },
@@ -218,7 +217,6 @@ export function PumpsTable({
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}
-      identifier={PUMPS_IDENTIFIER}
       getRowId={(pump) => pump.id}
       emptyMessage={isEditor ? "No pumps yet." : "No pumps are published in this version."}
       readOnly={!isEditor}

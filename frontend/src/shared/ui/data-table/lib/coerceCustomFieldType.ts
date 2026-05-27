@@ -28,6 +28,19 @@ export function computeLocalPreflight(
   // create_options materializes options server-side from row text
   // values, so the local preview reports no incompatibilities.
   if (policy === "create_options") return { incompatible: [], total: rows.length };
+  if (policy === "discard_then_author") {
+    const incompatible: PreflightRow[] = [];
+    for (const row of rows) {
+      if (row.rawValue !== null && row.rawValue !== undefined && row.rawValue !== "") {
+        incompatible.push({
+          rowId: row.rowId,
+          rawValue: row.rawValue,
+          reason: "discarded_for_formula_authoring",
+        });
+      }
+    }
+    return { incompatible, total: rows.length };
+  }
   // substitute_labels: rawValue is the option_id; the backend resolves
   // it to the option label and then coerces the label into the target
   // type. Mirror that here so the preflight count matches the server.
@@ -118,7 +131,7 @@ export function coerceCustomValue(
       return { ok: false, reason: "no_matching_option" };
     }
     case "formula":
-      return { ok: false, reason: "any_to_formula_disallowed" };
+      return { ok: true, value: null };
     default:
       return { ok: false, reason: `unsupported_to_type:${toType as string}` };
   }
