@@ -24,7 +24,7 @@ from features.auth.service import create_or_update_user
 from features.mcp.server import build_mcp_server
 from features.project_document.custom_fields import CustomFieldDef
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.rooms import ROOMS_CORE_FIELD_KEYS
+from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from main import app
 
 ORIGIN = "http://localhost:5173"
@@ -91,8 +91,7 @@ def _issue_token(client: TestClient, project_id: object, *, scopes: list[str]) -
 
 def _fingerprint(custom_fields: list[dict[str, Any]]) -> str:
     return compute_table_schema_fingerprint(
-        ROOMS_CORE_FIELD_KEYS,
-        [CustomFieldDef.model_validate(field) for field in custom_fields],
+        [*ROOMS_BUILT_IN_FIELD_DEFS, *[CustomFieldDef.model_validate(field) for field in custom_fields]]
     )
 
 
@@ -105,8 +104,7 @@ def _new_field(
     description: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "id": field_id,
-        "field_key": None,
+        "field_key": field_id,
         "display_name": display_name,
         "field_type": field_type,
         "config": config or {},

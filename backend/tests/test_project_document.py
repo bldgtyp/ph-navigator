@@ -187,7 +187,7 @@ def test_empty_project_document_has_rooms_and_option_lists() -> None:
 
     assert body == ProjectDocumentV1.model_validate(body.model_dump(mode="json"))
     assert body.tables.rooms.rows == []
-    assert body.tables.rooms.custom_fields == []
+    assert body.tables.rooms.field_defs
     assert body.single_select_options["rooms.floor_level"] == []
     assert body.single_select_options["rooms.building_zone"] == []
 

@@ -16,7 +16,7 @@ import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
   return {
     id: "cf_paint",
-    field_key: null,
+    field_key: "cf_paint",
     display_name: "Paint",
     field_type: "short_text",
     config: {},
@@ -159,7 +159,7 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
     const initialSlice = buildSlice({ rooms: [buildRoom()] });
     const postSlice = buildSlice({
       rooms: [buildRoom({ custom: { cf_notes: null } })],
-      custom_fields: [buildCustomField({ id: "cf_notes", display_name: "Notes" })],
+      custom_fields: [buildCustomField({ field_key: "cf_notes", display_name: "Notes" })],
     });
     render(<Harness initialSlice={initialSlice} postAddSlice={postSlice} />);
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));

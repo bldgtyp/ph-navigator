@@ -15,7 +15,12 @@ import { SliceTableShell, useSliceTableController } from "../../../shared/ui/dat
 import type { ProjectDetail } from "../../projects/types";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { usePumpsSchemaMutation, usePumpsSliceQuery, useReplacePumpsSliceMutation } from "../hooks";
-import { pumpsFieldOverlay, pumpsTableColumnsForSanitize, wasLocalDraftTouched } from "../lib";
+import {
+  pumpsFieldOverlay,
+  pumpsTableColumnsForSanitize,
+  pumpsTableFieldDefs,
+  wasLocalDraftTouched,
+} from "../lib";
 import { makeBuildEmptyPumpRow } from "../lib/buildEmptyPumpRow";
 import { pumpsPayloadBuilders } from "../lib/pumpsController";
 import { PUMP_DATASHEET_FIELD_KEY, PUMPS_TABLE_NAME, type PumpsSlice } from "../types";
@@ -132,15 +137,19 @@ function EquipmentPageBody(props: {
   const { project, pumpsSlice, refetchPumps } = props;
   const activeVersionId = project.active_version_id;
   const fieldOverlay = useMemo(() => pumpsFieldOverlay(pumpsSlice), [pumpsSlice]);
+  const fieldDefs = useMemo(
+    () => pumpsSlice.field_defs ?? pumpsTableFieldDefs(pumpsSlice),
+    [pumpsSlice],
+  );
   const previewSchemaFieldDefs = useMemo(
     () =>
       tableFieldDefsToFieldDefs({
         tableKey: PUMPS_TABLE_NAME,
-        fieldDefs: pumpsSlice.field_defs,
+        fieldDefs,
         fieldOverlay,
         singleSelectOptions: pumpsSlice.single_select_options,
       }),
-    [fieldOverlay, pumpsSlice.field_defs, pumpsSlice.single_select_options],
+    [fieldDefs, fieldOverlay, pumpsSlice.single_select_options],
   );
   const columnsForSanitize = useMemo(
     () => pumpsTableColumnsForSanitize(previewSchemaFieldDefs),
@@ -162,7 +171,7 @@ function EquipmentPageBody(props: {
     versionLocked: project.active_version?.locked ?? false,
     tableKey: PUMPS_TABLE_NAME,
     slice: pumpsSlice,
-    fieldDefs: pumpsSlice.field_defs,
+    fieldDefs,
     fieldOverlay,
     singleSelectOptions: pumpsSlice.single_select_options,
     columnsForSanitize,

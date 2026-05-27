@@ -15,7 +15,7 @@ import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
   return {
     id: "cf_paint",
-    field_key: null,
+    field_key: "cf_paint",
     display_name: "Paint",
     field_type: "short_text",
     config: {},

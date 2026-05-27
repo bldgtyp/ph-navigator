@@ -31,6 +31,7 @@ import type {
   RowDeletePayload,
   RowInsertPayload,
   TableFieldRenderOverlay,
+  TableFieldDef,
 } from "../../shared/ui/data-table";
 import {
   ALL_FIELD_LOCKS,
@@ -101,6 +102,54 @@ const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "runtime_khr_yr",
 ]);
 
+const BUILT_IN_FIELD_CREATED_AT = "2026-05-26T00:00:00Z";
+
+function builtInFieldDef(
+  field_key: string,
+  display_name: string,
+  field_type: TableFieldDef["field_type"],
+): TableFieldDef {
+  return {
+    field_key,
+    display_name,
+    field_type,
+    config: {},
+    description: null,
+    origin: "built_in",
+    created_at: BUILT_IN_FIELD_CREATED_AT,
+    created_by: null,
+  };
+}
+
+const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Record-ID", "formula"),
+  builtInFieldDef("number", "Number", "short_text"),
+  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef(ROOM_FLOOR_LEVEL_KEY, "Floor", "single_select"),
+  builtInFieldDef(ROOM_BUILDING_ZONE_KEY, "Zone", "single_select"),
+  builtInFieldDef("num_people", "People", "number"),
+  builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
+  builtInFieldDef("icfa_factor", "iCFA", "number"),
+  builtInFieldDef("erv_unit_ids", "ERVs", "long_text"),
+];
+
+const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Record-ID", "short_text"),
+  builtInFieldDef(PUMP_DEVICE_TYPE_KEY, "Device", "single_select"),
+  builtInFieldDef("use", "Use", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  builtInFieldDef("model", "Model", "short_text"),
+  builtInFieldDef("volts", "Volts", "number"),
+  builtInFieldDef("phase", "Phase", "number"),
+  builtInFieldDef("horse_power", "Horse Power", "number"),
+  builtInFieldDef("wattage", "Wattage", "number"),
+  builtInFieldDef("flow_gpm", "Flow - GPM", "number"),
+  builtInFieldDef("runtime_khr_yr", "Runtime - kHR/YEAR", "number"),
+  builtInFieldDef("link", "Link", "url"),
+  builtInFieldDef("notes", "Notes", "long_text"),
+  builtInFieldDef(PUMP_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+];
+
 export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableFieldRenderOverlay> {
   return {
     record_id: {
@@ -138,6 +187,14 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
       locked: ["field_type", "delete", "duplicate"],
     },
   };
+}
+
+export function roomsTableFieldDefs(roomsSlice: RoomsSlice): TableFieldDef[] {
+  return roomsSlice.field_defs ?? ROOMS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function pumpsTableFieldDefs(pumpsSlice: PumpsSlice): TableFieldDef[] {
+  return pumpsSlice.field_defs ?? PUMPS_COMPAT_BUILT_IN_FIELD_DEFS;
 }
 
 // Stub columns for sanitization — sanitizer reads only `id` + `fieldKey`.

@@ -19,7 +19,7 @@ import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 function buildFormulaField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
   return {
     id: "cf_label",
-    field_key: null,
+    field_key: "cf_label",
     display_name: "Label",
     field_type: "formula",
     config: {

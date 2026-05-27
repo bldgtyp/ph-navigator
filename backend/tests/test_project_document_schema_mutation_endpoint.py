@@ -18,7 +18,7 @@ from database import connection
 from features.auth.service import create_or_update_user
 from features.project_document.custom_fields import CustomFieldDef, CustomFieldType
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.rooms import ROOMS_CORE_FIELD_KEYS
+from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from main import app
 
 ORIGIN = "http://localhost:5173"
@@ -71,8 +71,7 @@ def _version_url(project_id: object, version_id: object) -> str:
 
 def _fingerprint(custom_fields: list[dict[str, Any]]) -> str:
     return compute_table_schema_fingerprint(
-        ROOMS_CORE_FIELD_KEYS,
-        [CustomFieldDef.model_validate(field) for field in custom_fields],
+        [*ROOMS_BUILT_IN_FIELD_DEFS, *[CustomFieldDef.model_validate(field) for field in custom_fields]]
     )
 
 
@@ -83,8 +82,7 @@ def _new_field_payload(
     description: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "id": cf_id,
-        "field_key": None,
+        "field_key": cf_id,
         "display_name": display_name,
         "field_type": field_type.value,
         "config": {},
