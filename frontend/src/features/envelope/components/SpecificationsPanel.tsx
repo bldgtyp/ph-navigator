@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
@@ -7,28 +7,22 @@ import {
 } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
-import type { AssetUrls } from "../../assets/types";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { MaterialDriftBadge } from "./MaterialDrift";
 import { ProjectMaterialEditor } from "./ProjectMaterialEditor";
-import { MATERIAL_DRIFT_STATE_LABELS, materialNeedsCatalogReview } from "../drift";
+import { materialNeedsCatalogReview } from "../drift";
 import { sortProjectMaterials, viewerVisibleMaterials } from "../lib";
 import type {
   EnvelopeCommand,
+  EnvelopeAttachmentChangeArgs,
   ProjectMaterial,
   ProjectMaterialDriftItem,
-  ProjectMaterialUseSite,
   SpecificationStatus,
 } from "../types";
+import { DriftSummary } from "./specifications/DriftSummary";
+import { UseSiteRow } from "./specifications/UseSiteRow";
 
 const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
-type AttachmentChangeArgs = {
-  tableKey: string;
-  rowId: string;
-  fieldKey: string;
-  currentAssetIds: string[];
-  nextAssetIds: string[];
-};
 
 export function SpecificationsPanel({
   materials,
@@ -50,7 +44,7 @@ export function SpecificationsPanel({
   busy: boolean;
   error: string | null;
   onCommand: (command: EnvelopeCommand) => void;
-  onAttachmentChange: (args: AttachmentChangeArgs) => Promise<void> | void;
+  onAttachmentChange: (args: EnvelopeAttachmentChangeArgs) => Promise<void> | void;
   onRefreshMaterial: (projectMaterialId: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
@@ -257,123 +251,6 @@ export function SpecificationsPanel({
         })}
       </div>
     </>
-  );
-}
-
-function DriftSummary({
-  materials,
-  driftByMaterialId,
-  canEdit,
-  onRefreshMaterial,
-}: {
-  materials: ProjectMaterial[];
-  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>;
-  canEdit: boolean;
-  onRefreshMaterial: (projectMaterialId: string) => void;
-}) {
-  const driftItems: { material: ProjectMaterial; item: ProjectMaterialDriftItem }[] = [];
-  for (const material of materials) {
-    const item = driftByMaterialId.get(material.id) ?? null;
-    if (materialNeedsCatalogReview(item)) driftItems.push({ material, item });
-  }
-  if (driftItems.length === 0) return null;
-  return (
-    <section className="material-drift-summary" aria-label="Catalog drift review">
-      <header>
-        <h2>Catalog review</h2>
-        <span>{driftItems.length} materials</span>
-      </header>
-      <ul>
-        {driftItems.map(({ material, item }) => (
-          <li key={material.id}>
-            <span>
-              {material.name} · {MATERIAL_DRIFT_STATE_LABELS[item.state]}
-            </span>
-            {canEdit ? (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => onRefreshMaterial(material.id)}
-              >
-                Review
-              </button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function UseSiteRow({
-  siteKey,
-  site,
-  projectId,
-  assetUrlById,
-  canEdit,
-  busy,
-  isEditing,
-  onToggleEdit,
-  onSubmit,
-  onPhotoChange,
-}: {
-  siteKey: string;
-  site: ProjectMaterialUseSite;
-  projectId: string;
-  assetUrlById: ReadonlyMap<string, AssetUrls>;
-  canEdit: boolean;
-  busy: boolean;
-  isEditing: boolean;
-  onToggleEdit: () => void;
-  onSubmit: (notes: string | null) => void;
-  onPhotoChange: (nextAssetIds: string[]) => Promise<void> | void;
-}) {
-  const [notes, setNotes] = useState(site.use_site_notes ?? "");
-  useEffect(() => setNotes(site.use_site_notes ?? ""), [siteKey, site.use_site_notes]);
-  const trimmedNotes = notes.trim() || null;
-  const canSave = trimmedNotes !== site.use_site_notes && !busy;
-  return (
-    <li>
-      <strong>{site.assembly_name}</strong>
-      <span>
-        Layer {site.layer_order + 1}, segment {site.segment_order + 1}
-      </span>
-      <div className="use-site-evidence">
-        <span>Photos</span>
-        <AttachmentCell
-          projectId={projectId}
-          value={site.photo_asset_ids}
-          config={SITE_PHOTO_ATTACHMENT_CONFIG}
-          readOnly={!canEdit || busy}
-          assetUrlById={assetUrlById}
-          showInlineEmptyButton={canEdit}
-          onChange={onPhotoChange}
-        />
-      </div>
-      {canEdit ? (
-        <>
-          {site.use_site_notes ? <em>{site.use_site_notes}</em> : null}
-          <button type="button" className="secondary-button" onClick={onToggleEdit}>
-            {isEditing ? "Close note" : "Edit note"}
-          </button>
-          {isEditing ? (
-            <div className="use-site-note-editor">
-              <textarea value={notes} onChange={(event) => setNotes(event.currentTarget.value)} />
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!canSave}
-                onClick={() => onSubmit(trimmedNotes)}
-              >
-                Save note
-              </button>
-            </div>
-          ) : null}
-        </>
-      ) : site.use_site_notes ? (
-        <em>{site.use_site_notes}</em>
-      ) : null}
-    </li>
   );
 }
 

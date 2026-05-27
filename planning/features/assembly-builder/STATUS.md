@@ -385,5 +385,16 @@ Repo-level `make lint` passed. Repo-level `make test` and
 test drift (`ROOMS_CORE_FIELD_KEYS`, stale `compute_table_schema_fingerprint`
 call shape, and old `RoomsTableEnvelope` / `RoomRow` field assumptions).
 
-Phases 10-12 remain proposed. Each remaining phase should begin on a
+Phase 10 is implemented on `assembly-builder`. The frontend foundation
+split is verified with:
+
+- `cd frontend && pnpm run format`
+- `cd frontend && pnpm exec eslint src/features/envelope src/shared/ui/DialogActions.tsx`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx src/features/envelope/__tests__/useLengthDraft.test.tsx`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/shared/ui/DialogActions" || true`
+
+The full `cd frontend && pnpm run build` gate remains blocked by
+unrelated equipment/project-document/windows/shared table type drift.
+
+Phases 11-12 remain proposed. Each remaining phase should begin on a
 fresh branch off `main` once the current phase branch has landed.

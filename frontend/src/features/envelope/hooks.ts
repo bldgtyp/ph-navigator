@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { errorMessage } from "../../shared/lib/errors";
+import { attachAssetToDocument, detachAssetFromDocument } from "../assets/api";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import {
@@ -9,7 +11,12 @@ import {
   postEnvelopeCommand,
 } from "./api";
 import { envelopeQueryKeys } from "./query-keys";
-import type { EnvelopeCommand, EnvelopeReadResponse, EnvelopeReadSource } from "./types";
+import type {
+  EnvelopeAttachmentChangeArgs,
+  EnvelopeCommand,
+  EnvelopeReadResponse,
+  EnvelopeReadSource,
+} from "./types";
 
 export function useEnvelopeReadQuery(
   projectId: string,
@@ -100,6 +107,75 @@ export function useEnvelopeHbjsonExportMutation(projectId: string, versionId: st
         link.remove();
         URL.revokeObjectURL(url);
       }
+    },
+  });
+}
+
+export function useEnvelopeAttachmentMutation({
+  projectId,
+  versionId,
+  onError,
+}: {
+  projectId: string;
+  versionId: string | null;
+  onError: (message: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      change,
+    }: {
+      current: EnvelopeReadResponse;
+      change: EnvelopeAttachmentChangeArgs;
+    }) => {
+      if (!versionId) throw new Error("Select a version before editing envelope attachments.");
+      let draftEtag = current.draft_etag;
+      const removed = change.currentAssetIds.filter(
+        (assetId) => !change.nextAssetIds.includes(assetId),
+      );
+      const added = change.nextAssetIds.filter(
+        (assetId) => !change.currentAssetIds.includes(assetId),
+      );
+      for (const assetId of removed) {
+        const response = await detachAssetFromDocument(projectId, assetId, {
+          version_id: versionId,
+          table_key: change.tableKey,
+          row_id: change.rowId,
+          field_key: change.fieldKey,
+          if_match: draftEtag,
+          if_match_version: draftEtag ? undefined : current.version_etag,
+        });
+        draftEtag = response.draft_etag;
+      }
+      for (const assetId of added) {
+        const response = await attachAssetToDocument(projectId, assetId, {
+          version_id: versionId,
+          table_key: change.tableKey,
+          row_id: change.rowId,
+          field_key: change.fieldKey,
+          index: change.nextAssetIds.indexOf(assetId),
+          if_match: draftEtag,
+          if_match_version: draftEtag ? undefined : current.version_etag,
+        });
+        draftEtag = response.draft_etag;
+      }
+      return { draftEtag };
+    },
+    onSuccess: async ({ draftEtag }) => {
+      if (!versionId) return;
+      if (draftEtag) {
+        markLocalDraftTouched(projectId, versionId, draftEtag);
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(projectId, versionId),
+        });
+      }
+      await queryClient.invalidateQueries({
+        queryKey: envelopeQueryKeys.read(projectId, versionId, "draft"),
+      });
+    },
+    onError: (error) => {
+      onError(errorMessage(error, "Attachment update failed."));
     },
   });
 }

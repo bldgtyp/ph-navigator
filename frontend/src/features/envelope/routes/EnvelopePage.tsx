@@ -1,16 +1,13 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import "../../assets/attachments.css";
-import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
-import { attachAssetToDocument, detachAssetFromDocument } from "../../assets/api";
 import { useMaterialsQuery } from "../../catalogs/hooks";
-import { markLocalDraftTouched } from "../../project_document/lib";
-import { projectDocumentQueryKeys } from "../../project_document/query-keys";
 import type { ProjectDetail } from "../../projects/types";
 import {
   useAssemblyThermalQuery,
+  useEnvelopeAttachmentMutation,
   useEnvelopeCommandMutation,
   useEnvelopeHbjsonExportMutation,
   useEnvelopeReadQuery,
@@ -20,6 +17,8 @@ import { envelopeReadSource, naturalSortAssemblies } from "../lib";
 import {
   envelopeAssembliesPath,
   envelopeAssemblyPath,
+  activeAssemblyIdFromSubpath,
+  envelopeSubpath,
   envelopeSpecificationsPath,
   isEnvelopeSubroute,
 } from "../paths";
@@ -38,18 +37,20 @@ import { EnvelopeSidebar } from "../components/EnvelopeSidebar";
 import { MaterialLegend } from "../components/MaterialLegend";
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
-import { envelopeQueryKeys } from "../query-keys";
 import type {
-  Assembly,
   AssemblyLayer,
   AssemblySegment,
+  EnvelopeAttachmentChangeArgs,
   EnvelopeCommand,
-  ProjectMaterial,
-  ProjectMaterialDriftItem,
 } from "../types";
+import {
+  countAssemblyMaterialDrift,
+  envelopeShellNotice,
+  exportErrorDetails,
+  hasCatalogOriginMaterials,
+} from "./page-helpers";
 
 export function EnvelopePage({ project }: { project: ProjectDetail }) {
-  const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isViewer = project.access_mode === "viewer";
@@ -63,13 +64,17 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     source,
     query.isSuccess && hasCatalogOriginMaterials(query.data.project_materials),
   );
+  const [commandError, setCommandError] = useState<string | null>(null);
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
+  const attachmentMutation = useEnvelopeAttachmentMutation({
+    projectId: project.id,
+    versionId: project.active_version_id,
+    onError: setCommandError,
+  });
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
   const catalogMaterialsQuery = useMaterialsQuery(false, canEdit && dialog?.kind === "segment");
-  const [commandError, setCommandError] = useState<string | null>(null);
-  const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
@@ -108,12 +113,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     : null;
 
   useEffect(() => {
+    if (!copiedAssignment) return undefined;
     function clearOnEscape(event: KeyboardEvent): void {
       if (event.key === "Escape") setCopiedAssignment(null);
     }
     window.addEventListener("keydown", clearOnEscape);
     return () => window.removeEventListener("keydown", clearOnEscape);
-  }, []);
+  }, [copiedAssignment]);
 
   if (subpath === "" || subpath === "/") {
     return (
@@ -197,61 +203,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     }
   }
 
-  async function applyAttachmentChange(args: {
-    tableKey: string;
-    rowId: string;
-    fieldKey: string;
-    currentAssetIds: string[];
-    nextAssetIds: string[];
-  }): Promise<void> {
+  async function applyAttachmentChange(change: EnvelopeAttachmentChangeArgs): Promise<void> {
     const current = query.data;
-    if (!current || !project.active_version_id) return;
+    if (!current) return;
     setCommandError(null);
-    setAttachmentBusy(true);
-    let draftEtag = current.draft_etag;
-    try {
-      const removed = args.currentAssetIds.filter(
-        (assetId) => !args.nextAssetIds.includes(assetId),
-      );
-      const added = args.nextAssetIds.filter((assetId) => !args.currentAssetIds.includes(assetId));
-      for (const assetId of removed) {
-        const response = await detachAssetFromDocument(project.id, assetId, {
-          version_id: project.active_version_id,
-          table_key: args.tableKey,
-          row_id: args.rowId,
-          field_key: args.fieldKey,
-          if_match: draftEtag,
-          if_match_version: draftEtag ? undefined : current.version_etag,
-        });
-        draftEtag = response.draft_etag;
-      }
-      for (const assetId of added) {
-        const response = await attachAssetToDocument(project.id, assetId, {
-          version_id: project.active_version_id,
-          table_key: args.tableKey,
-          row_id: args.rowId,
-          field_key: args.fieldKey,
-          index: args.nextAssetIds.indexOf(assetId),
-          if_match: draftEtag,
-          if_match_version: draftEtag ? undefined : current.version_etag,
-        });
-        draftEtag = response.draft_etag;
-      }
-      if (draftEtag) {
-        markLocalDraftTouched(project.id, project.active_version_id, draftEtag);
-        queryClient.invalidateQueries({
-          queryKey: projectDocumentQueryKeys.draftSummary(project.id, project.active_version_id),
-        });
-      }
-      await queryClient.invalidateQueries({
-        queryKey: envelopeQueryKeys.read(project.id, project.active_version_id, "draft"),
-      });
-    } catch (error) {
-      setCommandError(errorMessage(error, "Attachment update failed."));
-      throw error;
-    } finally {
-      setAttachmentBusy(false);
-    }
+    await attachmentMutation.mutateAsync({ current, change });
   }
 
   function pasteAssignment(layer: AssemblyLayer, segment: AssemblySegment): void {
@@ -316,7 +272,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           projectId={project.id}
           isViewer={isViewer}
           canEdit={canEdit}
-          busy={commandMutation.isPending || attachmentBusy}
+          busy={commandMutation.isPending || attachmentMutation.isPending}
           error={commandError}
           onCommand={(command) => void applyCommand(command)}
           onAttachmentChange={(args) => applyAttachmentChange(args)}
@@ -440,71 +396,4 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       ) : null}
     </section>
   );
-}
-
-function envelopeSubpath(pathname: string, projectId: string): string {
-  return pathname.replace(`/projects/${projectId}/envelope`, "");
-}
-
-function activeAssemblyIdFromSubpath(subpath: string): string | null {
-  const match = subpath.match(/^\/assemblies\/([^/]+)(?:\/.*)?$/);
-  return match?.[1] ?? null;
-}
-
-function exportErrorDetails(error: unknown): string | null {
-  if (!(error instanceof Error) || !("details" in error)) return null;
-  const details = (error as { details?: Record<string, unknown> }).details;
-  const errors = details?.errors;
-  if (!Array.isArray(errors) || errors.length === 0) return null;
-  const lines = errors
-    .slice(0, 5)
-    .map((entry) => {
-      if (!entry || typeof entry !== "object") return null;
-      const record = entry as Record<string, unknown>;
-      const assemblyName =
-        typeof record.assembly_name === "string" ? record.assembly_name : "Assembly";
-      const code =
-        typeof record.code === "string" ? record.code.replaceAll("_", " ") : "export issue";
-      return `${assemblyName}: ${code}`;
-    })
-    .filter(Boolean);
-  if (!lines.length) return null;
-  const suffix = errors.length > lines.length ? ` (${errors.length - lines.length} more)` : "";
-  return `HBJSON export needs attention: ${lines.join("; ")}${suffix}`;
-}
-
-function envelopeShellNotice({
-  isViewer,
-  isLocked,
-  source,
-}: {
-  isViewer: boolean;
-  isLocked: boolean;
-  source: "draft" | "version";
-}): string {
-  if (isViewer) return "Viewer mode";
-  if (isLocked) return "Locked version";
-  return source === "draft" ? "Draft view" : "Saved version";
-}
-
-function countAssemblyMaterialDrift(
-  assembly: Assembly,
-  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>,
-): number {
-  const materialIds = new Set<string>();
-  let count = 0;
-  for (const layer of assembly.layers) {
-    for (const segment of layer.segments) {
-      const materialId = segment.project_material_id;
-      if (!materialId || materialIds.has(materialId)) continue;
-      materialIds.add(materialId);
-      const item = driftByMaterialId.get(materialId);
-      if (item && item.state !== "in_sync") count += 1;
-    }
-  }
-  return count;
-}
-
-function hasCatalogOriginMaterials(materials: ProjectMaterial[]): boolean {
-  return materials.some((material) => material.catalog_origin !== null);
 }
