@@ -848,6 +848,60 @@ get an accurate view of mutable-type fields' wire shape; per-field
 domain invariants only survive on fields whose `field_type` lock is
 declared in the feature seed.
 
+#### 6.6.9 `field_type` conversion policy matrix (v4)
+
+`changeType` and the `editFieldBundle` field-type change branch
+consult a closed `(from_type, to_type) -> policy` matrix to decide
+how per-row values are migrated. Pairs absent from the matrix are
+forbidden. The matrix lives in
+`backend/features/project_document/mutations/models.py::CONVERSION_MATRIX`
+and is mirrored byte-for-byte by the frontend.
+
+| Source ↘ Target → | `short_text` | `long_text` | `number` | `url` | `single_select` | `formula` |
+|---|---|---|---|---|---|---|
+| `short_text` | n/a | lossless | lossy | lossy | create_options | **discard_then_author** |
+| `long_text` | lossy | n/a | lossy | lossy | create_options | **discard_then_author** |
+| `number` | lossless | lossless | n/a | — | — | **discard_then_author** |
+| `url` | lossless | lossless | — | n/a | — | **discard_then_author** |
+| `single_select` | substitute_labels | substitute_labels | substitute_labels | — | n/a | **discard_then_author** |
+| `formula` | **lossless** (snapshot) | **lossless** (snapshot) | **lossy** (snapshot + parse) | **lossy** (snapshot + URL check) | **create_options** (materialize from snapshot) | n/a |
+
+Policy semantics:
+
+- **lossless** — every non-empty source row coerces without loss.
+- **lossy** — coercion may fail per row; failed rows fall into the
+  preflight `incompatible` set and require `acknowledge_destructive`
+  to clear.
+- **create_options** — `text → single_select`: enumerate distinct
+  trimmed source values into a new option list (capped at 50, overflow
+  rows surface as incompatibles).
+- **substitute_labels** — `single_select → text/number`: substitute the
+  option label for the option id, then run the standard coercion.
+- **discard_then_author** — `primitive → formula` (Phase 3 addition):
+  the conversion drops every stored cell value; the user authors a
+  fresh formula source in the same gesture via
+  `EditFieldBundleMutation.formula_source`. Non-empty rows surface as
+  destructive incompatibles for ack tracking.
+- **formula → primitive** (Phase 3 addition) — re-evaluate the live
+  document one last time, snapshot each row's computed value into
+  `custom_values[field_key]` coerced to the target type, drop the
+  `formula_config` from the FieldDef. Error overlays
+  (`{"error": "missing_ref"}`) snapshot as `None` and fall into the
+  incompatible set so the user acks the clear.
+
+`field_type`-locked built-ins (PRD §P5; e.g. Rooms `floor_level`,
+`building_zone`, `icfa_factor`) reject every `changeType` regardless
+of matrix coverage with the `custom_field_field_type_locked` error
+code — the lock list lives on `TableFieldRegistry.field_type_locked_keys`
+and enforces the frontend lock defense-in-depth against MCP / hand-
+crafted writes.
+
+The `changeType` audit payload includes `row_changes: list[{row_id,
+before, after}]` for every row whose value changed (capped at 100
+entries with a `row_changes_truncated: True` flag past the cap), so
+discards and lossy conversions are recoverable from the action log
+within the audit retention window.
+
 ## 7. Catalog (bookshelf model)
 
 ### 7.0 Catalog roster
