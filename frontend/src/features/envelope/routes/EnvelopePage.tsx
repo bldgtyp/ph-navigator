@@ -1,4 +1,9 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
+// EnvelopePage owns route guarding, active assembly selection, dialog dispatch,
+// zoom, and the copy/paste buffer for the envelope workspace. Server state lives
+// in the envelope hooks, while canvas/sidebar/specification layout details stay
+// in feature components so browser and MCP mutations share the semantic command
+// boundary.
 import "../../assets/attachments.css";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";

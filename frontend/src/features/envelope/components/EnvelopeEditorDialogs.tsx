@@ -1,3 +1,7 @@
+// EnvelopeEditorDialogs is the command-to-modal switchboard for the Assembly
+// Builder editor. It owns transient dialog routing only; server mutation state
+// remains in EnvelopePage/hooks, and each dialog component owns its own form
+// draft so unit conversion and validation stay local to the active modal.
 import type { CatalogMaterial } from "../../catalogs/types";
 import type {
   Assembly,

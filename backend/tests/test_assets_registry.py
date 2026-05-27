@@ -11,7 +11,7 @@ from features.assets.registry import (
     list_asset_references,
 )
 from features.project_document.document import ProjectDocumentV1
-from tests.test_envelope_phase01 import base_document
+from tests.envelope.test_envelope_document_contracts import base_document
 
 
 def _document_with_pump_datasheets() -> ProjectDocumentV1:

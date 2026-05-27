@@ -37,7 +37,13 @@ def calculate_assembly_thermal(
     assembly: Assembly,
     materials_by_id: dict[str, ProjectMaterial],
 ) -> ThermalResult:
-    """Return SI-canonical thermal values or explicit incomplete-state flags."""
+    """Return SI-canonical preview values or explicit incomplete-state flags.
+
+    This is a construction-only Passive House preview, not certification
+    output. It reports the PH average of ASHRAE Fundamentals Ch. 25
+    Parallel-Path and Isothermal-Planes methods after guarding missing
+    materials, missing conductivity, broken references, and bad geometry.
+    """
     issues = thermal_issues(assembly, materials_by_id)
     flags = thermal_issue_flags(issues)
     blocking_flags = {"missing_conductivity", "invalid_geometry", "broken_material_reference"}
@@ -113,6 +119,12 @@ def _calculate_parallel_path_r_value(
     assembly: Assembly,
     materials_by_id: dict[str, ProjectMaterial],
 ) -> float:
+    """Apply the ASHRAE Ch. 25 Parallel-Path method across layer segment paths.
+
+    Single-segment layers collapse to simple series R-values. Zero-width
+    or invalid segments are filtered before path generation, and the
+    final `total_u > 0` guard prevents a divide-by-zero preview result.
+    """
     layer_paths = [_layer_path_segments(layer, materials_by_id) for layer in assembly.layers]
     layer_paths = [paths for paths in layer_paths if paths]
     if all(len(paths) == 1 for paths in layer_paths):
@@ -133,6 +145,13 @@ def _calculate_isothermal_planes_r_value(
     assembly: Assembly,
     materials_by_id: dict[str, ProjectMaterial],
 ) -> float:
+    """Apply the Isothermal-Planes method used in PH envelope previews.
+
+    Each layer is reduced to an equivalent R-value from valid segment
+    width fractions, with a single-segment fast path and a positive-U
+    guard so incomplete geometry yields no contribution instead of an
+    invalid certification-looking result.
+    """
     total_r = 0.0
     for layer in assembly.layers:
         valid_segments = _valid_segments(layer, materials_by_id)

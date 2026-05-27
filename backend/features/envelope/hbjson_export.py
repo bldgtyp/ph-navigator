@@ -14,7 +14,12 @@ from features.shared.errors import api_error
 
 
 def export_hbjson_constructions(body: ProjectDocumentV1) -> dict[str, object]:
-    """Serialize saved assemblies as Honeybee-compatible opaque constructions."""
+    """Serialize complete saved assemblies as Honeybee-compatible constructions.
+
+    PRD §15 makes export a saved-version deliverable, not a draft preview:
+    callers pass the saved body and incomplete assemblies raise a structured
+    422 instead of being silently omitted from downstream HBJSON.
+    """
     materials_by_id = {material.id: material for material in body.tables.project_materials}
     errors = _export_errors(body.tables.assemblies, materials_by_id)
     if errors:

@@ -1,9 +1,15 @@
-"""Phase 3 Assembly Builder semantic command tests."""
+"""Assembly Builder geometry command tests."""
 
 from __future__ import annotations
 
 from features.project_document.validation import document_etag
-from tests.test_envelope_phase01 import ORIGIN, create_project, envelope_body, signed_in_client, write_saved_body
+from tests.envelope.test_envelope_document_contracts import (
+    ORIGIN,
+    create_project,
+    envelope_body,
+    signed_in_client,
+    write_saved_body,
+)
 
 
 def command_url(project_id: object, version_id: object) -> str:
