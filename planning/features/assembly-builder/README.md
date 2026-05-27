@@ -42,6 +42,10 @@ work, known caveats, and the next phase to pick up.
 | 6 | `phase-06-evidence-attachments-site-photos.md` | Datasheet and site-photo evidence workflows inside Specifications. | Evidence upload/preview/detach works without mutating old saved versions. |
 | 7 | `phase-07-catalog-refresh-drift.md` | Material catalog drift detection and per-material refresh. | Drift and source-deactivated states are reviewable and explicitly applied. |
 | 8 | `phase-08-mcp-hardening-release.md` | MCP tools, scale hardening, accessibility, docs, and release readiness. | Full feature passes local and browser gates with lessons folded back into the PRD. |
+| 9 | `phase-09-backend-service-split.md` | Foundation refactor: split the 1061-line backend service module and replace the `isinstance` command cascade with a typed dispatch registry. | No backend envelope module exceeds the 600-line soft limit; existing tests pass unchanged. |
+| 10 | `phase-10-frontend-page-dialog-split.md` | Foundation refactor: decompose the three frontend files past the documented soft/hard limits; extract `useLengthDraft` and the attachment workflow. | No envelope frontend file exceeds the 300-line soft limit (with documented exceptions for declarative files); `EnvelopePage.test.tsx` passes unchanged. |
+| 11 | `phase-11-shared-constants-helpers.md` | Foundation refactor: name canvas calibration values, share `argbColor` and `downloadBlob` helpers, dedupe "next free name" loops. | No magic numbers in canvas / page files; new helpers ship with unit tests. |
+| 12 | `phase-12-docs-and-test-reorg.md` | Foundation closeout: add "why"-bearing docstrings on public service / thermal entry points; rename envelope tests by topic instead of phase. | Public service entry points and thermal math anchored to documented contracts; tests organized by concern. |
 
 ## Global Constraints
 
@@ -138,3 +142,7 @@ defaults are active unless a phase spike proves otherwise:
 | 6 | Implemented on branch | Implemented on `codex/assembly-builder-phase-06` with Specifications datasheet/photo evidence UI, generic asset attach/detach wiring, envelope attachment tests, shared URL resolution, and attachment row-resolution hardening. Browser smoke, Save As immutability workflow, and destructive photo-count dialogs remain. |
 | 7 | Implemented on branch | Implemented on `codex/assembly-builder-phase-07` with material catalog drift report, same-version field-delta detection, source-deactivated/missing states, per-material refresh command, badges, review summary, and refresh dialog. Browser smoke remains before closure. |
 | 8 | Active on branch | MCP envelope read/report tools and semantic command write tool implemented on `codex/assembly-builder-phase-07`; verified with scoped backend Ruff/Ty and `tests/test_mcp.py`. Scale fixture, browser hardening, full IP/SI smoke, V1 parity audit, and final release gates remain. |
+| 9 | Implemented on branch | Implemented on `codex/assembly-builder-phase-09` with backend envelope service split, command dispatch registry, shared material-field constants, and drift transaction threading. Verified with scoped envelope Ruff/Ty/Pytest gates; full repo `make test` and `make typecheck` remain blocked by unrelated project-document custom-field test drift. |
+| 10 | Proposed | Foundation refactor informed by `planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md`. No branch yet. Independent of Phase 9. |
+| 11 | Proposed | Foundation refactor informed by `planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md`. No branch yet. Prefers to land after Phases 9-10. |
+| 12 | Proposed | Foundation closeout informed by `planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md`. No branch yet. Depends on Phases 9-11. |
