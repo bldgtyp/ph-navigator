@@ -24,8 +24,10 @@ from features.project_document.custom_fields import (
     TableFieldDef,
 )
 from features.project_document.document import (
+    ROOM_FLOOR_LEVEL_OPTION_KEY,
     ProjectDocumentV1,
     RoomRow,
+    SingleSelectOption,
 )
 from features.project_document.mutations.models import (
     CONVERSION_MATRIX,
@@ -238,13 +240,6 @@ def test_primitive_to_formula_requires_ack_when_rows_non_empty() -> None:
     `acknowledge_destructive=True`."""
     body = _seed_body()
     body = _with_custom_field(body, "cf_label", display_name="Label")
-    # Seed an option list + room so the document still validates after
-    # adding a row.
-    from features.project_document.document import (
-        ROOM_FLOOR_LEVEL_OPTION_KEY,
-        SingleSelectOption,
-    )
-
     body = body.model_copy(
         update={
             "single_select_options": {
@@ -291,11 +286,6 @@ def test_audit_payload_contains_row_changes_with_before_after() -> None:
     body = _with_custom_field(
         body, "cf_count", display_name="Count", field_type=CustomFieldType.short_text
     )
-    from features.project_document.document import (
-        ROOM_FLOOR_LEVEL_OPTION_KEY,
-        SingleSelectOption,
-    )
-
     body = body.model_copy(
         update={
             "single_select_options": {
