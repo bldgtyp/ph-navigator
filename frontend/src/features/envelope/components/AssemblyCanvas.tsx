@@ -1,7 +1,14 @@
 import { useMemo } from "react";
 import { formatLengthFromMm, useUnitPreference } from "../../../lib/units";
+import { MaterialDriftBadge } from "./MaterialDrift";
 import { layerWidthMm, materialById, materialColor, maxLayerWidthMm } from "../lib";
-import type { Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
+import type {
+  Assembly,
+  AssemblyLayer,
+  AssemblySegment,
+  ProjectMaterial,
+  ProjectMaterialDriftItem,
+} from "../types";
 
 const BASE_PX_PER_MM = 0.18;
 const MIN_LAYER_HEIGHT = 30;
@@ -15,6 +22,7 @@ export type CopiedAssignment = Pick<
 export function AssemblyCanvas({
   assembly,
   materials,
+  driftByMaterialId,
   zoom,
   canEdit,
   onEditLayer,
@@ -29,6 +37,7 @@ export function AssemblyCanvas({
 }: {
   assembly: Assembly;
   materials: ProjectMaterial[];
+  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>;
   zoom: number;
   canEdit: boolean;
   onEditLayer: (layer: AssemblyLayer) => void;
@@ -125,6 +134,9 @@ export function AssemblyCanvas({
                       data-paste-target={copiedAssignment ? "true" : undefined}
                     >
                       <strong>{material?.name ?? "No material"}</strong>
+                      {material ? (
+                        <MaterialDriftBadge item={driftByMaterialId.get(material.id) ?? null} />
+                      ) : null}
                       <span>{formatLengthFromMm(segment.width_mm, { unitSystem })}</span>
                       {segment.steel_stud_spacing_mm ? (
                         <small>

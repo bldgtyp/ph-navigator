@@ -19,10 +19,9 @@ Assembly Builder Phases 1-3 are flattened into `main` as commit
 `5c687c9` (`Add assembly builder phases 1-3`). The phase worktrees and
 remote phase branches were removed after the squash merge.
 
-Phase 4 is implemented on branch `codex/assembly-builder-phase-04`.
-Phase 5 is active on branch `codex/assembly-builder-phase-05`, based on
-the Phase 4 branch tip because Phase 4 has not yet been flattened into
-`main`.
+Phases 4-7 are implemented on Assembly Builder feature branches after
+the Phase 1-3 flatten. The active branch is
+`codex/assembly-builder-phase-07`.
 
 Completed implementation surface:
 
@@ -39,7 +38,15 @@ Completed implementation surface:
 - editor dialogs and unit-aware length inputs for layer thickness,
   segment width, and stud spacing;
 - in-modal IP/SI preference toggle that keeps active numeric draft
-  strings stable until submit.
+  strings stable until submit;
+- project-material catalog copy-in, shared material editing,
+  detach-to-custom, and unused cleanup;
+- backend thermal overlays and saved-version-only HBJSON construction
+  export;
+- datasheet and site-photo evidence attachment workflows in
+  Specifications;
+- project-material catalog drift report, drift badges, review summary,
+  and explicit per-material refresh command/dialog.
 
 ## Verified Gates
 
@@ -139,13 +146,13 @@ Remaining before Phase 4 closure:
 
 ## Next Implementation Target
 
-Start with
-`docs/plans/2026-05-26/assembly-builder/phase-05-thermal-hbjson-export.md`.
+After Phase 7 browser smoke, start with
+`docs/plans/2026-05-26/assembly-builder/phase-08-mcp-hardening-release.md`.
 
 Primary goal:
 
-- add backend-computed construction-only thermal overlays and a
-  saved-version-only HBJSON construction export.
+- harden MCP tools, scale/performance behavior, accessibility, docs,
+  and release readiness across the accumulated Assembly Builder slices.
 
 Phase 5 implemented so far on `codex/assembly-builder-phase-05`:
 
@@ -209,3 +216,46 @@ Headline status: Specifications evidence UI is wired to the generic
 asset attach/detach backbone with backend/frontend tests. Browser smoke,
 Save As / prior-version resolution proof, and destructive photo-count
 dialogs remain before Phase 6 closure.
+
+## Phase 7 Progress - Catalog Refresh And Drift
+
+Implementation target:
+`docs/plans/2026-05-26/assembly-builder/phase-07-catalog-refresh-drift.md`.
+
+Phase 7 is implemented on `codex/assembly-builder-phase-07`.
+
+Implemented:
+
+- `GET /envelope/material-catalog-drift` over draft or saved source;
+- drift states for `in_sync`, `customized`, `drifted`,
+  `source_deactivated`, and `source_missing`;
+- drift predicate for catalog-version mismatch, same-version field
+  deltas, local overrides, and deactivated/missing source rows;
+- `refresh_project_material_from_catalog` semantic command with
+  field-level `keep_mine`, `take_catalog`, and `use_value` choices;
+- refresh command updates synced catalog metadata while preserving
+  `local_overrides` verbatim;
+- Assemblies drift banner, segment/card badges, Specifications review
+  summary, and per-material refresh dialog;
+- unit-aware physical-value diff display with SI canonical writes;
+- batched material source-row lookup for drift reports;
+- frontend drift query gated to catalog-origin project materials with
+  material-only drift invalidation.
+
+Verified:
+
+- `cd backend && uv run ruff check features/catalogs/materials/repository.py features/envelope tests/test_envelope_phase07.py`
+- `cd backend && uv run ty check features/catalogs/materials/repository.py features/envelope tests/test_envelope_phase07.py`
+- `cd backend && uv run pytest tests/test_envelope_phase04.py tests/test_envelope_phase07.py`
+- `cd frontend && pnpm exec eslint src/features/envelope`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/features/catalogs|src/lib/units" || true`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+
+Remaining before Phase 7 closure:
+
+- browser-smoke the Phase 7 checklist;
+- verify locked/viewer read-only drift visibility in-browser;
+- decide during Phase 8 whether to extract shared drift helpers across
+  Windows and Assembly Builder;
+- decide during Phase 8 whether drift belongs in the Envelope read model
+  or remains a separately gated catalog-origin query.

@@ -5,6 +5,7 @@ import type {
   EnvelopeCommandBody,
   EnvelopeReadResponse,
   EnvelopeReadSource,
+  ProjectMaterialDriftReport,
 } from "./types";
 
 export async function fetchEnvelopeReadModel(
@@ -44,6 +45,18 @@ export async function fetchAssemblyThermal(
 ): Promise<AssemblyThermalResponse> {
   return fetchJson<AssemblyThermalResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/envelope/assemblies/${assemblyId}/thermal?source=${source}`,
+    { signal },
+  );
+}
+
+export async function fetchMaterialCatalogDrift(
+  projectId: string,
+  versionId: string,
+  source: EnvelopeReadSource,
+  signal?: AbortSignal,
+): Promise<ProjectMaterialDriftReport> {
+  return fetchJson<ProjectMaterialDriftReport>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/material-catalog-drift?source=${source}`,
     { signal },
   );
 }

@@ -31,6 +31,12 @@ from features.envelope.models import (
     PasteAssignmentCommand,
     PickCatalogMaterialCommand,
     PickProjectMaterialCommand,
+    ProjectMaterialDriftField,
+    ProjectMaterialDriftFieldKey,
+    ProjectMaterialDriftItem,
+    ProjectMaterialDriftReport,
+    ProjectMaterialRefreshChoice,
+    RefreshProjectMaterialFromCatalogCommand,
     RemoveUnusedProjectMaterialsCommand,
     RenameAssemblyCommand,
     UpdateAssemblyTypeCommand,
@@ -72,7 +78,18 @@ PROJECT_MATERIAL_OVERRIDE_FIELDS: frozenset[str] = frozenset(
         "specific_heat_j_kgk",
         "emissivity",
         "argb_color",
+        "notes",
     }
+)
+PROJECT_MATERIAL_CATALOG_FIELDS: tuple[ProjectMaterialDriftFieldKey, ...] = (
+    "argb_color",
+    "category",
+    "conductivity_w_mk",
+    "density_kg_m3",
+    "emissivity",
+    "name",
+    "notes",
+    "specific_heat_j_kgk",
 )
 
 
@@ -140,6 +157,39 @@ def get_assembly_thermal_model(
         r_effective_m2k_w=result.r_effective_m2k_w,
         u_effective_w_m2k=result.u_effective_w_m2k,
         warnings=result.warnings,
+    )
+
+
+def get_project_material_drift_report(
+    version_id: UUID,
+    access: ProjectAccess,
+    source: ProjectDocumentSource,
+) -> ProjectMaterialDriftReport:
+    """Compare project-owned material copies against their current catalog rows."""
+    if source == "version":
+        body = get_saved_document(version_id, access)
+        response_source: ProjectDocumentSource = "version"
+        version_etag = document_etag(body)
+        draft_etag: str | None = None
+    else:
+        view = get_current_document_view(version_id, access)
+        body = view.body
+        response_source = view.source
+        version_etag = view.version_etag
+        draft_etag = view.draft_etag
+
+    catalog_rows = _load_catalog_material_rows(body.tables.project_materials)
+    return ProjectMaterialDriftReport(
+        project_id=access.project_id,
+        version_id=version_id,
+        source=response_source,
+        version_etag=version_etag,
+        draft_etag=draft_etag,
+        materials=[
+            _project_material_drift_item(material, catalog_rows)
+            for material in body.tables.project_materials
+            if material.catalog_origin is not None
+        ],
     )
 
 
@@ -343,6 +393,8 @@ def _apply_command(conn: Connection[Any], body: ProjectDocumentV1, command: Enve
         return _detach_segment_material(body, command)
     if isinstance(command, RemoveUnusedProjectMaterialsCommand):
         return _replace_project_materials(body, _used_project_materials(body))
+    if isinstance(command, RefreshProjectMaterialFromCatalogCommand):
+        return _refresh_project_material_from_catalog(conn, body, command)
     raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "unknown_envelope_command", "Unknown envelope command.")
 
 
@@ -566,6 +618,58 @@ def _update_project_material(body: ProjectDocumentV1, command: UpdateProjectMate
     return _replace_project_materials(body, materials)
 
 
+def _refresh_project_material_from_catalog(
+    conn: Connection[Any],
+    body: ProjectDocumentV1,
+    command: RefreshProjectMaterialFromCatalogCommand,
+) -> ProjectDocumentV1:
+    source = _find_project_material(body.tables.project_materials, command.project_material_id)
+    origin = source.catalog_origin
+    if origin is None:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "project_material_has_no_catalog_origin",
+            "Only catalog-origin project materials can be refreshed.",
+            {"project_material_id": command.project_material_id},
+        )
+    row = catalog_materials_repository.get_material(conn, origin.catalog_record_id)
+    if row is None:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "catalog_material_source_missing",
+            "The source catalog material no longer exists.",
+            {"catalog_material_id": origin.catalog_record_id},
+        )
+    if not row["is_active"]:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "catalog_material_source_deactivated",
+            "The source catalog material is deactivated.",
+            {"catalog_material_id": origin.catalog_record_id},
+        )
+
+    next_values = _refresh_values(source, row, command.field_choices)
+    refreshed = source.model_copy(
+        update={
+            **next_values,
+            "catalog_origin": origin.model_copy(
+                update={
+                    "catalog_version_id": row["current_version_id"],
+                    "catalog_schema_version": row["catalog_schema_version"],
+                    "synced_at": datetime.now(UTC),
+                }
+            ),
+        }
+    )
+    return _replace_project_materials(
+        body,
+        [
+            refreshed if material.id == command.project_material_id else material
+            for material in body.tables.project_materials
+        ],
+    )
+
+
 def _detach_segment_material(body: ProjectDocumentV1, command: DetachSegmentMaterialCommand) -> ProjectDocumentV1:
     segment = _find_segment(body, command.assembly_id, command.layer_id, command.segment_id)
     if segment.project_material_id is None:
@@ -738,6 +842,107 @@ def _changed_project_material_values(material: ProjectMaterial, changed: dict[st
         update={"local_overrides": sorted(overrides)}
     )
     return update_values
+
+
+def _load_catalog_material_rows(materials: list[ProjectMaterial]) -> dict[str, dict[str, Any] | None]:
+    record_ids = {
+        material.catalog_origin.catalog_record_id
+        for material in materials
+        if material.catalog_origin is not None
+    }
+    if not record_ids:
+        return {}
+    sorted_ids = sorted(record_ids)
+    with transaction() as conn:
+        rows = catalog_materials_repository.get_materials_by_ids(conn, sorted_ids)
+    rows_by_id = {row["id"]: row for row in rows}
+    return {record_id: rows_by_id.get(record_id) for record_id in sorted_ids}
+
+
+def _project_material_drift_item(
+    material: ProjectMaterial,
+    catalog_rows: dict[str, dict[str, Any] | None],
+) -> ProjectMaterialDriftItem:
+    origin = material.catalog_origin
+    if origin is None:
+        raise RuntimeError("Expected catalog_origin for project material drift item.")
+
+    row = catalog_rows.get(origin.catalog_record_id)
+    overrides = set(origin.local_overrides)
+    source_missing = row is None
+    source_deactivated = row is not None and not row["is_active"]
+    if source_missing:
+        fields = _project_material_drift_fields(material, None, overrides)
+        state = "source_missing"
+        current_version_id = None
+    elif source_deactivated:
+        fields = _project_material_drift_fields(material, None, overrides)
+        state = "source_deactivated"
+        current_version_id = row["current_version_id"]
+    else:
+        fields = _project_material_drift_fields(material, row, overrides)
+        current_version_id = row["current_version_id"]
+        version_drift = current_version_id != origin.catalog_version_id
+        field_drift = any(field.differs for field in fields)
+        if version_drift or field_drift:
+            state = "drifted"
+        elif origin.local_overrides:
+            state = "customized"
+        else:
+            state = "in_sync"
+
+    return ProjectMaterialDriftItem(
+        project_material_id=material.id,
+        state=state,
+        catalog_record_id=origin.catalog_record_id,
+        pinned_catalog_version_id=origin.catalog_version_id,
+        current_catalog_version_id=current_version_id,
+        local_overrides=list(origin.local_overrides),
+        fields=fields,
+    )
+
+
+def _project_material_drift_fields(
+    material: ProjectMaterial,
+    catalog_row: dict[str, Any] | None,
+    overrides: set[str],
+) -> list[ProjectMaterialDriftField]:
+    return [
+        ProjectMaterialDriftField(
+            key=key,
+            project_value=getattr(material, key),
+            catalog_value=None if catalog_row is None else catalog_row[key],
+            is_overridden=key in overrides,
+            differs=False if catalog_row is None else getattr(material, key) != catalog_row[key],
+        )
+        for key in PROJECT_MATERIAL_CATALOG_FIELDS
+    ]
+
+
+def _refresh_values(
+    material: ProjectMaterial,
+    catalog_row: dict[str, Any],
+    choices: list[ProjectMaterialRefreshChoice],
+) -> dict[str, Any]:
+    choices_by_key = {choice.key: choice for choice in choices}
+    unknown = sorted(set(choices_by_key) - set(PROJECT_MATERIAL_CATALOG_FIELDS))
+    if unknown:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "unknown_project_material_refresh_field",
+            "Refresh choices include fields that cannot be refreshed from the materials catalog.",
+            {"fields": unknown},
+        )
+    values: dict[str, Any] = {}
+    for key in PROJECT_MATERIAL_CATALOG_FIELDS:
+        choice = choices_by_key.get(key)
+        if choice is None or choice.action == "keep_mine":
+            values[key] = getattr(material, key)
+        elif choice.action == "take_catalog":
+            values[key] = catalog_row[key]
+        else:
+            values[key] = choice.value
+    return values
 
 
 def _used_project_materials(body: ProjectDocumentV1) -> list[ProjectMaterial]:

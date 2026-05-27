@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-26
 TIME: 18:21 EDT
-STATUS: Proposed implementation plan.
+STATUS: Implemented backend/frontend first pass on codex/assembly-builder-phase-07.
 AUTHOR: Codex
 SCOPE: Project-material catalog drift detection, review, and explicit
        refresh.
@@ -125,6 +125,51 @@ pnpm run build
 3. Refresh requires explicit field-level choices.
 4. Source deactivation is understood as a catalog problem, not invalid
    project data.
+
+## Implementation Notes - 2026-05-27
+
+Implemented on `codex/assembly-builder-phase-07`:
+
+- `GET /envelope/material-catalog-drift` over draft or saved source.
+- Project-material drift states:
+  `in_sync`, `customized`, `drifted`, `source_deactivated`, and
+  `source_missing`.
+- Drift predicate covers same-version catalog field deltas, pinned
+  catalog-version mismatch, local overrides, and deactivated/missing
+  source rows.
+- `refresh_project_material_from_catalog` semantic envelope command
+  with field-level `keep_mine`, `take_catalog`, and `use_value`
+  choices.
+- Refresh writes only chosen project-material fields, updates
+  `catalog_origin.catalog_version_id`, `catalog_schema_version`, and
+  `synced_at`, and preserves `local_overrides` verbatim.
+- Assemblies drift banner, segment/card badges, Specifications review
+  summary, and per-material refresh dialog.
+- Physical-value diffs render with the active IP/SI unit preference
+  while backend comparisons and writes remain SI canonical.
+- Drift report catalog lookup batches material source rows by id and
+  preserves missing-source state without N+1 catalog queries.
+- Frontend drift report fetching is gated until the envelope read model
+  has at least one catalog-origin project material; command invalidation
+  is limited to material/catalog-refresh commands that can change drift.
+
+Verified:
+
+- `cd backend && uv run ruff check features/catalogs/materials/repository.py features/envelope tests/test_envelope_phase07.py`
+- `cd backend && uv run ty check features/catalogs/materials/repository.py features/envelope tests/test_envelope_phase07.py`
+- `cd backend && uv run pytest tests/test_envelope_phase04.py tests/test_envelope_phase07.py`
+- `cd frontend && pnpm exec eslint src/features/envelope`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/features/catalogs|src/lib/units" || true`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+
+Remaining before closure:
+
+- Browser-smoke the complete checklist, including source deactivation
+  and locked/viewer read-only behavior.
+- Add a direct frontend test for the refresh dialog choice payload if
+  this UI becomes more complex.
+- Decide during Phase 8 whether drift belongs in the Envelope read model
+  or remains a separately gated catalog-origin query.
 
 ## Risks
 

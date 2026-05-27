@@ -178,6 +178,15 @@ const thermalPayload = {
   warnings: ["One or more segments do not have a material assignment."],
 };
 
+const driftPayload = {
+  project_id: PROJECT_ID,
+  version_id: VERSION_ID,
+  source: "draft",
+  version_etag: "version-etag",
+  draft_etag: "draft-etag",
+  materials: [],
+};
+
 beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockImplementation(defaultFetchImplementation);
@@ -295,6 +304,64 @@ describe("EnvelopePage", () => {
       "Dense-pack cellulose",
       "Unused air barrier",
     ]);
+  });
+
+  test("catalog drift badges render in assemblies and specifications", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            project_materials: [
+              {
+                ...envelopePayload.project_materials[0]!,
+                catalog_origin: {
+                  catalog_table: "materials",
+                  catalog_record_id: "mat_123",
+                  catalog_version_id: "matv_1",
+                  catalog_schema_version: 1,
+                  synced_at: "2026-05-27T20:00:00Z",
+                  local_overrides: [],
+                },
+              },
+              ...envelopePayload.project_materials.slice(1),
+            ],
+          }),
+        );
+      }
+      if (url.includes("/envelope/material-catalog-drift?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...driftPayload,
+            materials: [
+              {
+                project_material_id: "pmat_insul",
+                state: "drifted",
+                catalog_record_id: "mat_123",
+                pinned_catalog_version_id: "matv_1",
+                current_catalog_version_id: "matv_1",
+                local_overrides: [],
+                fields: [
+                  {
+                    key: "conductivity_w_mk",
+                    project_value: 0.038,
+                    catalog_value: 0.036,
+                    is_overridden: false,
+                    differs: true,
+                  },
+                ],
+              },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    expect(await screen.findByText("1 material copy needs catalog review.")).toBeInTheDocument();
+    expect(screen.getByText("Catalog drift")).toBeInTheDocument();
   });
 
   test("invalid assembly id redirects to the first sorted assembly", async () => {
@@ -478,6 +545,9 @@ function jsonResponse(body: unknown): Response {
 function defaultFetchImplementation(url: string): Promise<Response> {
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
+  if (url.includes("/envelope/material-catalog-drift?")) {
+    return Promise.resolve(jsonResponse(driftPayload));
+  }
   if (url.includes("/assets/bulk-urls")) {
     return Promise.resolve(
       jsonResponse({

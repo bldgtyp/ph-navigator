@@ -13,6 +13,7 @@ import {
   useEnvelopeCommandMutation,
   useEnvelopeHbjsonExportMutation,
   useEnvelopeReadQuery,
+  useMaterialCatalogDriftQuery,
 } from "../hooks";
 import { envelopeReadSource, naturalSortAssemblies } from "../lib";
 import {
@@ -34,9 +35,17 @@ import {
 } from "../components/EnvelopeStates";
 import { EnvelopeSidebar } from "../components/EnvelopeSidebar";
 import { MaterialLegend } from "../components/MaterialLegend";
+import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
 import { envelopeQueryKeys } from "../query-keys";
-import type { AssemblyLayer, AssemblySegment, EnvelopeCommand } from "../types";
+import type {
+  Assembly,
+  AssemblyLayer,
+  AssemblySegment,
+  EnvelopeCommand,
+  ProjectMaterial,
+  ProjectMaterialDriftItem,
+} from "../types";
 
 export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const queryClient = useQueryClient();
@@ -47,6 +56,12 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const canEdit = !isViewer && !isLocked;
   const source = envelopeReadSource(project);
   const query = useEnvelopeReadQuery(project.id, project.active_version_id, source);
+  const materialDriftQuery = useMaterialCatalogDriftQuery(
+    project.id,
+    project.active_version_id,
+    source,
+    query.isSuccess && hasCatalogOriginMaterials(query.data.project_materials),
+  );
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
   const [zoom, setZoom] = useState(1);
@@ -55,6 +70,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const [commandError, setCommandError] = useState<string | null>(null);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
+  const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
   const isAssembliesRoute = isEnvelopeSubroute(subpath, "assemblies");
   const isSpecificationsRoute = isEnvelopeSubroute(subpath, "specifications");
@@ -73,6 +89,22 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     source,
     isAssembliesRoute && activeAssembly !== null,
   );
+  const driftByMaterialId = useMemo(
+    () =>
+      new Map(
+        (materialDriftQuery.data?.materials ?? []).map((item) => [item.project_material_id, item]),
+      ),
+    [materialDriftQuery.data?.materials],
+  );
+  const activeAssemblyDriftCount = activeAssembly
+    ? countAssemblyMaterialDrift(activeAssembly, driftByMaterialId)
+    : 0;
+  const refreshMaterial = refreshMaterialId
+    ? (query.data?.project_materials.find((material) => material.id === refreshMaterialId) ?? null)
+    : null;
+  const refreshDriftItem = refreshMaterialId
+    ? (driftByMaterialId.get(refreshMaterialId) ?? null)
+    : null;
 
   useEffect(() => {
     function clearOnEscape(event: KeyboardEvent): void {
@@ -264,9 +296,22 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           </button>
         </div>
       ) : null}
+      {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
+        <div className="envelope-command-banner" role="status">
+          {activeAssemblyDriftCount} material{" "}
+          {activeAssemblyDriftCount === 1 ? "copy needs" : "copies need"} catalog review.
+          <NavLink
+            className="text-button"
+            to={{ pathname: envelopeSpecificationsPath(project.id), search: location.search }}
+          >
+            Review all
+          </NavLink>
+        </div>
+      ) : null}
       {isSpecificationsRoute ? (
         <SpecificationsPanel
           materials={query.data.project_materials}
+          driftByMaterialId={driftByMaterialId}
           projectId={project.id}
           isViewer={isViewer}
           canEdit={canEdit}
@@ -274,6 +319,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           error={commandError}
           onCommand={(command) => void applyCommand(command)}
           onAttachmentChange={(args) => applyAttachmentChange(args)}
+          onRefreshMaterial={setRefreshMaterialId}
         />
       ) : assemblies.length === 0 || !activeAssembly ? (
         <div>
@@ -333,6 +379,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             <AssemblyCanvas
               assembly={activeAssembly}
               materials={query.data.project_materials}
+              driftByMaterialId={driftByMaterialId}
               zoom={zoom}
               canEdit={canEdit}
               copiedAssignment={copiedAssignment}
@@ -377,6 +424,19 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         }}
         onCommand={(command) => void applyCommand(command)}
       />
+      {refreshMaterial && refreshDriftItem ? (
+        <MaterialDriftDialog
+          material={refreshMaterial}
+          item={refreshDriftItem}
+          busy={commandMutation.isPending}
+          error={commandError}
+          onClose={() => {
+            setRefreshMaterialId(null);
+            setCommandError(null);
+          }}
+          onCommand={(command) => void applyCommand(command)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -424,4 +484,26 @@ function envelopeShellNotice({
   if (isViewer) return "Viewer mode";
   if (isLocked) return "Locked version";
   return source === "draft" ? "Draft view" : "Saved version";
+}
+
+function countAssemblyMaterialDrift(
+  assembly: Assembly,
+  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>,
+): number {
+  const materialIds = new Set<string>();
+  let count = 0;
+  for (const layer of assembly.layers) {
+    for (const segment of layer.segments) {
+      const materialId = segment.project_material_id;
+      if (!materialId || materialIds.has(materialId)) continue;
+      materialIds.add(materialId);
+      const item = driftByMaterialId.get(materialId);
+      if (item && item.state !== "in_sync") count += 1;
+    }
+  }
+  return count;
+}
+
+function hasCatalogOriginMaterials(materials: ProjectMaterial[]): boolean {
+  return materials.some((material) => material.catalog_origin !== null);
 }

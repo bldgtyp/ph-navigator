@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -90,6 +90,67 @@ class AssemblyThermalResponse(BaseModel):
     r_effective_m2k_w: float | None
     u_effective_w_m2k: float | None
     warnings: list[str] = Field(default_factory=list)
+
+
+ProjectMaterialDriftState = Literal[
+    "in_sync",
+    "customized",
+    "drifted",
+    "source_deactivated",
+    "source_missing",
+]
+ProjectMaterialDriftFieldKey = Literal[
+    "argb_color",
+    "category",
+    "conductivity_w_mk",
+    "density_kg_m3",
+    "emissivity",
+    "name",
+    "notes",
+    "specific_heat_j_kgk",
+]
+ProjectMaterialRefreshAction = Literal["keep_mine", "take_catalog", "use_value"]
+
+
+class ProjectMaterialDriftField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: ProjectMaterialDriftFieldKey
+    project_value: Any
+    catalog_value: Any
+    is_overridden: bool
+    differs: bool
+
+
+class ProjectMaterialDriftItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_material_id: str
+    state: ProjectMaterialDriftState
+    catalog_record_id: str
+    pinned_catalog_version_id: str
+    current_catalog_version_id: str | None
+    local_overrides: list[str] = Field(default_factory=list)
+    fields: list[ProjectMaterialDriftField] = Field(default_factory=list)
+
+
+class ProjectMaterialDriftReport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    version_etag: str
+    draft_etag: str | None
+    materials: list[ProjectMaterialDriftItem] = Field(default_factory=list)
+
+
+class ProjectMaterialRefreshChoice(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: ProjectMaterialDriftFieldKey
+    action: ProjectMaterialRefreshAction
+    value: Any = None
 
 
 class CreateAssemblyCommand(BaseModel):
@@ -300,6 +361,14 @@ class RemoveUnusedProjectMaterialsCommand(BaseModel):
     kind: Literal["remove_unused_project_materials"]
 
 
+class RefreshProjectMaterialFromCatalogCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["refresh_project_material_from_catalog"]
+    project_material_id: str
+    field_choices: list[ProjectMaterialRefreshChoice]
+
+
 EnvelopeCommand = Annotated[
     CreateAssemblyCommand
     | RenameAssemblyCommand
@@ -321,7 +390,8 @@ EnvelopeCommand = Annotated[
     | UpdateProjectMaterialCommand
     | UpdateSegmentUseSiteNotesCommand
     | DetachSegmentMaterialCommand
-    | RemoveUnusedProjectMaterialsCommand,
+    | RemoveUnusedProjectMaterialsCommand
+    | RefreshProjectMaterialFromCatalogCommand,
     Field(discriminator="kind"),
 ]
 
