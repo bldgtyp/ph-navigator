@@ -7,6 +7,13 @@ export const DATASHEET_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
   maxFileSizeMb: 25,
 };
 
+export const SITE_PHOTO_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
+  assetKind: "site_photo",
+  allowedTypes: ["image/png", "image/jpeg", "image/webp"],
+  maxCount: 10,
+  maxFileSizeMb: 25,
+};
+
 export function readAttachmentAssetIds(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")

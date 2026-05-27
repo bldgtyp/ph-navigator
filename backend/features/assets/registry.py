@@ -166,7 +166,7 @@ def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[st
     if table_key == "equipment_ervs":
         return _dict_rows(tables.get("equipment", {}).get("ervs"))
     if table_key == "equipment_pumps":
-        return _dict_rows(tables.get("equipment", {}).get("pumps"))
+        return attachment_table_rows(tables.get("equipment", {}).get("pumps"))
     if table_key == "equipment_fans":
         return _dict_rows(tables.get("equipment", {}).get("fans"))
     if table_key == "assembly_segments":
@@ -187,3 +187,11 @@ def _dict_rows(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [cast(dict[str, Any], item) for item in value if isinstance(item, dict)]
+
+
+def attachment_table_rows(value: object) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        envelope = cast(dict[str, Any], value)
+        if isinstance(envelope.get("rows"), list):
+            return _dict_rows(envelope["rows"])
+    return _dict_rows(value)

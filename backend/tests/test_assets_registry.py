@@ -11,42 +11,36 @@ from features.assets.registry import (
     list_asset_references,
 )
 from features.project_document.document import ProjectDocumentV1
+from tests.test_envelope_phase01 import base_document
 
 
 def _document_with_pump_datasheets() -> ProjectDocumentV1:
-    return ProjectDocumentV1.model_validate(
+    raw = base_document().model_dump(mode="json")
+    raw["tables"]["equipment"]["pumps"]["rows"] = [
         {
-            "schema_version": 2,
-            "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-            "tables": {
-                "equipment": {
-                    "pumps": [
-                        {
-                            "id": "pmp_1",
-                            "device_type": "opt_circ",
-                            "use": "DHW recirc",
-                            "tag": "P-1",
-                            "manufacturer": "Taco",
-                            "model": "0015e3",
-                            "volts": 120,
-                            "phase": 1,
-                            "horse_power": None,
-                            "wattage": 45,
-                            "flow_gpm": 4,
-                            "runtime_khr_yr": 2.5,
-                            "notes": None,
-                            "link": "https://example.com/pump.pdf",
-                            "datasheet_asset_ids": ["asset_pdf_1", "asset_img_1"],
-                        }
-                    ]
-                }
-            },
-            "single_select_options": {
-                "rooms.floor_level": [],
-                "rooms.building_zone": [],
-                "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+            "id": "pmp_1",
+            "device_type": "opt_circ",
+            "phase": 1,
+            "notes": None,
+            "link": "https://example.com/pump.pdf",
+            "datasheet_asset_ids": ["asset_pdf_1", "asset_img_1"],
+            "custom_values": {
+                "use": "DHW recirc",
+                "record_id": "P-1",
+                "manufacturer": "Taco",
+                "model": "0015e3",
+                "volts": 120,
+                "wattage": 45,
+                "flow_gpm": 4,
+                "runtime_khr_yr": 2.5,
             },
         }
+    ]
+    raw["single_select_options"]["pumps.device_type"] = [
+        {"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}
+    ]
+    return ProjectDocumentV1.model_validate(
+        raw
     )
 
 

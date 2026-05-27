@@ -5,26 +5,46 @@ import {
   formatSpecificHeatFromJKgK,
   useUnitPreference,
 } from "../../../lib/units";
+import { AttachmentCell } from "../../assets/components/AttachmentCell";
+import { useAssetUrls } from "../../assets/hooks";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
+import type { AssetUrls } from "../../assets/types";
 import { ProjectMaterialEditor } from "./ProjectMaterialEditor";
 import { sortProjectMaterials, viewerVisibleMaterials } from "../lib";
-import type { EnvelopeCommand, ProjectMaterial, SpecificationStatus } from "../types";
+import type {
+  EnvelopeCommand,
+  ProjectMaterial,
+  ProjectMaterialUseSite,
+  SpecificationStatus,
+} from "../types";
 
 const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
+type AttachmentChangeArgs = {
+  tableKey: string;
+  rowId: string;
+  fieldKey: string;
+  currentAssetIds: string[];
+  nextAssetIds: string[];
+};
 
 export function SpecificationsPanel({
   materials,
+  projectId,
   isViewer,
   canEdit,
   busy,
   error,
   onCommand,
+  onAttachmentChange,
 }: {
   materials: ProjectMaterial[];
+  projectId: string;
   isViewer: boolean;
   canEdit: boolean;
   busy: boolean;
   error: string | null;
   onCommand: (command: EnvelopeCommand) => void;
+  onAttachmentChange: (args: AttachmentChangeArgs) => Promise<void> | void;
 }) {
   const { unitSystem } = useUnitPreference();
   const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
@@ -34,6 +54,15 @@ export function SpecificationsPanel({
     return sortProjectMaterials(filtered);
   }, [isViewer, materials]);
   const editingMaterial = visibleMaterials.find((material) => material.id === editingMaterialId);
+  const attachmentAssetIds = useMemo(
+    () => collectSpecificationAssetIds(visibleMaterials),
+    [visibleMaterials],
+  );
+  const assetUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const assetUrlById = useMemo(
+    () => new Map((assetUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [assetUrls.data],
+  );
 
   if (visibleMaterials.length === 0) {
     return (
@@ -115,42 +144,68 @@ export function SpecificationsPanel({
           ) : material.notes ? (
             <p className="spec-notes">{material.notes}</p>
           ) : null}
+          <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
+            <h3>Datasheets</h3>
+            <AttachmentCell
+              projectId={projectId}
+              value={material.datasheet_asset_ids}
+              config={DATASHEET_ATTACHMENT_CONFIG}
+              readOnly={!canEdit || material.specification_status === "na" || busy}
+              assetUrlById={assetUrlById}
+              showInlineEmptyButton={canEdit && material.specification_status !== "na"}
+              onChange={(nextAssetIds) =>
+                onAttachmentChange({
+                  tableKey: "project_materials",
+                  rowId: material.id,
+                  fieldKey: "datasheet_asset_ids",
+                  currentAssetIds: material.datasheet_asset_ids,
+                  nextAssetIds,
+                })
+              }
+            />
+          </section>
           <div className="use-sites">
             <h3>Use-sites</h3>
             {material.use_sites.length === 0 ? (
               <p>Not used by an assembly.</p>
             ) : (
               <ul>
-                {material.use_sites.map((site) => (
-                  <UseSiteRow
-                    key={`${site.assembly_id}:${site.layer_id}:${site.segment_id}`}
-                    siteKey={`${site.assembly_id}:${site.layer_id}:${site.segment_id}`}
-                    assemblyName={site.assembly_name}
-                    layerOrder={site.layer_order}
-                    segmentOrder={site.segment_order}
-                    initialNotes={site.use_site_notes}
-                    canEdit={canEdit}
-                    busy={busy}
-                    isEditing={
-                      editingSiteKey === `${site.assembly_id}:${site.layer_id}:${site.segment_id}`
-                    }
-                    onToggleEdit={() =>
-                      setEditingSiteKey((current) => {
-                        const siteKey = `${site.assembly_id}:${site.layer_id}:${site.segment_id}`;
-                        return current === siteKey ? null : siteKey;
-                      })
-                    }
-                    onSubmit={(use_site_notes) =>
-                      onCommand({
-                        kind: "update_segment_use_site_notes",
-                        assembly_id: site.assembly_id,
-                        layer_id: site.layer_id,
-                        segment_id: site.segment_id,
-                        use_site_notes,
-                      })
-                    }
-                  />
-                ))}
+                {material.use_sites.map((site) => {
+                  const siteKey = `${site.assembly_id}:${site.layer_id}:${site.segment_id}`;
+                  return (
+                    <UseSiteRow
+                      key={siteKey}
+                      siteKey={siteKey}
+                      site={site}
+                      projectId={projectId}
+                      assetUrlById={assetUrlById}
+                      canEdit={canEdit}
+                      busy={busy}
+                      isEditing={editingSiteKey === siteKey}
+                      onToggleEdit={() =>
+                        setEditingSiteKey((current) => (current === siteKey ? null : siteKey))
+                      }
+                      onSubmit={(use_site_notes) =>
+                        onCommand({
+                          kind: "update_segment_use_site_notes",
+                          assembly_id: site.assembly_id,
+                          layer_id: site.layer_id,
+                          segment_id: site.segment_id,
+                          use_site_notes,
+                        })
+                      }
+                      onPhotoChange={(nextAssetIds) =>
+                        onAttachmentChange({
+                          tableKey: "assembly_segments",
+                          rowId: site.segment_id,
+                          fieldKey: "photo_asset_ids",
+                          currentAssetIds: site.photo_asset_ids,
+                          nextAssetIds,
+                        })
+                      }
+                    />
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -172,40 +227,52 @@ export function SpecificationsPanel({
 
 function UseSiteRow({
   siteKey,
-  assemblyName,
-  layerOrder,
-  segmentOrder,
-  initialNotes,
+  site,
+  projectId,
+  assetUrlById,
   canEdit,
   busy,
   isEditing,
   onToggleEdit,
   onSubmit,
+  onPhotoChange,
 }: {
   siteKey: string;
-  assemblyName: string;
-  layerOrder: number;
-  segmentOrder: number;
-  initialNotes: string | null;
+  site: ProjectMaterialUseSite;
+  projectId: string;
+  assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
   busy: boolean;
   isEditing: boolean;
   onToggleEdit: () => void;
   onSubmit: (notes: string | null) => void;
+  onPhotoChange: (nextAssetIds: string[]) => Promise<void> | void;
 }) {
-  const [notes, setNotes] = useState(initialNotes ?? "");
-  useEffect(() => setNotes(initialNotes ?? ""), [siteKey, initialNotes]);
+  const [notes, setNotes] = useState(site.use_site_notes ?? "");
+  useEffect(() => setNotes(site.use_site_notes ?? ""), [siteKey, site.use_site_notes]);
   const trimmedNotes = notes.trim() || null;
-  const canSave = trimmedNotes !== initialNotes && !busy;
+  const canSave = trimmedNotes !== site.use_site_notes && !busy;
   return (
     <li>
-      <strong>{assemblyName}</strong>
+      <strong>{site.assembly_name}</strong>
       <span>
-        Layer {layerOrder + 1}, segment {segmentOrder + 1}
+        Layer {site.layer_order + 1}, segment {site.segment_order + 1}
       </span>
+      <div className="use-site-evidence">
+        <span>Photos</span>
+        <AttachmentCell
+          projectId={projectId}
+          value={site.photo_asset_ids}
+          config={SITE_PHOTO_ATTACHMENT_CONFIG}
+          readOnly={!canEdit || busy}
+          assetUrlById={assetUrlById}
+          showInlineEmptyButton={canEdit}
+          onChange={onPhotoChange}
+        />
+      </div>
       {canEdit ? (
         <>
-          {initialNotes ? <em>{initialNotes}</em> : null}
+          {site.use_site_notes ? <em>{site.use_site_notes}</em> : null}
           <button type="button" className="secondary-button" onClick={onToggleEdit}>
             {isEditing ? "Close note" : "Edit note"}
           </button>
@@ -223,9 +290,20 @@ function UseSiteRow({
             </div>
           ) : null}
         </>
-      ) : initialNotes ? (
-        <em>{initialNotes}</em>
+      ) : site.use_site_notes ? (
+        <em>{site.use_site_notes}</em>
       ) : null}
     </li>
   );
+}
+
+function collectSpecificationAssetIds(materials: ProjectMaterial[]): string[] {
+  const ids = new Set<string>();
+  for (const material of materials) {
+    for (const assetId of material.datasheet_asset_ids) ids.add(assetId);
+    for (const site of material.use_sites) {
+      for (const assetId of site.photo_asset_ids) ids.add(assetId);
+    }
+  }
+  return [...ids];
 }

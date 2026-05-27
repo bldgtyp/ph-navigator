@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-26
 TIME: 18:21 EDT
-STATUS: Proposed implementation plan.
+STATUS: Active implementation.
 AUTHOR: Codex
 SCOPE: Datasheet and site-photo evidence workflows within Assembly
        Builder Specifications.
@@ -156,3 +156,52 @@ Record lessons for:
 - `na` status friction;
 - whether Site Photos should be pulled into this rollout or stay
   separate.
+
+## Implementation Notes
+
+Implemented so far on `codex/assembly-builder-phase-06`:
+
+- Specifications renders the shared `AttachmentCell` on
+  project-material datasheets and segment use-site photos.
+- Datasheet/photo edits use the generic asset attach/detach routes
+  against `project_materials.datasheet_asset_ids` and
+  `assembly_segments.photo_asset_ids`.
+- `na` project materials keep thumbnails visible but hide upload and
+  mutation controls.
+- Datasheet and site-photo attachment configs are shared through the
+  assets feature module so Specifications and attachment-table views
+  enforce the same field limits.
+- Attachment field lookup now handles table-envelope row storage
+  (`{field_defs, rows}`) as well as plain list tables, so the generic
+  attachment routes continue to work for Pumps and future table-backed
+  surfaces.
+- Specifications resolves evidence URLs in one shared bulk query for
+  the visible material/use-site evidence instead of one query per
+  attachment cell.
+- Phase 6 backend tests cover envelope datasheet/photo attach/detach,
+  use-site note preservation, over-cap rejection, and cross-project
+  rejection.
+- Envelope frontend tests cover populated read-only evidence states and
+  `na` upload-control hiding.
+
+Verified so far:
+
+- `cd backend && uv run ruff check features/assets features/envelope tests/test_assets_registry.py tests/test_assets_service.py tests/test_envelope_phase06.py`
+- `cd backend && uv run ty check features/assets features/envelope tests/test_assets_registry.py tests/test_assets_service.py tests/test_envelope_phase06.py`
+- `cd backend && uv run pytest tests/test_assets_registry.py tests/test_assets_service.py tests/test_envelope_phase06.py`
+- `cd frontend && pnpm exec prettier --write src/features/assets/types.ts src/features/assets/api.ts src/features/assets/components/AttachmentCell.tsx src/features/assets/attachments.css src/features/envelope/routes/EnvelopePage.tsx src/features/envelope/components/SpecificationsPanel.tsx src/features/envelope/envelope.css src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm exec eslint src/features/assets src/features/envelope src/shared/api/client.ts`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/assets|src/features/envelope|src/shared/api/client" || true`
+
+Remaining before Phase 6 closure:
+
+- Browser-smoke the full Phase 6 checklist against real upload/preview
+  flows.
+- Prove Save As / prior-version asset resolution through browser or a
+  focused versioning test.
+- Add destructive assembly/layer/segment confirmation counts for
+  detached site-photo references.
+- Decide whether replacement/reorder needs first-class generic attach
+  operations in this phase or can stay deferred to the broader
+  attachment-cell backlog.

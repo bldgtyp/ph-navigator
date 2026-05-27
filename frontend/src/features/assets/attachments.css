@@ -46,6 +46,10 @@
   visibility: visible;
 }
 
+.attachment-cell-inline .attachment-drop-button {
+  visibility: visible;
+}
+
 .attachment-drop-button:disabled {
   display: none;
 }
