@@ -413,7 +413,7 @@ export function nextRoomsPayload(
       ...current.rooms.filter((candidate) => candidate.id !== normalizedRoom.id),
     ]),
     single_select_options: options,
-    custom_fields: [...current.custom_fields],
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -421,7 +421,7 @@ export function deleteRoomPayload(current: RoomsSlice, roomId: string): RoomsRep
   return {
     rooms: current.rooms.filter((room) => room.id !== roomId),
     single_select_options: cloneOptions(current),
-    custom_fields: [...current.custom_fields],
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -448,7 +448,7 @@ export function roomsPayloadFromRowInsert(
   return {
     rooms: sortedRooms([...current.rooms, ...built]),
     single_select_options: cloneOptions(current),
-    custom_fields: [...current.custom_fields],
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -464,7 +464,7 @@ export function roomsPayloadFromRowDelete(
   return {
     rooms: current.rooms.filter((room) => !toDelete.has(room.id)),
     single_select_options: cloneOptions(current),
-    custom_fields: [...current.custom_fields],
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -531,14 +531,14 @@ export function roomsPayloadFromCellWrites(
     }
     return byRowId;
   }, new Map<string, RoomCellWrite[]>());
-  const customFieldIds = new Set(current.custom_fields.map((field) => field.id));
+  const customFieldKeys = new Set(current.field_defs.map((field) => field.field_key));
   const rooms = current.rooms.map((room) =>
-    applyWritesToRoom(room, writesByRowId.get(room.id) ?? [], customFieldIds),
+    applyWritesToRoom(room, writesByRowId.get(room.id) ?? [], customFieldKeys),
   );
   return {
     rooms: sortedRooms(rooms),
     single_select_options: options,
-    custom_fields: [...current.custom_fields],
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -687,7 +687,7 @@ export function replaceRoomOptionsPayload(
   return {
     rooms: sortedRooms(rooms),
     single_select_options: options,
-    custom_fields: [...current.custom_fields],
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -726,12 +726,12 @@ function cloneOptions(current: RoomsSlice): RoomsReplacePayload["single_select_o
 function applyWritesToRoom(
   room: RoomRow,
   writes: RoomCellWrite[],
-  customFieldIds: ReadonlySet<string>,
+  customFieldKeys: ReadonlySet<string>,
 ): RoomRow {
   if (writes.length === 0) return room;
   let next = room;
   for (const write of writes) {
-    next = applyWriteToRoom(next, write.fieldKey, write.value, customFieldIds);
+    next = applyWriteToRoom(next, write.fieldKey, write.value, customFieldKeys);
   }
   return normalizeRoomForPayload(next);
 }
@@ -740,14 +740,14 @@ function applyWriteToRoom(
   room: RoomRow,
   fieldKey: string,
   value: unknown,
-  customFieldIds: ReadonlySet<string>,
+  customFieldKeys: ReadonlySet<string>,
 ): RoomRow {
   if (isCustomFieldKey(fieldKey)) {
     // Schema-drift guard: an unknown `cf_*` cannot land in `row.custom`
     // — backend validation would reject it and the cell would have no
     // column. Returning unchanged is the same shape we get for any
     // other unrecognized field key.
-    if (!customFieldIds.has(fieldKey)) return room;
+    if (!customFieldKeys.has(fieldKey)) return room;
     return setCustomValue(room, { field_key: fieldKey }, value);
   }
   if (fieldKey === "number" && typeof value === "string") return { ...room, number: value };

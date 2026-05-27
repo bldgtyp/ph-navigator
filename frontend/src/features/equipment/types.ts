@@ -1,4 +1,4 @@
-import type { CustomFieldDef, FieldOption } from "../../shared/ui/data-table";
+import type { FieldOption, TableFieldDef } from "../../shared/ui/data-table";
 
 export type SingleSelectOption = FieldOption;
 
@@ -41,9 +41,9 @@ export type RoomsSlice = {
   version_etag: string;
   draft_etag: string | null;
   rooms: RoomRow[];
-  // Plan-14 P1.1: parallel to `rooms`. Always present (defaults to [])
-  // so callers don't branch.
-  custom_fields: CustomFieldDef[];
+  // Phase 1b: persisted FieldDef array — built-in + custom entries
+  // share one stream keyed by `field_key`. Always present.
+  field_defs: TableFieldDef[];
   // String-keyed so custom single_select fields' `rooms.<cf_id>` lists
   // ride alongside the two core keys. The intersection preserves the
   // type-level guarantee that the two core keys are always present (the
@@ -64,7 +64,7 @@ export type RoomsOptionMap = Record<RoomOptionKey, SingleSelectOption[]> & {
 
 export type RoomsReplacePayload = {
   rooms: RoomRow[];
-  custom_fields?: CustomFieldDef[];
+  field_defs?: TableFieldDef[];
   single_select_options: RoomsOptionMap;
 };
 
@@ -103,10 +103,14 @@ export type PumpsSlice = {
   version_etag: string;
   draft_etag: string | null;
   pumps: PumpRow[];
+  // Phase 1b: same persisted FieldDef stream as Rooms — built-in +
+  // custom entries keyed by `field_key`. Always present.
+  field_defs: TableFieldDef[];
   single_select_options: PumpsOptionMap;
 };
 
 export type PumpsReplacePayload = {
   pumps: PumpRow[];
+  field_defs?: TableFieldDef[];
   single_select_options: PumpsOptionMap;
 };
