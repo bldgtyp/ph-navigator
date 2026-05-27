@@ -20,9 +20,14 @@ export type RoomRow = {
   custom: Record<string, unknown>;
 };
 
-export const ROOM_FLOOR_LEVEL_KEY = "rooms.floor_level";
-export const ROOM_BUILDING_ZONE_KEY = "rooms.building_zone";
-export const ROOM_OPTION_KEYS = [ROOM_FLOOR_LEVEL_KEY, ROOM_BUILDING_ZONE_KEY] as const;
+export const ROOM_FLOOR_LEVEL_KEY = "floor_level";
+export const ROOM_BUILDING_ZONE_KEY = "building_zone";
+export const ROOM_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level";
+export const ROOM_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone";
+export const ROOM_OPTION_KEYS = [
+  ROOM_FLOOR_LEVEL_OPTION_KEY,
+  ROOM_BUILDING_ZONE_OPTION_KEY,
+] as const;
 export const ROOMS_TABLE_NAME = "rooms";
 
 // Single-select option fields use a namespaced `field_key`
@@ -69,10 +74,11 @@ export type RoomsReplacePayload = {
 };
 
 export const PUMPS_TABLE_NAME = "pumps";
-export const PUMP_DEVICE_TYPE_KEY = "pumps.device_type";
+export const PUMP_DEVICE_TYPE_KEY = "device_type";
+export const PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type";
 export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
 export const PUMP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_KEY] as const;
+export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_OPTION_KEY] as const;
 
 export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];
 

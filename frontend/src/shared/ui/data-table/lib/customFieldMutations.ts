@@ -155,7 +155,7 @@ function clampDescription(value: string | null): string | null {
 }
 
 function assertCustomFieldDef(field: CustomFieldDef, role: string): void {
-  assertCustomFieldId(field.id, `${role} id`);
+  assertCustomFieldId(field.field_key, `${role} field_key`);
   assertDisplayName(field.display_name, `${role} display_name`);
 }
 
@@ -256,8 +256,10 @@ export type BuildDuplicateFieldArgs = {
 export function buildDuplicateFieldMutation(args: BuildDuplicateFieldArgs): DuplicateFieldMutation {
   assertCustomFieldId(args.sourceFieldId, "duplicateField.sourceFieldId");
   assertCustomFieldDef(args.newField, "duplicateField.after");
-  if (args.newField.id === args.sourceFieldId) {
-    throw new SchemaMutationBuildError("duplicateField target id must differ from the source id.");
+  if (args.newField.field_key === args.sourceFieldId) {
+    throw new SchemaMutationBuildError(
+      "duplicateField target field_key must differ from the source id.",
+    );
   }
   return {
     kind: "duplicateField",
@@ -363,9 +365,9 @@ export function buildEditFieldBundleMutation(
 ): EditFieldBundleMutation {
   assertCustomFieldId(args.fieldId, "editFieldBundle.fieldId");
   assertCustomFieldDef(args.after, "editFieldBundle.after");
-  if (args.after.id !== args.fieldId) {
+  if (args.after.field_key !== args.fieldId) {
     throw new SchemaMutationBuildError(
-      "editFieldBundle.after.id must equal fieldId (identity is preserved).",
+      "editFieldBundle.after.field_key must equal fieldId (identity is preserved).",
     );
   }
   if (args.after.description !== null && args.after.description !== undefined) {
@@ -452,9 +454,9 @@ export function buildNextConfigForFieldTypeChange(
 
 export function buildChangeTypeMutation(args: BuildChangeTypeArgs): ChangeTypeMutation {
   assertCustomFieldId(args.fieldId, "changeType.fieldId");
-  if (args.after.id !== args.fieldId) {
+  if (args.after.field_key !== args.fieldId) {
     throw new SchemaMutationBuildError(
-      "changeType.after.id must equal fieldId (identity is preserved).",
+      "changeType.after.field_key must equal fieldId (identity is preserved).",
     );
   }
   return {

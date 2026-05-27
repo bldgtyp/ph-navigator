@@ -4,7 +4,13 @@
 // before the write) to the new option id the write commits — or null
 // when the user is clearing the cell.
 
-import { ROOM_FLOOR_LEVEL_KEY, type RoomOptionKey, type RoomsSlice } from "../types";
+import {
+  ROOM_BUILDING_ZONE_KEY,
+  ROOM_FLOOR_LEVEL_KEY,
+  ROOM_FLOOR_LEVEL_OPTION_KEY,
+  type RoomOptionKey,
+  type RoomsSlice,
+} from "../types";
 
 export function collapseRoomCellWritesToReplacements(
   slice: RoomsSlice,
@@ -12,10 +18,11 @@ export function collapseRoomCellWritesToReplacements(
   cellWrites: ReadonlyArray<{ rowId: string; fieldKey: string; value: unknown }> | undefined,
 ): Record<string, string | null> {
   if (!cellWrites?.length) return {};
-  const roomField = key === ROOM_FLOOR_LEVEL_KEY ? "floor_level" : "building_zone";
+  const roomField =
+    key === ROOM_FLOOR_LEVEL_OPTION_KEY ? ROOM_FLOOR_LEVEL_KEY : ROOM_BUILDING_ZONE_KEY;
   const replacements: Record<string, string | null> = {};
   for (const write of cellWrites) {
-    if (write.fieldKey !== key) continue;
+    if (write.fieldKey !== roomField) continue;
     const room = slice.rooms.find((candidate) => candidate.id === write.rowId);
     const previousOptionId = room?.[roomField] ?? null;
     if (previousOptionId) {

@@ -2,8 +2,9 @@
 DATE: 2026-05-26
 TIME: 22:00 ET
 STATUS: IN PROGRESS — foundation slice landed 2026-05-26 (commit
-        `891d1c6` on `worktree-plan-31-frontend-bundle`). Six follow-up
-        slices remain. Multi-session — estimate 3–5 sessions total.
+        `891d1c6` on `worktree-plan-31-frontend-bundle`). P2.1
+        useTableSchema reshape landed 2026-05-27. Six follow-up slices
+        remain. Multi-session — estimate 3–5 sessions total.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Frontend cascade for Plan-31 Phases 1c, 2, and 3, deferred
        across earlier sessions while backend Phases 1b / 1c / 2 / 3
@@ -85,7 +86,7 @@ Shipped:
   + `lib.ts` per-table FieldDef builders + `useSliceTableController`
   internals + every consumer of typed `RoomRow.number` / `PumpRow.tag`.
 
-### P2.1 Slice — useTableSchema reshape (#28 / #10)
+### P2.1 Slice — useTableSchema reshape (#28 / #10) — LANDED 2026-05-27
 
 Collapse `useTableSchema`'s two-input contract into a single
 `fieldDefs: TableFieldDef[]` input fed straight from `slice.field_defs`.
@@ -116,6 +117,34 @@ Verification:
 - Rooms page renders correctly with the persisted backend FieldDef
   list; column headers come from `field_def.display_name` (not the
   hardcoded built-in seed).
+
+Shipped:
+- `useTableSchema` now accepts one persisted `fieldDefs:
+  TableFieldDef[]` stream, computes the v2 fingerprint directly from
+  that stream, derives built-in/custom identity from `origin`, and
+  layers render-only metadata through a `fieldOverlay` map keyed by
+  `field_key`.
+- Rooms and Pumps pass `slice.field_defs` directly through
+  `useSliceTableController`; the old `coreFieldDefs`,
+  `fingerprintCoreFieldKeys`, and `customFields` controller inputs are
+  gone.
+- Rooms/Pumps render overlays now carry locks, required/read-only
+  state, and option-list bindings. Column headers read from the
+  persisted FieldDefs.
+- Frontend table field keys are split from option-list namespace keys
+  for Rooms/Pumps (`floor_level` vs `rooms.floor_level`,
+  `device_type` vs `pumps.device_type`) so direct backend FieldDefs can
+  bind to existing option maps.
+
+Closeout verification:
+- `cd frontend && pnpm exec vitest run
+  src/shared/ui/data-table/__tests__/useTableSchema.test.ts` — passed
+  (8 tests).
+- `cd frontend && pnpm exec eslint <changed slice files>` — passed.
+- `cd frontend && pnpm exec tsc -b --pretty false` — still fails only
+  in the known downstream test/fixture layer (`custom_fields`, old
+  `id`, old `coreFieldDefs/customFields` harness wiring), matching the
+  accepted cascade state before P2.6.
 
 ### P2.2 Slice — Row-shape migration to mixed-storage (#11)
 

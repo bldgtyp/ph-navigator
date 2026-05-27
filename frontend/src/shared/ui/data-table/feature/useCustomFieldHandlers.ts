@@ -17,13 +17,12 @@ import {
 } from "../index";
 import { insertAfterColumnOrder } from "../lib/view/columnOrder";
 import type { AddCustomFieldRequest, EditCustomFieldBundleRequest, ViewState } from "../types";
-import type { CustomFieldDef, TableSchema } from "../index";
+import type { TableSchema } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 
 export type UseCustomFieldHandlersArgs = {
   tableKey: string;
   canEdit: boolean;
-  customFields: CustomFieldDef[] | null | undefined;
   tableSchema: TableSchema;
   view: ViewState;
   onViewChange: (next: ViewState) => void;
@@ -38,9 +37,8 @@ export type CustomFieldHandlers = {
 };
 
 export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): CustomFieldHandlers {
-  const { tableKey, canEdit, customFields, tableSchema, view, onViewChange, commitSchemaMutation } =
-    args;
-  const customFieldList = useMemo(() => customFields ?? [], [customFields]);
+  const { tableKey, canEdit, tableSchema, view, onViewChange, commitSchemaMutation } = args;
+  const customFieldList = useMemo(() => tableSchema.customFields, [tableSchema.customFields]);
 
   const handleDeleteCustomField = useCallback(
     async (fieldKey: string) => {
@@ -60,7 +58,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
       if (!canEdit) {
         throw new Error("Cannot duplicate a field while editing is disabled.");
       }
-      const source = customFieldList.find((field) => field.id === fieldKey);
+      const source = customFieldList.find((field) => field.field_key === fieldKey);
       if (!source) {
         throw new Error("That custom field no longer exists. Refresh to see the current fields.");
       }
@@ -69,8 +67,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
         tableKey,
         sourceFieldId: fieldKey,
         newField: {
-          id: newFieldId,
-          field_key: null,
+          field_key: newFieldId,
           display_name: uniqueCopyDisplayName(
             source.display_name,
             tableSchema.fieldDefs.map((fieldDef) => fieldDef.display_name),
@@ -78,6 +75,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
           field_type: source.field_type,
           config: structuredClone(source.config),
           description: source.description,
+          origin: "custom",
           created_at: new Date().toISOString(),
           created_by: null,
         },
@@ -96,7 +94,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
   const handleEditCustomFieldBundle = useCallback(
     async (request: EditCustomFieldBundleRequest) => {
       if (!canEdit) return;
-      const source = customFieldList.find((field) => field.id === request.fieldKey);
+      const source = customFieldList.find((field) => field.field_key === request.fieldKey);
       if (!source) {
         throw new Error("That custom field no longer exists. Refresh to see the current fields.");
       }
@@ -140,12 +138,12 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
       const mutation = buildAddFieldMutation({
         tableKey,
         newField: {
-          id: newFieldId,
-          field_key: null,
+          field_key: newFieldId,
           display_name: request.displayName,
           field_type: request.fieldType,
           config: request.config,
           description: request.description,
+          origin: "custom",
           created_at: new Date().toISOString(),
           created_by: null,
         },
