@@ -13,10 +13,10 @@ SCOPE: Frontend cascade for Plan-31 Phases 1c, 2, and 3, deferred
        `PumpRow.tag`) onto the v4 wire shape (`slice.field_defs`,
        mixed-storage `custom_values`).
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD)
-  - docs/plans/2026-05-26/plan-31-phase-3-built-in-type-changes.md (predecessor; backend cohort)
-  - docs/plans/2026-05-26/complete/plan-31-phase-2-record-id-field.md (Phase 2 backend)
-  - docs/plans/2026-05-26/complete/plan-31-phase-1c-rename-cascade-and-fixtures.md (Phase 1c backend)
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-3-built-in-type-changes.md (predecessor; backend cohort)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-2-record-id-field.md (Phase 2 backend)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1c-rename-cascade-and-fixtures.md (Phase 1c backend)
   - context/technical-requirements/data-model.md §6.6
   - context/technical-requirements/data-table.md
   - backend/features/project_document/custom_fields.py (TableFieldDef)
@@ -276,7 +276,7 @@ Final pass:
 - Playwright smoke: Rooms + Pumps round-trip on a live browser.
 
 Then rebase the whole bundle onto `origin/main` (resolving the
-`docs/plans/2026-05-26/plan-31-phase-3-built-in-type-changes.md` move
+`docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-3-built-in-type-changes.md` move
 conflict — main moved the file to `editable-fields/` while my branch
 modified the old path). Merge to main.
 

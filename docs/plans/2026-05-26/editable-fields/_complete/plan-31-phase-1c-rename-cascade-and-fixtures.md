@@ -18,9 +18,9 @@ SCOPE: Finish what Phase 1b started. Phase 1b reshaped the canonical
        surface, and lands the frontend reshape so the full test suite
        returns to green.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD)
-  - docs/plans/2026-05-26/plan-31-phase-1a-lock-model.md
-  - docs/plans/2026-05-26/plan-31-phase-1b-persistence-reshape.md
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1a-lock-model.md
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1b-persistence-reshape.md
   - backend/features/project_document/formula/resolver.py
   - backend/features/project_document/formula/evaluator.py
   - backend/features/project_document/mutations/{bundle,field_ops,options_ops,guards,formula_ops,type_conversion,dispatcher}.py

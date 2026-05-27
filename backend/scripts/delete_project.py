@@ -61,9 +61,7 @@ def _dry_run(project_id: UUID) -> dict[str, object]:
             "name": project["name"],
             "bt_number": project["bt_number"],
             "deleted_at": project["deleted_at"].isoformat() if project["deleted_at"] else None,
-            "hard_delete_after": (
-                project["hard_delete_after"].isoformat() if project["hard_delete_after"] else None
-            ),
+            "hard_delete_after": (project["hard_delete_after"].isoformat() if project["hard_delete_after"] else None),
         },
         "counts": counts.model_dump(),
         "manifest": manifest,

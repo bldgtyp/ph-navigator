@@ -71,7 +71,10 @@ function formFromRecord(record: CatalogFrameType, unitOptions: UnitFormatOptions
   };
 }
 
-function toCreatePayload(form: FormState, unitOptions: UnitFormatOptions): CatalogFrameTypeCreatePayload {
+function toCreatePayload(
+  form: FormState,
+  unitOptions: UnitFormatOptions,
+): CatalogFrameTypeCreatePayload {
   const payload: CatalogFrameTypeCreatePayload = {
     name: form.name.trim(),
     manufacturer: trimToNull(form.manufacturer),
@@ -80,7 +83,11 @@ function toCreatePayload(form: FormState, unitOptions: UnitFormatOptions): Catal
     width_mm: parseOptionalUnitNumber(form.width_mm, parseLengthToMm, unitOptions),
     u_value_w_m2k: parseOptionalUnitNumber(form.u_value_w_m2k, parseUValueToWm2K, unitOptions),
     psi_g_w_mk: parseOptionalUnitNumber(form.psi_g_w_mk, parseLinearPsiToWmK, unitOptions),
-    psi_install_w_mk: parseOptionalUnitNumber(form.psi_install_w_mk, parseLinearPsiToWmK, unitOptions),
+    psi_install_w_mk: parseOptionalUnitNumber(
+      form.psi_install_w_mk,
+      parseLinearPsiToWmK,
+      unitOptions,
+    ),
     argb_color: trimToNull(form.argb_color),
     notes: trimToNull(form.notes),
     source_provenance: trimToNull(form.source_provenance),

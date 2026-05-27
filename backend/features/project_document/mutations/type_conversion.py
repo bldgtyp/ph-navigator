@@ -484,9 +484,7 @@ def apply_change_type(
         else:
             custom[mutation.field_id] = cast(CustomValue, after)
         new_rows.append(capability.set_row_custom_values(row, custom))
-        row_changes.append(
-            {"row_id": str(getattr(row, "id", "")), "before": before, "after": after}
-        )
+        row_changes.append({"row_id": str(getattr(row, "id", "")), "before": before, "after": after})
     next_body = replace_rows_in_envelope(next_body, mutation.table_key, new_rows)
 
     # `cleared_row_count` mirrors `len(incompatible)` (the preflight

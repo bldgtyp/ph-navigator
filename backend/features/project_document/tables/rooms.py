@@ -92,7 +92,6 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
         parse,
         resolve_refs,
     )
-    from features.project_document.formula.analysis import infer_result_type
     from features.project_document.formula.resolver import collect_field_refs
 
     registry = tuple(
@@ -239,11 +238,7 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
             if room.id in prior_row_ids:
                 filled_rooms.append(room)
                 continue
-            missing = {
-                key: default
-                for key, default in defaults_by_field_key.items()
-                if key not in room.custom_values
-            }
+            missing = {key: default for key, default in defaults_by_field_key.items() if key not in room.custom_values}
             if not missing:
                 filled_rooms.append(room)
                 continue

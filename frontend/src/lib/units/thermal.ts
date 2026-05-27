@@ -54,7 +54,8 @@ export function formatUValueFromWm2K(
 export function parseUValueToWm2K(input: string, options: UnitFormatOptions): UnitParseResult {
   const parsed = parseDecimalInput(input);
   if (parsed === null) return { ok: false, code: "empty", message: "Enter a U-value." };
-  if (Number.isNaN(parsed)) return { ok: false, code: "invalid_number", message: "Enter a number." };
+  if (Number.isNaN(parsed))
+    return { ok: false, code: "invalid_number", message: "Enter a number." };
   if (parsed < 0) return { ok: false, code: "negative", message: "U-value cannot be negative." };
   return { ok: true, valueSi: options.unitSystem === "IP" ? btuHft2FToWm2K(parsed) : parsed };
 }
@@ -88,7 +89,8 @@ export function formatLinearPsiFromWmK(
 export function parseLinearPsiToWmK(input: string, options: UnitFormatOptions): UnitParseResult {
   const parsed = parseDecimalInput(input);
   if (parsed === null) return { ok: false, code: "empty", message: "Enter a psi-value." };
-  if (Number.isNaN(parsed)) return { ok: false, code: "invalid_number", message: "Enter a number." };
+  if (Number.isNaN(parsed))
+    return { ok: false, code: "invalid_number", message: "Enter a number." };
   if (parsed < 0) return { ok: false, code: "negative", message: "Psi-value cannot be negative." };
   return { ok: true, valueSi: options.unitSystem === "IP" ? btuHftFToWmK(parsed) : parsed };
 }
@@ -109,8 +111,10 @@ export function formatConductivityFromWmK(
 export function parseConductivityToWmK(input: string, options: UnitFormatOptions): UnitParseResult {
   const parsed = parseDecimalInput(input);
   if (parsed === null) return { ok: false, code: "empty", message: "Enter conductivity." };
-  if (Number.isNaN(parsed)) return { ok: false, code: "invalid_number", message: "Enter a number." };
-  if (parsed < 0) return { ok: false, code: "negative", message: "Conductivity cannot be negative." };
+  if (Number.isNaN(parsed))
+    return { ok: false, code: "invalid_number", message: "Enter a number." };
+  if (parsed < 0)
+    return { ok: false, code: "negative", message: "Conductivity cannot be negative." };
   return { ok: true, valueSi: options.unitSystem === "IP" ? btuHftFToWmK(parsed) : parsed };
 }
 

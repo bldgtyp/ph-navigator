@@ -443,9 +443,7 @@ def test_rooms_validation_allows_duplicate_room_numbers(
     initial = client.get(draft_rooms_url(project_id, version_id))
 
     duplicate_numbers = room_payload()
-    duplicate_numbers["rooms"].append(
-        {**duplicate_numbers["rooms"][0], "id": "rm_kitchen", "name": "Kitchen"}
-    )
+    duplicate_numbers["rooms"].append({**duplicate_numbers["rooms"][0], "id": "rm_kitchen", "name": "Kitchen"})
     response = client.put(
         draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},

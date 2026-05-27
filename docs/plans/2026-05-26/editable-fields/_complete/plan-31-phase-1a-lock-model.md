@@ -16,8 +16,8 @@ SCOPE: Introduce the per-attribute lock-list model on `FieldDef`,
        the right unlocked attributes become editable through the
        existing modal.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD)
-  - docs/plans/2026-05-26/plan-30-datatable-identifier-column.md
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md
   - context/technical-requirements/data-table.md
   - frontend/src/shared/ui/data-table/types.ts
   - frontend/src/shared/ui/data-table/hooks/useTableSchema.ts
@@ -53,7 +53,7 @@ collide.
 
 ## P1. Preconditions
 
-- Master PRD `plan-31-customizable-fields-prd.md` accepted.
+- Master PRD `docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md` accepted.
 - Q-F1, Q-F4, Q-F5, Q-F7, Q-F8, Q-F9, Q-F10 confirmed (they are
   marked resolved in the PRD; no further user input needed).
 - Phase 0 baseline: green test suite, no in-flight refactors of

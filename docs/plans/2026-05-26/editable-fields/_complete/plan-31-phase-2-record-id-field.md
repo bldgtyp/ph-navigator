@@ -30,10 +30,10 @@ SCOPE: Promote the pinned identifier column from a prop-driven
        chip off `field_key === "record_id"`. Replace Pumps' `tag`
        column end-to-end with `record_id`.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD, §P4.3, §P5.1, §P5.2)
-  - docs/plans/2026-05-26/plan-31-phase-1a-lock-model.md
-  - docs/plans/2026-05-26/plan-31-phase-1b-persistence-reshape.md (predecessor)
-  - docs/plans/2026-05-26/plan-30-datatable-identifier-column.md (superseded for identifier semantics)
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD, §P4.3, §P5.1, §P5.2)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1a-lock-model.md
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1b-persistence-reshape.md (predecessor)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md (superseded for identifier semantics)
   - context/technical-requirements/data-table.md (Identifier Column section to rewrite)
   - frontend/src/shared/ui/data-table/types.ts
   - frontend/src/shared/ui/data-table/lib/identifier/resolve.ts
@@ -247,7 +247,7 @@ synthetic column) and unlocks Phase 3's user-driven type changes on
   Note that `IdentifierConfig` retired.
 - `context/UI_UX.md §1.7`: scrub references to the synthetic
   identifier.
-- `docs/plans/2026-05-26/plan-30-datatable-identifier-column.md`
+- `docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md`
   STATUS header: mark superseded by Phase 2 (or move to
   `docs/REMOVED.md` per the project convention).
 
@@ -325,7 +325,7 @@ Phase 2 is done when **all** of the following are true:
 10. `context/technical-requirements/data-table.md` Identifier Column
     section rewritten; mentions FieldDef-driven pinning, not
     `IdentifierConfig`.
-11. `docs/plans/2026-05-26/plan-30-datatable-identifier-column.md`
+11. `docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md`
     marked superseded.
 12. The duplicate-warning chip works for both formula-derived
     Rooms identifiers and direct-text Pumps identifiers.

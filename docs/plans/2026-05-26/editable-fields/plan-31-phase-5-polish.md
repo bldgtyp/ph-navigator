@@ -2,7 +2,7 @@
 DATE: 2026-05-26
 TIME: 15:30 ET
 STATUS: PHASE PLAN — OPTIONAL. Depends on Phase 3 complete + PRD
-        acceptance (`docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`).
+        acceptance (`docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md`).
         Each item ships independently; none are gating.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Optional polish items that aren't required for the unified
@@ -12,8 +12,8 @@ SCOPE: Optional polish items that aren't required for the unified
        in the modal description tooltip, and the deferred "Duplicate
        record" right-click action (from Plan-30 follow-ups).
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD, §P6 Phase 5)
-  - docs/plans/2026-05-26/plan-30-datatable-identifier-column.md (origin of "Duplicate record" follow-up)
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD, §P6 Phase 5)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md (origin of "Duplicate record" follow-up)
   - frontend/src/shared/ui/data-table/components/FieldConfigModal.tsx
   - frontend/src/shared/ui/data-table/components/FieldConfigSection*.tsx
   - frontend/src/shared/ui/data-table/components/HeaderContextMenu.tsx

@@ -25,10 +25,14 @@ export function formatAirflowFromM3H(
   options: UnitFormatOptions,
 ): string {
   return options.unitSystem === "IP"
-    ? formatNumberWithUnit(valueM3H === null || valueM3H === undefined ? valueM3H : m3hToCfm(valueM3H), "cfm", {
-        fractionDigits: 1,
-        ...options,
-      })
+    ? formatNumberWithUnit(
+        valueM3H === null || valueM3H === undefined ? valueM3H : m3hToCfm(valueM3H),
+        "cfm",
+        {
+          fractionDigits: 1,
+          ...options,
+        },
+      )
     : formatNumberWithUnit(valueM3H, "m3/h", { fractionDigits: 1, ...options });
 }
 
@@ -37,9 +41,13 @@ export function formatAirflowFromM3S(
   options: UnitFormatOptions,
 ): string {
   return options.unitSystem === "IP"
-    ? formatNumberWithUnit(valueM3S === null || valueM3S === undefined ? valueM3S : m3sToCfm(valueM3S), "cfm", {
-        fractionDigits: 1,
-        ...options,
-      })
+    ? formatNumberWithUnit(
+        valueM3S === null || valueM3S === undefined ? valueM3S : m3sToCfm(valueM3S),
+        "cfm",
+        {
+          fractionDigits: 1,
+          ...options,
+        },
+      )
     : formatNumberWithUnit(valueM3S, "m3/s", { fractionDigits: 3, ...options });
 }

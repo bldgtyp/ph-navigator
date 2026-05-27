@@ -88,7 +88,9 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
                 <td>{record.name}</td>
                 <td>{record.manufacturer ?? "—"}</td>
                 <td>{record.brand ?? "—"}</td>
-                <td>{formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}</td>
+                <td>
+                  {formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}
+                </td>
                 <td>{formatNumber(record.g_value, 2)}</td>
                 <td>
                   {record.version_label} · {record.version_date}

@@ -2,7 +2,7 @@
 DATE: 2026-05-26
 TIME: 15:30 ET
 STATUS: PHASE PLAN — depends on Phase 3 complete + PRD acceptance
-        (`docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`).
+        (`docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md`).
         Per-table rollout phase; each table is independent.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Author seed FieldDef lists for every project-document table
@@ -13,8 +13,8 @@ SCOPE: Author seed FieldDef lists for every project-document table
        tables) its tighter `"field_type"` locks. Coordinates with the
        catalog rollout PRD when that lands.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD, §P5.3, §P5.4)
-  - docs/plans/2026-05-26/plan-31-phase-3-built-in-type-changes.md (predecessor)
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD, §P5.3, §P5.4)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-3-built-in-type-changes.md (predecessor)
   - context/technical-requirements/data-model.md §6.6, §7.0
   - context/user-stories/30-tables-equipment.md
   - context/user-stories/20-envelope.md (Window Types, Thermal Bridges)

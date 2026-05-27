@@ -11,8 +11,9 @@ STATUS: SUPERSEDED 2026-05-26 by `plan-31-phase-2-record-id-field.md`.
         retirement (identifier abstraction deletion, pin-by-field_key,
         ROOMS_IDENTIFIER / PUMPS_IDENTIFIER removal) is deferred and
         bundles with the Phase 1c frontend reshape (plan-31 tasks
-        #10/#11) — see `docs/plans/2026-05-26/plan-31-phase-2-record-
-        id-field.md` §P4.3. Historic plan-30 status preserved below
+        #10/#11) — see
+        `docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-2-record-id-field.md`
+        §P4.3. Historic plan-30 status preserved below
         for archaeology.
 
 [Historic status, pre-supersession:]

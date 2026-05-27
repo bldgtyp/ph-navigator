@@ -13,7 +13,12 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import type { CatalogMaterial, CatalogMaterialCreatePayload } from "../types";
-import { editorSubmitLabel, parseOptionalNumber, parseOptionalUnitNumber, todayIso } from "./form-helpers";
+import {
+  editorSubmitLabel,
+  parseOptionalNumber,
+  parseOptionalUnitNumber,
+  todayIso,
+} from "./form-helpers";
 import { conductivityUnitLabel, densityUnitLabel, specificHeatUnitLabel } from "./unit-labels";
 
 type FormState = {
@@ -65,14 +70,25 @@ function formFromMaterial(material: CatalogMaterial, unitOptions: UnitFormatOpti
   };
 }
 
-function toCreatePayload(form: FormState, unitOptions: UnitFormatOptions): CatalogMaterialCreatePayload {
+function toCreatePayload(
+  form: FormState,
+  unitOptions: UnitFormatOptions,
+): CatalogMaterialCreatePayload {
   const payload: CatalogMaterialCreatePayload = {
     name: form.name.trim(),
     category: form.category.trim(),
     version_label: form.version_label.trim() || "v1",
-    conductivity_w_mk: parseOptionalUnitNumber(form.conductivity_w_mk, parseConductivityToWmK, unitOptions),
+    conductivity_w_mk: parseOptionalUnitNumber(
+      form.conductivity_w_mk,
+      parseConductivityToWmK,
+      unitOptions,
+    ),
     density_kg_m3: parseOptionalUnitNumber(form.density_kg_m3, parseDensityToKgM3, unitOptions),
-    specific_heat_j_kgk: parseOptionalUnitNumber(form.specific_heat_j_kgk, parseSpecificHeatToJKgK, unitOptions),
+    specific_heat_j_kgk: parseOptionalUnitNumber(
+      form.specific_heat_j_kgk,
+      parseSpecificHeatToJKgK,
+      unitOptions,
+    ),
     emissivity: parseOptionalNumber(form.emissivity),
     argb_color: form.argb_color.trim() || null,
     notes: form.notes.trim() || null,

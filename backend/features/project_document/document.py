@@ -654,13 +654,9 @@ def _validate_envelope_references(project_materials: list[ProjectMaterial], asse
 
         for layer in assembly.layers:
             for segment in layer.segments:
-                if (
-                    segment.project_material_id is not None
-                    and segment.project_material_id not in project_material_ids
-                ):
+                if segment.project_material_id is not None and segment.project_material_id not in project_material_ids:
                     raise ValueError(
-                        "Unknown project_material_id "
-                        f"{segment.project_material_id!r} on segment {segment.id}"
+                        f"Unknown project_material_id {segment.project_material_id!r} on segment {segment.id}"
                     )
 
 
@@ -701,9 +697,7 @@ def _validate_rows_custom_values(
     option_list_by_field_key: dict[str, list[SingleSelectOption]] = {}
     for field_key, field_def in field_defs_by_key.items():
         if field_def.field_type is CustomFieldType.single_select:
-            option_list_by_field_key[field_key] = single_select_options.get(
-                f"{table_label}.{field_key}", []
-            )
+            option_list_by_field_key[field_key] = single_select_options.get(f"{table_label}.{field_key}", [])
 
     for row_id, custom_values in rows:
         for field_key, value in custom_values.items():
