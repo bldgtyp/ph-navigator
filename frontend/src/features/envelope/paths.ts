@@ -16,3 +16,12 @@ export function isEnvelopeSubroute(
 ): boolean {
   return subpath === `/${route}` || subpath.startsWith(`/${route}/`);
 }
+
+export function envelopeSubpath(pathname: string, projectId: string): string {
+  return pathname.replace(`/projects/${projectId}/envelope`, "");
+}
+
+export function activeAssemblyIdFromSubpath(subpath: string): string | null {
+  const match = subpath.match(/^\/assemblies\/([^/]+)(?:\/.*)?$/);
+  return match?.[1] ?? null;
+}

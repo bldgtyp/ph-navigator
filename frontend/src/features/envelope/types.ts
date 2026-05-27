@@ -250,3 +250,11 @@ export type EnvelopeCommand =
 export type EnvelopeCommandBody = {
   command: EnvelopeCommand;
 };
+
+export type EnvelopeAttachmentChangeArgs = {
+  tableKey: string;
+  rowId: string;
+  fieldKey: string;
+  currentAssetIds: string[];
+  nextAssetIds: string[];
+};
