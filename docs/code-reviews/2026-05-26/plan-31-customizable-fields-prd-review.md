@@ -9,11 +9,11 @@ STATUS: REVIEW — independent reading of plan-31-customizable-fields-prd.md
         the document wire format, the JSON Schema surface, the
         validation layer, and the downstream consumer contract.
 AUTHOR: Claude (Opus 4.7)
-REVIEWED: docs/plans/2026-05-26/plan-31-customizable-fields-prd.md
+REVIEWED: docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md
 SCOPE: Plan-review only. No implementation work.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md
-  - docs/plans/2026-05-26/plan-30-datatable-identifier-column.md
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md
   - context/PRD.md
   - context/technical-requirements/data-model.md §6.6
   - context/technical-requirements/data-table.md

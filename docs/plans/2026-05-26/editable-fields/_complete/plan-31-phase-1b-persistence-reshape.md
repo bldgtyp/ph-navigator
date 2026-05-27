@@ -7,7 +7,7 @@ STATUS: BACKBONE LANDED (2026-05-26). Backend types/models reshaped,
         Mechanical follow-on work (cascade rename through callers,
         fixture rewrites, frontend reshape, transitional-alias drop)
         is tracked in
-        `docs/plans/2026-05-26/plan-31-phase-1c-rename-cascade-and-fixtures.md`.
+        `docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1c-rename-cascade-and-fixtures.md`.
         Type-check is currently red (~45 errors) and test suite is
         widely red by design until Phase 1c lands. Transitional
         aliases (`CustomFieldDef`, `CustomFieldCapability`,
@@ -15,7 +15,7 @@ STATUS: BACKBONE LANDED (2026-05-26). Backend types/models reshaped,
         `rooms_custom_fields`, etc.) shipped to keep imports working
         across the cutover; Phase 1c removes them.
         DEPS: Phase 1a complete + PRD acceptance
-        (`docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`).
+        (`docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md`).
         Wire-format reshape; bumps document schema version 2 → 3.
         Pre-deploy, no back-compat reader.
 AUTHOR: Claude (Opus 4.7)
@@ -27,8 +27,8 @@ SCOPE: Move every built-in FieldDef into the document. Migrate
        the `_custom_field_` namespace. Update the published JSON Schema
        and the `data-model.md` contract.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD, §P0.1, §P2.3, §P4.2)
-  - docs/plans/2026-05-26/plan-31-phase-1a-lock-model.md (predecessor)
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD, §P0.1, §P2.3, §P4.2)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-1a-lock-model.md (predecessor)
   - context/technical-requirements/data-model.md §6.6
   - context/technical-requirements/save-versioning.md
   - context/technical-requirements/llm-mcp-schema.md

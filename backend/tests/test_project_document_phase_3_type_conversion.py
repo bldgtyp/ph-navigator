@@ -53,9 +53,7 @@ def _seed_body() -> ProjectDocumentV1:
     passes the `validate_document_references` "record_id required"
     check immediately.
     """
-    return empty_project_document(
-        CreateProjectRequest(name="t", bt_number="t-1", cert_programs=[])
-    )
+    return empty_project_document(CreateProjectRequest(name="t", bt_number="t-1", cert_programs=[]))
 
 
 def _with_custom_field(
@@ -77,9 +75,7 @@ def _with_custom_field(
     )
     envelope = body.tables.rooms
     next_envelope = envelope.model_copy(update={"field_defs": [*envelope.field_defs, field]})
-    return body.model_copy(
-        update={"tables": body.tables.model_copy(update={"rooms": next_envelope})}
-    )
+    return body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": next_envelope})})
 
 
 def _with_room(
@@ -104,9 +100,7 @@ def _with_room(
     )
     envelope = body.tables.rooms
     next_envelope = envelope.model_copy(update={"rows": [*envelope.rows, row]})
-    return body.model_copy(
-        update={"tables": body.tables.model_copy(update={"rooms": next_envelope})}
-    )
+    return body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": next_envelope})})
 
 
 def _fingerprint(body: ProjectDocumentV1) -> str:
@@ -138,9 +132,7 @@ def test_conversion_matrix_covers_formula_targets_for_every_primitive() -> None:
         CustomFieldType.single_select,
     ):
         policy = CONVERSION_MATRIX.get((source, CustomFieldType.formula))
-        assert policy == "discard_then_author", (
-            f"{source.value} → formula must be discard_then_author, got {policy!r}"
-        )
+        assert policy == "discard_then_author", f"{source.value} → formula must be discard_then_author, got {policy!r}"
 
 
 def test_conversion_matrix_covers_formula_to_each_primitive() -> None:
@@ -154,9 +146,7 @@ def test_conversion_matrix_covers_formula_to_each_primitive() -> None:
     }
     for target, policy in expected.items():
         actual = CONVERSION_MATRIX.get((CustomFieldType.formula, target))
-        assert actual == policy, (
-            f"formula → {target.value} expected {policy!r}, got {actual!r}"
-        )
+        assert actual == policy, f"formula → {target.value} expected {policy!r}, got {actual!r}"
 
 
 def test_conversion_matrix_rejects_formula_to_formula() -> None:
@@ -283,9 +273,7 @@ def test_audit_payload_contains_row_changes_with_before_after() -> None:
     """Successful conversions on populated tables capture per-row
     before/after pairs in the audit payload (capped at AUDIT_ROW_CAP)."""
     body = _seed_body()
-    body = _with_custom_field(
-        body, "cf_count", display_name="Count", field_type=CustomFieldType.short_text
-    )
+    body = _with_custom_field(body, "cf_count", display_name="Count", field_type=CustomFieldType.short_text)
     body = body.model_copy(
         update={
             "single_select_options": {

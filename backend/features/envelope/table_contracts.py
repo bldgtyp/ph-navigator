@@ -106,10 +106,7 @@ def apply_assembly_segments_replace(body: ProjectDocumentV1, payload: BaseModel)
                     "use_site_notes" in replacement.model_fields_set
                     and segment.use_site_notes != replacement.use_site_notes
                 )
-                if (
-                    segment.photo_asset_ids != replacement.photo_asset_ids
-                    or notes_changed
-                ):
+                if segment.photo_asset_ids != replacement.photo_asset_ids or notes_changed:
                     changed = True
                     break
             if changed:

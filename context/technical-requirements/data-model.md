@@ -647,7 +647,7 @@ built-in fields whose locks permit it.
 
 Catalog tables (`catalog_materials`, frame, glazing) are **not** field-
 config-capable in v1 — catalog stability is foundational and revisited
-post-v1. Implementation plan: `docs/plans/2026-05-26/plan-31-customizable-fields-prd.md`.
+post-v1. Implementation plan: `docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md`.
 
 The contract gates below are the durable record of decisions
 plan-31 §P3 made about identity, shape, validation timing, and export

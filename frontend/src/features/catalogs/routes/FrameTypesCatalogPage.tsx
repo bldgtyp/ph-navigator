@@ -95,7 +95,9 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
                 <td>{record.manufacturer ?? "—"}</td>
                 <td>{record.brand ?? "—"}</td>
                 <td>{formatLengthFromMm(record.width_mm, { unitSystem, showUnit: false })}</td>
-                <td>{formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}</td>
+                <td>
+                  {formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}
+                </td>
                 <td>
                   {formatLinearPsiFromWmK(record.psi_g_w_mk, { unitSystem, showUnit: false })}
                 </td>

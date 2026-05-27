@@ -36,7 +36,8 @@ export function formatDensityFromKgM3(
 export function parseDensityToKgM3(input: string, options: UnitFormatOptions): UnitParseResult {
   const parsed = parseDecimalInput(input);
   if (parsed === null) return { ok: false, code: "empty", message: "Enter density." };
-  if (Number.isNaN(parsed)) return { ok: false, code: "invalid_number", message: "Enter a number." };
+  if (Number.isNaN(parsed))
+    return { ok: false, code: "invalid_number", message: "Enter a number." };
   if (parsed < 0) return { ok: false, code: "negative", message: "Density cannot be negative." };
   return { ok: true, valueSi: options.unitSystem === "IP" ? lbFt3ToKgM3(parsed) : parsed };
 }
@@ -54,10 +55,15 @@ export function formatSpecificHeatFromJKgK(
     : formatNumberWithUnit(valueJKgK, "J/(kg-K)", { fractionDigits: 0, ...options });
 }
 
-export function parseSpecificHeatToJKgK(input: string, options: UnitFormatOptions): UnitParseResult {
+export function parseSpecificHeatToJKgK(
+  input: string,
+  options: UnitFormatOptions,
+): UnitParseResult {
   const parsed = parseDecimalInput(input);
   if (parsed === null) return { ok: false, code: "empty", message: "Enter specific heat." };
-  if (Number.isNaN(parsed)) return { ok: false, code: "invalid_number", message: "Enter a number." };
-  if (parsed < 0) return { ok: false, code: "negative", message: "Specific heat cannot be negative." };
+  if (Number.isNaN(parsed))
+    return { ok: false, code: "invalid_number", message: "Enter a number." };
+  if (parsed < 0)
+    return { ok: false, code: "negative", message: "Specific heat cannot be negative." };
   return { ok: true, valueSi: options.unitSystem === "IP" ? btuLbFToJKgK(parsed) : parsed };
 }

@@ -4,8 +4,8 @@ TIME: 14:10 ET (rev 2026-05-26 — review fold-in)
 STATUS: PRD — requirements + intent locked, with rev fold-in from
         docs/code-reviews/2026-05-26/plan-31-customizable-fields-prd-review.md.
         Detailed implementation plans for each phase land as separate
-        docs under `docs/plans/2026-05-26/plan-31-phase-N-*.md` once
-        this PRD is accepted.
+        docs under `docs/plans/2026-05-26/editable-fields/plan-31-phase-N-*.md`
+        once this PRD is accepted.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Unify the built-in / custom field distinction in the DataTable
        contract. Built-in field configuration becomes user-editable on
@@ -19,7 +19,7 @@ SCOPE: Unify the built-in / custom field distinction in the DataTable
        implications.
 RELATED:
   - docs/code-reviews/2026-05-26/plan-31-customizable-fields-prd-review.md
-  - docs/plans/2026-05-26/plan-30-datatable-identifier-column.md
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md
   - context/PRD.md §11.3 (Data Tables)
   - context/UI_UX.md §1.7 (Table interaction model)
   - context/technical-requirements/data-table.md
@@ -871,7 +871,8 @@ Pumps, fingerprint v1 → v2 byte-matching backend. Remaining frontend
 slices (#28 useTableSchema reshape, #11 row-shape migration, #29
 IdentifierConfig deletion, #30–#32 small wins, #33 catalog refresh
 skip, #34 test rewrites, #36 verification) tracked in
-`plan-31-phase-3-frontend-bundle.md`; estimated 3–5 sessions remaining.
+`docs/plans/2026-05-26/editable-fields/plan-31-phase-3-frontend-bundle.md`;
+estimated 3–5 sessions remaining.
 See `plan-31-phase-3-built-in-type-changes.md` STATUS for the landed-
 artifact list and `data-model.md` §6.6.9 for the published matrix.*
 - Allow `field_type` change on unlocked built-in fields. Run the
@@ -1085,7 +1086,7 @@ Code:
 
 Plans / context:
 
-- `docs/plans/2026-05-26/plan-30-datatable-identifier-column.md` —
+- `docs/plans/2026-05-26/editable-fields/_complete/plan-30-datatable-identifier-column.md` —
   predecessor PRD this supersedes for the identifier-column
   abstraction.
 - `docs/code-reviews/2026-05-26/plan-31-customizable-fields-prd-review.md`

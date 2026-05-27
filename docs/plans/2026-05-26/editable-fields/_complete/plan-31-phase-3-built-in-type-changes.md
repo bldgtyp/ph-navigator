@@ -13,10 +13,13 @@ STATUS: BACKEND COHORT LANDED 2026-05-26 — matrix extension, apply
         consumer layer by design — cascade migrates in subsequent
         slices (#28 useTableSchema reshape + #11 row-shape, #29
         IdentifierConfig deletion, etc.). See
-        `plan-31-phase-3-frontend-bundle.md` for the multi-session
+        `docs/plans/2026-05-26/editable-fields/plan-31-phase-3-frontend-bundle.md`
+        for the multi-session
         rollout plan. Original full-cohort intent in
-        `plan-31-customizable-fields-prd.md` §P6 Phase 3;
-        `complete/plan-31-phase-2-record-id-field.md` for the
+        `docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md`
+        §P6 Phase 3;
+        `docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-2-record-id-field.md`
+        for the
         predecessor.
         Lifts the Phase 1a hard rule that disables the type picker on
         built-in fields. Extends the conversion matrix to cover
@@ -32,8 +35,8 @@ SCOPE: Allow user-driven `field_type` changes on built-in fields whose
        fields cleanly. Rename audit-log entries to log built-in
        retypes uniformly with custom-field retypes.
 RELATED:
-  - docs/plans/2026-05-26/plan-31-customizable-fields-prd.md (master PRD, §P4.5, §P4.6)
-  - docs/plans/2026-05-26/plan-31-phase-2-record-id-field.md (predecessor)
+  - docs/plans/2026-05-26/editable-fields/plan-31-customizable-fields-prd.md (master PRD, §P4.5, §P4.6)
+  - docs/plans/2026-05-26/editable-fields/_complete/plan-31-phase-2-record-id-field.md (predecessor)
   - context/technical-requirements/data-table.md
   - context/technical-requirements/data-model.md §6.6
   - frontend/src/shared/ui/data-table/lib/typeConversionMatrix.ts
