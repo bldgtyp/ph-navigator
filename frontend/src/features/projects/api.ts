@@ -2,6 +2,8 @@ import { fetchJson } from "../../shared/api/client";
 import type {
   BtNumberAvailability,
   CreateProjectPayload,
+  ProjectBulkDeleteResponse,
+  ProjectDeletedListResponse,
   ProjectDetail,
   ProjectListResponse,
   UpdateProjectPayload,
@@ -9,6 +11,12 @@ import type {
 
 export async function listProjects(signal?: AbortSignal): Promise<ProjectListResponse> {
   return fetchJson<ProjectListResponse>("/api/v1/projects", { signal });
+}
+
+export async function listDeletedProjects(
+  signal?: AbortSignal,
+): Promise<ProjectDeletedListResponse> {
+  return fetchJson<ProjectDeletedListResponse>("/api/v1/projects/deleted", { signal });
 }
 
 export async function checkBtNumber(
@@ -25,6 +33,19 @@ export async function createProject(payload: CreateProjectPayload): Promise<Proj
   return fetchJson<ProjectDetail>("/api/v1/projects", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function bulkDeleteProjects(projectIds: string[]): Promise<ProjectBulkDeleteResponse> {
+  return fetchJson<ProjectBulkDeleteResponse>("/api/v1/projects:bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ project_ids: projectIds, confirm: true }),
+  });
+}
+
+export async function restoreProject(projectId: string): Promise<ProjectDetail> {
+  return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}:restore`, {
+    method: "POST",
   });
 }
 

@@ -13,12 +13,20 @@ factory. Tests can call any tool function directly with
 
 from __future__ import annotations
 
+from uuid import UUID
+
+from fastapi import HTTPException
+
 # `Context` is imported lazily inside the tool signatures via the
 # fastmcp runtime; we import here to keep type annotations resolvable.
 from mcp.server.fastmcp import Context
 
+from database import connection
 from features.assets.routes import get_asset_service
 from features.assets.schemas import AttachAssetRequest, BulkDownloadFilter, BulkDownloadRequest, DetachAssetRequest
+from features.auth import repository as auth_repository
+from features.auth.models import UserPublic
+from features.auth.service import public_user
 from features.mcp.helpers import (
     apply_mcp_schema_mutation,
     apply_mcp_schema_mutation_with_audit,
@@ -28,6 +36,7 @@ from features.mcp.helpers import (
     custom_field_response,
     parse_uuid,
     project_access_or_error,
+    raise_http_exception_as_mcp_error,
     raise_mcp_error,
     require_token_scope_or_error,
     table_contract_or_error,
@@ -51,13 +60,27 @@ from features.project_document.schema_mutations import (
     SetFormulaMutation,
 )
 from features.project_status.service import list_project_status_items
-from features.projects.models import ProjectSummary
-from features.projects.service import get_project_detail
+from features.projects.models import (
+    AccessMode,
+    ProjectDeleteRequest,
+    ProjectDetail,
+    ProjectHardDeleteRequest,
+    ProjectSummary,
+)
+from features.projects.service import (
+    delete_project as soft_delete_project,
+)
+from features.projects.service import (
+    get_project_detail,
+    hard_delete_project,
+    restore_project,
+)
 
 __all__ = [
     "tool_add_custom_field",
     "tool_change_custom_field_type",
     "tool_delete_custom_field",
+    "tool_delete_project",
     "tool_duplicate_custom_field",
     "tool_edit_custom_field_options",
     "tool_get_document",
@@ -74,7 +97,9 @@ __all__ = [
     "tool_bulk_detach",
     "tool_list_assets",
     "tool_resolve_asset_urls",
+    "tool_restore_project",
     "tool_start_bulk_download",
+    "tool_hard_delete_project",
     "tool_set_custom_field_description",
     "tool_set_custom_field_formula",
 ]
@@ -85,9 +110,36 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
+def _get_project_detail_or_error(project_id: UUID, access_mode: AccessMode, ctx: Context) -> ProjectDetail:
+    try:
+        return get_project_detail(project_id, access_mode=access_mode)
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_error",
+            default_message="Project could not be loaded.",
+            default_recoverability="refresh",
+            recoverability_by_code={"project_deleted": "refresh", "project_not_found": "refresh"},
+        )
+
+
+def _token_user_or_error(user_id: UUID, ctx: Context) -> UserPublic:
+    with connection() as conn:
+        row = auth_repository.get_user_by_id(conn, user_id)
+    if row is None or not row["is_active"]:
+        raise_mcp_error(
+            "mcp_issuing_user_not_found",
+            "MCP token issuing user is no longer active.",
+            "reauthenticate",
+            ctx,
+        )
+    return public_user(row)
+
+
 def tool_list_projects(ctx: Context, *, allow_env_token: bool) -> McpProjectListEnvelope:
     token = current_token(ctx, allow_env_token)
-    detail = get_project_detail(token.project_id, access_mode="viewer")
+    detail = _get_project_detail_or_error(token.project_id, "viewer", ctx)
     project = ProjectSummary.model_validate(
         detail.model_dump(exclude={"versions", "active_version", "access_mode", "owner_display_name"})
     )
@@ -98,7 +150,7 @@ def tool_get_project(project_id: str, ctx: Context, *, allow_env_token: bool) ->
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     token = current_token(ctx, allow_env_token)
     require_token_scope_or_error(token, parsed_project_id, "project:read", ctx)
-    detail = get_project_detail(parsed_project_id, access_mode="editor")
+    detail = _get_project_detail_or_error(parsed_project_id, "editor", ctx)
     return McpProjectEnvelope(
         project=ProjectSummary.model_validate(
             detail.model_dump(exclude={"versions", "active_version", "access_mode", "owner_display_name"})
@@ -112,8 +164,84 @@ def tool_list_versions(project_id: str, ctx: Context, *, allow_env_token: bool) 
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     token = current_token(ctx, allow_env_token)
     require_token_scope_or_error(token, parsed_project_id, "project:read", ctx)
-    detail = get_project_detail(parsed_project_id, access_mode="editor")
+    detail = _get_project_detail_or_error(parsed_project_id, "editor", ctx)
     return McpVersionListEnvelope(versions=detail.versions)
+
+
+def tool_delete_project(project_id: str, ctx: Context, *, allow_env_token: bool) -> dict[str, object]:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    require_token_scope_or_error(token, parsed_project_id, "project:write", ctx)
+    user = _token_user_or_error(token.issued_by_user_id, ctx)
+    try:
+        return soft_delete_project(
+            parsed_project_id,
+            ProjectDeleteRequest(confirm=True),
+            user,
+            request_meta=None,
+        ).model_dump(mode="json")
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_delete_failed",
+            default_message="Project delete failed.",
+            default_recoverability="fatal",
+        )
+
+
+def tool_restore_project(project_id: str, ctx: Context, *, allow_env_token: bool) -> dict[str, object]:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    require_token_scope_or_error(token, parsed_project_id, "project:write", ctx)
+    user = _token_user_or_error(token.issued_by_user_id, ctx)
+    try:
+        return restore_project(parsed_project_id, user, request_meta=None).model_dump(mode="json")
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_restore_failed",
+            default_message="Project restore failed.",
+            default_recoverability="fatal",
+            recoverability_by_code={"project_restore_expired": "fatal", "project_not_found": "refresh"},
+        )
+
+
+def tool_hard_delete_project(
+    project_id: str,
+    confirm_project_name: str,
+    confirm_bt_number: str,
+    ctx: Context,
+    *,
+    allow_env_token: bool,
+) -> dict[str, object]:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    require_token_scope_or_error(token, parsed_project_id, "project:write", ctx)
+    user = _token_user_or_error(token.issued_by_user_id, ctx)
+    try:
+        return hard_delete_project(
+            parsed_project_id,
+            ProjectHardDeleteRequest(
+                confirm_project_name=confirm_project_name,
+                confirm_bt_number=confirm_bt_number,
+            ),
+            user=user,
+            request_meta=None,
+        ).model_dump(mode="json")
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_hard_delete_failed",
+            default_message="Project hard-delete failed.",
+            default_recoverability="fatal",
+            recoverability_by_code={
+                "project_not_found": "refresh",
+                "project_hard_delete_storage_partial_failure": "retry",
+            },
+        )
 
 
 def tool_list_status_items(project_id: str, ctx: Context, *, allow_env_token: bool) -> McpStatusItemListEnvelope:

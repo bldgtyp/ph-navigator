@@ -32,6 +32,7 @@ from features.mcp.tools import (
     tool_bulk_detach,
     tool_change_custom_field_type,
     tool_delete_custom_field,
+    tool_delete_project,
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
     tool_get_asset_url,
@@ -39,6 +40,7 @@ from features.mcp.tools import (
     tool_get_job,
     tool_get_project,
     tool_get_table,
+    tool_hard_delete_project,
     tool_list_assets,
     tool_list_projects,
     tool_list_status_items,
@@ -46,6 +48,7 @@ from features.mcp.tools import (
     tool_rename_custom_field,
     tool_replace_table,
     tool_resolve_asset_urls,
+    tool_restore_project,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
     tool_start_bulk_download,
@@ -88,6 +91,32 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def get_project(project_id: str, ctx: Context) -> McpProjectEnvelope:
         """Return project metadata plus version list."""
         return tool_get_project(project_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def delete_project(project_id: str, ctx: Context) -> dict[str, object]:
+        """Soft-delete the token-scoped project after explicit project:write authorization."""
+        return tool_delete_project(project_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def restore_project(project_id: str, ctx: Context) -> dict[str, object]:
+        """Restore the token-scoped project during its soft-delete recovery window."""
+        return tool_restore_project(project_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def hard_delete_project(
+        project_id: str,
+        confirm_project_name: str,
+        confirm_bt_number: str,
+        ctx: Context,
+    ) -> dict[str, object]:
+        """Permanently delete the token-scoped project after exact name and BT number confirmation."""
+        return tool_hard_delete_project(
+            project_id,
+            confirm_project_name,
+            confirm_bt_number,
+            ctx,
+            allow_env_token=allow_env_token,
+        )
 
     @mcp.tool()
     def list_versions(project_id: str, ctx: Context) -> McpVersionListEnvelope:

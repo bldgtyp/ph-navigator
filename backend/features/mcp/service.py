@@ -32,6 +32,14 @@ from features.shared.errors import api_error
 TOKEN_PREFIX_LENGTH = 16
 
 
+class McpProjectDeletedError(LookupError):
+    """Raised when a valid project-scoped token points at a soft-deleted project."""
+
+    def __init__(self, project: dict[str, object]) -> None:
+        super().__init__("project_deleted")
+        self.project = project
+
+
 def generate_plaintext_token() -> str:
     return f"phn_mcp_{secrets.token_urlsafe(32)}"
 
@@ -142,10 +150,12 @@ def project_access_for_token(token: McpTokenRecord, project_id: UUID, scope: Mcp
     """Build the normal project-access object for a validated MCP token."""
     require_token_scope(token, project_id, scope)
     with connection() as conn:
-        project_row = projects_repository.get_project_by_id(conn, project_id)
+        project_row = projects_repository.get_project_by_id_including_deleted(conn, project_id)
         user_row = auth_repository.get_user_by_id(conn, token.issued_by_user_id)
     if project_row is None:
         raise LookupError("project_not_found")
+    if project_row["deleted_at"] is not None:
+        raise McpProjectDeletedError(project_row)
     if user_row is None:
         raise PermissionError("mcp_issuing_user_not_found")
     user_fields = UserPublic.model_fields.keys()
@@ -153,7 +163,7 @@ def project_access_for_token(token: McpTokenRecord, project_id: UUID, scope: Mcp
         project_id=project_id,
         mode="view",
         user=UserPublic.model_validate({key: user_row[key] for key in user_fields}),
-        project=ProjectSummary.model_validate(project_row),
+        project=ProjectSummary.model_validate({key: project_row[key] for key in ProjectSummary.model_fields}),
     )
 
 

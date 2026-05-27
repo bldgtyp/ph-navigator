@@ -4,9 +4,8 @@ Calls the `formula/` sub-package and translates each typed exception
 into a `features.shared.errors.api_error`. The translation helpers are
 module-private; the only public entry point is `apply_set_formula`.
 
-`_count_ast_nodes` and `_infer_result_type` live here transitionally —
-P8 moves them into `formula/` as `count_nodes` / `infer_result_type`
-helpers.
+AST analysis helpers live in `formula.analysis` so table seed builders
+can use them without importing mutation dispatchers at module import.
 """
 
 from __future__ import annotations
@@ -29,14 +28,7 @@ from features.project_document.formula import (
     parse,
     resolve_refs,
 )
-from features.project_document.formula.ast_nodes import (
-    BinaryOp,
-    FieldRef,
-    FuncCall,
-    IfExpr,
-    Literal_,
-    UnaryOp,
-)
+from features.project_document.formula.analysis import count_ast_nodes, infer_result_type
 from features.project_document.formula.resolver import collect_field_refs
 from features.project_document.mutations.guards import find_field
 from features.project_document.mutations.models import SetFormulaMutation
@@ -116,52 +108,6 @@ def _raise_formula_cycle(exc: FormulaCycleError, field_id: str) -> None:
             "cycle_path": list(exc.cycle_path),
         },
     )
-
-
-def count_ast_nodes(node: object) -> int:
-    if isinstance(node, (Literal_, FieldRef)):
-        return 1
-    if isinstance(node, UnaryOp):
-        return 1 + count_ast_nodes(node.operand)
-    if isinstance(node, BinaryOp):
-        return 1 + count_ast_nodes(node.left) + count_ast_nodes(node.right)
-    if isinstance(node, IfExpr):
-        return (
-            1 + count_ast_nodes(node.condition) + count_ast_nodes(node.then_branch) + count_ast_nodes(node.else_branch)
-        )
-    if isinstance(node, FuncCall):
-        return 1 + sum(count_ast_nodes(a) for a in node.args)
-    return 1
-
-
-def infer_result_type(node: object) -> str:
-    """Best-effort static result type used for downstream filter operators
-    (number aggregations, text comparisons). Falls back to "text" for
-    dynamic / mixed-typed expressions.
-    """
-    if isinstance(node, Literal_):
-        return node.inferred_type
-    if isinstance(node, UnaryOp):
-        if node.op == "-":
-            return "number"
-        if node.op == "not":
-            return "bool"
-    if isinstance(node, BinaryOp):
-        if node.op in ("+", "-", "*", "/", "%"):
-            return "number"
-        if node.op in ("=", "!=", "<", "<=", ">", ">=", "and", "or"):
-            return "bool"
-    if isinstance(node, IfExpr):
-        # Use the then-branch type when both branches agree.
-        then_t = infer_result_type(node.then_branch)
-        else_t = infer_result_type(node.else_branch)
-        return then_t if then_t == else_t else "text"
-    if isinstance(node, FuncCall):
-        if node.name in ("upper", "lower", "trim", "replace", "substring", "concat", "text"):
-            return "text"
-        if node.name in ("len", "number"):
-            return "number"
-    return "text"
 
 
 def apply_set_formula(
