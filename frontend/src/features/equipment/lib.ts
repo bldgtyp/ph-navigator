@@ -30,6 +30,7 @@ import type {
   FieldOption,
   RowDeletePayload,
   RowInsertPayload,
+  TableFieldRenderOverlay,
 } from "../../shared/ui/data-table";
 import {
   ALL_FIELD_LOCKS,
@@ -97,7 +98,7 @@ export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
   PUMP_DATASHEET_FIELD_KEY,
 ] as const;
 
-export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, Partial<FieldDef>> {
+export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableFieldRenderOverlay> {
   return {
     record_id: {
       locked: ["display_name", "delete", "duplicate"],
@@ -158,7 +159,7 @@ export function roomsTableColumnsForSanitize(
   }));
 }
 
-export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, Partial<FieldDef>> {
+export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableFieldRenderOverlay> {
   return {
     record_id: {
       locked: ["display_name", "delete", "duplicate"],

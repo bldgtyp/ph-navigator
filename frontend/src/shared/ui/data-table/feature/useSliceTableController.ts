@@ -33,8 +33,8 @@ import { projectDocumentQueryKeys } from "../../../../features/project_document/
 import { projectQueryKeys } from "../../../../features/projects/query-keys";
 import { useProjectTableViewState } from "../../../../features/table_views/hooks";
 import type { TableSliceAccessMode } from "../../../../features/project_document/table-slice";
-import type { BuildEmptyRow, FieldDef, FieldOption, WriteOp } from "../types";
-import type { FieldRegistryEntry, TableFieldDef } from "../index";
+import type { BuildEmptyRow, FieldOption, WriteOp } from "../types";
+import type { FieldRegistryEntry, TableFieldDef, TableFieldRenderOverlays } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import { useCustomFieldHandlers } from "./useCustomFieldHandlers";
 import type {
@@ -67,7 +67,7 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   // already short-circuited on loading / error so this is non-null.
   slice: TSlice;
   fieldDefs: TableFieldDef[] | null | undefined;
-  fieldOverlay?: Record<string, Partial<FieldDef>> | null;
+  fieldOverlay?: TableFieldRenderOverlays | null;
   singleSelectOptions: Record<string, FieldOption[]> | null;
   // Stub columns whose `id` / `fieldKey` mirror the live grid's. The
   // view-state sanitizer reads only `id` + `fieldKey`, so a slim list

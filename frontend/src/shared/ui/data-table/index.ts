@@ -18,12 +18,15 @@ export {
   FINGERPRINT_ALGORITHM_VERSION,
   computeTableSchemaFingerprint,
   mintCustomFieldId,
+  tableFieldDefsToFieldDefs,
   useTableSchema,
 } from "./hooks/useTableSchema";
 export type {
   CustomFieldDef,
   CustomFieldType,
   TableFieldDef,
+  TableFieldRenderOverlay,
+  TableFieldRenderOverlays,
   TableSchema,
   UseTableSchemaArgs,
 } from "./hooks/useTableSchema";
