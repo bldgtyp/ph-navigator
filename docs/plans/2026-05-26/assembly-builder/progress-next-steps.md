@@ -19,6 +19,8 @@ Assembly Builder Phases 1-3 are flattened into `main` as commit
 `5c687c9` (`Add assembly builder phases 1-3`). The phase worktrees and
 remote phase branches were removed after the squash merge.
 
+Phase 4 is active on branch `codex/assembly-builder-phase-04`.
+
 Completed implementation surface:
 
 - typed backend envelope document/read contracts;
@@ -64,11 +66,73 @@ Browser smoke completed before flatten on the Phase 03 worktree:
 - Full backend `uv run ty check` remains blocked by the pre-existing
   custom-field / project-document baseline noted during Phase 1. Use
   scoped envelope Ty gates until that baseline is reconciled.
+- Full frontend `pnpm exec tsc --noEmit` is currently dominated by
+  unrelated equipment/custom-field transition errors in the dirty
+  worktree. Use filtered Envelope/Catalog type output plus targeted
+  Envelope tests until that branch is reconciled.
 - `make smoke` remains blocked locally when another worktree owns the
   shared Docker container name `phn-v2-postgres`.
 - Main still has unrelated local worktree dirt outside Assembly Builder
   tracking (`.claude/worktrees/` and the Plan 31 file move). Do not fold
   that into Assembly Builder commits unless explicitly asked.
+
+## Phase 4 Active Progress
+
+Implemented on `codex/assembly-builder-phase-04` so far:
+
+- backend command DTOs and service handling for
+  `pick_project_material`, `pick_catalog_material`,
+  `hand_enter_material`, `update_project_material`,
+  `update_segment_use_site_notes`, `detach_segment_material`, and
+  `remove_unused_project_materials`;
+- backend catalog copy-in from the current Materials catalog record,
+  with project-material de-dupe by catalog record id and explicit
+  ambiguity rejection when multiple project materials share the same
+  origin;
+- shared material update behavior with catalog-origin
+  `local_overrides` tracking against canonical SI values;
+- detach-to-custom behavior that copies product values, datasheets,
+  status, and notes, clears `catalog_origin`, and leaves segment
+  use-site notes/photos on the segment;
+- frontend Segment Properties material picker for existing project
+  materials, catalog materials, hand-entered materials, detach, and the
+  shared material value editor;
+- frontend Specifications editing for status, product values, notes,
+  segment-owned use-site notes, and unused-material cleanup;
+- lazy Materials catalog query only while the editable Segment
+  Properties dialog is open, so normal Envelope reads do not add an
+  unrelated catalog dependency;
+- simplify pass extracted the shared project-material editor and modal
+  unit toggle into dedicated components, moved catalog-origin typing to
+  a shared project-document type, and replaced the segment dialog's
+  partial-command cast with explicit material callbacks;
+- simplify pass changed Specifications editing to mount material and
+  use-site note editors on demand instead of mounting controlled forms
+  for every visible material/use-site;
+- simplify pass added frontend dirty guards for material and use-site
+  note edits and a backend no-op guard for project-material table
+  replacement.
+
+Verified on this branch:
+
+- `cd backend && uv run ruff check features/envelope tests/test_envelope_phase04.py`
+- `cd backend && uv run ty check features/envelope tests/test_envelope_phase04.py`
+- `cd backend && uv run pytest tests/test_envelope_phase04.py`
+- `cd frontend && pnpm exec prettier --write src/features/catalogs/hooks.ts src/features/envelope/components/EnvelopeEditorDialogs.tsx src/features/envelope/components/SpecificationsPanel.tsx src/features/envelope/components/ProjectMaterialEditor.tsx src/features/envelope/components/ModalUnitToggle.tsx src/features/envelope/routes/EnvelopePage.tsx src/features/envelope/types.ts src/features/windows/types.ts src/features/project_document/catalog-origin.ts`
+- `cd frontend && pnpm exec eslint src/features/envelope src/features/catalogs/hooks.ts src/features/windows/types.ts src/features/project_document/catalog-origin.ts`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/features/catalogs/hooks|src/features/project_document/catalog-origin|src/features/windows/types" || true`
+
+Remaining before Phase 4 closure:
+
+- add direct frontend tests for material pick/catalog pick/hand-enter,
+  Specifications value editing, IP/SI material editor submission, and
+  use-site note commands;
+- browser-smoke the Phase 4 checklist against a seeded project;
+- reconcile or isolate unrelated frontend typecheck failures enough to
+  run the full build gate;
+- decide whether picker catalog grouping/search needs a richer widget
+  before Phase 4 is marked complete.
 
 ## Next Implementation Target
 
