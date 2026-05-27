@@ -8,8 +8,8 @@ from features.envelope.models import (
     AssemblyThermalStatus,
     ProjectMaterialRead,
     ProjectMaterialUseSite,
-    ThermalStatusFlag,
 )
+from features.envelope.thermal import thermal_issues, thermal_status_from_issues
 from features.project_document.document import Assembly, ProjectDocumentV1, ProjectMaterial
 
 
@@ -58,23 +58,7 @@ def assembly_status(
     materials_by_id: dict[str, ProjectMaterial],
 ) -> AssemblyThermalStatus:
     """Compute early unfinished flags without doing thermal math."""
-    flags: set[ThermalStatusFlag] = set()
-    for layer in assembly.layers:
-        if layer.thickness_mm <= 0:
-            flags.add("invalid_geometry")
-        for segment in layer.segments:
-            if segment.width_mm <= 0 or (
-                segment.steel_stud_spacing_mm is not None and segment.steel_stud_spacing_mm <= 0
-            ):
-                flags.add("invalid_geometry")
-            if segment.project_material_id is None:
-                flags.add("missing_material")
-                continue
-            material = materials_by_id.get(segment.project_material_id)
-            if material is None or material.conductivity_w_mk is None:
-                flags.add("missing_conductivity")
-    sorted_flags = sorted(flags)
-    return AssemblyThermalStatus(is_complete=not sorted_flags, flags=sorted_flags)
+    return thermal_status_from_issues(thermal_issues(assembly, materials_by_id))
 
 
 def flatten_assembly_segments(body: ProjectDocumentV1) -> list[AssemblySegmentTableRow]:

@@ -5,7 +5,11 @@ export type AssemblyType = "wall" | "floor" | "roof" | "other";
 export type AssemblyOrientation = "first_layer_outside" | "last_layer_outside";
 
 export type SpecificationStatus = "complete" | "missing" | "question" | "na";
-export type ThermalStatusFlag = "missing_material" | "missing_conductivity" | "invalid_geometry";
+export type ThermalStatusFlag =
+  | "missing_material"
+  | "missing_conductivity"
+  | "invalid_geometry"
+  | "broken_material_reference";
 export type EnvelopeReadSource = "draft" | "version";
 
 export type ProjectMaterialUseSite = {
@@ -68,6 +72,23 @@ export type Assembly = {
 export type EnvelopeReadResponse = BaseTableSlice & {
   assemblies: Assembly[];
   project_materials: ProjectMaterial[];
+};
+
+export type AssemblyThermalResponse = {
+  project_id: string;
+  version_id: string;
+  source: EnvelopeReadSource;
+  assembly_id: string;
+  input_hash: string;
+  status: {
+    is_complete: boolean;
+    flags: ThermalStatusFlag[];
+  };
+  r_parallel_path_m2k_w: number | null;
+  r_isothermal_planes_m2k_w: number | null;
+  r_effective_m2k_w: number | null;
+  u_effective_w_m2k: number | null;
+  warnings: string[];
 };
 
 export type EnvelopeCommand =

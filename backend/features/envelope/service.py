@@ -16,6 +16,7 @@ from features.catalogs.materials import repository as catalog_materials_reposito
 from features.envelope.models import (
     AddLayerCommand,
     AddSegmentCommand,
+    AssemblyThermalResponse,
     CreateAssemblyCommand,
     DeleteAssemblyCommand,
     DeleteLayerCommand,
@@ -39,6 +40,7 @@ from features.envelope.models import (
     UpdateSegmentUseSiteNotesCommand,
 )
 from features.envelope.selectors import build_envelope_read_parts
+from features.envelope.thermal import calculate_assembly_thermal
 from features.project_document import repository
 from features.project_document.audit import log_document_action
 from features.project_document.document import (
@@ -103,6 +105,41 @@ def get_envelope_read_model(
         draft_etag=view.draft_etag,
         assemblies=assemblies,
         project_materials=project_materials,
+    )
+
+
+def get_assembly_thermal_model(
+    version_id: UUID,
+    access: ProjectAccess,
+    assembly_id: str,
+    source: ProjectDocumentSource,
+) -> AssemblyThermalResponse:
+    """Load and calculate one assembly thermal overlay from draft or saved body."""
+    if source == "version":
+        body = get_saved_document(version_id, access)
+        response_source: ProjectDocumentSource = "version"
+    else:
+        view = get_current_document_view(version_id, access)
+        body = view.body
+        response_source = view.source
+
+    assembly = _find_assembly(body.tables.assemblies, assembly_id)
+    result = calculate_assembly_thermal(
+        assembly,
+        {material.id: material for material in body.tables.project_materials},
+    )
+    return AssemblyThermalResponse(
+        project_id=access.project_id,
+        version_id=version_id,
+        source=response_source,
+        assembly_id=assembly_id,
+        input_hash=result.input_hash,
+        status=result.status,
+        r_parallel_path_m2k_w=result.r_parallel_path_m2k_w,
+        r_isothermal_planes_m2k_w=result.r_isothermal_planes_m2k_w,
+        r_effective_m2k_w=result.r_effective_m2k_w,
+        u_effective_w_m2k=result.u_effective_w_m2k,
+        warnings=result.warnings,
     )
 
 

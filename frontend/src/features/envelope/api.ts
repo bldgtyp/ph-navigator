@@ -1,6 +1,11 @@
-import { fetchJson } from "../../shared/api/client";
+import { fetchBlob, fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
-import type { EnvelopeCommandBody, EnvelopeReadResponse, EnvelopeReadSource } from "./types";
+import type {
+  AssemblyThermalResponse,
+  EnvelopeCommandBody,
+  EnvelopeReadResponse,
+  EnvelopeReadSource,
+} from "./types";
 
 export async function fetchEnvelopeReadModel(
   projectId: string,
@@ -28,4 +33,21 @@ export async function postEnvelopeCommand(
       body: JSON.stringify(body),
     },
   );
+}
+
+export async function fetchAssemblyThermal(
+  projectId: string,
+  versionId: string,
+  assemblyId: string,
+  source: EnvelopeReadSource,
+  signal?: AbortSignal,
+): Promise<AssemblyThermalResponse> {
+  return fetchJson<AssemblyThermalResponse>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/assemblies/${assemblyId}/thermal?source=${source}`,
+    { signal },
+  );
+}
+
+export async function downloadEnvelopeHbjson(projectId: string, versionId: string): Promise<Blob> {
+  return fetchBlob(`/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/hbjson`);
 }

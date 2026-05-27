@@ -16,7 +16,12 @@ from features.project_document.document import (
 )
 from features.project_document.models import ProjectDocumentSource
 
-ThermalStatusFlag = Literal["missing_material", "missing_conductivity", "invalid_geometry"]
+ThermalStatusFlag = Literal[
+    "missing_material",
+    "missing_conductivity",
+    "invalid_geometry",
+    "broken_material_reference",
+]
 
 
 class AssemblyThermalStatus(BaseModel):
@@ -67,6 +72,24 @@ class EnvelopeReadResponse(BaseModel):
     draft_etag: str | None
     assemblies: list[AssemblyRead] = Field(default_factory=list)
     project_materials: list[ProjectMaterialRead] = Field(default_factory=list)
+
+
+class AssemblyThermalResponse(BaseModel):
+    """Backend-computed construction-only thermal result in SI units."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    assembly_id: str
+    input_hash: str
+    status: AssemblyThermalStatus
+    r_parallel_path_m2k_w: float | None
+    r_isothermal_planes_m2k_w: float | None
+    r_effective_m2k_w: float | None
+    u_effective_w_m2k: float | None
+    warnings: list[str] = Field(default_factory=list)
 
 
 class CreateAssemblyCommand(BaseModel):

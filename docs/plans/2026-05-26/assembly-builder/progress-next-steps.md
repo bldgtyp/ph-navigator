@@ -19,7 +19,10 @@ Assembly Builder Phases 1-3 are flattened into `main` as commit
 `5c687c9` (`Add assembly builder phases 1-3`). The phase worktrees and
 remote phase branches were removed after the squash merge.
 
-Phase 4 is active on branch `codex/assembly-builder-phase-04`.
+Phase 4 is implemented on branch `codex/assembly-builder-phase-04`.
+Phase 5 is active on branch `codex/assembly-builder-phase-05`, based on
+the Phase 4 branch tip because Phase 4 has not yet been flattened into
+`main`.
 
 Completed implementation surface:
 
@@ -137,31 +140,55 @@ Remaining before Phase 4 closure:
 ## Next Implementation Target
 
 Start with
-`docs/plans/2026-05-26/assembly-builder/phase-04-materials-picker-specifications.md`.
+`docs/plans/2026-05-26/assembly-builder/phase-05-thermal-hbjson-export.md`.
 
 Primary goal:
 
-- make segment material assignment useful by adding project-material
-  picker/copy-in/hand-entry flows and shared Specifications editing.
+- add backend-computed construction-only thermal overlays and a
+  saved-version-only HBJSON construction export.
 
-Phase 4 should preserve the contracts already proven in Phases 1-3:
+Phase 5 implemented so far on `codex/assembly-builder-phase-05`:
 
-- all mutations go through semantic envelope commands;
-- project-material rows remain shared records referenced by segment ids;
-- segment-owned `use_site_notes` and site photos stay on the segment;
-- material physical values are stored SI-canonical and displayed through
-  shared IP/SI helpers;
-- focused material numeric editors must follow the Phase 3 modal-unit
-  pattern: visible unit preference may change, but active draft text is
-  not reinterpreted mid-edit.
+- `GET /envelope/assemblies/{assembly_id}/thermal` over draft or saved
+  source with SI canonical R/U values, input hash, warnings, and
+  unfinished flags;
+- construction-only PH-average thermal calculation for assigned valid
+  segments, with null material segments flagged but not blocking the
+  preview value when remaining assigned layers are valid;
+- `GET /envelope/export/hbjson` that reads the saved version body only,
+  rejects incomplete assemblies with structured 422 paths, and exports
+  project-material ids, catalog origin, datasheet asset ids, and
+  `ref_status` metadata;
+- shared thermal issue records used by preview status, selectors, and
+  HBJSON export errors;
+- Envelope header thermal label that switches between SI U-value and IP
+  R-value using shared unit helpers;
+- shared frontend/backend download helpers for HBJSON blob delivery and
+  JSON attachment responses;
+- assembly-scoped thermal query invalidation for local envelope commands
+  with broad invalidation retained for shared material or assembly-list
+  changes;
+- dirty-draft warning before HBJSON download.
 
-## Phase 4 Pre-Flight
+Verified on this branch:
 
-Before coding Phase 4:
+- `cd backend && uv run ruff check features/envelope tests/test_envelope_phase04.py tests/test_envelope_phase05.py`
+- `cd backend && uv run ty check features/envelope tests/test_envelope_phase05.py`
+- `cd backend && uv run pytest tests/test_envelope_phase04.py tests/test_envelope_phase05.py`
+- `cd backend && uv run ruff check features/envelope features/shared features/project_document/routes.py tests/test_envelope_phase05.py`
+- `cd backend && uv run ty check features/envelope features/shared/responses.py tests/test_envelope_phase05.py`
+- `cd frontend && pnpm exec prettier --write src/shared/api/client.ts src/features/envelope/api.ts src/features/envelope/hooks.ts src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm exec eslint src/features/envelope src/features/catalogs/hooks.ts src/features/project_document/catalog-origin.ts src/features/windows/types.ts`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/features/catalogs/hooks|src/features/project_document/catalog-origin|src/features/windows/types" || true`
 
-- read `assembly-builder-prd.md` §§5.4-5.5, 6.4-6.5, and 7.7-7.11;
-- read the Phase 4 plan end to end;
-- inspect current envelope command DTOs and service helpers before
-  adding material commands;
-- verify no references to the legacy feature-doc PRD path have
-  reappeared.
+Remaining before Phase 5 closure:
+
+- add steel-stud equivalent-conductivity regression once the exact AISI
+  helper dependency/fixture is available in V2 or replaced with a
+  documented deterministic local implementation;
+- browser-smoke the full Phase 5 checklist, including downloaded HBJSON
+  inspection;
+- decide whether the current hand-authored Honeybee-compatible JSON
+  shape is enough for V1 export parity or whether V2 should add a
+  Honeybee package dependency for stricter object serialization.

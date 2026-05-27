@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+import json
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query
 
-from features.envelope.models import EnvelopeCommandRequest, EnvelopeReadResponse
-from features.envelope.service import apply_envelope_command, get_envelope_read_model
+from features.envelope.hbjson_export import export_hbjson_constructions
+from features.envelope.models import AssemblyThermalResponse, EnvelopeCommandRequest, EnvelopeReadResponse
+from features.envelope.service import apply_envelope_command, get_assembly_thermal_model, get_envelope_read_model
 from features.project_document.models import ProjectDocumentSource
+from features.project_document.service import get_saved_document
 from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
+from features.shared.responses import json_download_response
 
 router = APIRouter(
     prefix="/api/v1/projects/{project_id}/versions/{version_id}",
@@ -28,6 +32,29 @@ def get_envelope(
     source: Annotated[ProjectDocumentSource, Query()] = "draft",
 ) -> EnvelopeReadResponse:
     return get_envelope_read_model(version_id, access, source)
+
+
+@router.get("/envelope/assemblies/{assembly_id}/thermal", response_model=AssemblyThermalResponse)
+def get_assembly_thermal(
+    version_id: UUID,
+    assembly_id: str,
+    access: ProjectViewAccess,
+    source: Annotated[ProjectDocumentSource, Query()] = "draft",
+) -> AssemblyThermalResponse:
+    return get_assembly_thermal_model(version_id, access, assembly_id, source)
+
+
+@router.get("/envelope/export/hbjson")
+def export_envelope_hbjson(
+    version_id: UUID,
+    access: ProjectViewAccess,
+):
+    body = get_saved_document(version_id, access)
+    payload = export_hbjson_constructions(body)
+    return json_download_response(
+        json.dumps(payload, indent=2),
+        f"envelope-constructions-{version_id}.hbjson",
+    )
 
 
 @router.post("/draft/envelope/commands", response_model=EnvelopeReadResponse)

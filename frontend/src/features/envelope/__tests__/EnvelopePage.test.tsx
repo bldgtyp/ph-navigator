@@ -164,13 +164,35 @@ const envelopePayload: EnvelopeReadResponse = {
   ],
 };
 
+const thermalPayload = {
+  project_id: PROJECT_ID,
+  version_id: VERSION_ID,
+  source: "draft",
+  assembly_id: "asm_wall_c3",
+  input_hash: "a".repeat(64),
+  status: { is_complete: false, flags: ["missing_material"] },
+  r_parallel_path_m2k_w: 1.316,
+  r_isothermal_planes_m2k_w: 1.316,
+  r_effective_m2k_w: 1.316,
+  u_effective_w_m2k: 0.76,
+  warnings: ["One or more segments do not have a material assignment."],
+};
+
 beforeEach(() => {
   fetchMock.mockReset();
-  fetchMock.mockResolvedValue(jsonResponse(envelopePayload));
+  fetchMock.mockImplementation(defaultFetchImplementation);
   vi.stubGlobal("fetch", fetchMock);
+  Object.defineProperty(URL, "createObjectURL", {
+    writable: true,
+    value: vi.fn(() => "blob:hbjson"),
+  });
+  Object.defineProperty(URL, "revokeObjectURL", { writable: true, value: vi.fn() });
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -198,6 +220,9 @@ describe("EnvelopePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
 
     expect(screen.getByTestId("total-thickness")).toHaveTextContent("3.46 in");
+    expect(await screen.findByTestId("assembly-thermal-label")).toHaveTextContent(
+      "7.5 h-ft2-F/Btu",
+    );
     expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(initialWidth);
   });
 
@@ -240,7 +265,11 @@ describe("EnvelopePage", () => {
   });
 
   test("empty assemblies render the empty state without a redirect loop", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ ...envelopePayload, assemblies: [] }));
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?"))
+        return Promise.resolve(jsonResponse({ ...envelopePayload, assemblies: [] }));
+      return defaultFetchImplementation(url);
+    });
 
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies`);
 
@@ -251,13 +280,18 @@ describe("EnvelopePage", () => {
   });
 
   test("rename command posts semantic payload with draft etag", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(envelopePayload)).mockResolvedValueOnce(
-      jsonResponse({
-        ...envelopePayload,
-        draft_etag: "draft-etag-2",
-        assemblies: [{ ...envelopePayload.assemblies[0], name: "WALL-C4" }],
-      }),
-    );
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            draft_etag: "draft-etag-2",
+            assemblies: [{ ...envelopePayload.assemblies[0], name: "WALL-C4" }],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
 
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
@@ -269,7 +303,9 @@ describe("EnvelopePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Apply" }));
 
     expect(await screen.findByRole("link", { name: /WALL-C4/ })).toBeInTheDocument();
-    const commandCall = fetchMock.mock.calls[1]!;
+    const commandCall = fetchMock.mock.calls.find((call) =>
+      String(call[0]).includes("/draft/envelope/commands"),
+    )!;
     const commandOptions = commandCall[1]!;
     const headers = commandOptions?.headers as Headers;
     expect(commandCall[0]).toContain("/draft/envelope/commands");
@@ -280,9 +316,12 @@ describe("EnvelopePage", () => {
   });
 
   test("open length editors keep the draft string stable across unit toggles", async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(envelopePayload))
-      .mockResolvedValueOnce(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
 
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
@@ -296,7 +335,10 @@ describe("EnvelopePage", () => {
     expect(screen.getByLabelText("Thickness (mm)")).toHaveValue("50");
 
     await userEvent.click(screen.getByRole("button", { name: "Apply" }));
-    const commandOptions = fetchMock.mock.calls[1]![1]!;
+    const commandCall = fetchMock.mock.calls.find((call) =>
+      String(call[0]).includes("/draft/envelope/commands"),
+    )!;
+    const commandOptions = commandCall[1]!;
     expect(JSON.parse(commandOptions?.body as string)).toEqual({
       command: {
         kind: "update_layer_thickness",
@@ -316,6 +358,19 @@ describe("EnvelopePage", () => {
     expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/envelope?source=version"),
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
+  test("download warns when draft is dirty and calls saved-version export", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Download constructions HBJSON" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("last saved version"));
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/envelope/export/hbjson"),
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -376,4 +431,13 @@ function jsonResponse(body: unknown): Response {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+function defaultFetchImplementation(url: string): Promise<Response> {
+  if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
+  if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
+  if (url.includes("/envelope/export/hbjson")) {
+    return Promise.resolve(jsonResponse({ constructions: {} }));
+  }
+  throw new Error(`Unhandled fetch in EnvelopePage test: ${url}`);
 }
