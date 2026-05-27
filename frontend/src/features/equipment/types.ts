@@ -30,10 +30,10 @@ export const ROOM_OPTION_KEYS = [
 ] as const;
 export const ROOMS_TABLE_NAME = "rooms";
 
-// Single-select option fields use a namespaced `field_key`
-// ("rooms.floor_level") but the table column id is the short form. Both
-// `RoomsTable` (real columns) and `roomsTableColumnsForSanitize`
-// (sanitize stubs) must share these so saved view state lines up.
+// Rooms option-map keys stay namespaced (`rooms.floor_level`), while
+// table FieldDef keys and column ids use the backend field keys.
+// `RoomsTable` and `roomsTableColumnsForSanitize` share these ids so
+// saved view state lines up.
 export const ROOM_FLOOR_LEVEL_COLUMN_ID = "floor_level";
 export const ROOM_BUILDING_ZONE_COLUMN_ID = "building_zone";
 

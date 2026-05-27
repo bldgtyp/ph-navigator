@@ -42,10 +42,25 @@ export type TableSchema = {
   mintCustomFieldId: () => string;
 };
 
+export type TableFieldRenderOverlay = Partial<
+  Pick<
+    FieldDef,
+    | "colorCodeOptions"
+    | "defaultOptionId"
+    | "locked"
+    | "numberPrecision"
+    | "options"
+    | "read_only"
+    | "required"
+  >
+>;
+
+export type TableFieldRenderOverlays = Record<string, TableFieldRenderOverlay>;
+
 export type UseTableSchemaArgs = {
   tableKey: string;
   fieldDefs: TableFieldDef[] | null | undefined;
-  fieldOverlay?: Record<string, Partial<FieldDef>> | null;
+  fieldOverlay?: TableFieldRenderOverlays | null;
   // Namespaced single_select option lists keyed by their
   // `<table_path>.<field_id>` namespace key (e.g. `rooms.cf_abc123`).
   // When supplied, attached to custom single_select FieldDef entries.
@@ -67,23 +82,15 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
   const { fieldDefs, fieldOverlay, singleSelectOptions, tableKey } = args;
   const persistedFieldDefs = useMemo(() => fieldDefs ?? [], [fieldDefs]);
 
-  const optionsByFieldKey = useMemo<Record<string, readonly FieldOption[]>>(() => {
-    if (!singleSelectOptions) return {};
-    const out: Record<string, readonly FieldOption[]> = {};
-    for (const fieldDef of persistedFieldDefs) {
-      const namespacedKey = `${tableKey}.${fieldDef.field_key}`;
-      const options = singleSelectOptions[fieldDef.field_key] ?? singleSelectOptions[namespacedKey];
-      if (options) out[fieldDef.field_key] = options;
-    }
-    return out;
-  }, [persistedFieldDefs, singleSelectOptions, tableKey]);
-
   const renderedFieldDefs = useMemo<FieldDef[]>(
     () =>
-      persistedFieldDefs.map((fieldDef) =>
-        tableFieldToFieldDef(fieldDef, optionsByFieldKey, fieldOverlay?.[fieldDef.field_key]),
-      ),
-    [fieldOverlay, optionsByFieldKey, persistedFieldDefs],
+      tableFieldDefsToFieldDefs({
+        tableKey,
+        fieldDefs: persistedFieldDefs,
+        fieldOverlay,
+        singleSelectOptions,
+      }),
+    [fieldOverlay, persistedFieldDefs, singleSelectOptions, tableKey],
   );
 
   const coreFieldKeys = useMemo(
@@ -122,11 +129,45 @@ export function mintCustomFieldId(): string {
   return generatedId("cf");
 }
 
+export function tableFieldDefsToFieldDefs(args: {
+  tableKey: string;
+  fieldDefs: readonly TableFieldDef[] | null | undefined;
+  fieldOverlay?: TableFieldRenderOverlays | null;
+  singleSelectOptions?: Record<string, FieldOption[]> | null;
+}): FieldDef[] {
+  const persistedFieldDefs = args.fieldDefs ?? [];
+  const optionsByFieldKey = buildOptionsByFieldKey(
+    args.tableKey,
+    persistedFieldDefs,
+    args.singleSelectOptions,
+  );
+  return persistedFieldDefs.map((fieldDef) =>
+    tableFieldToFieldDef(fieldDef, optionsByFieldKey, args.fieldOverlay?.[fieldDef.field_key]),
+  );
+}
+
+function buildOptionsByFieldKey(
+  tableKey: string,
+  persistedFieldDefs: readonly TableFieldDef[],
+  singleSelectOptions: Record<string, FieldOption[]> | null | undefined,
+): Record<string, readonly FieldOption[]> {
+  if (!singleSelectOptions) return {};
+  const out: Record<string, readonly FieldOption[]> = {};
+  for (const fieldDef of persistedFieldDefs) {
+    const namespacedKey = `${tableKey}.${fieldDef.field_key}`;
+    const options = singleSelectOptions[fieldDef.field_key] ?? singleSelectOptions[namespacedKey];
+    if (options) out[fieldDef.field_key] = options;
+  }
+  return out;
+}
+
 function tableFieldToFieldDef(
   persisted: TableFieldDef,
   optionsByFieldKey: Record<string, readonly FieldOption[]>,
-  overlay: Partial<FieldDef> | undefined,
+  overlay: TableFieldRenderOverlay | undefined,
 ): FieldDef {
+  const overlayOptions = overlay?.options;
+  const overlayRest = fieldOverlayWithoutOptions(overlay);
   const fieldDef: FieldDef = {
     field_key: persisted.field_key,
     field_type: CUSTOM_FIELD_TYPE_TO_FIELD_TYPE[persisted.field_type],
@@ -137,7 +178,9 @@ function tableFieldToFieldDef(
     built_in: persisted.origin === "built_in" ? true : undefined,
   };
   if (persisted.field_type === "single_select") {
-    fieldDef.options = [...(optionsByFieldKey[persisted.field_key] ?? EMPTY_OPTIONS)];
+    fieldDef.options = [
+      ...(overlayOptions ?? optionsByFieldKey[persisted.field_key] ?? EMPTY_OPTIONS),
+    ];
     const defaultOptionId = persisted.config.default_option_id;
     fieldDef.defaultOptionId = typeof defaultOptionId === "string" ? defaultOptionId : null;
     fieldDef.colorCodeOptions = persisted.config.color_code_options !== false;
@@ -163,7 +206,21 @@ function tableFieldToFieldDef(
     // every other formula falls back to text.
     fieldDef.computed_type = resultType === "number" ? "number" : "text";
   }
-  return { ...fieldDef, ...overlay, display_name: persisted.display_name };
+  return { ...fieldDef, ...overlayRest };
+}
+
+function fieldOverlayWithoutOptions(
+  overlay: TableFieldRenderOverlay | undefined,
+): Omit<TableFieldRenderOverlay, "options"> {
+  if (!overlay) return {};
+  const out: Omit<TableFieldRenderOverlay, "options"> = {};
+  if (overlay.colorCodeOptions !== undefined) out.colorCodeOptions = overlay.colorCodeOptions;
+  if (overlay.defaultOptionId !== undefined) out.defaultOptionId = overlay.defaultOptionId;
+  if (overlay.locked !== undefined) out.locked = overlay.locked;
+  if (overlay.numberPrecision !== undefined) out.numberPrecision = overlay.numberPrecision;
+  if (overlay.read_only !== undefined) out.read_only = overlay.read_only;
+  if (overlay.required !== undefined) out.required = overlay.required;
+  return out;
 }
 
 // Must agree to the byte with backend `compute_table_schema_fingerprint`

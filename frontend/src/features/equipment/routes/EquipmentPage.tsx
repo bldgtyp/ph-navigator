@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   ALL_FIELD_LOCKS,
   DataTable,
+  tableFieldDefsToFieldDefs,
   type DataTableColumnDef,
   DEFAULT_BUILT_IN_LOCKS,
   emptyViewState,
@@ -131,14 +132,15 @@ function EquipmentPageBody(props: {
   const { project, pumpsSlice, refetchPumps } = props;
   const activeVersionId = project.active_version_id;
   const fieldOverlay = useMemo(() => pumpsFieldOverlay(pumpsSlice), [pumpsSlice]);
-  const previewSchemaFieldDefs = useMemo<FieldDef[]>(
+  const previewSchemaFieldDefs = useMemo(
     () =>
-      pumpsSlice.field_defs.map((fieldDef) => ({
-        field_key: fieldDef.field_key,
-        field_type: fieldDef.field_type === "number" ? "number" : "text",
-        display_name: fieldDef.display_name,
-      })),
-    [pumpsSlice.field_defs],
+      tableFieldDefsToFieldDefs({
+        tableKey: PUMPS_TABLE_NAME,
+        fieldDefs: pumpsSlice.field_defs,
+        fieldOverlay,
+        singleSelectOptions: pumpsSlice.single_select_options,
+      }),
+    [fieldOverlay, pumpsSlice.field_defs, pumpsSlice.single_select_options],
   );
   const columnsForSanitize = useMemo(
     () => pumpsTableColumnsForSanitize(previewSchemaFieldDefs),

@@ -1,7 +1,7 @@
 import "../equipment.css";
 import { useMemo, useState } from "react";
+import { tableFieldDefsToFieldDefs } from "../../../shared/ui/data-table";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
-import type { FieldDef } from "../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomsPageError } from "../components/RoomsPageError";
 import { RoomDialogStack, type RoomModalState } from "../components/RoomDialogStack";
@@ -57,14 +57,15 @@ function RoomsPageBody(props: {
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
 
   const fieldOverlay = useMemo(() => roomsFieldOverlay(roomsSlice), [roomsSlice]);
-  const previewSchemaFieldDefs = useMemo<FieldDef[]>(
+  const previewSchemaFieldDefs = useMemo(
     () =>
-      roomsSlice.field_defs.map((fieldDef) => ({
-        field_key: fieldDef.field_key,
-        field_type: fieldDef.field_type === "number" ? "number" : "text",
-        display_name: fieldDef.display_name,
-      })),
-    [roomsSlice.field_defs],
+      tableFieldDefsToFieldDefs({
+        tableKey: ROOMS_TABLE_NAME,
+        fieldDefs: roomsSlice.field_defs,
+        fieldOverlay,
+        singleSelectOptions: roomsSlice.single_select_options,
+      }),
+    [fieldOverlay, roomsSlice.field_defs, roomsSlice.single_select_options],
   );
   const columnsForSanitize = useMemo(
     () => roomsTableColumnsForSanitize(previewSchemaFieldDefs),
