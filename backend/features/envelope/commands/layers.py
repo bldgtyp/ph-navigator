@@ -5,6 +5,7 @@ from __future__ import annotations
 from starlette import status
 
 from features.envelope import ops
+from features.envelope.identifiers import ID_PREFIX_LAYER, ID_PREFIX_SEGMENT, new_id
 from features.envelope.models import (
     AddLayerCommand,
     AddSegmentCommand,
@@ -23,10 +24,10 @@ def add_layer(body: ProjectDocumentV1, command: AddLayerCommand) -> ProjectDocum
         target_index = ops.target_layer_index(assembly.layers, command.target_layer_id, command.position)
         width_mm = ops.layer_width(assembly.layers[max(0, min(target_index - 1, len(assembly.layers) - 1))])
         layer = AssemblyLayer(
-            id=ops.new_id("lyr"),
+            id=new_id(ID_PREFIX_LAYER),
             order=target_index,
             thickness_mm=command.thickness_mm,
-            segments=[AssemblySegment(id=ops.new_id("seg"), order=0, width_mm=width_mm)],
+            segments=[AssemblySegment(id=new_id(ID_PREFIX_SEGMENT), order=0, width_mm=width_mm)],
         )
         layers = [*assembly.layers[:target_index], layer, *assembly.layers[target_index:]]
         return assembly.model_copy(update={"layers": ops.renumber_layers(layers)})
@@ -59,7 +60,7 @@ def delete_layer(body: ProjectDocumentV1, command: DeleteLayerCommand) -> Projec
 def add_segment(body: ProjectDocumentV1, command: AddSegmentCommand) -> ProjectDocumentV1:
     def layer_updater(layer: AssemblyLayer) -> AssemblyLayer:
         target_index = ops.target_segment_index(layer.segments, command.target_segment_id, command.position)
-        segment = AssemblySegment(id=ops.new_id("seg"), order=target_index, width_mm=command.width_mm)
+        segment = AssemblySegment(id=new_id(ID_PREFIX_SEGMENT), order=target_index, width_mm=command.width_mm)
         segments = [*layer.segments[:target_index], segment, *layer.segments[target_index:]]
         return layer.model_copy(update={"segments": ops.renumber_segments(segments)})
 

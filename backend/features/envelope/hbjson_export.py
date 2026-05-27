@@ -6,6 +6,8 @@ import re
 from collections import Counter
 from typing import Any
 
+from starlette import status
+
 from features.envelope.thermal import ThermalIssue, thermal_issues
 from features.project_document.document import Assembly, AssemblyLayer, ProjectDocumentV1, ProjectMaterial
 from features.shared.errors import api_error
@@ -17,7 +19,7 @@ def export_hbjson_constructions(body: ProjectDocumentV1) -> dict[str, object]:
     errors = _export_errors(body.tables.assemblies, materials_by_id)
     if errors:
         raise api_error(
-            422,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
             "envelope_export_incomplete",
             "Envelope assemblies need complete material assignments and conductivity before HBJSON export.",
             {"errors": errors},

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from features.envelope import ops
+from features.envelope.identifiers import ID_PREFIX_ASSEMBLY, ID_PREFIX_LAYER, ID_PREFIX_SEGMENT, new_id
 from features.envelope.models import (
     CreateAssemblyCommand,
     DeleteAssemblyCommand,
@@ -18,18 +19,18 @@ from features.project_document.document import Assembly, AssemblyLayer, Assembly
 def create_assembly(body: ProjectDocumentV1, command: CreateAssemblyCommand) -> ProjectDocumentV1:
     ops.ensure_unique_assembly_name(body.tables.assemblies, command.name)
     assembly = Assembly(
-        id=ops.new_id("asm"),
+        id=new_id(ID_PREFIX_ASSEMBLY),
         name=command.name,
         type=command.type,
         orientation=command.orientation,
         layers=[
             AssemblyLayer(
-                id=ops.new_id("lyr"),
+                id=new_id(ID_PREFIX_LAYER),
                 order=0,
                 thickness_mm=command.thickness_mm,
                 segments=[
                     AssemblySegment(
-                        id=ops.new_id("seg"),
+                        id=new_id(ID_PREFIX_SEGMENT),
                         order=0,
                         width_mm=command.width_mm,
                     )
@@ -58,7 +59,15 @@ def update_assembly_type(body: ProjectDocumentV1, command: UpdateAssemblyTypeCom
 
 def duplicate_assembly(body: ProjectDocumentV1, command: DuplicateAssemblyCommand) -> ProjectDocumentV1:
     source = ops.find_assembly(body.tables.assemblies, command.assembly_id)
-    name = command.name.strip() if command.name else ops.next_copy_name(body.tables.assemblies, source.name)
+    name = (
+        command.name.strip()
+        if command.name
+        else ops.next_unique_name(
+            [assembly.name for assembly in body.tables.assemblies],
+            f"{source.name} Copy",
+            new_id(ID_PREFIX_ASSEMBLY),
+        )
+    )
     ops.ensure_unique_assembly_name(body.tables.assemblies, name)
 
     layers: list[AssemblyLayer] = []
@@ -66,7 +75,7 @@ def duplicate_assembly(body: ProjectDocumentV1, command: DuplicateAssemblyComman
         segments = [
             segment.model_copy(
                 update={
-                    "id": ops.new_id("seg"),
+                    "id": new_id(ID_PREFIX_SEGMENT),
                     "order": idx,
                     "photo_asset_ids": [],
                     "use_site_notes": None,
@@ -74,9 +83,11 @@ def duplicate_assembly(body: ProjectDocumentV1, command: DuplicateAssemblyComman
             )
             for idx, segment in enumerate(layer.segments)
         ]
-        layers.append(layer.model_copy(update={"id": ops.new_id("lyr"), "order": len(layers), "segments": segments}))
+        layers.append(
+            layer.model_copy(update={"id": new_id(ID_PREFIX_LAYER), "order": len(layers), "segments": segments})
+        )
 
-    copy = source.model_copy(update={"id": ops.new_id("asm"), "name": name, "layers": layers})
+    copy = source.model_copy(update={"id": new_id(ID_PREFIX_ASSEMBLY), "name": name, "layers": layers})
     return ops.replace_assemblies(body, [*body.tables.assemblies, copy])
 
 
