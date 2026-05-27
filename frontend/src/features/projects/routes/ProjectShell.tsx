@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { ApiRequestError } from "../../../shared/api/client";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
 import { WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
@@ -49,6 +50,18 @@ export function ProjectShell() {
   }
 
   if (projectQuery.isError) {
+    if (
+      projectQuery.error instanceof ApiRequestError &&
+      projectQuery.error.status === 410 &&
+      projectQuery.error.errorCode === "project_deleted"
+    ) {
+      return (
+        <ShellMessage
+          title="Project deleted"
+          message="This project is deleted and no longer available from this URL."
+        />
+      );
+    }
     return (
       <ShellMessage
         title="Project unavailable"

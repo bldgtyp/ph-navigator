@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -41,11 +42,23 @@ def optional_current_user(request: Request) -> UserPublic | None:
 
 def require_project_access(project_id: UUID, request: Request, mode: ProjectAccessMode) -> ProjectAccess:
     with connection() as conn:
-        project_row = repository.get_project_by_id(conn, project_id)
+        project_row = repository.get_project_by_id_including_deleted(conn, project_id)
     if project_row is None:
         raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
+    if project_row["deleted_at"] is not None:
+        raise api_error(
+            status.HTTP_410_GONE,
+            "project_deleted",
+            "Project was deleted.",
+            {
+                "recoverability": "restore",
+                "project_id": str(project_id),
+                "deleted_at": _isoformat(project_row["deleted_at"]),
+                "hard_delete_after": _isoformat(project_row["hard_delete_after"]),
+            },
+        )
 
-    project = ProjectSummary.model_validate(project_row)
+    project = ProjectSummary.model_validate({field: project_row[field] for field in ProjectSummary.model_fields})
     if mode == "edit":
         user, _expires_at = current_user_from_request(request)
         return ProjectAccess(project_id=project_id, mode=mode, user=user, project=project)
@@ -65,3 +78,7 @@ def require_editor_user(access: ProjectAccess) -> UserPublic:
     if access.user is None:
         raise api_error(status.HTTP_401_UNAUTHORIZED, "not_authenticated", "Sign-in required.")
     return access.user
+
+
+def _isoformat(value: object) -> str | None:
+    return value.isoformat() if isinstance(value, date) else None

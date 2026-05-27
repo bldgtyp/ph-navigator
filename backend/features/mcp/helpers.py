@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import date
 from typing import NoReturn, TypeVar
 from uuid import UUID
 
@@ -34,6 +35,7 @@ from features.mcp.models import (
     McpTokenRecord,
 )
 from features.mcp.service import (
+    McpProjectDeletedError,
     authenticate_plaintext_token,
     get_active_token_by_id,
     project_access_for_token,
@@ -108,6 +110,19 @@ def require_token_scope_or_error(token: McpTokenRecord, project_id: UUID, scope:
 def project_access_or_error(token: McpTokenRecord, project_id: UUID, scope: McpScope, ctx: Context) -> ProjectAccess:
     try:
         return project_access_for_token(token, project_id, scope)
+    except McpProjectDeletedError as exc:
+        raise_mcp_error(
+            "project_deleted",
+            "Project was deleted.",
+            "refresh",
+            ctx,
+            {
+                "recoverability": "restore",
+                "project_id": str(exc.project["id"]),
+                "deleted_at": _isoformat(exc.project["deleted_at"]),
+                "hard_delete_after": _isoformat(exc.project["hard_delete_after"]),
+            },
+        )
     except LookupError:
         raise_mcp_error("project_not_found", "Project not found.", "refresh", ctx)
     except PermissionError as exc:
@@ -164,6 +179,10 @@ def raise_http_exception_as_mcp_error(
         ctx,
         details if isinstance(details, dict) else {},
     )
+
+
+def _isoformat(value: object) -> str | None:
+    return value.isoformat() if isinstance(value, date) else None
 
 
 # Per-error-code recoverability map for the schema-mutation tools.
