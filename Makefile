@@ -4,12 +4,12 @@
 # `cd <subdir> && uv run …` or `cd <subdir> && pnpm …` so it never assumes
 # the caller's working directory. See context/environment-setup.md §6.
 
-.PHONY: help setup sync dev backend frontend db db-up db-down db-reset \
+.PHONY: help setup sync dev backend frontend db db-up db-down db-wait db-reset db-reset-dev \
         object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
         lint check check-backend check-frontend build-frontend format format-check \
-        smoke seed-dev-user e2e e2e-report clean
+        smoke seed-dev-user seed-dev-data e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -76,6 +76,11 @@ db-down: ## Stop Postgres container
 
 db: db-up ## Alias for db-up
 
+db-wait: db-up ## Wait until local Postgres is accepting connections
+	@until docker exec phn-v2-postgres pg_isready -U phn -d ph_navigator_v2 >/dev/null 2>&1; do \
+		sleep 1; \
+	done
+
 object-store-up: ## Start local S3-compatible object storage for attachments
 	docker compose up -d object-store
 
@@ -91,8 +96,12 @@ object-store-down: ## Stop local object storage
 	docker compose stop object-store
 
 db-reset: ## Destroy and recreate the Postgres volume (DANGER — wipes BOTH dev and test DBs)
-	docker compose down -v
+	docker compose stop db
+	docker compose rm -f db
+	docker volume rm ph-navigator-v2_phn_v2_postgres_data 2>/dev/null || true
 	docker compose up -d db
+
+db-reset-dev: db-reset db-wait migrate seed-dev-data ## Recreate local Postgres, migrate, and seed starter dev data
 
 db-create-test: db-up ## Create the ph_navigator_v2_test database if missing (idempotent)
 	@docker exec phn-v2-postgres sh -c '\
@@ -168,6 +177,9 @@ smoke: db-up ## Verify the box is wired up (run after `make setup`)
 
 seed-dev-user: migrate ## Create/reset the default local editor login
 	cd backend && uv run python -m scripts.seed_user --email ed@example.com --display-name "Ed May" --password "password"
+
+seed-dev-data: migrate ## Reset app rows and seed the default user + starter project
+	cd backend && uv run python -m scripts.seed_dev_db --reset
 
 clean: ## Remove caches and build artifacts (does NOT touch .venv or node_modules)
 	find . -type d -name __pycache__ -exec rm -rf {} +
