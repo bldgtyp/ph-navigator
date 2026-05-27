@@ -9,11 +9,11 @@ from __future__ import annotations
 from typing import Any, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import ProjectDocumentSource
-from features.project_document.tables.contracts import TableContract
+from features.project_document.tables.contracts import TableContract, TableRowsResponse
 from features.project_document.validation import validate_document
 
 
@@ -30,15 +30,7 @@ class AttachmentRowsReplaceRequest(BaseModel):
     rows: list[dict[str, Any]]
 
 
-class AttachmentRowsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    project_id: UUID
-    version_id: UUID
-    source: ProjectDocumentSource
-    version_etag: str
-    draft_etag: str | None
-    rows: list[dict[str, Any]] = Field(default_factory=list)
+AttachmentRowsResponse = TableRowsResponse
 
 
 def make_simple_attachment_contract(

@@ -1540,7 +1540,9 @@ Template:
 
 | Date | Phase | Lesson / Issue | Contract Impact | Follow-up |
 |---|---|---|---|---|
-| _TBD_ | _TBD_ | _Add implementation lesson here._ | _PRD / plan / context doc affected._ | _Owner or next slice._ |
+| 2026-05-26 | Phase 1 | Typed `assemblies[]` and `project_materials[]` can land without a schema-version bump because the fields were already reserved in schema v4. The project-document baseline tests are currently stale around the custom-fields to FieldDef rename, so Phase 1 needs a scoped envelope test gate until that baseline is reconciled. | Phase 1 plan closeout; no durable PRD contract change. | Reconcile `tests/test_project_document.py` and global `ty check` before using them as Assembly Builder gates. |
+| 2026-05-27 | Phase 2 | Frontend read-model DTO unions must be checked against `backend/features/project_document/document.py`, not inferred from UI vocabulary. `fetchJson<T>` does not validate literals at runtime, so impossible frontend-only states can compile while valid backend states are excluded. | Phase 2 tightened `AssemblyType`, `AssemblyOrientation`, and `SpecificationStatus` to match the backend contract. | Add backend-derived schema/type generation or a DTO contract test before more Assembly Builder write phases accumulate. |
+| 2026-05-27 | Phase 3 | Modal numeric editors need an in-modal IP/SI preference control because the page-level switcher is intentionally behind the modal backdrop. The active editor unit remains frozen until submit so typed values are not reinterpreted mid-edit. | Confirms the unit-switching contract in §5.12 for layer thickness, segment width, and stud spacing editors. | Reuse this modal-unit pattern for Phase 4 material physical-property editors where the active input must remain stable. |
 
 Entry rules:
 

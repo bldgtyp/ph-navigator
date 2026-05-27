@@ -32,6 +32,9 @@ from features.projects.models import CertificationProgram
 CatalogTableName = Literal["materials", "frame_types", "glazing_types"]
 CATALOG_RECORD_ID_PATTERN = r"^rec[A-Za-z0-9]{14}$"
 CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
+AssemblyType = Literal["wall", "floor", "roof", "other"]
+AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
+SpecificationStatus = Literal["complete", "missing", "question", "na"]
 
 ROOM_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level"
 ROOM_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone"
@@ -253,6 +256,114 @@ class GlazingRef(BaseModel):
         return self
 
 
+class AssemblySegment(BaseModel):
+    """A side-by-side material slot inside one assembly layer."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^seg_[A-Za-z0-9_-]+$", max_length=80)
+    order: int = Field(ge=0)
+    width_mm: float = Field(gt=0, allow_inf_nan=False)
+    is_continuous_insulation: bool = False
+    steel_stud_spacing_mm: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    project_material_id: str | None = Field(default=None, pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    use_site_notes: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("use_site_notes", mode="before")
+    @classmethod
+    def _strip_optional_notes(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+
+class AssemblyLayer(BaseModel):
+    """One ordered horizontal strip in an assembly cross-section."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^lyr_[A-Za-z0-9_-]+$", max_length=80)
+    order: int = Field(ge=0)
+    thickness_mm: float = Field(gt=0, allow_inf_nan=False)
+    segments: list[AssemblySegment] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_segments(self) -> AssemblyLayer:
+        _validate_unique_ids("segment", [segment.id for segment in self.segments])
+        _validate_contiguous_orders("segment", [(segment.id, segment.order) for segment in self.segments])
+        return self
+
+
+class Assembly(BaseModel):
+    """A project-owned opaque construction assembly."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^asm_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(min_length=1, max_length=200)
+    type: AssemblyType
+    orientation: AssemblyOrientation
+    layers: list[AssemblyLayer] = Field(min_length=1)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @model_validator(mode="after")
+    def _validate_layers(self) -> Assembly:
+        _validate_unique_ids("layer", [layer.id for layer in self.layers])
+        _validate_contiguous_orders("layer", [(layer.id, layer.order) for layer in self.layers])
+        return self
+
+
+class ProjectMaterial(BaseModel):
+    """A project-owned material/product record referenced by segments."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(min_length=1, max_length=200)
+    category: str = Field(min_length=1, max_length=120)
+    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    argb_color: str | None = Field(default=None, max_length=40)
+    specification_status: SpecificationStatus = "missing"
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    notes: str | None = Field(default=None, max_length=4000)
+    catalog_origin: CatalogOrigin | None = None
+
+    @field_validator("name", "category", mode="before")
+    @classmethod
+    def _strip_required_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def _strip_optional_notes(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @model_validator(mode="after")
+    def _validate_catalog_origin_family(self) -> ProjectMaterial:
+        _require_catalog_origin_family(
+            self.catalog_origin,
+            expected_table="materials",
+            expected_version_prefix="matv_",
+        )
+        return self
+
+
 class WindowElementFrames(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -349,8 +460,8 @@ class ProjectDocumentProject(BaseModel):
 class ProjectDocumentTables(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    assemblies: list[dict[str, object]] = Field(default_factory=list)
-    project_materials: list[dict[str, object]] = Field(default_factory=list)
+    assemblies: list[Assembly] = Field(default_factory=list)
+    project_materials: list[ProjectMaterial] = Field(default_factory=list)
     window_types: list[WindowTypeEntry] = Field(default_factory=list)
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     thermal_bridges: list[dict[str, object]] = Field(default_factory=list)
@@ -457,6 +568,8 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate window type name: {window_type.name}")
             window_type_names.add(normalized_name)
 
+        _validate_envelope_references(self.tables.project_materials, self.tables.assemblies)
+
         return self
 
     def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
@@ -505,6 +618,50 @@ def _require_record_id_seeded(
     """
     if RESERVED_FIELD_KEY_RECORD_ID not in field_defs_by_key:
         raise ValueError(f"{table_label}.field_defs must contain a record_id entry")
+
+
+def _validate_unique_ids(label: str, ids: list[str]) -> None:
+    seen: set[str] = set()
+    for item_id in ids:
+        if item_id in seen:
+            raise ValueError(f"Duplicate {label} id: {item_id}")
+        seen.add(item_id)
+
+
+def _validate_contiguous_orders(label: str, ordered_ids: list[tuple[str, int]]) -> None:
+    expected = list(range(len(ordered_ids)))
+    actual = sorted(order for _item_id, order in ordered_ids)
+    if actual != expected:
+        raise ValueError(f"{label} orders must be contiguous from 0")
+
+
+def _validate_envelope_references(project_materials: list[ProjectMaterial], assemblies: list[Assembly]) -> None:
+    project_material_ids = {material.id for material in project_materials}
+    if len(project_material_ids) != len(project_materials):
+        raise ValueError("Duplicate project material id")
+
+    assembly_ids: set[str] = set()
+    assembly_names: set[str] = set()
+    for assembly in assemblies:
+        if assembly.id in assembly_ids:
+            raise ValueError(f"Duplicate assembly id: {assembly.id}")
+        assembly_ids.add(assembly.id)
+
+        normalized_name = normalize_display_name(assembly.name)
+        if normalized_name in assembly_names:
+            raise ValueError(f"Duplicate assembly name: {assembly.name}")
+        assembly_names.add(normalized_name)
+
+        for layer in assembly.layers:
+            for segment in layer.segments:
+                if (
+                    segment.project_material_id is not None
+                    and segment.project_material_id not in project_material_ids
+                ):
+                    raise ValueError(
+                        "Unknown project_material_id "
+                        f"{segment.project_material_id!r} on segment {segment.id}"
+                    )
 
 
 def _index_table_field_defs(

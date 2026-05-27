@@ -144,6 +144,7 @@ cd backend
 uv run ruff check .
 uv run ty check
 uv run pytest tests/test_project_document.py
+uv run pytest tests/test_envelope_phase01.py
 ```
 
 Add any new targeted test file to the command list before closing the
@@ -177,3 +178,24 @@ Add PRD lesson-log entries if this phase changes:
 - table-contract ownership;
 - validation error envelope conventions.
 - whether `use_site_notes` need length limits or rich-text support.
+
+## Implementation Closeout Notes
+
+Updated 2026-05-26:
+
+- Schema-version decision: no bump. Phase 1 typed and validated the
+  already-reserved `tables.assemblies[]` and `tables.project_materials[]`
+  shapes inside schema version 4; it did not introduce a new persisted
+  top-level document version.
+- Added `tests/test_envelope_phase01.py` as the targeted phase gate for
+  envelope validation, registered table contracts, unit descriptors,
+  schema endpoints, and saved/draft read behavior.
+- Simplify/docs-pass follow-up removed a schema-test collection blocker
+  by making `features.project_document.tables` lazy at package init, then
+  updated `tests/test_schemas.py` to the current schema v4 /
+  registered-table schema contract.
+- `uv run ty check` and `uv run pytest tests/test_project_document.py`
+  currently expose pre-existing custom-field/FieldDef test drift outside
+  this envelope slice. Use the scoped typecheck and
+  `tests/test_envelope_phase01.py` as Phase 1 evidence until the
+  project-document baseline tests are reconciled.

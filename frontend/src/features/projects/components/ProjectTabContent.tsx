@@ -1,6 +1,6 @@
-import { EnvelopeAttachmentsTab } from "../../assets/routes/EnvelopeAttachmentsTab";
 import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
+import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
 import { StatusTab } from "../../project_status/routes/StatusTab";
 import { WindowsTab } from "../../windows/routes/WindowsTab";
@@ -29,7 +29,7 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
   }
 
   if (tab === "envelope") {
-    return <EnvelopeAttachmentsTab project={project} />;
+    return <EnvelopePage project={project} />;
   }
 
   return (

@@ -6,12 +6,14 @@ from collections.abc import Iterable
 
 from starlette import status
 
-from features.project_document.tables.attachments import (
+from features.envelope.table_contracts import (
     assembly_segments_contract,
+    project_materials_contract,
+)
+from features.project_document.tables.attachments import (
     equipment_ervs_contract,
     equipment_fans_contract,
     equipment_pumps_contract,
-    project_materials_contract,
     thermal_bridges_contract,
 )
 from features.project_document.tables.contracts import TableContract
