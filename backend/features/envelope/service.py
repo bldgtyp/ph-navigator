@@ -1,4 +1,14 @@
-"""Envelope read and semantic command workflows."""
+"""Envelope read and semantic command workflows.
+
+Envelope commands mutate the project-document draft, not relational
+shadow tables. This layer keeps the policy contracts that cross command
+modules: editor-only writes, draft/version ETag protection, no-op writes
+without draft churn, and read models derived from document tables.
+Segment widths are normalized per layer, project materials must exist
+before segments reference them, and assembly names are compared after
+trimming/case-folding. Those invariants stay in the document operation
+helpers so browser and MCP callers share one mutation boundary.
+"""
 
 from __future__ import annotations
 
@@ -39,7 +49,13 @@ def get_envelope_read_model(
     access: ProjectAccess,
     source: ProjectDocumentSource,
 ) -> EnvelopeReadResponse:
-    """Load the envelope slice from the saved version or user's draft."""
+    """Return a derived envelope read model without mutating the document body.
+
+    Viewer/locked routes can ask for the saved version while editors use
+    the current draft view. The response carries the ETags that write
+    callers need, but assemblies/materials remain projections of
+    `tables.assemblies[]` and `tables.project_materials[]`.
+    """
     if source == "version":
         body = get_saved_document(version_id, access)
         assemblies, project_materials = build_envelope_read_parts(body)
@@ -72,7 +88,13 @@ def get_assembly_thermal_model(
     assembly_id: str,
     source: ProjectDocumentSource,
 ) -> AssemblyThermalResponse:
-    """Load and calculate one assembly thermal overlay from draft or saved body."""
+    """Calculate the preview-only thermal overlay for one assembly.
+
+    Thermal values are derived at read time from the requested draft or
+    saved body and are never stored back into the project document. This
+    keeps incomplete assemblies visible while still surfacing the same
+    issue flags HBJSON export uses for blocking validation.
+    """
     if source == "version":
         body = get_saved_document(version_id, access)
         response_source: ProjectDocumentSource = "version"
@@ -106,7 +128,13 @@ def get_project_material_drift_report(
     access: ProjectAccess,
     source: ProjectDocumentSource,
 ) -> ProjectMaterialDriftReport:
-    """Compare project-owned material copies against their current catalog rows."""
+    """Compare catalog-origin project materials against current catalog rows.
+
+    Project materials are copied into the document at assignment time, so
+    catalog changes never mutate a project automatically. This report is
+    the explicit review surface for source-missing, source-deactivated,
+    and locally overridden catalog fields.
+    """
     if source == "version":
         body = get_saved_document(version_id, access)
         response_source: ProjectDocumentSource = "version"
@@ -146,7 +174,14 @@ def apply_envelope_command(
     if_match_version: str | None,
     updated_via: Literal["browser", "mcp"] = "browser",
 ) -> EnvelopeReadResponse:
-    """Apply one semantic Assembly Builder command to the editor draft."""
+    """Apply one editor-authorized semantic command to the active draft.
+
+    The draft ETag protects in-flight edits, while the saved-version ETag
+    protects the baseline when no draft exists yet. Commands that leave
+    the body unchanged return the current read model without writing a new
+    draft row, and successful writes tag their audit path with
+    `updated_via` so browser and MCP edits remain distinguishable.
+    """
     user = require_editor_user(access)
 
     with transaction() as conn:
@@ -212,6 +247,12 @@ def _load_command_context(
     if_match: str | None,
     if_match_version: str | None,
 ) -> tuple[ProjectDocumentV1, str, str, dict[str, Any] | None]:
+    """Load the locked command baseline and raise structured conflict errors.
+
+    Missing versions are 404s, locked versions are 409s, and stale draft
+    or version ETags are 409s with an `expected` payload so clients can
+    refresh against the current document identity instead of guessing.
+    """
     version = repository.get_project_version_for_update(conn, project_id, version_id)
     if version is None:
         raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")

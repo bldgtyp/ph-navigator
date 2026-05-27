@@ -409,4 +409,23 @@ helper extraction is verified with:
 The full `cd frontend && pnpm run build` gate remains blocked by
 unrelated equipment/project-document/windows/shared table type drift.
 
-Phase 12 remains proposed and should begin after Phase 11 lands.
+Phase 12 is implemented on `assembly-builder`. The documentation and
+test reorganization is verified with:
+
+- `cd backend && uv run ruff check features/envelope tests/envelope`
+- `cd backend && uv run ty check features/envelope tests/envelope`
+- `cd backend && uv run pytest tests/envelope tests/test_mcp.py`
+- `cd frontend && pnpm run format`
+- `cd frontend && pnpm exec eslint src/features/envelope`
+- `cd frontend && pnpm exec vitest run src/features/envelope/__tests__/`
+- `rg -n "test_envelope_phase0|test_envelope_phase" backend .github Makefile frontend --glob '!backend/.venv/**'`
+- `git diff --check`
+
+Docs-Pass updated this status note only. No context doc changed because
+Phase 12 documents existing code contracts and renames tests without
+changing architecture or user-facing behavior.
+
+The full `cd frontend && pnpm run build`, repo-level `make typecheck`,
+and repo-level `make test` gates remain blocked by unrelated
+equipment/project-document/windows/shared table drift. `make lint`
+passed.

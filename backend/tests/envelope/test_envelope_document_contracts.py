@@ -1,4 +1,4 @@
-"""Phase 1 Assembly Builder backend domain-contract tests."""
+"""Assembly Builder backend document-contract tests."""
 
 from __future__ import annotations
 

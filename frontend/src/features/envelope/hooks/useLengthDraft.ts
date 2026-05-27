@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { formatLengthFromMm, parseLengthToMm, useUnitPreference } from "../../../lib/units";
 
+// Length dialogs capture the unit system when opened; mid-edit global IP/SI
+// toggles do not rewrite the user's draft string.
 export function useLengthDraft(initialValueMm: number | null) {
   const { unitSystem } = useUnitPreference();
   const [editorUnitSystem] = useState(unitSystem);

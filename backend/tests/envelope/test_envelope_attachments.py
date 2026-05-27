@@ -1,4 +1,4 @@
-"""Phase 6 Assembly Builder evidence attachment tests."""
+"""Assembly Builder evidence attachment tests."""
 
 from __future__ import annotations
 
@@ -10,19 +10,19 @@ import pytest
 
 from database import transaction
 from features.project_document.validation import document_etag
-from tests.test_assets_service import (
-    FakeR2Client,
-    _asset_url,
-    _clear_fake_asset_service,
-    _install_fake_asset_service,
-)
-from tests.test_envelope_phase01 import (
+from tests.envelope.test_envelope_document_contracts import (
     ORIGIN,
     create_project,
     envelope_body,
     envelope_url,
     signed_in_client,
     write_saved_body,
+)
+from tests.test_assets_service import (
+    FakeR2Client,
+    _asset_url,
+    _clear_fake_asset_service,
+    _install_fake_asset_service,
 )
 
 

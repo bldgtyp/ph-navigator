@@ -1,4 +1,4 @@
-"""Phase 5 Assembly Builder thermal and HBJSON export tests."""
+"""Assembly Builder thermal preview and HBJSON export tests."""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ import pytest
 from database import transaction
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.validation import document_etag
-from tests.test_envelope_phase01 import (
+from tests.envelope.test_envelope_commands_geometry import command_url
+from tests.envelope.test_envelope_document_contracts import (
     ORIGIN,
     assembly,
     create_project,
@@ -18,11 +19,10 @@ from tests.test_envelope_phase01 import (
     signed_in_client,
     write_saved_body,
 )
-from tests.test_envelope_phase03 import command_url
 
 
 @pytest.fixture()
-def clean_envelope_phase05_tables() -> Iterator[None]:
+def clean_envelope_thermal_export_tables() -> Iterator[None]:
     _truncate()
     yield
     _truncate()
@@ -41,7 +41,7 @@ def _truncate() -> None:
 
 
 def test_assembly_thermal_returns_si_values_and_unfinished_flags(
-    clean_envelope_phase05_tables: None,
+    clean_envelope_thermal_export_tables: None,
 ) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -66,7 +66,7 @@ def test_assembly_thermal_returns_si_values_and_unfinished_flags(
 
 
 def test_thermal_label_can_return_value_for_partial_null_material_layer(
-    clean_envelope_phase05_tables: None,
+    clean_envelope_thermal_export_tables: None,
 ) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -87,7 +87,7 @@ def test_thermal_label_can_return_value_for_partial_null_material_layer(
 
 
 def test_hbjson_export_rejects_incomplete_saved_version_with_paths(
-    clean_envelope_phase05_tables: None,
+    clean_envelope_thermal_export_tables: None,
 ) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -111,7 +111,7 @@ def test_hbjson_export_rejects_incomplete_saved_version_with_paths(
 
 
 def test_hbjson_export_uses_saved_version_and_preserves_material_metadata(
-    clean_envelope_phase05_tables: None,
+    clean_envelope_thermal_export_tables: None,
 ) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -157,7 +157,7 @@ def test_hbjson_export_uses_saved_version_and_preserves_material_metadata(
 
 
 def test_hbjson_export_disambiguates_duplicate_material_and_cleaned_assembly_names(
-    clean_envelope_phase05_tables: None,
+    clean_envelope_thermal_export_tables: None,
 ) -> None:
     client = signed_in_client()
     project = create_project(client)

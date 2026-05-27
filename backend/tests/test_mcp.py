@@ -31,7 +31,7 @@ from features.mcp.tools import (
 )
 from features.project_document.validation import document_etag
 from main import app
-from tests.test_envelope_phase01 import envelope_body, write_saved_body
+from tests.envelope.test_envelope_document_contracts import envelope_body, write_saved_body
 
 ORIGIN = "http://localhost:5173"
 

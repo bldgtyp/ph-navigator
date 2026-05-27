@@ -1,4 +1,4 @@
-"""Phase 4 Assembly Builder material command tests."""
+"""Assembly Builder material command tests."""
 
 from __future__ import annotations
 
@@ -8,9 +8,15 @@ import pytest
 
 from database import transaction
 from features.project_document.validation import document_etag
+from tests.envelope.test_envelope_commands_geometry import command_url
+from tests.envelope.test_envelope_document_contracts import (
+    ORIGIN,
+    create_project,
+    envelope_body,
+    signed_in_client,
+    write_saved_body,
+)
 from tests.test_catalogs import _xps_payload
-from tests.test_envelope_phase01 import ORIGIN, create_project, envelope_body, signed_in_client, write_saved_body
-from tests.test_envelope_phase03 import command_url
 
 
 @pytest.fixture()

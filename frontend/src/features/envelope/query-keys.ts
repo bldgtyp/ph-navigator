@@ -1,5 +1,7 @@
 import type { EnvelopeReadSource } from "./types";
 
+// Envelope keys are scoped by project/version/source so command mutations can
+// invalidate read, thermal, and drift caches independently.
 export const envelopeQueryKeys = {
   all: (projectId: string) => ["projects", projectId, "envelope"] as const,
   read: (projectId: string, versionId: string, source: EnvelopeReadSource) =>
