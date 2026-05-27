@@ -10,6 +10,7 @@ from starlette import status
 
 from features.catalogs.materials import repository as catalog_materials_repository
 from features.envelope import ops
+from features.envelope.identifiers import ID_PREFIX_PROJECT_MATERIAL, new_id
 from features.envelope.material_fields import PROJECT_MATERIAL_CATALOG_FIELDS, PROJECT_MATERIAL_OVERRIDE_FIELDS
 from features.envelope.models import (
     DetachSegmentMaterialCommand,
@@ -24,6 +25,8 @@ from features.envelope.models import (
 )
 from features.project_document.document import CatalogOrigin, ProjectDocumentV1, ProjectMaterial
 from features.shared.errors import api_error
+
+DEFAULT_HAND_ENTERED_MATERIAL_COLOR = "(255,230,230,230)"
 
 
 def paste_assignment(body: ProjectDocumentV1, command: PasteAssignmentCommand) -> ProjectDocumentV1:
@@ -106,14 +109,14 @@ def pick_catalog_material(
 
 def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialCommand) -> ProjectDocumentV1:
     material = ProjectMaterial(
-        id=ops.new_id("pmat"),
+        id=new_id(ID_PREFIX_PROJECT_MATERIAL),
         name=command.name,
         category=command.category,
         conductivity_w_mk=command.conductivity_w_mk,
         density_kg_m3=command.density_kg_m3,
         specific_heat_j_kgk=command.specific_heat_j_kgk,
         emissivity=command.emissivity,
-        argb_color=command.argb_color or "(255,230,230,230)",
+        argb_color=command.argb_color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
         specification_status="missing",
         datasheet_asset_ids=[],
         notes=None,
@@ -161,8 +164,12 @@ def detach_segment_material(body: ProjectDocumentV1, command: DetachSegmentMater
     source = ops.find_project_material(body.tables.project_materials, segment.project_material_id)
     detached = source.model_copy(
         update={
-            "id": ops.new_id("pmat"),
-            "name": ops.next_custom_material_name(body.tables.project_materials, source.name),
+            "id": new_id(ID_PREFIX_PROJECT_MATERIAL),
+            "name": ops.next_unique_name(
+                [material.name for material in body.tables.project_materials],
+                f"{source.name} (Custom)",
+                new_id(ID_PREFIX_PROJECT_MATERIAL),
+            ),
             "catalog_origin": None,
         }
     )
@@ -253,7 +260,7 @@ def assign_segment_material(
 
 def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
     return ProjectMaterial(
-        id=ops.new_id("pmat"),
+        id=new_id(ID_PREFIX_PROJECT_MATERIAL),
         name=row["name"],
         category=row["category"],
         conductivity_w_mk=row["conductivity_w_mk"],

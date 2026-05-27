@@ -1,5 +1,6 @@
 import type { Assembly, AssemblyLayer, EnvelopeReadSource, ProjectMaterial } from "./types";
 import type { ProjectDetail } from "../projects/types";
+import { argbToCssRgb } from "../../shared/lib/argbColor";
 import { naturalSortByName } from "../../shared/lib/sort";
 
 export function naturalSortAssemblies(assemblies: Assembly[]): Assembly[] {
@@ -59,8 +60,5 @@ export function statusLabel(flags: string[]): string {
 }
 
 export function materialColor(material: ProjectMaterial | null): string {
-  if (!material?.argb_color) return "var(--bg-page)";
-  const match = material.argb_color.match(/\((\d+),(\d+),(\d+),(\d+)\)/);
-  if (!match) return "var(--bg-page)";
-  return `rgb(${match[2]} ${match[3]} ${match[4]})`;
+  return argbToCssRgb(material?.argb_color);
 }

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import secrets
 from collections.abc import Callable
 from typing import Literal, NoReturn
 
@@ -17,8 +16,6 @@ from features.project_document.document import (
 )
 from features.project_document.service import validate_document
 from features.shared.errors import api_error
-
-ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 
 def update_assembly(
@@ -190,32 +187,16 @@ def ensure_unique_assembly_name(assemblies: list[Assembly], name: str) -> None:
         )
 
 
-def next_copy_name(assemblies: list[Assembly], source_name: str) -> str:
-    names = {assembly.name.strip().casefold() for assembly in assemblies}
-    base = f"{source_name} Copy"
+def next_unique_name(existing: list[str], base: str, fallback_suffix: str) -> str:
+    names = {name.strip().casefold() for name in existing}
     if base.casefold() not in names:
         return base
+    # Human-readable suffixes cover normal use; after that, fall back to the ID keyspace.
     for index in range(2, 1000):
         candidate = f"{base} {index}"
         if candidate.casefold() not in names:
             return candidate
-    return f"{base} {new_id('asm')}"
-
-
-def next_custom_material_name(materials: list[ProjectMaterial], source_name: str) -> str:
-    names = {material.name.strip().casefold() for material in materials}
-    base = f"{source_name} (Custom)"
-    if base.casefold() not in names:
-        return base
-    for index in range(2, 1000):
-        candidate = f"{base} {index}"
-        if candidate.casefold() not in names:
-            return candidate
-    return f"{base} {new_id('pmat')}"
-
-
-def new_id(prefix: str) -> str:
-    return f"{prefix}_{''.join(secrets.choice(ID_ALPHABET) for _ in range(12))}"
+    return f"{base} {fallback_suffix}"
 
 
 def not_found(entity: str, entity_id: str) -> NoReturn:

@@ -37,6 +37,7 @@ import { EnvelopeSidebar } from "../components/EnvelopeSidebar";
 import { MaterialLegend } from "../components/MaterialLegend";
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from "../canvas-constants";
 import type {
   AssemblyLayer,
   AssemblySegment,
@@ -312,8 +313,8 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
               thermal={thermalQuery.data ?? null}
               thermalLoading={thermalQuery.isFetching}
               exportBusy={exportMutation.isPending}
-              onZoomIn={() => setZoom((current) => Math.min(2, current + 0.1))}
-              onZoomOut={() => setZoom((current) => Math.max(0.6, current - 0.1))}
+              onZoomIn={() => setZoom((current) => Math.min(ZOOM_MAX, current + ZOOM_STEP))}
+              onZoomOut={() => setZoom((current) => Math.max(ZOOM_MIN, current - ZOOM_STEP))}
               onExportHbjson={() => void exportHbjson()}
               onRename={() => setDialog({ kind: "rename-assembly", assembly: activeAssembly })}
               onTypeChange={() => setDialog({ kind: "type-assembly", assembly: activeAssembly })}

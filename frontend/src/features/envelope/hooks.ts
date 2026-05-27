@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { downloadBlob } from "../../shared/lib/downloadBlob";
 import { errorMessage } from "../../shared/lib/errors";
 import { attachAssetToDocument, detachAssetFromDocument } from "../assets/api";
 import { markLocalDraftTouched } from "../project_document/lib";
@@ -96,17 +97,7 @@ export function useEnvelopeHbjsonExportMutation(projectId: string, versionId: st
     mutationFn: async () => {
       if (!versionId) throw new Error("Select a version before exporting envelope assemblies.");
       const blob = await downloadEnvelopeHbjson(projectId, versionId);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      try {
-        link.href = url;
-        link.download = `envelope-constructions-${versionId}.hbjson`;
-        document.body.append(link);
-        link.click();
-      } finally {
-        link.remove();
-        URL.revokeObjectURL(url);
-      }
+      downloadBlob(blob, `envelope-constructions-${versionId}.hbjson`);
     },
   });
 }

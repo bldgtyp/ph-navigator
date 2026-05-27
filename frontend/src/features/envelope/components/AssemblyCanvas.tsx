@@ -1,6 +1,14 @@
 import { useMemo } from "react";
 import { formatLengthFromMm, useUnitPreference } from "../../../lib/units";
 import { MaterialDriftBadge } from "./MaterialDrift";
+import {
+  BASE_PX_PER_MM,
+  MIN_CANVAS_WIDTH_PX,
+  MIN_LAYER_HEIGHT_PX,
+  MIN_LAYER_WIDTH_PERCENT,
+  MIN_SEGMENT_WIDTH_PX,
+  pxFromMm,
+} from "../canvas-constants";
 import { layerWidthMm, materialById, materialColor, maxLayerWidthMm } from "../lib";
 import type {
   Assembly,
@@ -9,10 +17,6 @@ import type {
   ProjectMaterial,
   ProjectMaterialDriftItem,
 } from "../types";
-
-const BASE_PX_PER_MM = 0.18;
-const MIN_LAYER_HEIGHT = 30;
-const MIN_SEGMENT_WIDTH = 72;
 
 export type CopiedAssignment = Pick<
   AssemblySegment,
@@ -57,7 +61,7 @@ export function AssemblyCanvas({
   const { unitSystem } = useUnitPreference();
   const materialsById = useMemo(() => materialById(materials), [materials]);
   const maxWidth = useMemo(() => maxLayerWidthMm(assembly), [assembly]);
-  const canvasWidth = Math.max(360, maxWidth * BASE_PX_PER_MM * zoom);
+  const canvasWidth = Math.max(MIN_CANVAS_WIDTH_PX, maxWidth * BASE_PX_PER_MM * zoom);
 
   return (
     <div className="assembly-canvas-scroll" data-testid="assembly-canvas-scroll">
@@ -67,10 +71,7 @@ export function AssemblyCanvas({
         style={{ width: `${canvasWidth}px` }}
       >
         {assembly.layers.map((layer) => {
-          const layerHeight = Math.max(
-            MIN_LAYER_HEIGHT,
-            layer.thickness_mm * BASE_PX_PER_MM * zoom,
-          );
+          const layerHeight = pxFromMm(layer.thickness_mm, zoom, MIN_LAYER_HEIGHT_PX);
           const width = layerWidthMm(layer);
           return (
             <section
@@ -78,7 +79,7 @@ export function AssemblyCanvas({
               className="assembly-layer"
               style={{
                 minHeight: `${layerHeight}px`,
-                width: `${Math.max(12, (width / maxWidth) * 100)}%`,
+                width: `${Math.max(MIN_LAYER_WIDTH_PERCENT, (width / maxWidth) * 100)}%`,
               }}
               aria-label={`Layer ${layer.order + 1}`}
             >
@@ -128,7 +129,7 @@ export function AssemblyCanvas({
                       key={segment.id}
                       className={material ? "assembly-segment" : "assembly-segment null-material"}
                       style={{
-                        flexBasis: `${Math.max(MIN_SEGMENT_WIDTH, segment.width_mm * BASE_PX_PER_MM * zoom)}px`,
+                        flexBasis: `${pxFromMm(segment.width_mm, zoom, MIN_SEGMENT_WIDTH_PX)}px`,
                         background: materialColor(material),
                       }}
                       data-paste-target={copiedAssignment ? "true" : undefined}

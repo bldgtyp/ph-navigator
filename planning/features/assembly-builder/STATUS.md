@@ -340,9 +340,9 @@ every future command addition. They are independent of each other and
 can land in parallel; together they unlock the natural module homes
 that Phase 11 names and Phase 12 documents.
 
-Phase 11 introduces shared helpers without migrating every caller.
+Phase 11 introduced shared helpers without migrating every caller.
 Catalog editors keep their hand-rolled `argb_color` inputs until
-opportunistically touched; envelope adopts the new helpers immediately.
+opportunistically touched; envelope adopted the new helpers immediately.
 
 Phase 12 lands last on purpose: every docstring and renamed test gets
 to reference the post-refactor module layout, so the documented
@@ -355,10 +355,9 @@ contract matches the implementation.
   files have the same problem but are out of scope for the Assembly
   Builder bundle. Decide separately whether to fold the project-document
   rename into Phase 12 or treat it as its own project-wide cleanup.
-- **Shared `downloadBlob` helper colocation.** Phase 11 will grep the
-  repo for an existing `URL.createObjectURL` helper before writing a
-  new one; if one exists, adopt it instead. Confirm at implementation
-  time.
+- **Shared `downloadBlob` helper colocation.** Phase 11 confirmed no
+  existing shared `URL.createObjectURL` helper owned blob download
+  lifecycle, then added `frontend/src/shared/lib/downloadBlob.ts`.
 
 ### Sequencing Against Phase 8
 
@@ -396,5 +395,18 @@ split is verified with:
 The full `cd frontend && pnpm run build` gate remains blocked by
 unrelated equipment/project-document/windows/shared table type drift.
 
-Phases 11-12 remain proposed. Each remaining phase should begin on a
-fresh branch off `main` once the current phase branch has landed.
+Phase 11 is implemented on `assembly-builder`. The shared constants and
+helper extraction is verified with:
+
+- `cd backend && uv run ruff check features/envelope`
+- `cd backend && uv run ty check features/envelope tests/test_envelope_phase0*.py`
+- `cd backend && uv run pytest tests/test_envelope_phase0*.py`
+- `cd frontend && pnpm run format`
+- `cd frontend && pnpm exec eslint src/features/envelope src/shared/lib`
+- `cd frontend && pnpm exec vitest run src/shared/lib/argbColor.test.ts src/features/envelope/__tests__/EnvelopePage.test.tsx`
+- `cd frontend && pnpm exec tsc --noEmit --pretty false 2>&1 | rg "src/features/envelope|src/shared/lib/argbColor|src/shared/lib/downloadBlob" || true`
+
+The full `cd frontend && pnpm run build` gate remains blocked by
+unrelated equipment/project-document/windows/shared table type drift.
+
+Phase 12 remains proposed and should begin after Phase 11 lands.
