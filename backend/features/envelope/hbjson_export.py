@@ -148,11 +148,7 @@ def _export_errors(
     assemblies: list[Assembly],
     materials_by_id: dict[str, ProjectMaterial],
 ) -> list[dict[str, object]]:
-    return [
-        _error_entry(issue)
-        for assembly in assemblies
-        for issue in thermal_issues(assembly, materials_by_id)
-    ]
+    return [_error_entry(issue) for assembly in assemblies for issue in thermal_issues(assembly, materials_by_id)]
 
 
 def _error_entry(issue: ThermalIssue) -> dict[str, object]:

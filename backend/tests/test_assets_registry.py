@@ -39,9 +39,7 @@ def _document_with_pump_datasheets() -> ProjectDocumentV1:
     raw["single_select_options"]["pumps.device_type"] = [
         {"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}
     ]
-    return ProjectDocumentV1.model_validate(
-        raw
-    )
+    return ProjectDocumentV1.model_validate(raw)
 
 
 def test_equipment_pumps_datasheet_field_is_registered() -> None:

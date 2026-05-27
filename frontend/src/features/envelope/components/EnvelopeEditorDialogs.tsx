@@ -1,3 +1,4 @@
+// @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { FormEvent, useEffect, useState } from "react";
 import { formatLengthFromMm, parseLengthToMm, useUnitPreference } from "../../../lib/units";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
