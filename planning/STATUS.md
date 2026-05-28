@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| Assembly Builder | Active on branch / late-phase hardening | `features/assembly-builder/STATUS.md` |
+| Assembly Builder | UI parity Phase 13 implemented / review next | `features/assembly-builder/STATUS.md` |
 | Editable Fields | Active / typecheck fixture migration in progress | `features/editable-fields/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | Attachments | Planned / PRD and phase plans drafted | `features/attachments/STATUS.md` |

@@ -1,6 +1,7 @@
 .envelope-panel {
   display: grid;
-  gap: 14px;
+  gap: 0;
+  min-height: calc(100vh - 180px);
 }
 
 .envelope-topline,
@@ -20,11 +21,16 @@
   margin: 0;
 }
 
+.envelope-topline {
+  padding: 26px 0 18px;
+}
+
 .envelope-subtabs {
   align-items: center;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   gap: 18px;
+  margin-bottom: 0;
 }
 
 .envelope-subtabs a {
@@ -40,27 +46,45 @@
 
 .envelope-workbench {
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
-  min-height: 520px;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  min-height: 620px;
+}
+
+.envelope-workbench.is-sidebar-collapsed {
+  grid-template-columns: 52px minmax(0, 1fr);
 }
 
 .envelope-sidebar {
   border-right: 1px solid var(--border-subtle);
-  padding-right: 14px;
+  min-width: 0;
+  padding: 18px 18px 18px 0;
+}
+
+.envelope-sidebar.is-collapsed {
+  align-content: start;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding-right: 10px;
+  width: 52px;
+}
+
+.envelope-sidebar-tools {
+  align-items: center;
+  display: flex;
+  gap: 6px;
 }
 
 .envelope-sidebar-list {
   display: grid;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 16px;
 }
 
 .envelope-sidebar-list a {
   border-radius: 6px;
   color: var(--text-primary);
   display: grid;
-  gap: 2px;
   padding: 9px 10px;
   text-decoration: none;
 }
@@ -78,12 +102,14 @@
 
 .assembly-workspace {
   display: grid;
-  gap: 14px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
+  padding: 18px 0 18px 26px;
 }
 
 .assembly-header {
   border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
   padding-bottom: 12px;
 }
 
@@ -99,9 +125,15 @@
   min-width: 220px;
 }
 
+.assembly-picker-field {
+  min-width: 240px;
+}
+
 .assembly-header-metrics {
   display: flex;
-  gap: 22px;
+  flex: 1 1 auto;
+  gap: 24px;
+  justify-content: center;
   margin: 0;
 }
 
@@ -115,8 +147,17 @@
   gap: 8px;
 }
 
+.assembly-delete-button {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
 .assembly-canvas-scroll {
+  align-self: stretch;
+  border-bottom: 1px solid var(--border-subtle);
   overflow: auto;
+  padding: 20px 0 22px;
 }
 
 .assembly-canvas {
@@ -182,6 +223,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.material-legend {
+  padding-top: 14px;
 }
 
 .material-chip {
@@ -416,14 +461,26 @@
     grid-template-columns: 1fr;
   }
 
+  .envelope-workbench.is-sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .envelope-sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--border-subtle);
-    padding: 0 0 12px;
+    padding: 12px 0;
+  }
+
+  .assembly-workspace {
+    padding: 16px 0 0;
   }
 
   .assembly-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .assembly-header-metrics {
+    justify-content: flex-start;
   }
 }

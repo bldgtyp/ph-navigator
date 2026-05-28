@@ -236,6 +236,28 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(initialWidth);
   });
 
+  test("collapsed assembly sidebar preserves active assembly and zoom", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    const zoomedWidth = screen.getByTestId("assembly-canvas").getAttribute("style");
+
+    await userEvent.click(screen.getByRole("button", { name: "Collapse assembly sidebar" }));
+
+    expect(screen.queryByRole("link", { name: /WALL-C3/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
+    );
+    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
+    expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(zoomedWidth);
+
+    await userEvent.click(screen.getByRole("button", { name: "Expand assembly sidebar" }));
+
+    expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
+    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
+  });
+
   test("specifications render segment use-site notes and hide unused na cards in viewer mode", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`, {
       projectOverride: { access_mode: "viewer" },
