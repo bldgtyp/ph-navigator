@@ -234,7 +234,7 @@
   padding: 4px;
   position: absolute;
   top: 8px;
-  z-index: 3;
+  z-index: calc(var(--z-base) + 3);
 }
 
 .layer-actions .icon-button,
@@ -326,7 +326,7 @@
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  z-index: 4;
+  z-index: calc(var(--z-base) + 4);
 }
 
 .segment-edge-control {

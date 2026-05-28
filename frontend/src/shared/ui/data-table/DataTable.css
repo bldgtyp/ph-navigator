@@ -1107,8 +1107,25 @@
 .data-table-header-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   min-height: calc(var(--data-table-header-height) - 2px);
+}
+
+.data-table-field-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+  opacity: 0.9;
+}
+
+.data-table-field-type-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 .data-table-header-label {
@@ -1159,17 +1176,9 @@
 }
 
 /* Locked-schema indicator, description tooltip, and header context-
-   menu trigger. Both glyphs render in viewer and editor mode. */
+   menu trigger. Header glyphs render in viewer and editor mode. */
 .data-table-th[data-schema-locked="true"] {
   border-bottom: 2px solid var(--phn-header-border-locked);
-}
-
-.data-table-header-lock {
-  display: inline-flex;
-  align-items: center;
-  color: var(--phn-header-border-locked);
-  font-size: 0.78rem;
-  line-height: 1;
 }
 
 /* Duplicate-value chip rendered next to record_id cells whose value

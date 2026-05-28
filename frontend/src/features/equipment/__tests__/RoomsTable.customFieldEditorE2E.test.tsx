@@ -229,7 +229,11 @@ describe("RoomsTable custom-field editor E2E acceptance", () => {
     );
 
     const nameHeader = screen.getByRole("columnheader", { name: /^Name\b/ });
-    expect(within(nameHeader).getByTestId("data-table-header-lock")).toBeInTheDocument();
+    expect(nameHeader.getAttribute("data-schema-locked")).toBe("true");
+    expect(within(nameHeader).getByTestId("data-table-field-type-icon")).toHaveAttribute(
+      "data-field-type-icon",
+      "short_text",
+    );
     const paintHeader = screen.getByRole("columnheader", { name: /^Paint\b/ });
     expect(
       within(paintHeader).getByRole("button", { name: "Description for Paint" }),
