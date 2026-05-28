@@ -1,7 +1,8 @@
 ---
 DATE: 2026-05-27
 TIME: 17:22 EDT
-STATUS: Proposed implementation plan.
+STATUS: Implemented on `codex/assembly-builder-ui-planning`; review and
+        browser evidence remain.
 AUTHOR: Codex
 SCOPE: Assembly Builder UI/Layout parity, phase 14.
 RELATED:
@@ -101,3 +102,19 @@ The result should look like the Assembly Builder, not a data table.
   at the same time as hover visuals.
 - Very thin layers and narrow segments can create overlap. Define
   minimum display dimensions and fallback labels in the same pass.
+
+## Implementation Notes - 2026-05-27
+
+- Kept the canvas DOM/CSS-based rather than SVG-based so existing
+  semantic buttons and dialog command wiring stay intact.
+- Added outside/inside orientation labels, colored material segments,
+  clipped stable segment text, and contextual hover/focus action trays.
+- Kept hover/focus controls mounted for keyboard reachability, with
+  contextual aria labels for layer and segment commands.
+- Scoped the legend to active-assembly materials and added lambda /
+  missing-lambda status.
+- Added regression coverage for active-material legend scoping.
+- Local browser smoke was attempted against the Vite dev server on
+  `http://localhost:5174`, but the route could not load project data
+  because the backend/API was not running in this worktree. Phase 16
+  still owns browser evidence.

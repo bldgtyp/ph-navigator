@@ -2,7 +2,7 @@
 DATE: 2026-05-27
 TIME: 22:30 EDT
 STATUS: Active progress and next-steps tracker. Phases 13-16 added as
-       the V1-derived UI/Layout parity bundle; Phase 13 shell is
+       the V1-derived UI/Layout parity bundle; Phase 14 canvas is
        implemented on the current branch.
 AUTHOR: Codex / Claude (Opus 4.7)
 SCOPE: Assembly Builder implementation progress after Phases 1-3 were
@@ -65,13 +65,12 @@ Completed implementation surface:
 
 Current UI/Layout finding:
 
-- the implementation is functionally broad and Phase 13 now gives it the
-  V1-derived three-pane shell;
-- the canvas itself is still the next major parity gap;
+- the implementation is functionally broad and Phases 13-14 now give it
+  the V1-derived three-pane shell plus a to-scale canvas surface;
+- dialogs and material-picker polish are now the next major parity gap;
 - the next UI work should treat the target as a V2-native version of the
-  V1 Assembly Builder: primary to-scale colored canvas, compact
-  hover/focus controls, and refined material workflow surfaces inside
-  the new sidebar/drawer, top-bar, and main-view structure.
+  V1 Assembly Builder: refined material workflow surfaces inside the
+  new sidebar/drawer, top-bar, and main-view structure.
 
 ## Verified Gates
 
@@ -171,23 +170,28 @@ Remaining before Phase 4 closure:
 
 ## Next Implementation Target
 
-Phase 13 is implemented on `codex/assembly-builder-ui-planning` and
+Phase 14 is implemented on `codex/assembly-builder-ui-planning` and
 should be reviewed with the current branch changes.
 
-Implemented shell surface:
+Implemented UI parity surface:
 
 - collapsible assembly sidebar/drawer with active row switching and
   mobile recovery;
 - top assembly bar with active assembly picker, metrics, zoom/export,
   compact edit tools, and text-explicit Delete;
-- main assembly view with the existing canvas promoted into the work
-  area and a legend scoped to materials used by the active assembly;
+- main assembly view with the canvas promoted into the work area;
+- to-scale DOM/CSS layer and segment drawing driven by SI geometry;
+- orientation labels, material colors, clipped stable labels, and
+  contextual hover/focus controls;
+- legend scoped to materials used by the active assembly, including
+  lambda or missing-lambda status;
 - shared icon-button and tooltip utility styling;
 - regression coverage that collapsing/reopening the drawer preserves
-  active assembly and zoom.
+  active assembly and zoom, and that the legend remains scoped to active
+  materials.
 
-Next implementation target after review is Phase 14 from
-`planning/features/assembly-builder/phases/phase-14-to-scale-canvas-hover-controls.md`.
+Next implementation target after review is Phase 15 from
+`planning/features/assembly-builder/phases/phase-15-dialogs-material-picker-specifications-polish.md`.
 
 Phase 8 remains in review for its MCP/backend surface. Phase 16 now owns
 the remaining UI/browser release evidence that was formerly listed under
