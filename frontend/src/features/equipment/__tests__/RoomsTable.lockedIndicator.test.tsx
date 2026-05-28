@@ -11,8 +11,8 @@ import {
   withRoomCustomValues,
 } from "../testing/testFixtures";
 
-describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
-  test("every core column renders with the schema-locked indicator", () => {
+describe("RoomsTable header field indicators", () => {
+  test("core columns render schema-locked state and field-type icons", () => {
     const slice = buildRoomsSlice({ rooms: [buildRoom()] });
     render(
       <RoomsTable
@@ -31,15 +31,22 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
     // The accessible name on a header `<th>` accumulates child text:
     // for resizable columns that includes the "Resize column" button
     // label. Match on the column label as a prefix word.
-    for (const name of [/^Number\b/, /^Name\b/, /^Floor\b/, /^Zone\b/, /^iCFA\b/]) {
+    for (const [name, type] of [
+      [/^Record-ID\b/, "formula"],
+      [/^Number\b/, "short_text"],
+      [/^Floor\b/, "single_select"],
+      [/^iCFA\b/, "number"],
+    ] as const) {
       const header = screen.getByRole("columnheader", { name });
       expect(header.getAttribute("data-schema-locked")).toBe("true");
-      // The lock glyph renders inside the header row.
-      expect(within(header).getByTestId("data-table-header-lock")).toBeInTheDocument();
+      expect(within(header).getByTestId("data-table-field-type-icon")).toHaveAttribute(
+        "data-field-type-icon",
+        type,
+      );
     }
   });
 
-  test("a seeded custom column renders WITHOUT the schema-locked indicator", () => {
+  test("a seeded custom column renders WITHOUT schema-locked state and still shows type", () => {
     const customField = buildCustomField();
     const slice = buildRoomsSlice({
       rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
@@ -58,7 +65,10 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
     );
     const paintHeader = screen.getByRole("columnheader", { name: /^Paint\b/ });
     expect(paintHeader.getAttribute("data-schema-locked")).toBeNull();
-    expect(within(paintHeader).queryByTestId("data-table-header-lock")).toBeNull();
+    expect(within(paintHeader).getByTestId("data-table-field-type-icon")).toHaveAttribute(
+      "data-field-type-icon",
+      "short_text",
+    );
   });
 
   test("description tooltip surfaces when the custom field carries a description", () => {
@@ -86,7 +96,7 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
     expect(screen.getByRole("tooltip").textContent).toBe("LCA category override");
   });
 
-  test("viewer mode still renders the lock glyph and description tooltip", () => {
+  test("viewer mode still renders the field-type icon and description tooltip", () => {
     const customField = buildCustomField({ description: "View-only description" });
     const slice = buildRoomsSlice({
       rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
@@ -104,7 +114,10 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
       />,
     );
     const nameHeader = screen.getByRole("columnheader", { name: /^Name\b/ });
-    expect(within(nameHeader).getByTestId("data-table-header-lock")).toBeInTheDocument();
+    expect(within(nameHeader).getByTestId("data-table-field-type-icon")).toHaveAttribute(
+      "data-field-type-icon",
+      "short_text",
+    );
     const paintHeader = screen.getByRole("columnheader", { name: /^Paint\b/ });
     expect(
       within(paintHeader).getByRole("button", { name: "Description for Paint" }),
