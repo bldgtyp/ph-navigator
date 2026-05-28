@@ -4,12 +4,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { createQueryClient } from "../../../app/query-client";
-import { emptyViewState, type TableSchema } from "../../../shared/ui/data-table";
+import { emptyViewState } from "../../../shared/ui/data-table";
 import { PumpsTable } from "../components/PumpsTable";
-import { pumpsTableFieldDefs } from "../lib";
-import type { PumpRow, PumpsSlice } from "../types";
+import { buildPump, buildPumpsSlice, schemaForPumps } from "../testing/testFixtures";
 
-const option = { id: "opt_circ", label: "Circulator", color: "#3b82f6", order: 0 };
 const fetchMock = vi.fn();
 
 beforeEach(() => {
@@ -57,50 +55,10 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function buildSlice(rows: PumpRow[]): PumpsSlice {
-  return {
-    project_id: "proj_1",
-    version_id: "ver_1",
-    source: "draft",
-    version_etag: "v1",
-    draft_etag: "d1",
-    pumps: rows,
-    single_select_options: { "pumps.device_type": [option] },
-  };
-}
-
-function buildPump(overrides: Partial<PumpRow> = {}): PumpRow {
-  return {
-    id: "pmp_1",
-    device_type: "opt_circ",
-    use: "DHW recirc",
-    tag: "P-1",
-    manufacturer: null,
-    model: null,
-    volts: 120,
-    phase: 1,
-    horse_power: null,
-    wattage: 45,
-    flow_gpm: null,
-    runtime_khr_yr: null,
-    notes: null,
-    link: null,
-    datasheet_asset_ids: [],
-    ...overrides,
-  };
-}
-
 describe("PumpsTable DataTable reuse", () => {
   test("renders fixed pump columns and single-select labels", () => {
-    const slice = buildSlice([buildPump()]);
-    const fieldDefs = pumpsTableFieldDefs(slice);
-    const tableSchema: TableSchema = {
-      fieldDefs,
-      customFields: [],
-      coreFieldKeys: new Set(fieldDefs.map((field) => field.field_key)),
-      schemaFingerprint: "test",
-      mintCustomFieldId: () => "cf_test",
-    };
+    const slice = buildPumpsSlice({ pumps: [buildPump()] });
+    const tableSchema = schemaForPumps(slice);
     renderWithQueryClient(
       <PumpsTable
         pumpsSlice={slice}
@@ -120,15 +78,8 @@ describe("PumpsTable DataTable reuse", () => {
 
   test("calls onWrite through inline cell editing", async () => {
     const user = userEvent.setup();
-    const slice = buildSlice([buildPump()]);
-    const fieldDefs = pumpsTableFieldDefs(slice);
-    const tableSchema: TableSchema = {
-      fieldDefs,
-      customFields: [],
-      coreFieldKeys: new Set(fieldDefs.map((field) => field.field_key)),
-      schemaFingerprint: "test",
-      mintCustomFieldId: () => "cf_test",
-    };
+    const slice = buildPumpsSlice({ pumps: [buildPump()] });
+    const tableSchema = schemaForPumps(slice);
     const onWrite = vi.fn().mockResolvedValue(undefined);
     renderWithQueryClient(
       <PumpsTable
@@ -149,15 +100,8 @@ describe("PumpsTable DataTable reuse", () => {
   });
 
   test("emits a cell write when deleting a datasheet attachment", async () => {
-    const slice = buildSlice([buildPump({ datasheet_asset_ids: ["asset_pdf_1"] })]);
-    const fieldDefs = pumpsTableFieldDefs(slice);
-    const tableSchema: TableSchema = {
-      fieldDefs,
-      customFields: [],
-      coreFieldKeys: new Set(fieldDefs.map((field) => field.field_key)),
-      schemaFingerprint: "test",
-      mintCustomFieldId: () => "cf_test",
-    };
+    const slice = buildPumpsSlice({ pumps: [buildPump({ datasheet_asset_ids: ["asset_pdf_1"] })] });
+    const tableSchema = schemaForPumps(slice);
     const onWrite = vi.fn().mockResolvedValue(undefined);
     renderWithQueryClient(
       <PumpsTable

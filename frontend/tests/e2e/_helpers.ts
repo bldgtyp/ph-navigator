@@ -96,6 +96,14 @@ export async function openHeaderMenu(page: Page, headerName: string): Promise<vo
   await expect(page.getByRole("menu")).toBeVisible();
 }
 
+export async function addShortTextField(page: Page, name: string): Promise<void> {
+  await page.getByRole("button", { name: "Add field" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add field" });
+  await dialog.getByLabel(/^(Field )?Name$/).fill(name);
+  await dialog.getByRole("button", { name: /Add field/ }).click();
+  await expect(dialog).toBeHidden();
+}
+
 export async function readWindowTypesSlice(
   request: APIRequestContext,
   baseURL: string | undefined,

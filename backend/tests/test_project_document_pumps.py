@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from features.project_document.document import ProjectDocumentV1, PumpRow
+from tests.project_document_helpers import empty_pumps_table, empty_required_tables
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -17,6 +18,7 @@ def draft_pumps_url(project_id: object, version_id: object) -> str:
 
 def pump_payload() -> dict[str, Any]:
     return {
+        "field_defs": empty_pumps_table()["field_defs"],
         "pumps": [
             {
                 "id": "pmp_1",
@@ -56,12 +58,13 @@ def test_pump_row_validates_phase_and_link() -> None:
 def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
     body = {
-        "schema_version": 2,
+        "schema_version": 4,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
+            **empty_required_tables(),
             "equipment": {
-                "pumps": {
-                    "rows": [
+                "pumps": empty_pumps_table(
+                    rows=[
                         first,
                         {
                             **first,
@@ -69,8 +72,8 @@ def test_document_allows_duplicate_pump_tags() -> None:
                             "custom_values": {**first["custom_values"], "record_id": "p-1"},
                         },
                     ]
-                }
-            }
+                )
+            },
         },
         "single_select_options": {
             "rooms.floor_level": [],
@@ -102,4 +105,4 @@ def test_first_pumps_replace_lazily_creates_draft(clean_document_tables: None) -
     body = updated.json()
     assert body["source"] == "draft"
     assert body["draft_etag"]
-    assert body["pumps"][0]["tag"] == "P-1"
+    assert body["pumps"][0]["custom_values"]["record_id"] == "P-1"
