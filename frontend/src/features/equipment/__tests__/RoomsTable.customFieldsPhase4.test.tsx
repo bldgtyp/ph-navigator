@@ -266,6 +266,32 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     expect(screen.queryByRole("menuitem", { name: "Edit field…" })).not.toBeNull();
   });
 
+  test("built-in editable fields dispatch bundle type changes through RoomsPage", async () => {
+    const { postBodies } = renderRoomsPage(buildSlice());
+    await waitFor(() => expect(screen.queryByText("Loading table view…")).toBeNull());
+
+    await openHeaderMenu("Number");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+    const dialog = await screen.findByRole("dialog", { name: /Edit field/ });
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Number" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(postBodies).toHaveLength(1));
+    const edit = postBodies[0]!;
+    expect(edit.kind).toBe("editFieldBundle");
+    if (edit.kind !== "editFieldBundle") {
+      throw new Error(`Expected editFieldBundle, received ${edit.kind}`);
+    }
+    expect(edit.fieldId).toBe("number");
+    expect(edit.after).toMatchObject({
+      field_key: "number",
+      display_name: "Number",
+      field_type: "number",
+      origin: "built_in",
+      config: { precision: 2 },
+    });
+  });
+
   test("duplicating a formula via the header context menu dispatches duplicateField and the duplicate column renders the same computed value", async () => {
     const formulaField = buildFormulaField({
       config: { ...buildFormulaField().config, source: LABEL_FORMULA_SOURCE },

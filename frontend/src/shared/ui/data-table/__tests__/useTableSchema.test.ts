@@ -86,6 +86,11 @@ describe("useTableSchema", () => {
       "cf_notes",
       "cf_owner",
     ]);
+    expect(result.current.tableFields.map((field) => field.field_key)).toEqual([
+      "number",
+      "cf_notes",
+      "cf_owner",
+    ]);
     expect(result.current.coreFieldKeys).toEqual(new Set(["number"]));
   });
 

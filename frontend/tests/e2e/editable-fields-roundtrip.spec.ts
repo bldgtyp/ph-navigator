@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { addShortTextField, createProject, signIn } from "./_helpers";
+import { addShortTextField, createProject, openHeaderMenu, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -37,6 +37,14 @@ test("editable Rooms and Pumps fields round-trip through the browser", async ({ 
   await page.keyboard.type("round-tripped room note");
   await page.keyboard.press("Enter");
   await expect(page.getByText("round-tripped room note")).toBeVisible();
+
+  await openHeaderMenu(page, "Number");
+  await page.getByRole("menuitem", { name: "Edit field…" }).click();
+  const editNumberDialog = page.getByRole("dialog", { name: /Edit field/ });
+  await editNumberDialog.getByRole("radio", { name: "Number" }).click();
+  await editNumberDialog.getByRole("button", { name: "Save" }).click();
+  await expect(editNumberDialog).toBeHidden();
+  await expect(page.getByRole("gridcell", { name: "201", exact: true })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
