@@ -22,10 +22,9 @@ from mcp.types import TextContent
 from database import connection
 from features.auth.service import create_or_update_user
 from features.mcp.server import build_mcp_server
-from features.project_document.custom_fields import CustomFieldDef
-from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from main import app
+from tests.project_document_helpers import custom_fields_from_slice as _custom_fields
+from tests.project_document_helpers import field_defs_fingerprint as _fingerprint
 
 ORIGIN = "http://localhost:5173"
 
@@ -89,10 +88,8 @@ def _issue_token(client: TestClient, project_id: object, *, scopes: list[str]) -
     return str(response.json()["token"])
 
 
-def _fingerprint(custom_fields: list[dict[str, Any]]) -> str:
-    return compute_table_schema_fingerprint(
-        [*ROOMS_BUILT_IN_FIELD_DEFS, *[CustomFieldDef.model_validate(field) for field in custom_fields]]
-    )
+def _custom_values(row: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in row["custom_values"].items() if key.startswith("cf_")}
 
 
 def _new_field(
@@ -186,24 +183,26 @@ def _description_mutation(
 def _room(room_id: str, number: str, custom: dict[str, object]) -> dict[str, Any]:
     return {
         "id": room_id,
-        "number": number,
-        "name": f"Room {number}",
         "floor_level": "opt_ground",
         "building_zone": None,
-        "num_people": 1,
-        "num_bedrooms": 0,
         "icfa_factor": 1.0,
         "erv_unit_ids": [],
         "catalog_origin": None,
         "notes": None,
-        "custom": custom,
+        "custom_values": {
+            "number": number,
+            "name": f"Room {number}",
+            "num_people": 1,
+            "num_bedrooms": 0,
+            **custom,
+        },
     }
 
 
 def _rooms_payload(custom_fields: list[dict[str, Any]], rooms: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "rooms": rooms,
-        "custom_fields": custom_fields,
+        "field_defs": custom_fields,
         "single_select_options": {
             "rooms.floor_level": [{"id": "opt_ground", "label": "Ground", "color": "#3b82f6", "order": 0}],
             "rooms.building_zone": [],
@@ -233,7 +232,7 @@ def _add_field(
     response = client.post(
         _mutate_url(project_id, version_id),
         headers=_headers_for(current),
-        json=_add_mutation(fingerprint=_fingerprint(current["custom_fields"]), field=field),
+        json=_add_mutation(fingerprint=_fingerprint(current["field_defs"]), field=field),
     )
     assert response.status_code == 200, response.text
     return response.json()
@@ -265,10 +264,10 @@ def test_phase_2_adds_four_types_then_cell_writes_and_save_round_trip(
     write = client.put(
         _draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
-        json=_rooms_payload(current["custom_fields"], [_room("rm_101", "101", values)]),
+        json=_rooms_payload(current["field_defs"], [_room("rm_101", "101", values)]),
     )
     assert write.status_code == 200, write.text
-    assert write.json()["rooms"][0]["custom"] == values
+    assert _custom_values(write.json()["rooms"][0]) == values
 
     saved = client.post(
         _save_url(project_id, version_id),
@@ -279,13 +278,13 @@ def test_phase_2_adds_four_types_then_cell_writes_and_save_round_trip(
     persisted = client.get(_saved_rooms_url(project_id, version_id))
     assert persisted.status_code == 200
     body = persisted.json()
-    assert [field["field_type"] for field in body["custom_fields"]] == [
+    assert [field["field_type"] for field in _custom_fields(body)] == [
         "short_text",
         "long_text",
         "number",
         "url",
     ]
-    assert body["rooms"][0]["custom"] == values
+    assert _custom_values(body["rooms"][0]) == values
 
 
 def test_phase_2_put_rejects_mistyped_custom_values(clean_document_tables: None) -> None:
@@ -320,7 +319,7 @@ def test_phase_2_put_rejects_mistyped_custom_values(clean_document_tables: None)
             _draft_rooms_url(project_id, version_id),
             headers={"Origin": ORIGIN, "If-Match": added["draft_etag"]},
             json=_rooms_payload(
-                added["custom_fields"],
+                added["field_defs"],
                 [_room("rm_101", "101", {field_id: bad_value})],
             ),
         )
@@ -333,7 +332,7 @@ def test_phase_2_put_rejects_mistyped_custom_values(clean_document_tables: None)
             _mutate_url(project_id, version_id),
             headers={"Origin": ORIGIN, "If-Match": refreshed["draft_etag"]},
             json=_delete_mutation(
-                fingerprint=_fingerprint(refreshed["custom_fields"]),
+                fingerprint=_fingerprint(refreshed["field_defs"]),
                 field_id=field_id,
             ),
         )
@@ -373,7 +372,7 @@ def test_phase_2_download_surfaces_populated_custom_values(clean_document_tables
                 {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
                 {"id": "opt_done", "label": "Done", "color": "#10b981", "order": 2},
             ],
-            "expectedSchemaFingerprint": _fingerprint(current["custom_fields"]),
+            "expectedSchemaFingerprint": _fingerprint(current["field_defs"]),
         },
     )
     assert add_ss.status_code == 200, add_ss.text
@@ -388,7 +387,7 @@ def test_phase_2_download_surfaces_populated_custom_values(clean_document_tables
     }
     # Slice-replace payload only carries the two core option keys.
     # `rooms.cf_status` is preserved server-side from the saved body.
-    payload = _rooms_payload(current["custom_fields"], [_room("rm_101", "101", values)])
+    payload = _rooms_payload(current["field_defs"], [_room("rm_101", "101", values)])
     write = client.put(
         _draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
@@ -405,23 +404,22 @@ def test_phase_2_download_surfaces_populated_custom_values(clean_document_tables
     download = client.get(f"/api/v1/projects/{project_id}/versions/{version_id}/download/tables/rooms")
     assert download.status_code == 200, download.text
     body = download.json()["rooms"]
-    assert [field["id"] for field in body["custom_fields"]] == [
+    assert [field["field_key"] for field in _custom_fields(body)] == [
         "cf_short",
         "cf_long",
         "cf_number",
         "cf_url",
         "cf_status",
     ]
-    assert [field["field_type"] for field in body["custom_fields"]] == [
+    assert [field["field_type"] for field in _custom_fields(body)] == [
         "short_text",
         "long_text",
         "number",
         "url",
         "single_select",
     ]
-    assert body["rows"][0]["custom"] == values
-    # No formula in this fixture → the per-row read overlay is empty.
-    assert body["rows"][0]["computed"] == {}
+    assert _custom_values(body["rows"][0]) == values
+    assert body["rows"][0]["computed"]["record_id"] == "101 — Room 101"
 
 
 def test_phase_2_slice_replace_accepts_rooms_cf_option_lists(
@@ -450,7 +448,7 @@ def test_phase_2_slice_replace_accepts_rooms_cf_option_lists(
             "initialOptions": [
                 {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
             ],
-            "expectedSchemaFingerprint": _fingerprint(initial["custom_fields"]),
+            "expectedSchemaFingerprint": _fingerprint(initial["field_defs"]),
         },
     )
     assert add_ss.status_code == 200, add_ss.text
@@ -459,7 +457,7 @@ def test_phase_2_slice_replace_accepts_rooms_cf_option_lists(
     # Mirrors what the frontend `cloneOptions` builds after plan-18:
     # the full record, including the `rooms.cf_status` namespace.
     payload = _rooms_payload(
-        current["custom_fields"],
+        current["field_defs"],
         [_room("rm_101", "101", {"cf_status": "opt_open"})],
     )
     payload["single_select_options"]["rooms.cf_status"] = current["single_select_options"]["rooms.cf_status"]
@@ -469,7 +467,7 @@ def test_phase_2_slice_replace_accepts_rooms_cf_option_lists(
         json=payload,
     )
     assert response.status_code == 200, response.text
-    assert response.json()["rooms"][0]["custom"] == {"cf_status": "opt_open"}
+    assert _custom_values(response.json()["rooms"][0]) == {"cf_status": "opt_open"}
     # The custom option list round-trips through the response envelope.
     assert response.json()["single_select_options"]["rooms.cf_status"] == [
         {"id": "opt_open", "label": "Open", "color": "#3b82f6", "order": 1},
@@ -489,7 +487,7 @@ def test_phase_2_slice_replace_rejects_non_namespaced_extras(
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id)).json()
-    payload = _rooms_payload(initial["custom_fields"], [_room("rm_101", "101", {})])
+    payload = _rooms_payload(initial["field_defs"], [_room("rm_101", "101", {})])
     payload["single_select_options"]["window_types.foo"] = []
     response = client.put(
         _draft_rooms_url(project_id, version_id),
@@ -513,7 +511,7 @@ def test_phase_2_duplicate_name_recovery_sequence(clean_document_tables: None) -
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
         json=_add_mutation(
-            fingerprint=_fingerprint(current["custom_fields"]),
+            fingerprint=_fingerprint(current["field_defs"]),
             field=_new_field("cf_notes_again", "Notes"),
         ),
     )
@@ -524,7 +522,7 @@ def test_phase_2_duplicate_name_recovery_sequence(clean_document_tables: None) -
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
         json=_rename_mutation(
-            fingerprint=_fingerprint(current["custom_fields"]),
+            fingerprint=_fingerprint(current["field_defs"]),
             field_id="cf_notes",
             display_name="Notes 2",
         ),
@@ -535,12 +533,12 @@ def test_phase_2_duplicate_name_recovery_sequence(clean_document_tables: None) -
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": renamed.json()["draft_etag"]},
         json=_add_mutation(
-            fingerprint=_fingerprint(renamed.json()["custom_fields"]),
+            fingerprint=_fingerprint(renamed.json()["field_defs"]),
             field=_new_field("cf_notes_retry", "Notes"),
         ),
     )
     assert retry.status_code == 200, retry.text
-    assert [field["display_name"] for field in retry.json()["custom_fields"]] == ["Notes 2", "Notes"]
+    assert [field["display_name"] for field in _custom_fields(retry.json())] == ["Notes 2", "Notes"]
 
 
 def test_phase_2_stale_fingerprint_reports_active_fingerprint(clean_document_tables: None) -> None:
@@ -550,7 +548,7 @@ def test_phase_2_stale_fingerprint_reports_active_fingerprint(clean_document_tab
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id)).json()
-    held_fingerprint = _fingerprint(initial["custom_fields"])
+    held_fingerprint = _fingerprint(initial["field_defs"])
     first = _add_field(client, project_id, version_id, initial, _new_field("cf_first", "First"))
 
     stale = client.post(
@@ -565,7 +563,7 @@ def test_phase_2_stale_fingerprint_reports_active_fingerprint(clean_document_tab
     payload = stale.json()
     assert payload["error_code"] == "custom_field_stale_schema_fingerprint"
     assert payload["details"]["expected_fingerprint"] == held_fingerprint
-    assert payload["details"]["actual_fingerprint"] == _fingerprint(first["custom_fields"])
+    assert payload["details"]["actual_fingerprint"] == _fingerprint(first["field_defs"])
 
 
 def test_phase_2_locked_version_save_as_recovery(clean_document_tables: None) -> None:
@@ -587,7 +585,7 @@ def test_phase_2_locked_version_save_as_recovery(clean_document_tables: None) ->
         _mutate_url(project_id, locked_version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": locked_initial["version_etag"]},
         json=_add_mutation(
-            fingerprint=_fingerprint(locked_initial["custom_fields"]),
+            fingerprint=_fingerprint(locked_initial["field_defs"]),
             field=_new_field("cf_blocked", "Blocked"),
         ),
     )
@@ -606,12 +604,12 @@ def test_phase_2_locked_version_save_as_recovery(clean_document_tables: None) ->
         _mutate_url(project_id, unlocked_version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": unlocked_initial["version_etag"]},
         json=_add_mutation(
-            fingerprint=_fingerprint(unlocked_initial["custom_fields"]),
+            fingerprint=_fingerprint(unlocked_initial["field_defs"]),
             field=_new_field("cf_unlocked", "Unlocked"),
         ),
     )
     assert added.status_code == 200, added.text
-    assert client.get(_saved_rooms_url(project_id, locked_version_id)).json()["custom_fields"] == []
+    assert _custom_fields(client.get(_saved_rooms_url(project_id, locked_version_id)).json()) == []
 
 
 def test_phase_2_delete_clears_values_and_persists_clean_rows(clean_document_tables: None) -> None:
@@ -626,7 +624,7 @@ def test_phase_2_delete_clears_values_and_persists_clean_rows(clean_document_tab
         _draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
         json=_rooms_payload(
-            current["custom_fields"],
+            current["field_defs"],
             [
                 _room("rm_101", "101", {"cf_notes": "A"}),
                 _room("rm_102", "102", {"cf_notes": "B"}),
@@ -640,20 +638,20 @@ def test_phase_2_delete_clears_values_and_persists_clean_rows(clean_document_tab
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": write.json()["draft_etag"]},
         json=_delete_mutation(
-            fingerprint=_fingerprint(write.json()["custom_fields"]),
+            fingerprint=_fingerprint(write.json()["field_defs"]),
             field_id="cf_notes",
         ),
     )
     assert deleted.status_code == 200, deleted.text
-    assert deleted.json()["custom_fields"] == []
-    assert all("cf_notes" not in row["custom"] for row in deleted.json()["rooms"])
+    assert _custom_fields(deleted.json()) == []
+    assert all("cf_notes" not in row["custom_values"] for row in deleted.json()["rooms"])
 
     with connection() as conn:
         audit = conn.execute(
             """
             SELECT details
             FROM user_action_log
-            WHERE action = 'project_version_custom_field_delete'
+            WHERE action = 'project_version_field_delete'
             ORDER BY created_at DESC
             LIMIT 1
             """
@@ -667,8 +665,8 @@ def test_phase_2_delete_clears_values_and_persists_clean_rows(clean_document_tab
     )
     assert saved.status_code == 200, saved.text
     persisted = client.get(_saved_rooms_url(project_id, version_id)).json()
-    assert persisted["custom_fields"] == []
-    assert all(row["custom"] == {} for row in persisted["rooms"])
+    assert _custom_fields(persisted) == []
+    assert all(_custom_values(row) == {} for row in persisted["rooms"])
 
 
 def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: None) -> None:
@@ -683,7 +681,7 @@ def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: Non
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
         json=_rename_mutation(
-            fingerprint=_fingerprint(current["custom_fields"]),
+            fingerprint=_fingerprint(current["field_defs"]),
             field_id="cf_a",
             display_name="A renamed",
         ),
@@ -692,7 +690,7 @@ def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: Non
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": renamed["draft_etag"]},
         json=_description_mutation(
-            fingerprint=_fingerprint(renamed["custom_fields"]),
+            fingerprint=_fingerprint(renamed["field_defs"]),
             field_id="cf_a",
             description="Phase 2 audit description",
         ),
@@ -701,7 +699,7 @@ def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: Non
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": described["draft_etag"]},
         json=_duplicate_mutation(
-            fingerprint=_fingerprint(described["custom_fields"]),
+            fingerprint=_fingerprint(described["field_defs"]),
             source_field_id="cf_a",
             field=_new_field("cf_a_copy", "A renamed copy", description="Phase 2 audit description"),
         ),
@@ -710,7 +708,7 @@ def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: Non
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": duplicated["draft_etag"]},
         json=_delete_mutation(
-            fingerprint=_fingerprint(duplicated["custom_fields"]),
+            fingerprint=_fingerprint(duplicated["field_defs"]),
             field_id="cf_a_copy",
         ),
     )
@@ -722,17 +720,17 @@ def test_phase_2_audit_log_covers_every_mutation_kind(clean_document_tables: Non
             SELECT action, details
             FROM user_action_log
             WHERE details->>'version_id' = %(version_id)s
-              AND action LIKE 'project_version_custom_field_%%'
+              AND action LIKE 'project_version_field_%%'
             ORDER BY created_at ASC
             """,
             {"version_id": str(UUID(str(version_id)))},
         ).fetchall()
     assert [row["action"] for row in rows] == [
-        "project_version_custom_field_add",
-        "project_version_custom_field_rename",
-        "project_version_custom_field_set_description",
-        "project_version_custom_field_duplicate",
-        "project_version_custom_field_delete",
+        "project_version_field_add",
+        "project_version_field_rename",
+        "project_version_field_set_description",
+        "project_version_field_duplicate",
+        "project_version_field_delete",
     ]
     assert [row["details"]["kind"] for row in rows] == [
         "addField",
@@ -777,7 +775,10 @@ async def test_phase_2_rest_mcp_cross_talk(clean_document_tables: None) -> None:
                     )
                     assert table.isError is False, _tool_text(table)
                     table_payload = json.loads(_tool_text(table))
-                    assert table_payload["rows"]["custom_fields"][0]["id"] == "cf_rest"
+                    custom_fields = [
+                        field for field in table_payload["rows"]["field_defs"] if field["origin"] == "custom"
+                    ]
+                    assert custom_fields[0]["field_key"] == "cf_rest"
 
                     renamed = await session.call_tool(
                         "rename_custom_field",
@@ -787,7 +788,7 @@ async def test_phase_2_rest_mcp_cross_talk(clean_document_tables: None) -> None:
                             "table_key": "rooms",
                             "field_id": "cf_rest",
                             "display_name": "Renamed via MCP",
-                            "expected_schema_fingerprint": _fingerprint(rest_added["custom_fields"]),
+                            "expected_schema_fingerprint": _fingerprint(rest_added["field_defs"]),
                             "if_match": rest_added["draft_etag"],
                         },
                     )
@@ -795,4 +796,4 @@ async def test_phase_2_rest_mcp_cross_talk(clean_document_tables: None) -> None:
 
     via_rest = client.get(_draft_rooms_url(project_id, version_id))
     assert via_rest.status_code == 200
-    assert via_rest.json()["custom_fields"][0]["display_name"] == "Renamed via MCP"
+    assert _custom_fields(via_rest.json())[0]["display_name"] == "Renamed via MCP"

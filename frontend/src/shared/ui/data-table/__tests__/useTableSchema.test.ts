@@ -53,7 +53,6 @@ describe("useTableSchema", () => {
         ],
         fieldOverlay: {
           number: {
-            display_name: "Number",
             required: true,
             locked: ["delete", "duplicate"],
           },

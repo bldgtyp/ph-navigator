@@ -15,6 +15,7 @@ export {
   setCustomValue,
 } from "./lib/customFieldAccessor";
 export {
+  buildTableSchema,
   FINGERPRINT_ALGORITHM_VERSION,
   computeTableSchemaFingerprint,
   mintCustomFieldId,

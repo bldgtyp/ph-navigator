@@ -18,6 +18,7 @@ from features.project_document.tables.window_types import (
     WindowTypesSliceReplaceRequest,
 )
 from main import app
+from tests.project_document_helpers import empty_required_tables
 from tests.test_project_document import (
     ORIGIN,
     create_project,
@@ -68,17 +69,20 @@ def make_window_type(
 
 
 def base_document_body(project: dict[str, Any]) -> dict[str, Any]:
+    tables = empty_required_tables()
+    tables["window_types"] = []
     return {
-        "schema_version": 2,
+        "schema_version": 4,
         "project": {
             "name": project["name"],
             "bt_number": project["bt_number"],
             "cert_programs": [],
         },
-        "tables": {"window_types": []},
+        "tables": tables,
         "single_select_options": {
             "rooms.floor_level": [],
             "rooms.building_zone": [],
+            "pumps.device_type": [],
         },
     }
 
@@ -138,16 +142,16 @@ def test_window_element_span_must_be_in_bounds_and_ordered() -> None:
 
 
 def test_document_rejects_duplicate_window_type_names_trim_case_insensitive() -> None:
+    tables = empty_required_tables()
+    tables["window_types"] = [
+        make_window_type(id="win_A", name="Type A"),
+        make_window_type(id="win_B", name="  type a  "),
+    ]
     body = {
-        "schema_version": 2,
+        "schema_version": 4,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-        "tables": {
-            "window_types": [
-                make_window_type(id="win_A", name="Type A"),
-                make_window_type(id="win_B", name="  type a  "),
-            ]
-        },
-        "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": []},
+        "tables": tables,
+        "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": [], "pumps.device_type": []},
     }
     with pytest.raises(ValidationError, match="Duplicate window type name"):
         ProjectDocumentV1.model_validate(body)

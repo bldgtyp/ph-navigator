@@ -1,24 +1,20 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { RoomsPage } from "../routes/RoomsPage";
 import { RoomsTable } from "../components/RoomsTable";
-import {
-  emptyViewState,
-  useTableSchema,
-  type CustomFieldDef,
-  type TableSchema,
-} from "../../../shared/ui/data-table";
-import { roomsTableFieldDefs } from "../lib";
-import {
-  ROOM_BUILDING_ZONE_KEY,
-  ROOM_FLOOR_LEVEL_KEY,
-  ROOMS_TABLE_NAME,
-  type RoomRow,
-  type RoomsSlice,
-} from "../types";
+import { emptyViewState, type TableFieldDef } from "../../../shared/ui/data-table";
+import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 import type { ProjectDetail } from "../../projects/types";
+import {
+  applyRoomsSchemaMutationFixture,
+  buildFormulaField,
+  buildRoom,
+  buildRoomsSlice,
+  schemaForRooms,
+  withRoomCustomValues,
+  type RoomsSchemaMutationFixture,
+} from "../testing/testFixtures";
 
 // Plan-17 P4.10 — exit-criteria acceptance tests for formula custom
 // fields, exercised through the rendered RoomsPage UI. Pairs with
@@ -73,59 +69,15 @@ function buildProject(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
 
 const LABEL_FORMULA_SOURCE = 'concat({Number}, " — ", upper({Name}))';
 
-function buildFormulaField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
-  return {
-    id: "cf_label",
-    field_key: "cf_label",
-    display_name: "Label",
-    field_type: "formula",
-    config: {
-      source: LABEL_FORMULA_SOURCE,
-      ast: null,
-      deps: ["number", "name"],
-      result_type: "text",
-    },
-    description: null,
-    created_at: "2026-05-24T12:00:00Z",
-    created_by: null,
-    ...overrides,
-  };
-}
-
-function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
-  return {
-    id: "rm_1",
-    number: "101",
-    name: "Living Room",
-    floor_level: "opt_ground",
-    building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
-    icfa_factor: 1,
-    erv_unit_ids: [],
-    catalog_origin: null,
-    notes: null,
-    custom: {},
-    ...overrides,
-  };
-}
-
 function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
-  return {
+  return buildRoomsSlice({
     project_id: PROJECT_ID,
     version_id: VERSION_ID,
-    source: "draft",
-    version_etag: "v-etag",
     draft_etag: "d-etag-0",
     rooms: [buildRoom()],
-    custom_fields: [],
     rows_computed: {},
-    single_select_options: {
-      [ROOM_FLOOR_LEVEL_KEY]: [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
-      [ROOM_BUILDING_ZONE_KEY]: [],
-    },
     ...overrides,
-  };
+  });
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -134,26 +86,6 @@ function jsonResponse(body: unknown, status = 200): Response {
     headers: { "Content-Type": "application/json" },
   });
 }
-
-function schemaFor(slice: RoomsSlice): TableSchema {
-  return renderHook(() =>
-    useTableSchema({
-      tableKey: ROOMS_TABLE_NAME,
-      coreFieldDefs: roomsTableFieldDefs(slice),
-      customFields: slice.custom_fields,
-    }),
-  ).result.current;
-}
-
-type SchemaMutationBody = {
-  kind: string;
-  after?: CustomFieldDef;
-  fieldId?: string;
-  displayName?: string;
-  sourceFieldId?: string;
-  description?: string | null;
-  source?: string;
-};
 
 const ROOMS_CORE_DISPLAY_NAMES = new Set([
   "Number",
@@ -172,7 +104,7 @@ const ROOMS_CORE_DISPLAY_NAMES = new Set([
 function simulateFormula(
   source: string,
   room: RoomRow,
-  customByFieldId: Record<string, CustomFieldDef>,
+  customByFieldId: Record<string, TableFieldDef>,
 ): unknown {
   const refs = [...source.matchAll(/\{([^}]+)\}/g)]
     .map((m) => m[1])
@@ -186,47 +118,27 @@ function simulateFormula(
     }
   }
   if (source === LABEL_FORMULA_SOURCE) {
-    return `${room.number} — ${room.name.toUpperCase()}`;
+    const number = String(room.custom_values.number ?? "");
+    const name = String(room.custom_values.name ?? "");
+    return `${number} — ${name.toUpperCase()}`;
   }
   if (source === 'concat({Tag}, "-", {Name})') {
     const tagFieldId = Object.entries(customByFieldId).find(
       ([, def]) => def.display_name === "Tag",
     )?.[0];
-    const tag = tagFieldId ? String(room.custom[tagFieldId] ?? "") : "";
-    return `${tag}-${room.name}`;
+    const tag = tagFieldId ? String(room.custom_values[tagFieldId] ?? "") : "";
+    return `${tag}-${String(room.custom_values.name ?? "")}`;
   }
   return null;
 }
 
-function applySchemaMutation(
-  slice: RoomsSlice,
-  mutation: SchemaMutationBody,
-  nextDraftEtag: string,
-): RoomsSlice {
-  let customFields = slice.custom_fields.map((field) => ({
-    ...field,
-    config: { ...field.config },
-  }));
-  let rooms = slice.rooms;
-  if (mutation.kind === "addField" && mutation.after) {
-    customFields.push({ ...mutation.after, config: { ...mutation.after.config } });
-  } else if (mutation.kind === "duplicateField" && mutation.after) {
-    const sourceIndex = customFields.findIndex((item) => item.field_key === mutation.sourceFieldId);
-    customFields.splice(sourceIndex + 1, 0, {
-      ...mutation.after,
-      config: { ...mutation.after.config },
-    });
-  } else if (mutation.kind === "deleteField") {
-    const fieldId = mutation.fieldId ?? "";
-    customFields = customFields.filter((item) => item.id !== fieldId);
-    rooms = slice.rooms.map((row) => {
-      const custom = { ...row.custom };
-      delete custom[fieldId];
-      return { ...row, custom };
-    });
-  }
+function recomputeRowsComputed(
+  rooms: RoomRow[],
+  fieldDefs: TableFieldDef[],
+): RoomsSlice["rows_computed"] {
   const rowsComputed: Record<string, Record<string, unknown>> = {};
-  const customByFieldId = Object.fromEntries(customFields.map((f) => [f.id, f]));
+  const customFields = fieldDefs.filter((field) => field.origin === "custom");
+  const customByFieldId = Object.fromEntries(customFields.map((field) => [field.field_key, field]));
   for (const row of rooms) {
     const per: Record<string, unknown> = {};
     for (const field of customFields) {
@@ -236,26 +148,21 @@ function applySchemaMutation(
     }
     if (Object.keys(per).length > 0) rowsComputed[row.id] = per;
   }
-  return {
-    ...slice,
-    source: "draft",
-    draft_etag: nextDraftEtag,
-    custom_fields: customFields,
-    rooms,
-    rows_computed: rowsComputed,
-  };
+  return rowsComputed;
 }
 
 function renderRoomsPage(initialSlice: RoomsSlice) {
   let current = initialSlice;
   let draftCounter = 0;
-  const postBodies: SchemaMutationBody[] = [];
+  const postBodies: RoomsSchemaMutationFixture[] = [];
 
   fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
     if (url.includes(`/draft/tables/${ROOMS_TABLE_NAME}/custom-fields:mutate`)) {
-      const mutation = JSON.parse(String(init?.body)) as SchemaMutationBody;
+      const mutation = JSON.parse(String(init?.body)) as RoomsSchemaMutationFixture;
       postBodies.push(mutation);
-      current = applySchemaMutation(current, mutation, `d-etag-${++draftCounter}`);
+      current = applyRoomsSchemaMutationFixture(current, mutation, `d-etag-${++draftCounter}`, {
+        rowsComputed: recomputeRowsComputed,
+      });
       return jsonResponse(current);
     }
     if (url.includes(`/draft/tables/${ROOMS_TABLE_NAME}`)) {
@@ -324,16 +231,20 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     expect(postBodies).toHaveLength(1);
     const add = postBodies[0]!;
     expect(add.kind).toBe("addField");
-    expect(add.after?.field_type).toBe("formula");
-    const config = (add.after?.config ?? {}) as Record<string, unknown>;
+    if (add.kind !== "addField") throw new Error(`Expected addField, received ${add.kind}`);
+    expect(add.after.field_type).toBe("formula");
+    const config = (add.after.config ?? {}) as Record<string, unknown>;
     expect(config.source).toBe(LABEL_FORMULA_SOURCE);
     expect(config.deps).toEqual(expect.arrayContaining(["number", "name"]));
     expect(config.ast).toBeTruthy();
   });
 
   test("the header context menu opens the unified editor for formula custom fields and seeds the stored source", async () => {
+    const formulaField = buildFormulaField({
+      config: { ...buildFormulaField().config, source: LABEL_FORMULA_SOURCE },
+    });
     const seeded = buildSlice({
-      custom_fields: [buildFormulaField()],
+      field_defs: [...buildSlice().field_defs, formulaField],
       rows_computed: { rm_1: { cf_label: "101 — LIVING ROOM" } },
     });
 
@@ -356,8 +267,11 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
   });
 
   test("duplicating a formula via the header context menu dispatches duplicateField and the duplicate column renders the same computed value", async () => {
+    const formulaField = buildFormulaField({
+      config: { ...buildFormulaField().config, source: LABEL_FORMULA_SOURCE },
+    });
     const seeded = buildSlice({
-      custom_fields: [buildFormulaField()],
+      field_defs: [...buildSlice().field_defs, formulaField],
       rows_computed: { rm_1: { cf_label: "101 — LIVING ROOM" } },
     });
 
@@ -375,18 +289,21 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     expect(postBodies).toHaveLength(1);
     const dup = postBodies[0]!;
     expect(dup.kind).toBe("duplicateField");
+    if (dup.kind !== "duplicateField") {
+      throw new Error(`Expected duplicateField, received ${dup.kind}`);
+    }
     expect(dup.sourceFieldId).toBe("cf_label");
-    expect(dup.after?.field_type).toBe("formula");
+    expect(dup.after.field_type).toBe("formula");
   });
 
   test("deleting a referenced custom field surfaces the missing_ref error overlay on the formula column", async () => {
-    const tag: CustomFieldDef = {
-      id: "cf_tag",
+    const tag: TableFieldDef = {
       field_key: "cf_tag",
       display_name: "Tag",
       field_type: "short_text",
       config: {},
       description: null,
+      origin: "custom",
       created_at: "2026-05-24T12:00:00Z",
       created_by: null,
     };
@@ -399,8 +316,8 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
       },
     });
     const seeded = buildSlice({
-      rooms: [buildRoom({ custom: { cf_tag: "blue" } })],
-      custom_fields: [tag, formula],
+      rooms: [withRoomCustomValues(buildRoom(), { cf_tag: "blue" })],
+      field_defs: [...buildSlice().field_defs, tag, formula],
       rows_computed: { rm_1: { cf_label: "blue-Living Room" } },
     });
 
@@ -426,15 +343,18 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
   });
 
   test("viewer mode renders computed values and suppresses every formula-editor affordance", () => {
+    const formulaField = buildFormulaField({
+      config: { ...buildFormulaField().config, source: LABEL_FORMULA_SOURCE },
+    });
     const slice = buildSlice({
-      custom_fields: [buildFormulaField()],
+      field_defs: [...buildSlice().field_defs, formulaField],
       rows_computed: { rm_1: { cf_label: "101 — LIVING ROOM" } },
     });
 
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor={false}
         onEdit={vi.fn()}
         view={emptyViewState()}

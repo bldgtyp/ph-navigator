@@ -30,10 +30,9 @@ from mcp.types import TextContent
 from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.mcp.server import build_mcp_server
-from features.project_document.custom_fields import CustomFieldDef
-from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from main import app
+from tests.project_document_helpers import custom_fields_from_slice as _custom_fields
+from tests.project_document_helpers import field_defs_fingerprint as _fingerprint
 
 ORIGIN = "http://localhost:5173"
 
@@ -115,12 +114,6 @@ def _new_field_payload(
     }
 
 
-def _fingerprint(custom_fields: list[dict[str, Any]]) -> str:
-    return compute_table_schema_fingerprint(
-        [*ROOMS_BUILT_IN_FIELD_DEFS, *[CustomFieldDef.model_validate(field) for field in custom_fields]]
-    )
-
-
 def _draft_rooms_url(project_id: str, version_id: str) -> str:
     return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/rooms"
 
@@ -177,7 +170,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
 
                     # --- (1) add_custom_field round-trip + server stamps created_by
                     initial = rest_client.get(_draft_rooms_url(project_id, version_id))
-                    fingerprint = _fingerprint(initial.json()["custom_fields"])
+                    fingerprint = _fingerprint(initial.json()["field_defs"])
                     add_result = await session.call_tool(
                         "add_custom_field",
                         {
@@ -191,12 +184,12 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                     )
                     assert add_result.isError is False, _tool_text(add_result)
                     added = json.loads(_tool_text(add_result))
-                    assert added["id"] == "cf_mcp_notes"
+                    assert added["field_key"] == "cf_mcp_notes"
                     assert added["display_name"] == "MCP Notes"
                     assert added["created_by"] is not None
 
                     refetched = rest_client.get(_draft_rooms_url(project_id, version_id))
-                    assert [field["id"] for field in refetched.json()["custom_fields"]] == ["cf_mcp_notes"]
+                    assert [field["field_key"] for field in _custom_fields(refetched.json())] == ["cf_mcp_notes"]
 
                     # --- (2) stale-fingerprint reject → recoverability "refresh"
                     stale = await session.call_tool(
@@ -217,7 +210,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                     assert stale_payload["details"]["expected_fingerprint"] == "stale-fingerprint"
 
                     # --- (3) duplicate-name reject → recoverability "fatal"
-                    fp_after_add = _fingerprint(refetched.json()["custom_fields"])
+                    fp_after_add = _fingerprint(refetched.json()["field_defs"])
                     dup_name = await session.call_tool(
                         "add_custom_field",
                         {
@@ -236,7 +229,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                     dup_payload = _tool_error_payload(dup_name, "add_custom_field")
                     assert dup_payload["code"] == "custom_field_duplicate_name"
                     assert dup_payload["recoverability"] == "fatal"
-                    assert dup_payload["details"]["colliding_field_origin"] == "core"
+                    assert dup_payload["details"]["colliding_field_origin"] == "built_in"
 
                     # --- (4) rename round-trip preserves cf_id
                     rename_result = await session.call_tool(
@@ -253,7 +246,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                     )
                     assert rename_result.isError is False, _tool_text(rename_result)
                     renamed = json.loads(_tool_text(rename_result))
-                    assert renamed["id"] == "cf_mcp_notes"
+                    assert renamed["field_key"] == "cf_mcp_notes"
                     assert renamed["display_name"] == "MCP Notes (renamed)"
 
                     # --- (5) set_custom_field_description round-trip
@@ -266,7 +259,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "table_key": "rooms",
                             "field_id": "cf_mcp_notes",
                             "description": "Set via MCP.",
-                            "expected_schema_fingerprint": _fingerprint(after_rename.json()["custom_fields"]),
+                            "expected_schema_fingerprint": _fingerprint(after_rename.json()["field_defs"]),
                             "if_match": after_rename.json()["draft_etag"],
                         },
                     )
@@ -288,13 +281,13 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                                 display_name="MCP Notes (renamed) copy",
                                 description="Set via MCP.",
                             ),
-                            "expected_schema_fingerprint": _fingerprint(after_desc.json()["custom_fields"]),
+                            "expected_schema_fingerprint": _fingerprint(after_desc.json()["field_defs"]),
                             "if_match": after_desc.json()["draft_etag"],
                         },
                     )
                     assert dup_result.isError is False, _tool_text(dup_result)
                     duplicated = json.loads(_tool_text(dup_result))
-                    assert duplicated["id"] == "cf_mcp_notes_dup"
+                    assert duplicated["field_key"] == "cf_mcp_notes_dup"
 
                     # --- (7) populate a row with a value for the duplicated field,
                     #          then delete_custom_field returns cleared_row_count = 1
@@ -306,24 +299,26 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "rooms": [
                                 {
                                     "id": "rm_one",
-                                    "number": "101",
-                                    "name": "Room One",
                                     "floor_level": "opt_g",
                                     "building_zone": None,
-                                    "num_people": 1,
-                                    "num_bedrooms": 0,
                                     "icfa_factor": 1.0,
                                     "erv_unit_ids": [],
                                     "catalog_origin": None,
                                     "notes": None,
-                                    "custom": {"cf_mcp_notes_dup": "value-to-clear"},
+                                    "custom_values": {
+                                        "number": "101",
+                                        "name": "Room One",
+                                        "num_people": 1,
+                                        "num_bedrooms": 0,
+                                        "cf_mcp_notes_dup": "value-to-clear",
+                                    },
                                 }
                             ],
                             "single_select_options": {
                                 "rooms.floor_level": [{"id": "opt_g", "label": "G", "color": "#aaaaaa", "order": 0}],
                                 "rooms.building_zone": [],
                             },
-                            "custom_fields": after_dup.json()["custom_fields"],
+                            "field_defs": after_dup.json()["field_defs"],
                         },
                     )
                     assert populated.status_code == 200, populated.text
@@ -335,7 +330,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "version_id": version_id,
                             "table_key": "rooms",
                             "field_id": "cf_mcp_notes_dup",
-                            "expected_schema_fingerprint": _fingerprint(populated.json()["custom_fields"]),
+                            "expected_schema_fingerprint": _fingerprint(populated.json()["field_defs"]),
                             "if_match": populated.json()["draft_etag"],
                         },
                     )
@@ -368,7 +363,7 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                             "version_id": version_id,
                             "table_key": "rooms",
                             "after": _new_field_payload(cf_id="cf_viewer_attempt"),
-                            "expected_schema_fingerprint": _fingerprint(fresh.json()["custom_fields"]),
+                            "expected_schema_fingerprint": _fingerprint(fresh.json()["field_defs"]),
                             "if_match": fresh.json()["draft_etag"],
                         },
                     )
@@ -381,13 +376,13 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
     # The first MCP add tagged the draft with `updated_via='mcp'` and
     # the audit row should reflect it. The REST seed in `_seed_field_via_rest`
     # was not used in this test (we used MCP-only adds), so all
-    # `project_version_custom_field_add` rows here originated from MCP.
+    # `project_version_field_add` rows here originated from MCP.
     with connection() as conn:
         rows = conn.execute(
             """
             SELECT details, ip_address, user_agent
             FROM user_action_log
-            WHERE action = 'project_version_custom_field_add'
+            WHERE action = 'project_version_field_add'
             ORDER BY created_at ASC
             """
         ).fetchall()
