@@ -340,7 +340,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "id": "rm_...",
         "number": "101",
         "name": "LIVING ROOM",
-        "floor_level": "opt_...",            // single-select option_id
+        "floor_level": "opt_...",            // single-select option_id; nullable
         "building_zone": "opt_...",          // single-select option_id; nullable
         "num_people": 2,
         "num_bedrooms": 0,
@@ -666,7 +666,7 @@ Every field-config-capable table carries `{ field_defs, rows }`:
     "rows": [
       {
         "id": "rm_...",
-        "floor_level": "opt_...",            // locked-type built-in single-select
+        "floor_level": "opt_...",            // locked-type built-in single-select; nullable
         "building_zone": "opt_...",          // same
         "icfa_factor": 0.85,                 // locked-type built-in number
         "erv_unit_ids": [],
@@ -784,7 +784,7 @@ built-ins + customs):
 ```jsonc
 {
   "id": "rm_...",
-  "floor_level": "opt_...",
+  "floor_level": "opt_...",                  // nullable
   "icfa_factor": 0.85,
   "custom_values": { "number": "101", "name": "Master Bedroom", "cf_01HX_notes": "needs paint" }
 }
@@ -801,7 +801,7 @@ values, but they live in a separate `computed` overlay keyed by
     "rows": [
       {
         "id": "rm_...",
-        "floor_level": "opt_...",
+        "floor_level": "opt_...",            // nullable
         "custom_values": { "number": "101", "name": "Master Bedroom" },
         "computed": { "cf_01HX_label": "101 - MASTER BEDROOM" }
       }

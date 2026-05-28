@@ -392,17 +392,6 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
     assert response.json()["error_code"] == "invalid_project_document"
 
     invalid = room_payload()
-    invalid["rooms"][0]["floor_level"] = None
-    response = client.put(
-        draft_rooms_url(project_id, version_id),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=invalid,
-    )
-
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "validation_error"
-
-    invalid = room_payload()
     del invalid["single_select_options"]["rooms.building_zone"]
     response = client.put(
         draft_rooms_url(project_id, version_id),
@@ -434,6 +423,55 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
 
     assert response.status_code == 422
     assert response.json()["error_code"] == "invalid_project_document"
+
+
+def test_rooms_validation_allows_blank_room_identity_fields(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+
+    payload = room_payload()
+    payload["rooms"][0]["floor_level"] = None
+    payload["rooms"][0]["building_zone"] = None
+    payload["rooms"][0]["custom_values"]["number"] = ""
+    payload["rooms"][0]["custom_values"]["name"] = ""
+
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+
+    assert response.status_code == 200
+    room = response.json()["rooms"][0]
+    assert room["floor_level"] is None
+    assert room["building_zone"] is None
+    assert room["custom_values"]["number"] == ""
+    assert room["custom_values"]["name"] == ""
+
+    numeric_number_payload = room_payload()
+    for field_def in numeric_number_payload["field_defs"]:
+        if field_def["field_key"] == "number":
+            field_def["field_type"] = "number"
+            field_def["default"] = None
+    numeric_number_payload["rooms"][0]["custom_values"]["number"] = None
+    numeric_number_payload["rooms"][0]["custom_values"]["name"] = ""
+    numeric_number_payload["rooms"][0]["floor_level"] = None
+    numeric_number_payload["rooms"][0]["building_zone"] = None
+
+    current = client.get(draft_rooms_url(project_id, version_id)).json()
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": current["draft_etag"]},
+        json=numeric_number_payload,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["rooms"][0]["custom_values"]["number"] is None
 
 
 def test_rooms_validation_allows_duplicate_room_numbers(

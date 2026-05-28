@@ -457,9 +457,9 @@ mutations, locked-version, JSON download).
 ```jsonc
 {
   "id": "rm_<ULID>",
-  "name": "LIVING ROOM",
-  "number": "101",
-  "floor_level": "opt_01HXYZ...",     // single-select option_id; ref to body.single_select_options["rooms.floor_level"][*].id
+  "name": "LIVING ROOM",              // may be blank
+  "number": "101",                    // may be blank
+  "floor_level": "opt_01HXYZ...",     // single-select option_id; nullable; ref to body.single_select_options["rooms.floor_level"][*].id
   "building_zone": "opt_01HABC...",   // single-select option_id; ref to body.single_select_options["rooms.building_zone"][*].id; nullable
   "num_people": 2,
   "num_bedrooms": 0,
@@ -498,19 +498,17 @@ mutations, locked-version, JSON download).
    ascending via `naturalSortCompare`):
    | Column | Type | Validation | Notes |
    |---|---|---|---|
-   | `number` | string | required, unique-within-project (case-insensitive trim) | sort key |
-   | `name` | string | required | |
-   | `floor_level` | **single_select** (US-Builder-Tables criteria 16–17) | option_id ref into `single_select_options["rooms.floor_level"]`; required | sort follows option order, not label |
+   | `number` | string | nullable/blank allowed; unique-within-project only for non-blank values (case-insensitive trim) | sort key |
+   | `name` | string | nullable/blank allowed | |
+   | `floor_level` | **single_select** (US-Builder-Tables criteria 16–17) | nullable; when present, option_id ref into `single_select_options["rooms.floor_level"]` | sort follows option order, not label; blank rooms remain valid |
    | `building_zone` | **single_select** (US-Builder-Tables criteria 16–17) | option_id ref into `single_select_options["rooms.building_zone"]`; **nullable** | user-defined options; no enum imposed |
    | `num_people` | int | `>= 0` | |
    | `num_bedrooms` | int | `>= 0` | |
    | `icfa_factor` | float | `0.0 <= x <= 1.0`, default `1.0` | |
    | `erv_unit_ids` | **array of refs** | each id must reference an existing `tables.equipment.ervs[*].id`; empty array allowed | multi-select dropdown listing this project's ERV units by `name`; **a room may be served by 0, 1, or multiple ERVs** (per Q-EQ-2.4 resolution); updates live as ERVs are added |
 3. **Add row.** Hand-enter only (no catalog). Empty-defaults:
-   `number`, `name` blank (required); `floor_level` set to the
-   first option in `single_select_options["rooms.floor_level"]`
-   if any exist (else null with a "Pick a floor level" prompt
-   in the row-detail modal); `building_zone: null`; counts `0`;
+   `number`, `name` blank; `floor_level: null`;
+   `building_zone: null`; counts `0`;
    `icfa_factor: 1.0`; `erv_unit_ids: []`.
 4. **Row-detail modal** opens on row click. Title:
    `"Room: {number} — {name}"` (or `"New room"` for unsaved
