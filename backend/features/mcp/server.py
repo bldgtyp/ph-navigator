@@ -510,8 +510,9 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
         Works for both custom (``cf_*``) and core single-select fields.
         Deletes cascade to row clears; the response carries
-        ``cleared_row_count``. Required core single-select fields
-        (e.g. ``rooms.floor_level``) reject deletes without an explicit
+        ``cleared_row_count``. Table registries may mark built-in
+        single-select fields as requiring explicit replacement instead
+        of clear-to-null; those fields reject deletes without a
         ``replacements[old_option_id] = new_option_id`` mapping.
         """
         return tool_edit_custom_field_options(
