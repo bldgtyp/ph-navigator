@@ -376,6 +376,14 @@ The deferred backend + frontend test fixture rewrites:
   creation lives in `frontend/tests/e2e/_helpers.ts`, and backend tests
   share required empty v4 Rooms/Pumps table scaffolding through
   `backend/tests/project_document_helpers.py`.
+- Rebase follow-up included 2026-05-27:
+  the bundle rebased cleanly onto `origin/main` at `97e3465`. A second
+  Simplify pass extracted `buildTableSchema()` as the shared
+  production/test schema builder, changed unsupported schema mutation
+  fixture variants from silent no-ops to explicit failures, derived
+  backend required empty table scaffolds from `empty_project_document()`,
+  and hardened the Playwright custom-field cell selector to resolve the
+  intended column from the visible header.
 
 Approach: rewrite-in-place per test module. Don't try to land all
 remaining frontend fixtures in one commit; group by module and ship
@@ -396,11 +404,11 @@ Final pass:
 - Runtime fix included 2026-05-27: Pumps row insert/delete/cell-write
   payload builders now preserve `field_defs`, matching Rooms and
   preventing backend 422s during browser "Add pump" / edit flows.
+- Rebase status 2026-05-27: cleanly rebased onto `origin/main`
+  (`97e3465`) with `make lint`, `make typecheck`, `make test`,
+  `make smoke`, and the Rooms + Pumps Playwright smoke green afterward.
 
-Then rebase the whole bundle onto `origin/main` (resolving the
-`planning/features/editable-fields/archive/complete/plan-31-phase-3-built-in-type-changes.md` move
-conflict — main moved the file to `editable-fields/` while my branch
-modified the old path). Merge to main.
+Then merge/review the branch into `origin/main`.
 
 ## P3. Rules & Constraints
 

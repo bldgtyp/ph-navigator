@@ -27,7 +27,13 @@ test("editable Rooms and Pumps fields round-trip through the browser", async ({ 
   await roomDialog.getByRole("button", { name: "Save room" }).click();
   await expect(page.getByRole("gridcell", { name: "Browser Room", exact: true })).toBeVisible();
 
-  await page.locator('td[data-field-key^="cf_"]').first().dblclick();
+  const browserNoteHeader = page.getByRole("columnheader", { name: /^Browser Note\b/ });
+  const browserNoteColumnIndex = await browserNoteHeader.getAttribute("aria-colindex");
+  if (!browserNoteColumnIndex) throw new Error("Browser Note column is missing aria-colindex");
+  const browserRoomRow = page.getByRole("row").filter({
+    has: page.getByRole("gridcell", { name: "Browser Room", exact: true }),
+  });
+  await browserRoomRow.locator(`td[aria-colindex="${browserNoteColumnIndex}"]`).dblclick();
   await page.keyboard.type("round-tripped room note");
   await page.keyboard.press("Enter");
   await expect(page.getByText("round-tripped room note")).toBeVisible();
