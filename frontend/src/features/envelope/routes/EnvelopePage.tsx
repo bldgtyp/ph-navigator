@@ -78,7 +78,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   });
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
-  const catalogMaterialsQuery = useMaterialsQuery(false, canEdit && dialog?.kind === "segment");
+  const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
+  const catalogMaterialsQuery = useMaterialsQuery(
+    false,
+    canEdit && dialog?.kind === "segment" && catalogPickerOpen,
+  );
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
@@ -124,6 +128,10 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     window.addEventListener("keydown", clearOnEscape);
     return () => window.removeEventListener("keydown", clearOnEscape);
   }, [copiedAssignment]);
+
+  useEffect(() => {
+    if (catalogPickerOpen && dialog?.kind !== "segment") setCatalogPickerOpen(false);
+  }, [catalogPickerOpen, dialog]);
 
   if (subpath === "" || subpath === "/") {
     return (
@@ -359,10 +367,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         dialog={dialog}
         materials={query.data.project_materials}
         catalogMaterials={catalogMaterialsQuery.data ?? []}
+        catalogMaterialsLoading={catalogMaterialsQuery.isFetching}
         busy={commandMutation.isPending}
         error={commandError}
+        onOpenCatalogPicker={() => setCatalogPickerOpen(true)}
         onClose={() => {
           setDialog(null);
+          setCatalogPickerOpen(false);
           setCommandError(null);
         }}
         onCommand={(command) => void applyCommand(command)}
