@@ -1,6 +1,6 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -10,6 +10,15 @@ import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
 import { EnvelopePage } from "../routes/EnvelopePage";
 import type { EnvelopeReadResponse } from "../types";
+import {
+  PHASE16_BULK_ASSEMBLY_COUNT,
+  PHASE16_BULK_LAYER_COUNT,
+  PHASE16_BULK_SEGMENT_COUNT,
+  PHASE16_EDGE_ASSEMBLY_ID,
+  PHASE16_EDGE_ASSEMBLY_NAME,
+  phase16DriftFixture,
+  phase16EnvelopeFixture,
+} from "./phase16-fixtures";
 
 const PROJECT_ID = "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5";
 const VERSION_ID = "61561caa-44d0-401d-9daa-0fa113df8340";
@@ -236,6 +245,38 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(initialWidth);
   });
 
+  test("collapsed assembly sidebar preserves active assembly and zoom", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    const zoomedWidth = screen.getByTestId("assembly-canvas").getAttribute("style");
+
+    await userEvent.click(screen.getByRole("button", { name: "Collapse assembly sidebar" }));
+
+    expect(screen.queryByRole("link", { name: /WALL-C3/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
+    );
+    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
+    expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(zoomedWidth);
+
+    await userEvent.click(screen.getByRole("button", { name: "Expand assembly sidebar" }));
+
+    expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
+    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
+  });
+
+  test("assembly legend is scoped to active materials and shows lambda status", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const legend = await screen.findByRole("complementary", { name: "Material legend" });
+    expect(within(legend).getByText("Wood fiber board")).toBeInTheDocument();
+    expect(within(legend).getByText("0.038 W/(m-K)")).toBeInTheDocument();
+    expect(within(legend).queryByText("Dense-pack cellulose")).not.toBeInTheDocument();
+    expect(within(legend).queryByText("Unused air barrier")).not.toBeInTheDocument();
+  });
+
   test("specifications render segment use-site notes and hide unused na cards in viewer mode", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`, {
       projectOverride: { access_mode: "viewer" },
@@ -362,7 +403,7 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     expect(await screen.findByText("1 material copy needs catalog review.")).toBeInTheDocument();
-    expect(screen.getByText("Catalog drift")).toBeInTheDocument();
+    expect(await screen.findByText("Catalog drift")).toBeInTheDocument();
   });
 
   test("invalid assembly id redirects to the first sorted assembly", async () => {
@@ -436,7 +477,7 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByRole("link", { name: /WALL-C3/ });
-    await userEvent.click(screen.getAllByRole("button", { name: "Thickness" })[0]!);
+    await userEvent.click(screen.getByRole("button", { name: "Edit layer 1 thickness" }));
     const thicknessInput = screen.getByLabelText("Thickness (mm)");
     await userEvent.clear(thicknessInput);
     await userEvent.type(thicknessInput, "50");
@@ -459,6 +500,73 @@ describe("EnvelopePage", () => {
     });
   });
 
+  test("segment material picker gates catalog loading until From catalog opens", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    expect(catalogMaterialFetchCalls()).toHaveLength(0);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+
+    expect(await screen.findByRole("dialog", { name: "Segment properties" })).toBeInTheDocument();
+    expect(catalogMaterialFetchCalls()).toHaveLength(0);
+
+    await userEvent.click(screen.getByRole("tab", { name: "From catalog" }));
+
+    expect(
+      await screen.findByRole("option", { name: "Insulation / Cork board" }),
+    ).toBeInTheDocument();
+    expect(catalogMaterialFetchCalls()).toHaveLength(1);
+  });
+
+  test("segment material picker posts project and hand-enter material commands", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Project material"), "pmat_cellulose");
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+    await userEvent.click(screen.getByRole("tab", { name: "Hand-enter" }));
+    await userEvent.type(screen.getByPlaceholderText("Hand-enter material"), "Mineral wool");
+    await userEvent.click(screen.getByRole("button", { name: "Add material" }));
+
+    const commands = commandRequestBodies();
+    expect(commands).toContainEqual({
+      command: {
+        kind: "pick_project_material",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+        segment_id: "seg_insul",
+        project_material_id: "pmat_cellulose",
+      },
+    });
+    expect(commands).toContainEqual({
+      command: {
+        kind: "hand_enter_material",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+        segment_id: "seg_insul",
+        name: "Mineral wool",
+      },
+    });
+  });
+
   test("locked editor version loads saved source and keeps edit action disabled", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
       projectOverride: { active_version: { ...project.active_version!, locked: true } },
@@ -470,6 +578,53 @@ describe("EnvelopePage", () => {
       expect.stringContaining("/envelope?source=version"),
       expect.objectContaining({ credentials: "include" }),
     );
+  });
+
+  test("phase 16 scale fixture keeps edge cases visible and locked mode read-only", async () => {
+    const payload = phase16EnvelopeFixture(PROJECT_ID, VERSION_ID, { source: "version" });
+    expect(payload.assemblies).toHaveLength(PHASE16_BULK_ASSEMBLY_COUNT + 1);
+    expect(payload.assemblies.at(-1)?.layers).toHaveLength(PHASE16_BULK_LAYER_COUNT);
+    expect(payload.assemblies.at(-1)?.layers[0]?.segments).toHaveLength(PHASE16_BULK_SEGMENT_COUNT);
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(payload));
+      if (url.includes("/envelope/material-catalog-drift?")) {
+        return Promise.resolve(jsonResponse(phase16DriftFixture(PROJECT_ID, VERSION_ID)));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/${PHASE16_EDGE_ASSEMBLY_ID}`, {
+      projectOverride: { active_version: { ...project.active_version!, locked: true } },
+    });
+
+    expect(await screen.findByText("Locked version")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: PHASE16_EDGE_ASSEMBLY_NAME })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "PHASE16-BULK-12" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", {
+        name: /Edit Extremely long wood-fiber insulation product name/,
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByTitle(
+        "Extremely long wood-fiber insulation product name used to test clipped labels - 12.7 mm",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTitle("No material - 38.1 mm")).toBeInTheDocument();
+    expect(screen.getByText("Missing lambda")).toBeInTheDocument();
+
+    const legend = screen.getByRole("complementary", { name: "Material legend" });
+    expect(within(legend).getByText(/Extremely long wood-fiber/)).toBeInTheDocument();
+    expect(within(legend).getByText("Cavity insulation missing lambda")).toBeInTheDocument();
+    expect(within(legend).queryByText("Bulk fixture material 1")).not.toBeInTheDocument();
+    expect(within(legend).queryByText("Unused QA-only membrane")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/envelope?source=version"),
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(catalogMaterialFetchCalls()).toHaveLength(0);
   });
 
   test("download warns when draft is dirty and calls saved-version export", async () => {
@@ -543,6 +698,18 @@ function jsonResponse(body: unknown): Response {
   });
 }
 
+function catalogMaterialFetchCalls() {
+  return fetchMock.mock.calls.filter((call) =>
+    String(call[0]).includes("/api/v1/catalogs/materials"),
+  );
+}
+
+function commandRequestBodies(): unknown[] {
+  return fetchMock.mock.calls
+    .filter((call) => String(call[0]).includes("/draft/envelope/commands"))
+    .map((call) => JSON.parse(call[1]?.body as string));
+}
+
 function defaultFetchImplementation(url: string): Promise<Response> {
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
@@ -580,6 +747,35 @@ function defaultFetchImplementation(url: string): Promise<Response> {
             original_filename: "install.png",
             display_name: "install.png",
             size_bytes: 4321,
+          },
+        ],
+      }),
+    );
+  }
+  if (url.includes("/api/v1/catalogs/materials")) {
+    return Promise.resolve(
+      jsonResponse({
+        items: [
+          {
+            id: "cat_cork",
+            name: "Cork board",
+            category: "Insulation",
+            conductivity_w_mk: 0.042,
+            density_kg_m3: 115,
+            specific_heat_j_kgk: 1900,
+            emissivity: 0.9,
+            current_version_id: "catver_cork",
+            catalog_schema_version: 1,
+            version_label: "Current",
+            version_date: "2026-05-27",
+            argb_color: null,
+            notes: null,
+            source_provenance: null,
+            is_active: true,
+            created_at: "2026-05-27T20:00:00Z",
+            created_by: null,
+            updated_at: "2026-05-27T20:00:00Z",
+            updated_by: null,
           },
         ],
       }),

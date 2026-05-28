@@ -1,4 +1,15 @@
-import { Download, Minus, Plus } from "lucide-react";
+import {
+  Copy,
+  Download,
+  FlipHorizontal,
+  type LucideIcon,
+  Layers,
+  Minus,
+  Pencil,
+  Plus,
+  Shapes,
+  Trash2,
+} from "lucide-react";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import {
   formatLengthFromMm,
@@ -55,7 +66,7 @@ export function AssemblyHeader({
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
   return (
     <header className="assembly-header">
-      <div>
+      <div className="assembly-picker-field">
         <label htmlFor="assembly-picker">Assembly</label>
         <select
           id="assembly-picker"
@@ -91,75 +102,91 @@ export function AssemblyHeader({
         </div>
       </dl>
       <div className="assembly-toolbar" aria-label="Assembly tools">
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Zoom out"
-          onClick={onZoomOut}
-          data-tooltip="Zoom out"
-        >
-          <Minus size={16} aria-hidden="true" />
-        </button>
+        <AssemblyToolButton label="Zoom out" tooltip="Zoom out" icon={Minus} onClick={onZoomOut} />
         <span data-testid="canvas-zoom">{Math.round(zoom * 100)}%</span>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Zoom in"
-          onClick={onZoomIn}
-          data-tooltip="Zoom in"
-        >
-          <Plus size={16} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Download constructions HBJSON"
-          onClick={onExportHbjson}
+        <AssemblyToolButton label="Zoom in" tooltip="Zoom in" icon={Plus} onClick={onZoomIn} />
+        <AssemblyToolButton
+          label="Download constructions HBJSON"
+          tooltip="Download constructions (HBJSON)"
+          icon={Download}
           disabled={exportBusy}
-          data-tooltip="Download constructions (HBJSON)"
-        >
-          <Download size={16} aria-hidden="true" />
-        </button>
-        <button type="button" className="secondary-button" disabled={!canEdit} onClick={onRename}>
-          Rename
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
+          onClick={onExportHbjson}
+        />
+        <AssemblyToolButton
+          label="Rename"
+          tooltip="Rename assembly"
+          icon={Pencil}
+          disabled={!canEdit}
+          onClick={onRename}
+        />
+        <AssemblyToolButton
+          label="Type"
+          tooltip="Change assembly type"
+          icon={Shapes}
           disabled={!canEdit}
           onClick={onTypeChange}
-        >
-          Type
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
+        />
+        <AssemblyToolButton
+          label="Duplicate"
+          tooltip="Duplicate assembly"
+          icon={Copy}
           disabled={!canEdit}
           onClick={onDuplicate}
-        >
-          Duplicate
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
+        />
+        <AssemblyToolButton
+          label="Flip outside"
+          tooltip="Flip outside"
+          icon={FlipHorizontal}
           disabled={!canEdit}
           onClick={onFlipOrientation}
-        >
-          Flip outside
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
+        />
+        <AssemblyToolButton
+          label="Flip layers"
+          tooltip="Flip layers"
+          icon={Layers}
           disabled={!canEdit}
           onClick={onFlipLayers}
+        />
+        <button
+          type="button"
+          className="danger-button assembly-delete-button"
+          disabled={!canEdit}
+          aria-label="Delete"
+          data-tooltip="Delete assembly"
+          onClick={onDelete}
         >
-          Flip layers
-        </button>
-        <button type="button" className="danger-button" disabled={!canEdit} onClick={onDelete}>
+          <Trash2 size={16} aria-hidden="true" />
           Delete
         </button>
       </div>
     </header>
+  );
+}
+
+function AssemblyToolButton({
+  label,
+  tooltip,
+  icon: Icon,
+  disabled = false,
+  onClick,
+}: {
+  label: string;
+  tooltip: string;
+  icon: LucideIcon;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="icon-button"
+      aria-label={label}
+      data-tooltip={tooltip}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon size={16} aria-hidden="true" />
+    </button>
   );
 }
 

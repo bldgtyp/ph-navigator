@@ -27,8 +27,8 @@ import {
   envelopeSpecificationsPath,
   isEnvelopeSubroute,
 } from "../paths";
-import { AssemblyCanvas, type CopiedAssignment } from "../components/AssemblyCanvas";
-import { AssemblyHeader } from "../components/AssemblyHeader";
+import { type CopiedAssignment } from "../components/AssemblyCanvas";
+import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
 import {
   EnvelopeEditorDialogs,
   type EnvelopeEditorDialogState,
@@ -38,8 +38,6 @@ import {
   EnvelopeErrorState,
   EnvelopeLoadingState,
 } from "../components/EnvelopeStates";
-import { EnvelopeSidebar } from "../components/EnvelopeSidebar";
-import { MaterialLegend } from "../components/MaterialLegend";
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from "../canvas-constants";
@@ -80,7 +78,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   });
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
-  const catalogMaterialsQuery = useMaterialsQuery(false, canEdit && dialog?.kind === "segment");
+  const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
+  const catalogMaterialsQuery = useMaterialsQuery(
+    false,
+    canEdit && dialog?.kind === "segment" && catalogPickerOpen,
+  );
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
@@ -126,6 +128,10 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     window.addEventListener("keydown", clearOnEscape);
     return () => window.removeEventListener("keydown", clearOnEscape);
   }, [copiedAssignment]);
+
+  useEffect(() => {
+    if (catalogPickerOpen && dialog?.kind !== "segment") setCatalogPickerOpen(false);
+  }, [catalogPickerOpen, dialog]);
 
   if (subpath === "" || subpath === "/") {
     return (
@@ -298,91 +304,76 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           ) : null}
         </div>
       ) : (
-        <div className="envelope-workbench">
-          <EnvelopeSidebar
-            projectId={project.id}
-            assemblies={assemblies}
-            activeId={activeAssembly.id}
-            search={searchParams}
-            canEdit={canEdit}
-            onAddAssembly={() => setDialog({ kind: "create-assembly" })}
-          />
-          <div className="assembly-workspace">
-            <AssemblyHeader
-              projectId={project.id}
-              assemblies={assemblies}
-              activeAssembly={activeAssembly}
-              search={searchParams}
-              zoom={zoom}
-              canEdit={canEdit}
-              thermal={thermalQuery.data ?? null}
-              thermalLoading={thermalQuery.isFetching}
-              exportBusy={exportMutation.isPending}
-              onZoomIn={() => setZoom((current) => Math.min(ZOOM_MAX, current + ZOOM_STEP))}
-              onZoomOut={() => setZoom((current) => Math.max(ZOOM_MIN, current - ZOOM_STEP))}
-              onExportHbjson={() => void exportHbjson()}
-              onRename={() => setDialog({ kind: "rename-assembly", assembly: activeAssembly })}
-              onTypeChange={() => setDialog({ kind: "type-assembly", assembly: activeAssembly })}
-              onDuplicate={() =>
-                setDialog({ kind: "duplicate-assembly", assembly: activeAssembly })
-              }
-              onDelete={() => setDialog({ kind: "delete-assembly", assembly: activeAssembly })}
-              onFlipOrientation={() =>
-                void applyCommand({ kind: "flip_orientation", assembly_id: activeAssembly.id })
-              }
-              onFlipLayers={() =>
-                void applyCommand({ kind: "flip_layers", assembly_id: activeAssembly.id })
-              }
-            />
-            {commandError && !dialog ? (
-              <p className="form-error" role="alert">
-                {commandError}
-              </p>
-            ) : null}
-            <AssemblyCanvas
-              assembly={activeAssembly}
-              materials={query.data.project_materials}
-              driftByMaterialId={driftByMaterialId}
-              zoom={zoom}
-              canEdit={canEdit}
-              copiedAssignment={copiedAssignment}
-              onEditLayer={(layer) => setDialog({ kind: "layer", assembly: activeAssembly, layer })}
-              onAddLayer={(layer, position) =>
-                setDialog({ kind: "add-layer", assembly: activeAssembly, layer, position })
-              }
-              onDeleteLayer={(layer) =>
-                setDialog({ kind: "delete-layer", assembly: activeAssembly, layer })
-              }
-              onEditSegment={(layer, segment) =>
-                setDialog({ kind: "segment", assembly: activeAssembly, layer, segment })
-              }
-              onAddSegment={(layer, segment, position) =>
-                setDialog({
-                  kind: "add-segment",
-                  assembly: activeAssembly,
-                  layer,
-                  segment,
-                  position,
-                })
-              }
-              onDeleteSegment={(layer, segment) =>
-                setDialog({ kind: "delete-segment", assembly: activeAssembly, layer, segment })
-              }
-              onCopyAssignment={setCopiedAssignment}
-              onPasteAssignment={pasteAssignment}
-            />
-            <MaterialLegend materials={query.data.project_materials} />
-          </div>
-        </div>
+        <AssemblyWorkspace
+          projectId={project.id}
+          assemblies={assemblies}
+          activeAssembly={activeAssembly}
+          materials={query.data.project_materials}
+          driftByMaterialId={driftByMaterialId}
+          search={searchParams}
+          zoom={zoom}
+          canEdit={canEdit}
+          thermal={thermalQuery.data ?? null}
+          thermalLoading={thermalQuery.isFetching}
+          exportBusy={exportMutation.isPending}
+          copiedAssignment={copiedAssignment}
+          onAddAssembly={() => setDialog({ kind: "create-assembly" })}
+          onZoomIn={() => setZoom((current) => Math.min(ZOOM_MAX, current + ZOOM_STEP))}
+          onZoomOut={() => setZoom((current) => Math.max(ZOOM_MIN, current - ZOOM_STEP))}
+          onExportHbjson={() => void exportHbjson()}
+          onRename={() => setDialog({ kind: "rename-assembly", assembly: activeAssembly })}
+          onTypeChange={() => setDialog({ kind: "type-assembly", assembly: activeAssembly })}
+          onDuplicate={() => setDialog({ kind: "duplicate-assembly", assembly: activeAssembly })}
+          onDelete={() => setDialog({ kind: "delete-assembly", assembly: activeAssembly })}
+          onFlipOrientation={() =>
+            void applyCommand({ kind: "flip_orientation", assembly_id: activeAssembly.id })
+          }
+          onFlipLayers={() =>
+            void applyCommand({ kind: "flip_layers", assembly_id: activeAssembly.id })
+          }
+          onEditLayer={(layer) => setDialog({ kind: "layer", assembly: activeAssembly, layer })}
+          onAddLayer={(layer, position) =>
+            setDialog({ kind: "add-layer", assembly: activeAssembly, layer, position })
+          }
+          onDeleteLayer={(layer) =>
+            setDialog({ kind: "delete-layer", assembly: activeAssembly, layer })
+          }
+          onEditSegment={(layer, segment) =>
+            setDialog({ kind: "segment", assembly: activeAssembly, layer, segment })
+          }
+          onAddSegment={(layer, segment, position) =>
+            setDialog({
+              kind: "add-segment",
+              assembly: activeAssembly,
+              layer,
+              segment,
+              position,
+            })
+          }
+          onDeleteSegment={(layer, segment) =>
+            setDialog({ kind: "delete-segment", assembly: activeAssembly, layer, segment })
+          }
+          onCopyAssignment={setCopiedAssignment}
+          onPasteAssignment={pasteAssignment}
+        >
+          {commandError && !dialog ? (
+            <p className="form-error" role="alert">
+              {commandError}
+            </p>
+          ) : null}
+        </AssemblyWorkspace>
       )}
       <EnvelopeEditorDialogs
         dialog={dialog}
         materials={query.data.project_materials}
         catalogMaterials={catalogMaterialsQuery.data ?? []}
+        catalogMaterialsLoading={catalogMaterialsQuery.isFetching}
         busy={commandMutation.isPending}
         error={commandError}
+        onOpenCatalogPicker={() => setCatalogPickerOpen(true)}
         onClose={() => {
           setDialog(null);
+          setCatalogPickerOpen(false);
           setCommandError(null);
         }}
         onCommand={(command) => void applyCommand(command)}

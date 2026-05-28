@@ -67,6 +67,24 @@ references, relational project entities, per-segment datasheet
 duplication, alert/confirm workflows, chatty per-property PATCH calls,
 and ambiguous catalog refresh behavior.
 
+The V2 UI should feel like the V1 Assembly Builder rebuilt inside the
+new PH-Navigator app shell, not like a generic admin table. The core
+spatial model is a three-pane Assembly workspace:
+
+1. a collapsible left assembly sidebar/drawer for browsing and adding
+   assemblies;
+2. a top assembly bar for active-assembly selection, summary metrics,
+   and compact tools;
+3. a main view where the to-scale layer/segment drawing is the primary
+   work surface.
+
+This is the "three-window" layout shorthand used in design notes, but
+the canonical implementation nouns are assembly sidebar/drawer,
+assembly top bar, and assembly main view. The sidebar/drawer and the
+top-bar assembly picker are both required. The sidebar/drawer supports
+scanning the assembly set. The picker supports quick active-assembly
+switching while the user's attention remains on the canvas.
+
 ## 3. Users And Modes
 
 ### 3.1 Editors
@@ -111,11 +129,14 @@ Locked versions are read-only for document data. For this feature:
 ### 4.1 In Scope
 
 - Envelope sub-tab routing for Assemblies and Specifications.
-- Assembly sidebar with add, rename, duplicate, delete, and select.
-- Assembly header with active assembly picker, total thickness,
+- V1-derived three-pane Assemblies layout: collapsible assembly
+  sidebar/drawer, top assembly bar, and primary canvas work surface.
+- Assembly sidebar/drawer with add, rename, duplicate, delete, and
+  select.
+- Assembly top bar with active assembly picker, total thickness,
   effective R-/U-value, zoom controls, toolbar actions, and overflow.
 - Proportional assembly canvas: ordered layers, side-by-side segments,
-  inside/outside labels, and material legend.
+  inside/outside labels, material colors, and material legend.
 - Layer operations: add above/below, edit thickness, delete with
   last-layer guard.
 - Segment operations: add left/right, edit material/width/CI/stud
@@ -998,22 +1019,43 @@ the empty state.
 
 ### 8.2 Assemblies Layout
 
-The Assemblies sub-tab is split into:
+The Assemblies sub-tab uses a V1-derived three-pane layout inside the
+new V2 app chrome:
 
-- collapsible left sidebar, about 260 px when open;
-- right workbench with header, toolbar, canvas, and legend.
+- **left assembly sidebar/drawer** - collapsible, about 260 px when
+  open;
+- **top assembly bar** - active assembly picker, metrics, and compact
+  tools;
+- **main assembly view** - to-scale canvas, orientation labels, and
+  material legend.
 
 The visual assembly is the primary work object. It should not feel like
 a decorative preview embedded in a generic card.
 
-### 8.3 Assembly Sidebar
+The current scaffold state, where the canvas collapses into a small
+table-like block with always-visible text links, is not acceptable as the
+finished v1 UI. The canvas must use the available main-view area, remain
+legible at expected BLDGTYP project scale, and keep the layer/segment
+composition visually dominant.
 
-Rows show assembly name only. Do not add thumbnails, R-values, or
-counts in v1.
+The three panes should align with V2's typography, borders, button
+styles, focus states, and color tokens. Do not copy V1's Material UI
+styling literally; copy the useful information architecture and
+interaction model.
+
+### 8.3 Assembly Sidebar / Drawer
+
+The sidebar behaves as a collapsible assembly drawer. It should be
+openable/collapsible without changing the active assembly and without
+resetting canvas zoom or scroll state.
+
+Rows show assembly name only. Do not add thumbnails, assembly type,
+R-values, segment counts, layer count, or thickness in v1.
 
 Rows sort with `naturalSortCompare`.
 
-Hover row actions:
+The drawer header includes the "Assemblies" label and a compact add
+button. Hover row actions:
 
 - rename;
 - duplicate;
@@ -1021,9 +1063,9 @@ Hover row actions:
 
 Edit controls are hidden for Viewers and locked versions.
 
-### 8.4 Assembly Header
+### 8.4 Assembly Top Bar
 
-The header includes:
+The top assembly bar includes:
 
 - "Assembly Details" title;
 - active assembly picker;
@@ -1035,7 +1077,17 @@ The header includes:
 - pick/paste/undo controls;
 - assembly overflow menu.
 
-HBJSON in/out actions do not live here. AirTable refresh does not exist.
+The active assembly picker stays in the top bar even when the drawer is
+open. The two controls serve different workflows and should not be
+deduplicated.
+
+Use compact icon buttons for tool actions where V2 already has icons
+available. Text buttons are appropriate for high-risk or explicit
+commands such as Delete, but the common tools should not become a row of
+wide rectangular labels.
+
+HBJSON in/out actions do not live in the main top bar. AirTable refresh
+does not exist.
 
 ### 8.5 Canvas
 
@@ -1046,24 +1098,31 @@ The canvas renders:
 - bottom orientation label;
 - material legend.
 
+Layers and segments use project-material colors. Missing or invalid
+colors fall back to V2 neutral tokens. Null-material segments use a
+neutral unfinished treatment and remain clickable/editable.
+
 The material legend lists each unique project material used in the
 active assembly, sorted by display name, with color swatch and
 conductivity / missing-conductivity indicator.
 
-Layer height and segment width must share one `canvasZoom` scale so the
-assembly's aspect ratio is never distorted. Horizontal overflow should
-scroll instead of compressing segments.
-
-Canvas proportions are based on canonical mm values and `canvasZoom`.
-Toggling IP/SI changes labels, tooltips, and editor units only; it must
-not change the relative geometry, scroll position, zoom state, or dirty
-draft state.
+Layer height and segment width must share one `canvasZoom` scale based
+on canonical mm values so the assembly's aspect ratio is never
+distorted. Horizontal overflow should scroll instead of compressing
+segments. Toggling IP/SI changes labels, tooltips, and editor units
+only; it must not change the relative geometry, scroll position, zoom
+state, or dirty draft state.
 
 Null-material segments render as unfinished:
 
 - blank or neutral fill;
 - dashed outline;
 - still clickable and editable.
+
+Layer thickness labels sit beside the layer thickness band, not inside a
+generic data table. Segment material labels sit inside or near the
+segment when there is room; narrow segments may fall back to tooltip or
+legend-only identification to avoid text overlap.
 
 ### 8.6 Layer And Segment Hover Controls
 
@@ -1076,6 +1135,14 @@ Preserve V1's compact hover-circle add buttons:
 
 Hide hover add controls during pick/paste mode, for Viewers, and on
 locked versions.
+
+Always-visible text links inside every layer and segment are a scaffold
+only. The v1 UI should keep the drawing quiet until the user hovers,
+focuses, enters keyboard navigation, or opens a contextual action
+surface.
+
+Keyboard users must be able to reach the same add/edit/delete actions
+without relying on hover.
 
 ### 8.7 Modals And Dialogs
 
@@ -1346,8 +1413,12 @@ Pydantic models during implementation.
 ### 12.1 Preserve From V1
 
 - visual layer/segment canvas;
+- three-pane Assembly Builder mental model: assembly sidebar/drawer, top
+  assembly bar, and primary canvas view;
 - default collapsed sidebar;
 - natural-sorted assembly list;
+- active-assembly switching from both sidebar/drawer rows and the
+  top-bar picker;
 - hover add-layer and add-segment controls;
 - three core edit modals;
 - total thickness and effective R-/U-value header labels;
@@ -1376,6 +1447,9 @@ Pydantic models during implementation.
 - Catalog drift is explicit and reviewable.
 - No local Assembly Builder unit-conversion helpers; use the shared
   IP/SI unit foundation.
+- No literal V1 visual skin. V2 uses the new app's CSS variables,
+  typography, controls, focus states, and responsive behavior while
+  preserving the V1 spatial and interaction model.
 
 ### 12.3 V1 Parity Audit Decisions
 
@@ -1436,6 +1510,15 @@ The feature is acceptable when:
     steel-stud spacing labels, material previews, material editor
     labels/values, total thickness, and thermal labels without dirtying
     the draft or changing canonical SI payloads.
+16. The Assemblies tab presents a coherent three-pane workspace:
+    collapsible assembly sidebar/drawer, top assembly bar, and main
+    to-scale canvas view.
+17. Layer and segment controls use V1-equivalent hover/focus affordances
+    rather than permanent text-link clutter inside every drawing cell.
+18. The V2 canvas visually matches V1's core experience at functional
+    parity: material colors, proportional layer thickness, proportional
+    segment width, inside/outside orientation labels, and a useful legend,
+    while using V2 styling rather than V1's literal component skin.
 
 ## 14. Test Expectations
 
@@ -1553,6 +1636,8 @@ Template:
 | 2026-05-27 | Phase 7 | Same-version catalog edits are real drift even when `current_version_id` is unchanged. Tests must edit the catalog row in place and assert field deltas, because version-only drift checks miss the current Materials catalog behavior. | Tightens §7.13 drift semantics: field comparison is required alongside catalog-version comparison. | Keep same-version field-delta fixtures in future catalog refresh tests and avoid UI predicates based only on version ids. |
 | 2026-05-27 | Phase 7 | Drift reports touch both the project document and global catalog, so they need explicit hot-path guards: load catalog source rows in one batch and do not query drift at all when the envelope read model has no catalog-origin materials. | Confirms §7.13 refresh is a review affordance, not part of every assembly read unless catalog-origin material state exists. | In Phase 8, decide whether drift belongs in the Envelope read model or remains a separately gated query; keep any separate query batched by catalog row id. |
 | 2026-05-27 | Phase 8 | MCP should expose one generic Assembly Builder write tool, `apply_envelope_command`, rather than one MCP tool per assembly/material command. The generic tool still validates the same discriminated `EnvelopeCommandRequest` as REST, preserves SI-canonical payloads, and tags drafts as `updated_via='mcp'`. | Confirms §5.9 and §15 resolved question 8: browser and MCP share the semantic command boundary; MCP is not a raw nested-patch API. | Keep future envelope MCP writes behind the command DTO and add specific convenience tools only if client ergonomics prove the generic command is insufficient. |
+| 2026-05-27 | Phase 13 planning | The current scaffold proves function but not V1-equivalent use. The durable UI contract is a V1-derived three-pane workspace updated to V2 app styling: collapsible assembly sidebar/drawer, top-bar assembly picker/metrics/tools, and primary to-scale canvas. | Tightens §2, §4.1, §8.2-§8.6, §12.1-§12.2, and §13 acceptance criteria. | Implement UI parity as focused Phases 13-16 before treating Assembly Builder as release-ready. |
+| 2026-05-27 | Phase 16 | UI parity evidence needs a deterministic edge-case fixture, not only screenshots from whatever project happens to be open. Thin layers, narrow segments, long material names, null materials, missing lambda, evidence IDs, drift data, and locked-mode read-only behavior should live in one reusable fixture. | Confirms §13 acceptance should be tested against deliberate scale/parity data before release closeout. | Use the Phase 16 fixture for the next browser-backed visual/responsive pass once a live API/dev-server target is available. |
 
 Entry rules:
 

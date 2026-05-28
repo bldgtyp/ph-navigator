@@ -41,11 +41,15 @@ work, known caveats, and the next phase to pick up.
 | 5 | `phase-05-thermal-hbjson-export.md` | Backend thermal overlay and HBJSON construction export. | Golden thermal fixtures pass and export rejects incomplete assemblies clearly. |
 | 6 | `phase-06-evidence-attachments-site-photos.md` | Datasheet and site-photo evidence workflows inside Specifications. | Evidence upload/preview/detach works without mutating old saved versions. |
 | 7 | `phase-07-catalog-refresh-drift.md` | Material catalog drift detection and per-material refresh. | Drift and source-deactivated states are reviewable and explicitly applied. |
-| 8 | `phase-08-mcp-hardening-release.md` | MCP tools, scale hardening, accessibility, docs, and release readiness. | Full feature passes local and browser gates with lessons folded back into the PRD. |
+| 8 | `phase-08-mcp-hardening-release.md` | MCP tools and semantic command hardening; remaining UI/browser release evidence is delegated to Phase 16. | MCP read/write tools share the browser command boundary and remaining browser gates have a single owner. |
 | 9 | `phase-09-backend-service-split.md` | Foundation refactor: split the 1061-line backend service module and replace the `isinstance` command cascade with a typed dispatch registry. | No backend envelope module exceeds the 600-line soft limit; existing tests pass unchanged. |
 | 10 | `phase-10-frontend-page-dialog-split.md` | Foundation refactor: decompose the three frontend files past the documented soft/hard limits; extract `useLengthDraft` and the attachment workflow. | No envelope frontend file exceeds the 300-line soft limit (with documented exceptions for declarative files); `EnvelopePage.test.tsx` passes unchanged. |
 | 11 | `phase-11-shared-constants-helpers.md` | Foundation refactor: name canvas calibration values, share `argbColor` and `downloadBlob` helpers, dedupe "next free name" loops. | No magic numbers in canvas / page files; new helpers ship with unit tests. |
 | 12 | `phase-12-docs-and-test-reorg.md` | Foundation closeout: add "why"-bearing docstrings on public service / thermal entry points; rename envelope tests by topic instead of phase. | Public service entry points and thermal math anchored to documented contracts; tests organized by concern. |
+| 13 | `phase-13-three-pane-assemblies-shell.md` | UI parity: reshape Assemblies into the V1-derived sidebar/drawer, top-bar, and main-view workspace using V2 styling. | Implemented shell has stable sidebar/top-bar switching with the canvas ready to occupy the main view; browser evidence remains for Phase 16. |
+| 14 | `phase-14-to-scale-canvas-hover-controls.md` | UI parity: replace the scaffold canvas with a to-scale colored layer/segment drawing and compact hover/focus controls. | Implemented canvas uses SI-canonical geometry, material colors, orientation labels, contextual controls, and an active-material legend; browser evidence remains for Phase 16. |
+| 15 | `phase-15-dialogs-material-picker-specifications-polish.md` | UI parity: polish Segment Properties, material picker, shared material editor, and Specifications QA cards. | Browser can complete material and specification workflows through V2-native dialogs that preserve V1's mental model. |
+| 16 | `phase-16-ui-parity-browser-hardening.md` | UI parity closeout: V1 parity audit, realistic scale fixture, browser evidence, locked/viewer verification, and docs-pass. | Assembly Builder is release-ready or remaining gaps are explicitly deferred/blocking with evidence. |
 
 ## Global Constraints
 
@@ -64,6 +68,11 @@ work, known caveats, and the next phase to pick up.
 - Keep frontend code under `frontend/src/features/envelope/` and
   backend code under `backend/features/envelope/`, unless a phase
   explicitly explains why existing feature packages own the work.
+- Preserve V1's Assembly Builder mental model for the UI parity phase:
+  collapsible assembly sidebar/drawer, top assembly bar with active
+  assembly picker, primary to-scale canvas view, compact hover/focus
+  controls, material colors, and legend. Update the visual skin to V2
+  styling rather than copying V1 literally.
 - Coordinate with the active custom-field / table-schema reshape before
   Phase 1. Do not begin envelope schema work while backend document
   schema/typecheck is in an intentionally broken transition state.
@@ -128,7 +137,9 @@ defaults are active unless a phase spike proves otherwise:
 - missing conductivity does not block Save but blocks valid thermal
   calculation/export;
 - `catalog_origin.local_overrides` is preserved verbatim after refresh
-  in v1.
+  in v1;
+- the V2 Assembly Builder keeps both assembly-switching affordances:
+  sidebar/drawer row selection and top-bar picker selection.
 
 ## Progress Ledger
 
@@ -141,8 +152,12 @@ defaults are active unless a phase spike proves otherwise:
 | 5 | Implemented on branch | Implemented on `codex/assembly-builder-phase-05` with backend thermal endpoint, shared thermal issue records, saved-version-only HBJSON export, metadata preservation, export 422 paths, frontend thermal label, shared download handling, and dirty-draft warning. Steel-stud regression, browser smoke, and export-shape hardening remain before closure. |
 | 6 | Implemented on branch | Implemented on `codex/assembly-builder-phase-06` with Specifications datasheet/photo evidence UI, generic asset attach/detach wiring, envelope attachment tests, shared URL resolution, and attachment row-resolution hardening. Browser smoke, Save As immutability workflow, and destructive photo-count dialogs remain. |
 | 7 | Implemented on branch | Implemented on `codex/assembly-builder-phase-07` with material catalog drift report, same-version field-delta detection, source-deactivated/missing states, per-material refresh command, badges, review summary, and refresh dialog. Browser smoke remains before closure. |
-| 8 | Active on branch | MCP envelope read/report tools and semantic command write tool implemented on `codex/assembly-builder-phase-07`; verified with scoped backend Ruff/Ty and `tests/test_mcp.py`. Scale fixture, browser hardening, full IP/SI smoke, V1 parity audit, and final release gates remain. |
+| 8 | In review | MCP envelope read/report tools and semantic command write tool implemented on `codex/assembly-builder-phase-07`; verified with scoped backend Ruff/Ty and `tests/test_mcp.py`. Remaining UI/browser release evidence is delegated to Phase 16. |
 | 9 | Implemented on branch | Implemented on `codex/assembly-builder-phase-09` with backend envelope service split, command dispatch registry, shared material-field constants, and drift transaction threading. Verified with scoped envelope Ruff/Ty/Pytest gates; full repo `make test` and `make typecheck` remain blocked by unrelated project-document custom-field test drift. |
 | 10 | Implemented on branch | Implemented on `assembly-builder` with frontend dialog decomposition, page helper extraction, shared `DialogActions`, dedicated `useLengthDraft` hook/test, attachment mutation hook, route helpers, and Specifications subcomponents. Scoped envelope lint/tests/type filter pass; full frontend build remains blocked by unrelated equipment/project-document/windows/shared table type drift. |
-| 11 | Proposed | Foundation refactor informed by `planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md`. No branch yet. Prefers to land after Phases 9-10. |
-| 12 | Proposed | Foundation closeout informed by `planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md`. No branch yet. Depends on Phases 9-11. |
+| 11 | Implemented on branch | Implemented on `assembly-builder` with canvas constants, shared ARGB/download helpers, and helper tests. Full frontend build remains blocked by unrelated equipment/project-document/windows/shared table drift. |
+| 12 | Implemented on branch | Implemented on `assembly-builder` with public-service documentation and envelope test reorganization. Full frontend build, repo-level `make typecheck`, and repo-level `make test` remain blocked by unrelated table drift; `make lint` passed. |
+| 13 | Implemented on branch | Three-pane Assemblies shell implemented on `codex/assembly-builder-ui-planning`: collapsible assembly drawer, top-bar picker/metrics/tools, main canvas area, scoped active-material legend, shared icon-button/tooltip utility styling, and regression coverage for collapse preserving active assembly and zoom. Browser evidence remains for Phase 16. |
+| 14 | Implemented on branch | To-scale DOM/CSS canvas implemented on `codex/assembly-builder-ui-planning`: orientation labels, colored layer/segment blocks, clipped stable labels, contextual hover/focus controls, contextual aria labels, active-material legend with lambda status, and regression coverage for legend scoping. Browser smoke is blocked locally by missing backend/API and remains owned by Phase 16. |
+| 15 | Implemented on branch | Segment Properties polish implemented on `codex/assembly-builder-ui-planning`: material-first preview, tabbed project/catalog/hand-enter picker, lazy catalog query gating, standalone shared material editor form, and direct regression coverage for catalog gating and material-source commands. Specifications remains usable through existing QA cards; final browser evidence remains for Phase 16. |
+| 16 | Implemented on branch | Deterministic Phase 16 scale/evidence fixture added on `codex/assembly-builder-ui-planning` with thin layers, narrow segments, long material names, null material, missing lambda, evidence IDs, catalog-origin drift data, 12 bulk assemblies, and locked-mode regression coverage. Browser smoke remains blocked by the current local API/dev-server setup and full frontend build remains blocked by unrelated equipment/project-document/shared table type drift. |
