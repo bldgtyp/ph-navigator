@@ -121,7 +121,7 @@ function builtInFieldDef(
   };
 }
 
-const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Record-ID", "formula"),
   builtInFieldDef("number", "Number", "short_text"),
   builtInFieldDef("name", "Name", "short_text"),
@@ -133,7 +133,7 @@ const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("erv_unit_ids", "ERVs", "long_text"),
 ];
 
-const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Record-ID", "short_text"),
   builtInFieldDef(PUMP_DEVICE_TYPE_KEY, "Device", "single_select"),
   builtInFieldDef("use", "Use", "short_text"),
@@ -461,6 +461,7 @@ export function pumpsPayloadFromRowInsert(
   return {
     pumps: sortedPumps([...current.pumps, ...built]),
     single_select_options: clonePumpOptions(current),
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -472,6 +473,7 @@ export function pumpsPayloadFromRowDelete(
   return {
     pumps: current.pumps.filter((pump) => !toDelete.has(pump.id)),
     single_select_options: clonePumpOptions(current),
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -552,6 +554,7 @@ export function pumpsPayloadFromCellWrites(
   return {
     pumps: sortedPumps(pumps),
     single_select_options: options,
+    field_defs: [...current.field_defs],
   };
 }
 

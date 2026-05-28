@@ -1,5 +1,5 @@
 import type { CatalogOrigin } from "../project_document/catalog-origin";
-export type { CatalogTableName } from "../project_document/catalog-origin";
+export type { CatalogOrigin, CatalogTableName } from "../project_document/catalog-origin";
 
 export const WINDOW_TYPES_TABLE_NAME = "window_types";
 

@@ -3,6 +3,11 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { App } from "./app/App";
+import {
+  buildRoom,
+  roomsBuiltInFieldDefs,
+  withRoomCustomValues,
+} from "./features/equipment/testing/testFixtures";
 
 const fetchMock = vi.fn();
 
@@ -103,7 +108,7 @@ const roomsSlicePayload = {
   version_etag: "version-etag",
   draft_etag: null,
   rooms: [],
-  custom_fields: [],
+  field_defs: roomsBuiltInFieldDefs,
   single_select_options: {
     "rooms.floor_level": [],
     "rooms.building_zone": [],
@@ -1075,6 +1080,7 @@ describe("App", () => {
           source: "draft",
           draft_etag: "draft-etag",
           rooms: saved.rooms,
+          field_defs: saved.field_defs ?? roomsSlicePayload.field_defs,
           single_select_options: saved.single_select_options,
         });
       }
@@ -1111,19 +1117,14 @@ describe("App", () => {
     window.history.pushState({}, "", `/projects/${projectPayload.id}/rooms`);
     const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
     const draftUrl = draftSummaryUrl();
-    const room = {
-      id: "rm_101",
-      number: "101",
-      name: "Living Room",
-      floor_level: "opt_ground",
-      building_zone: null,
-      num_people: 0,
-      num_bedrooms: 0,
-      icfa_factor: 1,
-      erv_unit_ids: [],
-      catalog_origin: null,
-      notes: null,
-    };
+    const room = withRoomCustomValues(
+      buildRoom({
+        id: "rm_101",
+        floor_level: "opt_ground",
+        building_zone: null,
+      }),
+      { number: "101", name: "Living Room" },
+    );
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === `/api/v1/projects/${projectPayload.id}`) {

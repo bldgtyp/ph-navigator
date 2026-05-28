@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { createProject, openHeaderMenu, signIn } from "./_helpers";
+import { addShortTextField, createProject, openHeaderMenu, signIn } from "./_helpers";
 
 // Plan-17 P4.10 — exit-criteria Playwright walkthrough for the
 // formula custom-field UX against a running dev stack. Mirrors the
@@ -96,14 +96,6 @@ test("custom-fields Phase 4 formula walkthrough", async ({ page }) => {
     fullPage: false,
   });
 });
-
-async function addShortTextField(page: Page, name: string): Promise<void> {
-  await page.getByRole("button", { name: "Add field" }).click();
-  const dialog = page.getByRole("dialog", { name: "Add field" });
-  await dialog.getByLabel("Field name").fill(name);
-  await dialog.getByRole("button", { name: /Add field/ }).click();
-  await expect(dialog).toBeHidden();
-}
 
 async function openFieldConfigDialog(page: Page, fieldName: string) {
   await openHeaderMenu(page, fieldName);

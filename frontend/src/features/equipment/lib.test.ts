@@ -9,6 +9,9 @@ import {
   replaceRoomOptionsPayload,
   nextRoomsPayload,
   optionLabel,
+  pumpsPayloadFromCellWrites,
+  pumpsPayloadFromRowDelete,
+  pumpsPayloadFromRowInsert,
   remoteSliceChangesActiveRoom,
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
@@ -18,73 +21,28 @@ import {
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
 import type { TableFieldDef } from "../../shared/ui/data-table";
+import { tableFieldDefsToFieldDefs } from "../../shared/ui/data-table";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
   type RoomRow,
   type RoomsSlice,
 } from "./types";
-
-const createdAt = "2026-05-25T00:00:00Z";
-
-function builtInField(
-  fieldKey: string,
-  displayName: string,
-  fieldType: TableFieldDef["field_type"],
-): TableFieldDef {
-  return {
-    field_key: fieldKey,
-    display_name: displayName,
-    field_type: fieldType,
-    config: {},
-    description: null,
-    origin: "built_in",
-    created_at: createdAt,
-    created_by: null,
-  };
-}
-
-const roomsBuiltInFieldDefs: TableFieldDef[] = [
-  builtInField("record_id", "Record-ID", "formula"),
-  builtInField("number", "Number", "short_text"),
-  builtInField("name", "Name", "short_text"),
-  builtInField("floor_level", "Floor", "single_select"),
-  builtInField("building_zone", "Zone", "single_select"),
-  builtInField("num_people", "People", "number"),
-  builtInField("num_bedrooms", "Bedrooms", "number"),
-  builtInField("icfa_factor", "iCFA", "number"),
-];
-
-function customField(overrides: Partial<TableFieldDef> = {}): TableFieldDef {
-  const fieldKey = overrides.field_key ?? "cf_text";
-  return {
-    field_key: fieldKey,
-    display_name: "Test",
-    field_type: "short_text",
-    config: {},
-    description: null,
-    origin: "custom",
-    created_at: createdAt,
-    created_by: null,
-    ...overrides,
-  };
-}
-
-function withCustomValues(room: RoomRow, customValues: Partial<RoomRow["custom_values"]>): RoomRow {
-  return {
-    ...room,
-    custom_values: {
-      ...room.custom_values,
-      ...customValues,
-    },
-  };
-}
+import {
+  buildPump,
+  buildCustomField as customField,
+  buildRoom,
+  buildPumpsSlice,
+  pumpsBuiltInFieldDefs,
+  roomsBuiltInFieldDefs,
+  withRoomCustomValues as withCustomValues,
+} from "./testing/testFixtures";
 
 function roomFixture(
   overrides: Partial<Omit<RoomRow, "custom_values">> = {},
   customValues: Partial<RoomRow["custom_values"]> = {},
 ): RoomRow {
-  return withCustomValues({ ...emptyRoom(), ...overrides }, customValues);
+  return withCustomValues(buildRoom(overrides), customValues);
 }
 
 const baseSlice: RoomsSlice = {
@@ -382,7 +340,7 @@ describe("equipment room helpers", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
-        { ...emptyRoom(), id: "rm_1", number: "101", name: "Living", floor_level: "opt_ground" },
+        roomFixture({ id: "rm_1", floor_level: "opt_ground" }, { number: "101", name: "Living" }),
       ],
       single_select_options: {
         "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
@@ -450,7 +408,9 @@ describe("equipment room helpers", () => {
   // silently filters dragged-reorder entries out of view.columnOrder
   // and the user's drag is undone on render.
   test("roomsTableColumnsForSanitize emits ids that match RoomsTable column ids", () => {
-    const columns = roomsTableColumnsForSanitize(baseSlice.field_defs);
+    const columns = roomsTableColumnsForSanitize(
+      tableFieldDefsToFieldDefs({ tableKey: "rooms", fieldDefs: baseSlice.field_defs }),
+    );
     const ids = columns.map((column) => column.id);
     expect(ids).toEqual([
       "record_id",
@@ -461,6 +421,7 @@ describe("equipment room helpers", () => {
       "num_people",
       "num_bedrooms",
       "icfa_factor",
+      "erv_unit_ids",
     ]);
     expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");
     expect(ROOM_BUILDING_ZONE_COLUMN_ID).toBe("building_zone");
@@ -721,5 +682,42 @@ describe("equipment room helpers", () => {
     ]);
 
     expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
+  });
+
+  test("pumpsPayloadFromRowInsert preserves field_defs", () => {
+    const current = buildPumpsSlice();
+
+    const payload = pumpsPayloadFromRowInsert(
+      current,
+      [{ rowId: "pmp_browser", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) => ({ ...buildPump(), id: rowId }),
+    );
+
+    expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
+  });
+
+  test("pumpsPayloadFromCellWrites preserves field_defs", () => {
+    const current = buildPumpsSlice({
+      pumps: [buildPump({ id: "pmp_1" })],
+    });
+
+    const payload = pumpsPayloadFromCellWrites(
+      current,
+      [{ rowId: "pmp_1", fieldKey: "record_id", value: "P-2" }],
+      {},
+    );
+
+    expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
+  });
+
+  test("pumpsPayloadFromRowDelete preserves field_defs", () => {
+    const pump = buildPump({ id: "pmp_1" });
+    const current = buildPumpsSlice({ pumps: [pump] });
+
+    const payload = pumpsPayloadFromRowDelete(current, [
+      { rowId: "pmp_1", row: pump, anchorRowId: null },
+    ]);
+
+    expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
   });
 });

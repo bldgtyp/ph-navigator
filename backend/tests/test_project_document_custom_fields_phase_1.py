@@ -20,6 +20,7 @@ from features.auth.service import create_or_update_user
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.tables._dev_seed import seed_rooms_custom_field
+from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from main import app
 
 ORIGIN = "http://localhost:5173"
@@ -101,37 +102,41 @@ def _seed_custom_field_directly(version_id: object, display_name: str) -> str:
                 "version_id": version_id,
             },
         )
-    return custom_field.id
+    return custom_field.field_key
 
 
 def _build_room_payload(custom_field_id: str, custom_value: str | None = "needs paint") -> dict[str, Any]:
     return {
-        "rooms": [
+        "field_defs": [
+            *[field.model_dump(mode="json") for field in ROOMS_BUILT_IN_FIELD_DEFS],
             {
-                "id": "rm_living",
-                "number": "101",
-                "name": "Living Room",
-                "floor_level": "opt_ground",
-                "building_zone": "opt_residential",
-                "num_people": 2,
-                "num_bedrooms": 0,
-                "icfa_factor": 1.0,
-                "erv_unit_ids": [],
-                "catalog_origin": None,
-                "notes": None,
-                "custom": {custom_field_id: custom_value} if custom_value is not None else {},
-            }
-        ],
-        "custom_fields": [
-            {
-                "id": custom_field_id,
-                "field_key": None,
+                "field_key": custom_field_id,
                 "display_name": "Paint",
                 "field_type": "short_text",
                 "config": {},
                 "description": None,
+                "default": None,
+                "origin": "custom",
                 "created_at": "2026-05-24T12:00:00Z",
                 "created_by": None,
+            },
+        ],
+        "rooms": [
+            {
+                "id": "rm_living",
+                "floor_level": "opt_ground",
+                "building_zone": "opt_residential",
+                "icfa_factor": 1.0,
+                "erv_unit_ids": [],
+                "catalog_origin": None,
+                "notes": None,
+                "custom_values": {
+                    "number": "101",
+                    "name": "Living Room",
+                    "num_people": 2,
+                    "num_bedrooms": 0,
+                    **({custom_field_id: custom_value} if custom_value is not None else {}),
+                },
             }
         ],
         "single_select_options": {
@@ -156,10 +161,11 @@ def test_seed_and_read_returns_custom_field_on_rooms_slice(
     response = client.get(_saved_rooms_url(project_id, version_id))
     assert response.status_code == 200
     body = response.json()
-    assert len(body["custom_fields"]) == 1
-    custom = body["custom_fields"][0]
-    assert custom["id"] == cf_id
-    assert custom["id"].startswith("cf_")
+    custom_fields = [field for field in body["field_defs"] if field["origin"] == "custom"]
+    assert len(custom_fields) == 1
+    custom = custom_fields[0]
+    assert custom["field_key"] == cf_id
+    assert custom["field_key"].startswith("cf_")
     assert custom["field_type"] == "short_text"
 
 
@@ -181,7 +187,7 @@ def test_write_and_read_custom_value_round_trips(clean_document_tables: None) ->
     assert write.status_code == 200
 
     reloaded = client.get(_draft_rooms_url(project_id, version_id))
-    assert reloaded.json()["rooms"][0]["custom"] == {cf_id: "needs paint"}
+    assert reloaded.json()["rooms"][0]["custom_values"][cf_id] == "needs paint"
 
 
 def test_orphan_custom_value_is_rejected(clean_document_tables: None) -> None:
@@ -193,9 +199,9 @@ def test_orphan_custom_value_is_rejected(clean_document_tables: None) -> None:
 
     draft = client.get(_draft_rooms_url(project_id, version_id))
     payload = _build_room_payload(cf_id, "needs paint")
-    # Strip the custom_fields entry but keep the row.custom reference —
+    # Strip the custom field entry but keep the row.custom_values reference —
     # the document validator must reject this as `invalid_project_document`.
-    payload["custom_fields"] = []
+    payload["field_defs"] = [field.model_dump(mode="json") for field in ROOMS_BUILT_IN_FIELD_DEFS]
     response = client.put(
         _draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": draft.json()["version_etag"]},
@@ -230,9 +236,10 @@ def test_save_flushes_custom_field_to_version(clean_document_tables: None) -> No
     saved = client.get(_saved_rooms_url(project_id, version_id))
     assert saved.status_code == 200
     body = saved.json()
-    assert len(body["custom_fields"]) == 1
-    assert body["custom_fields"][0]["id"] == cf_id
-    assert body["rooms"][0]["custom"] == {cf_id: "needs paint"}
+    custom_fields = [field for field in body["field_defs"] if field["origin"] == "custom"]
+    assert len(custom_fields) == 1
+    assert custom_fields[0]["field_key"] == cf_id
+    assert body["rooms"][0]["custom_values"][cf_id] == "needs paint"
 
 
 def test_save_as_copies_custom_field_and_values_to_new_version(
@@ -263,8 +270,9 @@ def test_save_as_copies_custom_field_and_values_to_new_version(
     new_saved = client.get(_saved_rooms_url(project_id, new_version_id))
     assert new_saved.status_code == 200
     new_body = new_saved.json()
-    assert new_body["custom_fields"][0]["id"] == cf_id
-    assert new_body["rooms"][0]["custom"] == {cf_id: "needs paint"}
+    custom_fields = [field for field in new_body["field_defs"] if field["origin"] == "custom"]
+    assert custom_fields[0]["field_key"] == cf_id
+    assert new_body["rooms"][0]["custom_values"][cf_id] == "needs paint"
 
 
 def test_locked_version_blocks_draft_write_to_custom_value(
@@ -302,4 +310,5 @@ def test_locked_version_blocks_draft_write_to_custom_value(
     assert save_as.status_code == 200
     copied_id = save_as.json()["version"]["id"]
     copied = client.get(_saved_rooms_url(project_id, copied_id))
-    assert copied.json()["custom_fields"][0]["id"] == cf_id
+    custom_fields = [field for field in copied.json()["field_defs"] if field["origin"] == "custom"]
+    assert custom_fields[0]["field_key"] == cf_id

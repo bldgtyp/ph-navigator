@@ -53,7 +53,6 @@ describe("useTableSchema", () => {
         ],
         fieldOverlay: {
           number: {
-            display_name: "Number",
             required: true,
             locked: ["delete", "duplicate"],
           },
@@ -84,6 +83,11 @@ describe("useTableSchema", () => {
     );
 
     expect(result.current.customFields.map((field) => field.field_key)).toEqual([
+      "cf_notes",
+      "cf_owner",
+    ]);
+    expect(result.current.tableFields.map((field) => field.field_key)).toEqual([
+      "number",
       "cf_notes",
       "cf_owner",
     ]);
