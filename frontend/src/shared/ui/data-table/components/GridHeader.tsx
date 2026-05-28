@@ -1,5 +1,4 @@
 import { flexRender, type Header, type Table } from "@tanstack/react-table";
-import { Lock } from "lucide-react";
 import {
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -13,6 +12,7 @@ import { AddFieldTailCell } from "./AddFieldTailCell";
 import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
 import { ColumnResizeHandle } from "./ColumnResizeHandle";
 import { CustomFieldDescriptionTooltip } from "./CustomFieldDescriptionTooltip";
+import { FieldTypeIcon } from "./FieldTypeIcon";
 import { HeaderContextMenu } from "./HeaderContextMenu";
 import { SortableHeaderCell } from "./SortableHeaderCell";
 
@@ -243,15 +243,7 @@ function DataTableHeaderCell<TRow>({
       }
     >
       <div className="data-table-header-row">
-        {schemaLocked ? (
-          <span
-            className="data-table-header-lock"
-            data-testid="data-table-header-lock"
-            title="This field has built-in attributes the user cannot edit."
-          >
-            <Lock aria-hidden size={12} />
-          </span>
-        ) : null}
+        {fieldDef ? <FieldTypeIcon fieldDef={fieldDef} /> : null}
         <span className="data-table-header-label">
           {flexRender(header.column.columnDef.header, header.getContext())}
         </span>
