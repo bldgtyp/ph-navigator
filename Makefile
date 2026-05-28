@@ -8,7 +8,7 @@
         object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
-        lint check check-backend check-frontend build-frontend format format-check \
+        lint check ci ci-backend ci-frontend check-backend check-frontend build-frontend format format-check \
         smoke seed-dev-user seed-dev-data e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
@@ -133,13 +133,28 @@ test-frontend:
 typecheck: ## Run backend static type checker
 	cd backend && uv run ty check
 
-check: check-backend check-frontend test-frontend build-frontend ## Run local CI parity checks plus format checks
+check: ci ## Alias for the full local CI parity gate
 
-check-backend: db-migrate-test ## Run backend CI parity checks against the dedicated *_test DB
+ci: ci-backend ci-frontend ## Run the GitHub Actions CI jobs locally
+
+ci-backend: db-wait db-create-test ## Run the backend GitHub Actions job locally
+	cd backend && uv python install 3.11
+	cd backend && uv sync --locked
 	cd backend && uv run ruff format --check .
 	cd backend && uv run ruff check .
 	cd backend && uv run ty check
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run alembic upgrade head
 	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest
+
+ci-frontend: ## Run the frontend GitHub Actions job locally
+	cd frontend && pnpm install --frozen-lockfile
+	cd frontend && pnpm run format:check
+	cd frontend && pnpm run lint
+	cd frontend && pnpm run check:all
+	cd frontend && pnpm test
+	cd frontend && pnpm run build
+
+check-backend: ci-backend ## Alias for backend CI parity checks
 
 e2e: ## Run Playwright end-to-end tests (frontend must be running)
 	cd frontend && pnpm run test:e2e
@@ -151,10 +166,7 @@ lint: ## Run linters (ruff + eslint)
 	cd backend && uv run ruff check .
 	cd frontend && pnpm run lint
 
-check-frontend: ## Run frontend structural guard checks
-	cd frontend && pnpm run format:check
-	cd frontend && pnpm run lint
-	cd frontend && pnpm run check:all
+check-frontend: ci-frontend ## Alias for frontend CI parity checks
 
 build-frontend: ## Build the frontend production bundle
 	cd frontend && pnpm run build

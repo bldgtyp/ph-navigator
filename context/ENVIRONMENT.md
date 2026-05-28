@@ -256,6 +256,8 @@ password was shared in chat or another durable channel, rotate it.
 - `make dev` — start Postgres + local object storage; prints how to
   launch backend + frontend
 - `make backend`, `make frontend`
+- `make ci` / `make check` — run the full local CI-parity gate
+- `make check-backend`, `make check-frontend` — run one CI job locally
 - `make object-store-up`, `make object-store-init`,
   `make object-store-down`
 - `make test`, `make typecheck`, `make lint`, `make format`,
@@ -264,6 +266,38 @@ password was shared in chat or another durable channel, rotate it.
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).
+
+## Code-change closeout gate
+
+Every code-changing session must end with the same local gate before the
+work is reported complete, committed, or opened as a PR:
+
+```bash
+make format
+make ci
+```
+
+`make format` runs Ruff format for backend Python and Prettier for
+frontend source. `make ci` mirrors `.github/workflows/ci.yml` in local
+form:
+
+1. backend: `uv python install 3.11`
+2. backend: `uv sync --locked`
+3. backend: `uv run ruff format --check .`
+4. backend: `uv run ruff check .`
+5. backend: `uv run ty check`
+6. backend: `DATABASE_URL=..._test uv run alembic upgrade head`
+7. backend: `DATABASE_URL=..._test uv run pytest`
+8. frontend: `pnpm install --frozen-lockfile`
+9. frontend: `pnpm run format:check`
+10. frontend: `pnpm run lint`
+11. frontend: `pnpm run check:all`
+12. frontend: `pnpm test`
+13. frontend: `pnpm run build`
+
+Narrow commands are fine while iterating, but the final accepted state is
+`make format` followed by a green `make ci`. If formatting changes files,
+review the diff and rerun `make ci` after those changes.
 
 ## Logging
 

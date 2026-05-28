@@ -90,10 +90,30 @@ Start here in `context/`:
 
 - `make setup`, `make sync`, `make dev`
 - `make backend`, `make frontend`
+- `make ci`, `make check`, `make check-backend`, `make check-frontend`
 - `make test`, `make typecheck`, `make lint`, `make format`,
   `make migrate`, `make smoke`
 - `make e2e` — Playwright end-to-end
 - `make help` for the full list
+
+## Mandatory closeout gate
+
+After any code-changing session, before reporting completion, committing,
+or opening a PR:
+
+1. Run `make format` from the repo root.
+2. Run `make ci` from the repo root.
+3. If `make format` changes files, inspect the diff and run `make ci`
+   after those changes.
+4. Do not treat the work as complete while any `make ci` step is red.
+   Fix the failure locally, then rerun `make ci`.
+
+`make ci` mirrors `.github/workflows/ci.yml`: backend locked `uv`
+sync, Ruff format check, Ruff lint, Ty, Alembic migration, pytest;
+frontend frozen `pnpm` install, Prettier check, ESLint, structural
+guards, Vitest, and production build. Use narrower commands while
+iterating, but the final gate is the full `make format` + `make ci`
+sequence.
 
 ## Testing UIs
 

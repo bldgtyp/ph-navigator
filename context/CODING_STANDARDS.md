@@ -150,23 +150,40 @@ identifiers, not contents. `request_id` is bound automatically by
 `request_context_middleware` — do not pass it manually. Full reference:
 `context/LOGGING.md`.
 
+## Mandatory Closeout Gate
+
+Every code-changing session must end with the full repo gate before the work
+is reported complete, committed, or opened as a PR:
+
+```bash
+make format
+make ci
+```
+
+`make ci` is the local mirror of `.github/workflows/ci.yml`: backend locked
+`uv` sync, Ruff format check, Ruff lint, Ty, Alembic migration, pytest;
+frontend frozen `pnpm` install, Prettier check, ESLint, structural guards,
+Vitest, and production build. A narrower command is useful while iterating,
+but it does not close a code change. If `make format` changes files, inspect
+the diff and rerun `make ci`.
+
 ### Backend Controls
 
-Required local checks before considering backend work complete:
+Useful focused backend checks while iterating:
 
 ```bash
 cd backend
+uv run ruff format --check .
 uv run ruff check .
 uv run ty check
 uv run pytest
 ```
 
-Repo-level equivalents may be used when available:
+Repo-level aliases:
 
 ```bash
-make lint
-make typecheck
-make test
+make check-backend
+make ci
 ```
 
 Current enforced controls live in `backend/pyproject.toml`:
@@ -196,7 +213,7 @@ For every backend feature or change:
 - Are module/function sizes still reviewable?
 - Do docstrings explain the important why behind policy, invariants, or
   non-obvious behavior?
-- Did `ruff`, `ty check`, and `pytest` pass through `uv` or the Makefile?
+- Did the final closeout gate pass: `make format` followed by `make ci`?
 
 ## Frontend TypeScript
 
@@ -349,22 +366,22 @@ Preferred split direction:
 
 ### Frontend Controls
 
-Required local checks before considering frontend work complete:
+Useful focused frontend checks while iterating:
 
 ```bash
 cd frontend
-pnpm run build
-pnpm test
-pnpm run lint
 pnpm run format:check
+pnpm run lint
+pnpm run check:all
+pnpm test
+pnpm run build
 ```
 
-Repo-level equivalents may be used when available:
+Repo-level aliases:
 
 ```bash
-make typecheck
-make test-frontend
-make lint
+make check-frontend
+make ci
 ```
 
 Near-term controls to add as the frontend grows:
@@ -389,5 +406,4 @@ For every frontend feature or change:
 - Are API types, route helpers, tab registries, and payload builders outside
   page component files?
 - Are component files still small enough to review?
-- Did `build`, frontend tests, lint, and format checks pass through `pnpm` or the
-  Makefile?
+- Did the final closeout gate pass: `make format` followed by `make ci`?
