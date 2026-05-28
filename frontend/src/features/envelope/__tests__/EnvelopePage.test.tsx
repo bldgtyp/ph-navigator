@@ -491,6 +491,73 @@ describe("EnvelopePage", () => {
     });
   });
 
+  test("segment material picker gates catalog loading until From catalog opens", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    expect(catalogMaterialFetchCalls()).toHaveLength(0);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+
+    expect(await screen.findByRole("dialog", { name: "Segment properties" })).toBeInTheDocument();
+    expect(catalogMaterialFetchCalls()).toHaveLength(0);
+
+    await userEvent.click(screen.getByRole("tab", { name: "From catalog" }));
+
+    expect(
+      await screen.findByRole("option", { name: "Insulation / Cork board" }),
+    ).toBeInTheDocument();
+    expect(catalogMaterialFetchCalls()).toHaveLength(1);
+  });
+
+  test("segment material picker posts project and hand-enter material commands", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Project material"), "pmat_cellulose");
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+    await userEvent.click(screen.getByRole("tab", { name: "Hand-enter" }));
+    await userEvent.type(screen.getByPlaceholderText("Hand-enter material"), "Mineral wool");
+    await userEvent.click(screen.getByRole("button", { name: "Add material" }));
+
+    const commands = commandRequestBodies();
+    expect(commands).toContainEqual({
+      command: {
+        kind: "pick_project_material",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+        segment_id: "seg_insul",
+        project_material_id: "pmat_cellulose",
+      },
+    });
+    expect(commands).toContainEqual({
+      command: {
+        kind: "hand_enter_material",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+        segment_id: "seg_insul",
+        name: "Mineral wool",
+      },
+    });
+  });
+
   test("locked editor version loads saved source and keeps edit action disabled", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
       projectOverride: { active_version: { ...project.active_version!, locked: true } },
@@ -575,6 +642,18 @@ function jsonResponse(body: unknown): Response {
   });
 }
 
+function catalogMaterialFetchCalls() {
+  return fetchMock.mock.calls.filter((call) =>
+    String(call[0]).includes("/api/v1/catalogs/materials"),
+  );
+}
+
+function commandRequestBodies(): unknown[] {
+  return fetchMock.mock.calls
+    .filter((call) => String(call[0]).includes("/draft/envelope/commands"))
+    .map((call) => JSON.parse(call[1]?.body as string));
+}
+
 function defaultFetchImplementation(url: string): Promise<Response> {
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
@@ -612,6 +691,35 @@ function defaultFetchImplementation(url: string): Promise<Response> {
             original_filename: "install.png",
             display_name: "install.png",
             size_bytes: 4321,
+          },
+        ],
+      }),
+    );
+  }
+  if (url.includes("/api/v1/catalogs/materials")) {
+    return Promise.resolve(
+      jsonResponse({
+        items: [
+          {
+            id: "cat_cork",
+            name: "Cork board",
+            category: "Insulation",
+            conductivity_w_mk: 0.042,
+            density_kg_m3: 115,
+            specific_heat_j_kgk: 1900,
+            emissivity: 0.9,
+            current_version_id: "catver_cork",
+            catalog_schema_version: 1,
+            version_label: "Current",
+            version_date: "2026-05-27",
+            argb_color: null,
+            notes: null,
+            source_provenance: null,
+            is_active: true,
+            created_at: "2026-05-27T20:00:00Z",
+            created_by: null,
+            updated_at: "2026-05-27T20:00:00Z",
+            updated_by: null,
           },
         ],
       }),

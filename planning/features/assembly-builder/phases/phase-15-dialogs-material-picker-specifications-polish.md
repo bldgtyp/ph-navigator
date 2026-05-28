@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-27
-TIME: 17:22 EDT
-STATUS: Proposed implementation plan.
+TIME: 21:23 EDT
+STATUS: Implemented on branch; review and browser evidence remain.
 AUTHOR: Codex
 SCOPE: Assembly Builder UI/Layout parity, phase 15.
 RELATED:
@@ -75,6 +75,25 @@ generic form dump.
   Phase 4 on-demand editing lesson intact.
 - Dialogs should be sized for real material names and notes without
   pushing actions below inaccessible scroll regions.
+
+## Implementation Notes - 2026-05-27
+
+- Segment Properties now opens as a material-first dialog with assigned
+  material preview, project/catalog/hand-enter picker tabs, geometry
+  controls, and the shared project-material editor available from the
+  same surface.
+- The Materials catalog query is gated until the user opens the "From
+  catalog" tab, and repeated active-tab clicks avoid no-op picker state
+  updates.
+- The shared `ProjectMaterialEditor` remains a standalone form when used
+  inside Segment Properties, so Enter in material fields updates the
+  material form instead of submitting segment geometry.
+- Focused frontend coverage now verifies catalog-query gating and
+  project-material plus hand-enter command payloads from the segment
+  picker.
+- Specifications QA cards were kept on the existing Phase 4/6/7 surface;
+  Phase 16 should browser-smoke those cards together with the new dialog
+  flow before release closeout.
 
 ## Verification
 

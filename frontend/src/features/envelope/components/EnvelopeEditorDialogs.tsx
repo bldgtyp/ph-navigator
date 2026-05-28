@@ -40,16 +40,20 @@ export function EnvelopeEditorDialogs({
   dialog,
   materials,
   catalogMaterials,
+  catalogMaterialsLoading,
   busy,
   error,
+  onOpenCatalogPicker,
   onClose,
   onCommand,
 }: {
   dialog: DialogState | null;
   materials: ProjectMaterial[];
   catalogMaterials: CatalogMaterial[];
+  catalogMaterialsLoading: boolean;
   busy: boolean;
   error: string | null;
+  onOpenCatalogPicker: () => void;
   onClose: () => void;
   onCommand: (command: EnvelopeCommand) => void;
 }) {
@@ -193,6 +197,7 @@ export function EnvelopeEditorDialogs({
         segment={dialog.segment}
         materials={materials}
         catalogMaterials={catalogMaterials}
+        catalogMaterialsLoading={catalogMaterialsLoading}
         busy={busy}
         error={error}
         onClose={onClose}
@@ -223,6 +228,7 @@ export function EnvelopeEditorDialogs({
             catalog_material_id,
           })
         }
+        onOpenCatalogPicker={onOpenCatalogPicker}
         onHandEnterMaterial={(name) =>
           onCommand({
             kind: "hand_enter_material",

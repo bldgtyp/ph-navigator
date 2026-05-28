@@ -2,7 +2,7 @@
 DATE: 2026-05-27
 TIME: 22:30 EDT
 STATUS: Active progress and next-steps tracker. Phases 13-16 added as
-       the V1-derived UI/Layout parity bundle; Phase 14 canvas is
+       the V1-derived UI/Layout parity bundle; Phase 15 dialog polish is
        implemented on the current branch.
 AUTHOR: Codex / Claude (Opus 4.7)
 SCOPE: Assembly Builder implementation progress after Phases 1-3 were
@@ -65,12 +65,13 @@ Completed implementation surface:
 
 Current UI/Layout finding:
 
-- the implementation is functionally broad and Phases 13-14 now give it
-  the V1-derived three-pane shell plus a to-scale canvas surface;
-- dialogs and material-picker polish are now the next major parity gap;
+- the implementation is functionally broad and Phases 13-15 now give it
+  the V1-derived three-pane shell, to-scale canvas surface, and
+  material-first Segment Properties workflow;
+- final browser parity evidence is now the next major UI/Layout gap;
 - the next UI work should treat the target as a V2-native version of the
-  V1 Assembly Builder: refined material workflow surfaces inside the
-  new sidebar/drawer, top-bar, and main-view structure.
+  V1 Assembly Builder and verify the new sidebar/drawer, top-bar,
+  main-view, canvas, dialogs, and Specifications workflow together.
 
 ## Verified Gates
 
@@ -170,7 +171,7 @@ Remaining before Phase 4 closure:
 
 ## Next Implementation Target
 
-Phase 14 is implemented on `codex/assembly-builder-ui-planning` and
+Phase 15 is implemented on `codex/assembly-builder-ui-planning` and
 should be reviewed with the current branch changes.
 
 Implemented UI parity surface:
@@ -188,10 +189,16 @@ Implemented UI parity surface:
 - shared icon-button and tooltip utility styling;
 - regression coverage that collapsing/reopening the drawer preserves
   active assembly and zoom, and that the legend remains scoped to active
-  materials.
+  materials;
+- material-first Segment Properties dialog with material preview,
+  project/catalog/hand-enter picker tabs, geometry controls, and
+  standalone shared material editor form;
+- lazy Materials catalog query gating that waits for the "From catalog"
+  tab and regression coverage for catalog gating plus project and
+  hand-enter material commands.
 
-Next implementation target after review is Phase 15 from
-`planning/features/assembly-builder/phases/phase-15-dialogs-material-picker-specifications-polish.md`.
+Next implementation target after review is Phase 16 from
+`planning/features/assembly-builder/phases/phase-16-ui-parity-browser-hardening.md`.
 
 Phase 8 remains in review for its MCP/backend surface. Phase 16 now owns
 the remaining UI/browser release evidence that was formerly listed under

@@ -596,6 +596,105 @@
   color: var(--surface);
 }
 
+.segment-properties-form {
+  gap: 16px;
+  max-height: min(76vh, 760px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.segment-dialog-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.segment-dialog-section h3,
+.segment-section-header h3 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.segment-section-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.segment-material-preview {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.segment-material-preview.is-empty {
+  border-style: dashed;
+  color: var(--text-secondary);
+}
+
+.segment-material-preview dl {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.segment-material-preview dd {
+  margin: 0;
+}
+
+.segment-geometry-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.material-picker {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+}
+
+.material-picker legend {
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.material-picker-tabs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.material-picker-tabs button {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.material-picker-tabs button.active {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.material-picker-panel {
+  display: grid;
+  gap: 10px;
+}
+
 @media (max-width: 780px) {
   .envelope-workbench {
     grid-template-columns: 1fr;
@@ -622,5 +721,10 @@
 
   .assembly-header-metrics {
     justify-content: flex-start;
+  }
+
+  .segment-geometry-grid,
+  .segment-material-preview dl {
+    grid-template-columns: 1fr;
   }
 }
