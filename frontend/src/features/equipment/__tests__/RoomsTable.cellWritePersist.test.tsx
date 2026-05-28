@@ -3,8 +3,14 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { RoomsPage } from "../routes/RoomsPage";
 import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
-import type { CustomFieldDef } from "../../../shared/ui/data-table";
+import type { TableFieldDef } from "../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../projects/types";
+import {
+  applyRoomsSchemaMutationFixture,
+  buildRoom,
+  buildRoomsSlice,
+  type RoomsSchemaMutationFixture,
+} from "../testing/testFixtures";
 
 // Reproduces the "value disappears on Enter after adding a custom
 // field" regression: the user creates a custom field, types into a
@@ -25,40 +31,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
-  return {
-    id: "rm_1",
-    number: "101",
-    name: "Living Room",
-    floor_level: "opt_ground",
-    building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
-    icfa_factor: 1,
-    erv_unit_ids: [],
-    catalog_origin: null,
-    notes: null,
-    custom: {},
-    ...overrides,
-  };
-}
-
 function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
-  return {
-    project_id: "00000000-0000-0000-0000-000000000001",
-    version_id: "00000000-0000-0000-0000-000000000002",
-    source: "draft",
-    version_etag: "v-etag",
+  return buildRoomsSlice({
     draft_etag: "d-etag-0",
     rooms: [buildRoom()],
-    custom_fields: [],
-    single_select_options: {
-      "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
-      "rooms.building_zone": [],
-    },
     rows_computed: {},
     ...overrides,
-  };
+  });
 }
 
 function buildProject(): ProjectDetail {
@@ -94,18 +73,8 @@ function renderWithStatefulBackend(initialSlice: RoomsSlice) {
     requestLog.push({ url, method, body: parsedBody });
 
     if (url.includes(`/draft/tables/${ROOMS_TABLE_NAME}/custom-fields:mutate`)) {
-      const mutation = parsedBody as { kind: string; after?: CustomFieldDef };
-      if (mutation.kind === "addField" && mutation.after) {
-        current = {
-          ...current,
-          source: "draft",
-          draft_etag: `d-etag-${++draftCounter}`,
-          custom_fields: [
-            ...current.custom_fields,
-            { ...mutation.after, config: { ...mutation.after.config } },
-          ],
-        };
-      }
+      const mutation = parsedBody as RoomsSchemaMutationFixture;
+      current = applyRoomsSchemaMutationFixture(current, mutation, `d-etag-${++draftCounter}`);
       return jsonResponse(current);
     }
 
@@ -113,7 +82,7 @@ function renderWithStatefulBackend(initialSlice: RoomsSlice) {
       const payload = parsedBody as {
         rooms: RoomRow[];
         single_select_options: RoomsSlice["single_select_options"];
-        custom_fields?: CustomFieldDef[];
+        field_defs?: TableFieldDef[];
       };
       current = {
         ...current,
@@ -121,7 +90,7 @@ function renderWithStatefulBackend(initialSlice: RoomsSlice) {
         draft_etag: `d-etag-${++draftCounter}`,
         rooms: payload.rooms,
         single_select_options: payload.single_select_options,
-        custom_fields: payload.custom_fields ?? current.custom_fields,
+        field_defs: payload.field_defs ?? current.field_defs,
       };
       return jsonResponse(current);
     }
@@ -172,8 +141,9 @@ describe("RoomsTable cell-write persistence (regression)", () => {
       expect(screen.getByRole("columnheader", { name: /Notes/ })).toBeInTheDocument();
     });
 
-    expect(getCurrent().custom_fields).toHaveLength(1);
-    const cfId = getCurrent().custom_fields[0]!.field_key;
+    const customFields = getCurrent().field_defs.filter((field) => field.origin === "custom");
+    expect(customFields).toHaveLength(1);
+    const cfId = customFields[0]!.field_key;
 
     const cells = document.querySelectorAll(`[data-field-key="${cfId}"]`);
     expect(cells.length).toBeGreaterThan(0);
@@ -201,8 +171,8 @@ describe("RoomsTable cell-write persistence (regression)", () => {
         !req.url.includes("custom-fields"),
     )!;
     const payload = putRequest.body as { rooms: RoomRow[] };
-    expect(payload.rooms[0]?.custom).toEqual({ [cfId]: "hello" });
-    expect(getCurrent().rooms[0]?.custom).toEqual({ [cfId]: "hello" });
+    expect(payload.rooms[0]?.custom_values[cfId]).toBe("hello");
+    expect(getCurrent().rooms[0]?.custom_values[cfId]).toBe("hello");
 
     await waitFor(() => {
       expect(screen.getByText("hello")).toBeInTheDocument();

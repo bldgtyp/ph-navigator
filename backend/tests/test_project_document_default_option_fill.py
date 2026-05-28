@@ -24,7 +24,9 @@ from features.project_document.document import (
     RoomsTableEnvelope,
     SingleSelectOption,
 )
+from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import (
+    ROOMS_BUILT_IN_FIELD_DEFS,
     RoomsSliceOptions,
     RoomsSliceReplaceRequest,
     apply_rooms_replace,
@@ -45,16 +47,28 @@ def _body_with_default_field() -> ProjectDocumentV1:
         created_at=datetime(2026, 5, 25, 12, 0, tzinfo=UTC),
         created_by=None,
     )
-    envelope = RoomsTableEnvelope(field_defs=[field], rows=[])
-    body = ProjectDocumentV1(
-        project=ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]),
-        single_select_options={
-            ROOM_FLOOR_LEVEL_OPTION_KEY: [floor_opt],
-            ROOM_BUILDING_ZONE_OPTION_KEY: [],
-            "rooms.cf_ss": cf_opts,
-        },
+    envelope = RoomsTableEnvelope(field_defs=[*ROOMS_BUILT_IN_FIELD_DEFS, field], rows=[])
+    return ProjectDocumentV1.model_validate(
+        {
+            "schema_version": 4,
+            "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
+            "tables": {
+                "rooms": envelope.model_dump(mode="json"),
+                "equipment": {
+                    "pumps": {
+                        "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
+                        "rows": [],
+                    }
+                },
+            },
+            "single_select_options": {
+                ROOM_FLOOR_LEVEL_OPTION_KEY: [floor_opt.model_dump(mode="json")],
+                ROOM_BUILDING_ZONE_OPTION_KEY: [],
+                "pumps.device_type": [],
+                "rooms.cf_ss": [opt.model_dump(mode="json") for opt in cf_opts],
+            },
+        }
     )
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
 
 
 def _make_room(
@@ -141,9 +155,15 @@ def test_existing_row_not_backfilled_when_default_now_set() -> None:
 def test_default_fill_skipped_when_no_default_configured() -> None:
     body = _body_with_default_field()
     # Clear the default on the field.
-    field = body.tables.rooms.field_defs[0]
-    next_field = field.model_copy(update={"config": {}})
-    envelope = body.tables.rooms.model_copy(update={"field_defs": [next_field]})
+    target_field = next(field for field in body.tables.rooms.field_defs if field.field_key == "cf_ss")
+    next_field = target_field.model_copy(update={"config": {}})
+    envelope = body.tables.rooms.model_copy(
+        update={
+            "field_defs": [
+                next_field if existing.field_key == "cf_ss" else existing for existing in body.tables.rooms.field_defs
+            ]
+        }
+    )
     body = body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
     new_room = _make_room("rm_new", "101", "opt_L1", custom={})
     payload = _build_payload(body, [new_room])

@@ -1,81 +1,23 @@
-import { fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { RoomsTable } from "../components/RoomsTable";
+import { emptyViewState } from "../../../shared/ui/data-table";
 import {
-  emptyViewState,
-  useTableSchema,
-  type CustomFieldDef,
-  type TableSchema,
-} from "../../../shared/ui/data-table";
-import { roomsTableFieldDefs } from "../lib";
-import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
-
-function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
-  return {
-    id: "cf_paint",
-    field_key: "cf_paint",
-    display_name: "Paint",
-    field_type: "short_text",
-    config: {},
-    description: null,
-    created_at: "2026-05-24T12:00:00Z",
-    created_by: null,
-    ...overrides,
-  };
-}
-
-function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
-  return {
-    id: "rm_1",
-    number: "101",
-    name: "Living Room",
-    floor_level: "opt_ground",
-    building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
-    icfa_factor: 1,
-    erv_unit_ids: [],
-    catalog_origin: null,
-    notes: null,
-    custom: {},
-    ...overrides,
-  };
-}
-
-function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
-  return {
-    project_id: "00000000-0000-0000-0000-000000000001",
-    version_id: "00000000-0000-0000-0000-000000000002",
-    source: "draft",
-    version_etag: "v-etag",
-    draft_etag: "d-etag",
-    rooms: [],
-    custom_fields: [],
-    single_select_options: {
-      "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
-      "rooms.building_zone": [],
-    },
-    ...overrides,
-  };
-}
-
-function schemaFor(slice: RoomsSlice): TableSchema {
-  return renderHook(() =>
-    useTableSchema({
-      tableKey: ROOMS_TABLE_NAME,
-      coreFieldDefs: roomsTableFieldDefs(slice),
-      customFields: slice.custom_fields,
-    }),
-  ).result.current;
-}
+  buildCustomField,
+  buildRoom,
+  buildRoomsSlice,
+  roomsFieldDefs,
+  schemaForRooms,
+  withRoomCustomValues,
+} from "../testing/testFixtures";
 
 describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
   test("every core column renders with the schema-locked indicator", () => {
-    const slice = buildSlice({ rooms: [buildRoom()], custom_fields: [] });
+    const slice = buildRoomsSlice({ rooms: [buildRoom()] });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor
         onEdit={vi.fn()}
         view={emptyViewState()}
@@ -98,14 +40,15 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
   });
 
   test("a seeded custom column renders WITHOUT the schema-locked indicator", () => {
-    const slice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_paint: "blue" } })],
-      custom_fields: [buildCustomField()],
+    const customField = buildCustomField();
+    const slice = buildRoomsSlice({
+      rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
+      field_defs: roomsFieldDefs(customField),
     });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor
         onEdit={vi.fn()}
         view={emptyViewState()}
@@ -119,14 +62,15 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
   });
 
   test("description tooltip surfaces when the custom field carries a description", () => {
-    const slice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_paint: "blue" } })],
-      custom_fields: [buildCustomField({ description: "  LCA category override  " })],
+    const customField = buildCustomField({ description: "  LCA category override  " });
+    const slice = buildRoomsSlice({
+      rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
+      field_defs: roomsFieldDefs(customField),
     });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor
         onEdit={vi.fn()}
         view={emptyViewState()}
@@ -143,14 +87,15 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
   });
 
   test("viewer mode still renders the lock glyph and description tooltip", () => {
-    const slice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_paint: "blue" } })],
-      custom_fields: [buildCustomField({ description: "View-only description" })],
+    const customField = buildCustomField({ description: "View-only description" });
+    const slice = buildRoomsSlice({
+      rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
+      field_defs: roomsFieldDefs(customField),
     });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor={false}
         onEdit={vi.fn()}
         view={emptyViewState()}
@@ -167,16 +112,17 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
   });
 
   test("custom-field header context menu surfaces Delete field; confirm dispatches the typed mutation", async () => {
-    const slice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_paint: "blue" } })],
-      custom_fields: [buildCustomField()],
+    const customField = buildCustomField();
+    const slice = buildRoomsSlice({
+      rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
+      field_defs: roomsFieldDefs(customField),
     });
     const onDeleteCustomField = vi.fn().mockResolvedValue(undefined);
 
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor
         onEdit={vi.fn()}
         view={emptyViewState()}
@@ -207,14 +153,14 @@ describe("RoomsTable header locked-indicator (plan-15 P2.5)", () => {
   });
 
   test("viewer mode suppresses the header context menu entirely", () => {
-    const slice = buildSlice({
+    const slice = buildRoomsSlice({
       rooms: [buildRoom()],
-      custom_fields: [buildCustomField()],
+      field_defs: roomsFieldDefs(buildCustomField()),
     });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor={false}
         onEdit={vi.fn()}
         view={emptyViewState()}

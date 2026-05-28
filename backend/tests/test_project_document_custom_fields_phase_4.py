@@ -17,10 +17,9 @@ from typing import Any
 from fastapi.testclient import TestClient
 
 from features.auth.service import create_or_update_user
-from features.project_document.custom_fields import CustomFieldDef
-from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from main import app
+from tests.project_document_helpers import custom_fields_from_slice as _custom_fields
+from tests.project_document_helpers import field_defs_fingerprint as _fingerprint
 
 ORIGIN = "http://localhost:5173"
 
@@ -70,12 +69,6 @@ def _save_url(project_id: object, version_id: object) -> str:
     return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/save"
 
 
-def _fingerprint(custom_fields: list[dict[str, Any]]) -> str:
-    return compute_table_schema_fingerprint(
-        [*ROOMS_BUILT_IN_FIELD_DEFS, *[CustomFieldDef.model_validate(field) for field in custom_fields]]
-    )
-
-
 def _new_field(
     field_id: str,
     display_name: str,
@@ -111,7 +104,7 @@ def _add_field(
         "kind": "addField",
         "tableKey": "rooms",
         "after": field,
-        "expectedSchemaFingerprint": _fingerprint(current["custom_fields"]),
+        "expectedSchemaFingerprint": _fingerprint(current["field_defs"]),
     }
     response = client.post(
         _mutate_url(project_id, version_id),
@@ -136,7 +129,7 @@ def _set_formula(
         "tableKey": "rooms",
         "fieldId": field_id,
         "source": source,
-        "expectedSchemaFingerprint": _fingerprint(current["custom_fields"]),
+        "expectedSchemaFingerprint": _fingerprint(current["field_defs"]),
     }
     return client.post(
         _mutate_url(project_id, version_id),
@@ -155,34 +148,36 @@ def _seed_rooms(
         "rooms": [
             {
                 "id": "rm_101",
-                "number": "101",
-                "name": "Living",
                 "floor_level": "opt_ground",
                 "building_zone": None,
-                "num_people": 2,
-                "num_bedrooms": 1,
                 "icfa_factor": 1.0,
                 "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
-                "custom": {},
+                "custom_values": {
+                    "number": "101",
+                    "name": "Living",
+                    "num_people": 2,
+                    "num_bedrooms": 1,
+                },
             },
             {
                 "id": "rm_102",
-                "number": "102",
-                "name": "Bedroom",
                 "floor_level": "opt_ground",
                 "building_zone": None,
-                "num_people": 1,
-                "num_bedrooms": 1,
                 "icfa_factor": 0.7,
                 "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
-                "custom": {},
+                "custom_values": {
+                    "number": "102",
+                    "name": "Bedroom",
+                    "num_people": 1,
+                    "num_bedrooms": 1,
+                },
             },
         ],
-        "custom_fields": current["custom_fields"],
+        "field_defs": current["field_defs"],
         "single_select_options": {
             "rooms.floor_level": [{"id": "opt_ground", "label": "Ground", "color": "#3b82f6", "order": 0}],
             "rooms.building_zone": [],
@@ -313,7 +308,7 @@ def test_phase_4_setformula_rejects_self_cycle(
     assert "cf_loop" in detail["details"]["cycle_path"]
 
 
-def test_phase_4_changetype_to_formula_is_forbidden(
+def test_phase_4_changetype_to_formula_succeeds(
     clean_document_tables: None,
 ) -> None:
     client = _signed_in_client()
@@ -330,7 +325,7 @@ def test_phase_4_changetype_to_formula_is_forbidden(
         _new_field("cf_plain", "Plain", "short_text"),
     )
 
-    next_field = dict(current["custom_fields"][0])
+    next_field = dict(_custom_fields(current)[0])
     next_field["field_type"] = "formula"
     payload = {
         "kind": "changeType",
@@ -338,15 +333,15 @@ def test_phase_4_changetype_to_formula_is_forbidden(
         "fieldId": "cf_plain",
         "after": next_field,
         "acknowledgeDestructive": True,
-        "expectedSchemaFingerprint": _fingerprint(current["custom_fields"]),
+        "expectedSchemaFingerprint": _fingerprint(current["field_defs"]),
     }
     response = client.post(
         _mutate_url(project_id, version_id),
         headers=_headers_for(current),
         json=payload,
     )
-    assert response.status_code == 422, response.text
-    assert response.json()["error_code"] == "custom_field_illegal_type_conversion"
+    assert response.status_code == 200, response.text
+    assert _custom_fields(response.json())[0]["field_type"] == "formula"
 
 
 def test_phase_4_rename_referenced_field_absorbs_silently_and_overlay_recomputes(
@@ -383,5 +378,5 @@ def test_phase_4_rename_referenced_field_absorbs_silently_and_overlay_recomputes
     # evaluating correctly even though we haven't actually renamed
     # the core field here. Verify the stored ast.deps id is core
     # `name`, confirming D2 / D12 identity rules.
-    deps = current["custom_fields"][0]["config"]["deps"]
+    deps = _custom_fields(current)[0]["config"]["deps"]
     assert deps == ["name"]

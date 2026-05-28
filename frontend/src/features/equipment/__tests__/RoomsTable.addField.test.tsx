@@ -1,78 +1,23 @@
-import { fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { RoomsTable } from "../components/RoomsTable";
 import {
   emptyViewState,
-  useTableSchema,
   type AddCustomFieldRequest,
-  type CustomFieldDef,
-  type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { roomsTableFieldDefs } from "../lib";
-import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
+import type { RoomsSlice } from "../types";
+import {
+  buildCustomField,
+  buildRoom,
+  buildRoomsSlice,
+  schemaForRooms,
+  useRoomsTableSchema,
+  withRoomCustomValues,
+} from "../testing/testFixtures";
 
-function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
-  return {
-    id: "cf_paint",
-    field_key: "cf_paint",
-    display_name: "Paint",
-    field_type: "short_text",
-    config: {},
-    description: null,
-    created_at: "2026-05-24T12:00:00Z",
-    created_by: null,
-    ...overrides,
-  };
-}
-
-function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
-  return {
-    id: "rm_1",
-    number: "101",
-    name: "Living Room",
-    floor_level: "opt_ground",
-    building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
-    icfa_factor: 1,
-    erv_unit_ids: [],
-    catalog_origin: null,
-    notes: null,
-    custom: {},
-    ...overrides,
-  };
-}
-
-function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
-  return {
-    project_id: "00000000-0000-0000-0000-000000000001",
-    version_id: "00000000-0000-0000-0000-000000000002",
-    source: "draft",
-    version_etag: "v-etag",
-    draft_etag: "d-etag",
-    rooms: [],
-    custom_fields: [],
-    single_select_options: {
-      "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
-      "rooms.building_zone": [],
-    },
-    ...overrides,
-  };
-}
-
-function schemaFor(slice: RoomsSlice): TableSchema {
-  return renderHook(() =>
-    useTableSchema({
-      tableKey: ROOMS_TABLE_NAME,
-      coreFieldDefs: roomsTableFieldDefs(slice),
-      customFields: slice.custom_fields,
-    }),
-  ).result.current;
-}
-
-// Drives a refetch by swapping the slice's custom_fields after the
+// Drives a refetch by swapping the slice's field_defs after the
 // add dispatch resolves — the production code path achieves the same
 // effect by invalidating the rooms query.
 function Harness({
@@ -86,11 +31,7 @@ function Harness({
 }) {
   const [slice, setSlice] = useState(initialSlice);
   const [view, setView] = useState<ViewState>(emptyViewState());
-  const schema = useTableSchema({
-    tableKey: ROOMS_TABLE_NAME,
-    coreFieldDefs: roomsTableFieldDefs(slice),
-    customFields: slice.custom_fields,
-  });
+  const schema = useRoomsTableSchema(slice);
   return (
     <RoomsTable
       roomsSlice={slice}
@@ -114,7 +55,7 @@ function Harness({
 
 describe("RoomsTable add custom field (plan-15 P2.6)", () => {
   test("tail + button opens the add-field modal", async () => {
-    const slice = buildSlice({ rooms: [buildRoom()] });
+    const slice = buildRoomsSlice({ rooms: [buildRoom()] });
     render(<Harness initialSlice={slice} />);
     const tailButton = screen.getByRole("button", { name: "Add field" });
     fireEvent.click(tailButton);
@@ -122,7 +63,7 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
   });
 
   test("happy-path add dispatches the request and closes the modal", async () => {
-    const slice = buildSlice({ rooms: [buildRoom()] });
+    const slice = buildRoomsSlice({ rooms: [buildRoom()] });
     const dispatch = vi.fn().mockResolvedValue({ newFieldKey: "cf_notes" });
     render(<Harness initialSlice={slice} onDispatch={dispatch} />);
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));
@@ -139,11 +80,11 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
   });
 
   test("viewer mode hides the add-field affordance", () => {
-    const slice = buildSlice({ rooms: [buildRoom()] });
+    const slice = buildRoomsSlice({ rooms: [buildRoom()] });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor={false}
         onEdit={vi.fn()}
         view={emptyViewState()}
@@ -156,10 +97,11 @@ describe("RoomsTable add custom field (plan-15 P2.6)", () => {
   });
 
   test("after a successful add, the new column appears in the grid", async () => {
-    const initialSlice = buildSlice({ rooms: [buildRoom()] });
-    const postSlice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_notes: null } })],
-      custom_fields: [buildCustomField({ field_key: "cf_notes", display_name: "Notes" })],
+    const initialSlice = buildRoomsSlice({ rooms: [buildRoom()] });
+    const notesField = buildCustomField({ field_key: "cf_notes", display_name: "Notes" });
+    const postSlice = buildRoomsSlice({
+      rooms: [withRoomCustomValues(buildRoom(), { cf_notes: null })],
+      field_defs: [...initialSlice.field_defs, notesField],
     });
     render(<Harness initialSlice={initialSlice} postAddSlice={postSlice} />);
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));

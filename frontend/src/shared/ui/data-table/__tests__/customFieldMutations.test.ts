@@ -15,12 +15,12 @@ import {
 import { SOURCE_LENGTH_MAX } from "../lib/formula";
 
 const SAMPLE_FIELD: CustomFieldDef = {
-  id: "cf_sample",
   field_key: "cf_sample",
   display_name: "Notes",
   field_type: "short_text",
   config: {},
   description: null,
+  origin: "custom",
   created_at: "2026-05-24T12:00:00Z",
   created_by: null,
 };
@@ -249,7 +249,7 @@ describe("buildChangeTypeMutation", () => {
     const after: CustomFieldDef = { ...SAMPLE_FIELD, field_type: "number" };
     const op = buildChangeTypeMutation({
       tableKey: "rooms",
-      fieldId: SAMPLE_FIELD.id,
+      fieldId: SAMPLE_FIELD.field_key,
       after,
       acknowledgeDestructive: true,
       schemaFingerprint: "fp",
@@ -264,7 +264,7 @@ describe("buildChangeTypeMutation", () => {
     expect(() =>
       buildChangeTypeMutation({
         tableKey: "rooms",
-        fieldId: SAMPLE_FIELD.id,
+        fieldId: SAMPLE_FIELD.field_key,
         after,
         schemaFingerprint: "fp",
       }),
