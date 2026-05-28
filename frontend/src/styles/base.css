@@ -928,6 +928,72 @@ button:not([class]):hover:not(:disabled) {
   transform: none;
 }
 
+.icon-button {
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--phn-radius);
+  color: var(--text-primary);
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0;
+  width: 34px;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--bg-elev);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+  transform: translateY(-1px);
+}
+
+.icon-button:focus-visible {
+  box-shadow: var(--phn-focus);
+  outline: 0;
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  background: var(--text-primary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  bottom: calc(100% + 10px);
+  box-shadow: var(--shadow-elev-2);
+  color: var(--bg-card);
+  content: attr(data-tooltip);
+  display: block;
+  font-family: var(--font-primary);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 7px 9px;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(2px);
+  transition:
+    opacity 0.12s var(--ease) 0.9s,
+    transform 0.12s var(--ease) 0.9s;
+  white-space: normal;
+  width: min(280px, calc(100vw - 32px));
+  z-index: var(--z-tooltip);
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.56;
