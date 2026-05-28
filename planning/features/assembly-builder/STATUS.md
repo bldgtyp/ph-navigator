@@ -2,8 +2,8 @@
 DATE: 2026-05-27
 TIME: 22:30 EDT
 STATUS: Active progress and next-steps tracker. Phases 13-16 added as
-       the V1-derived UI/Layout parity bundle; Phase 15 dialog polish is
-       implemented on the current branch.
+       the V1-derived UI/Layout parity bundle; Phase 16 scale/evidence
+       fixture is implemented on the current branch.
 AUTHOR: Codex / Claude (Opus 4.7)
 SCOPE: Assembly Builder implementation progress after Phases 1-3 were
        flattened into main, plus the foundation refactor bundle informed
@@ -65,10 +65,13 @@ Completed implementation surface:
 
 Current UI/Layout finding:
 
-- the implementation is functionally broad and Phases 13-15 now give it
+- the implementation is functionally broad and Phases 13-16 now give it
   the V1-derived three-pane shell, to-scale canvas surface, and
-  material-first Segment Properties workflow;
-- final browser parity evidence is now the next major UI/Layout gap;
+  material-first Segment Properties workflow, plus a deterministic
+  scale/evidence fixture for parity regression checks;
+- final in-browser parity evidence is still the next UI/Layout gap
+  because this worktree does not have a running API/dev-server smoke
+  target;
 - the next UI work should treat the target as a V2-native version of the
   V1 Assembly Builder and verify the new sidebar/drawer, top-bar,
   main-view, canvas, dialogs, and Specifications workflow together.
@@ -171,7 +174,7 @@ Remaining before Phase 4 closure:
 
 ## Next Implementation Target
 
-Phase 15 is implemented on `codex/assembly-builder-ui-planning` and
+Phase 16 is implemented on `codex/assembly-builder-ui-planning` and
 should be reviewed with the current branch changes.
 
 Implemented UI parity surface:
@@ -195,10 +198,15 @@ Implemented UI parity surface:
   standalone shared material editor form;
 - lazy Materials catalog query gating that waits for the "From catalog"
   tab and regression coverage for catalog gating plus project and
-  hand-enter material commands.
+  hand-enter material commands;
+- deterministic Phase 16 fixture covering very thin layers, narrow
+  segments, long material names, null material, missing lambda, evidence
+  IDs, catalog-origin drift data, 12 bulk assemblies, and locked-mode
+  read-only suppression.
 
-Next implementation target after review is Phase 16 from
-`planning/features/assembly-builder/phases/phase-16-ui-parity-browser-hardening.md`.
+Next implementation target after review is a browser-backed closeout pass
+against the Phase 16 fixture once this worktree has a live API/dev-server
+target, or the next user-selected Assembly Builder follow-up.
 
 Phase 8 remains in review for its MCP/backend surface. Phase 16 now owns
 the remaining UI/browser release evidence that was formerly listed under

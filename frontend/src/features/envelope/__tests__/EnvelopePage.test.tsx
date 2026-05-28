@@ -10,6 +10,15 @@ import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
 import { EnvelopePage } from "../routes/EnvelopePage";
 import type { EnvelopeReadResponse } from "../types";
+import {
+  PHASE16_BULK_ASSEMBLY_COUNT,
+  PHASE16_BULK_LAYER_COUNT,
+  PHASE16_BULK_SEGMENT_COUNT,
+  PHASE16_EDGE_ASSEMBLY_ID,
+  PHASE16_EDGE_ASSEMBLY_NAME,
+  phase16DriftFixture,
+  phase16EnvelopeFixture,
+} from "./phase16-fixtures";
 
 const PROJECT_ID = "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5";
 const VERSION_ID = "61561caa-44d0-401d-9daa-0fa113df8340";
@@ -394,7 +403,7 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     expect(await screen.findByText("1 material copy needs catalog review.")).toBeInTheDocument();
-    expect(screen.getByText("Catalog drift")).toBeInTheDocument();
+    expect(await screen.findByText("Catalog drift")).toBeInTheDocument();
   });
 
   test("invalid assembly id redirects to the first sorted assembly", async () => {
@@ -569,6 +578,53 @@ describe("EnvelopePage", () => {
       expect.stringContaining("/envelope?source=version"),
       expect.objectContaining({ credentials: "include" }),
     );
+  });
+
+  test("phase 16 scale fixture keeps edge cases visible and locked mode read-only", async () => {
+    const payload = phase16EnvelopeFixture(PROJECT_ID, VERSION_ID, { source: "version" });
+    expect(payload.assemblies).toHaveLength(PHASE16_BULK_ASSEMBLY_COUNT + 1);
+    expect(payload.assemblies.at(-1)?.layers).toHaveLength(PHASE16_BULK_LAYER_COUNT);
+    expect(payload.assemblies.at(-1)?.layers[0]?.segments).toHaveLength(PHASE16_BULK_SEGMENT_COUNT);
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(payload));
+      if (url.includes("/envelope/material-catalog-drift?")) {
+        return Promise.resolve(jsonResponse(phase16DriftFixture(PROJECT_ID, VERSION_ID)));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/${PHASE16_EDGE_ASSEMBLY_ID}`, {
+      projectOverride: { active_version: { ...project.active_version!, locked: true } },
+    });
+
+    expect(await screen.findByText("Locked version")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: PHASE16_EDGE_ASSEMBLY_NAME })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "PHASE16-BULK-12" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", {
+        name: /Edit Extremely long wood-fiber insulation product name/,
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByTitle(
+        "Extremely long wood-fiber insulation product name used to test clipped labels - 12.7 mm",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTitle("No material - 38.1 mm")).toBeInTheDocument();
+    expect(screen.getByText("Missing lambda")).toBeInTheDocument();
+
+    const legend = screen.getByRole("complementary", { name: "Material legend" });
+    expect(within(legend).getByText(/Extremely long wood-fiber/)).toBeInTheDocument();
+    expect(within(legend).getByText("Cavity insulation missing lambda")).toBeInTheDocument();
+    expect(within(legend).queryByText("Bulk fixture material 1")).not.toBeInTheDocument();
+    expect(within(legend).queryByText("Unused QA-only membrane")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/envelope?source=version"),
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(catalogMaterialFetchCalls()).toHaveLength(0);
   });
 
   test("download warns when draft is dirty and calls saved-version export", async () => {

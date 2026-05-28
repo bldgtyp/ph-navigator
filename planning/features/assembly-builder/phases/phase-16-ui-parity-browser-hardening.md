@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-27
-TIME: 17:22 EDT
-STATUS: Proposed implementation plan.
+TIME: 21:37 EDT
+STATUS: Implemented on branch; browser smoke remains blocked by local setup.
 AUTHOR: Codex
 SCOPE: Assembly Builder UI/Layout parity, phase 16.
 RELATED:
@@ -87,6 +87,31 @@ browser matrix, scale fixture, V1 parity audit, and docs closeout.
   otherwise capture filtered type/build blockers in `STATUS.md`.
 - Consolidated browser smoke on seeded data for editor, locked, and
   viewer modes.
+
+## Implementation Notes - 2026-05-27
+
+- Added `frontend/src/features/envelope/__tests__/phase16-fixtures.ts`
+  as the deterministic Phase 16 scale/evidence fixture. It includes:
+  - a named edge-case assembly with a 3 mm layer, 12.7 mm segment, long
+    material name, null material segment, missing lambda material,
+    evidence asset IDs, and catalog-origin drift data;
+  - 12 generated bulk assemblies with four layers and three segments
+    each, plus six bulk project materials, so sidebar sorting and active
+    material scoping are exercised without relying on production data.
+- Extended `EnvelopePage.test.tsx` with locked-mode regression coverage
+  against the Phase 16 fixture:
+  - saved-version source request;
+  - disabled top-bar editing;
+  - hidden canvas edit controls;
+  - edge-case canvas titles;
+  - active-material legend scoping;
+  - catalog picker remains lazy until opened.
+- Full frontend build was attempted and remains blocked by unrelated
+  equipment/project-document/shared data-table type drift. The scoped
+  Envelope checks pass.
+- Browser smoke still needs a live API/dev-server target for final visual
+  screenshots and responsive evidence. This commit gives that pass a
+  deterministic fixture shape to drive.
 
 ## Exit Criteria
 
