@@ -1,3 +1,13 @@
+import {
+  Copy,
+  type LucideIcon,
+  Minus,
+  PanelTopClose,
+  PanelTopOpen,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useMemo } from "react";
 import { formatLengthFromMm, useUnitPreference } from "../../../lib/units";
 import { MaterialDriftBadge } from "./MaterialDrift";
@@ -62,6 +72,8 @@ export function AssemblyCanvas({
   const materialsById = useMemo(() => materialById(materials), [materials]);
   const maxWidth = useMemo(() => maxLayerWidthMm(assembly), [assembly]);
   const canvasWidth = Math.max(MIN_CANVAS_WIDTH_PX, maxWidth * BASE_PX_PER_MM * zoom);
+  const [outsideLabel, insideLabel] =
+    assembly.orientation === "first_layer_outside" ? ["Outside", "Inside"] : ["Inside", "Outside"];
 
   return (
     <div className="assembly-canvas-scroll" data-testid="assembly-canvas-scroll">
@@ -70,9 +82,14 @@ export function AssemblyCanvas({
         data-testid="assembly-canvas"
         style={{ width: `${canvasWidth}px` }}
       >
+        <div className="assembly-orientation-labels" aria-hidden="true">
+          <span>{outsideLabel}</span>
+          <span>{insideLabel}</span>
+        </div>
         {assembly.layers.map((layer) => {
           const layerHeight = pxFromMm(layer.thickness_mm, zoom, MIN_LAYER_HEIGHT_PX);
           const width = layerWidthMm(layer);
+          const layerNumber = layer.order + 1;
           return (
             <section
               key={layer.id}
@@ -81,41 +98,41 @@ export function AssemblyCanvas({
                 minHeight: `${layerHeight}px`,
                 width: `${Math.max(MIN_LAYER_WIDTH_PERCENT, (width / maxWidth) * 100)}%`,
               }}
-              aria-label={`Layer ${layer.order + 1}`}
+              aria-label={`Layer ${layerNumber}`}
             >
               <div className="assembly-layer-label">
-                <strong>Layer {layer.order + 1}</strong>
-                <span>{formatLengthFromMm(layer.thickness_mm, { unitSystem })}</span>
+                <div className="assembly-layer-meta">
+                  <strong>Layer {layerNumber}</strong>
+                  <span>{formatLengthFromMm(layer.thickness_mm, { unitSystem })}</span>
+                </div>
                 {canEdit ? (
                   <div className="layer-actions">
-                    <button
-                      type="button"
-                      className="text-button"
+                    <CanvasActionButton
+                      label={`Edit layer ${layerNumber} thickness`}
+                      tooltip="Edit layer thickness"
+                      icon={Pencil}
                       onClick={() => onEditLayer(layer)}
-                    >
-                      Thickness
-                    </button>
-                    <button
-                      type="button"
-                      className="text-button"
+                    />
+                    <CanvasActionButton
+                      label={`Add layer above layer ${layerNumber}`}
+                      tooltip="Add layer above"
+                      icon={PanelTopOpen}
+                      className="layer-edge-control add-above"
                       onClick={() => onAddLayer(layer, "above")}
-                    >
-                      Add above
-                    </button>
-                    <button
-                      type="button"
-                      className="text-button"
+                    />
+                    <CanvasActionButton
+                      label={`Add layer below layer ${layerNumber}`}
+                      tooltip="Add layer below"
+                      icon={PanelTopClose}
+                      className="layer-edge-control add-below"
                       onClick={() => onAddLayer(layer, "below")}
-                    >
-                      Add below
-                    </button>
-                    <button
-                      type="button"
-                      className="text-button"
+                    />
+                    <CanvasActionButton
+                      label={`Delete layer ${layerNumber}`}
+                      tooltip="Delete layer"
+                      icon={Trash2}
                       onClick={() => onDeleteLayer(layer)}
-                    >
-                      Delete
-                    </button>
+                    />
                   </div>
                 ) : null}
               </div>
@@ -124,6 +141,12 @@ export function AssemblyCanvas({
                   const material = segment.project_material_id
                     ? (materialsById.get(segment.project_material_id) ?? null)
                     : null;
+                  const materialName = material?.name ?? "No material";
+                  const segmentWidthLabel = formatLengthFromMm(segment.width_mm, { unitSystem });
+                  const studSpacingLabel = segment.steel_stud_spacing_mm
+                    ? formatLengthFromMm(segment.steel_stud_spacing_mm, { unitSystem })
+                    : null;
+                  const segmentLabel = `${materialName} segment in layer ${layerNumber}`;
                   return (
                     <article
                       key={segment.id}
@@ -133,43 +156,42 @@ export function AssemblyCanvas({
                         background: materialColor(material),
                       }}
                       data-paste-target={copiedAssignment ? "true" : undefined}
+                      title={`${materialName} - ${segmentWidthLabel}`}
                     >
-                      <strong>{material?.name ?? "No material"}</strong>
-                      {material ? (
-                        <MaterialDriftBadge item={driftByMaterialId.get(material.id) ?? null} />
-                      ) : null}
-                      <span>{formatLengthFromMm(segment.width_mm, { unitSystem })}</span>
-                      {segment.steel_stud_spacing_mm ? (
-                        <small>
-                          Studs {formatLengthFromMm(segment.steel_stud_spacing_mm, { unitSystem })}
-                        </small>
-                      ) : null}
+                      <div className="assembly-segment-body">
+                        <strong>{materialName}</strong>
+                        {material ? (
+                          <MaterialDriftBadge item={driftByMaterialId.get(material.id) ?? null} />
+                        ) : null}
+                        <span>{segmentWidthLabel}</span>
+                        {studSpacingLabel ? <small>Studs {studSpacingLabel}</small> : null}
+                      </div>
                       {canEdit ? (
                         <div className="segment-actions">
-                          <button
-                            type="button"
-                            className="text-button"
+                          <CanvasActionButton
+                            label={`Edit ${segmentLabel}`}
+                            tooltip="Edit segment"
+                            icon={Pencil}
                             onClick={() => onEditSegment(layer, segment)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="text-button"
+                          />
+                          <CanvasActionButton
+                            label={`Add segment left of ${segmentLabel}`}
+                            tooltip="Add segment left"
+                            icon={Plus}
+                            className="segment-edge-control add-left"
                             onClick={() => onAddSegment(layer, segment, "left")}
-                          >
-                            Add left
-                          </button>
-                          <button
-                            type="button"
-                            className="text-button"
+                          />
+                          <CanvasActionButton
+                            label={`Add segment right of ${segmentLabel}`}
+                            tooltip="Add segment right"
+                            icon={Plus}
+                            className="segment-edge-control add-right"
                             onClick={() => onAddSegment(layer, segment, "right")}
-                          >
-                            Add right
-                          </button>
-                          <button
-                            type="button"
-                            className="text-button"
+                          />
+                          <CanvasActionButton
+                            label={`Copy ${segmentLabel} assignment`}
+                            tooltip="Copy assignment"
+                            icon={Copy}
                             onClick={() =>
                               onCopyAssignment({
                                 project_material_id: segment.project_material_id,
@@ -177,24 +199,20 @@ export function AssemblyCanvas({
                                 steel_stud_spacing_mm: segment.steel_stud_spacing_mm,
                               })
                             }
-                          >
-                            Copy
-                          </button>
-                          <button
-                            type="button"
-                            className="text-button"
+                          />
+                          <CanvasActionButton
+                            label={`Paste assignment to ${segmentLabel}`}
+                            tooltip="Paste assignment"
+                            icon={Plus}
                             disabled={!copiedAssignment}
                             onClick={() => onPasteAssignment(layer, segment)}
-                          >
-                            Paste
-                          </button>
-                          <button
-                            type="button"
-                            className="text-button"
+                          />
+                          <CanvasActionButton
+                            label={`Delete ${segmentLabel}`}
+                            tooltip="Delete segment"
+                            icon={Minus}
                             onClick={() => onDeleteSegment(layer, segment)}
-                          >
-                            Delete
-                          </button>
+                          />
                         </div>
                       ) : null}
                     </article>
@@ -206,5 +224,35 @@ export function AssemblyCanvas({
         })}
       </div>
     </div>
+  );
+}
+
+function CanvasActionButton({
+  label,
+  tooltip,
+  icon: Icon,
+  className,
+  disabled = false,
+  onClick,
+}: {
+  label: string;
+  tooltip: string;
+  icon: LucideIcon;
+  className?: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  const buttonClassName = className ? `icon-button ${className}` : "icon-button";
+  return (
+    <button
+      type="button"
+      className={buttonClassName}
+      aria-label={label}
+      data-tooltip={tooltip}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon size={14} aria-hidden="true" />
+    </button>
   );
 }

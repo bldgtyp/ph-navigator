@@ -1,8 +1,9 @@
 ---
 DATE: 2026-05-27
 TIME: 22:30 EDT
-STATUS: Active progress and next-steps tracker. Phases 9-12 added as a
-       foundation refactor bundle ahead of UI/UX polish.
+STATUS: Active progress and next-steps tracker. Phases 13-16 added as
+       the V1-derived UI/Layout parity bundle; Phase 16 scale/evidence
+       fixture is implemented on the current branch.
 AUTHOR: Codex / Claude (Opus 4.7)
 SCOPE: Assembly Builder implementation progress after Phases 1-3 were
        flattened into main, plus the foundation refactor bundle informed
@@ -15,6 +16,10 @@ RELATED:
   - planning/features/assembly-builder/phases/phase-10-frontend-page-dialog-split.md
   - planning/features/assembly-builder/phases/phase-11-shared-constants-helpers.md
   - planning/features/assembly-builder/phases/phase-12-docs-and-test-reorg.md
+  - planning/features/assembly-builder/phases/phase-13-three-pane-assemblies-shell.md
+  - planning/features/assembly-builder/phases/phase-14-to-scale-canvas-hover-controls.md
+  - planning/features/assembly-builder/phases/phase-15-dialogs-material-picker-specifications-polish.md
+  - planning/features/assembly-builder/phases/phase-16-ui-parity-browser-hardening.md
   - planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md
 ---
 
@@ -57,6 +62,19 @@ Completed implementation surface:
 - MCP envelope read/report tools and a semantic envelope command write
   tool that shares the browser command boundary and tags drafts as
   `updated_via='mcp'`.
+
+Current UI/Layout finding:
+
+- the implementation is functionally broad and Phases 13-16 now give it
+  the V1-derived three-pane shell, to-scale canvas surface, and
+  material-first Segment Properties workflow, plus a deterministic
+  scale/evidence fixture for parity regression checks;
+- final in-browser parity evidence is still the next UI/Layout gap
+  because this worktree does not have a running API/dev-server smoke
+  target;
+- the next UI work should treat the target as a V2-native version of the
+  V1 Assembly Builder and verify the new sidebar/drawer, top-bar,
+  main-view, canvas, dialogs, and Specifications workflow together.
 
 ## Verified Gates
 
@@ -156,14 +174,44 @@ Remaining before Phase 4 closure:
 
 ## Next Implementation Target
 
-Continue Phase 8 from
-`planning/features/assembly-builder/phases/phase-08-mcp-hardening-release.md`.
+Phase 16 is implemented on `codex/assembly-builder-ui-planning` and
+should be reviewed with the current branch changes.
 
-Primary goal:
+Implemented UI parity surface:
 
-- harden scale/performance behavior, accessibility, browser workflows,
-  docs, and release readiness across the accumulated Assembly Builder
-  slices.
+- collapsible assembly sidebar/drawer with active row switching and
+  mobile recovery;
+- top assembly bar with active assembly picker, metrics, zoom/export,
+  compact edit tools, and text-explicit Delete;
+- main assembly view with the canvas promoted into the work area;
+- to-scale DOM/CSS layer and segment drawing driven by SI geometry;
+- orientation labels, material colors, clipped stable labels, and
+  contextual hover/focus controls;
+- legend scoped to materials used by the active assembly, including
+  lambda or missing-lambda status;
+- shared icon-button and tooltip utility styling;
+- regression coverage that collapsing/reopening the drawer preserves
+  active assembly and zoom, and that the legend remains scoped to active
+  materials;
+- material-first Segment Properties dialog with material preview,
+  project/catalog/hand-enter picker tabs, geometry controls, and
+  standalone shared material editor form;
+- lazy Materials catalog query gating that waits for the "From catalog"
+  tab and regression coverage for catalog gating plus project and
+  hand-enter material commands;
+- deterministic Phase 16 fixture covering very thin layers, narrow
+  segments, long material names, null material, missing lambda, evidence
+  IDs, catalog-origin drift data, 12 bulk assemblies, and locked-mode
+  read-only suppression.
+
+Next implementation target after review is a browser-backed closeout pass
+against the Phase 16 fixture once this worktree has a live API/dev-server
+target, or the next user-selected Assembly Builder follow-up.
+
+Phase 8 remains in review for its MCP/backend surface. Phase 16 now owns
+the remaining UI/browser release evidence that was formerly listed under
+Phase 8, so there is one closeout owner for scale, parity, locked/viewer,
+and accumulated browser-smoke debt.
 
 Phase 5 implemented so far on `codex/assembly-builder-phase-05`:
 
@@ -276,7 +324,8 @@ Remaining before Phase 7 closure:
 Implementation target:
 `planning/features/assembly-builder/phases/phase-08-mcp-hardening-release.md`.
 
-Phase 8 is active on `codex/assembly-builder-phase-07`.
+Phase 8's MCP surface is implemented on `codex/assembly-builder-phase-07`.
+The remaining UI/browser hardening work is delegated to Phase 16.
 
 Implemented:
 
@@ -301,13 +350,8 @@ Verified:
 
 Remaining before Phase 8 closure:
 
-- realistic scale fixture and performance/browser evidence;
-- accumulated Phase 4-7 browser smoke workflows;
-- locked/viewer verification across all envelope sub-surfaces;
-- full IP/SI smoke across layer, segment, material, drift, thermal, and
-  MCP surfaces;
-- V1 parity audit closeout and final PRD lessons;
-- full repo gates once unrelated local blockers are isolated.
+- complete any MCP-specific follow-up discovered by future MCP tests;
+- close UI/browser release evidence through Phase 16.
 
 ## Foundation Refactor - Phases 9-12
 
@@ -429,3 +473,50 @@ The full `cd frontend && pnpm run build`, repo-level `make typecheck`,
 and repo-level `make test` gates remain blocked by unrelated
 equipment/project-document/windows/shared table drift. `make lint`
 passed.
+
+## UI/Layout Parity - Phases 13-16
+
+The current browser UI confirms the feature is functionally well along
+but visually still scaffolded. The accepted direction is to bring the
+core V1 Assembly Builder UX forward into V2 rather than inventing a
+different editor:
+
+- keep the collapsible assembly sidebar/drawer;
+- keep the top-bar active assembly picker;
+- make the to-scale colored layer/segment canvas the main work surface;
+- replace permanent text-link action clutter with compact hover/focus
+  controls;
+- use the new app's CSS tokens, typography, borders, buttons, icons,
+  and focus states instead of copying V1's literal visual skin.
+
+New planning docs:
+
+- Phase 13:
+  `planning/features/assembly-builder/phases/phase-13-three-pane-assemblies-shell.md`
+- Phase 14:
+  `planning/features/assembly-builder/phases/phase-14-to-scale-canvas-hover-controls.md`
+- Phase 15:
+  `planning/features/assembly-builder/phases/phase-15-dialogs-material-picker-specifications-polish.md`
+- Phase 16:
+  `planning/features/assembly-builder/phases/phase-16-ui-parity-browser-hardening.md`
+
+Recommended sequence:
+
+1. Phase 13 first, because it creates stable homes for the
+   sidebar/drawer, top bar, and main view.
+2. Phase 14 second, because the canvas is the core parity gap and should
+   not be polished inside the current table-like scaffold.
+3. Phase 15 third, because dialog and material-picker polish should be
+   driven by the new canvas and shell.
+4. Phase 16 last, because it resolves deferred browser smoke, scale,
+   locked/viewer, IP/SI, and accepted V1 parity-gap evidence.
+
+Open implementation constraints:
+
+- No backend API changes are expected for Phase 13.
+- Phase 14 may stay DOM/CSS-based or move the drawing to SVG, but it
+  must preserve accessible controls and SI-canonical geometry.
+- Phase 15 must preserve lazy catalog loading and shared
+  `ProjectMaterialEditor` semantics.
+- Phase 16 should update this `STATUS.md` and the PRD lesson log with
+  browser evidence and accepted gaps.

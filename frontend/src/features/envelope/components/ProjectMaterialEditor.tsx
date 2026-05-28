@@ -106,8 +106,7 @@ export function ProjectMaterialEditor({
     setParseError(null);
   }
 
-  function submit(event: FormEvent): void {
-    event.preventDefault();
+  function submitForm(): void {
     if (!canSubmit) {
       if (hasInvalidNumber(form, unitOptions)) {
         setParseError("Enter valid material values.");
@@ -139,8 +138,8 @@ export function ProjectMaterialEditor({
     });
   }
 
-  return (
-    <form className="project-material-editor" onSubmit={submit}>
+  const content = (
+    <>
       <p className="shared-material-warning">
         Editing applies to all {material.use_sites.length} segments using this material.
       </p>
@@ -204,6 +203,17 @@ export function ProjectMaterialEditor({
       <button type="submit" className="secondary-button" disabled={!canSubmit}>
         Update material
       </button>
+    </>
+  );
+
+  function submit(event: FormEvent): void {
+    event.preventDefault();
+    submitForm();
+  }
+
+  return (
+    <form className="project-material-editor" onSubmit={submit}>
+      {content}
     </form>
   );
 }
