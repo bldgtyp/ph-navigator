@@ -797,7 +797,7 @@ def test_edit_options_works_for_core_single_select_rename_no_row_impact() -> Non
     assert next_body.tables.rooms.rows[0].floor_level == "opt_L1"
 
 
-def test_edit_options_rejects_required_core_select_delete_without_replacement() -> None:
+def test_edit_options_delete_cascades_to_nullable_core_select_row_clears() -> None:
     body = _seed_floor_option(_empty_body())
     body = _with_room(body, custom={})
     mutation = EditOptionsMutation(
@@ -807,12 +807,10 @@ def test_edit_options_rejects_required_core_select_delete_without_replacement() 
         next_options=[],
         expected_schema_fingerprint=_fingerprint(body),
     )
-    with pytest.raises(HTTPException) as excinfo:
-        _apply(body, mutation)
-    detail = cast(dict[str, object], excinfo.value.detail)
-    assert detail["error_code"] == "custom_field_option_list_invalid"
-    details = cast(dict[str, object], detail["details"])
-    assert details["reason"] == "required_built_in_select_delete_without_replacement"
+    next_body, audit = _apply(body, mutation)
+    assert audit["cleared_row_count"] == 1
+    assert audit["deleted_option_ids"] == ["opt_L1"]
+    assert next_body.tables.rooms.rows[0].floor_level is None
 
 
 # ---------------------------------------------------------------------------
