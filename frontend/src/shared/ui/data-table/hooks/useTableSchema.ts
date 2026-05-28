@@ -91,9 +91,9 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
     [coreFieldDefs, customFields, fieldDefs],
   );
 
-  const renderedFieldDefs = useMemo<FieldDef[]>(
+  return useMemo(
     () =>
-      tableFieldDefsToFieldDefs({
+      buildTableSchema({
         tableKey,
         fieldDefs: persistedFieldDefs,
         fieldOverlay,
@@ -101,37 +101,31 @@ export function useTableSchema(args: UseTableSchemaArgs): TableSchema {
       }),
     [fieldOverlay, persistedFieldDefs, singleSelectOptions, tableKey],
   );
+}
 
-  const coreFieldKeys = useMemo(
-    () =>
-      new Set(
-        persistedFieldDefs
-          .filter((fieldDef) => fieldDef.origin === "built_in")
-          .map((fieldDef) => fieldDef.field_key),
-      ),
-    [persistedFieldDefs],
-  );
-
-  const customList = useMemo(
-    () => persistedFieldDefs.filter((fieldDef) => fieldDef.origin === "custom"),
-    [persistedFieldDefs],
-  );
-
-  const schemaFingerprint = useMemo(
-    () => computeTableSchemaFingerprint(persistedFieldDefs),
-    [persistedFieldDefs],
-  );
-
-  return useMemo(
-    () => ({
-      fieldDefs: renderedFieldDefs,
-      coreFieldKeys,
-      customFields: customList,
-      schemaFingerprint,
-      mintCustomFieldId,
+export function buildTableSchema(args: {
+  tableKey: string;
+  fieldDefs: TableFieldDef[];
+  fieldOverlay?: TableFieldRenderOverlays | null;
+  singleSelectOptions?: Record<string, FieldOption[]> | null;
+}): TableSchema {
+  const fieldDefs = args.fieldDefs.map(normalizeCompatTableFieldDef);
+  return {
+    fieldDefs: tableFieldDefsToFieldDefs({
+      tableKey: args.tableKey,
+      fieldDefs,
+      fieldOverlay: args.fieldOverlay,
+      singleSelectOptions: args.singleSelectOptions,
     }),
-    [coreFieldKeys, customList, renderedFieldDefs, schemaFingerprint],
-  );
+    coreFieldKeys: new Set(
+      fieldDefs
+        .filter((fieldDef) => fieldDef.origin === "built_in")
+        .map((fieldDef) => fieldDef.field_key),
+    ),
+    customFields: fieldDefs.filter((fieldDef) => fieldDef.origin === "custom"),
+    schemaFingerprint: computeTableSchemaFingerprint(fieldDefs),
+    mintCustomFieldId,
+  };
 }
 
 export function mintCustomFieldId(): string {

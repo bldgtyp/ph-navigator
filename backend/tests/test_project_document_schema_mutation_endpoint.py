@@ -16,10 +16,10 @@ from fastapi.testclient import TestClient
 
 from database import connection
 from features.auth.service import create_or_update_user
-from features.project_document.custom_fields import CustomFieldDef, CustomFieldType
-from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.custom_fields import CustomFieldType
 from main import app
+from tests.project_document_helpers import custom_fields_from_slice as _custom_fields
+from tests.project_document_helpers import field_defs_fingerprint as _fingerprint
 
 ORIGIN = "http://localhost:5173"
 
@@ -69,12 +69,6 @@ def _version_url(project_id: object, version_id: object) -> str:
     return f"/api/v1/projects/{project_id}/versions/{version_id}"
 
 
-def _fingerprint(custom_fields: list[dict[str, Any]]) -> str:
-    return compute_table_schema_fingerprint(
-        [*ROOMS_BUILT_IN_FIELD_DEFS, *[CustomFieldDef.model_validate(field) for field in custom_fields]]
-    )
-
-
 def _new_field_payload(
     cf_id: str = "cf_phase2",
     display_name: str = "Notes",
@@ -122,7 +116,7 @@ def test_post_schema_mutation_adds_field_round_trip(clean_document_tables: None)
 
     initial = client.get(_draft_rooms_url(project_id, version_id))
     assert initial.status_code == 200
-    fingerprint = _fingerprint(initial.json()["custom_fields"])
+    fingerprint = _fingerprint(initial.json()["field_defs"])
 
     mutation = _add_field_mutation(
         fingerprint=fingerprint,
@@ -137,16 +131,17 @@ def test_post_schema_mutation_adds_field_round_trip(clean_document_tables: None)
     body = response.json()
     assert body["source"] == "draft"
     assert body["draft_etag"]
-    assert [field["id"] for field in body["custom_fields"]] == ["cf_notes"]
+    custom_fields = _custom_fields(body)
+    assert [field["field_key"] for field in custom_fields] == ["cf_notes"]
     # `created_by` was stamped by the server with the editor user id —
     # the client sent `None`.
-    assert body["custom_fields"][0]["created_by"] is not None
-    assert body["custom_fields"][0]["created_by"] != "None"
+    assert custom_fields[0]["created_by"] is not None
+    assert custom_fields[0]["created_by"] != "None"
 
     # Re-fetching the draft returns the same envelope.
     refetch = client.get(_draft_rooms_url(project_id, version_id))
     assert refetch.status_code == 200
-    assert [field["id"] for field in refetch.json()["custom_fields"]] == ["cf_notes"]
+    assert [field["field_key"] for field in _custom_fields(refetch.json())] == ["cf_notes"]
 
 
 def test_post_schema_mutation_returns_409_on_stale_fingerprint(
@@ -185,7 +180,7 @@ def test_post_schema_mutation_returns_422_on_duplicate_name(
     initial = client.get(_draft_rooms_url(project_id, version_id))
     # "Number" collides with the core "Number" display name.
     mutation = _add_field_mutation(
-        fingerprint=_fingerprint(initial.json()["custom_fields"]),
+        fingerprint=_fingerprint(initial.json()["field_defs"]),
         field_payload=_new_field_payload(cf_id="cf_x", display_name="Number"),
     )
     response = client.post(
@@ -196,7 +191,7 @@ def test_post_schema_mutation_returns_422_on_duplicate_name(
     assert response.status_code == 422
     payload = response.json()
     assert payload["error_code"] == "custom_field_duplicate_name"
-    assert payload["details"]["colliding_field_origin"] == "core"
+    assert payload["details"]["colliding_field_origin"] == "built_in"
 
 
 def test_post_schema_mutation_returns_409_on_locked_version(
@@ -208,7 +203,7 @@ def test_post_schema_mutation_returns_409_on_locked_version(
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id))
-    fingerprint = _fingerprint(initial.json()["custom_fields"])
+    fingerprint = _fingerprint(initial.json()["field_defs"])
 
     # Save-As to a locked version so we can target it with the mutation.
     save_as = client.post(
@@ -246,7 +241,7 @@ def test_post_schema_mutation_returns_409_on_locked_version(
     )
     assert success.status_code == 200
     locked_after = client.get(_draft_rooms_url(project_id, locked_version_id))
-    assert locked_after.json()["custom_fields"] == []
+    assert _custom_fields(locked_after.json()) == []
 
 
 def test_post_schema_mutation_returns_409_on_stale_draft_etag(
@@ -258,7 +253,7 @@ def test_post_schema_mutation_returns_409_on_stale_draft_etag(
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id))
-    fingerprint = _fingerprint(initial.json()["custom_fields"])
+    fingerprint = _fingerprint(initial.json()["field_defs"])
 
     # Land a first mutation so a draft + etag exist.
     first = client.post(
@@ -276,7 +271,7 @@ def test_post_schema_mutation_returns_409_on_stale_draft_etag(
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match": "stale-etag"},
         json=_add_field_mutation(
-            fingerprint=_fingerprint(first.json()["custom_fields"]),
+            fingerprint=_fingerprint(first.json()["field_defs"]),
             field_payload=_new_field_payload(cf_id="cf_second", display_name="Second"),
         ),
     )
@@ -295,7 +290,7 @@ def test_post_schema_mutation_change_type_clean_preflight_succeeds(
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id))
-    fingerprint = _fingerprint(initial.json()["custom_fields"])
+    fingerprint = _fingerprint(initial.json()["field_defs"])
 
     added = client.post(
         _mutate_url(project_id, version_id),
@@ -307,7 +302,7 @@ def test_post_schema_mutation_change_type_clean_preflight_succeeds(
     )
     assert added.status_code == 200
 
-    new_fp = _fingerprint(added.json()["custom_fields"])
+    new_fp = _fingerprint(added.json()["field_defs"])
     change_type = {
         "kind": "changeType",
         "tableKey": "rooms",
@@ -322,7 +317,7 @@ def test_post_schema_mutation_change_type_clean_preflight_succeeds(
     )
     assert response.status_code == 200, response.text
     payload = response.json()
-    assert payload["custom_fields"][0]["field_type"] == "number"
+    assert _custom_fields(payload)[0]["field_type"] == "number"
 
 
 def test_post_schema_mutation_emits_audit_log(clean_document_tables: None) -> None:
@@ -336,7 +331,7 @@ def test_post_schema_mutation_emits_audit_log(clean_document_tables: None) -> No
         _mutate_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
         json=_add_field_mutation(
-            fingerprint=_fingerprint(initial.json()["custom_fields"]),
+            fingerprint=_fingerprint(initial.json()["field_defs"]),
             field_payload=_new_field_payload(cf_id="cf_logged", display_name="Logged"),
         ),
     )
@@ -347,7 +342,7 @@ def test_post_schema_mutation_emits_audit_log(clean_document_tables: None) -> No
             """
             SELECT action, details
             FROM user_action_log
-            WHERE action = 'project_version_custom_field_add'
+            WHERE action = 'project_version_field_add'
             ORDER BY created_at DESC
             LIMIT 1
             """
@@ -379,7 +374,7 @@ def test_post_schema_mutation_add_single_select_with_initial_options(
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id))
-    fingerprint = _fingerprint(initial.json()["custom_fields"])
+    fingerprint = _fingerprint(initial.json()["field_defs"])
 
     add = {
         "kind": "addField",
@@ -402,7 +397,7 @@ def test_post_schema_mutation_add_single_select_with_initial_options(
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["custom_fields"][0]["field_type"] == "single_select"
+    assert _custom_fields(body)[0]["field_type"] == "single_select"
     assert body["single_select_options"]["rooms.cf_status"][0]["label"] == "Open"
 
 
@@ -417,7 +412,7 @@ def test_post_schema_mutation_edit_options_delete_cascade(
     version_id = project["active_version_id"]
 
     initial = client.get(_draft_rooms_url(project_id, version_id))
-    fingerprint = _fingerprint(initial.json()["custom_fields"])
+    fingerprint = _fingerprint(initial.json()["field_defs"])
 
     add_response = client.post(
         _mutate_url(project_id, version_id),
@@ -450,7 +445,7 @@ def test_post_schema_mutation_edit_options_delete_cascade(
                 {"id": "opt_done", "label": "Done renamed", "color": "#10b981", "order": 1},
                 {"id": "opt_new", "label": "Brand new", "color": "#a16207", "order": 2},
             ],
-            "expectedSchemaFingerprint": _fingerprint(add_response.json()["custom_fields"]),
+            "expectedSchemaFingerprint": _fingerprint(add_response.json()["field_defs"]),
         },
     )
     assert edit.status_code == 200, edit.text

@@ -1,74 +1,16 @@
-import { fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { RoomsTable } from "../components/RoomsTable";
+import { emptyViewState, type EditCustomFieldBundleRequest } from "../../../shared/ui/data-table";
+import type { RoomsSlice } from "../types";
 import {
-  emptyViewState,
-  useTableSchema,
-  type CustomFieldDef,
-  type TableSchema,
-  type EditCustomFieldBundleRequest,
-} from "../../../shared/ui/data-table";
-import { roomsTableFieldDefs } from "../lib";
-import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
-
-function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
-  return {
-    id: "cf_paint",
-    field_key: "cf_paint",
-    display_name: "Paint",
-    field_type: "short_text",
-    config: {},
-    description: null,
-    created_at: "2026-05-24T12:00:00Z",
-    created_by: null,
-    ...overrides,
-  };
-}
-
-function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
-  return {
-    id: "rm_1",
-    number: "101",
-    name: "Living Room",
-    floor_level: "opt_ground",
-    building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
-    icfa_factor: 1,
-    erv_unit_ids: [],
-    catalog_origin: null,
-    notes: null,
-    custom: {},
-    ...overrides,
-  };
-}
-
-function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
-  return {
-    project_id: "00000000-0000-0000-0000-000000000001",
-    version_id: "00000000-0000-0000-0000-000000000002",
-    source: "draft",
-    version_etag: "v-etag",
-    draft_etag: "d-etag",
-    rooms: [],
-    custom_fields: [],
-    single_select_options: {
-      "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
-      "rooms.building_zone": [],
-    },
-    ...overrides,
-  };
-}
-
-function schemaFor(slice: RoomsSlice): TableSchema {
-  return renderHook(() =>
-    useTableSchema({
-      tableKey: ROOMS_TABLE_NAME,
-      coreFieldDefs: roomsTableFieldDefs(slice),
-      customFields: slice.custom_fields,
-    }),
-  ).result.current;
-}
+  buildCustomField,
+  buildRoom,
+  buildRoomsSlice,
+  roomsFieldDefs,
+  schemaForRooms,
+  withRoomCustomValues,
+} from "../testing/testFixtures";
 
 function renderEditorTable(
   slice: RoomsSlice,
@@ -80,7 +22,7 @@ function renderEditorTable(
   return render(
     <RoomsTable
       roomsSlice={slice}
-      tableSchema={schemaFor(slice)}
+      tableSchema={schemaForRooms(slice)}
       isEditor
       onEdit={vi.fn()}
       view={emptyViewState()}
@@ -105,9 +47,9 @@ async function openPaintConfigDialog(): Promise<HTMLElement> {
 describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
   test("Edit field modal submits a trimmed display name through the bundle path", async () => {
     const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
-    const slice = buildSlice({
+    const slice = buildRoomsSlice({
       rooms: [buildRoom()],
-      custom_fields: [buildCustomField()],
+      field_defs: roomsFieldDefs(buildCustomField()),
     });
     renderEditorTable(slice, { onEditCustomFieldBundle });
 
@@ -127,9 +69,9 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
 
   test("Edit field modal rejects duplicate names before dispatch", async () => {
     const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
-    const slice = buildSlice({
+    const slice = buildRoomsSlice({
       rooms: [buildRoom()],
-      custom_fields: [buildCustomField()],
+      field_defs: roomsFieldDefs(buildCustomField()),
     });
     renderEditorTable(slice, { onEditCustomFieldBundle });
 
@@ -146,9 +88,9 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
 
   test("Edit field modal keeps Save disabled when the field is unchanged", async () => {
     const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
-    const slice = buildSlice({
+    const slice = buildRoomsSlice({
       rooms: [buildRoom()],
-      custom_fields: [buildCustomField()],
+      field_defs: roomsFieldDefs(buildCustomField()),
     });
     renderEditorTable(slice, { onEditCustomFieldBundle });
 
@@ -162,9 +104,9 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
 
   test("Duplicate field routes through the custom-field callback", async () => {
     const onDuplicateCustomField = vi.fn().mockResolvedValue({ newFieldKey: "cf_paint_copy" });
-    const slice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_paint: "blue" } })],
-      custom_fields: [buildCustomField()],
+    const slice = buildRoomsSlice({
+      rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
+      field_defs: roomsFieldDefs(buildCustomField()),
     });
     renderEditorTable(slice, { onDuplicateCustomField });
 
@@ -176,13 +118,13 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
 
   test("Edit field modal seeds the current description", async () => {
     const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
-    const slice = buildSlice({
+    const slice = buildRoomsSlice({
       rooms: [buildRoom()],
-      custom_fields: [
+      field_defs: roomsFieldDefs(
         buildCustomField({
           description: "Existing note",
         }),
-      ],
+      ),
     });
     renderEditorTable(slice, { onEditCustomFieldBundle });
 

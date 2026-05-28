@@ -315,17 +315,17 @@ def custom_field_response(
     Raises ``custom_field_invalid_field_id`` if the field is missing —
     defensive guard, shouldn't fire since apply validated id existence.
     """
-    custom_fields = getattr(response, "custom_fields", None)
-    if custom_fields is None:
+    field_defs = getattr(response, "field_defs", None)
+    if field_defs is None:
         raise_mcp_error(
             "custom_field_unsupported_table",
-            "Response envelope does not expose custom_fields.",
+            "Response envelope does not expose field_defs.",
             "fatal",
             ctx,
             {"field_id": field_id},
         )
-    for field in custom_fields:
-        if field.id == field_id:
+    for field in field_defs:
+        if field.origin == "custom" and field.field_key == field_id:
             return field.model_dump(mode="json")
     raise_mcp_error(
         "custom_field_invalid_field_id",
