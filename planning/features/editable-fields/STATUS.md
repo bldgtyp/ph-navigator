@@ -10,7 +10,8 @@ for the editable-fields worktree.
 - Branch:
   `codex/editable-fields-p2-6-frontend-fixtures`
 - Working tree status:
-  implementation ready for review; changes are not yet committed.
+  rebased onto `origin/main` at `97e3465`; implementation ready for
+  review.
 
 ## Source-Of-Truth Docs
 
@@ -26,9 +27,9 @@ verification work.
 
 ## Phase 3 Frontend-Bundle Progress
 
-The branch has landed the Phase 3 frontend-bundle slices through P2.6
-and now has local P2.7 verification evidence. The remaining phase-level
-work is the bundle rebase/merge to `origin/main`.
+The branch has landed the Phase 3 frontend-bundle slices through P2.6,
+has local P2.7 verification evidence, and is rebased onto current
+`origin/main`. The remaining phase-level work is merge/PR review.
 
 P2.6 fixture rewrites covered:
 
@@ -49,11 +50,17 @@ P2.6 fixture rewrites covered:
   built-in editable-field round-trip persistence.
 - Fixed Pumps frontend row insert/delete/cell-write payload builders so
   they preserve `field_defs` during whole-table replaces.
+- Post-rebase Simplify cleanup extracted `buildTableSchema()` as the
+  shared production/test schema builder, made unsupported schema
+  mutation fixture variants fail loudly, derived backend empty required
+  table scaffolding from `empty_project_document()`, and hardened the
+  Playwright custom-field cell target by resolving the column from the
+  visible header.
 
 ## Current Gate Status
 
 Repository gates are green after the P2.6 cleanup and P2.7 browser
-evidence pass:
+evidence pass, rerun after rebasing onto `origin/main`:
 
 - `make test`: backend 415 passed, 1 skipped; frontend 948 passed.
 - `make lint`: backend Ruff and frontend ESLint clean.
@@ -62,7 +69,8 @@ evidence pass:
   Docker Postgres health check clean.
 - Playwright smoke: `cd frontend && E2E_BASE_URL=http://localhost:5174
   pnpm exec playwright test tests/e2e/editable-fields-roundtrip.spec.ts
-  --project=chromium` passed on the worktree dev stack.
+  --project=chromium` passed on the worktree dev stack after the
+  selector hardening.
 - Formatters: backend Ruff format and frontend Prettier run on touched
   files.
 
@@ -73,8 +81,8 @@ Known residual noise:
 - Frontend tests emit existing React `act(...)` warnings in table view
   state/custom-field write tests.
 
-P2.7 local verification is green. The full phase exit still requires
-bundle rebase/merge to `origin/main`.
+P2.7 local verification is green. The branch has been rebased onto
+`origin/main`; the full phase exit still requires merge/PR review.
 
 ## Verification Pattern For Each Fixture Rewrite
 

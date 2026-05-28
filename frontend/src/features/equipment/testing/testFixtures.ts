@@ -1,6 +1,5 @@
 import {
-  computeTableSchemaFingerprint,
-  mintCustomFieldId,
+  buildTableSchema,
   setCustomValue,
   tableFieldDefsToFieldDefs,
   useTableSchema,
@@ -193,7 +192,7 @@ export function applyRoomsSchemaMutationFixture(
     case "changeType":
     case "editOptions":
     case "setFormula":
-      break;
+      throw new Error(`Unsupported schema mutation fixture: ${mutation.kind}`);
   }
   return {
     ...slice,
@@ -247,21 +246,20 @@ export function buildPumpsSlice(overrides: Partial<PumpsSlice> = {}): PumpsSlice
 }
 
 export function schemaForRooms(slice: RoomsSlice): TableSchema {
-  return tableSchemaFor({
+  return buildTableSchema({
+    tableKey: ROOMS_TABLE_NAME,
     fieldDefs: slice.field_defs,
-    renderedFieldDefs: renderFieldDefsForRooms(slice),
+    fieldOverlay: roomsFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
   });
 }
 
 export function schemaForPumps(slice: PumpsSlice): TableSchema {
-  return tableSchemaFor({
+  return buildTableSchema({
+    tableKey: PUMPS_TABLE_NAME,
     fieldDefs: slice.field_defs,
-    renderedFieldDefs: tableFieldDefsToFieldDefs({
-      tableKey: PUMPS_TABLE_NAME,
-      fieldDefs: slice.field_defs,
-      fieldOverlay: pumpsFieldOverlay(slice),
-      singleSelectOptions: slice.single_select_options,
-    }),
+    fieldOverlay: pumpsFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
   });
 }
 
@@ -290,21 +288,4 @@ export function renderFieldDefsForRooms(slice: RoomsSlice): FieldDef[] {
     fieldOverlay: roomsFieldOverlay(slice),
     singleSelectOptions: slice.single_select_options,
   });
-}
-
-function tableSchemaFor(args: {
-  fieldDefs: TableFieldDef[];
-  renderedFieldDefs: FieldDef[];
-}): TableSchema {
-  return {
-    fieldDefs: args.renderedFieldDefs,
-    coreFieldKeys: new Set(
-      args.fieldDefs
-        .filter((fieldDef) => fieldDef.origin === "built_in")
-        .map((fieldDef) => fieldDef.field_key),
-    ),
-    customFields: args.fieldDefs.filter((fieldDef) => fieldDef.origin === "custom"),
-    schemaFingerprint: computeTableSchemaFingerprint(args.fieldDefs),
-    mintCustomFieldId,
-  };
 }

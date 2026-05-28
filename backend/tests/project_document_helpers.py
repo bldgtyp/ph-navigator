@@ -1,10 +1,9 @@
-from collections.abc import Iterable
 from typing import Any
 
 from features.project_document.custom_fields import CustomFieldDef
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
-from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
-from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.projects.models import CreateProjectRequest
+from features.projects.service import empty_project_document
 
 
 def custom_fields_from_slice(slice_body: dict[str, Any]) -> list[dict[str, Any]]:
@@ -15,23 +14,21 @@ def field_defs_fingerprint(field_defs: list[dict[str, Any]]) -> str:
     return compute_table_schema_fingerprint([CustomFieldDef.model_validate(field) for field in field_defs])
 
 
-def field_defs_json(field_defs: Iterable[Any]) -> list[dict[str, Any]]:
-    return [field.model_dump(mode="json") for field in field_defs]
+def _empty_document_tables() -> dict[str, Any]:
+    return empty_project_document(
+        CreateProjectRequest(name="Test Project", bt_number="BT-TEST", cert_programs=[])
+    ).tables.model_dump(mode="json")
 
 
 def empty_rooms_table() -> dict[str, Any]:
-    return {"field_defs": field_defs_json(ROOMS_BUILT_IN_FIELD_DEFS), "rows": []}
+    return _empty_document_tables()["rooms"]
 
 
 def empty_pumps_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    return {
-        "field_defs": field_defs_json(PUMPS_BUILT_IN_FIELD_DEFS),
-        "rows": rows or [],
-    }
+    pumps = _empty_document_tables()["equipment"]["pumps"]
+    pumps["rows"] = rows or []
+    return pumps
 
 
 def empty_required_tables() -> dict[str, Any]:
-    return {
-        "rooms": empty_rooms_table(),
-        "equipment": {"pumps": empty_pumps_table()},
-    }
+    return _empty_document_tables()
