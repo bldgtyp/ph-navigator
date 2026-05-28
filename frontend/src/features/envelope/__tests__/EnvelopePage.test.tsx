@@ -1,6 +1,6 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -258,6 +258,16 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
   });
 
+  test("assembly legend is scoped to active materials and shows lambda status", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const legend = await screen.findByRole("complementary", { name: "Material legend" });
+    expect(within(legend).getByText("Wood fiber board")).toBeInTheDocument();
+    expect(within(legend).getByText("0.038 W/(m-K)")).toBeInTheDocument();
+    expect(within(legend).queryByText("Dense-pack cellulose")).not.toBeInTheDocument();
+    expect(within(legend).queryByText("Unused air barrier")).not.toBeInTheDocument();
+  });
+
   test("specifications render segment use-site notes and hide unused na cards in viewer mode", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`, {
       projectOverride: { access_mode: "viewer" },
@@ -458,7 +468,7 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByRole("link", { name: /WALL-C3/ });
-    await userEvent.click(screen.getAllByRole("button", { name: "Thickness" })[0]!);
+    await userEvent.click(screen.getByRole("button", { name: "Edit layer 1 thickness" }));
     const thicknessInput = screen.getByLabelText("Thickness (mm)");
     await userEvent.clear(thicknessInput);
     await userEvent.type(thicknessInput, "50");
