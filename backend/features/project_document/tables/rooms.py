@@ -373,9 +373,9 @@ ROOMS_BUILT_IN_OPTION_KEY_BY_FIELD_KEY: dict[str, str] = {
     "building_zone": ROOM_BUILDING_ZONE_OPTION_KEY,
 }
 
-# Required built-in single-selects reject deletes-to-clear; the apply
-# path must require an explicit replacement option id.
-ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset({"floor_level"})
+# Rooms have no user-required fields. Deleting a referenced built-in
+# option may clear the affected cells instead of forcing replacement.
+ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset()
 
 # Built-in field_keys whose `field_type` is locked from user edits
 # (PRD §P5.1). These are the typed Pydantic columns on `RoomRow` —
@@ -412,8 +412,6 @@ def _set_rooms_built_in_option_value(row: object, field_key: str, value: str | N
     if not isinstance(row, RoomRow):
         raise TypeError(f"expected RoomRow, got {type(row).__name__}")
     if field_key == "floor_level":
-        if value is None:
-            raise ValueError("rooms.floor_level cannot be set to None")
         return row.model_copy(update={"floor_level": value})
     if field_key == "building_zone":
         return row.model_copy(update={"building_zone": value})

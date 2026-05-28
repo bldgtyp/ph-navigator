@@ -257,10 +257,10 @@ describe("equipment room helpers", () => {
     ]);
   });
 
-  test("validates required floor before draft writes and allows duplicate room numbers", () => {
-    const missingFloor = {
+  test("allows blank room labels, missing floor, and duplicate room numbers", () => {
+    const blankRoom = {
       ...baseSlice,
-      rooms: [roomFixture({ id: "rm_1" }, { number: "101", name: "Living" })],
+      rooms: [roomFixture({ id: "rm_1", floor_level: null }, { number: "", name: "" })],
     };
     const duplicate = {
       ...baseSlice,
@@ -277,7 +277,7 @@ describe("equipment room helpers", () => {
       },
     };
 
-    expect(validateRoomsPayload(missingFloor)).toBe("Floor level is required.");
+    expect(validateRoomsPayload(blankRoom)).toBeNull();
     expect(validateRoomsPayload(duplicate)).toBeNull();
   });
 
@@ -362,6 +362,10 @@ describe("equipment room helpers", () => {
           { id: "rm_5", floor_level: ground.id, icfa_factor: 0.85 },
           { number: "5", name: "Living", num_people: 2, num_bedrooms: 1 },
         ),
+        roomFixture(
+          { id: "rm_6", floor_level: ground.id, icfa_factor: 0.9 },
+          { number: "6", name: "Kitchen", num_people: 1, num_bedrooms: 0 },
+        ),
       ],
       single_select_options: { "rooms.floor_level": [ground], "rooms.building_zone": [] },
     };
@@ -376,12 +380,36 @@ describe("equipment room helpers", () => {
         id: rowId,
       }),
     );
-    expect(payload.rooms).toHaveLength(2);
+    expect(payload.rooms.map((room) => room.id)).toEqual(["rm_5", "tmp_row_1", "rm_6"]);
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
     expect(inserted?.custom_values.number).toBe("");
     expect(inserted?.custom_values.name).toBe("");
     expect(inserted?.floor_level).toBeNull();
     expect(inserted?.icfa_factor).toBe(1);
+  });
+
+  test("roomsPayloadFromRowInsert keeps blank room number null when Number is number-typed", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "number" ? { ...field, field_type: "number", default: null } : field,
+      ),
+      rooms: [roomFixture({ id: "rm_5", floor_level: null }, { number: 5, name: "Living" })],
+      single_select_options: { "rooms.floor_level": [], "rooms.building_zone": [] },
+    };
+
+    const payload = roomsPayloadFromRowInsert(
+      current,
+      [{ rowId: "tmp_row_1", anchorRowId: "rm_5", fieldDefaults: { number: null } }],
+      ({ rowId }) => ({
+        ...emptyRoom(),
+        id: rowId,
+      }),
+    );
+
+    const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
+    expect(inserted?.custom_values.number).toBeNull();
+    expect(validateRoomsPayload(payload)).toBeNull();
   });
 
   test("roomsPayloadFromRowDelete removes by id and preserves the option lists", () => {

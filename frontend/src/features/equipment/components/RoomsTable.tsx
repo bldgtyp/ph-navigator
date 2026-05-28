@@ -12,7 +12,6 @@ import {
 import { ComputedCell } from "../../../shared/ui/data-table/components/ComputedCell";
 import { isComputedErrorValue } from "../../../shared/ui/data-table/lib/formula";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
-import { sortedRooms } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
@@ -69,7 +68,6 @@ export function RoomsTable({
   getFormulaRowValues?: DataTableProps<RoomRow>["getFormulaRowValues"];
   rowsComputed?: Record<string, Record<string, unknown>>;
 }) {
-  const sortedRows = useMemo(() => sortedRooms(roomsSlice.rooms), [roomsSlice.rooms]);
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
@@ -180,7 +178,7 @@ export function RoomsTable({
 
   return (
     <DataTable
-      rows={sortedRows}
+      rows={roomsSlice.rooms}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(room) => room.id}

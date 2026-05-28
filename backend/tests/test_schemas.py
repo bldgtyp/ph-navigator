@@ -30,7 +30,7 @@ def test_project_document_and_room_json_schemas_are_exposed() -> None:
     assert room_schema.headers["X-Request-ID"] == "schema-room"
     room_body = room_schema.json()
     assert room_body["title"] == "RoomRow"
-    assert room_body["required"] == ["id", "floor_level"]
+    assert room_body["required"] == ["id"]
     assert room_body["properties"]["id"]["pattern"] == "^rm_[A-Za-z0-9_-]+$"
 
 

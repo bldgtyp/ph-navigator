@@ -50,11 +50,7 @@ export function RoomDialogStack(props: RoomDialogStackProps) {
       {roomModal && isEditor ? (
         <RoomModal
           key={roomModal.mode === "add" ? "add" : roomModal.room.id}
-          title={
-            roomModal.mode === "add"
-              ? "New room"
-              : `Room: ${customTextValue(roomModal.room, "number")} - ${customTextValue(roomModal.room, "name")}`
-          }
+          title={roomModal.mode === "add" ? "New room" : `Room: ${roomLabel(roomModal.room)}`}
           room={
             roomModal.mode === "add"
               ? emptyRoom(firstRoomFloorOptionId(roomsSlice))
@@ -79,4 +75,11 @@ export function RoomDialogStack(props: RoomDialogStackProps) {
       ) : null}
     </>
   );
+}
+
+function roomLabel(room: RoomRow): string {
+  const label = [customTextValue(room, "number"), customTextValue(room, "name")]
+    .filter(Boolean)
+    .join(" - ");
+  return label || room.id;
 }

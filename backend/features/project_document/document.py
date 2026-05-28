@@ -99,7 +99,7 @@ class RoomRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^rm_[A-Za-z0-9_-]+$", max_length=80)
-    floor_level: str = Field(pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    floor_level: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     building_zone: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     icfa_factor: float = Field(default=1.0, ge=0.0, le=1.0)
     erv_unit_ids: list[str] = Field(default_factory=list)
@@ -512,7 +512,7 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate room id: {room.id}")
             room_ids.add(room.id)
 
-            if room.floor_level not in floor_option_ids:
+            if room.floor_level is not None and room.floor_level not in floor_option_ids:
                 raise ValueError(f"Missing floor-level option for room {room.id}: {room.floor_level}")
             if room.building_zone is not None and room.building_zone not in zone_option_ids:
                 raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")

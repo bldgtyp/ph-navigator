@@ -52,18 +52,6 @@ export function RoomModal({
       setError(frozenReason);
       return;
     }
-    if (!customTextValue(draft, "number").trim()) {
-      setError("Room number is required.");
-      return;
-    }
-    if (!customTextValue(draft, "name").trim()) {
-      setError("Room name is required.");
-      return;
-    }
-    if (!floorLevel.trim()) {
-      setError("Floor level is required.");
-      return;
-    }
     setIsSaving(true);
     try {
       await onSubmit(draft, { floorLevel, buildingZone });
@@ -104,7 +92,6 @@ export function RoomModal({
               value={customTextValue(draft, "number")}
               onChange={(event) => setDraft(setCustomValue(draft, "number", event.target.value))}
               disabled={isFrozen}
-              required
             />
           </label>
           <label>
@@ -113,7 +100,6 @@ export function RoomModal({
               value={customTextValue(draft, "name")}
               onChange={(event) => setDraft(setCustomValue(draft, "name", event.target.value))}
               disabled={isFrozen}
-              required
             />
           </label>
           <label>
@@ -123,7 +109,6 @@ export function RoomModal({
               value={floorLevel}
               onChange={(event) => setFloorLevel(event.target.value)}
               disabled={isFrozen}
-              required
             />
           </label>
           <label>

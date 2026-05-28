@@ -1,5 +1,6 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import type {
+  CustomValue,
   PumpOptionKey,
   PumpRow,
   PumpsReplacePayload,
@@ -156,15 +157,12 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
       locked: ["display_name", "delete", "duplicate"],
     },
     number: {
-      required: true,
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     name: {
-      required: true,
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     [ROOM_FLOOR_LEVEL_KEY]: {
-      required: true,
       options: roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
@@ -330,18 +328,6 @@ export function optionLabel(options: SingleSelectOption[], optionId: string | nu
   });
 }
 
-export function sortedRooms(rooms: RoomRow[]): RoomRow[] {
-  return rooms
-    .map((room) => ({ room, number: customTextValue(room, "number") }))
-    .sort((a, b) =>
-      a.number.localeCompare(b.number, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      }),
-    )
-    .map(({ room }) => room);
-}
-
 export function sortedPumps(pumps: PumpRow[]): PumpRow[] {
   return pumps
     .map((pump) => ({
@@ -375,16 +361,23 @@ export function nextRoomsPayload(
   const options = cloneOptions(current);
   const floorLevel = upsertOption(options, ROOM_FLOOR_LEVEL_OPTION_KEY, labels.floorLevel);
   const buildingZone = upsertOption(options, ROOM_BUILDING_ZONE_OPTION_KEY, labels.buildingZone);
-  const normalizedRoom = normalizeRoomForPayload({
-    ...room,
-    floor_level: floorLevel,
-    building_zone: buildingZone,
-  });
+  const normalizedRoom = normalizeRoomForPayload(
+    {
+      ...room,
+      floor_level: floorLevel,
+      building_zone: buildingZone,
+    },
+    current.field_defs,
+  );
+  const existingIndex = current.rooms.findIndex((candidate) => candidate.id === normalizedRoom.id);
+  const rooms =
+    existingIndex === -1
+      ? [...current.rooms, normalizedRoom]
+      : current.rooms.map((candidate, index) =>
+          index === existingIndex ? normalizedRoom : candidate,
+        );
   return {
-    rooms: sortedRooms([
-      normalizedRoom,
-      ...current.rooms.filter((candidate) => candidate.id !== normalizedRoom.id),
-    ]),
+    rooms,
     single_select_options: options,
     field_defs: [...current.field_defs],
   };
@@ -401,8 +394,7 @@ export function deleteRoomPayload(current: RoomsSlice, roomId: string): RoomsRep
 // Build a RoomsReplacePayload that adds the rows synthesized by the
 // <DataTable> Shift+Enter gesture. The consumer's buildEmptyRow has
 // already expanded fieldDefaults into a full RoomRow — this helper
-// just merges into the current rooms list and clones options
-// unchanged.
+// inserts each row below its anchor and clones options unchanged.
 export function roomsPayloadFromRowInsert(
   current: RoomsSlice,
   inserts: RowInsertPayload[],
@@ -418,8 +410,18 @@ export function roomsPayloadFromRowInsert(
       anchorRow,
     });
   });
+  const builtById = new Set(built.map((room) => room.id));
+  const rooms = current.rooms.filter((room) => !builtById.has(room.id));
+  for (const [index, room] of built.entries()) {
+    const anchorRowId = inserts[index]?.anchorRowId ?? null;
+    const anchorIndex = anchorRowId
+      ? rooms.findIndex((candidate) => candidate.id === anchorRowId)
+      : -1;
+    const insertAt = anchorIndex === -1 ? rooms.length : anchorIndex + 1;
+    rooms.splice(insertAt, 0, normalizeRoomForPayload(room, current.field_defs));
+  }
   return {
-    rooms: sortedRooms([...current.rooms, ...built]),
+    rooms,
     single_select_options: cloneOptions(current),
     field_defs: [...current.field_defs],
   };
@@ -510,10 +512,10 @@ export function roomsPayloadFromCellWrites(
   }, new Map<string, RoomCellWrite[]>());
   const customFieldKeys = new Set(current.field_defs.map((field) => field.field_key));
   const rooms = current.rooms.map((room) =>
-    applyWritesToRoom(room, writesByRowId.get(room.id) ?? [], customFieldKeys),
+    applyWritesToRoom(room, writesByRowId.get(room.id) ?? [], customFieldKeys, current.field_defs),
   );
   return {
-    rooms: sortedRooms(rooms),
+    rooms,
     single_select_options: options,
     field_defs: [...current.field_defs],
   };
@@ -566,10 +568,8 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
     payload.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY].map((option) => option.id),
   );
   for (const room of payload.rooms) {
-    if (!customTextValue(room, "number").trim()) return "Room number is required.";
-    if (!customTextValue(room, "name").trim()) return "Room name is required.";
-    if (!room.floor_level || !floorOptionIds.has(room.floor_level)) {
-      return "Floor level is required.";
+    if (room.floor_level && !floorOptionIds.has(room.floor_level)) {
+      return "Floor level option is missing.";
     }
     if (room.building_zone && !zoneOptionIds.has(room.building_zone)) {
       return "Building zone option is missing.";
@@ -669,7 +669,7 @@ export function replaceRoomOptionsPayload(
     return { ...room, [roomFieldForOptionKey(key)]: replacements[currentOptionId] };
   });
   return {
-    rooms: sortedRooms(rooms),
+    rooms,
     single_select_options: options,
     field_defs: [...current.field_defs],
   };
@@ -713,13 +713,14 @@ function applyWritesToRoom(
   room: RoomRow,
   writes: RoomCellWrite[],
   customFieldKeys: ReadonlySet<string>,
+  fieldDefs: readonly Pick<TableFieldDef, "field_key" | "field_type">[],
 ): RoomRow {
   if (writes.length === 0) return room;
   let next = room;
   for (const write of writes) {
     next = applyWriteToRoom(next, write.fieldKey, write.value, customFieldKeys);
   }
-  return normalizeRoomForPayload(next);
+  return normalizeRoomForPayload(next, fieldDefs);
 }
 
 function applyWriteToRoom(
@@ -832,19 +833,57 @@ function upsertOption(
   return nextOption.id;
 }
 
-function normalizeRoomForPayload(room: RoomRow): RoomRow {
+function normalizeRoomForPayload(
+  room: RoomRow,
+  fieldDefs: readonly Pick<
+    TableFieldDef,
+    "field_key" | "field_type"
+  >[] = ROOMS_COMPAT_BUILT_IN_FIELD_DEFS,
+): RoomRow {
+  const fieldDefByKey = new Map(fieldDefs.map((field) => [field.field_key, field]));
   return {
     ...room,
     custom_values: {
       ...room.custom_values,
-      number: customTextValue(room, "number").trim(),
-      name: customTextValue(room, "name").trim(),
-      num_people: Math.max(0, Math.trunc(customNumberValue(room, "num_people") || 0)),
-      num_bedrooms: Math.max(0, Math.trunc(customNumberValue(room, "num_bedrooms") || 0)),
+      number: normalizeRoomCustomValue(room, "number", fieldDefByKey.get("number"), {
+        numberFallback: null,
+      }),
+      name: normalizeRoomCustomValue(room, "name", fieldDefByKey.get("name"), {
+        numberFallback: null,
+      }),
+      num_people: normalizeRoomCustomValue(room, "num_people", fieldDefByKey.get("num_people"), {
+        numberFallback: 0,
+        clampNonNegativeInteger: true,
+      }),
+      num_bedrooms: normalizeRoomCustomValue(
+        room,
+        "num_bedrooms",
+        fieldDefByKey.get("num_bedrooms"),
+        { numberFallback: 0, clampNonNegativeInteger: true },
+      ),
     },
     icfa_factor: clamp(room.icfa_factor || 0, 0, 1),
     notes: room.notes?.trim() || null,
   };
+}
+
+function normalizeRoomCustomValue(
+  room: RoomRow,
+  fieldKey: string,
+  fieldDef: Pick<TableFieldDef, "field_type"> | undefined,
+  opts: { numberFallback: number | null; clampNonNegativeInteger?: boolean },
+): CustomValue {
+  const value = room.custom_values[fieldKey];
+  if (fieldDef?.field_type === "number") {
+    const parsed = customNumberValue(room, fieldKey);
+    if (parsed === null) return opts.numberFallback;
+    const numeric = opts.clampNonNegativeInteger ? Math.max(0, Math.trunc(parsed)) : parsed;
+    return numeric;
+  }
+  if (fieldDef?.field_type === "single_select") {
+    return typeof value === "string" && value.trim() ? value : null;
+  }
+  return customTextValue(room, fieldKey).trim();
 }
 
 function normalizePumpForPayload(pump: PumpRow): PumpRow {
