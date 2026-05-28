@@ -6,6 +6,7 @@ import {
   buildAddFieldMutation,
   buildChangeTypeMutation,
   buildDeleteFieldMutation,
+  buildEditFieldBundleMutation,
   buildDuplicateFieldMutation,
   buildEditOptionsMutation,
   buildRenameFieldMutation,
@@ -22,6 +23,17 @@ const SAMPLE_FIELD: CustomFieldDef = {
   description: null,
   origin: "custom",
   created_at: "2026-05-24T12:00:00Z",
+  created_by: null,
+};
+
+const BUILT_IN_NUMBER_FIELD: CustomFieldDef = {
+  field_key: "number",
+  display_name: "Number",
+  field_type: "short_text",
+  config: {},
+  description: null,
+  origin: "built_in",
+  created_at: "2026-05-26T00:00:00Z",
   created_by: null,
 };
 
@@ -245,6 +257,22 @@ describe("buildEditOptionsMutation", () => {
 });
 
 describe("buildChangeTypeMutation", () => {
+  test("allows built-in editable fields", () => {
+    const after: CustomFieldDef = {
+      ...BUILT_IN_NUMBER_FIELD,
+      field_type: "number",
+      config: { precision: 2 },
+    };
+    const op = buildChangeTypeMutation({
+      tableKey: "rooms",
+      fieldId: "number",
+      after,
+      schemaFingerprint: "fp",
+    });
+    expect(op.fieldId).toBe("number");
+    expect(op.after.field_type).toBe("number");
+  });
+
   test("produces a typed changeType mutation preserving identity", () => {
     const after: CustomFieldDef = { ...SAMPLE_FIELD, field_type: "number" };
     const op = buildChangeTypeMutation({
@@ -266,6 +294,41 @@ describe("buildChangeTypeMutation", () => {
         tableKey: "rooms",
         fieldId: SAMPLE_FIELD.field_key,
         after,
+        schemaFingerprint: "fp",
+      }),
+    ).toThrow(SchemaMutationBuildError);
+  });
+});
+
+describe("buildEditFieldBundleMutation", () => {
+  test("allows built-in editable fields", () => {
+    const after: CustomFieldDef = {
+      ...BUILT_IN_NUMBER_FIELD,
+      field_type: "number",
+      config: { precision: 2 },
+    };
+    const op = buildEditFieldBundleMutation({
+      tableKey: "rooms",
+      fieldId: "number",
+      after,
+      acknowledgeDestructive: false,
+      schemaFingerprint: "fp",
+    });
+    expect(op).toMatchObject({
+      kind: "editFieldBundle",
+      tableKey: "rooms",
+      fieldId: "number",
+      after,
+      expectedSchemaFingerprint: "fp",
+    });
+  });
+
+  test("rejects identity mismatch", () => {
+    expect(() =>
+      buildEditFieldBundleMutation({
+        tableKey: "rooms",
+        fieldId: "number",
+        after: { ...BUILT_IN_NUMBER_FIELD, field_key: "name" },
         schemaFingerprint: "fp",
       }),
     ).toThrow(SchemaMutationBuildError);
