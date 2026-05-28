@@ -3,16 +3,18 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { RoomsPage } from "../routes/RoomsPage";
 import { RoomsTable } from "../components/RoomsTable";
-import { renderHook } from "@testing-library/react";
-import {
-  emptyViewState,
-  useTableSchema,
-  type CustomFieldDef,
-  type TableSchema,
-} from "../../../shared/ui/data-table";
+import { emptyViewState } from "../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../projects/types";
-import { roomsTableFieldDefs } from "../lib";
-import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
+import { ROOMS_TABLE_NAME, type RoomsSlice } from "../types";
+import {
+  applyRoomsSchemaMutationFixture,
+  buildCustomField,
+  buildRoom,
+  buildRoomsSlice,
+  schemaForRooms,
+  withRoomCustomValues,
+  type RoomsSchemaMutationFixture,
+} from "../testing/testFixtures";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000001";
 const VERSION_ID = "00000000-0000-0000-0000-000000000002";
@@ -60,63 +62,14 @@ function buildProject(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
   };
 }
 
-function buildCustomField(overrides: Partial<CustomFieldDef> = {}): CustomFieldDef {
-  return {
-    id: "cf_paint",
-    field_key: "cf_paint",
-    display_name: "Paint",
-    field_type: "short_text",
-    config: {},
-    description: null,
-    created_at: "2026-05-24T12:00:00Z",
-    created_by: null,
-    ...overrides,
-  };
-}
-
-function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
-  return {
-    id: "rm_1",
-    number: "101",
-    name: "Living Room",
-    floor_level: "opt_ground",
-    building_zone: null,
-    num_people: 0,
-    num_bedrooms: 0,
-    icfa_factor: 1,
-    erv_unit_ids: [],
-    catalog_origin: null,
-    notes: null,
-    custom: {},
-    ...overrides,
-  };
-}
-
 function buildSlice(overrides: Partial<RoomsSlice> = {}): RoomsSlice {
-  return {
+  return buildRoomsSlice({
     project_id: PROJECT_ID,
     version_id: VERSION_ID,
-    source: "draft",
-    version_etag: "v-etag",
     draft_etag: "d-etag-0",
     rooms: [buildRoom()],
-    custom_fields: [],
-    single_select_options: {
-      "rooms.floor_level": [{ id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 }],
-      "rooms.building_zone": [],
-    },
     ...overrides,
-  };
-}
-
-function schemaFor(slice: RoomsSlice): TableSchema {
-  return renderHook(() =>
-    useTableSchema({
-      tableKey: ROOMS_TABLE_NAME,
-      coreFieldDefs: roomsTableFieldDefs(slice),
-      customFields: slice.custom_fields,
-    }),
-  ).result.current;
+  });
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -129,13 +82,13 @@ function jsonResponse(body: unknown, status = 200): Response {
 function renderRoomsPageWithMockedSchemaMutation(initialSlice: RoomsSlice) {
   let current = initialSlice;
   let draftCounter = 0;
-  const postBodies: unknown[] = [];
+  const postBodies: RoomsSchemaMutationFixture[] = [];
 
   fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
     if (url.includes(`/draft/tables/${ROOMS_TABLE_NAME}/custom-fields:mutate`)) {
-      const mutation = JSON.parse(String(init?.body));
+      const mutation = JSON.parse(String(init?.body)) as RoomsSchemaMutationFixture;
       postBodies.push(mutation);
-      current = applySchemaMutation(current, mutation, `d-etag-${++draftCounter}`);
+      current = applyRoomsSchemaMutationFixture(current, mutation, `d-etag-${++draftCounter}`);
       return jsonResponse(current);
     }
     if (url.includes(`/draft/tables/${ROOMS_TABLE_NAME}`)) {
@@ -163,59 +116,6 @@ function renderRoomsPageWithMockedSchemaMutation(initialSlice: RoomsSlice) {
     </QueryClientProvider>,
   );
   return { ...rendered, postBodies };
-}
-
-type SchemaMutationBody = {
-  kind: string;
-  after?: CustomFieldDef;
-  fieldId?: string;
-  displayName?: string;
-  sourceFieldId?: string;
-  description?: string | null;
-};
-
-function applySchemaMutation(
-  slice: RoomsSlice,
-  mutation: SchemaMutationBody,
-  nextDraftEtag: string,
-): RoomsSlice {
-  const customFields = slice.custom_fields.map((field) => ({
-    ...field,
-    config: { ...field.config },
-  }));
-  if (mutation.kind === "addField") {
-    if (mutation.after)
-      customFields.push({ ...mutation.after, config: { ...mutation.after.config } });
-  } else if (mutation.kind === "editFieldBundle") {
-    const index = customFields.findIndex((item) => item.field_key === mutation.fieldId);
-    if (index >= 0 && mutation.after) {
-      customFields[index] = { ...mutation.after, config: { ...mutation.after.config } };
-    }
-  } else if (mutation.kind === "renameField") {
-    const field = customFields.find((item) => item.field_key === mutation.fieldId);
-    if (field && mutation.displayName) field.display_name = mutation.displayName;
-  } else if (mutation.kind === "duplicateField") {
-    const sourceIndex = customFields.findIndex((item) => item.field_key === mutation.sourceFieldId);
-    if (mutation.after) customFields.splice(sourceIndex + 1, 0, mutation.after);
-  } else if (mutation.kind === "setDescription") {
-    const field = customFields.find((item) => item.field_key === mutation.fieldId);
-    if (field) field.description = mutation.description ?? null;
-  } else if (mutation.kind === "deleteField") {
-    const fieldId = mutation.fieldId ?? "";
-    const nextFields = customFields.filter((item) => item.field_key !== mutation.fieldId);
-    return {
-      ...slice,
-      source: "draft",
-      draft_etag: nextDraftEtag,
-      custom_fields: nextFields,
-      rooms: slice.rooms.map((row) => {
-        const custom = { ...row.custom };
-        delete custom[fieldId];
-        return { ...row, custom };
-      }),
-    };
-  }
-  return { ...slice, source: "draft", draft_etag: nextDraftEtag, custom_fields: customFields };
 }
 
 async function addField(displayName: string) {
@@ -310,13 +210,16 @@ describe("RoomsTable custom-field editor E2E acceptance", () => {
 
   test("viewer mode shows read affordances and suppresses schema mutation controls", () => {
     const slice = buildSlice({
-      rooms: [buildRoom({ custom: { cf_paint: "blue" } })],
-      custom_fields: [buildCustomField({ description: "Read-only description" })],
+      rooms: [withRoomCustomValues(buildRoom(), { cf_paint: "blue" })],
+      field_defs: [
+        ...buildSlice().field_defs,
+        buildCustomField({ description: "Read-only description" }),
+      ],
     });
     render(
       <RoomsTable
         roomsSlice={slice}
-        tableSchema={schemaFor(slice)}
+        tableSchema={schemaForRooms(slice)}
         isEditor={false}
         onEdit={vi.fn()}
         view={emptyViewState()}

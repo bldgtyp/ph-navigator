@@ -355,8 +355,27 @@ The deferred backend + frontend test fixture rewrites:
   tests/test_project_document_custom_fields.py`, `uv run ty check
   tests/test_project_document_custom_fields.py`, and `uv run pytest
   tests/test_project_document_custom_fields.py -q` (6 passed).
-- ~55 frontend test files reference `slice.custom_fields` and
-  typed-column row literals. Each needs the fixture update.
+- Frontend equipment fixture cleanup continued 2026-05-27:
+  `frontend/src/features/equipment/testing/testFixtures.ts` now
+  centralizes v4 Rooms/Pumps fixtures, and the equipment table tests
+  use `field_defs`, `custom_values`, `record_id` built-in field defs,
+  and custom `field_key` references.
+- Backend and shared test cleanup continued 2026-05-27:
+  stale MCP, project-document, default-fill, pumps, schema-mutation,
+  phase-1, phase-2, phase-4, data-table, and table-slice fixtures were
+  migrated away from `custom_fields`, row `.custom`, and typed mutable
+  built-in columns. Shared backend field-def assertions now live in
+  `backend/tests/project_document_helpers.py`.
+- Runtime fix included 2026-05-27:
+  `backend/features/mcp/helpers.py` now reads MCP custom-field helper
+  responses from `field_defs`, filtering custom fields by
+  `field_key`.
+- Simplify follow-up included 2026-05-27:
+  frontend equipment tests now reuse the production Rooms/Pumps
+  built-in FieldDef compatibility lists, shared E2E short-text field
+  creation lives in `frontend/tests/e2e/_helpers.ts`, and backend tests
+  share required empty v4 Rooms/Pumps table scaffolding through
+  `backend/tests/project_document_helpers.py`.
 
 Approach: rewrite-in-place per test module. Don't try to land all
 remaining frontend fixtures in one commit; group by module and ship
@@ -365,10 +384,18 @@ per-module commits.
 ### P2.7 Slice — Verification (#36 / #14)
 
 Final pass:
-- `make typecheck` clean on backend and frontend.
-- `make test` clean on backend and frontend.
-- `make smoke` clean.
-- Playwright smoke: Rooms + Pumps round-trip on a live browser.
+- `make typecheck` clean on backend and frontend. Status 2026-05-27:
+  backend Ty and frontend TypeScript clean.
+- `make test` clean on backend and frontend. Status 2026-05-27:
+  backend 415 passed, 1 skipped; frontend 948 passed.
+- `make smoke` clean. Status 2026-05-27: clean.
+- Playwright smoke: Rooms + Pumps round-trip on a live browser. Status
+  2026-05-27: clean on the local worktree dev stack:
+  `E2E_BASE_URL=http://localhost:5174 pnpm exec playwright test
+  tests/e2e/editable-fields-roundtrip.spec.ts --project=chromium`.
+- Runtime fix included 2026-05-27: Pumps row insert/delete/cell-write
+  payload builders now preserve `field_defs`, matching Rooms and
+  preventing backend 422s during browser "Add pump" / edit flows.
 
 Then rebase the whole bundle onto `origin/main` (resolving the
 `planning/features/editable-fields/archive/complete/plan-31-phase-3-built-in-type-changes.md` move
