@@ -39,6 +39,7 @@ export type CustomFieldHandlers = {
 export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): CustomFieldHandlers {
   const { tableKey, canEdit, tableSchema, view, onViewChange, commitSchemaMutation } = args;
   const customFieldList = useMemo(() => tableSchema.customFields, [tableSchema.customFields]);
+  const tableFieldList = useMemo(() => tableSchema.tableFields, [tableSchema.tableFields]);
 
   const handleDeleteCustomField = useCallback(
     async (fieldKey: string) => {
@@ -94,9 +95,9 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
   const handleEditCustomFieldBundle = useCallback(
     async (request: EditCustomFieldBundleRequest) => {
       if (!canEdit) return;
-      const source = customFieldList.find((field) => field.field_key === request.fieldKey);
+      const source = tableFieldList.find((field) => field.field_key === request.fieldKey);
       if (!source) {
-        throw new Error("That custom field no longer exists. Refresh to see the current fields.");
+        throw new Error("That field no longer exists. Refresh to see the current fields.");
       }
       const nextFieldType = request.fieldType ?? source.field_type;
       const nextConfig = buildNextConfigForFieldTypeChange(source, request);
@@ -117,7 +118,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
       });
       await commitSchemaMutation(mutation);
     },
-    [canEdit, commitSchemaMutation, customFieldList, tableKey, tableSchema.schemaFingerprint],
+    [canEdit, commitSchemaMutation, tableFieldList, tableKey, tableSchema.schemaFingerprint],
   );
 
   const handleAddCustomField = useCallback(

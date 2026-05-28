@@ -32,6 +32,7 @@ export type CustomFieldDef = TableFieldDef;
 
 export type TableSchema = {
   fieldDefs: FieldDef[];
+  tableFields: TableFieldDef[];
   coreFieldKeys: Set<string>;
   customFields: TableFieldDef[];
   // Hex digest matching backend `compute_table_schema_fingerprint`.
@@ -117,6 +118,7 @@ export function buildTableSchema(args: {
       fieldOverlay: args.fieldOverlay,
       singleSelectOptions: args.singleSelectOptions,
     }),
+    tableFields: fieldDefs,
     coreFieldKeys: new Set(
       fieldDefs
         .filter((fieldDef) => fieldDef.origin === "built_in")

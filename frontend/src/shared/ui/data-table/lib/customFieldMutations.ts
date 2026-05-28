@@ -134,6 +134,12 @@ function assertCustomFieldId(fieldId: string, label: string): void {
   }
 }
 
+function assertFieldId(fieldId: string, label: string): void {
+  if (fieldId.trim() === "") {
+    throw new SchemaMutationBuildError(`${label} cannot be empty.`);
+  }
+}
+
 function assertDisplayName(value: string, label: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -156,6 +162,11 @@ function clampDescription(value: string | null): string | null {
 
 function assertCustomFieldDef(field: CustomFieldDef, role: string): void {
   assertCustomFieldId(field.field_key, `${role} field_key`);
+  assertDisplayName(field.display_name, `${role} display_name`);
+}
+
+function assertFieldDef(field: CustomFieldDef, role: string): void {
+  assertFieldId(field.field_key, `${role} field_key`);
   assertDisplayName(field.display_name, `${role} display_name`);
 }
 
@@ -363,8 +374,8 @@ export type BuildEditFieldBundleArgs = {
 export function buildEditFieldBundleMutation(
   args: BuildEditFieldBundleArgs,
 ): EditFieldBundleMutation {
-  assertCustomFieldId(args.fieldId, "editFieldBundle.fieldId");
-  assertCustomFieldDef(args.after, "editFieldBundle.after");
+  assertFieldId(args.fieldId, "editFieldBundle.fieldId");
+  assertFieldDef(args.after, "editFieldBundle.after");
   if (args.after.field_key !== args.fieldId) {
     throw new SchemaMutationBuildError(
       "editFieldBundle.after.field_key must equal fieldId (identity is preserved).",
@@ -453,7 +464,8 @@ export function buildNextConfigForFieldTypeChange(
 }
 
 export function buildChangeTypeMutation(args: BuildChangeTypeArgs): ChangeTypeMutation {
-  assertCustomFieldId(args.fieldId, "changeType.fieldId");
+  assertFieldId(args.fieldId, "changeType.fieldId");
+  assertFieldDef(args.after, "changeType.after");
   if (args.after.field_key !== args.fieldId) {
     throw new SchemaMutationBuildError(
       "changeType.after.field_key must equal fieldId (identity is preserved).",
