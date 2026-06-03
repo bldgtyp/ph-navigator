@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-03
-TIME: 19:15 EDT
-STATUS: All five phases complete; feature implementation closed,
-        pending browser smoke + the parallel color-field test fix.
+TIME: 19:40 EDT
+STATUS: All five phases complete; `make ci` fully green; feature
+        implementation closed, pending only the manual browser smoke.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Current state for the DataTable Number with Units planning
        packet.
@@ -105,11 +105,11 @@ RELATED:
   Simplify pass collapsed the initial duplicated narrative across the
   two files into a short pointer + grid-only specifics in data-table.md
   and the full contract in frontend-viewer-units.md.
-- `make format` clean. `make ci` red on the single pre-existing
-  `coerceCustomFieldType.test.ts` parity check (count drifted 33 → 34
-  after the parallel color-field merge); reproducible on the merge
-  commit with Phase 03–05 changes stashed, owned by the color-field
-  work, not this feature.
+- `make format` clean and `make ci` fully green (86 files, 998 tests)
+  after bumping the `coerceCustomFieldType.test.ts` formula-parity
+  count from 33 → 34 to match the post-color CONVERSION_MATRIX. The
+  bump is a stale-expectation fix, not a contract change — the
+  backend matrix already had the same 34 entries.
 
 ## Feature Closeout
 
@@ -133,10 +133,10 @@ documented in the canonical context docs.
   with the canonical pairs (`kg_m3 ↔ lb_ft3`, `w_m_k ↔ btu_h_ft_f`).
   No `R/in` in MVP — reciprocal/derived display belongs in a named
   helper, not the generic conductivity pair.
-- **Pre-existing `coerceCustomFieldType.test.ts` failure.** Owned by
-  the parallel color-field work. The fix is to update the formula-
-  parity expected entry count from 33 to 34 (or to whatever the
-  post-color CONVERSION_MATRIX exposes); not in this feature's scope.
+- *(Resolved 2026-06-03)* Pre-existing
+  `coerceCustomFieldType.test.ts` count drift — fixed inline as the
+  pre-merge gate; backend matrix was already authoritative and
+  matched the new 34-entry frontend.
 
 ## Next Step
 
@@ -202,5 +202,5 @@ Phase 05 focused verification:
 Phase 05 full verification:
 
 - `make format` — clean.
-- `make ci` — red on the pre-existing color-field test
-  (`coerceCustomFieldType.test.ts`); see "Deferred work" above.
+- `make ci` — green (86 files, 998 tests) after the inline fix to
+  `coerceCustomFieldType.test.ts` count expectation.
