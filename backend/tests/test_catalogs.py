@@ -1,4 +1,4 @@
-"""Materials catalog contract tests for TB-07."""
+"""Materials catalog contract tests."""
 
 from __future__ import annotations
 
@@ -13,32 +13,23 @@ from main import app
 
 ORIGIN = "http://localhost:5173"
 
+_TRUNCATE = """
+TRUNCATE catalog_materials,
+         catalog_frame_type_versions, catalog_frame_types,
+         catalog_glazing_type_versions, catalog_glazing_types,
+         user_action_log, sessions, project_status_items,
+         project_version_drafts, project_versions, projects, users
+RESTART IDENTITY CASCADE
+"""
+
 
 @pytest.fixture()
 def clean_catalog_tables() -> Iterator[None]:
     with transaction() as conn:
-        conn.execute(
-            """
-            TRUNCATE catalog_material_versions, catalog_materials,
-                     catalog_frame_type_versions, catalog_frame_types,
-                     catalog_glazing_type_versions, catalog_glazing_types,
-                     user_action_log, sessions, project_status_items,
-                     project_version_drafts, project_versions, projects, users
-            RESTART IDENTITY CASCADE
-            """
-        )
+        conn.execute(_TRUNCATE)
     yield
     with transaction() as conn:
-        conn.execute(
-            """
-            TRUNCATE catalog_material_versions, catalog_materials,
-                     catalog_frame_type_versions, catalog_frame_types,
-                     catalog_glazing_type_versions, catalog_glazing_types,
-                     user_action_log, sessions, project_status_items,
-                     project_version_drafts, project_versions, projects, users
-            RESTART IDENTITY CASCADE
-            """
-        )
+        conn.execute(_TRUNCATE)
 
 
 def signed_in_client() -> TestClient:
@@ -56,20 +47,19 @@ def signed_in_client() -> TestClient:
 def _xps_payload(name: str = "XPS") -> dict[str, object]:
     return {
         "name": name,
-        "category": "Insulation",
-        "version_label": "2024 spec",
-        "version_date": "2024-06-01",
-        "conductivity_w_mk": 0.034,
+        "category": "insulation",
         "density_kg_m3": 35.0,
         "specific_heat_j_kgk": 1500.0,
+        "conductivity_w_mk": 0.034,
         "emissivity": 0.9,
         "color": "#dce6f0",
-        "notes": "Type IV per ASTM C578",
-        "source_provenance": "Manufacturer datasheet 2024-Q2",
+        "source": "Manufacturer datasheet 2024-Q2",
+        "url": "https://example.com/xps-datasheet.pdf",
+        "comments": "Type IV per ASTM C578",
     }
 
 
-def test_create_returns_bookshelf_metadata(clean_catalog_tables: None) -> None:
+def test_create_returns_flat_record(clean_catalog_tables: None) -> None:
     client = signed_in_client()
     response = client.post(
         "/api/v1/catalogs/materials",
@@ -79,19 +69,29 @@ def test_create_returns_bookshelf_metadata(clean_catalog_tables: None) -> None:
     assert response.status_code == 201
     body = response.json()
     assert body["name"] == "XPS"
-    assert body["category"] == "Insulation"
+    assert body["category"] == "insulation"
     assert body["conductivity_w_mk"] == pytest.approx(0.034)
+    assert body["url"] == "https://example.com/xps-datasheet.pdf"
+    assert body["comments"] == "Type IV per ASTM C578"
     assert body["is_active"] is True
-    # Bookshelf-copy metadata shape: downstream picker needs these to construct
-    # `catalog_origin` per data-model.md §6.2 / §7.4. Record ids share the
-    # AirTable `rec` + 14-char shape across all three v1 catalogs so V1 /
-    # AirTable imports drop in as a literal INSERT. Versions stay V2-native.
+    # Record ids keep the AirTable `rec` + 14-char shape across all v1 catalogs.
     assert body["id"].startswith("rec")
     assert len(body["id"]) == 17
-    assert body["current_version_id"].startswith("matv_")
-    assert body["catalog_schema_version"] == 1
-    assert body["version_label"] == "2024 spec"
-    assert body["version_date"] == "2024-06-01"
+    # Flat schema: no per-version metadata fields on the response.
+    assert "current_version_id" not in body
+    assert "version_label" not in body
+    assert "catalog_schema_version" not in body
+
+
+def test_create_rejects_unknown_category(clean_catalog_tables: None) -> None:
+    """Category is constrained to the twelve fixed option ids."""
+    client = signed_in_client()
+    bad = client.post(
+        "/api/v1/catalogs/materials",
+        headers={"Origin": ORIGIN},
+        json={**_xps_payload(), "category": "not_a_real_category"},
+    )
+    assert bad.status_code == 422
 
 
 def test_list_filters_inactive_by_default_and_active_filter_is_explicit(
@@ -120,11 +120,9 @@ def test_edit_in_place_does_not_touch_project_versions(clean_catalog_tables: Non
     """A catalog edit must not mutate any project document.
 
     The bookshelf model copies values at pick time; later catalog edits live
-    only on the catalog row and surface through refresh-from-catalog, never
-    via silent mutation of saved project bodies.
+    only on the catalog row and surface through refresh-from-catalog.
     """
     client = signed_in_client()
-    # Create a project so project_versions is non-empty when the catalog edit lands.
     project_response = client.post(
         "/api/v1/projects",
         headers={"Origin": ORIGIN},
@@ -148,12 +146,11 @@ def test_edit_in_place_does_not_touch_project_versions(clean_catalog_tables: Non
     patched = client.patch(
         f"/api/v1/catalogs/materials/{created['id']}",
         headers={"Origin": ORIGIN},
-        json={"conductivity_w_mk": 0.030, "notes": "Reformulated 2026"},
+        json={"conductivity_w_mk": 0.030, "comments": "Reformulated 2026"},
     )
     assert patched.status_code == 200
     assert patched.json()["conductivity_w_mk"] == pytest.approx(0.030)
-    # current_version_id is unchanged (in-place edit per §7.3).
-    assert patched.json()["current_version_id"] == created["current_version_id"]
+    assert patched.json()["comments"] == "Reformulated 2026"
 
     with connection() as conn:
         after = conn.execute("SELECT id, body::text AS body_text, updated_at FROM project_versions").fetchall()
@@ -187,7 +184,6 @@ def test_validation_rejects_blank_name_and_negative_conductivity(
 
 
 def test_unauthenticated_read_and_write_rejected(clean_catalog_tables: None) -> None:
-    # Seed one row so the list endpoint has data to expose if auth ever leaked.
     client = signed_in_client()
     client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload())
 
@@ -221,7 +217,6 @@ def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None)
     client = signed_in_client()
     created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
     record_id = created["id"]
-    version_id = created["current_version_id"]
 
     patched = client.patch(
         f"/api/v1/catalogs/materials/{record_id}",
@@ -255,24 +250,5 @@ def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None)
         details = row["details_text"]
         assert '"catalog_table": "materials"' in details
         assert record_id in details
-    # The update entry records which fields changed so audit can answer
-    # "what changed" without diffing the version row.
     update_row = next(row for row in rows if row["action"] == "catalog_record_update")
     assert '"conductivity_w_mk"' in update_row["details_text"]
-    # Create + update + reactivate carry the version id so the audit trail
-    # can be joined back to a specific catalog_material_versions row.
-    for action in ("catalog_record_create", "catalog_record_update", "catalog_record_reactivate"):
-        row = next(r for r in rows if r["action"] == action)
-        assert version_id in row["details_text"]
-
-
-def test_patch_rejects_null_version_date(clean_catalog_tables: None) -> None:
-    """PATCH with version_date=null must 422 cleanly instead of hitting the NOT NULL constraint."""
-    client = signed_in_client()
-    created = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
-    response = client.patch(
-        f"/api/v1/catalogs/materials/{created['id']}",
-        headers={"Origin": ORIGIN},
-        json={"version_date": None},
-    )
-    assert response.status_code == 422

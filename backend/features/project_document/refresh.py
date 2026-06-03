@@ -249,6 +249,12 @@ def _slot_report(
         drifted_fields = any(field.ref_value != field.catalog_value for field in fields)
         state = "drifted" if (drifted_version or drifted_fields) else "in_sync"
 
+    # Frame and glazing CatalogOrigin entries always populate
+    # catalog_version_id; the field went Optional only because materials no
+    # longer have a version layer.
+    pinned_version_id = origin.catalog_version_id
+    assert pinned_version_id is not None, "frame/glazing CatalogOrigin must carry catalog_version_id"
+
     return RefreshSlotReport(
         window_type_id=window_type.id,
         element_id=element.id,
@@ -256,7 +262,7 @@ def _slot_report(
         state=state,
         catalog_table=origin.catalog_table,
         catalog_record_id=origin.catalog_record_id,
-        pinned_catalog_version_id=origin.catalog_version_id,
+        pinned_catalog_version_id=pinned_version_id,
         current_catalog_version_id=current_version_id,
         local_overrides=list(origin.local_overrides),
         fields=fields,

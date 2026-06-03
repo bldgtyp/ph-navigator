@@ -189,8 +189,12 @@ class CatalogOrigin(BaseModel):
 
     catalog_table: CatalogTableName
     catalog_record_id: str = Field(pattern=CATALOG_RECORD_ID_PATTERN)
-    catalog_version_id: str = Field(pattern=CATALOG_VERSION_ID_PATTERN)
-    catalog_schema_version: int = Field(ge=1)
+    # ``catalog_version_id`` / ``catalog_schema_version`` are populated only
+    # for catalogs that still ship a per-version row (frame, glazing). The
+    # materials catalog was flattened in Alembic 20260603_0015 — material
+    # origins leave both null.
+    catalog_version_id: str | None = Field(default=None, pattern=CATALOG_VERSION_ID_PATTERN)
+    catalog_schema_version: int | None = Field(default=None, ge=1)
     synced_at: datetime
     local_overrides: list[str] = Field(default_factory=list)
 
@@ -199,13 +203,20 @@ def _require_catalog_origin_family(
     origin: CatalogOrigin | None,
     *,
     expected_table: CatalogTableName,
-    expected_version_prefix: str,
+    expected_version_prefix: str | None,
 ) -> None:
     if origin is None:
         return
     if origin.catalog_table != expected_table:
         raise ValueError(f"catalog_origin.catalog_table must be {expected_table!r}, got {origin.catalog_table!r}")
-    if not origin.catalog_version_id.startswith(expected_version_prefix):
+    version_id = origin.catalog_version_id
+    if expected_version_prefix is None:
+        # Catalogs without a version layer (materials) must not stamp a
+        # version id; surface that mismatch instead of silently ignoring it.
+        if version_id is not None:
+            raise ValueError(f"catalog_origin.catalog_version_id must be null for {expected_table!r}")
+        return
+    if version_id is None or not version_id.startswith(expected_version_prefix):
         raise ValueError(f"catalog_origin.catalog_version_id must start with {expected_version_prefix!r}")
 
 
@@ -333,21 +344,28 @@ class Assembly(BaseModel):
 
 
 class ProjectMaterial(BaseModel):
-    """A project-owned material/product record referenced by segments."""
+    """A project-owned material/product record referenced by segments.
+
+    Catalog-sourced fields mirror ``CatalogMaterialPublic``; the project
+    side adds ``id``, ``specification_status``, ``datasheet_asset_ids``,
+    and ``catalog_origin``.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
     name: str = Field(min_length=1, max_length=200)
     category: str = Field(min_length=1, max_length=120)
-    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=400)
+    url: str | None = Field(default=None, max_length=2000)
+    comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
-    notes: str | None = Field(default=None, max_length=4000)
     catalog_origin: CatalogOrigin | None = None
 
     @field_validator("name", "category", mode="before")
@@ -357,9 +375,9 @@ class ProjectMaterial(BaseModel):
             return value.strip()
         return value
 
-    @field_validator("notes", mode="before")
+    @field_validator("source", "url", "comments", mode="before")
     @classmethod
-    def _strip_optional_notes(cls, value: object) -> object:
+    def _strip_optional_text(cls, value: object) -> object:
         if isinstance(value, str):
             stripped = value.strip()
             return stripped or None
@@ -375,7 +393,7 @@ class ProjectMaterial(BaseModel):
         _require_catalog_origin_family(
             self.catalog_origin,
             expected_table="materials",
-            expected_version_prefix="matv_",
+            expected_version_prefix=None,
         )
         return self
 

@@ -119,7 +119,6 @@ def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialComma
         color=command.color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
         specification_status="missing",
         datasheet_asset_ids=[],
-        notes=None,
         catalog_origin=None,
     )
     body_with_material = ops.replace_project_materials(body, [*body.tables.project_materials, material])
@@ -224,13 +223,7 @@ def refresh_project_material_from_catalog(
     refreshed = source.model_copy(
         update={
             **next_values,
-            "catalog_origin": origin.model_copy(
-                update={
-                    "catalog_version_id": row["current_version_id"],
-                    "catalog_schema_version": row["catalog_schema_version"],
-                    "synced_at": datetime.now(UTC),
-                }
-            ),
+            "catalog_origin": origin.model_copy(update={"synced_at": datetime.now(UTC)}),
         }
     )
     return ops.replace_project_materials(
@@ -263,19 +256,19 @@ def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
         id=new_id(ID_PREFIX_PROJECT_MATERIAL),
         name=row["name"],
         category=row["category"],
-        conductivity_w_mk=row["conductivity_w_mk"],
         density_kg_m3=row["density_kg_m3"],
         specific_heat_j_kgk=row["specific_heat_j_kgk"],
+        conductivity_w_mk=row["conductivity_w_mk"],
         emissivity=row["emissivity"],
         color=row["color"],
+        source=row["source"],
+        url=row["url"],
+        comments=row["comments"],
         specification_status="missing",
         datasheet_asset_ids=[],
-        notes=row["notes"],
         catalog_origin=CatalogOrigin(
             catalog_table="materials",
             catalog_record_id=row["id"],
-            catalog_version_id=row["current_version_id"],
-            catalog_schema_version=row["catalog_schema_version"],
             synced_at=datetime.now(UTC),
             local_overrides=[],
         ),

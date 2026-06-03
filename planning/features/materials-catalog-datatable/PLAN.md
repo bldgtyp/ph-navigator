@@ -42,8 +42,7 @@ no cohort or downstream-cascade pattern here).
 
 | Phase | File | Scope |
 |-------|------|-------|
-| 1 | `phases/phase-01-backend-schema.md` | Alembic destructive revision; flatten + reshape `catalog_materials`; drop `catalog_material_versions`; update models, repository, service, routes, tests. |
-| 2 | `phases/phase-02-drift-and-envelope.md` | Remove `catalog_version_id` from `CatalogOrigin`; rewrite `drift.py` and `pick_catalog_material` snapshot writer; rewrite drift tests. |
+| 1 + 2 (merged) | `phases/phase-01-backend-schema.md`, `phases/phase-02-drift-and-envelope.md` | Landed as one commit — see STATUS.md. The migration removes columns the envelope module reads at runtime, so the schema + envelope rewrites had to be atomic. Both phase docs are kept as the historical record of the intent. |
 | 3 | `phases/phase-03-frontend-datatable.md` | Built-in `TableFieldDef[]` + overlay (locks, fixed `numberUnits`, category options); REST→DataTable adapter; new `MaterialsCatalogPage`; delete `MaterialEditorModal`. |
 | 4 | `phases/phase-04-verification-docs.md` | `make ci` from repo root; Playwright MCP smoke; update `context/technical-requirements/data-table.md` if any deferred item flipped; closeout. |
 

@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-03
 TIME: 20:30 EDT
-STATUS: Planned.
+STATUS: Implemented (merged with phase 02 into one commit on
+        `feat/materials-catalog-datatable`; see ../STATUS.md).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Reshape the materials catalog backend to the nine-field flat
        schema and drop the version layer.

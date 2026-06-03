@@ -2,46 +2,71 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Final
+from datetime import datetime
+from typing import Final, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from features.catalogs._shared import (
-    reject_clearing_version_date,
-    strip_optional,
-    strip_required,
-)
+from features.catalogs._shared import strip_optional, strip_required
 from features.shared.colors import normalize_optional_hex_color
 
-CATALOG_VERSION_ID_PREFIX: Final[str] = "matv_"
+# Fixed twelve-option set. Edits here flow to the Alembic CHECK constraint and
+# the frontend overlay; keep all three in sync.
+MATERIAL_CATEGORY_IDS: Final[tuple[str, ...]] = (
+    "insulation",
+    "finishes",
+    "woods",
+    "metals",
+    "masonry",
+    "stud_layers_steel",
+    "stud_layers_wood",
+    "air_horizontal_heat_flow",
+    "air_upward_heat_flow",
+    "air_downward_heat_flow",
+    "rainscreen_insulation",
+    "doors",
+)
+
+MaterialCategoryId = Literal[
+    "insulation",
+    "finishes",
+    "woods",
+    "metals",
+    "masonry",
+    "stud_layers_steel",
+    "stud_layers_wood",
+    "air_horizontal_heat_flow",
+    "air_upward_heat_flow",
+    "air_downward_heat_flow",
+    "rainscreen_insulation",
+    "doors",
+]
 
 
 class CatalogMaterialPublic(BaseModel):
     """Bookshelf-ready material row.
 
-    The shape includes everything a downstream project picker needs to
-    construct a `catalog_origin` block (record id, version id, schema
-    version) plus the typed value fields copied at pick time.
+    One row per material — the per-version layer was dropped in
+    Alembic 20260603_0015 because the envelope pick command snapshots
+    values into the project document at pick time (see
+    ``features/envelope/commands/materials.py``), so the catalog never
+    needed history.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     id: str
     name: str
-    category: str
-    current_version_id: str
-    catalog_schema_version: int
-    version_label: str
-    version_date: date
-    conductivity_w_mk: float | None
+    category: MaterialCategoryId
     density_kg_m3: float | None
     specific_heat_j_kgk: float | None
+    conductivity_w_mk: float | None
     emissivity: float | None
     color: str | None
-    notes: str | None
-    source_provenance: str | None
+    source: str | None
+    url: str | None
+    comments: str | None
     is_active: bool
     created_at: datetime
     created_by: UUID | None
@@ -56,32 +81,22 @@ class CatalogMaterialListResponse(BaseModel):
 
 
 class _CatalogMaterialFields(BaseModel):
-    """Shared field shape and validators for Create/Update requests.
-
-    Subclasses redeclare `name` and `category` to flip required vs optional
-    without restating the rest of the value-field set or the validators.
-    """
+    """Shared field shape and validators for Create/Update requests."""
 
     model_config = ConfigDict(extra="forbid")
 
-    version_label: str | None = Field(default=None, min_length=1, max_length=80)
-    version_date: date | None = None
-    conductivity_w_mk: float | None = None
     density_kg_m3: float | None = None
     specific_heat_j_kgk: float | None = None
+    conductivity_w_mk: float | None = None
     emissivity: float | None = Field(default=None, ge=0.0, le=1.0)
     color: str | None = Field(default=None, max_length=40)
-    notes: str | None = Field(default=None, max_length=4000)
-    source_provenance: str | None = Field(default=None, max_length=400)
+    source: str | None = Field(default=None, max_length=400)
+    url: str | None = Field(default=None, max_length=2000)
+    comments: str | None = Field(default=None, max_length=4000)
 
-    @field_validator("version_label", mode="before")
+    @field_validator("source", "url", "comments", mode="before")
     @classmethod
-    def _strip_optional_label(cls, value: object) -> object:
-        return strip_optional(value)
-
-    @field_validator("notes", "source_provenance", mode="before")
-    @classmethod
-    def _strip_optional_fields(cls, value: object) -> object:
+    def _strip_optional_text(cls, value: object) -> object:
         return strip_optional(value)
 
     @field_validator("color", mode="before")
@@ -89,7 +104,7 @@ class _CatalogMaterialFields(BaseModel):
     def _normalize_color(cls, value: object) -> object:
         return normalize_optional_hex_color(value)
 
-    @field_validator("conductivity_w_mk", "density_kg_m3", "specific_heat_j_kgk")
+    @field_validator("density_kg_m3", "specific_heat_j_kgk", "conductivity_w_mk")
     @classmethod
     def _non_negative(cls, value: float | None) -> float | None:
         if value is not None and value < 0:
@@ -99,31 +114,21 @@ class _CatalogMaterialFields(BaseModel):
 
 class CatalogMaterialCreateRequest(_CatalogMaterialFields):
     name: str = Field(min_length=1, max_length=200)
-    category: str = Field(min_length=1, max_length=120)
-    version_label: str = Field(default="v1", min_length=1, max_length=80)
+    category: MaterialCategoryId
 
-    @field_validator("name", "category", "version_label", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
-    def _strip_required_fields(cls, value: object) -> object:
+    def _strip_name(cls, value: object) -> object:
         return strip_required(value)
 
 
 class CatalogMaterialUpdateRequest(_CatalogMaterialFields):
-    """Patch the identity row (name/category) and the current version's typed fields in place.
-
-    Per data-model.md §7.3: in-place edit allowed on the current version for
-    small corrections. Creating a new version is a separate flow (deferred).
-    """
+    """In-place patch of any catalog field. Omitted fields are unchanged."""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
-    category: str | None = Field(default=None, min_length=1, max_length=120)
+    category: MaterialCategoryId | None = None
 
-    @field_validator("name", "category", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
-    def _strip_optional_identity(cls, value: object) -> object:
+    def _strip_name(cls, value: object) -> object:
         return strip_optional(value)
-
-    @model_validator(mode="after")
-    def _reject_clearing_version_date(self) -> CatalogMaterialUpdateRequest:
-        reject_clearing_version_date(self)
-        return self

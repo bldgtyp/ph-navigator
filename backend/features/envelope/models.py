@@ -101,14 +101,16 @@ ProjectMaterialDriftState = Literal[
     "source_missing",
 ]
 ProjectMaterialDriftFieldKey = Literal[
-    "color",
-    "category",
-    "conductivity_w_mk",
-    "density_kg_m3",
-    "emissivity",
     "name",
-    "notes",
+    "category",
+    "density_kg_m3",
     "specific_heat_j_kgk",
+    "conductivity_w_mk",
+    "emissivity",
+    "color",
+    "source",
+    "url",
+    "comments",
 ]
 ProjectMaterialRefreshAction = Literal["keep_mine", "take_catalog", "use_value"]
 
@@ -129,8 +131,6 @@ class ProjectMaterialDriftItem(BaseModel):
     project_material_id: str
     state: ProjectMaterialDriftState
     catalog_record_id: str
-    pinned_catalog_version_id: str
-    current_catalog_version_id: str | None
     local_overrides: list[str] = Field(default_factory=list)
     fields: list[ProjectMaterialDriftField] = Field(default_factory=list)
 
@@ -333,13 +333,15 @@ class UpdateProjectMaterialCommand(BaseModel):
     project_material_id: str
     name: str | None = Field(default=None, min_length=1, max_length=200)
     category: str | None = Field(default=None, min_length=1, max_length=120)
-    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=400)
+    url: str | None = Field(default=None, max_length=2000)
+    comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus | None = None
-    notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("color", mode="before")
     @classmethod

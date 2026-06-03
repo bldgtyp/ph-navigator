@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-03
 TIME: 20:30 EDT
-STATUS: Planned.
+STATUS: Implemented (merged with phase 01 into one commit on
+        `feat/materials-catalog-datatable`; see ../STATUS.md).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Remove version-id-based drift from the envelope pipeline.
 RELATED:

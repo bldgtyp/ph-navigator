@@ -1,4 +1,8 @@
-"""Project material catalog drift reporting."""
+"""Project material catalog drift reporting.
+
+Materials are a flat catalog (Alembic 20260603_0015) — drift is decided
+purely by field-value comparison plus the source-active flag.
+"""
 
 from __future__ import annotations
 
@@ -44,17 +48,12 @@ def project_material_drift_item(
     if source_missing:
         fields = _project_material_drift_fields(material, None, overrides)
         state = "source_missing"
-        current_version_id = None
     elif source_deactivated:
         fields = _project_material_drift_fields(material, None, overrides)
         state = "source_deactivated"
-        current_version_id = row["current_version_id"]
     else:
         fields = _project_material_drift_fields(material, row, overrides)
-        current_version_id = row["current_version_id"]
-        version_drift = current_version_id != origin.catalog_version_id
-        field_drift = any(field.differs for field in fields)
-        if version_drift or field_drift:
+        if any(field.differs for field in fields):
             state = "drifted"
         elif origin.local_overrides:
             state = "customized"
@@ -65,8 +64,6 @@ def project_material_drift_item(
         project_material_id=material.id,
         state=state,
         catalog_record_id=origin.catalog_record_id,
-        pinned_catalog_version_id=origin.catalog_version_id,
-        current_catalog_version_id=current_version_id,
         local_overrides=list(origin.local_overrides),
         fields=fields,
     )

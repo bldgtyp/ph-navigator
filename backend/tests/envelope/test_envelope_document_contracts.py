@@ -23,15 +23,17 @@ def project_material(**overrides: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
         "id": "pmat_insul",
         "name": "Wood fiber board",
-        "category": "Insulation",
-        "conductivity_w_mk": 0.038,
+        "category": "insulation",
         "density_kg_m3": 160.0,
         "specific_heat_j_kgk": 2100.0,
+        "conductivity_w_mk": 0.038,
         "emissivity": 0.9,
         "color": "#dce6c8",
+        "source": None,
+        "url": None,
+        "comments": None,
         "specification_status": "missing",
         "datasheet_asset_ids": ["asset_01HXABCDEF0123456789ABCD"],
-        "notes": None,
         "catalog_origin": None,
     }
     base.update(overrides)
