@@ -5,6 +5,7 @@ export { formatAirflowFromM3H, formatAirflowFromM3S, m3hToCfm, m3sToCfm } from "
 export {
   convertNumberUnitsToDisplay,
   convertNumberUnitsToSi,
+  formatNumberUnitsDisplay,
   isCompatibleNumberUnitPair,
   isNumberUnitsConfig,
   NUMBER_UNIT_TYPES,
@@ -12,6 +13,7 @@ export {
   numberUnitLabel,
   numberUnitPrecision,
   numberUnitRegistrySnapshot,
+  parseNumberUnitsInput,
 } from "./numberUnits";
 export type {
   NumberIpUnit,

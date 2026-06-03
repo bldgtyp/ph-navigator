@@ -1,3 +1,8 @@
+import {
+  convertNumberUnitsToDisplay,
+  numberUnitPrecision,
+  type UnitSystem,
+} from "../../../../lib/units";
 import type { FieldDef } from "../types";
 
 // Per-field-type aggregation catalogue + pure formatter. Mirrors the
@@ -61,7 +66,17 @@ export function getAggregationKinds(fieldDef: FieldDef | undefined): readonly Ag
 // Pure formatter. Empty / no-data results yield "" for `count` and
 // "—" for stat kinds so an empty mean cell still reads as "we tried,
 // nothing to summarize."
-export function formatAggregation(kind: AggregationKind, values: readonly unknown[]): string {
+//
+// For number+units fields, sum/mean/min/max aggregate canonical SI
+// values, then the result is converted to the active display unit and
+// rendered at the configured precision (matching the cell-render
+// rule). Plain Number falls back to the existing two-decimal format.
+export function formatAggregation(
+  kind: AggregationKind,
+  values: readonly unknown[],
+  fieldDef?: FieldDef,
+  unitSystem: UnitSystem = "SI",
+): string {
   if (kind === "none") return "";
   if (kind === "count") {
     let n = 0;
@@ -81,16 +96,25 @@ export function formatAggregation(kind: AggregationKind, values: readonly unknow
   }
   const nums = collectFiniteNumbers(values);
   if (nums.length === 0) return "—";
-  switch (kind) {
-    case "sum":
-      return formatNumber(nums.reduce((a, b) => a + b, 0));
-    case "mean":
-      return formatNumber(nums.reduce((a, b) => a + b, 0) / nums.length);
-    case "min":
-      return formatNumber(Math.min(...nums));
-    case "max":
-      return formatNumber(Math.max(...nums));
+  const reduce = (): number => {
+    switch (kind) {
+      case "sum":
+        return nums.reduce((a, b) => a + b, 0);
+      case "mean":
+        return nums.reduce((a, b) => a + b, 0) / nums.length;
+      case "min":
+        return Math.min(...nums);
+      case "max":
+        return Math.max(...nums);
+    }
+  };
+  const result = reduce();
+  if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
+    const display =
+      unitSystem === "IP" ? convertNumberUnitsToDisplay(result, fieldDef.numberUnits) : result;
+    return display.toFixed(numberUnitPrecision(fieldDef.numberUnits, unitSystem));
   }
+  return formatNumber(result);
 }
 
 function collectFiniteNumbers(values: readonly unknown[]): number[] {

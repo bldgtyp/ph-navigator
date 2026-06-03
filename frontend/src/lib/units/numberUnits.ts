@@ -178,6 +178,37 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
   }
 }
 
+// Format a canonical SI value as the bare displayed number for the
+// active unit system. Returns "" when the value is null/undefined or
+// not finite — empty cells render as blank, matching plain Number.
+export function formatNumberUnitsDisplay(
+  valueSi: unknown,
+  config: NumberUnitsConfig,
+  unitSystem: UnitSystem,
+): string {
+  if (valueSi === null || valueSi === undefined || valueSi === "") return "";
+  const numeric = typeof valueSi === "number" ? valueSi : Number(valueSi);
+  if (!Number.isFinite(numeric)) return "";
+  const displayed = unitSystem === "IP" ? convertNumberUnitsToDisplay(numeric, config) : numeric;
+  return displayed.toFixed(numberUnitPrecision(config, unitSystem));
+}
+
+// Parse a bare displayed number string (active unit system) back to a
+// canonical SI numeric value. Blank string → null; an unparseable
+// string → undefined so callers can distinguish "user cleared the cell"
+// from "user typed something we couldn't read".
+export function parseNumberUnitsInput(
+  raw: string,
+  config: NumberUnitsConfig,
+  unitSystem: UnitSystem,
+): number | null | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed)) return undefined;
+  return unitSystem === "IP" ? convertNumberUnitsToSi(parsed, config) : parsed;
+}
+
 function isValidNumberUnitPrecision(value: unknown): value is number {
   return (
     typeof value === "number" &&

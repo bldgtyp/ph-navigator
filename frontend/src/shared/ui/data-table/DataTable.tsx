@@ -16,6 +16,8 @@ import {
   horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { useContext } from "react";
+import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import { computeIdentifierDuplicates, recordIdColumnId } from "./lib/identifier/recordId";
 import { applyFilters } from "./lib/filter/apply";
 import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
@@ -101,6 +103,14 @@ export function DataTable<TRow>({
 }: DataTableProps<TRow>) {
   const columnDefs = inputColumnDefs;
   const fieldDefs = inputFieldDefs;
+  // Active unit preference. Read via context directly (not the
+  // `useUnitPreference` hook) so the table can render without a
+  // surrounding provider — tests and pure-data hosts get a safe "SI"
+  // default. Toggling the real provider cycles a render through every
+  // memo that includes it (cell render, aggregates, filter, clipboard)
+  // so unit-aware columns re-display without a write.
+  const unitPreference = useContext(UnitPreferenceContext);
+  const unitSystem = unitPreference?.unitSystem ?? "SI";
   const pinnedColumnId = useMemo(() => recordIdColumnId(columnDefs), [columnDefs]);
   const visibleColumnDefs = useGridColumns(
     columnDefs,
@@ -124,12 +134,12 @@ export function DataTable<TRow>({
   const filteredRows = useMemo(
     () =>
       sortRows(
-        applyFilters(rows, visibleColumnDefs, fieldDefs, view.filter),
+        applyFilters(rows, visibleColumnDefs, fieldDefs, view.filter, unitSystem),
         visibleColumnDefs,
         fieldDefs,
         effectiveSort,
       ),
-    [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort],
+    [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort, unitSystem],
   );
   // Plan 30 §P5 / D13 — duplicate-value warning chip. O(n) over the
   // post-filter rows, keyed by identifier value; empty values do not
@@ -148,11 +158,15 @@ export function DataTable<TRow>({
   // the aggregation pass.
   const aggregatesByPath = useMemo(
     () =>
-      computeAggregatesByPath(filteredRows, visibleColumnDefs, fieldDefs, {
-        group: view.group,
-        aggregations: view.aggregations,
-      }),
-    [filteredRows, visibleColumnDefs, fieldDefs, view.group, view.aggregations],
+      computeAggregatesByPath(
+        filteredRows,
+        visibleColumnDefs,
+        fieldDefs,
+        { group: view.group, aggregations: view.aggregations },
+        undefined,
+        unitSystem,
+      ),
+    [filteredRows, visibleColumnDefs, fieldDefs, view.group, view.aggregations, unitSystem],
   );
   const bodyPlan = useMemo(
     () =>
@@ -203,6 +217,7 @@ export function DataTable<TRow>({
     dispatchWrite,
     onAnnounce: setAnnounce,
     hasWriteHandler: Boolean(onWrite),
+    unitSystem,
   });
 
   // History is in-memory per session (PoC L6.3). Phase 2: prefer the
@@ -217,17 +232,57 @@ export function DataTable<TRow>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionKey ?? rows]);
 
+  // Sanitize filters when a field's numberUnits config changes. Stored
+  // filter values are typed in the active unit system at the time of
+  // entry — once the unit pair or precision swaps, those values would
+  // be ambiguous, so we drop them and surface a no-op announce.
+  const lastUnitsByFieldRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    const previous = lastUnitsByFieldRef.current;
+    const next = new Map<string, string>();
+    const changed: string[] = [];
+    for (const fieldDef of fieldDefs) {
+      if (fieldDef.field_type !== "number") continue;
+      const fingerprint = fieldDef.numberUnits ? JSON.stringify(fieldDef.numberUnits) : "";
+      next.set(fieldDef.field_key, fingerprint);
+      const prev = previous.get(fieldDef.field_key);
+      if (prev !== undefined && prev !== fingerprint) changed.push(fieldDef.field_key);
+    }
+    lastUnitsByFieldRef.current = next;
+    if (changed.length === 0) return;
+    const changedSet = new Set(changed);
+    const remaining = view.filter.filter((rule) => !changedSet.has(rule.fieldKey));
+    if (remaining.length !== view.filter.length) {
+      onViewChange({ ...view, filter: remaining });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fieldDefs]);
+
   const tanstackColumns = useMemo<ColumnDef<TRow>[]>(
     () =>
-      visibleColumnDefs.map((column) => ({
-        id: column.id,
-        header: column.header,
-        accessorFn: column.accessor,
-        cell: ({ row }) =>
-          column.render?.(row.original) ??
-          formatDisplayCellValue(column.accessor(row.original), fieldDefByKey.get(column.fieldKey)),
-      })),
-    [fieldDefByKey, visibleColumnDefs],
+      visibleColumnDefs.map((column) => {
+        const fieldDef = fieldDefByKey.get(column.fieldKey);
+        // Number+units fields short-circuit any consumer `render` —
+        // those cells must always show the bare value in the active
+        // unit system so the toggle re-renders without consumers
+        // having to wire their own unit-aware render.
+        const isUnitNumber = fieldDef?.field_type === "number" && Boolean(fieldDef.numberUnits);
+        return {
+          id: column.id,
+          header: column.header,
+          accessorFn: column.accessor,
+          cell: ({ row }) => {
+            if (isUnitNumber) {
+              return formatDisplayCellValue(column.accessor(row.original), fieldDef, unitSystem);
+            }
+            return (
+              column.render?.(row.original) ??
+              formatDisplayCellValue(column.accessor(row.original), fieldDef, unitSystem)
+            );
+          },
+        };
+      }),
+    [fieldDefByKey, visibleColumnDefs, unitSystem],
   );
   // The TanStack table model is keyed on `visibleDataRows` so its row
   // model lines up 1:1 with the data items in `bodyPlan` and with
@@ -311,6 +366,7 @@ export function DataTable<TRow>({
     onWrite,
     dispatchWrite,
     onAnnounce: setAnnounce,
+    unitSystem,
   });
 
   const canInsertRow = Boolean(buildEmptyRow) && !readOnly && Boolean(onWrite);
@@ -1187,6 +1243,7 @@ export function DataTable<TRow>({
                   headerActions={headerActions}
                   onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
                   tailCellRef={tailCellRef}
+                  unitSystem={unitSystem}
                 />
                 <GridBody
                   table={table}
@@ -1236,6 +1293,7 @@ export function DataTable<TRow>({
                   fieldDefByKey={fieldDefByKey}
                   readOnly={readOnly}
                   onAggregationChange={handleAggregationChange}
+                  unitSystem={unitSystem}
                 />
               </table>
               {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}

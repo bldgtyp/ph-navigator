@@ -1149,6 +1149,25 @@
   white-space: nowrap;
 }
 
+/* Number-with-units header chip. Sits to the right of the label so the
+   active unit (SI vs IP) is always visible without crowding the label
+   ellipsis. Quiet typography: matches the header's own muted secondary
+   color so it reads as metadata, not a value. */
+.data-table-header-units {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
 .data-table-header-rename {
   flex: 1 1 auto;
   min-width: 0;

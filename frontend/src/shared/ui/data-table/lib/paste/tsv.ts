@@ -1,3 +1,4 @@
+import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../../lib/units";
 import type { CellRange, DataTableColumnDef, FieldDef } from "../../types";
 import { fieldDefForColumn } from "../internal/fieldDefForColumn";
 import { fieldKeyFieldDefMap } from "../internal/fieldKeyFieldDefMap";
@@ -10,11 +11,23 @@ export function formatClipboardValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
-export function formatClipboardCellValue(value: unknown, fieldDef: FieldDef | undefined): string {
-  if (fieldDef?.field_type !== "single_select") return formatClipboardValue(value);
-  if (value === null || value === undefined || value === "") return "";
-  const option = fieldDef.options?.find((candidate) => candidate.id === value);
-  return option?.label ?? "";
+// `unitSystem` is honored only for number fields with `numberUnits`.
+// Defaults to "SI" so untouched callers preserve their pre-units
+// behavior (plain Number, text, etc.).
+export function formatClipboardCellValue(
+  value: unknown,
+  fieldDef: FieldDef | undefined,
+  unitSystem: UnitSystem = "SI",
+): string {
+  if (fieldDef?.field_type === "single_select") {
+    if (value === null || value === undefined || value === "") return "";
+    const option = fieldDef.options?.find((candidate) => candidate.id === value);
+    return option?.label ?? "";
+  }
+  if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
+    return formatNumberUnitsDisplay(value, fieldDef.numberUnits, unitSystem);
+  }
+  return formatClipboardValue(value);
 }
 
 export function rangeToTsv<TRow>(
@@ -22,6 +35,7 @@ export function rangeToTsv<TRow>(
   columns: DataTableColumnDef<TRow>[],
   fieldDefs: FieldDef[],
   range: CellRange,
+  unitSystem: UnitSystem = "SI",
 ): string {
   const normalized = normalizeRange(range);
   const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
@@ -39,6 +53,7 @@ export function rangeToTsv<TRow>(
         formatClipboardCellValue(
           columns[columnIndex]?.accessor(row),
           fieldDefForColumn(columns[columnIndex], fieldDefsByKey),
+          unitSystem,
         ),
       );
     }
@@ -52,6 +67,7 @@ export function rangeToHtml<TRow>(
   columns: DataTableColumnDef<TRow>[],
   fieldDefs: FieldDef[],
   range: CellRange,
+  unitSystem: UnitSystem = "SI",
 ): string {
   const normalized = normalizeRange(range);
   const fieldDefsByKey = fieldKeyFieldDefMap(fieldDefs);
@@ -62,7 +78,7 @@ export function rangeToHtml<TRow>(
         .slice(normalized.columnStart, normalized.columnEnd + 1)
         .map(
           (column) =>
-            `<td>${escapeHtml(formatClipboardCellValue(column.accessor(row), fieldDefForColumn(column, fieldDefsByKey)))}</td>`,
+            `<td>${escapeHtml(formatClipboardCellValue(column.accessor(row), fieldDefForColumn(column, fieldDefsByKey), unitSystem))}</td>`,
         )
         .join("");
       return `<tr>${cells}</tr>`;

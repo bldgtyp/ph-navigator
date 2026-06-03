@@ -18,9 +18,11 @@ import {
   NUMBER_UNIT_TYPES,
   convertNumberUnitsToDisplay,
   convertNumberUnitsToSi,
+  formatNumberUnitsDisplay,
   isCompatibleNumberUnitPair,
   isNumberUnitsConfig,
   numberUnitRegistrySnapshot,
+  parseNumberUnitsInput,
   wm2kToBtuHft2F,
   wmkToBtuHftF,
 } from ".";
@@ -149,5 +151,40 @@ describe("number unit registry", () => {
     };
     expect(convertNumberUnitsToDisplay(1, length)).toBeCloseTo(3.280839895, 9);
     expect(convertNumberUnitsToSi(3.280839895, length)).toBeCloseTo(1, 9);
+  });
+
+  test("formatNumberUnitsDisplay renders bare numbers in active system", () => {
+    const density = {
+      mode: "editable" as const,
+      unit_type: "density" as const,
+      si_unit: "kg_m3" as const,
+      ip_unit: "lb_ft3" as const,
+      precision_si: 1,
+      precision_ip: 2,
+    };
+    expect(formatNumberUnitsDisplay(100, density, "SI")).toBe("100.0");
+    expect(formatNumberUnitsDisplay(100, density, "IP")).toBe("6.24");
+    expect(formatNumberUnitsDisplay(null, density, "SI")).toBe("");
+    expect(formatNumberUnitsDisplay("", density, "IP")).toBe("");
+    expect(formatNumberUnitsDisplay("abc", density, "SI")).toBe("");
+  });
+
+  test("parseNumberUnitsInput returns SI canonical or undefined / null", () => {
+    const length = {
+      mode: "editable" as const,
+      unit_type: "length" as const,
+      si_unit: "m" as const,
+      ip_unit: "ft" as const,
+      precision_si: 2,
+      precision_ip: 2,
+    };
+    // IP input -> SI canonical (1 ft ≈ 0.3048 m)
+    expect(parseNumberUnitsInput("1", length, "IP")).toBeCloseTo(0.3048, 6);
+    // SI input passes through unchanged
+    expect(parseNumberUnitsInput("1", length, "SI")).toBe(1);
+    // Blank parses to null (clear cell)
+    expect(parseNumberUnitsInput("   ", length, "IP")).toBe(null);
+    // Garbage parses to undefined so callers can surface "expected a number"
+    expect(parseNumberUnitsInput("abc", length, "SI")).toBe(undefined);
   });
 });
