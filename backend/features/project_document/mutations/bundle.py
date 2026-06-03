@@ -28,6 +28,7 @@ from starlette import status
 from features.project_document.custom_fields import (
     FIELD_DESCRIPTION_MAX,
     CustomFieldType,
+    TableFieldDef,
 )
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.mutations.formula_ops import apply_set_formula
@@ -75,6 +76,13 @@ def apply_edit_field_bundle(
             "custom_field_invalid_field_id",
             "editFieldBundle target id must equal field_id.",
             {"field_id": after.field_key, "expected_field_id": mutation.field_id},
+        )
+    if _number_units_are_fixed(existing) and existing.config.get("units") != after.config.get("units"):
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_fixed_units_locked",
+            "Fixed unit config cannot be edited.",
+            {"field_id": mutation.field_id},
         )
 
     properties_changed: list[str] = []
@@ -252,3 +260,8 @@ def apply_edit_field_bundle(
         **audit_extras,
     }
     return next_body, audit
+
+
+def _number_units_are_fixed(field: TableFieldDef) -> bool:
+    units = field.config.get("units")
+    return isinstance(units, dict) and cast(dict[str, object], units).get("mode") == "fixed"

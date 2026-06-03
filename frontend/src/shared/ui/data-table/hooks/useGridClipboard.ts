@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import type { UnitSystem } from "../../../../lib/units";
 import { parseTsv, rangeToHtml, rangeToTsv } from "../lib/paste/tsv";
 import { coercePasteWrites, planPaste } from "../lib/paste/plan";
 import type {
@@ -34,12 +35,23 @@ export function useGridClipboard<TRow>(args: {
   onWrite?: (op: WriteOp) => void | Promise<void>;
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
+  unitSystem?: UnitSystem;
 }): GridClipboard {
-  const { range, rows, columns, fieldDefs, getRowId, onWrite, dispatchWrite, onAnnounce } = args;
+  const {
+    range,
+    rows,
+    columns,
+    fieldDefs,
+    getRowId,
+    onWrite,
+    dispatchWrite,
+    onAnnounce,
+    unitSystem = "SI",
+  } = args;
 
   const copy = useCallback(() => {
-    void copySelection(rows, columns, fieldDefs, range);
-  }, [columns, fieldDefs, range, rows]);
+    void copySelection(rows, columns, fieldDefs, range, unitSystem);
+  }, [columns, fieldDefs, range, rows, unitSystem]);
 
   const pasteText = useCallback(
     async (tsv: string) => {
@@ -53,9 +65,10 @@ export function useGridClipboard<TRow>(args: {
         onWrite,
         dispatchWrite,
         onAnnounce,
+        unitSystem,
       });
     },
-    [columns, dispatchWrite, fieldDefs, getRowId, onAnnounce, onWrite, range, rows],
+    [columns, dispatchWrite, fieldDefs, getRowId, onAnnounce, onWrite, range, rows, unitSystem],
   );
 
   const pasteFromClipboard = useCallback(async () => {
@@ -76,9 +89,10 @@ async function copySelection<TRow>(
   columns: DataTableColumnDef<TRow>[],
   fieldDefs: FieldDef[],
   range: CellRange,
+  unitSystem: UnitSystem,
 ) {
-  const tsv = rangeToTsv(rows, columns, fieldDefs, range);
-  const html = rangeToHtml(rows, columns, fieldDefs, range);
+  const tsv = rangeToTsv(rows, columns, fieldDefs, range, unitSystem);
+  const html = rangeToHtml(rows, columns, fieldDefs, range, unitSystem);
   if ("ClipboardItem" in window && navigator.clipboard?.write) {
     await navigator.clipboard.write([
       new ClipboardItem({
@@ -101,9 +115,20 @@ async function pasteIntoSelection<TRow>(args: {
   onWrite?: (op: WriteOp) => void | Promise<void>;
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
+  unitSystem: UnitSystem;
 }) {
-  const { tsv, range, rows, columns, fieldDefs, getRowId, onWrite, dispatchWrite, onAnnounce } =
-    args;
+  const {
+    tsv,
+    range,
+    rows,
+    columns,
+    fieldDefs,
+    getRowId,
+    onWrite,
+    dispatchWrite,
+    onAnnounce,
+    unitSystem,
+  } = args;
   if (!onWrite) {
     onAnnounce("Paste is not enabled for this table yet.");
     return;
@@ -129,6 +154,7 @@ async function pasteIntoSelection<TRow>(args: {
     columns,
     fieldDefs,
     getRowId,
+    unitSystem,
   });
   if (!coerced.ok) {
     const first = coerced.errors[0];

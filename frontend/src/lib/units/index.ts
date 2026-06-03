@@ -3,6 +3,29 @@ export { UnitPreferenceProvider } from "./preference";
 export { useUnitPreference } from "./useUnitPreference";
 export { formatAirflowFromM3H, formatAirflowFromM3S, m3hToCfm, m3sToCfm } from "./airflow";
 export {
+  convertNumberUnitsToDisplay,
+  convertNumberUnitsToSi,
+  formatNumberUnitsDisplay,
+  isCompatibleNumberUnitPair,
+  isNumberUnitsConfig,
+  NUMBER_UNIT_TYPES,
+  numberUnitForSystem,
+  numberUnitLabel,
+  numberUnitPrecision,
+  numberUnitRegistrySnapshot,
+  parseNumberUnitsInput,
+} from "./numberUnits";
+export type {
+  NumberIpUnit,
+  NumberSiUnit,
+  NumberUnitDefinition,
+  NumberUnitId,
+  NumberUnitMode,
+  NumberUnitsConfig,
+  NumberUnitType,
+  NumberUnitTypeDefinition,
+} from "./numberUnits";
+export {
   formatAreaFromM2,
   formatLengthFromMm,
   formatVolumeFromM3,

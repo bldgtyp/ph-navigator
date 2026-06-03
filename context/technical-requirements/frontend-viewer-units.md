@@ -353,3 +353,52 @@ ambiguity.
 - Don't convert units server-side based on a request header or
   user preference. Backend has no notion of user preference for
   numeric values.
+
+#### 11.5.5 DataTable Number with Units
+
+Generic per-Number-field unit config that lets a single DataTable
+column participate in the SI/IP toggle without inventing a new
+`field_type`. The quantity-specific helpers under
+`frontend/src/lib/units/` (§11.5.3) stay as-is for bespoke surfaces
+(`MaterialEditorModal`, `MaterialsCatalogPage`, the 3D viewer, etc.);
+this section covers how the DataTable consumes them.
+
+- **Closed registry.** `frontend/src/lib/units/numberUnits.ts` exposes
+  `NUMBER_UNIT_TYPES` — an MVP set of `density`, `conductivity`,
+  `length`, `area`, `volume` — each with one SI unit, one IP unit, and
+  per-system decimal precision. The same registry is mirrored by the
+  backend; `registry_snapshot` round-trip tests pin the two ends
+  together. No `R/in` in MVP — reciprocal/derived display belongs in a
+  named helper, not the generic conductivity pair.
+- **FieldDef payload.** `FieldDef.numberUnits` is the validated
+  `NumberUnitsConfig` (`mode`, `unit_type`, `si_unit`, `ip_unit`,
+  `precision_si`, `precision_ip`). Absent means "plain Number" —
+  unchanged from V1 behavior.
+- **Mode.**
+  - `"editable"` — user-authored Number fields opt in / edit / remove
+    units through the field-config modal.
+  - `"fixed"` — catalog / domain built-ins (e.g. material density,
+    conductivity) lock the unit config to the canonical contract.
+    The modal renders fixed controls disabled with a "Units are fixed
+    by this catalog field." hint; the backend rejects user mutations
+    through both `editFieldBundle` and direct `changeType`.
+- **Display + edit pipeline.** Cell render, inline editor seed, paste
+  coerce, copy, filter compare, and aggregation all consult
+  `formatNumberUnitsDisplay` + `parseNumberUnitsInput`, threading the
+  active `unitSystem` from `useUnitPreference`. Stored values stay
+  canonical SI on every write; aggregates reduce on SI and format in
+  the active system. The header shows the active unit label
+  (`m` / `ft` etc.) as a quiet chip; cells never carry a per-cell
+  suffix.
+- **Toggle semantics.** Flipping the global SI/IP toggle is render-only
+  (re-renders every cell + the header chip + aggregates) and never
+  dirties an open editor draft or fires an `onWrite`. A change to a
+  field's `numberUnits` config drops persisted filter rules for that
+  field — stored filter strings were typed in the prior system and
+  would be ambiguous after a swap. All unrelated view state (sort,
+  group, widths, hidden columns, filters on other fields) is preserved.
+- **Migration hook.** The Materials catalog is not yet DataTable-backed
+  in V2. When it migrates, `density_kg_m3` and `conductivity_w_mk` must
+  seed `numberUnits.mode = "fixed"` with `kg_m3 ↔ lb_ft3` and
+  `w_m_k ↔ btu_h_ft_f`. See
+  `planning/features/data-table-unit-number-field/STATUS.md`.

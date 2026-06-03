@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-03
-TIME: 16:42 EDT
-STATUS: Confirmed PRD with phased implementation plan
-AUTHOR: Codex
+TIME: 19:15 EDT
+STATUS: All five phases shipped on `codex/data-table-number-units`;
+        durable contract folded into context docs. See STATUS.md.
+AUTHOR: Claude (Opus 4.7)
 SCOPE: Router for the DataTable Number with Units PRD.
 RELATED:
   - PRD.md
@@ -10,6 +11,7 @@ RELATED:
   - PLAN.md
   - ../ip-si-unit-switching/PRD.md
   - context/technical-requirements/data-table.md
+  - context/technical-requirements/frontend-viewer-units.md
 ---
 
 # DataTable Number With Units Planning
@@ -30,5 +32,11 @@ Read order:
 7. `phases/phase-04-fixed-catalog-fields.md`
 8. `phases/phase-05-verification-docs.md`
 
-The PRD decisions are confirmed. Implementation should work through the
-phase files in order.
+All five phases have shipped. The durable contract has been folded
+into `context/technical-requirements/data-table.md` ("Number with
+Units" subsection, grid-surface specifics) and
+`context/technical-requirements/frontend-viewer-units.md` §11.5.5
+(registry, payload, mode, migration hook). Use the context docs as
+the canonical reference; this folder is the historical record of how
+the contract was reached, with one named deferred follow-up (Materials
+catalog migration). See `STATUS.md` for the closeout summary.

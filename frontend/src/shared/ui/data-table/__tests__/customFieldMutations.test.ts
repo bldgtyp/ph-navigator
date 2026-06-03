@@ -9,6 +9,7 @@ import {
   buildEditFieldBundleMutation,
   buildDuplicateFieldMutation,
   buildEditOptionsMutation,
+  buildNextConfigForFieldTypeChange,
   buildRenameFieldMutation,
   buildSetDescriptionMutation,
   buildSetFormulaMutation,
@@ -332,6 +333,35 @@ describe("buildEditFieldBundleMutation", () => {
         schemaFingerprint: "fp",
       }),
     ).toThrow(SchemaMutationBuildError);
+  });
+});
+
+describe("buildNextConfigForFieldTypeChange number units", () => {
+  test("drops units when changing a Number with Units field away from number", () => {
+    const source: CustomFieldDef = {
+      ...SAMPLE_FIELD,
+      field_type: "number",
+      config: {
+        precision: 2,
+        units: {
+          mode: "editable",
+          unit_type: "length",
+          si_unit: "m",
+          ip_unit: "ft",
+          precision_si: 2,
+          precision_ip: 2,
+        },
+      },
+    };
+
+    expect(
+      buildNextConfigForFieldTypeChange(source, {
+        fieldKey: "cf_sample",
+        displayName: "Notes",
+        description: null,
+        fieldType: "short_text",
+      }),
+    ).toEqual({});
   });
 });
 

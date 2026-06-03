@@ -1,3 +1,4 @@
+import { parseNumberUnitsInput, type UnitSystem } from "../../../../lib/units";
 import type { FieldDef, FilterCondition, FilterOperator } from "../types";
 import { formatClipboardCellValue } from "../lib/paste/tsv";
 
@@ -122,7 +123,16 @@ export function evaluateFilter(
   condition: FilterCondition,
   cellValue: unknown,
   fieldDef: FieldDef,
+  unitSystem: UnitSystem = "SI",
 ): boolean {
+  // Number+units fields parse user input in the active display system
+  // and convert to SI; cell values are already SI, so comparison is a
+  // single SI-vs-SI float compare. Plain numbers preserve raw Number()
+  // parsing.
+  const parseUserNumber = (raw: string | undefined): number | null =>
+    fieldDef.field_type === "number" && fieldDef.numberUnits
+      ? parseNumberUnitsInputOrNull(raw, fieldDef.numberUnits, unitSystem)
+      : parseNumberOrNull(raw);
   switch (condition.operator) {
     case "is_empty":
       return isCellEmpty(cellValue);
@@ -132,35 +142,43 @@ export function evaluateFilter(
     case "contains": {
       const expected = (condition.value ?? "").trim().toLowerCase();
       if (!expected) return true;
-      return formatClipboardCellValue(cellValue, fieldDef).toLowerCase().includes(expected);
+      return formatClipboardCellValue(cellValue, fieldDef, unitSystem)
+        .toLowerCase()
+        .includes(expected);
     }
     case "does_not_contain": {
       const expected = (condition.value ?? "").trim().toLowerCase();
       if (!expected) return true;
-      return !formatClipboardCellValue(cellValue, fieldDef).toLowerCase().includes(expected);
+      return !formatClipboardCellValue(cellValue, fieldDef, unitSystem)
+        .toLowerCase()
+        .includes(expected);
     }
     case "is": {
       const expected = (condition.value ?? "").trim().toLowerCase();
       if (!expected) return true;
-      return formatClipboardCellValue(cellValue, fieldDef).trim().toLowerCase() === expected;
+      return (
+        formatClipboardCellValue(cellValue, fieldDef, unitSystem).trim().toLowerCase() === expected
+      );
     }
     case "is_not": {
       const expected = (condition.value ?? "").trim().toLowerCase();
       if (!expected) return true;
-      return formatClipboardCellValue(cellValue, fieldDef).trim().toLowerCase() !== expected;
+      return (
+        formatClipboardCellValue(cellValue, fieldDef, unitSystem).trim().toLowerCase() !== expected
+      );
     }
 
     case "eq":
-      return numCompare(cellValue, condition.value, (a, b) => a === b);
+      return numCompare(cellValue, parseUserNumber(condition.value), (a, b) => a === b);
     case "neq":
-      return numCompare(cellValue, condition.value, (a, b) => a !== b);
+      return numCompare(cellValue, parseUserNumber(condition.value), (a, b) => a !== b);
     case "gt":
-      return numCompare(cellValue, condition.value, (a, b) => a > b);
+      return numCompare(cellValue, parseUserNumber(condition.value), (a, b) => a > b);
     case "lt":
-      return numCompare(cellValue, condition.value, (a, b) => a < b);
+      return numCompare(cellValue, parseUserNumber(condition.value), (a, b) => a < b);
     case "between": {
-      const lo = parseNumberOrNull(condition.valuePair?.[0]);
-      const hi = parseNumberOrNull(condition.valuePair?.[1]);
+      const lo = parseUserNumber(condition.valuePair?.[0]);
+      const hi = parseUserNumber(condition.valuePair?.[1]);
       if (lo === null || hi === null) return true;
       const cell = parseNumberOrNull(cellValue);
       if (cell === null) return false;
@@ -191,14 +209,23 @@ function isCellEmpty(cellValue: unknown): boolean {
 
 function numCompare(
   cellValue: unknown,
-  rawExpected: string | undefined,
+  expected: number | null,
   predicate: (cell: number, expected: number) => boolean,
 ): boolean {
-  const expected = parseNumberOrNull(rawExpected);
   if (expected === null) return true; // dormant
   const cell = parseNumberOrNull(cellValue);
   if (cell === null) return false; // cell cannot satisfy a numeric comparison
   return predicate(cell, expected);
+}
+
+function parseNumberUnitsInputOrNull(
+  raw: string | undefined,
+  config: NonNullable<FieldDef["numberUnits"]>,
+  unitSystem: UnitSystem,
+): number | null {
+  if (typeof raw !== "string") return null;
+  const parsed = parseNumberUnitsInput(raw, config, unitSystem);
+  return parsed === undefined ? null : parsed;
 }
 
 function parseNumberOrNull(raw: unknown): number | null {

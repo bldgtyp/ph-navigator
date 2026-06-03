@@ -1,5 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useMemo, useState } from "react";
+import type { UnitSystem } from "../../../../lib/units";
 import { getAggregationKinds, type AggregationKind } from "../fields/aggregations";
 import { computeAggregate } from "../hooks/useGridAggregations";
 import type { DataTableColumnDef, FieldDef } from "../types";
@@ -30,6 +31,7 @@ export type SummaryBarProps<TRow> = {
   fieldDefByKey: Map<string, FieldDef>;
   readOnly: boolean;
   onAggregationChange: (fieldKey: string, next: AggregationKind) => void;
+  unitSystem?: UnitSystem;
 };
 
 export function SummaryBar<TRow>({
@@ -39,6 +41,7 @@ export function SummaryBar<TRow>({
   fieldDefByKey,
   readOnly,
   onAggregationChange,
+  unitSystem = "SI",
 }: SummaryBarProps<TRow>) {
   if (columns.length === 0) return null;
   return (
@@ -69,6 +72,7 @@ export function SummaryBar<TRow>({
               aggregation={normalizeKind(aggregations[column.fieldKey])}
               readOnly={readOnly}
               onPick={(next) => onAggregationChange(column.fieldKey, next)}
+              unitSystem={unitSystem}
             />
           );
         })}
@@ -92,6 +96,7 @@ type SummaryCellProps<TRow> = {
   aggregation: AggregationKind;
   readOnly: boolean;
   onPick: (next: AggregationKind) => void;
+  unitSystem: UnitSystem;
 };
 
 function SummaryCell<TRow>({
@@ -101,13 +106,14 @@ function SummaryCell<TRow>({
   aggregation,
   readOnly,
   onPick,
+  unitSystem,
 }: SummaryCellProps<TRow>) {
   const [open, setOpen] = useState(false);
   const catalogue = useMemo(() => getAggregationKinds(fieldDef), [fieldDef]);
   const hasCatalogue = catalogue.length > 0;
   const value = useMemo(
-    () => computeAggregate(aggregation, visibleRows, column.accessor),
-    [aggregation, visibleRows, column.accessor],
+    () => computeAggregate(aggregation, visibleRows, column.accessor, fieldDef, unitSystem),
+    [aggregation, visibleRows, column.accessor, fieldDef, unitSystem],
   );
   const pickerDisabled = readOnly || !hasCatalogue;
   const triggerLabel =
