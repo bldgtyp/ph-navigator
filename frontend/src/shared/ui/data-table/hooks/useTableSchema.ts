@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { generatedId } from "../../../lib/ids";
 import { sha256Hex } from "../../../lib/sha256";
+import { isNumberUnitsConfig } from "../../../../lib/units";
 import { clampNumberPrecision } from "../lib/numberPrecision";
 import type { CustomFieldType, FieldDef, FieldOption, FieldType } from "../types";
 
@@ -50,6 +51,7 @@ export type TableFieldRenderOverlay = Partial<
     | "defaultOptionId"
     | "locked"
     | "numberPrecision"
+    | "numberUnits"
     | "options"
     | "read_only"
     | "required"
@@ -201,6 +203,9 @@ function tableFieldToFieldDef(
   }
   if (persisted.field_type === "number") {
     fieldDef.numberPrecision = clampNumberPrecision(persisted.config.precision);
+    if (isNumberUnitsConfig(persisted.config.units)) {
+      fieldDef.numberUnits = persisted.config.units;
+    }
   }
   if (persisted.field_type === "formula") {
     const config = persisted.config ?? {};
@@ -232,6 +237,7 @@ function fieldOverlayWithoutOptions(
   if (overlay.defaultOptionId !== undefined) out.defaultOptionId = overlay.defaultOptionId;
   if (overlay.locked !== undefined) out.locked = overlay.locked;
   if (overlay.numberPrecision !== undefined) out.numberPrecision = overlay.numberPrecision;
+  if (overlay.numberUnits !== undefined) out.numberUnits = overlay.numberUnits;
   if (overlay.read_only !== undefined) out.read_only = overlay.read_only;
   if (overlay.required !== undefined) out.required = overlay.required;
   return out;

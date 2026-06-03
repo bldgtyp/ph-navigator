@@ -22,9 +22,9 @@ from __future__ import annotations
 import secrets
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     from features.project_document.document import SingleSelectOption
@@ -90,6 +90,85 @@ class CustomFieldType(StrEnum):
     formula = "formula"
 
 
+MIN_NUMBER_PRECISION = 0
+MAX_NUMBER_PRECISION = 10
+DEFAULT_NUMBER_PRECISION = 2
+
+NUMBER_UNIT_REGISTRY: dict[str, dict[str, frozenset[str]]] = {
+    "density": {"si": frozenset({"kg_m3"}), "ip": frozenset({"lb_ft3"})},
+    "conductivity": {"si": frozenset({"w_m_k"}), "ip": frozenset({"btu_h_ft_f"})},
+    "length": {"si": frozenset({"m"}), "ip": frozenset({"ft"})},
+    "area": {"si": frozenset({"m2"}), "ip": frozenset({"ft2"})},
+    "volume": {"si": frozenset({"m3"}), "ip": frozenset({"ft3"})},
+}
+NUMBER_UNITS_REQUIRED_KEYS = frozenset({"mode", "unit_type", "si_unit", "ip_unit", "precision_si", "precision_ip"})
+NUMBER_UNIT_MODES = frozenset({"editable", "fixed"})
+
+
+def clamp_number_precision(value: object) -> int:
+    if not isinstance(value, str | int | float):
+        return DEFAULT_NUMBER_PRECISION
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_NUMBER_PRECISION
+    return min(max(parsed, MIN_NUMBER_PRECISION), MAX_NUMBER_PRECISION)
+
+
+def validate_number_config(field_type: CustomFieldType, config: dict[str, object]) -> dict[str, object]:
+    """Validate optional Number units while preserving existing config."""
+    units = config.get("units")
+    if units is None:
+        return config
+    if field_type is not CustomFieldType.number:
+        raise ValueError("units config is only valid for number fields")
+    if not isinstance(units, dict):
+        raise ValueError("units config must be an object")
+    units_config = cast(dict[str, object], units)
+
+    missing = sorted(NUMBER_UNITS_REQUIRED_KEYS.difference(units_config))
+    if missing:
+        raise ValueError(f"units config missing required keys: {', '.join(missing)}")
+
+    mode = units_config["mode"]
+    if mode not in NUMBER_UNIT_MODES:
+        raise ValueError("units.mode must be 'editable' or 'fixed'")
+
+    unit_type = units_config["unit_type"]
+    if not isinstance(unit_type, str) or unit_type not in NUMBER_UNIT_REGISTRY:
+        raise ValueError(f"unknown units.unit_type: {unit_type!r}")
+
+    registry = NUMBER_UNIT_REGISTRY[unit_type]
+    si_unit = units_config["si_unit"]
+    ip_unit = units_config["ip_unit"]
+    if not isinstance(si_unit, str) or si_unit not in registry["si"]:
+        raise ValueError(f"units.si_unit {si_unit!r} is not valid for {unit_type}")
+    if not isinstance(ip_unit, str) or ip_unit not in registry["ip"]:
+        raise ValueError(f"units.ip_unit {ip_unit!r} is not valid for {unit_type}")
+
+    normalized_units = {
+        **units_config,
+        "mode": mode,
+        "unit_type": unit_type,
+        "si_unit": si_unit,
+        "ip_unit": ip_unit,
+        "precision_si": clamp_number_precision(units_config["precision_si"]),
+        "precision_ip": clamp_number_precision(units_config["precision_ip"]),
+    }
+    return {**config, "units": normalized_units}
+
+
+def number_unit_registry_snapshot() -> dict[str, dict[str, list[str]]]:
+    """Stable test/debug snapshot of the Number with Units registry."""
+    return {
+        unit_type: {
+            "si": sorted(units["si"]),
+            "ip": sorted(units["ip"]),
+        }
+        for unit_type, units in NUMBER_UNIT_REGISTRY.items()
+    }
+
+
 class TableFieldDef(BaseModel):
     """One field-config entry on a project-document table.
 
@@ -129,6 +208,11 @@ class TableFieldDef(BaseModel):
         `field_key` for both built-in and custom fields. Remove once
         every caller has migrated."""
         return self.field_key
+
+    @model_validator(mode="after")
+    def validate_config(self) -> TableFieldDef:
+        self.config = validate_number_config(self.field_type, self.config)
+        return self
 
 
 # Back-compat aliases for callers still importing the v2 names. Remove

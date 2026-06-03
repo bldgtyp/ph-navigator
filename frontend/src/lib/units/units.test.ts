@@ -15,6 +15,12 @@ import {
   m3ToFt3,
   m2kWToHft2FBtu,
   mmToIn,
+  NUMBER_UNIT_TYPES,
+  convertNumberUnitsToDisplay,
+  convertNumberUnitsToSi,
+  isCompatibleNumberUnitPair,
+  isNumberUnitsConfig,
+  numberUnitRegistrySnapshot,
   wm2kToBtuHft2F,
   wmkToBtuHftF,
 } from ".";
@@ -65,5 +71,83 @@ describe("unit display helpers", () => {
   test("formats density by active unit system", () => {
     expect(formatDensityFromKgM3(100, { unitSystem: "SI" })).toBe("100 kg/m3");
     expect(formatDensityFromKgM3(100, { unitSystem: "IP" })).toBe("6.2 lb/ft3");
+  });
+});
+
+describe("number unit registry", () => {
+  test("exposes the MVP unit pairs", () => {
+    expect(NUMBER_UNIT_TYPES.map((entry) => entry.id)).toEqual([
+      "density",
+      "conductivity",
+      "length",
+      "area",
+      "volume",
+    ]);
+    expect(isCompatibleNumberUnitPair("area", "m2", "ft2")).toBe(true);
+    expect(isCompatibleNumberUnitPair("area", "m3", "ft3")).toBe(false);
+    expect(numberUnitRegistrySnapshot()).toEqual({
+      density: { si: ["kg_m3"], ip: ["lb_ft3"] },
+      conductivity: { si: ["w_m_k"], ip: ["btu_h_ft_f"] },
+      length: { si: ["m"], ip: ["ft"] },
+      area: { si: ["m2"], ip: ["ft2"] },
+      volume: { si: ["m3"], ip: ["ft3"] },
+    });
+  });
+
+  test("validates complete number unit config", () => {
+    expect(
+      isNumberUnitsConfig({
+        mode: "fixed",
+        unit_type: "density",
+        si_unit: "kg_m3",
+        ip_unit: "lb_ft3",
+        precision_si: 1,
+        precision_ip: 1,
+      }),
+    ).toBe(true);
+    expect(
+      isNumberUnitsConfig({
+        mode: "fixed",
+        unit_type: "density",
+        si_unit: "m",
+        ip_unit: "ft",
+        precision_si: 1,
+        precision_ip: 1,
+      }),
+    ).toBe(false);
+    expect(
+      isNumberUnitsConfig({
+        mode: "fixed",
+        unit_type: "density",
+        si_unit: "kg_m3",
+        ip_unit: "lb_ft3",
+        precision_si: 11,
+        precision_ip: 1,
+      }),
+    ).toBe(false);
+  });
+
+  test("converts MVP number unit pairs", () => {
+    const density = {
+      mode: "editable" as const,
+      unit_type: "density" as const,
+      si_unit: "kg_m3" as const,
+      ip_unit: "lb_ft3" as const,
+      precision_si: 1,
+      precision_ip: 1,
+    };
+    expect(convertNumberUnitsToDisplay(100, density)).toBeCloseTo(6.242796, 6);
+    expect(convertNumberUnitsToSi(6.242796, density)).toBeCloseTo(100, 6);
+
+    const length = {
+      mode: "editable" as const,
+      unit_type: "length" as const,
+      si_unit: "m" as const,
+      ip_unit: "ft" as const,
+      precision_si: 2,
+      precision_ip: 2,
+    };
+    expect(convertNumberUnitsToDisplay(1, length)).toBeCloseTo(3.280839895, 9);
+    expect(convertNumberUnitsToSi(3.280839895, length)).toBeCloseTo(1, 9);
   });
 });

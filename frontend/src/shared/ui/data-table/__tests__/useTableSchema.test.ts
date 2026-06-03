@@ -110,6 +110,47 @@ describe("useTableSchema", () => {
     expect(result.current.fieldDefs[2]?.field_type).toBe("computed");
   });
 
+  test("maps complete number units config onto number FieldDef", () => {
+    const { result } = renderHook(() =>
+      useTableSchema({
+        tableKey: "materials",
+        fieldDefs: [
+          tableField("density_kg_m3", {
+            origin: "built_in",
+            field_type: "number",
+            config: {
+              precision: 2,
+              units: {
+                mode: "fixed",
+                unit_type: "density",
+                si_unit: "kg_m3",
+                ip_unit: "lb_ft3",
+                precision_si: 1,
+                precision_ip: 1,
+              },
+            },
+          }),
+          tableField("cf_plain", { field_type: "number", config: { precision: 3 } }),
+        ],
+      }),
+    );
+
+    expect(result.current.fieldDefs[0]).toMatchObject({
+      field_key: "density_kg_m3",
+      field_type: "number",
+      numberPrecision: 2,
+      numberUnits: {
+        mode: "fixed",
+        unit_type: "density",
+        si_unit: "kg_m3",
+        ip_unit: "lb_ft3",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    });
+    expect(result.current.fieldDefs[1]?.numberUnits).toBeUndefined();
+  });
+
   test("attaches single-select options by exact or namespaced option-list key", () => {
     const { result } = renderHook(() =>
       useTableSchema({
