@@ -154,7 +154,7 @@ V2 v1 field types:
 | Type | Requirement |
 |---|---|
 | `text` | Plain text with contains/is/empty-style operators. |
-| `number` | SI in document; render/input through active unit context where relevant. |
+| `number` | SI in document. Plain numbers render raw and have no unit chrome. Optional `numberUnits` config (see "Number with Units" below) wires a single Number field into the global SI/IP toggle without inventing a separate type. |
 | `single_select` | Project-defined options, pill renderer, popover editor, match-or-create paste, sort by option order. |
 | `computed` | Backend-owned read overlay; frontend renders ready/stale/loading/error states and never reimplements PH calculations. |
 | `attachment` | Cell value is `string[]` of `asset_id`s referencing `project_assets` rows (`data-model.md` §6.5). Rendered by `<AttachmentCell>` — mousewheel-scrolled thumbnail strip, fixed cell height, "📎 Drop files here" pill-button in the empty active state, preview modal on double-click, select-and-Delete detach gesture. **Pre-set core fields only in v1** — not in the user-extensible custom-field set; the roster of attachment-capable cells lives in `attachments.md` §A2. **Clipboard semantics in v1: copy/paste of attachment cells is disabled.** Fill propagates the array verbatim within the same column. Aggregations: Count, Count Unique. Sort: by array length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. **No** schema-mutation menu entries — `addField` / `deleteField` / `changeType` / `setFormula` do not apply. Full UX contract: `attachments.md`. |
@@ -171,6 +171,32 @@ field-type natural zero. This includes Backspace/Delete on the active
 editable cell and committing an emptied inline editor for `text`,
 `number`, `single_select`, and `color` fields. Required fields reject the clear
 and keep the prior value.
+
+### Number with Units
+
+Per-field opt-in extension that wires a single `number` field into the
+global SI/IP toggle. Not a separate `field_type` — the picker still
+shows "Number", and plain Number behavior is unchanged when
+`numberUnits` is absent. Full contract (registry, `FieldDef.numberUnits`
+shape, `editable` / `fixed` modes, SI-canonical storage, format/parse
+helpers, backend round-trip) lives in `frontend-viewer-units.md`
+§11.5.5; this section captures only what's specific to the DataTable
+grid surface.
+
+- **Header chip.** When `FieldDef.numberUnits` is present the column
+  header shows the active unit label (`m` / `ft`, `kg/m3` / `lb/ft3`,
+  …) as a quiet chip. Cells render the bare displayed value at the
+  active system's precision — no per-cell suffix.
+- **Cell pipeline.** Render, inline-editor seed, paste coerce, copy,
+  filter compare, and aggregation all go through the §11.5.5 shared
+  format/parse helpers against the active `unitSystem`. Aggregates
+  reduce on canonical SI then format in the active system. The global
+  SI/IP toggle is render-only and never dirties an open editor draft.
+- **View state on config change.** Editing a field's `numberUnits`
+  config (or clearing it) drops that field's persisted filter rules —
+  stored filter values were typed in the prior system and would be
+  ambiguous after a swap. Sort, group, widths, hidden columns, and
+  filters on other fields are preserved.
 
 **Field identity rule.** For core fields, `FieldDef.field_key` is the
 declared core key (e.g. `"name"`, `"floor_level"`). For user-defined

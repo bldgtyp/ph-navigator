@@ -1,12 +1,15 @@
 ---
 DATE: 2026-06-03
-TIME: 18:50 EDT
-STATUS: Phase 04 complete; paused for review before Phase 05.
+TIME: 19:15 EDT
+STATUS: All five phases complete; feature implementation closed,
+        pending browser smoke + the parallel color-field test fix.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Current state for the DataTable Number with Units planning
        packet.
 RELATED:
   - PRD.md
+  - context/technical-requirements/data-table.md
+  - context/technical-requirements/frontend-viewer-units.md
 ---
 
 # DataTable Number With Units Status
@@ -93,11 +96,53 @@ RELATED:
   end-to-end coverage so the future catalog migration can rely on it.
 - Simplify pass completed after Phase 04; no material simplifications
   applied — the two new integration tests are tight and load-bearing.
+- Phase 05 is complete on branch `codex/data-table-number-units`.
+- Stable context docs now describe the implemented contract:
+  `context/technical-requirements/data-table.md` field-types row +
+  "Number with Units" subsection (grid-surface specifics); the full
+  registry / payload / mode / migration contract lives in
+  `context/technical-requirements/frontend-viewer-units.md` §11.5.5.
+  Simplify pass collapsed the initial duplicated narrative across the
+  two files into a short pointer + grid-only specifics in data-table.md
+  and the full contract in frontend-viewer-units.md.
+- `make format` clean. `make ci` red on the single pre-existing
+  `coerceCustomFieldType.test.ts` parity check (count drifted 33 → 34
+  after the parallel color-field merge); reproducible on the merge
+  commit with Phase 03–05 changes stashed, owned by the color-field
+  work, not this feature.
+
+## Feature Closeout
+
+All five phases (01 Contract + Registry, 02 Field Config UI, 03 Grid
+Behavior, 04 Fixed Catalog Fields, 05 Verification + Docs) have shipped
+on `codex/data-table-number-units`. The MVP roster (`density`,
+`conductivity`, `length`, `area`, `volume`) is wired end-to-end and
+documented in the canonical context docs.
+
+### Deferred work
+
+- **Browser smoke validation.** The Phase 05 plan calls for a manual
+  IP/SI toggle walk-through, fixed-mode-modal visual check, and round-
+  trip edit verification. Automated test coverage exercises the same
+  paths; the walk-through is the user's responsibility before merging
+  the feature PR.
+- **Materials catalog migration to DataTable.** When `MaterialsCatalog
+  Page` and `MaterialEditorModal` are reworked onto the shared
+  DataTable primitive, the built-in `density_kg_m3` and
+  `conductivity_w_mk` fields must seed `numberUnits.mode = "fixed"`
+  with the canonical pairs (`kg_m3 ↔ lb_ft3`, `w_m_k ↔ btu_h_ft_f`).
+  No `R/in` in MVP — reciprocal/derived display belongs in a named
+  helper, not the generic conductivity pair.
+- **Pre-existing `coerceCustomFieldType.test.ts` failure.** Owned by
+  the parallel color-field work. The fix is to update the formula-
+  parity expected entry count from 33 to 34 (or to whatever the
+  post-color CONVERSION_MATRIX exposes); not in this feature's scope.
 
 ## Next Step
 
-Pause for review. After review, start
-`phases/phase-05-verification-docs.md`.
+Feature complete. No further phases planned. Promote the durable
+decisions out of this STATUS into the context docs (already done in
+Phase 05) and let this folder graduate to a historical record.
 
 ## Verification
 
@@ -148,3 +193,14 @@ Phase 04 full verification:
 
 - `make format`
 - `make ci`
+
+Phase 05 focused verification:
+
+- `cd frontend && pnpm exec tsc --noEmit`
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table src/lib/units`
+
+Phase 05 full verification:
+
+- `make format` — clean.
+- `make ci` — red on the pre-existing color-field test
+  (`coerceCustomFieldType.test.ts`); see "Deferred work" above.
