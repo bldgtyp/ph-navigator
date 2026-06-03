@@ -8,7 +8,12 @@ from typing import cast
 import pytest
 from pydantic import ValidationError
 
-from features.project_document.custom_fields import CustomFieldType, TableFieldDef, coerce_custom_value
+from features.project_document.custom_fields import (
+    CustomFieldType,
+    TableFieldDef,
+    coerce_custom_value,
+    number_unit_registry_snapshot,
+)
 from features.project_document.document import ProjectDocumentV1, RoomRow
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
@@ -39,6 +44,18 @@ def _make_custom_field(
         created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
         created_by=None,
     )
+
+
+def _make_number_units_config(**overrides: object) -> dict[str, object]:
+    return {
+        "mode": "editable",
+        "unit_type": "density",
+        "si_unit": "kg_m3",
+        "ip_unit": "lb_ft3",
+        "precision_si": 1,
+        "precision_ip": 2,
+        **overrides,
+    }
 
 
 def test_rooms_contract_exposes_field_registry() -> None:
@@ -82,6 +99,69 @@ def test_fingerprint_changes_when_field_type_changes() -> None:
     a = compute_table_schema_fingerprint([short_field])
     b = compute_table_schema_fingerprint([number_field])
     assert a != b
+
+
+def test_number_field_accepts_complete_units_config() -> None:
+    field = TableFieldDef(
+        field_key="cf_density",
+        display_name="Density",
+        field_type=CustomFieldType.number,
+        config={"precision": 2, "units": _make_number_units_config(precision_ip=99)},
+        created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
+        created_by=None,
+    )
+
+    assert field.config["units"] == {
+        "mode": "editable",
+        "unit_type": "density",
+        "si_unit": "kg_m3",
+        "ip_unit": "lb_ft3",
+        "precision_si": 1,
+        "precision_ip": 10,
+    }
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"units": {"mode": "editable"}},
+        {"units": _make_number_units_config(unit_type="density", si_unit="m")},
+        {"units": _make_number_units_config(mode="readonly")},
+        {"units": _make_number_units_config(unit_type="unknown")},
+    ],
+)
+def test_number_field_rejects_invalid_units_config(config: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        TableFieldDef(
+            field_key="cf_bad",
+            display_name="Bad",
+            field_type=CustomFieldType.number,
+            config=config,
+            created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
+            created_by=None,
+        )
+
+
+def test_non_number_field_rejects_units_config() -> None:
+    with pytest.raises(ValidationError):
+        TableFieldDef(
+            field_key="cf_text",
+            display_name="Text",
+            field_type=CustomFieldType.short_text,
+            config={"units": _make_number_units_config()},
+            created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
+            created_by=None,
+        )
+
+
+def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
+    assert number_unit_registry_snapshot() == {
+        "density": {"si": ["kg_m3"], "ip": ["lb_ft3"]},
+        "conductivity": {"si": ["w_m_k"], "ip": ["btu_h_ft_f"]},
+        "length": {"si": ["m"], "ip": ["ft"]},
+        "area": {"si": ["m2"], "ip": ["ft2"]},
+        "volume": {"si": ["m3"], "ip": ["ft3"]},
+    }
 
 
 def test_empty_fingerprint_matches_pinned_parity_digest() -> None:

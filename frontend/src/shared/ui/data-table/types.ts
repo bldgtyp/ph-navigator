@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { NumberUnitsConfig } from "../../../lib/units";
 import type { AggregationKind } from "./fields/aggregations";
 import type { FieldSchemaMutation } from "./lib/customFieldMutations";
 import type { FieldRegistryEntry } from "./lib/formula/resolver";
@@ -60,6 +61,9 @@ export type FieldDef = {
   // `CustomFieldDef.config.precision` so the field-config modal can edit
   // number display precision without reaching into the document model.
   numberPrecision?: number;
+  // Optional Number with Units config. Present only for number fields
+  // whose persisted `TableFieldDef.config.units` is complete and valid.
+  numberUnits?: NumberUnitsConfig;
   // When false, single_select pills render with a neutral background
   // even when each option still carries a color. Default true.
   colorCodeOptions?: boolean;
@@ -362,6 +366,9 @@ export type EditCustomFieldBundleRequest = {
   colorCodeOptions?: boolean;
   // Set for custom number fields. Stored in CustomFieldDef.config.
   numberPrecision?: number;
+  // Set for number fields when optional unit metadata changed. `null`
+  // removes units and returns the field to a plain Number.
+  numberUnits?: NumberUnitsConfig | null;
   // Set for custom formula fields when the expression changed. The
   // consumer sends it as `editFieldBundle.formulaSource` so the
   // backend reparses/resolves the bundle atomically.

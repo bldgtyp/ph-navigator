@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-03
 TIME: 17:12 EDT
-STATUS: Planned
+STATUS: Complete on branch codex/data-table-number-units
 AUTHOR: Codex
 SCOPE: Backend/frontend contracts and closed unit registry for Number
        with Units.
@@ -93,3 +93,36 @@ separately (`kg/m3`, `Btu/(h-ft-F)`, etc.).
 - A Number field with complete `config.units` maps into a frontend
   `FieldDef` with unit config.
 - Invalid unit configs fail before they can enter a project document.
+
+## Completion Notes
+
+Implemented in Phase 01:
+
+- Backend Number unit config validation in
+  `backend/features/project_document/custom_fields.py`.
+- Backend registry snapshot and validation tests in
+  `backend/tests/test_project_document_custom_fields.py`.
+- Frontend MVP registry and conversion helpers in
+  `frontend/src/lib/units/numberUnits.ts`.
+- Frontend exports in `frontend/src/lib/units/index.ts`.
+- Frontend `FieldDef.numberUnits` plumbing through
+  `frontend/src/shared/ui/data-table/hooks/useTableSchema.ts` and
+  `frontend/src/shared/ui/data-table/types.ts`.
+- Frontend unit/schema tests in `frontend/src/lib/units/units.test.ts`
+  and `frontend/src/shared/ui/data-table/__tests__/useTableSchema.test.ts`.
+
+Simplify pass completed after implementation. Concrete fixes applied:
+
+- precomputed frontend registry maps for label and compatibility lookup;
+- derived TypeScript unit unions from the runtime registry;
+- stricter frontend precision validation matching backend bounds;
+- backend/frontend snapshot tests to catch registry drift.
+
+Verification:
+
+- `cd backend && uv run ruff check features/project_document/custom_fields.py tests/test_project_document_custom_fields.py`
+- `cd backend && uv run ruff format --check features/project_document/custom_fields.py tests/test_project_document_custom_fields.py`
+- `cd backend && uv run pytest tests/test_project_document_custom_fields.py`
+- `cd frontend && pnpm exec vitest run src/lib/units/units.test.ts src/shared/ui/data-table/__tests__/useTableSchema.test.ts`
+- `cd frontend && pnpm run lint`
+- `cd frontend && pnpm run build`

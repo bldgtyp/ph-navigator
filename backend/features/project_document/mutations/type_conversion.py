@@ -18,6 +18,7 @@ from features.project_document.custom_fields import (
     SHORT_TEXT_MAX_LENGTH,
     CustomFieldType,
     CustomValue,
+    TableFieldDef,
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
@@ -130,9 +131,15 @@ def _try_coerce_for_change_type(
         # `apply_change_type` materializes the list before calling here.
         if target_option_list is None:
             return False, None, "missing_target_option_list"
-        if not isinstance(raw_value, str):
+        if isinstance(raw_value, str):
+            text_value = raw_value
+        elif isinstance(raw_value, bool):
+            text_value = "true" if raw_value else "false"
+        elif isinstance(raw_value, (int, float)):
+            text_value = _format_number_for_text(raw_value)
+        else:
             return False, None, "single_select_requires_text"
-        normalized = normalize_display_name(raw_value)
+        normalized = normalize_display_name(text_value)
         if not normalized:
             return True, None, ""
         for option in target_option_list:
@@ -264,6 +271,13 @@ def apply_change_type(
             "custom_field_invalid_field_id",
             "changeType target id must equal the source field id.",
             {"field_id": mutation.after.field_key, "expected_field_id": mutation.field_id},
+        )
+    if _number_units_are_fixed(existing) and existing.config.get("units") != mutation.after.config.get("units"):
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_fixed_units_locked",
+            "Fixed unit config cannot be edited.",
+            {"field_id": mutation.field_id},
         )
     # Defense-in-depth: reject `field_type` changes on built-in fields
     # whose `"field_type"` lock is set in feature code. The frontend
@@ -527,3 +541,8 @@ def apply_change_type(
         if len(row_changes) > AUDIT_ROW_CAP:
             audit["row_changes_truncated"] = True
     return next_body, audit
+
+
+def _number_units_are_fixed(field: TableFieldDef) -> bool:
+    units = field.config.get("units")
+    return isinstance(units, dict) and cast(dict[str, object], units).get("mode") == "fixed"

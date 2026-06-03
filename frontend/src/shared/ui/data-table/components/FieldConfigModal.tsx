@@ -20,6 +20,7 @@ import type {
   FieldDef,
   FieldOption,
 } from "../types";
+import type { NumberUnitsConfig } from "../../../../lib/units";
 import type { FieldRegistryEntry } from "../lib/formula";
 import { FIELD_LOCKED_TOOLTIP, isAttributeLocked } from "../lib/locks";
 import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
@@ -39,6 +40,7 @@ import {
 } from "./FieldConfigSectionTypeChange";
 import { FieldConfigSectionOptions, type OptionSourceRow } from "./FieldConfigSectionOptions";
 import { FieldConfigSectionNumber } from "./FieldConfigSectionNumber";
+import { FieldConfigSectionNumberUnits } from "./FieldConfigSectionNumberUnits";
 import { DEFAULT_NUMBER_PRECISION, clampNumberPrecision } from "../lib/numberPrecision";
 import {
   FieldConfigSectionFormula,
@@ -63,6 +65,10 @@ function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOptio
       .map((option, index) => ({ ...option, order: index + 1 }))
       .sort((left, right) => left.order - right.order);
   return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
+}
+
+function numberUnitsEquivalent(a: NumberUnitsConfig | null, b: NumberUnitsConfig | null): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 }
 
 const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
@@ -139,6 +145,7 @@ export function FieldConfigModal({
     dirty: boolean;
   } | null>(null);
   const [numberPrecision, setNumberPrecision] = useState(DEFAULT_NUMBER_PRECISION);
+  const [numberUnits, setNumberUnits] = useState<NumberUnitsConfig | null>(null);
   const [formulaDraft, setFormulaDraft] = useState<FormulaDraftState | null>(null);
   const [formulaPreviewSnapshot, setFormulaPreviewSnapshot] =
     useState<FormulaPreviewRowSnapshot | null>(null);
@@ -166,6 +173,7 @@ export function FieldConfigModal({
       setAcknowledged(false);
       setOptionsDraft(null);
       setNumberPrecision(DEFAULT_NUMBER_PRECISION);
+      setNumberUnits(null);
       setFormulaDraft(null);
       setFormulaPreviewSnapshot(null);
       setFormulaPreviewStale(false);
@@ -186,6 +194,7 @@ export function FieldConfigModal({
     setAcknowledged(false);
     setOptionsDraft(null);
     setNumberPrecision(clampNumberPrecision(seededSource.numberPrecision));
+    setNumberUnits(seededSource.numberUnits ?? null);
     setFormulaDraft(null);
     setFormulaPreviewSnapshot(cloneFormulaPreviewRow(formulaPreview?.row ?? null));
     setFormulaPreviewStale(false);
@@ -232,6 +241,7 @@ export function FieldConfigModal({
       currentCustomFieldType !== (source.custom_field_type ?? null) ||
       clampNumberPrecision(fieldDef.numberPrecision) !==
         clampNumberPrecision(source.numberPrecision) ||
+      !numberUnitsEquivalent(fieldDef.numberUnits ?? null, source.numberUnits ?? null) ||
       !optionListsEquivalent(fieldDef.options ?? [], source.options ?? []) ||
       (fieldDef.defaultOptionId ?? null) !== (source.defaultOptionId ?? null) ||
       (fieldDef.colorCodeOptions !== false) !== (source.colorCodeOptions !== false) ||
@@ -339,9 +349,12 @@ export function FieldConfigModal({
   const needsAck = typeChanged && incompatibleCount > 0;
   const ackSatisfied = !needsAck || acknowledged;
 
-  const numberDirty =
+  const numberPrecisionDirty =
     draftType === "number" &&
     numberPrecision !== clampNumberPrecision(source?.numberPrecision ?? DEFAULT_NUMBER_PRECISION);
+  const numberUnitsDirty =
+    draftType === "number" && !numberUnitsEquivalent(numberUnits, source?.numberUnits ?? null);
+  const numberDirty = numberPrecisionDirty || numberUnitsDirty;
 
   const hasTypeSpecificDirty = Boolean(
     (draftType === "single_select" && optionsDraft?.dirty) ||
@@ -382,7 +395,10 @@ export function FieldConfigModal({
               colorCodeOptions: optionsDraft.colorCodeOptions,
             }
           : {}),
-        ...(draftType === "number" && (typeChanged || numberDirty) ? { numberPrecision } : {}),
+        ...(draftType === "number" && (typeChanged || numberPrecisionDirty)
+          ? { numberPrecision }
+          : {}),
+        ...(draftType === "number" && numberUnitsDirty ? { numberUnits } : {}),
         ...(draftType === "formula" && formulaDraft?.dirty
           ? { formulaSource: formulaDraft.source }
           : {}),
@@ -419,12 +435,14 @@ export function FieldConfigModal({
     trimmedName,
     normalizedDescription,
     typeChanged,
-    numberDirty,
+    numberPrecisionDirty,
+    numberUnitsDirty,
     draftType,
     needsAck,
     dispatchBundle,
     optionsDraft,
     numberPrecision,
+    numberUnits,
     formulaDraft,
     onOpenChange,
     preflightRows,
@@ -468,6 +486,7 @@ export function FieldConfigModal({
     setAcknowledged(false);
     setOptionsDraft(null);
     setNumberPrecision(clampNumberPrecision(externalConflict.numberPrecision));
+    setNumberUnits(externalConflict.numberUnits ?? null);
     setFormulaDraft(null);
     setFormulaPreviewSnapshot(cloneFormulaPreviewRow(formulaPreview?.row ?? null));
     setFormulaPreviewStale(false);
@@ -637,13 +656,21 @@ export function FieldConfigModal({
               />
             ) : null}
             {draftType === "number" ? (
-              <FieldConfigSectionNumber
-                precision={numberPrecision}
-                onPrecisionChange={setNumberPrecision}
-                // Number precision is part of the type config; the
-                // type lock implies the precision is frozen too.
-                disabled={pending || fieldTypeLocked}
-              />
+              <>
+                <FieldConfigSectionNumber
+                  precision={numberPrecision}
+                  onPrecisionChange={setNumberPrecision}
+                  // Number precision is part of the type config; the
+                  // type lock implies the precision is frozen too.
+                  disabled={pending || fieldTypeLocked}
+                />
+                <FieldConfigSectionNumberUnits
+                  units={numberUnits}
+                  onUnitsChange={setNumberUnits}
+                  disabled={pending || fieldTypeLocked}
+                  fixed={numberUnits?.mode === "fixed"}
+                />
+              </>
             ) : null}
             {draftType === "formula" && source ? (
               <FieldConfigSectionFormula
