@@ -371,6 +371,9 @@ export type EditCustomFieldBundleRequest = {
   colorCodeOptions?: boolean;
   // Set for custom number fields. Stored in CustomFieldDef.config.
   numberPrecision?: number;
+  // Set for number fields when optional unit metadata changed. `null`
+  // removes units and returns the field to a plain Number.
+  numberUnits?: NumberUnitsConfig | null;
   // Set for custom formula fields when the expression changed. The
   // consumer sends it as `editFieldBundle.formulaSource` so the
   // backend reparses/resolves the bundle atomically.

@@ -70,11 +70,13 @@ def _make_custom_field(
     display_name: str = "Notes",
     field_type: CustomFieldType = CustomFieldType.short_text,
     description: str | None = None,
+    config: dict[str, object] | None = None,
 ) -> TableFieldDef:
     return TableFieldDef(
         field_key=field_key,
         display_name=display_name,
         field_type=field_type,
+        config=config or {},
         description=description,
         origin="custom",
         created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
@@ -947,6 +949,37 @@ def test_change_type_text_to_single_select_auto_creates_options() -> None:
     assert audit["created_option_count"] == 2
 
 
+def test_change_type_number_to_single_select_auto_creates_and_maps_options() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(
+        body,
+        _make_custom_field("cf_n", display_name="Value", field_type=CustomFieldType.number),
+    )
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_n": 10})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_n": 10.0})
+    body = _with_room(body, room_id="rm_3", number="103", custom={"cf_n": 12.5})
+
+    field = _custom_fields(body)[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_n",
+        after=_make_change_type_target("cf_n", field, CustomFieldType.single_select),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    new_options = next_body.single_select_options["rooms.cf_n"]
+    assert [opt.label for opt in new_options] == ["10", "12.5"]
+    ten_id = new_options[0].id
+    twelve_id = new_options[1].id
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
+    assert rows["rm_1"]["cf_n"] == ten_id
+    assert rows["rm_2"]["cf_n"] == ten_id
+    assert rows["rm_3"]["cf_n"] == twelve_id
+    assert audit["cleared_row_count"] == 0
+    assert audit["created_option_count"] == 2
+
+
 def test_change_type_single_select_to_text_substitutes_label() -> None:
     body = _seed_floor_option(_empty_body())
     body = _seed_custom_single_select(body)
@@ -1035,6 +1068,31 @@ def test_change_type_rejects_illegal_pair_number_to_url() -> None:
         _apply(body, mutation)
     detail = cast(dict[str, object], excinfo.value.detail)
     assert detail["error_code"] == "custom_field_illegal_type_conversion"
+
+
+def test_change_type_rejects_fixed_number_units_removal() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_density",
+            display_name="Density",
+            field_type=CustomFieldType.number,
+            config={"precision": 2, "units": _make_number_units_config(mode="fixed")},
+        ),
+    )
+    field = _custom_fields(body)[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_density",
+        after=_make_change_type_target("cf_density", field, CustomFieldType.short_text),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_fixed_units_locked"
 
 
 def test_change_type_rejects_no_op_same_type() -> None:
@@ -1133,6 +1191,25 @@ def _make_bundle_after(
             "config": dict(field.config) if config is None else config,
         }
     )
+
+
+def _make_number_units_config(
+    *,
+    mode: str = "editable",
+    unit_type: str = "density",
+    si_unit: str = "kg_m3",
+    ip_unit: str = "lb_ft3",
+    precision_si: int = 1,
+    precision_ip: int = 2,
+) -> dict[str, object]:
+    return {
+        "mode": mode,
+        "unit_type": unit_type,
+        "si_unit": si_unit,
+        "ip_unit": ip_unit,
+        "precision_si": precision_si,
+        "precision_ip": precision_ip,
+    }
 
 
 def test_edit_field_bundle_renames_and_updates_description() -> None:
@@ -1280,6 +1357,129 @@ def test_edit_field_bundle_changes_type_with_ack() -> None:
     changed = cast(list[str], audit["properties_changed"])
     assert "field_type" in changed
     assert audit["cleared_row_count"] == 1
+
+
+def test_edit_field_bundle_edits_editable_number_units_config() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field(
+        "cf_density",
+        display_name="Density",
+        field_type=CustomFieldType.number,
+        config={
+            "precision": 2,
+            "units": _make_number_units_config(),
+        },
+    )
+    body = _with_field(body, field)
+    after = _make_bundle_after(
+        field,
+        config={
+            "precision": 2,
+            "units": _make_number_units_config(precision_si=3, precision_ip=4),
+        },
+    )
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_density",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    units = cast(dict[str, object], final_field.config["units"])
+    assert units["precision_si"] == 3
+    assert units["precision_ip"] == 4
+
+
+def test_edit_field_bundle_rejects_fixed_number_units_edit() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field(
+        "cf_density",
+        display_name="Density",
+        field_type=CustomFieldType.number,
+        config={
+            "precision": 2,
+            "units": _make_number_units_config(mode="fixed"),
+        },
+    )
+    body = _with_field(body, field)
+    after = _make_bundle_after(
+        field,
+        config={
+            "precision": 2,
+            "units": _make_number_units_config(mode="fixed", precision_si=3),
+        },
+    )
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_density",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_fixed_units_locked"
+
+
+def test_edit_field_bundle_rejects_fixed_number_units_removal_on_type_change() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field(
+        "cf_density",
+        display_name="Density",
+        field_type=CustomFieldType.number,
+        config={
+            "precision": 2,
+            "units": _make_number_units_config(mode="fixed"),
+        },
+    )
+    body = _with_field(body, field)
+    after = _make_bundle_after(field, field_type=CustomFieldType.short_text, config={})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_density",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_fixed_units_locked"
+
+
+def test_edit_field_bundle_type_change_away_from_editable_units_drops_config() -> None:
+    body = _seed_floor_option(_empty_body())
+    field = _make_custom_field(
+        "cf_length",
+        display_name="Length",
+        field_type=CustomFieldType.number,
+        config={
+            "precision": 2,
+            "units": _make_number_units_config(
+                unit_type="length",
+                si_unit="m",
+                ip_unit="ft",
+                precision_si=2,
+                precision_ip=2,
+            ),
+        },
+    )
+    body = _with_field(body, field)
+    after = _make_bundle_after(field, field_type=CustomFieldType.short_text, config={})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_length",
+        after=after,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    assert final_field.field_type is CustomFieldType.short_text
+    assert "units" not in final_field.config
 
 
 def test_edit_field_bundle_text_to_single_select_uses_client_options() -> None:

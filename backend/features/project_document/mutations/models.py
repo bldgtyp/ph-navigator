@@ -92,6 +92,7 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     # number → *
     (CustomFieldType.number, CustomFieldType.short_text): "lossless",
     (CustomFieldType.number, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.number, CustomFieldType.single_select): "create_options",
     (CustomFieldType.number, CustomFieldType.formula): "discard_then_author",
     # url → *
     (CustomFieldType.url, CustomFieldType.short_text): "lossless",

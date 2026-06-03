@@ -425,6 +425,153 @@ describe("FieldConfigModal", () => {
     );
   });
 
+  test("plain number fields expose Add units without changing default Save state", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 4,
+        })}
+      />,
+    );
+
+    expect(screen.getByLabelText("Decimal precision")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add units" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  test("number fields add editable units and save the complete units config", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 2,
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add units" }));
+    fireEvent.change(screen.getByLabelText("Unit type"), { target: { value: "length" } });
+    fireEvent.change(screen.getByLabelText("IP decimal precision"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        numberUnits: {
+          mode: "editable",
+          unit_type: "length",
+          si_unit: "m",
+          ip_unit: "ft",
+          precision_si: 2,
+          precision_ip: 3,
+        },
+      }),
+    );
+  });
+
+  test("fixed number units are visible but disabled", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 2,
+          numberUnits: {
+            mode: "fixed",
+            unit_type: "density",
+            si_unit: "kg_m3",
+            ip_unit: "lb_ft3",
+            precision_si: 1,
+            precision_ip: 2,
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "Units" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Unit type")).toBeDisabled();
+    expect(screen.getByLabelText("SI decimal precision")).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Remove units" })).toBeNull();
+    expect(screen.getByText("Units are fixed by this catalog field.")).toBeInTheDocument();
+  });
+
+  test("removing editable units sends null units without touching cell values", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 2,
+          numberUnits: {
+            mode: "editable",
+            unit_type: "density",
+            si_unit: "kg_m3",
+            ip_unit: "lb_ft3",
+            precision_si: 1,
+            precision_ip: 2,
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove units" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        numberUnits: null,
+      }),
+    );
+  });
+
+  test("changing Number with Units to Single-select does not resend units", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        preflightRows={[{ rowId: "rm_1", rawValue: "1000" }]}
+        initialField={baseField({
+          field_type: "number",
+          custom_field_type: "number",
+          numberPrecision: 2,
+          numberUnits: {
+            mode: "editable",
+            unit_type: "length",
+            si_unit: "m",
+            ip_unit: "ft",
+            precision_si: 2,
+            precision_ip: 2,
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: "Single select" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fieldKey: "cf_notes",
+          fieldType: "single_select",
+        }),
+      ),
+    );
+    expect(dispatchBundle.mock.calls[0]?.[0]).not.toHaveProperty("numberUnits");
+  });
+
   test("number fields do not resend precision when only another property changes", async () => {
     const dispatchBundle = vi.fn().mockResolvedValue(undefined);
     render(
