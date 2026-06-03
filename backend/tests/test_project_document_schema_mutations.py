@@ -922,6 +922,45 @@ def test_change_type_text_to_url_validates_url() -> None:
     assert "cf_u" not in custom["rm_2"]
 
 
+def test_change_type_text_to_color_normalizes_hex_and_clears_invalid_on_ack() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_c", display_name="Color"))
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_c": " #DCE6F0 "})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_c": "#abc"})
+
+    field = _custom_fields(body)[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_c",
+        after=_make_change_type_target("cf_c", field, CustomFieldType.color),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_coercion_preflight_required"
+    details = cast(dict[str, object], detail["details"])
+    assert details["incompatible_row_count"] == 1
+    incompatible_rows = cast(list[dict[str, object]], details["incompatible_rows"])
+    assert incompatible_rows[0]["reason"] == "invalid_color_hex"
+
+    ack = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_c",
+        after=_make_change_type_target("cf_c", field, CustomFieldType.color),
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, ack)
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
+    assert _custom_fields(next_body)[0].field_type is CustomFieldType.color
+    assert rows["rm_1"]["cf_c"] == "#dce6f0"
+    assert "cf_c" not in rows["rm_2"]
+    assert audit["cleared_row_count"] == 1
+
+
 def test_change_type_text_to_single_select_auto_creates_options() -> None:
     body = _seed_floor_option(_empty_body())
     body = _with_field(body, _make_custom_field("cf_s", display_name="Status"))
@@ -999,6 +1038,54 @@ def test_change_type_single_select_to_text_substitutes_label() -> None:
     assert rows["rm_1"]["cf_ss"] == "A"
     assert rows["rm_2"]["cf_ss"] == "B"
     assert "rooms.cf_ss" not in next_body.single_select_options
+    assert audit["cleared_row_count"] == 0
+
+
+def test_change_type_single_select_to_color_substitutes_option_colors() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _seed_custom_single_select(
+        body,
+        options=[
+            SingleSelectOption(id="opt_a", label="A", color="#DCE6F0", order=1.0),
+            SingleSelectOption(id="opt_b", label="B", color="#222222", order=2.0),
+        ],
+    )
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_ss": "opt_a"})
+    body = _with_room(body, room_id="rm_2", number="102", custom={"cf_ss": "opt_b"})
+
+    field = _custom_fields(body)[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_ss",
+        after=_make_change_type_target("cf_ss", field, CustomFieldType.color),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    rows = {row.id: row.custom_values for row in next_body.tables.rooms.rows}
+    assert _custom_fields(next_body)[0].field_type is CustomFieldType.color
+    assert rows["rm_1"]["cf_ss"] == "#dce6f0"
+    assert rows["rm_2"]["cf_ss"] == "#222222"
+    assert "rooms.cf_ss" not in next_body.single_select_options
+    assert audit["cleared_row_count"] == 0
+
+
+def test_change_type_color_to_text_is_lossless() -> None:
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _make_custom_field("cf_c", display_name="Color", field_type=CustomFieldType.color))
+    body = _with_room(body, room_id="rm_1", number="101", custom={"cf_c": "#dce6f0"})
+
+    field = _custom_fields(body)[0]
+    mutation = ChangeTypeMutation(
+        kind="changeType",
+        table_key="rooms",
+        field_id="cf_c",
+        after=_make_change_type_target("cf_c", field, CustomFieldType.short_text),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    assert _custom_fields(next_body)[0].field_type is CustomFieldType.short_text
+    assert next_body.tables.rooms.rows[0].custom_values["cf_c"] == "#dce6f0"
     assert audit["cleared_row_count"] == 0
 
 

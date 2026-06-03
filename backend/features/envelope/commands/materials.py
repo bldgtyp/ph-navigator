@@ -26,7 +26,7 @@ from features.envelope.models import (
 from features.project_document.document import CatalogOrigin, ProjectDocumentV1, ProjectMaterial
 from features.shared.errors import api_error
 
-DEFAULT_HAND_ENTERED_MATERIAL_COLOR = "(255,230,230,230)"
+DEFAULT_HAND_ENTERED_MATERIAL_COLOR = "#e6e6e6"
 
 
 def paste_assignment(body: ProjectDocumentV1, command: PasteAssignmentCommand) -> ProjectDocumentV1:
@@ -116,7 +116,7 @@ def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialComma
         density_kg_m3=command.density_kg_m3,
         specific_heat_j_kgk=command.specific_heat_j_kgk,
         emissivity=command.emissivity,
-        argb_color=command.argb_color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
+        color=command.color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
         specification_status="missing",
         datasheet_asset_ids=[],
         notes=None,
@@ -267,7 +267,7 @@ def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
         density_kg_m3=row["density_kg_m3"],
         specific_heat_j_kgk=row["specific_heat_j_kgk"],
         emissivity=row["emissivity"],
-        argb_color=row["argb_color"],
+        color=row["color"],
         specification_status="missing",
         datasheet_asset_ids=[],
         notes=row["notes"],

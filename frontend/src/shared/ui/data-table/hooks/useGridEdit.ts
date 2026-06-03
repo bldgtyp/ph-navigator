@@ -20,6 +20,7 @@ import type { DispatchWrite } from "./useGridWriteReducer";
 export type EditorState =
   | { kind: "text"; draftValue: string }
   | { kind: "number"; draftValue: string }
+  | { kind: "color"; draftValue: string }
   | { kind: "single_select"; searchText: string; highlightedOptionId: string | null };
 
 export type EditingCell = {
@@ -211,12 +212,12 @@ function planCommit(
   if (editor.kind === "single_select") {
     return planSingleSelect(current, editor, fieldDef);
   }
-  return planTextOrNumber(current, editor, fieldDef);
+  return planTextNumberOrColor(current, editor, fieldDef);
 }
 
-function planTextOrNumber(
+function planTextNumberOrColor(
   current: EditingCell,
-  editor: { kind: "text" | "number"; draftValue: string },
+  editor: { kind: "text" | "number" | "color"; draftValue: string },
   fieldDef: FieldDef | undefined,
 ): CommitPlan {
   const coerced = coerceFieldValue(editor.draftValue, fieldDef, () => []);
@@ -292,7 +293,7 @@ function decideSingleSelectCommit(
 }
 
 function initialEditorState(
-  kind: "text" | "number" | "single_select" | "none",
+  kind: "text" | "number" | "color" | "single_select" | "none",
   initialValue: unknown,
   intent: EditIntent,
   replaceSeed: string | undefined,

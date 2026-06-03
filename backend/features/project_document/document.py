@@ -28,6 +28,7 @@ from features.project_document.custom_fields import (
     normalize_display_name,
 )
 from features.projects.models import CertificationProgram
+from features.shared.colors import normalize_optional_hex_color
 
 CatalogTableName = Literal["materials", "frame_types", "glazing_types"]
 CATALOG_RECORD_ID_PATTERN = r"^rec[A-Za-z0-9]{14}$"
@@ -218,10 +219,15 @@ class FrameRef(BaseModel):
     u_value_w_m2k: float | None = Field(default=None, ge=0)
     psi_g_w_mk: float | None = Field(default=None, ge=0)
     psi_install_w_mk: float | None = Field(default=None, ge=0)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=4000)
     source_provenance: str | None = Field(default=None, max_length=400)
     catalog_origin: CatalogOrigin | None = None
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
     @model_validator(mode="after")
     def _validate_catalog_origin_family(self) -> FrameRef:
@@ -241,10 +247,15 @@ class GlazingRef(BaseModel):
     brand: str | None = Field(default=None, max_length=200)
     u_value_w_m2k: float | None = Field(default=None, ge=0)
     g_value: float | None = Field(default=None, ge=0.0, le=1.0)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=4000)
     source_provenance: str | None = Field(default=None, max_length=400)
     catalog_origin: CatalogOrigin | None = None
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
     @model_validator(mode="after")
     def _validate_catalog_origin_family(self) -> GlazingRef:
@@ -333,7 +344,7 @@ class ProjectMaterial(BaseModel):
     density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(default=None, max_length=4000)
@@ -353,6 +364,11 @@ class ProjectMaterial(BaseModel):
             stripped = value.strip()
             return stripped or None
         return value
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
     @model_validator(mode="after")
     def _validate_catalog_origin_family(self) -> ProjectMaterial:

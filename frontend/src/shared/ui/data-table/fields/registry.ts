@@ -19,9 +19,10 @@ export function getFieldEditor(fieldDef: FieldDef | undefined): FieldEditor {
       return { kind: "number" };
     case "single_select":
       return { kind: "single_select" };
+    case "color":
+      return { kind: "color" };
     case "computed":
     case "attachment":
-    case "argb_color":
       return { kind: "none" };
   }
 }

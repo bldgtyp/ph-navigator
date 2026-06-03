@@ -13,6 +13,7 @@ from features.catalogs._shared import (
     strip_optional,
     strip_required,
 )
+from features.shared.colors import normalize_optional_hex_color
 
 CATALOG_VERSION_ID_PREFIX: Final[str] = "glazingv_"
 
@@ -37,7 +38,7 @@ class CatalogGlazingTypePublic(BaseModel):
     version_date: date
     u_value_w_m2k: float | None
     g_value: float | None
-    argb_color: str | None
+    color: str | None
     notes: str | None
     source_provenance: str | None
     is_active: bool
@@ -65,7 +66,7 @@ class _CatalogGlazingTypeFields(BaseModel):
     u_value_w_m2k: float | None = None
     # g-value (SHGC) is a unitless fraction in [0, 1].
     g_value: float | None = Field(default=None, ge=0.0, le=1.0)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=4000)
     source_provenance: str | None = Field(default=None, max_length=400)
 
@@ -74,10 +75,15 @@ class _CatalogGlazingTypeFields(BaseModel):
     def _strip_optional_meta(cls, value: object) -> object:
         return strip_optional(value)
 
-    @field_validator("argb_color", "notes", "source_provenance", mode="before")
+    @field_validator("notes", "source_provenance", mode="before")
     @classmethod
     def _strip_optional_text(cls, value: object) -> object:
         return strip_optional(value)
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
     @field_validator("u_value_w_m2k")
     @classmethod

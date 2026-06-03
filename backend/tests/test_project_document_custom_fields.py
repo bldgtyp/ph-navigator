@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 
 import pytest
 from pydantic import ValidationError
@@ -10,9 +11,10 @@ from pydantic import ValidationError
 from features.project_document.custom_fields import (
     CustomFieldType,
     TableFieldDef,
+    coerce_custom_value,
     number_unit_registry_snapshot,
 )
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import ProjectDocumentV1, RoomRow
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_KEYS, rooms_field_registry
@@ -30,11 +32,15 @@ def _empty_body() -> ProjectDocumentV1:
     )
 
 
-def _make_custom_field(field_key: str, display_name: str = "Notes") -> TableFieldDef:
+def _make_custom_field(
+    field_key: str,
+    display_name: str = "Notes",
+    field_type: CustomFieldType = CustomFieldType.short_text,
+) -> TableFieldDef:
     return TableFieldDef(
         field_key=field_key,
         display_name=display_name,
-        field_type=CustomFieldType.short_text,
+        field_type=field_type,
         created_at=datetime(2026, 5, 24, 12, 0, tzinfo=UTC),
         created_by=None,
     )
@@ -172,3 +178,79 @@ def test_rooms_registry_replace_round_trips_field_defs() -> None:
     next_body = rooms_field_registry.replace_field_defs(body, field_defs)
 
     assert rooms_field_registry.read_field_defs(next_body) == field_defs
+
+
+def test_color_custom_value_coercion_normalizes_nullable_values() -> None:
+    assert coerce_custom_value("#AABBCC", CustomFieldType.color) == "#aabbcc"
+    assert coerce_custom_value("  #DCE6F0  ", CustomFieldType.color) == "#dce6f0"
+    assert coerce_custom_value("", CustomFieldType.color) is None
+    assert coerce_custom_value(None, CustomFieldType.color) is None
+
+
+@pytest.mark.parametrize("raw_value", ["#abc", "#aabbccdd", "red", (255, 220, 230, 240), 123])
+def test_color_custom_value_coercion_rejects_non_hex_storage(raw_value: object) -> None:
+    with pytest.raises(ValueError):
+        coerce_custom_value(raw_value, CustomFieldType.color)
+
+
+def test_project_document_validates_color_custom_values() -> None:
+    body = _empty_body()
+    color_field = _make_custom_field("cf_color", "Material Color", CustomFieldType.color)
+    body = rooms_field_registry.replace_field_defs(
+        body,
+        [*rooms_field_registry.read_field_defs(body), color_field],
+    )
+    row = RoomRow(
+        id="rm_1",
+        floor_level=None,
+        building_zone=None,
+        icfa_factor=1.0,
+        erv_unit_ids=[],
+        catalog_origin=None,
+        notes=None,
+        custom_values=cast(
+            dict[str, str | int | float | bool | None],
+            {
+                "number": "101",
+                "name": "Living",
+                "num_people": 0,
+                "num_bedrooms": 0,
+                "cf_color": "#dce6f0",
+            },
+        ),
+    )
+    next_tables = body.tables.model_copy(update={"rooms": body.tables.rooms.model_copy(update={"rows": [row]})})
+
+    ProjectDocumentV1.model_validate(body.model_copy(update={"tables": next_tables}).model_dump(mode="json"))
+
+
+def test_project_document_rejects_invalid_color_custom_values() -> None:
+    body = _empty_body()
+    color_field = _make_custom_field("cf_color", "Material Color", CustomFieldType.color)
+    body = rooms_field_registry.replace_field_defs(
+        body,
+        [*rooms_field_registry.read_field_defs(body), color_field],
+    )
+    row = RoomRow(
+        id="rm_1",
+        floor_level=None,
+        building_zone=None,
+        icfa_factor=1.0,
+        erv_unit_ids=[],
+        catalog_origin=None,
+        notes=None,
+        custom_values=cast(
+            dict[str, str | int | float | bool | None],
+            {
+                "number": "101",
+                "name": "Living",
+                "num_people": 0,
+                "num_bedrooms": 0,
+                "cf_color": "#abc",
+            },
+        ),
+    )
+    next_tables = body.tables.model_copy(update={"rooms": body.tables.rooms.model_copy(update={"rows": [row]})})
+
+    with pytest.raises(ValidationError, match="color must be a 6-digit hex string"):
+        ProjectDocumentV1.model_validate(body.model_copy(update={"tables": next_tables}).model_dump(mode="json"))

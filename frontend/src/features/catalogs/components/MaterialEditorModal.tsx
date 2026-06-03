@@ -14,6 +14,7 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import type { CatalogMaterial, CatalogMaterialCreatePayload } from "../types";
 import {
+  colorToNull,
   editorSubmitLabel,
   parseOptionalNumber,
   parseOptionalUnitNumber,
@@ -30,7 +31,7 @@ type FormState = {
   density_kg_m3: string;
   specific_heat_j_kgk: string;
   emissivity: string;
-  argb_color: string;
+  color: string;
   notes: string;
   source_provenance: string;
 };
@@ -45,7 +46,7 @@ function emptyForm(): FormState {
     density_kg_m3: "",
     specific_heat_j_kgk: "",
     emissivity: "",
-    argb_color: "",
+    color: "",
     notes: "",
     source_provenance: "",
   };
@@ -64,7 +65,7 @@ function formFromMaterial(material: CatalogMaterial, unitOptions: UnitFormatOpti
     density_kg_m3: formatDensityFromKgM3(material.density_kg_m3, unitOptions),
     specific_heat_j_kgk: formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, unitOptions),
     emissivity: numberOrEmpty(material.emissivity),
-    argb_color: stringOrEmpty(material.argb_color),
+    color: stringOrEmpty(material.color),
     notes: stringOrEmpty(material.notes),
     source_provenance: stringOrEmpty(material.source_provenance),
   };
@@ -90,7 +91,7 @@ function toCreatePayload(
       unitOptions,
     ),
     emissivity: parseOptionalNumber(form.emissivity),
-    argb_color: form.argb_color.trim() || null,
+    color: colorToNull(form.color),
     notes: form.notes.trim() || null,
     source_provenance: form.source_provenance.trim() || null,
   };
@@ -248,11 +249,11 @@ export function MaterialEditorModal({
           />
         </label>
         <label>
-          <span>ARGB color</span>
+          <span>Color</span>
           <input
-            value={form.argb_color}
-            onChange={(event) => setForm((prev) => ({ ...prev, argb_color: event.target.value }))}
-            placeholder="(255,220,230,240)"
+            value={form.color}
+            onChange={(event) => setForm((prev) => ({ ...prev, color: event.target.value }))}
+            placeholder="#rrggbb"
           />
         </label>
         <label>

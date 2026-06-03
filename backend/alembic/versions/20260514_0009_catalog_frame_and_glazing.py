@@ -106,7 +106,7 @@ def _create_catalog(
         sa.Column("version_date", sa.Date(), nullable=False),
         sa.Column("catalog_schema_version", sa.Integer(), nullable=False, server_default=sa.text("1")),
         *value_columns,
-        sa.Column("argb_color", sa.Text(), nullable=True),
+        sa.Column("color", sa.Text(), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("source_provenance", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),

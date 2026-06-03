@@ -66,7 +66,7 @@ export function frameRefFromCatalog(row: CatalogFrameType): FrameRef {
     u_value_w_m2k: row.u_value_w_m2k,
     psi_g_w_mk: row.psi_g_w_mk,
     psi_install_w_mk: row.psi_install_w_mk,
-    argb_color: row.argb_color,
+    color: row.color,
     notes: row.notes,
     source_provenance: row.source_provenance,
     catalog_origin: stampCatalogOrigin({
@@ -85,7 +85,7 @@ export function glazingRefFromCatalog(row: CatalogGlazingType): GlazingRef {
     brand: row.brand,
     u_value_w_m2k: row.u_value_w_m2k,
     g_value: row.g_value,
-    argb_color: row.argb_color,
+    color: row.color,
     notes: row.notes,
     source_provenance: row.source_provenance,
     catalog_origin: stampCatalogOrigin({

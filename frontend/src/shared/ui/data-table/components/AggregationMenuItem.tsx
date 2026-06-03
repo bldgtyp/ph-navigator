@@ -4,12 +4,13 @@ import { getAggregationKinds, type AggregationKind } from "../fields/aggregation
 import type { FieldDef } from "../types";
 
 // Renders nothing when the field's aggregation catalogue is empty
-// (attachment / argb_color), so the parent menu can render this
+// (attachment), so the parent menu can render this
 // unconditionally and let it self-gate.
 
 const KIND_LABELS: Record<AggregationKind, string> = {
   none: "None",
   count: "Count",
+  count_unique: "Count unique",
   sum: "Sum",
   mean: "Mean",
   min: "Min",

@@ -64,7 +64,7 @@ def _payload(name: str = "Skyline SR-3") -> dict[str, object]:
         "u_value_w_m2k": 0.85,
         "psi_g_w_mk": 0.040,
         "psi_install_w_mk": 0.030,
-        "argb_color": "(255,40,40,40)",
+        "color": "#282828",
         "notes": "Triple-seal aluminum-clad timber",
         "source_provenance": "Manufacturer datasheet 2024-Q2",
     }

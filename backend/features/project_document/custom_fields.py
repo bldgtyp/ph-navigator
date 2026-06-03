@@ -26,6 +26,8 @@ from typing import TYPE_CHECKING, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from features.shared.colors import normalize_hex_color
+
 if TYPE_CHECKING:
     from features.project_document.document import SingleSelectOption
 
@@ -87,6 +89,7 @@ class CustomFieldType(StrEnum):
     number = "number"
     url = "url"
     single_select = "single_select"
+    color = "color"
     formula = "formula"
 
 
@@ -284,6 +287,12 @@ def coerce_custom_value(
         if option_list is not None and not any(option.id == value for option in option_list):
             raise ValueError(f"single_select value {value!r} is not a known option id")
         return value
+    if field_type is CustomFieldType.color:
+        if value == "":
+            return None
+        if not isinstance(value, str):
+            raise ValueError(f"color value must be a string, got {type(value).__name__}")
+        return normalize_hex_color(value)
     if field_type is CustomFieldType.formula:
         raise ValueError("formula fields are computed; stored row values are not permitted")
     raise ValueError(f"unsupported field type: {field_type!r}")

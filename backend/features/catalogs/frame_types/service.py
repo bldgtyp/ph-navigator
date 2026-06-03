@@ -66,7 +66,7 @@ def create_frame_type(
             u_value_w_m2k=payload.u_value_w_m2k,
             psi_g_w_mk=payload.psi_g_w_mk,
             psi_install_w_mk=payload.psi_install_w_mk,
-            argb_color=payload.argb_color,
+            color=payload.color,
             notes=payload.notes,
             source_provenance=payload.source_provenance,
             user_id=user.id,

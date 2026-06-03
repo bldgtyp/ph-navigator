@@ -11,7 +11,7 @@ const frameRef: FrameRef = {
   u_value_w_m2k: 0.85,
   psi_g_w_mk: 0.04,
   psi_install_w_mk: 0.05,
-  argb_color: null,
+  color: null,
   notes: null,
   source_provenance: null,
   catalog_origin: {

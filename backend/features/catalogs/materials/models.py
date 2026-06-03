@@ -13,6 +13,7 @@ from features.catalogs._shared import (
     strip_optional,
     strip_required,
 )
+from features.shared.colors import normalize_optional_hex_color
 
 CATALOG_VERSION_ID_PREFIX: Final[str] = "matv_"
 
@@ -38,7 +39,7 @@ class CatalogMaterialPublic(BaseModel):
     density_kg_m3: float | None
     specific_heat_j_kgk: float | None
     emissivity: float | None
-    argb_color: str | None
+    color: str | None
     notes: str | None
     source_provenance: str | None
     is_active: bool
@@ -69,7 +70,7 @@ class _CatalogMaterialFields(BaseModel):
     density_kg_m3: float | None = None
     specific_heat_j_kgk: float | None = None
     emissivity: float | None = Field(default=None, ge=0.0, le=1.0)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=4000)
     source_provenance: str | None = Field(default=None, max_length=400)
 
@@ -78,10 +79,15 @@ class _CatalogMaterialFields(BaseModel):
     def _strip_optional_label(cls, value: object) -> object:
         return strip_optional(value)
 
-    @field_validator("argb_color", "notes", "source_provenance", mode="before")
+    @field_validator("notes", "source_provenance", mode="before")
     @classmethod
     def _strip_optional_fields(cls, value: object) -> object:
         return strip_optional(value)
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
     @field_validator("conductivity_w_mk", "density_kg_m3", "specific_heat_j_kgk")
     @classmethod

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   NUMBER_OPERATORS,
+  COLOR_OPERATORS,
   SINGLE_SELECT_OPERATORS,
   TEXT_OPERATORS,
   getFilterOperators,
@@ -48,12 +49,15 @@ describe("getFilterOperators", () => {
     expect(getFilterOperators(fieldDef)).toBe(TEXT_OPERATORS);
   });
 
-  test("attachment and argb_color fields return an empty catalogue", () => {
+  test("color fields receive the color catalogue", () => {
+    expect(getFilterOperators({ field_key: "x", field_type: "color", display_name: "X" })).toBe(
+      COLOR_OPERATORS,
+    );
+  });
+
+  test("attachment fields return an empty catalogue", () => {
     expect(
       getFilterOperators({ field_key: "x", field_type: "attachment", display_name: "X" }),
-    ).toHaveLength(0);
-    expect(
-      getFilterOperators({ field_key: "x", field_type: "argb_color", display_name: "X" }),
     ).toHaveLength(0);
   });
 });

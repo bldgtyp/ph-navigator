@@ -10,6 +10,7 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateGlazingTypeMutation, useUpdateGlazingTypeMutation } from "../hooks";
 import type { CatalogGlazingType, CatalogGlazingTypeCreatePayload } from "../types";
 import {
+  colorToNull,
   editorSubmitLabel,
   parseOptionalNumber,
   parseOptionalUnitNumber,
@@ -27,7 +28,7 @@ type FormState = {
   version_date: string;
   u_value_w_m2k: string;
   g_value: string;
-  argb_color: string;
+  color: string;
   notes: string;
   source_provenance: string;
 };
@@ -41,7 +42,7 @@ function emptyForm(): FormState {
     version_date: todayIso(),
     u_value_w_m2k: "",
     g_value: "",
-    argb_color: "",
+    color: "",
     notes: "",
     source_provenance: "",
   };
@@ -56,7 +57,7 @@ function formFromRecord(record: CatalogGlazingType, unitOptions: UnitFormatOptio
     version_date: record.version_date,
     u_value_w_m2k: formatUValueFromWm2K(record.u_value_w_m2k, unitOptions),
     g_value: numberOrEmpty(record.g_value),
-    argb_color: stringOrEmpty(record.argb_color),
+    color: stringOrEmpty(record.color),
     notes: stringOrEmpty(record.notes),
     source_provenance: stringOrEmpty(record.source_provenance),
   };
@@ -77,7 +78,7 @@ function toCreatePayload(
     version_label: form.version_label.trim() || "v1",
     u_value_w_m2k: parseOptionalUnitNumber(form.u_value_w_m2k, parseUValueToWm2K, unitOptions),
     g_value: parseOptionalNumber(form.g_value),
-    argb_color: trimToNull(form.argb_color),
+    color: colorToNull(form.color),
     notes: trimToNull(form.notes),
     source_provenance: trimToNull(form.source_provenance),
   };
@@ -208,11 +209,11 @@ export function GlazingTypeEditorModal({
           />
         </label>
         <label>
-          <span>ARGB color</span>
+          <span>Color</span>
           <input
-            value={form.argb_color}
-            onChange={(event) => setForm((prev) => ({ ...prev, argb_color: event.target.value }))}
-            placeholder="(180,180,220,235)"
+            value={form.color}
+            onChange={(event) => setForm((prev) => ({ ...prev, color: event.target.value }))}
+            placeholder="#rrggbb"
           />
         </label>
         <label>

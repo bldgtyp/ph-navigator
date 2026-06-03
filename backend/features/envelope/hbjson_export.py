@@ -135,7 +135,7 @@ def _energy_material_payload(
             "type": "EnergyMaterialProperties",
             "ph": {
                 "user_data": {},
-                "ph_color": material.argb_color,
+                "ph_color": material.color,
             },
             "ref": {
                 "type": "EnergyMaterialRefProperties",

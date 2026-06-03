@@ -1,6 +1,7 @@
 /** Small helpers shared by every catalog editor modal. */
 
 import type { UnitFormatOptions, UnitParseResult } from "../../../lib/units";
+import { normalizeColorInput } from "../../../shared/lib/color";
 
 export function parseOptionalNumber(value: string): number | null {
   const trimmed = value.trim();
@@ -30,6 +31,12 @@ export function stringOrEmpty(value: string | null): string {
 export function trimToNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed === "" ? null : trimmed;
+}
+
+export function colorToNull(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  return normalizeColorInput(trimmed) ?? trimmed;
 }
 
 export function todayIso(): string {
