@@ -1,3 +1,4 @@
+import { parseNumberUnitsInput, type UnitSystem } from "../../../../../lib/units";
 import type { DataTableColumnDef, FieldDef, FieldOption, FieldType } from "../../types";
 import { normalizeColorInput } from "../../../../lib/color";
 import { createFieldOption } from "../options/create";
@@ -47,7 +48,10 @@ export function coerceFieldValue(
   raw: string,
   fieldDef: FieldDef | undefined,
   optionsForField: () => FieldOption[],
-  { emptyNumberValue = null }: { emptyNumberValue?: number | null } = {},
+  {
+    emptyNumberValue = null,
+    unitSystem = "SI",
+  }: { emptyNumberValue?: number | null; unitSystem?: UnitSystem } = {},
 ): { ok: true; value: unknown; created?: FieldOption } | { ok: false; message: string } {
   const trimmed = raw.trim();
   if (fieldDef?.field_type === "number") {
@@ -55,6 +59,11 @@ export function coerceFieldValue(
       return { ok: false, message: "Value required." };
     }
     if (!trimmed) return { ok: true, value: emptyNumberValue };
+    if (fieldDef.numberUnits) {
+      const parsed = parseNumberUnitsInput(raw, fieldDef.numberUnits, unitSystem);
+      if (parsed === undefined) return { ok: false, message: "Expected a number." };
+      return { ok: true, value: parsed };
+    }
     const value = Number(trimmed);
     return Number.isFinite(value)
       ? { ok: true, value }

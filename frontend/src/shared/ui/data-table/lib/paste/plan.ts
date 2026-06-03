@@ -1,3 +1,4 @@
+import type { UnitSystem } from "../../../../../lib/units";
 import type { CellRange, CellWrite, DataTableColumnDef, FieldDef, FieldOption } from "../../types";
 import { fieldDefForColumn } from "../internal/fieldDefForColumn";
 import { fieldKeyFieldDefMap } from "../internal/fieldKeyFieldDefMap";
@@ -58,12 +59,14 @@ export function coercePasteWrites<TRow>({
   columns,
   fieldDefs,
   getRowId,
+  unitSystem = "SI",
 }: {
   plannedWrites: { rowIndex: number; columnIndex: number; raw: string }[];
   rows: TRow[];
   columns: DataTableColumnDef<TRow>[];
   fieldDefs: FieldDef[];
   getRowId: (row: TRow) => string;
+  unitSystem?: UnitSystem;
 }): CoercePasteResult {
   const errors: { rowIndex: number; columnIndex: number; raw: string; message: string }[] = [];
   const writes: CellWrite[] = [];
@@ -82,11 +85,16 @@ export function coercePasteWrites<TRow>({
       errors.push({ ...plannedWrite, message: "Field is read-only." });
       continue;
     }
-    const coerced = coerceFieldValue(plannedWrite.raw, fieldDef, () => {
-      const options = optionsByField.get(column.fieldKey) ?? [];
-      optionsByField.set(column.fieldKey, options);
-      return options;
-    });
+    const coerced = coerceFieldValue(
+      plannedWrite.raw,
+      fieldDef,
+      () => {
+        const options = optionsByField.get(column.fieldKey) ?? [];
+        optionsByField.set(column.fieldKey, options);
+        return options;
+      },
+      { unitSystem },
+    );
     if (!coerced.ok) {
       errors.push({ ...plannedWrite, message: coerced.message });
       continue;

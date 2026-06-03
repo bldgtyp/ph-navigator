@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-03
-TIME: 16:42 EDT
-STATUS: Phase 02 complete; paused for review before Phase 03.
-AUTHOR: Codex
+TIME: 18:30 EDT
+STATUS: Phase 03 complete; paused for review before Phase 04.
+AUTHOR: Claude (Opus 4.7)
 SCOPE: Current state for the DataTable Number with Units planning
        packet.
 RELATED:
@@ -49,13 +49,34 @@ RELATED:
   shared default number precision for Add Units, local backend test
   fixture helper for unit configs, numeric single-select coercion fix,
   and direct fixed-unit changeType guard.
+- Phase 03 is complete on branch `codex/data-table-number-units`.
+- `DataTable` now consumes `UnitPreferenceContext` directly (with a
+  safe `"SI"` fallback for tests / unprovided hosts) and threads the
+  active `unitSystem` through cell render, inline edit, clipboard
+  copy/paste, filter evaluation, and aggregation. Plain Number fields
+  are unchanged.
+- Number-with-units cells render as bare displayed numbers (SI value
+  in SI mode, converted IP value in IP mode) at the configured
+  precision; the header carries a per-unit chip (`m` / `ft`, etc.).
+- Inline edit seeds the draft with the displayed bare number and
+  parses commit input back through the active unit system into the
+  canonical SI write; paste and fill follow the same path. Copy emits
+  the displayed bare number with no suffix.
+- Filter operator evaluation and `formatAggregation` are unit-aware:
+  user-typed filter values parse in the active display system before
+  comparing SI cell values, and aggregates render in the active
+  system at the configured precision.
+- When a Number field's `numberUnits` config changes between renders,
+  `DataTable` drops persisted filters for that field via
+  `onViewChange`; unrelated view state is preserved.
+- Simplify pass completed after Phase 03; `initialEditorState`
+  refactored to remove a nested ternary on the unit-aware seed path
+  while keeping the explanatory comment attached.
 
 ## Next Step
 
 Pause for review. After review, start
-`phases/phase-03-grid-behavior.md`: render headers with the active unit
-label, convert unitized number display/edit values from the global
-unit-system state, and invalidate filters on unit-config changes.
+`phases/phase-04-fixed-catalog-fields.md`.
 
 ## Verification
 
@@ -83,6 +104,16 @@ Phase 02 focused verification:
 - `cd frontend && pnpm run build`
 
 Phase 02 full verification:
+
+- `make format`
+- `make ci`
+
+Phase 03 focused verification:
+
+- `cd frontend && pnpm exec tsc --noEmit`
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table src/lib/units`
+
+Phase 03 full verification:
 
 - `make format`
 - `make ci`

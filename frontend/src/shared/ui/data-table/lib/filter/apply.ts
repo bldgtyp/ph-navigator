@@ -1,3 +1,4 @@
+import type { UnitSystem } from "../../../../../lib/units";
 import type { DataTableColumnDef, FieldDef, FilterCondition, FilterOperator } from "../../types";
 import {
   evaluateFilter,
@@ -20,6 +21,7 @@ export function applyFilters<TRow>(
   columns: DataTableColumnDef<TRow>[],
   fieldDefs: FieldDef[],
   filters: FilterCondition[],
+  unitSystem: UnitSystem = "SI",
 ): TRow[] {
   if (filters.length === 0) return rows;
   const columnsByFieldKey = fieldKeyColumnMap(columns);
@@ -42,7 +44,7 @@ export function applyFilters<TRow>(
   if (activeRules.length === 0) return rows;
   return rows.filter((row) =>
     activeRules.every(({ filter, column, fieldDef }) =>
-      evaluateFilter(filter, column.accessor(row), fieldDef),
+      evaluateFilter(filter, column.accessor(row), fieldDef, unitSystem),
     ),
   );
 }

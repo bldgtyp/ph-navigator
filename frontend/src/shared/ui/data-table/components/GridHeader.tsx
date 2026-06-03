@@ -4,6 +4,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import { numberUnitForSystem, numberUnitLabel, type UnitSystem } from "../../../../lib/units";
 import type { GridColumnDragKeyboard } from "../hooks/useGridColumnDragKeyboard";
 import type { GridColumnResize } from "../hooks/useGridColumnResize";
 import { isAttributeLocked, isBuiltInField, isFieldDuplicable } from "../lib/locks";
@@ -68,6 +69,9 @@ export type GridHeaderProps<TRow> = {
   // the create-field modal; otherwise it renders as a disabled preview.
   onAddFieldFromTail?: () => void;
   tailCellRef?: { current: HTMLTableCellElement | null };
+  // Active unit preference; drives the per-field unit-label chip in
+  // number-with-units headers. Defaults to "SI".
+  unitSystem?: UnitSystem;
 };
 
 export function GridHeader<TRow>({
@@ -84,6 +88,7 @@ export function GridHeader<TRow>({
   headerActions,
   onAddFieldFromTail,
   tailCellRef,
+  unitSystem = "SI",
 }: GridHeaderProps<TRow>) {
   const pickedUpColumnIndex = columnDragKeyboard?.pickedUpColumnIndex ?? null;
   return (
@@ -113,6 +118,7 @@ export function GridHeader<TRow>({
                 columnResize={columnResize}
                 onColumnMouseDown={onColumnMouseDown}
                 headerActions={headerActions}
+                unitSystem={unitSystem}
               />
             );
           })}
@@ -138,6 +144,7 @@ type DataTableHeaderCellProps<TRow> = {
   columnResize?: GridColumnResize;
   onColumnMouseDown?: (event: ReactMouseEvent<HTMLElement>, fieldKey: string) => void;
   headerActions: HeaderActionHandlers;
+  unitSystem: UnitSystem;
 };
 
 function DataTableHeaderCell<TRow>({
@@ -155,6 +162,7 @@ function DataTableHeaderCell<TRow>({
   columnResize,
   onColumnMouseDown,
   headerActions,
+  unitSystem,
 }: DataTableHeaderCellProps<TRow>) {
   const triggerRef = useRef<HTMLTableCellElement | null>(null);
   // Header lock glyph: today equivalent to "is built-in" (built-ins
@@ -247,6 +255,11 @@ function DataTableHeaderCell<TRow>({
         <span className="data-table-header-label">
           {flexRender(header.column.columnDef.header, header.getContext())}
         </span>
+        {fieldDef?.field_type === "number" && fieldDef.numberUnits ? (
+          <span className="data-table-header-units" data-testid="data-table-header-units">
+            {numberUnitLabel(numberUnitForSystem(fieldDef.numberUnits, unitSystem))}
+          </span>
+        ) : null}
         {description && fieldDef ? (
           <CustomFieldDescriptionTooltip
             description={description}

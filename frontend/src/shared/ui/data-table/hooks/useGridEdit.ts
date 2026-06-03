@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../lib/units";
 import { coerceFieldValue } from "../lib/rows/defaults";
 import { createFieldOption } from "../lib/options/create";
 import { findFieldOptionByLabel } from "../lib/options/references";
@@ -76,8 +77,9 @@ export function useGridEdit(args: {
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
   hasWriteHandler: boolean;
+  unitSystem?: UnitSystem;
 }): GridEdit {
-  const { fieldDefByKey, dispatchWrite, onAnnounce, hasWriteHandler } = args;
+  const { fieldDefByKey, dispatchWrite, onAnnounce, hasWriteHandler, unitSystem = "SI" } = args;
   const [editing, setEditing] = useState<EditingCell | null>(null);
   const pendingRef = useRef<PendingEdit | null>(null);
   const commitInFlightRef = useRef(false);
@@ -90,11 +92,18 @@ export function useGridEdit(args: {
     ({ rowId, fieldKey, initialValue, intent, replaceSeed }: StartArgs) => {
       const fieldDef = fieldDefByKey.get(fieldKey);
       const editorKind = getFieldEditor(fieldDef).kind;
-      const editor = initialEditorState(editorKind, initialValue, intent, replaceSeed);
+      const editor = initialEditorState(
+        editorKind,
+        initialValue,
+        intent,
+        replaceSeed,
+        fieldDef,
+        unitSystem,
+      );
       if (!editor) return;
       setEditing({ rowId, fieldKey, originalValue: initialValue, editor });
     },
-    [fieldDefByKey],
+    [fieldDefByKey, unitSystem],
   );
 
   const draft = useCallback((value: string) => {
@@ -128,7 +137,7 @@ export function useGridEdit(args: {
     commitInFlightRef.current = true;
     const fieldDef = fieldDefByKey.get(editing.fieldKey);
     const editor = editing.editor;
-    const plan = planCommit(editing, editor, fieldDef);
+    const plan = planCommit(editing, editor, fieldDef, unitSystem);
     try {
       if (plan.kind === "noop") {
         setEditing(null);
@@ -148,7 +157,7 @@ export function useGridEdit(args: {
     } finally {
       commitInFlightRef.current = false;
     }
-  }, [editing, hasWriteHandler, fieldDefByKey, dispatchWrite, onAnnounce]);
+  }, [editing, hasWriteHandler, fieldDefByKey, dispatchWrite, onAnnounce, unitSystem]);
 
   const queuePendingEdit = useCallback((pending: PendingEdit | null) => {
     pendingRef.current = pending;
@@ -208,19 +217,21 @@ function planCommit(
   current: EditingCell,
   editor: EditorState,
   fieldDef: FieldDef | undefined,
+  unitSystem: UnitSystem,
 ): CommitPlan {
   if (editor.kind === "single_select") {
     return planSingleSelect(current, editor, fieldDef);
   }
-  return planTextNumberOrColor(current, editor, fieldDef);
+  return planTextNumberOrColor(current, editor, fieldDef, unitSystem);
 }
 
 function planTextNumberOrColor(
   current: EditingCell,
   editor: { kind: "text" | "number" | "color"; draftValue: string },
   fieldDef: FieldDef | undefined,
+  unitSystem: UnitSystem,
 ): CommitPlan {
-  const coerced = coerceFieldValue(editor.draftValue, fieldDef, () => []);
+  const coerced = coerceFieldValue(editor.draftValue, fieldDef, () => [], { unitSystem });
   if (!coerced.ok) return { kind: "invalid", message: coerced.message };
   if (coerced.value === current.originalValue) return { kind: "noop" };
   const op: WriteOp = {
@@ -297,6 +308,8 @@ function initialEditorState(
   initialValue: unknown,
   intent: EditIntent,
   replaceSeed: string | undefined,
+  fieldDef: FieldDef | undefined,
+  unitSystem: UnitSystem,
 ): EditorState | null {
   if (kind === "none") return null;
   if (kind === "single_select") {
@@ -314,7 +327,17 @@ function initialEditorState(
         seed.length > 0 ? null : typeof initialValue === "string" ? initialValue : null,
     };
   }
-  const seed = intent === "replace" ? (replaceSeed ?? "") : formatClipboardValue(initialValue);
+  // Number+units fields seed the draft with the bare displayed number
+  // (canonical SI converted to the active system); commit parses that
+  // bare number back through the same unit config — so what the user
+  // sees and types matches the cell's rendered text.
+  if (intent === "replace") {
+    return { kind, draftValue: replaceSeed ?? "" };
+  }
+  const seed =
+    kind === "number" && fieldDef?.numberUnits
+      ? formatNumberUnitsDisplay(initialValue, fieldDef.numberUnits, unitSystem)
+      : formatClipboardValue(initialValue);
   return { kind, draftValue: seed };
 }
 
