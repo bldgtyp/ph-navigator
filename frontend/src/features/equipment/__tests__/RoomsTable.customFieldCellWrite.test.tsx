@@ -102,10 +102,7 @@ describe("RoomsTable cell-write on a custom field (plan-18 §5.6)", () => {
     if (op.kind === "cell") {
       const write = op.writes[0]!;
       expect(write.fieldKey).toBe("cf_paint");
-      // The library-level test in lib.test.ts pins that null / undefined
-      // values delete the key — this asserts the boundary's value
-      // is one of the falsy sentinels the builder accepts.
-      expect([null, undefined, ""]).toContain(write.value);
+      expect(write.value).toBeNull();
     }
   });
 });

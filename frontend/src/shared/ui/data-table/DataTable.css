@@ -1773,11 +1773,14 @@ td.data-table-cell-editing {
 
 .single-select-popover-search {
   width: 100%;
-  border: 1px solid var(--border-subtle);
+  border: 0;
   border-radius: 4px;
   background: var(--bg-card);
   color: var(--text-primary);
   font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  outline: none;
   padding: 4px 6px;
   margin-bottom: 4px;
 }

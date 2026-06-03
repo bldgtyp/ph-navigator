@@ -1,9 +1,13 @@
+import { useRef } from "react";
+
+type InlineCommitMove = { kind: "tab"; shiftKey: boolean } | { kind: "down" };
+
 export type InlineCellEditorProps = {
   value: string;
   onChange: (value: string) => void;
   onCancel: () => void;
   onCommit: () => void;
-  onCommitAndMove: (shiftKey: boolean) => void;
+  onCommitAndMove: (move: InlineCommitMove) => void;
 };
 
 // Borderless overlay used for text and number fields. Phase 1 will
@@ -16,25 +20,40 @@ export function InlineCellEditor({
   onCommit,
   onCommitAndMove,
 }: InlineCellEditorProps) {
+  const skipNextBlurCommitRef = useRef(false);
+
+  const skipBlurCommit = () => {
+    skipNextBlurCommitRef.current = true;
+  };
+
   return (
     <input
       className="data-table-cell-editor"
       autoFocus
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      onBlur={onCancel}
+      onBlur={() => {
+        if (skipNextBlurCommitRef.current) {
+          skipNextBlurCommitRef.current = false;
+          return;
+        }
+        onCommit();
+      }}
       onKeyDown={(event) => {
         event.stopPropagation();
         if (event.key === "Escape") {
+          skipBlurCommit();
           onCancel();
         }
         if (event.key === "Tab") {
           event.preventDefault();
-          onCommitAndMove(event.shiftKey);
+          skipBlurCommit();
+          onCommitAndMove({ kind: "tab", shiftKey: event.shiftKey });
         }
         if (event.key === "Enter") {
           event.preventDefault();
-          onCommit();
+          skipBlurCommit();
+          onCommitAndMove({ kind: "down" });
         }
       }}
     />

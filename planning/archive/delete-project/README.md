@@ -82,8 +82,8 @@ Each phase may add narrower checks, but default completion is:
 
 | Phase | Status | Evidence |
 |---|---|---|
-| 1 | In review | Migration and repository lifecycle helpers implemented; feature-scoped Ruff/Ty pass. |
-| 2 | In review | REST soft-delete, bulk-delete, deleted list, restore, and `410 project_deleted` covered by `tests/test_projects.py`. |
-| 3 | In review | Hard-delete service, R2 prefix cleanup helper, and `scripts/delete_project.py` implemented; storage cleanup covered by focused backend tests. |
-| 4 | In review | Dashboard selection, soft-delete modal, Recently Deleted restore, and deleted-link shell state implemented; Vitest/build/lint plus local browser smoke pass. |
-| 5 | In review | MCP soft-delete, restore, and hard-delete tools implemented; focused MCP tests and feature-scoped Ty pass. |
+| 1 | completed | Migration and repository lifecycle helpers implemented; feature-scoped Ruff/Ty pass. |
+| 2 | completed | REST soft-delete, bulk-delete, deleted list, restore, and `410 project_deleted` covered by `tests/test_projects.py`. |
+| 3 | completed | Hard-delete service, R2 prefix cleanup helper, and `scripts/delete_project.py` implemented; storage cleanup covered by focused backend tests. |
+| 4 | completed | Dashboard selection, soft-delete modal, Recently Deleted restore, and deleted-link shell state implemented; Vitest/build/lint plus local browser smoke pass. |
+| 5 | completed | MCP soft-delete, restore, and hard-delete tools implemented; focused MCP tests and feature-scoped Ty pass. |

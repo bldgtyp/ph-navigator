@@ -50,6 +50,9 @@ export function coerceFieldValue(
 ): { ok: true; value: unknown; created?: FieldOption } | { ok: false; message: string } {
   const trimmed = raw.trim();
   if (fieldDef?.field_type === "number") {
+    if (!trimmed && !fieldAllowsNull(fieldDef)) {
+      return { ok: false, message: "Value required." };
+    }
     if (!trimmed) return { ok: true, value: emptyNumberValue };
     const value = Number(trimmed);
     return Number.isFinite(value)
@@ -57,6 +60,9 @@ export function coerceFieldValue(
       : { ok: false, message: "Expected a number." };
   }
   if (fieldDef?.field_type === "single_select") {
+    if (!trimmed && !fieldAllowsNull(fieldDef)) {
+      return { ok: false, message: "Value required." };
+    }
     if (!trimmed) return { ok: true, value: null };
     const options = optionsForField();
     const existing = findFieldOptionByLabel(options, trimmed);
@@ -65,5 +71,15 @@ export function coerceFieldValue(
     options.push(created);
     return { ok: true, value: created.id, created };
   }
+  if (fieldDef?.field_type === "text") {
+    if (!trimmed && !fieldAllowsNull(fieldDef)) {
+      return { ok: false, message: "Value required." };
+    }
+    if (!trimmed && fieldAllowsNull(fieldDef)) return { ok: true, value: null };
+  }
   return { ok: true, value: raw };
+}
+
+export function fieldAllowsNull(fieldDef: FieldDef | undefined): boolean {
+  return fieldDef?.required !== true;
 }

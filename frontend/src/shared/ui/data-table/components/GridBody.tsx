@@ -30,6 +30,8 @@ import { GroupHeaderRow } from "./GroupHeaderRow";
 import { InlineCellEditor } from "./InlineCellEditor";
 import { SingleSelectPopover } from "./SingleSelectPopover";
 
+type CommitMove = { kind: "tab"; shiftKey: boolean } | { kind: "down" };
+
 // Pure tbody renderer. Hit targets emit stable identity to the parent;
 // active/selection visuals derive from the normalized range projection.
 export type GridBodyProps<TRow> = {
@@ -66,7 +68,7 @@ export type GridBodyProps<TRow> = {
   // when the consumer provides `onRowOpen` on DataTable; the gutter
   // hides the affordance entirely when undefined.
   onRowExpand?: (row: TRow) => void;
-  onCommitAndMove: (rowIndex: number, columnIndex: number, shiftKey: boolean) => void;
+  onCommitAndMove: (rowIndex: number, columnIndex: number, move: CommitMove) => void;
   // Phase 7: fill state from `useGridFill`. The bottom-right cell of
   // `fillSource` carries `data-fill-handle="true"` and renders
   // `<FillHandle>` when `fillHandleVisible` is true. Cells inside
@@ -302,9 +304,9 @@ export function GridBody<TRow>({
                     fieldKey,
                     fieldDef: fieldDefByKey.get(fieldKey),
                     fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
-                    onCommitAndMove: (shiftKey) =>
+                    onCommitAndMove: (move) =>
                       void edit.commit().then((committed) => {
-                        if (committed) onCommitAndMove(rowIndex, columnIndex, shiftKey);
+                        if (committed) onCommitAndMove(rowIndex, columnIndex, move);
                       }),
                   })}
                   {showDuplicateChip ? (
@@ -347,7 +349,7 @@ function renderCellContent(args: {
   fieldKey: string;
   fieldDef: FieldDef | undefined;
   fallback: () => ReactNode;
-  onCommitAndMove: (shiftKey: boolean) => void;
+  onCommitAndMove: (move: CommitMove) => void;
 }): ReactNode {
   const { edit, rowId, fieldKey, fieldDef, fallback, onCommitAndMove } = args;
   if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) return fallback();
@@ -373,7 +375,7 @@ function renderCellContent(args: {
         onHighlight={edit.highlight}
         onCancel={edit.cancel}
         onCommit={() => void edit.commit()}
-        onCommitAndMove={onCommitAndMove}
+        onCommitAndMove={(shiftKey) => onCommitAndMove({ kind: "tab", shiftKey })}
         anchorChildren={<span className="single-select-popover-anchor">{fallback()}</span>}
       />
     );

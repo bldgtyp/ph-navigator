@@ -281,7 +281,7 @@ describe("equipment room helpers", () => {
     expect(validateRoomsPayload(duplicate)).toBeNull();
   });
 
-  test("normalizes cleared numeric cell writes and blocks deferred ERV assignments", () => {
+  test("keeps cleared numeric cell writes null and blocks deferred ERV assignments", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
@@ -302,7 +302,7 @@ describe("equipment room helpers", () => {
       {},
     );
 
-    expect(payload.rooms[0]?.custom_values.num_people).toBe(0);
+    expect(payload.rooms[0]?.custom_values.num_people).toBeNull();
     expect(validateRoomsPayload(payload)).toBe(
       "ERV assignments are deferred until ERV units are available.",
     );
@@ -382,8 +382,8 @@ describe("equipment room helpers", () => {
     );
     expect(payload.rooms.map((room) => room.id)).toEqual(["rm_5", "tmp_row_1", "rm_6"]);
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
-    expect(inserted?.custom_values.number).toBe("");
-    expect(inserted?.custom_values.name).toBe("");
+    expect(inserted?.custom_values.number).toBeNull();
+    expect(inserted?.custom_values.name).toBeNull();
     expect(inserted?.floor_level).toBeNull();
     expect(inserted?.icfa_factor).toBe(1);
   });
@@ -409,6 +409,26 @@ describe("equipment room helpers", () => {
 
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
     expect(inserted?.custom_values.number).toBeNull();
+    expect(validateRoomsPayload(payload)).toBeNull();
+  });
+
+  test("roomsPayloadFromCellWrites keeps cleared room Number null when number-typed", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "number" ? { ...field, field_type: "number", default: null } : field,
+      ),
+      rooms: [roomFixture({ id: "rm_1", floor_level: null }, { number: 5, name: "Living" })],
+      single_select_options: { "rooms.floor_level": [], "rooms.building_zone": [] },
+    };
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "number", value: null }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom_values.number).toBeNull();
     expect(validateRoomsPayload(payload)).toBeNull();
   });
 

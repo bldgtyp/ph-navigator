@@ -35,8 +35,8 @@ export type GridKeyboardArgs = {
   // the keystroke is a single printable char with no modifiers and not
   // an IME composition.
   onPrintableKey?: (key: string) => void;
-  // Backspace / Delete on the active cell clears the value via the
-  // same replace path (initial draft = "").
+  // Backspace / Delete on the active cell asks the shell to clear the
+  // value. The shell enforces nullable-field and write-handler gates.
   onClearActiveCell?: () => void;
   // Shift+Enter row-insert (Phase 2 §4.5). Receives the active rowId
   // as the anchor — null when the active cell does not resolve to a
@@ -170,9 +170,9 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
         return;
       }
 
-      // Backspace / Delete on the active cell clears the value via the
-      // type-to-edit replace path. The shell's handler enforces
-      // editable-cell and write-handler gates.
+      // Backspace / Delete on the active cell clears nullable fields.
+      // The shell's handler enforces editable-cell and write-handler
+      // gates.
       if (
         (event.key === "Backspace" || event.key === "Delete") &&
         !event.metaKey &&
