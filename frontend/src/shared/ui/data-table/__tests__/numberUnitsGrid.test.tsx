@@ -169,6 +169,98 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     expect(next.filter).toEqual([]);
   });
 
+  // Phase 04: catalog/domain fields use `mode: "fixed"`. The grid does
+  // not branch on `mode` — fixed and editable fields go through the same
+  // render/edit/aggregate pipeline. These tests pin that policy down
+  // explicitly so the catalog migration (density / conductivity etc.)
+  // can rely on the same Phase 03 surface area.
+  test("fixed-mode built-in density field renders unit chip and converts to IP", () => {
+    type DensityRow = { id: string; density_kg_m3: number | null };
+    const densityRows: DensityRow[] = [{ id: "m1", density_kg_m3: 100 }];
+    const densityField: FieldDef = {
+      field_key: "density_kg_m3",
+      field_type: "number",
+      display_name: "Density",
+      built_in: true,
+      numberUnits: {
+        mode: "fixed",
+        unit_type: "density",
+        si_unit: "kg_m3",
+        ip_unit: "lb_ft3",
+        precision_si: 1,
+        precision_ip: 2,
+      },
+    };
+    const densityColumns: DataTableColumnDef<DensityRow>[] = [
+      {
+        id: "density_kg_m3",
+        fieldKey: "density_kg_m3",
+        header: "Density",
+        accessor: (row) => row.density_kg_m3,
+      },
+    ];
+    const { rerender } = render(
+      <UnitStub unitSystem="SI">
+        <DataTable
+          rows={densityRows}
+          getRowId={(row) => row.id}
+          fieldDefs={[densityField]}
+          columnDefs={densityColumns}
+          view={emptyViewState()}
+          onViewChange={vi.fn()}
+          emptyMessage="empty"
+        />
+      </UnitStub>,
+    );
+    expect(screen.getByTestId("data-table-header-units").textContent).toBe("kg/m3");
+    expect(getBodyCellText(0, 0)).toBe("100.0");
+    rerender(
+      <UnitStub unitSystem="IP">
+        <DataTable
+          rows={densityRows}
+          getRowId={(row) => row.id}
+          fieldDefs={[densityField]}
+          columnDefs={densityColumns}
+          view={emptyViewState()}
+          onViewChange={vi.fn()}
+          emptyMessage="empty"
+        />
+      </UnitStub>,
+    );
+    expect(screen.getByTestId("data-table-header-units").textContent).toBe("lb/ft3");
+    // 100 kg/m3 ≈ 6.24 lb/ft3 at precision_ip=2
+    expect(getBodyCellText(0, 0)).toBe("6.24");
+  });
+
+  test("built-in dimensionless number field remains plain Number", () => {
+    type CountRow = { id: string; count: number | null };
+    render(
+      <UnitStub unitSystem="IP">
+        <DataTable
+          rows={[{ id: "r1", count: 7 }] as CountRow[]}
+          getRowId={(row) => row.id}
+          fieldDefs={[
+            {
+              field_key: "count",
+              field_type: "number",
+              display_name: "Count",
+              built_in: true,
+            },
+          ]}
+          columnDefs={[
+            { id: "count", fieldKey: "count", header: "Count", accessor: (row) => row.count },
+          ]}
+          view={emptyViewState()}
+          onViewChange={vi.fn()}
+          emptyMessage="empty"
+        />
+      </UnitStub>,
+    );
+    // No unit chip; unconverted display.
+    expect(screen.queryByTestId("data-table-header-units")).toBeNull();
+    expect(getBodyCellText(0, 0)).toBe("7");
+  });
+
   test("IP edit commit writes the canonical SI value", async () => {
     const onWrite = vi.fn();
     render(

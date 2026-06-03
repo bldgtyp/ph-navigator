@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-03
-TIME: 18:30 EDT
-STATUS: Phase 03 complete; paused for review before Phase 04.
+TIME: 18:50 EDT
+STATUS: Phase 04 complete; paused for review before Phase 05.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Current state for the DataTable Number with Units planning
        packet.
@@ -72,11 +72,32 @@ RELATED:
 - Simplify pass completed after Phase 03; `initialEditorState`
   refactored to remove a nested ternary on the unit-aware seed path
   while keeping the explanatory comment attached.
+- Phase 04 is complete on branch `codex/data-table-number-units`.
+- The Materials catalog (`backend/features/catalogs/materials/`,
+  frontend `MaterialsCatalogPage` + `MaterialEditorModal`) is NOT yet
+  DataTable-backed; it keeps its own SQL-backed routes and bespoke
+  unit-aware modal. When that catalog is migrated to a DataTable, its
+  `density_kg_m3` and `conductivity_w_mk` built-in fields must seed
+  `numberUnits.mode = "fixed"` with the MVP pairs (`kg_m3 ↔ lb_ft3`,
+  `w_m_k ↔ btu_h_ft_f`). Do NOT add a `R/in` unit pair in MVP; it is
+  reciprocal/derived and belongs in a named display helper.
+- Grid integration tests now pin the fixed-vs-editable parity: a
+  fixed-mode built-in number field renders the unit chip and converts
+  to IP identically to an editable-mode field; a built-in dimensionless
+  number field with no `numberUnits` remains plain Number under both
+  unit systems.
+- No production code changed in Phase 04 — fixed-mode modal display
+  (Phase 02), backend `editFieldBundle` / `changeType` rejection of
+  fixed-unit edits (Phase 02), and the unit-aware grid pipeline
+  (Phase 03) together cover the policy. Phase 04's contribution is
+  end-to-end coverage so the future catalog migration can rely on it.
+- Simplify pass completed after Phase 04; no material simplifications
+  applied — the two new integration tests are tight and load-bearing.
 
 ## Next Step
 
 Pause for review. After review, start
-`phases/phase-04-fixed-catalog-fields.md`.
+`phases/phase-05-verification-docs.md`.
 
 ## Verification
 
@@ -114,6 +135,16 @@ Phase 03 focused verification:
 - `cd frontend && pnpm exec vitest run src/shared/ui/data-table src/lib/units`
 
 Phase 03 full verification:
+
+- `make format`
+- `make ci`
+
+Phase 04 focused verification:
+
+- `cd frontend && pnpm exec tsc --noEmit`
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx`
+
+Phase 04 full verification:
 
 - `make format`
 - `make ci`
