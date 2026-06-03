@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-03
 TIME: 16:42 EDT
-STATUS: Phase 02 complete; Phase 03 next.
+STATUS: Phase 02 complete; paused for review before Phase 03.
 AUTHOR: Codex
 SCOPE: Current state for the DataTable Number with Units planning
        packet.
@@ -52,9 +52,10 @@ RELATED:
 
 ## Next Step
 
-Start `phases/phase-03-grid-behavior.md`: render headers with the
-active unit label, convert unitized number display/edit values from the
-global unit-system state, and invalidate filters on unit-config changes.
+Pause for review. After review, start
+`phases/phase-03-grid-behavior.md`: render headers with the active unit
+label, convert unitized number display/edit values from the global
+unit-system state, and invalidate filters on unit-config changes.
 
 ## Verification
 
@@ -67,8 +68,10 @@ Phase 01 focused verification:
 - `cd frontend && pnpm run lint`
 - `cd frontend && pnpm run build`
 
-Full mandatory `make format` + `make ci` remains for final feature
-closeout or before commit, per project policy.
+Full mandatory gate completed for the Phase 02 commit:
+
+- `make format`
+- `make ci`
 
 Phase 02 focused verification:
 
@@ -78,3 +81,8 @@ Phase 02 focused verification:
 - `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/customFieldMutations.test.ts`
 - `cd frontend && pnpm run lint`
 - `cd frontend && pnpm run build`
+
+Phase 02 full verification:
+
+- `make format`
+- `make ci`
