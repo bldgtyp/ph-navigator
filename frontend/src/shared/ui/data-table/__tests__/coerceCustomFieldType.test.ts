@@ -12,7 +12,7 @@ describe("type conversion matrix — formula parity", () => {
         .map(([to, policy]) => `${from}->${to}:${policy}`),
     );
 
-    expect(entries).toHaveLength(33);
+    expect(entries).toHaveLength(34);
     expect(formulaEntries.sort()).toEqual([
       "color->formula:discard_then_author",
       "formula->color:lossy",
