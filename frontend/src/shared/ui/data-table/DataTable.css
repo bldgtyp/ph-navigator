@@ -882,6 +882,19 @@
   gap: 4px;
 }
 
+.data-table-field-config-modal-inline-grid {
+  display: grid;
+  grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: center;
+}
+
+.data-table-field-config-modal-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 .data-table-field-config-modal-footer {
   display: flex;
   justify-content: flex-end;

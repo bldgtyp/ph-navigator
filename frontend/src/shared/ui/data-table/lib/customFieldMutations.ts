@@ -452,6 +452,15 @@ export function buildNextConfigForFieldTypeChange(
   } else if (nextFieldType !== "number") {
     delete nextConfig.precision;
   }
+  if (nextFieldType === "number") {
+    if (request.numberUnits === null) {
+      delete nextConfig.units;
+    } else if (request.numberUnits !== undefined) {
+      nextConfig.units = request.numberUnits;
+    }
+  } else {
+    delete nextConfig.units;
+  }
   if (nextFieldType !== "formula") {
     delete nextConfig.source;
     delete nextConfig.ast;

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-03
 TIME: 17:12 EDT
-STATUS: Planned
+STATUS: Complete on branch codex/data-table-number-units
 AUTHOR: Codex
 SCOPE: Field config modal UX and schema mutation handling for Number
        with Units.
@@ -80,3 +80,50 @@ respecting fixed feature-owned unit config.
 - Users can author editable unit config through the modal.
 - Fixed unit config cannot be changed through UI or backend mutation.
 - Type-change semantics match the PRD without new cell coercion rules.
+
+## Completion Notes
+
+Completed 2026-06-03 on branch `codex/data-table-number-units`.
+
+Frontend:
+
+- Added `FieldConfigSectionNumberUnits` for Add Units, unit-type/unit
+  pair controls, SI/IP precision controls, Remove Units, and fixed
+  read-only messaging.
+- Extended `FieldConfigModal` number draft state, dirty checking,
+  conflict detection, discard behavior, and save payloads for
+  `numberUnits`.
+- Extended `EditCustomFieldBundleRequest` and
+  `buildNextConfigForFieldTypeChange` so Number config preserves,
+  adds, removes, or strips `config.units` according to the target type.
+- Added compact modal CSS for the unit control grid and fixed-unit hint.
+
+Backend:
+
+- `editFieldBundle` rejects changes/removal of existing
+  `mode: "fixed"` unit config.
+- Direct `changeType` rejects the same fixed-unit bypass.
+- Number-to-Single-select is now an allowed conversion and maps numeric
+  values through canonical text labels before option lookup.
+
+Simplify pass:
+
+- Reuse reviewer: reused `DEFAULT_NUMBER_PRECISION` in Add Units and
+  added a local backend test helper for unit config literals.
+- Quality reviewer: fixed Number-to-Single-select numeric mapping and
+  added fixed-unit enforcement to direct `changeType`.
+- Efficiency reviewer: no issues.
+
+Focused verification:
+
+- `cd backend && uv run ruff check features/project_document/mutations/models.py features/project_document/mutations/bundle.py features/project_document/mutations/type_conversion.py tests/test_project_document_schema_mutations.py`
+- `cd backend && uv run ty check`
+- `cd backend && uv run pytest tests/test_project_document_schema_mutations.py`
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/customFieldMutations.test.ts`
+- `cd frontend && pnpm run lint`
+- `cd frontend && pnpm run build`
+
+Full mandatory gate before commit:
+
+- `make format`
+- `make ci`

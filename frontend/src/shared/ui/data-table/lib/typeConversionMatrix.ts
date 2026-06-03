@@ -33,6 +33,7 @@ export const CONVERSION_MATRIX: Partial<
   number: {
     short_text: "lossless",
     long_text: "lossless",
+    single_select: "create_options",
     formula: "discard_then_author",
   },
   url: {

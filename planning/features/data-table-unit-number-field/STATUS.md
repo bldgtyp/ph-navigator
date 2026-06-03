@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-03
 TIME: 16:42 EDT
-STATUS: Phase 01 complete; Phase 02 next.
+STATUS: Phase 02 complete; Phase 03 next.
 AUTHOR: Codex
 SCOPE: Current state for the DataTable Number with Units planning
        packet.
@@ -37,11 +37,24 @@ RELATED:
   precomputed frontend registry lookups, stricter frontend precision
   validation, derived TS unit unions, and backend/frontend registry
   snapshot tests.
+- Phase 02 is complete on branch `codex/data-table-number-units`.
+- `FieldConfigModal` now lets Number fields add, edit, and remove
+  editable unit config while keeping the type picker label as `Number`.
+- Fixed unit config renders in the modal but cannot be edited or
+  removed; backend mutation paths reject fixed-unit edits through both
+  `editFieldBundle` and direct `changeType`.
+- Number fields can now change to Single-select; numeric source values
+  materialize and map to generated option labels instead of clearing.
+- Simplify pass completed after Phase 02; findings folded in:
+  shared default number precision for Add Units, local backend test
+  fixture helper for unit configs, numeric single-select coercion fix,
+  and direct fixed-unit changeType guard.
 
 ## Next Step
 
-Start `phases/phase-02-field-config-ui.md`: add the edit-field modal UI
-for Add/Remove units and fixed-unit read-only behavior.
+Start `phases/phase-03-grid-behavior.md`: render headers with the
+active unit label, convert unitized number display/edit values from the
+global unit-system state, and invalidate filters on unit-config changes.
 
 ## Verification
 
@@ -56,3 +69,12 @@ Phase 01 focused verification:
 
 Full mandatory `make format` + `make ci` remains for final feature
 closeout or before commit, per project policy.
+
+Phase 02 focused verification:
+
+- `cd backend && uv run ruff check features/project_document/mutations/models.py features/project_document/mutations/bundle.py features/project_document/mutations/type_conversion.py tests/test_project_document_schema_mutations.py`
+- `cd backend && uv run ty check`
+- `cd backend && uv run pytest tests/test_project_document_schema_mutations.py`
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/customFieldMutations.test.ts`
+- `cd frontend && pnpm run lint`
+- `cd frontend && pnpm run build`
