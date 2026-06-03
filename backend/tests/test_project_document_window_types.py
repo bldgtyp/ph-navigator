@@ -254,7 +254,7 @@ def test_window_types_contract_replace_read_diff_download(clean_document_tables:
                                 "u_value_w_m2k": 0.85,
                                 "psi_g_w_mk": 0.04,
                                 "psi_install_w_mk": None,
-                                "argb_color": None,
+                                "color": None,
                                 "notes": None,
                                 "source_provenance": None,
                                 "catalog_origin": {

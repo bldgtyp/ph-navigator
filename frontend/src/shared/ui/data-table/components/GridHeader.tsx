@@ -291,15 +291,16 @@ function DataTableHeaderCell<TRow>({
   );
 }
 
-// Per-type duplicability — single_select / attachment / argb_color
-// excluded because cloning their value (option list / attachment /
-// color slot) isn't defined yet. Independent of the `"duplicate"`
-// lock key, which is the author's policy switch.
+// Per-type duplicability — single_select / attachment excluded because
+// cloning their value (option list / attachment slot) isn't defined
+// yet. Independent of the `"duplicate"` lock key, which is the
+// author's policy switch.
 function fieldTypeSupportsDuplicate(fieldDef: FieldDef | undefined): boolean {
   return (
     fieldDef?.field_type === "text" ||
     fieldDef?.field_type === "number" ||
-    fieldDef?.field_type === "computed"
+    fieldDef?.field_type === "computed" ||
+    fieldDef?.field_type === "color"
   );
 }
 

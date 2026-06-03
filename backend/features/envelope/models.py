@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.project_document.document import (
     Assembly,
@@ -15,6 +15,7 @@ from features.project_document.document import (
     SpecificationStatus,
 )
 from features.project_document.models import ProjectDocumentSource
+from features.shared.colors import normalize_optional_hex_color
 
 ThermalStatusFlag = Literal[
     "missing_material",
@@ -100,7 +101,7 @@ ProjectMaterialDriftState = Literal[
     "source_missing",
 ]
 ProjectMaterialDriftFieldKey = Literal[
-    "argb_color",
+    "color",
     "category",
     "conductivity_w_mk",
     "density_kg_m3",
@@ -317,7 +318,12 @@ class HandEnterMaterialCommand(BaseModel):
     density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
 
 class UpdateProjectMaterialCommand(BaseModel):
@@ -331,9 +337,14 @@ class UpdateProjectMaterialCommand(BaseModel):
     density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     specification_status: SpecificationStatus | None = None
     notes: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
 
 class UpdateSegmentUseSiteNotesCommand(BaseModel):

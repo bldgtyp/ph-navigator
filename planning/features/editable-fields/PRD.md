@@ -141,7 +141,7 @@ Promoting `record_id` to a normal field deletes the special cases.
 
 The repo is further along than a naive read of plan-30 would suggest:
 
-- **Type taxonomy.** `FieldType = "text" | "number" | "single_select" | "computed" | "attachment" | "argb_color"` is the *renderer* taxonomy. `CustomFieldType = "short_text" | "long_text" | "number" | "url" | "single_select" | "formula"` is the *user-authorable* taxonomy. `useTableSchema` maps custom → renderer (e.g. `formula → computed`). `attachment` and `argb_color` are renderer-only — not user-authorable, and not subject to the user-driven type-change pipeline (see P4.5 + P5.5).
+- **Type taxonomy.** `FieldType = "text" | "number" | "single_select" | "computed" | "attachment" | "color"` is the *renderer* taxonomy. `CustomFieldType = "short_text" | "long_text" | "number" | "url" | "single_select" | "color" | "formula"` is the *user-authorable* taxonomy. `useTableSchema` maps custom → renderer (e.g. `formula → computed`, `color → color`). `attachment` is renderer-only — not user-authorable, and not subject to the user-driven type-change pipeline (see P4.5 + P5.5).
 - **Custom field schema mutations** (`WriteOp.schemaMutation` with `variant: "typed"`) carry add/rename/delete/duplicate/changeType/setDescription/setFormula through one backend endpoint (`/custom-fields:mutate`). Optimistic concurrency via `expectedSchemaFingerprint`; dependent cell writes ride in the same op (one undo entry).
 - **`FieldConfigModal`** is fully built and operates on a single `FieldDef`. It composes sections: `FieldConfigSectionTypeChange`, `FieldConfigSectionOptions`, `FieldConfigSectionNumber`, `FieldConfigSectionFormula`. The modal *currently* short-circuits when `read_only_schema: true` — the change we want is to keep the modal open and disable specific inputs based on the lock list.
 - **Type conversion matrix** (`lib/typeConversionMatrix.ts` + backend `schema_mutations.py::CONVERSION_MATRIX`) defines convertibility between pairs of *non-formula* `CustomFieldType`s with a policy: `"lossless" | "lossy" | "create_options" | "substitute_labels"`. Frontend `coerceCustomFieldType.computeLocalPreflight` runs the per-row preflight; the modal surfaces the count of rows that would lose data. **The matrix does not currently cover any conversion to or from `"formula"`** — that's new responsibility this PRD adds (see §P4.5).
@@ -304,8 +304,10 @@ type FieldLockKey =
   caller passes `locked: ["display_name", "field_type", "options",
   "default", "description", "formula", "delete", "duplicate"]` on
   attachment seeds, and the modal renders accordingly. See P5.5.
-- `argb_color` follows the same rule as attachment until it becomes
-  user-authorable.
+- `color` is user-authorable, nullable, and stored as normalized
+  `#rrggbb` hex. It is a scalar field for edit, filter, sort, group,
+  and aggregation; it does not drive table row tinting or app view
+  state.
 
 **`read_only` vs `read_only_schema`:** these are different concerns
 and `plan-31` deletes only the second. `FieldDef.read_only` continues
@@ -751,7 +753,7 @@ locked: [
 ```
 
 The modal opens for attachment fields but every section renders
-disabled. Type-picker excludes `"attachment"` (and `"argb_color"`)
+disabled. Type-picker excludes `"attachment"`
 from the conversion matrix — attachment cannot be converted to or
 from any other type, and `field_type` is always locked on attachment
 seeds.

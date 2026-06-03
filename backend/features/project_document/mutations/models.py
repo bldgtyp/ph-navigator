@@ -73,6 +73,7 @@ ConversionPolicy = Literal[
     "lossy",
     "create_options",
     "substitute_labels",
+    "substitute_option_colors",
     "discard_then_author",
 ]
 
@@ -81,12 +82,14 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     (CustomFieldType.short_text, CustomFieldType.long_text): "lossless",
     (CustomFieldType.short_text, CustomFieldType.number): "lossy",
     (CustomFieldType.short_text, CustomFieldType.url): "lossy",
+    (CustomFieldType.short_text, CustomFieldType.color): "lossy",
     (CustomFieldType.short_text, CustomFieldType.single_select): "create_options",
     (CustomFieldType.short_text, CustomFieldType.formula): "discard_then_author",
     # long_text → *
     (CustomFieldType.long_text, CustomFieldType.short_text): "lossy",
     (CustomFieldType.long_text, CustomFieldType.number): "lossy",
     (CustomFieldType.long_text, CustomFieldType.url): "lossy",
+    (CustomFieldType.long_text, CustomFieldType.color): "lossy",
     (CustomFieldType.long_text, CustomFieldType.single_select): "create_options",
     (CustomFieldType.long_text, CustomFieldType.formula): "discard_then_author",
     # number → *
@@ -97,6 +100,7 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     # url → *
     (CustomFieldType.url, CustomFieldType.short_text): "lossless",
     (CustomFieldType.url, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.url, CustomFieldType.color): "lossy",
     (CustomFieldType.url, CustomFieldType.formula): "discard_then_author",
     # single_select → *
     (CustomFieldType.single_select, CustomFieldType.short_text): "substitute_labels",
@@ -105,7 +109,12 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     # Labels that don't parse as numbers fall into the preflight incompatible
     # set so the user acks the clear (existing lossy-conversion UX).
     (CustomFieldType.single_select, CustomFieldType.number): "substitute_labels",
+    (CustomFieldType.single_select, CustomFieldType.color): "substitute_option_colors",
     (CustomFieldType.single_select, CustomFieldType.formula): "discard_then_author",
+    # color → *
+    (CustomFieldType.color, CustomFieldType.short_text): "lossless",
+    (CustomFieldType.color, CustomFieldType.long_text): "lossless",
+    (CustomFieldType.color, CustomFieldType.formula): "discard_then_author",
     # formula → * (snapshot the computed overlay at the moment of conversion)
     # The apply path re-evaluates the live document one last time and
     # writes the computed value into `custom_values[field_key]` coerced
@@ -116,6 +125,7 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     (CustomFieldType.formula, CustomFieldType.number): "lossy",
     (CustomFieldType.formula, CustomFieldType.url): "lossy",
     (CustomFieldType.formula, CustomFieldType.single_select): "create_options",
+    (CustomFieldType.formula, CustomFieldType.color): "lossy",
 }
 
 TEXT_TO_SINGLE_SELECT_OPTION_CAP = 50

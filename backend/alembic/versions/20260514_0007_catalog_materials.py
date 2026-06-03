@@ -49,7 +49,7 @@ def upgrade() -> None:
         sa.Column("density_kg_m3", sa.Float(), nullable=True),
         sa.Column("specific_heat_j_kgk", sa.Float(), nullable=True),
         sa.Column("emissivity", sa.Float(), nullable=True),
-        sa.Column("argb_color", sa.Text(), nullable=True),
+        sa.Column("color", sa.Text(), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("source_provenance", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),

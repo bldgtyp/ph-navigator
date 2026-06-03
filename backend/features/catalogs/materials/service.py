@@ -63,7 +63,7 @@ def create_material(payload: CatalogMaterialCreateRequest, user: UserPublic, req
             density_kg_m3=payload.density_kg_m3,
             specific_heat_j_kgk=payload.specific_heat_j_kgk,
             emissivity=payload.emissivity,
-            argb_color=payload.argb_color,
+            color=payload.color,
             notes=payload.notes,
             source_provenance=payload.source_provenance,
             user_id=user.id,

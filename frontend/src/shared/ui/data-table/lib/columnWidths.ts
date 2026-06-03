@@ -8,7 +8,7 @@ export const FIELD_TYPE_DEFAULT_WIDTH: Record<FieldType, number> = {
   single_select: 160,
   computed: 140,
   attachment: 120,
-  argb_color: 100,
+  color: 100,
 };
 
 // Match AirTable. Per-column overrides take precedence.

@@ -291,7 +291,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "density_kg_m3": 35.0,
         "specific_heat_j_kgk": 1500.0,
         "emissivity": 0.9,
-        "argb_color": "(255,220,230,240)",
+        "color": "#dce6f0",
         "specification_status": "complete",       // 'complete' | 'missing' | 'question' | 'na' — moved from segment (Q-ENV-2)
         "notes": null,                            // per-product notes — moved from segment (Q-ENV-2)
         "datasheet_asset_ids": ["asset_..."],     // QA submittal — project-only, never in catalog (Q-ENV-2.1)
@@ -329,10 +329,10 @@ JSON document. Illustrative sketch (the canonical model is the
     ],
     // FrameRef fields (TB-08.b, mirrors catalog_frame_type_versions):
     //   name, manufacturer, brand, width_mm, u_value_w_m2k, psi_g_w_mk,
-    //   psi_install_w_mk, argb_color, notes, source_provenance,
+    //   psi_install_w_mk, color, notes, source_provenance,
     //   catalog_origin (nullable; null when hand-entered)
     // GlazingRef fields (TB-08.b, mirrors catalog_glazing_type_versions):
-    //   name, manufacturer, brand, u_value_w_m2k, g_value, argb_color,
+    //   name, manufacturer, brand, u_value_w_m2k, g_value, color,
     //   notes, source_provenance, catalog_origin (nullable)
     // Authoritative schema: GET /api/v1/schemas/window-type/v1.json
     "rooms": [                               // see US-EQ-2
@@ -973,7 +973,7 @@ catalog_material_versions (
     density_kg_m3         FLOAT,
     specific_heat_j_kgk   FLOAT,
     emissivity            FLOAT,
-    argb_color            TEXT,
+    color                 TEXT,
     notes                 TEXT,
     source_provenance     TEXT,
     created_at, created_by

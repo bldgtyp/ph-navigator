@@ -42,6 +42,7 @@ from features.project_document.options import (
     validate_option_list,
 )
 from features.project_document.tables.contracts import TableFieldRegistry
+from features.shared.colors import normalize_hex_color
 from features.shared.errors import api_error
 
 __all__ = ["apply_change_type"]
@@ -145,6 +146,16 @@ def _try_coerce_for_change_type(
             if normalize_display_name(option.label) == normalized:
                 return True, option.id, ""
         return False, None, "no_matching_option"
+    if to_type is CustomFieldType.color:
+        if not isinstance(raw_value, str):
+            return False, None, "color_must_be_string"
+        stripped = raw_value.strip()
+        if not stripped:
+            return True, None, ""
+        try:
+            return True, normalize_hex_color(stripped), ""
+        except ValueError:
+            return False, None, "invalid_color_hex"
     return False, None, f"unsupported_to_type:{to_type.value}"
 
 
@@ -328,7 +339,7 @@ def apply_change_type(
     target_option_list: list[SingleSelectOption] | None = None
     generated_options: list[SingleSelectOption] | None = None
     overflow_diagnostics: list[tuple[str, object, str]] = []
-    label_lookup_for_substitute: dict[str, str] | None = None
+    option_value_lookup_for_substitute: dict[str, str] | None = None
     if policy == "create_options":
         if client_options is not None:
             # Bundle path: the user previewed/edited the auto-derived
@@ -345,12 +356,14 @@ def apply_change_type(
                 rows, mutation.field_id, capability, source_value_for=source_value
             )
             target_option_list = generated_options
-    elif policy == "substitute_labels":
+    elif policy in ("substitute_labels", "substitute_option_colors"):
         # Build {option_id: label} from the existing namespaced list so
-        # the per-row pass can substitute labels.
+        # the per-row pass can substitute labels or option colors.
         namespace_key = option_list_key(capability.table_path, mutation.field_id)
         existing_options = body.single_select_options.get(namespace_key, [])
-        label_lookup_for_substitute = {opt.id: opt.label for opt in existing_options}
+        option_value_lookup_for_substitute = {
+            opt.id: opt.color if policy == "substitute_option_colors" else opt.label for opt in existing_options
+        }
 
     # Per-row preflight. Each row produces one `(row, before, after)`
     # decision and (when rejected) one `incompatible` entry. The apply
@@ -393,18 +406,25 @@ def apply_change_type(
                 _reject(row, raw_value, reason)
             continue
 
-        if policy == "substitute_labels" and label_lookup_for_substitute is not None:
+        if (
+            policy in ("substitute_labels", "substitute_option_colors")
+            and option_value_lookup_for_substitute is not None
+        ):
             if raw_value is None or raw_value == "":
                 decisions.append((row, raw_value, None))
                 continue
-            label = label_lookup_for_substitute.get(str(raw_value))
-            if label is None:
+            substituted = option_value_lookup_for_substitute.get(str(raw_value))
+            if substituted is None:
                 _reject(row, raw_value, "no_matching_option")
                 continue
-            if to_type in (CustomFieldType.short_text, CustomFieldType.long_text):
-                decisions.append((row, raw_value, label))
+            if policy == "substitute_labels" and to_type in (CustomFieldType.short_text, CustomFieldType.long_text):
+                decisions.append((row, raw_value, substituted))
                 continue
-            ok, coerced, reason = _try_coerce_for_change_type(label, to_type, target_option_list=target_option_list)
+            ok, coerced, reason = _try_coerce_for_change_type(
+                substituted,
+                to_type,
+                target_option_list=target_option_list,
+            )
             if ok:
                 decisions.append((row, raw_value, coerced))
             else:

@@ -35,7 +35,7 @@ SELECT
     cfv.u_value_w_m2k                      AS u_value_w_m2k,
     cfv.psi_g_w_mk                         AS psi_g_w_mk,
     cfv.psi_install_w_mk                   AS psi_install_w_mk,
-    cfv.argb_color                         AS argb_color,
+    cfv.color                         AS color,
     cfv.notes                              AS notes,
     cfv.source_provenance                  AS source_provenance
 FROM catalog_frame_types cf
@@ -72,7 +72,7 @@ def insert_frame_type(
     u_value_w_m2k: float | None,
     psi_g_w_mk: float | None,
     psi_install_w_mk: float | None,
-    argb_color: str | None,
+    color: str | None,
     notes: str | None,
     source_provenance: str | None,
     user_id: UUID,
@@ -90,13 +90,13 @@ def insert_frame_type(
             id, record_id, version_label, version_date,
             manufacturer, brand,
             width_mm, u_value_w_m2k, psi_g_w_mk, psi_install_w_mk,
-            argb_color, notes, source_provenance, created_by
+            color, notes, source_provenance, created_by
         )
         VALUES (
             %(id)s, %(record_id)s, %(version_label)s, %(version_date)s,
             %(manufacturer)s, %(brand)s,
             %(width_mm)s, %(u_value_w_m2k)s, %(psi_g_w_mk)s, %(psi_install_w_mk)s,
-            %(argb_color)s, %(notes)s, %(source_provenance)s, %(user_id)s
+            %(color)s, %(notes)s, %(source_provenance)s, %(user_id)s
         )
         """,
         {
@@ -110,7 +110,7 @@ def insert_frame_type(
             "u_value_w_m2k": u_value_w_m2k,
             "psi_g_w_mk": psi_g_w_mk,
             "psi_install_w_mk": psi_install_w_mk,
-            "argb_color": argb_color,
+            "color": color,
             "notes": notes,
             "source_provenance": source_provenance,
             "user_id": user_id,
@@ -132,7 +132,7 @@ _VERSION_FIELDS = {
     "u_value_w_m2k",
     "psi_g_w_mk",
     "psi_install_w_mk",
-    "argb_color",
+    "color",
     "notes",
     "source_provenance",
 }

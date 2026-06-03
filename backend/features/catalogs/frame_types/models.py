@@ -13,6 +13,7 @@ from features.catalogs._shared import (
     strip_optional,
     strip_required,
 )
+from features.shared.colors import normalize_optional_hex_color
 
 CATALOG_VERSION_ID_PREFIX: Final[str] = "framev_"
 
@@ -39,7 +40,7 @@ class CatalogFrameTypePublic(BaseModel):
     u_value_w_m2k: float | None
     psi_g_w_mk: float | None
     psi_install_w_mk: float | None
-    argb_color: str | None
+    color: str | None
     notes: str | None
     source_provenance: str | None
     is_active: bool
@@ -68,7 +69,7 @@ class _CatalogFrameTypeFields(BaseModel):
     u_value_w_m2k: float | None = None
     psi_g_w_mk: float | None = None
     psi_install_w_mk: float | None = None
-    argb_color: str | None = Field(default=None, max_length=40)
+    color: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=4000)
     source_provenance: str | None = Field(default=None, max_length=400)
 
@@ -77,10 +78,15 @@ class _CatalogFrameTypeFields(BaseModel):
     def _strip_optional_meta(cls, value: object) -> object:
         return strip_optional(value)
 
-    @field_validator("argb_color", "notes", "source_provenance", mode="before")
+    @field_validator("notes", "source_provenance", mode="before")
     @classmethod
     def _strip_optional_text(cls, value: object) -> object:
         return strip_optional(value)
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
 
     @field_validator("width_mm", "u_value_w_m2k", "psi_g_w_mk", "psi_install_w_mk")
     @classmethod

@@ -116,7 +116,7 @@ each catalog table's seed FieldDef list:
 **P2.2.1 Materials**
 - `record_id` `display_name`: `"Name"` (locked).
 - Every field that ever appears as a catalog-sourced value (`u_value_w_m2k`,
-  `manufacturer`, `brand`, `argb_color`, etc.) locks `"field_type"`.
+  `manufacturer`, `brand`, `color`, etc.) locks `"field_type"`.
 - Optional / project-overridable fields (e.g. project-specific
   `notes`) may unlock `"field_type"` if the catalog rollout PRD
   agrees.

@@ -33,7 +33,7 @@ SELECT
     cgv.version_date                       AS version_date,
     cgv.u_value_w_m2k                      AS u_value_w_m2k,
     cgv.g_value                            AS g_value,
-    cgv.argb_color                         AS argb_color,
+    cgv.color                         AS color,
     cgv.notes                              AS notes,
     cgv.source_provenance                  AS source_provenance
 FROM catalog_glazing_types cg
@@ -68,7 +68,7 @@ def insert_glazing_type(
     version_date: date,
     u_value_w_m2k: float | None,
     g_value: float | None,
-    argb_color: str | None,
+    color: str | None,
     notes: str | None,
     source_provenance: str | None,
     user_id: UUID,
@@ -86,13 +86,13 @@ def insert_glazing_type(
             id, record_id, version_label, version_date,
             manufacturer, brand,
             u_value_w_m2k, g_value,
-            argb_color, notes, source_provenance, created_by
+            color, notes, source_provenance, created_by
         )
         VALUES (
             %(id)s, %(record_id)s, %(version_label)s, %(version_date)s,
             %(manufacturer)s, %(brand)s,
             %(u_value_w_m2k)s, %(g_value)s,
-            %(argb_color)s, %(notes)s, %(source_provenance)s, %(user_id)s
+            %(color)s, %(notes)s, %(source_provenance)s, %(user_id)s
         )
         """,
         {
@@ -104,7 +104,7 @@ def insert_glazing_type(
             "brand": brand,
             "u_value_w_m2k": u_value_w_m2k,
             "g_value": g_value,
-            "argb_color": argb_color,
+            "color": color,
             "notes": notes,
             "source_provenance": source_provenance,
             "user_id": user_id,
@@ -124,7 +124,7 @@ _VERSION_FIELDS = {
     "version_date",
     "u_value_w_m2k",
     "g_value",
-    "argb_color",
+    "color",
     "notes",
     "source_provenance",
 }

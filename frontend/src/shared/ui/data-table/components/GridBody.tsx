@@ -23,6 +23,7 @@ const EMPTY_OPTIONS: FieldOption[] = [];
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { AddFieldTailCell } from "./AddFieldTailCell";
+import { ColorCell, ColorCellEditor } from "./ColorCell";
 import { FillHandle } from "./FillHandle";
 import { GridChevron } from "./GridChevron";
 import { GridGutter } from "./GridGutter";
@@ -303,6 +304,7 @@ export function GridBody<TRow>({
                     rowId: tanstackRow.id,
                     fieldKey,
                     fieldDef: fieldDefByKey.get(fieldKey),
+                    cellValue: cell.getValue(),
                     fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
                     onCommitAndMove: (move) =>
                       void edit.commit().then((committed) => {
@@ -348,11 +350,15 @@ function renderCellContent(args: {
   rowId: string;
   fieldKey: string;
   fieldDef: FieldDef | undefined;
+  cellValue: unknown;
   fallback: () => ReactNode;
   onCommitAndMove: (move: CommitMove) => void;
 }): ReactNode {
-  const { edit, rowId, fieldKey, fieldDef, fallback, onCommitAndMove } = args;
-  if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) return fallback();
+  const { edit, rowId, fieldKey, fieldDef, cellValue, fallback, onCommitAndMove } = args;
+  if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) {
+    if (fieldDef?.field_type === "color") return <ColorCell value={cellValue} />;
+    return fallback();
+  }
   const editor = edit.editing.editor;
   if (editor.kind === "text" || editor.kind === "number") {
     return (
@@ -362,6 +368,22 @@ function renderCellContent(args: {
         onCancel={edit.cancel}
         onCommit={() => void edit.commit()}
         onCommitAndMove={onCommitAndMove}
+      />
+    );
+  }
+  if (editor.kind === "color") {
+    return (
+      <ColorCellEditor
+        value={editor.draftValue}
+        onChange={edit.draft}
+        onCancel={edit.cancel}
+        onCommit={() => void edit.commit()}
+        onCommitAndMove={onCommitAndMove}
+        anchorChildren={
+          <span className="data-table-color-editor-anchor">
+            <ColorCell value={cellValue} />
+          </span>
+        }
       />
     );
   }

@@ -131,6 +131,7 @@ def test_conversion_matrix_covers_formula_targets_for_every_primitive() -> None:
         CustomFieldType.number,
         CustomFieldType.url,
         CustomFieldType.single_select,
+        CustomFieldType.color,
     ):
         policy = CONVERSION_MATRIX.get((source, CustomFieldType.formula))
         assert policy == "discard_then_author", f"{source.value} → formula must be discard_then_author, got {policy!r}"
@@ -144,6 +145,7 @@ def test_conversion_matrix_covers_formula_to_each_primitive() -> None:
         CustomFieldType.number: "lossy",
         CustomFieldType.url: "lossy",
         CustomFieldType.single_select: "create_options",
+        CustomFieldType.color: "lossy",
     }
     for target, policy in expected.items():
         actual = CONVERSION_MATRIX.get((CustomFieldType.formula, target))

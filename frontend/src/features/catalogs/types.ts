@@ -6,7 +6,7 @@ type CatalogRowBase = {
   catalog_schema_version: number;
   version_label: string;
   version_date: string;
-  argb_color: string | null;
+  color: string | null;
   notes: string | null;
   source_provenance: string | null;
   is_active: boolean;
@@ -35,7 +35,7 @@ export type CatalogMaterialCreatePayload = {
   density_kg_m3?: number | null;
   specific_heat_j_kgk?: number | null;
   emissivity?: number | null;
-  argb_color?: string | null;
+  color?: string | null;
   notes?: string | null;
   source_provenance?: string | null;
 };
@@ -63,7 +63,7 @@ export type CatalogFrameTypeCreatePayload = {
   u_value_w_m2k?: number | null;
   psi_g_w_mk?: number | null;
   psi_install_w_mk?: number | null;
-  argb_color?: string | null;
+  color?: string | null;
   notes?: string | null;
   source_provenance?: string | null;
 };
@@ -87,7 +87,7 @@ export type CatalogGlazingTypeCreatePayload = {
   version_date?: string | null;
   u_value_w_m2k?: number | null;
   g_value?: number | null;
-  argb_color?: string | null;
+  color?: string | null;
   notes?: string | null;
   source_provenance?: string | null;
 };

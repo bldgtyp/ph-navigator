@@ -168,7 +168,7 @@ Pydantic models are written.
           "density_kg_m3": 35,
           "specific_heat_j_kgk": 1500,
           "emissivity": 0.9,
-          "argb_color": "(255,220,230,240)",
+          "color": "#dce6f0",
           "specification_status": "complete",       // 'complete'|'missing'|'question'|'na'
           "datasheet_asset_ids": ["asset_..."],      // <-- per-material
           "notes": null,
@@ -870,8 +870,7 @@ None outstanding.
 3. **Per-segment rendering** (V1 ref §9.3 parity, with V2
    null-material affordance per Q-ENV-3):
    - Inline SVG with a `<rect>` whose `fill` is computed from
-     the resolved `project_materials[*].argb_color` (parsing
-     the `"(a, r, g, b)"` string to a CSS `rgba(...)`).
+     the resolved `project_materials[*].color` (`#rrggbb` hex).
    - **Null-material segment** (`project_material_id` is null —
      Q-ENV-3 initial state): rendered with **blank fill** (no
      color; transparent or theme-default) and a **dashed
@@ -1378,7 +1377,7 @@ in V1)
      "density_kg_m3": 35,
      "specific_heat_j_kgk": 1500,
      "emissivity": 0.9,
-     "argb_color": "(255,220,230,240)",
+     "color": "#dce6f0",
      "specification_status": "na",
      "datasheet_asset_ids": [],
      "notes": null,
@@ -1456,7 +1455,7 @@ in V1)
 
 - **Q-ENV-7.1 (Resolved):** Inline override field set =
   full ProjectMaterial Pydantic field set, with rarely-used
-  fields (`emissivity`, `argb_color`) under a "More fields…"
+  fields (`emissivity`, `color`) under a "More fields…"
   expander. Mirrors Q-WIN-4.1. (Editing applies to the
   project_materials row, with shared-segments banner per
   US-ENV-6 criterion 2.4.)
