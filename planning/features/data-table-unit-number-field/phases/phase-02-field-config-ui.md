@@ -123,7 +123,9 @@ Focused verification:
 - `cd frontend && pnpm run lint`
 - `cd frontend && pnpm run build`
 
-Full mandatory gate before commit:
+Full mandatory gate completed before commit:
 
 - `make format`
 - `make ci`
+
+Phase 03 has not started; implementation is paused for review.
