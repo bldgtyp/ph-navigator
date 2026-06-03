@@ -257,6 +257,7 @@ export function DataTable<TRow>({
       if (target.closest(".data-table-fill-handle")) return true;
       if (!edit.editing) return false;
       if (target.closest(".data-table-cell-editor")) return true;
+      if (target.closest(".data-table-color-editor")) return true;
       if (target.closest(".single-select-popover")) return true;
       return false;
     },
@@ -563,17 +564,14 @@ export function DataTable<TRow>({
   });
 
   // `read_only` does NOT exclude a field — filtering on a computed
-  // column is a real use case. attachment / argb_color are dropped
-  // because the registry returns no operators for them.
+  // column is a real use case. attachment is dropped because the
+  // registry returns no operators for it.
   const filterableFieldDefs = useMemo(
     () => fieldDefs.filter((fieldDef) => getFilterOperators(fieldDef).length > 0),
     [fieldDefs],
   );
   const sortableFieldDefs = useMemo(
-    () =>
-      fieldDefs.filter(
-        (fieldDef) => fieldDef.field_type !== "attachment" && fieldDef.field_type !== "argb_color",
-      ),
+    () => fieldDefs.filter((fieldDef) => fieldDef.field_type !== "attachment"),
     [fieldDefs],
   );
   const groupableFieldDefs = sortableFieldDefs;

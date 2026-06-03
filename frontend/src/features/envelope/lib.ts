@@ -1,6 +1,6 @@
 import type { Assembly, AssemblyLayer, EnvelopeReadSource, ProjectMaterial } from "./types";
 import type { ProjectDetail } from "../projects/types";
-import { argbToCssRgb } from "../../shared/lib/argbColor";
+import { colorToCss } from "../../shared/lib/color";
 import { naturalSortByName } from "../../shared/lib/sort";
 
 export function naturalSortAssemblies(assemblies: Assembly[]): Assembly[] {
@@ -60,5 +60,5 @@ export function statusLabel(flags: string[]): string {
 }
 
 export function materialColor(material: ProjectMaterial | null): string {
-  return argbToCssRgb(material?.argb_color);
+  return colorToCss(material?.color);
 }

@@ -28,7 +28,7 @@ def project_material(**overrides: Any) -> dict[str, Any]:
         "density_kg_m3": 160.0,
         "specific_heat_j_kgk": 2100.0,
         "emissivity": 0.9,
-        "argb_color": "(255,220,230,200)",
+        "color": "#dce6c8",
         "specification_status": "missing",
         "datasheet_asset_ids": ["asset_01HXABCDEF0123456789ABCD"],
         "notes": None,

@@ -34,7 +34,7 @@ SELECT
     cmv.density_kg_m3                      AS density_kg_m3,
     cmv.specific_heat_j_kgk                AS specific_heat_j_kgk,
     cmv.emissivity                         AS emissivity,
-    cmv.argb_color                         AS argb_color,
+    cmv.color                         AS color,
     cmv.notes                              AS notes,
     cmv.source_provenance                  AS source_provenance
 FROM catalog_materials cm
@@ -77,7 +77,7 @@ def insert_material(
     density_kg_m3: float | None,
     specific_heat_j_kgk: float | None,
     emissivity: float | None,
-    argb_color: str | None,
+    color: str | None,
     notes: str | None,
     source_provenance: str | None,
     user_id: UUID,
@@ -94,12 +94,12 @@ def insert_material(
         INSERT INTO catalog_material_versions (
             id, record_id, version_label, version_date,
             conductivity_w_mk, density_kg_m3, specific_heat_j_kgk, emissivity,
-            argb_color, notes, source_provenance, created_by
+            color, notes, source_provenance, created_by
         )
         VALUES (
             %(id)s, %(record_id)s, %(version_label)s, %(version_date)s,
             %(conductivity_w_mk)s, %(density_kg_m3)s, %(specific_heat_j_kgk)s, %(emissivity)s,
-            %(argb_color)s, %(notes)s, %(source_provenance)s, %(user_id)s
+            %(color)s, %(notes)s, %(source_provenance)s, %(user_id)s
         )
         """,
         {
@@ -111,7 +111,7 @@ def insert_material(
             "density_kg_m3": density_kg_m3,
             "specific_heat_j_kgk": specific_heat_j_kgk,
             "emissivity": emissivity,
-            "argb_color": argb_color,
+            "color": color,
             "notes": notes,
             "source_provenance": source_provenance,
             "user_id": user_id,
@@ -131,7 +131,7 @@ _VERSION_FIELDS = {
     "density_kg_m3",
     "specific_heat_j_kgk",
     "emissivity",
-    "argb_color",
+    "color",
     "notes",
     "source_provenance",
 }

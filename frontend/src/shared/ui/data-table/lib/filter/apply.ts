@@ -51,7 +51,7 @@ export function applyFilters<TRow>(
 // field. Used by the FilterPopover when adding a new rule and when the
 // user changes a rule's field to one that doesn't support the rule's
 // current operator. Returns null when the field has no operators
-// (attachment / argb_color); the popover skips such fields.
+// and the popover skips such fields.
 export function defaultOperatorForField(fieldDef: FieldDef | undefined): FilterOperator | null {
   const operators = getFilterOperators(fieldDef);
   return operators[0]?.operator ?? null;

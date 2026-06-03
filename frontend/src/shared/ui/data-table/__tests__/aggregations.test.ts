@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   formatAggregation,
   getAggregationKinds,
+  COLOR_AGGREGATIONS,
   NUMBER_AGGREGATIONS,
   SINGLE_SELECT_AGGREGATIONS,
   TEXT_AGGREGATIONS,
@@ -35,20 +36,30 @@ const attachmentField: FieldDef = {
   field_type: "attachment",
   display_name: "Files",
 };
+const colorField: FieldDef = {
+  field_key: "finish",
+  field_type: "color",
+  display_name: "Finish",
+};
 
 describe("aggregation registry", () => {
   test("getAggregationKinds maps field type to catalogue", () => {
     expect(getAggregationKinds(textField)).toBe(TEXT_AGGREGATIONS);
     expect(getAggregationKinds(numberField)).toBe(NUMBER_AGGREGATIONS);
     expect(getAggregationKinds(singleSelectField)).toBe(SINGLE_SELECT_AGGREGATIONS);
+    expect(getAggregationKinds(colorField)).toBe(COLOR_AGGREGATIONS);
     expect(getAggregationKinds(computedNumberField)).toBe(NUMBER_AGGREGATIONS);
     expect(getAggregationKinds(computedTextField)).toBe(TEXT_AGGREGATIONS);
     expect(getAggregationKinds(attachmentField)).toEqual([]);
     expect(getAggregationKinds(undefined)).toEqual([]);
   });
 
-  test("text catalogue exposes only count", () => {
-    expect(getAggregationKinds(textField).map((d) => d.kind)).toEqual(["count"]);
+  test("text catalogue exposes count and count unique", () => {
+    expect(getAggregationKinds(textField).map((d) => d.kind)).toEqual(["count", "count_unique"]);
+  });
+
+  test("color catalogue exposes count and count unique", () => {
+    expect(getAggregationKinds(colorField).map((d) => d.kind)).toEqual(["count", "count_unique"]);
   });
 
   test("number catalogue exposes count + sum + mean + min + max", () => {
@@ -73,6 +84,12 @@ describe("formatAggregation", () => {
 
   test("count returns 0 for an empty list", () => {
     expect(formatAggregation("count", [])).toBe("0");
+  });
+
+  test("count_unique skips empty cells and counts distinct stored values", () => {
+    expect(formatAggregation("count_unique", [null, "", "#111111", "#111111", "#222222"])).toBe(
+      "2",
+    );
   });
 
   test("sum / mean / min / max parse string numbers and ignore NaN", () => {

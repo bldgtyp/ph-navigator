@@ -7,8 +7,8 @@ export const FIELD_LOCKED_TOOLTIP = "Field Locked";
 // edit that ripples to every seed.
 export const DEFAULT_BUILT_IN_LOCKS: readonly FieldLockKey[] = ["delete", "duplicate"];
 
-// PRD §P5.5 — attachment / argb_color fields are not user-authorable;
-// the modal opens but every section is disabled.
+// Complete lock set for renderer-only fields whose schema is visible
+// but not user-authorable, such as attachment fields.
 export const ALL_FIELD_LOCKS: readonly FieldLockKey[] = [
   "display_name",
   "field_type",

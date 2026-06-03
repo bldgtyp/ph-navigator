@@ -63,7 +63,7 @@ def _xps_payload(name: str = "XPS") -> dict[str, object]:
         "density_kg_m3": 35.0,
         "specific_heat_j_kgk": 1500.0,
         "emissivity": 0.9,
-        "argb_color": "(255,220,230,240)",
+        "color": "#dce6f0",
         "notes": "Type IV per ASTM C578",
         "source_provenance": "Manufacturer datasheet 2024-Q2",
     }

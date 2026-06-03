@@ -27,7 +27,7 @@ import type {
 } from "../types";
 
 const DRIFT_FIELD_LABELS: Record<ProjectMaterialDriftFieldKey, string> = {
-  argb_color: "Color",
+  color: "Color",
   category: "Category",
   conductivity_w_mk: "Lambda",
   density_kg_m3: "Density",

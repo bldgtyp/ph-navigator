@@ -10,13 +10,7 @@ import type { FieldRegistryEntry } from "./lib/formula/resolver";
 // paint each cell without any per-render JS work.
 export type AxisRoleSubset = "f" | "s" | "g" | "fs" | "fg" | "sg" | "fsg";
 
-export type FieldType =
-  | "text"
-  | "number"
-  | "single_select"
-  | "computed"
-  | "attachment"
-  | "argb_color";
+export type FieldType = "text" | "number" | "single_select" | "computed" | "attachment" | "color";
 
 // Closed v1 set, mirrored from backend `CustomFieldType`.
 export type CustomFieldType =
@@ -25,6 +19,7 @@ export type CustomFieldType =
   | "number"
   | "url"
   | "single_select"
+  | "color"
   | "formula";
 
 // Per-attribute lock keys. Each entry in `FieldDef.locked` forbids

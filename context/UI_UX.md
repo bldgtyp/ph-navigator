@@ -907,7 +907,7 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   is disabled when only one layer remains (UI-level guard, V2
   fix vs V1's server-exception + alert).
 - Right column: side-by-side segment SVG rectangles, colored
-  from each segment's material `argb_color`.
+  from each segment's material `color` (`#rrggbb`).
 - Segment hover reveals compact `+` buttons at left and right edges
   ("Add Segment Left / Right").
 - Click a segment → opens **Segment Properties modal** (US-ENV-6).

@@ -64,7 +64,7 @@ def create_glazing_type(
             version_date=version_date,
             u_value_w_m2k=payload.u_value_w_m2k,
             g_value=payload.g_value,
-            argb_color=payload.argb_color,
+            color=payload.color,
             notes=payload.notes,
             source_provenance=payload.source_provenance,
             user_id=user.id,

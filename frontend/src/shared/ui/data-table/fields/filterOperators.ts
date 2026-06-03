@@ -47,12 +47,19 @@ export const SINGLE_SELECT_OPERATORS: readonly FilterOperatorDef[] = [
   { operator: "is_not_empty", label: "is not empty", shape: { kind: "none" } },
 ] as const;
 
+export const COLOR_OPERATORS: readonly FilterOperatorDef[] = [
+  { operator: "is", label: "is…", shape: { kind: "string" } },
+  { operator: "is_not", label: "is not…", shape: { kind: "string" } },
+  { operator: "is_empty", label: "is empty", shape: { kind: "none" } },
+  { operator: "is_not_empty", label: "is not empty", shape: { kind: "none" } },
+] as const;
+
 const EMPTY_OPERATORS: readonly FilterOperatorDef[] = [];
 
 // `computed` defaults to text operators when `computed_type` is absent
 // (preserves Phase 0–3 behaviour for existing computed columns).
-// `attachment` and `argb_color` return [] — they don't filter through
-// the toolbar.
+// `attachment` returns [] because binary/list payloads do not filter
+// through the toolbar.
 export function getFilterOperators(fieldDef: FieldDef | undefined): readonly FilterOperatorDef[] {
   if (!fieldDef) return EMPTY_OPERATORS;
   switch (fieldDef.field_type) {
@@ -62,10 +69,11 @@ export function getFilterOperators(fieldDef: FieldDef | undefined): readonly Fil
       return NUMBER_OPERATORS;
     case "single_select":
       return SINGLE_SELECT_OPERATORS;
+    case "color":
+      return COLOR_OPERATORS;
     case "computed":
       return fieldDef.computed_type === "number" ? NUMBER_OPERATORS : TEXT_OPERATORS;
     case "attachment":
-    case "argb_color":
       return EMPTY_OPERATORS;
   }
 }
@@ -73,10 +81,9 @@ export function getFilterOperators(fieldDef: FieldDef | undefined): readonly Fil
 // Reverse lookup: operator → def. Built once at module load so the
 // popover row's per-render `getOperatorDef(rule.operator)` is O(1).
 const OPERATOR_DEF_BY_NAME = new Map<FilterOperator, FilterOperatorDef>(
-  [...TEXT_OPERATORS, ...NUMBER_OPERATORS, ...SINGLE_SELECT_OPERATORS].map((def) => [
-    def.operator,
-    def,
-  ]),
+  [...TEXT_OPERATORS, ...NUMBER_OPERATORS, ...SINGLE_SELECT_OPERATORS, ...COLOR_OPERATORS].map(
+    (def) => [def.operator, def],
+  ),
 );
 
 export function getOperatorDef(operator: FilterOperator): FilterOperatorDef | undefined {

@@ -6,7 +6,7 @@ import type { FieldDef } from "../types";
 // (`formatAggregation`). The registry is the only place the library
 // branches on `field_type`.
 
-export type AggregationKind = "none" | "count" | "sum" | "mean" | "min" | "max";
+export type AggregationKind = "none" | "count" | "count_unique" | "sum" | "mean" | "min" | "max";
 
 export type AggregationDef = {
   kind: AggregationKind;
@@ -15,6 +15,7 @@ export type AggregationDef = {
 
 export const TEXT_AGGREGATIONS: readonly AggregationDef[] = [
   { kind: "count", label: "Count" },
+  { kind: "count_unique", label: "Count unique" },
 ] as const;
 
 export const NUMBER_AGGREGATIONS: readonly AggregationDef[] = [
@@ -27,12 +28,18 @@ export const NUMBER_AGGREGATIONS: readonly AggregationDef[] = [
 
 export const SINGLE_SELECT_AGGREGATIONS: readonly AggregationDef[] = [
   { kind: "count", label: "Count" },
+  { kind: "count_unique", label: "Count unique" },
+] as const;
+
+export const COLOR_AGGREGATIONS: readonly AggregationDef[] = [
+  { kind: "count", label: "Count" },
+  { kind: "count_unique", label: "Count unique" },
 ] as const;
 
 const EMPTY_AGGREGATIONS: readonly AggregationDef[] = [];
 
-// `attachment` / `argb_color` return [] — no menu item appears for
-// those columns.
+// `attachment` returns [] — no menu item appears for binary/list
+// payload columns.
 export function getAggregationKinds(fieldDef: FieldDef | undefined): readonly AggregationDef[] {
   if (!fieldDef) return EMPTY_AGGREGATIONS;
   switch (fieldDef.field_type) {
@@ -42,10 +49,11 @@ export function getAggregationKinds(fieldDef: FieldDef | undefined): readonly Ag
       return NUMBER_AGGREGATIONS;
     case "single_select":
       return SINGLE_SELECT_AGGREGATIONS;
+    case "color":
+      return COLOR_AGGREGATIONS;
     case "computed":
       return fieldDef.computed_type === "number" ? NUMBER_AGGREGATIONS : TEXT_AGGREGATIONS;
     case "attachment":
-    case "argb_color":
       return EMPTY_AGGREGATIONS;
   }
 }
@@ -62,6 +70,14 @@ export function formatAggregation(kind: AggregationKind, values: readonly unknow
       n += 1;
     }
     return `${n}`;
+  }
+  if (kind === "count_unique") {
+    const unique = new Set<string>();
+    for (const value of values) {
+      if (value === null || value === undefined || value === "") continue;
+      unique.add(String(value));
+    }
+    return `${unique.size}`;
   }
   const nums = collectFiniteNumbers(values);
   if (nums.length === 0) return "—";

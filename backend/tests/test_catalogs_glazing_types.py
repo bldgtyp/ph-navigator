@@ -62,7 +62,7 @@ def _payload(name: str = "Triple-Pane LowE Argon") -> dict[str, object]:
         "version_date": "2024-06-01",
         "u_value_w_m2k": 0.7,
         "g_value": 0.50,
-        "argb_color": "(180,180,220,235)",
+        "color": "#b4dceb",
         "notes": "Argon-filled, two LowE coatings",
         "source_provenance": "Manufacturer datasheet 2024-Q2",
     }

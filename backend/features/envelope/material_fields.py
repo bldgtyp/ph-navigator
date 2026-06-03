@@ -5,7 +5,7 @@ from __future__ import annotations
 from features.envelope.models import ProjectMaterialDriftFieldKey
 
 PROJECT_MATERIAL_CATALOG_FIELDS: tuple[ProjectMaterialDriftFieldKey, ...] = (
-    "argb_color",
+    "color",
     "category",
     "conductivity_w_mk",
     "density_kg_m3",

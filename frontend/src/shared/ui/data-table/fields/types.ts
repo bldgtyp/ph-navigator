@@ -6,4 +6,5 @@ export type FieldEditor =
   | { kind: "none" }
   | { kind: "text" }
   | { kind: "number" }
+  | { kind: "color" }
   | { kind: "single_select" };

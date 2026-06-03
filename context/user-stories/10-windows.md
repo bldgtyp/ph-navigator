@@ -1294,8 +1294,7 @@ in Q-ENV-4.1
      - **Left frame** rectangle (width = left frame width)
      - **Glazing** rectangle in the center (remaining area)
    - Each rectangle's fill comes from the picked frame /
-     glazing's `argb_color` (parsing the `"(a, r, g, b)"`
-     string to CSS `rgba(...)`; default `#ccc` on parse
+     glazing's `color` (`#rrggbb` hex; default `#ccc` on parse
      fail or null).
    - **Null-frame / null-glazing rendering** (mirrors
      US-ENV-4 criterion 3 dashed-outline treatment):

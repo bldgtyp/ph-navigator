@@ -269,7 +269,7 @@ describe("DataTable helpers", () => {
     expect(naturalZero("single_select")).toBeNull();
     expect(naturalZero("computed")).toBeNull();
     expect(naturalZero("attachment")).toBeNull();
-    expect(naturalZero("argb_color")).toBeNull();
+    expect(naturalZero("color")).toBeNull();
   });
 
   test("coerceFieldValue maps blank nullable cells to null", () => {

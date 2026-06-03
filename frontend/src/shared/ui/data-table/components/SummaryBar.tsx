@@ -16,6 +16,7 @@ import { AddFieldTailCell } from "./AddFieldTailCell";
 const KIND_LABELS: Record<AggregationKind, string> = {
   none: "None",
   count: "Count",
+  count_unique: "Count unique",
   sum: "Sum",
   mean: "Mean",
   min: "Min",
