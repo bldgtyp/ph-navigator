@@ -11,7 +11,7 @@ export type FrameRef = {
   u_value_w_m2k: number | null;
   psi_g_w_mk: number | null;
   psi_install_w_mk: number | null;
-  argb_color: string | null;
+  color: string | null;
   notes: string | null;
   source_provenance: string | null;
   catalog_origin: CatalogOrigin | null;
@@ -23,7 +23,7 @@ export type GlazingRef = {
   brand: string | null;
   u_value_w_m2k: number | null;
   g_value: number | null;
-  argb_color: string | null;
+  color: string | null;
   notes: string | null;
   source_provenance: string | null;
   catalog_origin: CatalogOrigin | null;

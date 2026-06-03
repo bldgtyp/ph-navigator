@@ -31,7 +31,7 @@ export type ProjectMaterial = {
   density_kg_m3: number | null;
   specific_heat_j_kgk: number | null;
   emissivity: number | null;
-  argb_color: string | null;
+  color: string | null;
   specification_status: SpecificationStatus;
   datasheet_asset_ids: string[];
   notes: string | null;
@@ -99,7 +99,7 @@ export type ProjectMaterialDriftState =
   | "source_missing";
 
 export type ProjectMaterialDriftFieldKey =
-  | "argb_color"
+  | "color"
   | "category"
   | "conductivity_w_mk"
   | "density_kg_m3"
@@ -212,7 +212,7 @@ export type EnvelopeCommand =
       density_kg_m3?: number | null;
       specific_heat_j_kgk?: number | null;
       emissivity?: number | null;
-      argb_color?: string | null;
+      color?: string | null;
     }
   | {
       kind: "update_project_material";
@@ -223,7 +223,7 @@ export type EnvelopeCommand =
       density_kg_m3?: number | null;
       specific_heat_j_kgk?: number | null;
       emissivity?: number | null;
-      argb_color?: string | null;
+      color?: string | null;
       specification_status?: SpecificationStatus | null;
       notes?: string | null;
     }

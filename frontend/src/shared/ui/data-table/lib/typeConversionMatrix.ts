@@ -11,6 +11,7 @@ export type ConversionPolicy =
   | "lossy"
   | "create_options"
   | "substitute_labels"
+  | "substitute_option_colors"
   | "discard_then_author";
 
 export const CONVERSION_MATRIX: Partial<
@@ -20,6 +21,7 @@ export const CONVERSION_MATRIX: Partial<
     long_text: "lossless",
     number: "lossy",
     url: "lossy",
+    color: "lossy",
     single_select: "create_options",
     formula: "discard_then_author",
   },
@@ -27,6 +29,7 @@ export const CONVERSION_MATRIX: Partial<
     short_text: "lossy",
     number: "lossy",
     url: "lossy",
+    color: "lossy",
     single_select: "create_options",
     formula: "discard_then_author",
   },
@@ -38,6 +41,7 @@ export const CONVERSION_MATRIX: Partial<
   url: {
     short_text: "lossless",
     long_text: "lossless",
+    color: "lossy",
     formula: "discard_then_author",
   },
   single_select: {
@@ -46,6 +50,12 @@ export const CONVERSION_MATRIX: Partial<
     // Substitute the option label, then number-coerce on the backend.
     // Labels that don't parse as numbers are cleared (preflight ack).
     number: "substitute_labels",
+    color: "substitute_option_colors",
+    formula: "discard_then_author",
+  },
+  color: {
+    short_text: "lossless",
+    long_text: "lossless",
     formula: "discard_then_author",
   },
   formula: {
@@ -54,6 +64,7 @@ export const CONVERSION_MATRIX: Partial<
     number: "lossy",
     url: "lossy",
     single_select: "create_options",
+    color: "lossy",
   },
 };
 

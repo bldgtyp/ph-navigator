@@ -78,6 +78,7 @@ const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
   number: "number",
   url: "text",
   single_select: "single_select",
+  color: "color",
   formula: "computed",
 };
 

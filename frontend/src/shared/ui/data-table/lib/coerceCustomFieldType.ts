@@ -5,6 +5,7 @@
 
 import type { CustomFieldType } from "../hooks/useTableSchema";
 import type { FieldOption } from "../types";
+import { normalizeStoredHexColor } from "../../../lib/color";
 import { conversionPolicy } from "./typeConversionMatrix";
 
 export type CoerceOk = { ok: true; value: string | number | null };
@@ -41,21 +42,24 @@ export function computeLocalPreflight(
     }
     return { incompatible, total: rows.length };
   }
-  // substitute_labels: rawValue is the option_id; the backend resolves
-  // it to the option label and then coerces the label into the target
-  // type. Mirror that here so the preflight count matches the server.
+  // substitute_*: rawValue is the option_id; the backend resolves it
+  // to the option label or swatch and then coerces that value into the
+  // target type. Mirror that here so the preflight count matches the
+  // server.
   const substituteLabels = policy === "substitute_labels";
+  const substituteOptionColors = policy === "substitute_option_colors";
   const sourceLookup =
-    substituteLabels && sourceOptionList
-      ? new Map(sourceOptionList.map((o) => [o.id, o.label]))
+    (substituteLabels || substituteOptionColors) && sourceOptionList
+      ? new Map(sourceOptionList.map((o) => [o.id, substituteOptionColors ? o.color : o.label]))
       : null;
   const incompatible: PreflightRow[] = [];
   for (const row of rows) {
-    const coerceInput = substituteLabels
-      ? typeof row.rawValue === "string"
-        ? (sourceLookup?.get(row.rawValue) ?? null)
-        : null
-      : row.rawValue;
+    const coerceInput =
+      substituteLabels || substituteOptionColors
+        ? typeof row.rawValue === "string"
+          ? (sourceLookup?.get(row.rawValue) ?? null)
+          : null
+        : row.rawValue;
     const result = coerceCustomValue(coerceInput, toType, { optionList: targetOptionList ?? [] });
     if (!result.ok) {
       incompatible.push({ rowId: row.rowId, rawValue: row.rawValue, reason: result.reason });
@@ -129,6 +133,14 @@ export function coerceCustomValue(
         }
       }
       return { ok: false, reason: "no_matching_option" };
+    }
+    case "color": {
+      if (typeof rawValue !== "string") return { ok: false, reason: "color_must_be_string" };
+      const stripped = rawValue.trim();
+      if (!stripped) return { ok: true, value: null };
+      const normalized = normalizeStoredHexColor(stripped);
+      if (!normalized) return { ok: false, reason: "invalid_color_hex" };
+      return { ok: true, value: normalized };
     }
     case "formula":
       return { ok: true, value: null };

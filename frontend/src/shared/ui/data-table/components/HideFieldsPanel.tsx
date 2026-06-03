@@ -254,5 +254,5 @@ const ICON_FOR_FIELD_TYPE: Record<FieldType, ComponentType<LucideProps>> = {
   single_select: CircleDot,
   computed: Calculator,
   attachment: Paperclip,
-  argb_color: Palette,
+  color: Palette,
 };

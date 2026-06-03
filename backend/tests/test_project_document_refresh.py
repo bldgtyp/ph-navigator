@@ -52,7 +52,7 @@ def _create_frame(client: TestClient, name: str, u_value: float) -> dict[str, An
             "u_value_w_m2k": u_value,
             "psi_g_w_mk": 0.04,
             "psi_install_w_mk": 0.05,
-            "argb_color": None,
+            "color": None,
             "notes": None,
             "source_provenance": "datasheet",
         },
@@ -73,7 +73,7 @@ def _create_glazing(client: TestClient, name: str, u_value: float) -> dict[str, 
             "version_date": "2024-06-01",
             "u_value_w_m2k": u_value,
             "g_value": 0.5,
-            "argb_color": None,
+            "color": None,
             "notes": None,
             "source_provenance": "datasheet",
         },
@@ -91,7 +91,7 @@ def _frame_ref_from(frame: dict[str, Any], overrides: list[str] | None = None) -
         "u_value_w_m2k": frame["u_value_w_m2k"],
         "psi_g_w_mk": frame["psi_g_w_mk"],
         "psi_install_w_mk": frame["psi_install_w_mk"],
-        "argb_color": frame["argb_color"],
+        "color": frame["color"],
         "notes": frame["notes"],
         "source_provenance": frame["source_provenance"],
         "catalog_origin": {
@@ -112,7 +112,7 @@ def _glazing_ref_from(glazing: dict[str, Any]) -> dict[str, Any]:
         "brand": glazing["brand"],
         "u_value_w_m2k": glazing["u_value_w_m2k"],
         "g_value": glazing["g_value"],
-        "argb_color": glazing["argb_color"],
+        "color": glazing["color"],
         "notes": glazing["notes"],
         "source_provenance": glazing["source_provenance"],
         "catalog_origin": {
@@ -286,7 +286,7 @@ def test_hand_entered_refs_are_excluded(clean_refresh_tables: None) -> None:
         "brand": None,
         "u_value_w_m2k": 0.7,
         "g_value": 0.4,
-        "argb_color": None,
+        "color": None,
         "notes": None,
         "source_provenance": None,
         "catalog_origin": None,
@@ -330,11 +330,11 @@ def test_drifted_on_new_current_version_with_identical_fields(
             INSERT INTO catalog_frame_type_versions
                 (id, record_id, version_label, version_date,
                  manufacturer, brand, width_mm, u_value_w_m2k,
-                 psi_g_w_mk, psi_install_w_mk, argb_color, notes,
+                 psi_g_w_mk, psi_install_w_mk, color, notes,
                  source_provenance, catalog_schema_version, created_by)
             SELECT %(new_id)s, record_id, 'v2', '2025-01-01',
                    manufacturer, brand, width_mm, u_value_w_m2k,
-                   psi_g_w_mk, psi_install_w_mk, argb_color, notes,
+                   psi_g_w_mk, psi_install_w_mk, color, notes,
                    source_provenance, catalog_schema_version, created_by
             FROM catalog_frame_type_versions WHERE id = %(current)s
             """,

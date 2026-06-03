@@ -14,6 +14,7 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateFrameTypeMutation, useUpdateFrameTypeMutation } from "../hooks";
 import type { CatalogFrameType, CatalogFrameTypeCreatePayload } from "../types";
 import {
+  colorToNull,
   editorSubmitLabel,
   parseOptionalUnitNumber,
   stringOrEmpty,
@@ -32,7 +33,7 @@ type FormState = {
   u_value_w_m2k: string;
   psi_g_w_mk: string;
   psi_install_w_mk: string;
-  argb_color: string;
+  color: string;
   notes: string;
   source_provenance: string;
 };
@@ -48,7 +49,7 @@ function emptyForm(): FormState {
     u_value_w_m2k: "",
     psi_g_w_mk: "",
     psi_install_w_mk: "",
-    argb_color: "",
+    color: "",
     notes: "",
     source_provenance: "",
   };
@@ -65,7 +66,7 @@ function formFromRecord(record: CatalogFrameType, unitOptions: UnitFormatOptions
     u_value_w_m2k: formatUValueFromWm2K(record.u_value_w_m2k, unitOptions),
     psi_g_w_mk: formatLinearPsiFromWmK(record.psi_g_w_mk, unitOptions),
     psi_install_w_mk: formatLinearPsiFromWmK(record.psi_install_w_mk, unitOptions),
-    argb_color: stringOrEmpty(record.argb_color),
+    color: stringOrEmpty(record.color),
     notes: stringOrEmpty(record.notes),
     source_provenance: stringOrEmpty(record.source_provenance),
   };
@@ -88,7 +89,7 @@ function toCreatePayload(
       parseLinearPsiToWmK,
       unitOptions,
     ),
-    argb_color: trimToNull(form.argb_color),
+    color: colorToNull(form.color),
     notes: trimToNull(form.notes),
     source_provenance: trimToNull(form.source_provenance),
   };
@@ -243,11 +244,11 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>ARGB color</span>
+          <span>Color</span>
           <input
-            value={form.argb_color}
-            onChange={(event) => setForm((prev) => ({ ...prev, argb_color: event.target.value }))}
-            placeholder="(255,40,40,40)"
+            value={form.color}
+            onChange={(event) => setForm((prev) => ({ ...prev, color: event.target.value }))}
+            placeholder="#rrggbb"
           />
         </label>
         <label>

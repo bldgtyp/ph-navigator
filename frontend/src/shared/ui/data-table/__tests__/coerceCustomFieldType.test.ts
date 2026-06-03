@@ -12,8 +12,10 @@ describe("type conversion matrix — formula parity", () => {
         .map(([to, policy]) => `${from}->${to}:${policy}`),
     );
 
-    expect(entries).toHaveLength(25);
+    expect(entries).toHaveLength(33);
     expect(formulaEntries.sort()).toEqual([
+      "color->formula:discard_then_author",
+      "formula->color:lossy",
       "formula->long_text:lossless",
       "formula->number:lossy",
       "formula->short_text:lossless",
@@ -24,6 +26,47 @@ describe("type conversion matrix — formula parity", () => {
       "short_text->formula:discard_then_author",
       "single_select->formula:discard_then_author",
       "url->formula:discard_then_author",
+    ]);
+  });
+});
+
+describe("computeLocalPreflight — text → color", () => {
+  test("requires stored six-digit hex values", () => {
+    const result = computeLocalPreflight("short_text", "color", [
+      { rowId: "r1", rawValue: "#dce6f0" },
+      { rowId: "r2", rawValue: "#abc" },
+      { rowId: "r3", rawValue: "" },
+    ]);
+
+    expect(result).not.toBeNull();
+    expect(result!.total).toBe(3);
+    expect(result!.incompatible).toEqual([
+      { rowId: "r2", rawValue: "#abc", reason: "invalid_color_hex" },
+    ]);
+  });
+});
+
+describe("computeLocalPreflight — single_select → color (substitute_option_colors)", () => {
+  const sourceOptions: FieldOption[] = [
+    { id: "opt_good", label: "Good", color: "#dce6f0", order: 0 },
+    { id: "opt_bad", label: "Bad", color: "#abc", order: 1 },
+  ];
+
+  test("substitutes option swatches and validates strict stored hex", () => {
+    const result = computeLocalPreflight(
+      "single_select",
+      "color",
+      [
+        { rowId: "r1", rawValue: "opt_good" },
+        { rowId: "r2", rawValue: "opt_bad" },
+      ],
+      undefined,
+      sourceOptions,
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.incompatible).toEqual([
+      { rowId: "r2", rawValue: "opt_bad", reason: "invalid_color_hex" },
     ]);
   });
 });

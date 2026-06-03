@@ -1,4 +1,5 @@
 import type { DataTableColumnDef, FieldDef, FieldOption, FieldType } from "../../types";
+import { normalizeColorInput } from "../../../../lib/color";
 import { createFieldOption } from "../options/create";
 import { findFieldOptionByLabel } from "../options/references";
 
@@ -70,6 +71,16 @@ export function coerceFieldValue(
     const created = createFieldOption(trimmed, options);
     options.push(created);
     return { ok: true, value: created.id, created };
+  }
+  if (fieldDef?.field_type === "color") {
+    if (!trimmed && !fieldAllowsNull(fieldDef)) {
+      return { ok: false, message: "Value required." };
+    }
+    if (!trimmed) return { ok: true, value: null };
+    const normalized = normalizeColorInput(trimmed);
+    return normalized
+      ? { ok: true, value: normalized }
+      : { ok: false, message: "Expected a hex, RGB, or CMYK color." };
   }
   if (fieldDef?.field_type === "text") {
     if (!trimmed && !fieldAllowsNull(fieldDef)) {

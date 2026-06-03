@@ -11,7 +11,7 @@ import {
   type ViewState,
 } from "../types";
 
-type Row = { id: string; number: string; name: string; count: number };
+type Row = { id: string; number: string; name: string; count: number; color?: string | null };
 
 const rows: Row[] = [{ id: "rm_1", number: "101", name: "Living Room", count: 2 }];
 const fieldDefs: FieldDef[] = [
@@ -215,6 +215,38 @@ describe("DataTable", () => {
     expect(onWrite).toHaveBeenCalledWith({
       kind: "cell",
       writes: [{ rowId: "rm_1", fieldKey: "name", value: null }],
+    });
+  });
+
+  test("emits a normalized color write from the color editor", async () => {
+    const onWrite = vi.fn();
+    renderTable({
+      onWrite,
+      fieldDefsOverride: [{ field_key: "color", field_type: "color", display_name: "Color" }],
+      columnDefsOverride: [
+        { id: "color", fieldKey: "color", header: "Color", accessor: (row) => row.color },
+      ],
+      rowsOverride: [{ ...rows[0]!, color: "#111111" }],
+    });
+
+    fireEvent.doubleClick(screen.getByText("#111111"));
+    const dialog = screen.getByRole("dialog", { name: "Edit color" });
+    expect(document.body).toContainElement(dialog);
+    expect(dialog.closest("td")).toBeNull();
+
+    fireEvent.pointerDown(screen.getByLabelText("RGB R"));
+    expect(screen.getByRole("dialog", { name: "Edit color" })).toBeVisible();
+    expect(onWrite).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("RGB R"), { target: { value: "220" } });
+    fireEvent.change(screen.getByLabelText("RGB G"), { target: { value: "230" } });
+    fireEvent.change(screen.getByLabelText("RGB B"), { target: { value: "240" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Color updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "color", value: "#dce6f0" }],
     });
   });
 
@@ -795,6 +827,7 @@ function renderTable({
   onViewChange,
   rowsOverride,
   fieldDefsOverride,
+  columnDefsOverride,
 }: {
   view?: ViewState;
   readOnly?: boolean;
@@ -802,13 +835,14 @@ function renderTable({
   onViewChange?: DataTableProps<Row>["onViewChange"];
   rowsOverride?: Row[];
   fieldDefsOverride?: FieldDef[];
+  columnDefsOverride?: DataTableColumnDef<Row>[];
 } = {}) {
   return render(
     <DataTable
       rows={rowsOverride ?? rows}
       getRowId={(row) => row.id}
       fieldDefs={fieldDefsOverride ?? fieldDefs}
-      columnDefs={columnDefs}
+      columnDefs={columnDefsOverride ?? columnDefs}
       view={view}
       onViewChange={onViewChange ?? vi.fn()}
       onWrite={onWrite}

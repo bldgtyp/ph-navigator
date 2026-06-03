@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-05-27
-TIME: 00:00 EDT
+DATE: 2026-06-03
+TIME: 17:51 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -14,6 +14,7 @@ feature-first planning.
 | Assembly Builder | UI parity Phase 16 scale/evidence fixture implemented / review next | `features/assembly-builder/STATUS.md` |
 | Editable Fields | Active / typecheck fixture migration in progress | `features/editable-fields/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
+| DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Planned / PRD and phase plans drafted | `features/attachments/STATUS.md` |
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
 

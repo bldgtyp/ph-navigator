@@ -28,7 +28,7 @@ const FIELD_TYPE_ICON_META: Record<FieldTypeIconKind, FieldTypeIconMeta> = {
   text: { Icon: Type, label: "Text" },
   computed: { Icon: SquareFunction, label: "Computed" },
   attachment: { Icon: Paperclip, label: "Attachment" },
-  argb_color: { Icon: Palette, label: "Color" },
+  color: { Icon: Palette, label: "Color" },
 };
 
 function fieldTypeIconKind(fieldDef: FieldDef): FieldTypeIconKind {
