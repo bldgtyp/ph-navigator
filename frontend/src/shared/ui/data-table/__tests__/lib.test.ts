@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { applyFilters, defaultOperatorForField } from "../lib/filter/apply";
-import { buildEmptyRowDefaults, extractRowDefaults, naturalZero } from "../lib/rows/defaults";
+import {
+  buildEmptyRowDefaults,
+  coerceFieldValue,
+  extractRowDefaults,
+  naturalZero,
+} from "../lib/rows/defaults";
 import { formatDisplayCellValue } from "../lib/rows/format";
 import { coercePasteWrites, planPaste } from "../lib/paste/plan";
 import { formatClipboardCellValue, parseTsv, rangeToTsv } from "../lib/paste/tsv";
@@ -265,6 +270,61 @@ describe("DataTable helpers", () => {
     expect(naturalZero("computed")).toBeNull();
     expect(naturalZero("attachment")).toBeNull();
     expect(naturalZero("argb_color")).toBeNull();
+  });
+
+  test("coerceFieldValue maps blank nullable cells to null", () => {
+    expect(
+      coerceFieldValue(
+        "",
+        { field_key: "name", field_type: "text", display_name: "Name" },
+        () => [],
+      ),
+    ).toEqual({
+      ok: true,
+      value: null,
+    });
+    expect(
+      coerceFieldValue(
+        "",
+        { field_key: "count", field_type: "number", display_name: "Count" },
+        () => [],
+      ),
+    ).toEqual({
+      ok: true,
+      value: null,
+    });
+    expect(
+      coerceFieldValue(
+        "",
+        { field_key: "floor", field_type: "single_select", display_name: "Floor" },
+        () => [],
+      ),
+    ).toEqual({ ok: true, value: null });
+  });
+
+  test("coerceFieldValue rejects blank required cells", () => {
+    const required = { required: true };
+    expect(
+      coerceFieldValue(
+        "",
+        { ...required, field_key: "name", field_type: "text", display_name: "Name" },
+        () => [],
+      ),
+    ).toEqual({ ok: false, message: "Value required." });
+    expect(
+      coerceFieldValue(
+        "",
+        { ...required, field_key: "count", field_type: "number", display_name: "Count" },
+        () => [],
+      ),
+    ).toEqual({ ok: false, message: "Value required." });
+    expect(
+      coerceFieldValue(
+        "",
+        { ...required, field_key: "floor", field_type: "single_select", display_name: "Floor" },
+        () => [],
+      ),
+    ).toEqual({ ok: false, message: "Value required." });
   });
 
   test("computeEdgeBits returns all-false outside the range", () => {

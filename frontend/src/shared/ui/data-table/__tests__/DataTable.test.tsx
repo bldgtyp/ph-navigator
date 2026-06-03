@@ -1,5 +1,6 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
 import {
@@ -185,7 +186,7 @@ describe("DataTable", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  test("coerces cleared inline number edits to zero", async () => {
+  test("coerces cleared inline number edits to null", async () => {
     const onWrite = vi.fn();
     renderTable({ onWrite });
 
@@ -197,7 +198,23 @@ describe("DataTable", () => {
     expect(await screen.findByText("Count updated.")).toBeVisible();
     expect(onWrite).toHaveBeenCalledWith({
       kind: "cell",
-      writes: [{ rowId: "rm_1", fieldKey: "count", value: 0 }],
+      writes: [{ rowId: "rm_1", fieldKey: "count", value: null }],
+    });
+  });
+
+  test("coerces cleared inline text edits to null", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    fireEvent.doubleClick(screen.getByText("Living Room"));
+    const editor = screen.getByRole("textbox");
+    fireEvent.change(editor, { target: { value: "" } });
+    fireEvent.keyDown(editor, { key: "Enter" });
+
+    expect(await screen.findByText("Name updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: null }],
     });
   });
 
@@ -263,7 +280,7 @@ describe("DataTable", () => {
     expect(editor.value).toBe("7");
   });
 
-  test("type-to-edit: Backspace on active editable cell opens editor with empty draft", () => {
+  test("Backspace on an active nullable cell writes null without opening an editor", async () => {
     const onWrite = vi.fn();
     renderTable({ onWrite });
 
@@ -271,8 +288,30 @@ describe("DataTable", () => {
     fireEvent.click(nameCell);
     fireEvent.keyDown(screen.getByRole("grid"), { key: "Backspace" });
 
-    const editor = screen.getByRole("textbox") as HTMLInputElement;
-    expect(editor.value).toBe("");
+    expect(await screen.findByText("Name cleared.")).toBeVisible();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: null }],
+    });
+  });
+
+  test("Delete on a required cell does not clear the value", async () => {
+    const onWrite = vi.fn();
+    renderTable({
+      onWrite,
+      fieldDefsOverride: fieldDefs.map((fieldDef) =>
+        fieldDef.field_key === "name" ? { ...fieldDef, required: true } : fieldDef,
+      ),
+    });
+
+    const nameCell = screen.getByText("Living Room").closest("td") as HTMLElement;
+    fireEvent.click(nameCell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "Delete" });
+
+    expect(await screen.findByText("Name requires a value.")).toBeVisible();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(onWrite).not.toHaveBeenCalled();
   });
 
   test("type-to-edit: ⌘-shortcut keystrokes are not intercepted (⌘C still copies)", () => {
@@ -448,7 +487,7 @@ describe("DataTable", () => {
     expect(ground.getAttribute("aria-selected")).toBe("true");
   });
 
-  test("Backspace on a single-select cell is a no-op (does not open popover)", () => {
+  test("Backspace on a nullable single-select cell writes null without opening the popover", async () => {
     const onWrite = vi.fn();
     const selectFieldDefs: FieldDef[] = [
       {
@@ -475,17 +514,84 @@ describe("DataTable", () => {
     );
 
     fireEvent.keyDown(screen.getByRole("grid"), { key: "Backspace" });
+    expect(await screen.findByText("Floor cleared.")).toBeVisible();
     expect(screen.queryByRole("textbox", { name: "Search options" })).toBeNull();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "floor", value: null }],
+    });
   });
 
   test("commits inline edits on Tab", async () => {
-    const onWrite = vi.fn();
+    let resolveWrite: () => void = () => undefined;
+    const writePromise = new Promise<void>((resolve) => {
+      resolveWrite = resolve;
+    });
+    const onWrite = vi.fn(() => writePromise);
     renderTable({ onWrite });
 
     fireEvent.doubleClick(screen.getByText("Living Room"));
     const editor = screen.getByRole("textbox");
     fireEvent.change(editor, { target: { value: "Living" } });
     fireEvent.keyDown(editor, { key: "Tab" });
+    fireEvent.blur(editor);
+
+    expect(onWrite).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveWrite();
+      await writePromise;
+    });
+
+    expect(await screen.findByText("Name updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: "Living" }],
+    });
+  });
+
+  test("commits inline edits on Enter and moves the active cell down", async () => {
+    let resolveWrite: () => void = () => undefined;
+    const writePromise = new Promise<void>((resolve) => {
+      resolveWrite = resolve;
+    });
+    const onWrite = vi.fn(() => writePromise);
+    renderTable({
+      onWrite,
+      rowsOverride: [
+        { id: "rm_1", number: "101", name: "Living Room", count: 2 },
+        { id: "rm_2", number: "102", name: "Kitchen", count: 1 },
+      ],
+    });
+
+    fireEvent.doubleClick(screen.getByText("Living Room"));
+    const editor = screen.getByRole("textbox");
+    fireEvent.change(editor, { target: { value: "Living" } });
+    fireEvent.keyDown(editor, { key: "Enter" });
+    fireEvent.blur(editor);
+
+    expect(onWrite).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveWrite();
+      await writePromise;
+    });
+
+    expect(await screen.findByText("Name updated.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "cell",
+      writes: [{ rowId: "rm_1", fieldKey: "name", value: "Living" }],
+    });
+    expect(getBodyCell(1, 1)).toHaveClass("data-table-cell-active");
+  });
+
+  test("commits inline edits when clicking another cell", async () => {
+    const user = userEvent.setup();
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+
+    fireEvent.doubleClick(screen.getByText("Living Room"));
+    const editor = screen.getByRole("textbox");
+    fireEvent.change(editor, { target: { value: "Living" } });
+    await user.click(getBodyCell(0, 2));
 
     expect(await screen.findByText("Name updated.")).toBeVisible();
     expect(onWrite).toHaveBeenCalledWith({
@@ -688,18 +794,20 @@ function renderTable({
   onWrite,
   onViewChange,
   rowsOverride,
+  fieldDefsOverride,
 }: {
   view?: ViewState;
   readOnly?: boolean;
   onWrite?: DataTableProps<Row>["onWrite"];
   onViewChange?: DataTableProps<Row>["onViewChange"];
   rowsOverride?: Row[];
+  fieldDefsOverride?: FieldDef[];
 } = {}) {
   return render(
     <DataTable
       rows={rowsOverride ?? rows}
       getRowId={(row) => row.id}
-      fieldDefs={fieldDefs}
+      fieldDefs={fieldDefsOverride ?? fieldDefs}
       columnDefs={columnDefs}
       view={view}
       onViewChange={onViewChange ?? vi.fn()}

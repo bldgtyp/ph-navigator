@@ -165,6 +165,13 @@ fails validation, commit nothing and show a paste review dialog with row,
 column, raw value, and error, capped to the first 25 failures plus an
 overflow count.
 
+Blank-value coercion follows AirTable parity: when a field allows null
+(`required !== true`), user clear gestures write `null`, not the
+field-type natural zero. This includes Backspace/Delete on the active
+editable cell and committing an emptied inline editor for `text`,
+`number`, and `single_select` fields. Required fields reject the clear
+and keep the prior value.
+
 **Field identity rule.** For core fields, `FieldDef.field_key` is the
 declared core key (e.g. `"name"`, `"floor_level"`). For user-defined
 custom fields it is the immutable `cf_*` id from

@@ -22,7 +22,7 @@ import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
 import { computeAggregatesByPath } from "./lib/body/aggregates";
 import { pruneExpandedGroups } from "./lib/body/prune";
 import { effectiveSortFromView } from "./lib/view/sanitize";
-import { buildEmptyRowDefaults, extractRowDefaults } from "./lib/rows/defaults";
+import { buildEmptyRowDefaults, extractRowDefaults, fieldAllowsNull } from "./lib/rows/defaults";
 import { formatDisplayCellValue } from "./lib/rows/format";
 import { sortRows } from "./lib/sort/sortRows";
 import { resolveColumnWidth } from "./lib/columnWidths";
@@ -454,8 +454,46 @@ export function DataTable<TRow>({
     startInlineEdit(row, selection.activeCell.columnIndex);
   };
 
+  const clearActiveCell = useCallback(async () => {
+    const row = visibleDataRows[selection.activeCell.rowIndex];
+    const column = visibleColumnDefs[selection.activeCell.columnIndex];
+    if (!row || !column) return;
+    const fieldDef = fieldDefByKey.get(column.fieldKey);
+    const editorKind = getFieldEditor(fieldDef).kind;
+    if (readOnly || !onWrite || editorKind === "none") {
+      setAnnounce("This cell is read-only.");
+      return;
+    }
+    if (!fieldAllowsNull(fieldDef)) {
+      setAnnounce(`${fieldDef?.display_name ?? "Cell"} requires a value.`);
+      return;
+    }
+    const rowId = getRowId(row);
+    const previousValue = column.accessor(row);
+    selection.setActive({ rowId, fieldKey: column.fieldKey });
+    if (previousValue === null || previousValue === undefined) return;
+    try {
+      await dispatchWrite(
+        { kind: "cell", writes: [{ rowId, fieldKey: column.fieldKey, value: null }] },
+        { kind: "cell", writes: [{ rowId, fieldKey: column.fieldKey, value: previousValue }] },
+      );
+      setAnnounce(`${fieldDef?.display_name ?? "Cell"} cleared.`);
+    } catch (error) {
+      setAnnounce(error instanceof Error ? error.message : "Cell update failed.");
+    }
+  }, [
+    dispatchWrite,
+    fieldDefByKey,
+    getRowId,
+    onWrite,
+    readOnly,
+    selection,
+    visibleColumnDefs,
+    visibleDataRows,
+  ]);
+
   // Replace-mode entry point for type-to-edit. `initialKey` is the typed
-  // character ("K", "7", " ") or empty string for Backspace / Delete.
+  // character ("K", "7", " ").
   const typeToEditActiveCell = (initialKey: string) => {
     const row = visibleDataRows[selection.activeCell.rowIndex];
     const column = visibleColumnDefs[selection.activeCell.columnIndex];
@@ -472,13 +510,9 @@ export function DataTable<TRow>({
     // so Space — which the keyboard hook treats as a printable char —
     // opens the popover with no filter (matches Enter / F2 / chevron
     // click); a single trailing space would otherwise filter to "no
-    // matches" because option labels are stored trimmed. An empty
-    // seed (Backspace / Delete) is a no-op on single-select to
-    // preserve the prior "clearing is not how you change a select"
-    // behavior — users open the popover instead.
+    // matches" because option labels are stored trimmed.
     if (editorKind === "single_select") {
       const trimmed = initialKey.trim();
-      if (initialKey === "" && trimmed === "") return;
       edit.start({
         rowId: getRowId(row),
         fieldKey: column.fieldKey,
@@ -519,7 +553,7 @@ export function DataTable<TRow>({
       : undefined,
     onBeginEdit: beginEditActiveCell,
     onPrintableKey: !readOnly && onWrite ? typeToEditActiveCell : undefined,
-    onClearActiveCell: !readOnly && onWrite ? () => typeToEditActiveCell("") : undefined,
+    onClearActiveCell: !readOnly && onWrite ? clearActiveCell : undefined,
     onRowInsertBelowActive: canInsertRow ? insertRowBelowActive : undefined,
     onFillDown: !readOnly && Boolean(onWrite) ? fill.fillDown : undefined,
     onFillRight: !readOnly && Boolean(onWrite) ? fill.fillRight : undefined,
@@ -924,13 +958,20 @@ export function DataTable<TRow>({
     return map;
   }, [view.filter, view.sort, view.group]);
 
-  const handleCommitAndMove = (rowIndex: number, columnIndex: number, shiftKey: boolean) => {
-    const next = moveTabCell(
-      { rowIndex, columnIndex },
-      shiftKey,
-      visibleDataRows.length,
-      visibleColumnDefs.length,
-    );
+  const handleCommitAndMove = (
+    rowIndex: number,
+    columnIndex: number,
+    move: { kind: "tab"; shiftKey: boolean } | { kind: "down" },
+  ) => {
+    const next =
+      move.kind === "down"
+        ? moveDownCell({ rowIndex, columnIndex }, visibleDataRows.length, visibleColumnDefs.length)
+        : moveTabCell(
+            { rowIndex, columnIndex },
+            move.shiftKey,
+            visibleDataRows.length,
+            visibleColumnDefs.length,
+          );
     const nextRowId = rowIds[next.rowIndex];
     const nextFieldKey = fieldKeys[next.columnIndex];
     if (nextRowId !== undefined && nextFieldKey !== undefined) {
@@ -1241,5 +1282,13 @@ function moveTabCell(
   return {
     rowIndex: Math.floor(next / columnCount),
     columnIndex: next % columnCount,
+  };
+}
+
+function moveDownCell(active: CellCoord, rowCount: number, columnCount: number): CellCoord {
+  if (rowCount === 0 || columnCount === 0) return active;
+  return {
+    rowIndex: Math.min(rowCount - 1, active.rowIndex + 1),
+    columnIndex: active.columnIndex,
   };
 }

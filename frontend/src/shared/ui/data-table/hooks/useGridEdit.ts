@@ -38,9 +38,8 @@ export type StartArgs = {
   intent: EditIntent;
   // Seed the text/number draft when `intent === "replace"` so a
   // type-to-edit gesture lands in the editor with the typed character
-  // (or empty string for Backspace / Delete) instead of the prior
-  // cell value. Ignored for prefill (`intent === "extend"`) and for
-  // the single_select editor.
+  // instead of the prior cell value. Ignored for prefill
+  // (`intent === "extend"`) and for the single_select editor.
   replaceSeed?: string;
 };
 
@@ -80,6 +79,7 @@ export function useGridEdit(args: {
   const { fieldDefByKey, dispatchWrite, onAnnounce, hasWriteHandler } = args;
   const [editing, setEditing] = useState<EditingCell | null>(null);
   const pendingRef = useRef<PendingEdit | null>(null);
+  const commitInFlightRef = useRef(false);
   // Tracks the rowIds identity we last saw so a queued pending entry
   // gets one render to resolve. If the next render does not contain
   // the queued rowId, the entry is dropped.
@@ -123,18 +123,20 @@ export function useGridEdit(args: {
 
   const commit = useCallback(async (): Promise<boolean> => {
     if (!editing || !hasWriteHandler) return false;
+    if (commitInFlightRef.current) return false;
+    commitInFlightRef.current = true;
     const fieldDef = fieldDefByKey.get(editing.fieldKey);
     const editor = editing.editor;
     const plan = planCommit(editing, editor, fieldDef);
-    if (plan.kind === "noop") {
-      setEditing(null);
-      return true;
-    }
-    if (plan.kind === "invalid") {
-      onAnnounce(plan.message);
-      return false;
-    }
     try {
+      if (plan.kind === "noop") {
+        setEditing(null);
+        return true;
+      }
+      if (plan.kind === "invalid") {
+        onAnnounce(plan.message);
+        return false;
+      }
       await dispatchWrite(plan.op, plan.inverse);
       onAnnounce(`${fieldDef?.display_name ?? "Cell"} updated.`);
       setEditing(null);
@@ -142,6 +144,8 @@ export function useGridEdit(args: {
     } catch (error) {
       onAnnounce(error instanceof Error ? error.message : "Cell update failed.");
       return false;
+    } finally {
+      commitInFlightRef.current = false;
     }
   }, [editing, hasWriteHandler, fieldDefByKey, dispatchWrite, onAnnounce]);
 
@@ -215,9 +219,7 @@ function planTextOrNumber(
   editor: { kind: "text" | "number"; draftValue: string },
   fieldDef: FieldDef | undefined,
 ): CommitPlan {
-  const coerced = coerceFieldValue(editor.draftValue, fieldDef, () => [], {
-    emptyNumberValue: 0,
-  });
+  const coerced = coerceFieldValue(editor.draftValue, fieldDef, () => []);
   if (!coerced.ok) return { kind: "invalid", message: coerced.message };
   if (coerced.value === current.originalValue) return { kind: "noop" };
   const op: WriteOp = {

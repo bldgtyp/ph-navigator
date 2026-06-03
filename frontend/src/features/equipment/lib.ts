@@ -48,7 +48,11 @@ import {
 } from "../../shared/ui/data-table/lib";
 import { generatedId } from "../../shared/lib/ids";
 import { readAttachmentAssetIds } from "../assets/lib";
-import { customNumberValue, customTextValue } from "./lib/customValueReaders";
+import {
+  customNumberValue,
+  customTextValue,
+  customTextValueOrNull,
+} from "./lib/customValueReaders";
 export {
   isDraftStaleError,
   isInvalidProjectDocumentError,
@@ -852,14 +856,14 @@ function normalizeRoomForPayload(
         numberFallback: null,
       }),
       num_people: normalizeRoomCustomValue(room, "num_people", fieldDefByKey.get("num_people"), {
-        numberFallback: 0,
+        numberFallback: null,
         clampNonNegativeInteger: true,
       }),
       num_bedrooms: normalizeRoomCustomValue(
         room,
         "num_bedrooms",
         fieldDefByKey.get("num_bedrooms"),
-        { numberFallback: 0, clampNonNegativeInteger: true },
+        { numberFallback: null, clampNonNegativeInteger: true },
       ),
     },
     icfa_factor: clamp(room.icfa_factor || 0, 0, 1),
@@ -883,7 +887,8 @@ function normalizeRoomCustomValue(
   if (fieldDef?.field_type === "single_select") {
     return typeof value === "string" && value.trim() ? value : null;
   }
-  return customTextValue(room, fieldKey).trim();
+  const text = customTextValueOrNull(room, fieldKey);
+  return text === null ? null : text.trim() || null;
 }
 
 function normalizePumpForPayload(pump: PumpRow): PumpRow {
