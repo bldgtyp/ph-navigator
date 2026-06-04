@@ -188,6 +188,32 @@ def test_single_active_session_invalidates_previous_session(clean_auth_tables: N
     assert row["n"] == 1
 
 
+def test_stale_cookie_after_supersession_is_session_invalidated(clean_auth_tables: None) -> None:
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client_a = TestClient(app)
+    client_b = TestClient(app)
+
+    login_a = client_a.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login_a.status_code == 200
+
+    login_b = client_b.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login_b.status_code == 200
+
+    stale = client_a.get("/api/v1/auth/session")
+    assert stale.status_code == 401
+    body = stale.json()
+    assert body["error_code"] == "session_invalidated"
+    assert body["details"]["reason"] == "superseded_by_new_login"
+
+
 def test_parallel_login_attempts_do_not_escape_single_active_session(clean_auth_tables: None) -> None:
     create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
     clients = [TestClient(app), TestClient(app)]
