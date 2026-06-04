@@ -24,16 +24,25 @@ RELATED:
   version prefix, refresh.py loosened `pinned_catalog_version_id`
   to nullable. Modal + landing page kept compiling on the new
   shape (retired in Phase 2).
-- **Phase 2 (Frontend DataTable page)** — `pending`. 9 columns.
+- **Phase 2 (Frontend DataTable page)** — `Complete`, `2026-06-04`.
+  `frontend/src/features/catalogs/glazing-types/` (controller +
+  fieldDefs + tests) added; `GlazingTypesCatalogPage` rewritten on
+  `<DataTable>` with 9 columns + bulk reactivate; modal retired.
+  Added `u_value` (+ `specific_heat`) to the IP/SI registry on both
+  sides so the U-value column toggles cleanly between
+  `W/(m²·K)` and `Btu/(h-ft²-F)`.
 - **Phase 3 (JSON import/export)** — `pending`. Match key is `id`.
 - **Phase 4 (Seed data + smoke)** — `pending`. 42 rows.
 
 ## Next step
 
-Phase 2: build `frontend/src/features/catalogs/glazing-types/`
-(controller + fieldDefs + tests), rewrite
-`routes/GlazingTypesCatalogPage.tsx` on `<DataTable>`, retire
-`GlazingTypeEditorModal`.
+Phase 3: add
+`backend/features/catalogs/glazing_types/import_export/` (file_format,
+coerce, tokens, upgrade, pipeline, service) + `/import/preview` and
+`/import/commit` routes; add frontend `import_export/`
+(`ImportDialog`, `OverflowMenuItems`, `export.ts`,
+`useImportMutations`, `api.ts`, `types.ts`); wire overflow-menu
+items on the catalog page.
 
 ## Blockers
 

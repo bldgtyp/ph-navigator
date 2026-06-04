@@ -1,140 +1,172 @@
 import "../catalogs.css";
-import { type ReactNode, useState } from "react";
-import { formatUValueFromWm2K, useUnitPreference } from "../../../lib/units";
+import { useCallback, useMemo, useState } from "react";
+import {
+  DataTable,
+  buildTableSchema,
+  type DataTableColumnDef,
+} from "../../../shared/ui/data-table";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
-import { GlazingTypeEditorModal } from "../components/GlazingTypeEditorModal";
-import { formatNumber } from "../components/form-helpers";
-import { uValueUnitLabel } from "../components/unit-labels";
 import {
-  useDeactivateGlazingTypeMutation,
-  useGlazingTypesQuery,
-  useReactivateGlazingTypeMutation,
-} from "../hooks";
+  toGlazingTypeRow,
+  useGlazingTypesCatalogController,
+  type GlazingTypeRow,
+} from "../glazing-types/controller";
+import {
+  GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
+  GLAZING_TYPES_FIELD_OVERLAY,
+  GLAZING_TYPES_TABLE_KEY,
+} from "../glazing-types/fieldDefs";
+import { useGlazingTypesQuery, useReactivateGlazingTypeMutation } from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogGlazingType } from "../types";
 
-type EditorState =
-  | { kind: "closed" }
-  | { kind: "create" }
-  | { kind: "edit"; record: CatalogGlazingType };
+const EMPTY_GLAZING_TYPES: readonly CatalogGlazingType[] = Object.freeze([]);
+
+const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
+function buildEmptyGlazingTypeRow({ rowId }: { rowId: string }): GlazingTypeRow {
+  return {
+    id: rowId,
+    name: "New glazing type",
+    manufacturer: null,
+    brand: null,
+    suffix: null,
+    u_value_w_m2k: null,
+    g_value: null,
+    color: null,
+    source: null,
+    comments: null,
+    is_active: true,
+    created_at: PLACEHOLDER_TIMESTAMP,
+    updated_at: PLACEHOLDER_TIMESTAMP,
+  };
+}
+
+const COLUMN_DEFS: DataTableColumnDef<GlazingTypeRow>[] = [
+  { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name, defaultWidth: 280 },
+  {
+    id: "manufacturer",
+    fieldKey: "manufacturer",
+    header: "Manufacturer",
+    accessor: (row) => row.manufacturer,
+    defaultWidth: 160,
+  },
+  {
+    id: "brand",
+    fieldKey: "brand",
+    header: "Brand",
+    accessor: (row) => row.brand,
+    defaultWidth: 260,
+  },
+  {
+    id: "suffix",
+    fieldKey: "suffix",
+    header: "Suffix",
+    accessor: (row) => row.suffix,
+    defaultWidth: 110,
+  },
+  {
+    id: "u_value_w_m2k",
+    fieldKey: "u_value_w_m2k",
+    header: "U-value",
+    accessor: (row) => row.u_value_w_m2k,
+    className: "numeric-cell",
+  },
+  {
+    id: "g_value",
+    fieldKey: "g_value",
+    header: "g-value",
+    accessor: (row) => row.g_value,
+    className: "numeric-cell",
+    defaultWidth: 110,
+  },
+  {
+    id: "color",
+    fieldKey: "color",
+    header: "Color",
+    accessor: (row) => row.color,
+    defaultWidth: 110,
+  },
+  {
+    id: "source",
+    fieldKey: "source",
+    header: "Source",
+    accessor: (row) => row.source,
+    defaultWidth: 200,
+  },
+  {
+    id: "comments",
+    fieldKey: "comments",
+    header: "Comments",
+    accessor: (row) => row.comments,
+    defaultWidth: 280,
+  },
+];
 
 export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
-  const { unitSystem } = useUnitPreference();
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
-  const itemsQuery = useGlazingTypesQuery();
-  const deactivateMutation = useDeactivateGlazingTypeMutation();
-  const reactivateMutation = useReactivateGlazingTypeMutation();
+  const [bulkReactivating, setBulkReactivating] = useState(false);
+  const glazingTypesQuery = useGlazingTypesQuery();
   const signOutMutation = useSignOutMutation();
+  const reactivateMutation = useReactivateGlazingTypeMutation();
 
-  // Fetch the full catalog once; filter the "Show deactivated" toggle in
-  // memory rather than refetching with a different query param.
-  const allItems = itemsQuery.data ?? [];
-  const items = includeInactive ? allItems : allItems.filter((record) => record.is_active);
-  const closeEditor = () => setEditor({ kind: "closed" });
+  const allGlazingTypes = glazingTypesQuery.data ?? EMPTY_GLAZING_TYPES;
+  const glazingTypes = useMemo(
+    () => (includeInactive ? allGlazingTypes : allGlazingTypes.filter((g) => g.is_active)),
+    [allGlazingTypes, includeInactive],
+  );
+  const rows = useMemo<GlazingTypeRow[]>(() => glazingTypes.map(toGlazingTypeRow), [glazingTypes]);
+  const controller = useGlazingTypesCatalogController();
 
-  const handleDeactivate = (record: CatalogGlazingType) => {
-    if (
-      window.confirm(
-        `Deactivate "${record.name}"? It will no longer appear in project pickers, ` +
-          "but already-picked entries remain unchanged.",
-      )
-    ) {
-      deactivateMutation.mutate(record.id);
-    }
-  };
+  const isActiveById = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const glazing of glazingTypes) map.set(glazing.id, glazing.is_active);
+    return map;
+  }, [glazingTypes]);
 
-  const renderBody = (): ReactNode => {
-    if (itemsQuery.isLoading) {
-      return <p className="form-note">Loading glazing types…</p>;
-    }
-    if (itemsQuery.isError) {
+  const renderBulkSelectionActions = useCallback(
+    (selectedRowIds: ReadonlySet<string>) => {
+      const inactiveIds: string[] = [];
+      for (const id of selectedRowIds) {
+        if (isActiveById.get(id) === false) inactiveIds.push(id);
+      }
+      if (inactiveIds.length === 0) return null;
+      const label =
+        inactiveIds.length === 1
+          ? "Reactivate 1 glazing type"
+          : `Reactivate ${inactiveIds.length} glazing types`;
       return (
-        <p className="form-error" role="alert">
-          {errorMessage(itemsQuery.error, "Could not load glazing types.")}
-        </p>
+        <button
+          type="button"
+          disabled={bulkReactivating}
+          onClick={async () => {
+            setBulkReactivating(true);
+            try {
+              await Promise.allSettled(inactiveIds.map((id) => reactivateMutation.mutateAsync(id)));
+            } finally {
+              setBulkReactivating(false);
+            }
+          }}
+        >
+          {label}
+        </button>
       );
-    }
-    if (items.length === 0) {
-      return (
-        <section className="empty-state">
-          <h2>No glazing types yet</h2>
-          <p>Add the first glazing type to seed the project picker.</p>
-          <button type="button" onClick={() => setEditor({ kind: "create" })}>
-            Add glazing type
-          </button>
-        </section>
-      );
-    }
-    return (
-      <div className="catalog-table-wrapper">
-        <table className="catalog-table">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Manufacturer</th>
-              <th scope="col">Brand</th>
-              <th scope="col">Suffix</th>
-              <th scope="col">U-value ({uValueUnitLabel(unitSystem)})</th>
-              <th scope="col">g-value</th>
-              <th scope="col">Status</th>
-              <th scope="col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((record) => (
-              <tr key={record.id} className={record.is_active ? "" : "catalog-row-inactive"}>
-                <td>{record.name}</td>
-                <td>{record.manufacturer ?? "—"}</td>
-                <td>{record.brand ?? "—"}</td>
-                <td>{record.suffix ?? "—"}</td>
-                <td>
-                  {formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}
-                </td>
-                <td>{formatNumber(record.g_value, 2)}</td>
-                <td>{record.is_active ? "Active" : "Deactivated"}</td>
-                <td>
-                  <div className="catalog-row-actions">
-                    <button
-                      type="button"
-                      className="text-button"
-                      onClick={() => setEditor({ kind: "edit", record })}
-                      disabled={!record.is_active}
-                    >
-                      Edit
-                    </button>
-                    {record.is_active ? (
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => handleDeactivate(record)}
-                        disabled={deactivateMutation.isPending}
-                      >
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => reactivateMutation.mutate(record.id)}
-                        disabled={reactivateMutation.isPending}
-                      >
-                        Reactivate
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+    },
+    [bulkReactivating, isActiveById, reactivateMutation],
+  );
+
+  const tableSchema = useMemo(
+    () =>
+      buildTableSchema({
+        tableKey: GLAZING_TYPES_TABLE_KEY,
+        fieldDefs: GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
+        fieldOverlay: GLAZING_TYPES_FIELD_OVERLAY,
+      }),
+    [],
+  );
 
   return (
     <main className="workspace-shell">
@@ -151,21 +183,7 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
           />
         }
       />
-      <section className="dashboard-page" aria-labelledby="glazing-types-catalog-title">
-        <div className="page-heading">
-          <div>
-            <p className="eyebrow">Catalogs</p>
-            <h1 id="glazing-types-catalog-title">Window-Glazing</h1>
-            <p className="catalog-description">
-              Curated starting library of glazing products. Picking a glazing into a project copies
-              the values in; later catalog edits surface through refresh-from-catalog.
-            </p>
-          </div>
-          <button type="button" onClick={() => setEditor({ kind: "create" })}>
-            Add glazing type
-          </button>
-        </div>
-
+      <section className="dashboard-page" aria-label="Window-Glazing catalog">
         <div className="catalog-toolbar">
           <label className="catalog-inactive-toggle">
             <input
@@ -176,19 +194,33 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
             <span>Show deactivated glazing types</span>
           </label>
           <span className="catalog-count">
-            {items.length} {items.length === 1 ? "glazing type" : "glazing types"}
+            {rows.length} {rows.length === 1 ? "glazing type" : "glazing types"}
           </span>
         </div>
 
-        {renderBody()}
-
-        {editor.kind !== "closed" ? (
-          <GlazingTypeEditorModal
-            record={editor.kind === "edit" ? editor.record : null}
-            onClose={closeEditor}
-            onSaved={closeEditor}
+        {glazingTypesQuery.isError ? (
+          <p className="form-error" role="alert">
+            {errorMessage(glazingTypesQuery.error, "Could not load glazing types.")}
+          </p>
+        ) : (
+          <DataTable<GlazingTypeRow>
+            rows={rows}
+            getRowId={(row) => row.id}
+            columnDefs={COLUMN_DEFS}
+            fieldDefs={tableSchema.fieldDefs}
+            view={controller.view}
+            onViewChange={controller.onViewChange}
+            onResetView={controller.onResetView}
+            onWrite={controller.onWrite}
+            buildEmptyRow={buildEmptyGlazingTypeRow}
+            bulkSelectionActions={renderBulkSelectionActions}
+            emptyMessage={
+              glazingTypesQuery.isLoading
+                ? "Loading glazing types…"
+                : "No glazing types yet. Shift-Enter to add one."
+            }
           />
-        ) : null}
+        )}
       </section>
     </main>
   );
