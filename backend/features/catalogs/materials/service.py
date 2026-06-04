@@ -40,9 +40,7 @@ def get_material(material_id: str) -> CatalogMaterialPublic:
     return _to_public(row)
 
 
-def create_material(
-    payload: CatalogMaterialCreateRequest, user: UserPublic, request: Request
-) -> CatalogMaterialPublic:
+def create_material(payload: CatalogMaterialCreateRequest, user: UserPublic, request: Request) -> CatalogMaterialPublic:
     record_id = new_catalog_record_id()
     with transaction() as conn:
         repository.insert_material(

@@ -31,7 +31,7 @@ type MaterialFormState = {
   density_kg_m3: string;
   specific_heat_j_kgk: string;
   emissivity: string;
-  notes: string;
+  comments: string;
 };
 
 function formFromMaterial(
@@ -45,7 +45,7 @@ function formFromMaterial(
     density_kg_m3: formatDensityFromKgM3(material.density_kg_m3, unitOptions),
     specific_heat_j_kgk: formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, unitOptions),
     emissivity: material.emissivity?.toString() ?? "",
-    notes: material.notes ?? "",
+    comments: material.comments ?? "",
   };
 }
 
@@ -134,7 +134,7 @@ export function ProjectMaterialEditor({
         unitOptions,
       ),
       emissivity: parseOptionalNumber(form.emissivity),
-      ...(showNotes ? { notes: trimToNull(form.notes) } : {}),
+      ...(showNotes ? { comments: trimToNull(form.comments) } : {}),
     });
   }
 
@@ -188,10 +188,10 @@ export function ProjectMaterialEditor({
       </label>
       {showNotes ? (
         <label>
-          Notes
+          Comments
           <textarea
-            value={form.notes}
-            onChange={(event) => updateForm("notes", event.currentTarget.value)}
+            value={form.comments}
+            onChange={(event) => updateForm("comments", event.currentTarget.value)}
           />
         </label>
       ) : null}

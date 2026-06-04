@@ -360,11 +360,11 @@ Generic per-Number-field unit config that lets a single DataTable
 column participate in the SI/IP toggle without inventing a new
 `field_type`. The quantity-specific helpers under
 `frontend/src/lib/units/` (§11.5.3) stay as-is for bespoke surfaces
-(`MaterialEditorModal`, `MaterialsCatalogPage`, the 3D viewer, etc.);
-this section covers how the DataTable consumes them.
+(`ProjectMaterialEditor`, the 3D viewer, etc.); this section covers how
+the DataTable consumes them.
 
 - **Closed registry.** `frontend/src/lib/units/numberUnits.ts` exposes
-  `NUMBER_UNIT_TYPES` — an MVP set of `density`, `conductivity`,
+  `NUMBER_UNIT_TYPES` — `density`, `conductivity`, `specific_heat`,
   `length`, `area`, `volume` — each with one SI unit, one IP unit, and
   per-system decimal precision. The same registry is mirrored by the
   backend; `registry_snapshot` round-trip tests pin the two ends
@@ -397,8 +397,9 @@ this section covers how the DataTable consumes them.
   field — stored filter strings were typed in the prior system and
   would be ambiguous after a swap. All unrelated view state (sort,
   group, widths, hidden columns, filters on other fields) is preserved.
-- **Migration hook.** The Materials catalog is not yet DataTable-backed
-  in V2. When it migrates, `density_kg_m3` and `conductivity_w_mk` must
-  seed `numberUnits.mode = "fixed"` with `kg_m3 ↔ lb_ft3` and
-  `w_m_k ↔ btu_h_ft_f`. See
-  `planning/features/data-table-unit-number-field/STATUS.md`.
+- **Fixed-mode anchors.** The Materials catalog DataTable seeds
+  fixed-mode `numberUnits` for `density_kg_m3` (`kg_m3 ↔ lb_ft3`),
+  `specific_heat_j_kgk` (`j_kg_k ↔ btu_lb_f`), and `conductivity_w_mk`
+  (`w_m_k ↔ btu_h_ft_f`) — see
+  `frontend/src/features/catalogs/materials/fieldDefs.ts`. Other catalog
+  / domain built-ins that need SI/IP display follow the same pattern.

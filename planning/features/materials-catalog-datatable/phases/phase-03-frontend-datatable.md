@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-03
 TIME: 20:30 EDT
-STATUS: Planned.
+STATUS: Implemented on `feat/materials-catalog-datatable`; see
+        ../STATUS.md.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Rebuild the Materials Catalog page on the shared DataTable.
 RELATED:

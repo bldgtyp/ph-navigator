@@ -60,8 +60,6 @@ export function phase16DriftFixture(
         project_material_id: LONG_MATERIAL_ID,
         state: "drifted",
         catalog_record_id: "mat_phase16_long_name",
-        pinned_catalog_version_id: "matv_phase16_a",
-        current_catalog_version_id: "matv_phase16_b",
         local_overrides: [],
         fields: [
           {
@@ -173,7 +171,9 @@ function edgeMaterials(): ProjectMaterial[] {
       color: "#cee4cd",
       specification_status: "question",
       datasheet_asset_ids: ["asset_datasheet_1"],
-      notes: "Long-name edge case for Phase 16 parity checks.",
+      source: null,
+      url: null,
+      comments: "Long-name edge case for Phase 16 parity checks.",
       catalog_origin: {
         catalog_table: "materials",
         catalog_record_id: "mat_phase16_long_name",
@@ -206,7 +206,9 @@ function edgeMaterials(): ProjectMaterial[] {
       color: "#b9a082",
       specification_status: "complete",
       datasheet_asset_ids: [],
-      notes: null,
+      source: null,
+      url: null,
+      comments: null,
       catalog_origin: null,
       use_sites: [
         {
@@ -232,7 +234,9 @@ function edgeMaterials(): ProjectMaterial[] {
       color: "#dcdcf5",
       specification_status: "missing",
       datasheet_asset_ids: [],
-      notes: "Missing conductivity is intentional.",
+      source: null,
+      url: null,
+      comments: "Missing conductivity is intentional.",
       catalog_origin: null,
       use_sites: [
         {
@@ -258,7 +262,9 @@ function edgeMaterials(): ProjectMaterial[] {
       color: "#ebebe6",
       specification_status: "complete",
       datasheet_asset_ids: [],
-      notes: null,
+      source: null,
+      url: null,
+      comments: null,
       catalog_origin: null,
       use_sites: [
         {
@@ -284,7 +290,9 @@ function edgeMaterials(): ProjectMaterial[] {
       color: null,
       specification_status: "na",
       datasheet_asset_ids: [],
-      notes: "Unused material verifies Specifications cleanup and viewer filtering.",
+      source: null,
+      url: null,
+      comments: "Unused material verifies Specifications cleanup and viewer filtering.",
       catalog_origin: null,
       use_sites: [],
     },
@@ -330,7 +338,9 @@ function bulkMaterials(): ProjectMaterial[] {
     color: null,
     specification_status: "complete",
     datasheet_asset_ids: [],
-    notes: null,
+    source: null,
+    url: null,
+    comments: null,
     catalog_origin: null,
     use_sites: [],
   }));

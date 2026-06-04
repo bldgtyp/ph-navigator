@@ -74,6 +74,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    raise NotImplementedError(
-        "20260603_0015 is destructive (pre-deployment): no downgrade path."
-    )
+    raise NotImplementedError("20260603_0015 is destructive (pre-deployment): no downgrade path.")

@@ -1,5 +1,5 @@
 import { ft2ToM2, ft3ToM3, ftToMm, m2ToFt2, m3ToFt3, mmToFt } from "./length";
-import { kgM3ToLbFt3, lbFt3ToKgM3 } from "./material";
+import { btuLbFToJKgK, jKgKToBtuLbF, kgM3ToLbFt3, lbFt3ToKgM3 } from "./material";
 import { btuHftFToWmK, wmkToBtuHftF } from "./thermal";
 import type { UnitSystem } from "./types";
 
@@ -33,6 +33,12 @@ export const NUMBER_UNIT_TYPES = [
     label: "Conductivity",
     siUnits: [{ id: "w_m_k", label: "W/(m-K)", system: "SI" }],
     ipUnits: [{ id: "btu_h_ft_f", label: "Btu/(h-ft-F)", system: "IP" }],
+  },
+  {
+    id: "specific_heat",
+    label: "Specific Heat",
+    siUnits: [{ id: "j_kg_k", label: "J/(kg-K)", system: "SI" }],
+    ipUnits: [{ id: "btu_lb_f", label: "Btu/(lb-F)", system: "IP" }],
   },
   {
     id: "length",
@@ -154,6 +160,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return kgM3ToLbFt3(valueSi);
     case "conductivity":
       return wmkToBtuHftF(valueSi);
+    case "specific_heat":
+      return jKgKToBtuLbF(valueSi);
     case "length":
       return mmToFt(valueSi * 1000);
     case "area":
@@ -169,6 +177,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return lbFt3ToKgM3(valueIp);
     case "conductivity":
       return btuHftFToWmK(valueIp);
+    case "specific_heat":
+      return btuLbFToJKgK(valueIp);
     case "length":
       return ftToMm(valueIp) / 1000;
     case "area":

@@ -1,163 +1,110 @@
 import "../catalogs.css";
-import { type ReactNode, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  formatConductivityFromWmK,
-  formatDensityFromKgM3,
-  formatSpecificHeatFromJKgK,
-  useUnitPreference,
-} from "../../../lib/units";
+  DataTable,
+  buildTableSchema,
+  type DataTableColumnDef,
+} from "../../../shared/ui/data-table";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
-import { formatNumber } from "../components/form-helpers";
-import { MaterialEditorModal } from "../components/MaterialEditorModal";
-import {
-  conductivityUnitLabel,
-  densityUnitLabel,
-  specificHeatUnitLabel,
-} from "../components/unit-labels";
-import {
-  useDeactivateMaterialMutation,
-  useMaterialsQuery,
-  useReactivateMaterialMutation,
-} from "../hooks";
+import { useMaterialsQuery } from "../hooks";
 import { catalogPath } from "../lib";
-import type { CatalogMaterial } from "../types";
+import {
+  toMaterialRow,
+  useMaterialsCatalogController,
+  type MaterialRow,
+} from "../materials/controller";
+import {
+  MATERIALS_BUILT_IN_FIELD_DEFS,
+  MATERIALS_FIELD_OVERLAY,
+  MATERIALS_TABLE_KEY,
+} from "../materials/fieldDefs";
 
-type EditorState =
-  | { kind: "closed" }
-  | { kind: "create" }
-  | { kind: "edit"; material: CatalogMaterial };
+const COLUMN_DEFS: DataTableColumnDef<MaterialRow>[] = [
+  { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name, defaultWidth: 240 },
+  {
+    id: "category",
+    fieldKey: "category",
+    header: "Category",
+    accessor: (row) => row.category,
+    defaultWidth: 200,
+  },
+  {
+    id: "density_kg_m3",
+    fieldKey: "density_kg_m3",
+    header: "Density",
+    accessor: (row) => row.density_kg_m3,
+    className: "numeric-cell",
+  },
+  {
+    id: "specific_heat_j_kgk",
+    fieldKey: "specific_heat_j_kgk",
+    header: "Specific Heat",
+    accessor: (row) => row.specific_heat_j_kgk,
+    className: "numeric-cell",
+  },
+  {
+    id: "conductivity_w_mk",
+    fieldKey: "conductivity_w_mk",
+    header: "Conductivity",
+    accessor: (row) => row.conductivity_w_mk,
+    className: "numeric-cell",
+  },
+  {
+    id: "emissivity",
+    fieldKey: "emissivity",
+    header: "Emissivity",
+    accessor: (row) => row.emissivity,
+    className: "numeric-cell",
+    defaultWidth: 110,
+  },
+  {
+    id: "color",
+    fieldKey: "color",
+    header: "Color",
+    accessor: (row) => row.color,
+    defaultWidth: 110,
+  },
+  {
+    id: "source",
+    fieldKey: "source",
+    header: "Source",
+    accessor: (row) => row.source,
+    defaultWidth: 220,
+  },
+  { id: "url", fieldKey: "url", header: "URL", accessor: (row) => row.url, defaultWidth: 240 },
+  {
+    id: "comments",
+    fieldKey: "comments",
+    header: "Comments",
+    accessor: (row) => row.comments,
+    defaultWidth: 280,
+  },
+];
 
 export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
-  const { unitSystem } = useUnitPreference();
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
   const materialsQuery = useMaterialsQuery(includeInactive);
-  const deactivateMutation = useDeactivateMaterialMutation();
-  const reactivateMutation = useReactivateMaterialMutation();
   const signOutMutation = useSignOutMutation();
 
-  const items = materialsQuery.data ?? [];
-  const closeEditor = () => setEditor({ kind: "closed" });
+  const rows = useMemo<MaterialRow[]>(
+    () => (materialsQuery.data ?? []).map(toMaterialRow),
+    [materialsQuery.data],
+  );
+  const controller = useMaterialsCatalogController();
 
-  const handleDeactivate = (material: CatalogMaterial) => {
-    if (
-      window.confirm(
-        `Deactivate "${material.name}"? It will no longer appear in project pickers, ` +
-          "but already-picked entries remain unchanged.",
-      )
-    ) {
-      deactivateMutation.mutate(material.id);
-    }
-  };
-
-  const renderBody = (): ReactNode => {
-    if (materialsQuery.isLoading) {
-      return <p className="form-note">Loading materials…</p>;
-    }
-    if (materialsQuery.isError) {
-      return (
-        <p className="form-error" role="alert">
-          {errorMessage(materialsQuery.error, "Could not load materials.")}
-        </p>
-      );
-    }
-    if (items.length === 0) {
-      return (
-        <section className="empty-state">
-          <h2>No materials yet</h2>
-          <p>Add the first material to seed the project picker.</p>
-          <button type="button" onClick={() => setEditor({ kind: "create" })}>
-            Add material
-          </button>
-        </section>
-      );
-    }
-    return (
-      <div className="catalog-table-wrapper">
-        <table className="catalog-table">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Category</th>
-              <th scope="col">Conductivity ({conductivityUnitLabel(unitSystem)})</th>
-              <th scope="col">Density ({densityUnitLabel(unitSystem)})</th>
-              <th scope="col">Specific heat ({specificHeatUnitLabel(unitSystem)})</th>
-              <th scope="col">Emissivity</th>
-              <th scope="col">Version</th>
-              <th scope="col">Status</th>
-              <th scope="col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((material) => (
-              <tr key={material.id} className={material.is_active ? "" : "catalog-row-inactive"}>
-                <td>{material.name}</td>
-                <td>{material.category}</td>
-                <td>
-                  {formatConductivityFromWmK(material.conductivity_w_mk, {
-                    unitSystem,
-                    showUnit: false,
-                  })}
-                </td>
-                <td>
-                  {formatDensityFromKgM3(material.density_kg_m3, {
-                    unitSystem,
-                    showUnit: false,
-                  })}
-                </td>
-                <td>
-                  {formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, {
-                    unitSystem,
-                    showUnit: false,
-                  })}
-                </td>
-                <td>{formatNumber(material.emissivity, 2)}</td>
-                <td>
-                  {material.version_label} · {material.version_date}
-                </td>
-                <td>{material.is_active ? "Active" : "Deactivated"}</td>
-                <td>
-                  <div className="catalog-row-actions">
-                    <button
-                      type="button"
-                      className="text-button"
-                      onClick={() => setEditor({ kind: "edit", material })}
-                      disabled={!material.is_active}
-                    >
-                      Edit
-                    </button>
-                    {material.is_active ? (
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => handleDeactivate(material)}
-                        disabled={deactivateMutation.isPending}
-                      >
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => reactivateMutation.mutate(material.id)}
-                        disabled={reactivateMutation.isPending}
-                      >
-                        Reactivate
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+  const tableSchema = useMemo(
+    () =>
+      buildTableSchema({
+        tableKey: MATERIALS_TABLE_KEY,
+        fieldDefs: MATERIALS_BUILT_IN_FIELD_DEFS,
+        fieldOverlay: MATERIALS_FIELD_OVERLAY,
+      }),
+    [],
+  );
 
   return (
     <main className="workspace-shell">
@@ -181,9 +128,6 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
               later catalog edits surface through refresh-from-catalog.
             </p>
           </div>
-          <button type="button" onClick={() => setEditor({ kind: "create" })}>
-            Add material
-          </button>
         </div>
 
         <div className="catalog-toolbar">
@@ -196,19 +140,31 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             <span>Show deactivated materials</span>
           </label>
           <span className="catalog-count">
-            {items.length} {items.length === 1 ? "material" : "materials"}
+            {rows.length} {rows.length === 1 ? "material" : "materials"}
           </span>
         </div>
 
-        {renderBody()}
-
-        {editor.kind !== "closed" ? (
-          <MaterialEditorModal
-            material={editor.kind === "edit" ? editor.material : null}
-            onClose={closeEditor}
-            onSaved={closeEditor}
+        {materialsQuery.isError ? (
+          <p className="form-error" role="alert">
+            {errorMessage(materialsQuery.error, "Could not load materials.")}
+          </p>
+        ) : (
+          <DataTable<MaterialRow>
+            rows={rows}
+            getRowId={(row) => row.id}
+            columnDefs={COLUMN_DEFS}
+            fieldDefs={tableSchema.fieldDefs}
+            view={controller.view}
+            onViewChange={controller.onViewChange}
+            onResetView={controller.onResetView}
+            onWrite={controller.onWrite}
+            emptyMessage={
+              materialsQuery.isLoading
+                ? "Loading materials…"
+                : "No materials yet. Shift-Enter to add one."
+            }
           />
-        ) : null}
+        )}
       </section>
     </main>
   );

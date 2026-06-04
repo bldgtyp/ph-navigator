@@ -131,8 +131,7 @@ def update_material(
     """In-place patch. Returns False if the row is missing or soft-deleted."""
     updates = {k: v for k, v in values.items() if k in _UPDATABLE_FIELDS}
     assignment_parts: list[sql.Composable] = [
-        sql.SQL("{} = {}").format(sql.Identifier(key), sql.Placeholder(key))
-        for key in sorted(updates)
+        sql.SQL("{} = {}").format(sql.Identifier(key), sql.Placeholder(key)) for key in sorted(updates)
     ]
     assignment_parts.append(sql.SQL("updated_at = now()"))
     assignment_parts.append(sql.SQL("updated_by = %(updated_by)s"))

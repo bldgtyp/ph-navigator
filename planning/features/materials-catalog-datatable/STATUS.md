@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-03
-TIME: 23:30 EDT
-STATUS: Implemented on branch — backend (phases 1 + 2) merged into a
-        single commit on `feat/materials-catalog-datatable`. Frontend
-        phase 3 has not started.
+TIME: 23:55 EDT
+STATUS: Implemented on branch — backend (phases 1 + 2) and frontend
+        (phase 3) landed on `feat/materials-catalog-datatable`. Phase 4
+        (Playwright MCP smoke + final closeout) outstanding.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the Materials Catalog DataTable migration.
 RELATED:
@@ -17,34 +17,39 @@ RELATED:
 ## Current state
 
 - Branch: `feat/materials-catalog-datatable`.
-- Planning packet drafted and committed (`200dcbf`).
-- **Phases 1 + 2 merged into one backend commit.** Reason: the Alembic
-  migration drops `current_version_id` / `catalog_material_versions`,
-  which breaks the envelope pick + drift code at runtime. The two
-  phases had to land together to keep the backend green and `make ci`
-  passable. PRD scope is unchanged; only the commit boundary moved.
-- Backend tests: 440 passed, 1 skipped (full repo suite). ruff + ty
-  clean.
-- `context/technical-requirements/data-model.md` updated with a §7.2
-  callout describing the flat materials shape, a §7.4 note that
-  materials drift is field-only, and a JSON example showing
-  `catalog_version_id: null` on material origins.
+- Planning packet committed (`200dcbf`).
+- **Phases 1 + 2 (backend) merged into one commit** (`763b7d5`):
+  destructive Alembic; CatalogOrigin nullable version slots;
+  ProjectMaterial reshape; envelope drift collapsed to field-value
+  comparison; `data-model.md` §7.2 / §7.4 folded.
+- **Phase 3 (frontend) landed**: shared `<DataTable>` replaces the
+  hand-rolled table + modal; built-in nine-field FieldDefs with locks +
+  fixed `numberUnits` for density / specific_heat / conductivity;
+  twelve-option Category single_select; REST→WriteOp
+  `useMaterialsCatalogController`; specific_heat added to the
+  `NUMBER_UNIT_TYPES` registry; ProjectMaterial / CatalogOrigin /
+  drift type reshape across envelope + tests;
+  `frontend-viewer-units.md` §11.5.5 fold-back.
+- `make ci` from repo root: green (1003 tests, frontend build OK).
 
 ## Next step
 
-Begin **Phase 3 — Frontend DataTable**. See
-`phases/phase-03-frontend-datatable.md`.
+Phase 4 — verification + final docs closeout. See
+`phases/phase-04-verification-docs.md`. Open the PR once Playwright MCP
+smoke captures.
 
 ## Blockers
 
 None.
 
-## Verification (planning packet)
+## Verification
 
 - [x] PRD documents the nine-field contract and category options.
 - [x] PRD documents drift comparator changes.
 - [x] Backend implementation landed; `uv run pytest` green.
-- [x] Context doc fold-back complete for the backend contract changes.
-- [ ] Frontend implementation begun.
-- [ ] `make ci` from repo root run for the final closeout.
-- [ ] Playwright MCP smoke captured.
+- [x] Frontend implementation landed.
+- [x] `make ci` from repo root green.
+- [x] Context doc fold-back: `data-model.md`,
+      `frontend-viewer-units.md`.
+- [ ] Playwright MCP smoke captured (Phase 4).
+- [ ] PR opened.
