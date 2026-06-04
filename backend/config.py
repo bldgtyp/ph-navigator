@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     log_sql: bool = False
     log_sample_health: bool = False
     session_lifetime_minutes: int = 60
+    # Throttle for the per-request sessions.last_seen_at / expires_at UPDATE.
+    # The response cookie's expires_at is recomputed on every authenticated
+    # response; the DB row's expires_at only advances when this throttle
+    # fires, so the gap between cookie and DB expires_at is bounded by this
+    # value. 0 disables throttling; UPDATE on every authenticated request.
+    session_touch_throttle_seconds: int = 60
     session_cookie_name: str = "phn_session"
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     password_argon2_time_cost: int = 3

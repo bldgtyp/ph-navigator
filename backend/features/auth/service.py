@@ -201,7 +201,10 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
                 raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
 
             expires_at = session_expires_at(now)
-            repository.touch_session(conn, session_id, expires_at)
+            throttle = settings.session_touch_throttle_seconds
+            last_seen_at = row["session_last_seen_at"]
+            if throttle <= 0 or (now - last_seen_at).total_seconds() >= throttle:
+                repository.touch_session(conn, session_id, expires_at)
             user = public_user(
                 {
                     "id": row["user_id"],

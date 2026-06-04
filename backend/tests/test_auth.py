@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -257,6 +258,77 @@ def test_expired_session_is_invalidated(clean_auth_tables: None) -> None:
         row = conn.execute("SELECT invalidation_reason FROM sessions WHERE invalidated_at IS NOT NULL").fetchone()
     assert row is not None
     assert row["invalidation_reason"] == "expired"
+
+
+def _read_last_seen_at() -> datetime:
+    with connection() as conn:
+        row = conn.execute("SELECT last_seen_at FROM sessions LIMIT 1").fetchone()
+    assert row is not None
+    value = row["last_seen_at"]
+    assert isinstance(value, datetime)
+    return value
+
+
+def test_touch_session_throttle_skips_write_within_window(
+    clean_auth_tables: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "session_touch_throttle_seconds", 60)
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+    login = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login.status_code == 200
+
+    original_last_seen = _read_last_seen_at()
+    assert client.get("/api/v1/auth/session").status_code == 200
+    assert _read_last_seen_at() == original_last_seen
+
+    with transaction() as conn:
+        conn.execute("UPDATE sessions SET last_seen_at = now() - interval '90 seconds'")
+
+    assert client.get("/api/v1/auth/session").status_code == 200
+    after = _read_last_seen_at()
+    assert after > original_last_seen
+
+
+def test_cookie_expires_at_slides_on_every_response(clean_auth_tables: None) -> None:
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+    login = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login.status_code == 200
+    first = login.json()["expires_at"]
+
+    second_response = client.get("/api/v1/auth/session")
+    assert second_response.status_code == 200
+    second = second_response.json()["expires_at"]
+    assert second >= first
+
+
+def test_touch_session_throttle_zero_writes_every_request(
+    clean_auth_tables: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "session_touch_throttle_seconds", 0)
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+    login = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+    assert login.status_code == 200
+
+    assert client.get("/api/v1/auth/session").status_code == 200
+    first = _read_last_seen_at()
+    assert client.get("/api/v1/auth/session").status_code == 200
+    second = _read_last_seen_at()
+    assert second > first
 
 
 def test_failed_login_is_generic_and_logged(clean_auth_tables: None) -> None:
