@@ -1,4 +1,4 @@
-"""Window-Glazing catalog contract tests for TB-08.a."""
+"""Window-Glazing catalog contract tests."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def clean_catalog_tables() -> Iterator[None]:
             """
             TRUNCATE catalog_materials,
                      catalog_frame_type_versions, catalog_frame_types,
-                     catalog_glazing_type_versions, catalog_glazing_types,
+                     catalog_glazing_types,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE
@@ -33,7 +33,7 @@ def clean_catalog_tables() -> Iterator[None]:
             """
             TRUNCATE catalog_materials,
                      catalog_frame_type_versions, catalog_frame_types,
-                     catalog_glazing_type_versions, catalog_glazing_types,
+                     catalog_glazing_types,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE
@@ -58,17 +58,16 @@ def _payload(name: str = "Triple-Pane LowE Argon") -> dict[str, object]:
         "name": name,
         "manufacturer": "Cardinal",
         "brand": "LoE-366",
-        "version_label": "2024 spec",
-        "version_date": "2024-06-01",
+        "suffix": "T",
         "u_value_w_m2k": 0.7,
         "g_value": 0.50,
         "color": "#b4dceb",
-        "notes": "Argon-filled, two LowE coatings",
-        "source_provenance": "Manufacturer datasheet 2024-Q2",
+        "source": "Manufacturer datasheet 2024-Q2",
+        "comments": "Argon-filled, two LowE coatings",
     }
 
 
-def test_create_returns_bookshelf_metadata(clean_catalog_tables: None) -> None:
+def test_create_returns_flat_row(clean_catalog_tables: None) -> None:
     client = signed_in_client()
     response = client.post(
         "/api/v1/catalogs/glazing-types",
@@ -79,13 +78,19 @@ def test_create_returns_bookshelf_metadata(clean_catalog_tables: None) -> None:
     body = response.json()
     assert body["name"] == "Triple-Pane LowE Argon"
     assert body["manufacturer"] == "Cardinal"
+    assert body["suffix"] == "T"
     assert body["u_value_w_m2k"] == pytest.approx(0.7)
     assert body["g_value"] == pytest.approx(0.50)
+    assert body["source"] == "Manufacturer datasheet 2024-Q2"
+    assert body["comments"] == "Argon-filled, two LowE coatings"
     assert body["is_active"] is True
     assert body["id"].startswith("rec")
     assert len(body["id"]) == 17
-    assert body["current_version_id"].startswith("glazingv_")
-    assert body["catalog_schema_version"] == 1
+    # Version layer is gone; no version_* fields on the response.
+    assert "current_version_id" not in body
+    assert "catalog_schema_version" not in body
+    assert "version_label" not in body
+    assert "version_date" not in body
 
 
 def test_list_filters_inactive_by_default(clean_catalog_tables: None) -> None:
@@ -100,8 +105,6 @@ def test_list_filters_inactive_by_default(clean_catalog_tables: None) -> None:
         client.delete(f"/api/v1/catalogs/glazing-types/{created['id']}", headers={"Origin": ORIGIN}).status_code == 204
     )
     assert {item["name"] for item in client.get("/api/v1/catalogs/glazing-types").json()["items"]} == {"B"}
-    # `include_inactive=true` must round-trip both active and deactivated rows so historical
-    # picks remain queryable for refresh-from-catalog (matches Materials + Frame parity).
     listed_inactive = client.get("/api/v1/catalogs/glazing-types", params={"include_inactive": "true"}).json()
     assert {item["name"] for item in listed_inactive["items"]} == {"A", "B"}
     deactivated = next(item for item in listed_inactive["items"] if item["name"] == "A")
@@ -137,7 +140,6 @@ def test_edit_in_place_does_not_touch_project_versions(clean_catalog_tables: Non
     )
     assert patched.status_code == 200
     assert patched.json()["u_value_w_m2k"] == pytest.approx(0.65)
-    assert patched.json()["current_version_id"] == created["current_version_id"]
 
     with connection() as conn:
         after = conn.execute("SELECT id, body::text AS body_text, updated_at FROM project_versions").fetchall()
@@ -160,7 +162,6 @@ def test_validation_rejects_invalid_values(clean_catalog_tables: None) -> None:
     )
     assert negative_u.status_code == 422
 
-    # g-value is a fraction in [0, 1]; >1 is rejected.
     bad_g = client.post(
         "/api/v1/catalogs/glazing-types",
         headers={"Origin": ORIGIN},
@@ -198,6 +199,28 @@ def test_deactivate_is_idempotent_and_reactivate_restores(clean_catalog_tables: 
     )
     assert reactivated.status_code == 200
     assert reactivated.json()["is_active"] is True
+
+
+def test_duplicate_copies_fields_with_copy_suffix(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/glazing-types", headers={"Origin": ORIGIN}, json=_payload("Source")).json()
+
+    response = client.post(
+        f"/api/v1/catalogs/glazing-types/{created['id']}/duplicate",
+        headers={"Origin": ORIGIN},
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["name"] == "Source (copy)"
+    assert body["id"] != created["id"]
+    assert body["manufacturer"] == created["manufacturer"]
+    assert body["u_value_w_m2k"] == pytest.approx(created["u_value_w_m2k"])
+
+    again = client.post(
+        f"/api/v1/catalogs/glazing-types/{created['id']}/duplicate",
+        headers={"Origin": ORIGIN},
+    ).json()
+    assert again["name"] == "Source (copy 2)"
 
 
 def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None) -> None:

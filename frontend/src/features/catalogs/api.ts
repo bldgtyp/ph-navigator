@@ -134,3 +134,9 @@ export async function reactivateGlazingType(id: string): Promise<CatalogGlazingT
     method: "POST",
   });
 }
+
+export async function duplicateGlazingType(id: string): Promise<CatalogGlazingType> {
+  return fetchJson<CatalogGlazingType>(`/api/v1/catalogs/glazing-types/${id}/duplicate`, {
+    method: "POST",
+  });
+}

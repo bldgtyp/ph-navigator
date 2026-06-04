@@ -108,11 +108,20 @@ export type CatalogFrameTypeCreatePayload = {
 
 export type CatalogFrameTypeUpdatePayload = Partial<CatalogFrameTypeCreatePayload>;
 
-export type CatalogGlazingType = CatalogRowBase & {
+export type CatalogGlazingType = {
+  id: string;
+  name: string;
   manufacturer: string | null;
   brand: string | null;
+  suffix: string | null;
   u_value_w_m2k: number | null;
   g_value: number | null;
+  color: string | null;
+  source: string | null;
+  comments: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type CatalogGlazingTypeListResponse = { items: CatalogGlazingType[] };
@@ -121,13 +130,12 @@ export type CatalogGlazingTypeCreatePayload = {
   name: string;
   manufacturer?: string | null;
   brand?: string | null;
-  version_label?: string;
-  version_date?: string | null;
+  suffix?: string | null;
   u_value_w_m2k?: number | null;
   g_value?: number | null;
   color?: string | null;
-  notes?: string | null;
-  source_provenance?: string | null;
+  source?: string | null;
+  comments?: string | null;
 };
 
 export type CatalogGlazingTypeUpdatePayload = Partial<CatalogGlazingTypeCreatePayload>;

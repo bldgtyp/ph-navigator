@@ -15,7 +15,6 @@ import {
   parseOptionalNumber,
   parseOptionalUnitNumber,
   stringOrEmpty,
-  todayIso,
   trimToNull,
 } from "./form-helpers";
 import { uValueUnitLabel } from "./unit-labels";
@@ -24,13 +23,12 @@ type FormState = {
   name: string;
   manufacturer: string;
   brand: string;
-  version_label: string;
-  version_date: string;
+  suffix: string;
   u_value_w_m2k: string;
   g_value: string;
   color: string;
-  notes: string;
-  source_provenance: string;
+  source: string;
+  comments: string;
 };
 
 function emptyForm(): FormState {
@@ -38,13 +36,12 @@ function emptyForm(): FormState {
     name: "",
     manufacturer: "",
     brand: "",
-    version_label: "v1",
-    version_date: todayIso(),
+    suffix: "",
     u_value_w_m2k: "",
     g_value: "",
     color: "",
-    notes: "",
-    source_provenance: "",
+    source: "",
+    comments: "",
   };
 }
 
@@ -53,13 +50,12 @@ function formFromRecord(record: CatalogGlazingType, unitOptions: UnitFormatOptio
     name: record.name,
     manufacturer: stringOrEmpty(record.manufacturer),
     brand: stringOrEmpty(record.brand),
-    version_label: record.version_label,
-    version_date: record.version_date,
+    suffix: stringOrEmpty(record.suffix),
     u_value_w_m2k: formatUValueFromWm2K(record.u_value_w_m2k, unitOptions),
     g_value: numberOrEmpty(record.g_value),
     color: stringOrEmpty(record.color),
-    notes: stringOrEmpty(record.notes),
-    source_provenance: stringOrEmpty(record.source_provenance),
+    source: stringOrEmpty(record.source),
+    comments: stringOrEmpty(record.comments),
   };
 }
 
@@ -71,19 +67,17 @@ function toCreatePayload(
   form: FormState,
   unitOptions: UnitFormatOptions,
 ): CatalogGlazingTypeCreatePayload {
-  const payload: CatalogGlazingTypeCreatePayload = {
+  return {
     name: form.name.trim(),
     manufacturer: trimToNull(form.manufacturer),
     brand: trimToNull(form.brand),
-    version_label: form.version_label.trim() || "v1",
+    suffix: trimToNull(form.suffix),
     u_value_w_m2k: parseOptionalUnitNumber(form.u_value_w_m2k, parseUValueToWm2K, unitOptions),
     g_value: parseOptionalNumber(form.g_value),
     color: colorToNull(form.color),
-    notes: trimToNull(form.notes),
-    source_provenance: trimToNull(form.source_provenance),
+    source: trimToNull(form.source),
+    comments: trimToNull(form.comments),
   };
-  if (form.version_date) payload.version_date = form.version_date;
-  return payload;
 }
 
 export function GlazingTypeEditorModal({
@@ -174,20 +168,11 @@ export function GlazingTypeEditorModal({
           />
         </label>
         <label>
-          <span>Version label</span>
+          <span>Suffix</span>
           <input
-            value={form.version_label}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, version_label: event.target.value }))
-            }
-          />
-        </label>
-        <label>
-          <span>Version date</span>
-          <input
-            type="date"
-            value={form.version_date}
-            onChange={(event) => setForm((prev) => ({ ...prev, version_date: event.target.value }))}
+            value={form.suffix}
+            onChange={(event) => setForm((prev) => ({ ...prev, suffix: event.target.value }))}
+            placeholder="3CK-IL, T, …"
           />
         </label>
         <label>
@@ -217,20 +202,18 @@ export function GlazingTypeEditorModal({
           />
         </label>
         <label>
-          <span>Source / provenance</span>
+          <span>Source</span>
           <input
-            value={form.source_provenance}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, source_provenance: event.target.value }))
-            }
+            value={form.source}
+            onChange={(event) => setForm((prev) => ({ ...prev, source: event.target.value }))}
           />
         </label>
         <label>
-          <span>Notes</span>
+          <span>Comments</span>
           <textarea
             rows={3}
-            value={form.notes}
-            onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+            value={form.comments}
+            onChange={(event) => setForm((prev) => ({ ...prev, comments: event.target.value }))}
           />
         </label>
         {errorText ? (

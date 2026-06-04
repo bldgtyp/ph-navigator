@@ -17,6 +17,7 @@ from features.catalogs.glazing_types.models import (
 from features.catalogs.glazing_types.service import (
     create_glazing_type,
     deactivate_glazing_type,
+    duplicate_glazing_type,
     get_glazing_type,
     list_glazing_types,
     reactivate_glazing_type,
@@ -70,3 +71,17 @@ def delete_glazing_type_route(record_id: str, request: Request, auth: CurrentUse
 def reactivate_glazing_type_route(record_id: str, request: Request, auth: CurrentUser) -> CatalogGlazingTypePublic:
     user, _expires_at = auth
     return reactivate_glazing_type(record_id, user, request)
+
+
+@router.post(
+    "/{record_id}/duplicate",
+    response_model=CatalogGlazingTypePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_glazing_type_duplicate(
+    record_id: str,
+    request: Request,
+    auth: CurrentUser,
+) -> CatalogGlazingTypePublic:
+    user, _expires_at = auth
+    return duplicate_glazing_type(record_id, user, request)

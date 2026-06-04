@@ -21,11 +21,12 @@ export type GlazingRef = {
   name: string;
   manufacturer: string | null;
   brand: string | null;
+  suffix: string | null;
   u_value_w_m2k: number | null;
   g_value: number | null;
   color: string | null;
-  notes: string | null;
-  source_provenance: string | null;
+  source: string | null;
+  comments: string | null;
   catalog_origin: CatalogOrigin | null;
 };
 

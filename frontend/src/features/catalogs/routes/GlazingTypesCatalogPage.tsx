@@ -78,9 +78,9 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
               <th scope="col">Name</th>
               <th scope="col">Manufacturer</th>
               <th scope="col">Brand</th>
+              <th scope="col">Suffix</th>
               <th scope="col">U-value ({uValueUnitLabel(unitSystem)})</th>
               <th scope="col">g-value</th>
-              <th scope="col">Version</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
@@ -91,13 +91,11 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
                 <td>{record.name}</td>
                 <td>{record.manufacturer ?? "—"}</td>
                 <td>{record.brand ?? "—"}</td>
+                <td>{record.suffix ?? "—"}</td>
                 <td>
                   {formatUValueFromWm2K(record.u_value_w_m2k, { unitSystem, showUnit: false })}
                 </td>
                 <td>{formatNumber(record.g_value, 2)}</td>
-                <td>
-                  {record.version_label} · {record.version_date}
-                </td>
                 <td>{record.is_active ? "Active" : "Deactivated"}</td>
                 <td>
                   <div className="catalog-row-actions">
