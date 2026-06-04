@@ -1,19 +1,7 @@
 .data-table-wrap {
   --data-table-gutter-width: 72px;
-  --data-table-row-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
   --data-table-gutter-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
-  --data-table-row-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--data-table-cell-bg));
   --data-table-gutter-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--bg-card));
-  --data-table-cell-block-selected-bg: color-mix(
-    in oklab,
-    var(--accent-text) 4%,
-    var(--data-table-cell-bg)
-  );
-  --data-table-cell-block-active-bg: color-mix(
-    in oklab,
-    var(--accent-text) 8%,
-    var(--data-table-cell-bg)
-  );
   overflow: auto;
   /* The wrap MUST be the scroll container for the row virtualizer to
      work. Without an explicit ceiling, the wrap expands to its
@@ -1008,6 +996,18 @@
 .data-table td {
   position: relative;
   --data-table-cell-bg: var(--bg-card);
+  --data-table-row-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
+  --data-table-row-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--data-table-cell-bg));
+  --data-table-cell-block-selected-bg: color-mix(
+    in oklab,
+    var(--accent-text) 4%,
+    var(--data-table-cell-bg)
+  );
+  --data-table-cell-block-active-bg: color-mix(
+    in oklab,
+    var(--accent-text) 8%,
+    var(--data-table-cell-bg)
+  );
   background: var(--data-table-cell-bg);
   font-family: var(--font-table, var(--font-primary));
   font-weight: 400;
@@ -1623,6 +1623,14 @@
   left: var(--data-table-gutter-width);
   z-index: calc(var(--z-base) + 5);
   background: var(--data-table-cell-bg, var(--data-table-header-bg, var(--bg-card)));
+}
+
+.data-table tbody tr:hover td.data-table-frozen {
+  background: var(--data-table-row-hover-bg);
+}
+
+.data-table tbody tr:has(.data-table-gutter-selected) td.data-table-frozen {
+  background: var(--data-table-row-selected-bg);
 }
 
 .data-table th.data-table-frozen {
