@@ -1,5 +1,10 @@
 /** Shared shape for versioned catalog rows (frame, glazing). Materials are
- * flat and do not extend this — see CatalogMaterial below. */
+ * flat and do not extend this — see CatalogMaterial below.
+ *
+ * `created_by` / `updated_by` are intentionally NOT on this list-shape:
+ * the catalog list endpoints trim them (see Catalog<X>ListItem in the
+ * backend) so the wire payload stays small. The per-row detail endpoint
+ * carries them on `Catalog<X>Detail`. No list UI displays them today. */
 type CatalogRowBase = {
   id: string;
   name: string;
@@ -12,9 +17,7 @@ type CatalogRowBase = {
   source_provenance: string | null;
   is_active: boolean;
   created_at: string;
-  created_by: string | null;
   updated_at: string;
-  updated_by: string | null;
 };
 
 export const MATERIAL_CATEGORY_IDS = [
@@ -34,6 +37,10 @@ export const MATERIAL_CATEGORY_IDS = [
 
 export type MaterialCategoryId = (typeof MATERIAL_CATEGORY_IDS)[number];
 
+// Shape returned by the materials list endpoint. Drops `created_by` /
+// `updated_by` to trim wire payload (see backend `CatalogMaterialListItem`).
+// The per-row detail endpoint returns `CatalogMaterialDetail` with the
+// audit fields when needed.
 export type CatalogMaterial = {
   id: string;
   name: string;
@@ -48,8 +55,11 @@ export type CatalogMaterial = {
   comments: string | null;
   is_active: boolean;
   created_at: string;
-  created_by: string | null;
   updated_at: string;
+};
+
+export type CatalogMaterialDetail = CatalogMaterial & {
+  created_by: string | null;
   updated_by: string | null;
 };
 

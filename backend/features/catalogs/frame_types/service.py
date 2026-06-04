@@ -19,6 +19,7 @@ from features.catalogs.frame_types import repository
 from features.catalogs.frame_types.models import (
     CATALOG_VERSION_ID_PREFIX,
     CatalogFrameTypeCreateRequest,
+    CatalogFrameTypeListItem,
     CatalogFrameTypeListResponse,
     CatalogFrameTypePublic,
     CatalogFrameTypeUpdateRequest,
@@ -32,10 +33,14 @@ def _to_public(row: dict[str, Any]) -> CatalogFrameTypePublic:
     return CatalogFrameTypePublic.model_validate(row)
 
 
+def _to_list_item(row: dict[str, Any]) -> CatalogFrameTypeListItem:
+    return CatalogFrameTypeListItem.model_validate(row)
+
+
 def list_frame_types(*, include_inactive: bool = False) -> CatalogFrameTypeListResponse:
     with connection() as conn:
         rows = repository.list_frame_types(conn, include_inactive=include_inactive)
-    return CatalogFrameTypeListResponse(items=[_to_public(row) for row in rows])
+    return CatalogFrameTypeListResponse(items=[_to_list_item(row) for row in rows])
 
 
 def get_frame_type(record_id: str) -> CatalogFrameTypePublic:

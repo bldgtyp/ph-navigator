@@ -44,17 +44,20 @@ MaterialCategoryId = Literal[
 ]
 
 
-class CatalogMaterialPublic(BaseModel):
-    """Bookshelf-ready material row.
+class CatalogMaterialListItem(BaseModel):
+    """List-endpoint projection: the fields the catalog UI actually
+    renders. Drops `created_by` / `updated_by` since no list view shows
+    "edited by"; on the 410-row fixture this trims ~20% of the
+    uncompressed payload. The per-row detail endpoint
+    (``GET /catalogs/materials/{id}``) returns the full audit fields via
+    :class:`CatalogMaterialPublic` below.
 
-    One row per material — the per-version layer was dropped in
-    Alembic 20260603_0015 because the envelope pick command snapshots
-    values into the project document at pick time (see
-    ``features/envelope/commands/materials.py``), so the catalog never
-    needed history.
+    `extra="ignore"` rather than `"forbid"` so the repository row's
+    audit columns silently drop on `model_validate` — the SQL query is
+    shared between list and detail paths.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     name: str
@@ -69,15 +72,29 @@ class CatalogMaterialPublic(BaseModel):
     comments: str | None
     is_active: bool
     created_at: datetime
-    created_by: UUID | None
     updated_at: datetime
+
+
+class CatalogMaterialPublic(CatalogMaterialListItem):
+    """Per-row detail. Extends the list projection with audit user refs.
+
+    One row per material — the per-version layer was dropped in
+    Alembic 20260603_0015 because the envelope pick command snapshots
+    values into the project document at pick time (see
+    ``features/envelope/commands/materials.py``), so the catalog never
+    needed history.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    created_by: UUID | None
     updated_by: UUID | None
 
 
 class CatalogMaterialListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    items: list[CatalogMaterialPublic]
+    items: list[CatalogMaterialListItem]
 
 
 class _CatalogMaterialFields(BaseModel):

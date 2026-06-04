@@ -18,15 +18,17 @@ from features.shared.colors import normalize_optional_hex_color
 CATALOG_VERSION_ID_PREFIX: Final[str] = "framev_"
 
 
-class CatalogFrameTypePublic(BaseModel):
-    """Bookshelf-ready frame row.
+class CatalogFrameTypeListItem(BaseModel):
+    """List-endpoint projection. Drops `created_by` / `updated_by` since
+    no list view shows "edited by". The per-row detail endpoint returns
+    the full audit fields via :class:`CatalogFrameTypePublic` below.
 
-    Field shape matches US-WIN-4 criterion 3: a downstream picker copies these
-    typed values into a project Window element's per-side FrameRef along with
-    the `catalog_origin` block (record id, version id, schema version).
+    `extra="ignore"` so the repository row's audit columns silently drop
+    on `model_validate` — the SQL query is shared between list and
+    detail paths.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     name: str
@@ -45,15 +47,27 @@ class CatalogFrameTypePublic(BaseModel):
     source_provenance: str | None
     is_active: bool
     created_at: datetime
-    created_by: UUID | None
     updated_at: datetime
+
+
+class CatalogFrameTypePublic(CatalogFrameTypeListItem):
+    """Bookshelf-ready frame row.
+
+    Field shape matches US-WIN-4 criterion 3: a downstream picker copies these
+    typed values into a project Window element's per-side FrameRef along with
+    the `catalog_origin` block (record id, version id, schema version).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    created_by: UUID | None
     updated_by: UUID | None
 
 
 class CatalogFrameTypeListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    items: list[CatalogFrameTypePublic]
+    items: list[CatalogFrameTypeListItem]
 
 
 class _CatalogFrameTypeFields(BaseModel):

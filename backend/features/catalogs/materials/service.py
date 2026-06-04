@@ -13,6 +13,7 @@ from features.catalogs._shared import log_catalog_action, new_catalog_record_id
 from features.catalogs.materials import repository
 from features.catalogs.materials.models import (
     CatalogMaterialCreateRequest,
+    CatalogMaterialListItem,
     CatalogMaterialListResponse,
     CatalogMaterialPublic,
     CatalogMaterialUpdateRequest,
@@ -26,10 +27,14 @@ def _to_public(row: dict[str, Any]) -> CatalogMaterialPublic:
     return CatalogMaterialPublic.model_validate(row)
 
 
+def _to_list_item(row: dict[str, Any]) -> CatalogMaterialListItem:
+    return CatalogMaterialListItem.model_validate(row)
+
+
 def list_materials(*, include_inactive: bool = False) -> CatalogMaterialListResponse:
     with connection() as conn:
         rows = repository.list_materials(conn, include_inactive=include_inactive)
-    return CatalogMaterialListResponse(items=[_to_public(row) for row in rows])
+    return CatalogMaterialListResponse(items=[_to_list_item(row) for row in rows])
 
 
 def get_material(material_id: str) -> CatalogMaterialPublic:
