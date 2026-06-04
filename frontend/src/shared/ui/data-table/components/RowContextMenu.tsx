@@ -11,9 +11,10 @@ import { useGridMenuKeyboard } from "../hooks/useGridMenuKeyboard";
 // HeaderContextMenu so the visual / a11y / portal behavior stays
 // uniform across the two menus.
 //
-// Phase 1 ships Insert / Expand / Delete only. Duplicate (Phase 3a),
-// multi-row delete collapse (Phase 2), and the rowActions extension
-// slot (Phase 4) layer in later.
+// PRD §5 render-perf contract: `selectionCount` and `rowIsInSelection`
+// are frozen at right-click time. The menu derives its branch
+// (collapsed multi-row Delete vs. full single-row items) from the
+// frozen snapshot and does not re-read row-selection state while open.
 
 export type RowContextMenuOpenState = {
   rowId: string;
@@ -24,6 +25,10 @@ export type RowContextMenuOpenState = {
   // for keyboard-opened menus; null for pointer-opened menus so focus
   // returns to wherever the click landed).
   returnFocus: HTMLElement | null;
+  // Frozen at right-click time per PRD §5. When both are truthy and
+  // `selectionCount >= 2`, the menu renders the collapsed branch.
+  selectionCount: number;
+  rowIsInSelection: boolean;
 };
 
 export type RowContextMenuProps = {
@@ -32,6 +37,7 @@ export type RowContextMenuProps = {
   onInsertBelow: () => void;
   onOpen?: () => void;
   onDelete: () => void;
+  onDeleteSelection: () => void;
 };
 
 type MenuItem = {
@@ -43,28 +49,40 @@ type MenuItem = {
   onSelect: () => void;
 };
 
-export function RowContextMenu({
-  open,
-  onClose,
-  onInsertBelow,
-  onOpen,
-  onDelete,
-}: RowContextMenuProps) {
+function buildItems(args: {
+  collapsed: boolean;
+  selectionCount: number;
+  onInsertBelow: () => void;
+  onOpen?: () => void;
+  onDelete: () => void;
+  onDeleteSelection: () => void;
+}): MenuItem[] {
+  if (args.collapsed) {
+    return [
+      {
+        key: "delete-selection",
+        label: `Delete ${args.selectionCount} records`,
+        icon: <Trash2 size={14} aria-hidden="true" />,
+        danger: true,
+        onSelect: args.onDeleteSelection,
+      },
+    ];
+  }
   const items: MenuItem[] = [
     {
       key: "insert",
       label: "Insert record",
       icon: <ArrowDown size={14} aria-hidden="true" />,
       shortcutHint: "⇧ ⏎",
-      onSelect: onInsertBelow,
+      onSelect: args.onInsertBelow,
     },
   ];
-  if (onOpen) {
+  if (args.onOpen) {
     items.push({
       key: "expand",
       label: "Expand record",
       icon: <Maximize2 size={14} aria-hidden="true" />,
-      onSelect: onOpen,
+      onSelect: args.onOpen,
     });
   }
   items.push({
@@ -73,7 +91,27 @@ export function RowContextMenu({
     icon: <Trash2 size={14} aria-hidden="true" />,
     shortcutHint: "⌫",
     danger: true,
-    onSelect: onDelete,
+    onSelect: args.onDelete,
+  });
+  return items;
+}
+
+export function RowContextMenu({
+  open,
+  onClose,
+  onInsertBelow,
+  onOpen,
+  onDelete,
+  onDeleteSelection,
+}: RowContextMenuProps) {
+  const collapsed = open !== null && open.selectionCount >= 2 && open.rowIsInSelection;
+  const items = buildItems({
+    collapsed,
+    selectionCount: open?.selectionCount ?? 0,
+    onInsertBelow,
+    onOpen,
+    onDelete,
+    onDeleteSelection,
   });
 
   const { itemRefs, onKeyDown, resetToInitial } = useGridMenuKeyboard({
@@ -89,6 +127,7 @@ export function RowContextMenu({
   if (!open) return null;
 
   const anchorRef = pointAnchorRef(open.x, open.y);
+  const ariaLabel = collapsed ? "Selected rows actions" : `Row ${open.rowNumber} actions`;
 
   return (
     <Popover.Root
@@ -105,7 +144,7 @@ export function RowContextMenu({
           align="start"
           sideOffset={2}
           role="menu"
-          aria-label={`Row ${open.rowNumber} actions`}
+          aria-label={ariaLabel}
           onOpenAutoFocus={(event) => event.preventDefault()}
           onCloseAutoFocus={(event) => {
             event.preventDefault();

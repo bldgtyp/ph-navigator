@@ -733,9 +733,23 @@ export function DataTable<TRow>({
       returnFocus: HTMLElement | null;
     }) => {
       if (readOnly || !onWrite) return;
-      setRowMenu(args);
+      // PRD §5 collapse rules. Snapshot the row-selection summary at
+      // right-click time and freeze it into the menu's open state.
+      // Rule 1 (count >= 2 && in selection): collapse to one-item
+      // `Delete N records`. Rule 2 (count >= 2 && not in selection):
+      // clear the selection — D-5b accepts irreversibility — and open
+      // the full single-row menu with the post-clear snapshot. Rule 3
+      // (count <= 1): open the full menu, selection untouched.
+      const count = rowSelection.count;
+      const inSelection = rowSelection.isSelected(args.rowId);
+      if (count >= 2 && !inSelection) {
+        rowSelection.clear();
+        setRowMenu({ ...args, selectionCount: 0, rowIsInSelection: false });
+        return;
+      }
+      setRowMenu({ ...args, selectionCount: count, rowIsInSelection: inSelection });
     },
-    [readOnly, onWrite],
+    [readOnly, onWrite, rowSelection],
   );
   const closeRowMenu = useCallback(() => setRowMenu(null), []);
 
@@ -1443,6 +1457,9 @@ export function DataTable<TRow>({
           }
           onDelete={() => {
             if (rowMenu) void deleteRowById(rowMenu.rowId);
+          }}
+          onDeleteSelection={() => {
+            void deleteSelectedRows();
           }}
         />
       </div>
