@@ -29,6 +29,7 @@ export function SegmentDialog({
   onHandEnterMaterial,
   onDetachSegmentMaterial,
   onUpdateProjectMaterial,
+  onDelete,
 }: {
   title: string;
   segment: AssemblySegment;
@@ -51,6 +52,7 @@ export function SegmentDialog({
   onUpdateProjectMaterial: (
     command: Extract<EnvelopeCommand, { kind: "update_project_material" }>,
   ) => void;
+  onDelete: () => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
   const width = useLengthDraft(segment.width_mm);
@@ -131,6 +133,9 @@ export function SegmentDialog({
             submitLabel="Apply"
             onClose={onClose}
           />
+          <button type="button" className="danger-button modal-danger-action" onClick={onDelete}>
+            Delete segment
+          </button>
         </form>
         {selectedMaterial ? (
           <section className="segment-dialog-section">

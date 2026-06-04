@@ -11,7 +11,6 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| Assembly Builder | UI parity Phase 16 scale/evidence fixture implemented / review next | `features/assembly-builder/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Planned / PRD and phase plans drafted | `features/attachments/STATUS.md` |
@@ -22,6 +21,9 @@ feature-first planning.
 - Legacy dated planning files now live under `archive/dated/<date>/...`.
 - Dated code reviews now live under `code-reviews/<date>/...`.
 - Feature-specific dated bundles now live under `features/<feature>/...`.
+- Completed Assembly Builder canvas-refactor planning now lives under
+  `archive/assembly-builder/`; older foundation precedent remains
+  under `archive/assembly-builder-foundation/`.
 
 ## Update Rule
 

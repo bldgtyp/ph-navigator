@@ -107,6 +107,10 @@
   padding: 18px 0 18px 26px;
 }
 
+.assembly-interaction-region {
+  display: contents;
+}
+
 .assembly-header {
   border-bottom: 1px solid var(--border-subtle);
   flex-wrap: wrap;
@@ -161,9 +165,23 @@
 }
 
 .assembly-canvas {
+  --assembly-canvas-add: color-mix(in oklab, crimson 72%, var(--accent) 28%);
+  --assembly-dimension-line: color-mix(in oklab, var(--text-secondary) 72%, transparent);
+  --assembly-paint-pulse: color-mix(in oklab, gold 78%, transparent);
+  --assembly-paint-tint: color-mix(in oklab, gold 18%, transparent);
+  --assembly-pick-ring: color-mix(in oklab, seagreen 82%, transparent);
+
   display: grid;
   gap: 10px;
   min-width: 360px;
+}
+
+.assembly-canvas[data-paint-mode="picking"] {
+  cursor: crosshair;
+}
+
+.assembly-canvas[data-paint-mode="pasting"] {
+  cursor: cell;
 }
 
 .assembly-orientation-labels {
@@ -176,111 +194,203 @@
   text-transform: uppercase;
 }
 
-.assembly-layer {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
-  overflow: visible;
+.assembly-canvas-stage {
   position: relative;
 }
 
-.assembly-layer-label {
-  background: var(--bg-card);
-  border-right: 1px solid var(--border-subtle);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  padding: 10px;
-  position: relative;
+.assembly-svg-canvas {
+  display: block;
+  position: absolute;
+  top: 0;
 }
 
-.assembly-layer-meta {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
+.assembly-svg-segment {
+  stroke: color-mix(in oklab, var(--border-subtle) 70%, var(--text-secondary));
+  stroke-width: 1;
 }
 
-.assembly-layer-meta span {
-  color: var(--text-secondary);
+.assembly-svg-segment.is-null-material {
+  fill: transparent;
+  stroke-dasharray: 4 3;
+  stroke-width: 1.5;
 }
 
-.layer-actions,
-.segment-actions {
+.assembly-svg-canvas[data-mode="picking"] .assembly-svg-segment,
+.assembly-svg-segment.is-picked-source {
+  stroke: var(--assembly-pick-ring);
+  stroke-width: 2;
+}
+
+.assembly-null-material-hatch {
+  stroke: color-mix(in oklab, var(--border-subtle) 65%, transparent);
+  stroke-width: 2;
+}
+
+.assembly-canvas-overlay {
+  inset: 0;
+  position: absolute;
+}
+
+.assembly-layer-dimension,
+.assembly-segment-overlay {
+  position: absolute;
+}
+
+.assembly-layer-dimension {
   align-items: center;
-  display: inline-flex;
-  gap: 4px;
+  display: flex;
+  justify-content: center;
+  left: 0;
+}
+
+.assembly-layer-dimension::before,
+.assembly-layer-dimension::after {
+  border-top: 1px dashed var(--assembly-dimension-line);
+  content: "";
+  left: 100%;
+  position: absolute;
+  width: 12px;
+}
+
+.assembly-layer-dimension::before {
+  top: 0;
+}
+
+.assembly-layer-dimension::after {
+  bottom: 0;
+}
+
+.dimension-label-button,
+.dimension-input {
+  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 12%, transparent);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  min-height: 24px;
+  padding: 3px 5px;
+  text-align: center;
+  width: 48px;
+}
+
+.dimension-label-button:hover,
+.dimension-label-button:focus-visible {
+  border-color: var(--accent);
+}
+
+.dimension-input-wrap {
+  position: relative;
+}
+
+.dimension-input {
+  outline: none;
+}
+
+.dimension-input[aria-invalid="true"] {
+  border-color: var(--phn-danger);
+}
+
+.dimension-error {
+  background: var(--bg-card);
+  border: 1px solid var(--phn-danger);
+  border-radius: 4px;
+  box-shadow: var(--shadow-elev-1);
+  color: var(--phn-danger);
+  font-size: 11px;
+  left: 0;
+  min-width: 170px;
+  padding: 5px 7px;
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: calc(var(--z-base) + 6);
+}
+
+.dimension-dialog-button {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  display: flex;
+  height: 22px;
+  justify-content: center;
+  min-height: 22px;
+  min-width: 22px;
   opacity: 0;
   pointer-events: none;
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translate(100%, -50%);
   transition: opacity 0.14s var(--ease);
+  width: 22px;
+  z-index: calc(var(--z-base) + 5);
 }
 
-.assembly-layer:hover .layer-actions,
-.assembly-layer:focus-within .layer-actions,
-.assembly-segment:hover .segment-actions,
-.assembly-segment:focus-within .segment-actions {
+.assembly-layer-dimension:hover .dimension-dialog-button,
+.assembly-layer-dimension:focus-within .dimension-dialog-button {
   opacity: 1;
   pointer-events: auto;
 }
 
-.layer-actions {
-  background: color-mix(in oklab, var(--bg-card) 92%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  box-shadow: var(--shadow-elev-1);
-  left: 8px;
-  padding: 4px;
-  position: absolute;
-  top: 8px;
-  z-index: calc(var(--z-base) + 3);
-}
-
-.layer-actions .icon-button,
-.segment-actions .icon-button {
-  height: 28px;
-  min-height: 28px;
-  min-width: 28px;
-  width: 28px;
-}
-
-.layer-edge-control {
-  position: absolute;
-}
-
-.layer-edge-control.add-above {
-  left: 42px;
-  top: -18px;
-}
-
-.layer-edge-control.add-below {
-  bottom: -18px;
-  left: 42px;
-}
-
-.assembly-segments {
-  display: flex;
-  min-width: 0;
-  overflow: visible;
-}
-
-.assembly-segment {
-  border-right: 1px solid color-mix(in oklab, var(--border-subtle) 70%, var(--text-secondary));
+.assembly-segment-overlay {
+  border: 1px dashed transparent;
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: 72px;
   overflow: visible;
   padding: 10px;
-  position: relative;
+}
+
+.assembly-segment-hit-target {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: flex;
+  font: inherit;
+  inset: 0;
+  justify-content: center;
+  padding: 10px;
+  position: absolute;
+  text-align: left;
+}
+
+.assembly-segment-hit-target:disabled {
+  cursor: default;
+}
+
+.assembly-segment-overlay:hover,
+.assembly-segment-overlay:has(.assembly-segment-hit-target:focus-visible) {
+  border-color: var(--assembly-canvas-add);
+  outline: none;
+}
+
+.assembly-segment-overlay[data-mode="picking"]:hover,
+.assembly-segment-overlay[data-mode="picking"]:has(.assembly-segment-hit-target:focus-visible),
+.assembly-segment-overlay[data-picked-source="true"] {
+  border-color: var(--assembly-pick-ring);
+}
+
+.assembly-segment-overlay[data-mode="pasting"]:hover,
+.assembly-segment-overlay[data-mode="pasting"]:has(.assembly-segment-hit-target:focus-visible) {
+  background: var(--assembly-paint-tint);
+  border-color: var(--assembly-paint-pulse);
+}
+
+.assembly-segment-overlay[data-paste-pulse="true"] {
+  animation: assembly-paste-pulse 600ms var(--ease);
 }
 
 .assembly-segment-body {
   display: grid;
   gap: 4px;
   min-width: 0;
+  pointer-events: none;
+  width: 100%;
 }
 
 .assembly-segment-body strong,
@@ -296,51 +406,118 @@
   color: var(--text-secondary);
 }
 
-.assembly-segment .material-drift-badge {
+.assembly-segment-overlay .material-drift-badge {
   justify-self: start;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.assembly-segment[data-paste-target="true"] {
-  outline: 2px dashed var(--accent);
-  outline-offset: -3px;
+.assembly-segment-overlay.null-material {
+  color: var(--text-secondary);
 }
 
-.assembly-segment.null-material {
-  background-image: repeating-linear-gradient(
-    45deg,
-    color-mix(in oklab, var(--border-subtle) 55%, transparent) 0 8px,
-    transparent 8px 16px
-  );
+.canvas-add-button {
+  --add-button-transform: translate(0, 0);
+
+  align-items: center;
+  background: var(--assembly-canvas-add);
+  border: 2px solid color-mix(in oklab, white 86%, transparent);
+  border-radius: 999px;
+  box-shadow:
+    0 1px 6px color-mix(in oklab, var(--assembly-canvas-add) 45%, transparent),
+    0 0 0 1px color-mix(in oklab, white 70%, transparent);
+  color: white;
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  min-height: 24px;
+  min-width: 24px;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  transition:
+    opacity 0.14s var(--ease),
+    transform 0.14s var(--ease);
+  transform: var(--add-button-transform);
+  width: 24px;
+  z-index: calc(var(--z-base) + 5);
 }
 
-.segment-actions {
-  background: color-mix(in oklab, var(--bg-card) 92%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  box-shadow: var(--shadow-elev-1);
+.canvas-add-button:hover,
+.canvas-add-button:focus-visible {
+  transform: var(--add-button-transform) scale(1.08);
+}
+
+.assembly-layer-dimension:hover .canvas-add-button,
+.assembly-layer-dimension:focus-within .canvas-add-button,
+.assembly-segment-overlay:hover .canvas-add-button,
+.assembly-segment-overlay:focus-within .canvas-add-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.assembly-canvas-overlay[data-mode="picking"] .canvas-add-button,
+.assembly-canvas-overlay[data-mode="pasting"] .canvas-add-button {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.layer-add-button {
   left: 50%;
-  padding: 4px;
+}
+
+.layer-add-button.add-above {
+  top: 0;
+  --add-button-transform: translate(-50%, -50%);
+}
+
+.layer-add-button.add-below {
+  bottom: 0;
+  --add-button-transform: translate(-50%, 50%);
+}
+
+.segment-add-controls {
+  inset: 0;
+  pointer-events: none;
   position: absolute;
+}
+
+.segment-add-button {
   top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: calc(var(--z-base) + 4);
 }
 
-.segment-edge-control {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+.segment-add-button.add-left {
+  left: 8px;
+  --add-button-transform: translateY(-50%);
 }
 
-.segment-edge-control.add-left {
-  left: -15px;
+.segment-add-button.add-right {
+  right: 8px;
+  --add-button-transform: translateY(-50%);
 }
 
-.segment-edge-control.add-right {
-  right: -15px;
+.segment-add-controls.is-narrow .segment-add-button.add-left {
+  left: calc(50% - 24px);
+}
+
+.segment-add-controls.is-narrow .segment-add-button.add-right {
+  right: calc(50% - 24px);
+}
+
+@keyframes assembly-paste-pulse {
+  0% {
+    filter: drop-shadow(0 0 0 var(--assembly-paint-pulse));
+  }
+
+  45% {
+    filter: drop-shadow(0 0 8px var(--assembly-paint-pulse));
+  }
+
+  100% {
+    filter: drop-shadow(0 0 0 var(--assembly-paint-pulse));
+  }
 }
 
 .material-legend div {
@@ -693,6 +870,10 @@
 .material-picker-panel {
   display: grid;
   gap: 10px;
+}
+
+.modal-danger-action {
+  justify-self: start;
 }
 
 @media (max-width: 780px) {

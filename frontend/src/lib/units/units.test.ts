@@ -23,6 +23,7 @@ import {
   isNumberUnitsConfig,
   numberUnitRegistrySnapshot,
   parseNumberUnitsInput,
+  parseLengthToMm,
   wm2kToBtuHft2F,
   wmkToBtuHftF,
 } from ".";
@@ -62,6 +63,28 @@ describe("unit display helpers", () => {
   test("formats length by active unit system", () => {
     expect(formatLengthFromMm(25.4, { unitSystem: "SI" })).toBe("25.4 mm");
     expect(formatLengthFromMm(25.4, { unitSystem: "IP" })).toBe("1 in");
+  });
+
+  test("parses explicit length units and fractional inches", () => {
+    expect(parseLengthToMm("4 in", { unitSystem: "SI" })).toEqual({
+      ok: true,
+      valueSi: 101.6,
+    });
+    expect(parseLengthToMm("156 mm", { unitSystem: "IP" })).toEqual({
+      ok: true,
+      valueSi: 156,
+    });
+    expect(parseLengthToMm("6.5 cm", { unitSystem: "IP" })).toEqual({
+      ok: true,
+      valueSi: 65,
+    });
+    const fractional = parseLengthToMm('2-1/2"', { unitSystem: "IP" });
+    expect(fractional.ok ? fractional.valueSi : null).toBeCloseTo(63.5, 10);
+    expect(parseLengthToMm("4 yd", { unitSystem: "SI" })).toEqual({
+      ok: false,
+      code: "unsupported_unit",
+      message: "Unsupported length unit.",
+    });
   });
 
   test("formats thermal values by active unit system", () => {

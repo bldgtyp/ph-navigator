@@ -180,6 +180,7 @@ export type EnvelopeCommand =
   | { kind: "delete_segment"; assembly_id: string; layer_id: string; segment_id: string }
   | { kind: "flip_orientation"; assembly_id: string }
   | { kind: "flip_layers"; assembly_id: string }
+  | { kind: "flip_segments"; assembly_id: string }
   | {
       kind: "paste_assignment";
       assembly_id: string;

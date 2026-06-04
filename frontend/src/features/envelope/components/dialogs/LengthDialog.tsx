@@ -13,6 +13,7 @@ export function LengthDialog({
   error,
   onClose,
   onSubmit,
+  onDelete,
 }: {
   title: string;
   label: string;
@@ -21,6 +22,7 @@ export function LengthDialog({
   error: string | null;
   onClose: () => void;
   onSubmit: (valueMm: number) => void;
+  onDelete?: () => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
   const length = useLengthDraft(initialValueMm);
@@ -46,6 +48,11 @@ export function LengthDialog({
           submitLabel="Apply"
           onClose={onClose}
         />
+        {onDelete ? (
+          <button type="button" className="danger-button modal-danger-action" onClick={onDelete}>
+            Delete layer
+          </button>
+        ) : null}
       </form>
     </ModalDialog>
   );
