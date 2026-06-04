@@ -1022,8 +1022,7 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Window-Glazing" }));
 
-    expect(await screen.findByRole("heading", { name: "Window-Glazing" })).toBeVisible();
-    expect(await screen.findByText("No glazing types yet")).toBeVisible();
+    expect(await screen.findByText("No glazing types yet. Shift-Enter to add one.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/glazing-types");
   });
 

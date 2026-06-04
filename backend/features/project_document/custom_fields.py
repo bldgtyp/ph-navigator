@@ -100,6 +100,8 @@ DEFAULT_NUMBER_PRECISION = 2
 NUMBER_UNIT_REGISTRY: dict[str, dict[str, frozenset[str]]] = {
     "density": {"si": frozenset({"kg_m3"}), "ip": frozenset({"lb_ft3"})},
     "conductivity": {"si": frozenset({"w_m_k"}), "ip": frozenset({"btu_h_ft_f"})},
+    "u_value": {"si": frozenset({"w_m2_k"}), "ip": frozenset({"btu_h_ft2_f"})},
+    "specific_heat": {"si": frozenset({"j_kg_k"}), "ip": frozenset({"btu_lb_f"})},
     "length": {"si": frozenset({"m"}), "ip": frozenset({"ft"})},
     "area": {"si": frozenset({"m2"}), "ip": frozenset({"ft2"})},
     "volume": {"si": frozenset({"m3"}), "ip": frozenset({"ft3"})},
