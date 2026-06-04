@@ -96,6 +96,12 @@ export async function reactivateFrameType(id: string): Promise<CatalogFrameType>
   });
 }
 
+export async function duplicateFrameType(id: string): Promise<CatalogFrameType> {
+  return fetchJson<CatalogFrameType>(`/api/v1/catalogs/frame-types/${id}/duplicate`, {
+    method: "POST",
+  });
+}
+
 export async function listGlazingTypes(
   includeInactive: boolean,
   signal?: AbortSignal,

@@ -1008,8 +1008,7 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Window-Frame Elements" }));
 
-    expect(await screen.findByRole("heading", { name: "Window-Frame Elements" })).toBeVisible();
-    expect(await screen.findByText("No frame types yet")).toBeVisible();
+    expect(await screen.findByText("No frame types yet. Shift-Enter to add one.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/frame-types");
   });
 

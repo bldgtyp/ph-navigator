@@ -84,6 +84,7 @@ describe("number unit registry", () => {
       "u_value",
       "specific_heat",
       "length",
+      "length_mm",
       "area",
       "volume",
     ]);
@@ -95,6 +96,7 @@ describe("number unit registry", () => {
       u_value: { si: ["w_m2_k"], ip: ["btu_h_ft2_f"] },
       specific_heat: { si: ["j_kg_k"], ip: ["btu_lb_f"] },
       length: { si: ["m"], ip: ["ft"] },
+      length_mm: { si: ["mm"], ip: ["in"] },
       area: { si: ["m2"], ip: ["ft2"] },
       volume: { si: ["m3"], ip: ["ft3"] },
     });

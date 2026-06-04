@@ -15,30 +15,45 @@ RELATED:
 
 ## Current state
 
-- **Phase 0 (Planning)** — `Active`, `2026-06-04`. README + PRD +
+- **Phase 0 (Planning)** — `Complete`, `2026-06-04`. README + PRD +
   PLAN drafted. **OQs resolved 2026-06-04** (see PRD §Resolved
-  decisions). Ready for Phase 1 kickoff.
-- **Phase 1 (Backend destructive reshape + API)** — `pending`.
-  Scope widened: drop version table + 4 columns, rename 2
-  columns, add 7 columns.
-- **Phase 2 (Frontend DataTable page)** — `pending`. 17 columns;
-  largest catalog grid to date.
+  decisions).
+- **Phase 1 (Backend destructive reshape + API)** — `Complete`,
+  commit `5eb40eb`. Alembic 20260604_0017 drops the version
+  table + `current_version_id`, renames
+  `source_provenance → source` and `notes → comments`, adds the
+  seven categorization columns. `POST /duplicate` wired. Dead
+  `new_catalog_version_id` / `reject_clearing_version_date`
+  helpers removed. FrameRef updated end-to-end. `make ci` green
+  (490 backend + 1082 frontend tests).
+- **Phase 2 (Frontend DataTable page)** — `Complete`. New
+  `frontend/src/features/catalogs/frame-types/`
+  (`controller.ts`, `fieldDefs.ts`, `__tests__/`) mirrors the
+  glazing precedent. `FrameTypesCatalogPage.tsx` rewritten on
+  `<DataTable>` with all seventeen columns; the
+  `FrameTypeEditorModal` is retired. Added a `length_mm`
+  number-units type (mm ↔ in) to `lib/units/numberUnits.ts` so
+  the topbar IP/SI toggle flips `width_mm` display alongside the
+  three thermal columns. Soft-enum categorization columns ship
+  as plain `short_text` for v1; strict `single_select` promotion
+  remains deferred to a follow-up after the Phase 4 seed lands
+  (PRD D4). `make ci` green (490 backend + 1095 frontend tests).
 - **Phase 3 (JSON import/export)** — `pending`. Match key is `id`.
 - **Phase 4 (Seed data + smoke)** — `pending`. 189 rows.
 
 ## Next step
 
-Kick off Phase 1 on `feat/frame-types-catalog`. Create
-`phases/phase-01-schema.md` with the detailed implementation
-steps (per-column DDL, rename DDL, drop DDL, validator
-additions, repository SQL diffs, pytest plan). Start with the
-verification grep called out in PLAN.md/PRD.md §Backend Shape —
-confirm no downstream code reads `catalog_version_id` /
-`current_version_id` / `catalog_frame_type_versions` /
-`catalog_schema_version` / `FrameRef.catalog_origin`. If
-anything points at them, fold that work into the same Alembic
-revision (mirror Materials Phase 2 in
-`planning/archive/materials-catalog-datatable/phases/`).
+Kick off Phase 3 on `feat/frame-types-catalog`. Add
+`backend/features/catalogs/frame_types/import_export/`
+(`file_format.py`, `coerce.py`, `tokens.py`, `upgrade.py`,
+`pipeline.py`, `service.py`) for the
+`ph-navigator/catalog-frame-types` envelope, wire
+`POST /import/preview` + `POST /import/commit` (mirror glazing
+`import_export/`), and add the frontend
+`frame-types/import_export/` folder with `ImportDialog.tsx`,
+`OverflowMenuItems.tsx`, `export.ts`, `useImportMutations.ts`,
+`api.ts`, `types.ts`. Wire the overflow-menu slot on
+`FrameTypesCatalogPage.tsx`.
 
 ## Blockers
 
