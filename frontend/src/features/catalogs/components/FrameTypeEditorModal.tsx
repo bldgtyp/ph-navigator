@@ -18,7 +18,6 @@ import {
   editorSubmitLabel,
   parseOptionalUnitNumber,
   stringOrEmpty,
-  todayIso,
   trimToNull,
 } from "./form-helpers";
 import { lengthUnitLabel, psiUnitLabel, uValueUnitLabel } from "./unit-labels";
@@ -27,15 +26,13 @@ type FormState = {
   name: string;
   manufacturer: string;
   brand: string;
-  version_label: string;
-  version_date: string;
   width_mm: string;
   u_value_w_m2k: string;
   psi_g_w_mk: string;
   psi_install_w_mk: string;
   color: string;
-  notes: string;
-  source_provenance: string;
+  comments: string;
+  source: string;
 };
 
 function emptyForm(): FormState {
@@ -43,15 +40,13 @@ function emptyForm(): FormState {
     name: "",
     manufacturer: "",
     brand: "",
-    version_label: "v1",
-    version_date: todayIso(),
     width_mm: "",
     u_value_w_m2k: "",
     psi_g_w_mk: "",
     psi_install_w_mk: "",
     color: "",
-    notes: "",
-    source_provenance: "",
+    comments: "",
+    source: "",
   };
 }
 
@@ -60,15 +55,13 @@ function formFromRecord(record: CatalogFrameType, unitOptions: UnitFormatOptions
     name: record.name,
     manufacturer: stringOrEmpty(record.manufacturer),
     brand: stringOrEmpty(record.brand),
-    version_label: record.version_label,
-    version_date: record.version_date,
     width_mm: formatLengthFromMm(record.width_mm, unitOptions),
     u_value_w_m2k: formatUValueFromWm2K(record.u_value_w_m2k, unitOptions),
     psi_g_w_mk: formatLinearPsiFromWmK(record.psi_g_w_mk, unitOptions),
     psi_install_w_mk: formatLinearPsiFromWmK(record.psi_install_w_mk, unitOptions),
     color: stringOrEmpty(record.color),
-    notes: stringOrEmpty(record.notes),
-    source_provenance: stringOrEmpty(record.source_provenance),
+    comments: stringOrEmpty(record.comments),
+    source: stringOrEmpty(record.source),
   };
 }
 
@@ -76,11 +69,10 @@ function toCreatePayload(
   form: FormState,
   unitOptions: UnitFormatOptions,
 ): CatalogFrameTypeCreatePayload {
-  const payload: CatalogFrameTypeCreatePayload = {
+  return {
     name: form.name.trim(),
     manufacturer: trimToNull(form.manufacturer),
     brand: trimToNull(form.brand),
-    version_label: form.version_label.trim() || "v1",
     width_mm: parseOptionalUnitNumber(form.width_mm, parseLengthToMm, unitOptions),
     u_value_w_m2k: parseOptionalUnitNumber(form.u_value_w_m2k, parseUValueToWm2K, unitOptions),
     psi_g_w_mk: parseOptionalUnitNumber(form.psi_g_w_mk, parseLinearPsiToWmK, unitOptions),
@@ -90,13 +82,9 @@ function toCreatePayload(
       unitOptions,
     ),
     color: colorToNull(form.color),
-    notes: trimToNull(form.notes),
-    source_provenance: trimToNull(form.source_provenance),
+    comments: trimToNull(form.comments),
+    source: trimToNull(form.source),
   };
-  // version_date is NOT NULL in storage. On create, backend defaults to today
-  // when omitted; on update, omit to preserve the existing value.
-  if (form.version_date) payload.version_date = form.version_date;
-  return payload;
 }
 
 export function FrameTypeEditorModal({
@@ -191,23 +179,6 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>Version label</span>
-          <input
-            value={form.version_label}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, version_label: event.target.value }))
-            }
-          />
-        </label>
-        <label>
-          <span>Version date</span>
-          <input
-            type="date"
-            value={form.version_date}
-            onChange={(event) => setForm((prev) => ({ ...prev, version_date: event.target.value }))}
-          />
-        </label>
-        <label>
           <span>Width ({lengthUnitLabel(formUnitSystem)})</span>
           <input
             inputMode="decimal"
@@ -252,20 +223,18 @@ export function FrameTypeEditorModal({
           />
         </label>
         <label>
-          <span>Source / provenance</span>
+          <span>Source</span>
           <input
-            value={form.source_provenance}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, source_provenance: event.target.value }))
-            }
+            value={form.source}
+            onChange={(event) => setForm((prev) => ({ ...prev, source: event.target.value }))}
           />
         </label>
         <label>
-          <span>Notes</span>
+          <span>Comments</span>
           <textarea
             rows={3}
-            value={form.notes}
-            onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+            value={form.comments}
+            onChange={(event) => setForm((prev) => ({ ...prev, comments: event.target.value }))}
           />
         </label>
         {errorText ? (

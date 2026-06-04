@@ -2,30 +2,29 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Final
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from features.catalogs._shared import (
-    reject_clearing_version_date,
-    strip_optional,
-    strip_required,
-)
+from features.catalogs._shared import strip_optional, strip_required
 from features.shared.colors import normalize_optional_hex_color
 
-CATALOG_VERSION_ID_PREFIX: Final[str] = "framev_"
+# Soft-enum text fields (PRD D4): UI surfaces suggestions, server stores any
+# string. Promotion to strict single_select is deferred until the AirTable
+# seed lands and the real option distribution is observable.
+_SOFT_ENUM_MAX = 40
+_CODE_MAX = 80
 
 
 class CatalogFrameTypeListItem(BaseModel):
-    """List-endpoint projection. Drops `created_by` / `updated_by` since
-    no list view shows "edited by". The per-row detail endpoint returns
-    the full audit fields via :class:`CatalogFrameTypePublic` below.
+    """List-endpoint projection: trims `created_by` / `updated_by` since no
+    list view shows "edited by". The per-row detail endpoint returns the
+    full audit fields via :class:`CatalogFrameTypePublic` below.
 
     `extra="ignore"` so the repository row's audit columns silently drop
-    on `model_validate` — the SQL query is shared between list and
-    detail paths.
+    on `model_validate` — the SQL query is shared between list and detail
+    paths.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -34,17 +33,20 @@ class CatalogFrameTypeListItem(BaseModel):
     name: str
     manufacturer: str | None
     brand: str | None
-    current_version_id: str
-    catalog_schema_version: int
-    version_label: str
-    version_date: date
+    use: str | None
+    operation: str | None
+    location: str | None
+    mull_type: str | None
+    prefix: str | None
+    suffix: str | None
+    material: str | None
     width_mm: float | None
     u_value_w_m2k: float | None
     psi_g_w_mk: float | None
     psi_install_w_mk: float | None
     color: str | None
-    notes: str | None
-    source_provenance: str | None
+    source: str | None
+    comments: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -53,9 +55,9 @@ class CatalogFrameTypeListItem(BaseModel):
 class CatalogFrameTypePublic(CatalogFrameTypeListItem):
     """Bookshelf-ready frame row.
 
-    Field shape matches US-WIN-4 criterion 3: a downstream picker copies these
-    typed values into a project Window element's per-side FrameRef along with
-    the `catalog_origin` block (record id, version id, schema version).
+    Field shape matches US-WIN-4 criterion 3: a downstream picker copies
+    these typed values into a project Window element's per-side FrameRef
+    along with the `catalog_origin` block (record id).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -77,22 +79,35 @@ class _CatalogFrameTypeFields(BaseModel):
 
     manufacturer: str | None = Field(default=None, max_length=200)
     brand: str | None = Field(default=None, max_length=200)
-    version_label: str | None = Field(default=None, min_length=1, max_length=80)
-    version_date: date | None = None
+    use: str | None = Field(default=None, max_length=_SOFT_ENUM_MAX)
+    operation: str | None = Field(default=None, max_length=_SOFT_ENUM_MAX)
+    location: str | None = Field(default=None, max_length=_SOFT_ENUM_MAX)
+    mull_type: str | None = Field(default=None, max_length=_SOFT_ENUM_MAX)
+    prefix: str | None = Field(default=None, max_length=_CODE_MAX)
+    suffix: str | None = Field(default=None, max_length=_CODE_MAX)
+    material: str | None = Field(default=None, max_length=_CODE_MAX)
     width_mm: float | None = None
     u_value_w_m2k: float | None = None
     psi_g_w_mk: float | None = None
     psi_install_w_mk: float | None = None
     color: str | None = Field(default=None, max_length=40)
-    notes: str | None = Field(default=None, max_length=4000)
-    source_provenance: str | None = Field(default=None, max_length=400)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
 
-    @field_validator("manufacturer", "brand", "version_label", mode="before")
-    @classmethod
-    def _strip_optional_meta(cls, value: object) -> object:
-        return strip_optional(value)
-
-    @field_validator("notes", "source_provenance", mode="before")
+    @field_validator(
+        "manufacturer",
+        "brand",
+        "use",
+        "operation",
+        "location",
+        "mull_type",
+        "prefix",
+        "suffix",
+        "material",
+        "source",
+        "comments",
+        mode="before",
+    )
     @classmethod
     def _strip_optional_text(cls, value: object) -> object:
         return strip_optional(value)
@@ -112,20 +127,15 @@ class _CatalogFrameTypeFields(BaseModel):
 
 class CatalogFrameTypeCreateRequest(_CatalogFrameTypeFields):
     name: str = Field(min_length=1, max_length=200)
-    version_label: str = Field(default="v1", min_length=1, max_length=80)
 
-    @field_validator("name", "version_label", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
-    def _strip_required_fields(cls, value: object) -> object:
+    def _strip_required_name(cls, value: object) -> object:
         return strip_required(value)
 
 
 class CatalogFrameTypeUpdateRequest(_CatalogFrameTypeFields):
-    """Patch identity (name) + the current version's typed fields in place.
-
-    Per data-model.md §7.3: in-place edit allowed on the current version for
-    small corrections. Creating a new version is a separate flow (deferred).
-    """
+    """Patch identity (name) + the typed fields in place."""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
 
@@ -133,8 +143,3 @@ class CatalogFrameTypeUpdateRequest(_CatalogFrameTypeFields):
     @classmethod
     def _strip_optional_name(cls, value: object) -> object:
         return strip_optional(value)
-
-    @model_validator(mode="after")
-    def _reject_clearing_version_date(self) -> CatalogFrameTypeUpdateRequest:
-        reject_clearing_version_date(self)
-        return self

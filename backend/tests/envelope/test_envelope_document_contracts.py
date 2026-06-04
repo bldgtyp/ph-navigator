@@ -196,8 +196,6 @@ def test_document_validates_envelope_shape_and_references() -> None:
         catalog_origin={
             "catalog_table": "frame_types",
             "catalog_record_id": "rec0123456789ABCD",
-            "catalog_version_id": "framev_abc123",
-            "catalog_schema_version": 1,
             "synced_at": "2026-05-26T21:44:00Z",
         }
     )

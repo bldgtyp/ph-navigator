@@ -189,10 +189,11 @@ class CatalogOrigin(BaseModel):
 
     catalog_table: CatalogTableName
     catalog_record_id: str = Field(pattern=CATALOG_RECORD_ID_PATTERN)
-    # ``catalog_version_id`` / ``catalog_schema_version`` are populated only
-    # for catalogs that still ship a per-version row (frame, glazing). The
-    # materials catalog was flattened in Alembic 20260603_0015 — material
-    # origins leave both null.
+    # ``catalog_version_id`` / ``catalog_schema_version`` are legacy fields
+    # from the per-version row layer. All v1 catalogs (materials, glazing,
+    # frames) are now flat; new origins always leave both null. The fields
+    # stay nullable on the model so older documents that still carry a
+    # stamped version id round-trip cleanly.
     catalog_version_id: str | None = Field(default=None, pattern=CATALOG_VERSION_ID_PATTERN)
     catalog_schema_version: int | None = Field(default=None, ge=1)
     synced_at: datetime
@@ -226,13 +227,20 @@ class FrameRef(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     manufacturer: str | None = Field(default=None, max_length=200)
     brand: str | None = Field(default=None, max_length=200)
+    use: str | None = Field(default=None, max_length=40)
+    operation: str | None = Field(default=None, max_length=40)
+    location: str | None = Field(default=None, max_length=40)
+    mull_type: str | None = Field(default=None, max_length=40)
+    prefix: str | None = Field(default=None, max_length=80)
+    suffix: str | None = Field(default=None, max_length=80)
+    material: str | None = Field(default=None, max_length=80)
     width_mm: float | None = Field(default=None, ge=0)
     u_value_w_m2k: float | None = Field(default=None, ge=0)
     psi_g_w_mk: float | None = Field(default=None, ge=0)
     psi_install_w_mk: float | None = Field(default=None, ge=0)
     color: str | None = Field(default=None, max_length=40)
-    notes: str | None = Field(default=None, max_length=4000)
-    source_provenance: str | None = Field(default=None, max_length=400)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
     catalog_origin: CatalogOrigin | None = None
 
     @field_validator("color", mode="before")
@@ -245,7 +253,7 @@ class FrameRef(BaseModel):
         _require_catalog_origin_family(
             self.catalog_origin,
             expected_table="frame_types",
-            expected_version_prefix="framev_",
+            expected_version_prefix=None,
         )
         return self
 
