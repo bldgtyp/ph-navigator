@@ -26,12 +26,15 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
   const { unitSystem } = useUnitPreference();
   const [includeInactive, setIncludeInactive] = useState(false);
   const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
-  const itemsQuery = useGlazingTypesQuery(includeInactive);
+  const itemsQuery = useGlazingTypesQuery();
   const deactivateMutation = useDeactivateGlazingTypeMutation();
   const reactivateMutation = useReactivateGlazingTypeMutation();
   const signOutMutation = useSignOutMutation();
 
-  const items = itemsQuery.data ?? [];
+  // Fetch the full catalog once; filter the "Show deactivated" toggle in
+  // memory rather than refetching with a different query param.
+  const allItems = itemsQuery.data ?? [];
+  const items = includeInactive ? allItems : allItems.filter((record) => record.is_active);
   const closeEditor = () => setEditor({ kind: "closed" });
 
   const handleDeactivate = (record: CatalogGlazingType) => {

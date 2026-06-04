@@ -32,8 +32,18 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
   const canEdit = isEditor && !isLocked && Boolean(project.active_version_id);
   // Catalog routes require an authenticated user and the picker is the only
   // consumer here; skip them in Viewer / locked contexts to avoid 401 noise.
-  const frameTypesQuery = useFrameTypesQuery(false, canEdit);
-  const glazingTypesQuery = useGlazingTypesQuery(false, canEdit);
+  const frameTypesQuery = useFrameTypesQuery(canEdit);
+  const glazingTypesQuery = useGlazingTypesQuery(canEdit);
+  // The picker only shows active catalog entries; filter the unified
+  // fetch (which now includes deactivated rows) down to active here.
+  const activeFrameTypes = useMemo(
+    () => (frameTypesQuery.data ?? []).filter((record) => record.is_active),
+    [frameTypesQuery.data],
+  );
+  const activeGlazingTypes = useMemo(
+    () => (glazingTypesQuery.data ?? []).filter((record) => record.is_active),
+    [glazingTypesQuery.data],
+  );
   const replaceMutation = useReplaceWindowTypesSliceMutation(project.id, project.active_version_id);
   const refreshQuery = useWindowTypesRefreshReportQuery(
     project.id,
@@ -134,9 +144,9 @@ export function WindowsTab({ project }: { project: ProjectDetail }) {
         selectedId={selectedId}
         selectedWindowType={selectedWindowType}
         canEdit={canEdit}
-        frameTypes={frameTypesQuery.data ?? []}
+        frameTypes={activeFrameTypes}
         frameTypesLoading={frameTypesQuery.isLoading}
-        glazingTypes={glazingTypesQuery.data ?? []}
+        glazingTypes={activeGlazingTypes}
         glazingTypesLoading={glazingTypesQuery.isLoading}
         getRefreshSlot={(elementId, slot) =>
           selectedWindowType

@@ -80,8 +80,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
   const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
   const catalogMaterialsQuery = useMaterialsQuery(
-    false,
     canEdit && dialog?.kind === "segment" && catalogPickerOpen,
+  );
+  // The catalog picker only offers active materials; filter the unified
+  // fetch (which includes deactivated rows) down to active here.
+  const activeCatalogMaterials = useMemo(
+    () => (catalogMaterialsQuery.data ?? []).filter((m) => m.is_active),
+    [catalogMaterialsQuery.data],
   );
   const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
@@ -366,7 +371,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       <EnvelopeEditorDialogs
         dialog={dialog}
         materials={query.data.project_materials}
-        catalogMaterials={catalogMaterialsQuery.data ?? []}
+        catalogMaterials={activeCatalogMaterials}
         catalogMaterialsLoading={catalogMaterialsQuery.isFetching}
         busy={commandMutation.isPending}
         error={commandError}

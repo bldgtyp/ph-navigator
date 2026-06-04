@@ -131,11 +131,18 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   const [importOpen, setImportOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [bulkReactivating, setBulkReactivating] = useState(false);
-  const materialsQuery = useMaterialsQuery(includeInactive);
+  const materialsQuery = useMaterialsQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateMaterialMutation();
 
-  const materials = materialsQuery.data ?? EMPTY_MATERIALS;
+  // Fetch the full catalog once and filter the "Show deactivated" toggle
+  // client-side. Keeps the toggle off the network and lets the row identity
+  // stay stable across other re-renders.
+  const allMaterials = materialsQuery.data ?? EMPTY_MATERIALS;
+  const materials = useMemo(
+    () => (includeInactive ? allMaterials : allMaterials.filter((m) => m.is_active)),
+    [allMaterials, includeInactive],
+  );
   const rows = useMemo<MaterialRow[]>(() => materials.map(toMaterialRow), [materials]);
   const controller = useMaterialsCatalogController();
 

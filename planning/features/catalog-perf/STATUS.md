@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-04
-TIME: 11:00 ET
-STATUS: Active — Phase 1 (gzip) shipped. Phase 2 next.
+TIME: 11:30 ET
+STATUS: Active — Phases 1 (gzip) and 2 (client-side `is_active`) shipped.
+        Phase 3 (DataTable virtualization) next.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the catalog-perf feature. Updated at the end
        of every implementation session.
@@ -32,7 +33,7 @@ streamable HTTP mount is unaffected.
 | Phase | Title | Status | Branch / PR | Verification |
 |---|---|---|---|---|
 | 1 | GZipMiddleware | Done | `main` (commit `59766fa`) | gzip smoke tests pass; MCP suite green |
-| 2 | Client-side `is_active` filter | Pending | — | not yet measured |
+| 2 | Client-side `is_active` filter | Done | `main` (this commit) | all three catalog hooks unified; 1030 frontend tests pass |
 | 3 | `DataTable` row virtualization | Pending | — | not yet measured |
 | 4 | List payload trim | Pending | — | not yet measured |
 | 5 | Pagination | Deferred | — | not yet measured |
@@ -64,8 +65,10 @@ Targets after phases 1–3:
 
 ## Next step
 
-Phase 2 — client-side `is_active` filter. See
-`phases/phase-02-client-side-active-filter.md`.
+Phase 3 — `DataTable` row virtualization. See
+`phases/phase-03-datatable-virtualization.md`. This is the largest
+phase and the only one with a non-trivial regression risk across
+`DataTable` consumers.
 
 ## Blockers
 

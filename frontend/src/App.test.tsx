@@ -947,7 +947,7 @@ describe("App", () => {
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
       if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
-      if (url === "/api/v1/catalogs/materials") return jsonResponse({ items: [] });
+      if (url.startsWith("/api/v1/catalogs/materials")) return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });
 
@@ -993,7 +993,7 @@ describe("App", () => {
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
       if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
-      if (url === "/api/v1/catalogs/frame-types") return jsonResponse({ items: [] });
+      if (url.startsWith("/api/v1/catalogs/frame-types")) return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });
 
@@ -1015,7 +1015,7 @@ describe("App", () => {
       if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
       if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
-      if (url === "/api/v1/catalogs/glazing-types") return jsonResponse({ items: [] });
+      if (url.startsWith("/api/v1/catalogs/glazing-types")) return jsonResponse({ items: [] });
       return jsonResponse({}, 404);
     });
 
@@ -1192,8 +1192,8 @@ describe("App", () => {
       const url = String(input);
       if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
       if (url === draftUrl) return jsonResponse(draftSummaryPayload);
-      if (url === "/api/v1/catalogs/frame-types") return jsonResponse({ items: [] });
-      if (url === "/api/v1/catalogs/glazing-types") return jsonResponse({ items: [] });
+      if (url.startsWith("/api/v1/catalogs/frame-types")) return jsonResponse({ items: [] });
+      if (url.startsWith("/api/v1/catalogs/glazing-types")) return jsonResponse({ items: [] });
       if (url === refreshUrl) return jsonResponse(windowTypesRefreshPayload);
       if (url === windowsUrl && init?.method !== "PUT")
         return jsonResponse(windowTypesSlicePayload);
