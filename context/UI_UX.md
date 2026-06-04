@@ -1371,8 +1371,8 @@ Consistent visual language for state across the app:
 
 | State | Visual | Used where |
 |---|---|---|
-| Clean (saved) | Subtle green dot | Project header save indicator |
-| Dirty (unsaved draft) | Amber dot + "Unsaved changes" tooltip | Project header |
+| Clean (committed) | Subtle green dot | Project header version indicator |
+| Dirty (uncommitted draft) | Amber dot + "Uncommitted changes" tooltip explaining edits are auto-saved as a draft on the server and Save Version writes them into the active version | Project header |
 | Sync error | Red dot + tooltip | Project header |
 | Locked version | Padlock icon next to version name | Project header, Versions list |
 | Submitted | Document-with-checkmark icon | Versions list |

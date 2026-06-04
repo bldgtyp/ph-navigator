@@ -118,14 +118,15 @@ export function ImportDialog({ onClose, onCommitted }: ImportDialogProps) {
     } catch (apiError) {
       // 410 (stale token) → reset to Pick so the user can re-upload.
       // Any other error stays on the report stage so the user can
-      // retry the commit click.
+      // retry the commit click. The banner copy is delegated to
+      // `formatApiError` for both branches so the stale-token wording
+      // has a single source of truth — ERROR_CODE_COPY below.
+      setErrorBanner(formatApiError(apiError));
       if (apiError instanceof ApiRequestError && apiError.status === 410) {
-        setErrorBanner("Preview expired — please re-upload the file.");
         setStage({ kind: "pick" });
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
-      setErrorBanner(formatApiError(apiError));
       setStage({ kind: "report", fileName, preview });
     }
   }
@@ -334,15 +335,45 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// Curated copy for each backend error_code we map. Anything not in
+// this table falls through to the catch-all — server message prefixed
+// with status so the operator can tell at a glance it's a raw server
+// string rather than curated UX copy.
+const ERROR_CODE_COPY: Record<string, string> = {
+  catalog_import_bad_json: "File is not valid JSON. Check the export and try again.",
+  catalog_import_schema_too_new:
+    "This file was exported by a newer version of PH-Navigator. Upgrade the app or downgrade the file.",
+  catalog_import_too_large: "File too large (max 8 MB).",
+  catalog_import_token_missing: "Preview expired — please re-upload the file.",
+  catalog_import_token_forbidden:
+    "This import preview belongs to another session. Please re-upload the file.",
+  catalog_import_field_required:
+    "A required field is missing after coercion; please fix the file and re-upload.",
+};
+
 function formatApiError(error: unknown): string {
   if (error instanceof ApiRequestError) {
-    if (error.status === 413) return "File too large (max 8 MB).";
-    if (error.errorCode === "catalog_import_bad_json")
-      return "File is not valid JSON. Check the export and try again.";
-    if (error.errorCode === "catalog_import_bad_envelope") return `Bad envelope: ${error.message}`;
-    if (error.errorCode === "catalog_import_schema_too_new")
-      return "This file was exported by a newer version of PH-Navigator. Upgrade the app or downgrade the file.";
-    return error.message;
+    // 413 fires from the route's streaming size guard; map by status
+    // as belt-and-braces in case the error_code is ever absent.
+    // `??` rather than `!` so a future refactor that drops the
+    // `catalog_import_too_large` key surfaces a clean fallback string
+    // instead of an undefined banner.
+    if (error.status === 413) {
+      return ERROR_CODE_COPY.catalog_import_too_large ?? "File too large.";
+    }
+    if (error.errorCode === "catalog_import_bad_envelope") {
+      // Special-cased to keep the server's specific message — the
+      // envelope guard reports which key was wrong / missing.
+      return `Bad envelope: ${error.message}`;
+    }
+    const curated = error.errorCode ? ERROR_CODE_COPY[error.errorCode] : undefined;
+    if (curated) return curated;
+    // Unmapped or absent error_code → use statusText (e.g.
+    // "Bad Gateway") rather than the synthetic `Request failed: …`
+    // message ApiRequestError constructs when there's no JSON body,
+    // so a 5xx HTML response doesn't render the status twice.
+    const tail = error.statusText || error.message;
+    return `Import failed (${error.status})${tail ? `: ${tail}` : ""}.`;
   }
   return errorMessage(error, "Could not import the file. Check your connection and try again.");
 }

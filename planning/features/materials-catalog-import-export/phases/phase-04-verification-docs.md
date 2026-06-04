@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-03
-TIME: 22:00 EDT
-STATUS: Draft for implementation.
+TIME: 23:30 EDT
+STATUS: Implemented on `feat/materials-catalog-import-export`.
+        Seed script + round-trip + screenshots + context
+        fold-back all complete; see STATUS.md.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: End-to-end round-trip against a real seed file, Playwright
        MCP smoke, and docs fold-back.
@@ -119,6 +121,45 @@ Mark this feature's `STATUS.md`:
 - Three MCP screenshots committed under `assets/`.
 - Context-doc fold-back diff exists in the PR.
 - PR opened and ready for review.
+
+## Review-pass fixes (closeout sweep)
+
+`/simplify` precision review found seven issues on the Phase 4 cut;
+all fixed before close:
+
+1. `useImportMutations` error generic widened to
+   `ApiRequestError | Error`. The Phase 3 tightening to
+   `ApiRequestError` was a type lie — `fetchJson`'s underlying
+   `fetch()` call has no try/catch, so a network failure
+   propagates as a bare `TypeError`. Consumers must runtime-check
+   `instanceof ApiRequestError` before reading typed fields.
+2. `handleConfirm`'s 410 path delegates the banner string to
+   `formatApiError` instead of hard-coding it. Single source of
+   truth for the stale-token copy lives in `ERROR_CODE_COPY`.
+3. `formatApiError` catch-all uses `error.statusText` (or
+   `error.message` if statusText is absent) rather than the
+   synthetic `Request failed: 502 Bad Gateway` message
+   `ApiRequestError` constructs when there's no JSON body — so
+   a 5xx HTML response no longer renders the status twice.
+4. New vitest cases cover (a) a mapped non-obvious `error_code`
+   surfacing curated copy and (b) an unmapped/null-code path
+   asserting the catch-all shape `Import failed (502): Bad
+   Gateway.` with no `Request failed:` leakage.
+5. `research/build_materials_seed.py` gained a module-load
+   assertion mirroring `coerce.py`'s drift guard between
+   `_CATEGORY_LABEL_TO_ID` and `MATERIAL_CATEGORY_IDS`. Future
+   13th-category PRs that miss the seed script fail fast at
+   startup.
+6. `formatApiError` 413 branch swapped its non-null assertion
+   for `?? "File too large."` so a future refactor that
+   renames the key surfaces a clean fallback instead of an
+   undefined banner.
+7. `context/GLOSSARY.md` Database-ID wording tightened: the
+   row no longer says catalog `rec_…` ids are "Never
+   user-visible" (they're in the exported JSON) — replaced
+   with "Never rendered in DataTable UI", with the portable-
+   identifier note kept distinct from project-document local
+   PKs.
 
 ## Out of scope
 

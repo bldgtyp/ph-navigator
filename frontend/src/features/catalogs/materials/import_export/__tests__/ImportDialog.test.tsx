@@ -191,6 +191,46 @@ describe("ImportDialog", () => {
     expect(screen.queryByRole("button", { name: /Import \d+ rows?/ })).toBeNull();
   });
 
+  test("mapped error_code surfaces curated copy verbatim (not the server message)", async () => {
+    const user = userEvent.setup();
+    const forbidden = new ApiRequestError({ status: 403, statusText: "Forbidden" } as Response, {
+      error_code: "catalog_import_token_forbidden",
+      message: "Import token does not belong to the current user.",
+      request_id: "req",
+      details: {},
+    });
+    vi.spyOn(api, "previewCatalogImportRaw").mockRejectedValueOnce(forbidden);
+    render(<OpenDialog />, { wrapper });
+
+    await user.upload(screen.getByTestId("import-dialog-file") as HTMLInputElement, jsonFile());
+
+    expect(await screen.findByTestId("import-dialog-error")).toHaveTextContent(
+      /import preview belongs to another session/i,
+    );
+  });
+
+  test("unmapped error_code uses status + statusText fallback (no doubled status)", async () => {
+    const user = userEvent.setup();
+    // Simulates a 5xx HTML response that ApiRequestError swallowed
+    // into a synthetic `Request failed: 502 Bad Gateway` message; the
+    // catch-all must prefer statusText and not produce
+    // `Import failed (502): Request failed: 502 Bad Gateway`.
+    const badGateway = new ApiRequestError(
+      { status: 502, statusText: "Bad Gateway" } as Response,
+      null,
+    );
+    vi.spyOn(api, "previewCatalogImportRaw").mockRejectedValueOnce(badGateway);
+    render(<OpenDialog />, { wrapper });
+
+    await user.upload(screen.getByTestId("import-dialog-file") as HTMLInputElement, jsonFile());
+
+    const banner = await screen.findByTestId("import-dialog-error");
+    expect(banner).toHaveTextContent("Import failed (502): Bad Gateway.");
+    // No doubled status — the synthetic ApiRequestError message
+    // ("Request failed: 502 Bad Gateway") must not appear.
+    expect(banner.textContent ?? "").not.toMatch(/Request failed:/);
+  });
+
   test("oversize 413 from the server surfaces a clean message", async () => {
     const user = userEvent.setup();
     const tooLarge = new ApiRequestError(

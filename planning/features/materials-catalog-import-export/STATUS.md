@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-03
-TIME: 23:00 EDT
-STATUS: Phases 1 + 2 + 3 complete on
-        `feat/materials-catalog-import-export`. Phase 4
-        (verification + docs fold-back) is next.
+TIME: 23:30 EDT
+STATUS: Implemented on branch `feat/materials-catalog-import-export`.
+        All four phases complete; round-trip verified; docs
+        folded back. Awaiting PR + merge.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for Materials Catalog JSON import/export.
 RELATED:
@@ -28,6 +28,44 @@ RELATED:
   A parallel `external_id` column would have been redundant.
   PRD + PLAN + downstream phase docs swept to reference `id`.
 - Phases 2–4 specs revised in lockstep with the Phase 1 decision.
+- **Phase 4 — Verification + Docs: Complete.**
+  - Carry-over hardening from Phase 3: `useImportMutations`
+    error generic tightened to `ApiRequestError`;
+    `formatApiError` gained a curated copy table + plainly-
+    labeled catch-all for unmapped backend `error_code`s.
+  - `research/build_materials_seed.py` converts the WUFI /
+    manufacturer CSV (`research/Material Data-Grid view.csv`,
+    416 rows) into `working/materials-seed.json` — 408 rows
+    after the 8 rows with un-mappable categories are filtered.
+  - Playwright MCP round-trip on a freshly truncated catalog:
+    import → preview shows new=408 / matched=0 / errored=0 /
+    warnings=0; commit lands 408 rows; export via the page's
+    own list endpoint produces a file whose re-import shows
+    new=0 / matched=408. Three screenshots saved under
+    `assets/`.
+  - Context fold-back: `context/PRD.md` §6 records that catalog
+    rows are portable via JSON and the `rec_*` id is the
+    durable identifier; `context/GLOSSARY.md` Database-ID
+    entry extended to distinguish portable catalog ids from
+    project-document local PKs.
+  - `/simplify` precision review on the Phase 4 cut found
+    seven issues; all fixed before close — mutation error
+    generic widened to `ApiRequestError | Error` (network
+    failures propagate as `TypeError`, not `ApiRequestError`);
+    handleConfirm's 410 path now delegates to `formatApiError`
+    so the stale-token banner copy has a single source of
+    truth in `ERROR_CODE_COPY`; `formatApiError`'s catch-all
+    uses `statusText` instead of the synthetic
+    `Request failed: …` message to avoid doubled-status
+    banners on 5xx HTML responses; the `!` on
+    `ERROR_CODE_COPY.catalog_import_too_large` lookup
+    replaced with `??` fallback; new vitest cases cover both
+    a mapped error_code and an unmapped/null-code path so the
+    catch-all shape is locked; `research/build_materials_seed.py`
+    gained a module-load assertion mirroring backend
+    `coerce.py`'s drift guard; `context/GLOSSARY.md` Database-ID
+    wording tightened to remove the "Never user-visible"
+    contradiction.
 - **Phase 3 — Frontend Overflow Menu: Complete.** New
   `frontend/src/features/catalogs/materials/import_export/`
   package (types, api, useImportMutations, ImportDialog,
@@ -59,11 +97,12 @@ RELATED:
 
 ## Next step
 
-Begin Phase 4 — Verification + docs. See
-`phases/phase-04-verification-docs.md`. Two carry-over items
-from Phase 3's deferred list should land in Phase 4: tighten
-`useImportMutations` error generics to `ApiRequestError`, and
-extend `formatApiError` with a catch-all mapping pass.
+Open PR, get review, merge. After merge:
+
+- Optional follow-up: Frame / Glazing catalog parity (same
+  pipeline, different table — defer until there's demand).
+- Optional follow-up: a productionized CSV → JSON converter
+  (today the seed script lives at `research/` as a one-shot).
 
 ## Blockers
 
@@ -78,6 +117,10 @@ None.
 - [x] Phase 3: frontend overflow-menu items, import modal state
       machine, 12 vitest tests; `/simplify` 4 findings fixed +
       2 deferred to Phase 4; spec fold-back complete.
+- [x] Phase 4: round-trip on 408-row seed file (Playwright MCP
+      smoke + 3 screenshots), Phase 3 carry-over hardening
+      shipped, `context/PRD.md` + `context/GLOSSARY.md` fold-
+      back, `make ci` green.
 - [ ] Phase 3: frontend overflow-menu items and import modal wired.
 - [ ] Phase 4: round-trip against seed file; MCP smoke;
       `make ci` green from repo root; docs fold-back.

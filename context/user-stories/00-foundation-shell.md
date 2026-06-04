@@ -526,12 +526,12 @@ category.)
    with unsaved changes, prompt before switching:
    - "You have unsaved changes in [Working]. What would you like
      to do?"
-   - Options: **Save** (writes draft to current version, then
+   - Options: **Save Version** (writes draft to current version, then
      switches), **Save As…** (writes draft to a new version, then
      switches to the requested version), **Discard changes** (drops
      draft, then switches). **Cancel** closes the prompt without
      switching.
-   - If the current version is locked, "Save" is unavailable
+   - If the current version is locked, "Save Version" is unavailable
      (locked); only "Save As…" or "Discard."
 3. **Switch:** URL updates to `/projects/{pid}/{tab}` (tab unchanged);
    editor reloads the new version's body. Header trigger updates to
