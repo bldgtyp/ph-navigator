@@ -45,23 +45,31 @@ FRAME_REF_COMPARED_FIELDS: tuple[str, ...] = (
     "name",
     "manufacturer",
     "brand",
+    "use",
+    "operation",
+    "location",
+    "mull_type",
+    "prefix",
+    "suffix",
+    "material",
     "width_mm",
     "u_value_w_m2k",
     "psi_g_w_mk",
     "psi_install_w_mk",
     "color",
-    "notes",
-    "source_provenance",
+    "source",
+    "comments",
 )
 GLAZING_REF_COMPARED_FIELDS: tuple[str, ...] = (
     "name",
     "manufacturer",
     "brand",
+    "suffix",
     "u_value_w_m2k",
     "g_value",
     "color",
-    "notes",
-    "source_provenance",
+    "source",
+    "comments",
 )
 
 SlotName = Literal[
@@ -111,7 +119,7 @@ class RefreshSlotReport(BaseModel):
     state: SlotState
     catalog_table: CatalogTableName
     catalog_record_id: str
-    pinned_catalog_version_id: str
+    pinned_catalog_version_id: str | None
     current_catalog_version_id: str | None
     local_overrides: list[str]
     fields: list[RefreshFieldDelta]
@@ -245,15 +253,9 @@ def _slot_report(
     else:
         assert row is not None
         current_version_id = row.get("current_version_id")
-        drifted_version = current_version_id != origin.catalog_version_id
+        drifted_version = origin.catalog_version_id is not None and current_version_id != origin.catalog_version_id
         drifted_fields = any(field.ref_value != field.catalog_value for field in fields)
         state = "drifted" if (drifted_version or drifted_fields) else "in_sync"
-
-    # Frame and glazing CatalogOrigin entries always populate
-    # catalog_version_id; the field went Optional only because materials no
-    # longer have a version layer.
-    pinned_version_id = origin.catalog_version_id
-    assert pinned_version_id is not None, "frame/glazing CatalogOrigin must carry catalog_version_id"
 
     return RefreshSlotReport(
         window_type_id=window_type.id,
@@ -262,7 +264,7 @@ def _slot_report(
         state=state,
         catalog_table=origin.catalog_table,
         catalog_record_id=origin.catalog_record_id,
-        pinned_catalog_version_id=pinned_version_id,
+        pinned_catalog_version_id=origin.catalog_version_id,
         current_catalog_version_id=current_version_id,
         local_overrides=list(origin.local_overrides),
         fields=fields,

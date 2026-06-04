@@ -81,8 +81,10 @@ describe("number unit registry", () => {
     expect(NUMBER_UNIT_TYPES.map((entry) => entry.id)).toEqual([
       "density",
       "conductivity",
+      "u_value",
       "specific_heat",
       "length",
+      "length_mm",
       "area",
       "volume",
     ]);
@@ -91,8 +93,10 @@ describe("number unit registry", () => {
     expect(numberUnitRegistrySnapshot()).toEqual({
       density: { si: ["kg_m3"], ip: ["lb_ft3"] },
       conductivity: { si: ["w_m_k"], ip: ["btu_h_ft_f"] },
+      u_value: { si: ["w_m2_k"], ip: ["btu_h_ft2_f"] },
       specific_heat: { si: ["j_kg_k"], ip: ["btu_lb_f"] },
       length: { si: ["m"], ip: ["ft"] },
+      length_mm: { si: ["mm"], ip: ["in"] },
       area: { si: ["m2"], ip: ["ft2"] },
       volume: { si: ["m3"], ip: ["ft3"] },
     });

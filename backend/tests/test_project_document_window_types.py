@@ -164,8 +164,6 @@ def test_catalog_origin_requires_all_fields_and_defaults_local_overrides() -> No
         base: dict[str, Any] = {
             "catalog_table": "frame_types",
             "catalog_record_id": "rec0123456789ABCD",
-            "catalog_version_id": "framev_abc123",
-            "catalog_schema_version": 1,
             "synced_at": "2026-05-14T12:00:00Z",
         }
         base.update(overrides)
@@ -191,22 +189,21 @@ def test_frame_ref_rejects_non_frame_catalog_origin() -> None:
     wrong_table = {
         "catalog_table": "glazing_types",
         "catalog_record_id": "rec0123456789ABCD",
-        "catalog_version_id": "glazingv_abc123",
-        "catalog_schema_version": 1,
         "synced_at": "2026-05-14T12:00:00Z",
     }
     with pytest.raises(ValidationError, match="catalog_table must be 'frame_types'"):
         FrameRef.model_validate({"name": "SR-3", "catalog_origin": wrong_table})
 
-    mismatched_version = {
+    # Frame catalog is now flat (no version layer) — a stamped catalog_version_id
+    # is rejected by the same guard that protects glazing/materials.
+    stamped_version = {
         "catalog_table": "frame_types",
         "catalog_record_id": "rec0123456789ABCD",
-        "catalog_version_id": "matv_abc123",
-        "catalog_schema_version": 1,
+        "catalog_version_id": "framev_abc123",
         "synced_at": "2026-05-14T12:00:00Z",
     }
-    with pytest.raises(ValidationError, match="must start with 'framev_'"):
-        FrameRef.model_validate({"name": "SR-3", "catalog_origin": mismatched_version})
+    with pytest.raises(ValidationError, match="must be null for 'frame_types'"):
+        FrameRef.model_validate({"name": "SR-3", "catalog_origin": stamped_version})
 
     with pytest.raises(ValidationError, match="catalog_table must be 'glazing_types'"):
         GlazingRef.model_validate(
@@ -215,8 +212,6 @@ def test_frame_ref_rejects_non_frame_catalog_origin() -> None:
                 "catalog_origin": {
                     "catalog_table": "frame_types",
                     "catalog_record_id": "rec0123456789ABCD",
-                    "catalog_version_id": "framev_abc123",
-                    "catalog_schema_version": 1,
                     "synced_at": "2026-05-14T12:00:00Z",
                 },
             }
@@ -255,13 +250,11 @@ def test_window_types_contract_replace_read_diff_download(clean_document_tables:
                                 "psi_g_w_mk": 0.04,
                                 "psi_install_w_mk": None,
                                 "color": None,
-                                "notes": None,
-                                "source_provenance": None,
+                                "source": None,
+                                "comments": None,
                                 "catalog_origin": {
                                     "catalog_table": "frame_types",
                                     "catalog_record_id": "rec0123456789ABCD",
-                                    "catalog_version_id": "framev_abc123",
-                                    "catalog_schema_version": 1,
                                     "synced_at": "2026-05-14T12:00:00Z",
                                     "local_overrides": [],
                                 },

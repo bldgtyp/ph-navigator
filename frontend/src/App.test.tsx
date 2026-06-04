@@ -137,18 +137,25 @@ const windowTypesSlicePayload = {
               name: "Old frame",
               manufacturer: "Skyline",
               brand: "SR",
+              use: null,
+              operation: null,
+              location: null,
+              mull_type: null,
+              prefix: null,
+              suffix: null,
+              material: null,
               width_mm: 80,
               u_value_w_m2k: 0.85,
               psi_g_w_mk: 0.04,
               psi_install_w_mk: 0.05,
               color: null,
-              notes: null,
-              source_provenance: null,
+              source: null,
+              comments: null,
               catalog_origin: {
                 catalog_table: "frame_types",
                 catalog_record_id: "rec1234567890ab",
-                catalog_version_id: "framev_old",
-                catalog_schema_version: 1,
+                catalog_version_id: null,
+                catalog_schema_version: null,
                 synced_at: "2026-05-14T00:00:00Z",
                 local_overrides: ["u_value_w_m2k"],
               },
@@ -1001,8 +1008,7 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Window-Frame Elements" }));
 
-    expect(await screen.findByRole("heading", { name: "Window-Frame Elements" })).toBeVisible();
-    expect(await screen.findByText("No frame types yet")).toBeVisible();
+    expect(await screen.findByText("No frame types yet. Shift-Enter to add one.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/frame-types");
   });
 
@@ -1022,8 +1028,7 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Window-Glazing" }));
 
-    expect(await screen.findByRole("heading", { name: "Window-Glazing" })).toBeVisible();
-    expect(await screen.findByText("No glazing types yet")).toBeVisible();
+    expect(await screen.findByText("No glazing types yet. Shift-Enter to add one.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/glazing-types");
   });
 
