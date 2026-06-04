@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 12:00 EDT
-STATUS: Active
+TIME: 19:30 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 4.7) + Ed May
 SCOPE: Status ledger for the Window-Frame-Elements Catalog
        feature.
@@ -55,19 +55,38 @@ RELATED:
   skip, bad number, unknown field, missing name, one-shot
   token, and round-trip noop. `make ci` green (500 backend +
   1095 frontend tests).
-- **Phase 4 (Seed data + smoke)** — `pending`. 189 rows from
-  `research/Frame Data-ALL DATA.csv`.
+- **Phase 4 (Seed data + smoke)** — `Complete`. Committed
+  `backend/features/catalogs/frame_types/seeds/frame-types.v1.json`
+  (190 rows — CSV actually contains 190 data rows; the
+  PRD/README's "189" estimate predates the conversion).
+  Per PRD §Field provenance the conversion drops `DATASHEET`,
+  `LINK`, `WIDTH_IN`, `U_VALUE_BTU_HR_FT2_F`,
+  `PSI_G_BTU_HR_FT_F`; `psi_install_w_mk` is `null` for every
+  row (PRD D5 — AirTable CSV doesn't carry it). New
+  `scripts/seed_frame_catalog.py` and `make seed-frames`
+  Makefile recipe pipe the seed through the same
+  `preview_import` → `commit_import` service the HTTP routes
+  use. Local run reported `new=190, matched=0, errored=0,
+  warnings=0` and seeded 190 rows clean. Playwright MCP visual
+  smoke deferred to manual verification by the operator
+  against the live dev environment.
+- **Closeout** — `make ci` green (500 backend + 1095 frontend
+  tests). All four phases land on `feat/frame-types-catalog`
+  ahead of merge.
 
 ## Next step
 
-Kick off Phase 4 on `feat/frame-types-catalog`. Convert
-`research/Frame Data-ALL DATA.csv` →
-`backend/features/catalogs/frame_types/seeds/frame-types.v1.json`
-(dropping `DATASHEET`, `LINK`, `WIDTH_IN`,
-`U_VALUE_BTU_HR_FT2_F`, `PSI_G_BTU_HR_FT_F` per PRD); add a
-`make seed-frames` recipe (or `uv run` script) that POSTs the
-seed through `/import/commit`; verify the seeded grid via
-Playwright MCP and roll the feature `STATUS` to `Complete`.
+Manual operator verification: run `make seed-frames` locally
+against the dev database, navigate to `/catalog/frame-types`,
+confirm 190 rows render with the seventeen columns and that the
+IP/SI topbar toggle flips the four numeric performance columns.
+Once verified, merge `feat/frame-types-catalog` into `main`.
+Follow-up tickets (deferred from PRD): (a) promote soft-enum
+`use` / `operation` / `location` / `mull_type` / `material`
+columns to strict `single_select` once the live option
+distribution is observable; (b) extract the shared
+`import_export` plumbing across Materials / Glazing / Frames
+into a single abstraction (PRD §Out of scope).
 
 ## Blockers
 
