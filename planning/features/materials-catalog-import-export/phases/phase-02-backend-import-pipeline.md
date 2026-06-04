@@ -29,7 +29,7 @@ reuse the same endpoints with the same semantics (PRD Resolved
 Decision §5).
 
 Export needs no backend work — the frontend serializes from the
-list response (which already includes `external_id` after Phase 1).
+list response (which already includes `id` on every row).
 
 ## Module layout
 
@@ -54,7 +54,7 @@ Routes live in the existing
 class CatalogFileRow(BaseModel):
     model_config = ConfigDict(extra="allow")  # unknown keys
                                               # surfaced as warnings
-    external_id: str | None = None
+    id: str | None = None
     name: str | None = None
     category: str | None = None
     density_kg_m3: float | None = None
@@ -112,6 +112,7 @@ For each field, in order:
 
 | field | rule on mismatch |
 |---|---|
+| `id` | optional. If present, must match the `rec` + 14 base62-char shape (`^rec[A-Za-z0-9]{14}$`); malformed → row is **errored** with warning `bad_id`. Absent → row will be assigned a fresh id at insert (see Dedup). |
 | `name` | required; empty → row is **errored** (excluded from write set, reported in `errors`). |
 | `category` | resolve against the twelve option ids (case-insensitive on id, then on display label). No match → blank + warning `unknown_category`. |
 | `density_kg_m3`, `specific_heat_j_kgk`, `conductivity_w_mk`, `emissivity` | coerce numeric strings (`"0.0548"`) to float. Negative or non-finite → blank + warning `bad_number`. Emissivity outside `[0, 1]` → blank + warning `emissivity_range`. |
@@ -134,9 +135,9 @@ do not exclude the row.
 
 After coerce, partition rows:
 
-- `new`: `external_id` is None, **or** `external_id` is not None
-  but no existing `catalog_materials.external_id` matches.
-- `matched`: `external_id` is not None **and** matches an existing
+- `new`: `id` is None, **or** `id` is not None
+  but no existing `catalog_materials.id` matches.
+- `matched`: `id` is not None **and** matches an existing
   row.
 
 MVP policy is **Skip matches**, so `matched` rows are dropped from
@@ -230,7 +231,7 @@ Add `backend/tests/catalogs/test_materials_import.py`:
    from it, preview → counts.new == 0, counts.matched == 3;
    commit → 0 inserts; DB unchanged.
 4. **Seed empty.** Empty DB; preview a 5-row file → counts.new
-   == 5; commit → 5 inserts, all with fresh `external_id`s.
+   == 5; commit → 5 inserts, all with fresh `id`s.
 5. **Coercion paths.** One row per warning type
    (unknown_category, bad_number, emissivity_range, bad_color,
    unknown_field). Assert the warning is present in the report

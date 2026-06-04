@@ -49,7 +49,7 @@ New subfolder
 currently in the page's TanStack-Query cache (the same list
 `useMaterialsQuery` returns). Per PRD:
 
-- Include all nine canonical fields plus `external_id`.
+- Include all nine canonical fields plus `id`.
 - Exclude `id`, timestamps, `created_by`, `updated_by`,
   `is_active`.
 - Honor the page's include-inactive toggle: include inactive rows
@@ -135,7 +135,7 @@ pattern, not introduce a new tool).
 
 - `frontend/src/features/catalogs/materials/import_export/__tests__/export.test.ts` —
   serialize a known rows array; assert key set, key order
-  (`external_id` first, then the nine canonical fields), and
+  (`id` first, then the nine canonical fields), and
   pretty-print formatting.
 - `frontend/src/features/catalogs/materials/import_export/__tests__/ImportDialog.test.tsx` —
   with mocked mutations:
@@ -174,7 +174,7 @@ Plan (executed in Phase 4):
 
 ## Out of scope
 
-- Showing `external_id` in the DataTable.
+- Showing `id` in the DataTable.
 - Drag-and-drop file input (file picker only in v1).
 - Per-row "ignore this warning" UI — warnings are surface-only.
 - Selection-based export.

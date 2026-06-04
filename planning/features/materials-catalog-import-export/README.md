@@ -11,7 +11,7 @@ RELATED:
   - PRD.md
   - STATUS.md
   - PLAN.md
-  - phases/phase-01-backend-external-id.md
+  - phases/phase-01-match-key-decision.md
   - phases/phase-02-backend-import-pipeline.md
   - phases/phase-03-frontend-overflow-menu.md
   - phases/phase-04-verification-docs.md
@@ -30,7 +30,7 @@ actions" overflow popover.
 1. `PRD.md` — product contract, file format, behavior.
 2. `STATUS.md` — current state and next step.
 3. `PLAN.md` — sequencing rationale, branching, phase map.
-4. `phases/phase-01-backend-external-id.md`
+4. `phases/phase-01-match-key-decision.md`
 5. `phases/phase-02-backend-import-pipeline.md`
 6. `phases/phase-03-frontend-overflow-menu.md`
 7. `phases/phase-04-verification-docs.md`
@@ -38,7 +38,8 @@ actions" overflow popover.
 ## Scope
 
 - **In**: JSON download of the current catalog; JSON upload with a
-  dry-run preview, dedup by stable `external_id`, **Skip-matches**
+  dry-run preview, dedup by the existing catalog row `id`
+  (`rec` + 14 base62 chars; see Phase 1), **Skip-matches**
   conflict behavior (MVP), schema-version upgrade chain that
   converts what it can and blanks what it can't, single-transaction
   commit through a new backend `import/preview` + `import/commit`

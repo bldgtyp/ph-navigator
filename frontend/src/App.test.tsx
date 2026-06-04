@@ -332,7 +332,7 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "My Projects" })).toBeVisible();
     expect(await screen.findByText("No projects yet")).toBeVisible();
-    expect(screen.getByText("Ed May")).toBeVisible();
+    expect(screen.getByLabelText("Account: Ed May")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/auth/login",
       expect.objectContaining({
@@ -528,6 +528,7 @@ describe("App", () => {
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
       if (url === draftUrl) return jsonResponse(draftSummaryPayload);
       if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
@@ -539,6 +540,7 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByText("Clean")).toBeVisible();
+    expect(screen.getByLabelText("Account: Ed May")).toBeVisible();
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect(screen.queryByRole("link", { name: "Rooms JSON" })).not.toBeInTheDocument();
 
@@ -968,7 +970,7 @@ describe("App", () => {
     await user.click(screen.getByRole("heading", { name: "My Projects" }));
     expect(screen.getByRole("link", { name: "Materials", hidden: true })).not.toBeVisible();
 
-    await user.click(screen.getByText("Ed May"));
+    await user.click(screen.getByLabelText("Account: Ed May"));
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
     await user.click(screen.getByRole("heading", { name: "My Projects" }));
     expect(screen.getByRole("button", { name: "Sign out", hidden: true })).not.toBeVisible();

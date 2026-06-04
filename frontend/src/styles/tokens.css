@@ -2,6 +2,7 @@
 :root {
   color-scheme: light;
   --phn-radius: var(--radius-sm);
+  --phn-control-radius: 6px;
   --z-base: 0;
   --z-sticky: 10;
   --z-dropdown: 100;

@@ -75,14 +75,19 @@
 .version-control-wrap {
   position: relative;
   display: grid;
-  justify-items: end;
+  justify-items: center;
   gap: 8px;
   min-width: 0;
 }
 
 .version-control-wrap .shell-controls {
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: color-mix(in oklab, var(--bg-card) 88%, transparent);
+  padding: 3px;
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--text-primary) 4%, transparent);
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 3px;
 }
 
 .inline-action-error {
@@ -97,17 +102,18 @@
   position: absolute;
   z-index: calc(var(--z-dropdown) - 70);
   top: calc(100% + 6px);
-  right: 0;
+  right: 50%;
   width: min(420px, calc(100vw - 40px));
   padding: 14px;
   box-shadow: var(--phn-shadow);
+  transform: translateX(50%);
 }
 
 .project-actions-menu {
   position: absolute;
   z-index: calc(var(--z-dropdown) - 65);
   top: calc(100% + 6px);
-  right: 0;
+  right: 50%;
   display: grid;
   min-width: 220px;
   border: 1px solid var(--border-card);
@@ -115,6 +121,7 @@
   background: var(--bg-card);
   padding: 6px;
   box-shadow: var(--phn-shadow);
+  transform: translateX(50%);
 }
 
 .menu-action,

@@ -1,3 +1,4 @@
+import { Menu } from "lucide-react";
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
 
@@ -94,11 +95,7 @@ export function VersionShellControls({
         aria-description={PROJECT_ACTIONS_HELP}
         data-tooltip={PROJECT_ACTIONS_HELP}
       >
-        <span className="project-actions-icon" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
+        <Menu aria-hidden="true" size={18} strokeWidth={1.8} />
       </button>
     </div>
   );

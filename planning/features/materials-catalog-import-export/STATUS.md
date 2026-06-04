@@ -1,15 +1,15 @@
 ---
 DATE: 2026-06-03
-TIME: 22:00 EDT
-STATUS: PRD locked. PLAN.md + four phase files drafted. Awaiting
-        kickoff on `feat/materials-catalog-import-export`.
+TIME: 22:30 EDT
+STATUS: Phase 1 complete (doc-only, no code shipped). Phases 2–4
+        pending on branch `feat/materials-catalog-import-export`.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for Materials Catalog JSON import/export.
 RELATED:
   - README.md
   - PRD.md
   - PLAN.md
-  - phases/phase-01-backend-external-id.md
+  - phases/phase-01-match-key-decision.md
   - phases/phase-02-backend-import-pipeline.md
   - phases/phase-03-frontend-overflow-menu.md
   - phases/phase-04-verification-docs.md
@@ -19,32 +19,19 @@ RELATED:
 
 ## Current state
 
-- Feature folder created; PRD locked.
-- Decisions folded back: dedup by stable `external_id` (new column
-  on `catalog_materials`); MVP conflict behavior is Skip-matches
-  only; no selection-based export; include-inactive toggle governs
-  export; backend owns the entire import pipeline behind a
-  `preview` + `commit` endpoint pair (reusable by a future MCP /
-  CLI caller); no CSV adapter.
+- Branch: `feat/materials-catalog-import-export`.
+- **Phase 1 — Match-Key Decision: Complete.** No code change.
+  Schema review confirmed `catalog_materials.id` is already a
+  stable, opaque, portable `rec` + 14 base62-char string
+  (`backend/features/catalogs/_shared.py:new_catalog_record_id`).
+  A parallel `external_id` column would have been redundant.
+  PRD + PLAN + downstream phase docs swept to reference `id`.
+- Phases 2–4 specs revised in lockstep with the Phase 1 decision.
 
 ## Next step
 
-Draft `PLAN.md` and the phase files. Likely phasing:
-
-1. **Phase 1 — Backend `external_id`.** Add the column +
-   Alembic migration; backfill existing rows; expose it in the
-   `CatalogMaterialPublic` payload; update repository/service.
-2. **Phase 2 — Backend import pipeline.** File-format types, the
-   upgrade chain (v1 only at first), per-row coerce/validate,
-   dedup-by-`external_id`, `preview` + `commit` routes with the
-   token cache, tests.
-3. **Phase 3 — Frontend overflow-menu wiring.** Add Export /
-   Import items to `MaterialsCatalogPage`'s
-   `overflowMenuActions` slot; client-side serialize for export;
-   upload modal with preview dialog driven by the backend report.
-4. **Phase 4 — Verification + docs.** Round-trip test against the
-   reference CSV-derived seed file; Playwright MCP smoke; doc
-   fold-back into `context/`.
+Begin Phase 2 — Backend import pipeline. See
+`phases/phase-02-backend-import-pipeline.md`.
 
 ## Blockers
 
@@ -52,7 +39,9 @@ None.
 
 ## Verification
 
-- [ ] User stories reviewed and approved.
-- [ ] Open questions resolved and folded into PRD.
-- [ ] `PLAN.md` + phase files drafted.
-- [ ] Implementation phases executed; `make ci` green.
+- [x] Phase 1: match-key decision recorded; downstream docs swept.
+- [ ] Phase 2: backend `preview` + `commit` endpoints with tests
+      green.
+- [ ] Phase 3: frontend overflow-menu items and import modal wired.
+- [ ] Phase 4: round-trip against seed file; MCP smoke;
+      `make ci` green from repo root; docs fold-back.

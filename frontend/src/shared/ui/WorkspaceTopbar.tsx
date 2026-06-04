@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
+import { CircleUserRound, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TopbarUnitToggle } from "./TopbarUnitToggle";
 import { useOutsidePointerDown } from "./useOutsidePointerDown";
@@ -11,10 +12,12 @@ type Breadcrumb = {
 export function WorkspaceTopbar({
   breadcrumbs = [],
   primaryNav,
+  documentControls,
   accountSlot,
 }: {
   breadcrumbs?: Breadcrumb[];
   primaryNav?: ReactNode;
+  documentControls?: ReactNode;
   accountSlot?: ReactNode;
 }) {
   return (
@@ -37,13 +40,22 @@ export function WorkspaceTopbar({
       ) : (
         <span aria-hidden="true" />
       )}
-      {primaryNav ? (
-        <nav className="topnav" aria-label="Primary">
-          {primaryNav}
-        </nav>
-      ) : null}
-      <TopbarUnitToggle />
-      {accountSlot ? <div className="user-menu">{accountSlot}</div> : null}
+      {documentControls ? (
+        <div className="topbar-document-controls" aria-label="Project controls">
+          {documentControls}
+        </div>
+      ) : (
+        <span aria-hidden="true" />
+      )}
+      <div className="topbar-global-actions">
+        {primaryNav ? (
+          <nav className="topnav" aria-label="Primary">
+            {primaryNav}
+          </nav>
+        ) : null}
+        <TopbarUnitToggle />
+        {accountSlot ? <div className="user-menu">{accountSlot}</div> : null}
+      </div>
     </header>
   );
 }
@@ -63,9 +75,13 @@ export function TopbarAccountMenu({ label, onSignOut }: { label: string; onSignO
       className="account-menu"
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
-      <summary>{label}</summary>
+      <summary aria-label={`Account: ${label}`} title={label}>
+        <CircleUserRound aria-hidden="true" size={18} strokeWidth={1.8} />
+      </summary>
       <div className="account-menu-panel">
+        <p className="account-menu-label">{label}</p>
         <button type="button" className="text-button" onClick={onSignOut}>
+          <LogOut aria-hidden="true" size={14} strokeWidth={1.8} />
           Sign out
         </button>
       </div>

@@ -48,7 +48,7 @@ app) that:
   - Drop the rest (`conductivity_btu_hr_ft_F`,
     `resistivity_hr_ft2_F_Btu_in`, `display_name`,
     `DATASHEET`).
-- Emits no `external_id` (let the importer assign them on insert).
+- Emits no `id` (let the importer assign them on insert).
 - Writes `working/materials-seed.json` with the v1 envelope.
 
 This script is **not** the production import path — it's the
@@ -71,7 +71,7 @@ On a fresh local DB:
    `new = 0`, `matched = N`. Confirm — DB unchanged.
 6. Open `working/materials-after-import.json` in an editor.
    Verify: pretty-printed, key order stable, every row has an
-   `external_id`, units are SI.
+   `id`, units are SI.
 
 ### 3. Playwright MCP smoke
 
@@ -92,9 +92,11 @@ STATUS: 1010 frontend / 440+1 skipped backend).
 
 - `context/PRD.md`: add a one-paragraph note under the catalogs
   section that catalog data is portable via JSON import/export and
-  that `external_id` is the durable identity. Link this feature
+  that the catalog `id` (AirTable-shaped `rec` + 14 base62 chars)
+  serves as the durable, portable row identity. Link this feature
   folder.
-- `context/GLOSSARY.md`: add `external_id` (catalog row).
+- `context/GLOSSARY.md`: confirm "Catalog Record ID" entry covers
+  the import/export use; add or extend it if missing.
 - `context/technical-requirements/data-table.md`: if any decision
   here flipped a previously-deferred item (e.g. catalog-scoped
   view-state — it didn't, but check), update accordingly.

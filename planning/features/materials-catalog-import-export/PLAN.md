@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-03
-TIME: 22:00 EDT
-STATUS: Draft for implementation.
+TIME: 22:30 EDT
+STATUS: Phase 1 complete (no-op after match-key review). Phases 2–4
+        pending.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Implementation sequence for Materials Catalog JSON
        import/export.
@@ -19,28 +20,32 @@ RELATED:
 
 ## Sequencing rationale
 
-The import pipeline keys off a stable `external_id` that does not
-exist on `catalog_materials` today. The frontend wiring depends on
-the new backend endpoints. The verification phase needs the full
-pipeline to round-trip a real seed file. Order:
+Phase 1 turned out to be a no-op after schema review: the existing
+`catalog_materials.id` column is already a stable, opaque, portable
+`rec`-prefixed base62 string (see `_shared.py:new_catalog_record_id`),
+so it serves as the import match key with no schema change needed.
+Phase 1's deliverable is a documentation revision recording that
+decision.
 
-1. **Backend `external_id`.** Column, migration, backfill, expose
-   in the public payload. Lands first so existing API consumers
-   keep working and exports can include the field immediately.
-2. **Backend import pipeline.** File-format types, upgrade chain,
-   coerce/validate/dedup, `preview` + `commit` endpoints with the
-   token cache. Reusable from a future MCP / CLI caller.
-3. **Frontend overflow-menu wiring.** Export item (client-side
-   serialize) and Import item (upload modal driven by the backend
-   preview report).
-4. **Verification + docs.** Round-trip test against a JSON file
-   derived from `research/Material Data-Grid view.csv`; Playwright
-   MCP smoke; fold-back into `context/`.
+Order:
 
-Each phase is self-contained and shippable. If review pauses
-between phases, `main` stays coherent: Phase 1 adds an unused
-column; Phase 2 adds endpoints with no UI; Phase 3 wires UI to
-endpoints that already exist.
+1. **Match-key decision (Phase 1).** Doc-only: PRD + PLAN + phase
+   files revised so the import pipeline keys off `id` rather than
+   a parallel `external_id`. No code changes; no migration.
+2. **Backend import pipeline (Phase 2).** File-format types,
+   upgrade chain, coerce/validate/dedup-by-`id`, `preview` +
+   `commit` endpoints with the token cache. Reusable from a future
+   MCP / CLI caller.
+3. **Frontend overflow-menu wiring (Phase 3).** Export item
+   (client-side serialize) and Import item (upload modal driven by
+   the backend preview report).
+4. **Verification + docs (Phase 4).** Round-trip test against a
+   JSON file derived from `research/Material Data-Grid view.csv`;
+   Playwright MCP smoke; fold-back into `context/`.
+
+Each remaining phase is self-contained and shippable. If review
+pauses between phases, `main` stays coherent: Phase 2 adds endpoints
+with no UI; Phase 3 wires UI to endpoints that already exist.
 
 ## Branching
 
@@ -54,18 +59,13 @@ already merged).
 
 | Phase | File | Scope |
 |-------|------|-------|
-| 1 | `phases/phase-01-backend-external-id.md` | New `external_id` column + Alembic migration + backfill; expose in `CatalogMaterialPublic`; repo/service/routes pass it through. |
-| 2 | `phases/phase-02-backend-import-pipeline.md` | File-format Pydantic models, schema-version upgrade chain (v1 baseline), per-row coerce/validate, dedup-by-`external_id`, `POST /import/preview` + `POST /import/commit` with in-memory token cache. Unit + route tests. |
+| 1 | `phases/phase-01-match-key-decision.md` | Doc-only: dedup on existing `id` PK; no schema change. Marked Complete. |
+| 2 | `phases/phase-02-backend-import-pipeline.md` | File-format Pydantic models, schema-version upgrade chain (v1 baseline), per-row coerce/validate, dedup-by-`id`, `POST /import/preview` + `POST /import/commit` with in-memory token cache. Unit + route tests. |
 | 3 | `phases/phase-03-frontend-overflow-menu.md` | Add Export and Import items to `MaterialsCatalogPage`'s `overflowMenuActions` slot. Client-side JSON serialize for export. Upload modal: file picker → preview dialog driven by `/import/preview` response → commit button calls `/import/commit`. |
 | 4 | `phases/phase-04-verification-docs.md` | `make ci` from repo root; build a seed JSON file from the reference CSV and run a full round-trip; Playwright MCP smoke; doc fold-back. |
 
 ## Risks
 
-- **`external_id` backfill.** Existing rows (dev DBs and any seeded
-  rows) need a generated id. The migration must mint one per row
-  in the `op.execute` / data-migration step and only then add the
-  `NOT NULL` constraint. Test the migration against a non-empty
-  table before merging Phase 1.
 - **Token-cache lifetime.** The `preview → commit` token cache is
   in-memory (process-local) for MVP. With a single backend process
   in dev this is fine; document the assumption and add a TTL so a
