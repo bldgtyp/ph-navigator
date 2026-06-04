@@ -1,9 +1,11 @@
 ---
-DATE: 2026-06-03
-TIME: 23:30 EDT
-STATUS: Implemented on branch `feat/materials-catalog-import-export`.
-        All four phases complete; round-trip verified; docs
-        folded back. Awaiting PR + merge.
+DATE: 2026-06-04
+TIME: 00:00 EDT
+STATUS: Complete — squash-merged to main as `4a2beba` via PR #7.
+        Branch `feat/materials-catalog-import-export` deleted
+        (remote + local). Feature folder moved into
+        `planning/archive/` per the materials-catalog-datatable
+        precedent.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for Materials Catalog JSON import/export.
 RELATED:
@@ -17,6 +19,15 @@ RELATED:
 ---
 
 # STATUS — Materials Catalog Import / Export
+
+## Final state (merged)
+
+- **Main commit**: `4a2beba` "Materials catalog: JSON import / export (#7)".
+- **PR**: https://github.com/bldgtyp/ph-navigator-v2/pull/7 (merged, squashed).
+- **Branch**: `feat/materials-catalog-import-export` — deleted on
+  remote and locally on merge.
+- **Archive**: this folder moved from `planning/features/` →
+  `planning/archive/` in the same docs sweep.
 
 ## Current state
 
