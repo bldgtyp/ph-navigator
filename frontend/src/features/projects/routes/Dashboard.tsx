@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CatalogMenu } from "../../catalogs/components/CatalogMenu";
+import { Box, Layers3, SquareStack, type LucideIcon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { useSignOutMutation } from "../../auth/hooks";
+import { catalogPath, type CatalogSlug } from "../../catalogs/lib";
 import type { AuthSession } from "../../auth/types";
 import { DeletedProjectsPanel } from "../components/DeletedProjectsPanel";
 import { DeleteProjectsModal } from "../components/DeleteProjectsModal";
@@ -18,6 +19,18 @@ import { projectStatusPath } from "../lib";
 import type { ProjectSummary } from "../types";
 
 const EMPTY_PROJECTS: ProjectSummary[] = [];
+
+type DashboardCatalogCard = {
+  slug: CatalogSlug;
+  label: string;
+  icon: LucideIcon;
+};
+
+const DASHBOARD_CATALOGS: DashboardCatalogCard[] = [
+  { slug: "materials", label: "Materials", icon: Layers3 },
+  { slug: "glazing-types", label: "Window-Glazing", icon: SquareStack },
+  { slug: "frame-types", label: "Window-Frame Elements", icon: Box },
+];
 
 export function Dashboard({ session }: { session: AuthSession }) {
   const navigate = useNavigate();
@@ -91,26 +104,38 @@ export function Dashboard({ session }: { session: AuthSession }) {
   return (
     <main className="workspace-shell">
       <WorkspaceTopbar
-        primaryNav={<CatalogMenu />}
         accountSlot={
           <TopbarAccountMenu label={session.user.display_name} onSignOut={handleSignOut} />
         }
       />
-      <section className="dashboard-page" aria-labelledby="dashboard-title">
+      <section className="dashboard-page" aria-label="Dashboard">
         <div className="page-heading">
-          <div>
-            <p className="eyebrow">Dashboard</p>
-            <h1 id="dashboard-title">My Projects</h1>
-          </div>
-          <button
-            type="button"
-            aria-label="Create new project"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            New project
+          <button type="button" onClick={() => setIsCreateOpen(true)}>
+            Add New Project +
           </button>
         </div>
         <div className="dashboard-sections">
+          <section aria-labelledby="catalog-shortcuts-title">
+            <div className="project-section-heading">
+              <div>
+                <h2 id="catalog-shortcuts-title">Catalogs</h2>
+                <span>3 libraries</span>
+              </div>
+            </div>
+            <div className="catalog-card-grid">
+              {DASHBOARD_CATALOGS.map((catalog) => {
+                const Icon = catalog.icon;
+                return (
+                  <Link key={catalog.slug} className="catalog-card" to={catalogPath(catalog.slug)}>
+                    <span className="catalog-card-icon">
+                      <Icon aria-hidden={true} size={22} strokeWidth={1.8} />
+                    </span>
+                    <span>{catalog.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
           <ProjectList
             isLoading={projectsQuery.isLoading}
             error={projectsQuery.error}
