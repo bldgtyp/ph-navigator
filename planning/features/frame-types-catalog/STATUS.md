@@ -26,8 +26,8 @@ RELATED:
   `new_catalog_version_id` / `reject_clearing_version_date`
   helpers removed. FrameRef updated end-to-end. `make ci` green
   (490 backend + 1082 frontend tests).
-- **Phase 2 (Frontend DataTable page)** — `Complete`. New
-  `frontend/src/features/catalogs/frame-types/`
+- **Phase 2 (Frontend DataTable page)** — `Complete`, commit
+  `3eed10b`. New `frontend/src/features/catalogs/frame-types/`
   (`controller.ts`, `fieldDefs.ts`, `__tests__/`) mirrors the
   glazing precedent. `FrameTypesCatalogPage.tsx` rewritten on
   `<DataTable>` with all seventeen columns; the
@@ -37,23 +37,37 @@ RELATED:
   three thermal columns. Soft-enum categorization columns ship
   as plain `short_text` for v1; strict `single_select` promotion
   remains deferred to a follow-up after the Phase 4 seed lands
-  (PRD D4). `make ci` green (490 backend + 1095 frontend tests).
-- **Phase 3 (JSON import/export)** — `pending`. Match key is `id`.
-- **Phase 4 (Seed data + smoke)** — `pending`. 189 rows.
+  (PRD D4).
+- **Phase 3 (JSON import/export)** — `Complete`. New
+  `backend/features/catalogs/frame_types/import_export/`
+  (`file_format.py`, `coerce.py`, `tokens.py`, `upgrade.py`,
+  `pipeline.py`, `service.py`) implements the
+  `ph-navigator.catalog.frame-types` envelope; routes wire
+  `POST /import/preview` + `POST /import/commit` with the
+  8 MB body cap. v0 upgrade renames `source_provenance` /
+  `notes` to `source` / `comments`, matching the Phase 1
+  Alembic reshape. Frontend
+  `frame-types/import_export/` mirrors glazing's
+  `ImportDialog.tsx`, `OverflowMenuItems.tsx`, `export.ts`,
+  `useImportMutations.ts`, `api.ts`, `types.ts`; overflow menu
+  + dialog wired onto the page. Backend pytest covers happy
+  path, bad envelope, schema-too-new, v0 upgrade, matched-id
+  skip, bad number, unknown field, missing name, one-shot
+  token, and round-trip noop. `make ci` green (500 backend +
+  1095 frontend tests).
+- **Phase 4 (Seed data + smoke)** — `pending`. 189 rows from
+  `research/Frame Data-ALL DATA.csv`.
 
 ## Next step
 
-Kick off Phase 3 on `feat/frame-types-catalog`. Add
-`backend/features/catalogs/frame_types/import_export/`
-(`file_format.py`, `coerce.py`, `tokens.py`, `upgrade.py`,
-`pipeline.py`, `service.py`) for the
-`ph-navigator/catalog-frame-types` envelope, wire
-`POST /import/preview` + `POST /import/commit` (mirror glazing
-`import_export/`), and add the frontend
-`frame-types/import_export/` folder with `ImportDialog.tsx`,
-`OverflowMenuItems.tsx`, `export.ts`, `useImportMutations.ts`,
-`api.ts`, `types.ts`. Wire the overflow-menu slot on
-`FrameTypesCatalogPage.tsx`.
+Kick off Phase 4 on `feat/frame-types-catalog`. Convert
+`research/Frame Data-ALL DATA.csv` →
+`backend/features/catalogs/frame_types/seeds/frame-types.v1.json`
+(dropping `DATASHEET`, `LINK`, `WIDTH_IN`,
+`U_VALUE_BTU_HR_FT2_F`, `PSI_G_BTU_HR_FT_F` per PRD); add a
+`make seed-frames` recipe (or `uv run` script) that POSTs the
+seed through `/import/commit`; verify the seeded grid via
+Playwright MCP and roll the feature `STATUS` to `Complete`.
 
 ## Blockers
 
