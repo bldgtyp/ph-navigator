@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 16:00
-STATUS: Active — Phase 1 landed; Phase 2 next
+TIME: 16:30
+STATUS: Active — Phases 1 + 2 landed; Phase 3a next (keystone)
 AUTHOR: Ed May / Claude
 SCOPE: DataTable row context menu — status ledger
 RELATED:
@@ -15,13 +15,16 @@ RELATED:
 
 ## Current state
 
-`Active` — Phase 1 shipped on 2026-06-04. The library now hosts the
-shared `useGridMenuKeyboard` hook and the hoisted
+`Active` — Phases 1 + 2 shipped on 2026-06-04. The library hosts the
+shared `useGridMenuKeyboard` hook, the hoisted
 `isPointerInActiveEditor` predicate, the new `RowContextMenu`
-component, and the delegated `<tbody>` `contextmenu` + gutter
-`Shift+F10` triggers. Single-row `Insert record` / `Expand record` /
-`Delete record` are wired against existing handlers. No WriteOp
-change and no backend work landed.
+component (single-row + multi-row collapse branches), and the
+delegated `<tbody>` `contextmenu` + gutter `Shift+F10` triggers.
+Single-row `Insert record` / `Expand record` / `Delete record` are
+wired against existing handlers. Multi-row collapse (PRD §5 rules
+1–3) freezes the selection snapshot at right-click time and reuses
+the existing `deleteSelectedRows` path. No WriteOp change and no
+backend work yet.
 
 The revision corrected three structural issues in the V1 PRD:
 
@@ -43,16 +46,17 @@ hoist `isPointerInActiveEditor` to a shared predicate (D-7).
 
 ## Next step
 
-Begin Phase 2 (multi-row Delete collapse). The phase file is
-self-contained; the keystone Phase 3a follows (it lands the
-`rowDuplicate` `WriteOp` shape that all later consumer phases ride).
+Begin Phase 3a (keystone). It lands the `rowDuplicate` `WriteOp`
+shape, the Materials backend duplicate endpoint, the `(copy)` suffix
+helper, and the Materials controller wiring. Phases 3b / 3c / 4 all
+ride on the WriteOp contract from this phase.
 
 ## Phase ledger
 
 | Phase | File | Status |
 |---|---|---|
 | 1 | `phases/phase-01-row-context-menu-shell.md` | Done |
-| 2 | `phases/phase-02-multi-row-collapse.md` | Ready |
+| 2 | `phases/phase-02-multi-row-collapse.md` | Done |
 | 3a | `phases/phase-03a-rowduplicate-op-and-materials.md` | Ready |
 | 3b | `phases/phase-03b-rooms-slice-replace-duplicate.md` | Ready |
 | 3c | `phases/phase-03c-pumps-slice-replace-duplicate.md` | Ready |

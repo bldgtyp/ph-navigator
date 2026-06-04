@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 14:30
-STATUS: Ready
+TIME: 16:30
+STATUS: Done — landed 2026-06-04 on main
 AUTHOR: Ed May / Claude
 SCOPE: Multi-row Delete collapse rules (PRD §5 rules 1–3). Reuse
        existing `deleteSelectedRows`. No new endpoints.
