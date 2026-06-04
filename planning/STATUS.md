@@ -12,7 +12,6 @@ feature-first planning.
 | Feature | State | Current pointer |
 |---|---|---|
 | Assembly Builder | UI parity Phase 16 scale/evidence fixture implemented / review next | `features/assembly-builder/STATUS.md` |
-| Editable Fields | Active / typecheck fixture migration in progress | `features/editable-fields/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Planned / PRD and phase plans drafted | `features/attachments/STATUS.md` |

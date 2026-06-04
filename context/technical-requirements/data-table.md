@@ -393,7 +393,7 @@ own row identity.
   persisted sort rules and column widths under that key round-trip
   cleanly across schema-fingerprint changes.
 
-See `planning/features/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
+See `planning/archive/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
 for the rollout phasing (catalog and remaining project-document
 tables drop their identifier uniqueness validators in later phases).
 
