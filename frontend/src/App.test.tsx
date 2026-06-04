@@ -332,7 +332,7 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "My Projects" })).toBeVisible();
     expect(await screen.findByText("No projects yet")).toBeVisible();
-    expect(screen.getByText("Ed May")).toBeVisible();
+    expect(screen.getByLabelText("Account: Ed May")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/auth/login",
       expect.objectContaining({
@@ -379,7 +379,10 @@ describe("App", () => {
     expect(await screen.findByText("BT number available")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Create project" }));
 
-    expect(await screen.findByRole("button", { name: "Save" })).toBeVisible();
+    expect(
+      await screen.findByRole("button", { name: "Version actions for Working" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
@@ -508,7 +511,7 @@ describe("App", () => {
 
     expect(await screen.findByText("Read-only")).toBeVisible();
     expect(screen.getByText("Edit controls hidden")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Project settings" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
@@ -528,6 +531,7 @@ describe("App", () => {
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
       if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
       if (url === draftUrl) return jsonResponse(draftSummaryPayload);
       if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
@@ -538,16 +542,20 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Clean")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    await screen.findByRole("button", { name: "Version actions for Working" });
+    expect(screen.queryByText("Clean")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Account: Ed May")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Rooms JSON" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Working" }));
+    await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
+    await user.click(screen.getByRole("menuitem", { name: "Open version..." }));
     expect(screen.getByText("Versions")).toBeVisible();
     await user.click(screen.getByRole("heading", { name: "Status" }));
     expect(screen.queryByText("Versions")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Project actions" }));
+    await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
+    expect(screen.getByRole("menuitem", { name: "Save Version" })).toBeDisabled();
     expect(screen.getByRole("menuitem", { name: "Diff" })).toBeVisible();
     await user.click(screen.getByRole("heading", { name: "Status" }));
     expect(screen.queryByRole("menuitem", { name: "Diff" })).not.toBeInTheDocument();
@@ -622,7 +630,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Project actions" }));
+    await user.click(await screen.findByRole("button", { name: "Version actions for Working" }));
     await user.click(screen.getByRole("menuitem", { name: "Project settings" }));
     expect(await screen.findByRole("heading", { name: "Project settings" })).toBeVisible();
     expect(await screen.findByText("Local Claude")).toBeVisible();
@@ -690,9 +698,11 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("button", { name: "Working · Locked" })).toBeVisible();
-    expect(await screen.findByText("Unsaved")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Version actions for Working · Locked" }),
+    ).toBeVisible();
+    expect(await screen.findByText("Uncommitted changes")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save As" })).toBeVisible();
   });
 
@@ -721,15 +731,15 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("dialog", { name: "Unsaved draft found" })).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "Recovered draft found" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Restore draft" }));
-    expect(screen.queryByRole("dialog", { name: "Unsaved draft found" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Recovered draft found" })).not.toBeInTheDocument();
 
     const beforeUnload = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(beforeUnload);
     expect(beforeUnload.defaultPrevented).toBe(true);
 
-    await user.click(screen.getByRole("button", { name: "Project actions" }));
+    await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
     await user.click(screen.getByRole("menuitem", { name: "Discard changes" }));
     await user.click(screen.getByRole("button", { name: "Discard draft" }));
 
@@ -772,7 +782,8 @@ describe("App", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Restore draft" }));
-    await user.click(screen.getByRole("button", { name: "Working" }));
+    await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
+    await user.click(screen.getByRole("menuitem", { name: "Open version..." }));
     await user.click(
       within(screen.getByText("Round 1 Submit").closest(".version-row") as HTMLElement).getByRole(
         "button",
@@ -780,7 +791,7 @@ describe("App", () => {
       ),
     );
 
-    expect(await screen.findByRole("dialog", { name: "Unsaved draft" })).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "Uncommitted draft" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Save then open" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -821,7 +832,7 @@ describe("App", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Restore draft" }));
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save Version" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Saved version changed" });
     expect(dialog).toBeVisible();
@@ -854,7 +865,7 @@ describe("App", () => {
       `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/download`,
     );
     expect(screen.getByText("schema-safe")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Rooms" })).not.toBeInTheDocument();
   });
 
@@ -886,7 +897,7 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "Download raw project JSON" })).toBeVisible();
     expect(screen.queryByText("Saved schema")).not.toBeInTheDocument();
     expect(screen.queryByText("schema-safe")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
   });
 
   test("refetches project access after signing in from a public project URL", async () => {
@@ -968,7 +979,7 @@ describe("App", () => {
     await user.click(screen.getByRole("heading", { name: "My Projects" }));
     expect(screen.getByRole("link", { name: "Materials", hidden: true })).not.toBeVisible();
 
-    await user.click(screen.getByText("Ed May"));
+    await user.click(screen.getByLabelText("Account: Ed May"));
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
     await user.click(screen.getByRole("heading", { name: "My Projects" }));
     expect(screen.getByRole("button", { name: "Sign out", hidden: true })).not.toBeVisible();
@@ -1100,7 +1111,9 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Building zone"), "Residential");
     await user.click(screen.getByRole("button", { name: "Save room" }));
 
-    expect(await screen.findByText("Unsaved")).toBeVisible();
+    expect(await screen.findByText("Uncommitted changes")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
+    expect(screen.getByRole("menuitem", { name: "Save Version" })).toBeEnabled();
     expect(screen.getByText("Living Room")).toBeVisible();
     expect(screen.getByText("Ground")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(

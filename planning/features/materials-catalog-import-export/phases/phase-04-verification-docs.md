@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-03
-TIME: 22:00 EDT
-STATUS: Draft for implementation.
+TIME: 23:30 EDT
+STATUS: Implemented on `feat/materials-catalog-import-export`.
+        Seed script + round-trip + screenshots + context
+        fold-back all complete; see STATUS.md.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: End-to-end round-trip against a real seed file, Playwright
        MCP smoke, and docs fold-back.
@@ -48,7 +50,7 @@ app) that:
   - Drop the rest (`conductivity_btu_hr_ft_F`,
     `resistivity_hr_ft2_F_Btu_in`, `display_name`,
     `DATASHEET`).
-- Emits no `external_id` (let the importer assign them on insert).
+- Emits no `id` (let the importer assign them on insert).
 - Writes `working/materials-seed.json` with the v1 envelope.
 
 This script is **not** the production import path — it's the
@@ -71,7 +73,7 @@ On a fresh local DB:
    `new = 0`, `matched = N`. Confirm — DB unchanged.
 6. Open `working/materials-after-import.json` in an editor.
    Verify: pretty-printed, key order stable, every row has an
-   `external_id`, units are SI.
+   `id`, units are SI.
 
 ### 3. Playwright MCP smoke
 
@@ -92,9 +94,11 @@ STATUS: 1010 frontend / 440+1 skipped backend).
 
 - `context/PRD.md`: add a one-paragraph note under the catalogs
   section that catalog data is portable via JSON import/export and
-  that `external_id` is the durable identity. Link this feature
+  that the catalog `id` (AirTable-shaped `rec` + 14 base62 chars)
+  serves as the durable, portable row identity. Link this feature
   folder.
-- `context/GLOSSARY.md`: add `external_id` (catalog row).
+- `context/GLOSSARY.md`: confirm "Catalog Record ID" entry covers
+  the import/export use; add or extend it if missing.
 - `context/technical-requirements/data-table.md`: if any decision
   here flipped a previously-deferred item (e.g. catalog-scoped
   view-state — it didn't, but check), update accordingly.
@@ -117,6 +121,45 @@ Mark this feature's `STATUS.md`:
 - Three MCP screenshots committed under `assets/`.
 - Context-doc fold-back diff exists in the PR.
 - PR opened and ready for review.
+
+## Review-pass fixes (closeout sweep)
+
+`/simplify` precision review found seven issues on the Phase 4 cut;
+all fixed before close:
+
+1. `useImportMutations` error generic widened to
+   `ApiRequestError | Error`. The Phase 3 tightening to
+   `ApiRequestError` was a type lie — `fetchJson`'s underlying
+   `fetch()` call has no try/catch, so a network failure
+   propagates as a bare `TypeError`. Consumers must runtime-check
+   `instanceof ApiRequestError` before reading typed fields.
+2. `handleConfirm`'s 410 path delegates the banner string to
+   `formatApiError` instead of hard-coding it. Single source of
+   truth for the stale-token copy lives in `ERROR_CODE_COPY`.
+3. `formatApiError` catch-all uses `error.statusText` (or
+   `error.message` if statusText is absent) rather than the
+   synthetic `Request failed: 502 Bad Gateway` message
+   `ApiRequestError` constructs when there's no JSON body — so
+   a 5xx HTML response no longer renders the status twice.
+4. New vitest cases cover (a) a mapped non-obvious `error_code`
+   surfacing curated copy and (b) an unmapped/null-code path
+   asserting the catch-all shape `Import failed (502): Bad
+   Gateway.` with no `Request failed:` leakage.
+5. `research/build_materials_seed.py` gained a module-load
+   assertion mirroring `coerce.py`'s drift guard between
+   `_CATEGORY_LABEL_TO_ID` and `MATERIAL_CATEGORY_IDS`. Future
+   13th-category PRs that miss the seed script fail fast at
+   startup.
+6. `formatApiError` 413 branch swapped its non-null assertion
+   for `?? "File too large."` so a future refactor that
+   renames the key surfaces a clean fallback instead of an
+   undefined banner.
+7. `context/GLOSSARY.md` Database-ID wording tightened: the
+   row no longer says catalog `rec_…` ids are "Never
+   user-visible" (they're in the exported JSON) — replaced
+   with "Never rendered in DataTable UI", with the portable-
+   identifier note kept distinct from project-document local
+   PKs.
 
 ## Out of scope
 

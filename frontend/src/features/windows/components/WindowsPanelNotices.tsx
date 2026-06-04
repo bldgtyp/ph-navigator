@@ -28,9 +28,7 @@ export function WindowsPanelNotices({
           This version is locked. Save As to copy it into a new version.
         </p>
       ) : null}
-      {source === "draft" ? (
-        <p className="draft-banner">Unsaved Window Types draft restored</p>
-      ) : null}
+      {source === "draft" ? <p className="draft-banner">Window Types draft restored</p> : null}
       {actionError ? (
         <p className="form-error" role="alert">
           {actionError}

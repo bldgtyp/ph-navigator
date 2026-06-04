@@ -37,7 +37,7 @@ export function DocumentConfirmationDialog({
     return (
       <ModalDialog title="Unlock version?" titleId="unlock-version-title" onClose={onCancel}>
         <div className="confirmation-panel">
-          <p>Unlocking allows direct edits and Save on this version.</p>
+          <p>Unlocking allows direct edits and Save Version on this version.</p>
           <div className="modal-actions">
             <button type="button" className="secondary-button" onClick={onCancel}>
               Cancel
@@ -54,9 +54,12 @@ export function DocumentConfirmationDialog({
   if (confirmation.kind === "switch") {
     const target = confirmation.target;
     return (
-      <ModalDialog title="Unsaved draft" titleId="switch-version-title" onClose={onCancel}>
+      <ModalDialog title="Uncommitted draft" titleId="switch-version-title" onClose={onCancel}>
         <div className="confirmation-panel">
-          <p>Save or discard this draft before opening {target.name}.</p>
+          <p>
+            This draft has changes that have not been committed to a version. Save them into a
+            version or discard them before opening {target.name}.
+          </p>
           <div className="modal-actions modal-actions-stack">
             <button
               type="button"

@@ -252,6 +252,13 @@ Core commitments:
 - Catalog picks are copied into the project document. `catalog_origin`
   records where a copied value came from, but projects never resolve
   catalog values live.
+- **Catalog rows are portable across databases via JSON
+  import/export.** The catalog row `id` (AirTable-shaped
+  `rec` + 14 base62 chars) is the durable, opaque identifier —
+  stable across renames, safe to round-trip through a file, and
+  used as the dedup key when re-importing. The contract lives at
+  `planning/features/materials-catalog-import-export/` (Materials
+  catalog v1; Frame / Glazing parity is a follow-up).
 - Project material rows de-duplicate products inside a project so one
   datasheet/spec status can serve many assembly segments.
 - Uploaded datasheets, photos, HBJSON files, and future simulation/export

@@ -237,7 +237,7 @@ function EquipmentPageBody(props: {
         Boolean(activeVersionId) &&
         !wasLocalDraftTouched(project.id, activeVersionId!, pumpsSlice.draft_etag)
       }
-      draftRestoredMessage="Unsaved Pumps draft restored"
+      draftRestoredMessage="Pumps draft restored"
       isLocked={controller.isLocked}
       lockedMessage={PUMPS_CONFLICT_MESSAGES.versionLocked}
       editBlocker={controller.editBlocker}

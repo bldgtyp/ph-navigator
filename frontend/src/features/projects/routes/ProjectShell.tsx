@@ -1,9 +1,17 @@
-import { useState } from "react";
-import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { useState, type ReactNode } from "react";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { ApiRequestError } from "../../../shared/api/client";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
-import { WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
+import { TopbarAccountMenu, WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
+import { useSessionQuery, useSignOutMutation } from "../../auth/hooks";
 import { projectDownloadUrl } from "../../project_document/api";
 import { VersionControls } from "../../project_document/components/VersionControls";
 import { useDraftSummaryQuery, useProjectDocumentQuery } from "../../project_document/hooks";
@@ -17,9 +25,12 @@ import { isProjectTab, PROJECT_TABS, projectStatusPath, projectTabPath, TAB_LABE
 export function ProjectShell() {
   const { projectId, tab } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const activeTab = isProjectTab(tab) ? tab : null;
+  const sessionQuery = useSessionQuery();
+  const signOutMutation = useSignOutMutation();
   const projectQuery = useProjectQuery(projectId);
   const projectData = projectQuery.data;
   const requestedVersionId = searchParams.get("version");
@@ -100,6 +111,13 @@ export function ProjectShell() {
   const projectTitleLabel = `${project.bt_number} - ${project.name}`;
   const projectCrumbLabel = projectTitleLabel;
   const topbarBreadcrumbs = [{ label: projectCrumbLabel, to: projectStatusPath(project.id) }];
+  const handleSignOut = () => {
+    signOutMutation.mutate(undefined, {
+      onSettled: () => {
+        navigate(`/sign-in?next=${encodeURIComponent(returnPath)}`, { replace: true });
+      },
+    });
+  };
   const accountSlot = isViewer ? (
     <>
       <span className="read-only-pill">Read-only</span>
@@ -107,22 +125,34 @@ export function ProjectShell() {
         Sign in
       </Link>
     </>
+  ) : sessionQuery.data ? (
+    <TopbarAccountMenu label={sessionQuery.data.user.display_name} onSignOut={handleSignOut} />
   ) : null;
-  const versionControls = readSafeEnvelope ? null : (
+  const renderTopbar = ({
+    pathControls,
+    documentControls,
+  }: {
+    pathControls?: ReactNode;
+    documentControls?: ReactNode;
+  } = {}) => (
+    <WorkspaceTopbar
+      breadcrumbs={topbarBreadcrumbs}
+      pathControls={pathControls}
+      documentControls={documentControls}
+      accountSlot={accountSlot}
+    />
+  );
+  const topbar = readSafeEnvelope ? (
+    renderTopbar()
+  ) : (
     <VersionControls
       project={openProject}
       defaultVersionId={project.active_version_id}
       onOpenVersion={openVersionById}
       onOpenProjectSettings={!isViewer ? () => setIsSettingsOpen(true) : undefined}
-    />
-  );
-
-  const topbar = (
-    <WorkspaceTopbar
-      breadcrumbs={topbarBreadcrumbs}
-      primaryNav={versionControls}
-      accountSlot={accountSlot}
-    />
+    >
+      {renderTopbar}
+    </VersionControls>
   );
 
   if (readSafeEnvelope && openProject.active_version_id) {

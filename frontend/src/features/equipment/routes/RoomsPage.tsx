@@ -153,7 +153,7 @@ function RoomsPageBody(props: {
         Boolean(activeVersionId) &&
         !wasLocalDraftTouched(project.id, activeVersionId!, roomsSlice.draft_etag)
       }
-      draftRestoredMessage="Unsaved Rooms draft restored"
+      draftRestoredMessage="Rooms draft restored"
       isLocked={controller.isLocked}
       lockedMessage="This version is locked. Save As to copy it into a new version."
       editBlocker={controller.editBlocker}

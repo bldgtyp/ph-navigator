@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-03
-TIME: 21:45 EDT
-STATUS: Draft — open questions resolved; ready for phased plan.
+TIME: 22:30 EDT
+STATUS: Locked. Match-key revised to use existing `id` instead of a
+        parallel `external_id` (the catalog PK is already a stable,
+        opaque, portable `rec`-prefixed string).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Add JSON import (upload) and JSON export (download) to the
        Materials Catalog page so the catalog can be seeded, backed up,
@@ -157,7 +159,7 @@ schema version. Pretty-printed; UTF-8; LF line endings.
   "app_version": "ph-navigator-v2 <git-sha>",
   "rows": [
     {
-      "external_id": "01HWQ7K3Z9F8YV2N4D6XJ5C0AB",
+      "id": "recAbCdEfGhIjKlMn",
       "name": "AAC Block",
       "category": "insulation",
       "density_kg_m3": null,
@@ -187,16 +189,17 @@ Conventions:
 - Missing keys are treated as `null` / unset by the importer.
 - Unknown keys are ignored on import and a per-row warning is
   surfaced.
-- `external_id` is a **stable, portable identifier** (ULID, opaque
-  string) generated server-side on row create and persisted on the
-  `catalog_materials` row. It is the primary dedup match key (see
-  below) and survives renames. Exports always include it; imports
-  prefer it when present.
-- The internal database `id`, `created_at`, `created_by`,
-  `updated_at`, `updated_by`, `is_active` are **excluded** from the
-  export. The importer ignores them if present. (Rationale: internal
-  identity is local to a database; `external_id` is the portable
-  one.)
+- `id` is the catalog row's primary key — already an opaque,
+  server-assigned, `rec`-prefixed base62 string (see
+  `backend/features/catalogs/_shared.py:new_catalog_record_id`).
+  It is portable across databases (14-char base62 keyspace ≈ 10²⁵,
+  collisions effectively impossible), stable across renames, and
+  immutable after insert. It is the primary dedup match key.
+  Exports always include it; the importer reads it when present.
+- `created_at`, `created_by`, `updated_at`, `updated_by`,
+  `is_active` are **excluded** from the export. The importer
+  ignores them if present. (Rationale: those are local-DB
+  audit state, not portable identity.)
 
 ### Schema versioning
 
@@ -240,18 +243,22 @@ Conventions:
 
 ### Match key (deduplication)
 
-Dedup is **by `external_id`**:
+Dedup is **by `id`** (the catalog row PK):
 
-- **Primary:** exact `external_id` match against an existing
+- **Primary:** exact `id` match against an existing
   `catalog_materials` row.
-- **No fallback to `name`.** If a row's `external_id` is missing or
-  doesn't match any existing row, the row is classified `new`. (Two
-  rows with the same `name` but different `external_id`s are two
-  different materials. The catalog already allows duplicate names.)
-- **Rows without `external_id` in the file** (e.g. files
-  hand-authored by a user, or files from a tool that doesn't emit
-  ids): always classified `new`. The backend assigns a fresh
-  `external_id` on insert.
+- **No fallback to `name`.** If a row's `id` is missing or doesn't
+  match any existing row, the row is classified `new`. (Two rows
+  with the same `name` but different `id`s are two different
+  materials. The catalog already allows duplicate names.)
+- **Rows without `id` in the file** (hand-authored files, or files
+  from a tool that doesn't emit ids): always classified `new`. The
+  backend assigns a fresh `id` on insert (the existing
+  `new_catalog_record_id()` generator).
+- **Rows with a malformed `id`** (not `rec` + 14 base62 chars):
+  rejected as `errored` with a clear warning — the importer never
+  invents a "valid" id from a bad one. Easier to surface than to
+  paper over.
 
 This makes round-trips fully unambiguous through renames and
 duplicate names, and keeps the importer's matching logic trivial.
@@ -261,7 +268,7 @@ duplicate names, and keeps the importer's matching logic trivial.
 MVP ships **Skip matches** as the only behavior — no user choice
 required:
 
-- `match` rows (existing `external_id` already in the catalog) are
+- `match` rows (existing `id` already in the catalog) are
   dropped from the write set and reported in the preview as
   "skipped (already in catalog)".
 - `new` rows are inserted; `errored` rows are excluded.
@@ -361,7 +368,7 @@ Two-call flow:
   menu; no new toolbar buttons elsewhere.
 - **Round-trip.** Exporting the catalog and re-importing the same
   file results in zero inserts and N skipped rows (every row matches
-  on `external_id`); the catalog is unchanged.
+  on `id`); the catalog is unchanged.
 - **Seed.** Importing a JSON file derived from the reference CSV
   (`research/Material Data-Grid view.csv`) into an empty catalog
   produces one row per CSV record with the nine canonical fields
@@ -381,9 +388,11 @@ Two-call flow:
 
 ## Resolved Decisions
 
-1. **Match key = `external_id`.** A stable, opaque, server-assigned
-   identifier on `catalog_materials`. No fallback to `name`. Rows
-   without `external_id` are always inserted as new.
+1. **Match key = `id`.** The catalog row's existing PK is already
+   a stable, opaque, server-assigned `rec`-prefixed base62 string
+   — it does everything a parallel `external_id` would do, with
+   no schema change. No fallback to `name`. Rows without `id` are
+   always inserted as new; rows with a malformed `id` are errored.
 2. **Conflict policy = Skip matches only** for MVP. No user choice
    in the preview. Update-in-place and add-all-as-new policies are
    deferred.

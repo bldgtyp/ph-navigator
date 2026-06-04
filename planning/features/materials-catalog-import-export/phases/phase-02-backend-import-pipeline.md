@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-03
 TIME: 22:00 EDT
-STATUS: Draft for implementation.
+STATUS: Implemented on `feat/materials-catalog-import-export`.
+        See "What actually shipped" below for deltas from the
+        original spec (review-pass fixes folded back).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Server-owned import pipeline + preview/commit endpoints for
        the Materials Catalog.
@@ -29,7 +31,7 @@ reuse the same endpoints with the same semantics (PRD Resolved
 Decision §5).
 
 Export needs no backend work — the frontend serializes from the
-list response (which already includes `external_id` after Phase 1).
+list response (which already includes `id` on every row).
 
 ## Module layout
 
@@ -54,7 +56,7 @@ Routes live in the existing
 class CatalogFileRow(BaseModel):
     model_config = ConfigDict(extra="allow")  # unknown keys
                                               # surfaced as warnings
-    external_id: str | None = None
+    id: str | None = None
     name: str | None = None
     category: str | None = None
     density_kg_m3: float | None = None
@@ -112,6 +114,7 @@ For each field, in order:
 
 | field | rule on mismatch |
 |---|---|
+| `id` | optional. If present, must match the `rec` + 14 base62-char shape (`^rec[A-Za-z0-9]{14}$`); malformed → row is **errored** with warning `bad_id`. Absent → row will be assigned a fresh id at insert (see Dedup). |
 | `name` | required; empty → row is **errored** (excluded from write set, reported in `errors`). |
 | `category` | resolve against the twelve option ids (case-insensitive on id, then on display label). No match → blank + warning `unknown_category`. |
 | `density_kg_m3`, `specific_heat_j_kgk`, `conductivity_w_mk`, `emissivity` | coerce numeric strings (`"0.0548"`) to float. Negative or non-finite → blank + warning `bad_number`. Emissivity outside `[0, 1]` → blank + warning `emissivity_range`. |
@@ -134,9 +137,9 @@ do not exclude the row.
 
 After coerce, partition rows:
 
-- `new`: `external_id` is None, **or** `external_id` is not None
-  but no existing `catalog_materials.external_id` matches.
-- `matched`: `external_id` is not None **and** matches an existing
+- `new`: `id` is None, **or** `id` is not None
+  but no existing `catalog_materials.id` matches.
+- `matched`: `id` is not None **and** matches an existing
   row.
 
 MVP policy is **Skip matches**, so `matched` rows are dropped from
@@ -230,7 +233,7 @@ Add `backend/tests/catalogs/test_materials_import.py`:
    from it, preview → counts.new == 0, counts.matched == 3;
    commit → 0 inserts; DB unchanged.
 4. **Seed empty.** Empty DB; preview a 5-row file → counts.new
-   == 5; commit → 5 inserts, all with fresh `external_id`s.
+   == 5; commit → 5 inserts, all with fresh `id`s.
 5. **Coercion paths.** One row per warning type
    (unknown_category, bad_number, emissivity_range, bad_color,
    unknown_field). Assert the warning is present in the report
@@ -260,3 +263,94 @@ Add `backend/tests/catalogs/test_materials_import.py`:
 - Frontend modal (Phase 3).
 - Frame / Glazing catalogs.
 - Multi-worker token store (Redis etc.).
+
+## What actually shipped (deltas from spec)
+
+The `/simplify` precision review on the first cut surfaced seven
+issues; all seven were fixed before merge. The deltas the frontend
+in Phase 3 needs to know about:
+
+1. **Negative `schema_version` → 400.** The envelope check rejects
+   negative versions explicitly so the upgrade chain never crashes
+   on them. Error code: `catalog_import_bad_envelope`.
+
+2. **ARGB tuple `a,r,g,b` with alpha=0 → `null` (not `#000000`).**
+   Legacy WUFI exporters use `0,0,0,0` as a "no color set" sentinel
+   (see `research/Material Data-Grid view.csv`). The coerce step
+   treats alpha=0 as None rather than collapsing to opaque black.
+
+3. **Length caps on text fields.** `coerce.py` mirrors
+   `_CatalogMaterialFields` (`models.py`): name ≤ 200, source ≤
+   400, url ≤ 2000, comments ≤ 4000, color ≤ 40. Oversize values
+   blank + warn (`field_too_long:<field>`). Oversize `name` chains
+   to `missing_name` and errors the row. This stops the import
+   path from landing values that later PATCH would 422-reject.
+
+4. **`build_preview` takes `existing_ids: dict[str, bool]`**, not
+   `set[str]`. The bool is the active flag. Inactive-id matches
+   still classify as `matched` (and skipped), but surface a
+   `matched_inactive_skip` warning so the user knows their
+   re-import did not land. Frontend should render that warning
+   prominently for matched-inactive cases.
+
+5. **Race-safe commit via per-row SAVEPOINT.** Each insert runs
+   inside `SAVEPOINT import_row_<i>`; a `psycopg.errors.UniqueViolation`
+   (i.e. another writer landed the same file-supplied id between
+   preview and commit) ROLLBACK-TO-SAVEPOINTs and the row is added
+   to `CommitResponse.skipped_conflict_ids`. Non-conflict errors
+   still propagate and abort the whole batch (atomicity test #9
+   continues to hold).
+
+6. **`CommitResponse` has a new field.** Final shape:
+   ```python
+   class CommitResponse(BaseModel):
+       inserted: int
+       inserted_ids: list[str]
+       skipped_conflict_ids: list[str] = []
+   ```
+
+7. **Route is async + streaming body read.** `POST /import/preview`
+   reads the body via `request.stream()` with a running byte cap,
+   so the 8 MB limit kicks in WHILE streaming — chunked
+   Transfer-Encoding without a Content-Length header is also
+   bounded. JSON parsing happens after the size guard, not before.
+   Returns 413 (`catalog_import_too_large`) on oversize. Also
+   handles malformed JSON with a clean 400
+   (`catalog_import_bad_json`).
+
+8. **Label-id map drift guard.** `coerce.py` asserts at module
+   load that `set(_CATEGORY_LABEL_TO_ID.values()) ==
+   set(MATERIAL_CATEGORY_IDS)`. A future PR adding a thirteenth
+   category id without extending the label map fails CI at import
+   time. A regression test (`test_label_to_id_map_matches_canonical_ids`)
+   provides a second line of defense.
+
+### Final error-code surface
+
+| HTTP | error_code | trigger |
+|---|---|---|
+| 400 | `catalog_import_bad_json` | body is not valid JSON |
+| 400 | `catalog_import_bad_envelope` | missing/bad `kind`, missing/bad/negative `schema_version`, non-array `rows` |
+| 400 | `catalog_import_schema_too_new` | `schema_version > CURRENT_SCHEMA_VERSION` |
+| 403 | `catalog_import_token_forbidden` | commit token belongs to another user |
+| 410 | `catalog_import_token_missing` | commit token never minted, expired, or already consumed |
+| 413 | `catalog_import_too_large` | body exceeds 8 MB (streamed) |
+
+### Final warning / error reason codes (per row)
+
+Warnings (recoverable; row still imports):
+
+- `unknown_field:<key>` — file row has a key not in the canonical set
+- `unknown_category` — file value didn't match any id or label
+- `bad_number` — non-numeric / negative / non-finite numeric field
+- `emissivity_range` — emissivity > 1.0
+- `bad_color` — color was neither `#rrggbb` nor a valid ARGB tuple
+- `field_too_long:<field>` — value exceeded that field's cap
+- `matched_inactive_skip` — row matched a soft-deleted catalog id
+
+Errors (row excluded from write set):
+
+- `bad_id` — `id` did not match `^rec[A-Za-z0-9]{14}$`
+- `missing_name` — name absent, empty, or blanked by `field_too_long`
+- `missing_category` — category absent or unknown
+- `bad_row_shape` — row entry was not a JSON object
