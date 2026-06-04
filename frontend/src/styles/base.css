@@ -693,6 +693,12 @@ a:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.dashboard-project-action {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: -4px;
+}
+
 .project-section-heading {
   display: flex;
   align-items: center;
@@ -854,6 +860,42 @@ a:focus-visible {
 .deleted-project-empty {
   margin: 0;
   padding: 14px 16px;
+}
+
+.deleted-project-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.deleted-project-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border-radius: var(--phn-control-radius);
+  color: var(--text-secondary);
+  padding: 0;
+}
+
+.deleted-project-toggle:hover:not(:disabled) {
+  background: var(--bg-elev);
+  color: var(--accent-text);
+}
+
+.deleted-project-toggle:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.deleted-project-toggle-icon {
+  transition: transform 0.16s var(--ease);
+}
+
+.deleted-project-toggle-icon.expanded {
+  transform: rotate(180deg);
 }
 
 .deleted-project-summary {

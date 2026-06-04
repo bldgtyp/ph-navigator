@@ -109,11 +109,6 @@ export function Dashboard({ session }: { session: AuthSession }) {
         }
       />
       <section className="dashboard-page" aria-label="Dashboard">
-        <div className="page-heading">
-          <button type="button" onClick={() => setIsCreateOpen(true)}>
-            Add New Project +
-          </button>
-        </div>
         <div className="dashboard-sections">
           <section aria-labelledby="catalog-shortcuts-title">
             <div className="project-section-heading">
@@ -136,6 +131,11 @@ export function Dashboard({ session }: { session: AuthSession }) {
               })}
             </div>
           </section>
+          <div className="dashboard-project-action">
+            <button type="button" onClick={() => setIsCreateOpen(true)}>
+              Add New Project +
+            </button>
+          </div>
           <ProjectList
             isLoading={projectsQuery.isLoading}
             error={projectsQuery.error}

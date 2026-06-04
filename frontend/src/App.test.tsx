@@ -456,9 +456,11 @@ describe("App", () => {
         screen.queryByRole("link", { name: "2426 - West Stockbridge House" }),
       ).not.toBeInTheDocument(),
     );
-    expect(await screen.findByRole("button", { name: "Show list" })).toBeVisible();
+    expect(
+      await screen.findByRole("button", { name: "Show recently deleted projects" }),
+    ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Restore" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Show list" }));
+    await user.click(screen.getByRole("button", { name: "Show recently deleted projects" }));
     expect(await screen.findByRole("button", { name: "Restore" })).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /Hard delete|Permanently delete/i }),

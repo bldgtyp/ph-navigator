@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import type { ProjectDeletedSummary } from "../types";
@@ -25,19 +26,33 @@ export function DeletedProjectsPanel({
     <section aria-labelledby="deleted-projects-title">
       <div className="project-section-heading">
         <div>
-          <h2 id="deleted-projects-title">Recently deleted</h2>
+          <h2 id="deleted-projects-title" className="deleted-project-title">
+            Recently deleted
+            <button
+              type="button"
+              className="deleted-project-toggle"
+              aria-label={
+                isExpanded ? "Hide recently deleted projects" : "Show recently deleted projects"
+              }
+              aria-expanded={isExpanded}
+              aria-controls="deleted-project-list"
+              disabled={isLoading || projects.length === 0}
+              onClick={() => setIsExpanded((current) => !current)}
+            >
+              <ChevronDown
+                aria-hidden={true}
+                className={
+                  isExpanded
+                    ? "deleted-project-toggle-icon expanded"
+                    : "deleted-project-toggle-icon"
+                }
+                size={16}
+                strokeWidth={2}
+              />
+            </button>
+          </h2>
           <span>{isLoading ? "Loading" : projectCountLabel}</span>
         </div>
-        <button
-          type="button"
-          className="secondary-button"
-          aria-expanded={isExpanded}
-          aria-controls="deleted-project-list"
-          disabled={isLoading || projects.length === 0}
-          onClick={() => setIsExpanded((current) => !current)}
-        >
-          {isExpanded ? "Hide list" : "Show list"}
-        </button>
       </div>
       {!isLoading && !error && projects.length === 0 ? (
         <p className="deleted-project-summary">No deleted projects.</p>
