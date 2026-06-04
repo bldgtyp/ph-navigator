@@ -15,7 +15,16 @@
     var(--data-table-cell-bg)
   );
   overflow: auto;
-  max-height: 100%;
+  /* The wrap MUST be the scroll container for the row virtualizer to
+     work. Without an explicit ceiling, the wrap expands to its
+     `scrollHeight` (every row mounted), the window scrolls, and the
+     virtualizer mounts the full table. The chrome offset accounts for
+     topbar + page padding + heading + toolbar on the standard
+     `.workspace-shell` layout; consumers can override the variable on
+     a parent for tighter panels. `dvh` so mobile chrome resize
+     doesn't clip the table. */
+  --data-table-page-chrome: 220px;
+  max-height: calc(100dvh - var(--data-table-page-chrome));
   background: var(--bg-table-outside);
 }
 

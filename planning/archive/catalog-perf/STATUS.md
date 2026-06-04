@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-04
-TIME: 13:00 ET
-STATUS: Complete — Phases 1–4 shipped and measured. Phase 5
-        (pagination) remains Deferred per the PRD. Feature folder
-        being archived under `planning/archive/catalog-perf/`.
+TIME: 13:45 ET
+STATUS: Complete — Phases 1–4 shipped, scroll-container fix applied,
+        all targets met on remeasure. Phase 5 (pagination) remains
+        Deferred per the PRD.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the catalog-perf feature. Updated at the end
        of every implementation session.
@@ -85,6 +85,27 @@ met.
 | DOM `<tr>` count under tbody (410-row dataset) | 410 | ≤ 50 | 410 | ✗ over target |
 | DOM `<td>` count under tbody | 4,510 | — | 4,510 | unchanged |
 
+### After follow-up scroll-container fix (2026-06-04 13:45 ET)
+
+The `.data-table-wrap` was expanding to its `scrollHeight` because no
+ancestor on the catalog page provided a definite height for the
+existing `max-height: 100%` to resolve against. Pinning the wrap to
+`max-height: calc(100dvh - var(--data-table-page-chrome))` makes the
+wrap the real scroll container, which lets the virtualizer see a 535
+px viewport instead of the full 15,198 px. Same measurement protocol,
+same dev fixture, viewport 772 px:
+
+| Metric | Target | Post-scroll-fix |
+|---|---|---|
+| `.data-table-wrap.clientHeight` (scroll viewport) | constrained | 535 px |
+| `.data-table-wrap` is_scrollable | yes | yes (scrollHeight 13,374 px) |
+| DOM `<tr>` count under tbody (410-row dataset) | ≤ 50 | **28 ✓** |
+| DOM `<td>` count under tbody | — | **298** (down from 4,510, −93%) |
+| Distinct rows rendered after scrollTop = 5000 | n/a | 39 (virtualizer remounts) |
+| "Show deactivated" toggle latency (frame-flushed) | ≤ 150 ms | **119 / 49 / 34 ms ✓** |
+| Mid-table cell click latency (rAF×2) | ≤ 50 ms | **33–77 ms; median ~34 ms ✓** |
+| Network requests on toggle | 0 | 0 |
+
 ¹ Baseline "gzip if enabled" figure was theoretical (12,371 bytes); the
 trigger review observed gzip was not being served. Post-fix gzip is
 delivered by `GZipMiddleware` on every JSON response > 1 KB.
@@ -107,10 +128,7 @@ delivered by `GZipMiddleware` on every JSON response > 1 KB.
 
 ## Next step
 
-Feature is being archived as Complete. Any follow-up to make
-virtualization effective in this layout (constrain the table's
-scroll container height, or pin the virtualizer to `window`) is out
-of scope for this feature and will be tracked separately if pursued.
+All targets met. Feature is archived as Complete.
 
 ## Blockers
 
