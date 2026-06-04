@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
 TIME: 17:30
-STATUS: Done — all phases (1, 2, 3a/b/c, 4) shipped
+STATUS: Complete — archived 2026-06-04; all phases merged to main
 AUTHOR: Ed May / Claude
 SCOPE: DataTable row context menu — status ledger
 RELATED:
