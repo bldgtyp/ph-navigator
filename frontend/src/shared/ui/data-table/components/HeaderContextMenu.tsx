@@ -1,14 +1,8 @@
 import * as Popover from "@radix-ui/react-popover";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type RefObject,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { pointAnchorRef } from "../lib/popoverAnchor";
 import { isFieldDeletable, isFieldDuplicable } from "../lib/locks";
+import { useGridMenuKeyboard } from "../hooks/useGridMenuKeyboard";
 import type { FieldDef } from "../types";
 
 // Right-click / Shift+F10 / ContextMenu key opens a per-header menu
@@ -49,7 +43,7 @@ type MenuItem = {
   onSelect: () => void;
 };
 
-type OpenState = { x: number; y: number; activeIndex: number };
+type OpenState = { x: number; y: number };
 
 export function HeaderContextMenu({
   fieldDef,
@@ -67,7 +61,6 @@ export function HeaderContextMenu({
   onHide,
 }: HeaderContextMenuProps) {
   const [open, setOpen] = useState<OpenState | null>(null);
-  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const restoreFocusOnCloseRef = useRef(true);
 
   const canEditField = onEditFieldConfig !== undefined;
@@ -124,7 +117,7 @@ export function HeaderContextMenu({
   }
 
   const openAt = useCallback((x: number, y: number) => {
-    setOpen({ x, y, activeIndex: 0 });
+    setOpen({ x, y });
   }, []);
 
   useEffect(() => {
@@ -151,30 +144,16 @@ export function HeaderContextMenu({
     };
   }, [triggerRef, isViewer, openAt]);
 
+  const keyboard = useGridMenuKeyboard({ itemCount: items.length });
+  const { itemRefs, onKeyDown: handleMenuKeyDown, resetToInitial } = keyboard;
+
+  // Reset focus to the first item every time the menu re-opens so users
+  // don't see leftover focus state from the previous open.
   useEffect(() => {
-    if (open) itemRefs.current[open.activeIndex]?.focus();
-  }, [open]);
+    if (open) resetToInitial();
+  }, [open, resetToInitial]);
 
   if (isViewer) return null;
-
-  const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (!open) return;
-    const last = items.length - 1;
-    const set = (activeIndex: number) => setOpen({ ...open, activeIndex });
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      set((open.activeIndex + 1) % items.length);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      set((open.activeIndex - 1 + items.length) % items.length);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      set(0);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      set(last);
-    }
-  };
 
   const anchorRef = open ? pointAnchorRef(open.x, open.y) : null;
 

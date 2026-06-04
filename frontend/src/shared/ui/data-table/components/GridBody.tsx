@@ -1,3 +1,4 @@
+// @size-exception: planning/features/row-context-menu/PRD.md
 import { flexRender, type Table } from "@tanstack/react-table";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { AlertTriangle } from "lucide-react";
@@ -5,6 +6,7 @@ import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { describeDuplicateRows } from "../lib/identifier/recordId";
 import type { DuplicateIdentifierRows } from "../lib/identifier/recordId";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
+import { isPointerInActiveEditor } from "../lib/eventTargets";
 import type {
   AxisRoleSubset,
   BodyPlanItem,
@@ -98,6 +100,19 @@ export type GridBodyProps<TRow> = {
   // heights so the scrollbar geometry matches a full table.
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   bodyPlanIndexByDataRowIndex: readonly number[];
+  // Phase 1 row-context-menu — right-click on a data row opens the
+  // shared menu owned by DataTable. Undefined in viewer / readOnly /
+  // no-onWrite surfaces so the browser's native menu surfaces instead.
+  // `editingActive` lets the predicate suppress the menu while an
+  // editor (text / color / single-select) or fill-handle is open.
+  onRowContextMenu?: (args: {
+    rowId: string;
+    rowNumber: number;
+    x: number;
+    y: number;
+    returnFocus: HTMLElement | null;
+  }) => void;
+  editingActive?: boolean;
 };
 
 export function GridBody<TRow>({
@@ -133,6 +148,8 @@ export function GridBody<TRow>({
   identifierDuplicates,
   rowVirtualizer,
   bodyPlanIndexByDataRowIndex,
+  onRowContextMenu,
+  editingActive = false,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
@@ -164,8 +181,33 @@ export function GridBody<TRow>({
     hasExplicitRange &&
     (normalizedActiveRange.rowStart !== normalizedActiveRange.rowEnd ||
       normalizedActiveRange.columnStart !== normalizedActiveRange.columnEnd);
+  const handleTbodyContextMenu = onRowContextMenu
+    ? (event: ReactMouseEvent<HTMLTableSectionElement>) => {
+        const target = event.target as HTMLElement;
+        if (isPointerInActiveEditor(target, { editingActive })) return;
+        if (target.closest("input.data-table-gutter-checkbox")) return;
+        const tr = target.closest<HTMLTableRowElement>("tr[data-row-id]");
+        if (!tr) return;
+        const rowIdAttr = tr.dataset.rowId;
+        if (!rowIdAttr) return;
+        const dataIndex = Number(tr.dataset.index);
+        const item = bodyPlan[dataIndex];
+        if (!item || item.kind !== "data") return;
+        const rowNumber = (dataRowIndexByBodyPlanIndex[dataIndex] ?? -1) + 1;
+        if (rowNumber <= 0) return;
+        event.preventDefault();
+        onRowContextMenu({
+          rowId: rowIdAttr,
+          rowNumber,
+          x: event.clientX,
+          y: event.clientY,
+          returnFocus: null,
+        });
+      }
+    : undefined;
+
   return (
-    <tbody>
+    <tbody onContextMenu={handleTbodyContextMenu}>
       {bodyPlan.length === 0 ? (
         <tr role="row" aria-rowindex={2}>
           <td className="data-table-filter-empty" colSpan={totalColSpan}>
@@ -223,6 +265,7 @@ export function GridBody<TRow>({
             key={virtualItem.key}
             ref={measureRef}
             data-index={virtualItem.index}
+            data-row-id={rowIdForRow}
             role="row"
             aria-rowindex={ariaRowIndex}
             data-row-depth={item.depth}
@@ -240,6 +283,18 @@ export function GridBody<TRow>({
                 if (rowId !== undefined) onRowToggleSelected(rowId, mode);
               }}
               onExpandRow={onRowExpand ? () => onRowExpand(tanstackRow.original) : undefined}
+              onContextMenuKey={
+                onRowContextMenu && rowIdForRow !== undefined
+                  ? ({ x, y, trigger }) =>
+                      onRowContextMenu({
+                        rowId: rowIdForRow,
+                        rowNumber: rowIndex + 1,
+                        x,
+                        y,
+                        returnFocus: trigger,
+                      })
+                  : undefined
+              }
             />
             {tanstackRow.getVisibleCells().map((cell, columnIndex) => {
               const selected =

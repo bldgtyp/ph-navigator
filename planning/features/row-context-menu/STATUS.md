@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 14:30
-STATUS: Active — phase files ready for handoff
+TIME: 16:00
+STATUS: Active — Phase 1 landed; Phase 2 next
 AUTHOR: Ed May / Claude
 SCOPE: DataTable row context menu — status ledger
 RELATED:
@@ -15,8 +15,13 @@ RELATED:
 
 ## Current state
 
-`Active` — PRD revised after architectural review (2026-06-04). Six
-phase files written and ready for hand-off. No code written yet.
+`Active` — Phase 1 shipped on 2026-06-04. The library now hosts the
+shared `useGridMenuKeyboard` hook and the hoisted
+`isPointerInActiveEditor` predicate, the new `RowContextMenu`
+component, and the delegated `<tbody>` `contextmenu` + gutter
+`Shift+F10` triggers. Single-row `Insert record` / `Expand record` /
+`Delete record` are wired against existing handlers. No WriteOp
+change and no backend work landed.
 
 The revision corrected three structural issues in the V1 PRD:
 
@@ -38,17 +43,15 @@ hoist `isPointerInActiveEditor` to a shared predicate (D-7).
 
 ## Next step
 
-Begin Phase 1 implementation. The phase file
-(`phases/phase-01-row-context-menu-shell.md`) is self-contained and
-includes the acceptance criteria, file list, key code shapes, and
-test plan. The closeout gate per `CLAUDE.md` (`make format` +
-`make ci`) is the final check.
+Begin Phase 2 (multi-row Delete collapse). The phase file is
+self-contained; the keystone Phase 3a follows (it lands the
+`rowDuplicate` `WriteOp` shape that all later consumer phases ride).
 
 ## Phase ledger
 
 | Phase | File | Status |
 |---|---|---|
-| 1 | `phases/phase-01-row-context-menu-shell.md` | Ready |
+| 1 | `phases/phase-01-row-context-menu-shell.md` | Done |
 | 2 | `phases/phase-02-multi-row-collapse.md` | Ready |
 | 3a | `phases/phase-03a-rowduplicate-op-and-materials.md` | Ready |
 | 3b | `phases/phase-03b-rooms-slice-replace-duplicate.md` | Ready |
