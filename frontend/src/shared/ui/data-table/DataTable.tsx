@@ -22,6 +22,7 @@ import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import { computeIdentifierDuplicates, recordIdColumnId } from "./lib/identifier/recordId";
 import { applyFilters } from "./lib/filter/apply";
 import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
+import { isPointerInActiveEditor as isPointerInActiveEditorBase } from "./lib/eventTargets";
 import { computeAggregatesByPath } from "./lib/body/aggregates";
 import { pruneExpandedGroups } from "./lib/body/prune";
 import { effectiveSortFromView } from "./lib/view/sanitize";
@@ -50,6 +51,7 @@ import { useGridColumnResize } from "./hooks/useGridColumnResize";
 import { DataTableErrorBoundary } from "./components/DataTableErrorBoundary";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
+import { RowContextMenu, type RowContextMenuOpenState } from "./components/RowContextMenu";
 import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
 import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
@@ -359,21 +361,12 @@ export function DataTable<TRow>({
   // Phase 3 §4.9: short-circuit pointer drag when the mousedown source
   // lives inside the active editor (inline <input> or single-select
   // popover). Lets native text-selection inside the editor work
-  // without interference from the cell-drag hook.
+  // without interference from the cell-drag hook. Shared with the
+  // GridBody contextmenu hit-test via `lib/eventTargets.ts`.
+  const editingActive = Boolean(edit.editing);
   const isPointerInActiveEditor = useCallback(
-    (target: EventTarget | null) => {
-      if (!(target instanceof Element)) return false;
-      // Mousedown on the fill handle is not "in an editor", but it must
-      // still short-circuit the cell-drag path so useGridFill's session
-      // can own the drag (Phase 7 §4.3).
-      if (target.closest(".data-table-fill-handle")) return true;
-      if (!edit.editing) return false;
-      if (target.closest(".data-table-cell-editor")) return true;
-      if (target.closest(".data-table-color-editor")) return true;
-      if (target.closest(".single-select-popover")) return true;
-      return false;
-    },
-    [edit.editing],
+    (target: EventTarget | null) => isPointerInActiveEditorBase(target, { editingActive }),
+    [editingActive],
   );
   const pointerDrag = useGridPointerDrag({
     containerRef: wrapperRef,
@@ -427,68 +420,117 @@ export function DataTable<TRow>({
   });
 
   const canInsertRow = Boolean(buildEmptyRow) && !readOnly && Boolean(onWrite);
-  const insertRowBelowActive = useCallback(async () => {
-    if (!canInsertRow || !buildEmptyRow) {
-      setAnnounce("Row insert is not enabled for this table.");
-      return;
-    }
-    // Commit any pending edit first; abort if the commit failed
-    // (validation blocked the cell write).
-    if (edit.editing) {
-      const committed = await edit.commit();
-      if (!committed) return;
-    }
-    const anchorRow = visibleDataRows[selection.activeCell.rowIndex] ?? null;
-    const anchorRowId = anchorRow ? getRowId(anchorRow) : null;
-    // Plan 30 D10 — Shift-Enter creates a truly blank row. Field
-    // defaults are sourced from `FieldDef.default` / natural zero
-    // only — never cloned from the anchor row. The anchor's position
-    // still places the new row below it; the anchor's *values* don't
-    // travel. The explicit "Duplicate record" gesture (out of scope
-    // for this plan) will reuse `buildEmptyRow` with anchor values.
-    const fieldDefaults = buildEmptyRowDefaults(fieldDefs);
-    const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
-    const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
-    const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
-
-    const op: WriteOp = {
-      kind: "rowInsert",
-      rows: [{ rowId: tmpId, fieldDefaults, anchorRowId }],
-    };
-    const inverse: WriteOp = {
-      kind: "rowDelete",
-      rows: [{ rowId: tmpId, row: newRow, anchorRowId }],
-    };
-    try {
-      await dispatchWrite(op, inverse);
-      if (firstEditableFieldKey) {
-        const initialValue =
-          fieldDefaults[firstEditableFieldKey] ??
-          fieldDefByKey.get(firstEditableFieldKey)?.default ??
-          "";
-        edit.queuePendingEdit({
-          rowId: tmpId,
-          fieldKey: firstEditableFieldKey,
-          initialValue,
-        });
+  const insertRowBelow = useCallback(
+    async (anchorRowId: string | null) => {
+      if (!canInsertRow || !buildEmptyRow) {
+        setAnnounce("Row insert is not enabled for this table.");
+        return;
       }
-      setAnnounce("Row inserted.");
-    } catch (error) {
-      setAnnounce(error instanceof Error ? error.message : "Row insert failed.");
-    }
-  }, [
-    buildEmptyRow,
-    canInsertRow,
-    dispatchWrite,
-    edit,
-    fieldDefByKey,
-    fieldDefs,
-    visibleDataRows,
-    generateRowId,
-    getRowId,
-    selection.activeCell.rowIndex,
-    visibleColumnDefs,
-  ]);
+      // Commit any pending edit first; abort if the commit failed
+      // (validation blocked the cell write).
+      if (edit.editing) {
+        const committed = await edit.commit();
+        if (!committed) return;
+      }
+      const anchorRow =
+        anchorRowId !== null
+          ? (visibleDataRows.find((row) => getRowId(row) === anchorRowId) ?? null)
+          : null;
+      // Plan 30 D10 — Shift-Enter creates a truly blank row. Field
+      // defaults are sourced from `FieldDef.default` / natural zero
+      // only — never cloned from the anchor row. The anchor's position
+      // still places the new row below it; the anchor's *values* don't
+      // travel. The explicit "Duplicate record" gesture (out of scope
+      // for this plan) will reuse `buildEmptyRow` with anchor values.
+      const fieldDefaults = buildEmptyRowDefaults(fieldDefs);
+      const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
+      const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
+      const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
+
+      const op: WriteOp = {
+        kind: "rowInsert",
+        rows: [{ rowId: tmpId, fieldDefaults, anchorRowId }],
+      };
+      const inverse: WriteOp = {
+        kind: "rowDelete",
+        rows: [{ rowId: tmpId, row: newRow, anchorRowId }],
+      };
+      try {
+        await dispatchWrite(op, inverse);
+        if (firstEditableFieldKey) {
+          const initialValue =
+            fieldDefaults[firstEditableFieldKey] ??
+            fieldDefByKey.get(firstEditableFieldKey)?.default ??
+            "";
+          edit.queuePendingEdit({
+            rowId: tmpId,
+            fieldKey: firstEditableFieldKey,
+            initialValue,
+          });
+        }
+        setAnnounce("Row inserted.");
+      } catch (error) {
+        setAnnounce(error instanceof Error ? error.message : "Row insert failed.");
+      }
+    },
+    [
+      buildEmptyRow,
+      canInsertRow,
+      dispatchWrite,
+      edit,
+      fieldDefByKey,
+      fieldDefs,
+      visibleDataRows,
+      generateRowId,
+      getRowId,
+      visibleColumnDefs,
+    ],
+  );
+
+  const insertRowBelowActive = useCallback(() => {
+    const anchorRow = visibleDataRows[selection.activeCell.rowIndex] ?? null;
+    return insertRowBelow(anchorRow ? getRowId(anchorRow) : null);
+  }, [insertRowBelow, visibleDataRows, getRowId, selection.activeCell.rowIndex]);
+
+  const deleteRowById = useCallback(
+    async (rowId: string) => {
+      if (readOnly || !onWrite) return;
+      const index = visibleDataRows.findIndex((row) => getRowId(row) === rowId);
+      if (index < 0) return;
+      const row = visibleDataRows[index]!;
+      const anchorRowId = index > 0 ? (rowIds[index - 1] ?? null) : null;
+      const op: WriteOp = {
+        kind: "rowDelete",
+        rows: [{ rowId, row, anchorRowId }],
+      };
+      const inverse: WriteOp = {
+        kind: "rowInsert",
+        rows: [
+          {
+            rowId,
+            anchorRowId,
+            fieldDefaults: extractRowDefaults(row, fieldDefs, visibleColumnDefs),
+          },
+        ],
+      };
+      try {
+        await dispatchWrite(op, inverse);
+        setAnnounce("Row deleted.");
+      } catch (error) {
+        setAnnounce(error instanceof Error ? error.message : "Row delete failed.");
+      }
+    },
+    [
+      dispatchWrite,
+      fieldDefs,
+      getRowId,
+      onWrite,
+      readOnly,
+      rowIds,
+      visibleColumnDefs,
+      visibleDataRows,
+    ],
+  );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const deleteSelectedRows = useCallback(async () => {
@@ -675,6 +717,27 @@ export function DataTable<TRow>({
     onFillLeft: !readOnly && Boolean(onWrite) ? fill.fillLeft : undefined,
     drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
+
+  // Row context menu — single shared menu instance opened imperatively
+  // by GridBody (right-click) or GridGutter (Shift+F10 / ContextMenu).
+  // Open state is frozen at gesture time per PRD §5 render-perf
+  // contract; the menu does not re-read selection/row state while
+  // open.
+  const [rowMenu, setRowMenu] = useState<RowContextMenuOpenState | null>(null);
+  const openRowMenu = useCallback(
+    (args: {
+      rowId: string;
+      rowNumber: number;
+      x: number;
+      y: number;
+      returnFocus: HTMLElement | null;
+    }) => {
+      if (readOnly || !onWrite) return;
+      setRowMenu(args);
+    },
+    [readOnly, onWrite],
+  );
+  const closeRowMenu = useCallback(() => setRowMenu(null), []);
 
   // `read_only` does NOT exclude a field — filtering on a computed
   // column is a real use case. attachment is dropped because the
@@ -1347,6 +1410,8 @@ export function DataTable<TRow>({
                   cellsWritable={!readOnly && Boolean(onWrite)}
                   identifierColumnId={pinnedColumnId}
                   identifierDuplicates={identifierDuplicates}
+                  onRowContextMenu={!readOnly && onWrite ? openRowMenu : undefined}
+                  editingActive={Boolean(edit.editing)}
                 />
                 <SummaryBar
                   columns={visibleColumnDefs}
@@ -1362,6 +1427,24 @@ export function DataTable<TRow>({
             </div>
           </SortableContext>
         </DndContext>
+        <RowContextMenu
+          open={rowMenu}
+          onClose={closeRowMenu}
+          onInsertBelow={() => {
+            if (rowMenu) void insertRowBelow(rowMenu.rowId);
+          }}
+          onOpen={
+            onRowOpen && rowMenu
+              ? () => {
+                  const row = visibleDataRows.find((r) => getRowId(r) === rowMenu.rowId);
+                  if (row) onRowOpen(row);
+                }
+              : undefined
+          }
+          onDelete={() => {
+            if (rowMenu) void deleteRowById(rowMenu.rowId);
+          }}
+        />
       </div>
     </DataTableErrorBoundary>
   );

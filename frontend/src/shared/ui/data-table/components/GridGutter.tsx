@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import { Maximize2 } from "lucide-react";
 import type { RowSelectionMode } from "../hooks/useGridRowSelection";
 
@@ -17,6 +17,11 @@ export type GridGutterProps = {
   // row-open callback; otherwise it renders as a visual-only affordance
   // so catalog and project tables keep the same gutter layout.
   onExpandRow?: () => void;
+  // Phase 1 row-context-menu — Shift+F10 / ContextMenu on the gutter
+  // number button opens the row menu anchored at the row's bottom-left.
+  // The button itself stays tabIndex=-1 (PoC), but tests and consumer
+  // code can focus it explicitly to drive the keyboard gesture.
+  onContextMenuKey?: (anchor: { x: number; y: number; trigger: HTMLElement }) => void;
 };
 
 export function GridGutter({
@@ -26,6 +31,7 @@ export function GridGutter({
   onSelectRow,
   onToggleSelected,
   onExpandRow,
+  onContextMenuKey,
 }: GridGutterProps) {
   const handleCheckboxClick = (event: MouseEvent<HTMLInputElement>) => {
     // Stop the click from bubbling to the gutter cell and triggering the
@@ -58,6 +64,22 @@ export function GridGutter({
           aria-label={`Highlight row ${rowNumber}`}
           tabIndex={-1}
           onClick={onSelectRow}
+          onKeyDown={
+            onContextMenuKey
+              ? (event: KeyboardEvent<HTMLButtonElement>) => {
+                  const isShiftF10 = event.key === "F10" && event.shiftKey;
+                  const isContextKey = event.key === "ContextMenu";
+                  if (!isShiftF10 && !isContextKey) return;
+                  event.preventDefault();
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  onContextMenuKey({
+                    x: rect.left,
+                    y: rect.bottom,
+                    trigger: event.currentTarget,
+                  });
+                }
+              : undefined
+          }
         >
           {rowNumber}
         </button>

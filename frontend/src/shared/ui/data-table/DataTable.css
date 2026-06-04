@@ -386,6 +386,37 @@
   margin-left: auto;
 }
 
+/* Row-menu items lay out as [icon][label][hint] so the shortcut hint
+   right-aligns within the menu item width. Header menu items keep
+   their two-slot label layout (no modifier). */
+.data-table-column-menu-item--with-icon {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.data-table-column-menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.data-table-column-menu-item[data-danger="true"] .data-table-column-menu-item-icon {
+  color: inherit;
+}
+
+.data-table-column-menu-item-label {
+  min-width: 0;
+}
+
+.data-table-column-menu-item-hint {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 .data-table-column-menu-divider {
   border: 0;
   border-top: 1px solid var(--border-subtle);
