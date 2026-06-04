@@ -86,7 +86,6 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
               <th scope="col">U-value ({uValueUnitLabel(unitSystem)})</th>
               <th scope="col">Ψ-glazing ({psiUnitLabel(unitSystem)})</th>
               <th scope="col">Ψ-install ({psiUnitLabel(unitSystem)})</th>
-              <th scope="col">Version</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
@@ -109,9 +108,6 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
                     unitSystem,
                     showUnit: false,
                   })}
-                </td>
-                <td>
-                  {record.version_label} · {record.version_date}
                 </td>
                 <td>{record.is_active ? "Active" : "Deactivated"}</td>
                 <td>

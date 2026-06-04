@@ -14,18 +14,21 @@ import type { WindowTypeEntry } from "./types";
 const sampleFrame: CatalogFrameType = {
   id: "rec1234567890abcd",
   name: "Skyline SR-3",
-  current_version_id: "framev_abc123",
-  catalog_schema_version: 1,
-  version_label: "v1",
-  version_date: "2026-05-14",
   color: null,
-  notes: null,
-  source_provenance: null,
+  source: null,
+  comments: null,
   is_active: true,
   created_at: "2026-05-14T00:00:00Z",
   updated_at: "2026-05-14T00:00:00Z",
   manufacturer: "Skyline",
   brand: "SR",
+  use: null,
+  operation: null,
+  location: null,
+  mull_type: null,
+  prefix: null,
+  suffix: null,
+  material: null,
   width_mm: 80,
   u_value_w_m2k: 0.95,
   psi_g_w_mk: 0.04,
@@ -89,8 +92,7 @@ describe("windows lib", () => {
     expect(ref.catalog_origin).not.toBeNull();
     expect(ref.catalog_origin?.catalog_table).toBe("frame_types");
     expect(ref.catalog_origin?.catalog_record_id).toBe(sampleFrame.id);
-    expect(ref.catalog_origin?.catalog_version_id).toBe(sampleFrame.current_version_id);
-    expect(ref.catalog_origin?.catalog_schema_version).toBe(1);
+    expect(ref.catalog_origin?.catalog_version_id).toBeNull();
     expect(ref.catalog_origin?.local_overrides).toEqual([]);
   });
 

@@ -19,8 +19,7 @@ def clean_catalog_tables() -> Iterator[None]:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE catalog_materials,
-                     catalog_frame_type_versions, catalog_frame_types,
+            TRUNCATE catalog_materials, catalog_frame_types,
                      catalog_glazing_types,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
@@ -31,8 +30,7 @@ def clean_catalog_tables() -> Iterator[None]:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE catalog_materials,
-                     catalog_frame_type_versions, catalog_frame_types,
+            TRUNCATE catalog_materials, catalog_frame_types,
                      catalog_glazing_types,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users

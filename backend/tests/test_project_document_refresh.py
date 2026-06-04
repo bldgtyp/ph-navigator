@@ -25,7 +25,7 @@ def draft_window_types_url(project_id: object, version_id: object) -> str:
 def clean_refresh_tables() -> Iterator[None]:
     sql = """
         TRUNCATE catalog_materials,
-                 catalog_frame_type_versions, catalog_frame_types,
+                 catalog_frame_types,
                  catalog_glazing_types,
                  user_action_log, sessions, project_status_items,
                  project_version_drafts, project_versions, projects, users
@@ -46,15 +46,13 @@ def _create_frame(client: TestClient, name: str, u_value: float) -> dict[str, An
             "name": name,
             "manufacturer": "Skyline",
             "brand": "Ridge",
-            "version_label": "v1",
-            "version_date": "2024-06-01",
             "width_mm": 100.0,
             "u_value_w_m2k": u_value,
             "psi_g_w_mk": 0.04,
             "psi_install_w_mk": 0.05,
             "color": None,
-            "notes": None,
-            "source_provenance": "datasheet",
+            "source": "datasheet",
+            "comments": None,
         },
     )
     assert response.status_code == 201, response.text
@@ -91,13 +89,13 @@ def _frame_ref_from(frame: dict[str, Any], overrides: list[str] | None = None) -
         "psi_g_w_mk": frame["psi_g_w_mk"],
         "psi_install_w_mk": frame["psi_install_w_mk"],
         "color": frame["color"],
-        "notes": frame["notes"],
-        "source_provenance": frame["source_provenance"],
+        "source": frame["source"],
+        "comments": frame["comments"],
         "catalog_origin": {
             "catalog_table": "frame_types",
             "catalog_record_id": frame["id"],
-            "catalog_version_id": frame["current_version_id"],
-            "catalog_schema_version": frame["catalog_schema_version"],
+            "catalog_version_id": None,
+            "catalog_schema_version": None,
             "synced_at": "2026-05-14T12:00:00Z",
             "local_overrides": overrides or [],
         },
@@ -305,54 +303,6 @@ def test_hand_entered_refs_are_excluded(clean_refresh_tables: None) -> None:
     slots = response.json()["slots"]
     assert len(slots) == 1
     assert slots[0]["slot"] == "frame.top"
-
-
-def test_drifted_on_new_current_version_with_identical_fields(
-    clean_refresh_tables: None,
-) -> None:
-    """Pinned `catalog_version_id` differs from current but every typed field
-    still matches: the slot must still be reported as `drifted` so the user
-    can see and acknowledge the version bump. Exercises the version-id branch
-    of the drift state computation independently of field deltas."""
-    client = signed_in_client()
-    frame = _create_frame(client, "SR-3", 0.95)
-    glazing = _create_glazing(client, "Triple LowE", 0.6)
-    project = create_project(client)
-    _seed_window_types(client, project, frame, glazing)
-
-    # Fork a new current version with identical typed fields. There is no
-    # "new version" API yet (data-model.md §7.3 in-place edit is the MVP
-    # flow); the future new-version path will do the same INSERT + pointer
-    # update this test performs directly.
-    new_version_id = "framev_fork_v2_aaaa"
-    with transaction() as conn:
-        conn.execute(
-            """
-            INSERT INTO catalog_frame_type_versions
-                (id, record_id, version_label, version_date,
-                 manufacturer, brand, width_mm, u_value_w_m2k,
-                 psi_g_w_mk, psi_install_w_mk, color, notes,
-                 source_provenance, catalog_schema_version, created_by)
-            SELECT %(new_id)s, record_id, 'v2', '2025-01-01',
-                   manufacturer, brand, width_mm, u_value_w_m2k,
-                   psi_g_w_mk, psi_install_w_mk, color, notes,
-                   source_provenance, catalog_schema_version, created_by
-            FROM catalog_frame_type_versions WHERE id = %(current)s
-            """,
-            {"new_id": new_version_id, "current": frame["current_version_id"]},
-        )
-        conn.execute(
-            "UPDATE catalog_frame_types SET current_version_id = %(new)s WHERE id = %(record)s",
-            {"new": new_version_id, "record": frame["id"]},
-        )
-
-    response = client.get(refresh_url(project["id"], project["active_version_id"]))
-    assert response.status_code == 200
-    frame_slot = next(slot for slot in response.json()["slots"] if slot["slot"] == "frame.top")
-    assert frame_slot["state"] == "drifted"
-    assert frame_slot["pinned_catalog_version_id"] == frame["current_version_id"]
-    assert frame_slot["current_catalog_version_id"] == new_version_id
-    assert all(field["ref_value"] == field["catalog_value"] for field in frame_slot["fields"])
 
 
 def test_unauthenticated_and_viewer_reads_are_rejected(

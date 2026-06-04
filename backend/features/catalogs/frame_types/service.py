@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from fastapi import Request
@@ -13,11 +12,10 @@ from features.auth.models import UserPublic
 from features.catalogs._shared import (
     log_catalog_action,
     new_catalog_record_id,
-    new_catalog_version_id,
+    next_copy_suffix,
 )
 from features.catalogs.frame_types import repository
 from features.catalogs.frame_types.models import (
-    CATALOG_VERSION_ID_PREFIX,
     CatalogFrameTypeCreateRequest,
     CatalogFrameTypeListItem,
     CatalogFrameTypeListResponse,
@@ -55,25 +53,27 @@ def create_frame_type(
     payload: CatalogFrameTypeCreateRequest, user: UserPublic, request: Request
 ) -> CatalogFrameTypePublic:
     record_id = new_catalog_record_id()
-    version_id = new_catalog_version_id(CATALOG_VERSION_ID_PREFIX)
-    version_date = payload.version_date or date.today()
     with transaction() as conn:
         repository.insert_frame_type(
             conn,
             record_id=record_id,
-            version_id=version_id,
             name=payload.name,
             manufacturer=payload.manufacturer,
             brand=payload.brand,
-            version_label=payload.version_label,
-            version_date=version_date,
+            use=payload.use,
+            operation=payload.operation,
+            location=payload.location,
+            mull_type=payload.mull_type,
+            prefix=payload.prefix,
+            suffix=payload.suffix,
+            material=payload.material,
             width_mm=payload.width_mm,
             u_value_w_m2k=payload.u_value_w_m2k,
             psi_g_w_mk=payload.psi_g_w_mk,
             psi_install_w_mk=payload.psi_install_w_mk,
             color=payload.color,
-            notes=payload.notes,
-            source_provenance=payload.source_provenance,
+            source=payload.source,
+            comments=payload.comments,
             user_id=user.id,
         )
         row = repository.get_frame_type(conn, record_id)
@@ -84,7 +84,6 @@ def create_frame_type(
             request,
             catalog_table=CATALOG_TABLE,
             record_id=record_id,
-            version_id=version_id,
         )
     if row is None:
         raise RuntimeError("Catalog frame type insert did not return a row.")
@@ -124,11 +123,59 @@ def update_frame_type(
                 request,
                 catalog_table=CATALOG_TABLE,
                 record_id=record_id,
-                version_id=row["current_version_id"],
                 changed_fields=list(values.keys()),
             )
     if row is None:
         raise RuntimeError("Catalog frame type disappeared after update.")
+    return _to_public(row)
+
+
+def duplicate_frame_type(record_id: str, user: UserPublic, request: Request) -> CatalogFrameTypePublic:
+    """Insert a copy of ``record_id`` with a ``(copy)`` suffix on ``name``."""
+    new_record_id = new_catalog_record_id()
+    with transaction() as conn:
+        src = repository.get_frame_type(conn, record_id)
+        if src is None or not src["is_active"]:
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "catalog_frame_type_not_found",
+                "Catalog frame type not found.",
+            )
+        siblings = repository.list_sibling_names(conn, exclude_id=record_id)
+        new_name = next_copy_suffix(src["name"], siblings)
+        repository.insert_frame_type(
+            conn,
+            record_id=new_record_id,
+            name=new_name,
+            manufacturer=src["manufacturer"],
+            brand=src["brand"],
+            use=src["use"],
+            operation=src["operation"],
+            location=src["location"],
+            mull_type=src["mull_type"],
+            prefix=src["prefix"],
+            suffix=src["suffix"],
+            material=src["material"],
+            width_mm=src["width_mm"],
+            u_value_w_m2k=src["u_value_w_m2k"],
+            psi_g_w_mk=src["psi_g_w_mk"],
+            psi_install_w_mk=src["psi_install_w_mk"],
+            color=src["color"],
+            source=src["source"],
+            comments=src["comments"],
+            user_id=user.id,
+        )
+        row = repository.get_frame_type(conn, new_record_id)
+        log_catalog_action(
+            conn,
+            "catalog_record_create",
+            user,
+            request,
+            catalog_table=CATALOG_TABLE,
+            record_id=new_record_id,
+        )
+    if row is None:
+        raise RuntimeError("Catalog frame type disappeared after duplicate.")
     return _to_public(row)
 
 
@@ -170,6 +217,5 @@ def reactivate_frame_type(record_id: str, user: UserPublic, request: Request) ->
             request,
             catalog_table=CATALOG_TABLE,
             record_id=record_id,
-            version_id=row["current_version_id"],
         )
     return _to_public(row)

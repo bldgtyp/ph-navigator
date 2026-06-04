@@ -7,10 +7,8 @@ import re
 from features.catalogs._shared import (
     CATALOG_RECORD_ID_PREFIX,
     new_catalog_record_id,
-    new_catalog_version_id,
     next_copy_suffix,
 )
-from features.catalogs.frame_types.models import CATALOG_VERSION_ID_PREFIX as FRAME_VERSION_PREFIX
 
 _RECORD_ID_PATTERN = re.compile(r"^rec[A-Za-z0-9]{14}$")
 
@@ -28,16 +26,6 @@ def test_new_catalog_record_id_is_unique_across_calls() -> None:
     """Each call returns a fresh id; collisions are astronomically rare."""
     ids = {new_catalog_record_id() for _ in range(1000)}
     assert len(ids) == 1000
-
-
-def test_version_ids_keep_v2_native_table_prefix() -> None:
-    """Frame still uses the per-version row; materials (0015) and glazing
-    (0016) dropped theirs, so only frame keeps a version prefix."""
-    assert FRAME_VERSION_PREFIX == "framev_"
-    version_id = new_catalog_version_id(FRAME_VERSION_PREFIX)
-    assert version_id.startswith(FRAME_VERSION_PREFIX)
-    # Body is url-safe base64 of 12 random bytes -> 16 chars.
-    assert len(version_id) > len(FRAME_VERSION_PREFIX)
 
 
 def test_next_copy_suffix_first_duplicate_appends_copy() -> None:

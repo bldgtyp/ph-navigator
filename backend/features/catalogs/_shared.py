@@ -73,16 +73,6 @@ def new_catalog_record_id() -> str:
     return f"{CATALOG_RECORD_ID_PREFIX}{body}"
 
 
-def new_catalog_version_id(prefix: str) -> str:
-    """Generate a fresh catalog version id.
-
-    Version ids are V2-native and table-prefixed (``matv_``, ``framev_``,
-    ``glazingv_``) so they remain self-documenting; AirTable has no version
-    concept so there is no import-compat constraint on versions.
-    """
-    return f"{prefix}{secrets.token_urlsafe(12)}"
-
-
 def strip_required(value: object) -> object:
     if isinstance(value, str):
         return value.strip()
@@ -94,18 +84,6 @@ def strip_optional(value: object) -> object:
         stripped = value.strip()
         return stripped or None
     return value
-
-
-def reject_clearing_version_date(model: Any) -> None:
-    """Shared `version_date` PATCH guard.
-
-    The DB column is NOT NULL. Omitting the field on PATCH keeps the value;
-    passing an explicit ``null`` would emit ``SET version_date = NULL`` and
-    trip the constraint as a 500. Each catalog's UpdateRequest calls this
-    from a ``@model_validator(mode="after")`` to fail closed at 422 instead.
-    """
-    if "version_date" in model.model_fields_set and model.version_date is None:
-        raise ValueError("version_date cannot be set to null; omit the field to leave it unchanged")
 
 
 def soft_delete_catalog_record(

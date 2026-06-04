@@ -17,6 +17,7 @@ from features.catalogs.frame_types.models import (
 from features.catalogs.frame_types.service import (
     create_frame_type,
     deactivate_frame_type,
+    duplicate_frame_type,
     get_frame_type,
     list_frame_types,
     reactivate_frame_type,
@@ -70,3 +71,17 @@ def delete_frame_type_route(record_id: str, request: Request, auth: CurrentUser)
 def reactivate_frame_type_route(record_id: str, request: Request, auth: CurrentUser) -> CatalogFrameTypePublic:
     user, _expires_at = auth
     return reactivate_frame_type(record_id, user, request)
+
+
+@router.post(
+    "/{record_id}/duplicate",
+    response_model=CatalogFrameTypePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_frame_type_duplicate(
+    record_id: str,
+    request: Request,
+    auth: CurrentUser,
+) -> CatalogFrameTypePublic:
+    user, _expires_at = auth
+    return duplicate_frame_type(record_id, user, request)

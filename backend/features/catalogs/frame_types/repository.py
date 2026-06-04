@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -16,37 +15,61 @@ from features.catalogs._shared import (
 
 _TABLE = "catalog_frame_types"
 
-_SELECT_JOINED = """
+_SELECT = """
 SELECT
-    cf.id                                  AS id,
-    cf.name                                AS name,
-    cf.current_version_id                  AS current_version_id,
-    cf.created_at                          AS created_at,
-    cf.created_by                          AS created_by,
-    cf.updated_at                          AS updated_at,
-    cf.updated_by                          AS updated_by,
-    (cf.deleted_at IS NULL)                AS is_active,
-    cfv.catalog_schema_version             AS catalog_schema_version,
-    cfv.manufacturer                       AS manufacturer,
-    cfv.brand                              AS brand,
-    cfv.version_label                      AS version_label,
-    cfv.version_date                       AS version_date,
-    cfv.width_mm                           AS width_mm,
-    cfv.u_value_w_m2k                      AS u_value_w_m2k,
-    cfv.psi_g_w_mk                         AS psi_g_w_mk,
-    cfv.psi_install_w_mk                   AS psi_install_w_mk,
-    cfv.color                         AS color,
-    cfv.notes                              AS notes,
-    cfv.source_provenance                  AS source_provenance
-FROM catalog_frame_types cf
-JOIN catalog_frame_type_versions cfv ON cfv.id = cf.current_version_id
+    id,
+    name,
+    manufacturer,
+    brand,
+    "use",
+    operation,
+    location,
+    mull_type,
+    prefix,
+    suffix,
+    material,
+    width_mm,
+    u_value_w_m2k,
+    psi_g_w_mk,
+    psi_install_w_mk,
+    color,
+    source,
+    comments,
+    (deleted_at IS NULL) AS is_active,
+    created_at,
+    created_by,
+    updated_at,
+    updated_by
+FROM catalog_frame_types
 """
+
+_UPDATABLE_FIELDS = frozenset(
+    {
+        "name",
+        "manufacturer",
+        "brand",
+        "use",
+        "operation",
+        "location",
+        "mull_type",
+        "prefix",
+        "suffix",
+        "material",
+        "width_mm",
+        "u_value_w_m2k",
+        "psi_g_w_mk",
+        "psi_install_w_mk",
+        "color",
+        "source",
+        "comments",
+    }
+)
 
 
 def list_frame_types(conn: Connection[Any], include_inactive: bool = False) -> list[dict[str, Any]]:
-    where = sql.SQL("") if include_inactive else sql.SQL("WHERE cf.deleted_at IS NULL")
-    query = sql.SQL("{select} {where} ORDER BY cf.name ASC, cf.id ASC").format(
-        select=sql.SQL(_SELECT_JOINED),
+    where = sql.SQL("") if include_inactive else sql.SQL("WHERE deleted_at IS NULL")
+    query = sql.SQL("{select} {where} ORDER BY name ASC, id ASC").format(
+        select=sql.SQL(_SELECT),
         where=where,
     )
     rows = conn.execute(query).fetchall()
@@ -54,88 +77,85 @@ def list_frame_types(conn: Connection[Any], include_inactive: bool = False) -> l
 
 
 def get_frame_type(conn: Connection[Any], record_id: str) -> dict[str, Any] | None:
-    query = sql.SQL("{select} WHERE cf.id = %(id)s").format(select=sql.SQL(_SELECT_JOINED))
+    query = sql.SQL("{select} WHERE id = %(id)s").format(select=sql.SQL(_SELECT))
     return conn.execute(query, {"id": record_id}).fetchone()
+
+
+def list_sibling_names(conn: Connection[Any], *, exclude_id: str) -> list[str]:
+    """Return names of all active rows except ``exclude_id``."""
+    rows = conn.execute(
+        "SELECT name FROM catalog_frame_types WHERE deleted_at IS NULL AND id <> %(exclude_id)s",
+        {"exclude_id": exclude_id},
+    ).fetchall()
+    return [row["name"] for row in rows]
 
 
 def insert_frame_type(
     conn: Connection[Any],
     *,
     record_id: str,
-    version_id: str,
     name: str,
     manufacturer: str | None,
     brand: str | None,
-    version_label: str,
-    version_date: date,
+    use: str | None,
+    operation: str | None,
+    location: str | None,
+    mull_type: str | None,
+    prefix: str | None,
+    suffix: str | None,
+    material: str | None,
     width_mm: float | None,
     u_value_w_m2k: float | None,
     psi_g_w_mk: float | None,
     psi_install_w_mk: float | None,
     color: str | None,
-    notes: str | None,
-    source_provenance: str | None,
+    source: str | None,
+    comments: str | None,
     user_id: UUID,
 ) -> None:
     conn.execute(
         """
-        INSERT INTO catalog_frame_types (id, name, created_by, updated_by)
-        VALUES (%(id)s, %(name)s, %(user_id)s, %(user_id)s)
-        """,
-        {"id": record_id, "name": name, "user_id": user_id},
-    )
-    conn.execute(
-        """
-        INSERT INTO catalog_frame_type_versions (
-            id, record_id, version_label, version_date,
+        INSERT INTO catalog_frame_types (
+            id, name,
             manufacturer, brand,
+            "use", operation, location, mull_type,
+            prefix, suffix, material,
             width_mm, u_value_w_m2k, psi_g_w_mk, psi_install_w_mk,
-            color, notes, source_provenance, created_by
+            color, source, comments,
+            created_by, updated_by
         )
         VALUES (
-            %(id)s, %(record_id)s, %(version_label)s, %(version_date)s,
+            %(id)s, %(name)s,
             %(manufacturer)s, %(brand)s,
+            %(use)s, %(operation)s, %(location)s, %(mull_type)s,
+            %(prefix)s, %(suffix)s, %(material)s,
             %(width_mm)s, %(u_value_w_m2k)s, %(psi_g_w_mk)s, %(psi_install_w_mk)s,
-            %(color)s, %(notes)s, %(source_provenance)s, %(user_id)s
+            %(color)s, %(source)s, %(comments)s,
+            %(user_id)s, %(user_id)s
         )
         """,
         {
-            "id": version_id,
-            "record_id": record_id,
-            "version_label": version_label,
-            "version_date": version_date,
+            "id": record_id,
+            "name": name,
             "manufacturer": manufacturer,
             "brand": brand,
+            "use": use,
+            "operation": operation,
+            "location": location,
+            "mull_type": mull_type,
+            "prefix": prefix,
+            "suffix": suffix,
+            "material": material,
             "width_mm": width_mm,
             "u_value_w_m2k": u_value_w_m2k,
             "psi_g_w_mk": psi_g_w_mk,
             "psi_install_w_mk": psi_install_w_mk,
             "color": color,
-            "notes": notes,
-            "source_provenance": source_provenance,
+            "source": source,
+            "comments": comments,
             "user_id": user_id,
         },
     )
-    conn.execute(
-        "UPDATE catalog_frame_types SET current_version_id = %(version_id)s WHERE id = %(id)s",
-        {"version_id": version_id, "id": record_id},
-    )
-
-
-_IDENTITY_FIELDS = {"name"}
-_VERSION_FIELDS = {
-    "manufacturer",
-    "brand",
-    "version_label",
-    "version_date",
-    "width_mm",
-    "u_value_w_m2k",
-    "psi_g_w_mk",
-    "psi_install_w_mk",
-    "color",
-    "notes",
-    "source_provenance",
-}
 
 
 def update_frame_type(
@@ -144,15 +164,14 @@ def update_frame_type(
     values: Mapping[str, object],
     user_id: UUID,
 ) -> bool:
-    identity_updates = {k: v for k, v in values.items() if k in _IDENTITY_FIELDS}
-    version_updates = {k: v for k, v in values.items() if k in _VERSION_FIELDS}
-
-    identity_assignments_parts: list[sql.Composable] = [
-        sql.SQL("{} = {}").format(sql.Identifier(key), sql.Placeholder(key)) for key in sorted(identity_updates)
+    """In-place patch. Returns False if the row is missing or soft-deleted."""
+    updates = {k: v for k, v in values.items() if k in _UPDATABLE_FIELDS}
+    assignment_parts: list[sql.Composable] = [
+        sql.SQL("{} = {}").format(sql.Identifier(key), sql.Placeholder(key)) for key in sorted(updates)
     ]
-    identity_assignments_parts.append(sql.SQL("updated_at = now()"))
-    identity_assignments_parts.append(sql.SQL("updated_by = %(updated_by)s"))
-    params: dict[str, Any] = dict(identity_updates)
+    assignment_parts.append(sql.SQL("updated_at = now()"))
+    assignment_parts.append(sql.SQL("updated_by = %(updated_by)s"))
+    params: dict[str, Any] = dict(updates)
     params["updated_by"] = user_id
     params["id"] = record_id
     row = conn.execute(
@@ -161,28 +180,12 @@ def update_frame_type(
             UPDATE catalog_frame_types
             SET {assignments}
             WHERE id = %(id)s AND deleted_at IS NULL
-            RETURNING current_version_id
+            RETURNING id
             """
-        ).format(assignments=sql.SQL(", ").join(identity_assignments_parts)),
+        ).format(assignments=sql.SQL(", ").join(assignment_parts)),
         params,
     ).fetchone()
-    if row is None:
-        return False
-
-    if version_updates:
-        assignments = sql.SQL(", ").join(
-            sql.SQL("{} = {}").format(sql.Identifier(key), sql.Placeholder(key)) for key in sorted(version_updates)
-        )
-        version_params: dict[str, Any] = dict(version_updates)
-        version_params["version_id"] = row["current_version_id"]
-        conn.execute(
-            sql.SQL("UPDATE catalog_frame_type_versions SET {assignments} WHERE id = %(version_id)s").format(
-                assignments=assignments
-            ),
-            version_params,
-        )
-
-    return True
+    return row is not None
 
 
 def soft_delete_frame_type(conn: Connection[Any], record_id: str, user_id: UUID) -> bool:
