@@ -180,12 +180,12 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
     session_expired = False
     result: tuple[UserPublic, datetime] | None = None
     with transaction() as conn:
-        session = repository.get_session_for_update(conn, session_id)
-        if session is None:
+        row = repository.get_session_with_user(conn, session_id)
+        if row is None:
             raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
 
-        if session["invalidated_at"] is not None:
-            reason = str(session["invalidation_reason"] or "invalidated")
+        if row["session_invalidated_at"] is not None:
+            reason = str(row["session_invalidation_reason"] or "invalidated")
             raise api_error(
                 status.HTTP_401_UNAUTHORIZED,
                 "session_invalidated",
@@ -193,17 +193,24 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
                 {"reason": reason},
             )
 
-        if session["expires_at"] <= now:
+        if row["session_expires_at"] <= now:
             repository.invalidate_session(conn, session_id, reason="expired", invalidated_at=now)
             session_expired = True
         else:
-            user = repository.get_user_by_id(conn, session["user_id"])
-            if user is None or not user["is_active"]:
+            if not row["user_is_active"]:
                 raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
 
             expires_at = session_expires_at(now)
             repository.touch_session(conn, session_id, expires_at)
-            result = (public_user(user), expires_at)
+            user = public_user(
+                {
+                    "id": row["user_id"],
+                    "email": row["user_email"],
+                    "display_name": row["user_display_name"],
+                    "units_preference": row["user_units_preference"],
+                }
+            )
+            result = (user, expires_at)
 
     if session_expired:
         raise api_error(
