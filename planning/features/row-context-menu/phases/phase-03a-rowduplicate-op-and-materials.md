@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 14:30
-STATUS: Ready
+TIME: 17:00
+STATUS: Done — landed 2026-06-04 on main
 AUTHOR: Ed May / Claude
 SCOPE: `rowDuplicate` WriteOp shape; library `duplicateRowById`;
        Materials backend duplicate endpoint; `(copy)` suffix helper;

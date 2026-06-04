@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useEffect, type ReactNode } from "react";
-import { ArrowDown, Maximize2, Trash2 } from "lucide-react";
+import { ArrowDown, Copy, Maximize2, Trash2 } from "lucide-react";
 import { pointAnchorRef } from "../lib/popoverAnchor";
 import { useGridMenuKeyboard } from "../hooks/useGridMenuKeyboard";
 
@@ -35,6 +35,7 @@ export type RowContextMenuProps = {
   open: RowContextMenuOpenState | null;
   onClose: () => void;
   onInsertBelow: () => void;
+  onDuplicate: () => void;
   onOpen?: () => void;
   onDelete: () => void;
   onDeleteSelection: () => void;
@@ -53,6 +54,7 @@ function buildItems(args: {
   collapsed: boolean;
   selectionCount: number;
   onInsertBelow: () => void;
+  onDuplicate: () => void;
   onOpen?: () => void;
   onDelete: () => void;
   onDeleteSelection: () => void;
@@ -75,6 +77,12 @@ function buildItems(args: {
       icon: <ArrowDown size={14} aria-hidden="true" />,
       shortcutHint: "⇧ ⏎",
       onSelect: args.onInsertBelow,
+    },
+    {
+      key: "duplicate",
+      label: "Duplicate record",
+      icon: <Copy size={14} aria-hidden="true" />,
+      onSelect: args.onDuplicate,
     },
   ];
   if (args.onOpen) {
@@ -100,6 +108,7 @@ export function RowContextMenu({
   open,
   onClose,
   onInsertBelow,
+  onDuplicate,
   onOpen,
   onDelete,
   onDeleteSelection,
@@ -109,6 +118,7 @@ export function RowContextMenu({
     collapsed,
     selectionCount: open?.selectionCount ?? 0,
     onInsertBelow,
+    onDuplicate,
     onOpen,
     onDelete,
     onDeleteSelection,

@@ -492,6 +492,30 @@ export function DataTable<TRow>({
     return insertRowBelow(anchorRow ? getRowId(anchorRow) : null);
   }, [insertRowBelow, visibleDataRows, getRowId, selection.activeCell.rowIndex]);
 
+  const duplicateRowById = useCallback(
+    async (rowId: string) => {
+      if (readOnly || !onWrite) return;
+      const sourceRow = visibleDataRows.find((row) => getRowId(row) === rowId);
+      if (sourceRow === undefined) return;
+      const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
+      const op: WriteOp = {
+        kind: "rowDuplicate",
+        rows: [{ rowId: tmpId, sourceRowId: rowId, sourceRow, anchorRowId: rowId }],
+      };
+      const inverse: WriteOp = {
+        kind: "rowDelete",
+        rows: [{ rowId: tmpId, row: sourceRow, anchorRowId: rowId }],
+      };
+      try {
+        await dispatchWrite(op, inverse);
+        setAnnounce("Row duplicated.");
+      } catch (error) {
+        setAnnounce(error instanceof Error ? error.message : "Row duplicate failed.");
+      }
+    },
+    [readOnly, onWrite, visibleDataRows, getRowId, generateRowId, dispatchWrite],
+  );
+
   const deleteRowById = useCallback(
     async (rowId: string) => {
       if (readOnly || !onWrite) return;
@@ -1446,6 +1470,9 @@ export function DataTable<TRow>({
           onClose={closeRowMenu}
           onInsertBelow={() => {
             if (rowMenu) void insertRowBelow(rowMenu.rowId);
+          }}
+          onDuplicate={() => {
+            if (rowMenu) void duplicateRowById(rowMenu.rowId);
           }}
           onOpen={
             onRowOpen && rowMenu

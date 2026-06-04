@@ -8,6 +8,7 @@ from features.catalogs._shared import (
     CATALOG_RECORD_ID_PREFIX,
     new_catalog_record_id,
     new_catalog_version_id,
+    next_copy_suffix,
 )
 from features.catalogs.frame_types.models import CATALOG_VERSION_ID_PREFIX as FRAME_VERSION_PREFIX
 from features.catalogs.glazing_types.models import CATALOG_VERSION_ID_PREFIX as GLAZING_VERSION_PREFIX
@@ -43,3 +44,31 @@ def test_version_ids_keep_v2_native_table_prefix() -> None:
         assert version_id.startswith(prefix)
         # Body is url-safe base64 of 12 random bytes -> 16 chars.
         assert len(version_id) > len(prefix)
+
+
+def test_next_copy_suffix_first_duplicate_appends_copy() -> None:
+    assert next_copy_suffix("XPS", []) == "XPS (copy)"
+
+
+def test_next_copy_suffix_second_duplicate_appends_copy_2() -> None:
+    assert next_copy_suffix("XPS", ["XPS (copy)"]) == "XPS (copy 2)"
+
+
+def test_next_copy_suffix_advances_past_existing_copies() -> None:
+    assert next_copy_suffix("XPS", ["XPS (copy)", "XPS (copy 2)", "XPS (copy 3)"]) == "XPS (copy 4)"
+
+
+def test_next_copy_suffix_strips_source_suffix() -> None:
+    """Duplicating ``Foo (copy)`` resolves under ``Foo`` so the chain stays flat."""
+    assert next_copy_suffix("Foo (copy)", ["Foo (copy)"]) == "Foo (copy 2)"
+    assert next_copy_suffix("Foo (copy 5)", ["Foo", "Foo (copy)"]) == "Foo (copy 2)"
+
+
+def test_next_copy_suffix_ignores_unrelated_names() -> None:
+    assert next_copy_suffix("XPS", ["EPS", "XPS Type IV", "XPS 2"]) == "XPS (copy)"
+
+
+def test_next_copy_suffix_handles_internal_parens() -> None:
+    """A base name that contains parens but doesn't end in ``(copy)`` is treated as a literal root."""
+    assert next_copy_suffix("XPS (Type IV)", []) == "XPS (Type IV) (copy)"
+    assert next_copy_suffix("XPS (Type IV)", ["XPS (Type IV) (copy)"]) == "XPS (Type IV) (copy 2)"

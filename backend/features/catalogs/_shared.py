@@ -15,8 +15,10 @@ they share three concerns:
 
 from __future__ import annotations
 
+import re
 import secrets
 import string
+from collections.abc import Iterable
 from typing import Any, Final
 from uuid import UUID
 
@@ -26,6 +28,35 @@ from psycopg import Connection, sql
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+
+_COPY_SUFFIX_RE: Final = re.compile(r"^(.*?)\s*\(copy(?:\s+(\d+))?\)$")
+
+
+def next_copy_suffix(base_name: str, sibling_names: Iterable[str]) -> str:
+    """Resolve the next free ``<root> (copy)`` / ``<root> (copy N)`` name.
+
+    Matches AirTable's duplicate-row UX: duplicating ``Foo`` produces
+    ``Foo (copy)``; duplicating ``Foo`` again produces ``Foo (copy 2)``;
+    duplicating ``Foo (copy)`` also produces ``Foo (copy 2)`` (the
+    source's own suffix is stripped before resolving) so the chain stays
+    flat rather than recursing into ``Foo (copy) (copy)``.
+
+    ``sibling_names`` is the set of names already in the same scope —
+    typically the table's active rows excluding the source.
+    """
+    match = _COPY_SUFFIX_RE.match(base_name)
+    root = match.group(1) if match else base_name
+    siblings = set(sibling_names)
+    candidate = f"{root} (copy)"
+    if candidate not in siblings:
+        return candidate
+    n = 2
+    while True:
+        candidate = f"{root} (copy {n})"
+        if candidate not in siblings:
+            return candidate
+        n += 1
+
 
 CATALOG_SCHEMA_VERSION: Final[int] = 1
 

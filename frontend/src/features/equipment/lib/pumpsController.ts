@@ -4,6 +4,7 @@ import {
   isPumpOptionKey,
   pumpsPayloadFromCellWrites,
   pumpsPayloadFromRowDelete,
+  pumpsPayloadFromRowDuplicate,
   pumpsPayloadFromRowInsert,
   replacePumpOptionsPayload,
   validatePumpsPayload,
@@ -19,6 +20,9 @@ export const pumpsPayloadBuilders: SlicePayloadBuilders<PumpsSlice, PumpRow, Pum
     },
     fromRowDelete(slice, rows) {
       return pumpsPayloadFromRowDelete(slice, rows);
+    },
+    fromRowDuplicate(slice, rows) {
+      return pumpsPayloadFromRowDuplicate(slice, rows);
     },
     validate(payload) {
       return validatePumpsPayload(payload);

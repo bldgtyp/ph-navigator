@@ -12,6 +12,7 @@ import {
   replaceRoomOptionsPayload,
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
+  roomsPayloadFromRowDuplicate,
   roomsPayloadFromRowInsert,
   validateRoomsPayload,
 } from "../lib";
@@ -27,6 +28,9 @@ export const roomsPayloadBuilders: SlicePayloadBuilders<RoomsSlice, RoomRow, Roo
     },
     fromRowDelete(slice, rows) {
       return roomsPayloadFromRowDelete(slice, rows);
+    },
+    fromRowDuplicate(slice, rows) {
+      return roomsPayloadFromRowDuplicate(slice, rows);
     },
     validate(payload) {
       return validateRoomsPayload(payload);

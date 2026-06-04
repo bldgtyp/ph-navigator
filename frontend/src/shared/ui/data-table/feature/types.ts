@@ -13,6 +13,7 @@ import type {
   EditCustomFieldBundleRequest,
   FieldOption,
   RowDeletePayload,
+  RowDuplicatePayload,
   RowInsertPayload,
   ViewState,
   WriteOp,
@@ -40,6 +41,11 @@ export interface SlicePayloadBuilders<TSlice, TRow extends { id: string }, TPayl
   ): TPayload;
   fromRowInsert(slice: TSlice, rows: RowInsertPayload[], build: BuildEmptyRow<TRow>): TPayload;
   fromRowDelete(slice: TSlice, rows: RowDeletePayload[]): TPayload;
+  // Phase 3b/3c — clone each `sourceRow` snapshot client-side and
+  // produce a slice-replace payload. Slice-replace consumers do not
+  // have a per-row CRUD endpoint, so the cloning lives in the
+  // controller boundary (PRD §8 / decision D-1).
+  fromRowDuplicate(slice: TSlice, rows: RowDuplicatePayload[]): TPayload;
   // Pre-flight validation run on every replace payload. Return the
   // user-facing error message, or null when the payload is valid.
   validate(payload: TPayload): string | null;

@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import type { CellWrite, ViewState, WriteOp } from "../../../shared/ui/data-table";
-import { createMaterial, deactivateMaterial, updateMaterial } from "../api";
+import { createMaterial, deactivateMaterial, duplicateMaterial, updateMaterial } from "../api";
 import { catalogQueryKeys } from "../query-keys";
 import type {
   CatalogMaterial,
@@ -130,6 +130,16 @@ export function useMaterialsCatalogController(): MaterialsCatalogController {
         }
         case "rowDelete": {
           await Promise.all(op.rows.map((row) => deactivateMaterial(row.rowId)));
+          await invalidate();
+          return;
+        }
+        case "rowDuplicate": {
+          if (op.rows.length === 0) return;
+          // The library carries a full TRow snapshot in `sourceRow`,
+          // but Materials lets the backend rebuild the duplicate from
+          // its own state — we only need `sourceRowId`. The snapshot
+          // still feeds the inverse `rowDelete` for ⌘Z bookkeeping.
+          await Promise.all(op.rows.map((row) => duplicateMaterial(row.sourceRowId)));
           await invalidate();
           return;
         }

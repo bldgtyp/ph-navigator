@@ -281,6 +281,14 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
         );
         return;
       }
+      if (op.kind === "rowDuplicate") {
+        await commitPayloadOrThrow(
+          payloadBuilders.fromRowDuplicate(slice, op.rows),
+          conflictMessages.activeRowConflict,
+          "Could not duplicate row.",
+        );
+        return;
+      }
       if (op.kind === "schemaMutation") {
         if (op.variant === "typed") {
           await commitSchemaMutation(op.mutation);

@@ -74,6 +74,20 @@ def get_materials_by_ids(conn: Connection[Any], material_ids: list[str]) -> list
     return list(conn.execute(query, {"ids": material_ids}).fetchall())
 
 
+def list_sibling_names(conn: Connection[Any], *, exclude_id: str) -> list[str]:
+    """Return names of all active rows except ``exclude_id``.
+
+    Feeds the ``next_copy_suffix`` resolver for the duplicate route; the
+    source row is skipped so the helper can treat its own name as a
+    candidate base.
+    """
+    rows = conn.execute(
+        "SELECT name FROM catalog_materials WHERE deleted_at IS NULL AND id <> %(exclude_id)s",
+        {"exclude_id": exclude_id},
+    ).fetchall()
+    return [row["name"] for row in rows]
+
+
 def insert_material(
     conn: Connection[Any],
     *,

@@ -30,6 +30,7 @@ from features.catalogs.materials.models import (
 from features.catalogs.materials.service import (
     create_material,
     deactivate_material,
+    duplicate_material,
     get_material,
     list_materials,
     reactivate_material,
@@ -87,6 +88,20 @@ def delete_material_route(material_id: str, request: Request, auth: CurrentUser)
 def reactivate_material_route(material_id: str, request: Request, auth: CurrentUser) -> CatalogMaterialPublic:
     user, _expires_at = auth
     return reactivate_material(material_id, user, request)
+
+
+@router.post(
+    "/{material_id}/duplicate",
+    response_model=CatalogMaterialPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_material_duplicate(
+    material_id: str,
+    request: Request,
+    auth: CurrentUser,
+) -> CatalogMaterialPublic:
+    user, _expires_at = auth
+    return duplicate_material(material_id, user, request)
 
 
 @router.post("/import/preview", response_model=PreviewResponse)

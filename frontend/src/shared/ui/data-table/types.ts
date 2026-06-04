@@ -229,6 +229,24 @@ export type RowDeletePayload = {
   anchorRowId: string | null;
 };
 
+// One entry per row duplicated in a `rowDuplicate` op. Carries enough
+// for both consumer write models:
+//   - CRUD consumers (Materials) use `sourceRowId` to call the backend
+//     duplicate endpoint and ignore `sourceRow` on the forward path.
+//   - Slice-replace consumers (Rooms, Pumps) clone `sourceRow`
+//     client-side, mint the new row's `name` with the `(copy)` suffix,
+//     and dispatch their existing slice-replace mutation.
+// The `sourceRow` snapshot also feeds the inverse `rowDelete.row` for
+// ⌘Z. `anchorRowId` is almost always equal to `sourceRowId` today, but
+// kept separate so a future "duplicate to top / bottom" gesture is
+// expressible without a WriteOp shape change.
+export type RowDuplicatePayload = {
+  rowId: string;
+  sourceRowId: string;
+  sourceRow: unknown;
+  anchorRowId: string | null;
+};
+
 export type WriteOp =
   | ({ kind: "cell"; writes: CellWrite[] } & OptionListDelta)
   | ({
@@ -240,6 +258,7 @@ export type WriteOp =
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: RowInsertPayload[] }
   | { kind: "rowDelete"; rows: RowDeletePayload[] }
+  | { kind: "rowDuplicate"; rows: RowDuplicatePayload[] }
   // `schemaMutation` carries two sub-shapes. `typed` is the
   // custom-field pipeline that POSTs to `/custom-fields:mutate`;
   // `legacyOptions` is the single-select option editor that still

@@ -30,6 +30,7 @@ import type {
   FieldDef,
   FieldOption,
   RowDeletePayload,
+  RowDuplicatePayload,
   RowInsertPayload,
   TableFieldRenderOverlay,
   TableFieldDef,
@@ -435,6 +436,75 @@ export function roomsPayloadFromRowInsert(
 // <DataTable> toolbar-delete gesture. Inverse-of-delete (undo)
 // dispatches a matching rowInsert; the consumer's buildEmptyRow
 // reconstructs each row from extractRowDefaults output.
+// AirTable-parity " (copy)" / " (copy N)" suffix resolver. Mirrors
+// the backend `next_copy_suffix` in
+// `backend/features/catalogs/_shared.py` so CRUD and slice-replace
+// consumers behave identically. Lives here today next to its two
+// consumers (Rooms, Pumps); promote to `shared/lib/copySuffix.ts` if a
+// third TS consumer needs it.
+const COPY_SUFFIX_RE = /^(.*?)\s*\(copy(?:\s+(\d+))?\)$/;
+
+export function nextCopySuffix(baseName: string, siblingNames: Iterable<string>): string {
+  const match = COPY_SUFFIX_RE.exec(baseName);
+  const root = match ? match[1] : baseName;
+  const siblings = new Set(siblingNames);
+  let candidate = `${root} (copy)`;
+  if (!siblings.has(candidate)) return candidate;
+  let n = 2;
+  while (true) {
+    candidate = `${root} (copy ${n})`;
+    if (!siblings.has(candidate)) return candidate;
+    n += 1;
+  }
+}
+
+// Slice-replace duplicate for Rooms. The library's WriteOp carries the
+// full source TRow snapshot per PRD §6; we clone it client-side, mint a
+// fresh `(copy)` suffix on the built-in `name` field (stored under
+// `custom_values["name"]` per the Rooms data model), splice below the
+// anchor row, and dispatch through the existing slice-replace PUT
+// path. `liveNames` accumulates across the duplicates array so a
+// batched multi-row duplicate picks distinct suffixes.
+// Built-in `name` / `record_id` fields live inside `custom_values`
+// alongside `cf_*` entries. Reading them returns the empty string when
+// missing so the suffix resolver still produces `(copy)` rather than
+// crashing on an undefined source name.
+function stringFromCustomValues(values: Record<string, CustomValue>, key: string): string {
+  const raw = values[key];
+  return typeof raw === "string" ? raw : "";
+}
+
+export function roomsPayloadFromRowDuplicate(
+  current: RoomsSlice,
+  duplicates: RowDuplicatePayload[],
+): RoomsReplacePayload {
+  const rooms = [...current.rooms];
+  const liveNames = new Set(
+    rooms.map((room) => stringFromCustomValues(room.custom_values, "name")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as RoomRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "name");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: RoomRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, name: newName },
+    };
+    const anchorIndex = duplicate.anchorRowId
+      ? rooms.findIndex((room) => room.id === duplicate.anchorRowId)
+      : -1;
+    const insertAt = anchorIndex === -1 ? rooms.length : anchorIndex + 1;
+    rooms.splice(insertAt, 0, normalizeRoomForPayload(clone, current.field_defs));
+  }
+  return {
+    rooms,
+    single_select_options: cloneOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
 export function roomsPayloadFromRowDelete(
   current: RoomsSlice,
   deletes: RowDeletePayload[],
@@ -466,6 +536,39 @@ export function pumpsPayloadFromRowInsert(
   });
   return {
     pumps: sortedPumps([...current.pumps, ...built]),
+    single_select_options: clonePumpOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+// Slice-replace duplicate for Pumps. Like Rooms, but Pumps re-sorts
+// after every insert/duplicate (the table maintains its own canonical
+// order) — `anchorRowId` is informational here, the clone lands
+// wherever `sortedPumps` puts it. Pumps' user-facing identifier is
+// `record_id` (stored under `custom_values["record_id"]`) rather than
+// `name`, so the suffix resolver runs against that column instead.
+export function pumpsPayloadFromRowDuplicate(
+  current: PumpsSlice,
+  duplicates: RowDuplicatePayload[],
+): PumpsReplacePayload {
+  const pumps = [...current.pumps];
+  const liveNames = new Set(
+    pumps.map((pump) => stringFromCustomValues(pump.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as PumpRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: PumpRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    pumps.push(normalizePumpForPayload(clone));
+  }
+  return {
+    pumps: sortedPumps(pumps),
     single_select_options: clonePumpOptions(current),
     field_defs: [...current.field_defs],
   };
