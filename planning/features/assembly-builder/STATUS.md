@@ -13,7 +13,7 @@ RELATED:
 
 ## Current state
 
-**PRD locked, no implementation yet.**
+**PRD + all four phase plans locked. No implementation yet.**
 
 - Architectural decision locked: Option C (single SVG with
   `viewBox` in mm + HTML overlay for chrome). See `PRD.md` §3.
@@ -22,25 +22,28 @@ RELATED:
   Airtightness, Site Photos are **out of scope** for this
   feature folder and stay owned by their existing user stories.
 - All six open questions resolved 2026-06-04. See `PRD.md` §8
-  for the locked answers (per-assembly segment flip; dim lines
-  stop at assembly left edge; active-unit display + multi-unit
-  input parser; magenta `+` left/right with no hover trash/edit
-  icons; click-segment opens modal; zoom max 3.0x).
+  for the locked answers.
+- Phase plans landed 2026-06-04:
+  - `phases/phase-01-svg-canvas-substrate.md` — Active, not
+    started.
+  - `phases/phase-02-overlay-chrome.md` — Blocked on Phase 01.
+  - `phases/phase-03-assembly-header-toolbar.md` — Blocked on
+    Phase 02.
+  - `phases/phase-04-pick-paste-state-machine.md` — Blocked on
+    Phase 03.
 
 ## Next step
 
-Draft `phases/phase-01-svg-canvas-substrate.md` —
-substrate-only phase that delivers visual parity with
-`assets/v1-reference-to-scale.png` and drops the three clamps
-in `canvas-constants.ts`. Subsequent phases (overlay chrome,
-direct interactions, toolbar) land after Phase 01 lands on
-main.
+Start Phase 01. Recommended first commit: add the four pure
+geometry helpers to `lib.ts` with unit tests
+(`__tests__/geometry.test.ts`) — see Phase 01 §P4 commit 1.
+Helpers are exported but no caller uses them yet, so the
+commit lands cleanly with no behavioral change.
 
 ## Blockers
 
-None. The PRD does not depend on any external decision; all
-referenced behavior already exists in
-`context/user-stories/20-envelope.md`.
+None. All four phase plans are self-contained and require no
+external decisions before execution.
 
 ## Verification (when implemented)
 
@@ -71,3 +74,7 @@ referenced behavior already exists in
 - 2026-06-04 — All six open questions (Q-AB-1..Q-AB-6) resolved.
   PRD updated; STATUS bumped to "PRD locked." Next step:
   draft Phase 01 (SVG substrate).
+- 2026-06-04 — All four phase plans drafted: Phase 01 (SVG
+  substrate), Phase 02 (overlay chrome), Phase 03 (header
+  toolbar), Phase 04 (pick / paste state machine). README phase
+  map locked. Next step: execute Phase 01.

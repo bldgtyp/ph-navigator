@@ -48,20 +48,49 @@ US-ENV-13, US-ENV-14, US-ENV-15) and stay authoritative there.
 
 ## Phase map
 
-To be filled in once the PRD is reviewed. Likely shape:
+Locked 2026-06-04. Each phase lands as one mergeable PR; each
+ends with the app in a working state. Phases must execute in
+order — Phase 02 depends on Phase 01's substrate, Phase 03 on
+Phase 02's overlay (only the orchestrator import), Phase 04 on
+Phase 03's toolbar wires.
 
-- Phase 01 — SVG canvas substrate (single `<svg viewBox>`, drop
-  the three clamps in `canvas-constants.ts`, parity with V1
-  Image #2 visual fidelity).
-- Phase 02 — HTML overlay chrome (dimension column with
-  click-to-edit, hover-`+` buttons, hover highlighting).
-- Phase 03 — Direct interactions (click segment → modal, eyedropper /
-  paint state machine wired to canvas).
-- Phase 04 — Header toolbar (flip orientation, flip layers, zoom
-  cluster, eyedropper / paint buttons).
+- **Phase 01 — SVG canvas substrate** (`phases/phase-01-svg-canvas-substrate.md`).
+  New `AssemblySvgCanvas.tsx`. Drop the three clamps in
+  `canvas-constants.ts`. Add pure geometry helpers in
+  `lib.ts`. Existing chrome stays in place (kludge — gets
+  replaced in Phase 02). Visual fidelity target:
+  `assets/v1-reference-to-scale.png`.
 
-Each phase will land as `phases/phase-NN-*.md` once the PRD is
-locked.
+- **Phase 02 — Overlay chrome** (`phases/phase-02-overlay-chrome.md`).
+  New `AssemblyCanvasOverlay.tsx` with the dimension column
+  (click-to-edit inline editor + any-unit length parser),
+  orientation labels, magenta hover-`+` buttons for segments
+  and layers, hover highlight on segments. Removes the
+  Phase-01 kludge chrome. Click segment → opens
+  `SegmentDialog`. No hover trash / edit icons. Visual fidelity
+  target: `assets/v1-segment-hover-plus-buttons.png`.
+
+- **Phase 03 — Assembly header toolbar** (`phases/phase-03-assembly-header-toolbar.md`).
+  Toolbar cluster in `AssemblyHeader.tsx`: flip orientation,
+  flip layers, **flip segments (NEW)**, zoom cluster
+  `[−] % [+] [Fit]`, eyedropper / paint-bucket / undo
+  entry buttons. Persists zoom to `userPreferencesStore`.
+  Pure JSON-Patch generators for the three flips. Toolbar
+  buttons wire to no-op placeholders for pick / paste; the
+  actual state machine lands in Phase 04.
+
+- **Phase 04 — Pick / paste state machine** (`phases/phase-04-pick-paste-state-machine.md`).
+  `usePickPasteMode` hook owning the state machine + bounded
+  per-assembly undo stack (20 entries). Mode-aware SVG
+  rendering (green outline picking, yellow tint pasting,
+  600 ms pulse on paste). ESC / outside-mousedown / assembly
+  switch cancel. ⌘Z keybinding wired. Closes out US-ENV-9
+  on the canvas surface.
+
+When all four phases are merged, the canvas-rebuild feature is
+complete; this folder rolls to `STATUS: Complete` and routes
+back to `context/user-stories/20-envelope.md` as the durable
+behavioral source.
 
 ## Out of scope (explicit non-goals)
 
