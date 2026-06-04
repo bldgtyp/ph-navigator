@@ -1,8 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 09:00 ET
-STATUS: Active — PRD locked, no implementation yet. Awaiting Phase 1
-        kickoff.
+TIME: 11:00 ET
+STATUS: Active — Phase 1 (gzip) shipped. Phase 2 next.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the catalog-perf feature. Updated at the end
        of every implementation session.
@@ -21,14 +20,18 @@ RELATED:
 
 ## Current state
 
-PRD is locked. No code changes have landed yet. Ready to hand off
-Phase 1.
+Phase 1 (gzip middleware) landed on `main` (folded into commit
+`59766fa`). Smoke tests under `backend/tests/test_gzip_middleware.py`
+verify large responses compress, identity responses don't, and small
+responses skip gzip below the 1 KB threshold. Starlette 1.0.0's
+`GZipMiddleware` excludes `text/event-stream` by default, so the MCP
+streamable HTTP mount is unaffected.
 
 ## Phase ledger
 
 | Phase | Title | Status | Branch / PR | Verification |
 |---|---|---|---|---|
-| 1 | GZipMiddleware | Pending | — | not yet measured |
+| 1 | GZipMiddleware | Done | `main` (commit `59766fa`) | gzip smoke tests pass; MCP suite green |
 | 2 | Client-side `is_active` filter | Pending | — | not yet measured |
 | 3 | `DataTable` row virtualization | Pending | — | not yet measured |
 | 4 | List payload trim | Pending | — | not yet measured |
@@ -61,8 +64,8 @@ Targets after phases 1–3:
 
 ## Next step
 
-Hand Phase 1 to an implementation agent. See
-`phases/phase-01-gzip-middleware.md`.
+Phase 2 — client-side `is_active` filter. See
+`phases/phase-02-client-side-active-filter.md`.
 
 ## Blockers
 

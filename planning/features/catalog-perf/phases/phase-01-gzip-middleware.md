@@ -1,7 +1,10 @@
 ---
 DATE: 2026-06-04
 TIME: 09:10 ET
-STATUS: PENDING — implementation has not started.
+STATUS: DONE — landed in commit `59766fa` on `main`. Gzip smoke tests
+        live in `backend/tests/test_gzip_middleware.py`. Starlette
+        1.0.0 auto-excludes `text/event-stream`, so the MCP mount
+        keeps streaming.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Add `GZipMiddleware` to the FastAPI app so JSON responses
        compress on the wire. Materials Catalog GET drops from
