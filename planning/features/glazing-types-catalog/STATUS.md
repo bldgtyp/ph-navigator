@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 12:00 EDT
-STATUS: Active
+TIME: 16:00 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 4.7) + Ed May
 SCOPE: Status ledger for the Window-Glazing Catalog feature.
 RELATED:
@@ -41,16 +41,24 @@ RELATED:
   `ImportDialog.tsx`, `OverflowMenuItems.tsx`; the catalog page wires
   the overflow menu and dialog. Match key is `id`; round-trip is a
   no-op.
-- **Phase 4 (Seed data + smoke)** — `pending`. 42 rows.
+- **Phase 4 (Seed data + smoke)** — `Complete`, `2026-06-04`.
+  Canonical seed at
+  `backend/features/catalogs/glazing_types/seeds/glazing-types.v1.json`
+  (43 rows derived from the AirTable CSV, with DATASHEET + LINK
+  columns dropped per PRD). `backend/scripts/seed_glazing_catalog.py`
+  loads it through the same preview→commit pipeline the HTTP routes
+  use; wired as `make seed-glazing`. A pipeline-level seed-file smoke
+  test guards against rot.
 
 ## Next step
 
-Phase 4: convert `research/Glazing Data-ALL DATA.csv` → canonical
-JSON seed under
-`backend/features/catalogs/glazing_types/seeds/glazing-types.v1.json`
-(drop DATASHEET + LINK columns); add a `make seed-glazing` recipe
-that POSTs the seed through `/import/commit`; run once locally to
-verify all 42 rows appear.
+Feature complete. Candidate follow-ups (deferred):
+
+- Consolidation refactor over Materials / Frame / Glazing import
+  pipelines once Frame ships.
+- Re-export the seed file from the live catalog after the first
+  seed run so subsequent reruns are idempotent on `id` rather than
+  duplicating rows.
 
 ## Blockers
 
