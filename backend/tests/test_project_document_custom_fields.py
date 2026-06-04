@@ -158,6 +158,8 @@ def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
     assert number_unit_registry_snapshot() == {
         "density": {"si": ["kg_m3"], "ip": ["lb_ft3"]},
         "conductivity": {"si": ["w_m_k"], "ip": ["btu_h_ft_f"]},
+        "u_value": {"si": ["w_m2_k"], "ip": ["btu_h_ft2_f"]},
+        "specific_heat": {"si": ["j_kg_k"], "ip": ["btu_lb_f"]},
         "length": {"si": ["m"], "ip": ["ft"]},
         "area": {"si": ["m2"], "ip": ["ft2"]},
         "volume": {"si": ["m3"], "ip": ["ft3"]},

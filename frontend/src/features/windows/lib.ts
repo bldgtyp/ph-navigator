@@ -62,19 +62,28 @@ export function frameRefFromCatalog(row: CatalogFrameType): FrameRef {
     name: row.name,
     manufacturer: row.manufacturer,
     brand: row.brand,
+    use: row.use,
+    operation: row.operation,
+    location: row.location,
+    mull_type: row.mull_type,
+    prefix: row.prefix,
+    suffix: row.suffix,
+    material: row.material,
     width_mm: row.width_mm,
     u_value_w_m2k: row.u_value_w_m2k,
     psi_g_w_mk: row.psi_g_w_mk,
     psi_install_w_mk: row.psi_install_w_mk,
     color: row.color,
-    notes: row.notes,
-    source_provenance: row.source_provenance,
-    catalog_origin: stampCatalogOrigin({
+    source: row.source,
+    comments: row.comments,
+    catalog_origin: {
       catalog_table: "frame_types",
       catalog_record_id: row.id,
-      catalog_version_id: row.current_version_id,
-      catalog_schema_version: row.catalog_schema_version,
-    }),
+      catalog_version_id: null,
+      catalog_schema_version: null,
+      synced_at: new Date().toISOString(),
+      local_overrides: [],
+    },
   };
 }
 
@@ -83,30 +92,20 @@ export function glazingRefFromCatalog(row: CatalogGlazingType): GlazingRef {
     name: row.name,
     manufacturer: row.manufacturer,
     brand: row.brand,
+    suffix: row.suffix,
     u_value_w_m2k: row.u_value_w_m2k,
     g_value: row.g_value,
     color: row.color,
-    notes: row.notes,
-    source_provenance: row.source_provenance,
-    catalog_origin: stampCatalogOrigin({
+    source: row.source,
+    comments: row.comments,
+    catalog_origin: {
       catalog_table: "glazing_types",
       catalog_record_id: row.id,
-      catalog_version_id: row.current_version_id,
-      catalog_schema_version: row.catalog_schema_version,
-    }),
-  };
-}
-
-function stampCatalogOrigin(input: {
-  catalog_table: CatalogOrigin["catalog_table"];
-  catalog_record_id: string;
-  catalog_version_id: string;
-  catalog_schema_version: number;
-}): CatalogOrigin {
-  return {
-    ...input,
-    synced_at: new Date().toISOString(),
-    local_overrides: [],
+      catalog_version_id: null,
+      catalog_schema_version: null,
+      synced_at: new Date().toISOString(),
+      local_overrides: [],
+    },
   };
 }
 

@@ -96,6 +96,12 @@ export async function reactivateFrameType(id: string): Promise<CatalogFrameType>
   });
 }
 
+export async function duplicateFrameType(id: string): Promise<CatalogFrameType> {
+  return fetchJson<CatalogFrameType>(`/api/v1/catalogs/frame-types/${id}/duplicate`, {
+    method: "POST",
+  });
+}
+
 export async function listGlazingTypes(
   includeInactive: boolean,
   signal?: AbortSignal,
@@ -131,6 +137,12 @@ export async function deactivateGlazingType(id: string): Promise<void> {
 
 export async function reactivateGlazingType(id: string): Promise<CatalogGlazingType> {
   return fetchJson<CatalogGlazingType>(`/api/v1/catalogs/glazing-types/${id}/reactivate`, {
+    method: "POST",
+  });
+}
+
+export async function duplicateGlazingType(id: string): Promise<CatalogGlazingType> {
+  return fetchJson<CatalogGlazingType>(`/api/v1/catalogs/glazing-types/${id}/duplicate`, {
     method: "POST",
   });
 }

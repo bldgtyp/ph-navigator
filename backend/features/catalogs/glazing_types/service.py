@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from fastapi import Request
@@ -13,11 +12,10 @@ from features.auth.models import UserPublic
 from features.catalogs._shared import (
     log_catalog_action,
     new_catalog_record_id,
-    new_catalog_version_id,
+    next_copy_suffix,
 )
 from features.catalogs.glazing_types import repository
 from features.catalogs.glazing_types.models import (
-    CATALOG_VERSION_ID_PREFIX,
     CatalogGlazingTypeCreateRequest,
     CatalogGlazingTypeListItem,
     CatalogGlazingTypeListResponse,
@@ -55,23 +53,19 @@ def create_glazing_type(
     payload: CatalogGlazingTypeCreateRequest, user: UserPublic, request: Request
 ) -> CatalogGlazingTypePublic:
     record_id = new_catalog_record_id()
-    version_id = new_catalog_version_id(CATALOG_VERSION_ID_PREFIX)
-    version_date = payload.version_date or date.today()
     with transaction() as conn:
         repository.insert_glazing_type(
             conn,
             record_id=record_id,
-            version_id=version_id,
             name=payload.name,
             manufacturer=payload.manufacturer,
             brand=payload.brand,
-            version_label=payload.version_label,
-            version_date=version_date,
+            suffix=payload.suffix,
             u_value_w_m2k=payload.u_value_w_m2k,
             g_value=payload.g_value,
             color=payload.color,
-            notes=payload.notes,
-            source_provenance=payload.source_provenance,
+            source=payload.source,
+            comments=payload.comments,
             user_id=user.id,
         )
         row = repository.get_glazing_type(conn, record_id)
@@ -82,7 +76,6 @@ def create_glazing_type(
             request,
             catalog_table=CATALOG_TABLE,
             record_id=record_id,
-            version_id=version_id,
         )
     if row is None:
         raise RuntimeError("Catalog glazing type insert did not return a row.")
@@ -122,11 +115,51 @@ def update_glazing_type(
                 request,
                 catalog_table=CATALOG_TABLE,
                 record_id=record_id,
-                version_id=row["current_version_id"],
                 changed_fields=list(values.keys()),
             )
     if row is None:
         raise RuntimeError("Catalog glazing type disappeared after update.")
+    return _to_public(row)
+
+
+def duplicate_glazing_type(record_id: str, user: UserPublic, request: Request) -> CatalogGlazingTypePublic:
+    """Insert a copy of ``record_id`` with a ``(copy)`` suffix on ``name``."""
+    new_record_id = new_catalog_record_id()
+    with transaction() as conn:
+        source = repository.get_glazing_type(conn, record_id)
+        if source is None or not source["is_active"]:
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "catalog_glazing_type_not_found",
+                "Catalog glazing type not found.",
+            )
+        siblings = repository.list_sibling_names(conn, exclude_id=record_id)
+        new_name = next_copy_suffix(source["name"], siblings)
+        repository.insert_glazing_type(
+            conn,
+            record_id=new_record_id,
+            name=new_name,
+            manufacturer=source["manufacturer"],
+            brand=source["brand"],
+            suffix=source["suffix"],
+            u_value_w_m2k=source["u_value_w_m2k"],
+            g_value=source["g_value"],
+            color=source["color"],
+            source=source["source"],
+            comments=source["comments"],
+            user_id=user.id,
+        )
+        row = repository.get_glazing_type(conn, new_record_id)
+        log_catalog_action(
+            conn,
+            "catalog_record_create",
+            user,
+            request,
+            catalog_table=CATALOG_TABLE,
+            record_id=new_record_id,
+        )
+    if row is None:
+        raise RuntimeError("Catalog glazing type disappeared after duplicate.")
     return _to_public(row)
 
 
@@ -168,6 +201,5 @@ def reactivate_glazing_type(record_id: str, user: UserPublic, request: Request) 
             request,
             catalog_table=CATALOG_TABLE,
             record_id=record_id,
-            version_id=row["current_version_id"],
         )
     return _to_public(row)
