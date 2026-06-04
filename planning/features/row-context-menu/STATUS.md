@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 17:00
-STATUS: Active — Phases 1 + 2 + 3 landed; Phase 4 next
+TIME: 17:30
+STATUS: Done — all phases (1, 2, 3a/b/c, 4) shipped
 AUTHOR: Ed May / Claude
 SCOPE: DataTable row context menu — status ledger
 RELATED:
@@ -15,18 +15,22 @@ RELATED:
 
 ## Current state
 
-`Active` — Phases 1 + 2 + 3 shipped on 2026-06-04. The library hosts
+`Done` — feature shipped end-to-end on 2026-06-04. The library hosts
 the shared `useGridMenuKeyboard` hook, the hoisted
-`isPointerInActiveEditor` predicate, the new `RowContextMenu`
-component, and the delegated `<tbody>` `contextmenu` + gutter
-`Shift+F10` triggers. The full four-item menu (Insert / Duplicate /
-Expand / Delete) is live with PRD §5 multi-row collapse. The
-`rowDuplicate` `WriteOp` variant carries a full source-row snapshot
-per PRD §6; CRUD consumers (Materials) call the new
+`isPointerInActiveEditor` predicate, the `RowContextMenu` component,
+and the delegated `<tbody>` `contextmenu` + gutter `Shift+F10`
+triggers. The full four-item menu (Insert / Duplicate / Expand /
+Delete) is live with PRD §5 multi-row collapse. The `rowDuplicate`
+`WriteOp` variant carries a full source-row snapshot per PRD §6;
+CRUD consumers (Materials) call the new
 `POST /catalogs/materials/{id}/duplicate` backend route with
-server-side `(copy)` suffix resolution, and slice-replace consumers
+server-side `(copy)` suffix resolution; slice-replace consumers
 (Rooms, Pumps) clone client-side via `nextCopySuffix` +
 `*PayloadFromRowDuplicate` helpers without a per-row endpoint.
+Finally, the `rowActions` extension slot lets consumers inject their
+own row-menu items after the built-ins (suppressed in the
+multi-row-collapse branch); no production consumer wires it yet —
+they adopt the slot as their actions ship.
 
 The revision corrected three structural issues in the V1 PRD:
 
@@ -48,12 +52,10 @@ hoist `isPointerInActiveEditor` to a shared predicate (D-7).
 
 ## Next step
 
-Begin Phase 4 (rowActions extension slot). Ships the
-`rowActions?: (ctx) => RowAction[]` prop on `DataTableProps`, the
-`RowAction` / `RowActionContext<TRow>` types, the menu renderer (with
-the divider + suppression rule for the multi-row collapse branch),
-and one DataTable-test consumer fixture. No production wiring; this
-phase only delivers the slot.
+Feature complete. Consumers adopt the `rowActions` slot as their own
+actions ship (likely candidates: Materials `Submit to Phius library`,
+Rooms `Apply assembly preset`, Pumps `Test against ASHRAE 90.1` —
+none of these are in scope for this feature).
 
 ## Phase ledger
 
@@ -64,7 +66,7 @@ phase only delivers the slot.
 | 3a | `phases/phase-03a-rowduplicate-op-and-materials.md` | Done |
 | 3b | `phases/phase-03b-rooms-slice-replace-duplicate.md` | Done |
 | 3c | `phases/phase-03c-pumps-slice-replace-duplicate.md` | Done |
-| 4 | `phases/phase-04-row-actions-extension-slot.md` | Ready |
+| 4 | `phases/phase-04-row-actions-extension-slot.md` | Done |
 
 ## Blockers
 

@@ -1,3 +1,4 @@
+// @size-exception: planning/features/row-context-menu/PRD.md
 import type { ReactNode } from "react";
 import type { NumberUnitsConfig } from "../../../lib/units";
 import type { AggregationKind } from "./fields/aggregations";
@@ -229,6 +230,45 @@ export type RowDeletePayload = {
   anchorRowId: string | null;
 };
 
+// Phase 4 — consumer-defined row-menu item rendered after the four
+// built-ins (Insert / Duplicate / Expand / Delete). The library does
+// not interpret `onSelect`; the consumer's closure decides whether to
+// dispatch a `WriteOp` through `onWrite` (riding the existing undo
+// pipeline) or call its own API directly (no library-managed undo).
+//
+// `shortcutHint` is display-only — the library does not register a
+// global keyboard shortcut for it. Decision D-3 / PRD §2 non-goal.
+export type RowAction = {
+  // Stable id used for React keys, the `data-row-action-key`
+  // attribute on the rendered button, and consumer-side telemetry.
+  key: string;
+  label: string;
+  // Optional lucide-react icon. Renders in the left 16-px icon slot
+  // via the same `--with-icon` modifier the built-ins use.
+  icon?: ReactNode;
+  // Right-aligned muted hint text. Display-only — see the comment
+  // above for why the library does not bind a shortcut.
+  shortcutHint?: string;
+  // Routes to `data-danger="true"` for the red tint (matches the
+  // built-in `Delete record` styling).
+  danger?: boolean;
+  // Called after the menu closes — mirrors the built-in lifecycle so
+  // any state mutation the consumer kicks off lands after Radix's
+  // close animation runs.
+  onSelect: () => void;
+};
+
+// Per-open context handed to the consumer's `rowActions` selector.
+// `selectionCount` and `rowIsInSelection` are snapshotted at right-
+// click time (PRD §5 render-perf contract) so the consumer reads the
+// same state the library used to pick its branch.
+export type RowActionContext<TRow> = {
+  rowId: string;
+  row: TRow;
+  selectionCount: number;
+  rowIsInSelection: boolean;
+};
+
 // One entry per row duplicated in a `rowDuplicate` op. Carries enough
 // for both consumer write models:
 //   - CRUD consumers (Materials) use `sourceRowId` to call the backend
@@ -333,6 +373,13 @@ export type DataTableProps<TRow> = {
   // the rows in scope. Selection clears automatically when the rows
   // array identity changes after a successful mutation.
   bulkSelectionActions?: (selectedRowIds: ReadonlySet<string>) => ReactNode;
+  // Phase 4 — per-row-menu extension slot. Invoked at menu-open time
+  // with the right-clicked row's context; the returned items render
+  // after the four built-ins, separated by a single divider.
+  // Suppressed in the multi-select-collapse branch (PRD §5 rule 1).
+  // The library calls the selector each time the menu opens; consumers
+  // do not need to memoize unless item identity matters across opens.
+  rowActions?: (ctx: RowActionContext<TRow>) => RowAction[];
   footerAction?: ReactNode;
   // When provided, the toolbar's "Reset view" action invokes this
   // callback instead of the in-DataTable default (which clears

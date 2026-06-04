@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-04
-TIME: 14:30
-STATUS: Ready
+TIME: 17:30
+STATUS: Done — landed 2026-06-04 on main
 AUTHOR: Ed May / Claude
 SCOPE: `rowActions` extension slot on `DataTableProps`. Lets each
        consumer inject its own row-menu items without forking the

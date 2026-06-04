@@ -824,6 +824,41 @@ describe("DataTable", () => {
       expect(handles).toHaveLength(3);
     });
   });
+
+  describe("rowActions extension slot", () => {
+    test("invokes the consumer selector at menu-open with the right context", () => {
+      const onWrite = vi.fn();
+      const rowActions = vi.fn().mockReturnValue([]);
+      renderTable({ onWrite, rowActions });
+      const cell = getBodyCell(0, 0);
+      fireEvent.contextMenu(cell, { clientX: 100, clientY: 50 });
+      expect(rowActions).toHaveBeenCalledTimes(1);
+      expect(rowActions).toHaveBeenCalledWith({
+        rowId: "rm_1",
+        row: rows[0],
+        selectionCount: 0,
+        rowIsInSelection: false,
+      });
+    });
+
+    test("renders the consumer's items and dispatches their onSelect", async () => {
+      const onWrite = vi.fn();
+      const onPing = vi.fn();
+      const rowActions = () => [{ key: "ping", label: "Ping row", onSelect: () => onPing() }];
+      renderTable({ onWrite, rowActions });
+      fireEvent.contextMenu(getBodyCell(0, 0), { clientX: 10, clientY: 10 });
+      const ping = await screen.findByRole("menuitem", { name: /Ping row/ });
+      fireEvent.click(ping);
+      expect(onPing).toHaveBeenCalledTimes(1);
+    });
+
+    test("does not invoke the selector when the menu is suppressed (readOnly)", () => {
+      const rowActions = vi.fn().mockReturnValue([]);
+      renderTable({ readOnly: true, rowActions });
+      fireEvent.contextMenu(getBodyCell(0, 0), { clientX: 0, clientY: 0 });
+      expect(rowActions).not.toHaveBeenCalled();
+    });
+  });
 });
 
 function renderTable({
@@ -834,6 +869,7 @@ function renderTable({
   rowsOverride,
   fieldDefsOverride,
   columnDefsOverride,
+  rowActions,
 }: {
   view?: ViewState;
   readOnly?: boolean;
@@ -842,6 +878,7 @@ function renderTable({
   rowsOverride?: Row[];
   fieldDefsOverride?: FieldDef[];
   columnDefsOverride?: DataTableColumnDef<Row>[];
+  rowActions?: DataTableProps<Row>["rowActions"];
 } = {}) {
   return render(
     <DataTable
@@ -854,6 +891,7 @@ function renderTable({
       onWrite={onWrite}
       readOnly={readOnly}
       emptyMessage="No rooms yet."
+      rowActions={rowActions}
     />,
   );
 }

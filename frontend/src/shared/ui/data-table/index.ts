@@ -86,6 +86,8 @@ export type {
   FilterCondition,
   FilterOperator,
   GroupRule,
+  RowAction,
+  RowActionContext,
   RowDeletePayload,
   RowDuplicatePayload,
   RowInsertPayload,
