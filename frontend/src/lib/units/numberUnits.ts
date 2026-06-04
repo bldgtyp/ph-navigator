@@ -1,4 +1,4 @@
-import { ft2ToM2, ft3ToM3, ftToMm, m2ToFt2, m3ToFt3, mmToFt } from "./length";
+import { ft2ToM2, ft3ToM3, ftToMm, inToMm, m2ToFt2, m3ToFt3, mmToFt, mmToIn } from "./length";
 import { btuLbFToJKgK, jKgKToBtuLbF, kgM3ToLbFt3, lbFt3ToKgM3 } from "./material";
 import { btuHft2FToWm2K, btuHftFToWmK, wm2kToBtuHft2F, wmkToBtuHftF } from "./thermal";
 import type { UnitSystem } from "./types";
@@ -51,6 +51,14 @@ export const NUMBER_UNIT_TYPES = [
     label: "Length",
     siUnits: [{ id: "m", label: "m", system: "SI" }],
     ipUnits: [{ id: "ft", label: "ft", system: "IP" }],
+  },
+  {
+    // Small-scale length stored in millimetres. Used by frame profile width
+    // and similar millimetre-precision dimensions where ft is too coarse.
+    id: "length_mm",
+    label: "Length (mm)",
+    siUnits: [{ id: "mm", label: "mm", system: "SI" }],
+    ipUnits: [{ id: "in", label: "in", system: "IP" }],
   },
   {
     id: "area",
@@ -172,6 +180,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return jKgKToBtuLbF(valueSi);
     case "length":
       return mmToFt(valueSi * 1000);
+    case "length_mm":
+      return mmToIn(valueSi);
     case "area":
       return m2ToFt2(valueSi);
     case "volume":
@@ -191,6 +201,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return btuLbFToJKgK(valueIp);
     case "length":
       return ftToMm(valueIp) / 1000;
+    case "length_mm":
+      return inToMm(valueIp);
     case "area":
       return ft2ToM2(valueIp);
     case "volume":
