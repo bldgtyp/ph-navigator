@@ -66,7 +66,7 @@ test("editor picks frame and glazing into a window type and the override tracer 
     await page.goto(`/projects/${projectId}/windows`);
     await expect(page.getByRole("heading", { name: "Windows", level: 2 })).toBeVisible();
     await page.getByRole("button", { name: "Add window type" }).click();
-    await expect(page.getByText("Unsaved Window Types draft restored")).toBeVisible();
+    await expect(page.getByText("Window Types draft restored")).toBeVisible();
     await expect(page.getByRole("button", { name: "Unnamed Window Type" })).toBeVisible();
 
     // Wait for the frame draft to settle before picking glazing — concurrent
@@ -83,9 +83,9 @@ test("editor picks frame and glazing into a window type and the override tracer 
     await page.keyboard.press("Tab");
     await expect(page.locator(".override-badge").first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Unsaved Window Types draft restored")).toHaveCount(0);
-    await expect(page.getByText("Clean")).toBeVisible();
+    await page.getByRole("button", { name: "Save Version", exact: true }).click();
+    await expect(page.getByText("Window Types draft restored")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Save Version", exact: true })).toHaveCount(0);
 
     await page.reload();
     await expect(page.getByRole("button", { name: "Unnamed Window Type" })).toBeVisible();

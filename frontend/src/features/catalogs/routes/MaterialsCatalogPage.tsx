@@ -12,6 +12,7 @@ import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import { useMaterialsQuery } from "../hooks";
 import { catalogPath } from "../lib";
+import type { CatalogMaterial } from "../types";
 import {
   toMaterialRow,
   useMaterialsCatalogController,
@@ -22,11 +23,24 @@ import {
   MATERIALS_FIELD_OVERLAY,
   MATERIALS_TABLE_KEY,
 } from "../materials/fieldDefs";
+import { ImportDialog } from "../materials/import_export/ImportDialog";
+import { CatalogImportExportMenu } from "../materials/import_export/OverflowMenuItems";
+import {
+  exportFilename,
+  serializeCatalog,
+  triggerCatalogDownload,
+} from "../materials/import_export/export";
 
 // Optimistic placeholder row used by Shift-Enter on an empty grid. The
 // controller's `rowInsert` handler POSTs the row with safe defaults
 // (name "New material", category "insulation"); the optimistic row
 // disappears on the refetch that follows.
+// Module-level frozen empty array so loading-state renders reuse the
+// same reference; `materialsQuery.data ?? EMPTY_MATERIALS` is stable
+// across renders when data is undefined, keeping the `rows` useMemo
+// and DataTable's row identity stable.
+const EMPTY_MATERIALS: readonly CatalogMaterial[] = Object.freeze([]);
+
 const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
 function buildEmptyMaterialRow({ rowId }: { rowId: string }): MaterialRow {
   return {
@@ -113,14 +127,21 @@ const COLUMN_DEFS: DataTableColumnDef<MaterialRow>[] = [
 
 export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const materialsQuery = useMaterialsQuery(includeInactive);
   const signOutMutation = useSignOutMutation();
 
-  const rows = useMemo<MaterialRow[]>(
-    () => (materialsQuery.data ?? []).map(toMaterialRow),
-    [materialsQuery.data],
-  );
+  const materials = materialsQuery.data ?? EMPTY_MATERIALS;
+  const rows = useMemo<MaterialRow[]>(() => materials.map(toMaterialRow), [materials]);
   const controller = useMaterialsCatalogController();
+
+  function handleExport() {
+    const file = serializeCatalog(materials, {
+      exportedBy: session.user.email,
+      appVersion: (import.meta.env.VITE_APP_VERSION ?? null) as string | null,
+    });
+    triggerCatalogDownload(file, exportFilename());
+  }
 
   const tableSchema = useMemo(
     () =>
@@ -185,6 +206,13 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             onResetView={controller.onResetView}
             onWrite={controller.onWrite}
             buildEmptyRow={buildEmptyMaterialRow}
+            overflowMenuActions={
+              <CatalogImportExportMenu
+                onExport={handleExport}
+                onImport={() => setImportOpen(true)}
+                exportDisabled={materials.length === 0}
+              />
+            }
             emptyMessage={
               materialsQuery.isLoading
                 ? "Loading materials…"
@@ -192,6 +220,14 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             }
           />
         )}
+        {/*
+          Conditional mount, not an `open` prop: closing the dialog
+          tears down its internal state and any in-flight preview /
+          commit mutations, so a late-resolving preview cannot
+          setState on a hidden dialog and surface a stale report on
+          the next open.
+        */}
+        {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
       </section>
     </main>
   );

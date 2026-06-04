@@ -1,68 +1,68 @@
+import { ChevronDown } from "lucide-react";
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
 
 const VERSION_TRIGGER_HELP = "Open the version list to switch or compare versions.";
-const CLEAN_STATE_HELP = "No unsaved draft changes.";
-const DIRTY_STATE_HELP = "Draft changes are pending.";
-const CHECKING_STATE_HELP = "Checking whether this version has pending draft changes.";
-const SAVE_HELP = "Save this draft into the active unlocked version.";
+const DIRTY_STATE_HELP =
+  "Your edits are auto-saved as a draft on the server. Use Save Version to write them into the active version as a permanent snapshot.";
+const SAVE_HELP =
+  "Write the current draft into the active unlocked version as a permanent snapshot.";
 const SAVE_AS_HELP = "Create a new version from the current draft, then switch to it.";
 const PROJECT_ACTIONS_HELP = "Open project and version actions.";
 
-export function VersionShellControls({
+export function VersionPathControls({
   activeVersionName,
   isLocked,
-  hasDraft,
-  checkingDraft,
-  canSave,
-  canSaveAs,
-  busy,
-  versionsOpen,
   actionsOpen,
-  onToggleVersions,
   onToggleActions,
-  onSave,
-  onSaveAs,
 }: {
   activeVersionName: string;
   isLocked: boolean;
-  hasDraft: boolean;
-  checkingDraft: boolean;
+  actionsOpen: boolean;
+  onToggleActions: () => void;
+}) {
+  const label = `${activeVersionName}${isLocked ? " · Locked" : ""}`;
+  return (
+    <div className="version-path-inline">
+      <span className="version-path-label">{label}</span>
+      <button
+        type="button"
+        className="version-path-trigger"
+        onClick={onToggleActions}
+        aria-label={`Version actions for ${label}`}
+        aria-expanded={actionsOpen}
+        aria-description={PROJECT_ACTIONS_HELP}
+        data-tooltip={PROJECT_ACTIONS_HELP}
+      >
+        <ChevronDown aria-hidden="true" size={12} strokeWidth={1.9} />
+      </button>
+    </div>
+  );
+}
+
+export function VersionShellControls({
+  isLocked,
+  canSave,
+  canSaveAs,
+  busy,
+  onSave,
+  onSaveAs,
+}: {
+  isLocked: boolean;
   canSave: boolean;
   canSaveAs: boolean;
   busy: boolean;
-  versionsOpen: boolean;
-  actionsOpen: boolean;
-  onToggleVersions: () => void;
-  onToggleActions: () => void;
   onSave: () => void;
   onSaveAs: () => void;
 }) {
   return (
     <div className="shell-controls">
-      <button
-        type="button"
-        className="secondary-button version-trigger"
-        onClick={onToggleVersions}
-        aria-expanded={versionsOpen}
-        aria-description={VERSION_TRIGGER_HELP}
-        data-tooltip={VERSION_TRIGGER_HELP}
-      >
-        <span className="version-trigger-label">
-          {activeVersionName}
-          {isLocked ? " · Locked" : ""}
-        </span>
-      </button>
       <span
-        className={hasDraft ? "save-state dirty" : "save-state"}
-        data-tooltip={
-          checkingDraft ? CHECKING_STATE_HELP : hasDraft ? DIRTY_STATE_HELP : CLEAN_STATE_HELP
-        }
-        aria-description={
-          checkingDraft ? CHECKING_STATE_HELP : hasDraft ? DIRTY_STATE_HELP : CLEAN_STATE_HELP
-        }
+        className="save-state dirty"
+        data-tooltip={DIRTY_STATE_HELP}
+        aria-description={DIRTY_STATE_HELP}
       >
-        {checkingDraft ? "Checking..." : hasDraft ? "Unsaved" : "Clean"}
+        Uncommitted changes
       </span>
       {isLocked ? (
         <button
@@ -72,7 +72,7 @@ export function VersionShellControls({
           aria-description={SAVE_AS_HELP}
           data-tooltip={SAVE_AS_HELP}
         >
-          Save As
+          {busy ? "Saving..." : "Save As"}
         </button>
       ) : (
         <button
@@ -82,24 +82,9 @@ export function VersionShellControls({
           aria-description={SAVE_HELP}
           data-tooltip={SAVE_HELP}
         >
-          Save
+          {busy ? "Saving..." : "Save Version"}
         </button>
       )}
-      <button
-        type="button"
-        className="secondary-button icon-button project-actions-trigger"
-        onClick={onToggleActions}
-        aria-label="Project actions"
-        aria-expanded={actionsOpen}
-        aria-description={PROJECT_ACTIONS_HELP}
-        data-tooltip={PROJECT_ACTIONS_HELP}
-      >
-        <span className="project-actions-icon" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
-      </button>
     </div>
   );
 }
@@ -111,6 +96,8 @@ export function ProjectActionsMenu({
   hasDraft,
   busy,
   onOpenProjectSettings,
+  onOpenVersions,
+  onSave,
   onSaveAs,
   onDiscard,
   onToggleLock,
@@ -123,6 +110,8 @@ export function ProjectActionsMenu({
   hasDraft: boolean;
   busy: boolean;
   onOpenProjectSettings?: () => void;
+  onOpenVersions: () => void;
+  onSave: () => void;
   onSaveAs: () => void;
   onDiscard: () => void;
   onToggleLock: () => void;
@@ -146,6 +135,31 @@ export function ProjectActionsMenu({
           Project settings
         </button>
       ) : null}
+      <button
+        type="button"
+        className="menu-action"
+        role="menuitem"
+        aria-description={VERSION_TRIGGER_HELP}
+        data-tooltip={VERSION_TRIGGER_HELP}
+        onClick={onOpenVersions}
+        disabled={!activeVersionId || busy}
+      >
+        Open version...
+      </button>
+      <button
+        type="button"
+        className="menu-action"
+        role="menuitem"
+        aria-description={SAVE_HELP}
+        data-tooltip={SAVE_HELP}
+        onClick={() => {
+          onClose();
+          onSave();
+        }}
+        disabled={isLocked || !hasDraft || busy}
+      >
+        Save Version
+      </button>
       {!isLocked ? (
         <button
           type="button"

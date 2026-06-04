@@ -637,7 +637,7 @@ describe("EnvelopePage", () => {
     await screen.findByRole("link", { name: /WALL-C3/ });
     await userEvent.click(screen.getByRole("button", { name: "Download constructions HBJSON" }));
 
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("last saved version"));
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("last committed version"));
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/envelope/export/hbjson"),
       expect.objectContaining({ credentials: "include" }),

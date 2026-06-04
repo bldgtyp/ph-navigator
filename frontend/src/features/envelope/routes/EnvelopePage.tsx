@@ -203,7 +203,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     if (!current) return;
     if (current.source === "draft" && current.draft_etag) {
       const confirmed = window.confirm(
-        "Download constructions reads the last saved version, not your unsaved draft. Save or Save As first if the draft should be included. Continue with the saved version?",
+        "Download constructions reads the last committed version, not your current draft. Save Version or Save As first if the draft should be included. Continue with the saved version?",
       );
       if (!confirmed) return;
     }

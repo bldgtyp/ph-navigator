@@ -177,15 +177,23 @@ a:focus-visible {
   top: 0;
   z-index: calc(var(--z-sticky) + 10);
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
+  column-gap: 18px;
   min-height: 58px;
   border-bottom: 1px solid var(--border-subtle);
   background: color-mix(in oklab, var(--bg-page) 88%, transparent);
   padding: 0 24px;
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
+}
+
+.topbar-path {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  overflow: visible;
 }
 
 .brand {
@@ -245,6 +253,33 @@ a:focus-visible {
   color: var(--accent-text);
 }
 
+.topbar-document-controls {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  min-width: 0;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+}
+
+.topbar-global-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  min-width: max-content;
+}
+
+.topbar-global-actions:has(.topnav)::after {
+  content: "";
+  align-self: stretch;
+  width: 1px;
+  min-height: 26px;
+  background: var(--border-subtle);
+  order: 1;
+}
+
 .topnav a,
 .text-link,
 .catalog-menu summary,
@@ -263,6 +298,7 @@ a:focus-visible {
   min-width: 0;
   align-items: center;
   justify-content: flex-end;
+  order: 0;
 }
 
 .catalog-menu,
@@ -275,6 +311,33 @@ a:focus-visible {
   cursor: pointer;
   list-style: none;
   white-space: nowrap;
+}
+
+.account-menu {
+  order: 3;
+}
+
+.account-menu summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 30px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0;
+  transition:
+    background 0.16s var(--ease),
+    color 0.16s var(--ease);
+}
+
+.account-menu[open] summary,
+.account-menu summary:hover {
+  background: transparent;
+  color: var(--accent-text);
 }
 
 .catalog-menu summary::-webkit-details-marker,
@@ -309,7 +372,28 @@ a:focus-visible {
 }
 
 .account-menu-panel {
-  min-width: 120px;
+  min-width: 168px;
+  gap: 8px;
+}
+
+.account-menu-label {
+  margin: 2px 4px 4px;
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.account-menu-panel .text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  border-radius: var(--phn-radius);
+  padding: 6px 8px;
+  text-align: left;
+  text-decoration: none;
 }
 
 .text-link {
@@ -325,19 +409,43 @@ a:focus-visible {
   gap: 12px;
   color: var(--text-secondary);
   font-size: 0.875rem;
+  order: 3;
 }
 
 .topbar-unit-toggle {
+  position: relative;
   align-items: center;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+  border: 0;
+  border-radius: 999px;
   display: inline-flex;
   font-family: var(--font-mono);
   overflow: hidden;
+  order: 2;
+  padding: 3px;
+}
+
+.topbar-unit-toggle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: var(--z-base);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--accent-dark);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 18%, transparent);
+  transition: transform 0.16s var(--ease);
+}
+
+.topbar-unit-toggle:has(button:nth-child(2).active)::before {
+  transform: translateX(32px);
 }
 
 .topbar-unit-toggle button {
+  position: relative;
+  z-index: var(--z-base-elevated);
   background: transparent;
   border: 0;
   color: var(--text-secondary);
@@ -346,17 +454,14 @@ a:focus-visible {
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1;
-  min-width: 28px;
-  padding: 4px 6px;
-}
-
-.topbar-unit-toggle button + button {
-  border-left: 1px solid var(--border-subtle);
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0;
+  transition: color 0.16s var(--ease);
 }
 
 .topbar-unit-toggle button.active {
-  background: color-mix(in oklab, var(--accent) 16%, var(--bg-card));
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .topbar-unit-toggle button:hover:not(.active) {
@@ -449,19 +554,6 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
-}
-
-.project-actions-icon {
-  display: grid;
-  width: 14px;
-  gap: 3px;
-}
-
-.project-actions-icon span {
-  display: block;
-  height: 1px;
-  border-radius: 999px;
-  background: currentColor;
 }
 
 .status-heading {
@@ -881,7 +973,7 @@ a:focus-visible {
 button {
   min-height: var(--phn-control-height);
   border: 1px solid transparent;
-  border-radius: var(--phn-radius);
+  border-radius: var(--phn-control-radius);
   background: transparent;
   color: inherit;
   padding: 8px 14px;
