@@ -1,5 +1,19 @@
 .data-table-wrap {
   --data-table-gutter-width: 72px;
+  --data-table-row-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
+  --data-table-gutter-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+  --data-table-row-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--data-table-cell-bg));
+  --data-table-gutter-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--bg-card));
+  --data-table-cell-block-selected-bg: color-mix(
+    in oklab,
+    var(--accent-text) 4%,
+    var(--data-table-cell-bg)
+  );
+  --data-table-cell-block-active-bg: color-mix(
+    in oklab,
+    var(--accent-text) 8%,
+    var(--data-table-cell-bg)
+  );
   overflow: auto;
   max-height: 100%;
   background: var(--bg-table-outside);
@@ -993,11 +1007,11 @@
 }
 
 .data-table tbody tr:hover td {
-  background: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
+  background: var(--data-table-row-hover-bg);
 }
 
 .data-table tbody tr:hover .data-table-gutter {
-  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+  background: var(--data-table-gutter-hover-bg);
 }
 
 .data-table .data-table-gutter {
@@ -1027,31 +1041,36 @@
   display: grid;
   width: 100%;
   height: 100%;
-  grid-template-columns: minmax(32px, 1fr) 16px;
+  grid-template-columns: minmax(32px, 1fr) 17px;
   align-items: center;
-  column-gap: 6px;
+  column-gap: 5px;
 }
 
 .data-table-gutter-checkbox {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
   appearance: none;
   display: inline-grid;
   place-content: center;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   margin: 0;
   border: 1px solid color-mix(in oklab, var(--text-muted) 52%, var(--bg-card));
   border-radius: 3px;
   background: var(--bg-card);
   cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .data-table-gutter-checkbox::before {
   content: "";
-  width: 7px;
-  height: 5px;
-  border-left: 2px solid var(--bg-card);
-  border-bottom: 2px solid var(--bg-card);
-  transform: translateY(-1px) rotate(-45deg) scale(0);
+  width: 6px;
+  height: 4px;
+  border-left: 1.5px solid var(--bg-card);
+  border-bottom: 1.5px solid var(--bg-card);
+  transform: translateY(-0.5px) rotate(-45deg) scale(0);
   transform-origin: center;
 }
 
@@ -1061,7 +1080,7 @@
 }
 
 .data-table-gutter-checkbox:checked::before {
-  transform: translateY(-1px) rotate(-45deg) scale(1);
+  transform: translateY(-0.5px) rotate(-45deg) scale(1);
 }
 
 .data-table-gutter-checkbox:focus-visible {
@@ -1070,26 +1089,28 @@
 }
 
 .data-table-gutter-number {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
   min-width: 32px;
   min-height: 0;
   border: 0;
   background: transparent;
   color: inherit;
   padding: 0;
-  text-align: inherit;
+  text-align: left;
   line-height: 1.5;
   cursor: pointer;
 }
 
 /* AirTable-style row-expand affordance. Hidden by default; reveals on
-   row-hover (or when keyboard-focused). Positioned absolutely against
-   the gutter cell (which is already `position: sticky`) so it consumes
-   zero inline width — the column doesn't reflow between states. */
+   row-hover (or when keyboard-focused) in the fixed right gutter lane.
+   The left lane swaps between the row number and selection checkbox. */
 .data-table-gutter-expand {
-  position: absolute;
-  top: 50%;
-  left: 8px;
-  display: none;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 16px;
@@ -1102,7 +1123,8 @@
   background: var(--bg-card);
   color: var(--text-secondary);
   cursor: pointer;
-  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .data-table-gutter-expand:hover,
@@ -1112,19 +1134,39 @@
   background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
 }
 
-.data-table tbody tr:hover .data-table-gutter-expand,
-.data-table-gutter-expand:focus-visible {
-  display: inline-flex;
+.data-table-gutter-expand[aria-hidden="true"] {
+  cursor: default;
 }
 
-.data-table tbody tr:hover .data-table-gutter-number {
+.data-table tbody tr:hover .data-table-gutter-expand,
+.data-table-gutter-expand:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.data-table tbody tr:hover .data-table-gutter-expand[aria-hidden="true"] {
+  pointer-events: none;
+}
+
+.data-table tbody tr:hover .data-table-gutter-selectable .data-table-gutter-checkbox,
+.data-table-gutter-selectable .data-table-gutter-checkbox:checked,
+.data-table-gutter-selectable .data-table-gutter-checkbox:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.data-table tbody tr:hover .data-table-gutter-selectable .data-table-gutter-number,
+.data-table-gutter-selected .data-table-gutter-number {
   visibility: hidden;
 }
 
+.data-table tbody tr:has(.data-table-gutter-selected) td {
+  background: var(--data-table-row-selected-bg);
+}
+
 .data-table-gutter-selected,
-.data-table tbody tr:has(.data-table-gutter-selected) td,
 .data-table tbody tr:has(.data-table-gutter-selected) .data-table-gutter {
-  background: color-mix(in oklab, var(--accent) 18%, var(--bg-card));
+  background: var(--data-table-gutter-selected-bg);
 }
 
 /* Phase 3 R1: whole-header click is the column-select gesture.
@@ -1597,7 +1639,7 @@
 /* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
    Single active cells keep the normal bordered cursor treatment below. */
 .data-table td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
+  background: var(--data-table-cell-block-selected-bg) !important;
   --data-table-selection-border: color-mix(in oklab, var(--accent-text) 46%, transparent);
   --data-table-selection-edge-top-shadow: inset 0 0 0 0 transparent;
   --data-table-selection-edge-right-shadow: inset 0 0 0 0 transparent;
@@ -1640,13 +1682,13 @@
 }
 
 .data-table td.data-table-cell-active.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
+  background: var(--data-table-cell-block-active-bg) !important;
   box-shadow: inset 0 0 0 2px var(--accent-text) !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 4%, var(--data-table-cell-bg)) !important;
+  background: var(--data-table-cell-block-selected-bg) !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-active.data-table-cell-selected,
@@ -1654,7 +1696,7 @@
   tbody
   tr:has(.data-table-gutter-selected)
   td.data-table-cell-active.data-table-cell-selected {
-  background: color-mix(in oklab, var(--accent-text) 8%, var(--data-table-cell-bg)) !important;
+  background: var(--data-table-cell-block-active-bg) !important;
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the

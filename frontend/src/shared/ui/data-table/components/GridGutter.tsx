@@ -12,11 +12,10 @@ export type GridGutterProps = {
   showCheckbox: boolean;
   onSelectRow: () => void;
   onToggleSelected: (mode: RowSelectionMode) => void;
-  // AirTable-style row-expand affordance: when wired, an Expand icon
-  // overlays the row number on row-hover and invokes the consumer's
-  // row-open callback. Plan 04 took the Enter key for inline editing,
-  // so this button is the new keyboard-and-mouse path to the row
-  // detail dialog.
+  // AirTable-style row-expand affordance: the icon reveals on row-hover
+  // in the right gutter lane. When wired, it invokes the consumer's
+  // row-open callback; otherwise it renders as a visual-only affordance
+  // so catalog and project tables keep the same gutter layout.
   onExpandRow?: () => void;
 };
 
@@ -42,8 +41,16 @@ export function GridGutter({
     onExpandRow?.();
   };
 
+  const className = [
+    "data-table-gutter",
+    selected ? "data-table-gutter-selected" : "",
+    showCheckbox ? "data-table-gutter-selectable" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <th className={`data-table-gutter${selected ? " data-table-gutter-selected" : ""}`} scope="row">
+    <th className={className} scope="row">
       <div className="data-table-gutter-inner">
         <button
           type="button"
@@ -78,7 +85,11 @@ export function GridGutter({
           >
             <Maximize2 size={12} aria-hidden="true" />
           </button>
-        ) : null}
+        ) : (
+          <span className="data-table-gutter-expand" aria-hidden="true">
+            <Maximize2 size={12} aria-hidden="true" />
+          </span>
+        )}
       </div>
     </th>
   );
