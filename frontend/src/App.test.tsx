@@ -311,7 +311,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "My Projects" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Add New Project +" })).toBeVisible();
     expect(window.location.pathname).toBe("/dashboard");
   });
 
@@ -330,7 +330,7 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Password"), "password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("heading", { name: "My Projects" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Add New Project +" })).toBeVisible();
     expect(await screen.findByText("No projects yet")).toBeVisible();
     expect(screen.getByLabelText("Account: Ed May")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -371,7 +371,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "New project" }));
+    await user.click(await screen.findByRole("button", { name: "Add New Project +" }));
     await user.type(screen.getByLabelText("Project name"), "West Stockbridge House");
     await user.type(screen.getByLabelText("BT number"), "2426");
     await user.type(screen.getByLabelText("Client"), "May");
@@ -439,6 +439,7 @@ describe("App", () => {
     expect(
       await screen.findByRole("link", { name: "2426 - West Stockbridge House" }),
     ).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Delete selected/ })).not.toBeInTheDocument();
     await user.click(screen.getByLabelText("Select project 2426 West Stockbridge House"));
     expect(window.location.pathname).toBe("/dashboard");
     expect(screen.getByRole("button", { name: "Delete selected (1)" })).toBeEnabled();
@@ -455,6 +456,9 @@ describe("App", () => {
         screen.queryByRole("link", { name: "2426 - West Stockbridge House" }),
       ).not.toBeInTheDocument(),
     );
+    expect(await screen.findByRole("button", { name: "Show list" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Restore" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show list" }));
     expect(await screen.findByRole("button", { name: "Restore" })).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /Hard delete|Permanently delete/i }),
@@ -939,7 +943,7 @@ describe("App", () => {
     ).toBeVisible();
   });
 
-  test("routes the Catalogs dropdown to the live Materials catalog page", async () => {
+  test("routes the Materials dashboard card to the live Materials catalog page", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -953,15 +957,14 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByText("Catalogs"));
-    await user.click(screen.getByRole("link", { name: "Materials" }));
+    await user.click(await screen.findByRole("link", { name: "Materials" }));
 
     expect(await screen.findByRole("button", { name: "New Material +" })).toBeVisible();
     expect(await screen.findByText("No materials yet. Shift-Enter to add one.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/materials");
   });
 
-  test("closes topbar dropdown menus when clicking outside", async () => {
+  test("closes the topbar account menu when clicking outside", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -974,18 +977,13 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByText("Catalogs"));
-    expect(screen.getByRole("link", { name: "Materials" })).toBeVisible();
-    await user.click(screen.getByRole("heading", { name: "My Projects" }));
-    expect(screen.getByRole("link", { name: "Materials", hidden: true })).not.toBeVisible();
-
-    await user.click(screen.getByLabelText("Account: Ed May"));
+    await user.click(await screen.findByLabelText("Account: Ed May"));
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await user.click(screen.getByRole("heading", { name: "My Projects" }));
+    await user.click(screen.getByRole("heading", { name: "No projects yet" }));
     expect(screen.getByRole("button", { name: "Sign out", hidden: true })).not.toBeVisible();
   });
 
-  test("routes the Catalogs dropdown to the Window-Frame Elements catalog page", async () => {
+  test("routes the Window-Frame Elements dashboard card to its catalog page", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -999,15 +997,14 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByText("Catalogs"));
-    await user.click(screen.getByRole("link", { name: "Window-Frame Elements" }));
+    await user.click(await screen.findByRole("link", { name: "Window-Frame Elements" }));
 
     expect(await screen.findByRole("heading", { name: "Window-Frame Elements" })).toBeVisible();
     expect(await screen.findByText("No frame types yet")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/frame-types");
   });
 
-  test("routes the Catalogs dropdown to the Window-Glazing catalog page", async () => {
+  test("routes the Window-Glazing dashboard card to its catalog page", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -1021,8 +1018,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByText("Catalogs"));
-    await user.click(screen.getByRole("link", { name: "Window-Glazing" }));
+    await user.click(await screen.findByRole("link", { name: "Window-Glazing" }));
 
     expect(await screen.findByRole("heading", { name: "Window-Glazing" })).toBeVisible();
     expect(await screen.findByText("No glazing types yet")).toBeVisible();

@@ -45,7 +45,7 @@ export function ProjectList({
         <h2 id="empty-dashboard-title">No projects yet</h2>
         <p>Create the first PH-Navigator V2 project shell from this dashboard.</p>
         <button type="button" onClick={onCreateProject}>
-          New project
+          Add New Project +
         </button>
       </section>
     );
@@ -64,17 +64,19 @@ export function ProjectList({
             {projects.length} {projects.length === 1 ? "project" : "projects"}
           </span>
         </div>
-        <button
-          type="button"
-          className="danger-button"
-          disabled={selectedCount === 0 || isDeleting}
-          onClick={onDeleteSelected}
-        >
-          {isDeleting
-            ? "Deleting..."
-            : `Delete selected${selectedCount ? ` (${selectedCount})` : ""}`}
-        </button>
       </div>
+      {selectedCount > 0 ? (
+        <div className="project-bulk-actions">
+          <button
+            type="button"
+            className="danger-button"
+            disabled={isDeleting}
+            onClick={onDeleteSelected}
+          >
+            {isDeleting ? "Deleting..." : `Delete selected (${selectedCount})`}
+          </button>
+        </div>
+      ) : null}
       <div className="project-list" aria-label="All projects">
         <div className="project-list-heading">
           <span className="project-select-cell">

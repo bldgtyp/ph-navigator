@@ -643,6 +643,56 @@ a:focus-visible {
   gap: 24px;
 }
 
+.catalog-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.catalog-card {
+  display: flex;
+  min-height: 86px;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 16px;
+  text-decoration: none;
+  transition:
+    border-color 0.16s var(--ease),
+    background 0.16s var(--ease),
+    color 0.16s var(--ease),
+    transform 0.16s var(--ease);
+}
+
+.catalog-card:hover {
+  border-color: var(--accent-edge);
+  background: var(--bg-elev);
+  color: var(--accent-text);
+  transform: translateY(-1px);
+}
+
+.catalog-card-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: color-mix(in oklab, var(--accent) 9%, var(--bg-card));
+  color: var(--accent-text);
+}
+
+.catalog-card > span:last-child {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .project-section-heading {
   display: flex;
   align-items: center;
@@ -670,6 +720,12 @@ a:focus-visible {
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.project-bulk-actions {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
 }
 
 .project-list-heading,
@@ -798,6 +854,12 @@ a:focus-visible {
 .deleted-project-empty {
   margin: 0;
   padding: 14px 16px;
+}
+
+.deleted-project-summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
 }
 
 .project-delete-list {
@@ -1242,6 +1304,10 @@ button:disabled {
 
   .dashboard-page {
     padding: 28px 0;
+  }
+
+  .catalog-card-grid {
+    grid-template-columns: 1fr;
   }
 
   .project-list-heading {

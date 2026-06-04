@@ -4,12 +4,15 @@
   padding: 24px;
 }
 
+.tab-panel {
+  background: var(--bg-card);
+}
+
 .auth-panel,
 .empty-state,
 .project-list,
 .modal-panel,
 .version-popover,
-.tab-panel,
 .read-safe-panel,
 .data-table-wrap,
 .data-table-empty,
