@@ -85,7 +85,7 @@ test("editor picks frame and glazing into a window type and the override tracer 
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Unsaved Window Types draft restored")).toHaveCount(0);
-    await expect(page.getByText("Clean")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
 
     await page.reload();
     await expect(page.getByRole("button", { name: "Unnamed Window Type" })).toBeVisible();

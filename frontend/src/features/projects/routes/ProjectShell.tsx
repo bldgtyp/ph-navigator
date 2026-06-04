@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Link,
   Navigate,
@@ -128,21 +128,31 @@ export function ProjectShell() {
   ) : sessionQuery.data ? (
     <TopbarAccountMenu label={sessionQuery.data.user.display_name} onSignOut={handleSignOut} />
   ) : null;
-  const versionControls = readSafeEnvelope ? null : (
+  const renderTopbar = ({
+    pathControls,
+    documentControls,
+  }: {
+    pathControls?: ReactNode;
+    documentControls?: ReactNode;
+  } = {}) => (
+    <WorkspaceTopbar
+      breadcrumbs={topbarBreadcrumbs}
+      pathControls={pathControls}
+      documentControls={documentControls}
+      accountSlot={accountSlot}
+    />
+  );
+  const topbar = readSafeEnvelope ? (
+    renderTopbar()
+  ) : (
     <VersionControls
       project={openProject}
       defaultVersionId={project.active_version_id}
       onOpenVersion={openVersionById}
       onOpenProjectSettings={!isViewer ? () => setIsSettingsOpen(true) : undefined}
-    />
-  );
-
-  const topbar = (
-    <WorkspaceTopbar
-      breadcrumbs={topbarBreadcrumbs}
-      documentControls={versionControls}
-      accountSlot={accountSlot}
-    />
+    >
+      {renderTopbar}
+    </VersionControls>
   );
 
   if (readSafeEnvelope && openProject.active_version_id) {

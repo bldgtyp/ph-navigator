@@ -49,7 +49,7 @@ test("editor reviews all window catalog drift and applies one slot refresh", asy
     await page.keyboard.press("Tab");
     await expect(page.locator(".override-badge").first()).toBeVisible();
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Clean")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
 
     await updateCatalogRow(page.request, apiUrl(baseURL, FRAME_TYPES_PATH), frameId, headers, {
       u_value_w_m2k: 0.72,
@@ -70,7 +70,7 @@ test("editor reviews all window catalog drift and applies one slot refresh", asy
 
     await page.getByRole("button", { name: "Apply" }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Clean")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
     await page.reload();
     await expect(page.getByLabel("Frame top U-value")).toHaveValue("0.85");
     await expect(page.locator(".override-badge").first()).toBeVisible();

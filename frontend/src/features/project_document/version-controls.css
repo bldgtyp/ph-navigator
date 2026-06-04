@@ -90,6 +90,70 @@
   gap: 3px;
 }
 
+.version-control-wrap .shell-controls > button {
+  min-inline-size: 104px;
+}
+
+.version-path-control {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-path-control::before {
+  content: "/";
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.version-path-inline {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.version-path-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.version-path-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  padding: 0;
+}
+
+.version-path-trigger:hover:not(:disabled),
+.version-path-trigger[aria-expanded="true"] {
+  border-color: var(--accent-text);
+  background: var(--bg-elev);
+  color: var(--accent-text);
+  transform: none;
+}
+
+.version-control-fallback {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .inline-action-error {
   max-width: 520px;
   margin: 0;
@@ -101,19 +165,18 @@
 .version-popover {
   position: absolute;
   z-index: calc(var(--z-dropdown) - 70);
-  top: calc(100% + 6px);
-  right: 50%;
+  top: calc(100% + 12px);
+  left: 16px;
   width: min(420px, calc(100vw - 40px));
   padding: 14px;
   box-shadow: var(--phn-shadow);
-  transform: translateX(50%);
 }
 
 .project-actions-menu {
   position: absolute;
   z-index: calc(var(--z-dropdown) - 65);
-  top: calc(100% + 6px);
-  right: 50%;
+  top: calc(100% + 12px);
+  left: 16px;
   display: grid;
   min-width: 220px;
   border: 1px solid var(--border-card);
@@ -121,14 +184,13 @@
   background: var(--bg-card);
   padding: 6px;
   box-shadow: var(--phn-shadow);
-  transform: translateX(50%);
 }
 
 .menu-action,
 .project-actions-menu .download-link {
   position: relative;
   min-height: 34px;
-  justify-content: flex-end;
+  justify-content: flex-start;
   border: 0;
   border-radius: var(--phn-radius);
   background: transparent;
@@ -137,7 +199,7 @@
   font-family: var(--font-primary);
   font-size: 0.88rem;
   letter-spacing: 0;
-  text-align: right;
+  text-align: left;
   text-decoration: none;
   text-transform: none;
 }

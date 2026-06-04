@@ -1,5 +1,5 @@
 import "../version-controls.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import type { ProjectDetail } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
@@ -10,18 +10,30 @@ import { useVersionControlsState } from "../hooks/useVersionControlsState";
 import { DRAFT_DIFF_TARGET } from "../types/versionControls";
 import { DocumentConfirmationDialog } from "./DocumentConfirmationDialog";
 import { DiffDialog, DraftRestoreDialog, SaveAsDialog } from "./VersionControlsDialogs";
-import { ProjectActionsMenu, VersionPopover, VersionShellControls } from "./VersionControlsMenus";
+import {
+  ProjectActionsMenu,
+  VersionPathControls,
+  VersionPopover,
+  VersionShellControls,
+} from "./VersionControlsMenus";
+
+type VersionControlsRenderProps = {
+  pathControls: ReactNode;
+  documentControls: ReactNode;
+};
 
 export function VersionControls({
   project,
   defaultVersionId,
   onOpenVersion,
   onOpenProjectSettings,
+  children,
 }: {
   project: ProjectDetail;
   defaultVersionId: string | null;
   onOpenVersion: (versionId: string) => void;
   onOpenProjectSettings?: () => void;
+  children?: (controls: VersionControlsRenderProps) => ReactNode;
 }) {
   const controlsRef = useRef<HTMLDivElement | null>(null);
   const initializedDraftKeysRef = useRef(new Set<string>());
@@ -95,7 +107,7 @@ export function VersionControls({
   ]);
 
   if (!isEditor) {
-    return (
+    const documentControls = (
       <div className="shell-controls viewer-controls">
         <span>Edit controls hidden</span>
         {activeVersionId ? (
@@ -108,6 +120,7 @@ export function VersionControls({
         ) : null}
       </div>
     );
+    return <>{children ? children({ pathControls: null, documentControls }) : documentControls}</>;
   }
 
   const toggleLock = async () => {
@@ -134,28 +147,16 @@ export function VersionControls({
     state.setVersionsOpen(false);
   };
 
-  return (
-    <div className="version-control-wrap" ref={controlsRef}>
-      <VersionShellControls
+  const pathControls = (
+    <div className="version-path-control" ref={controlsRef}>
+      <VersionPathControls
         activeVersionName={activeVersion?.name ?? "No version"}
         isLocked={isLocked}
-        hasDraft={hasDraft}
-        checkingDraft={draftSummaryQuery.isLoading}
-        canSave={hasDraft && Boolean(draftSummary)}
-        canSaveAs={Boolean(activeVersionId)}
-        busy={busy}
-        versionsOpen={state.versionsOpen}
         actionsOpen={state.actionsOpen}
-        onToggleVersions={() => {
-          state.setVersionsOpen((value) => !value);
-          state.setActionsOpen(false);
-        }}
         onToggleActions={() => {
           state.setActionsOpen((value) => !value);
           state.setVersionsOpen(false);
         }}
-        onSave={() => void lifecycle.save()}
-        onSaveAs={() => state.openSaveAs()}
       />
       {state.actionsOpen ? (
         <ProjectActionsMenu
@@ -165,6 +166,11 @@ export function VersionControls({
           hasDraft={hasDraft}
           busy={busy}
           onOpenProjectSettings={onOpenProjectSettings}
+          onOpenVersions={() => {
+            state.setActionsOpen(false);
+            state.setVersionsOpen(true);
+          }}
+          onSave={() => void lifecycle.save()}
           onSaveAs={() => state.openSaveAs()}
           onDiscard={() => {
             state.setActionsOpen(false);
@@ -178,6 +184,43 @@ export function VersionControls({
           onClose={() => state.setActionsOpen(false)}
         />
       ) : null}
+      {state.versionsOpen ? (
+        <VersionPopover
+          versions={project.versions}
+          activeVersionId={activeVersionId}
+          defaultVersionId={defaultVersionId}
+          busy={busy}
+          onSaveAs={() => state.openSaveAs()}
+          onOpenVersion={openVersion}
+          onOpenDiff={() => state.setDiffOpen(true)}
+        />
+      ) : null}
+    </div>
+  );
+
+  const documentControls = hasDraft ? (
+    <div className="version-control-wrap">
+      <VersionShellControls
+        isLocked={isLocked}
+        canSave={Boolean(draftSummary)}
+        canSaveAs={Boolean(activeVersionId)}
+        busy={busy}
+        onSave={() => void lifecycle.save()}
+        onSaveAs={() => state.openSaveAs()}
+      />
+    </div>
+  ) : null;
+
+  return (
+    <>
+      {children ? (
+        children({ pathControls, documentControls })
+      ) : (
+        <div className="version-control-fallback">
+          {pathControls}
+          {documentControls}
+        </div>
+      )}
       {state.actionError && !state.confirmation ? (
         <p className="inline-action-error" role="alert">
           {state.actionError}
@@ -189,17 +232,6 @@ export function VersionControls({
           busy={busy}
           onDiscard={() => void lifecycle.discard()}
           onKeep={state.keepRestoredDraft}
-        />
-      ) : null}
-      {state.versionsOpen ? (
-        <VersionPopover
-          versions={project.versions}
-          activeVersionId={activeVersionId}
-          defaultVersionId={defaultVersionId}
-          busy={busy}
-          onSaveAs={() => state.openSaveAs()}
-          onOpenVersion={openVersion}
-          onOpenDiff={() => state.setDiffOpen(true)}
         />
       ) : null}
       {state.saveAsOpen ? (
@@ -244,6 +276,6 @@ export function VersionControls({
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }

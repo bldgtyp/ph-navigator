@@ -177,7 +177,7 @@ a:focus-visible {
   top: 0;
   z-index: calc(var(--z-sticky) + 10);
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 18px;
   min-height: 58px;
@@ -186,6 +186,14 @@ a:focus-visible {
   padding: 0 24px;
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
+}
+
+.topbar-path {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  overflow: visible;
 }
 
 .brand {
@@ -246,9 +254,13 @@ a:focus-visible {
 }
 
 .topbar-document-controls {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: flex;
   min-width: 0;
   justify-content: center;
+  transform: translate(-50%, -50%);
 }
 
 .topbar-global-actions {

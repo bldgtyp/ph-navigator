@@ -11,11 +11,13 @@ type Breadcrumb = {
 
 export function WorkspaceTopbar({
   breadcrumbs = [],
+  pathControls,
   primaryNav,
   documentControls,
   accountSlot,
 }: {
   breadcrumbs?: Breadcrumb[];
+  pathControls?: ReactNode;
   primaryNav?: ReactNode;
   documentControls?: ReactNode;
   accountSlot?: ReactNode;
@@ -25,28 +27,27 @@ export function WorkspaceTopbar({
       <Link className="brand" to="/dashboard" aria-label="PH-Navigator dashboard">
         PH-NAV
       </Link>
-      {breadcrumbs.length > 0 ? (
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          {breadcrumbs.map((breadcrumb, index) => (
-            <span key={`${breadcrumb.label}-${index}`} className="breadcrumb-segment">
-              {breadcrumb.to ? (
-                <Link to={breadcrumb.to}>{breadcrumb.label}</Link>
-              ) : (
-                breadcrumb.label
-              )}
-            </span>
-          ))}
-        </nav>
-      ) : (
-        <span aria-hidden="true" />
-      )}
+      <div className="topbar-path">
+        {breadcrumbs.length > 0 ? (
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            {breadcrumbs.map((breadcrumb, index) => (
+              <span key={`${breadcrumb.label}-${index}`} className="breadcrumb-segment">
+                {breadcrumb.to ? (
+                  <Link to={breadcrumb.to}>{breadcrumb.label}</Link>
+                ) : (
+                  breadcrumb.label
+                )}
+              </span>
+            ))}
+          </nav>
+        ) : null}
+        {pathControls}
+      </div>
       {documentControls ? (
         <div className="topbar-document-controls" aria-label="Project controls">
           {documentControls}
         </div>
-      ) : (
-        <span aria-hidden="true" />
-      )}
+      ) : null}
       <div className="topbar-global-actions">
         {primaryNav ? (
           <nav className="topnav" aria-label="Primary">
