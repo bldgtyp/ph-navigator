@@ -92,6 +92,7 @@ export function DataTable<TRow>({
   emptyMessage,
   onRowOpen,
   overflowMenuActions,
+  bulkSelectionActions,
   footerAction,
   onResetView,
   onDeleteCustomField,
@@ -1098,13 +1099,16 @@ export function DataTable<TRow>({
 
   const toolbarActions =
     !readOnly && rowSelection.count > 0 ? (
-      <button
-        type="button"
-        aria-label={`Delete ${rowSelection.count} selected row${rowSelection.count === 1 ? "" : "s"}`}
-        onClick={() => setDeleteDialogOpen(true)}
-      >
-        Delete {rowSelection.count} {rowSelection.count === 1 ? "row" : "rows"}
-      </button>
+      <>
+        <button
+          type="button"
+          aria-label={`Delete ${rowSelection.count} selected row${rowSelection.count === 1 ? "" : "s"}`}
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          Delete {rowSelection.count} {rowSelection.count === 1 ? "row" : "rows"}
+        </button>
+        {bulkSelectionActions?.(rowSelection.selectedRowIds)}
+      </>
     ) : null;
 
   return (

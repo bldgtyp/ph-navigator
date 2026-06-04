@@ -307,6 +307,13 @@ export type DataTableProps<TRow> = {
   emptyMessage: string;
   onRowOpen?: (row: TRow) => void;
   overflowMenuActions?: ReactNode;
+  // Consumer-supplied toolbar actions rendered alongside the built-in
+  // "Delete N rows" button when at least one row is selected via the
+  // gutter checkbox. Receives the live selection set so the consumer
+  // can render its own bulk actions (e.g. "Reactivate") conditional on
+  // the rows in scope. Selection clears automatically when the rows
+  // array identity changes after a successful mutation.
+  bulkSelectionActions?: (selectedRowIds: ReadonlySet<string>) => ReactNode;
   footerAction?: ReactNode;
   // When provided, the toolbar's "Reset view" action invokes this
   // callback instead of the in-DataTable default (which clears
