@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from fastapi import Request
@@ -10,14 +9,9 @@ from starlette import status
 
 from database import connection, transaction
 from features.auth.models import UserPublic
-from features.catalogs._shared import (
-    log_catalog_action,
-    new_catalog_record_id,
-    new_catalog_version_id,
-)
+from features.catalogs._shared import log_catalog_action, new_catalog_record_id
 from features.catalogs.materials import repository
 from features.catalogs.materials.models import (
-    CATALOG_VERSION_ID_PREFIX,
     CatalogMaterialCreateRequest,
     CatalogMaterialListResponse,
     CatalogMaterialPublic,
@@ -48,24 +42,20 @@ def get_material(material_id: str) -> CatalogMaterialPublic:
 
 def create_material(payload: CatalogMaterialCreateRequest, user: UserPublic, request: Request) -> CatalogMaterialPublic:
     record_id = new_catalog_record_id()
-    version_id = new_catalog_version_id(CATALOG_VERSION_ID_PREFIX)
-    version_date = payload.version_date or date.today()
     with transaction() as conn:
         repository.insert_material(
             conn,
             record_id=record_id,
-            version_id=version_id,
             name=payload.name,
             category=payload.category,
-            version_label=payload.version_label,
-            version_date=version_date,
-            conductivity_w_mk=payload.conductivity_w_mk,
             density_kg_m3=payload.density_kg_m3,
             specific_heat_j_kgk=payload.specific_heat_j_kgk,
+            conductivity_w_mk=payload.conductivity_w_mk,
             emissivity=payload.emissivity,
             color=payload.color,
-            notes=payload.notes,
-            source_provenance=payload.source_provenance,
+            source=payload.source,
+            url=payload.url,
+            comments=payload.comments,
             user_id=user.id,
         )
         row = repository.get_material(conn, record_id)
@@ -76,7 +66,6 @@ def create_material(payload: CatalogMaterialCreateRequest, user: UserPublic, req
             request,
             catalog_table=CATALOG_TABLE,
             record_id=record_id,
-            version_id=version_id,
         )
     if row is None:
         raise RuntimeError("Catalog material insert did not return a row.")
@@ -116,7 +105,6 @@ def update_material(
                 request,
                 catalog_table=CATALOG_TABLE,
                 record_id=material_id,
-                version_id=row["current_version_id"],
                 changed_fields=list(values.keys()),
             )
     if row is None:
@@ -162,6 +150,5 @@ def reactivate_material(material_id: str, user: UserPublic, request: Request) ->
             request,
             catalog_table=CATALOG_TABLE,
             record_id=material_id,
-            version_id=row["current_version_id"],
         )
     return _to_public(row)

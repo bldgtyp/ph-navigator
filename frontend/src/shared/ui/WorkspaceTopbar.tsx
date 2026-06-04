@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { TopbarUnitToggle } from "./TopbarUnitToggle";
 import { useOutsidePointerDown } from "./useOutsidePointerDown";
 
 type Breadcrumb = {
@@ -41,6 +42,7 @@ export function WorkspaceTopbar({
           {primaryNav}
         </nav>
       ) : null}
+      <TopbarUnitToggle />
       {accountSlot ? <div className="user-menu">{accountSlot}</div> : null}
     </header>
   );

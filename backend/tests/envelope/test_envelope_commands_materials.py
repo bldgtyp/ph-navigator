@@ -30,7 +30,7 @@ def _truncate() -> None:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE catalog_material_versions, catalog_materials,
+            TRUNCATE catalog_materials,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE
@@ -66,7 +66,7 @@ def test_catalog_pick_copies_once_and_reuses_project_material(
     first_json = first.json()
     copied = next(material for material in first_json["project_materials"] if material["name"] == "XPS")
     assert copied["catalog_origin"]["catalog_record_id"] == catalog["id"]
-    assert copied["catalog_origin"]["catalog_version_id"] == catalog["current_version_id"]
+    assert copied["catalog_origin"]["catalog_version_id"] is None
     assert copied["specification_status"] == "missing"
     assert first_json["assemblies"][0]["layers"][1]["segments"][0]["project_material_id"] == copied["id"]
 
@@ -136,7 +136,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
                 "density_kg_m3": 115.0,
                 "specific_heat_j_kgk": 1800.0,
                 "specification_status": "question",
-                "notes": "Confirm final product submittal.",
+                "comments": "Confirm final product submittal.",
             }
         },
     )
@@ -164,7 +164,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
     segment = noted.json()["assemblies"][0]["layers"][1]["segments"][0]
     assert segment["use_site_notes"] == "Use only at service cavity returns."
     noted_material = next(material for material in noted.json()["project_materials"] if material["id"] == custom["id"])
-    assert noted_material["notes"] == "Confirm final product submittal."
+    assert noted_material["comments"] == "Confirm final product submittal."
 
     detached = client.post(
         command_url(project_id, version_id),
@@ -187,7 +187,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
     )
     assert detached_material["name"] == "Custom cork (Custom)"
     assert detached_material["catalog_origin"] is None
-    assert detached_material["notes"] == "Confirm final product submittal."
+    assert detached_material["comments"] == "Confirm final product submittal."
     assert detached_segment["use_site_notes"] == "Use only at service cavity returns."
 
     cleaned = client.post(

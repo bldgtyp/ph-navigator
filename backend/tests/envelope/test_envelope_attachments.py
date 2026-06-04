@@ -37,7 +37,7 @@ def _truncate() -> None:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE project_assets, project_jobs, catalog_material_versions, catalog_materials,
+            TRUNCATE project_assets, project_jobs, catalog_materials,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE

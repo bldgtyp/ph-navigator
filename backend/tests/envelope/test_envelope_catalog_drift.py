@@ -30,7 +30,7 @@ def _truncate() -> None:
     with transaction() as conn:
         conn.execute(
             """
-            TRUNCATE catalog_material_versions, catalog_materials,
+            TRUNCATE catalog_materials,
                      user_action_log, sessions, project_status_items,
                      project_version_drafts, project_versions, projects, users
             RESTART IDENTITY CASCADE
@@ -88,13 +88,10 @@ def test_material_drift_report_detects_same_version_field_delta_and_overrides(
         json={"density_kg_m3": 41.0},
     )
     assert edited_catalog.status_code == 200
-    assert edited_catalog.json()["current_version_id"] == catalog["current_version_id"]
 
     report = client.get(drift_url(project_id, version_id)).json()
     item = next(row for row in report["materials"] if row["project_material_id"] == copied["id"])
     assert item["state"] == "drifted"
-    assert item["pinned_catalog_version_id"] == catalog["current_version_id"]
-    assert item["current_catalog_version_id"] == catalog["current_version_id"]
     assert item["local_overrides"] == ["conductivity_w_mk"]
     fields = {field["key"]: field for field in item["fields"]}
     assert fields["conductivity_w_mk"]["is_overridden"] is True
@@ -141,7 +138,7 @@ def test_refresh_writes_field_choices_and_preserves_local_overrides(
     client.patch(
         f"/api/v1/catalogs/materials/{catalog['id']}",
         headers={"Origin": ORIGIN},
-        json={"density_kg_m3": 41.0, "notes": "Updated catalog note."},
+        json={"density_kg_m3": 41.0, "comments": "Updated catalog note."},
     )
 
     refreshed = client.post(
@@ -153,7 +150,7 @@ def test_refresh_writes_field_choices_and_preserves_local_overrides(
                 "project_material_id": copied["id"],
                 "field_choices": [
                     {"key": "density_kg_m3", "action": "take_catalog"},
-                    {"key": "notes", "action": "use_value", "value": "Reviewed local note."},
+                    {"key": "comments", "action": "use_value", "value": "Reviewed local note."},
                 ],
             }
         },
@@ -163,8 +160,8 @@ def test_refresh_writes_field_choices_and_preserves_local_overrides(
     material = next(row for row in refreshed.json()["project_materials"] if row["id"] == copied["id"])
     assert material["conductivity_w_mk"] == pytest.approx(0.031)
     assert material["density_kg_m3"] == pytest.approx(41.0)
-    assert material["notes"] == "Reviewed local note."
-    assert material["catalog_origin"]["catalog_version_id"] == catalog["current_version_id"]
+    assert material["comments"] == "Reviewed local note."
+    assert material["catalog_origin"]["catalog_version_id"] is None
     assert material["catalog_origin"]["local_overrides"] == ["conductivity_w_mk"]
 
 

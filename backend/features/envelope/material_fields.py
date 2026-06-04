@@ -5,14 +5,16 @@ from __future__ import annotations
 from features.envelope.models import ProjectMaterialDriftFieldKey
 
 PROJECT_MATERIAL_CATALOG_FIELDS: tuple[ProjectMaterialDriftFieldKey, ...] = (
-    "color",
-    "category",
-    "conductivity_w_mk",
-    "density_kg_m3",
-    "emissivity",
     "name",
-    "notes",
+    "category",
+    "density_kg_m3",
     "specific_heat_j_kgk",
+    "conductivity_w_mk",
+    "emissivity",
+    "color",
+    "source",
+    "url",
+    "comments",
 )
 
 PROJECT_MATERIAL_OVERRIDE_FIELDS: frozenset[ProjectMaterialDriftFieldKey] = frozenset(PROJECT_MATERIAL_CATALOG_FIELDS)
