@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-04
-TIME: 00:55 EDT
-STATUS: Ready for review on `feat/materials-catalog-datatable`. All
-        four phases complete; Phase 4 follow-ups resolved before
-        marking the PR ready.
+TIME: 01:30 EDT
+STATUS: Complete — squash-merged to main as `94d6a2a` via PR #6.
+        Branch `feat/materials-catalog-datatable` deleted (remote +
+        local). Feature folder moved into `planning/archive/` per the
+        data-table-unit-number-field precedent.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the Materials Catalog DataTable migration.
 RELATED:
@@ -14,59 +15,75 @@ RELATED:
 
 # STATUS — Materials Catalog DataTable
 
-## Current state
+## Final state (merged)
 
-- Branch: `feat/materials-catalog-datatable`.
-- Planning packet committed (`200dcbf`).
-- **Phases 1 + 2 (backend) merged into one commit** (`763b7d5`):
-  destructive Alembic; CatalogOrigin nullable version slots;
-  ProjectMaterial reshape; envelope drift collapsed to field-value
-  comparison; `data-model.md` §7.2 / §7.4 folded.
-- **Phase 3 (frontend) landed** (`1c7d17d`): shared `<DataTable>`
-  replaces the hand-rolled table + modal; built-in nine-field FieldDefs
-  with locks + fixed `numberUnits` for density / specific_heat /
-  conductivity; twelve-option Category single_select; REST→WriteOp
-  `useMaterialsCatalogController`; specific_heat added to the
-  `NUMBER_UNIT_TYPES` registry; ProjectMaterial / CatalogOrigin / drift
-  type reshape across envelope + tests;
-  `frontend-viewer-units.md` §11.5.5 fold-back.
-- **Phase 4 verification + follow-ups complete**:
-  - Initial Playwright MCP smoke surfaced four gaps. Two turned out
-    to be smoke-methodology artifacts (synthetic clicks not firing
-    React's synthetic events) once seven new controller unit tests
-    (`frontend/src/features/catalogs/materials/__tests__/controller.test.tsx`)
-    proved cell / paste / fill / rowInsert / rowDelete all translate
-    to the right REST calls. Two were real wiring gaps and got
-    fixed:
-    - `MaterialsCatalogPage` now passes `buildEmptyRow` so
-      Shift-Enter on an empty grid POSTs a placeholder row the user
-      can edit in place (controller's `buildCreatePayload` fills
-      `name: "New material"` / `category: "insulation"` when the
-      grid hands over empty `fieldDefaults`).
-    - `WorkspaceTopbar` now hosts `<TopbarUnitToggle>`, so the
-      SI/IP toggle is visible on every authenticated page (Dashboard,
-      ProjectShell, all three catalog managers). Fold-back in
-      `UI_UX.md` §2 and `frontend-viewer-units.md` §11.5.2.
-  - `make ci` from repo root: green (1010 frontend tests, 440 + 1
-    skipped backend tests).
+- **Main commit**: `94d6a2a` "Materials Catalog: rebuild on shared
+  DataTable; flatten catalog schema (#6)".
+- **PR**: https://github.com/bldgtyp/ph-navigator-v2/pull/6 (merged,
+  squashed).
 
-## Next step
+## What landed
 
-Mark PR #6 ready for review.
+- **Backend (phases 1 + 2 merged into one commit on the branch)**:
+  destructive Alembic 0015 flattened `catalog_materials` and dropped
+  `catalog_material_versions`; `CatalogOrigin.catalog_version_id` +
+  `catalog_schema_version` made Optional; `ProjectMaterial` reshape
+  (rename `notes` → `comments`, add `source` + `url`); envelope drift
+  collapsed to field-value comparison only;
+  `context/technical-requirements/data-model.md` §7.2 / §7.4 folded.
+- **Frontend (phase 3)**: shared `<DataTable>` replaces the hand-rolled
+  Materials Catalog table + `MaterialEditorModal`; built-in nine-field
+  FieldDefs with locks; fixed-mode `numberUnits` for density /
+  specific_heat / conductivity; twelve-option Category single_select;
+  `useMaterialsCatalogController` translates DataTable `WriteOp`s
+  (cell / paste / fill / rowInsert / rowDelete) to PATCH / POST /
+  DELETE on the existing REST surface;
+  `frontend-viewer-units.md` §11.5.5 folded.
+- **Phase 4 verification + follow-ups**: Playwright MCP smoke
+  captured; the four surfaced gaps closed —
+  - FU-1 + FU-3 (single_select + row-delete): 7 controller unit tests
+    proved both paths are wired correctly; the smoke results were
+    synthetic-click artifacts, not real bugs.
+  - FU-2 (Shift-Enter on empty grid): page now passes `buildEmptyRow`,
+    controller substitutes `"New material"` / `"insulation"` defaults
+    when the DataTable hands over empty `fieldDefaults`.
+  - FU-4 (global SI/IP toggle): new `<TopbarUnitToggle>` lives in
+    `<WorkspaceTopbar>`, so every authenticated page (Dashboard,
+    ProjectShell, all three catalog managers) shows it inline. The
+    pre-existing `UnitSystemToggle` in the project header was removed
+    as a duplicate; CSS dead code stripped from `version-controls.css`.
+- **Topbar toggle visual pass**: redesigned to a compact
+  `[IP | SI]` rectangle with a soft accent tint on the active option.
+  Replaces the initial black-pill design that washed out the active
+  label.
 
-## Blockers
+## Tests at merge
 
-None.
+- Frontend: 1010 passed.
+- Backend: 440 passed, 1 skipped (full repo suite).
+- `make ci` from repo root green.
 
-## Verification
+## Context doc fold-backs
 
-- [x] PRD documents the nine-field contract and category options.
-- [x] PRD documents drift comparator changes.
-- [x] Backend implementation landed; `uv run pytest` green.
-- [x] Frontend implementation landed.
-- [x] `make ci` from repo root green (final).
-- [x] Context doc fold-back: `data-model.md`,
-      `frontend-viewer-units.md`, `UI_UX.md`.
-- [x] Playwright MCP smoke captured; both real gaps closed; two
-      false positives explained by controller unit tests.
-- [x] PR opened (#6, currently draft pending the ready flip).
+- `context/technical-requirements/data-model.md` — §7.2 callout
+  describing the flat materials shape; §7.4 materials-drift-is-field-
+  only note; project_materials JSON example updated to the new shape.
+- `context/technical-requirements/frontend-viewer-units.md` — §11.5.2
+  Toggle UX rewritten to point at `<TopbarUnitToggle>`; §11.5.5
+  registry list now includes `specific_heat`; "Fixed-mode anchors"
+  subsection points at the live materials fieldDefs file.
+- `context/UI_UX.md` §2 — IP/SI toggle moved from project header to
+  the global `<WorkspaceTopbar>`.
+
+## Follow-ups recorded elsewhere
+
+- **Catalog frame_types + glazing_types** still ride the
+  hand-rolled-table + modal-form UI. The same DataTable migration can
+  be applied; not in scope for this PR. Decide separately whether the
+  versioned schema there also needs a flattening pass.
+- **Catalog view-state persistence** remains explicitly deferred per
+  `context/technical-requirements/data-table.md` ("Catalog-manager
+  view-state persistence is still out of scope; catalog tables resize
+  locally").
+
+No open work tied to this feature.

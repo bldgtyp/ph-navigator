@@ -10,6 +10,11 @@ SCOPE: Materials Catalog JSON import (upload) and JSON export
 RELATED:
   - PRD.md
   - STATUS.md
+  - PLAN.md
+  - phases/phase-01-backend-external-id.md
+  - phases/phase-02-backend-import-pipeline.md
+  - phases/phase-03-frontend-overflow-menu.md
+  - phases/phase-04-verification-docs.md
   - ../materials-catalog-datatable/PRD.md
 ---
 
@@ -22,11 +27,13 @@ actions" overflow popover.
 
 ## Read order
 
-1. `PRD.md` — product contract, file format, behavior, open
-   questions.
+1. `PRD.md` — product contract, file format, behavior.
 2. `STATUS.md` — current state and next step.
-3. Phased plan (`PLAN.md` / `phases/`) — created **after** user
-   stories are agreed.
+3. `PLAN.md` — sequencing rationale, branching, phase map.
+4. `phases/phase-01-backend-external-id.md`
+5. `phases/phase-02-backend-import-pipeline.md`
+6. `phases/phase-03-frontend-overflow-menu.md`
+7. `phases/phase-04-verification-docs.md`
 
 ## Scope
 
