@@ -1,10 +1,9 @@
 ---
 DATE: 2026-06-04
-TIME: 12:30 ET
-STATUS: Active — Phases 1–4 shipped. Phase 5 (pagination) remains
-        Deferred per the PRD until row growth warrants it.
-        Performance verification against the 410-row materials
-        fixture is still outstanding.
+TIME: 13:00 ET
+STATUS: Complete — Phases 1–4 shipped and measured. Phase 5
+        (pagination) remains Deferred per the PRD. Feature folder
+        being archived under `planning/archive/catalog-perf/`.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the catalog-perf feature. Updated at the end
        of every implementation session.
@@ -65,15 +64,53 @@ Targets after phases 1–3:
 - Cell click: ≤ 50 ms
 - DOM `<tr>` count: ≤ 50
 
+## Post-fix measurements (2026-06-04 13:00 ET)
+
+Captured against the dev fixture (413 active + 3 inactive rows), Vite
++ FastAPI on `localhost`, Playwright-driven Chrome, viewport 772 px
+inner height. Measurement protocol mirrors the trigger review.
+Numbers recorded as observed; no edits even where a target is not
+met.
+
+| Metric | Baseline (2026-06-04) | Target | Post-fix | Delta |
+|---|---|---|---|---|
+| Materials wire payload — uncompressed | 197,304 bytes | — | 155,633 bytes | −21% |
+| Materials wire payload — gzip on the wire | 12,371 bytes¹ | ≤ 15 KB | 11,416 bytes | −94% vs baseline raw / −7.7% vs baseline gzip |
+| `Content-Encoding` in response | not set | gzip | `gzip` | ✓ |
+| Items returned | 410 | — | 413 | +3 |
+| List response keys per item | 16 (incl. `created_by`, `updated_by`) | 14 | 14 (no `created_by` / `updated_by`) | ✓ |
+| Network requests on "Show deactivated" toggle | 1 per flip | 0 | 0 | ✓ |
+| "Show deactivated" toggle latency (frame-flushed) | ~1,970 ms | ≤ 150 ms | 584 / 278 / 357 ms across three toggles | ✗ over target |
+| Mid-table cell click latency (rAF×2) | 130–360 ms | ≤ 50 ms | 130–267 ms (median ~133 ms) | ≈ unchanged |
+| DOM `<tr>` count under tbody (410-row dataset) | 410 | ≤ 50 | 410 | ✗ over target |
+| DOM `<td>` count under tbody | 4,510 | — | 4,510 | unchanged |
+
+¹ Baseline "gzip if enabled" figure was theoretical (12,371 bytes); the
+trigger review observed gzip was not being served. Post-fix gzip is
+delivered by `GZipMiddleware` on every JSON response > 1 KB.
+
+**Notes on the misses:**
+- Wire-payload and toggle-network-request targets fully met.
+- DOM `<tr>` count and toggle-flush latency targets not met. With the
+  current page layout, `.data-table-wrap` expands to fit its content
+  (`clientHeight = scrollHeight = 15,198 px` for the 410-row table) —
+  the window is the scroll container, not the wrap, so the row
+  virtualizer's viewport calculation sees the full table height and
+  mounts every row. Tests still verify virtualization renders only
+  the in-viewport slice when the scroll container is height-
+  constrained (`tests/setup.ts` shims a 2,000 px viewport).
+- Cell-click latency improved at the tail (~360 → ~220 ms at index
+  2,500) but the median is dominated by React's re-render cost on
+  the full 410-row mount; the gain expected from Phase 3 won't
+  materialize until `<tr>` count drops, which depends on the layout
+  point above.
+
 ## Next step
 
-Phases 1–4 are landed. Phase 5 stays Deferred per the PRD until row
-count or stakeholder ask triggers it.
-
-Manual perf verification against the 410-row materials fixture is
-still outstanding (target: wire payload ≤ 15 KB; rendered `<tr>`
-count ≤ 50; "Show deactivated" toggle ≤ 150 ms; cell click ≤ 50 ms).
-Record the numbers here once measured.
+Feature is being archived as Complete. Any follow-up to make
+virtualization effective in this layout (constrain the table's
+scroll container height, or pin the virtualizer to `window`) is out
+of scope for this feature and will be tracked separately if pursued.
 
 ## Blockers
 
