@@ -1,7 +1,12 @@
 ---
 DATE: 2026-06-04
 TIME: 09:15 ET
-STATUS: PENDING — implementation has not started.
+STATUS: DONE — `useMaterialsQuery` / `useFrameTypesQuery` /
+        `useGlazingTypesQuery` always fetch with `include_inactive=true`
+        and have no `includeInactive` parameter. The "Show deactivated"
+        toggle filters the cached rows client-side. Picker consumers
+        (`EnvelopePage`, `WindowsTab`) filter to `is_active` rows in
+        memory.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Stop refetching the materials list when the "Show deactivated"
        checkbox toggles. Fetch with `include_inactive=true` once and

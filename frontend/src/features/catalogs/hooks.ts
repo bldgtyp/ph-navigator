@@ -31,10 +31,14 @@ function useInvalidateMaterials() {
   return () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.materials() });
 }
 
-export function useMaterialsQuery(includeInactive: boolean, enabled = true) {
+// Fetches the full catalog (active + deactivated) in one shot. Consumers
+// that only want active rows filter on `is_active` client-side. This keeps
+// the cache key stable across the "Show deactivated" toggle so the toggle
+// no longer triggers a network round-trip.
+export function useMaterialsQuery(enabled = true) {
   return useQuery({
-    queryKey: catalogQueryKeys.materialsList(includeInactive),
-    queryFn: ({ signal }) => listMaterials(includeInactive, signal),
+    queryKey: catalogQueryKeys.materialsList(),
+    queryFn: ({ signal }) => listMaterials(true, signal),
     enabled,
     select: (payload) => payload.items,
   });
@@ -78,10 +82,10 @@ function useInvalidateFrameTypes() {
   return () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.frameTypes() });
 }
 
-export function useFrameTypesQuery(includeInactive: boolean, enabled = true) {
+export function useFrameTypesQuery(enabled = true) {
   return useQuery({
-    queryKey: catalogQueryKeys.frameTypesList(includeInactive),
-    queryFn: ({ signal }) => listFrameTypes(includeInactive, signal),
+    queryKey: catalogQueryKeys.frameTypesList(),
+    queryFn: ({ signal }) => listFrameTypes(true, signal),
     select: (payload) => payload.items,
     enabled,
   });
@@ -125,10 +129,10 @@ function useInvalidateGlazingTypes() {
   return () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.glazingTypes() });
 }
 
-export function useGlazingTypesQuery(includeInactive: boolean, enabled = true) {
+export function useGlazingTypesQuery(enabled = true) {
   return useQuery({
-    queryKey: catalogQueryKeys.glazingTypesList(includeInactive),
-    queryFn: ({ signal }) => listGlazingTypes(includeInactive, signal),
+    queryKey: catalogQueryKeys.glazingTypesList(),
+    queryFn: ({ signal }) => listGlazingTypes(true, signal),
     enabled,
     select: (payload) => payload.items,
   });
