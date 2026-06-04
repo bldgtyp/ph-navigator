@@ -27,6 +27,7 @@ type RenderOverrides = Partial<{
   open: RowContextMenuOpenState | null;
   onClose: () => void;
   onInsertBelow: () => void;
+  onDuplicate: () => void;
   onOpen?: () => void;
   onDelete: () => void;
   onDeleteSelection: () => void;
@@ -38,6 +39,7 @@ function renderMenu(overrides: RenderOverrides = {}) {
       open={overrides.open ?? defaultOpen()}
       onClose={overrides.onClose ?? vi.fn()}
       onInsertBelow={overrides.onInsertBelow ?? vi.fn()}
+      onDuplicate={overrides.onDuplicate ?? vi.fn()}
       onOpen={overrides.onOpen}
       onDelete={overrides.onDelete ?? vi.fn()}
       onDeleteSelection={overrides.onDeleteSelection ?? vi.fn()}
@@ -46,11 +48,12 @@ function renderMenu(overrides: RenderOverrides = {}) {
 }
 
 describe("RowContextMenu — single-row branch", () => {
-  test("renders Insert / Expand / Delete when onOpen is wired", () => {
+  test("renders Insert / Duplicate / Expand / Delete when onOpen is wired", () => {
     renderMenu({ onOpen: vi.fn() });
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       expect.stringContaining("Insert record"),
+      expect.stringContaining("Duplicate record"),
       expect.stringContaining("Expand record"),
       expect.stringContaining("Delete record"),
     ]);
@@ -61,8 +64,25 @@ describe("RowContextMenu — single-row branch", () => {
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       expect.stringContaining("Insert record"),
+      expect.stringContaining("Duplicate record"),
       expect.stringContaining("Delete record"),
     ]);
+  });
+
+  test("Duplicate record carries no danger tint and no shortcut hint", () => {
+    renderMenu();
+    const dup = screen.getByRole("menuitem", { name: /Duplicate record/ });
+    expect(dup).not.toHaveAttribute("data-danger");
+    expect(dup.querySelector(".data-table-column-menu-item-hint")).toBeNull();
+  });
+
+  test("clicking Duplicate record invokes onDuplicate and closes the menu", () => {
+    const onDuplicate = vi.fn();
+    const onClose = vi.fn();
+    renderMenu({ onDuplicate, onClose });
+    fireEvent.click(screen.getByRole("menuitem", { name: /Duplicate record/ }));
+    expect(onDuplicate).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test("Delete record carries data-danger=true", () => {
@@ -134,6 +154,7 @@ describe("RowContextMenu — multi-row collapse (PRD §5)", () => {
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       expect.stringContaining("Insert record"),
+      expect.stringContaining("Duplicate record"),
       expect.stringContaining("Expand record"),
       expect.stringContaining("Delete record"),
     ]);
@@ -147,6 +168,7 @@ describe("RowContextMenu — multi-row collapse (PRD §5)", () => {
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       expect.stringContaining("Insert record"),
+      expect.stringContaining("Duplicate record"),
       expect.stringContaining("Expand record"),
       expect.stringContaining("Delete record"),
     ]);
@@ -159,6 +181,7 @@ describe("RowContextMenu — multi-row collapse (PRD §5)", () => {
         open={collapsed}
         onClose={vi.fn()}
         onInsertBelow={vi.fn()}
+        onDuplicate={vi.fn()}
         onOpen={vi.fn()}
         onDelete={vi.fn()}
         onDeleteSelection={vi.fn()}
@@ -173,6 +196,7 @@ describe("RowContextMenu — multi-row collapse (PRD §5)", () => {
         open={collapsed}
         onClose={vi.fn()}
         onInsertBelow={vi.fn()}
+        onDuplicate={vi.fn()}
         onOpen={vi.fn()}
         onDelete={vi.fn()}
         onDeleteSelection={vi.fn()}

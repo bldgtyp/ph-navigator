@@ -6,15 +6,18 @@ import {
   firstRoomFloorOptionId,
   isDraftStaleError,
   isInvalidProjectDocumentError,
+  nextCopySuffix,
   replaceRoomOptionsPayload,
   nextRoomsPayload,
   optionLabel,
   pumpsPayloadFromCellWrites,
   pumpsPayloadFromRowDelete,
+  pumpsPayloadFromRowDuplicate,
   pumpsPayloadFromRowInsert,
   remoteSliceChangesActiveRoom,
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
+  roomsPayloadFromRowDuplicate,
   roomsPayloadFromRowInsert,
   roomsTableColumnsForSanitize,
   validateRoomsPayload,
@@ -767,5 +770,124 @@ describe("equipment room helpers", () => {
     ]);
 
     expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
+  });
+});
+
+describe("nextCopySuffix", () => {
+  test("first duplicate appends ' (copy)'", () => {
+    expect(nextCopySuffix("Living Room", [])).toBe("Living Room (copy)");
+  });
+
+  test("second duplicate appends ' (copy 2)'", () => {
+    expect(nextCopySuffix("Living Room", ["Living Room (copy)"])).toBe("Living Room (copy 2)");
+  });
+
+  test("advances past existing (copy N) siblings", () => {
+    expect(nextCopySuffix("Foo", ["Foo (copy)", "Foo (copy 2)", "Foo (copy 3)"])).toBe(
+      "Foo (copy 4)",
+    );
+  });
+
+  test("strips the source's own suffix before resolving", () => {
+    expect(nextCopySuffix("Foo (copy)", ["Foo (copy)"])).toBe("Foo (copy 2)");
+    expect(nextCopySuffix("Foo (copy 5)", ["Foo", "Foo (copy)"])).toBe("Foo (copy 2)");
+  });
+
+  test("treats internal parens as literal text", () => {
+    expect(nextCopySuffix("XPS (Type IV)", [])).toBe("XPS (Type IV) (copy)");
+    expect(nextCopySuffix("XPS (Type IV)", ["XPS (Type IV) (copy)"])).toBe(
+      "XPS (Type IV) (copy 2)",
+    );
+  });
+});
+
+describe("roomsPayloadFromRowDuplicate", () => {
+  test("clones source row below the anchor with a ' (copy)' name suffix", () => {
+    const source = roomFixture(
+      { id: "rm_1", floor_level: "opt_ground" },
+      { number: "5", name: "Living" },
+    );
+    const sibling = roomFixture(
+      { id: "rm_2", floor_level: "opt_ground" },
+      { number: "6", name: "Kitchen" },
+    );
+    const current: RoomsSlice = { ...baseSlice, rooms: [source, sibling] };
+
+    const payload = roomsPayloadFromRowDuplicate(current, [
+      {
+        rowId: "tmp_dup",
+        sourceRowId: "rm_1",
+        sourceRow: source,
+        anchorRowId: "rm_1",
+      },
+    ]);
+
+    expect(payload.rooms.map((r) => r.id)).toEqual(["rm_1", "tmp_dup", "rm_2"]);
+    const clone = payload.rooms.find((r) => r.id === "tmp_dup");
+    expect(clone?.custom_values.name).toBe("Living (copy)");
+    expect(clone?.floor_level).toBe("opt_ground");
+  });
+
+  test("advances suffix when ' (copy)' is already taken", () => {
+    const source = roomFixture({ id: "rm_1" }, { number: "5", name: "Living" });
+    const existingCopy = roomFixture({ id: "rm_copy" }, { number: "5", name: "Living (copy)" });
+    const current: RoomsSlice = { ...baseSlice, rooms: [source, existingCopy] };
+
+    const payload = roomsPayloadFromRowDuplicate(current, [
+      {
+        rowId: "tmp_dup",
+        sourceRowId: "rm_1",
+        sourceRow: source,
+        anchorRowId: "rm_1",
+      },
+    ]);
+
+    expect(payload.rooms.find((r) => r.id === "tmp_dup")?.custom_values.name).toBe(
+      "Living (copy 2)",
+    );
+  });
+
+  test("multi-duplicate picks distinct suffixes across the batch", () => {
+    const source = roomFixture({ id: "rm_1" }, { number: "5", name: "Living" });
+    const current: RoomsSlice = { ...baseSlice, rooms: [source] };
+
+    const payload = roomsPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_a", sourceRowId: "rm_1", sourceRow: source, anchorRowId: "rm_1" },
+      { rowId: "tmp_b", sourceRowId: "rm_1", sourceRow: source, anchorRowId: "rm_1" },
+    ]);
+
+    const names = payload.rooms.map((r) => r.custom_values.name);
+    expect(names).toContain("Living (copy)");
+    expect(names).toContain("Living (copy 2)");
+  });
+
+  test("appends at the end when anchorRowId is null", () => {
+    const source = roomFixture({ id: "rm_1" }, { name: "Living" });
+    const sibling = roomFixture({ id: "rm_2" }, { name: "Kitchen" });
+    const current: RoomsSlice = { ...baseSlice, rooms: [source, sibling] };
+
+    const payload = roomsPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "rm_1", sourceRow: source, anchorRowId: null },
+    ]);
+
+    expect(payload.rooms.map((r) => r.id)).toEqual(["rm_1", "rm_2", "tmp_dup"]);
+  });
+});
+
+describe("pumpsPayloadFromRowDuplicate", () => {
+  test("clones source pump with a record_id ' (copy)' suffix, sorted into place", () => {
+    const source = buildPump({ id: "pmp_1" });
+    const current = buildPumpsSlice({
+      pumps: [source],
+    });
+    // record_id lives in custom_values; seed it directly.
+    source.custom_values = { ...source.custom_values, record_id: "P-1" };
+
+    const payload = pumpsPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "pmp_1", sourceRow: source, anchorRowId: "pmp_1" },
+    ]);
+
+    const clone = payload.pumps.find((p) => p.id === "tmp_dup");
+    expect(clone?.custom_values.record_id).toBe("P-1 (copy)");
   });
 });

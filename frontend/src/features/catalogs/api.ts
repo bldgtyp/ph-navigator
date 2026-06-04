@@ -51,6 +51,12 @@ export async function reactivateMaterial(id: string): Promise<CatalogMaterial> {
   });
 }
 
+export async function duplicateMaterial(id: string): Promise<CatalogMaterial> {
+  return fetchJson<CatalogMaterial>(`/api/v1/catalogs/materials/${id}/duplicate`, {
+    method: "POST",
+  });
+}
+
 export async function listFrameTypes(
   includeInactive: boolean,
   signal?: AbortSignal,

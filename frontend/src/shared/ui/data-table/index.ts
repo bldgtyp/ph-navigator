@@ -87,6 +87,7 @@ export type {
   FilterOperator,
   GroupRule,
   RowDeletePayload,
+  RowDuplicatePayload,
   RowInsertPayload,
   SortRule,
   ViewState,

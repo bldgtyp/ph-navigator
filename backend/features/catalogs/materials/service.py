@@ -9,7 +9,11 @@ from starlette import status
 
 from database import connection, transaction
 from features.auth.models import UserPublic
-from features.catalogs._shared import log_catalog_action, new_catalog_record_id
+from features.catalogs._shared import (
+    log_catalog_action,
+    new_catalog_record_id,
+    next_copy_suffix,
+)
 from features.catalogs.materials import repository
 from features.catalogs.materials.models import (
     CatalogMaterialCreateRequest,
@@ -114,6 +118,56 @@ def update_material(
             )
     if row is None:
         raise RuntimeError("Catalog material disappeared after update.")
+    return _to_public(row)
+
+
+def duplicate_material(material_id: str, user: UserPublic, request: Request) -> CatalogMaterialPublic:
+    """Insert a copy of ``material_id`` with a ``(copy)`` suffix on ``name``.
+
+    The new record gets a fresh internal id, the next free
+    ``next_copy_suffix`` name across active sibling rows, and copies
+    every other catalog field verbatim from the source. ``created_*`` /
+    ``updated_*`` are minted by the insert path. Audited as a regular
+    ``catalog_record_create``: the row is a new record from the
+    catalog's perspective.
+    """
+    new_record_id = new_catalog_record_id()
+    with transaction() as conn:
+        source = repository.get_material(conn, material_id)
+        if source is None or not source["is_active"]:
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "catalog_material_not_found",
+                "Catalog material not found.",
+            )
+        siblings = repository.list_sibling_names(conn, exclude_id=material_id)
+        new_name = next_copy_suffix(source["name"], siblings)
+        repository.insert_material(
+            conn,
+            record_id=new_record_id,
+            name=new_name,
+            category=source["category"],
+            density_kg_m3=source["density_kg_m3"],
+            specific_heat_j_kgk=source["specific_heat_j_kgk"],
+            conductivity_w_mk=source["conductivity_w_mk"],
+            emissivity=source["emissivity"],
+            color=source["color"],
+            source=source["source"],
+            url=source["url"],
+            comments=source["comments"],
+            user_id=user.id,
+        )
+        row = repository.get_material(conn, new_record_id)
+        log_catalog_action(
+            conn,
+            "catalog_record_create",
+            user,
+            request,
+            catalog_table=CATALOG_TABLE,
+            record_id=new_record_id,
+        )
+    if row is None:
+        raise RuntimeError("Catalog material disappeared after duplicate.")
     return _to_public(row)
 
 
