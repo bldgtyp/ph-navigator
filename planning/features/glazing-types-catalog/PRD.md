@@ -128,11 +128,17 @@ frontend converts for IP display per
 | `suffix`            | `text`          | Suffix       | **NEW.** Max 80. Optional. Variant/sub-code from AirTable (e.g. "3CK-IL", "T", "Horizontal"). |
 | `u_value_w_m2k`     | `number`        | U-value      | SI W/(m²·K). `numberUnits` fixed: `W/(m²·K) ↔ Btu/(hr·ft²·°F)`. `>= 0`. Optional. |
 | `g_value`           | `number`        | g-value      | SHGC, dimensionless 0–1; no `numberUnits`. Optional. |
-| `source_provenance` | `text`          | Source       | Max 400. Where the values came from (e.g. "Manufacturer", "NFRC #1234"). |
-| `version_label`     | `text`          | Version      | Required. Max 80. Defaults to `v1` on create. |
-| `version_date`      | `date`          | Version date | Optional. ISO date. |
 | `color`             | `color`         | Color        | `#rrggbb`. Optional. UI tinting only. |
-| `notes`             | `text`          | Notes        | Max 4000. Free-form comments. |
+| `source`            | `text`          | Source       | **Renamed from `source_provenance`** for cross-catalog parity with Materials. Max 400. Where the values came from (e.g. "Manufacturer", "NFRC #1234"). |
+| `comments`          | `text`          | Comments     | **Renamed from `notes`** for cross-catalog parity with Materials. Max 4000. Free-form. |
+
+The version layer (`catalog_glazing_type_versions` table,
+`current_version_id`, `catalog_schema_version`, `version_label`,
+`version_date`) is **dropped** in Phase 1, mirroring the Materials
+Catalog destructive reshape. One row per glazing type; edits write
+in place. No envelope-drift refactor required because no project-
+document code reads `catalog_version_id` for glazing yet (V2 is
+still early; verify in Phase 1).
 
 ### Field provenance vs. CSV columns
 
@@ -144,30 +150,51 @@ frontend converts for IP display per
 | `SUFFIX`          | `suffix`            | **New column added in Phase 1.** |
 | `U_VALUE_W_M2K`   | `u_value_w_m2k`     | Direct. |
 | `G_VALUE`         | `g_value`           | Direct. |
-| `SOURCE`          | `source_provenance` | Direct. |
+| `SOURCE`          | `source`            | Direct (column renamed in Phase 1). |
 | `DATASHEET`       | —                   | **Dropped** (project-level concern). |
 | `LINK`            | —                   | **Dropped** (project-level concern). |
-| `COMMENTS`        | `notes`             | Direct. |
+| `COMMENTS`        | `comments`          | Direct (column renamed in Phase 1). |
 
-Audit / lifecycle columns (`is_active`, `created_at`, `created_by`,
-`updated_at`, `updated_by`, `current_version_id`,
-`catalog_schema_version`) are managed server-side and not editable
-in the grid; they remain in the read response shape for the
-detail/list endpoints, exactly as today.
+Audit / lifecycle columns (`is_active`, `created_at`,
+`created_by`, `updated_at`, `updated_by`) are managed server-side
+and not editable in the grid; they remain in the read response
+shape for the detail/list endpoints.
 
 ## Backend Shape
 
-- One table: `catalog_glazing_types` (existing). Single column
-  added in Phase 1: `suffix text null`. All other columns and the
-  `catalog_glazing_type_versions` table stay as-is for now.
+- One table: `catalog_glazing_types`. Phase 1 is a **destructive
+  reshape** mirroring the Materials Catalog precedent
+  (`planning/archive/materials-catalog-datatable/PRD.md`):
+  - **Add column**: `suffix text null`.
+  - **Rename columns**: `source_provenance → source`,
+    `notes → comments`.
+  - **Drop columns**: `current_version_id`,
+    `catalog_schema_version`, `version_label`, `version_date`.
+  - **Drop table**: `catalog_glazing_type_versions`.
+  - Migration is destructive (no production users; app is in
+    dev). One Alembic revision performs all four operations. No
+    down-migration data preservation required beyond Alembic
+    hygiene. Final column list: `id`, `name`, `manufacturer`,
+    `brand`, `suffix`, `u_value_w_m2k`, `g_value`, `color`,
+    `source`, `comments`, `is_active`, `created_at`,
+    `created_by`, `updated_at`, `updated_by`.
 - REST surface stays at `/api/v1/catalogs/glazing-types` with the
-  existing verbs. Phase 3 adds `POST /import/preview` and
-  `POST /import/commit`. Phase 2 may add a `POST /duplicate`
-  endpoint if not already present (mirrors materials).
-- `suffix` follows the same `strip_optional` validator pattern used
-  by `manufacturer` / `brand`. `max_length=80`, nullable.
-- Existing `u_value_w_m2k >= 0` and `g_value ∈ [0, 1]` validators
-  stay in place.
+  existing verbs (list, create, get, patch, soft-delete,
+  reactivate). Phase 2 wires `POST /duplicate` (mirror
+  Materials). Phase 3 adds `POST /import/preview` and
+  `POST /import/commit`.
+- `suffix` follows the same `strip_optional` validator pattern
+  used by `manufacturer` / `brand`. `max_length=80`, nullable.
+- Existing `u_value_w_m2k >= 0` and `g_value ∈ [0, 1]`
+  validators stay in place.
+- **Phase 1 verification before dropping the version layer:**
+  grep the codebase for `catalog_version_id`,
+  `current_version_id`, `catalog_glazing_type_versions`,
+  `catalog_schema_version`, and `GlazingRef.catalog_origin`
+  references. If any project-document, envelope-drift, or
+  bookshelf-copy code points at them, that work must land in the
+  same migration commit (mirrors Materials Phase 2 in the
+  archived plan).
 
 ## Frontend Shape
 
@@ -204,60 +231,65 @@ The Glazing variant looks like:
   "exported_at": "2026-06-04T12:00:00Z",
   "items": [
     {
-      "id": "rec_glzv2_...",            // optional; match key on re-import
+      "id": "rec_glaz_...",            // match key on re-import; see below
       "name": "INTUS | 44.2_CG/12Ar/4/14Ar/CG_6",
       "manufacturer": "INTUS",
       "brand": "44.2_CG/12Ar/4/14Ar/CG_6",
       "suffix": null,
       "u_value_w_m2k": 0.625,
       "g_value": 0.368,
-      "source_provenance": "Manufacturer",
-      "version_label": "v1",
-      "version_date": "2026-06-04",
       "color": null,
-      "notes": null
+      "source": "Manufacturer",
+      "comments": null
     }
   ]
 }
 ```
 
-Import semantics mirror Materials:
+Import semantics mirror Materials Catalog
+(`planning/archive/materials-catalog-import-export/PRD.md`):
 
-- **New** — no `id` match → insert.
+- **Match key is `id`** — the existing catalog primary key
+  (a stable, opaque, `rec`-prefixed string). Rows with an `id`
+  that matches an existing catalog row are treated as
+  matched; rows without an `id` (or with an `id` that no longer
+  exists) are treated as new.
+- **New** — no `id` (or `id` not found) → insert. The server
+  assigns a fresh `rec`-prefixed `id`.
 - **Match** — `id` matches an existing row → update or skip per
-  conflict policy.
-- **Schema drift** — unknown fields are silently dropped; missing
-  fields fall back to defaults; per-row warnings collected and
-  surfaced in the preview.
-- Two-phase: `/import/preview` returns counts and warnings without
-  writing; `/import/commit` performs the write.
+  conflict policy (default policy: update on field-value diff,
+  skip on identity match).
+- **Schema drift** — unknown fields are silently dropped;
+  missing fields fall back to defaults; per-row warnings
+  collected and surfaced in the preview.
+- Two-phase: `/import/preview` returns counts and warnings
+  without writing; `/import/commit` performs the write.
 
 ## Validation
 
 Server-side (Pydantic + service):
 - `name` required, 1–200 chars.
-- `manufacturer`, `brand`, `suffix`, `notes`, `source_provenance` —
+- `manufacturer`, `brand`, `suffix`, `source`, `comments` —
   `strip_optional`, max-length enforced.
 - `u_value_w_m2k >= 0` (when present).
 - `g_value ∈ [0, 1]` (when present).
-- `version_label` required on create (default `v1`); 1–80 chars.
 - `color` normalized via `normalize_optional_hex_color`.
 - Soft-delete / reactivate transitions remain idempotent.
-- Import: per-row warnings collected; preview never writes; commit
-  uses one transaction.
+- Import: per-row warnings collected; preview never writes;
+  commit uses one transaction.
 
 Client-side (DataTable + controller):
-- Inline cell edits send a `PATCH` for the changed cell; controller
-  surfaces the `name`-required violation immediately if the user
-  blanks the name cell.
+- Inline cell edits send a `PATCH` for the changed cell;
+  controller surfaces the `name`-required violation immediately
+  if the user blanks the name cell.
 - Shift-Enter on an empty grid inserts a row with safe defaults
-  (`name = "New glazing type"`, `version_label = "v1"`), mirroring
-  the Materials Catalog `buildEmptyMaterialRow`.
+  (`name = "New glazing type"`), mirroring the Materials Catalog
+  `buildEmptyMaterialRow`.
 
 ## Acceptance Criteria
 
-A1. `/catalog/glazing-types` renders with `<DataTable>` showing the
-    eleven fields above; no hand-rolled HTML table remains.
+A1. `/catalog/glazing-types` renders with `<DataTable>` showing
+    the nine fields above; no hand-rolled HTML table remains.
 A2. Sort, filter, group, hide, and column-reorder work for every
     field. IP/SI topbar toggle flips the `u_value_w_m2k` display
     between `W/(m²·K)` and `Btu/(hr·ft²·°F)` without server calls;
@@ -278,32 +310,23 @@ A6. `make ci` is green at the end of each phase. Backend pytest
     covers the new `controller.ts` and `fieldDefs.ts`. Playwright
     E2E covers the import → edit → export cycle.
 
-## Open questions
+## Resolved decisions (2026-06-04)
 
-OQ1. **Version layer.** Materials Catalog removed its
-`catalog_material_versions` table in the archived
-"materials-catalog-datatable" PRD on grounds that nothing
-downstream depends on `catalog_version_id`. Does the same
-argument apply to glazing? *Default for this PRD:* keep the
-version layer for v1 (preserves the existing schema; no envelope
-drift work needed). Revisit once Phase 1 + 2 land. Decision needed
-before Phase 3 if we want to drop `catalog_version_id` from the
-import/export payload.
+D1. **Version layer is stripped** in Phase 1 (drop
+`catalog_glazing_type_versions`, `current_version_id`,
+`catalog_schema_version`, `version_label`, `version_date`). Match
+Materials Catalog. One row per glazing type; edits write in
+place. See §Backend Shape.
 
-OQ2. **Suffix as part of name uniqueness.** AirTable rows that
-share a manufacturer + brand often differ only in `SUFFIX`
-(e.g. "Kawneer | GL-1" vs "Kawneer | GL-1 | S"). Service-layer
-uniqueness today is on `name` alone. *Default:* import treats
-`name` as the unique key as-is (the seed names already encode the
-suffix). No change to the uniqueness rule. Revisit if collision
-warnings dominate the seed preview.
+D2. **Import match key is `id`** (the existing catalog primary
+key — opaque, stable, `rec`-prefixed). Match Materials. See
+§JSON File Format. No reliance on `name` for matching, so a
+post-import rename of an existing row remains a single in-place
+edit, not a duplicate.
 
-OQ3. **"Source" vs "Source provenance".** Materials uses
-`source` (renamed from `source_provenance` in its archived PRD).
-For consistency, should glazing also rename `source_provenance →
-source`? *Default:* keep `source_provenance` for v1 (no migration
-work). Address in a later docs-pass if cross-catalog naming
-parity becomes a UX issue.
+D3. **`source_provenance` → `source` and `notes` → `comments`**
+renames are part of Phase 1, for cross-catalog parity with
+Materials.
 
 ## Out of scope deferrals (mirrors README)
 

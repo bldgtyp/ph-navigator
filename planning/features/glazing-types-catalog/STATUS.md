@@ -15,32 +15,32 @@ RELATED:
 ## Current state
 
 - **Phase 0 (Planning)** — `Active`, `2026-06-04`. README + PRD +
-  PLAN drafted; awaiting human review before Phase 1 kickoff.
-- **Phase 1 (Backend schema + API)** — `pending`.
-- **Phase 2 (Frontend DataTable page)** — `pending`.
-- **Phase 3 (JSON import/export)** — `pending`.
-- **Phase 4 (Seed data + smoke)** — `pending`.
+  PLAN drafted. **OQs resolved 2026-06-04** (see PRD §Resolved
+  decisions). Ready for Phase 1 kickoff.
+- **Phase 1 (Backend destructive reshape + API)** — `pending`.
+  Scope widened: drop version table + 4 columns, rename 2
+  columns, add 1 column.
+- **Phase 2 (Frontend DataTable page)** — `pending`. 9 columns.
+- **Phase 3 (JSON import/export)** — `pending`. Match key is `id`.
+- **Phase 4 (Seed data + smoke)** — `pending`. 42 rows.
 
 ## Next step
 
-Human review of `PRD.md` and `PLAN.md`. Resolve the three open
-questions called out in PRD §Open questions:
-
-1. OQ1 — Keep the `catalog_glazing_type_versions` layer for v1?
-2. OQ2 — Is `name` alone sufficient as the import match key, or do
-   we need `name + suffix`?
-3. OQ3 — Rename `source_provenance → source` for parity with
-   Materials Catalog?
-
-Once those are settled, kick off Phase 1 on
-`feat/glazing-types-catalog` and create `phases/phase-01-schema.md`
-with the detailed implementation steps.
+Kick off Phase 1 on `feat/glazing-types-catalog`. Create
+`phases/phase-01-schema.md` with the detailed implementation
+steps. Start with the verification grep called out in
+PLAN.md/PRD.md §Backend Shape — confirm no downstream code reads
+`catalog_version_id` / `current_version_id` /
+`catalog_glazing_type_versions` / `catalog_schema_version` /
+`GlazingRef.catalog_origin`. If anything points at them, fold that
+work into the same Alembic revision (mirror Materials Phase 2 in
+`planning/archive/materials-catalog-datatable/phases/`).
 
 ## Blockers
 
-None known. The existing backend `glazing_types/` feature already
-has CRUD + soft-delete + reactivate wired, so Phase 1 is purely
-additive.
+None known. The verification grep is the gating check before the
+destructive migration; if it surfaces dependent code, that work
+is in-scope for Phase 1 (not a blocker).
 
 ## Verification
 
