@@ -382,7 +382,7 @@ describe("App", () => {
     expect(
       await screen.findByRole("button", { name: "Version actions for Working" }),
     ).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
@@ -511,7 +511,7 @@ describe("App", () => {
 
     expect(await screen.findByText("Read-only")).toBeVisible();
     expect(screen.getByText("Edit controls hidden")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Project settings" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
@@ -545,7 +545,7 @@ describe("App", () => {
     await screen.findByRole("button", { name: "Version actions for Working" });
     expect(screen.queryByText("Clean")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Account: Ed May")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Rooms JSON" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
@@ -555,7 +555,7 @@ describe("App", () => {
     expect(screen.queryByText("Versions")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
-    expect(screen.getByRole("menuitem", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("menuitem", { name: "Save Version" })).toBeDisabled();
     expect(screen.getByRole("menuitem", { name: "Diff" })).toBeVisible();
     await user.click(screen.getByRole("heading", { name: "Status" }));
     expect(screen.queryByRole("menuitem", { name: "Diff" })).not.toBeInTheDocument();
@@ -701,8 +701,8 @@ describe("App", () => {
     expect(
       await screen.findByRole("button", { name: "Version actions for Working · Locked" }),
     ).toBeVisible();
-    expect(await screen.findByText("Unsaved changes")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Uncommitted changes")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save As" })).toBeVisible();
   });
 
@@ -731,9 +731,9 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("dialog", { name: "Unsaved draft found" })).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "Recovered draft found" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Restore draft" }));
-    expect(screen.queryByRole("dialog", { name: "Unsaved draft found" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Recovered draft found" })).not.toBeInTheDocument();
 
     const beforeUnload = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(beforeUnload);
@@ -791,7 +791,7 @@ describe("App", () => {
       ),
     );
 
-    expect(await screen.findByRole("dialog", { name: "Unsaved draft" })).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "Uncommitted draft" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Save then open" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -832,7 +832,7 @@ describe("App", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Restore draft" }));
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save Version" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Saved version changed" });
     expect(dialog).toBeVisible();
@@ -865,7 +865,7 @@ describe("App", () => {
       `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/download`,
     );
     expect(screen.getByText("schema-safe")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Rooms" })).not.toBeInTheDocument();
   });
 
@@ -897,7 +897,7 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "Download raw project JSON" })).toBeVisible();
     expect(screen.queryByText("Saved schema")).not.toBeInTheDocument();
     expect(screen.queryByText("schema-safe")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
   });
 
   test("refetches project access after signing in from a public project URL", async () => {
@@ -1111,9 +1111,9 @@ describe("App", () => {
     await user.type(screen.getByLabelText("Building zone"), "Residential");
     await user.click(screen.getByRole("button", { name: "Save room" }));
 
-    expect(await screen.findByText("Unsaved changes")).toBeVisible();
+    expect(await screen.findByText("Uncommitted changes")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
-    expect(screen.getByRole("menuitem", { name: "Save" })).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: "Save Version" })).toBeEnabled();
     expect(screen.getByText("Living Room")).toBeVisible();
     expect(screen.getByText("Ground")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(

@@ -3,8 +3,10 @@ import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
 
 const VERSION_TRIGGER_HELP = "Open the version list to switch or compare versions.";
-const DIRTY_STATE_HELP = "Draft changes are pending.";
-const SAVE_HELP = "Save this draft into the active unlocked version.";
+const DIRTY_STATE_HELP =
+  "Your edits are auto-saved as a draft on the server. Use Save Version to write them into the active version as a permanent snapshot.";
+const SAVE_HELP =
+  "Write the current draft into the active unlocked version as a permanent snapshot.";
 const SAVE_AS_HELP = "Create a new version from the current draft, then switch to it.";
 const PROJECT_ACTIONS_HELP = "Open project and version actions.";
 
@@ -32,7 +34,7 @@ export function VersionPathControls({
         aria-description={PROJECT_ACTIONS_HELP}
         data-tooltip={PROJECT_ACTIONS_HELP}
       >
-        <ChevronDown aria-hidden="true" size={14} strokeWidth={1.8} />
+        <ChevronDown aria-hidden="true" size={12} strokeWidth={1.9} />
       </button>
     </div>
   );
@@ -60,7 +62,7 @@ export function VersionShellControls({
         data-tooltip={DIRTY_STATE_HELP}
         aria-description={DIRTY_STATE_HELP}
       >
-        Unsaved changes
+        Uncommitted changes
       </span>
       {isLocked ? (
         <button
@@ -80,7 +82,7 @@ export function VersionShellControls({
           aria-description={SAVE_HELP}
           data-tooltip={SAVE_HELP}
         >
-          {busy ? "Saving..." : "Save"}
+          {busy ? "Saving..." : "Save Version"}
         </button>
       )}
     </div>
@@ -156,7 +158,7 @@ export function ProjectActionsMenu({
         }}
         disabled={isLocked || !hasDraft || busy}
       >
-        Save
+        Save Version
       </button>
       {!isLocked ? (
         <button

@@ -77,7 +77,7 @@ export function TopbarAccountMenu({ label, onSignOut }: { label: string; onSignO
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary aria-label={`Account: ${label}`} title={label}>
-        <CircleUserRound aria-hidden="true" size={18} strokeWidth={1.8} />
+        <CircleUserRound aria-hidden="true" size={22} strokeWidth={1.7} />
       </summary>
       <div className="account-menu-panel">
         <p className="account-menu-label">{label}</p>

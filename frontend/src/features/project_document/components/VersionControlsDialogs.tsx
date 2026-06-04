@@ -18,12 +18,13 @@ export function DraftRestoreDialog({
   onKeep: () => void;
 }) {
   return (
-    <ModalDialog title="Unsaved draft found" titleId="restore-draft-title" onClose={onKeep}>
+    <ModalDialog title="Recovered draft found" titleId="restore-draft-title" onClose={onKeep}>
       <div className="confirmation-panel">
         <p>
-          This version has a recovered server draft
-          {prompt.lastPatchedAt ? ` from ${formatProjectDateTime(prompt.lastPatchedAt)}` : ""}. Keep
-          it open or discard it and reload the saved version.
+          Your edits were auto-saved to a server draft
+          {prompt.lastPatchedAt ? ` at ${formatProjectDateTime(prompt.lastPatchedAt)}` : ""} but
+          never committed to a version. Restore the draft to continue editing, or discard it and
+          reload the last saved version.
         </p>
         <div className="modal-actions">
           <button type="button" className="secondary-button" onClick={onDiscard} disabled={busy}>

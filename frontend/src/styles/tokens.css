@@ -5,6 +5,11 @@
   --phn-radius: var(--radius-sm);
   --phn-control-radius: 6px;
   --z-base: 0;
+  /* One step above --z-base for in-component stacking inside a single
+     widget (e.g. the SI/IP toggle's foreground text sitting above its
+     animated pill). Not for cross-component layering — use --z-sticky
+     or higher for that. */
+  --z-base-elevated: 1;
   --z-sticky: 10;
   --z-dropdown: 100;
   --z-overlay-hud: 500;

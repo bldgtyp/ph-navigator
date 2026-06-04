@@ -91,7 +91,8 @@
 }
 
 .version-control-wrap .shell-controls > button {
-  min-inline-size: 104px;
+  flex: 0 0 112px;
+  inline-size: 112px;
 }
 
 .version-path-control {
@@ -113,7 +114,7 @@
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 4px;
+  gap: 1px;
 }
 
 .version-path-label {
@@ -130,20 +131,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: var(--bg-card);
+  width: 18px;
+  height: 22px;
+  min-height: 22px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
   color: var(--text-secondary);
   padding: 0;
 }
 
 .version-path-trigger:hover:not(:disabled),
 .version-path-trigger[aria-expanded="true"] {
-  border-color: var(--accent-text);
-  background: var(--bg-elev);
+  background: transparent;
   color: var(--accent-text);
   transform: none;
 }
