@@ -20,6 +20,13 @@ import {
   FRAME_TYPES_FIELD_OVERLAY,
   FRAME_TYPES_TABLE_KEY,
 } from "../frame-types/fieldDefs";
+import { ImportDialog } from "../frame-types/import_export/ImportDialog";
+import { CatalogImportExportMenu } from "../frame-types/import_export/OverflowMenuItems";
+import {
+  exportFilename,
+  serializeCatalog,
+  triggerCatalogDownload,
+} from "../frame-types/import_export/export";
 import { useFrameTypesQuery, useReactivateFrameTypeMutation } from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogFrameType } from "../types";
@@ -170,10 +177,19 @@ const COLUMN_DEFS: DataTableColumnDef<FrameTypeRow>[] = [
 
 export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [bulkReactivating, setBulkReactivating] = useState(false);
   const frameTypesQuery = useFrameTypesQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateFrameTypeMutation();
+
+  function handleExport() {
+    const file = serializeCatalog(frameTypes, {
+      exportedBy: session.user.email,
+      appVersion: (import.meta.env.VITE_APP_VERSION ?? null) as string | null,
+    });
+    triggerCatalogDownload(file, exportFilename());
+  }
 
   const allFrameTypes = frameTypesQuery.data ?? EMPTY_FRAME_TYPES;
   const frameTypes = useMemo(
@@ -276,6 +292,13 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             onWrite={controller.onWrite}
             buildEmptyRow={buildEmptyFrameTypeRow}
             bulkSelectionActions={renderBulkSelectionActions}
+            overflowMenuActions={
+              <CatalogImportExportMenu
+                onExport={handleExport}
+                onImport={() => setImportOpen(true)}
+                exportDisabled={frameTypes.length === 0}
+              />
+            }
             emptyMessage={
               frameTypesQuery.isLoading
                 ? "Loading frame types…"
@@ -283,6 +306,10 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             }
           />
         )}
+        {/* Conditional mount: closing tears down internal state and any
+            in-flight preview/commit mutations so a late preview cannot
+            setState on a hidden dialog. */}
+        {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
       </section>
     </main>
   );
