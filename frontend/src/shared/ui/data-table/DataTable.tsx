@@ -2,6 +2,7 @@
 import "./DataTable.css";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   DndContext,
   KeyboardSensor,
@@ -190,6 +191,17 @@ export function DataTable<TRow>({
       aggregatesByPath,
     ],
   );
+  // For row virtualization: map each data-row index (0..rowIds.length-1)
+  // to its position in `bodyPlan`. Group-header items are skipped. This
+  // lets the active-cell scroll-into-view effect translate the
+  // selection's row index into a virtualizer index.
+  const bodyPlanIndexByDataRowIndex = useMemo(() => {
+    const result: number[] = [];
+    for (let i = 0; i < bodyPlan.length; i += 1) {
+      if (bodyPlan[i]?.kind === "data") result.push(i);
+    }
+    return result;
+  }, [bodyPlan]);
   // Selection / keyboard / clipboard operate on the data-row subset
   // of the body plan — collapsed-group rows are invisible to those
   // models. Group-header rows never enter `rowIds`, so the existing
@@ -300,6 +312,50 @@ export function DataTable<TRow>({
 
   const isGrouped = view.group.length > 0;
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Row virtualization. Only rows in (or near) the viewport mount; the
+  // body renders top + bottom spacer `<tr>`s so the scrollbar geometry
+  // matches a fully-populated table. The estimate is conservative —
+  // group rows are slightly taller than data rows — and finalized via
+  // `measureElement` on each rendered `<tr>` so dynamic heights settle.
+  const rowVirtualizer = useVirtualizer({
+    count: bodyPlan.length,
+    getScrollElement: () => wrapperRef.current,
+    estimateSize: (index) => (bodyPlan[index]?.kind === "group" ? 40 : 32),
+    overscan: 12,
+    getItemKey: (index) => {
+      const item = bodyPlan[index];
+      if (!item) return index;
+      return item.kind === "group" ? `group::${item.pathKey}` : `data::${item.rowId}`;
+    },
+  });
+
+  // Scroll the active cell's row into view when the selection moves.
+  // Without this, keyboard navigation past the rendered overscan band
+  // would land on an unmounted row. Skipping this work pre-mount keeps
+  // a fresh render from auto-scrolling on first paint.
+  const activeDataRowIndex = selection.activeCell.rowIndex;
+  useEffect(() => {
+    if (activeDataRowIndex < 0) return;
+    const planIndex = bodyPlanIndexByDataRowIndex[activeDataRowIndex];
+    if (planIndex === undefined) return;
+    if (!wrapperRef.current) return;
+    rowVirtualizer.scrollToIndex(planIndex, { align: "auto" });
+  }, [activeDataRowIndex, bodyPlanIndexByDataRowIndex, rowVirtualizer]);
+
+  // Keep the row containing the open inline editor mounted by pinning
+  // the virtualizer's scroll position to it. Without this, scrolling
+  // an in-progress edit off-screen would unmount the editor mid-edit.
+  const editingRowId = edit.editing?.rowId ?? null;
+  useEffect(() => {
+    if (!editingRowId) return;
+    const dataIndex = rowIds.indexOf(editingRowId);
+    if (dataIndex < 0) return;
+    const planIndex = bodyPlanIndexByDataRowIndex[dataIndex];
+    if (planIndex === undefined) return;
+    rowVirtualizer.scrollToIndex(planIndex, { align: "auto" });
+  }, [editingRowId, rowIds, bodyPlanIndexByDataRowIndex, rowVirtualizer]);
+
   // Phase 3 §4.9: short-circuit pointer drag when the mousedown source
   // lives inside the active editor (inline <input> or single-select
   // popover). Lets native text-selection inside the editor work
@@ -1265,6 +1321,8 @@ export function DataTable<TRow>({
                   totalRowCount={rows.length}
                   axisRolesByFieldKey={axisRolesByFieldKey}
                   bodyPlan={bodyPlan}
+                  rowVirtualizer={rowVirtualizer}
+                  bodyPlanIndexByDataRowIndex={bodyPlanIndexByDataRowIndex}
                   onGroupToggle={handleToggleGroup}
                   onCellActivate={(rowId, fieldKey) => {
                     selection.setActive({ rowId, fieldKey });

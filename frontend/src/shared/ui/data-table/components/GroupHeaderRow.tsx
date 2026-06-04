@@ -18,6 +18,12 @@ export type GroupHeaderRowProps<TRow> = {
   expanded: boolean;
   visibleColumnDefs: readonly DataTableColumnDef<TRow>[];
   onToggle: (pathKey: string) => void;
+  // Row-virtualization plumbing. The body renders only the rows the
+  // virtualizer returns; each `<tr>` reports its measured height back
+  // via `measureRef` so variable group-header heights settle without a
+  // fixed estimate.
+  measureRef?: (el: HTMLTableRowElement | null) => void;
+  dataIndex?: number;
 };
 
 export function GroupHeaderRow<TRow>({
@@ -30,6 +36,8 @@ export function GroupHeaderRow<TRow>({
   expanded,
   visibleColumnDefs,
   onToggle,
+  measureRef,
+  dataIndex,
 }: GroupHeaderRowProps<TRow>) {
   const indent = depth * 8 + 8;
   // First column hosts chevron + key + count; subsequent columns each
@@ -38,6 +46,8 @@ export function GroupHeaderRow<TRow>({
   // aggregated value too — same alignment as the body.
   return (
     <tr
+      ref={measureRef}
+      data-index={dataIndex}
       role="row"
       className="data-table-group-row"
       data-group-path={pathKey}

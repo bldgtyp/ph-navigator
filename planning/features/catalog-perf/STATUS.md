@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-04
-TIME: 11:30 ET
-STATUS: Active — Phases 1 (gzip) and 2 (client-side `is_active`) shipped.
-        Phase 3 (DataTable virtualization) next.
+TIME: 12:00 ET
+STATUS: Active — Phases 1 (gzip), 2 (client-side `is_active`), and 3
+        (DataTable virtualization) shipped. Phase 4 (payload trim)
+        next.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the catalog-perf feature. Updated at the end
        of every implementation session.
@@ -33,8 +34,8 @@ streamable HTTP mount is unaffected.
 | Phase | Title | Status | Branch / PR | Verification |
 |---|---|---|---|---|
 | 1 | GZipMiddleware | Done | `main` (commit `59766fa`) | gzip smoke tests pass; MCP suite green |
-| 2 | Client-side `is_active` filter | Done | `main` (this commit) | all three catalog hooks unified; 1030 frontend tests pass |
-| 3 | `DataTable` row virtualization | Pending | — | not yet measured |
+| 2 | Client-side `is_active` filter | Done | `main` (commit `fe32a0b`) | all three catalog hooks unified; 1030 frontend tests pass |
+| 3 | `DataTable` row virtualization | Done | `main` (this commit) | `@tanstack/react-virtual` wired; 1030 frontend tests pass unmodified across all 5 DataTable consumers |
 | 4 | List payload trim | Pending | — | not yet measured |
 | 5 | Pagination | Deferred | — | not yet measured |
 
@@ -65,10 +66,12 @@ Targets after phases 1–3:
 
 ## Next step
 
-Phase 3 — `DataTable` row virtualization. See
-`phases/phase-03-datatable-virtualization.md`. This is the largest
-phase and the only one with a non-trivial regression risk across
-`DataTable` consumers.
+Phase 4 — list payload trim. See `phases/phase-04-payload-trim.md`.
+
+Manual perf verification against the 410-row materials fixture is
+still outstanding for Phases 1–3 combined (target: rendered `<tr>`
+count ≤ 50; "Show deactivated" toggle ≤ 150 ms; cell click ≤ 50 ms).
+Record the numbers here once measured.
 
 ## Blockers
 
