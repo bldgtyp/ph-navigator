@@ -45,6 +45,15 @@ export function GridGutter({
   return (
     <th className={`data-table-gutter${selected ? " data-table-gutter-selected" : ""}`} scope="row">
       <div className="data-table-gutter-inner">
+        <button
+          type="button"
+          className="data-table-gutter-number"
+          aria-label={`Highlight row ${rowNumber}`}
+          tabIndex={-1}
+          onClick={onSelectRow}
+        >
+          {rowNumber}
+        </button>
         {showCheckbox ? (
           <input
             type="checkbox"
@@ -58,15 +67,6 @@ export function GridGutter({
             tabIndex={-1}
           />
         ) : null}
-        <button
-          type="button"
-          className="data-table-gutter-number"
-          aria-label={`Highlight row ${rowNumber}`}
-          tabIndex={-1}
-          onClick={onSelectRow}
-        >
-          {rowNumber}
-        </button>
         {onExpandRow ? (
           <button
             type="button"

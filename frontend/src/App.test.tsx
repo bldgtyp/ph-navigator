@@ -956,7 +956,7 @@ describe("App", () => {
     await user.click(await screen.findByText("Catalogs"));
     await user.click(screen.getByRole("link", { name: "Materials" }));
 
-    expect(await screen.findByRole("heading", { name: "Materials" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "New Material +" })).toBeVisible();
     expect(await screen.findByText("No materials yet. Shift-Enter to add one.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/materials");
   });

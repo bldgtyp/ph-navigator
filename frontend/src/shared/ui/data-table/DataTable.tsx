@@ -1220,7 +1220,7 @@ export function DataTable<TRow>({
                 {/* Propagate column widths to every row so the sticky frozen
               cell renders at the same horizontal position as its header.
               Without a colgroup, the body cell width is auto-derived and
-              the sticky `left: 42px` cell overlaps the adjacent column. */}
+              the sticky frozen cell can overlap the adjacent column. */}
                 <colgroup>
                   <col className="data-table-gutter-col" />
                   {visibleColumnDefs.map((column) => {

@@ -1,4 +1,5 @@
 .data-table-wrap {
+  --data-table-gutter-width: 72px;
   overflow: auto;
   max-height: 100%;
   background: var(--bg-table-outside);
@@ -658,7 +659,7 @@
 }
 
 .data-table-gutter-col {
-  width: var(--gutter-width);
+  width: var(--data-table-gutter-width);
 }
 
 .data-table-tail-col {
@@ -1003,9 +1004,9 @@
   position: sticky;
   left: 0;
   z-index: calc(var(--z-base) + 7);
-  width: var(--gutter-width);
-  min-width: var(--gutter-width);
-  max-width: var(--gutter-width);
+  width: var(--data-table-gutter-width);
+  min-width: var(--data-table-gutter-width);
+  max-width: var(--data-table-gutter-width);
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--text-muted);
@@ -1014,7 +1015,7 @@
 
 .data-table tbody .data-table-gutter {
   height: var(--data-table-row-height);
-  padding: 0 var(--data-table-cell-padding-x);
+  padding: 0 8px;
 }
 
 .data-table thead .data-table-gutter {
@@ -1023,18 +1024,53 @@
 }
 
 .data-table-gutter-inner {
-  display: flex;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: minmax(32px, 1fr) 16px;
   align-items: center;
-  gap: 4px;
-  justify-content: flex-end;
+  column-gap: 6px;
 }
 
 .data-table-gutter-checkbox {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 14px;
+  height: 14px;
   margin: 0;
+  border: 1px solid color-mix(in oklab, var(--text-muted) 52%, var(--bg-card));
+  border-radius: 3px;
+  background: var(--bg-card);
   cursor: pointer;
 }
 
+.data-table-gutter-checkbox::before {
+  content: "";
+  width: 7px;
+  height: 5px;
+  border-left: 2px solid var(--bg-card);
+  border-bottom: 2px solid var(--bg-card);
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+  transform-origin: center;
+}
+
+.data-table-gutter-checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.data-table-gutter-checkbox:checked::before {
+  transform: translateY(-1px) rotate(-45deg) scale(1);
+}
+
+.data-table-gutter-checkbox:focus-visible {
+  outline: none;
+  box-shadow: var(--phn-focus);
+}
+
 .data-table-gutter-number {
+  min-width: 32px;
   min-height: 0;
   border: 0;
   background: transparent;
@@ -1052,7 +1088,7 @@
 .data-table-gutter-expand {
   position: absolute;
   top: 50%;
-  right: 4px;
+  left: 8px;
   display: none;
   align-items: center;
   justify-content: center;
@@ -1533,7 +1569,7 @@
 .data-table th.data-table-frozen,
 .data-table td.data-table-frozen {
   position: sticky;
-  left: var(--gutter-width);
+  left: var(--data-table-gutter-width);
   z-index: calc(var(--z-base) + 5);
   background: var(--data-table-cell-bg, var(--data-table-header-bg, var(--bg-card)));
 }

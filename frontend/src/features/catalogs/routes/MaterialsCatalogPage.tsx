@@ -10,6 +10,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
+import { MaterialEditorModal } from "../components/MaterialEditorModal";
 import { useMaterialsQuery, useReactivateMaterialMutation } from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogMaterial } from "../types";
@@ -128,6 +129,8 @@ const COLUMN_DEFS: DataTableColumnDef<MaterialRow>[] = [
 export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [bulkReactivating, setBulkReactivating] = useState(false);
   const materialsQuery = useMaterialsQuery(includeInactive);
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateMaterialMutation();
@@ -166,20 +169,26 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
       return (
         <button
           type="button"
-          disabled={reactivateMutation.isPending}
-          onClick={() => {
-            // Fire all reactivations in parallel; the shared mutation's
-            // onSuccess invalidates after each one, but materialsQuery's
-            // refetch will coalesce. Selection auto-clears when the new
-            // rows array identity arrives.
-            for (const id of inactiveIds) reactivateMutation.mutate(id);
+          disabled={bulkReactivating}
+          onClick={async () => {
+            // Fan out reactivations in parallel and only re-enable the
+            // button once every request settles — relying on the shared
+            // mutation's isPending would flip back to false as soon as
+            // the first response landed. Selection auto-clears when the
+            // new rows array identity arrives.
+            setBulkReactivating(true);
+            try {
+              await Promise.allSettled(inactiveIds.map((id) => reactivateMutation.mutateAsync(id)));
+            } finally {
+              setBulkReactivating(false);
+            }
           }}
         >
           {label}
         </button>
       );
     },
-    [isActiveById, reactivateMutation],
+    [bulkReactivating, isActiveById, reactivateMutation],
   );
 
   const tableSchema = useMemo(
@@ -204,16 +213,11 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
           />
         }
       />
-      <section className="dashboard-page" aria-labelledby="catalog-title">
+      <section className="dashboard-page" aria-label="Materials catalog">
         <div className="page-heading">
-          <div>
-            <p className="eyebrow">Catalogs</p>
-            <h1 id="catalog-title">Materials</h1>
-            <p className="catalog-description">
-              Curated starting library. Picking a material into a project copies the values in;
-              later catalog edits surface through refresh-from-catalog.
-            </p>
-          </div>
+          <button type="button" onClick={() => setEditorOpen(true)}>
+            New Material +
+          </button>
         </div>
 
         <div className="catalog-toolbar">
@@ -268,6 +272,12 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
           the next open.
         */}
         {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
+        {editorOpen ? (
+          <MaterialEditorModal
+            onClose={() => setEditorOpen(false)}
+            onSaved={() => setEditorOpen(false)}
+          />
+        ) : null}
       </section>
     </main>
   );
