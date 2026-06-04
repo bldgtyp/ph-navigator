@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-03
 TIME: 20:30 EDT
-STATUS: Active — planning packet drafted, awaiting implementation kickoff.
+STATUS: Complete — squash-merged to main as `94d6a2a` via PR #6;
+        folder archived under `planning/archive/`. See STATUS.md.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Rebuild the Materials Catalog page on the shared DataTable
        primitive and reshape the catalog material schema.
