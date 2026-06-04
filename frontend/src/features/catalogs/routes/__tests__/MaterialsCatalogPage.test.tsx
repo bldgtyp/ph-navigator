@@ -69,9 +69,7 @@ describe("MaterialsCatalogPage", () => {
       comments: null,
       is_active: true,
       created_at: "2026-06-04T12:00:00Z",
-      created_by: null,
       updated_at: "2026-06-04T12:00:00Z",
-      updated_by: null,
     });
 
     renderPage();

@@ -1,7 +1,13 @@
 ---
 DATE: 2026-06-04
 TIME: 09:40 ET
-STATUS: PENDING — implementation has not started.
+STATUS: DONE — list endpoints for materials, frame-types, and
+        glazing-types now return `Catalog<X>ListItem` (no
+        `created_by`/`updated_by`); per-row detail endpoints still
+        return the full `Catalog<X>Public` with audit fields. Frontend
+        `CatalogMaterial` / `CatalogFrameType` / `CatalogGlazingType`
+        no longer declare audit fields; a new `CatalogMaterialDetail`
+        captures the detail shape for future per-row consumers.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Drop `created_by` and `updated_by` from the catalog list
        endpoints; keep them on per-row detail endpoints. Distinct

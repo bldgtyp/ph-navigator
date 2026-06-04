@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-04
-TIME: 12:00 ET
-STATUS: Active — Phases 1 (gzip), 2 (client-side `is_active`), and 3
-        (DataTable virtualization) shipped. Phase 4 (payload trim)
-        next.
+TIME: 12:30 ET
+STATUS: Active — Phases 1–4 shipped. Phase 5 (pagination) remains
+        Deferred per the PRD until row growth warrants it.
+        Performance verification against the 410-row materials
+        fixture is still outstanding.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the catalog-perf feature. Updated at the end
        of every implementation session.
@@ -35,8 +36,8 @@ streamable HTTP mount is unaffected.
 |---|---|---|---|---|
 | 1 | GZipMiddleware | Done | `main` (commit `59766fa`) | gzip smoke tests pass; MCP suite green |
 | 2 | Client-side `is_active` filter | Done | `main` (commit `fe32a0b`) | all three catalog hooks unified; 1030 frontend tests pass |
-| 3 | `DataTable` row virtualization | Done | `main` (this commit) | `@tanstack/react-virtual` wired; 1030 frontend tests pass unmodified across all 5 DataTable consumers |
-| 4 | List payload trim | Pending | — | not yet measured |
+| 3 | `DataTable` row virtualization | Done | `main` (commit `ae1f4c0`) | `@tanstack/react-virtual` wired; 1030 frontend tests pass unmodified across all 5 DataTable consumers |
+| 4 | List payload trim | Done | `main` (this commit) | list endpoints drop `created_by`/`updated_by`; detail endpoints unchanged; 1030 fe + 468 be tests pass |
 | 5 | Pagination | Deferred | — | not yet measured |
 
 ## Baseline measurements (from trigger review)
@@ -66,10 +67,11 @@ Targets after phases 1–3:
 
 ## Next step
 
-Phase 4 — list payload trim. See `phases/phase-04-payload-trim.md`.
+Phases 1–4 are landed. Phase 5 stays Deferred per the PRD until row
+count or stakeholder ask triggers it.
 
 Manual perf verification against the 410-row materials fixture is
-still outstanding for Phases 1–3 combined (target: rendered `<tr>`
+still outstanding (target: wire payload ≤ 15 KB; rendered `<tr>`
 count ≤ 50; "Show deactivated" toggle ≤ 150 ms; cell click ≤ 50 ms).
 Record the numbers here once measured.
 

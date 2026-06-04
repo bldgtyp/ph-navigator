@@ -19,6 +19,7 @@ from features.catalogs.glazing_types import repository
 from features.catalogs.glazing_types.models import (
     CATALOG_VERSION_ID_PREFIX,
     CatalogGlazingTypeCreateRequest,
+    CatalogGlazingTypeListItem,
     CatalogGlazingTypeListResponse,
     CatalogGlazingTypePublic,
     CatalogGlazingTypeUpdateRequest,
@@ -32,10 +33,14 @@ def _to_public(row: dict[str, Any]) -> CatalogGlazingTypePublic:
     return CatalogGlazingTypePublic.model_validate(row)
 
 
+def _to_list_item(row: dict[str, Any]) -> CatalogGlazingTypeListItem:
+    return CatalogGlazingTypeListItem.model_validate(row)
+
+
 def list_glazing_types(*, include_inactive: bool = False) -> CatalogGlazingTypeListResponse:
     with connection() as conn:
         rows = repository.list_glazing_types(conn, include_inactive=include_inactive)
-    return CatalogGlazingTypeListResponse(items=[_to_public(row) for row in rows])
+    return CatalogGlazingTypeListResponse(items=[_to_list_item(row) for row in rows])
 
 
 def get_glazing_type(record_id: str) -> CatalogGlazingTypePublic:

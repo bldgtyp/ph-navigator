@@ -58,9 +58,7 @@ function buildEmptyMaterialRow({ rowId }: { rowId: string }): MaterialRow {
     comments: null,
     is_active: true,
     created_at: PLACEHOLDER_TIMESTAMP,
-    created_by: null,
     updated_at: PLACEHOLDER_TIMESTAMP,
-    updated_by: null,
   };
 }
 
