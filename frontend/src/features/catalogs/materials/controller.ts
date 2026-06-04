@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { emptyViewState } from "../../../shared/ui/data-table";
 import type { CellWrite, ViewState, WriteOp } from "../../../shared/ui/data-table";
 import { createMaterial, deactivateMaterial, updateMaterial } from "../api";
 import { catalogQueryKeys } from "../query-keys";
@@ -9,17 +10,6 @@ import type {
   CatalogMaterialUpdatePayload,
 } from "../types";
 import { MATERIALS_BUILT_IN_FIELD_DEFS, materialCategoryFromOptionId } from "./fieldDefs";
-
-const EMPTY_VIEW: ViewState = {
-  filter: [],
-  sort: [],
-  group: [],
-  aggregations: {},
-  columnOrder: [],
-  columnWidths: {},
-  hiddenColumns: [],
-  expandedGroups: {},
-};
 
 // Row shape used by the grid. `category` holds the single_select option
 // id (e.g. `opt_insulation`) so the DataTable cell can render the pill;
@@ -114,13 +104,13 @@ export type MaterialsCatalogController = {
 };
 
 export function useMaterialsCatalogController(): MaterialsCatalogController {
-  const [view, setView] = useState<ViewState>(EMPTY_VIEW);
+  const [view, setView] = useState<ViewState>(emptyViewState());
   const queryClient = useQueryClient();
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.materials() }),
     [queryClient],
   );
-  const onResetView = useCallback(() => setView(EMPTY_VIEW), []);
+  const onResetView = useCallback(() => setView(emptyViewState()), []);
 
   const onWrite = useCallback<MaterialsCatalogController["onWrite"]>(
     async (op) => {
