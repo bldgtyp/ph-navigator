@@ -31,18 +31,26 @@ RELATED:
   Added `u_value` (+ `specific_heat`) to the IP/SI registry on both
   sides so the U-value column toggles cleanly between
   `W/(m²·K)` and `Btu/(h-ft²-F)`.
-- **Phase 3 (JSON import/export)** — `pending`. Match key is `id`.
+- **Phase 3 (JSON import/export)** — `Complete`, `2026-06-04`.
+  `backend/features/catalogs/glazing_types/import_export/` mirrors the
+  materials pipeline (file_format, upgrade v0→v1 rename, coerce,
+  tokens, pipeline, service); routes ship `/import/preview` +
+  `/import/commit`. Frontend
+  `frontend/src/features/catalogs/glazing-types/import_export/` ships
+  `api.ts`, `types.ts`, `export.ts`, `useImportMutations.ts`,
+  `ImportDialog.tsx`, `OverflowMenuItems.tsx`; the catalog page wires
+  the overflow menu and dialog. Match key is `id`; round-trip is a
+  no-op.
 - **Phase 4 (Seed data + smoke)** — `pending`. 42 rows.
 
 ## Next step
 
-Phase 3: add
-`backend/features/catalogs/glazing_types/import_export/` (file_format,
-coerce, tokens, upgrade, pipeline, service) + `/import/preview` and
-`/import/commit` routes; add frontend `import_export/`
-(`ImportDialog`, `OverflowMenuItems`, `export.ts`,
-`useImportMutations`, `api.ts`, `types.ts`); wire overflow-menu
-items on the catalog page.
+Phase 4: convert `research/Glazing Data-ALL DATA.csv` → canonical
+JSON seed under
+`backend/features/catalogs/glazing_types/seeds/glazing-types.v1.json`
+(drop DATASHEET + LINK columns); add a `make seed-glazing` recipe
+that POSTs the seed through `/import/commit`; run once locally to
+verify all 42 rows appear.
 
 ## Blockers
 

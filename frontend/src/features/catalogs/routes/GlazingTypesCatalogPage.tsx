@@ -20,6 +20,13 @@ import {
   GLAZING_TYPES_FIELD_OVERLAY,
   GLAZING_TYPES_TABLE_KEY,
 } from "../glazing-types/fieldDefs";
+import { ImportDialog } from "../glazing-types/import_export/ImportDialog";
+import { CatalogImportExportMenu } from "../glazing-types/import_export/OverflowMenuItems";
+import {
+  exportFilename,
+  serializeCatalog,
+  triggerCatalogDownload,
+} from "../glazing-types/import_export/export";
 import { useGlazingTypesQuery, useReactivateGlazingTypeMutation } from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogGlazingType } from "../types";
@@ -108,10 +115,19 @@ const COLUMN_DEFS: DataTableColumnDef<GlazingTypeRow>[] = [
 
 export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [bulkReactivating, setBulkReactivating] = useState(false);
   const glazingTypesQuery = useGlazingTypesQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateGlazingTypeMutation();
+
+  function handleExport() {
+    const file = serializeCatalog(glazingTypes, {
+      exportedBy: session.user.email,
+      appVersion: (import.meta.env.VITE_APP_VERSION ?? null) as string | null,
+    });
+    triggerCatalogDownload(file, exportFilename());
+  }
 
   const allGlazingTypes = glazingTypesQuery.data ?? EMPTY_GLAZING_TYPES;
   const glazingTypes = useMemo(
@@ -214,6 +230,13 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
             onWrite={controller.onWrite}
             buildEmptyRow={buildEmptyGlazingTypeRow}
             bulkSelectionActions={renderBulkSelectionActions}
+            overflowMenuActions={
+              <CatalogImportExportMenu
+                onExport={handleExport}
+                onImport={() => setImportOpen(true)}
+                exportDisabled={glazingTypes.length === 0}
+              />
+            }
             emptyMessage={
               glazingTypesQuery.isLoading
                 ? "Loading glazing types…"
@@ -221,6 +244,10 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
             }
           />
         )}
+        {/* Conditional mount: closing tears down internal state and any
+            in-flight preview/commit mutations so a late preview cannot
+            setState on a hidden dialog. */}
+        {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
       </section>
     </main>
   );
