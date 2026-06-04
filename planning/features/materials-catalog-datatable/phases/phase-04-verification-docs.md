@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-03
 TIME: 20:30 EDT
-STATUS: Planned.
+STATUS: Complete. All gates green and smoke-surfaced follow-ups
+        closed on `feat/materials-catalog-datatable`; see ../STATUS.md.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Closeout — verification gates and durable doc fold-back.
 RELATED:

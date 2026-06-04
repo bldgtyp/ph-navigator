@@ -23,6 +23,32 @@ import {
   MATERIALS_TABLE_KEY,
 } from "../materials/fieldDefs";
 
+// Optimistic placeholder row used by Shift-Enter on an empty grid. The
+// controller's `rowInsert` handler POSTs the row with safe defaults
+// (name "New material", category "insulation"); the optimistic row
+// disappears on the refetch that follows.
+const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
+function buildEmptyMaterialRow({ rowId }: { rowId: string }): MaterialRow {
+  return {
+    id: rowId,
+    name: "New material",
+    category: "opt_insulation",
+    density_kg_m3: null,
+    specific_heat_j_kgk: null,
+    conductivity_w_mk: null,
+    emissivity: null,
+    color: null,
+    source: null,
+    url: null,
+    comments: null,
+    is_active: true,
+    created_at: PLACEHOLDER_TIMESTAMP,
+    created_by: null,
+    updated_at: PLACEHOLDER_TIMESTAMP,
+    updated_by: null,
+  };
+}
+
 const COLUMN_DEFS: DataTableColumnDef<MaterialRow>[] = [
   { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name, defaultWidth: 240 },
   {
@@ -158,6 +184,7 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             onViewChange={controller.onViewChange}
             onResetView={controller.onResetView}
             onWrite={controller.onWrite}
+            buildEmptyRow={buildEmptyMaterialRow}
             emptyMessage={
               materialsQuery.isLoading
                 ? "Loading materials…"

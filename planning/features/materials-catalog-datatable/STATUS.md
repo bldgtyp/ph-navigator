@@ -1,10 +1,9 @@
 ---
 DATE: 2026-06-04
-TIME: 00:30 EDT
-STATUS: Implemented on `feat/materials-catalog-datatable`; ready for
-        review. Three known UX gaps recorded below as follow-up work,
-        none of which block landing the rewrite (the legacy
-        modal-based UI it replaces was even more limited).
+TIME: 00:55 EDT
+STATUS: Ready for review on `feat/materials-catalog-datatable`. All
+        four phases complete; Phase 4 follow-ups resolved before
+        marking the PR ready.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Status ledger for the Materials Catalog DataTable migration.
 RELATED:
@@ -17,7 +16,7 @@ RELATED:
 
 ## Current state
 
-- Branch: `feat/materials-catalog-datatable` (PR pending).
+- Branch: `feat/materials-catalog-datatable`.
 - Planning packet committed (`200dcbf`).
 - **Phases 1 + 2 (backend) merged into one commit** (`763b7d5`):
   destructive Alembic; CatalogOrigin nullable version slots;
@@ -31,61 +30,29 @@ RELATED:
   `NUMBER_UNIT_TYPES` registry; ProjectMaterial / CatalogOrigin / drift
   type reshape across envelope + tests;
   `frontend-viewer-units.md` §11.5.5 fold-back.
-- **Phase 4 (verification + closeout)** finished:
-  - `make format` + `make ci` from repo root: green (1003 frontend
-    tests, 440 + 1 skipped backend tests).
-  - Playwright MCP browser smoke run against the live `/catalog/materials`
-    page; screenshots in gitignored `working/phase4-smoke/`.
-
-## Smoke verification — what works
-
-- Page mounts with all ten columns + tail `+` cell; the per-column
-  unit chips render the active SI unit label.
-- REST list loads three seeded rows; categories render as option
-  labels (single_select pill UI), color cells show swatch + hex,
-  numbers right-aligned, "3 materials" count + footer `COUNT 3`.
-- SI → IP toggle (via the user preference endpoint) flipped the unit
-  chips and converted values correctly:
-  Density `35 / 7850 / 650 kg/m3 → 2.2 / 490.1 / 40.6 lb/ft3`;
-  Specific Heat `1500 / 500 / 1700 J/(kg-K) → 0.358 / 0.119 / 0.406 Btu/(lb-F)`;
-  Conductivity `0.034 / 52 / 0.13 W/(m-K) → 0.020 / 30.045 / 0.075 Btu/(h-ft-F)`.
-- Category popover opens with the twelve fixed options listed in PRD
-  order; current value is marked `[selected]` and the option list is
-  scrollable.
-- Plain Number cell edit fires PATCH end-to-end: typing in the
-  Density cell for OSB drove `650.0 → 650.07` server-side and the
-  "Density updated." status announcement rendered.
-
-## Smoke verification — gaps to fix in follow-ups
-
-1. **Single_select cell commit does not fire `onWrite`.** Clicking a
-   different option in the Category popover closes it without
-   reaching `useMaterialsCatalogController.onWrite`. Same gesture on
-   the Rooms slice-controller works, so the wiring lives somewhere
-   between `SingleSelectPopover.onCommit` and the cell-write pipeline
-   that the REST adapter is missing. Likely 1-day fix, post-merge.
-2. **Shift-Enter on the empty grid does not insert a row.** Symptom
-   only on a zero-row table: the DataTable fires the rowInsert with
-   empty `fieldDefaults`, and the REST controller skips because the
-   POST body needs `name` + `category`. Two fixes possible: (a)
-   pre-fill `name: "Untitled"` + `category: "insulation"` in
-   `buildCreatePayload`'s fallback, then let the user rename in place;
-   (b) only allow Shift-Enter when there's at least one anchor row.
-3. **Row delete via the selection-checkbox + Delete key does not fire
-   the DELETE.** Same gesture isn't wired through to `op.rowDelete`
-   on the REST adapter path. Will investigate alongside #1 — likely
-   the same upstream commit gap.
-4. **No global SI/IP toggle UI.** The `ModalUnitToggle` exists only
-   inside dialogs (`ProjectMaterialEditor`, `MaterialDrift`,
-   `LengthDialog`). The catalog page has no inline toggle, so this
-   smoke flipped the preference via the server PATCH endpoint and
-   reloaded. Adding a global toggle to `WorkspaceTopbar` is out of
-   this feature's scope.
+- **Phase 4 verification + follow-ups complete**:
+  - Initial Playwright MCP smoke surfaced four gaps. Two turned out
+    to be smoke-methodology artifacts (synthetic clicks not firing
+    React's synthetic events) once seven new controller unit tests
+    (`frontend/src/features/catalogs/materials/__tests__/controller.test.tsx`)
+    proved cell / paste / fill / rowInsert / rowDelete all translate
+    to the right REST calls. Two were real wiring gaps and got
+    fixed:
+    - `MaterialsCatalogPage` now passes `buildEmptyRow` so
+      Shift-Enter on an empty grid POSTs a placeholder row the user
+      can edit in place (controller's `buildCreatePayload` fills
+      `name: "New material"` / `category: "insulation"` when the
+      grid hands over empty `fieldDefaults`).
+    - `WorkspaceTopbar` now hosts `<TopbarUnitToggle>`, so the
+      SI/IP toggle is visible on every authenticated page (Dashboard,
+      ProjectShell, all three catalog managers). Fold-back in
+      `UI_UX.md` §2 and `frontend-viewer-units.md` §11.5.2.
+  - `make ci` from repo root: green (1010 frontend tests, 440 + 1
+    skipped backend tests).
 
 ## Next step
 
-Open PR, hand to review. Follow-ups #1–#3 above will land in a
-separate slice after this PR; #4 belongs to a topbar-UX feature.
+Mark PR #6 ready for review.
 
 ## Blockers
 
@@ -97,8 +64,9 @@ None.
 - [x] PRD documents drift comparator changes.
 - [x] Backend implementation landed; `uv run pytest` green.
 - [x] Frontend implementation landed.
-- [x] `make ci` from repo root green.
+- [x] `make ci` from repo root green (final).
 - [x] Context doc fold-back: `data-model.md`,
-      `frontend-viewer-units.md`.
-- [x] Playwright MCP smoke captured.
-- [ ] PR opened.
+      `frontend-viewer-units.md`, `UI_UX.md`.
+- [x] Playwright MCP smoke captured; both real gaps closed; two
+      false positives explained by controller unit tests.
+- [x] PR opened (#6, currently draft pending the ready flip).

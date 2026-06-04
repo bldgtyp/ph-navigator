@@ -339,10 +339,13 @@ ambiguity.
   change must not silently swap units. The golden-file corpus
   (§10.5) tests the round-trip; new shims are tested for unit
   preservation.
-- **Toggle UX.** The IP/SI toggle in the project header (§11.1)
-  edits `users.units_preference`. Toggling re-renders all numeric
-  values in the active tab; no API roundtrip needed (display-layer
-  only).
+- **Toggle UX.** The IP/SI toggle lives in the global
+  `<WorkspaceTopbar>` (`frontend/src/shared/ui/TopbarUnitToggle.tsx`)
+  and edits `users.units_preference` through the session round-trip.
+  Toggling re-renders every numeric value in the active page —
+  catalog managers, project-document tables, and the 3D viewer all
+  read the same `useUnitPreference` context. The earlier `ModalUnitToggle`
+  remains for in-dialog editors that need a local segmented control.
 
 #### 11.5.4 Anti-patterns banned
 

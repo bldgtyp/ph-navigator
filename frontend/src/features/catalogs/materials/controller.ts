@@ -78,30 +78,32 @@ async function applyCellWrites(writes: CellWrite[], opts: WriteOptions): Promise
   await opts.invalidate();
 }
 
-function buildCreatePayload(
-  fieldDefaults: Record<string, unknown>,
-): CatalogMaterialCreatePayload | null {
-  const name = fieldDefaults.name;
-  if (typeof name !== "string" || name.trim().length === 0) return null;
+// Shift-Enter on the grid emits a rowInsert with empty `fieldDefaults`
+// — the user fills the cells afterwards. The REST POST needs name +
+// category up front, so we substitute safe placeholders the user can
+// edit in place. Matches the AirTable-like UX where adding a row gives
+// you a row to type into rather than blocking on a modal form.
+const DEFAULT_NEW_MATERIAL_NAME = "New material";
+const DEFAULT_NEW_MATERIAL_CATEGORY = "insulation";
+
+function buildCreatePayload(fieldDefaults: Record<string, unknown>): CatalogMaterialCreatePayload {
+  const nameRaw = fieldDefaults.name;
+  const name =
+    typeof nameRaw === "string" && nameRaw.trim().length > 0
+      ? nameRaw.trim()
+      : DEFAULT_NEW_MATERIAL_NAME;
   const categoryRaw = fieldDefaults.category;
-  const category = materialCategoryFromOptionId(
-    typeof categoryRaw === "string" ? categoryRaw : null,
-  );
-  if (category === null) return null;
-  const payload: CatalogMaterialCreatePayload = {
-    name: name.trim(),
-    category,
-  };
+  const category =
+    materialCategoryFromOptionId(typeof categoryRaw === "string" ? categoryRaw : null) ??
+    DEFAULT_NEW_MATERIAL_CATEGORY;
+  const extras: Record<string, unknown> = {};
   for (const fieldDef of MATERIALS_BUILT_IN_FIELD_DEFS) {
     if (fieldDef.field_key === "name" || fieldDef.field_key === "category") continue;
     const value = fieldDefaults[fieldDef.field_key];
     if (value === undefined) continue;
-    (payload as Record<string, unknown>)[fieldDef.field_key] = valueForField(
-      fieldDef.field_key,
-      value,
-    );
+    extras[fieldDef.field_key] = valueForField(fieldDef.field_key, value);
   }
-  return payload;
+  return { name, category, ...extras };
 }
 
 export type MaterialsCatalogController = {
@@ -129,13 +131,11 @@ export function useMaterialsCatalogController(): MaterialsCatalogController {
           await applyCellWrites(op.writes, { invalidate });
           return;
         case "rowInsert": {
-          const created: CatalogMaterial[] = [];
-          for (const row of op.rows) {
-            const payload = buildCreatePayload(row.fieldDefaults);
-            if (!payload) continue;
-            created.push(await createMaterial(payload));
-          }
-          if (created.length > 0) await invalidate();
+          if (op.rows.length === 0) return;
+          await Promise.all(
+            op.rows.map((row) => createMaterial(buildCreatePayload(row.fieldDefaults))),
+          );
+          await invalidate();
           return;
         }
         case "rowDelete": {
