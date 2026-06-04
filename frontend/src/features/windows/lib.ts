@@ -83,17 +83,20 @@ export function glazingRefFromCatalog(row: CatalogGlazingType): GlazingRef {
     name: row.name,
     manufacturer: row.manufacturer,
     brand: row.brand,
+    suffix: row.suffix,
     u_value_w_m2k: row.u_value_w_m2k,
     g_value: row.g_value,
     color: row.color,
-    notes: row.notes,
-    source_provenance: row.source_provenance,
-    catalog_origin: stampCatalogOrigin({
+    source: row.source,
+    comments: row.comments,
+    catalog_origin: {
       catalog_table: "glazing_types",
       catalog_record_id: row.id,
-      catalog_version_id: row.current_version_id,
-      catalog_schema_version: row.catalog_schema_version,
-    }),
+      catalog_version_id: null,
+      catalog_schema_version: null,
+      synced_at: new Date().toISOString(),
+      local_overrides: [],
+    },
   };
 }
 

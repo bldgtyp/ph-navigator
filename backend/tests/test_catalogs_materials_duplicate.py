@@ -16,7 +16,7 @@ ORIGIN = "http://localhost:5173"
 _TRUNCATE = """
 TRUNCATE catalog_materials,
          catalog_frame_type_versions, catalog_frame_types,
-         catalog_glazing_type_versions, catalog_glazing_types,
+         catalog_glazing_types,
          user_action_log, sessions, project_status_items,
          project_version_drafts, project_versions, projects, users
 RESTART IDENTITY CASCADE

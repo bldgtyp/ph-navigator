@@ -256,11 +256,12 @@ class GlazingRef(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     manufacturer: str | None = Field(default=None, max_length=200)
     brand: str | None = Field(default=None, max_length=200)
+    suffix: str | None = Field(default=None, max_length=80)
     u_value_w_m2k: float | None = Field(default=None, ge=0)
     g_value: float | None = Field(default=None, ge=0.0, le=1.0)
     color: str | None = Field(default=None, max_length=40)
-    notes: str | None = Field(default=None, max_length=4000)
-    source_provenance: str | None = Field(default=None, max_length=400)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
     catalog_origin: CatalogOrigin | None = None
 
     @field_validator("color", mode="before")
@@ -273,7 +274,7 @@ class GlazingRef(BaseModel):
         _require_catalog_origin_family(
             self.catalog_origin,
             expected_table="glazing_types",
-            expected_version_prefix="glazingv_",
+            expected_version_prefix=None,
         )
         return self
 

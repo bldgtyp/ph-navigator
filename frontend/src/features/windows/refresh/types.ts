@@ -24,7 +24,7 @@ export type RefreshSlotReport = {
   state: RefreshSlotState;
   catalog_table: CatalogTableName;
   catalog_record_id: string;
-  pinned_catalog_version_id: string;
+  pinned_catalog_version_id: string | null;
   current_catalog_version_id: string | null;
   local_overrides: string[];
   fields: RefreshFieldDelta[];

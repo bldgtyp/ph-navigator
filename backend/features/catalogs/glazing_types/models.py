@@ -2,30 +2,23 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Final
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from features.catalogs._shared import (
-    reject_clearing_version_date,
-    strip_optional,
-    strip_required,
-)
+from features.catalogs._shared import strip_optional, strip_required
 from features.shared.colors import normalize_optional_hex_color
-
-CATALOG_VERSION_ID_PREFIX: Final[str] = "glazingv_"
 
 
 class CatalogGlazingTypeListItem(BaseModel):
-    """List-endpoint projection. Drops `created_by` / `updated_by` since
-    no list view shows "edited by". The per-row detail endpoint returns
-    the full audit fields via :class:`CatalogGlazingTypePublic` below.
+    """List-endpoint projection: trims `created_by` / `updated_by` since no
+    list view shows "edited by". The per-row detail endpoint returns the
+    full audit fields via :class:`CatalogGlazingTypePublic` below.
 
     `extra="ignore"` so the repository row's audit columns silently drop
-    on `model_validate` — the SQL query is shared between list and
-    detail paths.
+    on `model_validate` — the SQL query is shared between list and detail
+    paths.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -34,15 +27,12 @@ class CatalogGlazingTypeListItem(BaseModel):
     name: str
     manufacturer: str | None
     brand: str | None
-    current_version_id: str
-    catalog_schema_version: int
-    version_label: str
-    version_date: date
+    suffix: str | None
     u_value_w_m2k: float | None
     g_value: float | None
     color: str | None
-    notes: str | None
-    source_provenance: str | None
+    source: str | None
+    comments: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -51,9 +41,9 @@ class CatalogGlazingTypeListItem(BaseModel):
 class CatalogGlazingTypePublic(CatalogGlazingTypeListItem):
     """Bookshelf-ready glazing row.
 
-    Field shape matches US-WIN-4 criterion 3: a downstream picker copies these
-    typed values into a project Window element's GlazingRef along with the
-    `catalog_origin` block (record id, version id, schema version).
+    Field shape matches US-WIN-4 criterion 3: a downstream picker copies
+    these typed values into a project Window element's GlazingRef along
+    with the `catalog_origin` block (record id).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -75,21 +65,15 @@ class _CatalogGlazingTypeFields(BaseModel):
 
     manufacturer: str | None = Field(default=None, max_length=200)
     brand: str | None = Field(default=None, max_length=200)
-    version_label: str | None = Field(default=None, min_length=1, max_length=80)
-    version_date: date | None = None
+    suffix: str | None = Field(default=None, max_length=80)
     u_value_w_m2k: float | None = None
     # g-value (SHGC) is a unitless fraction in [0, 1].
     g_value: float | None = Field(default=None, ge=0.0, le=1.0)
     color: str | None = Field(default=None, max_length=40)
-    notes: str | None = Field(default=None, max_length=4000)
-    source_provenance: str | None = Field(default=None, max_length=400)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
 
-    @field_validator("manufacturer", "brand", "version_label", mode="before")
-    @classmethod
-    def _strip_optional_meta(cls, value: object) -> object:
-        return strip_optional(value)
-
-    @field_validator("notes", "source_provenance", mode="before")
+    @field_validator("manufacturer", "brand", "suffix", "source", "comments", mode="before")
     @classmethod
     def _strip_optional_text(cls, value: object) -> object:
         return strip_optional(value)
@@ -109,16 +93,15 @@ class _CatalogGlazingTypeFields(BaseModel):
 
 class CatalogGlazingTypeCreateRequest(_CatalogGlazingTypeFields):
     name: str = Field(min_length=1, max_length=200)
-    version_label: str = Field(default="v1", min_length=1, max_length=80)
 
-    @field_validator("name", "version_label", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
-    def _strip_required_fields(cls, value: object) -> object:
+    def _strip_required_name(cls, value: object) -> object:
         return strip_required(value)
 
 
 class CatalogGlazingTypeUpdateRequest(_CatalogGlazingTypeFields):
-    """Patch identity (name) + the current version's typed fields in place."""
+    """Patch identity (name) + the typed fields in place."""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
 
@@ -126,8 +109,3 @@ class CatalogGlazingTypeUpdateRequest(_CatalogGlazingTypeFields):
     @classmethod
     def _strip_optional_name(cls, value: object) -> object:
         return strip_optional(value)
-
-    @model_validator(mode="after")
-    def _reject_clearing_version_date(self) -> CatalogGlazingTypeUpdateRequest:
-        reject_clearing_version_date(self)
-        return self

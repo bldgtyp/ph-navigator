@@ -35,18 +35,15 @@ const sampleFrame: CatalogFrameType = {
 const sampleGlazing: CatalogGlazingType = {
   id: "rec0000000000abcd",
   name: "Triple LowE Argon",
-  current_version_id: "glazingv_xyz789",
-  catalog_schema_version: 1,
-  version_label: "v1",
-  version_date: "2026-05-14",
   color: null,
-  notes: null,
-  source_provenance: null,
+  source: null,
+  comments: null,
   is_active: true,
   created_at: "2026-05-14T00:00:00Z",
   updated_at: "2026-05-14T00:00:00Z",
   manufacturer: null,
   brand: null,
+  suffix: null,
   u_value_w_m2k: 0.6,
   g_value: 0.5,
 };
@@ -101,7 +98,7 @@ describe("windows lib", () => {
     const ref = glazingRefFromCatalog(sampleGlazing);
     expect(ref.g_value).toBe(0.5);
     expect(ref.catalog_origin?.catalog_table).toBe("glazing_types");
-    expect(ref.catalog_origin?.catalog_version_id).toBe(sampleGlazing.current_version_id);
+    expect(ref.catalog_origin?.catalog_version_id).toBeNull();
     expect(ref.catalog_origin?.local_overrides).toEqual([]);
   });
 

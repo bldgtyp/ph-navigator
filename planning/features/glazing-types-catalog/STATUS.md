@@ -14,27 +14,26 @@ RELATED:
 
 ## Current state
 
-- **Phase 0 (Planning)** — `Active`, `2026-06-04`. README + PRD +
-  PLAN drafted. **OQs resolved 2026-06-04** (see PRD §Resolved
-  decisions). Ready for Phase 1 kickoff.
-- **Phase 1 (Backend destructive reshape + API)** — `pending`.
-  Scope widened: drop version table + 4 columns, rename 2
-  columns, add 1 column.
+- **Phase 0 (Planning)** — `Complete`, `2026-06-04`.
+- **Phase 1 (Backend destructive reshape + API)** — `Complete`,
+  `2026-06-04`. Alembic 20260604_0016 dropped the version layer +
+  4 columns, renamed `source_provenance`/`notes` →
+  `source`/`comments`, added `suffix`, added `POST /duplicate`.
+  Adjacent: `GlazingRef` reshaped to match (now version-less),
+  `_require_catalog_origin_family` allows glazing without a
+  version prefix, refresh.py loosened `pinned_catalog_version_id`
+  to nullable. Modal + landing page kept compiling on the new
+  shape (retired in Phase 2).
 - **Phase 2 (Frontend DataTable page)** — `pending`. 9 columns.
 - **Phase 3 (JSON import/export)** — `pending`. Match key is `id`.
 - **Phase 4 (Seed data + smoke)** — `pending`. 42 rows.
 
 ## Next step
 
-Kick off Phase 1 on `feat/glazing-types-catalog`. Create
-`phases/phase-01-schema.md` with the detailed implementation
-steps. Start with the verification grep called out in
-PLAN.md/PRD.md §Backend Shape — confirm no downstream code reads
-`catalog_version_id` / `current_version_id` /
-`catalog_glazing_type_versions` / `catalog_schema_version` /
-`GlazingRef.catalog_origin`. If anything points at them, fold that
-work into the same Alembic revision (mirror Materials Phase 2 in
-`planning/archive/materials-catalog-datatable/phases/`).
+Phase 2: build `frontend/src/features/catalogs/glazing-types/`
+(controller + fieldDefs + tests), rewrite
+`routes/GlazingTypesCatalogPage.tsx` on `<DataTable>`, retire
+`GlazingTypeEditorModal`.
 
 ## Blockers
 

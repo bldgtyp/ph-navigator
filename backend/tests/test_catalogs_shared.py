@@ -11,7 +11,6 @@ from features.catalogs._shared import (
     next_copy_suffix,
 )
 from features.catalogs.frame_types.models import CATALOG_VERSION_ID_PREFIX as FRAME_VERSION_PREFIX
-from features.catalogs.glazing_types.models import CATALOG_VERSION_ID_PREFIX as GLAZING_VERSION_PREFIX
 
 _RECORD_ID_PATTERN = re.compile(r"^rec[A-Za-z0-9]{14}$")
 
@@ -32,18 +31,13 @@ def test_new_catalog_record_id_is_unique_across_calls() -> None:
 
 
 def test_version_ids_keep_v2_native_table_prefix() -> None:
-    """Versions are V2-native because AirTable has no version concept; the
-    table prefix keeps them self-documenting. Materials dropped versioning
-    in Alembic 20260603_0015, so only frame/glazing keep prefixes.
-    """
+    """Frame still uses the per-version row; materials (0015) and glazing
+    (0016) dropped theirs, so only frame keeps a version prefix."""
     assert FRAME_VERSION_PREFIX == "framev_"
-    assert GLAZING_VERSION_PREFIX == "glazingv_"
-
-    for prefix in (FRAME_VERSION_PREFIX, GLAZING_VERSION_PREFIX):
-        version_id = new_catalog_version_id(prefix)
-        assert version_id.startswith(prefix)
-        # Body is url-safe base64 of 12 random bytes -> 16 chars.
-        assert len(version_id) > len(prefix)
+    version_id = new_catalog_version_id(FRAME_VERSION_PREFIX)
+    assert version_id.startswith(FRAME_VERSION_PREFIX)
+    # Body is url-safe base64 of 12 random bytes -> 16 chars.
+    assert len(version_id) > len(FRAME_VERSION_PREFIX)
 
 
 def test_next_copy_suffix_first_duplicate_appends_copy() -> None:
