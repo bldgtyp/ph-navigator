@@ -9,7 +9,6 @@ import { useDraftLifecycle } from "../hooks/useDraftLifecycle";
 import { useVersionControlsState } from "../hooks/useVersionControlsState";
 import { DRAFT_DIFF_TARGET } from "../types/versionControls";
 import { DocumentConfirmationDialog } from "./DocumentConfirmationDialog";
-import { UnitSystemToggle } from "./UnitSystemToggle";
 import { DiffDialog, DraftRestoreDialog, SaveAsDialog } from "./VersionControlsDialogs";
 import { ProjectActionsMenu, VersionPopover, VersionShellControls } from "./VersionControlsMenus";
 
@@ -107,7 +106,6 @@ export function VersionControls({
             Project JSON
           </a>
         ) : null}
-        <UnitSystemToggle />
       </div>
     );
   }

@@ -1,6 +1,5 @@
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
-import { UnitSystemToggle } from "./UnitSystemToggle";
 
 const VERSION_TRIGGER_HELP = "Open the version list to switch or compare versions.";
 const CLEAN_STATE_HELP = "No unsaved draft changes.";
@@ -101,7 +100,6 @@ export function VersionShellControls({
           <span />
         </span>
       </button>
-      <UnitSystemToggle />
     </div>
   );
 }
