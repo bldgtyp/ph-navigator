@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from config import settings
 from features.assets.routes import jobs_router as asset_jobs_router
@@ -55,6 +56,7 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Mcp-Session-Id", "X-Request-ID"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.middleware("http")(request_context_middleware)
 app.add_exception_handler(HTTPException, http_exception_handler)
