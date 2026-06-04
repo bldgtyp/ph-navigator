@@ -139,6 +139,29 @@ def create_session(
     return row
 
 
+def get_session_with_user(conn: Connection[Any], session_id: UUID) -> dict[str, Any] | None:
+    return conn.execute(
+        """
+        SELECT
+            s.id                  AS session_id,
+            s.user_id             AS session_user_id,
+            s.expires_at          AS session_expires_at,
+            s.last_seen_at        AS session_last_seen_at,
+            s.invalidated_at      AS session_invalidated_at,
+            s.invalidation_reason AS session_invalidation_reason,
+            u.id                  AS user_id,
+            u.email               AS user_email,
+            u.display_name        AS user_display_name,
+            u.is_active           AS user_is_active,
+            u.units_preference    AS user_units_preference
+        FROM sessions AS s
+        JOIN users AS u ON u.id = s.user_id
+        WHERE s.id = %(session_id)s
+        """,
+        {"session_id": session_id},
+    ).fetchone()
+
+
 def get_session_for_update(conn: Connection[Any], session_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         """
