@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend build-frontend format format-check \
-        smoke seed-dev-user seed-dev-data seed-glazing e2e e2e-report clean
+        smoke seed-dev-user seed-dev-data seed-glazing seed-frames e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -195,6 +195,9 @@ seed-dev-data: migrate ## Reset app rows and seed the default user + starter pro
 
 seed-glazing: migrate ## Load the canonical Window-Glazing catalog seed (~42 rows)
 	cd backend && uv run python -m scripts.seed_glazing_catalog
+
+seed-frames: migrate ## Load the canonical Window-Frame Elements catalog seed (~190 rows)
+	cd backend && uv run python -m scripts.seed_frame_catalog
 
 clean: ## Remove caches and build artifacts (does NOT touch .venv or node_modules)
 	find . -type d -name __pycache__ -exec rm -rf {} +
