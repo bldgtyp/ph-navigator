@@ -1,5 +1,5 @@
 import "../catalogs.css";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DataTable,
   buildTableSchema,
@@ -10,7 +10,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
-import { useMaterialsQuery } from "../hooks";
+import { useMaterialsQuery, useReactivateMaterialMutation } from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogMaterial } from "../types";
 import {
@@ -130,10 +130,19 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   const [importOpen, setImportOpen] = useState(false);
   const materialsQuery = useMaterialsQuery(includeInactive);
   const signOutMutation = useSignOutMutation();
+  const reactivateMutation = useReactivateMaterialMutation();
 
   const materials = materialsQuery.data ?? EMPTY_MATERIALS;
   const rows = useMemo<MaterialRow[]>(() => materials.map(toMaterialRow), [materials]);
   const controller = useMaterialsCatalogController();
+
+  // Map id → is_active for O(1) lookups when the bulk-action renderer
+  // walks the live selection set on every selection change.
+  const isActiveById = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const material of materials) map.set(material.id, material.is_active);
+    return map;
+  }, [materials]);
 
   function handleExport() {
     const file = serializeCatalog(materials, {
@@ -142,6 +151,36 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
     });
     triggerCatalogDownload(file, exportFilename());
   }
+
+  const renderBulkSelectionActions = useCallback(
+    (selectedRowIds: ReadonlySet<string>) => {
+      const inactiveIds: string[] = [];
+      for (const id of selectedRowIds) {
+        if (isActiveById.get(id) === false) inactiveIds.push(id);
+      }
+      if (inactiveIds.length === 0) return null;
+      const label =
+        inactiveIds.length === 1
+          ? "Reactivate 1 material"
+          : `Reactivate ${inactiveIds.length} materials`;
+      return (
+        <button
+          type="button"
+          disabled={reactivateMutation.isPending}
+          onClick={() => {
+            // Fire all reactivations in parallel; the shared mutation's
+            // onSuccess invalidates after each one, but materialsQuery's
+            // refetch will coalesce. Selection auto-clears when the new
+            // rows array identity arrives.
+            for (const id of inactiveIds) reactivateMutation.mutate(id);
+          }}
+        >
+          {label}
+        </button>
+      );
+    },
+    [isActiveById, reactivateMutation],
+  );
 
   const tableSchema = useMemo(
     () =>
@@ -206,6 +245,7 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             onResetView={controller.onResetView}
             onWrite={controller.onWrite}
             buildEmptyRow={buildEmptyMaterialRow}
+            bulkSelectionActions={renderBulkSelectionActions}
             overflowMenuActions={
               <CatalogImportExportMenu
                 onExport={handleExport}
