@@ -614,11 +614,17 @@ because the screen lacks a secondary information model.
     Project settings.
   - **IP / SI units toggle** — segmented control bound to
     `users.units_preference`. Toggling re-renders all numeric
-    values in the active tab. **Display-layer only** — no API
-    roundtrip; backend always speaks SI (PRD §11.5). Toggling
-    while editing a value in a cell is OK; the cell's parser
-    handles either input format (frontend converts to SI before
-    sending to the server).
+    values in the active tab. As of Phase 4 of the materials-catalog
+    rollout the toggle lives in the global `<WorkspaceTopbar>`
+    (`frontend/src/shared/ui/TopbarUnitToggle.tsx`) and is visible on
+    every authenticated page — Dashboard, ProjectShell, and all three
+    catalog managers — not only in the project header. **Display-layer
+    only** — the preference round-trips to `/api/v1/auth/preferences`
+    so it persists across sessions, but no per-cell value is ever
+    rewritten; backend always speaks SI (PRD §11.5). Toggling while
+    editing a value in a cell is OK; the cell's parser handles either
+    input format (frontend converts to SI before sending to the
+    server).
 - **No "AirTable" button.** V2 has no AirTable surface.
 - Sticky on vertical scroll.
 

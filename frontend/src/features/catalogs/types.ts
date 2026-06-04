@@ -1,4 +1,5 @@
-/** Shared shape for every catalog row -- identity + version + audit fields. */
+/** Shared shape for versioned catalog rows (frame, glazing). Materials are
+ * flat and do not extend this — see CatalogMaterial below. */
 type CatalogRowBase = {
   id: string;
   name: string;
@@ -16,28 +17,55 @@ type CatalogRowBase = {
   updated_by: string | null;
 };
 
-export type CatalogMaterial = CatalogRowBase & {
-  category: string;
-  conductivity_w_mk: number | null;
+export const MATERIAL_CATEGORY_IDS = [
+  "insulation",
+  "finishes",
+  "woods",
+  "metals",
+  "masonry",
+  "stud_layers_steel",
+  "stud_layers_wood",
+  "air_horizontal_heat_flow",
+  "air_upward_heat_flow",
+  "air_downward_heat_flow",
+  "rainscreen_insulation",
+  "doors",
+] as const;
+
+export type MaterialCategoryId = (typeof MATERIAL_CATEGORY_IDS)[number];
+
+export type CatalogMaterial = {
+  id: string;
+  name: string;
+  category: MaterialCategoryId;
   density_kg_m3: number | null;
   specific_heat_j_kgk: number | null;
+  conductivity_w_mk: number | null;
   emissivity: number | null;
+  color: string | null;
+  source: string | null;
+  url: string | null;
+  comments: string | null;
+  is_active: boolean;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
 };
 
 export type CatalogMaterialListResponse = { items: CatalogMaterial[] };
 
 export type CatalogMaterialCreatePayload = {
   name: string;
-  category: string;
-  version_label?: string;
-  version_date?: string | null;
-  conductivity_w_mk?: number | null;
+  category: MaterialCategoryId;
   density_kg_m3?: number | null;
   specific_heat_j_kgk?: number | null;
+  conductivity_w_mk?: number | null;
   emissivity?: number | null;
   color?: string | null;
-  notes?: string | null;
-  source_provenance?: string | null;
+  source?: string | null;
+  url?: string | null;
+  comments?: string | null;
 };
 
 export type CatalogMaterialUpdatePayload = Partial<CatalogMaterialCreatePayload>;

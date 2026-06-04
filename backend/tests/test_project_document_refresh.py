@@ -24,7 +24,7 @@ def draft_window_types_url(project_id: object, version_id: object) -> str:
 @pytest.fixture()
 def clean_refresh_tables() -> Iterator[None]:
     sql = """
-        TRUNCATE catalog_material_versions, catalog_materials,
+        TRUNCATE catalog_materials,
                  catalog_frame_type_versions, catalog_frame_types,
                  catalog_glazing_type_versions, catalog_glazing_types,
                  user_action_log, sessions, project_status_items,

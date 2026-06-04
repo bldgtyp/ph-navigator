@@ -220,7 +220,7 @@ CREATE INDEX ON project_versions (project_id, created_at);
 
 Catalog tables (full schema in §7):
 ```
-catalog_materials, catalog_material_versions
+catalog_materials                       -- flat (§7.2 callout)
 catalog_frame_types, catalog_frame_type_versions
 catalog_glazing_types, catalog_glazing_type_versions
 catalog_audit_log
@@ -286,20 +286,22 @@ JSON document. Illustrative sketch (the canonical model is the
       {
         "id": "pmat_...",
         "name": "XPS",
-        "category": "Insulation",
-        "conductivity_w_mk": 0.034,
+        "category": "insulation",                 // one of twelve fixed option ids (§7.2 callout)
         "density_kg_m3": 35.0,
         "specific_heat_j_kgk": 1500.0,
+        "conductivity_w_mk": 0.034,
         "emissivity": 0.9,
         "color": "#dce6f0",
+        "source": "Manufacturer datasheet 2024-Q2",
+        "url": "https://example.com/xps.pdf",
+        "comments": "Type IV per ASTM C578",
         "specification_status": "complete",       // 'complete' | 'missing' | 'question' | 'na' — moved from segment (Q-ENV-2)
-        "notes": null,                            // per-product notes — moved from segment (Q-ENV-2)
         "datasheet_asset_ids": ["asset_..."],     // QA submittal — project-only, never in catalog (Q-ENV-2.1)
         "catalog_origin": {
           "catalog_table": "materials",
           "catalog_record_id": "rec123abc",
-          "catalog_version_id": "rec123abc_v3",
-          "catalog_schema_version": 1,            // pinned at pick time (§7.5)
+          "catalog_version_id": null,             // materials catalog is flat (§7.2 callout)
+          "catalog_schema_version": null,
           "synced_at": "2026-05-09T14:00:00Z",
           "local_overrides": []                   // field keys intentionally kept different from catalog (§7.4)
         }
@@ -952,36 +954,43 @@ spec" coexist as two versions of the same identity row. The user can
 pick either when adding to a project. Once picked, the values are copied
 in and the project no longer cares which version was the source.
 
+> **Materials are flat as of Alembic 20260603_0015.** The
+> identity-plus-versions shape below still applies to `catalog_frame_types`
+> and `catalog_glazing_types`. Materials collapsed to a single
+> `catalog_materials` row carrying the nine catalog fields inline
+> (`name`, `category`, `density_kg_m3`, `specific_heat_j_kgk`,
+> `conductivity_w_mk`, `emissivity`, `color`, `source`, `url`,
+> `comments`) plus the soft-delete + audit columns. `current_version_id`,
+> `catalog_schema_version`, `version_label`, and `version_date` no longer
+> exist on materials; the `catalog_material_versions` table is dropped.
+> `category` is constrained to the twelve fixed option ids via CHECK
+> constraint. See `planning/features/materials-catalog-datatable/PRD.md`
+> for the live materials shape.
+
 ```sql
-catalog_materials (
+-- Frame / glazing catalogs keep the identity + versions pattern.
+-- The materials catalog is flat per the callout above.
+
+catalog_frame_types (
     id              TEXT PRIMARY KEY,         -- AirTable-shaped rec id; see §7.2.1
     name            TEXT NOT NULL,
-    category        TEXT NOT NULL,
-    current_version_id  TEXT REFERENCES catalog_material_versions(id),
-                    -- the default version offered to new picks
-    deleted_at      TIMESTAMPTZ,              -- soft delete only
+    current_version_id  TEXT REFERENCES catalog_frame_type_versions(id),
+    deleted_at      TIMESTAMPTZ,
     created_at, created_by, updated_at, updated_by
 )
 
-catalog_material_versions (
-    id              TEXT PRIMARY KEY,         -- V2-native `matv_<token>`; see §7.2.1
-    record_id       TEXT NOT NULL REFERENCES catalog_materials(id),
-    version_label   TEXT NOT NULL,            -- e.g. "2024 spec"
+catalog_frame_type_versions (
+    id              TEXT PRIMARY KEY,         -- V2-native `framev_<token>`; see §7.2.1
+    record_id       TEXT NOT NULL REFERENCES catalog_frame_types(id),
+    version_label   TEXT NOT NULL,
     version_date    DATE NOT NULL,
-    -- typed value columns (matching V1's Material today):
-    conductivity_w_mk     FLOAT,
-    density_kg_m3         FLOAT,
-    specific_heat_j_kgk   FLOAT,
-    emissivity            FLOAT,
-    color                 TEXT,
-    notes                 TEXT,
-    source_provenance     TEXT,
+    -- typed value columns ...
     created_at, created_by
 )
 ```
 
-Frame types and glazing types follow the same identity-plus-versions
-pattern. Catalog audit log records all edits.
+Glazing types follow the same identity-plus-versions pattern as frame
+types. Catalog audit log records all edits.
 
 #### 7.2.1 Catalog id format (TB-08.a)
 
@@ -1057,6 +1066,11 @@ catalog" gesture:
   is **customized** on those specific fields — they default to **Keep
   mine** in the refresh dialog — but the entry as a whole is still
   drifted if anything else differs.
+- **Materials drift is field-only.** Because the materials catalog is
+  flat (no versions; see §7.2 callout), `catalog_origin.catalog_version_id`
+  is `null` on material origins and the version-id branch above does not
+  apply. A material origin is drifted iff any of the nine catalog fields
+  differs from the live `catalog_materials` row.
 
 A "show me everything that's drifted or customized from catalog" report
 lives in the catalog manager view of a project. In v1, **Review all**

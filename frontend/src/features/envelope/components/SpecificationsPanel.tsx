@@ -168,8 +168,8 @@ export function SpecificationsPanel({
                   error={error}
                   onCommand={onCommand}
                 />
-              ) : material.notes ? (
-                <p className="spec-notes">{material.notes}</p>
+              ) : material.comments ? (
+                <p className="spec-notes">{material.comments}</p>
               ) : null}
               <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
                 <h3>Datasheets</h3>

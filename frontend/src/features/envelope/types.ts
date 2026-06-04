@@ -27,14 +27,16 @@ export type ProjectMaterial = {
   id: string;
   name: string;
   category: string | null;
-  conductivity_w_mk: number | null;
   density_kg_m3: number | null;
   specific_heat_j_kgk: number | null;
+  conductivity_w_mk: number | null;
   emissivity: number | null;
   color: string | null;
+  source: string | null;
+  url: string | null;
+  comments: string | null;
   specification_status: SpecificationStatus;
   datasheet_asset_ids: string[];
-  notes: string | null;
   catalog_origin: CatalogOrigin | null;
   use_sites: ProjectMaterialUseSite[];
 };
@@ -99,14 +101,16 @@ export type ProjectMaterialDriftState =
   | "source_missing";
 
 export type ProjectMaterialDriftFieldKey =
-  | "color"
-  | "category"
-  | "conductivity_w_mk"
-  | "density_kg_m3"
-  | "emissivity"
   | "name"
-  | "notes"
-  | "specific_heat_j_kgk";
+  | "category"
+  | "density_kg_m3"
+  | "specific_heat_j_kgk"
+  | "conductivity_w_mk"
+  | "emissivity"
+  | "color"
+  | "source"
+  | "url"
+  | "comments";
 
 export type ProjectMaterialDriftField = {
   key: ProjectMaterialDriftFieldKey;
@@ -120,8 +124,6 @@ export type ProjectMaterialDriftItem = {
   project_material_id: string;
   state: ProjectMaterialDriftState;
   catalog_record_id: string;
-  pinned_catalog_version_id: string;
-  current_catalog_version_id: string | null;
   local_overrides: string[];
   fields: ProjectMaterialDriftField[];
 };
@@ -219,13 +221,15 @@ export type EnvelopeCommand =
       project_material_id: string;
       name?: string | null;
       category?: string | null;
-      conductivity_w_mk?: number | null;
       density_kg_m3?: number | null;
       specific_heat_j_kgk?: number | null;
+      conductivity_w_mk?: number | null;
       emissivity?: number | null;
       color?: string | null;
+      source?: string | null;
+      url?: string | null;
+      comments?: string | null;
       specification_status?: SpecificationStatus | null;
-      notes?: string | null;
     }
   | {
       kind: "update_segment_use_site_notes";

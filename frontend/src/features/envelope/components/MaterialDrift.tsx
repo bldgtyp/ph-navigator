@@ -27,14 +27,16 @@ import type {
 } from "../types";
 
 const DRIFT_FIELD_LABELS: Record<ProjectMaterialDriftFieldKey, string> = {
-  color: "Color",
-  category: "Category",
-  conductivity_w_mk: "Lambda",
-  density_kg_m3: "Density",
-  emissivity: "Emissivity",
   name: "Name",
-  notes: "Notes",
+  category: "Category",
+  density_kg_m3: "Density",
   specific_heat_j_kgk: "Specific heat",
+  conductivity_w_mk: "Lambda",
+  emissivity: "Emissivity",
+  color: "Color",
+  source: "Source",
+  url: "URL",
+  comments: "Comments",
 };
 
 type DriftAction = ProjectMaterialRefreshChoice["action"];

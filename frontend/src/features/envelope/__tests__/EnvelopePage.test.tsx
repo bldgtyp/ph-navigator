@@ -115,7 +115,9 @@ const envelopePayload: EnvelopeReadResponse = {
       color: "#dce6c8",
       specification_status: "missing",
       datasheet_asset_ids: [],
-      notes: "Candidate product.",
+      source: null,
+      url: null,
+      comments: "Candidate product.",
       catalog_origin: null,
       use_sites: [
         {
@@ -141,7 +143,9 @@ const envelopePayload: EnvelopeReadResponse = {
       color: null,
       specification_status: "complete",
       datasheet_asset_ids: [],
-      notes: null,
+      source: null,
+      url: null,
+      comments: null,
       catalog_origin: null,
       use_sites: [
         {
@@ -167,7 +171,9 @@ const envelopePayload: EnvelopeReadResponse = {
       color: null,
       specification_status: "na",
       datasheet_asset_ids: [],
-      notes: null,
+      source: null,
+      url: null,
+      comments: null,
       catalog_origin: null,
       use_sites: [],
     },
@@ -380,8 +386,6 @@ describe("EnvelopePage", () => {
                 project_material_id: "pmat_insul",
                 state: "drifted",
                 catalog_record_id: "mat_123",
-                pinned_catalog_version_id: "matv_1",
-                current_catalog_version_id: "matv_1",
                 local_overrides: [],
                 fields: [
                   {
