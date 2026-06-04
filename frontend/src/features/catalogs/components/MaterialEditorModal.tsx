@@ -1,5 +1,8 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  formatConductivityFromWmK,
+  formatDensityFromKgM3,
+  formatSpecificHeatFromJKgK,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
@@ -8,14 +11,15 @@ import {
 } from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { useCreateMaterialMutation } from "../hooks";
+import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import { MATERIAL_CATEGORY_OPTIONS, materialCategoryFromOptionId } from "../materials/fieldDefs";
-import type { CatalogMaterialCreatePayload } from "../types";
+import type { CatalogMaterial, CatalogMaterialCreatePayload } from "../types";
 import {
   colorToNull,
   editorSubmitLabel,
   parseOptionalNumber,
   parseOptionalUnitNumber,
+  stringOrEmpty,
   trimToNull,
 } from "./form-helpers";
 import { conductivityUnitLabel, densityUnitLabel, specificHeatUnitLabel } from "./unit-labels";
@@ -50,6 +54,21 @@ function emptyForm(): FormState {
     source: "",
     url: "",
     comments: "",
+  };
+}
+
+function formFromRecord(record: CatalogMaterial, unitOptions: UnitFormatOptions): FormState {
+  return {
+    name: record.name,
+    category: `opt_${record.category}`,
+    density_kg_m3: formatDensityFromKgM3(record.density_kg_m3, unitOptions),
+    specific_heat_j_kgk: formatSpecificHeatFromJKgK(record.specific_heat_j_kgk, unitOptions),
+    conductivity_w_mk: formatConductivityFromWmK(record.conductivity_w_mk, unitOptions),
+    emissivity: record.emissivity === null ? "" : String(record.emissivity),
+    color: stringOrEmpty(record.color),
+    source: stringOrEmpty(record.source),
+    url: stringOrEmpty(record.url),
+    comments: stringOrEmpty(record.comments),
   };
 }
 
@@ -92,9 +111,11 @@ function toCreatePayload(
 }
 
 export function MaterialEditorModal({
+  record,
   onClose,
   onSaved,
 }: {
+  record: CatalogMaterial | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -109,13 +130,26 @@ export function MaterialEditorModal({
     }),
     [formUnitSystem],
   );
-  const [form, setForm] = useState<FormState>(() => emptyForm());
+  const [form, setForm] = useState<FormState>(() =>
+    record ? formFromRecord(record, unitOptions) : emptyForm(),
+  );
   const [parseError, setParseError] = useState<string | null>(null);
+  const isEdit = record !== null;
   const createMutation = useCreateMaterialMutation();
+  const updateMutation = useUpdateMaterialMutation();
+  const activeMutation = isEdit ? updateMutation : createMutation;
   const parsedNumbers = parseMaterialNumbers(form, unitOptions);
 
+  useEffect(() => {
+    setForm(record ? formFromRecord(record, unitOptions) : emptyForm());
+    setParseError(null);
+    // Unit system is intentionally frozen while the modal is open so an
+    // in-progress edit is not rewritten under the cursor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [record]);
+
   const canSubmit =
-    form.name.trim().length > 0 && parsedNumbers !== null && !createMutation.isPending;
+    form.name.trim().length > 0 && parsedNumbers !== null && !activeMutation.isPending;
 
   function updateForm(field: keyof FormState, value: string): void {
     setForm((current) => ({ ...current, [field]: value }));
@@ -134,17 +168,28 @@ export function MaterialEditorModal({
       setParseError("Choose a material category.");
       return;
     }
-    createMutation.mutate(payload, { onSuccess: onSaved });
+    if (isEdit && record) {
+      updateMutation.mutate({ id: record.id, payload }, { onSuccess: onSaved });
+    } else {
+      createMutation.mutate(payload, { onSuccess: onSaved });
+    }
   }
 
   const errorText =
     parseError ??
-    (createMutation.isError
-      ? errorMessage(createMutation.error, "Could not create material.")
+    (activeMutation.isError
+      ? errorMessage(
+          activeMutation.error,
+          isEdit ? "Could not save material." : "Could not create material.",
+        )
       : null);
 
   return (
-    <ModalDialog title="New material" titleId="material-editor-title" onClose={onClose}>
+    <ModalDialog
+      title={isEdit ? "Edit material" : "New material"}
+      titleId="material-editor-title"
+      onClose={onClose}
+    >
       <form className="project-form" onSubmit={handleSubmit}>
         <label>
           <span>Name</span>
@@ -242,7 +287,7 @@ export function MaterialEditorModal({
             Cancel
           </button>
           <button type="submit" disabled={!canSubmit}>
-            {editorSubmitLabel(false, createMutation.isPending, "Create material")}
+            {editorSubmitLabel(isEdit, activeMutation.isPending, "Create material")}
           </button>
         </div>
       </form>

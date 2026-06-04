@@ -5,9 +5,9 @@ STATUS: Implemented on branch; review and browser evidence remain.
 AUTHOR: Codex
 SCOPE: Assembly Builder UI/Layout parity, phase 15.
 RELATED:
-  - planning/features/assembly-builder/PRD.md
-  - planning/features/assembly-builder/assets/_v1_segment_attribute_modal.png
-  - planning/features/assembly-builder/assets/_v1_ip_metric_swtich.png
+  - planning/archive/assembly-builder/PRD.md
+  - planning/archive/assembly-builder/assets/_v1_segment_attribute_modal.png
+  - planning/archive/assembly-builder/assets/_v1_ip_metric_swtich.png
   - frontend/src/features/envelope/components/dialogs/SegmentDialog.tsx
   - frontend/src/features/envelope/components/dialogs/SegmentMaterialPicker.tsx
   - frontend/src/features/envelope/components/ProjectMaterialEditor.tsx

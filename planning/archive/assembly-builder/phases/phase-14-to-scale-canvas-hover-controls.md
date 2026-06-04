@@ -6,10 +6,10 @@ STATUS: Implemented on `codex/assembly-builder-ui-planning`; review and
 AUTHOR: Codex
 SCOPE: Assembly Builder UI/Layout parity, phase 14.
 RELATED:
-  - planning/features/assembly-builder/PRD.md
-  - planning/features/assembly-builder/assets/_v1_basic_ui.png
-  - planning/features/assembly-builder/assets/_v1_add_layer.png
-  - planning/features/assembly-builder/assets/_v1_add_new_segment.png
+  - planning/archive/assembly-builder/PRD.md
+  - planning/archive/assembly-builder/assets/_v1_basic_ui.png
+  - planning/archive/assembly-builder/assets/_v1_add_layer.png
+  - planning/archive/assembly-builder/assets/_v1_add_new_segment.png
   - frontend/src/features/envelope/components/AssemblyCanvas.tsx
   - frontend/src/features/envelope/components/MaterialLegend.tsx
   - frontend/src/features/envelope/canvas-constants.ts

@@ -1,12 +1,14 @@
 ---
-DATE: 2026-05-26
-TIME: 18:21 EDT
-STATUS: Proposed phased implementation roadmap.
-AUTHOR: Codex
-SCOPE: Assembly Builder implementation plan bundle.
+DATE: 2026-06-04
+TIME: 11:30 EDT
+STATUS: Complete — Phases 1–16 merged to main. Folder archived under
+        `planning/archive/assembly-builder/`. UI rework and browser
+        closeout deferred to a fresh follow-up feature.
+AUTHOR: Codex / Claude (Opus 4.7)
+SCOPE: Assembly Builder implementation plan bundle (historical).
 RELATED:
-  - planning/features/assembly-builder/PRD.md
-  - planning/features/assembly-builder/STATUS.md
+  - planning/archive/assembly-builder/PRD.md
+  - planning/archive/assembly-builder/STATUS.md
   - context/user-stories/20-envelope.md
   - context/technical-requirements/data-model.md
   - context/technical-requirements/save-versioning.md
@@ -19,7 +21,7 @@ RELATED:
 
 # Assembly Builder Implementation Plans
 
-This folder breaks `planning/features/assembly-builder/PRD.md` into
+This folder breaks `planning/archive/assembly-builder/PRD.md` into
 manageable implementation phases. Each phase should be treated as a
 verifiable slice with its own tests, browser checks, and docs-pass.
 
@@ -107,7 +109,7 @@ browser-visible workflow.
 ## Lessons Workflow
 
 The main PRD now includes `Implementation Lessons Log`
-(`planning/features/assembly-builder/PRD.md` §15.1). During each phase:
+(`planning/archive/assembly-builder/PRD.md` §15.1). During each phase:
 
 - add a short lesson row when implementation reveals a durable
   invariant, repeated failure mode, rejected shortcut, or changed
@@ -143,21 +145,30 @@ defaults are active unless a phase spike proves otherwise:
 
 ## Progress Ledger
 
-| Phase | Status | Evidence |
+All sixteen phases are merged to `main`. The `codex/assembly-builder-*`
+and `assembly-builder` branches were squashed and removed. See
+`STATUS.md` for the full phase table with commit references and the
+deferred items lifted into the next feature folder.
+
+| Phase | Status | On `main` as |
 |---|---|---|
-| 1 | Merged to main | Implemented on `codex/assembly-builder-phase-01`; flattened into main with the Phase 1-3 squash merge. Verified with `git diff --check`, `backend` Ruff, scoped Ty, `tests/test_envelope_phase01.py`, and `tests/test_schemas.py`. |
-| 2 | Merged to main | Read-only shell implemented on `codex/assembly-builder-phase-02` (`929f5b8`, simplify follow-up `bd77dee`); flattened into main with the Phase 1-3 squash merge. Verified with targeted Envelope/Windows tests, `tsc --noEmit`, frontend build, ESLint, feature-shape check, `git diff --check`, and local browser smoke on a seeded envelope project. |
-| 3 | Merged to main | Editor commands implemented on `codex/assembly-builder-phase-03` (`9e6c560`, simplify follow-up `1d87078`, docs-pass `0458eae`); flattened into main with the Phase 1-3 squash merge. Verified with backend envelope Ruff/Ty/Pytest gates, frontend Prettier/TS/Vitest/ESLint/shape/build gates, `git diff --check`, and browser smoke covering modal unit toggle, copy/paste assignment, Save, and reload. `make smoke` remains blocked by the local shared `phn-v2-postgres` Docker container name conflict. |
-| 4 | Implemented on branch | Implemented on `codex/assembly-builder-phase-04` with backend material commands, catalog copy-in, shared material editor, Specifications editing, detach, unused cleanup, simplify follow-up, and scoped backend/frontend gates. Browser smoke and direct material-flow frontend tests remain before closure. |
-| 5 | Implemented on branch | Implemented on `codex/assembly-builder-phase-05` with backend thermal endpoint, shared thermal issue records, saved-version-only HBJSON export, metadata preservation, export 422 paths, frontend thermal label, shared download handling, and dirty-draft warning. Steel-stud regression, browser smoke, and export-shape hardening remain before closure. |
-| 6 | Implemented on branch | Implemented on `codex/assembly-builder-phase-06` with Specifications datasheet/photo evidence UI, generic asset attach/detach wiring, envelope attachment tests, shared URL resolution, and attachment row-resolution hardening. Browser smoke, Save As immutability workflow, and destructive photo-count dialogs remain. |
-| 7 | Implemented on branch | Implemented on `codex/assembly-builder-phase-07` with material catalog drift report, same-version field-delta detection, source-deactivated/missing states, per-material refresh command, badges, review summary, and refresh dialog. Browser smoke remains before closure. |
-| 8 | In review | MCP envelope read/report tools and semantic command write tool implemented on `codex/assembly-builder-phase-07`; verified with scoped backend Ruff/Ty and `tests/test_mcp.py`. Remaining UI/browser release evidence is delegated to Phase 16. |
-| 9 | Implemented on branch | Implemented on `codex/assembly-builder-phase-09` with backend envelope service split, command dispatch registry, shared material-field constants, and drift transaction threading. Verified with scoped envelope Ruff/Ty/Pytest gates; full repo `make test` and `make typecheck` remain blocked by unrelated project-document custom-field test drift. |
-| 10 | Implemented on branch | Implemented on `assembly-builder` with frontend dialog decomposition, page helper extraction, shared `DialogActions`, dedicated `useLengthDraft` hook/test, attachment mutation hook, route helpers, and Specifications subcomponents. Scoped envelope lint/tests/type filter pass; full frontend build remains blocked by unrelated equipment/project-document/windows/shared table type drift. |
-| 11 | Implemented on branch | Implemented on `assembly-builder` with canvas constants, shared ARGB/download helpers, and helper tests. Full frontend build remains blocked by unrelated equipment/project-document/windows/shared table drift. |
-| 12 | Implemented on branch | Implemented on `assembly-builder` with public-service documentation and envelope test reorganization. Full frontend build, repo-level `make typecheck`, and repo-level `make test` remain blocked by unrelated table drift; `make lint` passed. |
-| 13 | Implemented on branch | Three-pane Assemblies shell implemented on `codex/assembly-builder-ui-planning`: collapsible assembly drawer, top-bar picker/metrics/tools, main canvas area, scoped active-material legend, shared icon-button/tooltip utility styling, and regression coverage for collapse preserving active assembly and zoom. Browser evidence remains for Phase 16. |
-| 14 | Implemented on branch | To-scale DOM/CSS canvas implemented on `codex/assembly-builder-ui-planning`: orientation labels, colored layer/segment blocks, clipped stable labels, contextual hover/focus controls, contextual aria labels, active-material legend with lambda status, and regression coverage for legend scoping. Browser smoke is blocked locally by missing backend/API and remains owned by Phase 16. |
-| 15 | Implemented on branch | Segment Properties polish implemented on `codex/assembly-builder-ui-planning`: material-first preview, tabbed project/catalog/hand-enter picker, lazy catalog query gating, standalone shared material editor form, and direct regression coverage for catalog gating and material-source commands. Specifications remains usable through existing QA cards; final browser evidence remains for Phase 16. |
-| 16 | Implemented on branch | Deterministic Phase 16 scale/evidence fixture added on `codex/assembly-builder-ui-planning` with thin layers, narrow segments, long material names, null material, missing lambda, evidence IDs, catalog-origin drift data, 12 bulk assemblies, and locked-mode regression coverage. Browser smoke remains blocked by the current local API/dev-server setup and full frontend build remains blocked by unrelated equipment/project-document/shared table type drift. |
+| 1–3 | Merged to main | `5c687c9` (squash of the Phase 1–3 worktrees) |
+| 4 | Merged to main | `0901c26` |
+| 5 | Merged to main | `5dac1fc` |
+| 6 | Merged to main | `d711c3d` |
+| 7 | Merged to main | `1a75378` |
+| 8 | Merged to main (MCP surface) — browser closeout deferred | `484a4b1` |
+| 9 | Merged to main | `5ee4800` |
+| 10 | Merged to main | `2c3bf52` |
+| 11 | Merged to main | `fb1e733` |
+| 12 | Merged to main | `94ac109` |
+| 13 | Merged to main | `f868d4e` |
+| 14 | Merged to main | `996ec34` |
+| 15 | Merged to main | `214ad89` |
+| 16 | Merged to main (fixture only) — browser closeout deferred | `13778ae` |
+
+Deferred items (Phase 16 browser closeout, Phase 4 frontend tests,
+Phase 5 steel-stud regression + export shape decision, Phase 6
+destructive-confirm dialogs + Save-As immutability proof, Phase 7
+locked/viewer drift visibility, picker UX, and the UI rework backlog
+that motivated this archive) are seeds for the next feature folder.

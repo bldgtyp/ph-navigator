@@ -6,8 +6,8 @@ AUTHOR: Codex
 SCOPE: Read-only Envelope routes, sidebar, canvas, and Specifications
        scaffold.
 RELATED:
-  - planning/features/assembly-builder/PRD.md §§7-10
-  - planning/features/assembly-builder/phases/phase-01-backend-domain-contracts.md
+  - planning/archive/assembly-builder/PRD.md §§7-10
+  - planning/archive/assembly-builder/phases/phase-01-backend-domain-contracts.md
   - context/UI_UX.md §2.7
   - context/user-stories/20-envelope.md US-ENV-1..4, US-ENV-13
   - context/technical-requirements/frontend-viewer-units.md

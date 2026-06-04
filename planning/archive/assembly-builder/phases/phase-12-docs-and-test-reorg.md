@@ -9,7 +9,7 @@ SCOPE: Add the missing "why" docstrings on cross-cutting service and
        by historical phase number.
 RELATED:
   - planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md §L1, §L4, §L5, §M6
-  - planning/features/assembly-builder/PRD.md §§5, 11, 15
+  - planning/archive/assembly-builder/PRD.md §§5, 11, 15
   - context/CODING_STANDARDS.md §Documentation Standard
 ---
 
@@ -131,7 +131,7 @@ shaped that way without reading the PRD end-to-end.
   Phase 8's docs-pass owns that. This phase docs the code; that phase
   docs the contract.
 - README or CONTEXT-level docs in the planning bundle. Those live in
-  `planning/features/assembly-builder/PRD.md` lessons log.
+  `planning/archive/assembly-builder/PRD.md` lessons log.
 
 ## Why Document Now, Not Earlier
 

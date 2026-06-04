@@ -6,8 +6,8 @@ AUTHOR: Codex
 SCOPE: Project-material catalog drift detection, review, and explicit
        refresh.
 RELATED:
-  - planning/features/assembly-builder/PRD.md §§5.5, 7.13
-  - planning/features/assembly-builder/phases/phase-04-materials-picker-specifications.md
+  - planning/archive/assembly-builder/PRD.md §§5.5, 7.13
+  - planning/archive/assembly-builder/phases/phase-04-materials-picker-specifications.md
   - context/technical-requirements/data-model.md §7.4
   - context/user-stories/20-envelope.md US-ENV-11
 ---

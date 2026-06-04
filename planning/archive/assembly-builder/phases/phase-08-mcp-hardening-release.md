@@ -7,8 +7,8 @@ AUTHOR: Codex
 SCOPE: MCP tools and semantic command hardening. Historical UI/browser
        release gates are now owned by Phase 16.
 RELATED:
-  - planning/features/assembly-builder/PRD.md §§5.9, 13-15
-  - planning/features/assembly-builder/README.md
+  - planning/archive/assembly-builder/PRD.md §§5.9, 13-15
+  - planning/archive/assembly-builder/README.md
   - context/technical-requirements/llm-mcp-schema.md
   - context/technical-requirements/api.md
   - context/CODING_STANDARDS.md
@@ -159,4 +159,4 @@ Remaining:
 
 - complete any MCP-specific follow-up discovered by future MCP tests;
 - close UI/browser release evidence through
-  `planning/features/assembly-builder/phases/phase-16-ui-parity-browser-hardening.md`.
+  `planning/archive/assembly-builder/phases/phase-16-ui-parity-browser-hardening.md`.
