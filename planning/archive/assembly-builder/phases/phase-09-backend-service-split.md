@@ -8,7 +8,7 @@ SCOPE: Restructure backend envelope service so adding the next command,
        requiring a 1000-line file scan.
 RELATED:
   - planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md §H1, §H2, §M3
-  - planning/features/assembly-builder/PRD.md §§5, 7
+  - planning/archive/assembly-builder/PRD.md §§5, 7
   - context/CODING_STANDARDS.md §Module Size And Splitting, §Required Feature Shape
 ---
 

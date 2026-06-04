@@ -6,8 +6,8 @@ AUTHOR: Codex
 SCOPE: Backend domain model, validation, read slices, and table-contract
        adapters for Assembly Builder.
 RELATED:
-  - planning/features/assembly-builder/PRD.md §§5-6, 11
-  - planning/features/assembly-builder/README.md
+  - planning/archive/assembly-builder/PRD.md §§5-6, 11
+  - planning/archive/assembly-builder/README.md
   - context/technical-requirements/data-model.md
   - context/technical-requirements/save-versioning.md
   - context/technical-requirements/attachments.md

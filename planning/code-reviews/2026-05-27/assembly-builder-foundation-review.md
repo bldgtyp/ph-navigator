@@ -7,9 +7,9 @@ SCOPE:
   - backend/features/envelope/
   - frontend/src/features/envelope/
 RELATED:
-  - planning/features/assembly-builder/README.md
-  - planning/features/assembly-builder/STATUS.md
-  - planning/features/assembly-builder/PRD.md
+  - planning/archive/assembly-builder/README.md
+  - planning/archive/assembly-builder/STATUS.md
+  - planning/archive/assembly-builder/PRD.md
   - context/CODING_STANDARDS.md
 GOAL: Sanity-check the foundation before a real UI/UX build-out. The
       feature is still a rough wireframe; review focuses on architecture,

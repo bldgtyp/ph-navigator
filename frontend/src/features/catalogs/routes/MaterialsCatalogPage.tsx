@@ -32,6 +32,11 @@ import {
   triggerCatalogDownload,
 } from "../materials/import_export/export";
 
+type EditorState =
+  | { kind: "closed" }
+  | { kind: "create" }
+  | { kind: "edit"; record: CatalogMaterial };
+
 // Optimistic placeholder row used by Shift-Enter on an empty grid. The
 // controller's `rowInsert` handler POSTs the row with safe defaults
 // (name "New material", category "insulation"); the optimistic row
@@ -127,7 +132,7 @@ const COLUMN_DEFS: DataTableColumnDef<MaterialRow>[] = [
 export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [editor, setEditor] = useState<EditorState>({ kind: "closed" });
   const [bulkReactivating, setBulkReactivating] = useState(false);
   const materialsQuery = useMaterialsQuery();
   const signOutMutation = useSignOutMutation();
@@ -143,6 +148,7 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   );
   const rows = useMemo<MaterialRow[]>(() => materials.map(toMaterialRow), [materials]);
   const controller = useMaterialsCatalogController();
+  const closeEditor = () => setEditor({ kind: "closed" });
 
   // Map id → is_active for O(1) lookups when the bulk-action renderer
   // walks the live selection set on every selection change.
@@ -220,7 +226,7 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
       />
       <section className="dashboard-page" aria-label="Materials catalog">
         <div className="page-heading">
-          <button type="button" onClick={() => setEditorOpen(true)}>
+          <button type="button" onClick={() => setEditor({ kind: "create" })}>
             New Material +
           </button>
         </div>
@@ -253,6 +259,10 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             onViewChange={controller.onViewChange}
             onResetView={controller.onResetView}
             onWrite={controller.onWrite}
+            onRowOpen={(row) => {
+              const record = materials.find((material) => material.id === row.id);
+              if (record) setEditor({ kind: "edit", record });
+            }}
             buildEmptyRow={buildEmptyMaterialRow}
             bulkSelectionActions={renderBulkSelectionActions}
             overflowMenuActions={
@@ -277,10 +287,11 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
           the next open.
         */}
         {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
-        {editorOpen ? (
+        {editor.kind !== "closed" ? (
           <MaterialEditorModal
-            onClose={() => setEditorOpen(false)}
-            onSaved={() => setEditorOpen(false)}
+            record={editor.kind === "edit" ? editor.record : null}
+            onClose={closeEditor}
+            onSaved={closeEditor}
           />
         ) : null}
       </section>

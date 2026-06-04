@@ -6,8 +6,8 @@ AUTHOR: Codex
 SCOPE: Project materials, material picker, shared material editor,
        detach-to-new-material, and Specifications cards.
 RELATED:
-  - planning/features/assembly-builder/PRD.md §§5.4-5.5, 6.4-6.5, 7.7-7.11
-  - planning/features/assembly-builder/phases/phase-03-editor-commands-canvas-crud.md
+  - planning/archive/assembly-builder/PRD.md §§5.4-5.5, 6.4-6.5, 7.7-7.11
+  - planning/archive/assembly-builder/phases/phase-03-editor-commands-canvas-crud.md
   - context/technical-requirements/data-model.md §7
   - context/user-stories/20-envelope.md US-ENV-7, US-ENV-13
 ---

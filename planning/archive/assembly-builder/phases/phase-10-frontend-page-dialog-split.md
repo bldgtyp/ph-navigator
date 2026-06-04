@@ -9,7 +9,7 @@ SCOPE: Bring the three largest envelope frontend files back under the
        through the page component for cross-cutting workflows.
 RELATED:
   - planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md §H3, §H4, §M5
-  - planning/features/assembly-builder/PRD.md §§6, 9
+  - planning/archive/assembly-builder/PRD.md §§6, 9
   - context/CODING_STANDARDS.md §Component Size And Splitting, §App And Routing Boundaries
 ---
 

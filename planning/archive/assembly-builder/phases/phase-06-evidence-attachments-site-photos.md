@@ -6,8 +6,8 @@ AUTHOR: Codex
 SCOPE: Datasheet and site-photo evidence workflows within Assembly
        Builder Specifications.
 RELATED:
-  - planning/features/assembly-builder/PRD.md §§5.6, 7.11-7.12
-  - planning/features/assembly-builder/phases/phase-04-materials-picker-specifications.md
+  - planning/archive/assembly-builder/PRD.md §§5.6, 7.11-7.12
+  - planning/archive/assembly-builder/phases/phase-04-materials-picker-specifications.md
   - context/technical-requirements/attachments.md
   - context/user-stories/20-envelope.md US-ENV-13, US-ENV-15
 ---

@@ -6,7 +6,10 @@ import { describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
 import type { AuthSession } from "../../../auth/types";
 import * as api from "../../api";
+import type { CatalogMaterial } from "../../types";
 import { MaterialsCatalogPage } from "../MaterialsCatalogPage";
+
+type MockMaterialRow = { id: string };
 
 vi.mock("../../../../shared/ui/data-table", async () => {
   const actual = await vi.importActual<typeof import("../../../../shared/ui/data-table")>(
@@ -14,7 +17,19 @@ vi.mock("../../../../shared/ui/data-table", async () => {
   );
   return {
     ...actual,
-    DataTable: () => <div data-testid="materials-grid" />,
+    DataTable: ({
+      rows,
+      onRowOpen,
+    }: {
+      rows: MockMaterialRow[];
+      onRowOpen?: (row: MockMaterialRow) => void;
+    }) => (
+      <div data-testid="materials-grid">
+        <button type="button" onClick={() => rows[0] && onRowOpen?.(rows[0])}>
+          Expand first material
+        </button>
+      </div>
+    ),
   };
 });
 
@@ -26,6 +41,23 @@ const SESSION: AuthSession = {
     units_preference: "SI",
   },
   expires_at: "2026-06-04T12:00:00Z",
+};
+
+const WOOD_FIBER: CatalogMaterial = {
+  id: "mat_1",
+  name: "Wood fiber board",
+  category: "insulation",
+  density_kg_m3: null,
+  specific_heat_j_kgk: null,
+  conductivity_w_mk: 0.038,
+  emissivity: null,
+  color: null,
+  source: null,
+  url: null,
+  comments: null,
+  is_active: true,
+  created_at: "2026-06-04T12:00:00Z",
+  updated_at: "2026-06-04T12:00:00Z",
 };
 
 function renderPage() {
@@ -55,22 +87,7 @@ describe("MaterialsCatalogPage", () => {
   test("opens the new material modal from the top-left action", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "listMaterials").mockResolvedValue({ items: [] });
-    vi.spyOn(api, "createMaterial").mockResolvedValue({
-      id: "mat_1",
-      name: "Wood fiber board",
-      category: "insulation",
-      density_kg_m3: null,
-      specific_heat_j_kgk: null,
-      conductivity_w_mk: 0.038,
-      emissivity: null,
-      color: null,
-      source: null,
-      url: null,
-      comments: null,
-      is_active: true,
-      created_at: "2026-06-04T12:00:00Z",
-      updated_at: "2026-06-04T12:00:00Z",
-    });
+    vi.spyOn(api, "createMaterial").mockResolvedValue(WOOD_FIBER);
 
     renderPage();
 
@@ -87,6 +104,42 @@ describe("MaterialsCatalogPage", () => {
     await waitFor(() => {
       expect(api.createMaterial).toHaveBeenCalledWith({
         name: "Wood fiber board",
+        category: "insulation",
+        density_kg_m3: null,
+        specific_heat_j_kgk: null,
+        conductivity_w_mk: 0.038,
+        emissivity: null,
+        color: null,
+        source: null,
+        url: null,
+        comments: null,
+      });
+    });
+  });
+
+  test("opens the edit modal from the table expand gutter", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(api, "listMaterials").mockResolvedValue({ items: [WOOD_FIBER] });
+    vi.spyOn(api, "updateMaterial").mockResolvedValue({
+      ...WOOD_FIBER,
+      name: "Dense wood fiber board",
+    });
+
+    renderPage();
+
+    await screen.findByText("1 material");
+    await user.click(await screen.findByRole("button", { name: "Expand first material" }));
+    expect(screen.getByRole("dialog", { name: "Edit material" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveValue("Wood fiber board");
+    expect(screen.getByLabelText(/Lambda/)).toHaveValue("0.038");
+
+    await user.clear(screen.getByLabelText("Name"));
+    await user.type(screen.getByLabelText("Name"), "Dense wood fiber board");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(api.updateMaterial).toHaveBeenCalledWith("mat_1", {
+        name: "Dense wood fiber board",
         category: "insulation",
         density_kg_m3: null,
         specific_heat_j_kgk: null,

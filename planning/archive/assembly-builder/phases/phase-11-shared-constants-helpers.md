@@ -8,7 +8,7 @@ SCOPE: Replace magic numbers, hand-rolled duplicates, and inline string
        author has one place to read or change each calibrated value.
 RELATED:
   - planning/code-reviews/2026-05-27/assembly-builder-foundation-review.md §M1, §M2, §M4, §L2, §L3, §L7, §L8
-  - planning/features/assembly-builder/PRD.md §6.1, §6.6
+  - planning/archive/assembly-builder/PRD.md §6.1, §6.6
   - context/CODING_STANDARDS.md §Documentation Standard
 ---
 

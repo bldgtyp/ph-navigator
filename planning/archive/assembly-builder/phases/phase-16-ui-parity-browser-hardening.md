@@ -5,12 +5,12 @@ STATUS: Implemented on branch; browser smoke remains blocked by local setup.
 AUTHOR: Codex
 SCOPE: Assembly Builder UI/Layout parity, phase 16.
 RELATED:
-  - planning/features/assembly-builder/PRD.md
-  - planning/features/assembly-builder/STATUS.md
-  - planning/features/assembly-builder/phases/phase-08-mcp-hardening-release.md
-  - planning/features/assembly-builder/phases/phase-13-three-pane-assemblies-shell.md
-  - planning/features/assembly-builder/phases/phase-14-to-scale-canvas-hover-controls.md
-  - planning/features/assembly-builder/phases/phase-15-dialogs-material-picker-specifications-polish.md
+  - planning/archive/assembly-builder/PRD.md
+  - planning/archive/assembly-builder/STATUS.md
+  - planning/archive/assembly-builder/phases/phase-08-mcp-hardening-release.md
+  - planning/archive/assembly-builder/phases/phase-13-three-pane-assemblies-shell.md
+  - planning/archive/assembly-builder/phases/phase-14-to-scale-canvas-hover-controls.md
+  - planning/archive/assembly-builder/phases/phase-15-dialogs-material-picker-specifications-polish.md
   - research/v1-assembly-builder-reference.md
 ---
 
@@ -31,7 +31,7 @@ browser matrix, scale fixture, V1 parity audit, and docs closeout.
 
 - Run a V1 parity audit against:
   - `research/v1-assembly-builder-reference.md`;
-  - the V1 reference screenshots in `planning/features/assembly-builder/assets/`;
+  - the V1 reference screenshots in `planning/archive/assembly-builder/assets/`;
   - PRD §8, §12, and §13.
 - Create one deterministic reusable scale fixture or seed helper with:
   - a named edge-case set covering very thin layers, narrow segments,
