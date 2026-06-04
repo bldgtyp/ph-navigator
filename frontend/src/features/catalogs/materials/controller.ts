@@ -104,7 +104,7 @@ export type MaterialsCatalogController = {
 };
 
 export function useMaterialsCatalogController(): MaterialsCatalogController {
-  const [view, setView] = useState<ViewState>(emptyViewState());
+  const [view, setView] = useState<ViewState>(() => emptyViewState());
   const queryClient = useQueryClient();
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.materials() }),

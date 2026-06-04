@@ -102,6 +102,12 @@ describe("DataTable", () => {
       "tabindex",
       "-1",
     );
+    expect(
+      screen
+        .getByRole("button", { name: "Highlight row 1" })
+        .compareDocumentPosition(screen.getByRole("checkbox", { name: "Select row 1" })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   test("body cells carry data-axis-tint='f' on a column with a contributing filter rule", () => {
