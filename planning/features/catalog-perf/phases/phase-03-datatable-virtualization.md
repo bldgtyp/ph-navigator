@@ -1,9 +1,12 @@
 ---
 DATE: 2026-06-04
 TIME: 09:30 ET
-STATUS: PENDING — implementation has not started. This is the
-        largest phase and the only one with a non-trivial risk of
-        regression across `DataTable` consumers.
+STATUS: DONE — `@tanstack/react-virtual` wired through `DataTable` and
+        `GridBody` with spacer-row pattern. Active-cell and inline-edit
+        rows are pinned via `scrollToIndex`. `tests/setup.ts` shims
+        `offsetHeight`/`offsetWidth`/`ResizeObserver` so jsdom-backed
+        tests can render the virtualizer. All 1030 frontend tests
+        (including five DataTable consumer suites) pass unmodified.
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Add row virtualization to the shared `DataTable` body so it
        renders only the rows in (or near) the viewport. Preserve

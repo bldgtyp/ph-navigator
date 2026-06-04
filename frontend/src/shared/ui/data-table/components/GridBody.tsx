@@ -1,4 +1,5 @@
 import { flexRender, type Table } from "@tanstack/react-table";
+import type { Virtualizer } from "@tanstack/react-virtual";
 import { AlertTriangle } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { describeDuplicateRows } from "../lib/identifier/recordId";
@@ -89,6 +90,14 @@ export type GridBodyProps<TRow> = {
   // another visible row has the same non-empty identifier value.
   identifierColumnId?: string | null;
   identifierDuplicates?: ReadonlyMap<string, DuplicateIdentifierRows>;
+  // Phase 3 (catalog-perf): row virtualizer keyed on `bodyPlan.length`,
+  // plus a precomputed map from a data-row index (the selection's
+  // `activeCell.rowIndex` and TanStack `tableRows[i]` cursor) to its
+  // bodyPlan index. The body renders only the rows the virtualizer
+  // returns, surrounded by spacer `<tr>`s that consume the unrendered
+  // heights so the scrollbar geometry matches a full table.
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
+  bodyPlanIndexByDataRowIndex: readonly number[];
 };
 
 export function GridBody<TRow>({
@@ -122,6 +131,8 @@ export function GridBody<TRow>({
   cellsWritable = false,
   identifierColumnId = null,
   identifierDuplicates,
+  rowVirtualizer,
+  bodyPlanIndexByDataRowIndex,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
@@ -131,11 +142,24 @@ export function GridBody<TRow>({
     identifierColumnId === null
       ? -1
       : visibleColumnDefs.findIndex((column) => column.id === identifierColumnId);
-  let ariaRowIndex = 1; // header row is 1; data + group rows start at 2.
-  // TanStack receives `visibleDataRows` as its data source, so
-  // `tableRows[i]` aligns with the i-th data item in `bodyPlan`. Walk
-  // a cursor instead of building a row-id lookup each render.
-  let dataRowIndex = 0;
+  // Reverse lookup: bodyPlan index → data-row index. Built once per
+  // render from the (already-computed) data-row → bodyPlan mapping so
+  // the per-virtual-row resolver is a cheap array read.
+  const dataRowIndexByBodyPlanIndex = (() => {
+    const result: number[] = new Array(bodyPlan.length).fill(-1);
+    for (let dataIdx = 0; dataIdx < bodyPlanIndexByDataRowIndex.length; dataIdx += 1) {
+      const planIdx = bodyPlanIndexByDataRowIndex[dataIdx];
+      if (planIdx !== undefined) result[planIdx] = dataIdx;
+    }
+    return result;
+  })();
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const totalSize = rowVirtualizer.getTotalSize();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0]!.start : 0;
+  const paddingBottom =
+    virtualItems.length > 0 ? totalSize - virtualItems[virtualItems.length - 1]!.end : 0;
+  // Column count for spacer `colSpan`: gutter (1) + visible columns + tail (1).
+  const totalColSpan = visibleColumnDefs.length + 2;
   const hasMultiCellRange =
     hasExplicitRange &&
     (normalizedActiveRange.rowStart !== normalizedActiveRange.rowEnd ||
@@ -144,17 +168,29 @@ export function GridBody<TRow>({
     <tbody>
       {bodyPlan.length === 0 ? (
         <tr role="row" aria-rowindex={2}>
-          <td className="data-table-filter-empty" colSpan={visibleColumnDefs.length + 2}>
+          <td className="data-table-filter-empty" colSpan={totalColSpan}>
             {isSourceEmpty ? emptyMessage : "No rows match the current table view."}
           </td>
         </tr>
       ) : null}
-      {bodyPlan.map((item) => {
-        ariaRowIndex += 1;
+      {paddingTop > 0 ? (
+        <tr aria-hidden="true" style={{ height: paddingTop }}>
+          <td colSpan={totalColSpan} style={{ padding: 0, border: 0 }} />
+        </tr>
+      ) : null}
+      {virtualItems.map((virtualItem) => {
+        const item = bodyPlan[virtualItem.index];
+        if (!item) return null;
+        const ariaRowIndex = virtualItem.index + 2; // +1 for header row, +1 for 1-based
+        const measureRef = (el: Element | null) => {
+          if (el) rowVirtualizer.measureElement(el);
+        };
         if (item.kind === "group") {
           return (
             <GroupHeaderRow
-              key={`group::${item.pathKey}`}
+              key={virtualItem.key}
+              measureRef={measureRef}
+              dataIndex={virtualItem.index}
               depth={item.depth}
               pathKey={item.pathKey}
               fieldDef={item.fieldDef}
@@ -167,10 +203,9 @@ export function GridBody<TRow>({
             />
           );
         }
-        const rowIndex = dataRowIndex;
-        dataRowIndex += 1;
-        const tanstackRow = tableRows[rowIndex];
-        if (!tanstackRow) return null;
+        const rowIndex = dataRowIndexByBodyPlanIndex[virtualItem.index] ?? -1;
+        const tanstackRow = rowIndex >= 0 ? tableRows[rowIndex] : undefined;
+        if (!tanstackRow || rowIndex < 0) return null;
         const isLastDataRow = rowIndex === rowIds.length - 1;
         // Hoisted per-row duplicate lookup; only depends on rowId, so
         // it doesn't belong inside the per-cell loop.
@@ -185,7 +220,9 @@ export function GridBody<TRow>({
             : "";
         return (
           <tr
-            key={tanstackRow.id}
+            key={virtualItem.key}
+            ref={measureRef}
+            data-index={virtualItem.index}
             role="row"
             aria-rowindex={ariaRowIndex}
             data-row-depth={item.depth}
@@ -337,6 +374,11 @@ export function GridBody<TRow>({
           </tr>
         );
       })}
+      {paddingBottom > 0 ? (
+        <tr aria-hidden="true" style={{ height: paddingBottom }}>
+          <td colSpan={totalColSpan} style={{ padding: 0, border: 0 }} />
+        </tr>
+      ) : null}
     </tbody>
   );
 }

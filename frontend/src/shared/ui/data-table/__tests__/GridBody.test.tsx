@@ -29,7 +29,7 @@ const COLUMN_DEFS: DataTableColumnDef<Row>[] = [
 
 function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
   const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
-  render(
+  return render(
     <DataTable<Row>
       rows={ROWS}
       getRowId={(row) => row.id}
@@ -95,9 +95,13 @@ describe("GridBody — row-expand affordance", () => {
     expect(cell).not.toHaveClass("data-table-cell-selected");
   });
 
-  test("omits the Expand button when onRowOpen is undefined", () => {
-    renderTable();
+  test("renders a visual-only Expand affordance when onRowOpen is undefined", () => {
+    const { container } = renderTable();
+
     expect(screen.queryByRole("button", { name: /Expand row/ })).not.toBeInTheDocument();
+    expect(
+      container.querySelectorAll(".data-table-gutter-expand[aria-hidden='true']"),
+    ).toHaveLength(ROWS.length);
   });
 });
 
