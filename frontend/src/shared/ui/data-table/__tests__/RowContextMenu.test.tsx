@@ -19,6 +19,7 @@ function defaultOpen(overrides: Partial<RowContextMenuOpenState> = {}): RowConte
     returnFocus: null,
     selectionCount: 0,
     rowIsInSelection: false,
+    customActions: [],
     ...overrides,
   };
 }
@@ -203,5 +204,114 @@ describe("RowContextMenu — multi-row collapse (PRD §5)", () => {
       />,
     );
     expect(screen.getAllByRole("menuitem")).toHaveLength(1);
+  });
+});
+
+describe("RowContextMenu — rowActions extension slot (Phase 4)", () => {
+  const fixtureActions = [
+    {
+      key: "ping",
+      label: "Ping row",
+      icon: <span data-testid="ping-icon" />,
+      shortcutHint: "P",
+      onSelect: () => undefined,
+    },
+    {
+      key: "archive",
+      label: "Archive row",
+      danger: true,
+      onSelect: () => undefined,
+    },
+  ];
+
+  test("renders custom items after the built-ins separated by a divider", () => {
+    renderMenu({
+      open: defaultOpen({ customActions: fixtureActions }),
+      onOpen: vi.fn(),
+    });
+    const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(items).toEqual([
+      expect.stringContaining("Insert record"),
+      expect.stringContaining("Duplicate record"),
+      expect.stringContaining("Expand record"),
+      expect.stringContaining("Delete record"),
+      expect.stringContaining("Ping row"),
+      expect.stringContaining("Archive row"),
+    ]);
+    expect(screen.getAllByRole("separator")).toHaveLength(1);
+  });
+
+  test("returning [] produces no divider", () => {
+    renderMenu({ open: defaultOpen({ customActions: [] }), onOpen: vi.fn() });
+    expect(screen.queryByRole("separator")).toBeNull();
+  });
+
+  test("danger flag routes to data-danger=true on the custom item", () => {
+    renderMenu({ open: defaultOpen({ customActions: fixtureActions }) });
+    const archive = screen.getByRole("menuitem", { name: /Archive row/ });
+    expect(archive).toHaveAttribute("data-danger", "true");
+    const ping = screen.getByRole("menuitem", { name: /Ping row/ });
+    expect(ping).not.toHaveAttribute("data-danger");
+  });
+
+  test("custom item icon renders in the icon slot", () => {
+    renderMenu({ open: defaultOpen({ customActions: fixtureActions }) });
+    const ping = screen.getByRole("menuitem", { name: /Ping row/ });
+    expect(ping.querySelector("[data-testid='ping-icon']")).not.toBeNull();
+  });
+
+  test("clicking a custom item closes the menu then invokes onSelect", () => {
+    const onPing = vi.fn();
+    const onClose = vi.fn();
+    const callOrder: string[] = [];
+    onClose.mockImplementation(() => callOrder.push("close"));
+    onPing.mockImplementation(() => callOrder.push("ping"));
+    renderMenu({
+      open: defaultOpen({
+        customActions: [
+          {
+            key: "ping",
+            label: "Ping row",
+            onSelect: onPing,
+          },
+        ],
+      }),
+      onClose,
+    });
+    fireEvent.click(screen.getByRole("menuitem", { name: /Ping row/ }));
+    expect(callOrder).toEqual(["close", "ping"]);
+  });
+
+  test("each custom item carries a stable data-row-action-key for test selectors", () => {
+    renderMenu({ open: defaultOpen({ customActions: fixtureActions }) });
+    expect(screen.getByRole("menuitem", { name: /Ping row/ })).toHaveAttribute(
+      "data-row-action-key",
+      "ping",
+    );
+    expect(screen.getByRole("menuitem", { name: /Archive row/ })).toHaveAttribute(
+      "data-row-action-key",
+      "archive",
+    );
+  });
+
+  test("collapsed branch suppresses custom items entirely (PRD §5 rule 1)", () => {
+    renderMenu({
+      open: defaultOpen({
+        selectionCount: 3,
+        rowIsInSelection: true,
+        customActions: fixtureActions,
+      }),
+    });
+    const items = screen.getAllByRole("menuitem");
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent("Delete 3 records");
+    expect(screen.queryByRole("separator")).toBeNull();
+  });
+
+  test("shortcutHint on a custom item renders as right-aligned hint text", () => {
+    renderMenu({ open: defaultOpen({ customActions: fixtureActions }) });
+    const ping = screen.getByRole("menuitem", { name: /Ping row/ });
+    const hint = ping.querySelector(".data-table-column-menu-item-hint");
+    expect(hint?.textContent).toBe("P");
   });
 });

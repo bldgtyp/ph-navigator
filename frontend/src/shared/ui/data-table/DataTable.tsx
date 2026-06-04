@@ -69,6 +69,7 @@ import type {
   FieldDef,
   FilterCondition,
   GroupRule,
+  RowAction,
   RowDeletePayload,
   SortRule,
   WriteOp,
@@ -102,6 +103,7 @@ export function DataTable<TRow>({
   onAddCustomField,
   onDuplicateCustomField,
   onEditCustomFieldBundle,
+  rowActions,
   formulaFieldRegistry,
   getFormulaRowValues,
 }: DataTableProps<TRow>) {
@@ -766,14 +768,36 @@ export function DataTable<TRow>({
       // (count <= 1): open the full menu, selection untouched.
       const count = rowSelection.count;
       const inSelection = rowSelection.isSelected(args.rowId);
-      if (count >= 2 && !inSelection) {
-        rowSelection.clear();
-        setRowMenu({ ...args, selectionCount: 0, rowIsInSelection: false });
-        return;
+      // Rule-2 fallthrough: clear the prior checkbox selection so the
+      // menu opens against the right-clicked row in single-row mode.
+      const clearsSelection = count >= 2 && !inSelection;
+      if (clearsSelection) rowSelection.clear();
+      const selectionCount = clearsSelection ? 0 : count;
+      const rowIsInSelection = clearsSelection ? false : inSelection;
+      // Phase 4 — invoke the consumer's `rowActions` selector at
+      // open time so the returned items freeze into the open state
+      // (PRD §9). Suppressed in the collapsed branch.
+      const collapsed = selectionCount >= 2 && rowIsInSelection;
+      let customActions: RowAction[] = [];
+      if (!collapsed && rowActions) {
+        const row = visibleDataRows.find((r) => getRowId(r) === args.rowId);
+        if (row !== undefined) {
+          customActions = rowActions({
+            rowId: args.rowId,
+            row,
+            selectionCount,
+            rowIsInSelection,
+          });
+        }
       }
-      setRowMenu({ ...args, selectionCount: count, rowIsInSelection: inSelection });
+      setRowMenu({
+        ...args,
+        selectionCount,
+        rowIsInSelection,
+        customActions,
+      });
     },
-    [readOnly, onWrite, rowSelection],
+    [readOnly, onWrite, rowSelection, rowActions, visibleDataRows, getRowId],
   );
   const closeRowMenu = useCallback(() => setRowMenu(null), []);
 
