@@ -1,14 +1,18 @@
 import {
+  ArrowLeftRight,
+  ArrowUpDown,
   Copy,
   Download,
-  FlipHorizontal,
+  FlipVertical2,
   type LucideIcon,
-  Layers,
   Minus,
+  PaintBucket,
   Pencil,
+  Pipette,
   Plus,
   Shapes,
   Trash2,
+  Undo2,
 } from "lucide-react";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import {
@@ -19,6 +23,7 @@ import {
 } from "../../../lib/units";
 import { statusLabel, totalThicknessMm } from "../lib";
 import { envelopeAssemblyPath } from "../paths";
+import type { AssemblyCanvasPaintController } from "../canvas-paint";
 import type { Assembly, AssemblyThermalResponse } from "../types";
 
 export function AssemblyHeader({
@@ -31,6 +36,8 @@ export function AssemblyHeader({
   thermal,
   thermalLoading,
   exportBusy,
+  commandBusy,
+  paint,
   onZoomIn,
   onZoomOut,
   onExportHbjson,
@@ -40,6 +47,7 @@ export function AssemblyHeader({
   onDelete,
   onFlipOrientation,
   onFlipLayers,
+  onFlipSegments,
 }: {
   projectId: string;
   assemblies: Assembly[];
@@ -50,6 +58,8 @@ export function AssemblyHeader({
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
   exportBusy: boolean;
+  commandBusy: boolean;
+  paint: AssemblyCanvasPaintController;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onExportHbjson: () => void;
@@ -59,11 +69,14 @@ export function AssemblyHeader({
   onDelete: () => void;
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
+  onFlipSegments: () => void;
 }) {
   const { unitSystem } = useUnitPreference();
   const navigate = useNavigate();
   const query = createSearchParams(search).toString();
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
+  const commandDisabled = !canEdit || commandBusy;
+  const flipDisabled = commandDisabled || paint.mode === "picking" || paint.mode === "pasting";
   return (
     <header className="assembly-header">
       <div className="assembly-picker-field">
@@ -106,6 +119,29 @@ export function AssemblyHeader({
         <span data-testid="canvas-zoom">{Math.round(zoom * 100)}%</span>
         <AssemblyToolButton label="Zoom in" tooltip="Zoom in" icon={Plus} onClick={onZoomIn} />
         <AssemblyToolButton
+          label="Pick segment assignment"
+          tooltip="Pick assignment"
+          icon={Pipette}
+          disabled={!canEdit}
+          pressed={paint.mode === "picking"}
+          onClick={paint.mode === "picking" ? paint.clear : paint.startPicking}
+        />
+        <AssemblyToolButton
+          label="Paint picked assignment"
+          tooltip="Paint assignment"
+          icon={PaintBucket}
+          disabled={!canEdit || !paint.canStartPasting}
+          pressed={paint.mode === "pasting"}
+          onClick={paint.mode === "pasting" ? paint.clear : paint.startPasting}
+        />
+        <AssemblyToolButton
+          label="Undo last paint"
+          tooltip="Undo last paint"
+          icon={Undo2}
+          disabled={commandDisabled || !paint.canUndoPaint}
+          onClick={paint.undoLastPaint}
+        />
+        <AssemblyToolButton
           label="Download constructions HBJSON"
           tooltip="Download constructions (HBJSON)"
           icon={Download}
@@ -116,41 +152,48 @@ export function AssemblyHeader({
           label="Rename"
           tooltip="Rename assembly"
           icon={Pencil}
-          disabled={!canEdit}
+          disabled={commandDisabled}
           onClick={onRename}
         />
         <AssemblyToolButton
           label="Type"
           tooltip="Change assembly type"
           icon={Shapes}
-          disabled={!canEdit}
+          disabled={commandDisabled}
           onClick={onTypeChange}
         />
         <AssemblyToolButton
           label="Duplicate"
           tooltip="Duplicate assembly"
           icon={Copy}
-          disabled={!canEdit}
+          disabled={commandDisabled}
           onClick={onDuplicate}
         />
         <AssemblyToolButton
           label="Flip outside"
           tooltip="Flip outside"
-          icon={FlipHorizontal}
-          disabled={!canEdit}
+          icon={ArrowUpDown}
+          disabled={flipDisabled}
           onClick={onFlipOrientation}
         />
         <AssemblyToolButton
           label="Flip layers"
           tooltip="Flip layers"
-          icon={Layers}
-          disabled={!canEdit}
+          icon={FlipVertical2}
+          disabled={flipDisabled}
           onClick={onFlipLayers}
+        />
+        <AssemblyToolButton
+          label="Flip segments"
+          tooltip="Flip segments"
+          icon={ArrowLeftRight}
+          disabled={flipDisabled}
+          onClick={onFlipSegments}
         />
         <button
           type="button"
           className="danger-button assembly-delete-button"
-          disabled={!canEdit}
+          disabled={commandDisabled}
           aria-label="Delete"
           data-tooltip="Delete assembly"
           onClick={onDelete}
@@ -168,12 +211,14 @@ function AssemblyToolButton({
   tooltip,
   icon: Icon,
   disabled = false,
+  pressed,
   onClick,
 }: {
   label: string;
   tooltip: string;
   icon: LucideIcon;
   disabled?: boolean;
+  pressed?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -181,6 +226,7 @@ function AssemblyToolButton({
       type="button"
       className="icon-button"
       aria-label={label}
+      aria-pressed={pressed ?? undefined}
       data-tooltip={tooltip}
       disabled={disabled}
       onClick={onClick}

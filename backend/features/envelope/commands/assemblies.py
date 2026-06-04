@@ -10,6 +10,7 @@ from features.envelope.models import (
     DuplicateAssemblyCommand,
     FlipLayersCommand,
     FlipOrientationCommand,
+    FlipSegmentsCommand,
     RenameAssemblyCommand,
     UpdateAssemblyTypeCommand,
 )
@@ -108,6 +109,19 @@ def flip_layers(body: ProjectDocumentV1, command: FlipLayersCommand) -> ProjectD
         command.assembly_id,
         lambda assembly: assembly.model_copy(update={"layers": ops.renumber_layers(list(reversed(assembly.layers)))}),
     )
+
+
+def flip_segments(body: ProjectDocumentV1, command: FlipSegmentsCommand) -> ProjectDocumentV1:
+    def updater(assembly: Assembly) -> Assembly:
+        if not any(len(layer.segments) > 1 for layer in assembly.layers):
+            return assembly
+        layers = [
+            layer.model_copy(update={"segments": ops.renumber_segments(list(reversed(layer.segments)))})
+            for layer in assembly.layers
+        ]
+        return assembly.model_copy(update={"layers": layers})
+
+    return ops.update_assembly(body, command.assembly_id, updater)
 
 
 def _flipped_orientation(assembly: Assembly) -> Assembly:

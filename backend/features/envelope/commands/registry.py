@@ -45,6 +45,7 @@ _COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "delete_segment": _body_only(layers.delete_segment),
     "flip_orientation": _body_only(assemblies.flip_orientation),
     "flip_layers": _body_only(assemblies.flip_layers),
+    "flip_segments": _body_only(assemblies.flip_segments),
     "paste_assignment": _body_only(materials.paste_assignment),
     "pick_project_material": _body_only(materials.pick_project_material),
     "pick_catalog_material": cast(CommandHandler, materials.pick_catalog_material),

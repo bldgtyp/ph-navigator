@@ -55,12 +55,95 @@ export function formatLengthFromMm(
 }
 
 export function parseLengthToMm(input: string, options: UnitFormatOptions): UnitParseResult {
-  const parsed = parseDecimalInput(input);
+  const unitParse = parseLengthInput(input);
+  if (unitParse === null) return { ok: false, code: "empty", message: "Enter a length." };
+  if (!unitParse.ok) return unitParse.error;
+
+  const parsed = unitParse.value;
   if (parsed === null) return { ok: false, code: "empty", message: "Enter a length." };
   if (Number.isNaN(parsed))
     return { ok: false, code: "invalid_number", message: "Enter a number." };
   if (parsed < 0) return { ok: false, code: "negative", message: "Length cannot be negative." };
-  return { ok: true, valueSi: options.unitSystem === "IP" ? inToMm(parsed) : parsed };
+
+  switch (unitParse.unit) {
+    case "mm":
+      return { ok: true, valueSi: parsed };
+    case "cm":
+      return { ok: true, valueSi: parsed * 10 };
+    case "m":
+      return { ok: true, valueSi: parsed * 1000 };
+    case "in":
+      return { ok: true, valueSi: inToMm(parsed) };
+    case "ft":
+      return { ok: true, valueSi: ftToMm(parsed) };
+    case null:
+      return { ok: true, valueSi: options.unitSystem === "IP" ? inToMm(parsed) : parsed };
+  }
+}
+
+type LengthInputUnit = "mm" | "cm" | "m" | "in" | "ft";
+
+type LengthInputParse =
+  | { ok: true; value: number | null; unit: LengthInputUnit | null }
+  | { ok: false; error: UnitParseResult };
+
+function parseLengthInput(input: string): LengthInputParse | null {
+  const trimmed = input.trim().toLowerCase();
+  if (trimmed === "") return null;
+
+  const trailingUnitMatch = trimmed.match(/([a-z"']+)\s*$/u);
+  const unitMatch = trimmed.match(
+    /\s*(mm|millimeters?|cm|centimeters?|m|meters?|in|inch|inches|"|ft|feet|foot|')\s*$/u,
+  );
+  const unit = normalizeLengthUnit(unitMatch?.[1] ?? null);
+  if (trailingUnitMatch && !unitMatch) {
+    return {
+      ok: false,
+      error: { ok: false, code: "unsupported_unit", message: "Unsupported length unit." },
+    };
+  }
+
+  const rawNumber = (unitMatch ? trimmed.slice(0, unitMatch.index).trim() : trimmed).replace(
+    /,/gu,
+    "",
+  );
+  const parsed =
+    unit === "in" || unit === null ? parseInchLikeNumber(rawNumber) : parseDecimalInput(rawNumber);
+  return { ok: true, value: parsed, unit };
+}
+
+function normalizeLengthUnit(unit: string | null): LengthInputUnit | null {
+  if (unit === null) return null;
+  if (unit === "mm" || unit.startsWith("millimeter")) return "mm";
+  if (unit === "cm" || unit.startsWith("centimeter")) return "cm";
+  if (unit === "m" || unit.startsWith("meter")) return "m";
+  if (unit === "in" || unit === "inch" || unit === "inches" || unit === '"') return "in";
+  if (unit === "ft" || unit === "feet" || unit === "foot" || unit === "'") return "ft";
+  return null;
+}
+
+function parseInchLikeNumber(input: string): number | null {
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+  const mixedFraction = trimmed.match(/^([+-]?\d+(?:\.\d+)?)\s*[- ]\s*(\d+)\s*\/\s*(\d+)$/u);
+  if (mixedFraction) {
+    const whole = Number(mixedFraction[1]);
+    const numerator = Number(mixedFraction[2]);
+    const denominator = Number(mixedFraction[3]);
+    if (!Number.isFinite(whole) || denominator === 0) return Number.NaN;
+    const sign = whole < 0 ? -1 : 1;
+    return whole + sign * (numerator / denominator);
+  }
+
+  const fraction = trimmed.match(/^([+-]?\d+)\s*\/\s*(\d+)$/u);
+  if (fraction) {
+    const numerator = Number(fraction[1]);
+    const denominator = Number(fraction[2]);
+    if (denominator === 0) return Number.NaN;
+    return numerator / denominator;
+  }
+
+  return parseDecimalInput(trimmed);
 }
 
 export function formatAreaFromM2(

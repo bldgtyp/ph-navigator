@@ -643,5 +643,5 @@ drafting.
 - `research/v1-assembly-builder-reference.md` §9, §11 — V1
   canvas + header behavior; precedent reading for parity
   decisions.
-- `planning/archive/assembly-builder/` — prior 16-phase plan,
-  superseded by this folder. Read for context only.
+- `planning/archive/assembly-builder-foundation/` — prior 16-phase
+  plan, superseded by this folder. Read for context only.

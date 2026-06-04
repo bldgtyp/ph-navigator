@@ -271,6 +271,13 @@ class FlipLayersCommand(BaseModel):
     assembly_id: str
 
 
+class FlipSegmentsCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["flip_segments"]
+    assembly_id: str
+
+
 class PasteAssignmentCommand(BaseModel):
     """Copy/paste material assignment fields without geometry or evidence."""
 
@@ -396,6 +403,7 @@ EnvelopeCommand = Annotated[
     | DeleteSegmentCommand
     | FlipOrientationCommand
     | FlipLayersCommand
+    | FlipSegmentsCommand
     | PasteAssignmentCommand
     | PickProjectMaterialCommand
     | PickCatalogMaterialCommand

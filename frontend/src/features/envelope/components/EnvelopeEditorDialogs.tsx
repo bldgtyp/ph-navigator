@@ -45,6 +45,7 @@ export function EnvelopeEditorDialogs({
   error,
   onOpenCatalogPicker,
   onClose,
+  onReplaceDialog,
   onCommand,
 }: {
   dialog: DialogState | null;
@@ -55,6 +56,7 @@ export function EnvelopeEditorDialogs({
   error: string | null;
   onOpenCatalogPicker: () => void;
   onClose: () => void;
+  onReplaceDialog: (dialog: DialogState) => void;
   onCommand: (command: EnvelopeCommand) => void;
 }) {
   if (!dialog) return null;
@@ -148,6 +150,9 @@ export function EnvelopeEditorDialogs({
             thickness_mm,
           })
         }
+        onDelete={() => {
+          onReplaceDialog({ kind: "delete-layer", assembly: dialog.assembly, layer: dialog.layer });
+        }}
       />
     );
   }
@@ -247,6 +252,14 @@ export function EnvelopeEditorDialogs({
           })
         }
         onUpdateProjectMaterial={(command) => onCommand(command)}
+        onDelete={() => {
+          onReplaceDialog({
+            kind: "delete-segment",
+            assembly: dialog.assembly,
+            layer: dialog.layer,
+            segment: dialog.segment,
+          });
+        }}
       />
     );
   }

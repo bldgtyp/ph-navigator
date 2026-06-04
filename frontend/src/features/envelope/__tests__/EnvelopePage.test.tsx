@@ -1,6 +1,6 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -264,13 +264,139 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("location")).toHaveTextContent(
       `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
     );
-    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
+    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
     expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(zoomedWidth);
 
     await userEvent.click(screen.getByRole("button", { name: "Expand assembly sidebar" }));
 
     expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
-    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("110%");
+    expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
+  });
+
+  test("flip segments posts semantic assembly command", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    const flipSegments = screen.getByRole("button", { name: "Flip segments" });
+    expect(flipSegments).not.toHaveAttribute("aria-pressed");
+
+    await userEvent.click(flipSegments);
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: { kind: "flip_segments", assembly_id: "asm_wall_c3" },
+    });
+  });
+
+  test("pending flip segments command disables duplicate submission", async () => {
+    let resolveCommand: (response: Response) => void = () => {};
+    const commandResponse = new Promise<Response>((resolve) => {
+      resolveCommand = resolve;
+    });
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) return commandResponse;
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    const flipSegments = screen.getByRole("button", { name: "Flip segments" });
+    await userEvent.click(flipSegments);
+    await userEvent.click(flipSegments);
+
+    expect(flipSegments).toBeDisabled();
+    expect(commandRequestBodies()).toHaveLength(1);
+
+    resolveCommand(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+    await waitFor(() => expect(flipSegments).not.toBeDisabled());
+  });
+
+  test("flip operations are disabled during pick mode", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Pick segment assignment" }));
+
+    expect(screen.getByRole("button", { name: "Flip outside" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Flip layers" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Flip segments" })).toBeDisabled();
+  });
+
+  test("assembly canvas renders segments in one to-scale svg without layer or segment clamps", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            assemblies: [
+              {
+                ...envelopePayload.assemblies[0]!,
+                layers: [
+                  {
+                    id: "lyr_half_inch",
+                    order: 0,
+                    thickness_mm: 12.7,
+                    segments: [
+                      {
+                        id: "seg_half_inch",
+                        order: 0,
+                        width_mm: 50.8,
+                        is_continuous_insulation: false,
+                        steel_stud_spacing_mm: null,
+                        project_material_id: null,
+                        photo_asset_ids: [],
+                        use_site_notes: null,
+                      },
+                    ],
+                  },
+                  {
+                    id: "lyr_three_half_inch",
+                    order: 1,
+                    thickness_mm: 88.9,
+                    segments: [
+                      {
+                        id: "seg_three_half_inch",
+                        order: 0,
+                        width_mm: 355.6,
+                        is_continuous_insulation: false,
+                        steel_stud_spacing_mm: null,
+                        project_material_id: null,
+                        photo_asset_ids: [],
+                        use_site_notes: null,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const svg = await screen.findByTestId("assembly-svg-canvas");
+    expect(svg).toHaveAttribute("viewBox", "0 0 355.6 101.6");
+    const segments = screen.getAllByTestId("assembly-svg-segment");
+
+    expect(segments).toHaveLength(2);
+    expect(Number(segments[0]!.getAttribute("height"))).toBeCloseTo(12.7);
+    expect(Number(segments[1]!.getAttribute("height"))).toBeCloseTo(88.9);
+    expect(
+      Number(segments[1]!.getAttribute("height")) / Number(segments[0]!.getAttribute("height")),
+    ).toBeCloseTo(7);
+    expect(
+      Number(segments[1]!.getAttribute("width")) / Number(segments[0]!.getAttribute("width")),
+    ).toBeCloseTo(7);
   });
 
   test("assembly legend is scoped to active materials and shows lambda status", async () => {
@@ -470,7 +596,7 @@ describe("EnvelopePage", () => {
     });
   });
 
-  test("open length editors keep the draft string stable across unit toggles", async () => {
+  test("dimension label edits layer thickness with explicit unit parsing", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/draft/envelope/commands")) {
         return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
@@ -482,14 +608,9 @@ describe("EnvelopePage", () => {
 
     await screen.findByRole("link", { name: /WALL-C3/ });
     await userEvent.click(screen.getByRole("button", { name: "Edit layer 1 thickness" }));
-    const thicknessInput = screen.getByLabelText("Thickness (mm)");
+    const thicknessInput = screen.getByRole("textbox", { name: "Layer 1 thickness" });
     await userEvent.clear(thicknessInput);
-    await userEvent.type(thicknessInput, "50");
-    await userEvent.click(screen.getByRole("radio", { name: "Set display units to IP" }));
-
-    expect(screen.getByLabelText("Thickness (mm)")).toHaveValue("50");
-
-    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+    await userEvent.type(thicknessInput, "2 in{Enter}");
     const commandCall = fetchMock.mock.calls.find((call) =>
       String(call[0]).includes("/draft/envelope/commands"),
     )!;
@@ -499,7 +620,181 @@ describe("EnvelopePage", () => {
         kind: "update_layer_thickness",
         assembly_id: "asm_wall_c3",
         layer_id: "lyr_sheathing",
-        thickness_mm: 50,
+        thickness_mm: 50.8,
+      },
+    });
+  });
+
+  test("open inline thickness editor keeps unitless draft in the starting unit system", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Edit layer 1 thickness" }));
+    const thicknessInput = screen.getByRole("textbox", { name: "Layer 1 thickness" });
+    await userEvent.clear(thicknessInput);
+    await userEvent.type(thicknessInput, "51");
+    await userEvent.click(screen.getByRole("button", { name: "IP" }));
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: {
+        kind: "update_layer_thickness",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+        thickness_mm: 51,
+      },
+    });
+  });
+
+  test("canvas delete controls open existing layer and segment confirmation commands", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Open layer 1 thickness dialog" }));
+    expect(await screen.findByRole("dialog", { name: "Layer thickness" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Delete layer" }));
+    expect(await screen.findByRole("dialog", { name: "Delete layer" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+    );
+    expect(await screen.findByRole("dialog", { name: "Segment properties" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Delete segment" }));
+    expect(await screen.findByRole("dialog", { name: "Delete segment" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: {
+        kind: "delete_layer",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+      },
+    });
+    expect(commandRequestBodies()).toContainEqual({
+      command: {
+        kind: "delete_segment",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_sheathing",
+        segment_id: "seg_insul",
+      },
+    });
+  });
+
+  test("canvas eyedropper and paint bucket post paste assignment command", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    expect(screen.getByRole("button", { name: "Paint picked assignment" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Pick segment assignment" }));
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Pick assignment from Wood fiber board segment in layer 1",
+      }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Paint picked assignment" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Paint assignment to No material segment in layer 2" }),
+    );
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: {
+        kind: "paste_assignment",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_service",
+        segment_id: "seg_null",
+        project_material_id: "pmat_insul",
+        is_continuous_insulation: false,
+        steel_stud_spacing_mm: null,
+      },
+    });
+  });
+
+  test("canvas paint ignores rapid duplicate clicks while the command is in flight", async () => {
+    const commandResolvers: Array<(response: Response) => void> = [];
+    const commandResponse = new Promise<Response>((resolve) => {
+      commandResolvers.push(resolve);
+    });
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) return commandResponse;
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Pick segment assignment" }));
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Pick assignment from Wood fiber board segment in layer 1",
+      }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Paint picked assignment" }));
+    const paintTarget = screen.getByRole("button", {
+      name: "Paint assignment to No material segment in layer 2",
+    });
+    await userEvent.click(paintTarget);
+    await userEvent.click(paintTarget);
+
+    expect(commandRequestBodies()).toHaveLength(1);
+
+    commandResolvers[0]?.(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+  });
+
+  test("undo last canvas paint restores the previous assignment", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Pick segment assignment" }));
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Pick assignment from Wood fiber board segment in layer 1",
+      }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Paint picked assignment" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Paint assignment to No material segment in layer 2" }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Undo last paint" }));
+
+    const commands = commandRequestBodies();
+    expect(commands).toContainEqual({
+      command: {
+        kind: "paste_assignment",
+        assembly_id: "asm_wall_c3",
+        layer_id: "lyr_service",
+        segment_id: "seg_null",
+        project_material_id: null,
+        is_continuous_insulation: false,
+        steel_stud_spacing_mm: 406.4,
       },
     });
   });

@@ -1,12 +1,11 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 // EnvelopePage owns route guarding, active assembly selection, dialog dispatch,
-// zoom, and the copy/paste buffer for the envelope workspace. Server state lives
-// in the envelope hooks, while canvas/sidebar/specification layout details stay
-// in feature components so browser and MCP mutations share the semantic command
-// boundary.
+// and zoom for the envelope workspace. Server state lives in the envelope hooks,
+// while canvas/sidebar/specification layout details stay in feature components
+// so browser and MCP mutations share the semantic command boundary.
 import "../../assets/attachments.css";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useMaterialsQuery } from "../../catalogs/hooks";
 import type { ProjectDetail } from "../../projects/types";
@@ -27,7 +26,6 @@ import {
   envelopeSpecificationsPath,
   isEnvelopeSubroute,
 } from "../paths";
-import { type CopiedAssignment } from "../components/AssemblyCanvas";
 import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
 import {
   EnvelopeEditorDialogs,
@@ -40,7 +38,17 @@ import {
 } from "../components/EnvelopeStates";
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
-import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from "../canvas-constants";
+import { nextZoomStep, previousZoomStep } from "../canvas-constants";
+import {
+  assignmentFromSegment,
+  assignmentsEqual,
+  pasteAssignmentCommand,
+  segmentCanvasKey,
+  type AssemblyCanvasPaintController,
+  type AssemblyCanvasPaintMode,
+  type LastPaintAssignment,
+  type PickedSegmentAssignment,
+} from "../canvas-paint";
 import type {
   AssemblyLayer,
   AssemblySegment,
@@ -78,6 +86,12 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   });
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
+  const [paintMode, setPaintMode] = useState<AssemblyCanvasPaintMode>("idle");
+  const [pickedAssignment, setPickedAssignment] = useState<PickedSegmentAssignment | null>(null);
+  const [lastPaint, setLastPaint] = useState<LastPaintAssignment | null>(null);
+  const [pastePulseKey, setPastePulseKey] = useState<string | null>(null);
+  const commandInFlightRef = useRef(false);
+  const paintCommandInFlightRef = useRef(false);
   const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
   const catalogMaterialsQuery = useMaterialsQuery(
     canEdit && dialog?.kind === "segment" && catalogPickerOpen,
@@ -88,7 +102,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     () => (catalogMaterialsQuery.data ?? []).filter((m) => m.is_active),
     [catalogMaterialsQuery.data],
   );
-  const [copiedAssignment, setCopiedAssignment] = useState<CopiedAssignment | null>(null);
   const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
   const isAssembliesRoute = isEnvelopeSubroute(subpath, "assemblies");
@@ -126,17 +139,34 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     : null;
 
   useEffect(() => {
-    if (!copiedAssignment) return undefined;
-    function clearOnEscape(event: KeyboardEvent): void {
-      if (event.key === "Escape") setCopiedAssignment(null);
-    }
-    window.addEventListener("keydown", clearOnEscape);
-    return () => window.removeEventListener("keydown", clearOnEscape);
-  }, [copiedAssignment]);
-
-  useEffect(() => {
     if (catalogPickerOpen && dialog?.kind !== "segment") setCatalogPickerOpen(false);
   }, [catalogPickerOpen, dialog]);
+
+  useEffect(() => {
+    if (!canEdit) clearCanvasPaintMode();
+  }, [canEdit]);
+
+  useEffect(() => {
+    clearCanvasPaintMode();
+    setLastPaint(null);
+  }, [activeAssembly?.id]);
+
+  useEffect(() => {
+    if (paintMode === "idle") return;
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      clearCanvasPaintMode();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [paintMode]);
+
+  useEffect(() => {
+    if (!pastePulseKey) return;
+    const timeoutId = window.setTimeout(() => setPastePulseKey(null), 600);
+    return () => window.clearTimeout(timeoutId);
+  }, [pastePulseKey]);
 
   if (subpath === "" || subpath === "/") {
     return (
@@ -191,16 +221,86 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     source: query.data.source,
   });
 
-  async function applyCommand(command: EnvelopeCommand): Promise<void> {
+  async function applyCommand(command: EnvelopeCommand): Promise<boolean> {
     const current = query.data;
-    if (!current) return;
+    if (!current) return false;
+    if (commandInFlightRef.current || commandMutation.isPending) return false;
+    commandInFlightRef.current = true;
     setCommandError(null);
     try {
       await commandMutation.mutateAsync({ current, command });
       setDialog(null);
+      return true;
     } catch (error) {
       setCommandError(errorMessage(error, "Envelope command failed."));
+      return false;
+    } finally {
+      commandInFlightRef.current = false;
     }
+  }
+
+  function clearCanvasPaintMode(): void {
+    setPaintMode("idle");
+    setPickedAssignment(null);
+  }
+
+  function startPicking(): void {
+    if (!canEdit) return;
+    setPickedAssignment(null);
+    setPaintMode("picking");
+  }
+
+  function startPasting(): void {
+    if (!canEdit || !pickedAssignment) return;
+    setPaintMode("pasting");
+  }
+
+  function pickSegment(layer: AssemblyLayer, segment: AssemblySegment): void {
+    if (!canEdit) return;
+    setPickedAssignment({
+      ...assignmentFromSegment(segment),
+      sourceLayerId: layer.id,
+      sourceSegmentId: segment.id,
+    });
+    setPaintMode("picked");
+  }
+
+  async function paintSegment(layer: AssemblyLayer, segment: AssemblySegment): Promise<void> {
+    if (!canEdit || !activeAssembly || !pickedAssignment) return;
+    if (paintCommandInFlightRef.current || commandMutation.isPending) return;
+    const previous = assignmentFromSegment(segment);
+    if (assignmentsEqual(previous, pickedAssignment)) return;
+    paintCommandInFlightRef.current = true;
+    const success = await applyCommand(
+      pasteAssignmentCommand({
+        assemblyId: activeAssembly.id,
+        layerId: layer.id,
+        segmentId: segment.id,
+        assignment: pickedAssignment,
+      }),
+    );
+    paintCommandInFlightRef.current = false;
+    if (!success) return;
+    setLastPaint({ layerId: layer.id, segmentId: segment.id, previous });
+    setPastePulseKey(segmentCanvasKey(layer.id, segment.id));
+  }
+
+  async function undoLastPaint(): Promise<void> {
+    if (!canEdit || !activeAssembly || !lastPaint) return;
+    if (paintCommandInFlightRef.current || commandMutation.isPending) return;
+    paintCommandInFlightRef.current = true;
+    const success = await applyCommand(
+      pasteAssignmentCommand({
+        assemblyId: activeAssembly.id,
+        layerId: lastPaint.layerId,
+        segmentId: lastPaint.segmentId,
+        assignment: lastPaint.previous,
+      }),
+    );
+    paintCommandInFlightRef.current = false;
+    if (!success) return;
+    setPastePulseKey(segmentCanvasKey(lastPaint.layerId, lastPaint.segmentId));
+    setLastPaint(null);
   }
 
   async function exportHbjson(): Promise<void> {
@@ -227,18 +327,21 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     await attachmentMutation.mutateAsync({ current, change });
   }
 
-  function pasteAssignment(layer: AssemblyLayer, segment: AssemblySegment): void {
-    if (!copiedAssignment || !activeAssembly) return;
-    void applyCommand({
-      kind: "paste_assignment",
-      assembly_id: activeAssembly.id,
-      layer_id: layer.id,
-      segment_id: segment.id,
-      project_material_id: copiedAssignment.project_material_id,
-      is_continuous_insulation: copiedAssignment.is_continuous_insulation,
-      steel_stud_spacing_mm: copiedAssignment.steel_stud_spacing_mm,
-    });
-  }
+  const paintController: AssemblyCanvasPaintController = {
+    mode: paintMode,
+    pickedSourceKey: pickedAssignment
+      ? segmentCanvasKey(pickedAssignment.sourceLayerId, pickedAssignment.sourceSegmentId)
+      : null,
+    pastePulseKey,
+    canStartPasting: pickedAssignment !== null && !commandMutation.isPending,
+    canUndoPaint: lastPaint !== null && !commandMutation.isPending,
+    startPicking,
+    startPasting,
+    undoLastPaint: () => void undoLastPaint(),
+    clear: clearCanvasPaintMode,
+    pickSegment,
+    paintSegment: (layer, segment) => void paintSegment(layer, segment),
+  };
 
   return (
     <section className="tab-panel envelope-panel" aria-labelledby="envelope-title">
@@ -262,14 +365,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           Specifications
         </NavLink>
       </nav>
-      {copiedAssignment && canEdit ? (
-        <div className="envelope-command-banner" role="status">
-          Assignment copied. Paste onto a segment.
-          <button type="button" className="text-button" onClick={() => setCopiedAssignment(null)}>
-            Clear
-          </button>
-        </div>
-      ) : null}
       {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
         <div className="envelope-command-banner" role="status">
           {activeAssemblyDriftCount} material{" "}
@@ -321,10 +416,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           thermal={thermalQuery.data ?? null}
           thermalLoading={thermalQuery.isFetching}
           exportBusy={exportMutation.isPending}
-          copiedAssignment={copiedAssignment}
+          commandBusy={commandMutation.isPending}
+          paint={paintController}
           onAddAssembly={() => setDialog({ kind: "create-assembly" })}
-          onZoomIn={() => setZoom((current) => Math.min(ZOOM_MAX, current + ZOOM_STEP))}
-          onZoomOut={() => setZoom((current) => Math.max(ZOOM_MIN, current - ZOOM_STEP))}
+          onZoomIn={() => setZoom(nextZoomStep)}
+          onZoomOut={() => setZoom(previousZoomStep)}
           onExportHbjson={() => void exportHbjson()}
           onRename={() => setDialog({ kind: "rename-assembly", assembly: activeAssembly })}
           onTypeChange={() => setDialog({ kind: "type-assembly", assembly: activeAssembly })}
@@ -336,12 +432,20 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           onFlipLayers={() =>
             void applyCommand({ kind: "flip_layers", assembly_id: activeAssembly.id })
           }
+          onFlipSegments={() =>
+            void applyCommand({ kind: "flip_segments", assembly_id: activeAssembly.id })
+          }
           onEditLayer={(layer) => setDialog({ kind: "layer", assembly: activeAssembly, layer })}
+          onUpdateLayerThickness={(layer, thicknessMm) =>
+            void applyCommand({
+              kind: "update_layer_thickness",
+              assembly_id: activeAssembly.id,
+              layer_id: layer.id,
+              thickness_mm: thicknessMm,
+            })
+          }
           onAddLayer={(layer, position) =>
             setDialog({ kind: "add-layer", assembly: activeAssembly, layer, position })
-          }
-          onDeleteLayer={(layer) =>
-            setDialog({ kind: "delete-layer", assembly: activeAssembly, layer })
           }
           onEditSegment={(layer, segment) =>
             setDialog({ kind: "segment", assembly: activeAssembly, layer, segment })
@@ -355,11 +459,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
               position,
             })
           }
-          onDeleteSegment={(layer, segment) =>
-            setDialog({ kind: "delete-segment", assembly: activeAssembly, layer, segment })
-          }
-          onCopyAssignment={setCopiedAssignment}
-          onPasteAssignment={pasteAssignment}
         >
           {commandError && !dialog ? (
             <p className="form-error" role="alert">
@@ -381,6 +480,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           setCatalogPickerOpen(false);
           setCommandError(null);
         }}
+        onReplaceDialog={setDialog}
         onCommand={(command) => void applyCommand(command)}
       />
       {refreshMaterial && refreshDriftItem ? (

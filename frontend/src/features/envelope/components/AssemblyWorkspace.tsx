@@ -1,5 +1,6 @@
-import { type ReactNode, useMemo, useState } from "react";
-import { AssemblyCanvas, type CopiedAssignment } from "./AssemblyCanvas";
+import { type ReactNode, useMemo, useRef, useState } from "react";
+import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
+import { AssemblyCanvas } from "./AssemblyCanvas";
 import { AssemblyHeader } from "./AssemblyHeader";
 import { EnvelopeSidebar } from "./EnvelopeSidebar";
 import { MaterialLegend } from "./MaterialLegend";
@@ -11,6 +12,7 @@ import type {
   ProjectMaterial,
   ProjectMaterialDriftItem,
 } from "../types";
+import type { AssemblyCanvasPaintController } from "../canvas-paint";
 
 export function AssemblyWorkspace({
   projectId,
@@ -24,7 +26,8 @@ export function AssemblyWorkspace({
   thermal,
   thermalLoading,
   exportBusy,
-  copiedAssignment,
+  commandBusy,
+  paint,
   children,
   onAddAssembly,
   onZoomIn,
@@ -36,14 +39,12 @@ export function AssemblyWorkspace({
   onDelete,
   onFlipOrientation,
   onFlipLayers,
+  onFlipSegments,
   onEditLayer,
+  onUpdateLayerThickness,
   onAddLayer,
-  onDeleteLayer,
   onEditSegment,
   onAddSegment,
-  onDeleteSegment,
-  onCopyAssignment,
-  onPasteAssignment,
 }: {
   projectId: string;
   assemblies: Assembly[];
@@ -56,7 +57,8 @@ export function AssemblyWorkspace({
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
   exportBusy: boolean;
-  copiedAssignment: CopiedAssignment | null;
+  commandBusy: boolean;
+  paint: AssemblyCanvasPaintController;
   children?: ReactNode;
   onAddAssembly: () => void;
   onZoomIn: () => void;
@@ -68,23 +70,27 @@ export function AssemblyWorkspace({
   onDelete: () => void;
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
+  onFlipSegments: () => void;
   onEditLayer: (layer: AssemblyLayer) => void;
+  onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
-  onDeleteLayer: (layer: AssemblyLayer) => void;
   onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
   onAddSegment: (
     layer: AssemblyLayer,
     segment: AssemblySegment,
     position: "left" | "right",
   ) => void;
-  onDeleteSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
-  onCopyAssignment: (assignment: CopiedAssignment) => void;
-  onPasteAssignment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const interactionRef = useRef<HTMLDivElement>(null);
   const legendMaterials = useMemo(
     () => activeAssemblyMaterials(activeAssembly, materials),
     [activeAssembly, materials],
+  );
+  useOutsidePointerDown(
+    interactionRef,
+    paint.mode === "picking" || paint.mode === "pasting",
+    paint.clear,
   );
 
   return (
@@ -104,43 +110,45 @@ export function AssemblyWorkspace({
         onAddAssembly={onAddAssembly}
       />
       <div className="assembly-workspace">
-        <AssemblyHeader
-          projectId={projectId}
-          assemblies={assemblies}
-          activeAssembly={activeAssembly}
-          search={search}
-          zoom={zoom}
-          canEdit={canEdit}
-          thermal={thermal}
-          thermalLoading={thermalLoading}
-          exportBusy={exportBusy}
-          onZoomIn={onZoomIn}
-          onZoomOut={onZoomOut}
-          onExportHbjson={onExportHbjson}
-          onRename={onRename}
-          onTypeChange={onTypeChange}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-          onFlipOrientation={onFlipOrientation}
-          onFlipLayers={onFlipLayers}
-        />
-        {children}
-        <AssemblyCanvas
-          assembly={activeAssembly}
-          materials={materials}
-          driftByMaterialId={driftByMaterialId}
-          zoom={zoom}
-          canEdit={canEdit}
-          copiedAssignment={copiedAssignment}
-          onEditLayer={onEditLayer}
-          onAddLayer={onAddLayer}
-          onDeleteLayer={onDeleteLayer}
-          onEditSegment={onEditSegment}
-          onAddSegment={onAddSegment}
-          onDeleteSegment={onDeleteSegment}
-          onCopyAssignment={onCopyAssignment}
-          onPasteAssignment={onPasteAssignment}
-        />
+        <div ref={interactionRef} className="assembly-interaction-region">
+          <AssemblyHeader
+            projectId={projectId}
+            assemblies={assemblies}
+            activeAssembly={activeAssembly}
+            search={search}
+            zoom={zoom}
+            canEdit={canEdit}
+            thermal={thermal}
+            thermalLoading={thermalLoading}
+            exportBusy={exportBusy}
+            commandBusy={commandBusy}
+            paint={paint}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onExportHbjson={onExportHbjson}
+            onRename={onRename}
+            onTypeChange={onTypeChange}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            onFlipOrientation={onFlipOrientation}
+            onFlipLayers={onFlipLayers}
+            onFlipSegments={onFlipSegments}
+          />
+          {children}
+          <AssemblyCanvas
+            assembly={activeAssembly}
+            materials={materials}
+            driftByMaterialId={driftByMaterialId}
+            zoom={zoom}
+            canEdit={canEdit}
+            paint={paint}
+            onEditLayer={onEditLayer}
+            onUpdateLayerThickness={onUpdateLayerThickness}
+            onAddLayer={onAddLayer}
+            onEditSegment={onEditSegment}
+            onAddSegment={onAddSegment}
+          />
+        </div>
         <MaterialLegend materials={legendMaterials} />
       </div>
     </div>
