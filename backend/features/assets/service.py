@@ -40,7 +40,7 @@ from features.assets.schemas import (
     UploadIntentResponse,
 )
 from features.assets.storage_r2 import asset_object_key, orphaned_asset_object_key
-from features.project_document.drafts import _load_draft_context
+from features.project_document.drafts import load_draft_context
 from features.project_document.store import get_saved_document
 from features.project_document.validation import next_draft_etag, validate_document
 from features.projects.access import ProjectAccess, require_editor_user
@@ -486,7 +486,7 @@ class AssetService:
                 raise api_error(
                     status.HTTP_422_UNPROCESSABLE_ENTITY, "asset_mime_not_allowed", "Asset is not valid for this field."
                 )
-            base_body, base_version_etag, version_etag, draft = _load_draft_context(
+            base_body, base_version_etag, version_etag, draft = load_draft_context(
                 conn,
                 access.project_id,
                 UUID(payload.version_id),

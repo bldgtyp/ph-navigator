@@ -8,6 +8,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 
+from features.project_document.aperture_commands.models import ApertureCommand
+from features.project_document.aperture_commands.service import (
+    apply_aperture_command_to_draft,
+)
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     DiscardDraftResponse,
@@ -40,6 +44,7 @@ from features.project_document.service import (
     table_download_body,
 )
 from features.project_document.tables import RegisteredTableResponse
+from features.project_document.tables.apertures import AperturesSliceResponse
 from features.projects.access import (
     ProjectAccess,
     require_project_edit_access,
@@ -135,6 +140,26 @@ def post_schema_mutation(
     response, _ = apply_schema_mutation_to_draft(
         version_id,
         table_name,
+        payload,
+        access,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        request=request,
+    )
+    return response
+
+
+@router.post("/apertures/command", response_model=AperturesSliceResponse)
+def post_aperture_command(
+    version_id: UUID,
+    payload: ApertureCommand,
+    access: ProjectEditAccess,
+    request: Request,
+    if_match: Annotated[str | None, Header()] = None,
+    if_match_version: Annotated[str | None, Header()] = None,
+) -> AperturesSliceResponse:
+    response, _ = apply_aperture_command_to_draft(
+        version_id,
         payload,
         access,
         if_match=if_match,

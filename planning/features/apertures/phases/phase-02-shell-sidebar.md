@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
 TIME: 15:25 EDT
-STATUS: Active — not yet started
+STATUS: Partially shipped (additive variant) — see "Implementation note" below
 AUTHOR: Codex
 SCOPE: Cut over the frontend route from `/windows` to `/apertures`,
        ship the V2 page layout (header / sidebar / main placeholder),
@@ -20,6 +20,79 @@ RELATED:
 ---
 
 # Phase 2 — Apertures shell + sidebar
+
+## Implementation note (2026-06-05, additive variant)
+
+Phase 02 shipped **additively alongside** the existing Windows tab —
+the new `Apertures` tab is registered in `PROJECT_TABS` next to
+`Windows` rather than replacing it, and the legacy
+`frontend/src/features/windows/` folder and `WindowTypeEntry` backend
+classes are kept untouched. This unblocks Phase 03+ (the route, the
+sidebar, the command pipeline, and the catalog adapter all exist)
+without the disruption of deleting the still-functional tracer-bullet.
+
+What shipped in this commit (`make ci` green):
+
+- Backend
+  - `POST /api/v1/projects/{id}/versions/{vid}/apertures/command`
+    route + `apply_aperture_command_to_draft` service wrapper
+    (ETag preflight via shared `load_draft_context`, audit-log
+    persistence using `AUDIT_KIND_BY_APERTURE_COMMAND`).
+  - `DatabaseDefaultsCatalog` adapter
+    (`apertures/default_refs.py`) — fetches the seeded
+    `PHN-Default-Frame` / `PHN-Default-Glazing` rows from the
+    catalog tables and bookshelf-copies them through the existing
+    `build_default_aperture_type` factory. Returns the
+    `aperture_default_refs_missing` envelope when the seed rows
+    are absent.
+  - Renamed `_load_draft_context` → `load_draft_context` (now a
+    public seam reused by aperture-command + assets services).
+- Frontend
+  - New `frontend/src/features/apertures/` feature folder:
+    `types.ts`, `api.ts`, `query-keys.ts`, `hooks.ts`, `lib.ts`,
+    `lib.test.ts`, `apertures.css`, `components/`
+    (`ApertureSidebar`, `AperturesHeader`,
+    `ApertureBuilderPlaceholder`, `RenameApertureDialog`,
+    `DeleteApertureDialog`), `routes/AperturesTab.tsx`.
+  - `'apertures'` added to `PROJECT_TABS` (alongside
+    `'windows'`); `TAB_LABELS["apertures"] === "Apertures"`.
+  - `ProjectTabContent` renders the new `<AperturesTab />` for
+    `tab === "apertures"`.
+  - Sidebar: list (natural-sorted), select, `+ Add aperture
+    type`, hover-revealed Edit / Dup / Del row actions; rename
+    dialog with collision helper; delete dialog with descriptive
+    body. All actions drive the new
+    `POST .../apertures/command` endpoint via
+    `useApplyApertureCommandMutation`.
+  - Viewer / locked state hides edit affordances.
+- Full `make ci` green: 525 backend tests, 1122 frontend tests,
+  build successful.
+
+Deferred (still folded into a future cleanup phase):
+
+- Renaming `WindowTypeEntry` / `WindowElement` /
+  `WindowElementFrames` to `Aperture*` with legacy aliases.
+- Renaming `body.tables.window_types` → `body.tables.apertures`
+  with a `@computed_field` alias.
+- Document-load migration shim in `validation.py` that rewrites
+  `win_` / `winel_` ids to `apt_` / `aptel_`.
+- Alembic migration that munges existing JSON documents in
+  Postgres and seeds the `PHN-Default-Frame` /
+  `PHN-Default-Glazing` catalog rows.
+- Deleting `frontend/src/features/windows/` and the legacy
+  `Windows` tab from `PROJECT_TABS`.
+- `/projects/:id/windows` → `/projects/:id/apertures` redirect.
+- Sidebar collapse / chevron, sticky `+ Add`, V1-pixel-parity
+  styling. The current sidebar is functional but plainer than
+  V1 — Phase 03 picks up the canvas next; styling polish lives
+  alongside or in a follow-on cleanup commit.
+- E2E Playwright tests for the new route. Unit + structural
+  tests cover the lib helpers; component tests for the sidebar
+  / dialog can land alongside Phase 03 once the visual surface
+  stabilises.
+
+---
+
 
 ## P0. Why this slice
 

@@ -1,3 +1,4 @@
+import { AperturesTab } from "../../apertures/routes/AperturesTab";
 import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
@@ -14,6 +15,10 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
 
   if (tab === "windows") {
     return <WindowsTab project={project} />;
+  }
+
+  if (tab === "apertures") {
+    return <AperturesTab project={project} />;
   }
 
   if (tab === "rooms") {

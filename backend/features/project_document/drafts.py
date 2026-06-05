@@ -33,7 +33,7 @@ from features.projects.service import version_public
 from features.shared.errors import api_error
 
 
-def _load_draft_context(
+def load_draft_context(
     conn: Connection[Any],
     project_id: UUID,
     version_id: UUID,
@@ -103,7 +103,7 @@ def replace_table_slice(
     payload = contract.parse_replace_payload(raw_payload)
 
     with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = _load_draft_context(
+        base_body, base_version_etag, version_etag, draft = load_draft_context(
             conn,
             access.project_id,
             version_id,
@@ -190,7 +190,7 @@ def apply_schema_mutation_to_draft(
         )
 
     with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = _load_draft_context(
+        base_body, base_version_etag, version_etag, draft = load_draft_context(
             conn,
             access.project_id,
             version_id,
