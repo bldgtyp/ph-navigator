@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 19:00 EDT
-STATUS: In progress — Phases 01–07 shipped (Phase 05 split into two PRs).
+TIME: 19:15 EDT
+STATUS: In progress — Phases 01–08 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,9 +70,75 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 08 (`phases/phase-08-merge-split-copy-paste.md`) — merge,
-split, and copy-paste of element assignments. Phase 07's operation
-editor + symbol layer + re-pick warning are all in place.
+Begin Phase 09 (`phases/phase-09-uvalue-service-chips.md`) — U-Value
+service + per-element / per-type chips. Phase 08's `affects_u_value`
+audit field is the seam Phase 09 hooks for cache invalidation.
+
+## Phase 08 — Merge / Split + Eyedropper-Paint-bucket paste + Undo (shipped)
+
+- Backend `mergeElements`, `splitElement`, `pasteAssignment` handlers
+  live in `aperture_commands/handlers/merge_split.py` +
+  `handlers/paste.py`. The dispatcher's
+  `_NOT_IMPLEMENTED_KINDS` set is now empty — every wire kind
+  declared in Phase 01 has a handler.
+- `mergeElements` validates the source list forms a contiguous
+  rectangle (no overlaps, no holes, no L-shapes), drops the other
+  sources, and stamps a fresh merged element that inherits the
+  top-left source's 6 assignment fields *and* its name. Audit
+  carries `top_left_source_id`.
+- `splitElement` requires the source span to cover ≥ 2 cells;
+  explodes into one fresh 1×1 element per cell with fresh ids and
+  deep-copied refs (catalog-origin `synced_at` re-stamped for
+  Phase 12 drift). Source name is preserved on every new element.
+- `pasteAssignment` copies the 6 fields (operation, glazing, four
+  frames) from `source_element_id` onto each `target_element_ids[i]`
+  inside the same aperture; targets keep their `id`, `row_span`,
+  `column_span`, and `name`. Refs are deep-copied so future overrides
+  on one target don't leak.
+- Frontend pure helpers shipped at the feature root:
+  `merge-validation.ts` (validateMergeSelection + topLeftSource),
+  `split-geometry.ts` (isSplittable + splitCells),
+  `pick-paste-machine.ts` (nextMode pure transitions).
+- `usePickPasteHandlers` hook centralises the paste / undo / capture
+  chain so `ApertureCanvasContainer` stays under the 500-line cap.
+- Zustand store gains `pickPasteMode`, `pickedAssignment`,
+  `undoStacksByAperture`, and `pickPasteAction` + push/pop/clear
+  helpers; PASTE_UNDO_STACK_LIMIT = 20.
+- Toolbar surfaces Merge / Split / Eyedropper / Paint bucket /
+  Undo paste buttons with selection-driven gating.
+- Overlay element click intercepts: when `pickPasteMode === picking`
+  the click captures the source assignment; when `pasting` it
+  triggers paste. Source element gets a dashed `--phn-warning`
+  ring; paste target gets a 600 ms outline pulse.
+- ⌘Z (or Ctrl-Z) on the canvas pops the most recent paste off the
+  active aperture's stack; ESC clears the pick/paste machine.
+- Cross-aperture clear: switching apertures unmounts the container
+  which clears selection, dismissed warnings, undo stack, and
+  pick/paste state.
+
+## Phase 08 deviations from the doc
+
+- **Toolbar uses text labels, not lucide icons.** Phase 06 set the
+  precedent (text-only buttons); adding lucide for one phase would
+  force the dep on the project. Tooltips carry context.
+- **Sonner toast for merge result is omitted.** V2 has no toast
+  primitive yet; the merge audit carries the `top_left_source_id`
+  so the eventual toast wiring (Phase 12 cleanup or a polish phase)
+  can read the source name from the document. The functional merge
+  is unchanged.
+- **`splitElement` wire shape simplified.** Phase 01's model
+  carried `axis` + `at_index`; Phase 08 trims these because the
+  semantic is always "explode all cells". Frontend dispatch wires
+  only `element_id`.
+- **`pasteAssignment` writes deep copies via `model_copy(deep=True)`**
+  instead of a literal JSON-Patch. Same on-disk shape; the patch
+  framing is a wire-format detail that Phase 12 + the audit log can
+  encode if needed.
+- **Region-click + pick-paste do not yet interact.** Region clicks
+  open a card picker (Phase 06 wiring); pick-paste captures the
+  whole element. The two affordances don't conflict but they don't
+  share a click handler either — clicking a frame rect in pick-paste
+  mode still opens the picker. Documented for Phase 11/12 polish.
 
 ## Phase 07 — Operation editor + canvas symbols + re-pick warning (shipped)
 
@@ -227,6 +293,16 @@ Phase 05 was split into two sub-PRs:
   by Phase 06. Frontend Vitest: 1331 tests pass (+7 new across
   `picker-filters`, `frame-label-map`, and `ref-builders`).
   Frontend build + lint + structural guards pass.
+- Phase 08: this commit. Backend Ruff + Ty + frontend Vitest +
+  build all green. Deterministic-order pytest reports 532 backend
+  tests pass, 2 skipped (the Phase 01 stub test now skips because
+  every reserved kind is wired). Frontend Vitest: 1357 tests pass
+  (+17 across `merge-validation`, `split-geometry`,
+  `pick-paste-machine`). Full `make ci` continues to expose 19–39
+  pre-existing local pollution failures (asset / catalog import /
+  duplicate tests that pass in isolation and on a deterministic
+  run); reproduces on `git stash -u` of HEAD too, unrelated to
+  Phase 08.
 - Phase 07: this commit. `make ci` green: 546 backend tests pass
   (unchanged count — Phase 07 only adds a backend audit field,
   no new tests since the existing

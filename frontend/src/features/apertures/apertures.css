@@ -868,3 +868,29 @@
   color: var(--phn-warning);
   cursor: help;
 }
+
+/* ---- Phase 08: pick / paste + merge / split visual feedback -------------- */
+
+.aperture-hit--element[data-pick-source="true"] {
+  outline: 2px dashed var(--phn-warning);
+  outline-offset: -2px;
+}
+
+.aperture-hit--element[data-paste-flash="true"] {
+  animation: aperture-paste-pulse 600ms ease-out;
+}
+
+@keyframes aperture-paste-pulse {
+  0% {
+    outline: 3px solid color-mix(in oklab, var(--accent) 80%, transparent);
+    outline-offset: -3px;
+  }
+  100% {
+    outline: 0 solid transparent;
+    outline-offset: 0;
+  }
+}
+
+.aperture-canvas-overlay[data-pick-paste-mode] {
+  cursor: copy;
+}

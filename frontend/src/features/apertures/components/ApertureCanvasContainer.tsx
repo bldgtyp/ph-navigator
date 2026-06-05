@@ -21,7 +21,14 @@ import {
 } from "../aperture-geometry";
 import { deleteColumnImpact, deleteRowImpact } from "../delete-dimension-impact";
 import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
-import { selectionForAperture, useApertureBuilderStore } from "../store/builder-store";
+import {
+  selectionForAperture,
+  useApertureBuilderStore,
+  type PickedAssignment,
+} from "../store/builder-store";
+import { validateMergeSelection } from "../merge-validation";
+import { isSplittable } from "../split-geometry";
+import { usePickPasteHandlers } from "../hooks/usePickPasteHandlers";
 import type { ApertureTypeEntry } from "../types";
 import { ApertureCanvasOverlay } from "./ApertureCanvasOverlay";
 import { ApertureCanvasToolbar } from "./ApertureCanvasToolbar";
@@ -79,6 +86,9 @@ export function ApertureCanvasContainer({
   onEditFrameField,
   onEditGlazingField,
   onSetElementOperation,
+  onMergeElements,
+  onSplitElement,
+  onPasteAssignment,
 }: {
   aperture: ApertureTypeEntry;
   canEdit?: boolean;
@@ -101,6 +111,13 @@ export function ApertureCanvasContainer({
     elementId: string,
     operation: import("../types").ApertureOperation | null,
   ) => void;
+  onMergeElements?: (elementIds: string[]) => void;
+  onSplitElement?: (elementId: string) => void;
+  onPasteAssignment?: (
+    sourceElementId: string,
+    targetElementIds: string[],
+    payload: PickedAssignment,
+  ) => Promise<void> | void;
 }) {
   const [focusedTarget, setFocusedTarget] = useState<FocusedTarget>(null);
   const [zoom, setZoom] = useState(1);
@@ -118,6 +135,20 @@ export function ApertureCanvasContainer({
   const clearDismissedOperationWarnings = useApertureBuilderStore(
     (state) => state.clearDismissedOperationWarnings,
   );
+  const clearPickPaste = useApertureBuilderStore((state) => state.clearPickPaste);
+  const clearUndoStack = useApertureBuilderStore((state) => state.clearUndoStack);
+  const {
+    pickPasteMode,
+    pickedAssignment,
+    flashTargetId: pasteFlashTargetId,
+    undoDepth,
+    pasteOnto,
+    undoLastPaste,
+    capturePickFromElement,
+    handleEyedropper,
+    handlePaintBucket,
+    sendEsc,
+  } = usePickPasteHandlers({ apertureId: aperture.id, onPasteAssignment });
 
   const dimFormat = useApertureDimFormat();
   const unitSystem = dimFormat.system === "ip" ? "ip" : "si";
@@ -129,8 +160,16 @@ export function ApertureCanvasContainer({
     return () => {
       clearSelection(id);
       clearDismissedOperationWarnings(id);
+      clearUndoStack(id);
+      clearPickPaste();
     };
-  }, [aperture.id, clearSelection, clearDismissedOperationWarnings]);
+  }, [
+    aperture.id,
+    clearSelection,
+    clearDismissedOperationWarnings,
+    clearUndoStack,
+    clearPickPaste,
+  ]);
 
   const fitZoom = useCallback(() => {
     const container = scrollRef.current;
@@ -204,12 +243,43 @@ export function ApertureCanvasContainer({
     setPendingDelete(null);
   }, [onDeleteColumn, onDeleteRow, pendingDelete]);
 
+  const mergeValidation = validateMergeSelection(aperture, selection);
+  const canMerge = canEdit && mergeValidation.ok;
+  const selectedElement =
+    selection.length === 1 ? (aperture.elements.find((e) => e.id === selection[0]) ?? null) : null;
+  const canSplit = canEdit && selectedElement !== null && isSplittable(selectedElement);
+
+  const handleMerge = useCallback(() => {
+    if (!canMerge || !mergeValidation.ok) return;
+    onMergeElements?.(mergeValidation.sources.map((e) => e.id));
+  }, [canMerge, mergeValidation, onMergeElements]);
+
+  const handleSplit = useCallback(() => {
+    if (!canSplit || !selectedElement) return;
+    onSplitElement?.(selectedElement.id);
+  }, [canSplit, selectedElement, onSplitElement]);
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
+      if (pickPasteMode !== "idle") {
+        event.preventDefault();
+        sendEsc();
+        return;
+      }
       if (selection.length > 0) {
         event.preventDefault();
         clearSelection(aperture.id);
       }
+      return;
+    }
+    if (
+      canEdit &&
+      (event.key === "z" || event.key === "Z") &&
+      (event.metaKey || event.ctrlKey) &&
+      undoDepth > 0
+    ) {
+      event.preventDefault();
+      void undoLastPaste();
       return;
     }
     if (canEdit && (event.key === "Delete" || event.key === "Backspace") && selection.length > 0) {
@@ -233,6 +303,10 @@ export function ApertureCanvasContainer({
         viewDirection={viewDirection}
         selectionCount={selection.length}
         canEdit={canEdit}
+        canMerge={canMerge}
+        canSplit={canSplit}
+        pickPasteMode={pickPasteMode}
+        undoDepth={undoDepth}
         onZoomIn={() => setZoom((current) => nextZoomStep(current))}
         onZoomOut={() => setZoom((current) => previousZoomStep(current))}
         onFit={fitZoom}
@@ -240,6 +314,11 @@ export function ApertureCanvasContainer({
           setViewDirection((current) => (current === "exterior" ? "interior" : "exterior"))
         }
         onClearSelection={() => clearSelection(aperture.id)}
+        onMerge={handleMerge}
+        onSplit={handleSplit}
+        onEyedropper={handleEyedropper}
+        onPaintBucket={handlePaintBucket}
+        onUndoPaste={() => void undoLastPaste()}
       />
       <TotalDimensionsCaption aperture={aperture} format={dimFormat.format} />
       {deleteTip ? (
@@ -303,6 +382,11 @@ export function ApertureCanvasContainer({
                     region === "glazing" ? "glazing" : visualSideToCanonical(region, viewDirection);
                   setFocusedTarget({ elementId, region: canonical });
                 }}
+                pickPasteMode={pickPasteMode}
+                pickedSourceElementId={pickedAssignment?.source_element_id ?? null}
+                pasteFlashElementId={pasteFlashTargetId}
+                onPickElement={(el) => capturePickFromElement(el)}
+                onPasteElement={(el) => void pasteOnto(el)}
               />
             </div>
           </div>

@@ -440,16 +440,13 @@ def test_unknown_command_kind_raises_422() -> None:
 
 
 def test_stub_command_kind_raises_not_implemented() -> None:
-    body = _empty_body()
-
-    class _Stub:
-        # ``mergeElements`` still ships in a later phase (Phase 08).
-        # Earlier phases used ``pickFrame`` here, but Phase 06 wired it.
-        kind = "mergeElements"
-
-    with pytest.raises(Exception) as exc:
-        apply_aperture_command(body, cast(Any, _Stub()), actor_user_id="u", catalog=_seeded_catalog())
-    assert "aperture_command_not_implemented" in str(exc.value)
+    # Phase 08 wired the last reserved stub kinds (mergeElements,
+    # splitElement, pasteAssignment), so the ``_NOT_IMPLEMENTED_KINDS``
+    # set is now empty. The not-implemented branch is preserved on the
+    # dispatcher for future-reserved kinds, but currently no kind
+    # exercises it. The unsupported-kind branch covers the broader
+    # "unknown" case (see ``test_unknown_command_kind_raises_422``).
+    pytest.skip("All Phase 01–08 command stubs are wired; no kind exercises the not-implemented branch.")
 
 
 # ------------------------ Dimension commands (Phase 05) ----------------------
@@ -816,3 +813,129 @@ def test_edit_field_override_unknown_field_raises_422() -> None:
 
 def test_edit_field_override_audit_kind_registered() -> None:
     assert AUDIT_KIND_BY_APERTURE_COMMAND["editFieldOverride"] == "project_version_aperture_field_override"
+
+
+# ------------------------ Merge / split / paste (Phase 08) -------------------
+
+
+def _two_by_two_aperture() -> tuple[ProjectDocumentV1, str]:
+    """Build a 2×2 aperture with four 1×1 elements via add-row/add-column."""
+
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddRow(aperture_type_id=apt_id, at_index=1, height_mm=1000.0))
+    body, _ = _apply(body, AddColumn(aperture_type_id=apt_id, at_index=1, width_mm=1000.0))
+    return body, apt_id
+
+
+def test_merge_two_adjacent_elements_inherits_top_left_assignments() -> None:
+    from features.project_document.aperture_commands.models import MergeElements
+
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    # Pick the top-left (0,0) and top-right (0,1) cells.
+    tl = next(e for e in entry.elements if e.row_span == (0, 0) and e.column_span == (0, 0))
+    tr = next(e for e in entry.elements if e.row_span == (0, 0) and e.column_span == (1, 1))
+    # Rename top-left so the inheritance is observable.
+    body, _ = _apply(body, SetElementName(aperture_type_id=apt_id, element_id=tl.id, new_name="TL-source"))
+
+    body, audit = _apply(body, MergeElements(aperture_type_id=apt_id, element_ids=[tl.id, tr.id]))
+    entry = body.tables.apertures[0]
+    # One element with row_span (0,0), column_span (0,1) plus the two
+    # bottom cells = 3 elements total.
+    assert len(entry.elements) == 3
+    merged = next(e for e in entry.elements if e.column_span == (0, 1))
+    assert merged.name == "TL-source"
+    assert merged.row_span == (0, 0)
+    payload = cast(dict[str, object], audit["payload"])
+    assert payload["top_left_source_id"] == tl.id
+
+
+def test_merge_non_rectangle_rejects_with_422() -> None:
+    from features.project_document.aperture_commands.models import MergeElements
+
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    tl = next(e for e in entry.elements if e.row_span == (0, 0) and e.column_span == (0, 0))
+    br = next(e for e in entry.elements if e.row_span == (1, 1) and e.column_span == (1, 1))
+    # Diagonal selection (top-left + bottom-right) → not a rectangle.
+    with pytest.raises(Exception) as exc:
+        _apply(body, MergeElements(aperture_type_id=apt_id, element_ids=[tl.id, br.id]))
+    assert "aperture_merge_not_rectangle" in str(exc.value)
+
+
+def test_split_2x2_element_yields_four_cells_with_inherited_assignments() -> None:
+    from features.project_document.aperture_commands.models import MergeElements, SplitElement
+
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    ids = [e.id for e in entry.elements]
+    # First merge all four into one spanning element.
+    body, _ = _apply(body, MergeElements(aperture_type_id=apt_id, element_ids=ids))
+    entry = body.tables.apertures[0]
+    spanning = next(e for e in entry.elements if e.row_span == (0, 1) and e.column_span == (0, 1))
+    body, _ = _apply(body, SplitElement(aperture_type_id=apt_id, element_id=spanning.id))
+    entry = body.tables.apertures[0]
+    assert len(entry.elements) == 4
+    # All four new elements share the source's name.
+    assert {e.name for e in entry.elements} == {spanning.name}
+
+
+def test_split_1x1_element_rejects_with_422() -> None:
+    from features.project_document.aperture_commands.models import SplitElement
+
+    body, apt_id = _seeded_body_with_aperture()
+    aperture = body.tables.apertures[0]
+    with pytest.raises(Exception) as exc:
+        _apply(body, SplitElement(aperture_type_id=apt_id, element_id=aperture.elements[0].id))
+    assert "aperture_split_not_splittable" in str(exc.value)
+
+
+def test_paste_assignment_copies_six_fields_only() -> None:
+    from features.project_document.aperture_commands.models import PasteAssignment
+
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    src = entry.elements[0]
+    dst = next(e for e in entry.elements if e.id != src.id)
+    # Customize the source name + operation so the inheritance is observable.
+    body, _ = _apply(body, SetElementName(aperture_type_id=apt_id, element_id=src.id, new_name="Source-Name"))
+    body, _ = _apply(
+        body,
+        SetElementOperation(
+            aperture_type_id=apt_id,
+            element_id=src.id,
+            operation=ApertureOperation(type="swing", directions=["left"]),
+        ),
+    )
+    dst_row_span = dst.row_span
+    dst_column_span = dst.column_span
+    body, audit = _apply(
+        body, PasteAssignment(aperture_type_id=apt_id, source_element_id=src.id, target_element_ids=[dst.id])
+    )
+    entry = body.tables.apertures[0]
+    target = next(e for e in entry.elements if e.id == dst.id)
+    # name / row_span / column_span / id preserved on the target.
+    assert target.id == dst.id
+    assert target.row_span == dst_row_span
+    assert target.column_span == dst_column_span
+    assert target.name != "Source-Name"
+    # Operation copied.
+    assert target.operation is not None
+    assert target.operation.type == "swing"
+    assert target.operation.directions == ["left"]
+    payload = cast(dict[str, object], audit["payload"])
+    assert payload["target_element_ids"] == [dst.id]
+    assert payload["affects_u_value"] is True
+
+
+def test_paste_assignment_target_equals_source_rejects() -> None:
+    from features.project_document.aperture_commands.models import PasteAssignment
+
+    body, apt_id = _seeded_body_with_aperture()
+    el = body.tables.apertures[0].elements[0]
+    with pytest.raises(Exception) as exc:
+        _apply(
+            body,
+            PasteAssignment(aperture_type_id=apt_id, source_element_id=el.id, target_element_ids=[el.id]),
+        )
+    assert "aperture_paste_target_is_source" in str(exc.value)
