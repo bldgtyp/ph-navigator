@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 17:00 EDT
-STATUS: In progress — Phases 01 and 02 shipped as additive variants; renames + windows deletion + redirect + Alembic seed still deferred.
+TIME: 17:30 EDT
+STATUS: In progress — Phases 01, 02, and 03 shipped as additive variants; renames + windows deletion + redirect + Alembic seed still deferred.
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -15,13 +15,15 @@ RELATED:
 
 ## Current State
 
-- **Phases 01 and 02 — additive variants shipped.** New `Aperture*`
+- **Phases 01, 02, and 03 — additive variants shipped.** New `Aperture*`
   domain model, `tables.apertures[]` field, command seam, coverage
-  invariant, default factory, route + service wrapper, and full
-  frontend tab landed **side-by-side** with the existing Windows
-  tracer-bullet. Nothing in the legacy tracer-bullet path was
-  touched. See each phase file's "Implementation note" for the
-  per-commit delta.
+  invariant, default factory, route + service wrapper, full
+  frontend tab, and the SVG canvas substrate (geometry helpers,
+  `ApertureSvgCanvas`, canvas toolbar with zoom + view-direction
+  controls, `ApertureCanvasContainer`) landed **side-by-side** with
+  the existing Windows tracer-bullet. Nothing in the legacy
+  tracer-bullet path was touched. See each phase file's
+  "Implementation note" for the per-commit delta.
 - **What's live now end-to-end:**
   - Open a project → click the new **Apertures** tab.
   - Empty state shows `No aperture types yet.` and a
@@ -65,10 +67,9 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 03 (`phases/phase-03-svg-canvas-substrate.md`).
-Phase 03 is pure frontend (the SVG canvas substrate +
-`aperture-geometry.ts`) so it should land cleanly without
-touching the deferred-rename list.
+Begin Phase 04 (`phases/phase-04-canvas-interaction.md`) — the
+canvas substrate is in place; Phase 04 layers hover affordances,
+click-to-select, and the on-canvas name pill on top of it.
 
 ## Blockers
 
@@ -82,5 +83,7 @@ touching the deferred-rename list.
 ## Verification
 
 - Phase 01: commit `339e7ca`. `make ci` green.
-- Phase 02: this commit. `make ci` green (525 backend tests, 1122
+- Phase 02: commit (prior). `make ci` green (525 backend tests, 1122
   frontend tests, build successful).
+- Phase 03: this commit. `make ci` green (525 backend tests, 1141
+  frontend tests — 12 geometry + 7 canvas added, build successful).
