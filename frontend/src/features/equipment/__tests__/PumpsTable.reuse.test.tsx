@@ -99,6 +99,56 @@ describe("PumpsTable DataTable reuse", () => {
     expect(onWrite).toHaveBeenCalled();
   });
 
+  test("keeps phase validation local so other cells remain editable", async () => {
+    const user = userEvent.setup();
+    const slice = buildPumpsSlice({
+      pumps: [buildPump({ custom_values: { ...buildPump().custom_values, manufacturer: "This" } })],
+    });
+    const tableSchema = schemaForPumps(slice);
+    const onWrite = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Phase must be 1 or 3."))
+      .mockResolvedValue(undefined);
+    const { container } = renderWithQueryClient(
+      <PumpsTable
+        pumpsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={onWrite}
+      />,
+    );
+
+    const phaseCell = container.querySelector<HTMLElement>(
+      'td[data-row-id="pmp_1"][data-field-key="phase"]',
+    );
+    expect(phaseCell).not.toBeNull();
+    await user.dblClick(phaseCell!);
+    await user.keyboard("{Control>}a{/Control}5{Enter}");
+
+    await waitFor(() => {
+      expect(phaseCell).toHaveAttribute("data-cell-error", "true");
+    });
+    expect(phaseCell).toHaveAttribute("title", "Phase must be 1 or 3.");
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+
+    const manufacturerCell = container.querySelector<HTMLElement>(
+      'td[data-row-id="pmp_1"][data-field-key="manufacturer"]',
+    );
+    expect(manufacturerCell).not.toBeNull();
+    await user.dblClick(manufacturerCell!);
+    await user.keyboard("{Control>}a{/Control}That{Enter}");
+
+    await waitFor(() => {
+      expect(onWrite).toHaveBeenLastCalledWith({
+        kind: "cell",
+        writes: [{ rowId: "pmp_1", fieldKey: "manufacturer", value: "That" }],
+      });
+    });
+  });
+
   test("emits a cell write when deleting a datasheet attachment", async () => {
     const slice = buildPumpsSlice({ pumps: [buildPump({ datasheet_asset_ids: ["asset_pdf_1"] })] });
     const tableSchema = schemaForPumps(slice);
