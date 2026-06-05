@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
 TIME: 15:15 EDT
-STATUS: Active — not yet started
+STATUS: Partially shipped (additive variant) — see "Implementation note" below
 AUTHOR: Codex
 SCOPE: Schema cutover from `window_types` to `apertures`, id-prefix
        rename, add `name` + `operation` to elements, seed default
@@ -23,6 +23,76 @@ RELATED:
 ---
 
 # Phase 1 — Terminology, schema, ApertureCommand boundary, default refs
+
+## Implementation note (2026-06-05, additive variant)
+
+Phase 01 shipped as an **additive** Phase 01: the new `Aperture*`
+model classes, `tables.apertures[]` field, `ApertureCommand` seam,
+coverage invariant, default-aperture factory, and tests landed **side
+by side** with the existing `Window*` classes and `tables.window_types[]`
+field. The renames + legacy aliases + ApertureCommand REST route +
+Alembic migration deferred to Phase 02 (where the frontend route
+cuts over anyway, making the rename cheaper to land cleanly).
+
+What shipped in this commit (`make ci` green):
+
+- `document.py`: `ApertureOperation`, `ApertureElementFrames`,
+  `ApertureElement` (with `name` default-"Unnamed" + `operation`),
+  `ApertureTypeEntry` (with coverage validator), constants
+  `APERTURE_DEFAULT_FRAME_NAME` / `APERTURE_DEFAULT_GLAZING_NAME`,
+  `tables.apertures: list[ApertureTypeEntry]` field, document-level
+  uniqueness of aperture id and aperture name (case-insensitive
+  trimmed).
+- `apertures/coverage.py`: `CoverageError` + `check_aperture_coverage`
+  (no holes, no overlaps, in-bounds spans, unique element ids).
+- `apertures/factories.py`: `DefaultsCatalogReader` Protocol +
+  `build_default_aperture_type` (bookshelf-copies frame into all four
+  sides + glazing, stamps `catalog_schema_version=1`, raises
+  `aperture_default_refs_missing` when either seed row is absent).
+- `aperture_commands/`: full 16-command discriminated union; dispatcher
+  with `validate_document` tail-call + audit envelope; six handlers
+  shipped (createApertureType, renameApertureType,
+  duplicateApertureType, deleteApertureType, setElementName,
+  setElementOperation); the remaining ten kinds raise
+  `aperture_command_not_implemented` so the wire shape is stable.
+- `tables/apertures.py` + registry — the new contract is registered
+  alongside `window_types_contract`.
+- `tests/test_project_document_apertures.py` — 24 unit tests covering
+  coverage holes / overlaps / OOB spans / empty names / duplicate
+  directions, factory happy + missing-seed paths, dispatcher
+  CRUD-and-element behavior, autoname suffixing, unknown / stub
+  command kinds. All pass.
+- Full `make ci` green: 525 backend tests, 1118 frontend tests, build
+  successful.
+
+Deferred to Phase 02 (or later):
+
+- Renaming `WindowTypeEntry` / `WindowElement` / `WindowElementFrames`
+  to `Aperture*` and re-exporting legacy names as aliases.
+- Migration shim in `validation.py` that rewrites `win_` / `winel_`
+  ids to `apt_` / `aptel_` at load time.
+- Renaming `body.tables.window_types` → `body.tables.apertures` with
+  a `@computed_field` alias.
+- Alembic migration that munges existing JSON documents in Postgres.
+- Alembic seed of `PHN-Default-Frame` / `PHN-Default-Glazing` catalog
+  rows (the factory + dispatcher exist; the route layer that calls
+  them isn't wired yet, so no production code path depends on the
+  seeds today).
+- `POST /projects/{id}/versions/{vid}/apertures/command` REST route
+  + the `apply_aperture_command_to_draft` service wrapper (ETag
+  preflight, draft creation, audit-log persistence).
+- Frontend `types.ts` / `api.ts` extensions (`ApertureOperation`,
+  `name` on `WindowElement`, `applyApertureCommand` helper).
+- Catalog `DefaultsCatalogReader` adapter that resolves the seeded
+  rows from the real `catalog_frame_types` / `catalog_glazing_types`
+  tables.
+
+Phase 02 should bundle the rename + alias + route + seed migration
+into the route cutover, since the existing tracer-bullet UI is being
+replaced in the same PR.
+
+---
+
 
 ## P0. Why this slice
 

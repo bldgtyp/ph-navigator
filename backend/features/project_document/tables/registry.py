@@ -10,6 +10,7 @@ from features.envelope.table_contracts import (
     assembly_segments_contract,
     project_materials_contract,
 )
+from features.project_document.tables.apertures import apertures_contract
 from features.project_document.tables.attachments import (
     equipment_ervs_contract,
     equipment_fans_contract,
@@ -67,4 +68,5 @@ _TABLES: dict[str, TableContract] = {
     equipment_pumps_contract.name: equipment_pumps_contract,
     equipment_fans_contract.name: equipment_fans_contract,
     window_types_contract.name: window_types_contract,
+    apertures_contract.name: apertures_contract,
 }

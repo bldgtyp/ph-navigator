@@ -407,6 +407,132 @@ class ProjectMaterial(BaseModel):
         return self
 
 
+APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
+APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
+
+ApertureOperationType = Literal["swing", "slide"]
+ApertureOperationDirection = Literal["left", "right", "up", "down"]
+
+
+class ApertureOperation(BaseModel):
+    """Aperture-element operation (Fixed when omitted at the element level).
+
+    `swing` (hinge) and `slide` (track) are the two parametric families.
+    `directions` is the per-leaf set of hinge or slide directions — V1's
+    preset menu (tilt-turn, awning, casement L/R, slider L/R) materializes
+    as `(type, directions)` pairs here; the canvas-side symbol picker
+    (Phase 07) ships those presets.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: ApertureOperationType
+    directions: list[ApertureOperationDirection] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _validate_directions(self) -> ApertureOperation:
+        if len(self.directions) != len(set(self.directions)):
+            raise ValueError("ApertureOperation.directions must be unique")
+        return self
+
+
+class ApertureElementFrames(BaseModel):
+    """Four-sided per-element frame slots (top/right/bottom/left)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    top: FrameRef | None = None
+    right: FrameRef | None = None
+    bottom: FrameRef | None = None
+    left: FrameRef | None = None
+
+
+class ApertureElement(BaseModel):
+    """One sash inside an aperture type, spanning a contiguous grid rectangle.
+
+    `name` defaults to "Unnamed" so newly created elements are valid
+    without an explicit label; empty / whitespace-only names are rejected
+    at validation time. `operation=None` means Fixed. `row_span` /
+    `column_span` are inclusive on both ends; coverage of the aperture
+    grid is enforced by `check_aperture_coverage` (no holes, no overlaps).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^aptel_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(default="Unnamed", min_length=1, max_length=200)
+    row_span: tuple[int, int]
+    column_span: tuple[int, int]
+    frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
+    glazing: GlazingRef | None = None
+    operation: ApertureOperation | None = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("ApertureElement.name must not be empty")
+            return stripped
+        return value
+
+    @field_validator("row_span", "column_span")
+    @classmethod
+    def _validate_span(cls, value: tuple[int, int]) -> tuple[int, int]:
+        start, end = value
+        if start < 0 or end < 0:
+            raise ValueError("span indices must be >= 0")
+        if start > end:
+            raise ValueError("span start must be <= end")
+        return value
+
+
+class ApertureTypeEntry(BaseModel):
+    """A named aperture type — grid + element layout + per-element refs.
+
+    The `coverage invariant` is enforced here: every grid cell
+    `(r, c)` for `0 <= r < R`, `0 <= c < C` must be covered by exactly
+    one element. Holes and overlaps both raise validation errors. The
+    pure check lives in `apertures/coverage.py` so the merge/split and
+    add-row/add-column command handlers (later phases) can reuse it.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^apt_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(min_length=1, max_length=200)
+    row_heights_mm: list[float] = Field(min_length=1)
+    column_widths_mm: list[float] = Field(min_length=1)
+    elements: list[ApertureElement] = Field(min_length=1)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("row_heights_mm", "column_widths_mm")
+    @classmethod
+    def _positive_dimensions(cls, value: list[float]) -> list[float]:
+        for dim in value:
+            if dim <= 0:
+                raise ValueError("grid dimensions must be > 0")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_coverage(self) -> ApertureTypeEntry:
+        # Lazy-import to keep the coverage check independent of the
+        # document module — apertures/coverage.py imports
+        # `ApertureTypeEntry` for typing, so a top-level import would
+        # cycle.
+        from features.project_document.apertures.coverage import check_aperture_coverage
+
+        check_aperture_coverage(self)
+        return self
+
+
 class WindowElementFrames(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -506,6 +632,7 @@ class ProjectDocumentTables(BaseModel):
     assemblies: list[Assembly] = Field(default_factory=list)
     project_materials: list[ProjectMaterial] = Field(default_factory=list)
     window_types: list[WindowTypeEntry] = Field(default_factory=list)
+    apertures: list[ApertureTypeEntry] = Field(default_factory=list)
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     thermal_bridges: list[dict[str, object]] = Field(default_factory=list)
     equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
@@ -598,6 +725,18 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=pumps_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
+
+        aperture_ids: set[str] = set()
+        aperture_names: set[str] = set()
+        for aperture in self.tables.apertures:
+            if aperture.id in aperture_ids:
+                raise ValueError(f"Duplicate aperture id: {aperture.id}")
+            aperture_ids.add(aperture.id)
+
+            normalized_aperture_name = normalize_display_name(aperture.name)
+            if normalized_aperture_name in aperture_names:
+                raise ValueError(f"Duplicate aperture name: {aperture.name}")
+            aperture_names.add(normalized_aperture_name)
 
         window_type_ids: set[str] = set()
         window_type_names: set[str] = set()
