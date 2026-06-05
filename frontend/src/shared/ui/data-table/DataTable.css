@@ -1786,6 +1786,21 @@
   box-shadow: inset 0 0 0 2px var(--accent-text) !important;
 }
 
+.data-table td.data-table-cell-error {
+  background: color-mix(
+    in oklab,
+    var(--phn-danger) 12%,
+    var(--data-table-cell-bg, var(--bg-card))
+  ) !important;
+  box-shadow: inset 0 0 0 2px var(--phn-danger) !important;
+}
+
+.data-table td.data-table-cell-error.data-table-cell-active {
+  box-shadow:
+    inset 0 0 0 2px var(--phn-danger),
+    inset 0 0 0 4px color-mix(in oklab, var(--phn-danger) 18%, transparent) !important;
+}
+
 .data-table tbody tr:hover td.data-table-cell-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
   background: var(--data-table-cell-block-selected-bg) !important;

@@ -31,6 +31,7 @@ function makeSelection(): GridSelection {
 function makeEdit(): GridEdit {
   return {
     editing: null,
+    cellError: () => null,
     isEditingCell: () => false,
     start: vi.fn(),
     draft: vi.fn(),

@@ -58,6 +58,7 @@ export type PendingEdit = {
 
 export type GridEdit = {
   editing: EditingCell | null;
+  cellError: (rowId: string, fieldKey: string) => string | null;
   isEditingCell: (rowId: string, fieldKey: string) => boolean;
   start: (args: StartArgs) => void;
   // Update the draft string. For text/number this sets draftValue; for
@@ -81,6 +82,7 @@ export function useGridEdit(args: {
 }): GridEdit {
   const { fieldDefByKey, dispatchWrite, onAnnounce, hasWriteHandler, unitSystem = "SI" } = args;
   const [editing, setEditing] = useState<EditingCell | null>(null);
+  const [cellErrors, setCellErrors] = useState<Record<string, string>>({});
   const pendingRef = useRef<PendingEdit | null>(null);
   const commitInFlightRef = useRef(false);
   // Tracks the rowIds identity we last saw so a queued pending entry
@@ -126,6 +128,36 @@ export function useGridEdit(args: {
 
   const cancel = useCallback(() => setEditing(null), []);
 
+  const cellErrorKey = useCallback(
+    (rowId: string, fieldKey: string) => `${rowId}\u0000${fieldKey}`,
+    [],
+  );
+
+  const setCellError = useCallback(
+    (rowId: string, fieldKey: string, message: string) => {
+      setCellErrors((current) => ({ ...current, [cellErrorKey(rowId, fieldKey)]: message }));
+    },
+    [cellErrorKey],
+  );
+
+  const clearCellError = useCallback(
+    (rowId: string, fieldKey: string) => {
+      setCellErrors((current) => {
+        const key = cellErrorKey(rowId, fieldKey);
+        if (!(key in current)) return current;
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+    },
+    [cellErrorKey],
+  );
+
+  const cellError = useCallback(
+    (rowId: string, fieldKey: string) => cellErrors[cellErrorKey(rowId, fieldKey)] ?? null,
+    [cellErrorKey, cellErrors],
+  );
+
   const isEditingCell = useCallback(
     (rowId: string, fieldKey: string) => editing?.rowId === rowId && editing.fieldKey === fieldKey,
     [editing],
@@ -140,24 +172,40 @@ export function useGridEdit(args: {
     const plan = planCommit(editing, editor, fieldDef, unitSystem);
     try {
       if (plan.kind === "noop") {
+        clearCellError(editing.rowId, editing.fieldKey);
         setEditing(null);
         return true;
       }
       if (plan.kind === "invalid") {
         onAnnounce(plan.message);
+        setCellError(editing.rowId, editing.fieldKey, plan.message);
+        setEditing(null);
         return false;
       }
       await dispatchWrite(plan.op, plan.inverse);
       onAnnounce(`${fieldDef?.display_name ?? "Cell"} updated.`);
+      clearCellError(editing.rowId, editing.fieldKey);
       setEditing(null);
       return true;
     } catch (error) {
-      onAnnounce(error instanceof Error ? error.message : "Cell update failed.");
+      const message = error instanceof Error ? error.message : "Cell update failed.";
+      onAnnounce(message);
+      setCellError(editing.rowId, editing.fieldKey, message);
+      setEditing(null);
       return false;
     } finally {
       commitInFlightRef.current = false;
     }
-  }, [editing, hasWriteHandler, fieldDefByKey, dispatchWrite, onAnnounce, unitSystem]);
+  }, [
+    editing,
+    hasWriteHandler,
+    fieldDefByKey,
+    dispatchWrite,
+    onAnnounce,
+    unitSystem,
+    clearCellError,
+    setCellError,
+  ]);
 
   const queuePendingEdit = useCallback((pending: PendingEdit | null) => {
     pendingRef.current = pending;
@@ -193,6 +241,7 @@ export function useGridEdit(args: {
 
   return {
     editing,
+    cellError,
     isEditingCell,
     start,
     draft,

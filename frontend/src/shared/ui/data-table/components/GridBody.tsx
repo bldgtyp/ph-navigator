@@ -312,6 +312,8 @@ export function GridBody<TRow>({
               const rowId = rowIds[rowIndex];
               const editing =
                 rowId !== undefined && fieldKey ? edit.isEditingCell(rowId, fieldKey) : false;
+              const cellError =
+                rowId !== undefined && fieldKey ? edit.cellError(rowId, fieldKey) : null;
               const axisTint = fieldKey ? axisRolesByFieldKey.get(fieldKey) : undefined;
               const isFillSourceCorner =
                 fillHandleVisible === true &&
@@ -345,8 +347,10 @@ export function GridBody<TRow>({
                   role="gridcell"
                   aria-colindex={columnIndex + 1}
                   aria-selected={selected}
+                  aria-invalid={cellError ? "true" : undefined}
                   data-row-id={rowId}
                   data-field-key={fieldKey || undefined}
+                  data-cell-error={cellError ? "true" : undefined}
                   data-axis-tint={axisTint}
                   data-fill-handle={isFillSourceCorner ? "true" : undefined}
                   data-fill-target={isFillTarget ? "true" : undefined}
@@ -361,9 +365,11 @@ export function GridBody<TRow>({
                     selectionEdgeLeft ? "data-table-selection-edge-left" : "",
                     active ? "data-table-cell-active" : "",
                     editing ? "data-table-cell-editing" : "",
+                    cellError ? "data-table-cell-error" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  title={cellError ?? undefined}
                   onMouseDown={onCellMouseDown}
                   onClick={(event) => {
                     // Phase 3: Shift+Click extends the range via the
