@@ -147,7 +147,21 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
     [allMaterials, includeInactive],
   );
   const rows = useMemo<MaterialRow[]>(() => materials.map(toMaterialRow), [materials]);
-  const controller = useMaterialsCatalogController();
+  const tableSchema = useMemo(
+    () =>
+      buildTableSchema({
+        tableKey: MATERIALS_TABLE_KEY,
+        fieldDefs: MATERIALS_BUILT_IN_FIELD_DEFS,
+        fieldOverlay: MATERIALS_FIELD_OVERLAY,
+      }),
+    [],
+  );
+  const controller = useMaterialsCatalogController({
+    userId: session.user.id,
+    columns: COLUMN_DEFS,
+    fieldDefs: tableSchema.fieldDefs,
+    schemaFingerprint: tableSchema.schemaFingerprint,
+  });
   const closeEditor = () => setEditor({ kind: "closed" });
 
   // Map id → is_active for O(1) lookups when the bulk-action renderer
@@ -200,16 +214,6 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
       );
     },
     [bulkReactivating, isActiveById, reactivateMutation],
-  );
-
-  const tableSchema = useMemo(
-    () =>
-      buildTableSchema({
-        tableKey: MATERIALS_TABLE_KEY,
-        fieldDefs: MATERIALS_BUILT_IN_FIELD_DEFS,
-        fieldOverlay: MATERIALS_FIELD_OVERLAY,
-      }),
-    [],
   );
 
   return (

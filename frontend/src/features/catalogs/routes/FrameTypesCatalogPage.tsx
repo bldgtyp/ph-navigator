@@ -197,7 +197,21 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
     [allFrameTypes, includeInactive],
   );
   const rows = useMemo<FrameTypeRow[]>(() => frameTypes.map(toFrameTypeRow), [frameTypes]);
-  const controller = useFrameTypesCatalogController();
+  const tableSchema = useMemo(
+    () =>
+      buildTableSchema({
+        tableKey: FRAME_TYPES_TABLE_KEY,
+        fieldDefs: FRAME_TYPES_BUILT_IN_FIELD_DEFS,
+        fieldOverlay: FRAME_TYPES_FIELD_OVERLAY,
+      }),
+    [],
+  );
+  const controller = useFrameTypesCatalogController({
+    userId: session.user.id,
+    columns: COLUMN_DEFS,
+    fieldDefs: tableSchema.fieldDefs,
+    schemaFingerprint: tableSchema.schemaFingerprint,
+  });
 
   const isActiveById = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -234,16 +248,6 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
       );
     },
     [bulkReactivating, isActiveById, reactivateMutation],
-  );
-
-  const tableSchema = useMemo(
-    () =>
-      buildTableSchema({
-        tableKey: FRAME_TYPES_TABLE_KEY,
-        fieldDefs: FRAME_TYPES_BUILT_IN_FIELD_DEFS,
-        fieldOverlay: FRAME_TYPES_FIELD_OVERLAY,
-      }),
-    [],
   );
 
   return (

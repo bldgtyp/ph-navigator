@@ -135,7 +135,21 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
     [allGlazingTypes, includeInactive],
   );
   const rows = useMemo<GlazingTypeRow[]>(() => glazingTypes.map(toGlazingTypeRow), [glazingTypes]);
-  const controller = useGlazingTypesCatalogController();
+  const tableSchema = useMemo(
+    () =>
+      buildTableSchema({
+        tableKey: GLAZING_TYPES_TABLE_KEY,
+        fieldDefs: GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
+        fieldOverlay: GLAZING_TYPES_FIELD_OVERLAY,
+      }),
+    [],
+  );
+  const controller = useGlazingTypesCatalogController({
+    userId: session.user.id,
+    columns: COLUMN_DEFS,
+    fieldDefs: tableSchema.fieldDefs,
+    schemaFingerprint: tableSchema.schemaFingerprint,
+  });
 
   const isActiveById = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -172,16 +186,6 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
       );
     },
     [bulkReactivating, isActiveById, reactivateMutation],
-  );
-
-  const tableSchema = useMemo(
-    () =>
-      buildTableSchema({
-        tableKey: GLAZING_TYPES_TABLE_KEY,
-        fieldDefs: GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
-        fieldOverlay: GLAZING_TYPES_FIELD_OVERLAY,
-      }),
-    [],
   );
 
   return (

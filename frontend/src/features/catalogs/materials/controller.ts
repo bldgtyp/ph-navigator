@@ -1,7 +1,14 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { emptyViewState } from "../../../shared/ui/data-table";
-import type { CellWrite, ViewState, WriteOp } from "../../../shared/ui/data-table";
+import type {
+  CellWrite,
+  DataTableColumnDef,
+  FieldDef,
+  ViewState,
+  WriteOp,
+} from "../../../shared/ui/data-table";
+import { useLocalTableViewState } from "../../table_views/useLocalTableViewState";
 import { createMaterial, deactivateMaterial, duplicateMaterial, updateMaterial } from "../api";
 import { catalogQueryKeys } from "../query-keys";
 import type {
@@ -9,7 +16,11 @@ import type {
   CatalogMaterialCreatePayload,
   CatalogMaterialUpdatePayload,
 } from "../types";
-import { MATERIALS_BUILT_IN_FIELD_DEFS, materialCategoryFromOptionId } from "./fieldDefs";
+import {
+  MATERIALS_BUILT_IN_FIELD_DEFS,
+  MATERIALS_TABLE_KEY,
+  materialCategoryFromOptionId,
+} from "./fieldDefs";
 
 // Row shape used by the grid. `category` holds the single_select option
 // id (e.g. `opt_insulation`) so the DataTable cell can render the pill;
@@ -103,14 +114,44 @@ export type MaterialsCatalogController = {
   onWrite: (op: WriteOp) => Promise<void>;
 };
 
-export function useMaterialsCatalogController(): MaterialsCatalogController {
-  const [view, setView] = useState<ViewState>(() => emptyViewState());
+export type MaterialsCatalogControllerArgs = {
+  // Owning user id — view-state preference is per-user (catalogs are
+  // shared data, but sort / filter / group / column widths are a
+  // personal lens).
+  userId: string;
+  columns: DataTableColumnDef<MaterialRow>[];
+  fieldDefs: FieldDef[];
+  schemaFingerprint: string;
+};
+
+export function useMaterialsCatalogController({
+  userId,
+  columns,
+  fieldDefs,
+  schemaFingerprint,
+}: MaterialsCatalogControllerArgs): MaterialsCatalogController {
+  const defaults = useMemo(() => emptyViewState(), []);
+  const {
+    view,
+    onViewChange,
+    reset: onResetView,
+  } = useLocalTableViewState({
+    userId,
+    tableKey: MATERIALS_TABLE_KEY,
+    defaults,
+    enabled: true,
+    // `DataTableColumnDef<TRow>` is invariant in TRow; cast once here
+    // to the hook's row-agnostic signature. sanitizeViewStateForSchema
+    // only reads `column.id` / `column.fieldKey`, so the cast is safe.
+    columns: columns as DataTableColumnDef<unknown>[],
+    fieldDefs,
+    schemaFingerprint,
+  });
   const queryClient = useQueryClient();
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.materials() }),
     [queryClient],
   );
-  const onResetView = useCallback(() => setView(emptyViewState()), []);
 
   const onWrite = useCallback<MaterialsCatalogController["onWrite"]>(
     async (op) => {
@@ -152,5 +193,5 @@ export function useMaterialsCatalogController(): MaterialsCatalogController {
     [invalidate],
   );
 
-  return { view, onViewChange: setView, onResetView, onWrite };
+  return { view, onViewChange, onResetView, onWrite };
 }

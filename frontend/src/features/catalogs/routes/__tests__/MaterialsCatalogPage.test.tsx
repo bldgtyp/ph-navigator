@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
 import type { AuthSession } from "../../../auth/types";
 import * as api from "../../api";
@@ -82,6 +82,13 @@ function renderPage() {
     </QueryClientProvider>,
   );
 }
+
+// The page mounts useLocalTableViewState which reads/writes localStorage
+// under `phn:tableView:v1:user_1:catalog_materials`. Clear between tests
+// so a write from one test never leaks into the next test's initial view.
+beforeEach(() => {
+  window.localStorage.clear();
+});
 
 describe("MaterialsCatalogPage", () => {
   test("opens the new material modal from the top-left action", async () => {
