@@ -166,8 +166,11 @@
 }
 
 .assembly-header {
+  align-items: flex-end;
   border-bottom: 1px solid var(--border-subtle);
+  display: flex;
   flex-wrap: wrap;
+  gap: 20px;
   padding-bottom: 12px;
 }
 
@@ -176,18 +179,22 @@
   color: var(--text-secondary);
   display: block;
   font-size: 12px;
+  line-height: 16px;
   margin-bottom: 4px;
 }
 
 .assembly-header select {
+  height: 25px;
   min-width: 220px;
 }
 
 .assembly-picker-field {
+  display: grid;
   min-width: 240px;
 }
 
 .assembly-header-metrics {
+  align-items: end;
   display: flex;
   flex: 1 1 auto;
   gap: 24px;
@@ -195,8 +202,115 @@
   margin: 0;
 }
 
+.assembly-header-metrics > div {
+  display: grid;
+  grid-template-rows: 16px 25px;
+  row-gap: 4px;
+}
+
+.assembly-header-metrics dt {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
 .assembly-header-metrics dd {
+  align-items: center;
+  display: flex;
+  line-height: 25px;
   margin: 0;
+}
+
+.assembly-header-metric-label {
+  line-height: 16px;
+}
+
+.assembly-header-info-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  height: 14px;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  width: 14px;
+}
+
+.assembly-header-info-button:hover,
+.assembly-header-info-button:focus-visible {
+  color: var(--text-primary);
+  outline: 0;
+}
+
+.assembly-header-info-tooltip {
+  background: rgb(87 87 87 / 94%);
+  border-radius: 3px;
+  bottom: calc(100% + 8px);
+  box-shadow: var(--shadow-elev-1);
+  color: white;
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 400;
+  gap: 8px;
+  left: 50%;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 8px;
+  pointer-events: none;
+  position: absolute;
+  text-align: left;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.12s var(--ease) 0.2s,
+    transform 0.12s var(--ease) 0.2s;
+  width: 316px;
+  z-index: var(--z-tooltip);
+}
+
+.assembly-header-info-tooltip::after {
+  border-color: rgb(87 87 87 / 94%) transparent transparent;
+  border-style: solid;
+  border-width: 6px 6px 0;
+  content: "";
+  left: 50%;
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%);
+}
+
+.assembly-header-info-tooltip strong {
+  font-weight: 700;
+}
+
+.assembly-header-info-tooltip em {
+  font-style: italic;
+}
+
+.assembly-header-info-button:hover .assembly-header-info-tooltip,
+.assembly-header-info-button:focus-visible .assembly-header-info-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.assembly-header-warning dt {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.assembly-header-warning dd {
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .assembly-canvas-scroll {
@@ -215,6 +329,7 @@
 
   display: grid;
   gap: 10px;
+  margin-inline: auto;
   min-width: 360px;
 }
 
@@ -271,7 +386,7 @@
   position: absolute;
   top: -58px;
   transform: translateX(-50%);
-  z-index: var(--z-tooltip);
+  z-index: calc(var(--z-base) + 3);
 }
 
 .assembly-canvas-toolbar-button {
@@ -313,7 +428,7 @@
   transition:
     opacity 0.12s var(--ease) 0.35s,
     transform 0.12s var(--ease) 0.35s;
-  z-index: var(--z-tooltip);
+  z-index: calc(var(--z-base) + 4);
 }
 
 .assembly-canvas-toolbar-button[data-toolbar-tooltip]::before,
