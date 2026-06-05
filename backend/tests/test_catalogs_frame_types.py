@@ -271,3 +271,33 @@ def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None)
     for row in rows:
         assert '"catalog_table": "frame_types"' in row["details_text"]
         assert record_id in row["details_text"]
+
+
+def test_list_filters_by_location_operation_use_and_manufacturer(clean_catalog_tables: None) -> None:
+    """Phase 06 filter query params on ``GET /catalogs/frame-types``."""
+
+    client = signed_in_client()
+
+    def _create(name: str, *, location: str, operation: str, use: str, manufacturer: str) -> None:
+        body = _payload(name)
+        body.update({"location": location, "operation": operation, "use": use, "manufacturer": manufacturer})
+        assert client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=body).status_code == 201
+
+    _create("Head A", location="Head", operation="Casement", use="Window", manufacturer="Skyline")
+    _create("Sill B", location="Sill", operation="Fixed", use="Window", manufacturer="Skyline")
+    _create("Jamb C", location="Jamb", operation="Casement", use="Door", manufacturer="Other")
+
+    def names_for(params: list[tuple[str, str | int | float | None]]) -> set[str]:
+        return {item["name"] for item in client.get("/api/v1/catalogs/frame-types", params=params).json()["items"]}
+
+    assert names_for([("location", "head")]) == {"Head A"}  # case-insensitive
+    assert names_for([("operation", "Casement")]) == {"Head A", "Jamb C"}
+    assert names_for([("use", "Door")]) == {"Jamb C"}
+    assert names_for([("manufacturers", "Skyline")]) == {"Head A", "Sill B"}
+    assert names_for([("manufacturers", "Skyline"), ("manufacturers", "Other")]) == {
+        "Head A",
+        "Sill B",
+        "Jamb C",
+    }
+    # Combined filters AND together.
+    assert names_for([("location", "Jamb"), ("operation", "Casement")]) == {"Jamb C"}

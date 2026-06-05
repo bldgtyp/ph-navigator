@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 16:10 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 18:45 EDT
+STATUS: Done
+AUTHOR: Claude
 SCOPE: Ship the per-element assignment cards below the canvas,
        per-side frame picker filtering by `location` / `use` /
        `operation`, click-on-canvas-region scoped pickers
@@ -26,6 +26,53 @@ RELATED:
 ---
 
 # Phase 6 — Element cards, region-click pickers, filtering, badges
+
+## Implementation note (Claude, 2026-06-05)
+
+Shipped as a single PR per user choice. All P1 acceptance items
+landed; deviations are listed in STATUS.md under
+"Phase 06 deviations from the doc". Highlights:
+
+- Backend `pickFrame`, `pickGlazing`, `editFieldOverride` handlers
+  live in `aperture_commands/handlers/picks.py`.
+  ``apply_pick_frame`` / ``apply_pick_glazing`` accept the full
+  `FrameRef` / `GlazingRef` on the wire (frontend resolves the
+  catalog row into a ref before dispatch) — the handler re-stamps
+  `synced_at`, resets `local_overrides`, and writes the slot.
+  Hand-entered refs (null `catalog_origin`) round-trip unchanged.
+- ``apply_edit_field_override`` patches one field via
+  `model_copy` → `model_validate` so per-field validators fire,
+  then appends `field_key` to `catalog_origin.local_overrides`
+  (deduped). Hand-entered refs take edits without touching
+  overrides.
+- Catalog list endpoints gained server-side filter query params
+  (`location`, `operation`, `use`, `manufacturers[]` on frames;
+  `manufacturers[]` on glazings). Composes AND, case-insensitive.
+- Frontend filter primitives (`picker-filters.ts`,
+  `frame-label-map.ts`) and ref builders (`ref-builders.ts`) sit
+  at the feature root, not under `lib/`, to avoid the
+  `lib.ts` ↔ `lib/index.ts` collision documented in the Phase 05
+  note.
+- `FramePicker` / `GlazingPicker` use a `<details>` + `<summary>`
+  pattern with a paired `useFrameCatalog` / `useGlazingCatalog`
+  hook that runs both the filtered query and an unfiltered query
+  so the "Showing N of M · Clear filter" footnote stays correct
+  without an extra round-trip.
+- `ApertureElementCard` / `ApertureElementCardStack` render below
+  the canvas. Region clicks on the overlay surface a
+  `focusedTarget` that the active card uses to scroll into view —
+  the click does NOT auto-open the picker dropdown (the
+  `<details>` element requires an explicit click), but it does
+  surface the right card and side label. Interior-view label flip
+  goes through `frameRowLabel` on every row.
+- "You edited this" pill renders per inline override input from
+  `catalog_origin.local_overrides`. The drift badge ships dormant
+  (`hasDrift={false}`) — Phase 12 wires the input.
+- `Combobox` + Sonner-equivalents from the phase doc are *not*
+  shipped; the simpler `<details>` + `<button>` composition keeps
+  the surface dependency-free.
+
+## Original Phase 06 plan follows.
 
 ## P0. Why this slice
 

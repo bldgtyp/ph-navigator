@@ -50,13 +50,27 @@ _UPDATABLE_FIELDS = frozenset(
 )
 
 
-def list_glazing_types(conn: Connection[Any], include_inactive: bool = False) -> list[dict[str, Any]]:
-    where = sql.SQL("") if include_inactive else sql.SQL("WHERE deleted_at IS NULL")
+def list_glazing_types(
+    conn: Connection[Any],
+    include_inactive: bool = False,
+    *,
+    manufacturers: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    clauses: list[sql.Composable] = []
+    params: dict[str, Any] = {}
+    if not include_inactive:
+        clauses.append(sql.SQL("deleted_at IS NULL"))
+    if manufacturers is not None:
+        if not manufacturers:
+            return []
+        clauses.append(sql.SQL("LOWER(manufacturer) = ANY(%(manufacturers)s)"))
+        params["manufacturers"] = [m.lower() for m in manufacturers]
+    where = sql.SQL("") if not clauses else sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses)
     query = sql.SQL("{select} {where} ORDER BY name ASC, id ASC").format(
         select=sql.SQL(_SELECT),
         where=where,
     )
-    rows = conn.execute(query).fetchall()
+    rows = conn.execute(query, params).fetchall()
     return list(rows)
 
 

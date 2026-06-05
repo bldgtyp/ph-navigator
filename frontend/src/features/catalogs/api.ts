@@ -57,12 +57,31 @@ export async function duplicateMaterial(id: string): Promise<CatalogMaterial> {
   });
 }
 
+export type FrameTypeListFilters = {
+  includeInactive?: boolean;
+  location?: string;
+  operation?: string;
+  use?: string;
+  manufacturers?: string[];
+};
+
 export async function listFrameTypes(
-  includeInactive: boolean,
+  includeInactiveOrFilters: boolean | FrameTypeListFilters,
   signal?: AbortSignal,
 ): Promise<CatalogFrameTypeListResponse> {
-  const query = includeInactive ? "?include_inactive=true" : "";
-  return fetchJson<CatalogFrameTypeListResponse>(`/api/v1/catalogs/frame-types${query}`, {
+  const filters: FrameTypeListFilters =
+    typeof includeInactiveOrFilters === "boolean"
+      ? { includeInactive: includeInactiveOrFilters }
+      : includeInactiveOrFilters;
+  const params = new URLSearchParams();
+  if (filters.includeInactive) params.set("include_inactive", "true");
+  if (filters.location) params.set("location", filters.location);
+  if (filters.operation) params.set("operation", filters.operation);
+  if (filters.use) params.set("use", filters.use);
+  for (const m of filters.manufacturers ?? []) params.append("manufacturers", m);
+  const query = params.toString();
+  const suffix = query ? `?${query}` : "";
+  return fetchJson<CatalogFrameTypeListResponse>(`/api/v1/catalogs/frame-types${suffix}`, {
     signal,
   });
 }
@@ -102,12 +121,25 @@ export async function duplicateFrameType(id: string): Promise<CatalogFrameType> 
   });
 }
 
+export type GlazingTypeListFilters = {
+  includeInactive?: boolean;
+  manufacturers?: string[];
+};
+
 export async function listGlazingTypes(
-  includeInactive: boolean,
+  includeInactiveOrFilters: boolean | GlazingTypeListFilters,
   signal?: AbortSignal,
 ): Promise<CatalogGlazingTypeListResponse> {
-  const query = includeInactive ? "?include_inactive=true" : "";
-  return fetchJson<CatalogGlazingTypeListResponse>(`/api/v1/catalogs/glazing-types${query}`, {
+  const filters: GlazingTypeListFilters =
+    typeof includeInactiveOrFilters === "boolean"
+      ? { includeInactive: includeInactiveOrFilters }
+      : includeInactiveOrFilters;
+  const params = new URLSearchParams();
+  if (filters.includeInactive) params.set("include_inactive", "true");
+  for (const m of filters.manufacturers ?? []) params.append("manufacturers", m);
+  const query = params.toString();
+  const suffix = query ? `?${query}` : "";
+  return fetchJson<CatalogGlazingTypeListResponse>(`/api/v1/catalogs/glazing-types${suffix}`, {
     signal,
   });
 }
