@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import {
   NUMBER_UNIT_TYPES,
   type NumberUnitsConfig,
@@ -66,64 +67,57 @@ export function FieldConfigSectionNumberUnits({
       <label className="data-table-add-field-label" htmlFor={typeId}>
         Unit type
       </label>
-      <select
+      <AutocompleteSelect
         id={typeId}
         className="data-table-add-field-input"
         value={units.unit_type}
         disabled={controlsDisabled}
-        onChange={(event) =>
+        compact
+        options={NUMBER_UNIT_TYPES.map((definition) => ({
+          value: definition.id,
+          label: definition.label,
+        }))}
+        onChange={(unitType) =>
           onUnitsChange(
-            unitsForType(event.currentTarget.value as NumberUnitType, {
+            unitsForType(unitType as NumberUnitType, {
               mode: units.mode,
               precision_si: units.precision_si,
               precision_ip: units.precision_ip,
             }),
           )
         }
-      >
-        {NUMBER_UNIT_TYPES.map((definition) => (
-          <option key={definition.id} value={definition.id}>
-            {definition.label}
-          </option>
-        ))}
-      </select>
+      />
       <div className="data-table-field-config-modal-inline-grid">
         <label className="data-table-add-field-label" htmlFor={siUnitId}>
           SI unit
         </label>
-        <select
+        <AutocompleteSelect
           id={siUnitId}
           className="data-table-add-field-input"
           value={units.si_unit}
           disabled={controlsDisabled}
-          onChange={(event) =>
-            onUnitsChange({ ...units, si_unit: event.currentTarget.value as NumberSiUnit })
-          }
-        >
-          {(currentType ?? DEFAULT_UNIT_TYPE).siUnits.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.label}
-            </option>
-          ))}
-        </select>
+          compact
+          options={(currentType ?? DEFAULT_UNIT_TYPE).siUnits.map((unit) => ({
+            value: unit.id,
+            label: unit.label,
+          }))}
+          onChange={(siUnit) => onUnitsChange({ ...units, si_unit: siUnit as NumberSiUnit })}
+        />
         <label className="data-table-add-field-label" htmlFor={ipUnitId}>
           IP unit
         </label>
-        <select
+        <AutocompleteSelect
           id={ipUnitId}
           className="data-table-add-field-input"
           value={units.ip_unit}
           disabled={controlsDisabled}
-          onChange={(event) =>
-            onUnitsChange({ ...units, ip_unit: event.currentTarget.value as NumberIpUnit })
-          }
-        >
-          {(currentType ?? DEFAULT_UNIT_TYPE).ipUnits.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.label}
-            </option>
-          ))}
-        </select>
+          compact
+          options={(currentType ?? DEFAULT_UNIT_TYPE).ipUnits.map((unit) => ({
+            value: unit.id,
+            label: unit.label,
+          }))}
+          onChange={(ipUnit) => onUnitsChange({ ...units, ip_unit: ipUnit as NumberIpUnit })}
+        />
         <label className="data-table-add-field-label" htmlFor={precisionSiId}>
           SI decimal precision
         </label>

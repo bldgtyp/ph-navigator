@@ -1,16 +1,12 @@
-import { FormEvent, useState } from "react";
-import {
-  formatConductivityFromWmK,
-  formatDensityFromKgM3,
-  useUnitPreference,
-} from "../../../../lib/units";
+import { FormEvent, useRef, useState } from "react";
+import { useUnitPreference } from "../../../../lib/units";
 import { DialogActions } from "../../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
+import { useOutsidePointerDown } from "../../../../shared/ui/useOutsidePointerDown";
 import type { CatalogMaterial } from "../../../catalogs/types";
 import { useLengthDraft } from "../../hooks/useLengthDraft";
-import type { AssemblySegment, EnvelopeCommand, ProjectMaterial } from "../../types";
+import type { AssemblySegment, ProjectMaterial } from "../../types";
 import { ModalUnitToggle } from "../ModalUnitToggle";
-import { ProjectMaterialEditor } from "../ProjectMaterialEditor";
 import { SegmentMaterialPicker } from "./SegmentMaterialPicker";
 
 export function SegmentDialog({
@@ -26,9 +22,6 @@ export function SegmentDialog({
   onPickProjectMaterial,
   onPickCatalogMaterial,
   onOpenCatalogPicker,
-  onHandEnterMaterial,
-  onDetachSegmentMaterial,
-  onUpdateProjectMaterial,
   onDelete,
 }: {
   title: string;
@@ -47,22 +40,13 @@ export function SegmentDialog({
   onPickProjectMaterial: (projectMaterialId: string | null) => void;
   onPickCatalogMaterial: (catalogMaterialId: string) => void;
   onOpenCatalogPicker: () => void;
-  onHandEnterMaterial: (name: string) => void;
-  onDetachSegmentMaterial: () => void;
-  onUpdateProjectMaterial: (
-    command: Extract<EnvelopeCommand, { kind: "update_project_material" }>,
-  ) => void;
   onDelete: () => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
-  const width = useLengthDraft(segment.width_mm);
+  const lengthDraftOptions = { followUnitPreference: true, unitLabelStyle: "long" } as const;
+  const width = useLengthDraft(segment.width_mm, lengthDraftOptions);
   const [isContinuous, setIsContinuous] = useState(segment.is_continuous_insulation);
-  const studSpacing = useLengthDraft(segment.steel_stud_spacing_mm);
-  const selectedMaterial =
-    segment.project_material_id === null
-      ? null
-      : (materials.find((material) => material.id === segment.project_material_id) ?? null);
-
+  const studSpacing = useLengthDraft(segment.steel_stud_spacing_mm, lengthDraftOptions);
   function submit(event: FormEvent) {
     event.preventDefault();
     const widthMm = width.parsePositive("Width");
@@ -77,12 +61,19 @@ export function SegmentDialog({
   }
 
   return (
-    <ModalDialog title={title} titleId="envelope-segment-dialog-title" onClose={onClose}>
-      <div className="modal-form segment-properties-form">
-        <section className="segment-dialog-section">
-          <h3>Material</h3>
-          <MaterialPreview material={selectedMaterial} unitSystem={unitSystem} />
-        </section>
+    <ModalDialog
+      title={title}
+      titleId="envelope-segment-dialog-title"
+      onClose={onClose}
+      headerAccessory={
+        <>
+          <ModalUnitToggle unitSystem={unitSystem} setUnitSystem={setUnitSystem} />
+          <SegmentActionsMenu onDelete={onDelete} />
+        </>
+      }
+      showHeaderClose={false}
+    >
+      <form className="modal-form segment-properties-form" onSubmit={submit}>
         <SegmentMaterialPicker
           selectedProjectMaterialId={segment.project_material_id}
           materials={materials}
@@ -92,99 +83,81 @@ export function SegmentDialog({
           onPickProjectMaterial={onPickProjectMaterial}
           onPickCatalogMaterial={onPickCatalogMaterial}
           onOpenCatalogPicker={onOpenCatalogPicker}
-          onHandEnterMaterial={onHandEnterMaterial}
-          onDetachSegmentMaterial={onDetachSegmentMaterial}
         />
-        <form className="segment-dialog-section segment-geometry-form" onSubmit={submit}>
-          <section>
-            <div className="segment-section-header">
-              <h3>Geometry</h3>
-              <ModalUnitToggle unitSystem={unitSystem} setUnitSystem={setUnitSystem} />
-            </div>
-            <div className="segment-geometry-grid">
-              <label>
-                Width ({width.unitLabel})
-                <input
-                  value={width.draft}
-                  onChange={(event) => width.setDraft(event.currentTarget.value)}
-                />
-              </label>
-              <label>
-                Stud spacing ({studSpacing.unitLabel})
-                <input
-                  value={studSpacing.draft}
-                  onChange={(event) => studSpacing.setDraft(event.currentTarget.value)}
-                  placeholder="None"
-                />
-              </label>
-            </div>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={isContinuous}
-                onChange={(event) => setIsContinuous(event.currentTarget.checked)}
-              />
-              Continuous insulation
-            </label>
-          </section>
-          <DialogActions
-            busy={busy}
-            error={width.error ?? studSpacing.error ?? error}
-            submitLabel="Apply"
-            onClose={onClose}
-          />
-          <button type="button" className="danger-button modal-danger-action" onClick={onDelete}>
-            Delete segment
-          </button>
-        </form>
-        {selectedMaterial ? (
-          <section className="segment-dialog-section">
-            <h3>Shared material values</h3>
-            <ProjectMaterialEditor
-              material={selectedMaterial}
-              busy={busy}
-              error={error}
-              showNotes={false}
-              onCommand={onUpdateProjectMaterial}
+        <fieldset className="segment-dialog-section">
+          <legend>Width ({width.unitLabel})</legend>
+          <div className="segment-geometry-grid">
+            <input
+              aria-label={`Width (${width.unitLabel})`}
+              value={width.draft}
+              onChange={(event) => width.setDraft(event.currentTarget.value)}
             />
-          </section>
-        ) : null}
-      </div>
+          </div>
+        </fieldset>
+        <fieldset className="segment-dialog-section">
+          <legend>Steel Stud Parameters</legend>
+          <div className="segment-geometry-grid">
+            <label>
+              Stud spacing ({studSpacing.unitLabel})
+              <input
+                value={studSpacing.draft}
+                onChange={(event) => studSpacing.setDraft(event.currentTarget.value)}
+                placeholder="None"
+              />
+            </label>
+          </div>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={isContinuous}
+              onChange={(event) => setIsContinuous(event.currentTarget.checked)}
+            />
+            Continuous insulation
+          </label>
+        </fieldset>
+        <DialogActions
+          busy={busy}
+          error={width.error ?? studSpacing.error ?? error}
+          submitLabel="Apply"
+          onClose={onClose}
+        />
+      </form>
     </ModalDialog>
   );
 }
 
-function MaterialPreview({
-  material,
-  unitSystem,
-}: {
-  material: ProjectMaterial | null;
-  unitSystem: "IP" | "SI";
-}) {
-  if (!material) {
-    return (
-      <div className="segment-material-preview is-empty">
-        <strong>No material assigned</strong>
-        <span>
-          Choose a project material, copy one from the catalog, or hand-enter a custom material.
-        </span>
-      </div>
-    );
+function SegmentActionsMenu({ onDelete }: { onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  useOutsidePointerDown(menuRef, open, () => setOpen(false));
+
+  function deleteSegment(): void {
+    setOpen(false);
+    onDelete();
   }
+
   return (
-    <div className="segment-material-preview">
-      <strong>{material.name}</strong>
-      <span>{material.category ?? "Uncategorized"}</span>
-      <dl>
-        <div>
-          <dt>Lambda</dt>
-          <dd>{formatConductivityFromWmK(material.conductivity_w_mk, { unitSystem })}</dd>
+    <div className="segment-actions" ref={menuRef}>
+      <button
+        type="button"
+        className="segment-actions-trigger"
+        aria-label="More segment actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      />
+      {open ? (
+        <div className="segment-actions-menu" role="menu" aria-label="Segment actions">
+          <button
+            type="button"
+            role="menuitem"
+            className="segment-actions-menu-item is-danger"
+            onClick={deleteSegment}
+          >
+            Delete segment
+          </button>
         </div>
-        <div>
-          <dt>Density</dt>
-          <dd>{formatDensityFromKgM3(material.density_kg_m3, { unitSystem })}</dd>
-        </div>
-      </dl>
+      ) : null}
     </div>
   );
 }

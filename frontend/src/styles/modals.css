@@ -23,6 +23,12 @@
   letter-spacing: 0;
 }
 
+.modal-header-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
 .modal-subtitle {
   margin: 6px 0 0;
   color: var(--text-secondary);

@@ -234,24 +234,6 @@ export function EnvelopeEditorDialogs({
           })
         }
         onOpenCatalogPicker={onOpenCatalogPicker}
-        onHandEnterMaterial={(name) =>
-          onCommand({
-            kind: "hand_enter_material",
-            assembly_id: dialog.assembly.id,
-            layer_id: dialog.layer.id,
-            segment_id: dialog.segment.id,
-            name,
-          })
-        }
-        onDetachSegmentMaterial={() =>
-          onCommand({
-            kind: "detach_segment_material",
-            assembly_id: dialog.assembly.id,
-            layer_id: dialog.layer.id,
-            segment_id: dialog.segment.id,
-          })
-        }
-        onUpdateProjectMaterial={(command) => onCommand(command)}
         onDelete={() => {
           onReplaceDialog({
             kind: "delete-segment",

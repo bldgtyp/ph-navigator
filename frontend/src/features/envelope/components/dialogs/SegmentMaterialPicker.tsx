@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { AutocompleteSelect } from "../../../../shared/ui/AutocompleteSelect";
 import type { CatalogMaterial } from "../../../catalogs/types";
 import type { ProjectMaterial } from "../../types";
 
-type PickerMode = "project" | "catalog" | "custom";
+type PickerMode = "project" | "catalog";
 
 export function SegmentMaterialPicker({
   selectedProjectMaterialId,
@@ -13,8 +14,6 @@ export function SegmentMaterialPicker({
   onPickProjectMaterial,
   onPickCatalogMaterial,
   onOpenCatalogPicker,
-  onHandEnterMaterial,
-  onDetachSegmentMaterial,
 }: {
   selectedProjectMaterialId: string | null;
   materials: ProjectMaterial[];
@@ -24,11 +23,8 @@ export function SegmentMaterialPicker({
   onPickProjectMaterial: (projectMaterialId: string | null) => void;
   onPickCatalogMaterial: (catalogMaterialId: string) => void;
   onOpenCatalogPicker: () => void;
-  onHandEnterMaterial: (name: string) => void;
-  onDetachSegmentMaterial: () => void;
 }) {
   const [mode, setMode] = useState<PickerMode>("project");
-  const [newMaterialName, setNewMaterialName] = useState("");
   function switchMode(nextMode: PickerMode): void {
     if (nextMode === mode) return;
     setMode(nextMode);
@@ -38,12 +34,16 @@ export function SegmentMaterialPicker({
   return (
     <fieldset className="material-picker">
       <legend>Material</legend>
-      <div className="material-picker-tabs" role="tablist" aria-label="Material source">
+      <div
+        className="material-picker-tabs pill-tab-list"
+        role="tablist"
+        aria-label="Material source"
+      >
         <button
           type="button"
           role="tab"
           aria-selected={mode === "project"}
-          className={mode === "project" ? "active" : undefined}
+          className={`pill-tab${mode === "project" ? " active" : ""}`}
           onClick={() => switchMode("project")}
         >
           In this project
@@ -52,95 +52,51 @@ export function SegmentMaterialPicker({
           type="button"
           role="tab"
           aria-selected={mode === "catalog"}
-          className={mode === "catalog" ? "active" : undefined}
+          className={`pill-tab${mode === "catalog" ? " active" : ""}`}
           onClick={() => switchMode("catalog")}
         >
           From catalog
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "custom"}
-          className={mode === "custom" ? "active" : undefined}
-          onClick={() => switchMode("custom")}
-        >
-          Hand-enter
-        </button>
       </div>
       {mode === "project" ? (
         <div className="material-picker-panel" role="tabpanel">
-          <label>
-            Project material
-            <select
-              value={selectedProjectMaterialId ?? ""}
-              disabled={busy}
-              onChange={(event) => onPickProjectMaterial(event.currentTarget.value || null)}
-            >
-              <option value="">No material</option>
-              {materials.map((material) => (
-                <option key={material.id} value={material.id}>
-                  {material.name} ({material.use_sites.length} uses)
-                </option>
-              ))}
-            </select>
-          </label>
+          <AutocompleteSelect
+            aria-label="Project material"
+            value={selectedProjectMaterialId ?? ""}
+            disabled={busy}
+            options={[
+              { value: "", label: "No material" },
+              ...materials.map((material) => ({
+                value: material.id,
+                label: material.name,
+                description: `${material.use_sites.length} uses`,
+              })),
+            ]}
+            onChange={(nextProjectMaterialId) =>
+              onPickProjectMaterial(nextProjectMaterialId || null)
+            }
+          />
         </div>
       ) : null}
       {mode === "catalog" ? (
         <div className="material-picker-panel" role="tabpanel">
-          <label>
-            Catalog material
-            <select
-              value=""
-              disabled={busy || catalogMaterialsLoading}
-              onChange={(event) => {
-                const catalogMaterialId = event.currentTarget.value;
-                if (catalogMaterialId) onPickCatalogMaterial(catalogMaterialId);
-              }}
-            >
-              <option value="">
-                {catalogMaterialsLoading
-                  ? "Loading catalog materials..."
-                  : "Choose catalog material"}
-              </option>
-              {catalogMaterials.map((material) => (
-                <option key={material.id} value={material.id}>
-                  {material.category} / {material.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : null}
-      {mode === "custom" ? (
-        <div className="material-picker-panel inline-form-row" role="tabpanel">
-          <input
-            value={newMaterialName}
-            onChange={(event) => setNewMaterialName(event.currentTarget.value)}
-            placeholder="Hand-enter material"
-          />
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={!newMaterialName.trim() || busy}
-            onClick={() => {
-              onHandEnterMaterial(newMaterialName.trim());
-              setNewMaterialName("");
+          <AutocompleteSelect
+            aria-label="Catalog material"
+            value=""
+            disabled={busy || catalogMaterialsLoading}
+            placeholder={
+              catalogMaterialsLoading ? "Loading catalog materials..." : "Choose catalog material"
+            }
+            options={catalogMaterials.map((material) => ({
+              value: material.id,
+              label: material.name,
+              description: material.category,
+            }))}
+            onChange={(catalogMaterialId) => {
+              if (catalogMaterialId) onPickCatalogMaterial(catalogMaterialId);
             }}
-          >
-            Add material
-          </button>
+          />
         </div>
-      ) : null}
-      {selectedProjectMaterialId ? (
-        <button
-          type="button"
-          className="text-button"
-          disabled={busy}
-          onClick={onDetachSegmentMaterial}
-        >
-          Detach to custom material
-        </button>
       ) : null}
     </fieldset>
   );

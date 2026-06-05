@@ -28,6 +28,11 @@ function baseField(overrides: Partial<FieldDef> = {}): FieldDef {
 
 type PreflightSourceRow = { rowId: string; rawValue: unknown };
 
+function chooseAutocompleteOption(label: string, optionName: string) {
+  fireEvent.focus(screen.getByRole("combobox", { name: label }));
+  fireEvent.click(screen.getByRole("option", { name: optionName }));
+}
+
 type HarnessProps = {
   initialField?: FieldDef;
   dispatchBundle?: ReturnType<typeof vi.fn>;
@@ -455,7 +460,7 @@ describe("FieldConfigModal", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Add units" }));
-    fireEvent.change(screen.getByLabelText("Unit type"), { target: { value: "length" } });
+    chooseAutocompleteOption("Unit type", "Length");
     fireEvent.change(screen.getByLabelText("IP decimal precision"), { target: { value: "3" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -670,7 +675,7 @@ describe("FieldConfigModal", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("Default option"), { target: { value: "opt_b" } });
+    chooseAutocompleteOption("Default option", "B");
     fireEvent.change(screen.getByLabelText("Option label for A"), {
       target: { value: "Alpha" },
     });

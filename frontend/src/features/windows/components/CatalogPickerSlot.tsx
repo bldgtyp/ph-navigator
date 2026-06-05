@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { OVERRIDE_TRACKER_FIELD, applyUValueOverride } from "../lib";
 import { refreshActionLabel } from "../refresh/lib";
 import type { RefreshSlotReport } from "../refresh/types";
@@ -37,15 +38,18 @@ export function CatalogPickerSlot<TRow extends CatalogPickableRow, TRef extends 
   const refreshLabel = canEdit && refreshSlot ? refreshActionLabel(refreshSlot.state) : null;
   return (
     <div className={className ? `window-slot ${className}` : "window-slot"}>
-      <label htmlFor={selectId} className="window-slot-label">
-        {label}
-      </label>
-      <select
+      <AutocompleteSelect
         id={selectId}
+        label={label}
+        className="window-slot-picker"
         value={value?.catalog_origin?.catalog_record_id ?? ""}
         disabled={!canEdit || catalogRowsLoading}
-        onChange={(event) => {
-          const recordId = event.target.value;
+        placeholder={catalogRowsLoading ? "Loading catalog..." : "(none)"}
+        options={[
+          { value: "", label: "(none)" },
+          ...catalogRows.map((row) => ({ value: row.id, label: row.name })),
+        ]}
+        onChange={(recordId) => {
           if (!recordId) {
             onChange(null);
             return;
@@ -54,14 +58,7 @@ export function CatalogPickerSlot<TRow extends CatalogPickableRow, TRef extends 
           if (!row) return;
           onChange(refFromCatalogRow(row));
         }}
-      >
-        <option value="">(none)</option>
-        {catalogRows.map((row) => (
-          <option key={row.id} value={row.id}>
-            {row.name}
-          </option>
-        ))}
-      </select>
+      />
       {value ? (
         <div className="window-slot-detail">
           {value.catalog_origin ? (

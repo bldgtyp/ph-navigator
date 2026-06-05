@@ -68,18 +68,20 @@ describe("GroupPopover", () => {
     const directions = screen.getAllByRole("combobox", { name: "Group direction" });
     expect(directions).toHaveLength(2);
     // Direction options use AirTable's literal group phrasing.
-    expect((directions[0] as HTMLSelectElement).value).toBe("asc");
-    expect(screen.getAllByText("First → Last").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Last → First").length).toBeGreaterThan(0);
+    expect(directions[0]).toHaveValue("First → Last");
+    expect(directions[1]).toHaveValue("Last → First");
   });
 
   test("field picker excludes fields already in the group stack", () => {
-    renderPopover([{ fieldKey: "floor", direction: "asc" }]);
-    const fieldSelect = screen.getByRole("combobox", { name: "Group field" }) as HTMLSelectElement;
-    const optionValues = Array.from(fieldSelect.options).map((o) => o.value);
-    expect(optionValues).toContain("floor"); // the current rule's value stays selectable
-    // Other rules' fields would be excluded; here only one rule exists.
-    expect(new Set(optionValues).size).toBe(optionValues.length);
+    renderPopover([
+      { fieldKey: "floor", direction: "asc" },
+      { fieldKey: "zone", direction: "asc" },
+    ]);
+    const fieldSelects = screen.getAllByRole("combobox", { name: "Group field" });
+    fireEvent.focus(fieldSelects[0]!);
+    expect(screen.getByRole("option", { name: "Floor" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Zone" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Name" })).toBeInTheDocument();
   });
 
   test("delete (×) removes the rule", () => {

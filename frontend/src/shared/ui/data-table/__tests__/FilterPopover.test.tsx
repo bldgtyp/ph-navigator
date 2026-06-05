@@ -48,6 +48,11 @@ function popoverContent(): HTMLElement {
   return screen.getByRole("dialog", { name: "Filter rules" });
 }
 
+function chooseAutocompleteOption(label: string, optionName: string) {
+  fireEvent.focus(within(popoverContent()).getByRole("combobox", { name: label }));
+  fireEvent.click(screen.getByRole("option", { name: optionName }));
+}
+
 describe("FilterPopover", () => {
   test("renders an empty-state message when no rules exist", () => {
     render(<Harness onFilterChange={vi.fn()} />);
@@ -71,8 +76,7 @@ describe("FilterPopover", () => {
         onFilterChange={onChange}
       />,
     );
-    const fieldPicker = within(popoverContent()).getByLabelText("Filter field");
-    fireEvent.change(fieldPicker, { target: { value: "num_people" } });
+    chooseAutocompleteOption("Filter field", "People");
     expect(onChange).toHaveBeenLastCalledWith([{ fieldKey: "num_people", operator: "eq" }]);
   });
 
@@ -84,8 +88,7 @@ describe("FilterPopover", () => {
         onFilterChange={onChange}
       />,
     );
-    const operatorPicker = within(popoverContent()).getByLabelText("Filter operator");
-    fireEvent.change(operatorPicker, { target: { value: "is_empty" } });
+    chooseAutocompleteOption("Filter operator", "is empty");
     expect(onChange).toHaveBeenLastCalledWith([{ fieldKey: "name", operator: "is_empty" }]);
   });
 
