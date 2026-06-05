@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 18:05 EDT
-STATUS: In progress — Phases 01–04 shipped; Phase 05 sub-PR A (parser + backend dim handlers) shipped; sub-PR B (UI) pending.
+TIME: 18:25 EDT
+STATUS: In progress — Phases 01–05 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current State
 
-- **Phases 01, 02, 03, and 04 — additive variants shipped.** New `Aperture*`
+- **Phases 01, 02, 03, 04, and 05 — additive variants shipped.** New `Aperture*`
   domain model, `tables.apertures[]` field, command seam, coverage
   invariant, default factory, route + service wrapper, full
   frontend tab, the SVG canvas substrate (geometry helpers,
@@ -70,22 +70,26 @@ RELATED:
 
 ## Next Step
 
-Phase 05 split into two sub-PRs to keep change-sets reviewable:
+Begin Phase 06 (`phases/phase-06-element-cards-pickers.md`) — element
+cards, frame / glazing pickers, U-Value chips. Phase 05's strips +
+edit-in-place + parser + backend handlers are all live underneath.
 
-- **Sub-PR A (shipped, this commit):** shared parser in
-  `frontend/src/lib/units/length/` (ported verbatim from V1 + parens
-  support for `evaluateSimpleExpression`) and the five backend
-  dimension command handlers
-  (`editDimension`, `addRow`, `addColumn`, `deleteRow`,
-  `deleteColumn`) wired into `apply_aperture_command`. Dispatcher
-  removes the five kinds from `_NOT_IMPLEMENTED_KINDS`. Phase 01's
-  command model field names (`new_value_mm` / `at_index` /
-  `height_mm` / `width_mm`) were preserved rather than renamed to
-  the phase doc's `new_mm` / `position` / `default_dim_mm` —
-  changing them would break the Phase 01 wire contract.
-- **Sub-PR B (next):** Dimension UI — strips, edge-add hot-zones,
-  delete dialog, format selector, total-dim caption, container
-  composition.
+Phase 05 was split into two sub-PRs:
+
+- **Sub-PR A:** shared parser in `frontend/src/lib/units/length/`
+  (ported verbatim from V1 + parens support for
+  `evaluateSimpleExpression`) and the five backend dimension command
+  handlers (`editDimension`, `addRow`, `addColumn`, `deleteRow`,
+  `deleteColumn`) wired into `apply_aperture_command`.
+- **Sub-PR B:** Dimension UI — `useDimensionDraft` hook,
+  `DimensionLabel` primitive, `HorizontalDimensionStrip` +
+  `VerticalDimensionStrip`, `EdgeAddButtons`,
+  `DeleteDimensionDialog`, `DisplayFormatSelector`,
+  `TotalDimensionsCaption`, `useApertureDimFormat`,
+  `delete-dimension-impact` quiet-vs-confirm helper, and the canvas
+  container CSS-grid composition that places strips + edge hot-zones
+  + selector + caption around the SVG / overlay stage. `AperturesTab`
+  fans the five dimension commands through `dispatch`.
 
 ## Blockers
 
@@ -106,7 +110,10 @@ Phase 05 split into two sub-PRs to keep change-sets reviewable:
 - Phase 04: prior commit. `make ci` green (525 backend tests, 1161
   frontend tests — 6 store + 8 overlay + 6 pill added, build
   successful).
-- Phase 05 sub-PR A: this commit. `make ci` green (536 backend
+- Phase 05 sub-PR A: prior commit. `make ci` green (536 backend
   tests — +11 for dimension commands; 1296 frontend tests — +135
   for shared parser modules: parseFeetInches 32, evaluateExpression
   41, parseInput 27, formatFeetInches 15, displayUnitConverter 20).
+- Phase 05 sub-PR B: this commit. `make ci` green (536 backend
+  tests; 1314 frontend tests — +18: useDimensionDraft 6,
+  DimensionLabel 7, HorizontalDimensionStrip 5).

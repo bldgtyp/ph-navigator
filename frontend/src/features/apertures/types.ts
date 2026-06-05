@@ -48,11 +48,11 @@ export type AperturesSlice = {
   apertures: ApertureTypeEntry[];
 };
 
-// Discriminated union mirroring the backend `ApertureCommand`. Stubbed
-// command kinds (everything from `editDimension` onwards) are reserved
-// in the wire shape but their server-side handlers raise
-// `aperture_command_not_implemented` until the phase that owns the
-// gesture ships.
+// Discriminated union mirroring the backend `ApertureCommand`. Five
+// kinds (editDimension, addRow, addColumn, deleteRow, deleteColumn)
+// were stubbed in Phase 01 and are wired in Phase 05; the remaining
+// stubs (merge, split, pickFrame, pickGlazing, pasteAssignment) still
+// raise `aperture_command_not_implemented` server-side.
 export type ApertureCommand =
   | { kind: "createApertureType"; proposed_name?: string | null }
   | { kind: "renameApertureType"; aperture_type_id: string; new_name: string }
@@ -64,4 +64,15 @@ export type ApertureCommand =
       aperture_type_id: string;
       element_id: string;
       operation: ApertureOperation | null;
-    };
+    }
+  | {
+      kind: "editDimension";
+      aperture_type_id: string;
+      axis: "row" | "column";
+      index: number;
+      new_value_mm: number;
+    }
+  | { kind: "addRow"; aperture_type_id: string; at_index: number; height_mm: number }
+  | { kind: "addColumn"; aperture_type_id: string; at_index: number; width_mm: number }
+  | { kind: "deleteRow"; aperture_type_id: string; index: number }
+  | { kind: "deleteColumn"; aperture_type_id: string; index: number };

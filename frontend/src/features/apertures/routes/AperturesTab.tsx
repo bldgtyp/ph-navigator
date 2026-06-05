@@ -151,6 +151,45 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   new_name: newName,
                 })
               }
+              onEditDimension={(axis, index, newMm) =>
+                void dispatch({
+                  kind: "editDimension",
+                  aperture_type_id: activeAperture.id,
+                  axis,
+                  index,
+                  new_value_mm: newMm,
+                })
+              }
+              onAddRow={(at_index) =>
+                void dispatch({
+                  kind: "addRow",
+                  aperture_type_id: activeAperture.id,
+                  at_index,
+                  height_mm: 1000,
+                })
+              }
+              onAddColumn={(at_index) =>
+                void dispatch({
+                  kind: "addColumn",
+                  aperture_type_id: activeAperture.id,
+                  at_index,
+                  width_mm: 1000,
+                })
+              }
+              onDeleteRow={(index) =>
+                void dispatch({
+                  kind: "deleteRow",
+                  aperture_type_id: activeAperture.id,
+                  index,
+                })
+              }
+              onDeleteColumn={(index) =>
+                void dispatch({
+                  kind: "deleteColumn",
+                  aperture_type_id: activeAperture.id,
+                  index,
+                })
+              }
             />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
