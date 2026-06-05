@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 16:20 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 19:00 EDT
+STATUS: Done
+AUTHOR: Claude
 SCOPE: Replace Phase 06's read-only operation display with the full
        Fixed / Swing / Slide editor + direction toggles + preset
        menu (Tilt-Turn, Awning, Hopper, Casement L/R, Slider L/R).
@@ -22,6 +22,27 @@ RELATED:
 ---
 
 # Phase 7 — Operations editor (presets + symbols + interior flip)
+
+## Implementation note (Claude, 2026-06-05)
+
+Shipped as a single PR. See STATUS.md "Phase 07 deviations from the
+doc" for the per-decision rationale. Highlights:
+
+- `OperationRow` uses a native `<select>` + `<button>` toggles
+  (no shadcn dep); preset menu is a `<details>` dropdown to match
+  the FramePicker / GlazingPicker pattern from Phase 06.
+- `<OperationSymbols />` lives at `components/OperationSymbols.tsx`
+  (flat, not under a `canvas/` subfolder) and mounts after the
+  glazing rect inside `ApertureSvgCanvas` so it paints on top.
+- Frame-match is exact-string against `formatOperation(element
+  .operation)` — V1 free-form `operation` labels ("Casement") report
+  as mismatched until the catalog seed normalizes its operation
+  column. Documented as a v1 trade-off.
+- Dismissed-warning state lives in Zustand
+  (`dismissedOperationWarnings`) and clears on aperture-type
+  unmount via `clearDismissedOperationWarnings`.
+
+## Original Phase 07 plan follows.
 
 ## P0. Why this slice
 

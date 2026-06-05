@@ -10,6 +10,10 @@ import type { ApertureElement, ApertureSide, FrameRef, GlazingRef } from "../typ
 import type { ViewDirection } from "../frame-label-map";
 import { FrameRow } from "./FrameRow";
 import { GlazingRow } from "./GlazingRow";
+import { OperationRow } from "./OperationRow";
+import { OperationWarningBanner } from "./OperationWarningBanner";
+import type { ApertureOperation } from "../types";
+import { mismatchedSides } from "../operation-frame-match";
 
 export type ApertureElementCardProps = {
   element: ApertureElement;
@@ -22,6 +26,9 @@ export type ApertureElementCardProps = {
   onPickGlazing: (glazing: GlazingRef) => void;
   onEditFrameField: (side: ApertureSide, fieldKey: string, value: string | number | null) => void;
   onEditGlazingField: (fieldKey: string, value: string | number | null) => void;
+  onSetOperation: (operation: ApertureOperation | null) => void;
+  operationWarningDismissed: boolean;
+  onDismissOperationWarning: () => void;
 };
 
 const ALL_SIDES: ApertureSide[] = ["top", "right", "bottom", "left"];
@@ -36,6 +43,9 @@ export function ApertureElementCard({
   onPickGlazing,
   onEditFrameField,
   onEditGlazingField,
+  onSetOperation,
+  operationWarningDismissed,
+  onDismissOperationWarning,
 }: ApertureElementCardProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [nameDraft, setNameDraft] = useState(element.name);
@@ -59,7 +69,7 @@ export function ApertureElementCard({
     if (trimmed !== element.name) onSetName(trimmed);
   };
 
-  const operationLabel = describeOperation(element.operation);
+  const mismatched = mismatchedSides(element);
 
   return (
     <div className="aperture-element-card" data-testid={`element-card-${element.id}`} ref={cardRef}>
@@ -89,30 +99,44 @@ export function ApertureElementCard({
         onPick={onPickGlazing}
         onEditField={onEditGlazingField}
       />
-      {ALL_SIDES.map((side) => (
-        <FrameRow
-          key={side}
-          side={side}
-          viewDirection={viewDirection}
-          frame={element.frames[side]}
-          operation={element.operation}
-          canEdit={canEdit}
-          onPick={(frame) => onPickFrame(side, frame)}
-          onEditField={(k, v) => onEditFrameField(side, k, v)}
+      {ALL_SIDES.map((side) => {
+        const isMismatch = !operationWarningDismissed && mismatched.includes(side);
+        return (
+          <FrameRow
+            key={side}
+            side={side}
+            viewDirection={viewDirection}
+            frame={element.frames[side]}
+            operation={element.operation}
+            canEdit={canEdit}
+            mismatchIndicator={
+              isMismatch
+                ? mismatchTooltip(element.frames[side]?.operation, element.operation)
+                : null
+            }
+            onPick={(frame) => onPickFrame(side, frame)}
+            onEditField={(k, v) => onEditFrameField(side, k, v)}
+          />
+        );
+      })}
+      <OperationRow operation={element.operation} canEdit={canEdit} onCommit={onSetOperation} />
+      {!operationWarningDismissed && (
+        <OperationWarningBanner
+          mismatchedSides={mismatched}
+          onDismiss={onDismissOperationWarning}
         />
-      ))}
-      <div className="aperture-element-card__operation">
-        <span className="aperture-card-row__label">Operation:</span>
-        <span data-testid="element-operation-readout">{operationLabel}</span>
-      </div>
+      )}
     </div>
   );
 }
 
-function describeOperation(operation: ApertureElement["operation"]): string {
-  if (operation === null) return "Fixed";
-  const type = operation.type === "swing" ? "Swing" : "Slide";
-  if (operation.directions.length === 0) return type;
-  const dirs = operation.directions.map((d) => d.charAt(0).toUpperCase() + d.slice(1));
-  return `${type} (${dirs.join(", ")})`;
+function mismatchTooltip(
+  frameOperation: string | null | undefined,
+  elementOperation: ApertureElement["operation"],
+): string {
+  const elementLabel =
+    elementOperation === null
+      ? "Fixed"
+      : `${elementOperation.type.charAt(0).toUpperCase()}${elementOperation.type.slice(1)}`;
+  return `Frame catalog operation was '${frameOperation ?? "?"}'; element operation is now '${elementLabel}'.`;
 }

@@ -5,6 +5,7 @@
 
 import type {
   ApertureElement,
+  ApertureOperation,
   ApertureSide,
   ApertureTypeEntry,
   FrameRef,
@@ -33,6 +34,9 @@ export type ApertureElementCardStackProps = {
     value: string | number | null,
   ) => void;
   onEditGlazingField: (elementId: string, fieldKey: string, value: string | number | null) => void;
+  onSetElementOperation: (elementId: string, operation: ApertureOperation | null) => void;
+  dismissedOperationWarnings: readonly string[];
+  onDismissOperationWarning: (elementId: string) => void;
 };
 
 export function ApertureElementCardStack({
@@ -45,6 +49,9 @@ export function ApertureElementCardStack({
   onPickGlazing,
   onEditFrameField,
   onEditGlazingField,
+  onSetElementOperation,
+  dismissedOperationWarnings,
+  onDismissOperationWarning,
 }: ApertureElementCardStackProps) {
   const ordered = orderedElements(aperture.elements);
   return (
@@ -63,6 +70,9 @@ export function ApertureElementCardStack({
           onPickGlazing={(glazing) => onPickGlazing(element.id, glazing)}
           onEditFrameField={(side, k, v) => onEditFrameField(element.id, side, k, v)}
           onEditGlazingField={(k, v) => onEditGlazingField(element.id, k, v)}
+          onSetOperation={(op) => onSetElementOperation(element.id, op)}
+          operationWarningDismissed={dismissedOperationWarnings.includes(element.id)}
+          onDismissOperationWarning={() => onDismissOperationWarning(element.id)}
         />
       ))}
     </div>
