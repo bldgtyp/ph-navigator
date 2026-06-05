@@ -163,9 +163,15 @@ make ci
 `make ci` is the local mirror of `.github/workflows/ci.yml`: backend locked
 `uv` sync, Ruff format check, Ruff lint, Ty, Alembic migration, pytest;
 frontend frozen `pnpm` install, Prettier check, ESLint, structural guards,
-Vitest, and production build. A narrower command is useful while iterating,
-but it does not close a code change. If `make format` changes files, inspect
-the diff and rerun `make ci`.
+Vitest, and production build.
+
+For simple frontend layout, CSS, typography, and component-positioning
+iterations, `make frontend-dev-check` is the preferred fast feedback gate. It
+runs frontend Prettier check, ESLint, structural guards, and the production
+build without touching Postgres, Alembic, backend pytest, frozen install, or
+the full Vitest suite. A narrower command is useful while iterating, but it
+does not close a code change. If `make format` changes files, inspect the diff
+and rerun `make ci`.
 
 ### Backend Controls
 
@@ -369,13 +375,14 @@ Preferred split direction:
 Useful focused frontend checks while iterating:
 
 ```bash
-cd frontend
-pnpm run format:check
-pnpm run lint
-pnpm run check:all
-pnpm test
-pnpm run build
+make frontend-dev-check
+cd frontend && pnpm exec vitest run src/features/.../__tests__/name.test.tsx
 ```
+
+Use the focused Vitest command when the change affects interaction, state,
+TanStack Query behavior, parsers, data transforms, or adapters. Pure layout,
+CSS, typography, and component-positioning changes usually only need
+`make frontend-dev-check` during iteration.
 
 Repo-level aliases:
 

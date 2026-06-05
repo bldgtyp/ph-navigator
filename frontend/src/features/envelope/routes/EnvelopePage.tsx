@@ -337,8 +337,12 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   };
 
   return (
-    <section className="tab-panel envelope-panel" aria-label="Assembly Builder">
-      <nav className="envelope-subtabs" aria-label="Envelope views">
+    <section
+      id="envelope-assembly-builder-panel"
+      className="tab-panel envelope-panel"
+      aria-label="Assembly Builder"
+    >
+      <nav id="envelope-subtabs" className="envelope-subtabs" aria-label="Envelope views">
         <NavLink to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}>
           Assemblies
         </NavLink>
@@ -420,7 +424,9 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           onFlipSegments={() =>
             void applyCommand({ kind: "flip_segments", assembly_id: activeAssembly.id })
           }
-          onEditLayer={(layer) => setDialog({ kind: "layer", assembly: activeAssembly, layer })}
+          onDeleteLayer={(layer) =>
+            setDialog({ kind: "delete-layer", assembly: activeAssembly, layer })
+          }
           onUpdateLayerThickness={(layer, thicknessMm) =>
             void applyCommand({
               kind: "update_layer_thickness",

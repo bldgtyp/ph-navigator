@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 
 export function ModalDialog({
+  id,
   title,
   titleId,
   onClose,
@@ -8,6 +9,7 @@ export function ModalDialog({
   headerAccessory,
   showHeaderClose = true,
 }: {
+  id?: string;
   title: string;
   titleId: string;
   onClose: () => void;
@@ -28,7 +30,13 @@ export function ModalDialog({
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <section
+        id={id}
+        className="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
         <div className="modal-header">
           <h2 id={titleId}>{title}</h2>
           <div className="modal-header-actions">

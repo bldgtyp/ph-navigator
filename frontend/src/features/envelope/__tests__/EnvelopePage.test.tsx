@@ -683,9 +683,8 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByRole("link", { name: /WALL-C3/ });
-    await userEvent.click(screen.getByRole("button", { name: "Open layer 1 thickness dialog" }));
-    expect(await screen.findByRole("dialog", { name: "Layer thickness" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Delete layer" }));
+    await userEvent.click(screen.getByRole("button", { name: "Edit layer 1 thickness" }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete layer 1" }));
     expect(await screen.findByRole("dialog", { name: "Delete layer" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 

@@ -6,6 +6,7 @@ import type { ProjectMaterial } from "../../types";
 type PickerMode = "project" | "catalog";
 
 export function SegmentMaterialPicker({
+  id = "envelope-segment-material-picker",
   selectedProjectMaterialId,
   materials,
   catalogMaterials,
@@ -15,6 +16,7 @@ export function SegmentMaterialPicker({
   onPickCatalogMaterial,
   onOpenCatalogPicker,
 }: {
+  id?: string;
   selectedProjectMaterialId: string | null;
   materials: ProjectMaterial[];
   catalogMaterials: CatalogMaterial[];
@@ -32,14 +34,16 @@ export function SegmentMaterialPicker({
   }
 
   return (
-    <fieldset className="material-picker">
+    <fieldset id={id} className="material-picker">
       <legend>Material</legend>
       <div
+        id={`${id}-tabs`}
         className="material-picker-tabs pill-tab-list"
         role="tablist"
         aria-label="Material source"
       >
         <button
+          id={`${id}-project-tab`}
           type="button"
           role="tab"
           aria-selected={mode === "project"}
@@ -49,6 +53,7 @@ export function SegmentMaterialPicker({
           In this project
         </button>
         <button
+          id={`${id}-catalog-tab`}
           type="button"
           role="tab"
           aria-selected={mode === "catalog"}
@@ -59,8 +64,9 @@ export function SegmentMaterialPicker({
         </button>
       </div>
       {mode === "project" ? (
-        <div className="material-picker-panel" role="tabpanel">
+        <div id={`${id}-project-panel`} className="material-picker-panel" role="tabpanel">
           <AutocompleteSelect
+            id={`${id}-project-select`}
             aria-label="Project material"
             value={selectedProjectMaterialId ?? ""}
             disabled={busy}
@@ -79,8 +85,9 @@ export function SegmentMaterialPicker({
         </div>
       ) : null}
       {mode === "catalog" ? (
-        <div className="material-picker-panel" role="tabpanel">
+        <div id={`${id}-catalog-panel`} className="material-picker-panel" role="tabpanel">
           <AutocompleteSelect
+            id={`${id}-catalog-select`}
             aria-label="Catalog material"
             value=""
             disabled={busy || catalogMaterialsLoading}

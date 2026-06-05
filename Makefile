@@ -8,7 +8,7 @@
         object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
-        lint check ci ci-backend ci-frontend check-backend check-frontend build-frontend format format-check \
+        lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
         smoke seed-dev-user seed-dev-data seed-glazing seed-frames e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
@@ -167,6 +167,12 @@ lint: ## Run linters (ruff + eslint)
 	cd frontend && pnpm run lint
 
 check-frontend: ci-frontend ## Alias for frontend CI parity checks
+
+frontend-dev-check: ## Fast frontend-only dev gate: format, lint, guards, build; no DB or Vitest
+	cd frontend && pnpm run format:check
+	cd frontend && pnpm run lint
+	cd frontend && pnpm run check:all
+	cd frontend && pnpm run build
 
 build-frontend: ## Build the frontend production bundle
 	cd frontend && pnpm run build

@@ -21,7 +21,6 @@ type DialogState =
   | { kind: "type-assembly"; assembly: Assembly }
   | { kind: "duplicate-assembly"; assembly: Assembly }
   | { kind: "delete-assembly"; assembly: Assembly }
-  | { kind: "layer"; assembly: Assembly; layer: AssemblyLayer }
   | { kind: "add-layer"; assembly: Assembly; layer: AssemblyLayer; position: "above" | "below" }
   | { kind: "delete-layer"; assembly: Assembly; layer: AssemblyLayer }
   | { kind: "segment"; assembly: Assembly; layer: AssemblyLayer; segment: AssemblySegment }
@@ -133,32 +132,10 @@ export function EnvelopeEditorDialogs({
       />
     );
   }
-  if (dialog.kind === "layer") {
-    return (
-      <LengthDialog
-        title="Layer thickness"
-        label="Thickness"
-        initialValueMm={dialog.layer.thickness_mm}
-        busy={busy}
-        error={error}
-        onClose={onClose}
-        onSubmit={(thickness_mm) =>
-          onCommand({
-            kind: "update_layer_thickness",
-            assembly_id: dialog.assembly.id,
-            layer_id: dialog.layer.id,
-            thickness_mm,
-          })
-        }
-        onDelete={() => {
-          onReplaceDialog({ kind: "delete-layer", assembly: dialog.assembly, layer: dialog.layer });
-        }}
-      />
-    );
-  }
   if (dialog.kind === "add-layer") {
     return (
       <LengthDialog
+        dialogId="envelope-add-layer-dialog"
         title="Add layer"
         label="Thickness"
         initialValueMm={100}
@@ -248,6 +225,7 @@ export function EnvelopeEditorDialogs({
   if (dialog.kind === "add-segment") {
     return (
       <LengthDialog
+        dialogId="envelope-add-segment-dialog"
         title="Add segment"
         label="Width"
         initialValueMm={dialog.segment.width_mm}
