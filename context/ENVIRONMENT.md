@@ -258,6 +258,8 @@ password was shared in chat or another durable channel, rotate it.
 - `make backend`, `make frontend`
 - `make ci` / `make check` — run the full local CI-parity gate
 - `make check-backend`, `make check-frontend` — run one CI job locally
+- `make frontend-dev-check` — fast frontend-only layout/UI gate; no DB,
+  backend, frozen install, or full Vitest suite
 - `make object-store-up`, `make object-store-init`,
   `make object-store-down`
 - `make test`, `make typecheck`, `make lint`, `make format`,
@@ -298,6 +300,36 @@ form:
 Narrow commands are fine while iterating, but the final accepted state is
 `make format` followed by a green `make ci`. If formatting changes files,
 review the diff and rerun `make ci` after those changes.
+
+### Fast frontend dev gate
+
+For simple frontend layout, CSS, typography, and component-positioning
+work, use:
+
+```bash
+make frontend-dev-check
+```
+
+This runs the frontend-only checks that usually catch layout/refactor
+mistakes quickly:
+
+1. frontend: `pnpm run format:check`
+2. frontend: `pnpm run lint`
+3. frontend: `pnpm run check:all`
+4. frontend: `pnpm run build`
+
+It intentionally skips Postgres, Alembic, backend pytest, frozen
+`pnpm install`, and the full Vitest suite. If the frontend change
+affects interaction, state, TanStack Query behavior, parsers, data
+transforms, or adapters, add the focused Vitest command for the touched
+area, for example:
+
+```bash
+cd frontend && pnpm exec vitest run src/features/.../__tests__/name.test.tsx
+```
+
+`make frontend-dev-check` is an iteration tool only. It does not replace
+the required `make format` followed by `make ci` closeout gate.
 
 ## Logging
 

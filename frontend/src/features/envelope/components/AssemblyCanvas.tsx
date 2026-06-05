@@ -31,7 +31,7 @@ export function AssemblyCanvas({
   onFlipOrientation,
   onFlipLayers,
   onFlipSegments,
-  onEditLayer,
+  onDeleteLayer,
   onUpdateLayerThickness,
   onAddLayer,
   onEditSegment,
@@ -48,7 +48,7 @@ export function AssemblyCanvas({
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
   onFlipSegments: () => void;
-  onEditLayer: (layer: AssemblyLayer) => void;
+  onDeleteLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
   onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
@@ -67,7 +67,7 @@ export function AssemblyCanvas({
   const canvasWidth = Math.max(MIN_CANVAS_WIDTH_PX, stageWidth);
   const canvasHeight = svgHeight;
   const actions: AssemblyCanvasOverlayActions = {
-    onEditLayer,
+    onDeleteLayer,
     onUpdateLayerThickness,
     onAddLayer,
     onEditSegment,
@@ -80,14 +80,20 @@ export function AssemblyCanvas({
   const assemblyCenterPx = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth / 2;
 
   return (
-    <div className="assembly-canvas-scroll" data-testid="assembly-canvas-scroll">
+    <div
+      id="assembly-canvas-scroll"
+      className="assembly-canvas-scroll"
+      data-testid="assembly-canvas-scroll"
+    >
       <div
+        id="assembly-canvas"
         className="assembly-canvas"
         data-paint-mode={paint.mode}
         data-testid="assembly-canvas"
         style={{ width: `${canvasWidth}px` }}
       >
         <div
+          id="assembly-canvas-stage"
           className="assembly-canvas-stage"
           style={{ width: `${stageWidth}px`, height: `${canvasHeight}px` }}
         >
@@ -104,6 +110,7 @@ export function AssemblyCanvas({
             onFlipSegments={onFlipSegments}
           />
           <div
+            id="assembly-orientation-labels"
             className="assembly-orientation-labels"
             aria-hidden="true"
             style={{
@@ -166,17 +173,31 @@ function AssemblyCanvasToolbar({
 
   return (
     <div
+      id="assembly-canvas-toolbar"
       className="assembly-canvas-toolbar"
       aria-label="Assembly canvas tools"
       style={{ left: `${leftPx}px` }}
     >
-      <CanvasToolbarButton label="Zoom out" tooltip="Zoom out" icon={ZoomOut} onClick={onZoomOut} />
+      <CanvasToolbarButton
+        id="assembly-canvas-zoom-out"
+        label="Zoom out"
+        tooltip="Zoom out"
+        icon={ZoomOut}
+        onClick={onZoomOut}
+      />
       <span className="sr-only" data-testid="canvas-zoom">
         {Math.round(zoom * 100)}%
       </span>
-      <CanvasToolbarButton label="Zoom in" tooltip="Zoom in" icon={ZoomIn} onClick={onZoomIn} />
+      <CanvasToolbarButton
+        id="assembly-canvas-zoom-in"
+        label="Zoom in"
+        tooltip="Zoom in"
+        icon={ZoomIn}
+        onClick={onZoomIn}
+      />
       <CanvasToolbarDivider />
       <CanvasToolbarButton
+        id="assembly-canvas-flip-outside"
         label="Flip outside"
         tooltip="Flip exterior/interior"
         icon={ArrowUpDown}
@@ -184,6 +205,7 @@ function AssemblyCanvasToolbar({
         onClick={onFlipOrientation}
       />
       <CanvasToolbarButton
+        id="assembly-canvas-flip-layers"
         label="Flip layers"
         tooltip="Flip layer order"
         icon={FlipVertical2}
@@ -191,6 +213,7 @@ function AssemblyCanvasToolbar({
         onClick={onFlipLayers}
       />
       <CanvasToolbarButton
+        id="assembly-canvas-flip-segments"
         label="Flip segments"
         tooltip="Flip segments"
         icon={ArrowLeftRight}
@@ -199,6 +222,7 @@ function AssemblyCanvasToolbar({
       />
       <CanvasToolbarDivider />
       <CanvasToolbarButton
+        id="assembly-canvas-pick-segment-assignment"
         label="Pick segment assignment"
         tooltip="Copy segment material"
         icon={Pipette}
@@ -207,6 +231,7 @@ function AssemblyCanvasToolbar({
         onClick={paint.mode === "picking" ? paint.clear : paint.startPicking}
       />
       <CanvasToolbarButton
+        id="assembly-canvas-paint-picked-assignment"
         label="Paint picked assignment"
         tooltip="Paste segment material"
         icon={PaintBucket}
@@ -215,6 +240,7 @@ function AssemblyCanvasToolbar({
         onClick={paint.mode === "pasting" ? paint.clear : paint.startPasting}
       />
       <CanvasToolbarButton
+        id="assembly-canvas-undo-last-paint"
         label="Undo last paint"
         tooltip="Undo paste"
         icon={RotateCcw}
@@ -226,6 +252,7 @@ function AssemblyCanvasToolbar({
 }
 
 function CanvasToolbarButton({
+  id,
   label,
   tooltip,
   icon: Icon,
@@ -233,6 +260,7 @@ function CanvasToolbarButton({
   pressed,
   onClick,
 }: {
+  id?: string;
   label: string;
   tooltip: string;
   icon: LucideIcon;
@@ -242,6 +270,7 @@ function CanvasToolbarButton({
 }) {
   return (
     <button
+      id={id}
       type="button"
       className="assembly-canvas-toolbar-button"
       aria-label={label}

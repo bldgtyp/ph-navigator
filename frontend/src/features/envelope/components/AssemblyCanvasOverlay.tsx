@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type MouseEvent, useRef, useState } from "react";
-import { Ellipsis, Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { formatLengthFromMm, parseLengthToMm, type UnitSystem } from "../../../lib/units";
 import {
   ASSEMBLY_CANVAS_ORIGIN_X_PX,
@@ -19,7 +19,7 @@ import type {
 import type { AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
 
 export type AssemblyCanvasOverlayActions = {
-  onEditLayer: (layer: AssemblyLayer) => void;
+  onDeleteLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
   onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
@@ -48,7 +48,12 @@ export function AssemblyCanvasOverlay({
   actions: AssemblyCanvasOverlayActions;
 }) {
   return (
-    <div className="assembly-canvas-overlay" data-mode={paint.mode} aria-hidden={!canEdit}>
+    <div
+      id="assembly-canvas-overlay"
+      className="assembly-canvas-overlay"
+      data-mode={paint.mode}
+      aria-hidden={!canEdit}
+    >
       {canEdit
         ? geometry.layers.map((layerGeometry) => (
             <LayerDimensionControls
@@ -92,6 +97,7 @@ function LayerDimensionControls({
   const heightPx = pxFromMm(layerGeometry.heightMm, zoom);
   return (
     <div
+      id={`assembly-layer-dimension-${layer.id}`}
       className="assembly-layer-dimension"
       style={{
         top: `${pxFromMm(layerGeometry.yMm, zoom)}px`,
@@ -106,22 +112,17 @@ function LayerDimensionControls({
         layer={layer}
         layerNumber={layerNumber}
         unitSystem={unitSystem}
+        onDelete={() => actions.onDeleteLayer(layer)}
         onSubmit={(thicknessMm) => actions.onUpdateLayerThickness(layer, thicknessMm)}
       />
-      <button
-        type="button"
-        className="dimension-dialog-button"
-        aria-label={`Open layer ${layerNumber} thickness dialog`}
-        onClick={() => actions.onEditLayer(layer)}
-      >
-        <Ellipsis size={12} aria-hidden="true" />
-      </button>
       <CanvasAddButton
+        id={`assembly-layer-add-above-${layer.id}`}
         label={`Add layer above layer ${layerNumber}`}
         className="layer-add-button add-above"
         onClick={() => actions.onAddLayer(layer, "above")}
       />
       <CanvasAddButton
+        id={`assembly-layer-add-below-${layer.id}`}
         label={`Add layer below layer ${layerNumber}`}
         className="layer-add-button add-below"
         onClick={() => actions.onAddLayer(layer, "below")}
@@ -134,11 +135,13 @@ function LayerThicknessEditor({
   layer,
   layerNumber,
   unitSystem,
+  onDelete,
   onSubmit,
 }: {
   layer: AssemblyLayer;
   layerNumber: number;
   unitSystem: UnitSystem;
+  onDelete: () => void;
   onSubmit: (thicknessMm: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -206,8 +209,20 @@ function LayerThicknessEditor({
             setDraft(event.currentTarget.value);
             setError(null);
           }}
+          onFocus={(event) => event.currentTarget.select()}
           onKeyDown={onKeyDown}
         />
+        <button
+          id={`assembly-layer-${layer.id}-delete`}
+          type="button"
+          className="dimension-delete-button"
+          aria-label={`Delete layer ${layerNumber}`}
+          title="Delete layer"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onDelete}
+        >
+          <Trash2 size={14} aria-hidden="true" />
+        </button>
         {error ? (
           <span className="dimension-error" role="alert">
             {error}
@@ -219,6 +234,7 @@ function LayerThicknessEditor({
 
   return (
     <button
+      id={`assembly-layer-${layer.id}-thickness-editor`}
       type="button"
       className="dimension-label-button"
       aria-label={`Edit layer ${layerNumber} thickness`}
@@ -264,6 +280,7 @@ function SegmentOverlay({
 
   return (
     <div
+      id={`assembly-segment-overlay-${layer.id}-${segment.id}`}
       className={material ? "assembly-segment-overlay" : "assembly-segment-overlay null-material"}
       data-mode={paint.mode}
       data-picked-source={isPickedSource ? "true" : undefined}
@@ -277,6 +294,7 @@ function SegmentOverlay({
       title={`${materialName} - ${segmentWidthLabel}`}
     >
       <button
+        id={`assembly-segment-hit-target-${layer.id}-${segment.id}`}
         type="button"
         className="assembly-segment-hit-target"
         disabled={!canEdit}
@@ -292,6 +310,8 @@ function SegmentOverlay({
       </button>
       {showAddControls ? (
         <SegmentAddControls
+          layerId={layer.id}
+          segmentId={segment.id}
           segmentLabel={segmentLabel}
           onAddLeft={(event) => {
             event.stopPropagation();
@@ -339,23 +359,32 @@ function handleSegmentAction({
 }
 
 function SegmentAddControls({
+  layerId,
+  segmentId,
   segmentLabel,
   onAddLeft,
   onAddRight,
 }: {
+  layerId: string;
+  segmentId: string;
   segmentLabel: string;
   onAddLeft: (event: MouseEvent<HTMLButtonElement>) => void;
   onAddRight: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
-    <div className="segment-add-controls">
+    <div
+      id={`assembly-segment-add-controls-${layerId}-${segmentId}`}
+      className="segment-add-controls"
+    >
       <CanvasAddButton
+        id={`assembly-segment-add-before-${layerId}-${segmentId}`}
         label={`Add segment before ${segmentLabel}`}
         tooltip="Add Segment Before"
         className="segment-add-button add-left"
         onClick={onAddLeft}
       />
       <CanvasAddButton
+        id={`assembly-segment-add-after-${layerId}-${segmentId}`}
         label={`Add segment after ${segmentLabel}`}
         tooltip="Add Segment After"
         className="segment-add-button add-right"
@@ -366,11 +395,13 @@ function SegmentAddControls({
 }
 
 function CanvasAddButton({
+  id,
   label,
   tooltip,
   className,
   onClick,
 }: {
+  id?: string;
   label: string;
   tooltip?: string;
   className?: string;
@@ -379,6 +410,7 @@ function CanvasAddButton({
   const buttonClassName = className ? `canvas-add-button ${className}` : "canvas-add-button";
   return (
     <button
+      id={id}
       type="button"
       className={buttonClassName}
       aria-label={label}

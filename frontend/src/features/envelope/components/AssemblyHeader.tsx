@@ -34,8 +34,8 @@ export function AssemblyHeader({
     ? null
     : statusLabel(activeAssembly.status.flags);
   return (
-    <header className="assembly-header">
-      <div className="assembly-picker-field">
+    <header id="assembly-builder-header" className="assembly-header">
+      <div id="assembly-picker-field" className="assembly-picker-field">
         <AutocompleteSelect
           id="assembly-picker"
           label="Assembly"
@@ -48,23 +48,24 @@ export function AssemblyHeader({
           }}
         />
       </div>
-      <dl className="assembly-header-metrics">
-        <div>
+      <dl id="assembly-header-metrics" className="assembly-header-metrics">
+        <div id="assembly-total-thickness-metric">
           <dt>Total thickness</dt>
           <dd data-testid="total-thickness">
             {formatLengthFromMm(totalThicknessMm(activeAssembly), { unitSystem })}
           </dd>
         </div>
         {assemblyWarning ? (
-          <div className="assembly-header-warning">
+          <div id="assembly-status-warning" className="assembly-header-warning">
             <dt>Warning</dt>
             <dd>{assemblyWarning}</dd>
           </div>
         ) : null}
-        <div>
+        <div id="assembly-thermal-metric">
           <dt className="assembly-header-metric-label">
             <span>Thermal</span>
             <button
+              id="assembly-thermal-info-button"
               type="button"
               className="assembly-header-info-button"
               aria-label="Effective Thermal Resistance details"

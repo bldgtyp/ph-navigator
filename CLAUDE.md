@@ -100,6 +100,7 @@ Start here in `context/`:
 - `make dev` — bring Postgres up; prints how to launch backend + frontend
 - `make backend`, `make frontend`
 - `make ci`, `make check`, `make check-backend`, `make check-frontend`
+- `make frontend-dev-check` — fast frontend-only layout/UI gate; no DB
 - `make test`, `make typecheck`, `make lint`, `make format`,
   `make migrate`, `make smoke`
 - `make e2e` — Playwright end-to-end (frontend must be running)
@@ -122,9 +123,16 @@ or opening a PR:
 `make ci` mirrors `.github/workflows/ci.yml`: backend locked `uv`
 sync, Ruff format check, Ruff lint, Ty, Alembic migration, pytest;
 frontend frozen `pnpm` install, Prettier check, ESLint, structural
-guards, Vitest, and production build. Use narrower commands while
-iterating, but the final gate is the full `make format` + `make ci`
-sequence.
+guards, Vitest, and production build.
+
+For simple frontend layout, CSS, typography, and component-positioning
+iterations, use `make frontend-dev-check` for fast feedback. It runs
+frontend Prettier check, ESLint, structural guards, and the production
+build without touching Postgres, Alembic, backend pytest, frozen install,
+or the full Vitest suite. If the change affects interaction, state,
+queries, parsing, or data transforms, also run the focused frontend test
+with `cd frontend && pnpm exec vitest run <test-file>`. The final gate
+is still the full `make format` + `make ci` sequence.
 
 ## Testing UIs — Playwright MCP
 

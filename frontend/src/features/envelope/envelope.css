@@ -297,22 +297,6 @@
   transform: translate(-50%, 0);
 }
 
-.assembly-header-warning dt {
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
-}
-
-.assembly-header-warning dd {
-  color: var(--danger);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
 .assembly-canvas-scroll {
   align-self: stretch;
   border-bottom: 1px solid var(--border-subtle);
@@ -485,7 +469,7 @@
 .assembly-svg-canvas {
   display: block;
   position: absolute;
-  top: 0; 
+  top: 0;
 }
 
 .assembly-svg-segment {
@@ -538,9 +522,9 @@
 .assembly-layer-dimension::after {
   border-top: 1px solid var(--assembly-dimension-line);
   content: "";
-  left: calc(var(--dimension-axis-x) - 8px);
+  left: calc(var(--dimension-axis-x) - 2px);
   position: absolute;
-  width: calc(100% - var(--dimension-axis-x) + 14px);
+  width: calc(100% - var(--dimension-axis-x) + 8px);
 }
 
 .assembly-layer-dimension::before {
@@ -549,6 +533,10 @@
 
 .assembly-layer-dimension::after {
   bottom: 0;
+}
+
+.assembly-layer-dimension + .assembly-layer-dimension::before {
+  display: none;
 }
 
 .dimension-tick {
@@ -577,12 +565,14 @@
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 10px;
+  line-height: 14px;
   min-height: 18px;
   padding: 1px 2px;
   position: absolute;
-  left: 16px;
+  left: 4px;
   text-align: right;
-  width: 32px;
+  width: 40px;
+  z-index: calc(var(--z-base) + 3);
 }
 
 .dimension-label-button:hover,
@@ -592,25 +582,39 @@
 }
 
 .dimension-input-wrap {
-  position: relative;
-}
-
-.dimension-input {
+  align-items: center;
   background: color-mix(in oklab, var(--bg-card) 94%, transparent);
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 12%, transparent);
+  box-shadow: var(--shadow-elev-1);
+  display: inline-flex;
+  gap: 3px;
+  left: 0;
+  padding: 2px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: calc(var(--z-base) + 7);
+}
+
+.dimension-input {
+  background: transparent;
+  border: 0;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 11px;
-  min-height: 24px;
+  font-size: 13px;
+  min-height: 26px;
   outline: none;
-  padding: 3px 5px;
+  padding: 3px 6px;
   text-align: center;
-  width: 48px;
+  width: 68px;
 }
 
 .dimension-input[aria-invalid="true"] {
+  color: var(--phn-danger);
+}
+
+.dimension-input-wrap:has(.dimension-input[aria-invalid="true"]) {
   border-color: var(--phn-danger);
 }
 
@@ -629,40 +633,30 @@
   z-index: calc(var(--z-base) + 6);
 }
 
-.dimension-dialog-button {
+.dimension-delete-button {
   align-items: center;
   background: transparent;
   border: 0;
+  border-radius: 4px;
   color: var(--text-secondary);
   display: flex;
-  height: 14px;
+  height: 26px;
   justify-content: center;
-  min-height: 14px;
-  min-width: 14px;
-  opacity: 0;
+  min-height: 26px;
+  min-width: 26px;
   padding: 0;
-  pointer-events: none;
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
   transition:
-    color 0.14s var(--ease),
-    opacity 0.14s var(--ease);
-  width: 14px;
-  z-index: calc(var(--z-base) + 5);
+    background 0.14s var(--ease),
+    color 0.14s var(--ease);
+  width: 26px;
 }
 
-.dimension-dialog-button:hover,
-.dimension-dialog-button:focus-visible {
+.dimension-delete-button:hover,
+.dimension-delete-button:focus-visible {
+  background: var(--phn-danger-bg);
   color: var(--phn-danger);
   outline: 0;
-}
-
-.assembly-layer-dimension:hover .dimension-dialog-button,
-.assembly-layer-dimension:focus-within .dimension-dialog-button {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 .assembly-segment-overlay {
@@ -1118,6 +1112,20 @@
 
 .modal-unit-toggle button:hover:not(.active) {
   color: var(--text-primary);
+}
+
+.layer-thickness-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.length-dialog-input-row {
+  display: grid;
+}
+
+.length-dialog-input-row input {
+  width: 100%;
 }
 
 .segment-actions {

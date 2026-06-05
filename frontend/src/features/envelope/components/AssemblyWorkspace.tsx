@@ -38,7 +38,7 @@ export function AssemblyWorkspace({
   onFlipOrientation,
   onFlipLayers,
   onFlipSegments,
-  onEditLayer,
+  onDeleteLayer,
   onUpdateLayerThickness,
   onAddLayer,
   onEditSegment,
@@ -68,7 +68,7 @@ export function AssemblyWorkspace({
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
   onFlipSegments: () => void;
-  onEditLayer: (layer: AssemblyLayer) => void;
+  onDeleteLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
   onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
@@ -92,6 +92,7 @@ export function AssemblyWorkspace({
 
   return (
     <div
+      id="assembly-builder-workbench"
       className={
         sidebarCollapsed ? "envelope-workbench is-sidebar-collapsed" : "envelope-workbench"
       }
@@ -113,8 +114,12 @@ export function AssemblyWorkspace({
         onDuplicate={onDuplicate}
         onDelete={onDelete}
       />
-      <div className="assembly-workspace">
-        <div ref={interactionRef} className="assembly-interaction-region">
+      <div id="assembly-builder-workspace" className="assembly-workspace">
+        <div
+          id="assembly-builder-interaction-region"
+          ref={interactionRef}
+          className="assembly-interaction-region"
+        >
           <AssemblyHeader
             projectId={projectId}
             assemblies={assemblies}
@@ -136,7 +141,7 @@ export function AssemblyWorkspace({
             onFlipOrientation={onFlipOrientation}
             onFlipLayers={onFlipLayers}
             onFlipSegments={onFlipSegments}
-            onEditLayer={onEditLayer}
+            onDeleteLayer={onDeleteLayer}
             onUpdateLayerThickness={onUpdateLayerThickness}
             onAddLayer={onAddLayer}
             onEditSegment={onEditSegment}

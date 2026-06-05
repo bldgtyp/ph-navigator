@@ -49,6 +49,7 @@ export function EnvelopeSidebar({
   const query = createSearchParams(search).toString();
   const addAssemblyButton = (
     <button
+      id={collapsed ? "assembly-sidebar-add-collapsed" : "assembly-sidebar-add"}
       type="button"
       className={collapsed ? "icon-button envelope-sidebar-add-collapsed" : "icon-button"}
       disabled={!canEdit}
@@ -62,13 +63,15 @@ export function EnvelopeSidebar({
 
   return (
     <aside
+      id="assembly-sidebar"
       className={collapsed ? "envelope-sidebar is-collapsed" : "envelope-sidebar"}
       aria-label="Assemblies"
     >
-      <div className="envelope-sidebar-header">
+      <div id="assembly-sidebar-header" className="envelope-sidebar-header">
         {collapsed ? null : <h2>Assemblies</h2>}
         <div className="envelope-sidebar-tools">
           <button
+            id="assembly-sidebar-toggle"
             type="button"
             className="icon-button"
             aria-label={collapsed ? "Expand assembly sidebar" : "Collapse assembly sidebar"}
@@ -84,6 +87,7 @@ export function EnvelopeSidebar({
           {collapsed ? null : (
             <>
               <button
+                id="assembly-sidebar-export-hbjson"
                 type="button"
                 className="icon-button"
                 aria-label="Download constructions HBJSON"
@@ -99,12 +103,13 @@ export function EnvelopeSidebar({
         </div>
       </div>
       {collapsed ? null : (
-        <div className="envelope-sidebar-list">
+        <div id="assembly-sidebar-list" className="envelope-sidebar-list">
           {assemblies.map((assembly) => {
             const isCurrent = assembly.id === activeId;
             return (
               <NavLink
                 key={assembly.id}
+                id={`assembly-sidebar-row-${assembly.id}`}
                 className={({ isActive }) =>
                   isActive || isCurrent ? "envelope-sidebar-row active" : "envelope-sidebar-row"
                 }
@@ -115,8 +120,13 @@ export function EnvelopeSidebar({
               >
                 <span className="envelope-sidebar-row-name">{assembly.name}</span>
                 {canEdit ? (
-                  <span className="envelope-sidebar-row-actions" aria-label="Assembly actions">
+                  <span
+                    id={`assembly-sidebar-row-actions-${assembly.id}`}
+                    className="envelope-sidebar-row-actions"
+                    aria-label="Assembly actions"
+                  >
                     <SidebarActionButton
+                      id={`assembly-sidebar-rename-${assembly.id}`}
                       label="Rename assembly"
                       tooltip="Rename assembly"
                       icon={Pencil}
@@ -124,6 +134,7 @@ export function EnvelopeSidebar({
                       onClick={() => onRename(assembly)}
                     />
                     <SidebarActionButton
+                      id={`assembly-sidebar-change-type-${assembly.id}`}
                       label="Change assembly type"
                       tooltip="Change assembly type"
                       icon={Shapes}
@@ -131,6 +142,7 @@ export function EnvelopeSidebar({
                       onClick={() => onTypeChange(assembly)}
                     />
                     <SidebarActionButton
+                      id={`assembly-sidebar-duplicate-${assembly.id}`}
                       label="Duplicate assembly"
                       tooltip="Duplicate assembly"
                       icon={Copy}
@@ -138,6 +150,7 @@ export function EnvelopeSidebar({
                       onClick={() => onDuplicate(assembly)}
                     />
                     <SidebarActionButton
+                      id={`assembly-sidebar-delete-${assembly.id}`}
                       label="Delete assembly"
                       tooltip="Delete assembly"
                       icon={Trash2}
@@ -158,6 +171,7 @@ export function EnvelopeSidebar({
 }
 
 function SidebarActionButton({
+  id,
   label,
   tooltip,
   icon: Icon,
@@ -165,6 +179,7 @@ function SidebarActionButton({
   danger = false,
   onClick,
 }: {
+  id?: string;
   label: string;
   tooltip: string;
   icon: LucideIcon;
@@ -174,6 +189,7 @@ function SidebarActionButton({
 }) {
   return (
     <button
+      id={id}
       type="button"
       className={danger ? "envelope-sidebar-row-action is-danger" : "envelope-sidebar-row-action"}
       aria-label={label}
