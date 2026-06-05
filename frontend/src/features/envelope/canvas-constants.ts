@@ -1,4 +1,4 @@
-export const BASE_PX_PER_MM = 0.18;
+export const BASE_PX_PER_MM = 1;
 export const DIMENSION_COLUMN_WIDTH_PX = 56;
 export const DIMENSION_GAP_PX = 12;
 export const ASSEMBLY_CANVAS_ORIGIN_X_PX = DIMENSION_COLUMN_WIDTH_PX + DIMENSION_GAP_PX;

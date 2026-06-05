@@ -57,7 +57,6 @@ import type {
 } from "../types";
 import {
   countAssemblyMaterialDrift,
-  envelopeShellNotice,
   exportErrorDetails,
   hasCatalogOriginMaterials,
 } from "./page-helpers";
@@ -215,12 +214,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     );
   }
 
-  const shellNotice = envelopeShellNotice({
-    isViewer,
-    isLocked,
-    source: query.data.source,
-  });
-
   async function applyCommand(command: EnvelopeCommand): Promise<boolean> {
     const current = query.data;
     if (!current) return false;
@@ -344,14 +337,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   };
 
   return (
-    <section className="tab-panel envelope-panel" aria-labelledby="envelope-title">
-      <header className="envelope-topline">
-        <div>
-          <p className="eyebrow">Envelope</p>
-          <h1 id="envelope-title">Assembly Builder</h1>
-        </div>
-        <span className="read-only-pill">{shellNotice}</span>
-      </header>
+    <section className="tab-panel envelope-panel" aria-label="Assembly Builder">
       <nav className="envelope-subtabs" aria-label="Envelope views">
         <NavLink to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}>
           Assemblies
@@ -409,7 +395,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           assemblies={assemblies}
           activeAssembly={activeAssembly}
           materials={query.data.project_materials}
-          driftByMaterialId={driftByMaterialId}
           search={searchParams}
           zoom={zoom}
           canEdit={canEdit}
@@ -422,10 +407,10 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           onZoomIn={() => setZoom(nextZoomStep)}
           onZoomOut={() => setZoom(previousZoomStep)}
           onExportHbjson={() => void exportHbjson()}
-          onRename={() => setDialog({ kind: "rename-assembly", assembly: activeAssembly })}
-          onTypeChange={() => setDialog({ kind: "type-assembly", assembly: activeAssembly })}
-          onDuplicate={() => setDialog({ kind: "duplicate-assembly", assembly: activeAssembly })}
-          onDelete={() => setDialog({ kind: "delete-assembly", assembly: activeAssembly })}
+          onRename={(assembly) => setDialog({ kind: "rename-assembly", assembly })}
+          onTypeChange={(assembly) => setDialog({ kind: "type-assembly", assembly })}
+          onDuplicate={(assembly) => setDialog({ kind: "duplicate-assembly", assembly })}
+          onDelete={(assembly) => setDialog({ kind: "delete-assembly", assembly })}
           onFlipOrientation={() =>
             void applyCommand({ kind: "flip_orientation", assembly_id: activeAssembly.id })
           }

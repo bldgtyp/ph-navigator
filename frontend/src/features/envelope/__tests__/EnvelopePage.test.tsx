@@ -240,6 +240,7 @@ describe("EnvelopePage", () => {
 
     const canvas = await screen.findByTestId("assembly-canvas");
     const initialWidth = canvas.getAttribute("style");
+    expect(canvas).toHaveStyle({ width: "880.8px" });
     expect(screen.getByTestId("total-thickness")).toHaveTextContent("88 mm");
 
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
@@ -385,7 +386,7 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     const svg = await screen.findByTestId("assembly-svg-canvas");
-    expect(svg).toHaveAttribute("viewBox", "0 0 355.6 101.6");
+    expect(svg).toHaveAttribute("viewBox", "-1 -1 357.6 103.6");
     const segments = screen.getAllByTestId("assembly-svg-segment");
 
     expect(segments).toHaveLength(2);
@@ -399,14 +400,20 @@ describe("EnvelopePage", () => {
     ).toBeCloseTo(7);
   });
 
-  test("assembly legend is scoped to active materials and shows lambda status", async () => {
+  test("assembly legend is scoped to active materials and follows the unit preference", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     const legend = await screen.findByRole("complementary", { name: "Material legend" });
     expect(within(legend).getByText("Wood fiber board")).toBeInTheDocument();
-    expect(within(legend).getByText("0.038 W/(m-K)")).toBeInTheDocument();
+    expect(within(legend).getByText("Conductivity [W/(m-K)]")).toBeInTheDocument();
+    expect(within(legend).getByText("0.038")).toBeInTheDocument();
     expect(within(legend).queryByText("Dense-pack cellulose")).not.toBeInTheDocument();
     expect(within(legend).queryByText("Unused air barrier")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "IP" }));
+
+    expect(within(legend).getByText("Resistivity [R/inch]")).toBeInTheDocument();
+    expect(within(legend).getByText("3.795")).toBeInTheDocument();
   });
 
   test("specifications render segment use-site notes and hide unused na cards in viewer mode", async () => {
@@ -533,7 +540,10 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     expect(await screen.findByText("1 material copy needs catalog review.")).toBeInTheDocument();
-    expect(await screen.findByText("Catalog drift")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("link", { name: "Review all" }));
+
+    expect(await screen.findByRole("heading", { name: "Catalog review" })).toBeInTheDocument();
+    expect(await screen.findAllByText("Catalog drift")).not.toHaveLength(0);
   });
 
   test("invalid assembly id redirects to the first sorted assembly", async () => {
