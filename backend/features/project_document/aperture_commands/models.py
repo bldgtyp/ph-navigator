@@ -181,4 +181,9 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "deleteApertureType": "project_version_aperture_type_delete",
     "setElementName": "project_version_aperture_element_set_name",
     "setElementOperation": "project_version_aperture_element_set_operation",
+    "editDimension": "project_version_aperture_dimension_edit",
+    "addRow": "project_version_aperture_row_add",
+    "addColumn": "project_version_aperture_column_add",
+    "deleteRow": "project_version_aperture_row_delete",
+    "deleteColumn": "project_version_aperture_column_delete",
 }

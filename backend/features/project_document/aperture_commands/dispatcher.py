@@ -12,6 +12,13 @@ from typing import cast
 
 from starlette import status
 
+from features.project_document.aperture_commands.handlers.dimensions import (
+    apply_add_column,
+    apply_add_row,
+    apply_delete_column,
+    apply_delete_row,
+    apply_edit_dimension,
+)
 from features.project_document.aperture_commands.handlers.element import (
     apply_set_element_name,
     apply_set_element_operation,
@@ -40,17 +47,17 @@ _HANDLERS: dict[str, _Handler] = {
     "deleteApertureType": cast(_Handler, apply_delete_aperture_type),
     "setElementName": cast(_Handler, apply_set_element_name),
     "setElementOperation": cast(_Handler, apply_set_element_operation),
+    "editDimension": cast(_Handler, apply_edit_dimension),
+    "addRow": cast(_Handler, apply_add_row),
+    "addColumn": cast(_Handler, apply_add_column),
+    "deleteRow": cast(_Handler, apply_delete_row),
+    "deleteColumn": cast(_Handler, apply_delete_column),
 }
 
 # Commands declared in the union but not yet wired up. Each phase that
 # owns the gesture removes its entry here as it lands the handler.
 _NOT_IMPLEMENTED_KINDS: frozenset[str] = frozenset(
     {
-        "editDimension",
-        "addRow",
-        "addColumn",
-        "deleteRow",
-        "deleteColumn",
         "mergeElements",
         "splitElement",
         "pickFrame",
