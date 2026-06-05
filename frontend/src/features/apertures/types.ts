@@ -101,4 +101,17 @@ export type ApertureCommand =
       target: "frame.top" | "frame.right" | "frame.bottom" | "frame.left" | "glazing";
       field_key: string;
       new_value: string | number | null;
+    }
+  | {
+      // Phase 08 element-level structural edits + assignment paste.
+      kind: "mergeElements";
+      aperture_type_id: string;
+      element_ids: string[];
+    }
+  | { kind: "splitElement"; aperture_type_id: string; element_id: string }
+  | {
+      kind: "pasteAssignment";
+      aperture_type_id: string;
+      source_element_id: string;
+      target_element_ids: string[];
     };

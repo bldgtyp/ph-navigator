@@ -111,6 +111,16 @@ class DeleteColumn(BaseModel):
 
 
 class MergeElements(BaseModel):
+    """Collapse N adjacent elements into one ``ApertureElement``.
+
+    The element ids must reference elements within the same
+    ``aperture_type_id`` and form a contiguous rectangle (no holes,
+    no overlaps, no L-shapes). The merged element inherits its 6
+    assignment fields (operation, glazing, four frames) and its
+    ``name`` from the top-left source — sorted by
+    ``row_span[0]`` then ``column_span[0]``.
+    """
+
     model_config = ConfigDict(extra="forbid")
     kind: Literal["mergeElements"] = "mergeElements"
     aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
@@ -118,12 +128,18 @@ class MergeElements(BaseModel):
 
 
 class SplitElement(BaseModel):
+    """Explode a multi-cell element into one fresh 1×1 element per cell.
+
+    Requires ``row_span`` or ``column_span`` to cover more than one
+    cell. Every new element inherits the source's 6 assignment fields
+    and ``name``. Catalog-origin ``synced_at`` is re-stamped on the
+    copies so Phase 12 drift detection treats them as distinct picks.
+    """
+
     model_config = ConfigDict(extra="forbid")
     kind: Literal["splitElement"] = "splitElement"
     aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
     element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
-    axis: Literal["row", "column"]
-    at_index: int = Field(ge=1)
 
 
 class PickFrame(BaseModel):
@@ -229,4 +245,7 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "pickFrame": "project_version_aperture_frame_pick",
     "pickGlazing": "project_version_aperture_glazing_pick",
     "editFieldOverride": "project_version_aperture_field_override",
+    "mergeElements": "project_version_aperture_elements_merge",
+    "splitElement": "project_version_aperture_element_split",
+    "pasteAssignment": "project_version_aperture_assignment_paste",
 }

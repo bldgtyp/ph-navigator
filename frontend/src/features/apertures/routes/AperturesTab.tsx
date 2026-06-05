@@ -235,6 +235,28 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   operation,
                 })
               }
+              onMergeElements={(element_ids) =>
+                void dispatch({
+                  kind: "mergeElements",
+                  aperture_type_id: activeAperture.id,
+                  element_ids,
+                })
+              }
+              onSplitElement={(element_id) =>
+                void dispatch({
+                  kind: "splitElement",
+                  aperture_type_id: activeAperture.id,
+                  element_id,
+                })
+              }
+              onPasteAssignment={(source_element_id, target_element_ids) =>
+                dispatch({
+                  kind: "pasteAssignment",
+                  aperture_type_id: activeAperture.id,
+                  source_element_id,
+                  target_element_ids,
+                }).then(() => undefined)
+              }
             />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />

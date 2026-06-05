@@ -33,6 +33,11 @@ export function ApertureCanvasOverlay({
   canEdit,
   onSetElementName,
   onRegionClick,
+  pickPasteMode = "idle",
+  pickedSourceElementId = null,
+  pasteFlashElementId = null,
+  onPickElement,
+  onPasteElement,
 }: {
   aperture: ApertureTypeEntry;
   zoom: number;
@@ -40,6 +45,15 @@ export function ApertureCanvasOverlay({
   canEdit: boolean;
   onSetElementName: (elementId: string, newName: string) => void;
   onRegionClick?: (elementId: string, region: ApertureRegionKind) => void;
+  /** Phase 08: pick/paste machine state surfaced for source-ring +
+   *  pulse styling and to gate element click intent. */
+  pickPasteMode?: "idle" | "picking" | "picked" | "pasting";
+  pickedSourceElementId?: string | null;
+  pasteFlashElementId?: string | null;
+  /** Click intent when ``pickPasteMode === "picking"``. */
+  onPickElement?: (element: ApertureElement) => void;
+  /** Click intent when ``pickPasteMode === "pasting"``. */
+  onPasteElement?: (element: ApertureElement) => void;
 }) {
   const rendered = useMemo(
     () => (viewDirection === "interior" ? mirrorApertureForInterior(aperture) : aperture),
@@ -66,6 +80,18 @@ export function ApertureCanvasOverlay({
     // don't double-fire on edit / pick gestures.
     const target = event.target as HTMLElement | null;
     if (target?.closest('[data-pill="true"]')) return;
+    // Phase 08: when the pick/paste machine is active, the click drives
+    // the machine and the selection model is bypassed.
+    if (pickPasteMode === "picking") {
+      event.stopPropagation();
+      onPickElement?.(element);
+      return;
+    }
+    if (pickPasteMode === "pasting") {
+      event.stopPropagation();
+      onPasteElement?.(element);
+      return;
+    }
     if (event.shiftKey) extendSelection(aperture.id, element.id);
     else if (event.metaKey || event.ctrlKey) toggleSelection(aperture.id, element.id);
     else selectSingle(aperture.id, element.id);
@@ -101,6 +127,9 @@ export function ApertureCanvasOverlay({
             data-testid={`hit-element-${element.id}`}
             data-selected={isSelected ? "true" : undefined}
             data-hovered={hoveredEl === element.id ? "true" : undefined}
+            data-pick-source={pickedSourceElementId === element.id ? "true" : undefined}
+            data-paste-flash={pasteFlashElementId === element.id ? "true" : undefined}
+            data-pick-paste-mode={pickPasteMode !== "idle" ? pickPasteMode : undefined}
             aria-selected={isSelected}
             style={elementStyle(rect, zoom)}
             onClick={(event) => onElementClick(element, event)}

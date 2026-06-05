@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 16:30 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 19:15 EDT
+STATUS: Done
+AUTHOR: Claude
 SCOPE: Toolbar Merge / Split buttons that respect the no-holes
        coverage invariant, eyedropper / paint-bucket copy-paste
        state machine for assignment transfer between elements,
@@ -24,6 +24,29 @@ RELATED:
 ---
 
 # Phase 8 — Merge / split + copy/paste + bounded undo
+
+## Implementation note (Claude, 2026-06-05)
+
+Shipped as a single PR. See STATUS.md "Phase 08 deviations from
+the doc" for the per-decision rationale. Highlights:
+
+- SplitElement wire shape trimmed to ``aperture_type_id`` +
+  ``element_id`` (no axis/at_index — the operation always full-
+  explodes into 1×1 cells).
+- Toolbar buttons are text-only (no lucide) to match Phase 06's
+  precedent; tooltips carry context.
+- Sonner-toast for merge result is deferred — the audit carries
+  ``top_left_source_id`` so the future toast wiring can read the
+  source name from the document.
+- `usePickPasteHandlers` extracts the paste / undo / capture chain
+  so `ApertureCanvasContainer` stays under the 500-line cap; the
+  state machine, undo stack, and dispatch all live in the Zustand
+  store + the route layer's `onPasteAssignment` callback.
+- Region-click + pick-paste do not interact yet — region clicks
+  still open the card picker even when pick-paste is active.
+  Polish-pass item for Phase 11/12.
+
+## Original Phase 08 plan follows.
 
 ## P0. Why this slice
 
