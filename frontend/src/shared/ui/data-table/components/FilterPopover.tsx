@@ -8,6 +8,7 @@ import {
   getOperatorDef,
   type FilterOperatorDef,
 } from "../fields/filterOperators";
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import { defaultOperatorForField } from "../lib/filter/apply";
 import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, FilterCondition, FilterOperator } from "../types";
@@ -146,30 +147,28 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
       data-dragging={sortable.isDragging ? "true" : undefined}
     >
       <span className="data-table-view-popover-conjunction">{index === 0 ? "Where" : "And"}</span>
-      <select
+      <AutocompleteSelect
         aria-label="Filter field"
         className="data-table-view-popover-select"
         value={rule.fieldKey}
-        onChange={(event) => handleFieldChange(event.target.value)}
-      >
-        {fieldDefs.map((def) => (
-          <option key={def.field_key} value={def.field_key}>
-            {def.display_name}
-          </option>
-        ))}
-      </select>
-      <select
+        compact
+        options={fieldDefs.map((def) => ({
+          value: def.field_key,
+          label: def.display_name,
+        }))}
+        onChange={handleFieldChange}
+      />
+      <AutocompleteSelect
         aria-label="Filter operator"
         className="data-table-view-popover-select"
         value={rule.operator}
-        onChange={(event) => handleOperatorChange(event.target.value as FilterOperator)}
-      >
-        {operators.map((op) => (
-          <option key={op.operator} value={op.operator}>
-            {op.label}
-          </option>
-        ))}
-      </select>
+        compact
+        options={operators.map((op) => ({
+          value: op.operator,
+          label: op.label,
+        }))}
+        onChange={(operator) => handleOperatorChange(operator as FilterOperator)}
+      />
       <FilterValueEditor
         rule={rule}
         operatorDef={operatorDef}

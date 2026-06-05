@@ -3,6 +3,7 @@ import { useMemo, type CSSProperties } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, SortRule } from "../types";
 
@@ -127,27 +128,28 @@ function SortRuleRow({ ruleId, index, rule, fieldOptions, onChange, onRemove }: 
       style={style}
       data-dragging={sortable.isDragging ? "true" : undefined}
     >
-      <select
+      <AutocompleteSelect
         aria-label="Sort field"
         className="data-table-view-popover-select"
         value={rule.fieldKey}
-        onChange={(event) => onChange({ ...rule, fieldKey: event.target.value })}
-      >
-        {fieldOptions.map((def) => (
-          <option key={def.field_key} value={def.field_key}>
-            {def.display_name}
-          </option>
-        ))}
-      </select>
-      <select
+        compact
+        options={fieldOptions.map((def) => ({
+          value: def.field_key,
+          label: def.display_name,
+        }))}
+        onChange={(fieldKey) => onChange({ ...rule, fieldKey })}
+      />
+      <AutocompleteSelect
         aria-label="Sort direction"
         className="data-table-view-popover-select"
         value={rule.direction}
-        onChange={(event) => onChange({ ...rule, direction: event.target.value as "asc" | "desc" })}
-      >
-        <option value="asc">A → Z</option>
-        <option value="desc">Z → A</option>
-      </select>
+        compact
+        options={[
+          { value: "asc", label: "A → Z" },
+          { value: "desc", label: "Z → A" },
+        ]}
+        onChange={(direction) => onChange({ ...rule, direction: direction as "asc" | "desc" })}
+      />
       <button
         type="button"
         className="data-table-view-popover-remove"

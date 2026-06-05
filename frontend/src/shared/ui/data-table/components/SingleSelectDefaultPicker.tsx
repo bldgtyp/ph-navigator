@@ -1,3 +1,4 @@
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import type { FieldOption } from "../types";
 
 export type SingleSelectDefaultPickerProps = {
@@ -14,21 +15,20 @@ export function SingleSelectDefaultPicker({
   disabled = false,
 }: SingleSelectDefaultPickerProps) {
   return (
-    <label className="data-table-add-field-label data-table-single-select-default-picker">
-      Default option
-      <select
-        className="data-table-add-field-input"
-        value={value ?? ""}
-        disabled={disabled}
-        onChange={(event) => onChange(event.currentTarget.value || null)}
-      >
-        <option value="">No default</option>
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <AutocompleteSelect
+      className="data-table-single-select-default-picker"
+      label="Default option"
+      value={value ?? ""}
+      disabled={disabled}
+      options={[
+        { value: "", label: "No default" },
+        ...options.map((option) => ({
+          value: option.id,
+          label: option.label,
+          color: option.color,
+        })),
+      ]}
+      onChange={(nextValue) => onChange(nextValue || null)}
+    />
   );
 }

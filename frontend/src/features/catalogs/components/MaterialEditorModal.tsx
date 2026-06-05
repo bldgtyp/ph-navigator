@@ -10,6 +10,7 @@ import {
   type UnitFormatOptions,
 } from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import { MATERIAL_CATEGORY_OPTIONS, materialCategoryFromOptionId } from "../materials/fieldDefs";
@@ -200,20 +201,15 @@ export function MaterialEditorModal({
             autoFocus
           />
         </label>
-        <label>
-          <span>Category</span>
-          <select
-            value={form.category}
-            onChange={(event) => updateForm("category", event.target.value)}
-            required
-          >
-            {MATERIAL_CATEGORY_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <AutocompleteSelect
+          label="Category"
+          value={form.category}
+          options={MATERIAL_CATEGORY_OPTIONS.map((option) => ({
+            value: option.id,
+            label: option.label,
+          }))}
+          onChange={(nextCategory) => updateForm("category", nextCategory)}
+        />
         <label>
           <span>Lambda ({conductivityUnitLabel(formUnitSystem)})</span>
           <input

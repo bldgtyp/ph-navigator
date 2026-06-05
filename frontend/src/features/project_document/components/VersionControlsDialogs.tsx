@@ -1,5 +1,6 @@
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { ProjectVersion } from "../../projects/types";
 import type { DiffSummary } from "../types";
@@ -74,19 +75,15 @@ export function SaveAsDialog({
             required
           />
         </label>
-        <label>
-          Version kind
-          <select
-            value={versionKind}
-            onChange={(event) => onKindChange(event.target.value as SaveAsVersionKind)}
-          >
-            {SAVE_AS_VERSION_KINDS.map((kind) => (
-              <option key={kind.value} value={kind.value}>
-                {kind.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <AutocompleteSelect
+          label="Version kind"
+          value={versionKind}
+          options={SAVE_AS_VERSION_KINDS.map((kind) => ({
+            value: kind.value,
+            label: kind.label,
+          }))}
+          onChange={(nextKind) => onKindChange(nextKind as SaveAsVersionKind)}
+        />
         <div className="modal-actions">
           <button type="button" className="secondary-button" onClick={onClose}>
             Cancel
@@ -122,19 +119,18 @@ export function DiffDialog({
   return (
     <ModalDialog title="Diff" titleId="diff-title" onClose={onClose}>
       <div className="diff-panel">
-        <label className="diff-target-control">
-          Compare current version to
-          <select value={diffTarget} onChange={(event) => onTargetChange(event.target.value)}>
-            <option value={DRAFT_DIFF_TARGET}>Current draft</option>
-            {versions
+        <AutocompleteSelect
+          className="diff-target-control"
+          label="Compare current version to"
+          value={diffTarget}
+          options={[
+            { value: DRAFT_DIFF_TARGET, label: "Current draft" },
+            ...versions
               .filter((version) => version.id !== activeVersionId)
-              .map((version) => (
-                <option key={version.id} value={version.id}>
-                  {version.name}
-                </option>
-              ))}
-          </select>
-        </label>
+              .map((version) => ({ value: version.id, label: version.name })),
+          ]}
+          onChange={onTargetChange}
+        />
         {isLoading ? <p>Loading diff...</p> : null}
         {error ? (
           <p className="form-error" role="alert">

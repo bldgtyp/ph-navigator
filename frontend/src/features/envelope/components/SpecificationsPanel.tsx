@@ -8,6 +8,7 @@ import {
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { MaterialDriftBadge } from "./MaterialDrift";
 import { ProjectMaterialEditor } from "./ProjectMaterialEditor";
 import { materialNeedsCatalogReview } from "../drift";
@@ -101,26 +102,20 @@ export function SpecificationsPanel({
               </header>
               {canEdit ? (
                 <div className="spec-card-actions">
-                  <label>
-                    Status
-                    <select
-                      value={material.specification_status}
-                      disabled={busy}
-                      onChange={(event) =>
-                        onCommand({
-                          kind: "update_project_material",
-                          project_material_id: material.id,
-                          specification_status: event.currentTarget.value as SpecificationStatus,
-                        })
-                      }
-                    >
-                      {STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <AutocompleteSelect
+                    label="Status"
+                    value={material.specification_status}
+                    disabled={busy}
+                    compact
+                    options={STATUSES.map((status) => ({ value: status, label: status }))}
+                    onChange={(nextStatus) =>
+                      onCommand({
+                        kind: "update_project_material",
+                        project_material_id: material.id,
+                        specification_status: nextStatus as SpecificationStatus,
+                      })
+                    }
+                  />
                   <button
                     type="button"
                     className="secondary-button"

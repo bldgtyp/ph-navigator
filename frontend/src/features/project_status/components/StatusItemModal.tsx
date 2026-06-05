@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { isStatusState, STATUS_STATE_OPTIONS } from "../lib";
 import type { StatusItem, StatusItemPayload, StatusState } from "../types";
@@ -52,21 +53,17 @@ export function StatusItemModal({
             required
           />
         </label>
-        <label>
-          <span>State</span>
-          <select
-            value={state}
-            onChange={(event) => {
-              if (isStatusState(event.target.value)) setState(event.target.value);
-            }}
-          >
-            {STATUS_STATE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <AutocompleteSelect
+          label="State"
+          value={state}
+          options={STATUS_STATE_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+          onChange={(nextState) => {
+            if (isStatusState(nextState)) setState(nextState);
+          }}
+        />
         <label>
           <span>Completion date</span>
           <input

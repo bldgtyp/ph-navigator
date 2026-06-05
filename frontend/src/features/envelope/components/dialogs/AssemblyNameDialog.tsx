@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { DialogActions } from "../../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
+import { AutocompleteSelect } from "../../../../shared/ui/AutocompleteSelect";
 import type { AssemblyType } from "../../types";
 
 const ASSEMBLY_TYPES: AssemblyType[] = ["wall", "floor", "roof", "other"];
@@ -42,19 +43,12 @@ export function AssemblyNameDialog({
           </label>
         )}
         {hideType ? null : (
-          <label>
-            Type
-            <select
-              value={type}
-              onChange={(event) => setType(event.currentTarget.value as AssemblyType)}
-            >
-              {ASSEMBLY_TYPES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
+          <AutocompleteSelect
+            label="Type"
+            value={type}
+            options={ASSEMBLY_TYPES.map((option) => ({ value: option, label: option }))}
+            onChange={(nextType) => setType(nextType as AssemblyType)}
+          />
         )}
         <DialogActions busy={busy} error={error} submitLabel="Apply" onClose={onClose} />
       </form>

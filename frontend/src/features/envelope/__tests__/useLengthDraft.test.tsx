@@ -55,6 +55,42 @@ describe("useLengthDraft", () => {
     expect(hook.result.current.unitLabel).toBe("in");
   });
 
+  it("can follow unit preference changes and convert the active draft", () => {
+    let currentUnitSystem: UnitSystem = "SI";
+    const hook = renderHook(
+      () => useLengthDraft(25.4, { followUnitPreference: true, unitLabelStyle: "long" }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <UnitPreferenceContext.Provider
+            value={{
+              unitSystem: currentUnitSystem,
+              source: "local",
+              error: null,
+              setUnitSystem: vi.fn(),
+              toggleUnitSystem: vi.fn(),
+            }}
+          >
+            {children}
+          </UnitPreferenceContext.Provider>
+        ),
+      },
+    );
+
+    expect(hook.result.current.draft).toBe("25.4");
+    expect(hook.result.current.unitLabel).toBe("mm");
+
+    currentUnitSystem = "IP";
+    hook.rerender();
+    expect(hook.result.current.draft).toBe("1");
+    expect(hook.result.current.unitLabel).toBe("inch");
+
+    act(() => hook.result.current.setDraft("134 mm"));
+    currentUnitSystem = "SI";
+    hook.rerender();
+    expect(hook.result.current.draft).toBe("134");
+    act(() => expect(hook.result.current.parsePositive("Length")).toBe(134));
+  });
+
   it("rejects zero and negative positive-length input", () => {
     const hook = renderHook(() => useLengthDraft(25.4), { wrapper: wrapper("SI") });
     act(() => hook.result.current.setDraft("0"));

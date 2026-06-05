@@ -406,14 +406,24 @@ describe("EnvelopePage", () => {
     const legend = await screen.findByRole("complementary", { name: "Material legend" });
     expect(within(legend).getByText("Wood fiber board")).toBeInTheDocument();
     expect(within(legend).getByText("Conductivity [W/(m-K)]")).toBeInTheDocument();
+    expect(within(legend).getByText("Density [kg/m3]")).toBeInTheDocument();
+    expect(within(legend).getByText("Specific heat [J/(kg-K)]")).toBeInTheDocument();
+    expect(within(legend).getByText("Emissivity")).toBeInTheDocument();
     expect(within(legend).getByText("0.038")).toBeInTheDocument();
+    expect(within(legend).getByText("160")).toBeInTheDocument();
+    expect(within(legend).getByText("2100")).toBeInTheDocument();
+    expect(within(legend).getByText("0.9")).toBeInTheDocument();
     expect(within(legend).queryByText("Dense-pack cellulose")).not.toBeInTheDocument();
     expect(within(legend).queryByText("Unused air barrier")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
 
     expect(within(legend).getByText("Resistivity [R/inch]")).toBeInTheDocument();
+    expect(within(legend).getByText("Density [lb/ft3]")).toBeInTheDocument();
+    expect(within(legend).getByText("Specific heat [Btu/(lb-F)]")).toBeInTheDocument();
     expect(within(legend).getByText("3.795")).toBeInTheDocument();
+    expect(within(legend).getByText("10")).toBeInTheDocument();
+    expect(within(legend).getByText("0.502")).toBeInTheDocument();
   });
 
   test("specifications render segment use-site notes and hide unused na cards in viewer mode", async () => {
@@ -683,7 +693,9 @@ describe("EnvelopePage", () => {
       screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
     );
     expect(await screen.findByRole("dialog", { name: "Segment properties" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Delete segment" }));
+    expect(screen.queryByRole("button", { name: "Delete segment" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "More segment actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Delete segment" }));
     expect(await screen.findByRole("dialog", { name: "Delete segment" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
@@ -824,13 +836,16 @@ describe("EnvelopePage", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "From catalog" }));
 
-    expect(
-      await screen.findByRole("option", { name: "Insulation / Cork board" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("combobox", { name: "Catalog material" })).toBeInTheDocument();
+    expect(screen.queryByText("Catalog material")).not.toBeInTheDocument();
     expect(catalogMaterialFetchCalls()).toHaveLength(1);
+    await userEvent.click(screen.getByRole("combobox", { name: "Catalog material" }));
+    expect(
+      await screen.findByRole("option", { name: "Cork board Insulation" }),
+    ).toBeInTheDocument();
   });
 
-  test("segment material picker posts project and hand-enter material commands", async () => {
+  test("segment material picker posts project material commands from the simplified modal", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/draft/envelope/commands")) {
         return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
@@ -845,15 +860,23 @@ describe("EnvelopePage", () => {
       screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Project material"), "pmat_cellulose");
+    const dialog = await screen.findByRole("dialog", { name: "Segment properties" });
+    expect(within(dialog).queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("tab", { name: "Hand-enter" })).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: "Detach to custom material" }),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Project material")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Shared material values")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Apply" })).toHaveClass("primary-button");
 
-    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Project material" }));
     await userEvent.click(
-      screen.getByRole("button", { name: "Edit Wood fiber board segment in layer 1" }),
+      within(dialog).getByRole("option", { name: "Dense-pack cellulose 1 uses" }),
     );
-    await userEvent.click(screen.getByRole("tab", { name: "Hand-enter" }));
-    await userEvent.type(screen.getByPlaceholderText("Hand-enter material"), "Mineral wool");
-    await userEvent.click(screen.getByRole("button", { name: "Add material" }));
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Segment properties" })).not.toBeInTheDocument();
 
     const commands = commandRequestBodies();
     expect(commands).toContainEqual({
@@ -865,15 +888,11 @@ describe("EnvelopePage", () => {
         project_material_id: "pmat_cellulose",
       },
     });
-    expect(commands).toContainEqual({
-      command: {
-        kind: "hand_enter_material",
-        assembly_id: "asm_wall_c3",
-        layer_id: "lyr_sheathing",
-        segment_id: "seg_insul",
-        name: "Mineral wool",
-      },
-    });
+    expect(commands).not.toContainEqual(
+      expect.objectContaining({
+        command: expect.objectContaining({ kind: "hand_enter_material" }),
+      }),
+    );
   });
 
   test("locked editor version loads saved source and keeps edit action disabled", async () => {

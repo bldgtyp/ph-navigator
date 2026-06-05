@@ -29,6 +29,23 @@ textarea {
   font: inherit;
 }
 
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]),
+textarea {
+  min-height: 34px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.25;
+  padding: 7px 10px 7px 14px;
+  outline: none;
+  transition:
+    border-color 0.16s var(--ease),
+    box-shadow 0.16s var(--ease),
+    background 0.16s var(--ease);
+}
+
 .auth-page,
 .workspace-shell {
   min-height: 100vh;
@@ -104,8 +121,10 @@ textarea {
 
 .auth-form label span,
 .project-form label span,
+.project-form .autocomplete-select-label,
 .project-form legend,
-.diff-target-control {
+.diff-target-control,
+.diff-target-control .autocomplete-select-label {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.09em;
@@ -117,12 +136,13 @@ textarea {
 .project-form select,
 .project-form textarea,
 .diff-target-control select {
-  min-height: 40px;
-  border: 1px solid var(--border-strong);
+  min-height: 36px;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
-  background: var(--bg-page);
+  background: var(--bg-input, var(--bg-card));
   color: var(--text-primary);
-  padding: 8px 10px;
+  font-size: 0.9rem;
+  padding: 8px 10px 8px 14px;
   outline: none;
   transition:
     border-color 0.16s var(--ease),
@@ -135,6 +155,7 @@ textarea {
 .project-form select:focus,
 .project-form textarea:focus,
 .diff-target-control select:focus,
+.autocomplete-select input:focus,
 button:focus-visible,
 a:focus-visible {
   border-color: var(--accent-text);
@@ -145,6 +166,171 @@ a:focus-visible {
 .project-form textarea {
   resize: vertical;
   line-height: 1.45;
+}
+
+.autocomplete-select {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-primary);
+}
+
+.autocomplete-select-label {
+  color: var(--text-secondary);
+}
+
+.autocomplete-select-control {
+  position: relative;
+  min-width: 0;
+}
+
+.autocomplete-select input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--phn-radius);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  padding: 8px 34px 8px 10px;
+  outline: none;
+  transition:
+    border-color 0.16s var(--ease),
+    box-shadow 0.16s var(--ease),
+    background 0.16s var(--ease);
+}
+
+.autocomplete-select input::placeholder {
+  color: var(--text-muted);
+}
+
+.autocomplete-select-toggle {
+  position: absolute;
+  inset-block: 1px;
+  right: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-height: 0;
+  border: 0;
+  border-radius: 0 calc(var(--phn-radius) - 1px) calc(var(--phn-radius) - 1px) 0;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0;
+}
+
+.autocomplete-select-toggle:hover:not(:disabled) {
+  background: var(--bg-elev);
+  color: var(--accent-text);
+  transform: none;
+}
+
+.autocomplete-select-listbox {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: min(280px, 45vh);
+  overflow: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  box-shadow: 0 18px 42px color-mix(in oklab, var(--text-primary) 15%, transparent);
+}
+
+.autocomplete-select-listbox [role="option"],
+.autocomplete-select-empty {
+  border-radius: calc(var(--phn-radius) - 2px);
+  min-height: 32px;
+  padding: 7px 9px;
+}
+
+.autocomplete-select-listbox [role="option"] {
+  cursor: pointer;
+}
+
+.autocomplete-select-listbox [role="option"].is-highlighted {
+  background: var(--bg-elev);
+}
+
+.autocomplete-select-listbox [role="option"][aria-selected="true"] {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.autocomplete-select-listbox [role="option"][aria-disabled="true"] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.autocomplete-select-empty {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.autocomplete-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.autocomplete-select-swatch {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in oklab, var(--text-primary) 18%, transparent);
+  border-radius: 999px;
+  background: var(--autocomplete-option-color);
+}
+
+.autocomplete-select-option-text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.autocomplete-select-option-text span,
+.autocomplete-select-option-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autocomplete-select-option-text small {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+.autocomplete-select.is-compact {
+  gap: 4px;
+}
+
+.autocomplete-select.is-compact input {
+  min-height: 30px;
+  padding: 4px 28px 4px 8px;
+  font-size: 0.8rem;
+}
+
+.autocomplete-select.is-compact .autocomplete-select-toggle {
+  width: 26px;
+}
+
+.autocomplete-select.is-compact .autocomplete-select-listbox [role="option"],
+.autocomplete-select.is-compact .autocomplete-select-empty {
+  min-height: 28px;
+  padding: 5px 7px;
+  font-size: 0.8rem;
+}
+
+.autocomplete-select.is-disabled {
+  color: var(--text-muted);
 }
 
 .project-form fieldset {
@@ -1092,6 +1278,7 @@ button {
 
 .download-link,
 button:not([class]),
+.primary-button,
 .secondary-button,
 .danger-button {
   display: inline-flex;
@@ -1109,7 +1296,8 @@ button:not([class]),
 }
 
 .download-link:hover,
-button:not([class]):hover:not(:disabled) {
+button:not([class]):hover:not(:disabled),
+.primary-button:hover:not(:disabled) {
   border-color: var(--accent-dark);
   background: var(--accent-dark);
   transform: translateY(-1px);
@@ -1255,6 +1443,46 @@ button:disabled {
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.pill-tab-list {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill-tab {
+  min-height: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--accent-text);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 7px 12px;
+  text-transform: none;
+}
+
+.pill-tab:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  color: var(--accent-text);
+  transform: none;
+}
+
+.pill-tab.active,
+.pill-tab[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.pill-tab.active:hover:not(:disabled),
+.pill-tab[aria-selected="true"]:hover:not(:disabled) {
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+  color: white;
 }
 
 .tabbar {

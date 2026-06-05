@@ -1,5 +1,6 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { useEffect, useMemo, useState } from "react";
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import type { FieldOption } from "../types";
 
 export type CascadeChoice = { kind: "clear" } | { kind: "replace"; replacementId: string };
@@ -102,22 +103,24 @@ export function ConfirmDeleteOptionDialog({
                   />
                   <span className="data-table-field-editor-cascade-replace">
                     Replace with:
-                    <select
+                    <AutocompleteSelect
                       aria-label="Replacement option"
                       value={replacementId}
-                      onChange={(event) => {
-                        setSelectionKind("replace");
-                        setReplacementId(event.target.value);
-                      }}
                       disabled={replacementOptions.length === 0}
-                    >
-                      <option value="">Pick an option…</option>
-                      {replacementOptions.map((candidate) => (
-                        <option key={candidate.id} value={candidate.id}>
-                          {candidate.label}
-                        </option>
-                      ))}
-                    </select>
+                      compact
+                      options={[
+                        { value: "", label: "Pick an option..." },
+                        ...replacementOptions.map((candidate) => ({
+                          value: candidate.id,
+                          label: candidate.label,
+                          color: candidate.color,
+                        })),
+                      ]}
+                      onChange={(nextReplacementId) => {
+                        setSelectionKind("replace");
+                        setReplacementId(nextReplacementId);
+                      }}
+                    />
                   </span>
                 </label>
               ) : null}

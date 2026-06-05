@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import { OPTION_COLOR_PALETTE, createFieldOption } from "../lib/options/create";
 import { hasDuplicateFieldOptionLabels } from "../lib/options/references";
 import { normalizeOptionOrders } from "../lib/options/normalize";
@@ -49,19 +50,19 @@ export function FieldConfigSectionCreateOptions({
       <ul className="data-table-add-field-options" role="list">
         {options.map((option, index) => (
           <li key={option.id} className="data-table-add-field-option-row">
-            <select
+            <AutocompleteSelect
               className="data-table-add-field-option-color"
               aria-label={`Option color ${index + 1}`}
               value={option.color}
               disabled={disabled}
-              onChange={(event) => updateOption(option.id, { color: event.target.value })}
-            >
-              {OPTION_COLOR_PALETTE.map((swatch) => (
-                <option key={swatch} value={swatch}>
-                  {swatch}
-                </option>
-              ))}
-            </select>
+              compact
+              options={OPTION_COLOR_PALETTE.map((swatch) => ({
+                value: swatch,
+                label: swatch,
+                color: swatch,
+              }))}
+              onChange={(color) => updateOption(option.id, { color })}
+            />
             <input
               type="text"
               className="data-table-add-field-input"

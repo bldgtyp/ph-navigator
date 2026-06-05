@@ -203,20 +203,18 @@ describe("CreateFieldConfigModal", () => {
     fireEvent.change(within(dialog()).getByLabelText("Option label 1"), {
       target: { value: "Open" },
     });
-    const defaultSelect = within(dialog()).getByLabelText("Default option") as HTMLSelectElement;
-    const optionId = Array.from(defaultSelect.options).find(
-      (option) => option.text === "Open",
-    )?.value;
-    expect(optionId).toBeTruthy();
-    fireEvent.change(within(dialog()).getByLabelText("Default option"), {
-      target: { value: optionId },
-    });
+    fireEvent.focus(within(dialog()).getByRole("combobox", { name: "Default option" }));
+    fireEvent.click(within(dialog()).getByRole("option", { name: "Open" }));
     clickAdd();
     await waitFor(() => expect(dispatch).toHaveBeenCalled());
     const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
+    const initialOptions = request.initialOptions;
+    expect(initialOptions).toBeDefined();
+    const optionId = initialOptions?.[0]?.id;
+    expect(optionId).toBeTruthy();
     expect(request.fieldType).toBe("single_select");
     expect(request.config).toEqual({ default_option_id: optionId });
-    expect(request.initialOptions).toEqual([
+    expect(initialOptions).toEqual([
       expect.objectContaining({ id: optionId, label: "Open", order: 1 }),
     ]);
   });

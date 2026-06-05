@@ -40,6 +40,19 @@ function popover(): HTMLElement {
   return screen.getByRole("dialog", { name: "Sort rules" });
 }
 
+function openAutocompleteOptions(combobox: HTMLElement) {
+  fireEvent.focus(combobox);
+}
+
+function closeAutocompleteOptions() {
+  fireEvent.pointerDown(document.body);
+}
+
+function chooseAutocompleteOption(label: string, optionName: string) {
+  openAutocompleteOptions(within(popover()).getByRole("combobox", { name: label }));
+  fireEvent.click(screen.getByRole("option", { name: optionName }));
+}
+
 describe("SortPopover", () => {
   test("renders an empty-state message when no rules exist", () => {
     render(<Harness onSortChange={vi.fn()} />);
@@ -71,8 +84,7 @@ describe("SortPopover", () => {
     render(
       <Harness initialRules={[{ fieldKey: "number", direction: "asc" }]} onSortChange={onChange} />,
     );
-    const directionPicker = within(popover()).getByLabelText("Sort direction");
-    fireEvent.change(directionPicker, { target: { value: "desc" } });
+    chooseAutocompleteOption("Sort direction", "Z → A");
     expect(onChange).toHaveBeenLastCalledWith([{ fieldKey: "number", direction: "desc" }]);
   });
 
@@ -86,15 +98,18 @@ describe("SortPopover", () => {
         onSortChange={vi.fn()}
       />,
     );
-    const fieldPickers = within(popover()).getAllByLabelText("Sort field");
+    const fieldPickers = within(popover()).getAllByRole("combobox", { name: "Sort field" });
     // First picker: its own field (number) + remaining unused (people).
-    expect(within(fieldPickers[0]!).queryByText("Name")).not.toBeInTheDocument();
-    expect(within(fieldPickers[0]!).getByText("Number")).toBeInTheDocument();
-    expect(within(fieldPickers[0]!).getByText("People")).toBeInTheDocument();
+    openAutocompleteOptions(fieldPickers[0]!);
+    expect(screen.queryByRole("option", { name: "Name" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Number" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "People" })).toBeInTheDocument();
+    closeAutocompleteOptions();
     // Second picker: its own (name) + unused (people); excludes number.
-    expect(within(fieldPickers[1]!).queryByText("Number")).not.toBeInTheDocument();
-    expect(within(fieldPickers[1]!).getByText("Name")).toBeInTheDocument();
-    expect(within(fieldPickers[1]!).getByText("People")).toBeInTheDocument();
+    openAutocompleteOptions(fieldPickers[1]!);
+    expect(screen.queryByRole("option", { name: "Number" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Name" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "People" })).toBeInTheDocument();
   });
 
   test("delete button removes a rule", () => {
@@ -119,8 +134,11 @@ describe("SortPopover", () => {
     render(
       <Harness initialRules={[{ fieldKey: "people", direction: "asc" }]} onSortChange={vi.fn()} />,
     );
-    expect(within(popover()).getByText("A → Z")).toBeInTheDocument();
-    expect(within(popover()).getByText("Z → A")).toBeInTheDocument();
+    const directionPicker = within(popover()).getByRole("combobox", { name: "Sort direction" });
+    expect(directionPicker).toHaveValue("A → Z");
+    openAutocompleteOptions(directionPicker);
+    expect(screen.getByRole("option", { name: "A → Z" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Z → A" })).toBeInTheDocument();
   });
 
   test("each rule exposes a drag handle reachable as a Reorder button", () => {

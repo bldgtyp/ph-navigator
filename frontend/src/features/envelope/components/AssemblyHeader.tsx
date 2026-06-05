@@ -1,5 +1,6 @@
 import { Info } from "lucide-react";
 import { createSearchParams, useNavigate } from "react-router-dom";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import {
   formatLengthFromMm,
   formatRValueFromM2KPerW,
@@ -35,21 +36,17 @@ export function AssemblyHeader({
   return (
     <header className="assembly-header">
       <div className="assembly-picker-field">
-        <label htmlFor="assembly-picker">Assembly</label>
-        <select
+        <AutocompleteSelect
           id="assembly-picker"
+          label="Assembly"
           value={activeAssembly.id}
-          onChange={(event) => {
-            const path = envelopeAssemblyPath(projectId, event.currentTarget.value);
+          compact
+          options={assemblies.map((assembly) => ({ value: assembly.id, label: assembly.name }))}
+          onChange={(nextAssemblyId) => {
+            const path = envelopeAssemblyPath(projectId, nextAssemblyId);
             navigate(`${path}${query ? `?${query}` : ""}`);
           }}
-        >
-          {assemblies.map((assembly) => (
-            <option key={assembly.id} value={assembly.id}>
-              {assembly.name}
-            </option>
-          ))}
-        </select>
+        />
       </div>
       <dl className="assembly-header-metrics">
         <div>

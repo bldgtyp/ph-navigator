@@ -3,6 +3,7 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { AutocompleteSelect } from "../../AutocompleteSelect";
 import { useSortableRules } from "../hooks/useSortableRules";
 import type { FieldDef, GroupRule } from "../types";
 
@@ -157,27 +158,28 @@ function GroupRuleRow({
       style={style}
       data-dragging={sortable.isDragging ? "true" : undefined}
     >
-      <select
+      <AutocompleteSelect
         aria-label="Group field"
         className="data-table-view-popover-select"
         value={rule.fieldKey}
-        onChange={(event) => onChange({ ...rule, fieldKey: event.target.value })}
-      >
-        {fieldOptions.map((def) => (
-          <option key={def.field_key} value={def.field_key}>
-            {def.display_name}
-          </option>
-        ))}
-      </select>
-      <select
+        compact
+        options={fieldOptions.map((def) => ({
+          value: def.field_key,
+          label: def.display_name,
+        }))}
+        onChange={(fieldKey) => onChange({ ...rule, fieldKey })}
+      />
+      <AutocompleteSelect
         aria-label="Group direction"
         className="data-table-view-popover-select"
         value={rule.direction}
-        onChange={(event) => onChange({ ...rule, direction: event.target.value as "asc" | "desc" })}
-      >
-        <option value="asc">First → Last</option>
-        <option value="desc">Last → First</option>
-      </select>
+        compact
+        options={[
+          { value: "asc", label: "First → Last" },
+          { value: "desc", label: "Last → First" },
+        ]}
+        onChange={(direction) => onChange({ ...rule, direction: direction as "asc" | "desc" })}
+      />
       <button
         type="button"
         className="data-table-view-popover-remove"
