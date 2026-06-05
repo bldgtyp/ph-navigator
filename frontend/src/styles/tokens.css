@@ -45,6 +45,8 @@
   --data-table-header-height: 34px;
   --data-table-cell-padding-x: 8px;
   --data-table-header-padding-x: 10px;
+  --font-primary: "Geist", sans-serif;
+  --font-table: "Geist", sans-serif;
   /* Bottom-border tint on header cells whose FieldDef carries any
      author-declared lock. Token name predates the lock-list model. */
   --phn-header-border-locked: color-mix(in oklab, var(--accent) 35%, transparent);
