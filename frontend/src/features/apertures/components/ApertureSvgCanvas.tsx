@@ -7,6 +7,7 @@ import {
 } from "../aperture-geometry";
 import { MIN_CANVAS_WIDTH_PX, pxFromMm } from "../canvas-constants";
 import type { ApertureSide, ApertureTypeEntry, FrameRef, GlazingRef } from "../types";
+import { OperationSymbols } from "./OperationSymbols";
 
 export type ApertureViewDirection = "exterior" | "interior";
 
@@ -67,6 +68,12 @@ export function ApertureSvgCanvas({
             />
             <FrameRegion side="left" frame={el.frames.left} rect={regions.left} elementId={el.id} />
             <GlazingRegion glazing={el.glazing} rect={regions.glazing} elementId={el.id} />
+            <OperationSymbols
+              elementId={el.id}
+              glazing={regions.glazing}
+              operation={el.operation}
+              viewDirection={viewDirection}
+            />
           </g>
         );
       })}

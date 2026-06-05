@@ -59,12 +59,18 @@ def apply_set_element_operation(
     updated = element.model_copy(update={"operation": command.operation})
     next_body = _replace_element(body, aperture_idx, aperture, element_idx, updated)
     op_payload = command.operation.model_dump(mode="json") if command.operation is not None else None
+    previous = element.operation.model_dump(mode="json") if element.operation is not None else None
     return next_body, _audit(
         "setElementOperation",
         actor_user_id,
         aperture_type_id=aperture.id,
         element_id=element.id,
-        operation=op_payload,
+        previous_operation=previous,
+        new_operation=op_payload,
+        # Phase 07: operation changes never invalidate the U-Value
+        # cache (PRD §14). Emitting this explicitly so the Phase 09
+        # content-hash skip-list is self-documenting from audit.
+        affects_u_value=False,
     )
 
 

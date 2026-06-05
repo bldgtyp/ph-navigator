@@ -16,6 +16,10 @@ export type FrameRowProps = {
   frame: FrameRef | null;
   operation: ApertureOperation | null;
   canEdit: boolean;
+  /** Phase 07 per-side ⚠ tooltip when the catalog operation no longer
+   *  matches the element operation. Null when the row is in agreement
+   *  or the warning was dismissed. */
+  mismatchIndicator?: string | null;
   onPick: (frame: FrameRef) => void;
   onEditField: (fieldKey: string, value: string | number | null) => void;
 };
@@ -39,6 +43,7 @@ export function FrameRow({
   frame,
   operation,
   canEdit,
+  mismatchIndicator,
   onPick,
   onEditField,
 }: FrameRowProps) {
@@ -58,6 +63,16 @@ export function FrameRow({
           origin={frame?.catalog_origin ?? null}
           datasheetUrl={frame?.source ?? null}
         />
+        {mismatchIndicator && (
+          <span
+            className="aperture-frame-row__mismatch"
+            title={mismatchIndicator}
+            data-testid={`frame-mismatch-${side}`}
+            aria-label="Operation mismatch"
+          >
+            ⚠
+          </span>
+        )}
       </div>
       {frame && (
         <div className="aperture-card-row__columns">

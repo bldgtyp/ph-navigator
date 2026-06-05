@@ -138,6 +138,7 @@
   --aperture-pill-bg: var(--bg-card);
   --aperture-pill-border: var(--border-subtle);
   --aperture-pill-text: var(--text-primary);
+  --aperture-operation-symbol: color-mix(in oklab, var(--text-secondary) 60%, transparent);
 }
 
 .aperture-canvas-container {
@@ -757,4 +758,113 @@
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+/* ---- Phase 07: operation row, preset menu, warning banner ---------------- */
+
+.aperture-operation-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.aperture-operation-row__readonly {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.aperture-operation-row__select {
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-input);
+}
+
+.aperture-operation-row__directions {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.aperture-operation-row__toggle {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-card);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+.aperture-operation-row__toggle[data-active="true"] {
+  background: color-mix(in oklab, var(--accent) 14%, var(--bg-card));
+  border-color: var(--accent);
+  color: var(--accent-dark, var(--accent));
+}
+
+.aperture-operation-preset-menu {
+  position: relative;
+  display: inline-block;
+}
+.aperture-operation-preset-menu__trigger {
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-card);
+  font-size: 0.8125rem;
+  list-style: none;
+}
+.aperture-operation-preset-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+.aperture-operation-preset-menu__panel {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  min-width: 200px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px color-mix(in oklab, var(--text-primary) 12%, transparent);
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+}
+.aperture-operation-preset-menu__option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+.aperture-operation-preset-menu__option:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+
+.aperture-operation-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--phn-warning) 14%, var(--bg-card));
+  color: var(--phn-warning);
+  font-size: 0.8125rem;
+}
+.aperture-operation-warning__dismiss {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.aperture-frame-row__mismatch {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: var(--phn-warning);
+  cursor: help;
 }

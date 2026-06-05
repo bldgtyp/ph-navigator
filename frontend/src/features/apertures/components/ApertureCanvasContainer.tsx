@@ -51,6 +51,10 @@ let noDeleteTooltipShown = false;
 
 type DimensionConfirm = { axis: "row" | "column"; index: number; customizedCount: number } | null;
 
+// Stable empty array used by the dismissed-warning selector so Zustand's
+// snapshot loop guard doesn't churn on fresh ``[]`` references.
+const EMPTY_DISMISSED: readonly string[] = Object.freeze([]);
+
 // Phase 03 + 04 keep zoom + view direction as component-local state. The
 // phase plan calls for a user-preferences store key, but no such store
 // exists in V2 yet — promotion is deferred to the same cleanup phase that
@@ -74,6 +78,7 @@ export function ApertureCanvasContainer({
   onPickGlazing,
   onEditFrameField,
   onEditGlazingField,
+  onSetElementOperation,
 }: {
   aperture: ApertureTypeEntry;
   canEdit?: boolean;
@@ -92,6 +97,10 @@ export function ApertureCanvasContainer({
     value: string | number | null,
   ) => void;
   onEditGlazingField?: (elementId: string, fieldKey: string, value: string | number | null) => void;
+  onSetElementOperation?: (
+    elementId: string,
+    operation: import("../types").ApertureOperation | null,
+  ) => void;
 }) {
   const [focusedTarget, setFocusedTarget] = useState<FocusedTarget>(null);
   const [zoom, setZoom] = useState(1);
@@ -102,6 +111,13 @@ export function ApertureCanvasContainer({
 
   const selection = useApertureBuilderStore((state) => selectionForAperture(state, aperture.id));
   const clearSelection = useApertureBuilderStore((state) => state.clearSelection);
+  const dismissedOpWarnings = useApertureBuilderStore(
+    (state) => state.dismissedOperationWarnings[aperture.id] ?? EMPTY_DISMISSED,
+  );
+  const dismissOperationWarning = useApertureBuilderStore((state) => state.dismissOperationWarning);
+  const clearDismissedOperationWarnings = useApertureBuilderStore(
+    (state) => state.clearDismissedOperationWarnings,
+  );
 
   const dimFormat = useApertureDimFormat();
   const unitSystem = dimFormat.system === "ip" ? "ip" : "si";
@@ -112,8 +128,9 @@ export function ApertureCanvasContainer({
     const id = aperture.id;
     return () => {
       clearSelection(id);
+      clearDismissedOperationWarnings(id);
     };
-  }, [aperture.id, clearSelection]);
+  }, [aperture.id, clearSelection, clearDismissedOperationWarnings]);
 
   const fitZoom = useCallback(() => {
     const container = scrollRef.current;
@@ -317,6 +334,11 @@ export function ApertureCanvasContainer({
           onPickGlazing={(elementId, glazing) => onPickGlazing?.(elementId, glazing)}
           onEditFrameField={(elementId, side, k, v) => onEditFrameField?.(elementId, side, k, v)}
           onEditGlazingField={(elementId, k, v) => onEditGlazingField?.(elementId, k, v)}
+          onSetElementOperation={(elementId, operation) =>
+            onSetElementOperation?.(elementId, operation)
+          }
+          dismissedOperationWarnings={dismissedOpWarnings}
+          onDismissOperationWarning={(elementId) => dismissOperationWarning(aperture.id, elementId)}
         />
       )}
       <DeleteDimensionDialog

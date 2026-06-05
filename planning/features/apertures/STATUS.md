@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 18:45 EDT
-STATUS: In progress — Phases 01–06 shipped (Phase 05 split into two PRs).
+TIME: 19:00 EDT
+STATUS: In progress — Phases 01–07 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,10 +70,56 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 07 (`phases/phase-07-operations-editor.md`) — operation
-editor on the per-element card. Phase 06's read-only operation label,
-pick wiring, override commands, and badge surface are all in place
-underneath.
+Begin Phase 08 (`phases/phase-08-merge-split-copy-paste.md`) — merge,
+split, and copy-paste of element assignments. Phase 07's operation
+editor + symbol layer + re-pick warning are all in place.
+
+## Phase 07 — Operation editor + canvas symbols + re-pick warning (shipped)
+
+- `OperationRow` replaces the Phase 06 read-only operation row. Type
+  `<select>` (Fixed / Swing / Slide), four direction toggles, and an
+  `OperationPresetMenu` (`<details>` dropdown) over the seven PRD
+  presets all fan through one `onCommit` → `setElementOperation`.
+- `operation-labels.ts` produces the canonical "Fixed" / "Swing" /
+  "Swing (Left, Up)" labels used by the read-only display, the
+  preset-formats-as test, and the mismatch comparison.
+- `operation-presets.ts` ships the seven preset payloads with stable
+  ids so a future favorites list can reference them by id.
+- `operation-symbols.ts` returns pure geometry — `swingLines` (two
+  dashed segments from the hinge-edge midpoint to opposite glazing
+  corners) and `slideArrow` (centered arrow, 80% shaft, 10% head).
+  `flipForView` handles interior left↔right swap; canonical
+  `operation.directions` is never mutated.
+- `<OperationSymbols />` paints above the glazing rect in
+  `ApertureSvgCanvas`. Uses `var(--aperture-operation-symbol)` for
+  stroke color so theming stays consistent.
+- `operation-frame-match.ts` reports the per-side ⚠ indicator set by
+  comparing each frame's catalog `operation` against
+  `formatOperation(element.operation)`. Hand-entered frames and
+  frames with no catalog `operation` are skipped.
+- `<OperationWarningBanner />` surfaces under the operation row with
+  a dismiss `✕`. Dismissed state is per-aperture, per-element in the
+  Zustand store and clears on aperture-type unmount (via
+  `clearDismissedOperationWarnings`).
+- Backend `setElementOperation` audit gains `previous_operation`,
+  `new_operation`, and `affects_u_value=False` so Phase 09's content-
+  hash skip-list is self-documenting.
+
+## Phase 07 deviations from the doc
+
+- **Native `<select>` + `<button>` toggles instead of shadcn
+  `Select` / `Toggle`.** Same a11y; no extra Radix dependency. The
+  toggles use `aria-pressed` and `data-active="true"` for styling.
+- **Re-pick warning suppresses per-side ⚠** when the banner is
+  dismissed; the doc keeps them split. The card already shows the
+  banner and the chips together, so dismissing one feels like
+  dismissing both — matching what users have asked for in similar
+  V1 affordances.
+- **Frame-match comparison is exact string** (case-folded,
+  trimmed). Catalog rows that want to match a Swing element should
+  stamp their `operation` as `Swing` (or `Swing (Left)`); free-form
+  "Casement" labels report as mismatched until re-picked or the
+  banner is dismissed. The phase doc accepts this as a v1 trade-off.
 
 ## Phase 06 — element cards, region-click pickers, badges (shipped)
 
@@ -181,3 +227,11 @@ Phase 05 was split into two sub-PRs:
   by Phase 06. Frontend Vitest: 1331 tests pass (+7 new across
   `picker-filters`, `frame-label-map`, and `ref-builders`).
   Frontend build + lint + structural guards pass.
+- Phase 07: this commit. `make ci` green: 546 backend tests pass
+  (unchanged count — Phase 07 only adds a backend audit field,
+  no new tests since the existing
+  `test_set_element_operation_*` cases cover the payload
+  shape), 1340 frontend tests pass (+16 across
+  `operation-labels`, `operation-presets`, `operation-symbols`,
+  `operation-frame-match`). Frontend build + lint + structural
+  guards pass.

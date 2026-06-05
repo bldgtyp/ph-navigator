@@ -20,6 +20,10 @@ export type ApertureBuilderState = {
   hoveredElementId: string | null;
   hoveredRegion: ApertureHoveredRegion | null;
   pickPasteMode: AperturePickPasteMode;
+  /** Per-aperture set of element ids whose operation-changed warning
+   *  banner the user dismissed this session. Cleared on aperture-type
+   *  or version switch — purely ephemeral. */
+  dismissedOperationWarnings: Record<string, string[]>;
 
   selectSingle: (apertureId: string, elementId: string) => void;
   extendSelection: (apertureId: string, elementId: string) => void;
@@ -28,6 +32,8 @@ export type ApertureBuilderState = {
   clearAllSelections: () => void;
   setHoveredElement: (elementId: string | null) => void;
   setHoveredRegion: (value: ApertureHoveredRegion | null) => void;
+  dismissOperationWarning: (apertureId: string, elementId: string) => void;
+  clearDismissedOperationWarnings: (apertureId: string) => void;
 };
 
 export const useApertureBuilderStore = create<ApertureBuilderState>((set) => ({
@@ -35,6 +41,7 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set) => ({
   hoveredElementId: null,
   hoveredRegion: null,
   pickPasteMode: "idle",
+  dismissedOperationWarnings: {},
 
   selectSingle: (apertureId, elementId) =>
     set((state) => {
@@ -80,6 +87,26 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set) => ({
 
   setHoveredElement: (elementId) => set({ hoveredElementId: elementId }),
   setHoveredRegion: (value) => set({ hoveredRegion: value }),
+
+  dismissOperationWarning: (apertureId, elementId) =>
+    set((state) => {
+      const current = state.dismissedOperationWarnings[apertureId] ?? [];
+      if (current.includes(elementId)) return state;
+      return {
+        dismissedOperationWarnings: {
+          ...state.dismissedOperationWarnings,
+          [apertureId]: [...current, elementId],
+        },
+      };
+    }),
+
+  clearDismissedOperationWarnings: (apertureId) =>
+    set((state) => {
+      if (!state.dismissedOperationWarnings[apertureId]?.length) return state;
+      const next = { ...state.dismissedOperationWarnings };
+      delete next[apertureId];
+      return { dismissedOperationWarnings: next };
+    }),
 }));
 
 // Stable empty array so selectors that fall back to "no selection" don't

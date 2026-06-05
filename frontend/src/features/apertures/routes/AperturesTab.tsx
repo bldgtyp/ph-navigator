@@ -227,6 +227,14 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   new_value,
                 })
               }
+              onSetElementOperation={(element_id, operation) =>
+                void dispatch({
+                  kind: "setElementOperation",
+                  aperture_type_id: activeAperture.id,
+                  element_id,
+                  operation,
+                })
+              }
             />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
