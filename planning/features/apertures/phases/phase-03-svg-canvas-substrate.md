@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 15:35 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 17:30 EDT
+STATUS: Done — SVG canvas substrate + toolbar shipped. `make ci` green (525 backend, 1141 frontend).
+AUTHOR: Claude
 SCOPE: Replace the Phase 02 Builder placeholder with a real SVG
        canvas substrate: pure geometry helpers, the
        `ApertureSvgCanvas` component that renders each element as
@@ -21,6 +21,36 @@ RELATED:
 ---
 
 # Phase 3 — SVG canvas substrate
+
+## Implementation note (2026-06-05)
+
+Phase 03 shipped in one commit (rather than the planned six) because each
+incremental piece had no caller until the final wire-up — splitting them
+would have produced N intermediate commits that all advertised dead code.
+The single commit covers `canvas-constants.ts`, `aperture-geometry.ts`,
+`ApertureSvgCanvas`, the toolbar trio (`ApertureCanvasToolbar`,
+`ZoomCluster`, `ViewDirectionToggle`), `ApertureCanvasContainer`, CSS
+tokens + canvas styling, and the AperturesTab wire-up that replaces the
+Phase 02 placeholder. `ApertureEmptyState` was lifted into its own file
+so the placeholder file could be deleted cleanly.
+
+Deviations from the phase plan:
+
+- **Zoom + view-direction state lives in component-local `useState`,
+  not the user-preferences store.** No user-preferences store exists in
+  the V2 frontend yet; the envelope canvas (the closest precedent) also
+  uses local state for zoom. Promoting these to persistent prefs is
+  deferred to the same cleanup phase that introduces the store. The
+  signature of `ApertureCanvasContainer` is a single `aperture` prop
+  so swapping the state source later is a one-file change.
+- **Header-toolbar zoom cluster is in the canvas toolbar, not the page
+  header.** Matches the envelope canvas precedent (toolbar attached to
+  the canvas, not the page chrome) and keeps the page header free for
+  the U-Value chip / per-aperture name slot.
+- **`Fit` snaps to the nearest discrete `ZOOM_STEPS` entry** via the
+  new `snapZoomToStep` helper, called once on mount and once on each
+  aperture change so a freshly selected aperture starts framed.
+
 
 ## P0. Why this slice
 

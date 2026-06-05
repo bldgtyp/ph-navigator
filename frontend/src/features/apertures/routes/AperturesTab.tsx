@@ -2,10 +2,8 @@ import "../apertures.css";
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
-import {
-  ApertureBuilderPlaceholder,
-  ApertureEmptyState,
-} from "../components/ApertureBuilderPlaceholder";
+import { ApertureCanvasContainer } from "../components/ApertureCanvasContainer";
+import { ApertureEmptyState } from "../components/ApertureEmptyState";
 import { ApertureSidebar } from "../components/ApertureSidebar";
 import { AperturesHeader } from "../components/AperturesHeader";
 import { DeleteApertureDialog } from "../components/DeleteApertureDialog";
@@ -142,7 +140,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
         />
         <main className="apertures-page__main">
           {activeAperture ? (
-            <ApertureBuilderPlaceholder aperture={activeAperture} />
+            <ApertureCanvasContainer aperture={activeAperture} />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
           )}
