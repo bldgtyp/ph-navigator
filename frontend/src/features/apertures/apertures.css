@@ -318,3 +318,220 @@
   font-size: 0.8125rem;
   color: var(--phn-danger);
 }
+
+/* Phase 05 — dimension strips, edge-add hot-zones, format selector,
+   total caption, error-state input border. CSS-grid composition keeps
+   the strip gutters, edge hot-zones, and the SVG/overlay stage all
+   aligned without per-segment math. */
+
+.aperture-canvas-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "gutter top"
+    "left   stage"
+    "gutter-bottom bottom";
+}
+
+.aperture-canvas-grid__gutter {
+  grid-area: gutter;
+  display: flex;
+  align-items: end;
+  padding: var(--space-1);
+}
+
+.aperture-canvas-grid__top-edge {
+  grid-area: top;
+  position: relative;
+  min-height: 0;
+}
+
+.aperture-canvas-grid__left-edge {
+  grid-area: left;
+  position: relative;
+  min-width: 0;
+}
+
+.aperture-canvas-grid__stage {
+  grid-area: stage;
+}
+
+.aperture-canvas-grid__bottom-edge {
+  grid-area: bottom;
+  position: relative;
+  min-height: 0;
+}
+
+.aperture-total-dim-caption {
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.aperture-dim-format-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.aperture-dim-format-selector__select {
+  font: inherit;
+  padding: 2px 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+}
+
+.aperture-dim-strip {
+  position: relative;
+}
+
+.aperture-dim-strip--horizontal {
+  height: 32px;
+}
+
+.aperture-dim-strip--vertical {
+  width: 64px;
+}
+
+.aperture-dim-tick {
+  position: absolute;
+  background: var(--border-subtle);
+}
+
+.aperture-dim-tick--horizontal {
+  top: 0;
+  width: 1px;
+  height: 6px;
+}
+
+.aperture-dim-tick--vertical {
+  left: 0;
+  width: 6px;
+  height: 1px;
+}
+
+.aperture-dim-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.aperture-dim-strip--horizontal .aperture-dim-label {
+  top: 10px;
+  height: 22px;
+}
+
+.aperture-dim-strip--vertical .aperture-dim-label {
+  left: 10px;
+  width: 50px;
+  flex-direction: column;
+}
+
+.aperture-dim-label__value {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.aperture-dim-label__value:hover:not(:disabled) {
+  border-color: var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.aperture-dim-label__value:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.aperture-dim-label__delete {
+  opacity: 0;
+  width: 18px;
+  height: 18px;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg-card);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.aperture-dim-label:hover .aperture-dim-label__delete {
+  opacity: 1;
+}
+
+.aperture-dim-label__delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.aperture-dim-label__input {
+  font: inherit;
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+}
+
+.aperture-dim-label__input[data-error="true"] {
+  border-color: var(--phn-danger);
+}
+
+.aperture-edge-hot-zone {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.aperture-edge-hot-zone:hover {
+  opacity: 1;
+}
+
+.aperture-edge-hot-zone--top {
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.aperture-edge-hot-zone--bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.aperture-edge-hot-zone--left {
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.aperture-edge-hot-zone--right {
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.aperture-edge-add {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}

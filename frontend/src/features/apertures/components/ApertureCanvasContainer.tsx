@@ -19,11 +19,19 @@ import {
   totalApertureHeightMm,
   totalApertureWidthMm,
 } from "../aperture-geometry";
+import { deleteColumnImpact, deleteRowImpact } from "../delete-dimension-impact";
+import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { selectionForAperture, useApertureBuilderStore } from "../store/builder-store";
 import type { ApertureTypeEntry } from "../types";
 import { ApertureCanvasOverlay } from "./ApertureCanvasOverlay";
 import { ApertureCanvasToolbar } from "./ApertureCanvasToolbar";
 import { ApertureSvgCanvas, type ApertureViewDirection } from "./ApertureSvgCanvas";
+import { DeleteDimensionDialog } from "./DeleteDimensionDialog";
+import { DisplayFormatSelector } from "./DisplayFormatSelector";
+import { EdgeAddButtons } from "./EdgeAddButtons";
+import { HorizontalDimensionStrip } from "./HorizontalDimensionStrip";
+import { TotalDimensionsCaption } from "./TotalDimensionsCaption";
+import { VerticalDimensionStrip } from "./VerticalDimensionStrip";
 
 // Educational tooltip text shown when the user presses Delete / Backspace
 // with elements selected. PRD §9.2.3: no direct-delete; route via Merge or
@@ -37,27 +45,48 @@ const NO_DIRECT_DELETE_MESSAGE =
 // tree in V2, so we ship a local inline notice instead.
 let noDeleteTooltipShown = false;
 
+type DimensionConfirm = { axis: "row" | "column"; index: number; customizedCount: number } | null;
+
 // Phase 03 + 04 keep zoom + view direction as component-local state. The
 // phase plan calls for a user-preferences store key, but no such store
 // exists in V2 yet — promotion is deferred to the same cleanup phase that
 // introduces the store. Selection lives in the apertures builder Zustand
 // store so the toolbar and overlay subscribe to the same source.
+//
+// Phase 05 adds the dimension strips + format selector + edge-add /
+// row-column delete affordances. Dimension commands fan out through the
+// optional `onDimensionCommand` callback so the route layer keeps owning
+// the actual dispatch + error handling.
 export function ApertureCanvasContainer({
   aperture,
   canEdit = false,
   onSetElementName,
+  onEditDimension,
+  onAddRow,
+  onAddColumn,
+  onDeleteRow,
+  onDeleteColumn,
 }: {
   aperture: ApertureTypeEntry;
   canEdit?: boolean;
   onSetElementName?: (elementId: string, newName: string) => void;
+  onEditDimension?: (axis: "row" | "column", index: number, newMm: number) => void;
+  onAddRow?: (at_index: number) => void;
+  onAddColumn?: (at_index: number) => void;
+  onDeleteRow?: (index: number) => void;
+  onDeleteColumn?: (index: number) => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<DimensionConfirm>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const selection = useApertureBuilderStore((state) => selectionForAperture(state, aperture.id));
   const clearSelection = useApertureBuilderStore((state) => state.clearSelection);
+
+  const dimFormat = useApertureDimFormat();
+  const unitSystem = dimFormat.system === "ip" ? "ip" : "si";
 
   // Selection is purely a viewing aid: clear this aperture's selection when
   // it unmounts or the user switches to a different aperture.
@@ -100,6 +129,46 @@ export function ApertureCanvasContainer({
     [onSetElementName],
   );
 
+  const handleEditRow = useCallback(
+    (index: number, newMm: number) => onEditDimension?.("row", index, newMm),
+    [onEditDimension],
+  );
+  const handleEditColumn = useCallback(
+    (index: number, newMm: number) => onEditDimension?.("column", index, newMm),
+    [onEditDimension],
+  );
+
+  const handleRequestDeleteRow = useCallback(
+    (index: number) => {
+      const impact = deleteRowImpact(aperture, index);
+      if (impact.customizedCount === 0) {
+        onDeleteRow?.(index);
+        return;
+      }
+      setPendingDelete({ axis: "row", index, customizedCount: impact.customizedCount });
+    },
+    [aperture, onDeleteRow],
+  );
+
+  const handleRequestDeleteColumn = useCallback(
+    (index: number) => {
+      const impact = deleteColumnImpact(aperture, index);
+      if (impact.customizedCount === 0) {
+        onDeleteColumn?.(index);
+        return;
+      }
+      setPendingDelete({ axis: "column", index, customizedCount: impact.customizedCount });
+    },
+    [aperture, onDeleteColumn],
+  );
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!pendingDelete) return;
+    if (pendingDelete.axis === "row") onDeleteRow?.(pendingDelete.index);
+    else onDeleteColumn?.(pendingDelete.index);
+    setPendingDelete(null);
+  }, [onDeleteColumn, onDeleteRow, pendingDelete]);
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
       if (selection.length > 0) {
@@ -137,6 +206,7 @@ export function ApertureCanvasContainer({
         }
         onClearSelection={() => clearSelection(aperture.id)}
       />
+      <TotalDimensionsCaption aperture={aperture} format={dimFormat.format} />
       {deleteTip ? (
         <div
           className="aperture-canvas-notice"
@@ -155,21 +225,66 @@ export function ApertureCanvasContainer({
         </div>
       ) : null}
       <div className="aperture-canvas-scroll" ref={scrollRef} data-testid="aperture-canvas-scroll">
-        <div
-          className="aperture-canvas-stage"
-          style={{ width: `${pxW}px`, height: `${pxH}px` }}
-          data-testid="aperture-canvas-stage"
-        >
-          <ApertureSvgCanvas aperture={aperture} zoom={zoom} viewDirection={viewDirection} />
-          <ApertureCanvasOverlay
-            aperture={aperture}
-            zoom={zoom}
-            viewDirection={viewDirection}
-            canEdit={canEdit}
-            onSetElementName={handleSetElementName}
-          />
+        <div className="aperture-canvas-grid">
+          <div className="aperture-canvas-grid__gutter">
+            <DisplayFormatSelector />
+          </div>
+          <div className="aperture-canvas-grid__top-edge">
+            <EdgeAddButtons
+              aperture={aperture}
+              canEdit={canEdit}
+              onAddRow={(at) => onAddRow?.(at)}
+              onAddColumn={(at) => onAddColumn?.(at)}
+            />
+          </div>
+          <div className="aperture-canvas-grid__left-edge">
+            <VerticalDimensionStrip
+              aperture={aperture}
+              zoom={zoom}
+              system={unitSystem}
+              format={dimFormat.format}
+              canEdit={canEdit}
+              onEditRow={handleEditRow}
+              onRequestDeleteRow={handleRequestDeleteRow}
+            />
+          </div>
+          <div className="aperture-canvas-grid__stage">
+            <div
+              className="aperture-canvas-stage"
+              style={{ width: `${pxW}px`, height: `${pxH}px` }}
+              data-testid="aperture-canvas-stage"
+            >
+              <ApertureSvgCanvas aperture={aperture} zoom={zoom} viewDirection={viewDirection} />
+              <ApertureCanvasOverlay
+                aperture={aperture}
+                zoom={zoom}
+                viewDirection={viewDirection}
+                canEdit={canEdit}
+                onSetElementName={handleSetElementName}
+              />
+            </div>
+          </div>
+          <div className="aperture-canvas-grid__bottom-edge">
+            <HorizontalDimensionStrip
+              aperture={aperture}
+              zoom={zoom}
+              system={unitSystem}
+              format={dimFormat.format}
+              canEdit={canEdit}
+              onEditColumn={handleEditColumn}
+              onRequestDeleteColumn={handleRequestDeleteColumn}
+            />
+          </div>
         </div>
       </div>
+      <DeleteDimensionDialog
+        open={pendingDelete !== null}
+        axis={pendingDelete?.axis ?? "row"}
+        index={pendingDelete?.index ?? 0}
+        customizedCount={pendingDelete?.customizedCount ?? 0}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

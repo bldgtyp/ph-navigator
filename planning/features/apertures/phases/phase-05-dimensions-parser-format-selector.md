@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 15:55 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 18:25 EDT
+STATUS: Done
+AUTHOR: Claude
 SCOPE: Ship the horizontal + vertical dimension strips with
        tickmarks, per-segment labels, edge-hover add buttons,
        row / column delete buttons (with confirmation rule for
@@ -489,3 +489,71 @@ def apply_edit_dimension(
   feature.** Mitigation: scope this phase to *creating* the
   shared module + apertures consumer; Envelope migration to the
   same module is a separate phase under the envelope feature.
+
+## Implementation note (2026-06-05)
+
+Shipped in two PRs rather than the phase doc's seven sub-commits — at the
+size the changes split cleanly along a parser+backend / UI seam, which
+keeps each diff reviewable on its own.
+
+Deviations from the spec:
+
+- **Sub-PR A — parser path:** `frontend/src/lib/units/length/index.ts`
+  was *not* created. A file `frontend/src/lib/units/length.ts` already
+  exists with the `formatLengthFromMm` / `parseLengthToMm` surface used
+  by Envelope; adding `length/index.ts` invites a TS module-resolution
+  collision where `./length` is ambiguous between the file and the
+  directory's index. Consumers import the new modules by file
+  (`from "../../../lib/units/length/parseInput"`). The bundler test
+  passed; a follow-up cleanup phase can rename the directory to
+  `length-input/` or merge surfaces if the duplication becomes
+  confusing.
+- **Sub-PR A — backend command fields:** `editDimension`,
+  `addRow`, `addColumn` kept Phase 01's field names (`new_value_mm`,
+  `at_index`, `height_mm`, `width_mm`) instead of renaming to the
+  phase doc's `new_mm` / `position` / `default_dim_mm`. The Phase 01
+  wire contract is already deployed and would have rippled through
+  the dispatcher + mocks; the renames carry no functional benefit.
+- **Sub-PR A — addRow/addColumn handler shape:** the `position`
+  ("top" / "bottom" / "start" / "end") argument is computed on the
+  frontend (`at_index = 0` for start, `length` for end). Backend
+  receives a numeric `at_index` only. Same end behavior, smaller wire
+  shape.
+- **Sub-PR A — delete-row absorption:** the "highest-index neighbor on
+  same axis" rule is satisfied by clamp-and-shift in every valid
+  layout we tested (1xN, Nx1, multi-cell straddles, full-row spans);
+  no explicit reassignment pass was needed. The handler comment
+  documents this so Phase 08 split-undo can rely on the same
+  ordering.
+- **Sub-PR B — format pref persistence:** the phase doc asks for two
+  server-backed preference keys
+  (`aperture_builder_dim_format_si` / `_ip`). V2's preference store
+  is currently server-backed for the SI/IP toggle only and adding
+  two more keys would have required backend schema + session payload
+  changes that don't justify the surface area for an in-progress
+  feature. Shipped as `localStorage`-backed via
+  `useApertureDimFormat` so a future swap to server-side doesn't
+  ripple through call sites.
+- **Sub-PR B — quiet-vs-confirm rule:** the phase doc compares
+  frame/glazing refs to seeded `catalog_origin.catalog_record_id`
+  values to decide whether to confirm. Those default record ids are
+  not exposed to the frontend yet (the Alembic seed is also still
+  deferred), so `delete-dimension-impact.ts` approximates: an
+  element is "customized" if it has a non-`Unnamed` name or a
+  non-null operation. Once the pickers ship (Phase 06+), this check
+  extends to compare against the seeded ids. The rule errs toward
+  confirming (false positives are safe; false negatives lose work).
+- **Sub-PR B — dialog primitive:** reused the existing
+  `ConfirmDestructiveDialog` (already used by the data-table delete
+  flows) rather than shipping a one-off shadcn `Dialog` instance.
+  Copy matches the spec verbatim.
+- **Sub-PR B — sub-commit count:** shipped as one commit per sub-PR
+  rather than the phase doc's seven small commits. Sub-commits would
+  have left intermediate states where the wire shape compiled but
+  the UI was incomplete; bundling keeps each commit shippable.
+
+The `editDimension` happy-path → `addRow` → `editDimension` →
+`deleteRow` flow is wired end-to-end: `AperturesTab` → `dispatch` →
+`POST /apertures/command` → backend handler → coverage re-check →
+`validate_document` → response → optimistic store update. No new
+mutations or repositories were needed.
