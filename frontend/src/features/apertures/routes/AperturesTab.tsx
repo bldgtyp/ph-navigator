@@ -140,7 +140,18 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
         />
         <main className="apertures-page__main">
           {activeAperture ? (
-            <ApertureCanvasContainer aperture={activeAperture} />
+            <ApertureCanvasContainer
+              aperture={activeAperture}
+              canEdit={canEdit}
+              onSetElementName={(elementId, newName) =>
+                void dispatch({
+                  kind: "setElementName",
+                  aperture_type_id: activeAperture.id,
+                  element_id: elementId,
+                  new_name: newName,
+                })
+              }
+            />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
           )}

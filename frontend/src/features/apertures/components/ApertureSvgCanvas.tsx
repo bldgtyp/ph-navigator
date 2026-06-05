@@ -1,7 +1,7 @@
 import {
   elementRectMm,
   elementRegionsMm,
-  flipColumnForInterior,
+  mirrorApertureForInterior,
   type RectMm,
   viewBoxFor,
 } from "../aperture-geometry";
@@ -72,14 +72,6 @@ export function ApertureSvgCanvas({
       })}
     </svg>
   );
-}
-
-function mirrorApertureForInterior(entry: ApertureTypeEntry): ApertureTypeEntry {
-  return {
-    ...entry,
-    column_widths_mm: [...entry.column_widths_mm].reverse(),
-    elements: entry.elements.map((el) => flipColumnForInterior(entry, el)),
-  };
 }
 
 function FrameRegion({

@@ -132,6 +132,12 @@
   --aperture-glazing-default-fill: color-mix(in oklab, var(--accent) 6%, var(--bg-card));
   --aperture-region-stroke: var(--border-subtle);
   --aperture-null-stroke: color-mix(in oklab, var(--text-secondary) 60%, transparent);
+  --aperture-hover-ring: color-mix(in oklab, var(--accent) 55%, transparent);
+  --aperture-hover-ring-strong: color-mix(in oklab, var(--accent) 80%, transparent);
+  --aperture-selected-ring: var(--accent);
+  --aperture-pill-bg: var(--bg-card);
+  --aperture-pill-border: var(--border-subtle);
+  --aperture-pill-text: var(--text-primary);
 }
 
 .aperture-canvas-container {
@@ -198,8 +204,90 @@
   min-height: 0;
 }
 
+.aperture-canvas-stage {
+  position: relative;
+}
+
 .aperture-svg-canvas {
   display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.aperture-canvas-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.aperture-canvas-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--accent) 6%, var(--bg-card));
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.aperture-canvas-notice__dismiss {
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  font-size: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  cursor: pointer;
+}
+
+.aperture-hit {
+  position: absolute;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.aperture-hit--element[data-hovered="true"] {
+  outline: 2px solid var(--aperture-hover-ring);
+  outline-offset: -2px;
+}
+
+.aperture-hit--element[data-selected="true"] {
+  outline: 2px solid var(--aperture-selected-ring);
+  outline-offset: -2px;
+}
+
+.aperture-hit--region[data-hovered="true"] {
+  outline: 2px solid var(--aperture-hover-ring-strong);
+  outline-offset: -2px;
+}
+
+.aperture-name-pill {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 2px var(--space-2);
+  min-height: 22px;
+  border: 1px solid var(--aperture-pill-border);
+  border-radius: 999px;
+  background: var(--aperture-pill-bg);
+  color: var(--aperture-pill-text);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: text;
+  user-select: none;
+}
+
+.aperture-name-pill[data-readonly="true"] {
+  cursor: default;
+}
+
+.aperture-name-pill--editing {
+  font: inherit;
+  min-width: 80px;
+  outline: none;
 }
 
 .apertures-empty {

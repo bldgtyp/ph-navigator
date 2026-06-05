@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 15:45 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 17:38 EDT
+STATUS: Done — overlay, selection store, hit targets, on-canvas pill, and inline no-direct-delete notice shipped. `make ci` green (525 backend, 1161 frontend).
+AUTHOR: Claude
 SCOPE: Layer a DOM overlay above the Phase 03 SVG substrate that
        owns hit targets, hover rings, the editable on-canvas
        element-name pill, the single / shift / cmd-ctrl + ESC
@@ -19,6 +19,44 @@ RELATED:
 ---
 
 # Phase 4 — Canvas overlay, on-canvas pill, selection model
+
+## Implementation note (2026-06-05)
+
+Shipped as a single commit rather than the planned six — the sub-pieces
+(store, overlay shell, selection wiring, pill, keyboard handling, CSS)
+have no value in isolation and the entire flow needs all of them to be
+reviewable.
+
+Deviations from the plan worth flagging:
+
+- **Sonner is not in V2's dependency tree.** The "no-direct-delete"
+  educational tooltip ships as a local inline notice (`role="status"`,
+  `data-testid="aperture-no-direct-delete"`) inside the canvas
+  container, deduped by a module-scope `noDeleteTooltipShown` flag so
+  the once-per-session contract holds. If Sonner (or any other toast
+  surface) lands in V2 later, swap the notice for a toast — the
+  module-scope flag and stable testid keep the dedupe semantics intact.
+- **Keyboard listeners are container-local** via `onKeyDown` on the
+  `aperture-canvas-container` div (with `tabIndex={-1}`) rather than a
+  global `window` listener. This keeps the canvas's Escape / Delete
+  handling scoped to canvas focus and stops it from racing the rename
+  dialog or sidebar shortcuts.
+- **Selection clears on aperture switch** through a cleanup effect
+  rather than a project-document hook — the same-aperture-id cleanup
+  captures the id at effect setup so other apertures' selections
+  persist by design (the store is keyed per aperture).
+- **`mirrorApertureForInterior` moved into `aperture-geometry.ts`**
+  so the SVG substrate and DOM overlay share one source of truth for
+  the post-flip element layout. The SVG canvas now imports it instead
+  of carrying its own copy.
+- **SVG `pointer-events: none` lives in CSS**, not as a JSX attribute,
+  so the canvas remains keyboard-accessible via the overlay layer and
+  the SVG keeps `role="img"` for screen readers.
+- **`__resetNoDeleteTooltipForTests`** is exported from the container
+  but not consumed yet — the keyboard-tooltip flow is covered by the
+  Playwright pass deferred to Phase 12; unit-level tests in this phase
+  cover the store, overlay, and pill but not the once-per-session
+  dedupe (which would require pollution of the module-scope flag).
 
 ## P0. Why this slice
 

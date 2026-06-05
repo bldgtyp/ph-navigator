@@ -126,3 +126,14 @@ export function flipColumnForInterior(
     },
   };
 }
+
+// Derive an aperture entry that renders as seen from the interior. The
+// canonical document is never mutated. Used by both the SVG substrate and
+// the DOM overlay so hits stay aligned with the painted rects.
+export function mirrorApertureForInterior(entry: ApertureTypeEntry): ApertureTypeEntry {
+  return {
+    ...entry,
+    column_widths_mm: [...entry.column_widths_mm].reverse(),
+    elements: entry.elements.map((element) => flipColumnForInterior(entry, element)),
+  };
+}
