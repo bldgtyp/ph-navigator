@@ -1,0 +1,773 @@
+---
+DATE: 2026-06-05
+TIME: 13:40 EDT
+STATUS: DRAFT - feature PRD for the full Apertures tab / Aperture Builder build-out. Not yet phased.
+AUTHOR: Codex
+SCOPE: Product, UX, data, save/versioning, MCP, export, and implementation-precedent contract for the V2 Apertures tab.
+RELATED:
+  - context/user-stories/10-windows.md
+  - research/v1-window-builder-reference.md
+  - research/ph-nav-v1-screenshots/aperture-builder/Window Builder.png
+  - research/ph-nav-v1-screenshots/aperture-builder/Project Frame Types.png
+  - research/ph-nav-v1-screenshots/aperture-builder/Project Glazing Types.png
+  - context/technical-requirements/save-versioning.md
+  - context/technical-requirements/llm-mcp-schema.md
+  - context/technical-requirements/data-model.md
+  - ../ph-navigator/backend/features/aperture/services/to_hbe_window_construction.py
+  - frontend/src/features/windows/
+  - frontend/src/features/envelope/components/AssemblySvgCanvas.tsx
+  - frontend/src/features/envelope/components/AssemblyCanvasOverlay.tsx
+  - frontend/src/features/envelope/canvas-geometry.ts
+  - frontend/src/features/envelope/envelope.css
+---
+
+# PH-Navigator V2 - Apertures / Aperture Builder PRD
+
+## 1. Why this doc exists
+
+The current Windows tab needs to become the Apertures tab and move from
+the tracer-bullet picker to a real Aperture Builder: a V2
+versioned-document implementation of the V1 Aperture / Unit Builder
+workflow.
+
+Terminology decision, 2026-06-05: **Apertures** is the canonical domain
+term. This aligns with Honeybee, and the Builder models windows, doors,
+skylights, and other glazed/door aperture types. `Windows` remains a
+current shipped UI / route / module vocabulary item until the first
+implementation phase renames it.
+
+The target is visible in
+`research/ph-nav-v1-screenshots/aperture-builder/Window Builder.png`:
+a left sidebar of aperture types, a compact per-aperture header with
+the active type and Uw, a proportional graphic panel with dimension labels
+and editing tools, and a lower stack of per-sash cards for frame,
+glazing, and operation assignments.
+
+This PRD consolidates the existing Windows/Apertures user-story cluster, V1 code
+reference, screenshot reference, save/versioning model, MCP/schema
+requirements, current TB-08/TB-09 implementation, and Assembly Builder
+implementation precedent into one feature contract. Detailed phased
+plans come after this PRD is reviewed.
+
+## 2. Current baseline
+
+The feature is not greenfield.
+
+Already present:
+
+- `backend/features/project_document/tables/window_types.py` currently
+  registers `tables.window_types[]` as a project-document table
+  contract.
+- `backend/features/project_document/document.py` defines `WindowTypeEntry`,
+  `WindowElement`, `FrameRef`, `GlazingRef`, and `CatalogOrigin`.
+- `frontend/src/features/windows/` renders the Windows tab with a
+  sidebar, minimal detail view, per-slot frame/glazing pickers,
+  bookshelf-copy stamping, `u_value_w_m2k` override tracking, and
+  refresh-from-catalog UI.
+- `backend/features/project_document/refresh.py` reports per-slot drift
+  for frame/glazing refs.
+- Generic table reads already expose `window_types` through REST and
+  MCP `get_table`.
+
+Not yet present:
+
+- V1-like proportional canvas.
+- Row/column dimensions and parser UI.
+- Element display names.
+- Operation editor and symbols.
+- Merge/split.
+- Copy/paste assignment tools.
+- Aperture/window-level and element-level ISO 10077-1 U-Value service.
+- Full sidebar actions: rename, duplicate, delete, empty state.
+- Manufacturer filter UI.
+- Aperture-specific semantic MCP write tools.
+- Browser/MCP edit conflict UX beyond shared draft ETag behavior.
+
+Known schema gap to close before full Builder work: current
+`WindowElement` has geometry, frames, and glazing, but no `name` or
+`operation`. The PRD requires both. The current table/module vocabulary
+also says `window_types`; the PRD target says `apertures`. Backwards
+compatibility is not a constraint, so schema/route/module changes may be
+direct cutovers with dev DB rebuild or migration cleanup as needed.
+
+## 3. Product goal
+
+Editors can define every project aperture type as a 2D type
+template with:
+
+- a named aperture type;
+- one or more rows and columns with editable dimensions;
+- one or more elements spanning cells;
+- per-element glazing assignment;
+- per-side frame assignments;
+- operation pattern and direction;
+- live composite aperture/window U-Value and per-element U-Value;
+- catalog provenance and drift review;
+- explicit Save / Save As versioning.
+
+The Builder is for type composition. It does not place apertures on
+model surfaces, own orientation/tilt, or mutate model geometry. Its
+HBJSON scope is construction export only. The Model tab remains
+deliberately disconnected from builder tables except where later
+export/import tools explicitly bridge them.
+
+## 4. Primary users and workflows
+
+Primary user: a BLDGTYP editor building a PHPP/WUFI/Rhino/Honeybee
+aperture schedule from project design information.
+
+Core workflow:
+
+1. Open `Apertures`.
+2. Add or select an aperture type, for example `AA`, `CW01`, or `Door B`.
+3. Build the 2D grid from row heights and column widths.
+4. Merge/split cells into sashes or fixed panels.
+5. Pick frame products per side and glazing products per element from
+   catalogs.
+6. Set operation symbols for operable sashes.
+7. Review the live window U-Value and per-element U-Values.
+8. Save or Save As the current project version.
+
+Secondary workflows:
+
+- Review from the opposite side of the aperture with an interior/exterior
+  view toggle.
+- Copy frame/glazing/operation assignments from one sash to another.
+- Review catalog drift and selectively refresh copied catalog values.
+- Use an MCP client to inspect or update aperture types through a
+  structured tool surface.
+
+## 5. Non-goals
+
+- No production backwards compatibility guarantee for existing dev data.
+- No V1 AirTable refresh workflow. V2 catalogs are native and curated.
+- No live FK from a project aperture type back to catalog rows. Picked
+  values are bookshelf-copied into the project document.
+- No aperture placement on wall/roof/model surfaces inside this Builder.
+- No orientation, tilt, shading, or exposure assignment here.
+- No glazing layer build-up editor. Glazing refs stay flat catalog
+  values: `u_value_w_m2k`, `g_value`, color, source fields.
+- No frame profile editor. Frame refs stay flat catalog values:
+  `width_mm`, `u_value_w_m2k`, `psi_g_w_mk`, `psi_install_w_mk`, color,
+  source fields.
+- No keyboard shortcut suite in v1 except Esc for modal/tool escape and
+  normal text-input behavior.
+- No bulk auto-refresh from catalog. Review remains explicit.
+- No public anonymous MCP. MCP remains authenticated, project-scoped,
+  and token-audited.
+
+## 6. Target page layout
+
+The page should follow the V1 `Window Builder.png` composition, adapted
+to the current PHN V2 design system and relabelled as Apertures in the
+reader-facing UI.
+
+Top-level layout:
+
+- Page header: `Apertures` tab title, active aperture type controls, Uw
+  chip, overflow menu.
+- Left sidebar: project aperture types.
+- Main area:
+  - Graphic Builder panel.
+  - Canvas toolbar.
+  - Proportional SVG window drawing.
+  - Editable dimension labels and tickmarks.
+  - Per-element assignment cards below the canvas.
+
+The first viewport should be the working Builder, not a marketing or
+explanatory landing page.
+
+## 7. Sidebar contract
+
+The sidebar lists the target `tables.apertures[]` for the current source
+view (`draft` when present, otherwise `version`). The current shipped
+table is `tables.window_types[]`; the first implementation phase should
+rename it before more Builder code depends on the old term.
+
+Acceptance:
+
+- Natural-sort by `name`.
+- Active aperture type highlighted.
+- Row text is the name only in v1. No thumbnail, U-Value, or element
+  count in the sidebar.
+- Add button creates a new aperture type entry and selects it.
+- Rename enforces trim + case-insensitive uniqueness within the active
+  project version.
+- Duplicate deep-copies the aperture type, preserving copied catalog refs
+  and generating fresh ids for the type and elements.
+- Delete uses an app dialog, not `window.confirm`.
+- Locked versions and Viewer access render the sidebar read-only:
+  navigation works, edit affordances are hidden.
+
+Default new aperture type:
+
+```jsonc
+{
+  "id": "apt_<token>",
+  "name": "Unnamed Aperture Type",
+  "row_heights_mm": [1000.0],
+  "column_widths_mm": [1000.0],
+  "elements": [
+    {
+      "id": "aptel_<token>",
+      "row_span": [0, 0],
+      "column_span": [0, 0],
+      "name": "Unnamed",
+      "frames": {
+        "top": { "name": "Default Frame", "...": "bookshelf-copied FrameRef" },
+        "right": { "name": "Default Frame", "...": "bookshelf-copied FrameRef" },
+        "bottom": { "name": "Default Frame", "...": "bookshelf-copied FrameRef" },
+        "left": { "name": "Default Frame", "...": "bookshelf-copied FrameRef" }
+      },
+      "glazing": { "name": "Default Glazing", "...": "bookshelf-copied GlazingRef" },
+      "operation": null
+    }
+  ]
+}
+```
+
+Default frame/glazing decision, 2026-06-05: new aperture elements should
+not normally have missing thermal assignments. Seed or otherwise
+guarantee one default frame catalog record and one default glazing
+catalog record, then bookshelf-copy those refs into each new element.
+Do not fall back to "first catalog row" silently. If the defaults are
+unavailable, creation should fail with a clear setup error rather than
+creating null thermal assignments.
+
+Use canonical aperture ids matching the target backend schema. Any
+current frontend/backend helper that emits `win_` / `winel_` prefixes
+should be normalized during the terminology/schema phase.
+
+## 8. Header and result summary
+
+The Builder header owns aperture-type-scoped state, not project-wide
+state.
+
+Required controls:
+
+- Active aperture type name / selector.
+- `Window U-Value` chip.
+- Info tooltip explaining ISO 10077-1, no surface-film convention, and
+  operation exclusion.
+- Overflow menu for aperture-type actions and feature-level actions.
+
+U-Value labels:
+
+- SI: `Window U-Value: 1.20 W/m2K`.
+- IP: `Window U-Value: 0.21 BTU/(hr*ft2*F)`.
+- Do not label this `U-Factor`.
+- Use fixed/minimum width to avoid layout shift while loading.
+- Broken/imported null assignments render a repair warning rather than
+  hiding the number. Normal new aperture types should already have
+  default frame/glazing assignments.
+
+## 9. Graphic Builder panel
+
+The canvas should reuse the Assembly Builder pattern where practical:
+
+- Pure geometry helpers, parallel to `canvas-geometry.ts`.
+- Dedicated SVG renderer, parallel to `AssemblySvgCanvas.tsx`.
+- Separate DOM overlay for hit targets, labels, add buttons, and
+  dimension editors, parallel to `AssemblyCanvasOverlay.tsx`.
+- Tokenized toolbar and dimension CSS, parallel to the Assembly
+  Builder section of `envelope.css`.
+- Lucide icons for toolbar buttons.
+
+Do not force a shared abstraction before the Aperture canvas exists.
+First mirror the proven separation of concerns; extract shared
+primitives later only where duplication is real.
+
+### 9.1 Geometry
+
+The aperture type stores:
+
+- `row_heights_mm`: top to bottom.
+- `column_widths_mm`: left to right in the canonical exterior/data
+  frame.
+- `elements[]`: inclusive `row_span` and `column_span`.
+
+Canvas geometry derives:
+
+- total width = sum of columns;
+- total height = sum of rows;
+- each element rectangle from span extents;
+- each glazing rectangle from element extents minus frame widths.
+
+Invariant: every grid cell is covered by exactly one element. No holes.
+
+### 9.2 SVG rendering
+
+Each element renders as five SVG regions:
+
+- top frame;
+- right frame;
+- bottom frame;
+- left frame;
+- center glazing.
+
+Frame widths come from each side's `FrameRef.width_mm`. If width is
+missing, use a clear visual fallback and validation warning. Do not
+invent thermal defaults silently for calculation.
+
+Colors:
+
+- Use `FrameRef.color` / `GlazingRef.color` when valid.
+- Null frame/glazing renders blank fill plus dashed outline.
+- Invalid color falls back to a neutral builder token.
+- Selected/hovered regions use CSS token outlines, not hardcoded theme
+  one-offs.
+
+Operation symbols:
+
+- `null` operation means fixed.
+- `swing` draws dashed hinge lines to opposite glazing corners.
+- `slide` draws a direction arrow.
+- Multiple directions are allowed for tilt-turn-style behavior.
+- Interior view swaps left/right directions, not up/down.
+
+### 9.3 View direction and zoom
+
+Default view: exterior.
+
+View toggle:
+
+- Exterior: canonical left/right as stored.
+- Interior: visual columns are reversed. Frame-label semantics also
+  flip so the visible right side maps to the row labelled `Right Frame`
+  in the card.
+
+Zoom:
+
+- Single scale factor. Both axes scale together.
+- Canvas scrolls on overflow; it never squashes horizontally.
+- Reuse Assembly Builder zoom patterns unless an Aperture-specific need
+  appears.
+- Zoom and view-direction are per-user preferences, not project data.
+
+## 10. Dimensions
+
+Dimension UI must feel like the V1 screenshot: tickmarks, labels at
+each row/column segment, and inline editable values.
+
+Required:
+
+- Horizontal dimension strip below the canvas.
+- Vertical dimension strip at the left of the canvas.
+- Tickmarks at every grid line.
+- One label per row/column segment.
+- Hover add buttons at grid edges for row/column insertion.
+- Delete buttons for row/column removal, blocked for the last row/col.
+
+Parser:
+
+- Store mm canonically.
+- Accept SI and IP inputs through the frontend length parser.
+- Port V1 test cases for feet/inches, fractions, arithmetic, and
+  formatting.
+- Add parentheses support in expressions.
+- Preserve precision when a click-away would otherwise round-trip a
+  displayed value back into a lossy mm value.
+
+Editing a dimension updates the draft and immediately re-renders the
+canvas and U-Value state.
+
+## 11. Element cards
+
+The lower card stack is a first-class part of the Builder, not a
+temporary debug panel.
+
+Each card represents one `ApertureElement` and includes:
+
+- editable element name;
+- per-element U-Value chip;
+- glazing row;
+- top/right/bottom/left frame rows;
+- operation row;
+- catalog-origin and drift badges;
+- inline override fields for key thermal values;
+- read-only source/comment fields behind a compact expander.
+
+Rows should preserve the V1 information density: label, picker/name,
+U-Value, width where applicable, g-value where applicable. The card may
+use V2 styling, but it should not become a large marketing-style card.
+
+Frame label behavior follows view direction. In interior view, the
+visible right frame reads/writes the canonical left-side data and the
+card label should match what the user sees.
+
+## 12. Data model contract
+
+The target canonical project document stores aperture types under
+`body.tables.apertures[]`.
+
+The current shipped tracer-bullet table is `body.tables.window_types[]`.
+Rename it during the first implementation phase. Backwards
+compatibility is not a product constraint here.
+
+Required `ApertureTypeEntry`:
+
+- `id`: `apt_<token>`.
+- `name`: unique within the version after trim + case-insensitive
+  compare.
+- `row_heights_mm`: non-empty positive floats.
+- `column_widths_mm`: non-empty positive floats.
+- `elements`: non-empty list of `ApertureElement`.
+
+Required `ApertureElement`:
+
+- `id`: `aptel_<token>`.
+- `name`: non-empty display label, default `Unnamed`.
+- `row_span`: inclusive `[start, end]`.
+- `column_span`: inclusive `[start, end]`.
+- `frames`: `top`, `right`, `bottom`, `left`, each `FrameRef`.
+- `glazing`: `GlazingRef`.
+- `operation`: `{ type: "swing" | "slide", directions: [...] } | null`.
+
+Required validation:
+
+- spans in bounds;
+- no duplicate element ids;
+- no grid holes;
+- no overlapping element coverage;
+- row/column dimensions > 0;
+- frame/glazing refs validate as data only, with no live catalog FK;
+- normal Save should work for newly-created aperture types because
+  default frame/glazing refs are assigned at creation.
+- null frame/glazing should only appear in legacy/import/broken
+  documents; validation should report a structured repair error.
+
+FrameRef / GlazingRef:
+
+- Continue mirroring the current catalog public field sets.
+- Carry `catalog_origin` when bookshelf-copied.
+- Allow `catalog_origin = null` for hand-entered refs.
+- Track field-level local overrides.
+- Keep all physical quantities SI canonical.
+
+Manufacturer filters:
+
+- Store in the project document if implemented for v1.
+- Filter picker candidates only. They do not hide already-picked refs.
+- In-use manufacturers cannot be disabled without first changing those
+  assignments.
+
+## 13. Save, mutation, and conflict contract
+
+All writes flow through the project-document draft buffer. Edits do not
+persist to the saved version until Save or Save As.
+
+Required behavior:
+
+- Draft writes use ETags.
+- Save/Save As use the active version ETag.
+- Locked versions reject draft patch and Save, but allow Save As.
+- Discard drops the draft and returns to the saved body.
+- Viewer/public access is read-only.
+- Browser and MCP writes obey the same draft/concurrency rules.
+
+Mutation decision:
+
+The minimal Windows UI currently uses whole-table replacement for
+`window_types`. That is acceptable for low-frequency picker edits, but
+the full Aperture Builder introduces high-frequency semantic operations:
+dimension edits, add row/column, merge/split, operation changes, and
+copy/paste.
+
+Decision, 2026-06-05: introduce an `ApertureCommand` service parallel
+to Assembly Builder's envelope command seam before building the
+canvas-heavy editor.
+
+Reasons:
+
+- one command equals one user gesture;
+- command validation can enforce no holes / no overlaps;
+- command payloads are smaller and easier for MCP;
+- tests can target semantic operations instead of whole-table diffs;
+- conflict/error messages can name the failed operation;
+- this matches the recently completed Assembly Builder pattern.
+
+Whole-table replacement can remain as a temporary compatibility wrapper
+for the existing tracer-bullet UI while the first phase cuts over, but
+new Builder gestures should be authored as semantic commands.
+
+## 14. U-Value contract
+
+Port the V1 ISO 10077-1 calculation to V2 `ApertureTypeEntry`.
+
+Formula:
+
+```text
+Uw = (sum(Ag * Ug) + sum(Af * Uf) + sum(lg * psi_g)) / sum(Ag + Af)
+```
+
+Behavior:
+
+- Uninstalled value. `psi_install_w_mk` is stored for future use but
+  excluded unless a later decision explicitly adds installed Uw.
+- Operation does not affect U-Value.
+- Area and spacer lengths derive from row/column dimensions, spans, and
+  per-side frame widths.
+- Per-element U-Value and window-level U-Value are returned together.
+- Missing frame/glazing values should only occur in legacy/import/broken
+  documents. They produce warnings and a repair state, not a crash.
+- Cache by a content hash of U-Value-affecting fields only.
+- Exclude element name and operation from the content hash.
+
+## 15. Catalog and refresh contract
+
+Apertures use the V2 bookshelf model:
+
+- Pick copies catalog values into the project document.
+- Catalog edits do not automatically mutate projects.
+- `catalog_origin` records source table, source record, synced time,
+  and local overrides.
+- Refresh-from-catalog compares the copied ref to the current catalog
+  row and lets the user choose per field.
+
+Existing refresh plumbing can remain the base. Full Builder work should
+surface drift in the element cards and Builder header without making
+refresh the dominant workflow.
+
+Hand-enter path:
+
+- Allowed for real-world one-off values.
+- `catalog_origin = null`.
+- Still validates thermal fields.
+- No promote-to-catalog flow in v1.
+
+## 16. MCP / LLM contract
+
+LLM-facing behavior must remain first-class:
+
+- `get_document` exposes the full document with `apertures`.
+- `get_table(project_id, version_id, "apertures")` reads the table
+  after the terminology/schema cutover. The current tracer-bullet table
+  is `window_types`.
+- Generic `replace_table` remains table-shaped, but MCP writes are
+  currently deferred in the shipped tool surface.
+- Future mutating tools should prefer a semantic Aperture command tool,
+  not raw nested JSON-Patch into the Builder tree.
+
+Proposed MCP additions for phase planning:
+
+```text
+list_aperture_types(project_id, version_id, source?)
+get_aperture_type(project_id, version_id, aperture_type_id, source?)
+report_aperture_catalog_drift(project_id, version_id, source?)
+calculate_aperture_u_values(project_id, version_id, aperture_type_ids?, source?)
+apply_aperture_command(project_id, version_id, command, if_match?, if_match_version?)
+```
+
+Tool rules:
+
+- SI canonical in all requests/responses.
+- Stable ids required for every target.
+- Same editor token draft as browser writes.
+- Same structured error envelope.
+- Same MCP edit-lease policy as other mutating tools.
+
+## 17. HBJSON / Rhino export contract
+
+HBJSON window-constructions export is in core scope. This is V1 parity
+and a downstream Rhino/Honeybee requirement, not a nice-to-have export.
+
+Rhino use case:
+
+- Rhino/GH components pull project aperture layout and construction data
+  from PHN.
+- Those constructions are used to build energy models downstream.
+- V2 may change endpoint names, field names, ids, and component internals,
+  but it must preserve the core capability: export every aperture
+  element as a Honeybee-Energy window construction payload that Rhino can
+  consume.
+
+V1 format reference:
+
+- Source:
+  `../ph-navigator/backend/features/aperture/services/to_hbe_window_construction.py`.
+- Each aperture element becomes one Honeybee-Energy
+  `WindowConstruction`.
+- Identifier format: `{aperture_name}_C{col}_R{row}`.
+  - In V2, use the element's canonical exterior/data-frame starting
+    column and row: `column_span[0]`, `row_span[0]`.
+  - If names/indices need escaping for Honeybee identifiers, keep a
+    deterministic mapping and document it for the Rhino component.
+- Each construction contains one `EnergyWindowMaterialSimpleGlazSys`.
+- Material identifier: `{construction_identifier}_GlazSys`.
+- Material `u_factor`: per-element ISO 10077-1 U-Value.
+- Material `shgc`: element glazing `g_value`.
+- Material `vt`: V1 hardcoded default `0.6` unless a later catalog field
+  makes VT explicit.
+- Response shape: JSON object keyed by construction identifier, with
+  each value equal to `WindowConstruction.to_dict()`.
+
+Export behavior:
+
+- Export reads the selected saved version or current draft source
+  explicitly; do not silently choose a different source.
+- Export skips or errors on broken aperture elements according to a
+  structured validation policy defined in the phase plan. Normal new
+  aperture elements should have default frame/glazing assignments and
+  should export cleanly.
+- Surface in the UI as an Apertures/Project overflow action and expose a
+  REST/MCP read tool for downstream automation.
+- Add backend fixtures against the V1 output shape before changing Rhino
+  components.
+
+## 18. Accessibility and read-only states
+
+Required:
+
+- Toolbar buttons have accessible labels and visible focus states.
+- Icon-only buttons have tooltips.
+- Canvas has a useful `role="img"` label naming the aperture type.
+- SVG regions are mirrored by DOM overlay hit targets, so click/focus
+  behavior does not depend on inaccessible raw SVG only.
+- Text inputs preserve keyboard semantics: Enter commit, Escape cancel.
+- Locked versions show values and viewing controls, but no mutating
+  controls.
+- Viewers can navigate, zoom, flip view direction, inspect cards, and
+  open tooltips; they cannot mutate.
+
+## 19. Testing and verification expectations
+
+Backend tests:
+
+- Aperture document validation: ids, spans, no holes, no overlaps,
+  positive dimensions, unique names, operation payload.
+- Aperture command service: add/rename/duplicate/delete,
+  add/delete row/column, dimension edit, merge/split, pick frame,
+  pick glazing, edit operation, paste assignment.
+- U-Value service: V1 parity fixtures, broken/null assignment warnings,
+  operation excluded from hash.
+- HBJSON export: V1 shape fixture, identifier stability, per-element
+  U-Value mapping, glazing `g_value` as SHGC, `vt=0.6`.
+- Refresh report continues to detect drift and source deactivation.
+- MCP read/write tools if added.
+
+Frontend tests:
+
+- Geometry helpers.
+- SVG region generation.
+- view-direction flip helpers.
+- dimension parser and formatter ports from V1.
+- sidebar natural sort and actions.
+- element-card frame-label flip.
+- copy/paste state machine.
+- locked/viewer read-only affordances.
+- refresh badges/dialog integration.
+
+Browser checks:
+
+- Add an aperture type.
+- Build a 2-column aperture.
+- Assign frame/glazing.
+- Edit dimensions.
+- Add operation symbol.
+- Confirm canvas/dimension/card sync.
+- Save, reload, verify persisted document.
+- Lock version, verify read-only.
+- Use Review all after catalog drift.
+
+Final code-changing closeout remains `make format && make ci`.
+
+## 20. Suggested phase groups
+
+These are not implementation plans yet. They are the likely grouping for
+future phase files.
+
+1. Terminology, schema, defaults, and command boundary
+   - Rename reader-facing UI from Windows to Apertures.
+   - Rename target document table from `window_types` to `apertures`
+     unless the phase plan finds a concrete reason to retain the old
+     key.
+   - Add element `name` and `operation`.
+   - Normalize ids to aperture vocabulary.
+   - Seed/guarantee default frame and glazing refs.
+   - Adopt `ApertureCommand`.
+   - Add validation for coverage/no holes.
+
+2. Builder shell and sidebar
+   - V1-like layout.
+   - add/rename/duplicate/delete.
+   - active type selection and empty states.
+
+3. SVG canvas foundation
+   - geometry helpers;
+   - SVG renderer;
+   - overlay hit targets;
+   - zoom and view direction.
+
+4. Dimensions
+   - row/column tickmarks and labels;
+   - parser port;
+   - add/delete/edit dimensions.
+
+5. Element cards and picker polish
+   - dense per-element cards;
+   - frame/glazing per-side pickers;
+   - full inline override fields;
+   - catalog badges and refresh affordances.
+
+6. Operations, merge/split, copy/paste
+   - operation editor and SVG symbols;
+   - selection;
+   - merge/split;
+   - eyedropper/paint-bucket.
+
+7. U-Value service and display
+   - backend ISO 10077-1 service;
+   - header and card chips;
+   - broken/import repair warning model.
+
+8. HBJSON / Rhino export
+   - V1 output-shape fixture;
+   - REST/UI export;
+   - MCP read tool;
+   - Rhino component compatibility notes.
+
+9. Manufacturer filters
+   - filter modal;
+   - picker integration;
+   - in-use manufacturer guard.
+
+10. MCP write follow-up
+   - semantic MCP reads/writes;
+   - browser/MCP conflict polish.
+
+## 21. Decision log
+
+Resolved 2026-06-05:
+
+1. Use `ApertureCommand` before the core canvas work. Recommendation:
+   follow the Assembly Builder command seam because Builder gestures are
+   semantic and high-frequency.
+2. Land element `name`, `operation`, no-holes validation, and aperture
+   terminology/id cleanup in the same schema phase unless the phase plan
+   finds a concrete migration risk.
+3. Save should work for normal new aperture types. New elements start
+   with default frame and glazing refs; missing/null assignments are not
+   a normal user state.
+4. HBJSON window-constructions export is core scope and required for
+   Rhino/Honeybee downstream workflows.
+5. Manufacturer filters ship after the core canvas.
+6. Canonical feature/domain term is `Apertures`, not `Windows`.
+
+## 22. Acceptance summary
+
+The feature is PRD-complete when a future implementation can reproduce
+the working shape of `Window Builder.png` in V2:
+
+- sidebar of project aperture types;
+- active aperture header with U-Value and menu;
+- proportional graphic aperture panel;
+- toolbar for zoom, view direction, copy/paste, merge/split, clear;
+- editable dimensions with tickmarks;
+- per-element assignment cards for glazing, four side frames, and
+  operation;
+- HBJSON window-constructions export for Rhino/Honeybee workflows;
+- all writes through versioned drafts;
+- catalog provenance and refresh review preserved;
+- locked/viewer read-only behavior correct;
+- verified by focused tests, browser check, `make format`, and
+  `make ci`.
