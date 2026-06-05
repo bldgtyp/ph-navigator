@@ -13,9 +13,14 @@ from features.project_document.aperture_commands.dispatcher import (
 )
 from features.project_document.aperture_commands.models import (
     AUDIT_KIND_BY_APERTURE_COMMAND,
+    AddColumn,
+    AddRow,
     CreateApertureType,
     DeleteApertureType,
+    DeleteColumn,
+    DeleteRow,
     DuplicateApertureType,
+    EditDimension,
     RenameApertureType,
     SetElementName,
     SetElementOperation,
@@ -440,3 +445,131 @@ def test_stub_command_kind_raises_not_implemented() -> None:
     with pytest.raises(Exception) as exc:
         apply_aperture_command(body, cast(Any, _Stub()), actor_user_id="u", catalog=_seeded_catalog())
     assert "aperture_command_not_implemented" in str(exc.value)
+
+
+# ------------------------ Dimension commands (Phase 05) ----------------------
+
+
+def _seeded_body_with_aperture() -> tuple[ProjectDocumentV1, str]:
+    body, _ = _apply(_empty_body(), CreateApertureType(proposed_name="Type A"))
+    return body, body.tables.apertures[0].id
+
+
+def test_edit_dimension_row_replaces_value_and_keeps_coverage() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, audit = _apply(body, EditDimension(aperture_type_id=apt_id, axis="row", index=0, new_value_mm=750.0))
+    assert body.tables.apertures[0].row_heights_mm == [750.0]
+    payload = cast(dict[str, object], audit["payload"])
+    assert payload["previous_mm"] == 1000.0
+    assert payload["new_mm"] == 750.0
+
+
+def test_edit_dimension_rejects_index_out_of_bounds() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    with pytest.raises(Exception) as exc:
+        _apply(body, EditDimension(aperture_type_id=apt_id, axis="column", index=5, new_value_mm=500.0))
+    assert "aperture_dimension_index_out_of_bounds" in str(exc.value)
+
+
+def test_add_row_at_start_shifts_existing_elements_and_adds_default() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddRow(aperture_type_id=apt_id, at_index=0, height_mm=1200.0))
+    entry = body.tables.apertures[0]
+    assert entry.row_heights_mm == [1200.0, 1000.0]
+    # original element shifted down to row 1
+    spans = sorted((e.row_span, e.column_span) for e in entry.elements)
+    assert spans == [((0, 0), (0, 0)), ((1, 1), (0, 0))]
+    # default refs on the inserted element
+    new_element = next(e for e in entry.elements if e.row_span == (0, 0))
+    assert new_element.glazing is not None
+    assert new_element.frames.top is not None
+
+
+def test_add_row_at_end_appends_new_default_element() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddRow(aperture_type_id=apt_id, at_index=1, height_mm=500.0))
+    entry = body.tables.apertures[0]
+    assert entry.row_heights_mm == [1000.0, 500.0]
+    spans = sorted((e.row_span, e.column_span) for e in entry.elements)
+    assert spans == [((0, 0), (0, 0)), ((1, 1), (0, 0))]
+
+
+def test_add_row_into_straddling_element_extends_span() -> None:
+    # 2x1 grid with one spanning element across both rows.
+    span_element = _element(id="aptel_span", row_span=(0, 1), column_span=(0, 0))
+    apt = _aperture(
+        row_heights_mm=[1000.0, 800.0],
+        elements=[span_element],
+    )
+    raw_body = _empty_body().model_dump(mode="json")
+    raw_body["tables"]["apertures"] = [apt.model_dump(mode="json")]
+    body = ProjectDocumentV1.model_validate(raw_body)
+    # at_index=1 falls strictly inside the span (rs < at_index <= re)
+    body, _ = _apply(body, AddRow(aperture_type_id=apt.id, at_index=1, height_mm=500.0))
+    entry = body.tables.apertures[0]
+    # Spanning element extended +1 row; no new default elements created
+    # because the single column is already covered.
+    assert len(entry.elements) == 1
+    assert entry.elements[0].row_span == (0, 2)
+    assert entry.row_heights_mm == [1000.0, 500.0, 800.0]
+
+
+def test_add_column_creates_one_default_per_row() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddRow(aperture_type_id=apt_id, at_index=1, height_mm=500.0))
+    body, _ = _apply(body, AddColumn(aperture_type_id=apt_id, at_index=1, width_mm=800.0))
+    entry = body.tables.apertures[0]
+    assert entry.row_heights_mm == [1000.0, 500.0]
+    assert entry.column_widths_mm == [1000.0, 800.0]
+    # 4 elements total (2 rows × 2 cols)
+    assert len(entry.elements) == 4
+
+
+def test_delete_row_last_remaining_rejects_with_422() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    with pytest.raises(Exception) as exc:
+        _apply(body, DeleteRow(aperture_type_id=apt_id, index=0))
+    assert "aperture_dimension_min_violation" in str(exc.value)
+
+
+def test_delete_row_drops_orphan_and_shifts_remaining() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddRow(aperture_type_id=apt_id, at_index=1, height_mm=500.0))
+    # delete the top (original) row
+    body, _ = _apply(body, DeleteRow(aperture_type_id=apt_id, index=0))
+    entry = body.tables.apertures[0]
+    assert entry.row_heights_mm == [500.0]
+    assert len(entry.elements) == 1
+    assert entry.elements[0].row_span == (0, 0)
+
+
+def test_delete_row_clamps_straddling_span() -> None:
+    span_element = _element(id="aptel_span", row_span=(0, 1), column_span=(0, 0))
+    apt = _aperture(
+        row_heights_mm=[1000.0, 500.0],
+        elements=[span_element],
+    )
+    raw_body = _empty_body().model_dump(mode="json")
+    raw_body["tables"]["apertures"] = [apt.model_dump(mode="json")]
+    body = ProjectDocumentV1.model_validate(raw_body)
+    body, _ = _apply(body, DeleteRow(aperture_type_id=apt.id, index=1))
+    entry = body.tables.apertures[0]
+    assert entry.row_heights_mm == [1000.0]
+    assert entry.elements[0].row_span == (0, 0)
+
+
+def test_delete_column_mirrors_delete_row_semantics() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddColumn(aperture_type_id=apt_id, at_index=1, width_mm=300.0))
+    body, _ = _apply(body, DeleteColumn(aperture_type_id=apt_id, index=1))
+    entry = body.tables.apertures[0]
+    assert entry.column_widths_mm == [1000.0]
+    assert len(entry.elements) == 1
+    assert entry.elements[0].column_span == (0, 0)
+
+
+def test_delete_column_last_remaining_rejects() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    with pytest.raises(Exception) as exc:
+        _apply(body, DeleteColumn(aperture_type_id=apt_id, index=0))
+    assert "aperture_dimension_min_violation" in str(exc.value)
