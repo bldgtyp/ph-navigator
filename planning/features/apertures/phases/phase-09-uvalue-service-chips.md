@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-05
-TIME: 16:40 EDT
-STATUS: Active — not yet started
-AUTHOR: Codex
+TIME: 19:30 EDT
+STATUS: Done
+AUTHOR: Claude
 SCOPE: Port the V1 ISO 10077-1 aperture U-Value calculation into
        V2, wire a per-aperture and per-element cache keyed on a
        content hash that explicitly excludes `operation` and
@@ -22,6 +22,29 @@ RELATED:
 ---
 
 # Phase 9 — U-Value service + display chips
+
+## Implementation note (Claude, 2026-06-05)
+
+Shipped as a single PR. See STATUS.md "Phase 09 deviations from
+the doc" for the per-decision rationale. Highlights:
+
+- Backend module lives at `backend/features/aperture_u_value/`
+  with the standard `service.py` / `models.py` / `cache.py` /
+  `routes.py` split. Algorithm mirrors V1 line-for-line
+  (corner 45° split, frame Q + spacer Ψ, area-weighted aggregate).
+- Cache is a FIFO-bounded ``OrderedDict``-backed class — strict
+  LRU would trip `ty`'s Liskov check against `dict.get`.
+- Content hash excludes operation and name; passes a unit test
+  showing tilt-turn ↔ Fixed yields the same hash.
+- Mutation hook invalidates the U-value query when the command
+  kind is in a client-side ``U_VALUE_AFFECTING_KINDS`` set;
+  ``setElementOperation`` and ``setElementName`` are absent.
+- Chip uses the native ``title`` for the PRD §8 tooltip copy.
+- Backend test fixtures derive expected ranges rather than
+  copying V1's fixture corpus (V1 lives in
+  ``../ph-navigator/`` which V2 doesn't depend on at CI time).
+
+## Original Phase 09 plan follows.
 
 ## P0. Why this slice
 

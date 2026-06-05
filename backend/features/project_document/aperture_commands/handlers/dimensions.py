@@ -103,6 +103,7 @@ def apply_edit_dimension(
         index=command.index,
         previous_mm=previous_mm,
         new_mm=command.new_value_mm,
+        affects_u_value=True,
     )
 
 
@@ -127,6 +128,7 @@ def apply_add_row(
         aperture_type_id=entry.id,
         at_index=command.at_index,
         height_mm=command.height_mm,
+        affects_u_value=True,
     )
 
 
@@ -151,6 +153,7 @@ def apply_add_column(
         aperture_type_id=entry.id,
         at_index=command.at_index,
         width_mm=command.width_mm,
+        affects_u_value=True,
     )
 
 
@@ -168,6 +171,7 @@ def apply_delete_row(
         actor_user_id,
         aperture_type_id=entry.id,
         index=command.index,
+        affects_u_value=True,
     )
 
 
@@ -185,6 +189,7 @@ def apply_delete_column(
         actor_user_id,
         aperture_type_id=entry.id,
         index=command.index,
+        affects_u_value=True,
     )
 
 

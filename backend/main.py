@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from config import settings
+from features.aperture_u_value.routes import router as aperture_u_value_router
 from features.assets.routes import jobs_router as asset_jobs_router
 from features.assets.routes import router as assets_router
 from features.auth.routes import router as auth_router
@@ -76,4 +77,5 @@ for catalog_router in catalog_routers:
 app.include_router(schemas_router)
 app.include_router(system_router)
 app.include_router(table_views_router)
+app.include_router(aperture_u_value_router)
 app.mount("/mcp", phn_mcp.streamable_http_app())

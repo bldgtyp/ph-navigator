@@ -37,6 +37,7 @@ export type ApertureElementCardStackProps = {
   onSetElementOperation: (elementId: string, operation: ApertureOperation | null) => void;
   dismissedOperationWarnings: readonly string[];
   onDismissOperationWarning: (elementId: string) => void;
+  uValueByElementId?: Map<string, number>;
 };
 
 export function ApertureElementCardStack({
@@ -52,6 +53,7 @@ export function ApertureElementCardStack({
   onSetElementOperation,
   dismissedOperationWarnings,
   onDismissOperationWarning,
+  uValueByElementId,
 }: ApertureElementCardStackProps) {
   const ordered = orderedElements(aperture.elements);
   return (
@@ -73,6 +75,7 @@ export function ApertureElementCardStack({
           onSetOperation={(op) => onSetElementOperation(element.id, op)}
           operationWarningDismissed={dismissedOperationWarnings.includes(element.id)}
           onDismissOperationWarning={() => onDismissOperationWarning(element.id)}
+          uValueWm2k={uValueByElementId?.get(element.id) ?? null}
         />
       ))}
     </div>
