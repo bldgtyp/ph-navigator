@@ -1,7 +1,14 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { emptyViewState } from "../../../shared/ui/data-table";
-import type { CellWrite, ViewState, WriteOp } from "../../../shared/ui/data-table";
+import type {
+  CellWrite,
+  DataTableColumnDef,
+  FieldDef,
+  ViewState,
+  WriteOp,
+} from "../../../shared/ui/data-table";
+import { useLocalTableViewState } from "../../table_views/useLocalTableViewState";
 import { createFrameType, deactivateFrameType, duplicateFrameType, updateFrameType } from "../api";
 import { catalogQueryKeys } from "../query-keys";
 import type {
@@ -9,7 +16,7 @@ import type {
   CatalogFrameTypeCreatePayload,
   CatalogFrameTypeUpdatePayload,
 } from "../types";
-import { FRAME_TYPES_BUILT_IN_FIELD_DEFS } from "./fieldDefs";
+import { FRAME_TYPES_BUILT_IN_FIELD_DEFS, FRAME_TYPES_TABLE_KEY } from "./fieldDefs";
 
 export type FrameTypeRow = CatalogFrameType;
 
@@ -74,14 +81,41 @@ export type FrameTypesCatalogController = {
   onWrite: (op: WriteOp) => Promise<void>;
 };
 
-export function useFrameTypesCatalogController(): FrameTypesCatalogController {
-  const [view, setView] = useState<ViewState>(() => emptyViewState());
+export type FrameTypesCatalogControllerArgs = {
+  userId: string;
+  columns: DataTableColumnDef<FrameTypeRow>[];
+  fieldDefs: FieldDef[];
+  schemaFingerprint: string;
+};
+
+export function useFrameTypesCatalogController({
+  userId,
+  columns,
+  fieldDefs,
+  schemaFingerprint,
+}: FrameTypesCatalogControllerArgs): FrameTypesCatalogController {
+  const defaults = useMemo(() => emptyViewState(), []);
+  const {
+    view,
+    onViewChange,
+    reset: onResetView,
+  } = useLocalTableViewState({
+    userId,
+    tableKey: FRAME_TYPES_TABLE_KEY,
+    defaults,
+    enabled: true,
+    // `DataTableColumnDef<TRow>` is invariant in TRow; cast to the
+    // hook's row-agnostic signature. Sanitize only reads `column.id` /
+    // `column.fieldKey`.
+    columns: columns as DataTableColumnDef<unknown>[],
+    fieldDefs,
+    schemaFingerprint,
+  });
   const queryClient = useQueryClient();
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.frameTypes() }),
     [queryClient],
   );
-  const onResetView = useCallback(() => setView(emptyViewState()), []);
 
   const onWrite = useCallback<FrameTypesCatalogController["onWrite"]>(
     async (op) => {
@@ -119,5 +153,5 @@ export function useFrameTypesCatalogController(): FrameTypesCatalogController {
     [invalidate],
   );
 
-  return { view, onViewChange: setView, onResetView, onWrite };
+  return { view, onViewChange, onResetView, onWrite };
 }

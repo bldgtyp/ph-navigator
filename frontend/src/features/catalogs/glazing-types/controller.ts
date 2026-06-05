@@ -1,7 +1,14 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { emptyViewState } from "../../../shared/ui/data-table";
-import type { CellWrite, ViewState, WriteOp } from "../../../shared/ui/data-table";
+import type {
+  CellWrite,
+  DataTableColumnDef,
+  FieldDef,
+  ViewState,
+  WriteOp,
+} from "../../../shared/ui/data-table";
+import { useLocalTableViewState } from "../../table_views/useLocalTableViewState";
 import {
   createGlazingType,
   deactivateGlazingType,
@@ -14,7 +21,7 @@ import type {
   CatalogGlazingTypeCreatePayload,
   CatalogGlazingTypeUpdatePayload,
 } from "../types";
-import { GLAZING_TYPES_BUILT_IN_FIELD_DEFS } from "./fieldDefs";
+import { GLAZING_TYPES_BUILT_IN_FIELD_DEFS, GLAZING_TYPES_TABLE_KEY } from "./fieldDefs";
 
 export type GlazingTypeRow = CatalogGlazingType;
 
@@ -81,14 +88,41 @@ export type GlazingTypesCatalogController = {
   onWrite: (op: WriteOp) => Promise<void>;
 };
 
-export function useGlazingTypesCatalogController(): GlazingTypesCatalogController {
-  const [view, setView] = useState<ViewState>(() => emptyViewState());
+export type GlazingTypesCatalogControllerArgs = {
+  userId: string;
+  columns: DataTableColumnDef<GlazingTypeRow>[];
+  fieldDefs: FieldDef[];
+  schemaFingerprint: string;
+};
+
+export function useGlazingTypesCatalogController({
+  userId,
+  columns,
+  fieldDefs,
+  schemaFingerprint,
+}: GlazingTypesCatalogControllerArgs): GlazingTypesCatalogController {
+  const defaults = useMemo(() => emptyViewState(), []);
+  const {
+    view,
+    onViewChange,
+    reset: onResetView,
+  } = useLocalTableViewState({
+    userId,
+    tableKey: GLAZING_TYPES_TABLE_KEY,
+    defaults,
+    enabled: true,
+    // `DataTableColumnDef<TRow>` is invariant in TRow; cast to the
+    // hook's row-agnostic signature. Sanitize only reads `column.id` /
+    // `column.fieldKey`.
+    columns: columns as DataTableColumnDef<unknown>[],
+    fieldDefs,
+    schemaFingerprint,
+  });
   const queryClient = useQueryClient();
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.glazingTypes() }),
     [queryClient],
   );
-  const onResetView = useCallback(() => setView(emptyViewState()), []);
 
   const onWrite = useCallback<GlazingTypesCatalogController["onWrite"]>(
     async (op) => {
@@ -126,5 +160,5 @@ export function useGlazingTypesCatalogController(): GlazingTypesCatalogControlle
     [invalidate],
   );
 
-  return { view, onViewChange: setView, onResetView, onWrite };
+  return { view, onViewChange, onResetView, onWrite };
 }

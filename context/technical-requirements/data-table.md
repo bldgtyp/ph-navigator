@@ -340,8 +340,19 @@ Rules:
   Backend storage lives in `user_table_views` and is JSONB-opaque
   beyond envelope checks (schema version, byte size, table-key syntax).
   Anonymous Viewer mode never reads or writes saved view state.
-  Catalog manager persistence is still out of scope; a future design
-  may add `scope_type/scope_id` rather than reusing project ids.
+- Catalog manager tables (Materials, Glazing Types, Frame Types) persist
+  one `ViewState` per `(user_id, catalog_table_key)` through
+  `useLocalTableViewState` (`features/table_views`), backed by
+  `localStorage` under `phn:tableView:v1:${userId}:${tableKey}`.
+  Catalogs are shared across users, but sort / filter / group / column
+  widths are a personal lens — localStorage gives each user their own
+  remembered view without a server round-trip. The hook mirrors
+  `useProjectTableViewState`'s API and reuses its `ViewStateEnvelope`
+  type and `sanitizeViewStateForSchema` pass, but uses a shorter
+  debounce (150 ms) since there is no network cost, flushes the
+  pending write on unmount and scope-change so navigation never
+  drops the last edit, and exposes no `saveError` / `isLoading` —
+  localStorage reads synchronously in the state initializer.
 - **Schema fingerprint on persisted view state.** Custom-field
   schemas are *version*-scoped while persisted view state is
   *(user, project, table)*-scoped. Each persisted view-state record

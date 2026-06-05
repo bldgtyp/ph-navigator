@@ -3,7 +3,17 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { WriteOp } from "../../../../shared/ui/data-table";
 import * as api from "../../api";
-import { useMaterialsCatalogController } from "../controller";
+import { useMaterialsCatalogController, type MaterialsCatalogControllerArgs } from "../controller";
+
+// View-state persistence is tested directly against useLocalTableViewState;
+// these tests only exercise onWrite, so the controller args carry empty
+// columns/fieldDefs and a stand-in fingerprint.
+const CONTROLLER_ARGS: MaterialsCatalogControllerArgs = {
+  userId: "user-test",
+  columns: [],
+  fieldDefs: [],
+  schemaFingerprint: "test-fp",
+};
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
@@ -13,6 +23,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
   vi.spyOn(api, "updateMaterial").mockResolvedValue({} as never);
   vi.spyOn(api, "createMaterial").mockResolvedValue({ id: "rec_new" } as never);
   vi.spyOn(api, "deactivateMaterial").mockResolvedValue();
@@ -24,7 +35,9 @@ afterEach(() => {
 
 describe("useMaterialsCatalogController.onWrite", () => {
   test("cell op for category translates opt_<id> → registry id and PATCHes", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "cell",
       writes: [{ rowId: "rec_xyz", fieldKey: "category", value: "opt_insulation" }],
@@ -36,7 +49,9 @@ describe("useMaterialsCatalogController.onWrite", () => {
   });
 
   test("cell op for density passes the SI value through verbatim", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "cell",
       writes: [{ rowId: "rec_abc", fieldKey: "density_kg_m3", value: 42.5 }],
@@ -48,7 +63,9 @@ describe("useMaterialsCatalogController.onWrite", () => {
   });
 
   test("multiple cell writes on the same row collapse into one PATCH", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "cell",
       writes: [
@@ -67,7 +84,9 @@ describe("useMaterialsCatalogController.onWrite", () => {
   });
 
   test("rowInsert op with name + category → POST", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "rowInsert",
       rows: [
@@ -93,7 +112,9 @@ describe("useMaterialsCatalogController.onWrite", () => {
   });
 
   test("rowInsert with empty fieldDefaults POSTs with safe placeholders so the user can edit in place", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "rowInsert",
       rows: [{ rowId: "rec_temp", fieldDefaults: {}, anchorRowId: null }],
@@ -108,7 +129,9 @@ describe("useMaterialsCatalogController.onWrite", () => {
   });
 
   test("rowDelete op calls DELETE per rowId", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "rowDelete",
       rows: [
@@ -124,7 +147,9 @@ describe("useMaterialsCatalogController.onWrite", () => {
   });
 
   test("schemaMutation throws (PRD non-goal)", async () => {
-    const { result } = renderHook(() => useMaterialsCatalogController(), { wrapper });
+    const { result } = renderHook(() => useMaterialsCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
     const op: WriteOp = {
       kind: "schemaMutation",
       variant: "typed",
