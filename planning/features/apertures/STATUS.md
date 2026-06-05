@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 17:30 EDT
-STATUS: In progress — Phases 01, 02, and 03 shipped as additive variants; renames + windows deletion + redirect + Alembic seed still deferred.
+TIME: 17:38 EDT
+STATUS: In progress — Phases 01–04 shipped as additive variants; renames + windows deletion + redirect + Alembic seed still deferred.
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -15,13 +15,16 @@ RELATED:
 
 ## Current State
 
-- **Phases 01, 02, and 03 — additive variants shipped.** New `Aperture*`
+- **Phases 01, 02, 03, and 04 — additive variants shipped.** New `Aperture*`
   domain model, `tables.apertures[]` field, command seam, coverage
   invariant, default factory, route + service wrapper, full
-  frontend tab, and the SVG canvas substrate (geometry helpers,
+  frontend tab, the SVG canvas substrate (geometry helpers,
   `ApertureSvgCanvas`, canvas toolbar with zoom + view-direction
-  controls, `ApertureCanvasContainer`) landed **side-by-side** with
-  the existing Windows tracer-bullet. Nothing in the legacy
+  controls, `ApertureCanvasContainer`), and the interaction overlay
+  (`ApertureCanvasOverlay`, `ApertureHitTarget`, `ApertureNamePill`,
+  Zustand builder store, selection model, Clear-selection toolbar
+  button, no-direct-delete inline notice) landed **side-by-side**
+  with the existing Windows tracer-bullet. Nothing in the legacy
   tracer-bullet path was touched. See each phase file's
   "Implementation note" for the per-commit delta.
 - **What's live now end-to-end:**
@@ -67,9 +70,11 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 04 (`phases/phase-04-canvas-interaction.md`) — the
-canvas substrate is in place; Phase 04 layers hover affordances,
-click-to-select, and the on-canvas name pill on top of it.
+Begin Phase 05 (`phases/phase-05-dimensions-parser-format-selector.md`)
+— overlay + selection are in place; Phase 05 adds the dimension
+strips (row / column labels, edit-in-place with the units parser,
+hover-to-add, row / column delete) above and to the left of the
+canvas.
 
 ## Blockers
 
@@ -85,5 +90,8 @@ click-to-select, and the on-canvas name pill on top of it.
 - Phase 01: commit `339e7ca`. `make ci` green.
 - Phase 02: commit (prior). `make ci` green (525 backend tests, 1122
   frontend tests, build successful).
-- Phase 03: this commit. `make ci` green (525 backend tests, 1141
+- Phase 03: prior commit. `make ci` green (525 backend tests, 1141
   frontend tests — 12 geometry + 7 canvas added, build successful).
+- Phase 04: this commit. `make ci` green (525 backend tests, 1161
+  frontend tests — 6 store + 8 overlay + 6 pill added, build
+  successful).
