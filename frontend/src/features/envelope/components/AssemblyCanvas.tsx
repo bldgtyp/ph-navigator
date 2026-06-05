@@ -1,4 +1,15 @@
 import { useMemo } from "react";
+import {
+  ArrowLeftRight,
+  ArrowUpDown,
+  FlipVertical2,
+  PaintBucket,
+  Pipette,
+  RotateCcw,
+  type LucideIcon,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { useUnitPreference } from "../../../lib/units";
 import { AssemblyCanvasOverlay, type AssemblyCanvasOverlayActions } from "./AssemblyCanvasOverlay";
 import { AssemblySvgCanvas } from "./AssemblySvgCanvas";
@@ -6,21 +17,20 @@ import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
 import { ASSEMBLY_CANVAS_ORIGIN_X_PX, MIN_CANVAS_WIDTH_PX, pxFromMm } from "../canvas-constants";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
 import { materialById } from "../lib";
-import type {
-  Assembly,
-  AssemblyLayer,
-  AssemblySegment,
-  ProjectMaterial,
-  ProjectMaterialDriftItem,
-} from "../types";
+import type { Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
 
 export function AssemblyCanvas({
   assembly,
   materials,
-  driftByMaterialId,
   zoom,
   canEdit,
   paint,
+  commandBusy,
+  onZoomIn,
+  onZoomOut,
+  onFlipOrientation,
+  onFlipLayers,
+  onFlipSegments,
   onEditLayer,
   onUpdateLayerThickness,
   onAddLayer,
@@ -29,10 +39,15 @@ export function AssemblyCanvas({
 }: {
   assembly: Assembly;
   materials: ProjectMaterial[];
-  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>;
   zoom: number;
   canEdit: boolean;
   paint: AssemblyCanvasPaintController;
+  commandBusy: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onFlipOrientation: () => void;
+  onFlipLayers: () => void;
+  onFlipSegments: () => void;
   onEditLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
@@ -59,7 +74,10 @@ export function AssemblyCanvas({
     onAddSegment,
   };
   const [outsideLabel, insideLabel] =
-    assembly.orientation === "first_layer_outside" ? ["Outside", "Inside"] : ["Inside", "Outside"];
+    assembly.orientation === "first_layer_outside"
+      ? ["Exterior", "Interior"]
+      : ["Interior", "Exterior"];
+  const assemblyCenterPx = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth / 2;
 
   return (
     <div className="assembly-canvas-scroll" data-testid="assembly-canvas-scroll">
@@ -69,14 +87,33 @@ export function AssemblyCanvas({
         data-testid="assembly-canvas"
         style={{ width: `${canvasWidth}px` }}
       >
-        <div className="assembly-orientation-labels" aria-hidden="true">
-          <span>{outsideLabel}</span>
-          <span>{insideLabel}</span>
-        </div>
         <div
           className="assembly-canvas-stage"
           style={{ width: `${stageWidth}px`, height: `${canvasHeight}px` }}
         >
+          <AssemblyCanvasToolbar
+            canEdit={canEdit}
+            commandBusy={commandBusy}
+            paint={paint}
+            zoom={zoom}
+            leftPx={assemblyCenterPx}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onFlipOrientation={onFlipOrientation}
+            onFlipLayers={onFlipLayers}
+            onFlipSegments={onFlipSegments}
+          />
+          <div
+            className="assembly-orientation-labels"
+            aria-hidden="true"
+            style={{
+              left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX}px`,
+              width: `${svgWidth}px`,
+            }}
+          >
+            <span className="assembly-orientation-label is-top">{outsideLabel}</span>
+            <span className="assembly-orientation-label is-bottom">{insideLabel}</span>
+          </div>
           <AssemblySvgCanvas
             assembly={assembly}
             materialsById={materialsById}
@@ -89,7 +126,6 @@ export function AssemblyCanvas({
           <AssemblyCanvasOverlay
             geometry={geometry}
             materialsById={materialsById}
-            driftByMaterialId={driftByMaterialId}
             unitSystem={unitSystem}
             zoom={zoom}
             canEdit={canEdit}
@@ -100,4 +136,125 @@ export function AssemblyCanvas({
       </div>
     </div>
   );
+}
+
+function AssemblyCanvasToolbar({
+  canEdit,
+  commandBusy,
+  paint,
+  zoom,
+  leftPx,
+  onZoomIn,
+  onZoomOut,
+  onFlipOrientation,
+  onFlipLayers,
+  onFlipSegments,
+}: {
+  canEdit: boolean;
+  commandBusy: boolean;
+  paint: AssemblyCanvasPaintController;
+  zoom: number;
+  leftPx: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onFlipOrientation: () => void;
+  onFlipLayers: () => void;
+  onFlipSegments: () => void;
+}) {
+  const commandDisabled = !canEdit || commandBusy;
+  const flipDisabled = commandDisabled || paint.mode === "picking" || paint.mode === "pasting";
+
+  return (
+    <div
+      className="assembly-canvas-toolbar"
+      aria-label="Assembly canvas tools"
+      style={{ left: `${leftPx}px` }}
+    >
+      <CanvasToolbarButton label="Zoom out" tooltip="Zoom out" icon={ZoomOut} onClick={onZoomOut} />
+      <span className="sr-only" data-testid="canvas-zoom">
+        {Math.round(zoom * 100)}%
+      </span>
+      <CanvasToolbarButton label="Zoom in" tooltip="Zoom in" icon={ZoomIn} onClick={onZoomIn} />
+      <CanvasToolbarDivider />
+      <CanvasToolbarButton
+        label="Flip outside"
+        tooltip="Flip exterior/interior"
+        icon={ArrowUpDown}
+        disabled={flipDisabled}
+        onClick={onFlipOrientation}
+      />
+      <CanvasToolbarButton
+        label="Flip layers"
+        tooltip="Flip layer order"
+        icon={FlipVertical2}
+        disabled={flipDisabled}
+        onClick={onFlipLayers}
+      />
+      <CanvasToolbarButton
+        label="Flip segments"
+        tooltip="Flip segments"
+        icon={ArrowLeftRight}
+        disabled={flipDisabled}
+        onClick={onFlipSegments}
+      />
+      <CanvasToolbarDivider />
+      <CanvasToolbarButton
+        label="Pick segment assignment"
+        tooltip="Copy segment material"
+        icon={Pipette}
+        disabled={!canEdit}
+        pressed={paint.mode === "picking"}
+        onClick={paint.mode === "picking" ? paint.clear : paint.startPicking}
+      />
+      <CanvasToolbarButton
+        label="Paint picked assignment"
+        tooltip="Paste segment material"
+        icon={PaintBucket}
+        disabled={!canEdit || !paint.canStartPasting}
+        pressed={paint.mode === "pasting"}
+        onClick={paint.mode === "pasting" ? paint.clear : paint.startPasting}
+      />
+      <CanvasToolbarButton
+        label="Undo last paint"
+        tooltip="Undo paste"
+        icon={RotateCcw}
+        disabled={commandDisabled || !paint.canUndoPaint}
+        onClick={paint.undoLastPaint}
+      />
+    </div>
+  );
+}
+
+function CanvasToolbarButton({
+  label,
+  tooltip,
+  icon: Icon,
+  disabled = false,
+  pressed,
+  onClick,
+}: {
+  label: string;
+  tooltip: string;
+  icon: LucideIcon;
+  disabled?: boolean;
+  pressed?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="assembly-canvas-toolbar-button"
+      aria-label={label}
+      aria-pressed={pressed ?? undefined}
+      data-toolbar-tooltip={tooltip}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon size={14} aria-hidden="true" />
+    </button>
+  );
+}
+
+function CanvasToolbarDivider() {
+  return <span className="assembly-canvas-toolbar-divider" aria-hidden="true" />;
 }

@@ -1,7 +1,6 @@
 import { type KeyboardEvent, type MouseEvent, useRef, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Ellipsis, Plus } from "lucide-react";
 import { formatLengthFromMm, parseLengthToMm, type UnitSystem } from "../../../lib/units";
-import { MaterialDriftBadge } from "./MaterialDrift";
 import {
   ASSEMBLY_CANVAS_ORIGIN_X_PX,
   DIMENSION_COLUMN_WIDTH_PX,
@@ -17,12 +16,7 @@ import type {
   AssemblyCanvasLayerGeometry,
   AssemblyCanvasSegmentGeometry,
 } from "../canvas-geometry";
-import type {
-  AssemblyLayer,
-  AssemblySegment,
-  ProjectMaterial,
-  ProjectMaterialDriftItem,
-} from "../types";
+import type { AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
 
 export type AssemblyCanvasOverlayActions = {
   onEditLayer: (layer: AssemblyLayer) => void;
@@ -39,7 +33,6 @@ export type AssemblyCanvasOverlayActions = {
 export function AssemblyCanvasOverlay({
   geometry,
   materialsById,
-  driftByMaterialId,
   unitSystem,
   zoom,
   canEdit,
@@ -48,7 +41,6 @@ export function AssemblyCanvasOverlay({
 }: {
   geometry: AssemblyCanvasGeometry;
   materialsById: ReadonlyMap<string, ProjectMaterial>;
-  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>;
   unitSystem: UnitSystem;
   zoom: number;
   canEdit: boolean;
@@ -73,7 +65,6 @@ export function AssemblyCanvasOverlay({
           key={`${segmentGeometry.layer.id}-${segmentGeometry.segment.id}`}
           segmentGeometry={segmentGeometry}
           materialsById={materialsById}
-          driftByMaterialId={driftByMaterialId}
           unitSystem={unitSystem}
           zoom={zoom}
           canEdit={canEdit}
@@ -109,6 +100,8 @@ function LayerDimensionControls({
       }}
       aria-label={`Layer ${layerNumber} thickness controls`}
     >
+      <span className="dimension-tick dimension-tick-top" aria-hidden="true" />
+      <span className="dimension-tick dimension-tick-bottom" aria-hidden="true" />
       <LayerThicknessEditor
         layer={layer}
         layerNumber={layerNumber}
@@ -119,20 +112,17 @@ function LayerDimensionControls({
         type="button"
         className="dimension-dialog-button"
         aria-label={`Open layer ${layerNumber} thickness dialog`}
-        data-tooltip="Layer options"
         onClick={() => actions.onEditLayer(layer)}
       >
-        <Pencil size={12} aria-hidden="true" />
+        <Ellipsis size={12} aria-hidden="true" />
       </button>
       <CanvasAddButton
         label={`Add layer above layer ${layerNumber}`}
-        tooltip="Add Layer Above"
         className="layer-add-button add-above"
         onClick={() => actions.onAddLayer(layer, "above")}
       />
       <CanvasAddButton
         label={`Add layer below layer ${layerNumber}`}
-        tooltip="Add Layer Below"
         className="layer-add-button add-below"
         onClick={() => actions.onAddLayer(layer, "below")}
       />
@@ -232,7 +222,6 @@ function LayerThicknessEditor({
       type="button"
       className="dimension-label-button"
       aria-label={`Edit layer ${layerNumber} thickness`}
-      data-tooltip="Edit thickness"
       onClick={startEditing}
     >
       {formatLayerThickness(layer.thickness_mm, unitSystem)}
@@ -243,7 +232,6 @@ function LayerThicknessEditor({
 function SegmentOverlay({
   segmentGeometry,
   materialsById,
-  driftByMaterialId,
   unitSystem,
   zoom,
   canEdit,
@@ -252,7 +240,6 @@ function SegmentOverlay({
 }: {
   segmentGeometry: AssemblyCanvasSegmentGeometry;
   materialsById: ReadonlyMap<string, ProjectMaterial>;
-  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>;
   unitSystem: UnitSystem;
   zoom: number;
   canEdit: boolean;
@@ -298,19 +285,14 @@ function SegmentOverlay({
           handleSegmentAction({ canEdit, paint, actions, layer, segment });
         }}
       >
-        <span className="assembly-segment-body">
-          <strong>{materialName}</strong>
-          {material ? (
-            <MaterialDriftBadge item={driftByMaterialId.get(material.id) ?? null} />
-          ) : null}
-          <span>{segmentWidthLabel}</span>
-          {studSpacingLabel ? <small>Studs {studSpacingLabel}</small> : null}
+        <span className="sr-only">
+          {materialName}, {segmentWidthLabel}
+          {studSpacingLabel ? `, studs ${studSpacingLabel}` : ""}
         </span>
       </button>
       {showAddControls ? (
         <SegmentAddControls
           segmentLabel={segmentLabel}
-          widthPx={pxFromMm(segmentGeometry.widthMm, zoom)}
           onAddLeft={(event) => {
             event.stopPropagation();
             actions.onAddSegment(layer, segment, "left");
@@ -358,18 +340,15 @@ function handleSegmentAction({
 
 function SegmentAddControls({
   segmentLabel,
-  widthPx,
   onAddLeft,
   onAddRight,
 }: {
   segmentLabel: string;
-  widthPx: number;
   onAddLeft: (event: MouseEvent<HTMLButtonElement>) => void;
   onAddRight: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
-  const isNarrow = widthPx < 60;
   return (
-    <div className={isNarrow ? "segment-add-controls is-narrow" : "segment-add-controls"}>
+    <div className="segment-add-controls">
       <CanvasAddButton
         label={`Add segment before ${segmentLabel}`}
         tooltip="Add Segment Before"
@@ -393,7 +372,7 @@ function CanvasAddButton({
   onClick,
 }: {
   label: string;
-  tooltip: string;
+  tooltip?: string;
   className?: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
@@ -403,7 +382,7 @@ function CanvasAddButton({
       type="button"
       className={buttonClassName}
       aria-label={label}
-      data-tooltip={tooltip}
+      data-tooltip={tooltip || undefined}
       onClick={onClick}
     >
       <Plus size={15} aria-hidden="true" />

@@ -4,6 +4,8 @@ import { segmentCanvasKey, type AssemblyCanvasPaintMode } from "../canvas-paint"
 import type { AssemblyCanvasGeometry, AssemblyCanvasSegmentGeometry } from "../canvas-geometry";
 import type { Assembly, ProjectMaterial } from "../types";
 
+const SVG_STROKE_PADDING_MM = 1;
+
 export function AssemblySvgCanvas({
   assembly,
   materialsById,
@@ -21,6 +23,19 @@ export function AssemblySvgCanvas({
   paintMode: AssemblyCanvasPaintMode;
   pickedSourceKey: string | null;
 }) {
+  const pxPerMm = widthPx / geometry.widthMm;
+  const strokePaddingPx = SVG_STROKE_PADDING_MM * pxPerMm;
+  const paddedWidthPx = widthPx + strokePaddingPx * 2;
+  const paddedHeightPx = heightPx + strokePaddingPx * 2;
+  const paddedViewBox = [
+    -SVG_STROKE_PADDING_MM,
+    -SVG_STROKE_PADDING_MM,
+    geometry.widthMm + SVG_STROKE_PADDING_MM * 2,
+    geometry.heightMm + SVG_STROKE_PADDING_MM * 2,
+  ]
+    .map(formatSvgNumber)
+    .join(" ");
+
   return (
     <svg
       className="assembly-svg-canvas"
@@ -28,12 +43,15 @@ export function AssemblySvgCanvas({
       data-testid="assembly-svg-canvas"
       role="img"
       aria-label={`${assembly.name} assembly section`}
-      viewBox={`0 0 ${formatSvgNumber(geometry.widthMm)} ${formatSvgNumber(geometry.heightMm)}`}
-      width={widthPx}
-      height={heightPx}
+      viewBox={paddedViewBox}
+      width={paddedWidthPx}
+      height={paddedHeightPx}
       preserveAspectRatio="xMinYMin meet"
       shapeRendering="crispEdges"
-      style={{ left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX}px` }}
+      style={{
+        left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX - strokePaddingPx}px`,
+        top: `${-strokePaddingPx}px`,
+      }}
     >
       <defs>
         <pattern

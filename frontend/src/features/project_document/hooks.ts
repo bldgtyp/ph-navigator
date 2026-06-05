@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { projectQueryKeys } from "../projects/query-keys";
+import { envelopeQueryKeys } from "../envelope/query-keys";
 import {
   discardDraft,
   fetchDiff,
@@ -13,19 +14,28 @@ import type { SaveAsPayload } from "./types";
 
 export { projectDocumentQueryKeys, projectDocumentTableQueryKeys };
 
-export function invalidateProjectDocumentQueries(
+export async function invalidateProjectDocumentQueries(
   queryClient: QueryClient,
   projectId: string,
   { detail = true, tables = true }: { detail?: boolean; tables?: boolean } = {},
-) {
+): Promise<void> {
+  const invalidations: Array<Promise<void>> = [];
   if (detail) {
-    queryClient.invalidateQueries({ queryKey: projectQueryKeys.detail(projectId) });
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.detail(projectId) }),
+    );
   }
-  queryClient.invalidateQueries({ queryKey: projectQueryKeys.list() });
-  queryClient.invalidateQueries({ queryKey: projectDocumentQueryKeys.project(projectId) });
+  invalidations.push(queryClient.invalidateQueries({ queryKey: projectQueryKeys.list() }));
+  invalidations.push(
+    queryClient.invalidateQueries({ queryKey: projectDocumentQueryKeys.project(projectId) }),
+  );
+  invalidations.push(queryClient.invalidateQueries({ queryKey: envelopeQueryKeys.all(projectId) }));
   if (tables) {
-    queryClient.invalidateQueries({ queryKey: projectDocumentTableQueryKeys.project(projectId) });
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: projectDocumentTableQueryKeys.project(projectId) }),
+    );
   }
+  await Promise.all(invalidations);
 }
 
 export function useDraftSummaryQuery(projectId: string, versionId: string | null, enabled = true) {
@@ -56,7 +66,7 @@ export function useSaveDraftMutation(projectId: string, versionId: string | null
     mutationFn: ({ versionEtag }: { versionEtag: string }) =>
       saveDraft(projectId, versionId ?? "", versionEtag),
     onSuccess: () => {
-      invalidateProjectDocumentQueries(queryClient, projectId);
+      return invalidateProjectDocumentQueries(queryClient, projectId);
     },
   });
 }
@@ -66,7 +76,7 @@ export function useSaveDraftAsMutation(projectId: string, versionId: string | nu
   return useMutation({
     mutationFn: (payload: SaveAsPayload) => saveDraftAs(projectId, versionId ?? "", payload),
     onSuccess: () => {
-      invalidateProjectDocumentQueries(queryClient, projectId);
+      return invalidateProjectDocumentQueries(queryClient, projectId);
     },
   });
 }
@@ -76,7 +86,7 @@ export function useDiscardDraftMutation(projectId: string, versionId: string | n
   return useMutation({
     mutationFn: () => discardDraft(projectId, versionId ?? ""),
     onSuccess: () => {
-      invalidateProjectDocumentQueries(queryClient, projectId, { detail: false });
+      return invalidateProjectDocumentQueries(queryClient, projectId, { detail: false });
     },
   });
 }

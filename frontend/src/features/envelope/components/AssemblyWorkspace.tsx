@@ -10,7 +10,6 @@ import type {
   AssemblySegment,
   AssemblyThermalResponse,
   ProjectMaterial,
-  ProjectMaterialDriftItem,
 } from "../types";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
 
@@ -19,7 +18,6 @@ export function AssemblyWorkspace({
   assemblies,
   activeAssembly,
   materials,
-  driftByMaterialId,
   search,
   zoom,
   canEdit,
@@ -50,7 +48,6 @@ export function AssemblyWorkspace({
   assemblies: Assembly[];
   activeAssembly: Assembly;
   materials: ProjectMaterial[];
-  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>;
   search: URLSearchParams;
   zoom: number;
   canEdit: boolean;
@@ -64,10 +61,10 @@ export function AssemblyWorkspace({
   onZoomIn: () => void;
   onZoomOut: () => void;
   onExportHbjson: () => void;
-  onRename: () => void;
-  onTypeChange: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
+  onRename: (assembly: Assembly) => void;
+  onTypeChange: (assembly: Assembly) => void;
+  onDuplicate: (assembly: Assembly) => void;
+  onDelete: (assembly: Assembly) => void;
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
   onFlipSegments: () => void;
@@ -105,9 +102,16 @@ export function AssemblyWorkspace({
         activeId={activeAssembly.id}
         search={search}
         canEdit={canEdit}
+        actionDisabled={!canEdit || commandBusy}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
         onAddAssembly={onAddAssembly}
+        exportBusy={exportBusy}
+        onExportHbjson={onExportHbjson}
+        onRename={onRename}
+        onTypeChange={onTypeChange}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
       />
       <div className="assembly-workspace">
         <div ref={interactionRef} className="assembly-interaction-region">
@@ -116,32 +120,22 @@ export function AssemblyWorkspace({
             assemblies={assemblies}
             activeAssembly={activeAssembly}
             search={search}
-            zoom={zoom}
-            canEdit={canEdit}
             thermal={thermal}
             thermalLoading={thermalLoading}
-            exportBusy={exportBusy}
-            commandBusy={commandBusy}
-            paint={paint}
-            onZoomIn={onZoomIn}
-            onZoomOut={onZoomOut}
-            onExportHbjson={onExportHbjson}
-            onRename={onRename}
-            onTypeChange={onTypeChange}
-            onDuplicate={onDuplicate}
-            onDelete={onDelete}
-            onFlipOrientation={onFlipOrientation}
-            onFlipLayers={onFlipLayers}
-            onFlipSegments={onFlipSegments}
           />
           {children}
           <AssemblyCanvas
             assembly={activeAssembly}
             materials={materials}
-            driftByMaterialId={driftByMaterialId}
             zoom={zoom}
             canEdit={canEdit}
             paint={paint}
+            commandBusy={commandBusy}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onFlipOrientation={onFlipOrientation}
+            onFlipLayers={onFlipLayers}
+            onFlipSegments={onFlipSegments}
             onEditLayer={onEditLayer}
             onUpdateLayerThickness={onUpdateLayerThickness}
             onAddLayer={onAddLayer}
