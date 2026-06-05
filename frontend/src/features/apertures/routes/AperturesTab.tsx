@@ -1,0 +1,172 @@
+import "../apertures.css";
+import { useEffect, useMemo, useState } from "react";
+import { errorMessage } from "../../../shared/lib/errors";
+import type { ProjectDetail } from "../../projects/types";
+import {
+  ApertureBuilderPlaceholder,
+  ApertureEmptyState,
+} from "../components/ApertureBuilderPlaceholder";
+import { ApertureSidebar } from "../components/ApertureSidebar";
+import { AperturesHeader } from "../components/AperturesHeader";
+import { DeleteApertureDialog } from "../components/DeleteApertureDialog";
+import { RenameApertureDialog } from "../components/RenameApertureDialog";
+import { useApplyApertureCommandMutation, useAperturesSliceQuery } from "../hooks";
+import { naturalSortApertures } from "../lib";
+import type { ApertureCommand, ApertureTypeEntry, AperturesSlice } from "../types";
+
+type DialogState =
+  | { kind: "none" }
+  | { kind: "rename"; aperture: ApertureTypeEntry }
+  | { kind: "delete"; aperture: ApertureTypeEntry };
+
+export function AperturesTab({ project }: { project: ProjectDetail }) {
+  const isViewer = project.access_mode === "viewer";
+  const isLocked = project.active_version?.locked ?? false;
+  const canEdit = !isViewer && !isLocked && Boolean(project.active_version_id);
+
+  const sliceQuery = useAperturesSliceQuery(
+    project.id,
+    project.active_version_id,
+    isViewer ? "viewer" : "editor",
+  );
+  const mutation = useApplyApertureCommandMutation(project.id, project.active_version_id);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const slice = sliceQuery.data;
+  const apertures = slice?.apertures ?? [];
+  const sorted = useMemo(() => naturalSortApertures(apertures), [apertures]);
+
+  useEffect(() => {
+    if (selectedId && sorted.some((a) => a.id === selectedId)) return;
+    setSelectedId(sorted[0]?.id ?? null);
+  }, [sorted, selectedId]);
+
+  const activeAperture = sorted.find((a) => a.id === selectedId) ?? null;
+
+  const dispatch = async (
+    command: ApertureCommand,
+    onSuccess?: (next: AperturesSlice) => void,
+  ): Promise<AperturesSlice | null> => {
+    if (!slice) return null;
+    setActionError(null);
+    try {
+      const next = await mutation.mutateAsync({ current: slice, command });
+      onSuccess?.(next);
+      return next;
+    } catch (error) {
+      setActionError(errorMessage(error, "Could not apply aperture command."));
+      return null;
+    }
+  };
+
+  const handleAdd = async () => {
+    const next = await dispatch({ kind: "createApertureType" });
+    if (!next) return;
+    const newEntry = next.apertures.find(
+      (entry) => !apertures.some((prior) => prior.id === entry.id),
+    );
+    if (newEntry) setSelectedId(newEntry.id);
+  };
+
+  const handleRename = async (newName: string) => {
+    if (dialog.kind !== "rename") return;
+    const target = dialog.aperture;
+    await dispatch({
+      kind: "renameApertureType",
+      aperture_type_id: target.id,
+      new_name: newName,
+    });
+    setDialog({ kind: "none" });
+  };
+
+  const handleDuplicate = async (aperture: ApertureTypeEntry) => {
+    const next = await dispatch({
+      kind: "duplicateApertureType",
+      aperture_type_id: aperture.id,
+    });
+    if (!next) return;
+    const duplicateEntry = next.apertures.find(
+      (entry) => !apertures.some((prior) => prior.id === entry.id),
+    );
+    if (duplicateEntry) setSelectedId(duplicateEntry.id);
+  };
+
+  const handleDelete = async () => {
+    if (dialog.kind !== "delete") return;
+    const target = dialog.aperture;
+    const next = await dispatch({
+      kind: "deleteApertureType",
+      aperture_type_id: target.id,
+    });
+    setDialog({ kind: "none" });
+    if (!next) return;
+    const remainder = naturalSortApertures(next.apertures);
+    setSelectedId(remainder[0]?.id ?? null);
+  };
+
+  if (sliceQuery.isLoading) {
+    return <section className="tab-panel">Loading apertures...</section>;
+  }
+  if (sliceQuery.isError || !slice) {
+    return (
+      <section className="tab-panel">
+        <p role="alert">{errorMessage(sliceQuery.error, "Could not load apertures.")}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="tab-panel apertures-page" aria-labelledby="apertures-title">
+      <span id="apertures-title" className="visually-hidden">
+        Apertures
+      </span>
+      <AperturesHeader activeAperture={activeAperture} />
+      {actionError ? (
+        <p className="form-error" role="alert">
+          {actionError}
+        </p>
+      ) : null}
+      <div className="apertures-page__body">
+        <ApertureSidebar
+          apertures={sorted}
+          activeApertureId={activeAperture?.id ?? null}
+          canEdit={canEdit}
+          onSelect={setSelectedId}
+          onAdd={() => void handleAdd()}
+          onRename={(aperture) => setDialog({ kind: "rename", aperture })}
+          onDuplicate={(aperture) => void handleDuplicate(aperture)}
+          onDelete={(aperture) => setDialog({ kind: "delete", aperture })}
+        />
+        <main className="apertures-page__main">
+          {activeAperture ? (
+            <ApertureBuilderPlaceholder aperture={activeAperture} />
+          ) : (
+            <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
+          )}
+        </main>
+      </div>
+      {dialog.kind === "rename" ? (
+        <RenameApertureDialog
+          aperture={dialog.aperture}
+          allApertures={sorted}
+          busy={mutation.isPending}
+          error={actionError}
+          onClose={() => setDialog({ kind: "none" })}
+          onSubmit={(newName) => void handleRename(newName)}
+        />
+      ) : null}
+      {dialog.kind === "delete" ? (
+        <DeleteApertureDialog
+          aperture={dialog.aperture}
+          busy={mutation.isPending}
+          error={actionError}
+          onClose={() => setDialog({ kind: "none" })}
+          onConfirm={() => void handleDelete()}
+        />
+      ) : null}
+    </section>
+  );
+}

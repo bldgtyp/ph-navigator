@@ -3,6 +3,7 @@ import { errorMessage } from "../../shared/lib/errors";
 export const PROJECT_TABS = [
   "status",
   "windows",
+  "apertures",
   "envelope",
   "rooms",
   "equipment",
@@ -14,6 +15,7 @@ export type ProjectTab = (typeof PROJECT_TABS)[number];
 export const TAB_LABELS: Record<ProjectTab, string> = {
   status: "Status",
   windows: "Windows",
+  apertures: "Apertures",
   envelope: "Envelope",
   rooms: "Rooms",
   equipment: "Equipment",
@@ -24,6 +26,7 @@ export const TAB_LABELS: Record<ProjectTab, string> = {
 export const TAB_COPY: Record<ProjectTab, string> = {
   status: "Track this project's lifecycle milestones.",
   windows: "Window type editing lands after the catalog tracer.",
+  apertures: "Aperture Builder (sidebar shell; canvas lands in Phase 03).",
   envelope: "Envelope assemblies land after the window catalog slices.",
   rooms: "Room schedules, iCFA factors, and occupancy assumptions.",
   equipment: "Equipment tables for ventilators, pumps, fans, hot-water tanks, and heaters.",
