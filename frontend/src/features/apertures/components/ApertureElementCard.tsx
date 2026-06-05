@@ -14,6 +14,8 @@ import { OperationRow } from "./OperationRow";
 import { OperationWarningBanner } from "./OperationWarningBanner";
 import type { ApertureOperation } from "../types";
 import { mismatchedSides } from "../operation-frame-match";
+import { UValueChip } from "./UValueChip";
+import { useUnitPreference } from "../../../lib/units";
 
 export type ApertureElementCardProps = {
   element: ApertureElement;
@@ -29,6 +31,7 @@ export type ApertureElementCardProps = {
   onSetOperation: (operation: ApertureOperation | null) => void;
   operationWarningDismissed: boolean;
   onDismissOperationWarning: () => void;
+  uValueWm2k?: number | null;
 };
 
 const ALL_SIDES: ApertureSide[] = ["top", "right", "bottom", "left"];
@@ -46,7 +49,9 @@ export function ApertureElementCard({
   onSetOperation,
   operationWarningDismissed,
   onDismissOperationWarning,
+  uValueWm2k,
 }: ApertureElementCardProps) {
+  const { unitSystem } = useUnitPreference();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [nameDraft, setNameDraft] = useState(element.name);
 
@@ -89,9 +94,11 @@ export function ApertureElementCard({
           }}
           aria-label="Element name"
         />
-        <span className="aperture-element-card__uvalue-chip" data-testid="element-uvalue-chip">
-          U-Value: --
-        </span>
+        <UValueChip
+          valueWm2k={uValueWm2k ?? null}
+          unitSystem={unitSystem === "IP" ? "ip" : "si"}
+          compact
+        />
       </div>
       <GlazingRow
         glazing={element.glazing}

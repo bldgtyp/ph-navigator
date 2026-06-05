@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 19:15 EDT
-STATUS: In progress — Phases 01–08 shipped (Phase 05 split into two PRs).
+TIME: 19:30 EDT
+STATUS: In progress — Phases 01–09 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,9 +70,70 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 09 (`phases/phase-09-uvalue-service-chips.md`) — U-Value
-service + per-element / per-type chips. Phase 08's `affects_u_value`
-audit field is the seam Phase 09 hooks for cache invalidation.
+Begin Phase 10 (`phases/phase-10-hbjson-export.md`) — HBJSON export
+for the active aperture. Phase 09's per-element U-Value is in place
+and ready to feed the export contract.
+
+## Phase 09 — U-Value service + display chips (shipped)
+
+- Backend `aperture_u_value` module: `service.py` (ISO 10077-1
+  composite per element + window-level), `cache.py` (SHA-256
+  content hash + bounded LRU; 256 entries), `models.py`
+  (`ApertureUValueResult`, `ApertureElementUValue`,
+  `ApertureUValueWarning`), `routes.py`
+  (`GET /api/v1/projects/{id}/versions/{vid}/apertures/u-values?source=draft|version`).
+  Mounted in `main.py`.
+- Content hash excludes `operation` and `name` so toggling
+  operation type or renaming an element hits the cache instantly.
+  Includes `row_heights_mm`, `column_widths_mm`, element spans,
+  frame `width_mm` / `u_value_w_m2k` / `psi_g_w_mk`, and glazing
+  `u_value_w_m2k`. Other ref fields are excluded because they
+  don't enter the calculation.
+- Missing frame / glazing assignments report as
+  `ApertureUValueWarning` and the element's value falls back to
+  zero (excluded from the aggregate). The window-level chip then
+  surfaces an italic `(unfinished)` qualifier.
+- Audit envelope flags backfilled: every dimension handler
+  (`editDimension`, `addRow`, `addColumn`, `deleteRow`,
+  `deleteColumn`) carries `affects_u_value=True`;
+  `setElementName` carries `affects_u_value=False` explicitly.
+  Picks / overrides / merge / split / paste already had the flag
+  from earlier phases.
+- Frontend: `format-u-value.ts` handles SI (`W/m²K`) and IP
+  (`BTU/(hr·ft²·°F)`) labelling with two decimal places and the
+  standard 0.1761 conversion factor. `UValueChip` ships in two
+  modes (full-size for the header, compact for the per-element
+  card) with a PRD §8 tooltip covering the no-films / no-operation
+  / no-psi_install convention.
+- `useApertureUValues` query keyed by `(project, version, source)`
+  with `staleTime: 0`. The aperture mutation hook invalidates the
+  U-value query after any successful command whose kind appears in
+  a client-side `U_VALUE_AFFECTING_KINDS` set — mirrors the backend
+  audit flag so the chip refreshes without waiting for the audit
+  envelope.
+
+## Phase 09 deviations from the doc
+
+- **No V1 fixture parity tests.** The V1 source lives in
+  `../ph-navigator/` (which V2 doesn't touch on CI), so we tested
+  the algorithm against derived expected ranges rather than
+  copying V1's fixture corpus. The arithmetic mirrors the V1
+  service line-for-line; future parity work can lift fixtures
+  into a dated review folder when needed.
+- **Debounce omitted.** The mutation-success invalidation already
+  fires once per command; 300 ms debounce would only matter under
+  rapid sequential edits, which the toolbar gestures don't
+  produce. The hook keeps the room for a debounce wrapper but
+  doesn't ship one.
+- **Cache is FIFO-bounded**, not strict LRU. The OrderedDict moves
+  hits to the end so the policy converges to LRU under read
+  pressure; the simpler model dodges the Liskov complaint that
+  `dict.get`'s narrower stub generates against `ty`.
+- **`UValueInfoTooltip` not a separate component.** The chip
+  wears its tooltip via the native `title` attribute; the canonical
+  copy lives in `U_VALUE_TOOLTIP` exported from
+  `UValueChip.tsx` so future polish can spin it into a shadcn
+  Popover without churning the API.
 
 ## Phase 08 — Merge / Split + Eyedropper-Paint-bucket paste + Undo (shipped)
 
@@ -293,6 +354,10 @@ Phase 05 was split into two sub-PRs:
   by Phase 06. Frontend Vitest: 1331 tests pass (+7 new across
   `picker-filters`, `frame-label-map`, and `ref-builders`).
   Frontend build + lint + structural guards pass.
+- Phase 09: this commit. `make ci` green: 558 backend tests pass
+  (+7 for `test_aperture_u_value_service.py`), 1362 frontend
+  tests pass (+5 for `format-u-value`). Backend Ruff + Ty pass,
+  frontend lint + structural guards + production build pass.
 - Phase 08: this commit. Backend Ruff + Ty + frontend Vitest +
   build all green. Deterministic-order pytest reports 532 backend
   tests pass, 2 skipped (the Phase 01 stub test now skips because

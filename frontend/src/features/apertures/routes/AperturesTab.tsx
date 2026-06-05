@@ -9,6 +9,7 @@ import { AperturesHeader } from "../components/AperturesHeader";
 import { DeleteApertureDialog } from "../components/DeleteApertureDialog";
 import { RenameApertureDialog } from "../components/RenameApertureDialog";
 import { useApplyApertureCommandMutation, useAperturesSliceQuery } from "../hooks";
+import { useApertureUValues } from "../hooks/useApertureUValues";
 import { naturalSortApertures } from "../lib";
 import type { ApertureCommand, ApertureTypeEntry, AperturesSlice } from "../types";
 
@@ -43,6 +44,13 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   }, [sorted, selectedId]);
 
   const activeAperture = sorted.find((a) => a.id === selectedId) ?? null;
+  const uValueSource: "draft" | "version" = slice?.source === "draft" ? "draft" : "version";
+  const uValueQuery = useApertureUValues(project.id, project.active_version_id, uValueSource);
+  const activeUValue =
+    uValueQuery.data?.apertures.find((r) => r.aperture_type_id === activeAperture?.id) ?? null;
+  const elementUValueById = new Map(
+    activeUValue?.elements.map((e) => [e.element_id, e.u_value_w_m2k]) ?? [],
+  );
 
   const dispatch = async (
     command: ApertureCommand,
@@ -121,7 +129,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
       <span id="apertures-title" className="visually-hidden">
         Apertures
       </span>
-      <AperturesHeader activeAperture={activeAperture} />
+      <AperturesHeader
+        activeAperture={activeAperture}
+        uValue={activeUValue}
+        loading={uValueQuery.isLoading}
+      />
       {actionError ? (
         <p className="form-error" role="alert">
           {actionError}
@@ -257,6 +269,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   target_element_ids,
                 }).then(() => undefined)
               }
+              uValueByElementId={elementUValueById}
             />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />

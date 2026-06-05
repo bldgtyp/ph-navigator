@@ -89,6 +89,7 @@ export function ApertureCanvasContainer({
   onMergeElements,
   onSplitElement,
   onPasteAssignment,
+  uValueByElementId,
 }: {
   aperture: ApertureTypeEntry;
   canEdit?: boolean;
@@ -118,6 +119,7 @@ export function ApertureCanvasContainer({
     targetElementIds: string[],
     payload: PickedAssignment,
   ) => Promise<void> | void;
+  uValueByElementId?: Map<string, number>;
 }) {
   const [focusedTarget, setFocusedTarget] = useState<FocusedTarget>(null);
   const [zoom, setZoom] = useState(1);
@@ -423,6 +425,7 @@ export function ApertureCanvasContainer({
           }
           dismissedOperationWarnings={dismissedOpWarnings}
           onDismissOperationWarning={(elementId) => dismissOperationWarning(aperture.id, elementId)}
+          uValueByElementId={uValueByElementId}
         />
       )}
       <DeleteDimensionDialog

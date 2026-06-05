@@ -46,6 +46,7 @@ def apply_set_element_name(
         element_id=element.id,
         previous_name=element.name,
         new_name=updated.name,
+        affects_u_value=False,
     )
 
 

@@ -2,8 +2,31 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import { applyApertureCommand, fetchAperturesSlice } from "./api";
+import { apertureUValuesQueryKey } from "./hooks/useApertureUValues";
 import { apertureQueryKeys } from "./query-keys";
 import type { ApertureCommand, AperturesSlice } from "./types";
+
+/** Wire kinds whose audit envelope sets ``affects_u_value=true``. The
+ *  list mirrors the backend audit flag; keeping it client-side keeps
+ *  invalidations from waiting for the audit envelope to round-trip.
+ *  ``setElementOperation`` and ``setElementName`` are intentionally
+ *  absent — PRD §14 keeps operation / name orthogonal to U-value. */
+const U_VALUE_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
+  "createApertureType",
+  "duplicateApertureType",
+  "deleteApertureType",
+  "editDimension",
+  "addRow",
+  "addColumn",
+  "deleteRow",
+  "deleteColumn",
+  "pickFrame",
+  "pickGlazing",
+  "editFieldOverride",
+  "mergeElements",
+  "splitElement",
+  "pasteAssignment",
+]);
 
 export function useAperturesSliceQuery(
   projectId: string,
@@ -28,7 +51,7 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       }
       return applyApertureCommand(projectId, versionId, current, command);
     },
-    onSuccess: (slice) => {
+    onSuccess: (slice, variables) => {
       markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
       queryClient.setQueryData(
         apertureQueryKeys.slice(projectId, slice.version_id, "editor"),
@@ -37,6 +60,11 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
       });
+      if (U_VALUE_AFFECTING_KINDS.has(variables.command.kind)) {
+        queryClient.invalidateQueries({
+          queryKey: apertureUValuesQueryKey(projectId, slice.version_id, slice.source),
+        });
+      }
     },
   });
 }
