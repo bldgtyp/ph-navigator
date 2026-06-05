@@ -587,7 +587,7 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByRole("link", { name: /WALL-C3/ });
-    await userEvent.click(screen.getByRole("button", { name: "Rename" }));
+    await userEvent.click(screen.getByRole("button", { name: "Rename assembly" }));
     const nameInput = screen.getByLabelText("Name");
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "WALL-C4");
@@ -881,8 +881,9 @@ describe("EnvelopePage", () => {
       projectOverride: { active_version: { ...project.active_version!, locked: true } },
     });
 
-    expect(await screen.findByText("Locked version")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
+    expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Rename assembly" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add assembly" })).toBeDisabled();
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/envelope?source=version"),
       expect.objectContaining({ credentials: "include" }),
@@ -906,10 +907,12 @@ describe("EnvelopePage", () => {
       projectOverride: { active_version: { ...project.active_version!, locked: true } },
     });
 
-    expect(await screen.findByText("Locked version")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: PHASE16_EDGE_ASSEMBLY_NAME })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: PHASE16_EDGE_ASSEMBLY_NAME }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "PHASE16-BULK-12" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Rename assembly" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add assembly" })).toBeDisabled();
     expect(
       screen.queryByRole("button", {
         name: /Edit Extremely long wood-fiber insulation product name/,
@@ -922,7 +925,7 @@ describe("EnvelopePage", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByTitle("No material - 38.1 mm")).toBeInTheDocument();
-    expect(screen.getByText("Missing lambda")).toBeInTheDocument();
+    expect(screen.getByText("Missing material")).toBeInTheDocument();
 
     const legend = screen.getByRole("complementary", { name: "Material legend" });
     expect(within(legend).getByText(/Extremely long wood-fiber/)).toBeInTheDocument();

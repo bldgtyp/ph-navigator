@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import {
   formatLengthFromMm,
@@ -28,6 +29,9 @@ export function AssemblyHeader({
   const navigate = useNavigate();
   const query = createSearchParams(search).toString();
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
+  const assemblyWarning = activeAssembly.status.is_complete
+    ? null
+    : statusLabel(activeAssembly.status.flags);
   return (
     <header className="assembly-header">
       <div className="assembly-picker-field">
@@ -54,15 +58,36 @@ export function AssemblyHeader({
             {formatLengthFromMm(totalThicknessMm(activeAssembly), { unitSystem })}
           </dd>
         </div>
+        {assemblyWarning ? (
+          <div className="assembly-header-warning">
+            <dt>Warning</dt>
+            <dd>{assemblyWarning}</dd>
+          </div>
+        ) : null}
         <div>
-          <dt>Status</dt>
-          <dd>{statusLabel(activeAssembly.status.flags)}</dd>
-        </div>
-        <div>
-          <dt>Thermal</dt>
-          <dd title={thermalTooltip(thermal)} data-testid="assembly-thermal-label">
-            {thermalLabel}
-          </dd>
+          <dt className="assembly-header-metric-label">
+            <span>Thermal</span>
+            <button
+              type="button"
+              className="assembly-header-info-button"
+              aria-label="Effective Thermal Resistance details"
+            >
+              <Info aria-hidden="true" size={12} strokeWidth={1.8} />
+              <span className="assembly-header-info-tooltip" role="tooltip">
+                <strong>Effective Thermal Resistance</strong>
+                <span>
+                  Calculated using the Passive House method: the average of the Parallel-Path and
+                  Isothermal-Planes methods.
+                </span>
+                <span>
+                  Note: Surface film resistances (air films) are NOT included in the value shown
+                  here.
+                </span>
+                <em>Reference: ASHRAE Handbook - Fundamentals, Chapter 27</em>
+              </span>
+            </button>
+          </dt>
+          <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
         </div>
       </dl>
     </header>
@@ -90,12 +115,4 @@ function formatThermalLabel(
           fractionDigits: 3,
         });
   return thermal.status.is_complete ? value : `${value} (${statusLabel(thermal.status.flags)})`;
-}
-
-function thermalTooltip(thermal: AssemblyThermalResponse | null): string {
-  if (!thermal) return "Construction-only thermal value. Surface films are excluded.";
-  return [
-    "Construction-only PH average of Parallel-Path and Isothermal-Planes. Surface films are excluded.",
-    ...thermal.warnings,
-  ].join(" ");
 }
