@@ -44,9 +44,13 @@ router = APIRouter(prefix="/api/v1/catalogs/glazing-types", tags=["catalogs"])
 def get_glazing_types(
     auth: CurrentUser,
     include_inactive: Annotated[bool, Query()] = False,
+    manufacturers: Annotated[list[str] | None, Query()] = None,
 ) -> CatalogGlazingTypeListResponse:
+    """List catalog glazing types; ``manufacturers`` filters by case-
+    insensitive name match (Phase 11 wires the project-level filter)."""
+
     del auth
-    return list_glazing_types(include_inactive=include_inactive)
+    return list_glazing_types(include_inactive=include_inactive, manufacturers=manufacturers)
 
 
 @router.post("", response_model=CatalogGlazingTypePublic, status_code=status.HTTP_201_CREATED)

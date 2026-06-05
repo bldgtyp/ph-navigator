@@ -26,6 +26,10 @@ import type { ApertureTypeEntry } from "../types";
 import { ApertureCanvasOverlay } from "./ApertureCanvasOverlay";
 import { ApertureCanvasToolbar } from "./ApertureCanvasToolbar";
 import { ApertureSvgCanvas, type ApertureViewDirection } from "./ApertureSvgCanvas";
+import { ApertureElementCardStack, type FocusedTarget } from "./ApertureElementCardStack";
+import { visualSideToCanonical } from "../frame-label-map";
+import type { ApertureRegionKind } from "./ApertureHitTarget";
+import type { ApertureSide, FrameRef, GlazingRef } from "../types";
 import { DeleteDimensionDialog } from "./DeleteDimensionDialog";
 import { DisplayFormatSelector } from "./DisplayFormatSelector";
 import { EdgeAddButtons } from "./EdgeAddButtons";
@@ -66,6 +70,10 @@ export function ApertureCanvasContainer({
   onAddColumn,
   onDeleteRow,
   onDeleteColumn,
+  onPickFrame,
+  onPickGlazing,
+  onEditFrameField,
+  onEditGlazingField,
 }: {
   aperture: ApertureTypeEntry;
   canEdit?: boolean;
@@ -75,7 +83,17 @@ export function ApertureCanvasContainer({
   onAddColumn?: (at_index: number) => void;
   onDeleteRow?: (index: number) => void;
   onDeleteColumn?: (index: number) => void;
+  onPickFrame?: (elementId: string, side: ApertureSide, frame: FrameRef) => void;
+  onPickGlazing?: (elementId: string, glazing: GlazingRef) => void;
+  onEditFrameField?: (
+    elementId: string,
+    side: ApertureSide,
+    fieldKey: string,
+    value: string | number | null,
+  ) => void;
+  onEditGlazingField?: (elementId: string, fieldKey: string, value: string | number | null) => void;
 }) {
+  const [focusedTarget, setFocusedTarget] = useState<FocusedTarget>(null);
   const [zoom, setZoom] = useState(1);
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
@@ -261,6 +279,13 @@ export function ApertureCanvasContainer({
                 viewDirection={viewDirection}
                 canEdit={canEdit}
                 onSetElementName={handleSetElementName}
+                onRegionClick={(elementId: string, region: ApertureRegionKind) => {
+                  // The overlay reports the *visible* side; map to canonical
+                  // before pointing the card stack at the matching picker.
+                  const canonical: ApertureSide | "glazing" =
+                    region === "glazing" ? "glazing" : visualSideToCanonical(region, viewDirection);
+                  setFocusedTarget({ elementId, region: canonical });
+                }}
               />
             </div>
           </div>
@@ -277,6 +302,23 @@ export function ApertureCanvasContainer({
           </div>
         </div>
       </div>
+      {(onPickFrame ||
+        onPickGlazing ||
+        onEditFrameField ||
+        onEditGlazingField ||
+        onSetElementName) && (
+        <ApertureElementCardStack
+          aperture={aperture}
+          viewDirection={viewDirection}
+          canEdit={canEdit}
+          focusedTarget={focusedTarget}
+          onSetElementName={(elementId, newName) => handleSetElementName(elementId, newName)}
+          onPickFrame={(elementId, side, frame) => onPickFrame?.(elementId, side, frame)}
+          onPickGlazing={(elementId, glazing) => onPickGlazing?.(elementId, glazing)}
+          onEditFrameField={(elementId, side, k, v) => onEditFrameField?.(elementId, side, k, v)}
+          onEditGlazingField={(elementId, k, v) => onEditGlazingField?.(elementId, k, v)}
+        />
+      )}
       <DeleteDimensionDialog
         open={pendingDelete !== null}
         axis={pendingDelete?.axis ?? "row"}

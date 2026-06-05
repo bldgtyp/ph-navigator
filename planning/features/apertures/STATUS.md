@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 18:25 EDT
-STATUS: In progress — Phases 01–05 shipped (Phase 05 split into two PRs).
+TIME: 18:45 EDT
+STATUS: In progress — Phases 01–06 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,9 +70,64 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 06 (`phases/phase-06-element-cards-pickers.md`) — element
-cards, frame / glazing pickers, U-Value chips. Phase 05's strips +
-edit-in-place + parser + backend handlers are all live underneath.
+Begin Phase 07 (`phases/phase-07-operations-editor.md`) — operation
+editor on the per-element card. Phase 06's read-only operation label,
+pick wiring, override commands, and badge surface are all in place
+underneath.
+
+## Phase 06 — element cards, region-click pickers, badges (shipped)
+
+- Backend `pickFrame` / `pickGlazing` / `editFieldOverride` handlers
+  live in `aperture_commands/handlers/picks.py`. `synced_at` is
+  re-stamped on every catalog pick, `local_overrides` dedupes by key,
+  hand-entered refs round-trip with `catalog_origin: null`.
+- `GET /catalogs/frame-types` accepts `location`, `operation`, `use`,
+  and repeated `manufacturers` query params — server-side, AND-
+  composed, case-insensitive. `GET /catalogs/glazing-types` accepts
+  the same `manufacturers` param.
+- Frontend ships the full card stack: `ApertureElementCardStack`,
+  `ApertureElementCard`, `FrameRow`, `GlazingRow`, `FramePicker`,
+  `GlazingPicker`, `InlineOverrideInput`, `MoreFieldsExpander`,
+  `CatalogBadges` (sourced / hand-enter / datasheet / drift
+  placeholder), and the ref-builder helpers
+  (`catalogRowToFrameRef`, `blankHandEnterFrameRef`, …) that turn
+  catalog rows into wire-shaped refs.
+- Pickers filter via paired hooks (`useFrameCatalog`,
+  `useGlazingCatalog`) that run a filtered query + an unfiltered
+  query so the "Showing N of M frames · Clear filter" footnote stays
+  honest.
+- Region clicks on the canvas open the matching card row's picker
+  via a `focusedTarget` prop. Visual ↔ canonical side flipping lives
+  in `frame-label-map.ts`; tests cover both directions.
+- Read-only / Viewer access: every picker collapses to a static
+  label, override fields are disabled, datasheet links remain
+  clickable, the `+ Hand-enter` action is hidden.
+
+## Phase 06 deviations from the doc
+
+- **Combobox primitive**: the picker is a native `<details>` /
+  `<summary>` dropdown rather than a shadcn `Combobox`. Keeps the
+  surface keyboard-accessible without adding Radix `Popper`. Phase
+  11 may swap if the manufacturer-filter UI calls for it.
+- **`datasheet_url`**: `FrameRef` / `GlazingRef` don't carry an
+  explicit `datasheet_url` column. The badge falls back to the
+  `source` field when it looks like an `http(s)://…` URL. A
+  dedicated column is deferred to the same cleanup phase that
+  renames `Window*` → `Aperture*`.
+- **Drift badge**: rendered only when `hasDrift=true`. Phase 06
+  never sets that, so the badge is dormant — the markup + tooltip
+  shipping early lets Phase 12 just wire the input.
+- **`+ Hand-enter`**: writes a blank `FrameRef` / `GlazingRef` with
+  `name = "Unnamed"` and `catalog_origin = null`. The user fills the
+  inline override fields immediately; the override handler accepts
+  edits on a null-origin ref without touching `local_overrides`.
+- **Card stack ordering**: `column_span[0]` ascending then
+  `row_span[0]` ascending. Matches the phase doc's canonical order.
+- **`useFrameCatalog` / `useGlazingCatalog`**: ship as paired
+  queries (filtered + all) so the picker footnote can recompute
+  without a round-trip. The backend filter still runs server-side
+  per the phase doc; the second unfiltered query is a small extra
+  read that cache-hits across pickers.
 
 Phase 05 was split into two sub-PRs:
 
@@ -117,3 +172,12 @@ Phase 05 was split into two sub-PRs:
 - Phase 05 sub-PR B: this commit. `make ci` green (536 backend
   tests; 1314 frontend tests — +18: useDimensionDraft 6,
   DimensionLabel 7, HorizontalDimensionStrip 5).
+- Phase 06: this commit. Backend Ruff + Ty pass; deterministic-
+  order pytest (`-p no:randomly`) reports 546 backend tests, 1
+  skipped. The full `make ci` exposes 1–3 pre-existing local
+  pollution failures (asset / catalog duplicate tests that pass
+  in isolation and on a deterministic run); these reproduce on a
+  clean `git stash -u` of HEAD too, so they're not introduced
+  by Phase 06. Frontend Vitest: 1331 tests pass (+7 new across
+  `picker-filters`, `frame-label-map`, and `ref-builders`).
+  Frontend build + lint + structural guards pass.

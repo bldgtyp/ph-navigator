@@ -190,6 +190,43 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   index,
                 })
               }
+              onPickFrame={(element_id, side, frame) =>
+                void dispatch({
+                  kind: "pickFrame",
+                  aperture_type_id: activeAperture.id,
+                  element_id,
+                  side,
+                  frame,
+                })
+              }
+              onPickGlazing={(element_id, glazing) =>
+                void dispatch({
+                  kind: "pickGlazing",
+                  aperture_type_id: activeAperture.id,
+                  element_id,
+                  glazing,
+                })
+              }
+              onEditFrameField={(element_id, side, field_key, new_value) =>
+                void dispatch({
+                  kind: "editFieldOverride",
+                  aperture_type_id: activeAperture.id,
+                  element_id,
+                  target: `frame.${side}`,
+                  field_key,
+                  new_value,
+                })
+              }
+              onEditGlazingField={(element_id, field_key, new_value) =>
+                void dispatch({
+                  kind: "editFieldOverride",
+                  aperture_type_id: activeAperture.id,
+                  element_id,
+                  target: "glazing",
+                  field_key,
+                  new_value,
+                })
+              }
             />
           ) : (
             <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />

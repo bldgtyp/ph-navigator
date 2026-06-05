@@ -35,9 +35,13 @@ def _to_list_item(row: dict[str, Any]) -> CatalogGlazingTypeListItem:
     return CatalogGlazingTypeListItem.model_validate(row)
 
 
-def list_glazing_types(*, include_inactive: bool = False) -> CatalogGlazingTypeListResponse:
+def list_glazing_types(
+    *,
+    include_inactive: bool = False,
+    manufacturers: list[str] | None = None,
+) -> CatalogGlazingTypeListResponse:
     with connection() as conn:
-        rows = repository.list_glazing_types(conn, include_inactive=include_inactive)
+        rows = repository.list_glazing_types(conn, include_inactive=include_inactive, manufacturers=manufacturers)
     return CatalogGlazingTypeListResponse(items=[_to_list_item(row) for row in rows])
 
 

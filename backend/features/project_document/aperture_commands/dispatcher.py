@@ -23,6 +23,11 @@ from features.project_document.aperture_commands.handlers.element import (
     apply_set_element_name,
     apply_set_element_operation,
 )
+from features.project_document.aperture_commands.handlers.picks import (
+    apply_edit_field_override,
+    apply_pick_frame,
+    apply_pick_glazing,
+)
 from features.project_document.aperture_commands.handlers.sidebar import (
     apply_create_aperture_type,
     apply_delete_aperture_type,
@@ -52,6 +57,9 @@ _HANDLERS: dict[str, _Handler] = {
     "addColumn": cast(_Handler, apply_add_column),
     "deleteRow": cast(_Handler, apply_delete_row),
     "deleteColumn": cast(_Handler, apply_delete_column),
+    "pickFrame": cast(_Handler, apply_pick_frame),
+    "pickGlazing": cast(_Handler, apply_pick_glazing),
+    "editFieldOverride": cast(_Handler, apply_edit_field_override),
 }
 
 # Commands declared in the union but not yet wired up. Each phase that
@@ -60,8 +68,6 @@ _NOT_IMPLEMENTED_KINDS: frozenset[str] = frozenset(
     {
         "mergeElements",
         "splitElement",
-        "pickFrame",
-        "pickGlazing",
         "pasteAssignment",
     }
 )

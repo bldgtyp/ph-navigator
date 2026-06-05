@@ -44,9 +44,27 @@ router = APIRouter(prefix="/api/v1/catalogs/frame-types", tags=["catalogs"])
 def get_frame_types(
     auth: CurrentUser,
     include_inactive: Annotated[bool, Query()] = False,
+    location: Annotated[str | None, Query(max_length=40)] = None,
+    operation: Annotated[str | None, Query(max_length=40)] = None,
+    use: Annotated[str | None, Query(max_length=40)] = None,
+    manufacturers: Annotated[list[str] | None, Query()] = None,
 ) -> CatalogFrameTypeListResponse:
+    """List catalog frame types with optional Phase 06 filters.
+
+    ``location``, ``operation``, and ``use`` filter case-insensitively on
+    the corresponding column; ``manufacturers`` accepts a repeated query
+    param (e.g. ``?manufacturers=ABC&manufacturers=XYZ``) and matches any
+    of the supplied names. Filters compose with AND.
+    """
+
     del auth
-    return list_frame_types(include_inactive=include_inactive)
+    return list_frame_types(
+        include_inactive=include_inactive,
+        location=location,
+        operation=operation,
+        use=use,
+        manufacturers=manufacturers,
+    )
 
 
 @router.post("", response_model=CatalogFrameTypePublic, status_code=status.HTTP_201_CREATED)

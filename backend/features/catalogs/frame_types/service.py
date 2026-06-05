@@ -35,9 +35,23 @@ def _to_list_item(row: dict[str, Any]) -> CatalogFrameTypeListItem:
     return CatalogFrameTypeListItem.model_validate(row)
 
 
-def list_frame_types(*, include_inactive: bool = False) -> CatalogFrameTypeListResponse:
+def list_frame_types(
+    *,
+    include_inactive: bool = False,
+    location: str | None = None,
+    operation: str | None = None,
+    use: str | None = None,
+    manufacturers: list[str] | None = None,
+) -> CatalogFrameTypeListResponse:
     with connection() as conn:
-        rows = repository.list_frame_types(conn, include_inactive=include_inactive)
+        rows = repository.list_frame_types(
+            conn,
+            include_inactive=include_inactive,
+            location=location,
+            operation=operation,
+            use=use,
+            manufacturers=manufacturers,
+        )
     return CatalogFrameTypeListResponse(items=[_to_list_item(row) for row in rows])
 
 

@@ -66,13 +66,46 @@ _UPDATABLE_FIELDS = frozenset(
 )
 
 
-def list_frame_types(conn: Connection[Any], include_inactive: bool = False) -> list[dict[str, Any]]:
-    where = sql.SQL("") if include_inactive else sql.SQL("WHERE deleted_at IS NULL")
+def list_frame_types(
+    conn: Connection[Any],
+    include_inactive: bool = False,
+    *,
+    location: str | None = None,
+    operation: str | None = None,
+    use: str | None = None,
+    manufacturers: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Phase 06 filters compose with AND. ``location``/``operation``/``use``
+    match case-insensitively on the column of the same name (``use`` is a
+    reserved word so it is double-quoted in SQL). ``manufacturers`` matches
+    any of the supplied names case-insensitively; an empty list returns no
+    rows (matches the explicit zero-of-set semantics)."""
+
+    clauses: list[sql.Composable] = []
+    params: dict[str, Any] = {}
+    if not include_inactive:
+        clauses.append(sql.SQL("deleted_at IS NULL"))
+    if location is not None:
+        clauses.append(sql.SQL("LOWER(location) = LOWER(%(location)s)"))
+        params["location"] = location
+    if operation is not None:
+        clauses.append(sql.SQL("LOWER(operation) = LOWER(%(operation)s)"))
+        params["operation"] = operation
+    if use is not None:
+        clauses.append(sql.SQL('LOWER("use") = LOWER(%(use)s)'))
+        params["use"] = use
+    if manufacturers is not None:
+        if not manufacturers:
+            return []
+        clauses.append(sql.SQL("LOWER(manufacturer) = ANY(%(manufacturers)s)"))
+        params["manufacturers"] = [m.lower() for m in manufacturers]
+
+    where = sql.SQL("") if not clauses else sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses)
     query = sql.SQL("{select} {where} ORDER BY name ASC, id ASC").format(
         select=sql.SQL(_SELECT),
         where=where,
     )
-    rows = conn.execute(query).fetchall()
+    rows = conn.execute(query, params).fetchall()
     return list(rows)
 
 
