@@ -17,16 +17,25 @@ export type AperturesHeaderExportContext = {
   onError: (message: string) => void;
 };
 
+// Phase-11 overflow action: open the manufacturer-filters modal. The
+// callback is wired from ``AperturesTab``; the header hides the entry
+// when no callback is supplied (Viewers, or the tab is read-only).
+export type AperturesHeaderFiltersContext = {
+  onConfigureFilters: () => void;
+};
+
 export function AperturesHeader({
   activeAperture,
   uValue,
   loading = false,
   exportContext,
+  filtersContext,
 }: {
   activeAperture: ApertureTypeEntry | null;
   uValue?: ApertureUValueResult | null;
   loading?: boolean;
   exportContext?: AperturesHeaderExportContext;
+  filtersContext?: AperturesHeaderFiltersContext;
 }) {
   const { unitSystem } = useUnitPreference();
   return (
@@ -38,7 +47,7 @@ export function AperturesHeader({
         unfinishedCount={uValue?.warnings.length ?? 0}
         loading={loading}
       />
-      {exportContext ? (
+      {exportContext || filtersContext ? (
         <details className="apertures-overflow">
           <summary
             className="apertures-overflow__trigger"
@@ -48,15 +57,26 @@ export function AperturesHeader({
             <MoreHorizontal size={16} aria-hidden="true" />
           </summary>
           <div className="apertures-overflow__menu" role="menu">
-            <ExportHbjsonAction
-              projectId={exportContext.projectId}
-              versionId={exportContext.versionId}
-              source={exportContext.source}
-              projectBtNumber={exportContext.projectBtNumber}
-              versionLabel={exportContext.versionLabel}
-              disabled={!exportContext.hasApertures}
-              onError={exportContext.onError}
-            />
+            {exportContext ? (
+              <ExportHbjsonAction
+                projectId={exportContext.projectId}
+                versionId={exportContext.versionId}
+                source={exportContext.source}
+                projectBtNumber={exportContext.projectBtNumber}
+                versionLabel={exportContext.versionLabel}
+                disabled={!exportContext.hasApertures}
+                onError={exportContext.onError}
+              />
+            ) : null}
+            {filtersContext ? (
+              <button
+                type="button"
+                className="apertures-overflow__item"
+                onClick={filtersContext.onConfigureFilters}
+              >
+                Configure manufacturer filters
+              </button>
+            ) : null}
           </div>
         </details>
       ) : null}

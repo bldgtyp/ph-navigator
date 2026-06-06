@@ -206,6 +206,23 @@ class PasteAssignment(BaseModel):
     target_element_ids: list[str] = Field(min_length=1)
 
 
+class SetManufacturerFilters(BaseModel):
+    """Replace the document's ``tables.manufacturer_filters`` enabled lists.
+
+    A ``None`` value for either field means "all manufacturers enabled"
+    (the explicit default state). An empty ``[]`` list means "no
+    manufacturers enabled" — the explicit clear-all state. The handler
+    refuses any new list that drops a manufacturer currently referenced
+    by an element (``manufacturer_filter_strands_frame_picks`` /
+    ``..._strands_glazing_picks``).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["setManufacturerFilters"] = "setManufacturerFilters"
+    frame_manufacturers_enabled: list[str] | None = None
+    glazing_manufacturers_enabled: list[str] | None = None
+
+
 ApertureCommand = Annotated[
     (
         CreateApertureType
@@ -225,6 +242,7 @@ ApertureCommand = Annotated[
         | PickGlazing
         | EditFieldOverride
         | PasteAssignment
+        | SetManufacturerFilters
     ),
     Field(discriminator="kind"),
 ]
@@ -248,4 +266,5 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "mergeElements": "project_version_aperture_elements_merge",
     "splitElement": "project_version_aperture_element_split",
     "pasteAssignment": "project_version_aperture_assignment_paste",
+    "setManufacturerFilters": "project_version_aperture_manufacturer_filters_set",
 }

@@ -8,6 +8,7 @@ import type {
   CatalogGlazingTypeCreatePayload,
   CatalogGlazingTypeListResponse,
   CatalogGlazingTypeUpdatePayload,
+  CatalogManufacturerListResponse,
   CatalogMaterial,
   CatalogMaterialCreatePayload,
   CatalogMaterialListResponse,
@@ -177,4 +178,21 @@ export async function duplicateGlazingType(id: string): Promise<CatalogGlazingTy
   return fetchJson<CatalogGlazingType>(`/api/v1/catalogs/glazing-types/${id}/duplicate`, {
     method: "POST",
   });
+}
+
+export async function listFrameTypeManufacturers(
+  signal?: AbortSignal,
+): Promise<CatalogManufacturerListResponse> {
+  return fetchJson<CatalogManufacturerListResponse>("/api/v1/catalogs/frame-types/manufacturers", {
+    signal,
+  });
+}
+
+export async function listGlazingTypeManufacturers(
+  signal?: AbortSignal,
+): Promise<CatalogManufacturerListResponse> {
+  return fetchJson<CatalogManufacturerListResponse>(
+    "/api/v1/catalogs/glazing-types/manufacturers",
+    { signal },
+  );
 }

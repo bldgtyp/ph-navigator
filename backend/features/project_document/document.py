@@ -15,7 +15,7 @@ Schema version is 3; no v2 reader is provided (pre-deploy posture).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -845,6 +845,23 @@ class ProjectDocumentProject(BaseModel):
     phius_dropbox_url: str | None = None
 
 
+class ManufacturerFilters(BaseModel):
+    """Per-project manufacturer allow-lists for frame / glazing pickers.
+
+    ``None`` (absence) for either field means "all manufacturers in the
+    catalog are enabled" — the default empty state. The explicit
+    ``[]`` empty list means "no manufacturer enabled" (the user has
+    deliberately cleared the column). The two states are kept
+    distinct on purpose: a missing key cannot be confused with an
+    intentional clear-all.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    frame_manufacturers_enabled: list[str] | None = None
+    glazing_manufacturers_enabled: list[str] | None = None
+
+
 class ProjectDocumentTables(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -855,7 +872,20 @@ class ProjectDocumentTables(BaseModel):
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     thermal_bridges: list[dict[str, object]] = Field(default_factory=list)
     equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
-    manufacturer_filters: list[dict[str, object]] = Field(default_factory=list)
+    manufacturer_filters: ManufacturerFilters | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_manufacturer_filters(cls, data: object) -> object:
+        # Earlier scaffold stored ``manufacturer_filters: []`` as a list
+        # placeholder. Coerce that into ``None`` so existing dev
+        # documents survive the schema upgrade.
+        if not isinstance(data, dict):
+            return data
+        as_dict = cast(dict[str, Any], data)
+        if isinstance(as_dict.get("manufacturer_filters"), list):
+            return {**as_dict, "manufacturer_filters": None}
+        return data
 
 
 class ProjectDocumentV1(BaseModel):

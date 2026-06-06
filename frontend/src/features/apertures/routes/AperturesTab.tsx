@@ -7,11 +7,18 @@ import { ApertureEmptyState } from "../components/ApertureEmptyState";
 import { ApertureSidebar } from "../components/ApertureSidebar";
 import { AperturesHeader } from "../components/AperturesHeader";
 import { DeleteApertureDialog } from "../components/DeleteApertureDialog";
+import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
 import { RenameApertureDialog } from "../components/RenameApertureDialog";
 import { useApplyApertureCommandMutation, useAperturesSliceQuery } from "../hooks";
 import { useApertureUValues } from "../hooks/useApertureUValues";
+import { ManufacturerFilterProvider } from "../hooks/useManufacturerFilter";
 import { naturalSortApertures } from "../lib";
-import type { ApertureCommand, ApertureTypeEntry, AperturesSlice } from "../types";
+import type {
+  ApertureCommand,
+  ApertureTypeEntry,
+  AperturesSlice,
+  ManufacturerFilters,
+} from "../types";
 
 type DialogState =
   | { kind: "none" }
@@ -33,6 +40,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
   const [actionError, setActionError] = useState<string | null>(null);
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
 
   const slice = sliceQuery.data;
   const apertures = slice?.apertures ?? [];
@@ -125,189 +133,216 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <section className="tab-panel apertures-page" aria-labelledby="apertures-title">
-      <span id="apertures-title" className="visually-hidden">
-        Apertures
-      </span>
-      <AperturesHeader
-        activeAperture={activeAperture}
-        uValue={activeUValue}
-        loading={uValueQuery.isLoading}
-        exportContext={
-          !isViewer && project.active_version_id
-            ? {
-                projectId: project.id,
-                versionId: project.active_version_id,
-                source: uValueSource,
-                projectBtNumber: project.bt_number,
-                versionLabel: project.active_version?.name ?? "version",
-                hasApertures: sorted.length > 0,
-                onError: setActionError,
-              }
-            : undefined
-        }
-      />
-      {actionError ? (
-        <p className="form-error" role="alert">
-          {actionError}
-        </p>
-      ) : null}
-      <div className="apertures-page__body">
-        <ApertureSidebar
+    <ManufacturerFilterProvider
+      value={{
+        filters: slice.manufacturer_filters,
+        openManufacturerFilters: () => setFiltersModalOpen(true),
+      }}
+    >
+      <section className="tab-panel apertures-page" aria-labelledby="apertures-title">
+        <span id="apertures-title" className="visually-hidden">
+          Apertures
+        </span>
+        <AperturesHeader
+          activeAperture={activeAperture}
+          uValue={activeUValue}
+          loading={uValueQuery.isLoading}
+          exportContext={
+            !isViewer && project.active_version_id
+              ? {
+                  projectId: project.id,
+                  versionId: project.active_version_id,
+                  source: uValueSource,
+                  projectBtNumber: project.bt_number,
+                  versionLabel: project.active_version?.name ?? "version",
+                  hasApertures: sorted.length > 0,
+                  onError: setActionError,
+                }
+              : undefined
+          }
+          filtersContext={
+            !isViewer && project.active_version_id
+              ? { onConfigureFilters: () => setFiltersModalOpen(true) }
+              : undefined
+          }
+        />
+        <ManufacturerFiltersModal
+          open={filtersModalOpen}
           apertures={sorted}
-          activeApertureId={activeAperture?.id ?? null}
-          canEdit={canEdit}
-          onSelect={setSelectedId}
-          onAdd={() => void handleAdd()}
-          onRename={(aperture) => setDialog({ kind: "rename", aperture })}
-          onDuplicate={(aperture) => void handleDuplicate(aperture)}
-          onDelete={(aperture) => setDialog({ kind: "delete", aperture })}
+          filters={slice.manufacturer_filters}
+          readOnly={!canEdit}
+          onClose={() => setFiltersModalOpen(false)}
+          onSave={async (next: ManufacturerFilters) => {
+            const result = await dispatch({
+              kind: "setManufacturerFilters",
+              frame_manufacturers_enabled: next.frame_manufacturers_enabled,
+              glazing_manufacturers_enabled: next.glazing_manufacturers_enabled,
+            });
+            if (result) setFiltersModalOpen(false);
+          }}
         />
-        <main className="apertures-page__main">
-          {activeAperture ? (
-            <ApertureCanvasContainer
-              aperture={activeAperture}
-              canEdit={canEdit}
-              onSetElementName={(elementId, newName) =>
-                void dispatch({
-                  kind: "setElementName",
-                  aperture_type_id: activeAperture.id,
-                  element_id: elementId,
-                  new_name: newName,
-                })
-              }
-              onEditDimension={(axis, index, newMm) =>
-                void dispatch({
-                  kind: "editDimension",
-                  aperture_type_id: activeAperture.id,
-                  axis,
-                  index,
-                  new_value_mm: newMm,
-                })
-              }
-              onAddRow={(at_index) =>
-                void dispatch({
-                  kind: "addRow",
-                  aperture_type_id: activeAperture.id,
-                  at_index,
-                  height_mm: 1000,
-                })
-              }
-              onAddColumn={(at_index) =>
-                void dispatch({
-                  kind: "addColumn",
-                  aperture_type_id: activeAperture.id,
-                  at_index,
-                  width_mm: 1000,
-                })
-              }
-              onDeleteRow={(index) =>
-                void dispatch({
-                  kind: "deleteRow",
-                  aperture_type_id: activeAperture.id,
-                  index,
-                })
-              }
-              onDeleteColumn={(index) =>
-                void dispatch({
-                  kind: "deleteColumn",
-                  aperture_type_id: activeAperture.id,
-                  index,
-                })
-              }
-              onPickFrame={(element_id, side, frame) =>
-                void dispatch({
-                  kind: "pickFrame",
-                  aperture_type_id: activeAperture.id,
-                  element_id,
-                  side,
-                  frame,
-                })
-              }
-              onPickGlazing={(element_id, glazing) =>
-                void dispatch({
-                  kind: "pickGlazing",
-                  aperture_type_id: activeAperture.id,
-                  element_id,
-                  glazing,
-                })
-              }
-              onEditFrameField={(element_id, side, field_key, new_value) =>
-                void dispatch({
-                  kind: "editFieldOverride",
-                  aperture_type_id: activeAperture.id,
-                  element_id,
-                  target: `frame.${side}`,
-                  field_key,
-                  new_value,
-                })
-              }
-              onEditGlazingField={(element_id, field_key, new_value) =>
-                void dispatch({
-                  kind: "editFieldOverride",
-                  aperture_type_id: activeAperture.id,
-                  element_id,
-                  target: "glazing",
-                  field_key,
-                  new_value,
-                })
-              }
-              onSetElementOperation={(element_id, operation) =>
-                void dispatch({
-                  kind: "setElementOperation",
-                  aperture_type_id: activeAperture.id,
-                  element_id,
-                  operation,
-                })
-              }
-              onMergeElements={(element_ids) =>
-                void dispatch({
-                  kind: "mergeElements",
-                  aperture_type_id: activeAperture.id,
-                  element_ids,
-                })
-              }
-              onSplitElement={(element_id) =>
-                void dispatch({
-                  kind: "splitElement",
-                  aperture_type_id: activeAperture.id,
-                  element_id,
-                })
-              }
-              onPasteAssignment={(source_element_id, target_element_ids) =>
-                dispatch({
-                  kind: "pasteAssignment",
-                  aperture_type_id: activeAperture.id,
-                  source_element_id,
-                  target_element_ids,
-                }).then(() => undefined)
-              }
-              uValueByElementId={elementUValueById}
-            />
-          ) : (
-            <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
-          )}
-        </main>
-      </div>
-      {dialog.kind === "rename" ? (
-        <RenameApertureDialog
-          aperture={dialog.aperture}
-          allApertures={sorted}
-          busy={mutation.isPending}
-          error={actionError}
-          onClose={() => setDialog({ kind: "none" })}
-          onSubmit={(newName) => void handleRename(newName)}
-        />
-      ) : null}
-      {dialog.kind === "delete" ? (
-        <DeleteApertureDialog
-          aperture={dialog.aperture}
-          busy={mutation.isPending}
-          error={actionError}
-          onClose={() => setDialog({ kind: "none" })}
-          onConfirm={() => void handleDelete()}
-        />
-      ) : null}
-    </section>
+        {actionError ? (
+          <p className="form-error" role="alert">
+            {actionError}
+          </p>
+        ) : null}
+        <div className="apertures-page__body">
+          <ApertureSidebar
+            apertures={sorted}
+            activeApertureId={activeAperture?.id ?? null}
+            canEdit={canEdit}
+            onSelect={setSelectedId}
+            onAdd={() => void handleAdd()}
+            onRename={(aperture) => setDialog({ kind: "rename", aperture })}
+            onDuplicate={(aperture) => void handleDuplicate(aperture)}
+            onDelete={(aperture) => setDialog({ kind: "delete", aperture })}
+          />
+          <main className="apertures-page__main">
+            {activeAperture ? (
+              <ApertureCanvasContainer
+                aperture={activeAperture}
+                canEdit={canEdit}
+                onSetElementName={(elementId, newName) =>
+                  void dispatch({
+                    kind: "setElementName",
+                    aperture_type_id: activeAperture.id,
+                    element_id: elementId,
+                    new_name: newName,
+                  })
+                }
+                onEditDimension={(axis, index, newMm) =>
+                  void dispatch({
+                    kind: "editDimension",
+                    aperture_type_id: activeAperture.id,
+                    axis,
+                    index,
+                    new_value_mm: newMm,
+                  })
+                }
+                onAddRow={(at_index) =>
+                  void dispatch({
+                    kind: "addRow",
+                    aperture_type_id: activeAperture.id,
+                    at_index,
+                    height_mm: 1000,
+                  })
+                }
+                onAddColumn={(at_index) =>
+                  void dispatch({
+                    kind: "addColumn",
+                    aperture_type_id: activeAperture.id,
+                    at_index,
+                    width_mm: 1000,
+                  })
+                }
+                onDeleteRow={(index) =>
+                  void dispatch({
+                    kind: "deleteRow",
+                    aperture_type_id: activeAperture.id,
+                    index,
+                  })
+                }
+                onDeleteColumn={(index) =>
+                  void dispatch({
+                    kind: "deleteColumn",
+                    aperture_type_id: activeAperture.id,
+                    index,
+                  })
+                }
+                onPickFrame={(element_id, side, frame) =>
+                  void dispatch({
+                    kind: "pickFrame",
+                    aperture_type_id: activeAperture.id,
+                    element_id,
+                    side,
+                    frame,
+                  })
+                }
+                onPickGlazing={(element_id, glazing) =>
+                  void dispatch({
+                    kind: "pickGlazing",
+                    aperture_type_id: activeAperture.id,
+                    element_id,
+                    glazing,
+                  })
+                }
+                onEditFrameField={(element_id, side, field_key, new_value) =>
+                  void dispatch({
+                    kind: "editFieldOverride",
+                    aperture_type_id: activeAperture.id,
+                    element_id,
+                    target: `frame.${side}`,
+                    field_key,
+                    new_value,
+                  })
+                }
+                onEditGlazingField={(element_id, field_key, new_value) =>
+                  void dispatch({
+                    kind: "editFieldOverride",
+                    aperture_type_id: activeAperture.id,
+                    element_id,
+                    target: "glazing",
+                    field_key,
+                    new_value,
+                  })
+                }
+                onSetElementOperation={(element_id, operation) =>
+                  void dispatch({
+                    kind: "setElementOperation",
+                    aperture_type_id: activeAperture.id,
+                    element_id,
+                    operation,
+                  })
+                }
+                onMergeElements={(element_ids) =>
+                  void dispatch({
+                    kind: "mergeElements",
+                    aperture_type_id: activeAperture.id,
+                    element_ids,
+                  })
+                }
+                onSplitElement={(element_id) =>
+                  void dispatch({
+                    kind: "splitElement",
+                    aperture_type_id: activeAperture.id,
+                    element_id,
+                  })
+                }
+                onPasteAssignment={(source_element_id, target_element_ids) =>
+                  dispatch({
+                    kind: "pasteAssignment",
+                    aperture_type_id: activeAperture.id,
+                    source_element_id,
+                    target_element_ids,
+                  }).then(() => undefined)
+                }
+                uValueByElementId={elementUValueById}
+              />
+            ) : (
+              <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />
+            )}
+          </main>
+        </div>
+        {dialog.kind === "rename" ? (
+          <RenameApertureDialog
+            aperture={dialog.aperture}
+            allApertures={sorted}
+            busy={mutation.isPending}
+            error={actionError}
+            onClose={() => setDialog({ kind: "none" })}
+            onSubmit={(newName) => void handleRename(newName)}
+          />
+        ) : null}
+        {dialog.kind === "delete" ? (
+          <DeleteApertureDialog
+            aperture={dialog.aperture}
+            busy={mutation.isPending}
+            error={actionError}
+            onClose={() => setDialog({ kind: "none" })}
+            onConfirm={() => void handleDelete()}
+          />
+        ) : null}
+      </section>
+    </ManufacturerFilterProvider>
   );
 }

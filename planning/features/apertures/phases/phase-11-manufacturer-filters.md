@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
 TIME: 17:00 EDT
-STATUS: Active — not yet started
+STATUS: Done — shipped Phase 11 with the deviations noted in STATUS.md
 AUTHOR: Codex
 SCOPE: Add the project-document `manufacturer_filters` section,
        the configure-filters modal, the picker-integration layer

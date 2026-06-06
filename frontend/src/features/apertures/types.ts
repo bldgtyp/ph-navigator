@@ -39,6 +39,11 @@ export type ApertureTypeEntry = {
   elements: ApertureElement[];
 };
 
+export type ManufacturerFilters = {
+  frame_manufacturers_enabled: string[] | null;
+  glazing_manufacturers_enabled: string[] | null;
+};
+
 export type AperturesSlice = {
   project_id: string;
   version_id: string;
@@ -46,6 +51,7 @@ export type AperturesSlice = {
   version_etag: string;
   draft_etag: string | null;
   apertures: ApertureTypeEntry[];
+  manufacturer_filters: ManufacturerFilters | null;
 };
 
 // Discriminated union mirroring the backend `ApertureCommand`. Five
@@ -114,4 +120,11 @@ export type ApertureCommand =
       aperture_type_id: string;
       source_element_id: string;
       target_element_ids: string[];
+    }
+  | {
+      // Phase 11: replace the project-document manufacturer-filter
+      // enabled lists. ``null`` for either field = "all enabled".
+      kind: "setManufacturerFilters";
+      frame_manufacturers_enabled: string[] | null;
+      glazing_manufacturers_enabled: string[] | null;
     };

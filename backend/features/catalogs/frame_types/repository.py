@@ -15,6 +15,28 @@ from features.catalogs._shared import (
 
 _TABLE = "catalog_frame_types"
 
+_MANUFACTURERS_QUERY = sql.SQL(
+    """
+    SELECT manufacturer, COUNT(*) AS product_count
+    FROM catalog_frame_types
+    WHERE deleted_at IS NULL AND manufacturer IS NOT NULL AND manufacturer <> ''
+    GROUP BY manufacturer
+    ORDER BY LOWER(manufacturer) ASC
+    """
+)
+
+
+def list_manufacturers(conn: Connection[Any]) -> list[dict[str, Any]]:
+    """Return ``[{manufacturer, product_count}]`` for all active frame rows.
+
+    Skips rows with a null / blank manufacturer; sorts case-insensitively
+    so the picker column matches how the user reads it.
+    """
+
+    rows = conn.execute(_MANUFACTURERS_QUERY).fetchall()
+    return list(rows)
+
+
 _SELECT = """
 SELECT
     id,

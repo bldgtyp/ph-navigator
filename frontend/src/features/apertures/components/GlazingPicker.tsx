@@ -6,7 +6,10 @@ import { useState } from "react";
 import type { CatalogGlazingType } from "../../catalogs/types";
 import type { GlazingRef } from "../types";
 import { useGlazingCatalog } from "../hooks/useGlazingCatalog";
+import { useManufacturerFilter, useOpenManufacturerFilters } from "../hooks/useManufacturerFilter";
+import { useManufacturerRoster } from "../hooks/useManufacturerRoster";
 import { catalogRowToGlazingRef, blankHandEnterGlazingRef } from "../ref-builders";
+import { PickerFilterHint } from "./PickerFilterHint";
 
 export type GlazingPickerProps = {
   currentName: string | null;
@@ -21,8 +24,14 @@ export function GlazingPicker({
   manufacturers,
   onPick,
 }: GlazingPickerProps) {
-  const { rows: filteredRows, totalRows } = useGlazingCatalog({ manufacturers });
+  const contextFilter = useManufacturerFilter("glazing_types");
+  const effectiveManufacturers = manufacturers ?? contextFilter;
+  const { rows: filteredRows, totalRows } = useGlazingCatalog({
+    manufacturers: effectiveManufacturers,
+  });
   const { rows: allRows } = useGlazingCatalog();
+  const roster = useManufacturerRoster("glazing_types");
+  const openFilters = useOpenManufacturerFilters();
   const [filterCleared, setFilterCleared] = useState(false);
   const visible = filterCleared ? allRows : filteredRows;
   const excluded = !filterCleared && filteredRows.length < totalRows;
@@ -72,9 +81,24 @@ export function GlazingPicker({
             </button>
           </div>
         )}
+        {openFilters ? (
+          <PickerFilterHint
+            visibleManufacturers={distinctManufacturers(visible)}
+            rosterManufacturers={roster.roster.length}
+            onOpenFilters={openFilters}
+          />
+        ) : null}
       </div>
     </details>
   );
+}
+
+function distinctManufacturers(rows: CatalogGlazingType[]): number {
+  const set = new Set<string>();
+  for (const r of rows) {
+    if (r.manufacturer && r.manufacturer.trim()) set.add(r.manufacturer.trim().toLowerCase());
+  }
+  return set.size;
 }
 
 function GlazingOptionSecondaryLine({ row }: { row: CatalogGlazingType }) {

@@ -24,10 +24,32 @@ from uuid import UUID
 
 from fastapi import Request
 from psycopg import Connection, sql
+from pydantic import BaseModel, ConfigDict
 
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+
+
+class CatalogManufacturerEntry(BaseModel):
+    """One row in a catalog's manufacturer roster: name + product count.
+
+    Used by the Phase 11 manufacturer-filter modal to render the per-
+    column checkbox lists. The roster is computed live from the catalog
+    table rather than snapshotted in the project document.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    manufacturer: str
+    product_count: int
+
+
+class CatalogManufacturerListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[CatalogManufacturerEntry]
+
 
 _COPY_SUFFIX_RE: Final = re.compile(r"^(.*?)\s*\(copy(?:\s+(\d+))?\)$")
 

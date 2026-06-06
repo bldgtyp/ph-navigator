@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 19:55 EDT
-STATUS: In progress — Phases 01–10 shipped (Phase 05 split into two PRs).
+TIME: 20:40 EDT
+STATUS: In progress — Phases 01–11 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,9 +70,86 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 11 (`phases/phase-11-manufacturer-filters.md`) —
-manufacturer multi-select filters wired through the catalog
-filters introduced in Phase 06.
+Begin Phase 12 (`phases/phase-12-refresh-from-catalog.md`) —
+refresh-from-catalog dialog + drift summary banner.
+
+## Phase 11 — Manufacturer filters (shipped)
+
+- Backend `tables.manufacturer_filters` is now a typed
+  `ManufacturerFilters | None` (was a list placeholder).
+  `null` ≡ "all manufacturers enabled"; an empty list ≡ explicit
+  clear-all. A `model_validator(mode="before")` migrates the legacy
+  `[]` placeholder on persisted dev documents so they survive the
+  schema upgrade without an Alembic step.
+- New `setManufacturerFilters` aperture command + handler. Drops
+  the new lists onto the draft and refuses any save that would
+  strand a manufacturer currently picked on an element — `422
+  manufacturer_filter_strands_frame_picks` /
+  `..._strands_glazing_picks`, listing the offending names. Audit
+  carries `affects_u_value=false`.
+- New catalog roster endpoints `GET /api/v1/catalogs/frame-types
+  /manufacturers` and `/glazing-types/manufacturers`. Each returns
+  a sorted distinct `manufacturer` + `product_count` list (active
+  rows only; null/blank manufacturers skipped). Shared
+  `CatalogManufacturerEntry` / `CatalogManufacturerListResponse`
+  models live in `features/catalogs/_shared.py`.
+- `AperturesSliceResponse.manufacturer_filters` exposes the
+  document-level enabled lists to the frontend in the same
+  endpoint that already returns the apertures slice. No second
+  fetch.
+- Frontend `lib/inUseManufacturers.ts` collects distinct manufacturer
+  names referenced by any element's picked frame / glazing
+  (case-insensitive lookup, sorted by lowercased name); plus
+  `isManufacturerEnabled()` for the case-insensitive membership
+  check used in both the modal and the picker pipelines.
+- `useManufacturerRoster(kind)` (TanStack Query, 60 s staleTime)
+  wraps the two roster endpoints behind a single hook keyed by
+  catalog kind.
+- `ManufacturerColumn` renders one checkbox column with count
+  badges per row, Select-all / Clear-all bulk actions, and an
+  in-use lock that always-checks-and-disables manufacturers
+  currently referenced by an element. Clear-all skips in-use rows
+  and emits a note via the parent modal.
+- `ManufacturerFiltersModal` composes both columns side-by-side,
+  Save is disabled until the draft is dirty, and surfaces the
+  Clear-all "kept enabled" note inline. Locked / Viewer
+  rendering: read-only checkboxes, Save hidden.
+- `ManufacturerFilterProvider` lives in `AperturesTab`; the
+  pickers read both the active enabled-list and the open-modal
+  callback through `useManufacturerFilter()` and
+  `useOpenManufacturerFilters()`. Existing per-prop overrides on
+  the picker components still win, so isolated picker tests don't
+  need the provider.
+- `FramePicker` + `GlazingPicker` honor the enabled-list via the
+  existing server-side `manufacturers` query param and append a
+  `PickerFilterHint` at the bottom of the dropdown when the
+  visible manufacturer count is below the catalog roster's. The
+  `Adjust filter` link opens the modal.
+
+## Phase 11 deviations from the doc
+
+- **No shadcn `Dialog`** — V2 still does not have shadcn. The
+  modal uses a plain backdrop + dialog div with a stop-propagation
+  click handler and explicit `role="dialog"`. The native pattern
+  matches the rest of the apertures feature (`<details>` pickers,
+  native `<select>` operation row).
+- **Two side-by-side columns rendered via CSS Grid** in
+  `apertures.css`, not a separate layout component. Adding a
+  `<ManufacturerColumns>` shell was extra ceremony for a fixed-2
+  layout.
+- **No Sonner toast** for the Clear-all kept-enabled message —
+  V2 has no toast layer yet (same trade-off documented for Phases
+  08 and 10). The note renders inline at the bottom of the modal
+  via `role="status"`.
+- **In-use detection reads the draft slice**, not the saved
+  version. `AperturesTab` passes the sorted slice apertures into
+  the modal so picks made earlier in the same session are
+  immediately reflected without an extra fetch.
+- **Hint counts use `distinct manufacturer names`**, not row
+  counts. Phase doc said `Showing N of M manufacturers`; counting
+  unique manufacturers (rather than rows) matches the column
+  semantics so a multi-product manufacturer doesn't inflate the
+  visible count.
 
 ## Phase 10 — HBJSON window-constructions export (shipped)
 

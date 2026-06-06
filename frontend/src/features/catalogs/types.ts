@@ -124,6 +124,13 @@ export type CatalogGlazingType = {
 
 export type CatalogGlazingTypeListResponse = { items: CatalogGlazingType[] };
 
+export type CatalogManufacturerEntry = {
+  manufacturer: string;
+  product_count: number;
+};
+
+export type CatalogManufacturerListResponse = { items: CatalogManufacturerEntry[] };
+
 export type CatalogGlazingTypeCreatePayload = {
   name: string;
   manufacturer?: string | null;

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
+from features.catalogs._shared import CatalogManufacturerListResponse
 from features.catalogs.frame_types.import_export.service import (
     CommitRequest,
     CommitResponse,
@@ -27,6 +28,7 @@ from features.catalogs.frame_types.service import (
     deactivate_frame_type,
     duplicate_frame_type,
     get_frame_type,
+    list_frame_manufacturers,
     list_frame_types,
     reactivate_frame_type,
     update_frame_type,
@@ -73,6 +75,14 @@ def post_frame_type(
 ) -> CatalogFrameTypePublic:
     user, _expires_at = auth
     return create_frame_type(payload, user, request)
+
+
+@router.get("/manufacturers", response_model=CatalogManufacturerListResponse)
+def get_frame_manufacturers(auth: CurrentUser) -> CatalogManufacturerListResponse:
+    """Phase 11 manufacturer roster — distinct manufacturer names + counts."""
+
+    del auth
+    return list_frame_manufacturers()
 
 
 @router.get("/{record_id}", response_model=CatalogFrameTypePublic)

@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict
 
 from features.project_document.document import (
     ApertureTypeEntry,
+    ManufacturerFilters,
     ProjectDocumentV1,
 )
 from features.project_document.models import ProjectDocumentSource
@@ -39,6 +40,9 @@ class AperturesSliceResponse(BaseModel):
     version_etag: str
     draft_etag: str | None
     apertures: list[ApertureTypeEntry]
+    # Phase 11: enabled-list for the manufacturer-filter modal +
+    # picker filtering. ``null`` means "all manufacturers enabled".
+    manufacturer_filters: ManufacturerFilters | None = None
 
 
 def apply_apertures_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -65,6 +69,7 @@ def apertures_response(
         version_etag=version_etag,
         draft_etag=draft_etag,
         apertures=body.tables.apertures,
+        manufacturer_filters=body.tables.manufacturer_filters,
     )
 
 

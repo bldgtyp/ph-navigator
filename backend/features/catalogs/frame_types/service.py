@@ -10,6 +10,8 @@ from starlette import status
 from database import connection, transaction
 from features.auth.models import UserPublic
 from features.catalogs._shared import (
+    CatalogManufacturerEntry,
+    CatalogManufacturerListResponse,
     log_catalog_action,
     new_catalog_record_id,
     next_copy_suffix,
@@ -53,6 +55,16 @@ def list_frame_types(
             manufacturers=manufacturers,
         )
     return CatalogFrameTypeListResponse(items=[_to_list_item(row) for row in rows])
+
+
+def list_frame_manufacturers() -> CatalogManufacturerListResponse:
+    """Phase 11 roster: distinct manufacturers + per-name product count."""
+
+    with connection() as conn:
+        rows = repository.list_manufacturers(conn)
+    return CatalogManufacturerListResponse(
+        items=[CatalogManufacturerEntry.model_validate(row) for row in rows],
+    )
 
 
 def get_frame_type(record_id: str) -> CatalogFrameTypePublic:
