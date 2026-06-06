@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 19:30 EDT
-STATUS: In progress — Phases 01–09 shipped (Phase 05 split into two PRs).
+TIME: 19:55 EDT
+STATUS: In progress — Phases 01–10 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,9 +70,68 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 10 (`phases/phase-10-hbjson-export.md`) — HBJSON export
-for the active aperture. Phase 09's per-element U-Value is in place
-and ready to feed the export contract.
+Begin Phase 11 (`phases/phase-11-manufacturer-filters.md`) —
+manufacturer multi-select filters wired through the catalog
+filters introduced in Phase 06.
+
+## Phase 10 — HBJSON window-constructions export (shipped)
+
+- Backend `aperture_hbjson_export` module: `identifiers.py`
+  (escape rule + `detect_collisions`), `service.py`
+  (`export_apertures` / `export_aperture_window_constructions`
+  emitting the minimal-stable V1 `WindowConstruction.to_dict()`
+  shape with one `EnergyWindowMaterialSimpleGlazSys` material
+  per element), `routes.py`
+  (`GET /api/v1/projects/{id}/versions/{vid}/apertures/hbjson?source=draft|version`),
+  `mcp.py` (`tool_get_aperture_window_constructions`). Mounted in
+  `main.py` + registered as the MCP read tool
+  `get_aperture_window_constructions`.
+- Identifier escape rule
+  (`re.sub(r"[^A-Za-z0-9_]", "_", raw)` + collapse + strip) is now
+  a stable contract documented in
+  `context/technical-requirements/hbjson-export.md`. Empty result
+  → 422 `aperture_hbjson_identifier_empty`; cross-aperture
+  collisions → 422 `aperture_hbjson_identifier_collision` naming
+  both source apertures. No silent suffix disambiguation.
+- `u_factor` is the per-element ISO 10077-1 value from the Phase 09
+  cache (rounded to 4 dp), `shgc` is `glazing.g_value` (V1 fallback
+  `0.5` when null, also rounded), `vt` hardcoded `0.6` until a real
+  catalog field exists. V1 shape fixture lives at
+  `backend/tests/fixtures/aperture_hbjson_export/v1_shape.json`
+  and is asserted exactly by the service test.
+- Frontend: `download-file.ts` (DOM-anchor download helper),
+  `ExportHbjsonAction` overflow-menu button (lucide `Download` icon,
+  PRD-§17 label `Export window constructions (HBJSON)`), wired into
+  a new native-`<details>` overflow menu in `AperturesHeader`.
+  Hidden for Viewers / projects with no active version; disabled
+  when the apertures table is empty. Collision and empty-identifier
+  errors surface to the existing `actionError` banner with a
+  copywritten message that names the offending apertures.
+- Filename: `<bt_slug>_<version_slug>_apertures.hbjson.json`. Slug
+  rule is local to the action; identifier escape rule stays
+  server-side.
+
+## Phase 10 deviations from the doc
+
+- **Folder layout under `backend/tests/`**, not nested
+  `backend/features/aperture_hbjson_export/__tests__/`. Matches the
+  repo's existing pytest convention (the Phase 09 U-Value tests
+  also live under `backend/tests/`).
+- **No Sonner toast** — V2 does not yet have a toast library; the
+  action surfaces errors through the existing aperture-page
+  `actionError` banner via an `onError` callback. The Phase 13
+  follow-up can swap to a toast layer without touching the action's
+  public surface.
+- **Minimal-stable payload shape** — honeybee_energy's `to_dict()`
+  includes a per-call random `properties.ref.identifier` that would
+  break determinism; we ship the strictly-required `type` /
+  `identifier` / `materials` (and the material's `type` /
+  `identifier` / `u_factor` / `shgc` / `vt`) which `from_dict`
+  accepts. The fixture pins this exact subset as the contract.
+- **REST returns the bare dict, not the V2 envelope** — V1 parity.
+  The MCP tool returns the same shape so Rhino / Grasshopper
+  scripts written against V1 can switch transports without
+  re-wrapping.
 
 ## Phase 09 — U-Value service + display chips (shipped)
 

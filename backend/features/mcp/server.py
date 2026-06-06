@@ -17,6 +17,7 @@ from mcp.server.streamable_http import TransportSecuritySettings
 from pydantic import AnyHttpUrl
 
 from config import settings
+from features.aperture_hbjson_export.mcp import tool_get_aperture_window_constructions
 from features.mcp.models import (
     McpDocumentEnvelope,
     McpProjectEnvelope,
@@ -588,6 +589,27 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
             allow_env_token=allow_env_token,
             if_match=if_match,
             if_match_version=if_match_version,
+        )
+
+    @mcp.tool()
+    def get_aperture_window_constructions(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, dict[str, object]]:
+        """Return HBJSON-shaped WindowConstruction dicts keyed by escaped aperture-element id.
+
+        Mirrors the REST `GET /apertures/hbjson` endpoint. Use this when a Rhino /
+        Grasshopper component needs the same payload via MCP. Identifier collisions
+        and empty-escaped names surface as structured fatal errors.
+        """
+        return tool_get_aperture_window_constructions(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
         )
 
     return mcp

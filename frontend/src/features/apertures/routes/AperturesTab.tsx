@@ -133,6 +133,19 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
         activeAperture={activeAperture}
         uValue={activeUValue}
         loading={uValueQuery.isLoading}
+        exportContext={
+          !isViewer && project.active_version_id
+            ? {
+                projectId: project.id,
+                versionId: project.active_version_id,
+                source: uValueSource,
+                projectBtNumber: project.bt_number,
+                versionLabel: project.active_version?.name ?? "version",
+                hasApertures: sorted.length > 0,
+                onError: setActionError,
+              }
+            : undefined
+        }
       />
       {actionError ? (
         <p className="form-error" role="alert">
