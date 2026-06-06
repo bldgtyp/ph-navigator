@@ -16,7 +16,6 @@ from config import settings
 from database import transaction
 from features.auth.service import create_or_update_user
 from features.project_document.document import (
-    EmptyEquipmentTables,
     ProjectDocumentTables,
     ProjectDocumentV1,
     PumpRow,
@@ -136,31 +135,33 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
                 _room("rm_105", "105", "Basement", "opt_level_1", "opt_unconditioned", icfa_factor=0.0),
             ],
         ),
-        equipment=EmptyEquipmentTables(
-            pumps=PumpsTableEnvelope(
-                field_defs=list(PUMPS_BUILT_IN_FIELD_DEFS),
-                rows=[
-                    PumpRow(
-                        id="pmp_1",
-                        device_type="opt_circulator",
-                        phase=1,
-                        link="https://example.com/pump.pdf",
-                        notes="Starter DHW recirculation pump.",
-                        datasheet_asset_ids=[],
-                        custom_values={
-                            "record_id": "P-1",
-                            "use": "DHW recirc",
-                            "manufacturer": "Taco",
-                            "model": "0015e3",
-                            "volts": 120,
-                            "horse_power": None,
-                            "wattage": 45,
-                            "flow_gpm": 4,
-                            "runtime_khr_yr": 2.5,
-                        },
-                    )
-                ],
-            )
+        equipment=body.tables.equipment.model_copy(
+            update={
+                "pumps": PumpsTableEnvelope(
+                    field_defs=list(PUMPS_BUILT_IN_FIELD_DEFS),
+                    rows=[
+                        PumpRow(
+                            id="pmp_1",
+                            device_type="opt_circulator",
+                            phase=1,
+                            link="https://example.com/pump.pdf",
+                            notes="Starter DHW recirculation pump.",
+                            datasheet_asset_ids=[],
+                            custom_values={
+                                "record_id": "P-1",
+                                "use": "DHW recirc",
+                                "manufacturer": "Taco",
+                                "model": "0015e3",
+                                "volts": 120,
+                                "horse_power": None,
+                                "wattage": 45,
+                                "flow_gpm": 4,
+                                "runtime_khr_yr": 2.5,
+                            },
+                        )
+                    ],
+                )
+            }
         ),
     )
     return validate_document(
