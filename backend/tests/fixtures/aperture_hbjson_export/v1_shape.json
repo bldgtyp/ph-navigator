@@ -1,0 +1,15 @@
+{
+  "Door_A_C0_R0": {
+    "type": "WindowConstruction",
+    "identifier": "Door_A_C0_R0",
+    "materials": [
+      {
+        "type": "EnergyWindowMaterialSimpleGlazSys",
+        "identifier": "Door_A_C0_R0_GlazSys",
+        "u_factor": 0.9933,
+        "shgc": 0.5,
+        "vt": 0.6
+      }
+    ]
+  }
+}

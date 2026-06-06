@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 16:50 EDT
-STATUS: Active — not yet started
+TIME: 19:55 EDT
+STATUS: Done — see Implementation note at end.
 AUTHOR: Codex
 SCOPE: Port the V1 Honeybee-Energy WindowConstruction export to
        V2, ship the deterministic identifier escaping rule,
@@ -380,3 +380,46 @@ export function ExportHbjsonAction(props: { projectId: string; versionId: string
   parity. Promotion to a real catalog field is a future scope
   decision (likely tied to a catalog-schema bump per Phase 01's
   `catalog_schema_version` hook).
+
+
+## Implementation note (2026-06-05 19:55 EDT)
+
+Shipped per spec. Single PR.
+
+- Module: `backend/features/aperture_hbjson_export/` with
+  `identifiers.py`, `service.py`, `routes.py`, `mcp.py`.
+- Identifier escape rule pinned: `re.sub(r"[^A-Za-z0-9_]", "_", raw)`
+  → collapse `_+` → strip. Empty → 422
+  `aperture_hbjson_identifier_empty`. Cross-aperture collision → 422
+  `aperture_hbjson_identifier_collision` with both source names.
+- Service: `export_apertures(list[ApertureTypeEntry])` is the lower-
+  level entry; `export_aperture_window_constructions(body)` is the
+  thin route wrapper. Material payload uses per-element U-Value
+  from the Phase 09 cache (4 dp), `shgc` from `glazing.g_value`
+  with V1 fallback `0.5`, `vt` hardcoded `0.6`.
+- REST: `GET /api/v1/projects/{id}/versions/{vid}/apertures/hbjson?source=draft|version`.
+  MCP: `get_aperture_window_constructions(project_id, version_id, source?)`.
+- Frontend: `ExportHbjsonAction` in a new native-`<details>`
+  overflow menu on `AperturesHeader`. Hidden for Viewers / projects
+  with no active version; disabled when apertures table is empty.
+  Filename `<bt_slug>_<version_slug>_apertures.hbjson.json`.
+- V1 shape fixture: `backend/tests/fixtures/aperture_hbjson_export/v1_shape.json`.
+
+### Deviations
+
+- **Test layout** under `backend/tests/` instead of the nested
+  `backend/features/aperture_hbjson_export/__tests__/` shown in P2 —
+  matches the Phase 09 U-Value test layout and the rest of the repo.
+- **No Sonner toast** — V2 has no toast lib yet; errors surface via
+  the existing aperture-page `actionError` banner through an
+  `onError` callback. Easy swap when toasts ship.
+- **Minimal stable to_dict() shape** — V1's payload includes a per-call
+  random `properties.ref.identifier` which would defeat caching and
+  fixture parity; we ship the strictly-required `type` / `identifier` /
+  `materials` subset that `from_dict` accepts. The fixture is the
+  contract.
+- **Test pollution flake**: 18 new tests pass in isolation and with
+  `-p no:randomly`. The cross-suite pollution that surfaces
+  intermittently under randomized ordering is the same pre-existing
+  flake documented across Phases 05–09.
+
