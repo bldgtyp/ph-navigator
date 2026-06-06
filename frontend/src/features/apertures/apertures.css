@@ -1093,3 +1093,175 @@
   cursor: pointer;
   padding: 0;
 }
+
+/* ---- Phase 12: drift banner + refresh dialog + project refs view --------- */
+
+.aperture-drift-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--phn-warning) 14%, var(--bg-card));
+  color: var(--phn-warning);
+  font-size: 0.8125rem;
+}
+.aperture-drift-banner button {
+  background: none;
+  border: 1px solid currentColor;
+  color: inherit;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.aperture-catalog-badge--drift {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--phn-warning);
+  font-size: 1rem;
+  padding: 0 0.2rem;
+}
+.aperture-catalog-badge--drift:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.aperture-drift-modal__backdrop,
+.refresh-dialog__backdrop,
+.project-refs__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, #000 45%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal, 1000);
+}
+.aperture-drift-modal,
+.refresh-dialog,
+.project-refs {
+  background: var(--bg-card, #fff);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  min-width: min(680px, 92vw);
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+.refresh-dialog__header h2,
+.aperture-drift-modal__header h2,
+.project-refs__header h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.refresh-dialog__subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.refresh-dialog__missing {
+  padding: 0.5rem;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--phn-warning) 14%, var(--bg-card));
+  color: var(--phn-warning);
+}
+.refresh-dialog__bulk {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.refresh-dialog__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.refresh-dialog__table th,
+.refresh-dialog__table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.3rem 0.4rem;
+  text-align: left;
+  vertical-align: top;
+}
+.refresh-dialog__field-key {
+  font-weight: 600;
+}
+.refresh-dialog__edited-tag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.refresh-dialog__edit-input {
+  display: block;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+.refresh-dialog__footer,
+.aperture-drift-modal__footer,
+.project-refs__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.refresh-dialog__save {
+  font-weight: 600;
+}
+
+.aperture-drift-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.aperture-drift-modal__list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.project-refs__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.project-refs__tabs button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+.project-refs__tabs button[aria-selected="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.project-refs__body section + section {
+  margin-top: 0.75rem;
+}
+.project-refs__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.project-refs__table th,
+.project-refs__table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.25rem 0.4rem;
+  text-align: left;
+}
+.project-refs__empty {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}

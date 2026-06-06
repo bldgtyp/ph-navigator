@@ -206,6 +206,26 @@ class PasteAssignment(BaseModel):
     target_element_ids: list[str] = Field(min_length=1)
 
 
+class RefreshRefFromCatalog(BaseModel):
+    """Phase 12 — write the user's per-field choices back onto a
+    catalog-sourced ref and re-stamp ``synced_at``.
+
+    The frontend resolves the choices in the dialog and ships the
+    final ``chosen_values`` map keyed by ``field_key``. The backend
+    coerces each value through the ref's Pydantic per-field validators
+    so an invalid third-value (e.g. negative U) fails the command.
+    ``catalog_origin.local_overrides`` is preserved verbatim per PRD
+    §15 — refresh does not silently demote an existing override.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["refreshRefFromCatalog"] = "refreshRefFromCatalog"
+    aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
+    element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
+    target: OverrideTarget
+    chosen_values: dict[str, str | float | int | None] = Field(default_factory=dict)
+
+
 class SetManufacturerFilters(BaseModel):
     """Replace the document's ``tables.manufacturer_filters`` enabled lists.
 
@@ -242,6 +262,7 @@ ApertureCommand = Annotated[
         | PickGlazing
         | EditFieldOverride
         | PasteAssignment
+        | RefreshRefFromCatalog
         | SetManufacturerFilters
     ),
     Field(discriminator="kind"),
@@ -267,4 +288,5 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "splitElement": "project_version_aperture_element_split",
     "pasteAssignment": "project_version_aperture_assignment_paste",
     "setManufacturerFilters": "project_version_aperture_manufacturer_filters_set",
+    "refreshRefFromCatalog": "project_version_aperture_ref_refresh_from_catalog",
 }

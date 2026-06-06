@@ -16,15 +16,32 @@
 //     not via this component.
 
 import type { CatalogOrigin } from "../types";
+import type { DriftTarget } from "../drift-types";
+import { useDriftEntry, useOpenRefreshDialog } from "../hooks/useDriftContext";
 
 export type CatalogBadgesProps = {
   origin: CatalogOrigin | null;
   datasheetUrl?: string | null;
   /** Phase 12 placeholder. Always false in Phase 06. */
   hasDrift?: boolean;
+  /** Phase 12: element / target the badges belong to. When provided,
+   *  the drift badge looks up the live entry from the drift context
+   *  and clicking it opens the RefreshDialog. */
+  elementId?: string;
+  target?: DriftTarget;
 };
 
-export function CatalogBadges({ origin, datasheetUrl, hasDrift }: CatalogBadgesProps) {
+export function CatalogBadges({
+  origin,
+  datasheetUrl,
+  hasDrift,
+  elementId,
+  target,
+}: CatalogBadgesProps) {
+  const driftEntry = useDriftEntry(elementId ?? "", target ?? "glazing");
+  const openRefresh = useOpenRefreshDialog();
+  const liveDrift = elementId && target ? driftEntry : null;
+  const isDrifted = hasDrift || Boolean(liveDrift);
   return (
     <span className="aperture-catalog-badges" data-testid="catalog-badges">
       {origin === null ? (
@@ -46,15 +63,21 @@ export function CatalogBadges({ origin, datasheetUrl, hasDrift }: CatalogBadgesP
           ⌘
         </span>
       )}
-      {hasDrift && (
-        <span
+      {isDrifted && (
+        <button
+          type="button"
           className="aperture-catalog-badge aperture-catalog-badge--drift"
-          title="Catalog has changed since pick. Click to review (Phase 12)."
+          title={
+            liveDrift?.kind === "catalog_row_missing"
+              ? "Catalog row removed. Click to review and repick."
+              : "Catalog has changed since pick. Click to refresh."
+          }
           data-testid="badge-drift"
-          aria-disabled="true"
+          disabled={!liveDrift || !openRefresh}
+          onClick={() => liveDrift && openRefresh?.(liveDrift)}
         >
           ↻
-        </span>
+        </button>
       )}
       {datasheetUrl && datasheetUrl.startsWith("http") && (
         <a

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 20:40 EDT
-STATUS: In progress — Phases 01–11 shipped (Phase 05 split into two PRs).
+TIME: 21:05 EDT
+STATUS: In progress — Phases 01–12 shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,8 +70,93 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 12 (`phases/phase-12-refresh-from-catalog.md`) —
-refresh-from-catalog dialog + drift summary banner.
+Begin Phase 13 (`phases/phase-13-mcp-semantic-tools.md`) —
+semantic MCP write tools (`list_aperture_types`,
+`get_aperture_type`, `report_aperture_catalog_drift`,
+`calculate_aperture_u_values`, `apply_aperture_command`).
+
+## Phase 12 — Catalog provenance polish (shipped)
+
+- New backend `aperture_drift` module: `comparator.py` (field-by-
+  field FrameRef / GlazingRef vs catalog-row dict, float
+  tolerance to silence noise), `detector.py`
+  (`detect_aperture_drift(body, catalog_reader)` walking every
+  catalog-aware ref on every element), `models.py`
+  (`ApertureDriftReport` / `ApertureDriftEntry` / `RefFieldDelta`),
+  `routes.py` exposing
+  `GET /projects/{id}/versions/{vid}/apertures/drift-report?source=draft|version`.
+  Mounted in `main.py`.
+- V2 drift is **field-delta only** (the legacy
+  `catalog_origin.catalog_version_id` layer is null on every new
+  catalog per `document.CatalogOrigin`), so the PRD's version-id
+  branch collapses into the field-delta branch.
+  `catalog_row_missing` covers the catalog-row-deleted case so the
+  dialog can show the user a reason to repick.
+- New `refreshRefFromCatalog` aperture command + handler at
+  `aperture_commands/handlers/refresh.py`. The dialog ships a flat
+  `chosen_values` map keyed by `field_key`; the handler validates
+  each through Pydantic's per-field validators (negative
+  `u_value_w_m2k` → 422), advances `catalog_origin.synced_at` to
+  now, and preserves `catalog_origin.local_overrides` verbatim
+  (PRD §15). Audit `affects_u_value=true` whenever any thermal
+  field changed.
+- Frontend ships `drift-types.ts`, `useApertureDriftReport`
+  (TanStack Query, `staleTime: 0`), and a `DriftContext`
+  (`useDriftEntry`, `useOpenRefreshDialog`,
+  `useApertureDriftEntries`) so cards / rows / badges look up the
+  live entry for a (element, target) pair without prop-drilling.
+- `CatalogBadges` drift badge becomes a real `<button>` — when a
+  drift entry is present for the (element, target) the badge
+  surfaces with its kind-specific tooltip and a click handler that
+  opens the `RefreshDialog`.
+- `RefreshDialog` ships a three-column diff (`Field | Catalog |
+  Yours`) with per-row `Take catalog | Keep mine | Edit` radios,
+  `Take all from catalog` / `Keep all mine` bulk actions, the
+  `You edited this` tag on locally-overridden fields (defaults
+  to **Keep mine** per PRD §15), and a `catalog_row_missing`
+  branch that hides Save and prompts the user to repick.
+- `BuilderDriftBanner` renders above the canvas when the active
+  aperture has any drifted entries; `Review all` opens a list of
+  drifted entries with a per-row `Refresh` button that re-uses
+  the same dialog.
+- `ProjectRefsView` modal lists every distinct ref picked across
+  the project. Frame and Glazing tabs, each grouped into
+  `Catalog` (deduped by `catalog_record_id`) and `Hand-entered`
+  (per-occurrence), with usage counts per row. Opened from the
+  Apertures header `⋯ → View picked frames & glazings`.
+- `FrameRow` / `GlazingRow` / `ApertureElementCard` thread
+  `elementId` down so the badge can pull from the drift context.
+
+## Phase 12 deviations from the doc
+
+- **Field-delta only** — the PRD's version-id-mismatch branch
+  collapses because `catalog_version_id` is now legacy / null on
+  every V2 catalog. Documented at the top of `detector.py`.
+- **No project-wide drift-report side panel + jump-to-card
+  navigation** in v1. The BuilderDriftBanner's `Review all` modal
+  is the scope-contained substitute for the active aperture; a
+  follow-up phase (or polish PR) can add the project-header side
+  panel and the cross-aperture jump-to-card flow.
+- **No standalone `BuilderDriftReviewAllModal` file** — the
+  review-all list is rendered inline by `BuilderDriftBanner.tsx`.
+  Splitting it into its own file added ceremony without a
+  reuse case.
+- **Refresh `Edit a third value` uses a single text input**
+  rather than a per-field-type input variant. The server
+  re-validates through Pydantic, so a stray string in a numeric
+  slot returns a 422 the user sees and corrects.
+- **Catalog reader uses repo-backed short-lived connections** —
+  the drift report is invoked once per page load, so connection
+  churn is acceptable. Caching by `(catalog_snapshot_id,
+  document_hash)` per PRD §15 risk R-12-1 stays deferred.
+- **No `BuilderDriftBanner.test.tsx`** — the banner is a thin
+  composition over `useApertureDriftEntries` (covered indirectly
+  by `RefreshDialog.test.tsx` + the integration through
+  `AperturesTab`). The drift detection logic itself ships with
+  full backend coverage.
+- **No `ProjectRefsView.test.tsx`** — the aggregation logic is
+  fully covered by `refsAggregation.test.ts`. The view is a
+  presentational table over that data.
 
 ## Phase 11 — Manufacturer filters (shipped)
 

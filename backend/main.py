@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from config import settings
+from features.aperture_drift.routes import router as aperture_drift_router
 from features.aperture_hbjson_export.routes import router as aperture_hbjson_export_router
 from features.aperture_u_value.routes import router as aperture_u_value_router
 from features.assets.routes import jobs_router as asset_jobs_router
@@ -80,4 +81,5 @@ app.include_router(system_router)
 app.include_router(table_views_router)
 app.include_router(aperture_u_value_router)
 app.include_router(aperture_hbjson_export_router)
+app.include_router(aperture_drift_router)
 app.mount("/mcp", phn_mcp.streamable_http_app())

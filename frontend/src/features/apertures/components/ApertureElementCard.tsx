@@ -103,6 +103,7 @@ export function ApertureElementCard({
       <GlazingRow
         glazing={element.glazing}
         canEdit={canEdit}
+        elementId={element.id}
         onPick={onPickGlazing}
         onEditField={onEditGlazingField}
       />
@@ -121,6 +122,7 @@ export function ApertureElementCard({
                 ? mismatchTooltip(element.frames[side]?.operation, element.operation)
                 : null
             }
+            elementId={element.id}
             onPick={(frame) => onPickFrame(side, frame)}
             onEditField={(k, v) => onEditFrameField(side, k, v)}
           />

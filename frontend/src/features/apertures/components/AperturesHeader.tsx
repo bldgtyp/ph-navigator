@@ -24,18 +24,25 @@ export type AperturesHeaderFiltersContext = {
   onConfigureFilters: () => void;
 };
 
+// Phase-12 overflow action: open the project-scoped refs view.
+export type AperturesHeaderRefsContext = {
+  onViewPickedRefs: () => void;
+};
+
 export function AperturesHeader({
   activeAperture,
   uValue,
   loading = false,
   exportContext,
   filtersContext,
+  refsContext,
 }: {
   activeAperture: ApertureTypeEntry | null;
   uValue?: ApertureUValueResult | null;
   loading?: boolean;
   exportContext?: AperturesHeaderExportContext;
   filtersContext?: AperturesHeaderFiltersContext;
+  refsContext?: AperturesHeaderRefsContext;
 }) {
   const { unitSystem } = useUnitPreference();
   return (
@@ -47,7 +54,7 @@ export function AperturesHeader({
         unfinishedCount={uValue?.warnings.length ?? 0}
         loading={loading}
       />
-      {exportContext || filtersContext ? (
+      {exportContext || filtersContext || refsContext ? (
         <details className="apertures-overflow">
           <summary
             className="apertures-overflow__trigger"
@@ -75,6 +82,15 @@ export function AperturesHeader({
                 onClick={filtersContext.onConfigureFilters}
               >
                 Configure manufacturer filters
+              </button>
+            ) : null}
+            {refsContext ? (
+              <button
+                type="button"
+                className="apertures-overflow__item"
+                onClick={refsContext.onViewPickedRefs}
+              >
+                View picked frames &amp; glazings
               </button>
             ) : null}
           </div>
