@@ -963,7 +963,7 @@
 .manufacturer-modal__backdrop {
   position: fixed;
   inset: 0;
-  background: color-mix(in oklab, #000 45%, transparent);
+  background: rgb(0 0 0 / 45%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -971,7 +971,7 @@
 }
 
 .manufacturer-modal {
-  background: var(--bg-card, #fff);
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   min-width: min(640px, 92vw);
@@ -1135,7 +1135,7 @@
 .project-refs__backdrop {
   position: fixed;
   inset: 0;
-  background: color-mix(in oklab, #000 45%, transparent);
+  background: rgb(0 0 0 / 45%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1144,7 +1144,7 @@
 .aperture-drift-modal,
 .refresh-dialog,
 .project-refs {
-  background: var(--bg-card, #fff);
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   min-width: min(680px, 92vw);

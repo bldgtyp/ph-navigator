@@ -46,6 +46,7 @@ def _seed_aperture(version_id: str) -> dict[str, object]:
             "SELECT body FROM project_versions WHERE id = %(version_id)s",
             {"version_id": version_id},
         ).fetchone()
+    assert row is not None
     body = cast(dict[str, object], row["body"])
     tables = cast(dict[str, object], body["tables"])
     tables["apertures"] = [

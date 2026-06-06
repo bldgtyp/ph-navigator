@@ -1,11 +1,12 @@
 """Load the canonical frame-types seed JSON into the local catalog.
 
-Reads the committed `features/catalogs/frame_types/seeds/frame-types.v1.json`
-envelope and pipes it through the same preview → commit pipeline the HTTP
-routes use. Idempotent on `id` (rows already present in the catalog with
-the same id are skipped); fresh ids are minted for seed rows that have
-none, so the FIRST run is the realistic case and subsequent runs insert
-duplicates unless the user re-exports the live catalog into the seed file.
+Reads the committed `backend/seeds/catalogs/frame-types.v1.json` envelope
+and pipes it through the same preview → commit pipeline the HTTP routes
+use. Idempotent on `id` (rows already present in the catalog with the
+same id are skipped); fresh ids are minted for seed rows that have none,
+so the FIRST run is the realistic case and subsequent runs insert
+duplicates unless the user re-exports the live catalog into the seed
+file.
 """
 
 from __future__ import annotations
@@ -19,18 +20,13 @@ from fastapi import Request
 
 from features.auth.service import create_or_update_user
 from features.catalogs.frame_types.import_export.service import commit_import, preview_import
+from scripts._seed_paths import FRAME_SEED_PATH, default_user_kwargs
 
-DEFAULT_SEED_PATH = (
-    pathlib.Path(__file__).resolve().parent.parent
-    / "features"
-    / "catalogs"
-    / "frame_types"
-    / "seeds"
-    / "frame-types.v1.json"
-)
-DEFAULT_EMAIL = "ed@example.com"
-DEFAULT_PASSWORD = "password"
-DEFAULT_DISPLAY_NAME = "Ed May"
+DEFAULT_SEED_PATH = FRAME_SEED_PATH
+_DEFAULTS = default_user_kwargs()
+DEFAULT_EMAIL = _DEFAULTS["email"]
+DEFAULT_PASSWORD = _DEFAULTS["password"]
+DEFAULT_DISPLAY_NAME = _DEFAULTS["display_name"]
 
 
 def _fake_request() -> Request:

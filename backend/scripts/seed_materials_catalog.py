@@ -1,10 +1,9 @@
-"""Load the canonical glazing-types seed JSON into the local catalog.
+"""Load the canonical materials seed JSON into the local catalog.
 
-Reads the committed `backend/seeds/catalogs/glazing-types.v1.json` envelope
+Reads the committed `backend/seeds/catalogs/materials.v1.json` envelope
 and pipes it through the same preview → commit pipeline the HTTP routes
-use. Idempotent on `id` (rows already present in the catalog with the
-same id are skipped); fresh ids are minted for seed rows that have none,
-so the FIRST run is the realistic case and subsequent runs insert
+use. Idempotent on `id`; fresh ids are minted for seed rows that have
+none, so the FIRST run is the realistic case and subsequent runs insert
 duplicates unless the user re-exports the live catalog into the seed
 file.
 """
@@ -19,10 +18,10 @@ import sys
 from fastapi import Request
 
 from features.auth.service import create_or_update_user
-from features.catalogs.glazing_types.import_export.service import commit_import, preview_import
-from scripts._seed_paths import GLAZING_SEED_PATH, default_user_kwargs
+from features.catalogs.materials.import_export.service import commit_import, preview_import
+from scripts._seed_paths import MATERIALS_SEED_PATH, default_user_kwargs
 
-DEFAULT_SEED_PATH = GLAZING_SEED_PATH
+DEFAULT_SEED_PATH = MATERIALS_SEED_PATH
 _DEFAULTS = default_user_kwargs()
 DEFAULT_EMAIL = _DEFAULTS["email"]
 DEFAULT_PASSWORD = _DEFAULTS["password"]
@@ -30,7 +29,7 @@ DEFAULT_DISPLAY_NAME = _DEFAULTS["display_name"]
 
 
 def _fake_request() -> Request:
-    """Build a minimal Starlette Request stub for audit logging.
+    """Minimal Starlette Request stub for audit logging.
 
     Audit log calls only read `client.host` and the User-Agent header;
     a bare ASGI scope with those fields is enough.
@@ -38,8 +37,8 @@ def _fake_request() -> Request:
     scope = {
         "type": "http",
         "method": "POST",
-        "path": "/scripts/seed_glazing_catalog",
-        "headers": [(b"user-agent", b"seed-glazing-catalog")],
+        "path": "/scripts/seed_materials_catalog",
+        "headers": [(b"user-agent", b"seed-materials-catalog")],
         "client": ("127.0.0.1", 0),
         "query_string": b"",
     }
@@ -47,7 +46,7 @@ def _fake_request() -> Request:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed the local glazing-types catalog.")
+    parser = argparse.ArgumentParser(description="Seed the local materials catalog.")
     parser.add_argument("--seed", type=pathlib.Path, default=DEFAULT_SEED_PATH)
     parser.add_argument("--email", default=DEFAULT_EMAIL)
     parser.add_argument("--display-name", default=DEFAULT_DISPLAY_NAME)

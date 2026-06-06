@@ -38,7 +38,7 @@ def _frame(**kwargs: object) -> FrameRef:
         "catalog_origin": _origin(),
     }
     defaults.update(kwargs)
-    return FrameRef(**defaults)  # type: ignore[arg-type]
+    return FrameRef(**defaults)  # ty: ignore[invalid-argument-type]
 
 
 def _frame_row(**overrides: object) -> dict[str, object]:

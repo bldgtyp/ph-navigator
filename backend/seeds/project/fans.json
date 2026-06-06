@@ -1,0 +1,111 @@
+{
+  "options": {
+    "fans.type": [
+      { "id": "opt_fan_exhaust", "label": "Exhaust", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_fan_supply", "label": "Supply", "color": "#22c55e", "order": 1 },
+      { "id": "opt_fan_kitchen_hood", "label": "Kitchen Hood", "color": "#f97316", "order": 2 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "fan_1",
+      "fan_type": "opt_fan_exhaust",
+      "phase": 1,
+      "url": "https://example.com/panasonic-fv0510vs1.pdf",
+      "notes": "Primary bath exhaust.",
+      "custom_values": {
+        "record_id": "F-1",
+        "name": "Bath Fan 1",
+        "quantity": 1,
+        "model": "FV-0510VS1",
+        "manufacturer": "Panasonic",
+        "annual_runtime_min_yr": 21900,
+        "airflow_m3h": 85,
+        "amps": 0.1,
+        "volts": 120,
+        "power_factor": 0.8,
+        "watts": 6.3
+      }
+    },
+    {
+      "id": "fan_2",
+      "fan_type": "opt_fan_exhaust",
+      "phase": 1,
+      "url": "https://example.com/panasonic-fv0510vs1.pdf",
+      "notes": "Secondary bath exhaust.",
+      "custom_values": {
+        "record_id": "F-2",
+        "name": "Bath Fan 2",
+        "quantity": 1,
+        "model": "FV-0510VS1",
+        "manufacturer": "Panasonic",
+        "annual_runtime_min_yr": 21900,
+        "airflow_m3h": 85,
+        "amps": 0.1,
+        "volts": 120,
+        "power_factor": 0.8,
+        "watts": 6.3
+      }
+    },
+    {
+      "id": "fan_3",
+      "fan_type": "opt_fan_kitchen_hood",
+      "phase": 1,
+      "url": "https://example.com/broan-bcdj1.pdf",
+      "notes": "Recirculating kitchen hood.",
+      "custom_values": {
+        "record_id": "F-3",
+        "name": "Kitchen Hood",
+        "quantity": 1,
+        "model": "BCDJ130SS",
+        "manufacturer": "Broan",
+        "annual_runtime_min_yr": 18250,
+        "airflow_m3h": 510,
+        "amps": 1.6,
+        "volts": 120,
+        "power_factor": 0.8,
+        "watts": 154
+      }
+    },
+    {
+      "id": "fan_4",
+      "fan_type": "opt_fan_exhaust",
+      "phase": 1,
+      "url": null,
+      "notes": "Dryer exhaust booster.",
+      "custom_values": {
+        "record_id": "F-4",
+        "name": "Dryer Booster",
+        "quantity": 1,
+        "model": "DBF110",
+        "manufacturer": "Tjernlund",
+        "annual_runtime_min_yr": 7300,
+        "airflow_m3h": 270,
+        "amps": 1.0,
+        "volts": 120,
+        "power_factor": 0.8,
+        "watts": 96
+      }
+    },
+    {
+      "id": "fan_5",
+      "fan_type": "opt_fan_supply",
+      "phase": 1,
+      "url": null,
+      "notes": "Make-up air supply fan.",
+      "custom_values": {
+        "record_id": "F-5",
+        "name": "Make-up Air",
+        "quantity": 1,
+        "model": "MUA-200",
+        "manufacturer": "Fantech",
+        "annual_runtime_min_yr": 18250,
+        "airflow_m3h": 340,
+        "amps": 1.2,
+        "volts": 120,
+        "power_factor": 0.8,
+        "watts": 115
+      }
+    }
+  ]
+}
