@@ -23,6 +23,9 @@ from features.project_document.aperture_commands.handlers.element import (
     apply_set_element_name,
     apply_set_element_operation,
 )
+from features.project_document.aperture_commands.handlers.manufacturer_filters import (
+    apply_set_manufacturer_filters,
+)
 from features.project_document.aperture_commands.handlers.merge_split import (
     apply_merge_elements,
     apply_split_element,
@@ -70,6 +73,7 @@ _HANDLERS: dict[str, _Handler] = {
     "mergeElements": cast(_Handler, apply_merge_elements),
     "splitElement": cast(_Handler, apply_split_element),
     "pasteAssignment": cast(_Handler, apply_paste_assignment),
+    "setManufacturerFilters": cast(_Handler, apply_set_manufacturer_filters),
 }
 
 # Commands declared in the union but not yet wired up. Each phase that

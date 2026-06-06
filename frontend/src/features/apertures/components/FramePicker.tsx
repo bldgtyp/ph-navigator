@@ -16,8 +16,11 @@ import type { CatalogFrameType } from "../../catalogs/types";
 import type { FrameRef } from "../types";
 import type { ApertureSide } from "../types";
 import { useFrameCatalog } from "../hooks/useFrameCatalog";
+import { useManufacturerFilter, useOpenManufacturerFilters } from "../hooks/useManufacturerFilter";
+import { useManufacturerRoster } from "../hooks/useManufacturerRoster";
 import { locationForSide, operationForElement, type FrameLocation } from "../picker-filters";
 import { catalogRowToFrameRef, blankHandEnterFrameRef } from "../ref-builders";
+import { PickerFilterHint } from "./PickerFilterHint";
 
 export type FramePickerProps = {
   side: ApertureSide;
@@ -38,12 +41,16 @@ export function FramePicker({
 }: FramePickerProps) {
   const location: FrameLocation = locationForSide(side);
   const operationFilter = operationForElement(operation).type;
+  const contextFilter = useManufacturerFilter("frame_types");
+  const effectiveManufacturers = manufacturers ?? contextFilter;
   const { rows: filteredRows, totalRows } = useFrameCatalog({
     location,
     operation: operationFilter,
-    manufacturers,
+    manufacturers: effectiveManufacturers,
   });
-  const { rows: allRows } = useFrameCatalog({ manufacturers });
+  const { rows: allRows } = useFrameCatalog({ manufacturers: effectiveManufacturers });
+  const roster = useManufacturerRoster("frame_types");
+  const openFilters = useOpenManufacturerFilters();
   const [filterCleared, setFilterCleared] = useState(false);
   const visible = filterCleared ? allRows : filteredRows;
   const excluded = !filterCleared && filteredRows.length < totalRows;
@@ -96,9 +103,24 @@ export function FramePicker({
             </button>
           </div>
         )}
+        {openFilters ? (
+          <PickerFilterHint
+            visibleManufacturers={distinctManufacturers(visible)}
+            rosterManufacturers={roster.roster.length}
+            onOpenFilters={openFilters}
+          />
+        ) : null}
       </div>
     </details>
   );
+}
+
+function distinctManufacturers(rows: CatalogFrameType[]): number {
+  const set = new Set<string>();
+  for (const r of rows) {
+    if (r.manufacturer && r.manufacturer.trim()) set.add(r.manufacturer.trim().toLowerCase());
+  }
+  return set.size;
 }
 
 function FrameOptionSecondaryLine({ row }: { row: CatalogFrameType }) {

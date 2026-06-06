@@ -9,6 +9,7 @@ from fastapi import APIRouter, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
+from features.catalogs._shared import CatalogManufacturerListResponse
 from features.catalogs.glazing_types.import_export.service import (
     CommitRequest,
     CommitResponse,
@@ -27,6 +28,7 @@ from features.catalogs.glazing_types.service import (
     deactivate_glazing_type,
     duplicate_glazing_type,
     get_glazing_type,
+    list_glazing_manufacturers,
     list_glazing_types,
     reactivate_glazing_type,
     update_glazing_type,
@@ -59,6 +61,14 @@ def post_glazing_type(
 ) -> CatalogGlazingTypePublic:
     user, _expires_at = auth
     return create_glazing_type(payload, user, request)
+
+
+@router.get("/manufacturers", response_model=CatalogManufacturerListResponse)
+def get_glazing_manufacturers(auth: CurrentUser) -> CatalogManufacturerListResponse:
+    """Phase 11 manufacturer roster — distinct manufacturer names + counts."""
+
+    del auth
+    return list_glazing_manufacturers()
 
 
 @router.get("/{record_id}", response_model=CatalogGlazingTypePublic)

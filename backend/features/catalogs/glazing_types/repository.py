@@ -15,6 +15,25 @@ from features.catalogs._shared import (
 
 _TABLE = "catalog_glazing_types"
 
+_MANUFACTURERS_QUERY = sql.SQL(
+    """
+    SELECT manufacturer, COUNT(*) AS product_count
+    FROM catalog_glazing_types
+    WHERE deleted_at IS NULL AND manufacturer IS NOT NULL AND manufacturer <> ''
+    GROUP BY manufacturer
+    ORDER BY LOWER(manufacturer) ASC
+    """
+)
+
+
+def list_manufacturers(conn: Connection[Any]) -> list[dict[str, Any]]:
+    """Return ``[{manufacturer, product_count}]`` for all active glazing
+    rows. Mirrors ``frame_types.repository.list_manufacturers``."""
+
+    rows = conn.execute(_MANUFACTURERS_QUERY).fetchall()
+    return list(rows)
+
+
 _SELECT = """
 SELECT
     id,
