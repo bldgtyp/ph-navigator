@@ -546,8 +546,8 @@ project_assets (
     project_id            UUID NOT NULL REFERENCES projects(id),
     asset_kind            TEXT NOT NULL,
                           -- v1: 'datasheet' | 'site_photo' | 'hbjson' |
-                          --     'simulation_file'
-                          -- future: 'export_bundle' | 'other'
+                          --     'simulation_file' | 'export_bundle' |
+                          --     'other'
                           -- `attachments.md` §A2 maps each kind to its
                           -- referencing core fields. No generic
                           -- `attachment` kind exists in v1 because there
@@ -582,7 +582,8 @@ Rules:
   `project_assets` row and a new R2 object.
 - Project documents store only asset ids, e.g.
   `project_materials[].datasheet_asset_ids[]`,
-  `assembly.segments[].photo_asset_ids[]`, and future
+  `assembly.segments[].photo_asset_ids[]`,
+  `equipment.<table>.datasheet_asset_ids[]`, and
   `thermal_bridges[].simulation_file_asset_ids[]`.
 - HBJSON files use the same `project_assets` row with
   `asset_kind = 'hbjson'`; `project_hbjson_files` is a subtype
@@ -597,8 +598,9 @@ Rules:
   are referenced by public project surfaces. They cannot create, rename,
   attach, detach, or delete assets.
 - MCP tokens require `asset:read` to resolve signed download URLs and
-  `asset:write` to create upload intents, complete uploads, or attach /
-  detach assets through draft JSON-Patch operations.
+  `asset:write` to attach / detach already-uploaded assets through draft
+  operations. Browser/REST currently owns direct upload intent and
+  complete-upload routes.
 - Content-hash dedup is advisory in MVP: if an uploaded file's
   `(project_id, asset_kind, content_hash_sha256)` already exists, the
   API returns the existing asset plus a `duplicate_of` warning instead

@@ -114,16 +114,9 @@ list_hbjson_files(project_id)        → metadata only (file list)
 get_hbjson_file_url(project_id, hbjson_file_id)
                                      → signed R2 URL + expires_at
                                        (LLM can fetch the body itself if needed)
-create_asset_upload_intent(project_id, asset_kind, filename, content_type,
-                           size_bytes, content_hash)
-                                     → asset id + signed PUT URL + expires_at
-complete_asset_upload(project_id, asset_id)
-                                     → uploaded asset metadata
+// Browser/REST currently owns direct upload-intent and complete-upload.
+// MCP asset tools operate on uploaded assets.
 get_asset_url(project_id, asset_id)  → signed preview/download URLs + expires_at
-attach_asset(project_id, version_id, asset_id, target_path)
-                                     → JSON-Patch attach into token owner's draft
-detach_asset(project_id, version_id, asset_id, target_path)
-                                     → JSON-Patch detach from token owner's draft
 
 # Bulk asset tools — wrap the §9.10.1/2 REST surface. See
 # `attachments.md` for the full contract.
@@ -144,13 +137,14 @@ get_job(project_id, job_id)          → job status; embeds
                                        result_asset_id when complete
 
 bulk_attach(project_id, version_id, attachments[])
-                                     → atomic multi-attach across cells
-                                       (one undo entry on the draft;
-                                        partial-failure structured error
-                                        returns per-item indexes)
+                                     → per-item attach calls against the
+                                       token owner's draft; returns item
+                                       indexes and `partial_failure`
 
 bulk_detach(project_id, version_id, asset_refs[])
-                                     → atomic multi-detach
+                                     → per-item detach calls against the
+                                       token owner's draft; returns item
+                                       indexes and `partial_failure`
 
 # Custom field schema mutations (Phase 2 of plan-13; project-document
 # tables only — catalog tables are not custom-field-capable in v1).

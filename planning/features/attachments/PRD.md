@@ -1,9 +1,7 @@
 ---
-DATE: 2026-05-25
-TIME: 21:30
-STATUS: DRAFT (rev 2 — pre-set fields only; no custom-field type) —
-        feature-specific PRD for the Attachments cell type and
-        supporting upload/preview/download/delete pipeline.
+DATE: 2026-06-05
+TIME: 20:46 EDT
+STATUS: Decision archive / historical PRD. Not the current status source.
 AUTHOR: Ed May (with Claude)
 SCOPE: Multi-file attachments on project-document table cells
        (AirTable parity), the upload/preview/delete UX, the storage
@@ -22,6 +20,21 @@ RELATED:
 
 # PH-Navigator V2 — Attachments Feature PRD
 
+## 0. Current-Status Note
+
+This PRD is retained as the decision archive and AirTable-precedent
+record. It is not the current implementation-status source.
+
+Current status lives in `STATUS.md`. The stable technical contract lives
+in `context/technical-requirements/attachments.md`, with supporting API,
+data-model, data-table, and MCP docs under `context/technical-requirements/`.
+
+Some implementation sketches below are now historical. In particular,
+the codebase has shipped a real asset backbone, fixed-field registry,
+frontend `AttachmentCell`, REST routes, and MCP asset tools; several
+MCP/upload details in this PRD were later narrowed or changed in the
+stable docs.
+
 ## 1. Why this doc exists
 
 Attachments are the *highest-volume manual workflow* on a PH consulting
@@ -33,11 +46,9 @@ the model. Today this happens in AirTable, where a column with an
 "Attachment" type accepts drag-dropped files, shows a small icon
 preview in the cell, and surfaces a full-size preview on click.
 
-V2 has the **building blocks** for this — the `project_assets` table,
-R2 bucket plumbing, signed-URL upload/download, attach/detach JSON-Patch
-wrappers, and stub `attachment` slots in `FieldDef` and
-`AttachmentRenderer` — but **no end-user surface and no implementation
-yet**.
+V2 originally had only building blocks for this. As of 2026-06-05, a
+partial implementation is on `main`; see `STATUS.md` for the accepted
+evidence, open acceptance items, and next steps.
 
 **Scope decision (2026-05-25, Ed):** Attachments are **core fields on
 a fixed set of tables** in v1. The closed v1 custom-field set
@@ -48,18 +59,16 @@ pre-configured by PHN and not user-mutable. This keeps the cell + upload
 pipeline complexity but removes schema mutations, changeType handling,
 and the field-add UI.
 
-This PRD is the canonical authoring document for closing that gap. It
+This PRD was the canonical authoring document for closing that gap. It
 collects the user stories already scattered across `20-envelope.md`,
 `30-tables-equipment.md`, and `50-settings-ops-llm.md`; pins down the
 storage backend; specifies the AirTable-parity UX; lays out the data
 model and API/MCP surface; and proposes a phased implementation.
 
-> **Status.** Draft for design discussion. Not yet authoritative.
-> Once decisions land, the durable parts graduate into
-> `context/technical-requirements/attachments.md` (new) and a row each
-> in `data-model.md`, `data-table.md`, `api.md`, and
-> `llm-mcp-schema.md`; phasing graduates into individually-dated
-> implementation plans.
+> **Status.** Historical decision archive. Durable decisions have
+> graduated into `context/technical-requirements/attachments.md` and
+> related stable context docs. Do not use this file to decide whether
+> the feature is complete.
 
 ## 2. Goal and non-goals
 

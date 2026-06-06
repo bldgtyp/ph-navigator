@@ -278,9 +278,12 @@ project document. They do not mutate saved versions directly.
 
 #### 9.10.1 Bulk asset endpoints
 
-These complement the single-asset routes above. Used by multi-file drop
-in the browser and by LLM agents through MCP (`llm-mcp-schema.md`
-§10.3). Full contract: `attachments.md`.
+These complement the single-asset routes above. They are available for
+multi-file browser workflows and LLM-agent workflows through MCP
+(`llm-mcp-schema.md` §10.3). Current `<AttachmentCell>` code still loops
+single-file upload calls sequentially; move it to `bulk-upload-intent`
+when the parallel upload coordinator lands. Full contract:
+`attachments.md`.
 
 ```
 POST   /api/v1/projects/{pid}/assets/bulk-upload-intent
@@ -315,13 +318,15 @@ POST   /api/v1/projects/{pid}/assets/bulk-download
                include_manifest_csv?: true }
        returns: 202 + { job_id, status_url }
 ```
-Async zip job. The server streams each asset from R2, packages a zip
-with the resolved per-file paths (default pattern
-`{table}/{row.name}__{filename}`), prepends a top-level
-`MANIFEST.csv` mapping rows to filenames, uploads the zip back to R2
-as `asset_kind = 'export_bundle'`, and exposes it through normal asset
-download routes. The client polls `status_url` (see §9.10.2) until the
-job reports `completed`, then GETs the export bundle's asset.
+DB-backed zip job. Current implementation completes the zip work inside
+the request, stores the final job state, and still returns a `status_url`
+for a consistent polling/read path. The server streams each asset from
+R2, packages a zip with the resolved per-file paths (default pattern
+`{table}/{row.name}__{filename}`), prepends a top-level `MANIFEST.csv`
+mapping rows to filenames, uploads the zip back to R2 as
+`asset_kind = 'export_bundle'`, and exposes it through normal asset
+download routes. The client polls or reads `status_url` (see §9.10.2)
+until the job reports `completed`, then GETs the export bundle's asset.
 
 Template variables available in `filename_pattern`:
 `{table}`, `{row.id}`, `{row.name}`, `{row.<core_key>}`,

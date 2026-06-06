@@ -158,8 +158,8 @@ Datasheet column.
 
 Add one opt-in test or script that exercises Cloudflare R2 directly.
 
-Status on 2026-05-26: **in progress**. Cloudflare R2 dashboard setup is
-complete for the staging/dev bucket:
+Status on 2026-06-05: **test implemented; run evidence still needed**.
+Cloudflare R2 dashboard setup is complete for the staging/dev bucket:
 
 - bucket `ph-navigator-v2-dev` exists;
 - public access is disabled;
@@ -171,7 +171,7 @@ complete for the staging/dev bucket:
 - a scoped R2 token exists for `ph-navigator-v2-dev` with object
   read/write permissions.
 
-Progress on 2026-05-26:
+Progress:
 
 - copied the rolled token's `Account ID`, `Access Key ID`, and
   `Secret Access Key` into Render staging as `R2_ACCOUNT_ID`,
@@ -181,8 +181,9 @@ Progress on 2026-05-26:
 - added `backend/tests/integration/test_r2_assets.py` as the opt-in
   provider smoke.
 
-Next gate: run the opt-in real R2 smoke with the Render/staging R2 env
-vars available, then move to the Render browser acceptance checklist.
+Next gate: run the opt-in real R2 smoke with current Render/staging R2
+env vars available and record the result in this file, then move to the
+Render browser acceptance checklist.
 
 It should be disabled by default and require an explicit flag:
 
@@ -320,6 +321,9 @@ Remaining staging acceptance items after the core PDF path:
 - use an MCP token to `list_assets`, `resolve_asset_urls`, and
   `start_bulk_download`.
 
+Status on 2026-06-05: no newer staging run was found in the planning
+docs. Treat the items above as still open until a fresh run is logged.
+
 Staging setup:
 
 - Render backend connected to dev Postgres;
@@ -355,16 +359,18 @@ Automate now:
 - backend asset service tests with fake storage; **done for the Pumps
   datasheet happy path on 2026-05-26** via
   `backend/tests/test_assets_service.py`;
-- draft attach/detach tests;
-- bulk download zip/manifest tests;
-- MCP asset tool permission tests;
+- draft attach/detach tests; **done for Pumps and envelope
+  material/site-photo paths** via `backend/tests/test_assets_service.py`
+  and `backend/tests/envelope/test_envelope_attachments.py`;
+- bulk download zip/manifest tests; **still open on 2026-06-05**;
+- MCP asset tool permission tests; **still open on 2026-06-05**;
 - orphan sweeper dry-run tests.
 
 Automate next, now that Pumps has landed:
 
-- frontend attachment cell tests against a real Equipment table;
-  **done for Pumps delete/write behavior on 2026-05-26** via
-  `frontend/src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`;
+- frontend attachment cell tests against real Equipment tables;
+  **done for delete/write behavior on Pumps, Fans, Hot Water Tanks, and
+  Appliances** via `frontend/src/features/equipment/__tests__/`;
 - Playwright local browser workflow for upload / preview / detach /
   reload;
 - Render staging checklist, possibly as a manual release checklist
@@ -388,8 +394,14 @@ Current order:
    the real Pumps table.
 4. **Done 2026-05-26:** run local browser workflow against local object
    storage.
-5. **Next:** add the opt-in R2 smoke.
-6. Deploy to Render and run the staging acceptance checklist.
+5. **Done by 2026-06-05:** add the opt-in R2 smoke file at
+   `backend/tests/integration/test_r2_assets.py`.
+6. **Next:** run the opt-in R2 smoke with current R2 env vars and log
+   the result.
+7. Add automated bulk download zip/manifest coverage.
+8. Add MCP asset-tool permission and partial-failure tests.
+9. Run the Render staging acceptance checklist, including image preview,
+   replace, bulk download manifest inspection, and MCP token smoke.
 
 This keeps the normal test suite fast and deterministic while still
 giving real evidence for the Cloudflare and deployment-specific parts of
