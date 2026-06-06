@@ -1,12 +1,15 @@
 import { ft2ToM2, ft3ToM3, ftToMm, inToMm, m2ToFt2, m3ToFt3, mmToFt, mmToIn } from "./length";
 import { btuLbFToJKgK, jKgKToBtuLbF, kgM3ToLbFt3, lbFt3ToKgM3 } from "./material";
+import { cToF, fToC } from "./temperature";
 import { btuHft2FToWm2K, btuHftFToWmK, wm2kToBtuHft2F, wmkToBtuHftF } from "./thermal";
+import { cfmToM3h, m3hToCfm } from "./airflow";
 import type { UnitSystem } from "./types";
 
 export type NumberUnitMode = "editable" | "fixed";
 
 const MIN_NUMBER_PRECISION = 0;
 const MAX_NUMBER_PRECISION = 10;
+const L_PER_GAL = 3.785411784;
 
 type UnitDefinitionInput = {
   id: string;
@@ -71,6 +74,30 @@ export const NUMBER_UNIT_TYPES = [
     label: "Volume",
     siUnits: [{ id: "m3", label: "m3", system: "SI" }],
     ipUnits: [{ id: "ft3", label: "ft3", system: "IP" }],
+  },
+  {
+    id: "volume_liters",
+    label: "Volume (L)",
+    siUnits: [{ id: "l", label: "L", system: "SI" }],
+    ipUnits: [{ id: "gal", label: "gal", system: "IP" }],
+  },
+  {
+    id: "temperature",
+    label: "Temperature",
+    siUnits: [{ id: "c", label: "deg C", system: "SI" }],
+    ipUnits: [{ id: "f", label: "deg F", system: "IP" }],
+  },
+  {
+    id: "airflow",
+    label: "Airflow",
+    siUnits: [{ id: "m3_h", label: "m3/h", system: "SI" }],
+    ipUnits: [{ id: "cfm", label: "cfm", system: "IP" }],
+  },
+  {
+    id: "electric_efficiency",
+    label: "Electrical Efficiency",
+    siUnits: [{ id: "wh_m3", label: "Wh/m3", system: "SI" }],
+    ipUnits: [{ id: "w_cfm", label: "W/cfm", system: "IP" }],
   },
 ] as const satisfies readonly UnitTypeDefinitionInput[];
 
@@ -186,6 +213,14 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return m2ToFt2(valueSi);
     case "volume":
       return m3ToFt3(valueSi);
+    case "volume_liters":
+      return valueSi / L_PER_GAL;
+    case "temperature":
+      return cToF(valueSi);
+    case "airflow":
+      return m3hToCfm(valueSi);
+    case "electric_efficiency":
+      return valueSi / m3hToCfm(1);
   }
 }
 
@@ -207,6 +242,14 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return ft2ToM2(valueIp);
     case "volume":
       return ft3ToM3(valueIp);
+    case "volume_liters":
+      return valueIp * L_PER_GAL;
+    case "temperature":
+      return fToC(valueIp);
+    case "airflow":
+      return cfmToM3h(valueIp);
+    case "electric_efficiency":
+      return valueIp * m3hToCfm(1);
   }
 }
 

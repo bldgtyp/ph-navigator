@@ -1,12 +1,38 @@
 import { createTableSliceFeature } from "../project_document/table-slice";
 import {
+  APPLIANCES_TABLE_NAME,
+  ELECTRIC_HEATERS_TABLE_NAME,
+  FANS_TABLE_NAME,
+  HOT_WATER_TANKS_TABLE_NAME,
   PUMPS_TABLE_NAME,
   ROOMS_TABLE_NAME,
+  VENTILATORS_TABLE_NAME,
+  type AppliancesReplacePayload,
+  type AppliancesSlice,
+  type ElectricHeatersReplacePayload,
+  type ElectricHeatersSlice,
+  type FansReplacePayload,
+  type FansSlice,
+  type HotWaterTanksReplacePayload,
+  type HotWaterTanksSlice,
   type PumpsReplacePayload,
   type PumpsSlice,
   type RoomsReplacePayload,
   type RoomsSlice,
+  type VentilatorsReplacePayload,
+  type VentilatorsSlice,
 } from "./types";
+
+export const appliancesSliceFeature = createTableSliceFeature<
+  AppliancesSlice,
+  AppliancesReplacePayload
+>({
+  tableName: APPLIANCES_TABLE_NAME,
+  missingVersionMessage: "Cannot update Appliances without an active project version.",
+});
+
+export const fetchAppliancesSlice = appliancesSliceFeature.fetchSlice;
+export const replaceAppliancesSlice = appliancesSliceFeature.replaceSlice;
 
 export const roomsSliceFeature = createTableSliceFeature<RoomsSlice, RoomsReplacePayload>({
   tableName: ROOMS_TABLE_NAME,
@@ -23,3 +49,44 @@ export const pumpsSliceFeature = createTableSliceFeature<PumpsSlice, PumpsReplac
 
 export const fetchPumpsSlice = pumpsSliceFeature.fetchSlice;
 export const replacePumpsSlice = pumpsSliceFeature.replaceSlice;
+
+export const ventilatorsSliceFeature = createTableSliceFeature<
+  VentilatorsSlice,
+  VentilatorsReplacePayload
+>({
+  tableName: VENTILATORS_TABLE_NAME,
+  missingVersionMessage: "Cannot update Ventilators without an active project version.",
+});
+
+export const fetchVentilatorsSlice = ventilatorsSliceFeature.fetchSlice;
+export const replaceVentilatorsSlice = ventilatorsSliceFeature.replaceSlice;
+
+export const fansSliceFeature = createTableSliceFeature<FansSlice, FansReplacePayload>({
+  tableName: FANS_TABLE_NAME,
+  missingVersionMessage: "Cannot update Fans without an active project version.",
+});
+
+export const fetchFansSlice = fansSliceFeature.fetchSlice;
+export const replaceFansSlice = fansSliceFeature.replaceSlice;
+
+export const hotWaterTanksSliceFeature = createTableSliceFeature<
+  HotWaterTanksSlice,
+  HotWaterTanksReplacePayload
+>({
+  tableName: HOT_WATER_TANKS_TABLE_NAME,
+  missingVersionMessage: "Cannot update Hot Water Tanks without an active project version.",
+});
+
+export const fetchHotWaterTanksSlice = hotWaterTanksSliceFeature.fetchSlice;
+export const replaceHotWaterTanksSlice = hotWaterTanksSliceFeature.replaceSlice;
+
+export const electricHeatersSliceFeature = createTableSliceFeature<
+  ElectricHeatersSlice,
+  ElectricHeatersReplacePayload
+>({
+  tableName: ELECTRIC_HEATERS_TABLE_NAME,
+  missingVersionMessage: "Cannot update Electric Heaters without an active project version.",
+});
+
+export const fetchElectricHeatersSlice = electricHeatersSliceFeature.fetchSlice;
+export const replaceElectricHeatersSlice = electricHeatersSliceFeature.replaceSlice;

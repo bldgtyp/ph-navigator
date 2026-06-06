@@ -24,6 +24,10 @@ from features.project_document.document import (
     RoomsTableEnvelope,
     SingleSelectOption,
 )
+from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import (
     ROOMS_BUILT_IN_FIELD_DEFS,
@@ -31,6 +35,7 @@ from features.project_document.tables.rooms import (
     RoomsSliceReplaceRequest,
     apply_rooms_replace,
 )
+from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 
 
 def _body_with_default_field() -> ProjectDocumentV1:
@@ -55,16 +60,41 @@ def _body_with_default_field() -> ProjectDocumentV1:
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),
                 "equipment": {
+                    "appliances": {
+                        "field_defs": [field.model_dump(mode="json") for field in APPLIANCES_BUILT_IN_FIELD_DEFS],
+                        "rows": [],
+                    },
                     "pumps": {
                         "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
                         "rows": [],
-                    }
+                    },
+                    "electric_heaters": {
+                        "field_defs": [field.model_dump(mode="json") for field in ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS],
+                        "rows": [],
+                    },
+                    "ervs": {
+                        "field_defs": [field.model_dump(mode="json") for field in VENTILATORS_BUILT_IN_FIELD_DEFS],
+                        "rows": [],
+                    },
+                    "fans": {
+                        "field_defs": [field.model_dump(mode="json") for field in FANS_BUILT_IN_FIELD_DEFS],
+                        "rows": [],
+                    },
+                    "hot_water_tanks": {
+                        "field_defs": [field.model_dump(mode="json") for field in HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS],
+                        "rows": [],
+                    },
                 },
             },
             "single_select_options": {
                 ROOM_FLOOR_LEVEL_OPTION_KEY: [floor_opt.model_dump(mode="json")],
                 ROOM_BUILDING_ZONE_OPTION_KEY: [],
                 "pumps.device_type": [],
+                "ventilators.inside_outside": [],
+                "fans.type": [],
+                "hot_water_tanks.type": [],
+                "appliances.type": [],
+                "appliances.energy_star": [],
                 "rooms.cf_ss": [opt.model_dump(mode="json") for opt in cf_opts],
             },
         }

@@ -170,6 +170,21 @@ equipment_fans_contract = make_simple_attachment_contract(
     schema_slug="equipment-fan",
     table_path=("equipment", "fans"),
 )
+equipment_hot_water_tanks_contract = make_simple_attachment_contract(
+    name="equipment_hot_water_tanks",
+    schema_slug="equipment-hot-water-tank",
+    table_path=("equipment", "hot_water_tanks"),
+)
+equipment_electric_heaters_contract = make_simple_attachment_contract(
+    name="equipment_electric_heaters",
+    schema_slug="equipment-electric-heater",
+    table_path=("equipment", "electric_heaters"),
+)
+equipment_appliances_contract = make_simple_attachment_contract(
+    name="equipment_appliances",
+    schema_slug="equipment-appliance",
+    table_path=("equipment", "appliances"),
+)
 
 
 def _read_path(tables: dict[str, Any], path: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -178,7 +193,7 @@ def _read_path(tables: dict[str, Any], path: tuple[str, ...]) -> list[dict[str, 
         if not isinstance(current, dict):
             return []
         current = current.get(part)
-    return _dict_rows(current)
+    return attachment_table_rows(current)
 
 
 def _write_path(tables: dict[str, Any], path: tuple[str, ...], rows: list[dict[str, Any]]) -> None:
@@ -188,8 +203,20 @@ def _write_path(tables: dict[str, Any], path: tuple[str, ...], rows: list[dict[s
             return
         current = current.setdefault(part, {})
     if isinstance(current, dict):
-        current[path[-1]] = rows
+        target = current.get(path[-1])
+        if isinstance(target, dict) and isinstance(target.get("rows"), list):
+            target["rows"] = rows
+        else:
+            current[path[-1]] = rows
 
 
 def _dict_rows(value: object) -> list[dict[str, Any]]:
     return [cast(dict[str, Any], item) for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def attachment_table_rows(value: object) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        envelope = cast(dict[str, Any], value)
+        if isinstance(envelope.get("rows"), list):
+            return _dict_rows(envelope["rows"])
+    return _dict_rows(value)

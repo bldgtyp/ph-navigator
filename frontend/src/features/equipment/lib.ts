@@ -1,6 +1,21 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import type {
+  ApplianceOptionKey,
+  ApplianceRow,
+  AppliancesReplacePayload,
+  AppliancesSlice,
   CustomValue,
+  ElectricHeaterRow,
+  ElectricHeatersReplacePayload,
+  ElectricHeatersSlice,
+  FanOptionKey,
+  FanRow,
+  FansReplacePayload,
+  FansSlice,
+  HotWaterTankOptionKey,
+  HotWaterTankRow,
+  HotWaterTanksReplacePayload,
+  HotWaterTanksSlice,
   PumpOptionKey,
   PumpRow,
   PumpsReplacePayload,
@@ -10,8 +25,27 @@ import type {
   RoomsReplacePayload,
   RoomsSlice,
   SingleSelectOption,
+  VentilatorOptionKey,
+  VentilatorRow,
+  VentilatorsReplacePayload,
+  VentilatorsSlice,
 } from "./types";
 import {
+  APPLIANCE_DATASHEET_FIELD_KEY,
+  APPLIANCE_ENERGY_STAR_COLUMN_ID,
+  APPLIANCE_ENERGY_STAR_KEY,
+  APPLIANCE_ENERGY_STAR_OPTION_KEY,
+  APPLIANCE_TYPE_COLUMN_ID,
+  APPLIANCE_TYPE_KEY,
+  APPLIANCE_TYPE_OPTION_KEY,
+  FAN_DATASHEET_FIELD_KEY,
+  FAN_TYPE_COLUMN_ID,
+  FAN_TYPE_KEY,
+  FAN_TYPE_OPTION_KEY,
+  HOT_WATER_TANK_DATASHEET_FIELD_KEY,
+  HOT_WATER_TANK_TYPE_COLUMN_ID,
+  HOT_WATER_TANK_TYPE_KEY,
+  HOT_WATER_TANK_TYPE_OPTION_KEY,
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
@@ -23,6 +57,9 @@ import {
   ROOM_FLOOR_LEVEL_KEY,
   ROOM_FLOOR_LEVEL_OPTION_KEY,
   ROOMS_TABLE_NAME,
+  VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
+  VENTILATOR_INSIDE_OUTSIDE_KEY,
+  VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
 } from "./types";
 import type {
   BuildEmptyRow,
@@ -66,9 +103,19 @@ export {
 // so a single grep tells you where Room IDs are minted.
 export const ROOM_ID_PREFIX = "rm";
 export const PUMP_ID_PREFIX = "pmp";
+export const VENTILATOR_ID_PREFIX = "vent";
+export const FAN_ID_PREFIX = "fan";
+export const HOT_WATER_TANK_ID_PREFIX = "hwt";
+export const ELECTRIC_HEATER_ID_PREFIX = "heatr";
+export const APPLIANCE_ID_PREFIX = "appl";
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type ApplianceCellWrite = { rowId: string; fieldKey: string; value: unknown };
 type PumpCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type VentilatorCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type FanCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type HotWaterTankCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type ElectricHeaterCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
 // Namespace prefix for custom single-select option lists scoped to the
 // Rooms table. Mirrors backend `option_list_key((ROOMS_TABLE_NAME,), cf_id)`.
@@ -95,6 +142,51 @@ export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
   "custom_values",
 ] as const;
 
+export const VENTILATORS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  VENTILATOR_INSIDE_OUTSIDE_KEY,
+  "url",
+  "notes",
+  "custom_values",
+] as const;
+
+export const FANS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  FAN_TYPE_KEY,
+  "phase",
+  "url",
+  "notes",
+  FAN_DATASHEET_FIELD_KEY,
+  "custom_values",
+] as const;
+
+export const HOT_WATER_TANKS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  HOT_WATER_TANK_TYPE_KEY,
+  "phase",
+  "url",
+  "notes",
+  HOT_WATER_TANK_DATASHEET_FIELD_KEY,
+  "custom_values",
+] as const;
+
+export const ELECTRIC_HEATERS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  "url",
+  "notes",
+  "custom_values",
+] as const;
+
+export const APPLIANCES_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  APPLIANCE_TYPE_KEY,
+  APPLIANCE_ENERGY_STAR_KEY,
+  "url",
+  "notes",
+  APPLIANCE_DATASHEET_FIELD_KEY,
+  "custom_values",
+] as const;
+
 const ROOM_CUSTOM_VALUE_FIELD_KEYS = new Set(["number", "name", "num_people", "num_bedrooms"]);
 const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -107,6 +199,63 @@ const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "flow_gpm",
   "runtime_khr_yr",
 ]);
+const VENTILATOR_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
+  "name",
+  "airflow_rate_m3h",
+  "model",
+  "manufacturer",
+  "heat_recovery_percent",
+  "moisture_recovery_percent",
+  "electrical_efficiency_wh_m3",
+  "filter_merv_rating",
+]);
+const FAN_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
+  "name",
+  "quantity",
+  "model",
+  "manufacturer",
+  "annual_runtime_min_yr",
+  "airflow_m3h",
+  "amps",
+  "volts",
+  "power_factor",
+  "watts",
+]);
+const HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
+  "name",
+  "quantity",
+  "model",
+  "manufacturer",
+  "size_l",
+  "temperature_c",
+  "amps",
+  "volts",
+  "power_factor",
+  "watts",
+  "uef",
+]);
+const ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
+  "name",
+  "model",
+  "manufacturer",
+  "watt",
+]);
+const APPLIANCE_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
+  "name",
+  "quantity",
+  "model",
+  "manufacturer",
+  "capacity_m3",
+  "cef",
+  "imef",
+  "mef",
+  "annual_energy_kwh",
+]);
 
 const BUILT_IN_FIELD_CREATED_AT = "2026-05-26T00:00:00Z";
 
@@ -114,6 +263,7 @@ function builtInFieldDef(
   field_key: string,
   display_name: string,
   field_type: TableFieldDef["field_type"],
+  defaultValue?: CustomValue,
 ): TableFieldDef {
   return {
     field_key,
@@ -121,6 +271,7 @@ function builtInFieldDef(
     field_type,
     config: {},
     description: null,
+    default: defaultValue,
     origin: "built_in",
     created_at: BUILT_IN_FIELD_CREATED_AT,
     created_by: null,
@@ -154,6 +305,160 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("link", "Link", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(PUMP_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+];
+
+export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef("name", "Name", "short_text"),
+  {
+    ...builtInFieldDef("airflow_rate_m3h", "Airflow Rate", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "airflow",
+        si_unit: "m3_h",
+        ip_unit: "cfm",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  builtInFieldDef("model", "Model", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  builtInFieldDef("heat_recovery_percent", "Heat Recovery %", "number"),
+  builtInFieldDef("moisture_recovery_percent", "Moisture Recovery %", "number"),
+  {
+    ...builtInFieldDef("electrical_efficiency_wh_m3", "Electrical Efficiency", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "electric_efficiency",
+        si_unit: "wh_m3",
+        ip_unit: "w_cfm",
+        precision_si: 2,
+        precision_ip: 2,
+      },
+    },
+  },
+  builtInFieldDef("filter_merv_rating", "Filter MERV Rating", "number"),
+  builtInFieldDef(VENTILATOR_INSIDE_OUTSIDE_KEY, "Inside / Outside", "single_select"),
+  builtInFieldDef("url", "URL", "url"),
+  builtInFieldDef("notes", "Notes", "long_text"),
+];
+
+export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("quantity", "Quantity", "number", 1),
+  builtInFieldDef(FAN_TYPE_KEY, "Type", "single_select"),
+  builtInFieldDef("model", "Model", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  builtInFieldDef("annual_runtime_min_yr", "Annual Runtime (Mins / Year)", "number"),
+  {
+    ...builtInFieldDef("airflow_m3h", "Airflow", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "airflow",
+        si_unit: "m3_h",
+        ip_unit: "cfm",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  builtInFieldDef("amps", "Amps", "number"),
+  builtInFieldDef("volts", "Volts", "number"),
+  builtInFieldDef("phase", "Phase", "number"),
+  builtInFieldDef("power_factor", "Power Factor", "number", 0.8),
+  builtInFieldDef("watts", "Watts", "number"),
+  builtInFieldDef("url", "URL", "url"),
+  builtInFieldDef("notes", "Notes", "long_text"),
+  builtInFieldDef(FAN_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+];
+
+export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("quantity", "Quantity", "number", 1),
+  builtInFieldDef(HOT_WATER_TANK_TYPE_KEY, "Type", "single_select"),
+  builtInFieldDef("model", "Model", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  {
+    ...builtInFieldDef("size_l", "Size", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "volume_liters",
+        si_unit: "l",
+        ip_unit: "gal",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  {
+    ...builtInFieldDef("temperature_c", "Temperatur", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "temperature",
+        si_unit: "c",
+        ip_unit: "f",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  builtInFieldDef("amps", "Amps", "number"),
+  builtInFieldDef("volts", "Volts", "number"),
+  builtInFieldDef("phase", "Phase", "number"),
+  builtInFieldDef("power_factor", "Power Factor", "number", 0.8),
+  builtInFieldDef("watts", "Watts", "number"),
+  builtInFieldDef("uef", "UEF", "number"),
+  builtInFieldDef("url", "URL", "url"),
+  builtInFieldDef("notes", "Notes", "long_text"),
+  builtInFieldDef(HOT_WATER_TANK_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+];
+
+export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("model", "Model", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  builtInFieldDef("watt", "Watt", "number"),
+  builtInFieldDef("url", "URL", "url"),
+  builtInFieldDef("notes", "Notes", "long_text"),
+];
+
+export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef(APPLIANCE_TYPE_KEY, "Type", "single_select"),
+  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("quantity", "Quantity", "number", 1),
+  builtInFieldDef("model", "Model", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  builtInFieldDef(APPLIANCE_ENERGY_STAR_KEY, "EnergyStar", "single_select"),
+  {
+    ...builtInFieldDef("capacity_m3", "Capacity", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "volume",
+        si_unit: "m3",
+        ip_unit: "ft3",
+        precision_si: 3,
+        precision_ip: 1,
+      },
+    },
+  },
+  builtInFieldDef("cef", "CEF", "number"),
+  builtInFieldDef("imef", "IMEF", "number"),
+  builtInFieldDef("mef", "MEF", "number"),
+  builtInFieldDef("annual_energy_kwh", "Annual Energy", "number"),
+  builtInFieldDef("url", "URL", "url"),
+  builtInFieldDef(APPLIANCE_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef("notes", "Notes", "long_text"),
 ];
 
 export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableFieldRenderOverlay> {
@@ -198,6 +503,30 @@ export function roomsTableFieldDefs(roomsSlice: RoomsSlice): TableFieldDef[] {
 
 export function pumpsTableFieldDefs(pumpsSlice: PumpsSlice): TableFieldDef[] {
   return pumpsSlice.field_defs ?? PUMPS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function ventilatorsTableFieldDefs(ventilatorsSlice: VentilatorsSlice): TableFieldDef[] {
+  return ventilatorsSlice.field_defs ?? VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function fansTableFieldDefs(fansSlice: FansSlice): TableFieldDef[] {
+  return fansSlice.field_defs ?? FANS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function hotWaterTanksTableFieldDefs(
+  hotWaterTanksSlice: HotWaterTanksSlice,
+): TableFieldDef[] {
+  return hotWaterTanksSlice.field_defs ?? HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function electricHeatersTableFieldDefs(
+  electricHeatersSlice: ElectricHeatersSlice,
+): TableFieldDef[] {
+  return electricHeatersSlice.field_defs ?? ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function appliancesTableFieldDefs(appliancesSlice: AppliancesSlice): TableFieldDef[] {
+  return appliancesSlice.field_defs ?? APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS;
 }
 
 // Stub columns for sanitization — sanitizer reads only `id` + `fieldKey`.
@@ -284,6 +613,309 @@ export function pumpsTableColumnsForSanitize(
   }));
 }
 
+export function ventilatorsFieldOverlay(
+  ventilatorsSlice: VentilatorsSlice,
+): Record<string, TableFieldRenderOverlay> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    name: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    airflow_rate_m3h: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    model: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    manufacturer: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    heat_recovery_percent: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    moisture_recovery_percent: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    electrical_efficiency_wh_m3: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    filter_merv_rating: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [VENTILATOR_INSIDE_OUTSIDE_KEY]: {
+      options: ventilatorsSlice.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    url: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    notes: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+  };
+}
+
+export function ventilatorsTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id:
+      fieldDef.field_key === VENTILATOR_INSIDE_OUTSIDE_KEY
+        ? VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID
+        : fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
+export function fansFieldOverlay(fansSlice: FansSlice): Record<string, TableFieldRenderOverlay> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    name: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    quantity: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [FAN_TYPE_KEY]: {
+      options: fansSlice.single_select_options[FAN_TYPE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    model: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    manufacturer: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    annual_runtime_min_yr: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    airflow_m3h: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    amps: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    volts: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    phase: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    power_factor: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    watts: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    url: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    notes: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [FAN_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+  };
+}
+
+export function fansTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id: fieldDef.field_key === FAN_TYPE_KEY ? FAN_TYPE_COLUMN_ID : fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
+export function hotWaterTanksFieldOverlay(
+  hotWaterTanksSlice: HotWaterTanksSlice,
+): Record<string, TableFieldRenderOverlay> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    name: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    quantity: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [HOT_WATER_TANK_TYPE_KEY]: {
+      options: hotWaterTanksSlice.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    model: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    manufacturer: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    size_l: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    temperature_c: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    amps: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    volts: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    phase: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    power_factor: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    watts: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    uef: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    url: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    notes: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [HOT_WATER_TANK_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+  };
+}
+
+export function hotWaterTanksTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id:
+      fieldDef.field_key === HOT_WATER_TANK_TYPE_KEY
+        ? HOT_WATER_TANK_TYPE_COLUMN_ID
+        : fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
+export function electricHeatersFieldOverlay(): Record<string, TableFieldRenderOverlay> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    name: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    model: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    manufacturer: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    watt: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    url: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    notes: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+  };
+}
+
+export function electricHeatersTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id: fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
+export function appliancesFieldOverlay(
+  appliancesSlice: AppliancesSlice,
+): Record<string, TableFieldRenderOverlay> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    [APPLIANCE_TYPE_KEY]: {
+      options: appliancesSlice.single_select_options[APPLIANCE_TYPE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    name: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    quantity: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    model: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    manufacturer: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [APPLIANCE_ENERGY_STAR_KEY]: {
+      options: appliancesSlice.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    capacity_m3: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    cef: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    imef: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    mef: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    annual_energy_kwh: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    url: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    [APPLIANCE_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+    notes: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+  };
+}
+
+export function appliancesTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id:
+      fieldDef.field_key === APPLIANCE_TYPE_KEY
+        ? APPLIANCE_TYPE_COLUMN_ID
+        : fieldDef.field_key === APPLIANCE_ENERGY_STAR_KEY
+          ? APPLIANCE_ENERGY_STAR_COLUMN_ID
+          : fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
 export function emptyPump(): PumpRow {
   return {
     id: generatedId(PUMP_ID_PREFIX),
@@ -302,6 +934,113 @@ export function emptyPump(): PumpRow {
       wattage: null,
       flow_gpm: null,
       runtime_khr_yr: null,
+    },
+  };
+}
+
+export function emptyVentilator(): VentilatorRow {
+  return {
+    id: generatedId(VENTILATOR_ID_PREFIX),
+    inside_outside: null,
+    url: null,
+    notes: null,
+    custom_values: {
+      record_id: null,
+      name: null,
+      airflow_rate_m3h: null,
+      model: null,
+      manufacturer: null,
+      heat_recovery_percent: null,
+      moisture_recovery_percent: null,
+      electrical_efficiency_wh_m3: null,
+      filter_merv_rating: null,
+    },
+  };
+}
+
+export function emptyFan(): FanRow {
+  return {
+    id: generatedId(FAN_ID_PREFIX),
+    fan_type: null,
+    phase: null,
+    url: null,
+    notes: null,
+    datasheet_asset_ids: [],
+    custom_values: {
+      record_id: null,
+      name: null,
+      quantity: 1,
+      model: null,
+      manufacturer: null,
+      annual_runtime_min_yr: null,
+      airflow_m3h: null,
+      amps: null,
+      volts: null,
+      power_factor: 0.8,
+      watts: null,
+    },
+  };
+}
+
+export function emptyHotWaterTank(): HotWaterTankRow {
+  return {
+    id: generatedId(HOT_WATER_TANK_ID_PREFIX),
+    tank_type: null,
+    phase: null,
+    url: null,
+    notes: null,
+    datasheet_asset_ids: [],
+    custom_values: {
+      record_id: null,
+      name: null,
+      quantity: 1,
+      model: null,
+      manufacturer: null,
+      size_l: null,
+      temperature_c: null,
+      amps: null,
+      volts: null,
+      power_factor: 0.8,
+      watts: null,
+      uef: null,
+    },
+  };
+}
+
+export function emptyElectricHeater(): ElectricHeaterRow {
+  return {
+    id: generatedId(ELECTRIC_HEATER_ID_PREFIX),
+    url: null,
+    notes: null,
+    custom_values: {
+      record_id: null,
+      name: null,
+      model: null,
+      manufacturer: null,
+      watt: null,
+    },
+  };
+}
+
+export function emptyAppliance(): ApplianceRow {
+  return {
+    id: generatedId(APPLIANCE_ID_PREFIX),
+    appliance_type: null,
+    energy_star: null,
+    url: null,
+    notes: null,
+    datasheet_asset_ids: [],
+    custom_values: {
+      record_id: null,
+      name: null,
+      quantity: 1,
+      model: null,
+      manufacturer: null,
+      capacity_m3: null,
+      cef: null,
+      imef: null,
+      mef: null,
+      annual_energy_kwh: null,
     },
   };
 }
@@ -348,6 +1087,109 @@ export function sortedPumps(pumps: PumpRow[]): PumpRow[] {
       return a.pump.id.localeCompare(b.pump.id, undefined, { numeric: true, sensitivity: "base" });
     })
     .map(({ pump }) => pump);
+}
+
+export function sortedVentilators(ventilators: VentilatorRow[]): VentilatorRow[] {
+  return ventilators
+    .map((ventilator) => ({
+      ventilator,
+      primary:
+        customTextValue(ventilator, "record_id") ||
+        customTextValue(ventilator, "name") ||
+        ventilator.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.ventilator.id.localeCompare(b.ventilator.id, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    })
+    .map(({ ventilator }) => ventilator);
+}
+
+export function sortedFans(fans: FanRow[]): FanRow[] {
+  return fans
+    .map((fan) => ({
+      fan,
+      primary: customTextValue(fan, "record_id") || customTextValue(fan, "name") || fan.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.fan.id.localeCompare(b.fan.id, undefined, { numeric: true, sensitivity: "base" });
+    })
+    .map(({ fan }) => fan);
+}
+
+export function sortedHotWaterTanks(hotWaterTanks: HotWaterTankRow[]): HotWaterTankRow[] {
+  return hotWaterTanks
+    .map((tank) => ({
+      tank,
+      primary: customTextValue(tank, "record_id") || customTextValue(tank, "name") || tank.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.tank.id.localeCompare(b.tank.id, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    })
+    .map(({ tank }) => tank);
+}
+
+export function sortedElectricHeaters(electricHeaters: ElectricHeaterRow[]): ElectricHeaterRow[] {
+  return electricHeaters
+    .map((heater) => ({
+      heater,
+      primary: customTextValue(heater, "record_id") || customTextValue(heater, "name") || heater.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.heater.id.localeCompare(b.heater.id, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    })
+    .map(({ heater }) => heater);
+}
+
+export function sortedAppliances(appliances: ApplianceRow[]): ApplianceRow[] {
+  return appliances
+    .map((appliance) => ({
+      appliance,
+      primary:
+        customTextValue(appliance, "record_id") ||
+        customTextValue(appliance, "name") ||
+        appliance.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.appliance.id.localeCompare(b.appliance.id, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    })
+    .map(({ appliance }) => appliance);
 }
 
 export function firstRoomFloorOptionId(current: RoomsSlice): string | null {
@@ -541,6 +1383,126 @@ export function pumpsPayloadFromRowInsert(
   };
 }
 
+export function ventilatorsPayloadFromRowInsert(
+  current: VentilatorsSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<VentilatorRow>,
+): VentilatorsReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.ventilators.find((ventilator) => ventilator.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizeVentilatorForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    ventilators: sortedVentilators([...current.ventilators, ...built]),
+    single_select_options: cloneVentilatorOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function fansPayloadFromRowInsert(
+  current: FansSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<FanRow>,
+): FansReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.fans.find((fan) => fan.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizeFanForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    fans: sortedFans([...current.fans, ...built]),
+    single_select_options: cloneFanOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function hotWaterTanksPayloadFromRowInsert(
+  current: HotWaterTanksSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<HotWaterTankRow>,
+): HotWaterTanksReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.hot_water_tanks.find((tank) => tank.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizeHotWaterTankForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    hot_water_tanks: sortedHotWaterTanks([...current.hot_water_tanks, ...built]),
+    single_select_options: cloneHotWaterTankOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function electricHeatersPayloadFromRowInsert(
+  current: ElectricHeatersSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<ElectricHeaterRow>,
+): ElectricHeatersReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.electric_heaters.find((heater) => heater.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizeElectricHeaterForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    electric_heaters: sortedElectricHeaters([...current.electric_heaters, ...built]),
+    single_select_options: cloneElectricHeaterOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function appliancesPayloadFromRowInsert(
+  current: AppliancesSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<ApplianceRow>,
+): AppliancesReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.appliances.find((appliance) => appliance.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizeApplianceForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    appliances: sortedAppliances([...current.appliances, ...built]),
+    single_select_options: cloneApplianceOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
 // Slice-replace duplicate for Pumps. Like Rooms, but Pumps re-sorts
 // after every insert/duplicate (the table maintains its own canonical
 // order) — `anchorRowId` is informational here, the clone lands
@@ -574,6 +1536,141 @@ export function pumpsPayloadFromRowDuplicate(
   };
 }
 
+export function ventilatorsPayloadFromRowDuplicate(
+  current: VentilatorsSlice,
+  duplicates: RowDuplicatePayload[],
+): VentilatorsReplacePayload {
+  const ventilators = [...current.ventilators];
+  const liveNames = new Set(
+    ventilators.map((ventilator) => stringFromCustomValues(ventilator.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as VentilatorRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: VentilatorRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    ventilators.push(normalizeVentilatorForPayload(clone));
+  }
+  return {
+    ventilators: sortedVentilators(ventilators),
+    single_select_options: cloneVentilatorOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function fansPayloadFromRowDuplicate(
+  current: FansSlice,
+  duplicates: RowDuplicatePayload[],
+): FansReplacePayload {
+  const fans = [...current.fans];
+  const liveNames = new Set(
+    fans.map((fan) => stringFromCustomValues(fan.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as FanRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: FanRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    fans.push(normalizeFanForPayload(clone));
+  }
+  return {
+    fans: sortedFans(fans),
+    single_select_options: cloneFanOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function hotWaterTanksPayloadFromRowDuplicate(
+  current: HotWaterTanksSlice,
+  duplicates: RowDuplicatePayload[],
+): HotWaterTanksReplacePayload {
+  const hotWaterTanks = [...current.hot_water_tanks];
+  const liveNames = new Set(
+    hotWaterTanks.map((tank) => stringFromCustomValues(tank.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as HotWaterTankRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: HotWaterTankRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    hotWaterTanks.push(normalizeHotWaterTankForPayload(clone));
+  }
+  return {
+    hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
+    single_select_options: cloneHotWaterTankOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function electricHeatersPayloadFromRowDuplicate(
+  current: ElectricHeatersSlice,
+  duplicates: RowDuplicatePayload[],
+): ElectricHeatersReplacePayload {
+  const electricHeaters = [...current.electric_heaters];
+  const liveNames = new Set(
+    electricHeaters.map((heater) => stringFromCustomValues(heater.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as ElectricHeaterRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: ElectricHeaterRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    electricHeaters.push(normalizeElectricHeaterForPayload(clone));
+  }
+  return {
+    electric_heaters: sortedElectricHeaters(electricHeaters),
+    single_select_options: cloneElectricHeaterOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function appliancesPayloadFromRowDuplicate(
+  current: AppliancesSlice,
+  duplicates: RowDuplicatePayload[],
+): AppliancesReplacePayload {
+  const appliances = [...current.appliances];
+  const liveNames = new Set(
+    appliances.map((appliance) => stringFromCustomValues(appliance.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as ApplianceRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: ApplianceRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    appliances.push(normalizeApplianceForPayload(clone));
+  }
+  return {
+    appliances: sortedAppliances(appliances),
+    single_select_options: cloneApplianceOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
 export function pumpsPayloadFromRowDelete(
   current: PumpsSlice,
   deletes: RowDeletePayload[],
@@ -582,6 +1679,66 @@ export function pumpsPayloadFromRowDelete(
   return {
     pumps: current.pumps.filter((pump) => !toDelete.has(pump.id)),
     single_select_options: clonePumpOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function ventilatorsPayloadFromRowDelete(
+  current: VentilatorsSlice,
+  deletes: RowDeletePayload[],
+): VentilatorsReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    ventilators: current.ventilators.filter((ventilator) => !toDelete.has(ventilator.id)),
+    single_select_options: cloneVentilatorOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function fansPayloadFromRowDelete(
+  current: FansSlice,
+  deletes: RowDeletePayload[],
+): FansReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    fans: current.fans.filter((fan) => !toDelete.has(fan.id)),
+    single_select_options: cloneFanOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function hotWaterTanksPayloadFromRowDelete(
+  current: HotWaterTanksSlice,
+  deletes: RowDeletePayload[],
+): HotWaterTanksReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    hot_water_tanks: current.hot_water_tanks.filter((tank) => !toDelete.has(tank.id)),
+    single_select_options: cloneHotWaterTankOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function electricHeatersPayloadFromRowDelete(
+  current: ElectricHeatersSlice,
+  deletes: RowDeletePayload[],
+): ElectricHeatersReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    electric_heaters: current.electric_heaters.filter((heater) => !toDelete.has(heater.id)),
+    single_select_options: cloneElectricHeaterOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function appliancesPayloadFromRowDelete(
+  current: AppliancesSlice,
+  deletes: RowDeletePayload[],
+): AppliancesReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    appliances: current.appliances.filter((appliance) => !toDelete.has(appliance.id)),
+    single_select_options: cloneApplianceOptions(current),
     field_defs: [...current.field_defs],
   };
 }
@@ -667,6 +1824,183 @@ export function pumpsPayloadFromCellWrites(
   };
 }
 
+export function ventilatorsPayloadFromCellWrites(
+  current: VentilatorsSlice,
+  writes: VentilatorCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
+): VentilatorsReplacePayload {
+  const options = cloneVentilatorOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    const optionKey = ventilatorOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[optionKey] = normalizeOptionOrders(
+      options[optionKey].filter((option) => !remove.has(option.id)),
+    );
+  }
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    const optionKey = ventilatorOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    options[optionKey] = normalizeOptionOrders([...options[optionKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, VentilatorCellWrite[]>());
+  const ventilators = current.ventilators.map((ventilator) =>
+    applyWritesToVentilator(ventilator, writesByRowId.get(ventilator.id) ?? []),
+  );
+  return {
+    ventilators: sortedVentilators(ventilators),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function fansPayloadFromCellWrites(
+  current: FansSlice,
+  writes: FanCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
+): FansReplacePayload {
+  const options = cloneFanOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    const optionKey = fanOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[optionKey] = normalizeOptionOrders(
+      options[optionKey].filter((option) => !remove.has(option.id)),
+    );
+  }
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    const optionKey = fanOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    options[optionKey] = normalizeOptionOrders([...options[optionKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, FanCellWrite[]>());
+  const fans = current.fans.map((fan) => applyWritesToFan(fan, writesByRowId.get(fan.id) ?? []));
+  return {
+    fans: sortedFans(fans),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function hotWaterTanksPayloadFromCellWrites(
+  current: HotWaterTanksSlice,
+  writes: HotWaterTankCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
+): HotWaterTanksReplacePayload {
+  const options = cloneHotWaterTankOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    const optionKey = hotWaterTankOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[optionKey] = normalizeOptionOrders(
+      options[optionKey].filter((option) => !remove.has(option.id)),
+    );
+  }
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    const optionKey = hotWaterTankOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    options[optionKey] = normalizeOptionOrders([...options[optionKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, HotWaterTankCellWrite[]>());
+  const hotWaterTanks = current.hot_water_tanks.map((tank) =>
+    applyWritesToHotWaterTank(tank, writesByRowId.get(tank.id) ?? []),
+  );
+  return {
+    hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function electricHeatersPayloadFromCellWrites(
+  current: ElectricHeatersSlice,
+  writes: ElectricHeaterCellWrite[],
+): ElectricHeatersReplacePayload {
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, ElectricHeaterCellWrite[]>());
+  const electricHeaters = current.electric_heaters.map((heater) =>
+    applyWritesToElectricHeater(heater, writesByRowId.get(heater.id) ?? []),
+  );
+  return {
+    electric_heaters: sortedElectricHeaters(electricHeaters),
+    single_select_options: cloneElectricHeaterOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function appliancesPayloadFromCellWrites(
+  current: AppliancesSlice,
+  writes: ApplianceCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
+): AppliancesReplacePayload {
+  const options = cloneApplianceOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    const optionKey = applianceOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[optionKey] = normalizeOptionOrders(
+      options[optionKey].filter((option) => !remove.has(option.id)),
+    );
+  }
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    const optionKey = applianceOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    options[optionKey] = normalizeOptionOrders([...options[optionKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, ApplianceCellWrite[]>());
+  const appliances = current.appliances.map((appliance) =>
+    applyWritesToAppliance(appliance, writesByRowId.get(appliance.id) ?? []),
+  );
+  return {
+    appliances: sortedAppliances(appliances),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
 export function validateRoomsPayload(payload: RoomsReplacePayload): string | null {
   const floorOptionIds = new Set(
     payload.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY].map((option) => option.id),
@@ -718,6 +2052,165 @@ export function validatePumpsPayload(payload: PumpsReplacePayload): string | nul
   return null;
 }
 
+export function validateVentilatorsPayload(payload: VentilatorsReplacePayload): string | null {
+  const ids = new Set<string>();
+  const insideOutsideIds = new Set(
+    payload.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY].map((option) => option.id),
+  );
+  for (const ventilator of payload.ventilators) {
+    if (ids.has(ventilator.id)) return "Ventilator id already exists in this project.";
+    ids.add(ventilator.id);
+    if (ventilator.inside_outside && !insideOutsideIds.has(ventilator.inside_outside)) {
+      return "Ventilator inside/outside option is missing.";
+    }
+    if (ventilator.url && !/^https?:\/\//.test(ventilator.url)) {
+      return "Ventilator URL must start with http:// or https://.";
+    }
+    const heatRecovery = customNumberValue(ventilator, "heat_recovery_percent");
+    if (heatRecovery !== null && (heatRecovery < 0 || heatRecovery > 100)) {
+      return "Heat Recovery % must be between 0 and 100.";
+    }
+    const moistureRecovery = customNumberValue(ventilator, "moisture_recovery_percent");
+    if (moistureRecovery !== null && (moistureRecovery < 0 || moistureRecovery > 100)) {
+      return "Moisture Recovery % must be between 0 and 100.";
+    }
+    const merv = customNumberValue(ventilator, "filter_merv_rating");
+    if (merv !== null && (merv < 1 || merv > 20)) {
+      return "Filter MERV Rating must be between 1 and 20.";
+    }
+  }
+  return null;
+}
+
+export function validateFansPayload(payload: FansReplacePayload): string | null {
+  const ids = new Set<string>();
+  const typeIds = new Set(
+    payload.single_select_options[FAN_TYPE_OPTION_KEY].map((option) => option.id),
+  );
+  for (const fan of payload.fans) {
+    if (ids.has(fan.id)) return "Fan id already exists in this project.";
+    ids.add(fan.id);
+    if (fan.fan_type && !typeIds.has(fan.fan_type)) {
+      return "Fan type option is missing.";
+    }
+    if (fan.phase !== null && fan.phase !== 1 && fan.phase !== 3) {
+      return "Phase must be 1 or 3.";
+    }
+    if (fan.url && !/^https?:\/\//.test(fan.url)) {
+      return "Fan URL must start with http:// or https://.";
+    }
+    const quantity = customNumberValue(fan, "quantity");
+    if (quantity !== null && quantity < 0) return "Quantity must be zero or greater.";
+    const annualRuntime = customNumberValue(fan, "annual_runtime_min_yr");
+    if (annualRuntime !== null && annualRuntime < 0)
+      return "Annual Runtime must be zero or greater.";
+    const airflow = customNumberValue(fan, "airflow_m3h");
+    if (airflow !== null && airflow < 0) return "Airflow must be zero or greater.";
+    const amps = customNumberValue(fan, "amps");
+    if (amps !== null && amps < 0) return "Amps must be zero or greater.";
+    const volts = customNumberValue(fan, "volts");
+    if (volts !== null && volts < 0) return "Volts must be zero or greater.";
+    const powerFactor = customNumberValue(fan, "power_factor");
+    if (powerFactor !== null && (powerFactor < 0 || powerFactor > 1)) {
+      return "Power Factor must be between 0 and 1.";
+    }
+    const watts = customNumberValue(fan, "watts");
+    if (watts !== null && watts < 0) return "Watts must be zero or greater.";
+  }
+  return null;
+}
+
+export function validateHotWaterTanksPayload(payload: HotWaterTanksReplacePayload): string | null {
+  const ids = new Set<string>();
+  const typeIds = new Set(
+    payload.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY].map((option) => option.id),
+  );
+  for (const tank of payload.hot_water_tanks) {
+    if (ids.has(tank.id)) return "Hot water tank id already exists in this project.";
+    ids.add(tank.id);
+    if (tank.tank_type && !typeIds.has(tank.tank_type)) {
+      return "Hot water tank type option is missing.";
+    }
+    if (tank.phase !== null && tank.phase !== 1 && tank.phase !== 3) {
+      return "Phase must be 1 or 3.";
+    }
+    if (tank.url && !/^https?:\/\//.test(tank.url)) {
+      return "Hot water tank URL must start with http:// or https://.";
+    }
+    const quantity = customNumberValue(tank, "quantity");
+    if (quantity !== null && quantity < 0) return "Quantity must be zero or greater.";
+    const size = customNumberValue(tank, "size_l");
+    if (size !== null && size < 0) return "Size must be zero or greater.";
+    const amps = customNumberValue(tank, "amps");
+    if (amps !== null && amps < 0) return "Amps must be zero or greater.";
+    const volts = customNumberValue(tank, "volts");
+    if (volts !== null && volts < 0) return "Volts must be zero or greater.";
+    const powerFactor = customNumberValue(tank, "power_factor");
+    if (powerFactor !== null && (powerFactor < 0 || powerFactor > 1)) {
+      return "Power Factor must be between 0 and 1.";
+    }
+    const watts = customNumberValue(tank, "watts");
+    if (watts !== null && watts < 0) return "Watts must be zero or greater.";
+    const uef = customNumberValue(tank, "uef");
+    if (uef !== null && uef < 0) return "UEF must be zero or greater.";
+  }
+  return null;
+}
+
+export function validateElectricHeatersPayload(
+  payload: ElectricHeatersReplacePayload,
+): string | null {
+  const ids = new Set<string>();
+  for (const heater of payload.electric_heaters) {
+    if (ids.has(heater.id)) return "Electric heater id already exists in this project.";
+    ids.add(heater.id);
+    if (heater.url && !/^https?:\/\//.test(heater.url)) {
+      return "Electric heater URL must start with http:// or https://.";
+    }
+    const watt = customNumberValue(heater, "watt");
+    if (watt !== null && watt < 0) return "Watt must be zero or greater.";
+  }
+  return null;
+}
+
+export function validateAppliancesPayload(payload: AppliancesReplacePayload): string | null {
+  const ids = new Set<string>();
+  const typeIds = new Set(
+    payload.single_select_options[APPLIANCE_TYPE_OPTION_KEY].map((option) => option.id),
+  );
+  const energyStarIds = new Set(
+    payload.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY].map((option) => option.id),
+  );
+  for (const appliance of payload.appliances) {
+    if (ids.has(appliance.id)) return "Appliance id already exists in this project.";
+    ids.add(appliance.id);
+    if (appliance.appliance_type && !typeIds.has(appliance.appliance_type)) {
+      return "Appliance type option is missing.";
+    }
+    if (appliance.energy_star && !energyStarIds.has(appliance.energy_star)) {
+      return "Appliance EnergyStar option is missing.";
+    }
+    if (appliance.url && !/^https?:\/\//.test(appliance.url)) {
+      return "Appliance URL must start with http:// or https://.";
+    }
+    const quantity = customNumberValue(appliance, "quantity");
+    if (quantity !== null && quantity < 0) return "Quantity must be zero or greater.";
+    const capacity = customNumberValue(appliance, "capacity_m3");
+    if (capacity !== null && capacity < 0) return "Capacity must be zero or greater.";
+    const cef = customNumberValue(appliance, "cef");
+    if (cef !== null && cef < 0) return "CEF must be zero or greater.";
+    const imef = customNumberValue(appliance, "imef");
+    if (imef !== null && imef < 0) return "IMEF must be zero or greater.";
+    const mef = customNumberValue(appliance, "mef");
+    if (mef !== null && mef < 0) return "MEF must be zero or greater.";
+    const annualEnergy = customNumberValue(appliance, "annual_energy_kwh");
+    if (annualEnergy !== null && annualEnergy < 0) {
+      return "Annual Energy must be zero or greater.";
+    }
+  }
+  return null;
+}
+
 export function replacePumpOptionsPayload(
   current: PumpsSlice,
   key: PumpOptionKey,
@@ -748,6 +2241,147 @@ export function replacePumpOptionsPayload(
   return {
     pumps: sortedPumps(pumps),
     single_select_options: options,
+  };
+}
+
+export function replaceVentilatorOptionsPayload(
+  current: VentilatorsSlice,
+  key: VentilatorOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): VentilatorsReplacePayload {
+  const options = cloneVentilatorOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.ventilators
+      .map((ventilator) => ventilator.inside_outside)
+      .filter(
+        (optionId): optionId is string =>
+          optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
+      ),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const ventilators = current.ventilators.map((ventilator) => {
+    const currentOptionId = ventilator.inside_outside;
+    if (!currentOptionId || !(currentOptionId in replacements)) return ventilator;
+    return { ...ventilator, inside_outside: replacements[currentOptionId] ?? null };
+  });
+  return {
+    ventilators: sortedVentilators(ventilators),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function replaceFanOptionsPayload(
+  current: FansSlice,
+  key: FanOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): FansReplacePayload {
+  const options = cloneFanOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.fans
+      .map((fan) => fan.fan_type)
+      .filter(
+        (optionId): optionId is string =>
+          optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
+      ),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const fans = current.fans.map((fan) => {
+    const currentOptionId = fan.fan_type;
+    if (!currentOptionId || !(currentOptionId in replacements)) return fan;
+    return { ...fan, fan_type: replacements[currentOptionId] ?? null };
+  });
+  return {
+    fans: sortedFans(fans),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function replaceHotWaterTankOptionsPayload(
+  current: HotWaterTanksSlice,
+  key: HotWaterTankOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): HotWaterTanksReplacePayload {
+  const options = cloneHotWaterTankOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.hot_water_tanks
+      .map((tank) => tank.tank_type)
+      .filter(
+        (optionId): optionId is string =>
+          optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
+      ),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const hotWaterTanks = current.hot_water_tanks.map((tank) => {
+    const currentOptionId = tank.tank_type;
+    if (!currentOptionId || !(currentOptionId in replacements)) return tank;
+    return { ...tank, tank_type: replacements[currentOptionId] ?? null };
+  });
+  return {
+    hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function replaceApplianceOptionsPayload(
+  current: AppliancesSlice,
+  key: ApplianceOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): AppliancesReplacePayload {
+  const options = cloneApplianceOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.appliances
+      .map((appliance) =>
+        key === APPLIANCE_TYPE_OPTION_KEY ? appliance.appliance_type : appliance.energy_star,
+      )
+      .filter(
+        (optionId): optionId is string =>
+          optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
+      ),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const appliances = current.appliances.map((appliance) => {
+    const currentOptionId =
+      key === APPLIANCE_TYPE_OPTION_KEY ? appliance.appliance_type : appliance.energy_star;
+    if (!currentOptionId || !(currentOptionId in replacements)) return appliance;
+    return key === APPLIANCE_TYPE_OPTION_KEY
+      ? { ...appliance, appliance_type: replacements[currentOptionId] ?? null }
+      : { ...appliance, energy_star: replacements[currentOptionId] ?? null };
+  });
+  return {
+    appliances: sortedAppliances(appliances),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
   };
 }
 
@@ -860,6 +2494,63 @@ function applyWritesToPump(pump: PumpRow, writes: PumpCellWrite[]): PumpRow {
   return normalizePumpForPayload(next);
 }
 
+function applyWritesToVentilator(
+  ventilator: VentilatorRow,
+  writes: VentilatorCellWrite[],
+): VentilatorRow {
+  if (writes.length === 0) return ventilator;
+  let next = ventilator;
+  for (const write of writes) {
+    next = applyWriteToVentilator(next, write.fieldKey, write.value);
+  }
+  return normalizeVentilatorForPayload(next);
+}
+
+function applyWritesToFan(fan: FanRow, writes: FanCellWrite[]): FanRow {
+  if (writes.length === 0) return fan;
+  let next = fan;
+  for (const write of writes) {
+    next = applyWriteToFan(next, write.fieldKey, write.value);
+  }
+  return normalizeFanForPayload(next);
+}
+
+function applyWritesToHotWaterTank(
+  tank: HotWaterTankRow,
+  writes: HotWaterTankCellWrite[],
+): HotWaterTankRow {
+  if (writes.length === 0) return tank;
+  let next = tank;
+  for (const write of writes) {
+    next = applyWriteToHotWaterTank(next, write.fieldKey, write.value);
+  }
+  return normalizeHotWaterTankForPayload(next);
+}
+
+function applyWritesToElectricHeater(
+  heater: ElectricHeaterRow,
+  writes: ElectricHeaterCellWrite[],
+): ElectricHeaterRow {
+  if (writes.length === 0) return heater;
+  let next = heater;
+  for (const write of writes) {
+    next = applyWriteToElectricHeater(next, write.fieldKey, write.value);
+  }
+  return normalizeElectricHeaterForPayload(next);
+}
+
+function applyWritesToAppliance(
+  appliance: ApplianceRow,
+  writes: ApplianceCellWrite[],
+): ApplianceRow {
+  if (writes.length === 0) return appliance;
+  let next = appliance;
+  for (const write of writes) {
+    next = applyWriteToAppliance(next, write.fieldKey, write.value);
+  }
+  return normalizeApplianceForPayload(next);
+}
+
 function applyWriteToPump(pump: PumpRow, fieldKey: string, value: unknown): PumpRow {
   if (fieldKey === PUMP_DEVICE_TYPE_KEY && isNullableOptionId(value)) {
     return { ...pump, device_type: value };
@@ -879,6 +2570,102 @@ function applyWriteToPump(pump: PumpRow, fieldKey: string, value: unknown): Pump
   return pump;
 }
 
+function applyWriteToVentilator(
+  ventilator: VentilatorRow,
+  fieldKey: string,
+  value: unknown,
+): VentilatorRow {
+  if (fieldKey === VENTILATOR_INSIDE_OUTSIDE_KEY && isNullableOptionId(value)) {
+    return { ...ventilator, inside_outside: value };
+  }
+  if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
+    return { ...ventilator, [fieldKey]: value };
+  }
+  if (VENTILATOR_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(ventilator, fieldKey, value);
+  }
+  return ventilator;
+}
+
+function applyWriteToFan(fan: FanRow, fieldKey: string, value: unknown): FanRow {
+  if (fieldKey === FAN_TYPE_KEY && isNullableOptionId(value)) {
+    return { ...fan, fan_type: value };
+  }
+  if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
+    return { ...fan, [fieldKey]: value };
+  }
+  if (fieldKey === "phase" && isNullableNumber(value)) {
+    return { ...fan, phase: value };
+  }
+  if (fieldKey === FAN_DATASHEET_FIELD_KEY) {
+    return { ...fan, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (FAN_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(fan, fieldKey, value);
+  }
+  return fan;
+}
+
+function applyWriteToHotWaterTank(
+  tank: HotWaterTankRow,
+  fieldKey: string,
+  value: unknown,
+): HotWaterTankRow {
+  if (fieldKey === HOT_WATER_TANK_TYPE_KEY && isNullableOptionId(value)) {
+    return { ...tank, tank_type: value };
+  }
+  if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
+    return { ...tank, [fieldKey]: value };
+  }
+  if (fieldKey === "phase" && isNullableNumber(value)) {
+    return { ...tank, phase: value };
+  }
+  if (fieldKey === HOT_WATER_TANK_DATASHEET_FIELD_KEY) {
+    return { ...tank, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(tank, fieldKey, value);
+  }
+  return tank;
+}
+
+function applyWriteToElectricHeater(
+  heater: ElectricHeaterRow,
+  fieldKey: string,
+  value: unknown,
+): ElectricHeaterRow {
+  if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
+    return { ...heater, [fieldKey]: value };
+  }
+  if (ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(heater, fieldKey, value);
+  }
+  return heater;
+}
+
+function applyWriteToAppliance(
+  appliance: ApplianceRow,
+  fieldKey: string,
+  value: unknown,
+): ApplianceRow {
+  if (fieldKey === APPLIANCE_TYPE_KEY && isNullableOptionId(value)) {
+    return { ...appliance, appliance_type: value };
+  }
+  if (fieldKey === APPLIANCE_ENERGY_STAR_KEY && isNullableOptionId(value)) {
+    return { ...appliance, energy_star: value };
+  }
+  if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
+    return { ...appliance, [fieldKey]: value };
+  }
+  if (fieldKey === APPLIANCE_DATASHEET_FIELD_KEY) {
+    return { ...appliance, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (APPLIANCE_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(appliance, fieldKey, value);
+  }
+  return appliance;
+}
+
 function isNullableOptionId(value: unknown): value is string | null {
   return value === null || (typeof value === "string" && value.startsWith("opt_"));
 }
@@ -889,6 +2676,22 @@ function isNullableNumber(value: unknown): value is number | null {
 
 export function isPumpOptionKey(key: string): key is PumpOptionKey {
   return key === PUMP_DEVICE_TYPE_OPTION_KEY;
+}
+
+export function isVentilatorOptionKey(key: string): key is VentilatorOptionKey {
+  return key === VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY;
+}
+
+export function isFanOptionKey(key: string): key is FanOptionKey {
+  return key === FAN_TYPE_OPTION_KEY;
+}
+
+export function isHotWaterTankOptionKey(key: string): key is HotWaterTankOptionKey {
+  return key === HOT_WATER_TANK_TYPE_OPTION_KEY;
+}
+
+export function isApplianceOptionKey(key: string): key is ApplianceOptionKey {
+  return key === APPLIANCE_TYPE_OPTION_KEY || key === APPLIANCE_ENERGY_STAR_OPTION_KEY;
 }
 
 export function isRoomOptionKey(key: string): key is RoomOptionKey {
@@ -914,6 +2717,40 @@ function roomsOptionListKeyForFieldKey(fieldKey: string): string | null {
 function pumpOptionListKeyForFieldKey(fieldKey: string): PumpOptionKey | null {
   if (fieldKey === PUMP_DEVICE_TYPE_KEY || fieldKey === PUMP_DEVICE_TYPE_OPTION_KEY) {
     return PUMP_DEVICE_TYPE_OPTION_KEY;
+  }
+  return null;
+}
+
+function ventilatorOptionListKeyForFieldKey(fieldKey: string): VentilatorOptionKey | null {
+  if (
+    fieldKey === VENTILATOR_INSIDE_OUTSIDE_KEY ||
+    fieldKey === VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY
+  ) {
+    return VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY;
+  }
+  return null;
+}
+
+function fanOptionListKeyForFieldKey(fieldKey: string): FanOptionKey | null {
+  if (fieldKey === FAN_TYPE_KEY || fieldKey === FAN_TYPE_OPTION_KEY) {
+    return FAN_TYPE_OPTION_KEY;
+  }
+  return null;
+}
+
+function hotWaterTankOptionListKeyForFieldKey(fieldKey: string): HotWaterTankOptionKey | null {
+  if (fieldKey === HOT_WATER_TANK_TYPE_KEY || fieldKey === HOT_WATER_TANK_TYPE_OPTION_KEY) {
+    return HOT_WATER_TANK_TYPE_OPTION_KEY;
+  }
+  return null;
+}
+
+function applianceOptionListKeyForFieldKey(fieldKey: string): ApplianceOptionKey | null {
+  if (fieldKey === APPLIANCE_TYPE_KEY || fieldKey === APPLIANCE_TYPE_OPTION_KEY) {
+    return APPLIANCE_TYPE_OPTION_KEY;
+  }
+  if (fieldKey === APPLIANCE_ENERGY_STAR_KEY || fieldKey === APPLIANCE_ENERGY_STAR_OPTION_KEY) {
+    return APPLIANCE_ENERGY_STAR_OPTION_KEY;
   }
   return null;
 }
@@ -1018,6 +2855,130 @@ function normalizePumpForPayload(pump: PumpRow): PumpRow {
   };
 }
 
+function normalizeVentilatorForPayload(ventilator: VentilatorRow): VentilatorRow {
+  return {
+    ...ventilator,
+    custom_values: {
+      ...ventilator.custom_values,
+      record_id: nullableTrimmed(customTextValue(ventilator, "record_id")),
+      name: nullableTrimmed(customTextValue(ventilator, "name")),
+      airflow_rate_m3h: nonNegativeOrNull(customNumberValue(ventilator, "airflow_rate_m3h")),
+      model: nullableTrimmed(customTextValue(ventilator, "model")),
+      manufacturer: nullableTrimmed(customTextValue(ventilator, "manufacturer")),
+      heat_recovery_percent: percentOrNull(customNumberValue(ventilator, "heat_recovery_percent")),
+      moisture_recovery_percent: percentOrNull(
+        customNumberValue(ventilator, "moisture_recovery_percent"),
+      ),
+      electrical_efficiency_wh_m3: nonNegativeOrNull(
+        customNumberValue(ventilator, "electrical_efficiency_wh_m3"),
+      ),
+      filter_merv_rating: mervOrOriginal(
+        customNumberValue(ventilator, "filter_merv_rating"),
+        ventilator.custom_values.filter_merv_rating,
+      ),
+    },
+    notes: ventilator.notes?.trim() || null,
+    url: ventilator.url?.trim() || null,
+  };
+}
+
+function normalizeFanForPayload(fan: FanRow): FanRow {
+  const phase =
+    fan.phase === null || fan.phase === undefined ? null : Math.trunc(Number(fan.phase));
+  return {
+    ...fan,
+    phase: phase === 1 || phase === 3 ? phase : fan.phase,
+    custom_values: {
+      ...fan.custom_values,
+      record_id: nullableTrimmed(customTextValue(fan, "record_id")),
+      name: nullableTrimmed(customTextValue(fan, "name")),
+      quantity: nonNegativeOrNull(customNumberValue(fan, "quantity")),
+      model: nullableTrimmed(customTextValue(fan, "model")),
+      manufacturer: nullableTrimmed(customTextValue(fan, "manufacturer")),
+      annual_runtime_min_yr: nonNegativeOrNull(customNumberValue(fan, "annual_runtime_min_yr")),
+      airflow_m3h: nonNegativeOrNull(customNumberValue(fan, "airflow_m3h")),
+      amps: nonNegativeOrNull(customNumberValue(fan, "amps")),
+      volts: nonNegativeOrNull(customNumberValue(fan, "volts")),
+      power_factor: powerFactorOrOriginal(
+        customNumberValue(fan, "power_factor"),
+        fan.custom_values.power_factor,
+      ),
+      watts: nonNegativeOrNull(customNumberValue(fan, "watts")),
+    },
+    notes: fan.notes?.trim() || null,
+    url: fan.url?.trim() || null,
+    datasheet_asset_ids: readAttachmentAssetIds(fan.datasheet_asset_ids),
+  };
+}
+
+function normalizeHotWaterTankForPayload(tank: HotWaterTankRow): HotWaterTankRow {
+  const phase =
+    tank.phase === null || tank.phase === undefined ? null : Math.trunc(Number(tank.phase));
+  return {
+    ...tank,
+    phase: phase === 1 || phase === 3 ? phase : tank.phase,
+    custom_values: {
+      ...tank.custom_values,
+      record_id: nullableTrimmed(customTextValue(tank, "record_id")),
+      name: nullableTrimmed(customTextValue(tank, "name")),
+      quantity: nonNegativeOrNull(customNumberValue(tank, "quantity")),
+      model: nullableTrimmed(customTextValue(tank, "model")),
+      manufacturer: nullableTrimmed(customTextValue(tank, "manufacturer")),
+      size_l: nonNegativeOrNull(customNumberValue(tank, "size_l")),
+      temperature_c: customNumberValue(tank, "temperature_c"),
+      amps: nonNegativeOrNull(customNumberValue(tank, "amps")),
+      volts: nonNegativeOrNull(customNumberValue(tank, "volts")),
+      power_factor: powerFactorOrOriginal(
+        customNumberValue(tank, "power_factor"),
+        tank.custom_values.power_factor,
+      ),
+      watts: nonNegativeOrNull(customNumberValue(tank, "watts")),
+      uef: nonNegativeOrNull(customNumberValue(tank, "uef")),
+    },
+    notes: tank.notes?.trim() || null,
+    url: tank.url?.trim() || null,
+    datasheet_asset_ids: readAttachmentAssetIds(tank.datasheet_asset_ids),
+  };
+}
+
+function normalizeElectricHeaterForPayload(heater: ElectricHeaterRow): ElectricHeaterRow {
+  return {
+    ...heater,
+    custom_values: {
+      ...heater.custom_values,
+      record_id: nullableTrimmed(customTextValue(heater, "record_id")),
+      name: nullableTrimmed(customTextValue(heater, "name")),
+      model: nullableTrimmed(customTextValue(heater, "model")),
+      manufacturer: nullableTrimmed(customTextValue(heater, "manufacturer")),
+      watt: nonNegativeOrNull(customNumberValue(heater, "watt")),
+    },
+    notes: heater.notes?.trim() || null,
+    url: heater.url?.trim() || null,
+  };
+}
+
+function normalizeApplianceForPayload(appliance: ApplianceRow): ApplianceRow {
+  return {
+    ...appliance,
+    custom_values: {
+      ...appliance.custom_values,
+      record_id: nullableTrimmed(customTextValue(appliance, "record_id")),
+      name: nullableTrimmed(customTextValue(appliance, "name")),
+      quantity: nonNegativeOrNull(customNumberValue(appliance, "quantity")),
+      model: nullableTrimmed(customTextValue(appliance, "model")),
+      manufacturer: nullableTrimmed(customTextValue(appliance, "manufacturer")),
+      capacity_m3: nonNegativeOrNull(customNumberValue(appliance, "capacity_m3")),
+      cef: nonNegativeOrNull(customNumberValue(appliance, "cef")),
+      imef: nonNegativeOrNull(customNumberValue(appliance, "imef")),
+      mef: nonNegativeOrNull(customNumberValue(appliance, "mef")),
+      annual_energy_kwh: nonNegativeOrNull(customNumberValue(appliance, "annual_energy_kwh")),
+    },
+    notes: appliance.notes?.trim() || null,
+    url: appliance.url?.trim() || null,
+    datasheet_asset_ids: readAttachmentAssetIds(appliance.datasheet_asset_ids),
+  };
+}
+
 function nullableTrimmed(value: string): string | null {
   return value.trim() || null;
 }
@@ -1027,9 +2988,79 @@ function nonNegativeOrNull(value: number | null): number | null {
   return Math.max(0, value);
 }
 
+function percentOrNull(value: number | null): number | null {
+  if (value === null || value === undefined) return null;
+  return value;
+}
+
+function mervOrOriginal(value: number | null, original: CustomValue | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const integer = Math.trunc(value);
+  if (integer < 1 || integer > 20) {
+    return typeof original === "number" ? original : value;
+  }
+  return integer;
+}
+
+function powerFactorOrOriginal(
+  value: number | null,
+  original: CustomValue | undefined,
+): number | null {
+  if (value === null || value === undefined) return null;
+  if (value < 0 || value > 1) {
+    return typeof original === "number" ? original : value;
+  }
+  return value;
+}
+
 function clonePumpOptions(current: PumpsSlice): PumpsReplacePayload["single_select_options"] {
   return {
     [PUMP_DEVICE_TYPE_OPTION_KEY]: [...current.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]],
+  };
+}
+
+function cloneVentilatorOptions(
+  current: VentilatorsSlice,
+): VentilatorsReplacePayload["single_select_options"] {
+  return {
+    [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]: [
+      ...current.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
+    ],
+  };
+}
+
+function cloneFanOptions(current: FansSlice): FansReplacePayload["single_select_options"] {
+  return {
+    [FAN_TYPE_OPTION_KEY]: [...current.single_select_options[FAN_TYPE_OPTION_KEY]],
+  };
+}
+
+function cloneHotWaterTankOptions(
+  current: HotWaterTanksSlice,
+): HotWaterTanksReplacePayload["single_select_options"] {
+  return {
+    [HOT_WATER_TANK_TYPE_OPTION_KEY]: [
+      ...current.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
+    ],
+  };
+}
+
+function cloneElectricHeaterOptions(
+  current: ElectricHeatersSlice,
+): ElectricHeatersReplacePayload["single_select_options"] {
+  return Object.fromEntries(
+    Object.entries(current.single_select_options).map(([key, options]) => [key, [...options]]),
+  );
+}
+
+function cloneApplianceOptions(
+  current: AppliancesSlice,
+): AppliancesReplacePayload["single_select_options"] {
+  return {
+    [APPLIANCE_TYPE_OPTION_KEY]: [...current.single_select_options[APPLIANCE_TYPE_OPTION_KEY]],
+    [APPLIANCE_ENERGY_STAR_OPTION_KEY]: [
+      ...current.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY],
+    ],
   };
 }
 
