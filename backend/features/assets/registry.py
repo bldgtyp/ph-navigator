@@ -58,7 +58,15 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
             max_count=5,
             max_file_size_mb=25,
         )
-        for table in ("equipment_ervs", "equipment_pumps", "equipment_fans", "thermal_bridges")
+        for table in (
+            "equipment_ervs",
+            "equipment_pumps",
+            "equipment_fans",
+            "equipment_hot_water_tanks",
+            "equipment_electric_heaters",
+            "equipment_appliances",
+            "thermal_bridges",
+        )
     ),
     AttachmentFieldConfig(
         key="thermal_bridges.simulation_file_asset_ids",
@@ -164,11 +172,17 @@ def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[st
     if table_key == "thermal_bridges":
         return _dict_rows(tables.get("thermal_bridges"))
     if table_key == "equipment_ervs":
-        return _dict_rows(tables.get("equipment", {}).get("ervs"))
+        return attachment_table_rows(tables.get("equipment", {}).get("ervs"))
     if table_key == "equipment_pumps":
         return attachment_table_rows(tables.get("equipment", {}).get("pumps"))
     if table_key == "equipment_fans":
-        return _dict_rows(tables.get("equipment", {}).get("fans"))
+        return attachment_table_rows(tables.get("equipment", {}).get("fans"))
+    if table_key == "equipment_hot_water_tanks":
+        return attachment_table_rows(tables.get("equipment", {}).get("hot_water_tanks"))
+    if table_key == "equipment_electric_heaters":
+        return attachment_table_rows(tables.get("equipment", {}).get("electric_heaters"))
+    if table_key == "equipment_appliances":
+        return attachment_table_rows(tables.get("equipment", {}).get("appliances"))
     if table_key == "assembly_segments":
         rows: list[dict[str, Any]] = []
         for assembly in _dict_rows(tables.get("assemblies")):

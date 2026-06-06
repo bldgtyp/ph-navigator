@@ -163,6 +163,10 @@ def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
         "length": {"si": ["m"], "ip": ["ft"]},
         "area": {"si": ["m2"], "ip": ["ft2"]},
         "volume": {"si": ["m3"], "ip": ["ft3"]},
+        "airflow": {"si": ["m3_h"], "ip": ["cfm"]},
+        "volume_liters": {"si": ["l"], "ip": ["gal"]},
+        "temperature": {"si": ["c"], "ip": ["f"]},
+        "electric_efficiency": {"si": ["wh_m3"], "ip": ["w_cfm"]},
     }
 
 

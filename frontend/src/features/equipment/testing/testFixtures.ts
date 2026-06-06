@@ -9,24 +9,40 @@ import {
   type TableSchema,
 } from "../../../shared/ui/data-table";
 import {
+  FANS_COMPAT_BUILT_IN_FIELD_DEFS,
+  fansFieldOverlay,
   PUMPS_COMPAT_BUILT_IN_FIELD_DEFS,
   pumpsFieldOverlay,
   ROOMS_COMPAT_BUILT_IN_FIELD_DEFS,
   roomsFieldOverlay,
+  VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS,
+  ventilatorsFieldOverlay,
 } from "../lib";
 import {
+  FAN_TYPE_OPTION_KEY,
+  FANS_TABLE_NAME,
   PUMP_DEVICE_TYPE_OPTION_KEY,
   PUMPS_TABLE_NAME,
   ROOMS_TABLE_NAME,
   ROOM_BUILDING_ZONE_OPTION_KEY,
   ROOM_FLOOR_LEVEL_OPTION_KEY,
+  VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATORS_TABLE_NAME,
+  type FanRow,
+  type FansSlice,
   type PumpRow,
   type PumpsSlice,
   type RoomRow,
   type RoomsSlice,
+  type VentilatorRow,
+  type VentilatorsSlice,
 } from "../types";
 
 const CREATED_AT = "2026-05-25T00:00:00Z";
+
+export * from "./hotWaterTanksFixtures";
+export * from "./electricHeatersFixtures";
+export * from "./appliancesFixtures";
 
 export function tableFieldDef(overrides: Partial<TableFieldDef> = {}): TableFieldDef {
   const fieldKey = overrides.field_key ?? "cf_paint";
@@ -57,6 +73,22 @@ export const pumpsBuiltInFieldDefs: TableFieldDef[] = [
 
 export function pumpsFieldDefs(...customFields: TableFieldDef[]): TableFieldDef[] {
   return [...pumpsBuiltInFieldDefs, ...customFields];
+}
+
+export const ventilatorsBuiltInFieldDefs: TableFieldDef[] = [
+  ...VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS.map(copyTableFieldDef),
+];
+
+export function ventilatorsFieldDefs(...customFields: TableFieldDef[]): TableFieldDef[] {
+  return [...ventilatorsBuiltInFieldDefs, ...customFields];
+}
+
+export const fansBuiltInFieldDefs: TableFieldDef[] = [
+  ...FANS_COMPAT_BUILT_IN_FIELD_DEFS.map(copyTableFieldDef),
+];
+
+export function fansFieldDefs(...customFields: TableFieldDef[]): TableFieldDef[] {
+  return [...fansBuiltInFieldDefs, ...customFields];
 }
 
 export function buildCustomField(overrides: Partial<TableFieldDef> = {}): TableFieldDef {
@@ -121,6 +153,52 @@ export function buildPump(overrides: Partial<PumpRow> = {}): PumpRow {
       wattage: 45,
       flow_gpm: null,
       runtime_khr_yr: null,
+    },
+    ...overrides,
+  };
+}
+
+export function buildVentilator(overrides: Partial<VentilatorRow> = {}): VentilatorRow {
+  return {
+    id: "vent_1",
+    inside_outside: "opt_inside",
+    url: null,
+    notes: null,
+    custom_values: {
+      record_id: "ERV-1",
+      name: "Apartment ERV",
+      airflow_rate_m3h: 425,
+      model: "Q350",
+      manufacturer: "Zehnder",
+      heat_recovery_percent: 84,
+      moisture_recovery_percent: 70,
+      electrical_efficiency_wh_m3: 0.42,
+      filter_merv_rating: 13,
+    },
+    ...overrides,
+  };
+}
+
+export function buildFan(overrides: Partial<FanRow> = {}): FanRow {
+  return {
+    id: "fan_1",
+    fan_type: "opt_kitchen_hood",
+    phase: 1,
+    url: null,
+    notes: null,
+    datasheet_asset_ids: [],
+    custom_values: {
+      record_id: "F-1",
+      name: "Kitchen hood exhaust",
+      quantity: 1,
+      model: "KH-100",
+      manufacturer: "Acme",
+      annual_runtime_min_yr: 12000,
+      airflow_m3h: 425,
+      amps: 1.2,
+      volts: 120,
+      power_factor: 0.8,
+      watts: 120,
     },
     ...overrides,
   };
@@ -245,6 +323,45 @@ export function buildPumpsSlice(overrides: Partial<PumpsSlice> = {}): PumpsSlice
   };
 }
 
+export function buildVentilatorsSlice(overrides: Partial<VentilatorsSlice> = {}): VentilatorsSlice {
+  return {
+    project_id: "proj_1",
+    version_id: "ver_1",
+    source: "draft",
+    version_etag: "v1",
+    draft_etag: "d1",
+    ventilators: [],
+    field_defs: ventilatorsFieldDefs(),
+    single_select_options: {
+      [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]: [
+        { id: "opt_inside", label: "Inside", color: "#3b82f6", order: 0 },
+        { id: "opt_outside", label: "Outside", color: "#10b981", order: 1 },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+export function buildFansSlice(overrides: Partial<FansSlice> = {}): FansSlice {
+  return {
+    project_id: "proj_1",
+    version_id: "ver_1",
+    source: "draft",
+    version_etag: "v1",
+    draft_etag: "d1",
+    fans: [],
+    field_defs: fansFieldDefs(),
+    single_select_options: {
+      [FAN_TYPE_OPTION_KEY]: [
+        { id: "opt_dryer", label: "1-Dryer", color: "#f97316", order: 0 },
+        { id: "opt_kitchen_hood", label: "2-Kitchen Hood", color: "#0ea5e9", order: 1 },
+        { id: "opt_user_defined", label: "3-User Defined", color: "#8b5cf6", order: 2 },
+      ],
+    },
+    ...overrides,
+  };
+}
+
 export function schemaForRooms(slice: RoomsSlice): TableSchema {
   return buildTableSchema({
     tableKey: ROOMS_TABLE_NAME,
@@ -263,6 +380,24 @@ export function schemaForPumps(slice: PumpsSlice): TableSchema {
   });
 }
 
+export function schemaForVentilators(slice: VentilatorsSlice): TableSchema {
+  return buildTableSchema({
+    tableKey: VENTILATORS_TABLE_NAME,
+    fieldDefs: slice.field_defs,
+    fieldOverlay: ventilatorsFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
+  });
+}
+
+export function schemaForFans(slice: FansSlice): TableSchema {
+  return buildTableSchema({
+    tableKey: FANS_TABLE_NAME,
+    fieldDefs: slice.field_defs,
+    fieldOverlay: fansFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
+  });
+}
+
 export function useRoomsTableSchema(slice: RoomsSlice): TableSchema {
   return useTableSchema({
     tableKey: ROOMS_TABLE_NAME,
@@ -277,6 +412,24 @@ export function usePumpsTableSchema(slice: PumpsSlice): TableSchema {
     tableKey: PUMPS_TABLE_NAME,
     fieldDefs: slice.field_defs,
     fieldOverlay: pumpsFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
+  });
+}
+
+export function useVentilatorsTableSchema(slice: VentilatorsSlice): TableSchema {
+  return useTableSchema({
+    tableKey: VENTILATORS_TABLE_NAME,
+    fieldDefs: slice.field_defs,
+    fieldOverlay: ventilatorsFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
+  });
+}
+
+export function useFansTableSchema(slice: FansSlice): TableSchema {
+  return useTableSchema({
+    tableKey: FANS_TABLE_NAME,
+    fieldDefs: slice.field_defs,
+    fieldOverlay: fansFieldOverlay(slice),
     singleSelectOptions: slice.single_select_options,
   });
 }

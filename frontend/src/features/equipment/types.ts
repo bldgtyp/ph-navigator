@@ -110,3 +110,186 @@ export type PumpsReplacePayload = {
   field_defs?: TableFieldDef[];
   single_select_options: PumpsOptionMap;
 };
+
+export const VENTILATORS_TABLE_NAME = "ventilators";
+export const VENTILATOR_INSIDE_OUTSIDE_KEY = "inside_outside";
+export const VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside";
+export const VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID = "inside_outside";
+export const VENTILATOR_OPTION_KEYS = [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY] as const;
+
+export type VentilatorOptionKey = (typeof VENTILATOR_OPTION_KEYS)[number];
+
+export type VentilatorRow = {
+  id: string;
+  inside_outside: string | null;
+  url: string | null;
+  notes: string | null;
+  custom_values: Record<string, CustomValue>;
+};
+
+export type VentilatorsOptionMap = Record<VentilatorOptionKey, SingleSelectOption[]>;
+
+export type VentilatorsSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  ventilators: VentilatorRow[];
+  field_defs: TableFieldDef[];
+  single_select_options: VentilatorsOptionMap;
+};
+
+export type VentilatorsReplacePayload = {
+  ventilators: VentilatorRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: VentilatorsOptionMap;
+};
+
+export const FANS_TABLE_NAME = "fans";
+export const FAN_TYPE_KEY = "fan_type";
+export const FAN_TYPE_OPTION_KEY = "fans.type";
+export const FAN_TYPE_COLUMN_ID = "fan_type";
+export const FAN_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const FAN_OPTION_KEYS = [FAN_TYPE_OPTION_KEY] as const;
+
+export type FanOptionKey = (typeof FAN_OPTION_KEYS)[number];
+
+export type FanRow = {
+  id: string;
+  fan_type: string | null;
+  phase: number | null;
+  url: string | null;
+  notes: string | null;
+  datasheet_asset_ids: string[];
+  custom_values: Record<string, CustomValue>;
+};
+
+export type FansOptionMap = Record<FanOptionKey, SingleSelectOption[]>;
+
+export type FansSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  fans: FanRow[];
+  field_defs: TableFieldDef[];
+  single_select_options: FansOptionMap;
+};
+
+export type FansReplacePayload = {
+  fans: FanRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: FansOptionMap;
+};
+
+export const HOT_WATER_TANKS_TABLE_NAME = "hot_water_tanks";
+export const HOT_WATER_TANK_TYPE_KEY = "tank_type";
+export const HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type";
+export const HOT_WATER_TANK_TYPE_COLUMN_ID = "tank_type";
+export const HOT_WATER_TANK_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const HOT_WATER_TANK_OPTION_KEYS = [HOT_WATER_TANK_TYPE_OPTION_KEY] as const;
+
+export type HotWaterTankOptionKey = (typeof HOT_WATER_TANK_OPTION_KEYS)[number];
+
+export type HotWaterTankRow = {
+  id: string;
+  tank_type: string | null;
+  phase: number | null;
+  url: string | null;
+  notes: string | null;
+  datasheet_asset_ids: string[];
+  custom_values: Record<string, CustomValue>;
+};
+
+export type HotWaterTanksOptionMap = Record<HotWaterTankOptionKey, SingleSelectOption[]>;
+
+export type HotWaterTanksSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  hot_water_tanks: HotWaterTankRow[];
+  field_defs: TableFieldDef[];
+  single_select_options: HotWaterTanksOptionMap;
+};
+
+export type HotWaterTanksReplacePayload = {
+  hot_water_tanks: HotWaterTankRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: HotWaterTanksOptionMap;
+};
+
+export const ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters";
+
+export type ElectricHeaterRow = {
+  id: string;
+  url: string | null;
+  notes: string | null;
+  custom_values: Record<string, CustomValue>;
+};
+
+export type ElectricHeatersOptionMap = Record<string, SingleSelectOption[]>;
+
+export type ElectricHeatersSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  electric_heaters: ElectricHeaterRow[];
+  field_defs: TableFieldDef[];
+  single_select_options: ElectricHeatersOptionMap;
+};
+
+export type ElectricHeatersReplacePayload = {
+  electric_heaters: ElectricHeaterRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: ElectricHeatersOptionMap;
+};
+
+export const APPLIANCES_TABLE_NAME = "appliances";
+export const APPLIANCE_TYPE_KEY = "appliance_type";
+export const APPLIANCE_TYPE_OPTION_KEY = "appliances.type";
+export const APPLIANCE_TYPE_COLUMN_ID = "appliance_type";
+export const APPLIANCE_ENERGY_STAR_KEY = "energy_star";
+export const APPLIANCE_ENERGY_STAR_OPTION_KEY = "appliances.energy_star";
+export const APPLIANCE_ENERGY_STAR_COLUMN_ID = "energy_star";
+export const APPLIANCE_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const APPLIANCE_OPTION_KEYS = [
+  APPLIANCE_TYPE_OPTION_KEY,
+  APPLIANCE_ENERGY_STAR_OPTION_KEY,
+] as const;
+
+export type ApplianceOptionKey = (typeof APPLIANCE_OPTION_KEYS)[number];
+
+export type ApplianceRow = {
+  id: string;
+  appliance_type: string | null;
+  energy_star: string | null;
+  url: string | null;
+  notes: string | null;
+  datasheet_asset_ids: string[];
+  custom_values: Record<string, CustomValue>;
+};
+
+export type AppliancesOptionMap = Record<ApplianceOptionKey, SingleSelectOption[]>;
+
+export type AppliancesSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  appliances: ApplianceRow[];
+  field_defs: TableFieldDef[];
+  single_select_options: AppliancesOptionMap;
+};
+
+export type AppliancesReplacePayload = {
+  appliances: ApplianceRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: AppliancesOptionMap;
+};
