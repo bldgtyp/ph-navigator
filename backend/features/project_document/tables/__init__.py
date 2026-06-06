@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from features.project_document.tables.apertures import AperturesSliceResponse
     from features.project_document.tables.appliances import AppliancesSliceResponse
     from features.project_document.tables.attachments import AttachmentRowsResponse
     from features.project_document.tables.contracts import TableContract, TableRowsResponse
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
         | FansSliceResponse
         | HotWaterTanksSliceResponse
         | WindowTypesSliceResponse
+        | AperturesSliceResponse
         | TableRowsResponse
     )
 
@@ -75,11 +77,16 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.window_types import WindowTypesSliceResponse
 
         return WindowTypesSliceResponse
+    if name == "AperturesSliceResponse":
+        from features.project_document.tables.apertures import AperturesSliceResponse
+
+        return AperturesSliceResponse
     if name in {"get_table_contract", "get_table_contract_by_schema_slug", "iter_table_contracts"}:
         from features.project_document.tables import registry
 
         return getattr(registry, name)
     if name == "RegisteredTableResponse":
+        from features.project_document.tables.apertures import AperturesSliceResponse
         from features.project_document.tables.appliances import AppliancesSliceResponse
         from features.project_document.tables.contracts import TableRowsResponse
         from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
@@ -99,12 +106,14 @@ def __getattr__(name: str) -> Any:
             | FansSliceResponse
             | HotWaterTanksSliceResponse
             | WindowTypesSliceResponse
+            | AperturesSliceResponse
             | TableRowsResponse
         )
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [
+    "AperturesSliceResponse",
     "AttachmentRowsResponse",
     "AppliancesSliceResponse",
     "ElectricHeatersSliceResponse",
