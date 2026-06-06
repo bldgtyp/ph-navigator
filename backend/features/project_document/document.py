@@ -47,6 +47,22 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
 PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type"
 PumpOptionKey = Literal["pumps.device_type"]
 PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY,)
+VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside"
+VentilatorOptionKey = Literal["ventilators.inside_outside"]
+VENTILATOR_OPTION_KEYS: tuple[VentilatorOptionKey, ...] = (VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,)
+FAN_TYPE_OPTION_KEY = "fans.type"
+FanOptionKey = Literal["fans.type"]
+FAN_OPTION_KEYS: tuple[FanOptionKey, ...] = (FAN_TYPE_OPTION_KEY,)
+HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type"
+HotWaterTankOptionKey = Literal["hot_water_tanks.type"]
+HOT_WATER_TANK_OPTION_KEYS: tuple[HotWaterTankOptionKey, ...] = (HOT_WATER_TANK_TYPE_OPTION_KEY,)
+APPLIANCE_TYPE_OPTION_KEY = "appliances.type"
+APPLIANCE_ENERGY_STAR_OPTION_KEY = "appliances.energy_star"
+ApplianceOptionKey = Literal["appliances.type", "appliances.energy_star"]
+APPLIANCE_OPTION_KEYS: tuple[ApplianceOptionKey, ...] = (
+    APPLIANCE_TYPE_OPTION_KEY,
+    APPLIANCE_ENERGY_STAR_OPTION_KEY,
+)
 
 # v4 wire shape: Phase 2 promotes the pinned identifier to a real
 # `record_id` FieldDef on every FieldDef-capable table; Pumps' `tag`
@@ -70,6 +86,17 @@ ROOMS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 )
 PUMPS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "device_type", "phase", "link", "notes", "datasheet_asset_ids"}
+)
+VENTILATORS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "inside_outside", "url", "notes"})
+FANS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "fan_type", "phase", "url", "notes", "datasheet_asset_ids"}
+)
+HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "tank_type", "phase", "url", "notes", "datasheet_asset_ids"}
+)
+ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "url", "notes"})
+APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "appliance_type", "energy_star", "url", "notes", "datasheet_asset_ids"}
 )
 
 
@@ -174,12 +201,204 @@ class PumpsTableEnvelope(BaseModel):
     rows: list[PumpRow] = Field(default_factory=list)
 
 
+class VentilatorRow(BaseModel):
+    """A row in the Ventilators / ERVs equipment table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^vent_[A-Za-z0-9_-]+$", max_length=80)
+    inside_outside: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+
+    @field_validator("url", "notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("url must start with http:// or https://")
+        return value
+
+
+class VentilatorsTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[VentilatorRow] = Field(default_factory=list)
+
+
+class FanRow(BaseModel):
+    """A row in the Fans equipment table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^fan_[A-Za-z0-9_-]+$", max_length=80)
+    fan_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    phase: int | None = None
+    url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+
+    @field_validator("url", "notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("phase")
+    @classmethod
+    def validate_phase(cls, value: int | None) -> int | None:
+        if value is not None and value not in {1, 3}:
+            raise ValueError("phase must be 1 or 3")
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("url must start with http:// or https://")
+        return value
+
+
+class FansTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[FanRow] = Field(default_factory=list)
+
+
+class HotWaterTankRow(BaseModel):
+    """A row in the Hot Water Tanks equipment table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^hwt_[A-Za-z0-9_-]+$", max_length=80)
+    tank_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    phase: int | None = None
+    url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+
+    @field_validator("url", "notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("phase")
+    @classmethod
+    def validate_phase(cls, value: int | None) -> int | None:
+        if value is not None and value not in {1, 3}:
+            raise ValueError("phase must be 1 or 3")
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("url must start with http:// or https://")
+        return value
+
+
+class HotWaterTanksTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[HotWaterTankRow] = Field(default_factory=list)
+
+
+class ElectricHeaterRow(BaseModel):
+    """A row in the Electric Heaters equipment table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^heatr_[A-Za-z0-9_-]+$", max_length=80)
+    url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+
+    @field_validator("url", "notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("url must start with http:// or https://")
+        return value
+
+
+class ElectricHeatersTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[ElectricHeaterRow] = Field(default_factory=list)
+
+
+class ApplianceRow(BaseModel):
+    """A row in the Appliances equipment table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^appl_[A-Za-z0-9_-]+$", max_length=80)
+    appliance_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    energy_star: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+
+    @field_validator("url", "notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("url must start with http:// or https://")
+        return value
+
+
+class AppliancesTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[ApplianceRow] = Field(default_factory=list)
+
+
 class EmptyEquipmentTables(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    fans: list[dict[str, object]] = Field(default_factory=list)
+    appliances: AppliancesTableEnvelope = Field(default_factory=AppliancesTableEnvelope)
+    electric_heaters: ElectricHeatersTableEnvelope = Field(default_factory=ElectricHeatersTableEnvelope)
+    fans: FansTableEnvelope = Field(default_factory=FansTableEnvelope)
+    hot_water_tanks: HotWaterTanksTableEnvelope = Field(default_factory=HotWaterTanksTableEnvelope)
     pumps: PumpsTableEnvelope = Field(default_factory=PumpsTableEnvelope)
-    ervs: list[dict[str, object]] = Field(default_factory=list)
+    ervs: VentilatorsTableEnvelope = Field(default_factory=VentilatorsTableEnvelope)
 
 
 class CatalogOrigin(BaseModel):
@@ -650,6 +869,11 @@ class ProjectDocumentV1(BaseModel):
             ROOM_FLOOR_LEVEL_OPTION_KEY: [],
             ROOM_BUILDING_ZONE_OPTION_KEY: [],
             PUMP_DEVICE_TYPE_OPTION_KEY: [],
+            VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [],
+            FAN_TYPE_OPTION_KEY: [],
+            HOT_WATER_TANK_TYPE_OPTION_KEY: [],
+            APPLIANCE_TYPE_OPTION_KEY: [],
+            APPLIANCE_ENERGY_STAR_OPTION_KEY: [],
         }
     )
 
@@ -658,6 +882,14 @@ class ProjectDocumentV1(BaseModel):
         for key in ROOM_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
         for key in PUMP_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in VENTILATOR_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in FAN_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in HOT_WATER_TANK_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in APPLIANCE_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
 
         for key, options in self.single_select_options.items():
@@ -723,6 +955,116 @@ class ProjectDocumentV1(BaseModel):
             row_label="pump",
             rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
             field_defs_by_key=pumps_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
+        fans_field_defs_by_key = _index_table_field_defs("fans", self.tables.equipment.fans.field_defs)
+        _require_record_id_seeded("fans", fans_field_defs_by_key)
+        fan_type_ids = {option.id for option in self.single_select_options[FAN_TYPE_OPTION_KEY]}
+        fan_ids: set[str] = set()
+        for fan in self.tables.equipment.fans.rows:
+            if fan.id in fan_ids:
+                raise ValueError(f"Duplicate fan id: {fan.id}")
+            fan_ids.add(fan.id)
+            if fan.fan_type is not None and fan.fan_type not in fan_type_ids:
+                raise ValueError(f"Missing fan type option for fan {fan.id}: {fan.fan_type}")
+
+        _validate_rows_custom_values(
+            table_label="fans",
+            row_label="fan",
+            rows=[(fan.id, fan.custom_values) for fan in self.tables.equipment.fans.rows],
+            field_defs_by_key=fans_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
+        hot_water_tanks_field_defs_by_key = _index_table_field_defs(
+            "hot_water_tanks", self.tables.equipment.hot_water_tanks.field_defs
+        )
+        _require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
+        hot_water_tank_type_ids = {option.id for option in self.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]}
+        hot_water_tank_ids: set[str] = set()
+        for tank in self.tables.equipment.hot_water_tanks.rows:
+            if tank.id in hot_water_tank_ids:
+                raise ValueError(f"Duplicate hot water tank id: {tank.id}")
+            hot_water_tank_ids.add(tank.id)
+            if tank.tank_type is not None and tank.tank_type not in hot_water_tank_type_ids:
+                raise ValueError(f"Missing hot water tank type option for tank {tank.id}: {tank.tank_type}")
+
+        _validate_rows_custom_values(
+            table_label="hot_water_tanks",
+            row_label="hot water tank",
+            rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
+            field_defs_by_key=hot_water_tanks_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
+        electric_heaters_field_defs_by_key = _index_table_field_defs(
+            "electric_heaters", self.tables.equipment.electric_heaters.field_defs
+        )
+        _require_record_id_seeded("electric_heaters", electric_heaters_field_defs_by_key)
+        electric_heater_ids: set[str] = set()
+        for heater in self.tables.equipment.electric_heaters.rows:
+            if heater.id in electric_heater_ids:
+                raise ValueError(f"Duplicate electric heater id: {heater.id}")
+            electric_heater_ids.add(heater.id)
+
+        _validate_rows_custom_values(
+            table_label="electric_heaters",
+            row_label="electric heater",
+            rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.electric_heaters.rows],
+            field_defs_by_key=electric_heaters_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
+        appliances_field_defs_by_key = _index_table_field_defs(
+            "appliances", self.tables.equipment.appliances.field_defs
+        )
+        _require_record_id_seeded("appliances", appliances_field_defs_by_key)
+        appliance_type_ids = {option.id for option in self.single_select_options[APPLIANCE_TYPE_OPTION_KEY]}
+        appliance_energy_star_ids = {
+            option.id for option in self.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY]
+        }
+        appliance_ids: set[str] = set()
+        for appliance in self.tables.equipment.appliances.rows:
+            if appliance.id in appliance_ids:
+                raise ValueError(f"Duplicate appliance id: {appliance.id}")
+            appliance_ids.add(appliance.id)
+            if appliance.appliance_type is not None and appliance.appliance_type not in appliance_type_ids:
+                raise ValueError(
+                    f"Missing appliance type option for appliance {appliance.id}: {appliance.appliance_type}"
+                )
+            if appliance.energy_star is not None and appliance.energy_star not in appliance_energy_star_ids:
+                raise ValueError(
+                    f"Missing appliance EnergyStar option for appliance {appliance.id}: {appliance.energy_star}"
+                )
+
+        _validate_rows_custom_values(
+            table_label="appliances",
+            row_label="appliance",
+            rows=[(appliance.id, appliance.custom_values) for appliance in self.tables.equipment.appliances.rows],
+            field_defs_by_key=appliances_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
+        ventilators_field_defs_by_key = _index_table_field_defs("ventilators", self.tables.equipment.ervs.field_defs)
+        _require_record_id_seeded("ventilators", ventilators_field_defs_by_key)
+        inside_outside_ids = {option.id for option in self.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]}
+        ventilator_ids: set[str] = set()
+        for ventilator in self.tables.equipment.ervs.rows:
+            if ventilator.id in ventilator_ids:
+                raise ValueError(f"Duplicate ventilator id: {ventilator.id}")
+            ventilator_ids.add(ventilator.id)
+            if ventilator.inside_outside is not None and ventilator.inside_outside not in inside_outside_ids:
+                raise ValueError(
+                    f"Missing ventilator inside/outside option for ventilator {ventilator.id}: "
+                    f"{ventilator.inside_outside}"
+                )
+
+        _validate_rows_custom_values(
+            table_label="ventilators",
+            row_label="ventilator",
+            rows=[(ventilator.id, ventilator.custom_values) for ventilator in self.tables.equipment.ervs.rows],
+            field_defs_by_key=ventilators_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
 

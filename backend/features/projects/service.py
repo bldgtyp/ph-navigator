@@ -18,15 +18,31 @@ from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
 from features.project_document.document import (
+    APPLIANCE_ENERGY_STAR_OPTION_KEY,
+    APPLIANCE_TYPE_OPTION_KEY,
+    FAN_TYPE_OPTION_KEY,
+    HOT_WATER_TANK_TYPE_OPTION_KEY,
+    VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+    AppliancesTableEnvelope,
+    ElectricHeatersTableEnvelope,
     EmptyEquipmentTables,
+    FansTableEnvelope,
+    HotWaterTanksTableEnvelope,
     ProjectDocumentProject,
     ProjectDocumentTables,
     ProjectDocumentV1,
     PumpsTableEnvelope,
     RoomsTableEnvelope,
+    SingleSelectOption,
+    VentilatorsTableEnvelope,
 )
+from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import body_size_bytes
 from features.projects import repository
 from features.projects.models import (
@@ -81,9 +97,46 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
         tables=ProjectDocumentTables(
             rooms=RoomsTableEnvelope(field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS)),
             equipment=EmptyEquipmentTables(
+                appliances=AppliancesTableEnvelope(field_defs=list(APPLIANCES_BUILT_IN_FIELD_DEFS)),
+                electric_heaters=ElectricHeatersTableEnvelope(field_defs=list(ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS)),
+                ervs=VentilatorsTableEnvelope(field_defs=list(VENTILATORS_BUILT_IN_FIELD_DEFS)),
                 pumps=PumpsTableEnvelope(field_defs=list(PUMPS_BUILT_IN_FIELD_DEFS)),
+                fans=FansTableEnvelope(field_defs=list(FANS_BUILT_IN_FIELD_DEFS)),
+                hot_water_tanks=HotWaterTanksTableEnvelope(field_defs=list(HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS)),
             ),
         ),
+        single_select_options={
+            "rooms.floor_level": [],
+            "rooms.building_zone": [],
+            "pumps.device_type": [],
+            VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [
+                SingleSelectOption(id="opt_vent_inside", label="Inside", color="#3b82f6", order=0),
+                SingleSelectOption(id="opt_vent_outside", label="Outside", color="#10b981", order=1),
+            ],
+            FAN_TYPE_OPTION_KEY: [
+                SingleSelectOption(id="opt_fan_dryer", label="1-Dryer", color="#f97316", order=0),
+                SingleSelectOption(id="opt_fan_kitchen_hood", label="2-Kitchen Hood", color="#0ea5e9", order=1),
+                SingleSelectOption(id="opt_fan_user_defined", label="3-User Defined", color="#8b5cf6", order=2),
+            ],
+            HOT_WATER_TANK_TYPE_OPTION_KEY: [
+                SingleSelectOption(id="opt_hwt_dryer", label="1-Dryer", color="#f97316", order=0),
+                SingleSelectOption(id="opt_hwt_kitchen_hood", label="2-Kitchen Hood", color="#0ea5e9", order=1),
+                SingleSelectOption(id="opt_hwt_user_defined", label="3-User Defined", color="#8b5cf6", order=2),
+            ],
+            APPLIANCE_TYPE_OPTION_KEY: [
+                SingleSelectOption(id="opt_appl_dishwasher", label="1-Dishwasher", color="#0ea5e9", order=0),
+                SingleSelectOption(id="opt_appl_clothes_washer", label="2-Clothes Washer", color="#14b8a6", order=1),
+                SingleSelectOption(id="opt_appl_clothes_dryer", label="3-Clothes Dryer", color="#f97316", order=2),
+                SingleSelectOption(id="opt_appl_refrigerator", label="4-Refrigerator", color="#3b82f6", order=3),
+                SingleSelectOption(id="opt_appl_freezer", label="5-Freezer", color="#6366f1", order=4),
+                SingleSelectOption(id="opt_appl_fridge_freezer", label="6-Fridge-Freezer", color="#8b5cf6", order=5),
+                SingleSelectOption(id="opt_appl_oven", label="7-Oven", color="#ef4444", order=6),
+            ],
+            APPLIANCE_ENERGY_STAR_OPTION_KEY: [
+                SingleSelectOption(id="opt_appl_energy_star_yes", label="Yes", color="#10b981", order=0),
+                SingleSelectOption(id="opt_appl_energy_star_no", label="No", color="#64748b", order=1),
+            ],
+        },
     )
 
 

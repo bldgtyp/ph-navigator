@@ -57,12 +57,14 @@ def test_pump_row_validates_phase_and_link() -> None:
 
 def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
+    tables = empty_required_tables()
     body = {
         "schema_version": 4,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
-            **empty_required_tables(),
+            **tables,
             "equipment": {
+                **tables["equipment"],
                 "pumps": empty_pumps_table(
                     rows=[
                         first,
@@ -72,7 +74,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
                             "custom_values": {**first["custom_values"], "record_id": "p-1"},
                         },
                     ]
-                )
+                ),
             },
         },
         "single_select_options": {

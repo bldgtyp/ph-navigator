@@ -1,0 +1,148 @@
+import { useMemo } from "react";
+import {
+  DataTable,
+  RECORD_ID_FIELD_KEY,
+  type DataTableColumnDef,
+  type DataTableProps,
+  type TableSchema,
+  type ViewState,
+} from "../../../shared/ui/data-table";
+import { sortedElectricHeaters } from "../lib";
+import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import { type ElectricHeaterRow, type ElectricHeatersSlice } from "../types";
+
+export function ElectricHeatersTable({
+  electricHeatersSlice,
+  tableSchema,
+  isEditor,
+  view,
+  onViewChange,
+  onWrite,
+  buildEmptyRow,
+  generateRowId,
+  sessionKey,
+  overflowMenuActions,
+  footerAction,
+  onResetView,
+}: {
+  electricHeatersSlice: ElectricHeatersSlice;
+  tableSchema: TableSchema;
+  isEditor: boolean;
+  view: ViewState;
+  onViewChange: (next: ViewState) => void;
+  onWrite: NonNullable<DataTableProps<ElectricHeaterRow>["onWrite"]>;
+  buildEmptyRow?: DataTableProps<ElectricHeaterRow>["buildEmptyRow"];
+  generateRowId?: DataTableProps<ElectricHeaterRow>["generateRowId"];
+  sessionKey?: DataTableProps<ElectricHeaterRow>["sessionKey"];
+  overflowMenuActions?: DataTableProps<ElectricHeaterRow>["overflowMenuActions"];
+  footerAction?: DataTableProps<ElectricHeaterRow>["footerAction"];
+  onResetView?: DataTableProps<ElectricHeaterRow>["onResetView"];
+}) {
+  const sortedRows = useMemo(
+    () => sortedElectricHeaters(electricHeatersSlice.electric_heaters),
+    [electricHeatersSlice.electric_heaters],
+  );
+  const { fieldDefs } = tableSchema;
+  const fieldDefByKey = useMemo(
+    () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
+    [fieldDefs],
+  );
+  const columns = useMemo<DataTableColumnDef<ElectricHeaterRow>[]>(
+    () => [
+      {
+        id: RECORD_ID_FIELD_KEY,
+        fieldKey: RECORD_ID_FIELD_KEY,
+        header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
+        accessor: (heater) => customTextValue(heater, RECORD_ID_FIELD_KEY),
+        defaultWidth: 100,
+      },
+      {
+        id: "name",
+        fieldKey: "name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        accessor: (heater) => customTextValue(heater, "name"),
+        defaultWidth: 180,
+      },
+      {
+        id: "model",
+        fieldKey: "model",
+        header: fieldDefByKey.get("model")?.display_name ?? "Model",
+        accessor: (heater) => customTextValue(heater, "model"),
+        defaultWidth: 140,
+      },
+      {
+        id: "manufacturer",
+        fieldKey: "manufacturer",
+        header: fieldDefByKey.get("manufacturer")?.display_name ?? "Manufacturer",
+        accessor: (heater) => customTextValue(heater, "manufacturer"),
+        defaultWidth: 160,
+      },
+      {
+        id: "watt",
+        fieldKey: "watt",
+        header: fieldDefByKey.get("watt")?.display_name ?? "Watt",
+        accessor: (heater) => customNumberValue(heater, "watt"),
+        defaultWidth: 100,
+        className: "numeric-cell",
+      },
+      {
+        id: "url",
+        fieldKey: "url",
+        header: fieldDefByKey.get("url")?.display_name ?? "URL",
+        accessor: (heater) => heater.url,
+        render: (heater) =>
+          heater.url ? (
+            <a
+              href={heater.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="data-table-link-cell"
+            >
+              {shortenUrl(heater.url)}
+            </a>
+          ) : null,
+        measureText: (heater) => heater.url ?? "",
+        defaultWidth: 180,
+      },
+      {
+        id: "notes",
+        fieldKey: "notes",
+        header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
+        accessor: (heater) => heater.notes,
+        defaultWidth: 280,
+      },
+    ],
+    [fieldDefByKey],
+  );
+
+  return (
+    <DataTable
+      rows={sortedRows}
+      columnDefs={columns}
+      fieldDefs={fieldDefs}
+      getRowId={(heater) => heater.id}
+      emptyMessage={
+        isEditor ? "No electric heaters yet." : "No electric heaters are published in this version."
+      }
+      readOnly={!isEditor}
+      view={view}
+      onViewChange={onViewChange}
+      onWrite={onWrite}
+      buildEmptyRow={buildEmptyRow}
+      generateRowId={generateRowId}
+      sessionKey={sessionKey}
+      overflowMenuActions={overflowMenuActions}
+      footerAction={footerAction}
+      onResetView={onResetView}
+    />
+  );
+}
+
+function shortenUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
+  } catch {
+    return value;
+  }
+}
