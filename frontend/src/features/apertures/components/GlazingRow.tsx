@@ -10,6 +10,9 @@ import { MoreFieldsExpander } from "./MoreFieldsExpander";
 export type GlazingRowProps = {
   glazing: GlazingRef | null;
   canEdit: boolean;
+  /** Phase 12: threaded into CatalogBadges so the drift badge can look
+   *  up the live entry from DriftContext. */
+  elementId?: string;
   onPick: (glazing: GlazingRef) => void;
   onEditField: (fieldKey: string, value: string | number | null) => void;
 };
@@ -23,7 +26,7 @@ const GLAZING_MORE_FIELDS: { key: string; label: string; kind: "string" | "numbe
   { key: "comments", label: "Comments", kind: "string" },
 ];
 
-export function GlazingRow({ glazing, canEdit, onPick, onEditField }: GlazingRowProps) {
+export function GlazingRow({ glazing, canEdit, elementId, onPick, onEditField }: GlazingRowProps) {
   const overrides = new Set(glazing?.catalog_origin?.local_overrides ?? []);
   return (
     <div className="aperture-card-row aperture-card-row--glazing" data-testid="glazing-row">
@@ -33,6 +36,8 @@ export function GlazingRow({ glazing, canEdit, onPick, onEditField }: GlazingRow
         <CatalogBadges
           origin={glazing?.catalog_origin ?? null}
           datasheetUrl={glazing?.source ?? null}
+          elementId={elementId}
+          target="glazing"
         />
       </div>
       {glazing && (

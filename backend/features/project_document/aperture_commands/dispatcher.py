@@ -38,6 +38,9 @@ from features.project_document.aperture_commands.handlers.picks import (
     apply_pick_frame,
     apply_pick_glazing,
 )
+from features.project_document.aperture_commands.handlers.refresh import (
+    apply_refresh_ref_from_catalog,
+)
 from features.project_document.aperture_commands.handlers.sidebar import (
     apply_create_aperture_type,
     apply_delete_aperture_type,
@@ -74,6 +77,7 @@ _HANDLERS: dict[str, _Handler] = {
     "splitElement": cast(_Handler, apply_split_element),
     "pasteAssignment": cast(_Handler, apply_paste_assignment),
     "setManufacturerFilters": cast(_Handler, apply_set_manufacturer_filters),
+    "refreshRefFromCatalog": cast(_Handler, apply_refresh_ref_from_catalog),
 }
 
 # Commands declared in the union but not yet wired up. Each phase that

@@ -127,4 +127,14 @@ export type ApertureCommand =
       kind: "setManufacturerFilters";
       frame_manufacturers_enabled: string[] | null;
       glazing_manufacturers_enabled: string[] | null;
+    }
+  | {
+      // Phase 12: write the user's per-field choices from the refresh
+      // dialog onto a catalog-sourced ref. Each value is validated
+      // server-side; ``catalog_origin.local_overrides`` is preserved.
+      kind: "refreshRefFromCatalog";
+      aperture_type_id: string;
+      element_id: string;
+      target: "frame.top" | "frame.right" | "frame.bottom" | "frame.left" | "glazing";
+      chosen_values: Record<string, string | number | null>;
     };

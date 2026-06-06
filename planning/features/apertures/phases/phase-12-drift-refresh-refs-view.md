@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
 TIME: 17:10 EDT
-STATUS: Active — not yet started
+STATUS: Done — shipped Phase 12 with the deviations noted in STATUS.md
 AUTHOR: Codex
 SCOPE: Wire the per-entry refresh-from-catalog dialog to the
        Phase 06 drift badge, extend drift detection to cover

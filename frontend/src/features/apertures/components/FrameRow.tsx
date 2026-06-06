@@ -20,6 +20,9 @@ export type FrameRowProps = {
    *  matches the element operation. Null when the row is in agreement
    *  or the warning was dismissed. */
   mismatchIndicator?: string | null;
+  /** Phase 12: element id the row belongs to. Threaded into CatalogBadges
+   *  so the drift badge can look up the live entry via DriftContext. */
+  elementId?: string;
   onPick: (frame: FrameRef) => void;
   onEditField: (fieldKey: string, value: string | number | null) => void;
 };
@@ -44,6 +47,7 @@ export function FrameRow({
   operation,
   canEdit,
   mismatchIndicator,
+  elementId,
   onPick,
   onEditField,
 }: FrameRowProps) {
@@ -62,6 +66,8 @@ export function FrameRow({
         <CatalogBadges
           origin={frame?.catalog_origin ?? null}
           datasheetUrl={frame?.source ?? null}
+          elementId={elementId}
+          target={`frame.${side}` as const}
         />
         {mismatchIndicator && (
           <span
