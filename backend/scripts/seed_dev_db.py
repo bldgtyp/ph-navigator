@@ -135,6 +135,57 @@ def _truncate_application_tables() -> None:
                 sql.SQL(", ").join(sql.Identifier(name) for name in table_names)
             )
             conn.execute(query)
+        _reseed_aperture_default_catalog_rows(conn)
+
+
+# Mirrors alembic revision ``20260605_0018`` — the truncate above clears
+# the Alembic-seeded ``PHN-Default-Frame`` / ``PHN-Default-Glazing`` rows
+# that the Aperture Builder bookshelf-copies, so we re-insert them here
+# in the same transaction. Idempotent via the ``WHERE NOT EXISTS`` guard
+# so a ``--no-reset`` run is also safe.
+_APERTURE_DEFAULT_FRAME_ID = "recPHNDefFrame001"
+_APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
+_APERTURE_DEFAULT_GLAZING_ID = "recPHNDefGlazng01"
+_APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
+
+
+def _reseed_aperture_default_catalog_rows(conn: Any) -> None:
+    conn.execute(
+        """
+        INSERT INTO catalog_frame_types (
+            id, name,
+            width_mm, u_value_w_m2k, psi_g_w_mk,
+            color, source
+        )
+        SELECT
+            %(id)s, %(name)s,
+            50.0, 1.5, 0.04,
+            '#888888', 'PH-Navigator built-in default'
+        WHERE NOT EXISTS (
+            SELECT 1 FROM catalog_frame_types
+            WHERE name = %(name)s AND deleted_at IS NULL
+        )
+        """,
+        {"id": _APERTURE_DEFAULT_FRAME_ID, "name": _APERTURE_DEFAULT_FRAME_NAME},
+    )
+    conn.execute(
+        """
+        INSERT INTO catalog_glazing_types (
+            id, name,
+            u_value_w_m2k, g_value,
+            color, source
+        )
+        SELECT
+            %(id)s, %(name)s,
+            1.0, 0.5,
+            '#a8c8ff', 'PH-Navigator built-in default'
+        WHERE NOT EXISTS (
+            SELECT 1 FROM catalog_glazing_types
+            WHERE name = %(name)s AND deleted_at IS NULL
+        )
+        """,
+        {"id": _APERTURE_DEFAULT_GLAZING_ID, "name": _APERTURE_DEFAULT_GLAZING_NAME},
+    )
 
 
 def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
