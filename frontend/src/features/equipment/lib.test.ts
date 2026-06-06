@@ -1,9 +1,25 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
 import { describe, expect, test, vi } from "vitest";
 import {
+  appliancesPayloadFromCellWrites,
+  appliancesPayloadFromRowDelete,
+  appliancesPayloadFromRowDuplicate,
+  appliancesPayloadFromRowInsert,
   deleteRoomPayload,
+  electricHeatersPayloadFromCellWrites,
+  electricHeatersPayloadFromRowDelete,
+  electricHeatersPayloadFromRowDuplicate,
+  electricHeatersPayloadFromRowInsert,
   emptyRoom,
+  fansPayloadFromCellWrites,
+  fansPayloadFromRowDelete,
+  fansPayloadFromRowDuplicate,
+  fansPayloadFromRowInsert,
   firstRoomFloorOptionId,
+  hotWaterTanksPayloadFromCellWrites,
+  hotWaterTanksPayloadFromRowDelete,
+  hotWaterTanksPayloadFromRowDuplicate,
+  hotWaterTanksPayloadFromRowInsert,
   isDraftStaleError,
   isInvalidProjectDocumentError,
   nextCopySuffix,
@@ -20,7 +36,16 @@ import {
   roomsPayloadFromRowDuplicate,
   roomsPayloadFromRowInsert,
   roomsTableColumnsForSanitize,
+  validateFansPayload,
+  validateAppliancesPayload,
+  validateElectricHeatersPayload,
+  validateHotWaterTanksPayload,
   validateRoomsPayload,
+  validateVentilatorsPayload,
+  ventilatorsPayloadFromCellWrites,
+  ventilatorsPayloadFromRowDelete,
+  ventilatorsPayloadFromRowDuplicate,
+  ventilatorsPayloadFromRowInsert,
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
 import type { TableFieldDef } from "../../shared/ui/data-table";
@@ -32,12 +57,27 @@ import {
   type RoomsSlice,
 } from "./types";
 import {
+  buildAppliance,
+  buildAppliancesSlice,
   buildPump,
   buildCustomField as customField,
+  buildElectricHeater,
+  buildElectricHeatersSlice,
+  buildFan,
+  buildFansSlice,
+  buildHotWaterTank,
+  buildHotWaterTanksSlice,
   buildRoom,
   buildPumpsSlice,
+  buildVentilator,
+  buildVentilatorsSlice,
+  appliancesBuiltInFieldDefs,
+  electricHeatersBuiltInFieldDefs,
+  fansBuiltInFieldDefs,
+  hotWaterTanksBuiltInFieldDefs,
   pumpsBuiltInFieldDefs,
   roomsBuiltInFieldDefs,
+  ventilatorsBuiltInFieldDefs,
   withRoomCustomValues as withCustomValues,
 } from "./testing/testFixtures";
 
@@ -771,6 +811,172 @@ describe("equipment room helpers", () => {
 
     expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
   });
+
+  test("ventilatorsPayloadFromRowInsert preserves field_defs", () => {
+    const current = buildVentilatorsSlice();
+
+    const payload = ventilatorsPayloadFromRowInsert(
+      current,
+      [{ rowId: "vent_browser", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) => ({ ...buildVentilator(), id: rowId }),
+    );
+
+    expect(payload.field_defs).toEqual(ventilatorsBuiltInFieldDefs);
+  });
+
+  test("ventilatorsPayloadFromCellWrites preserves field_defs", () => {
+    const current = buildVentilatorsSlice({
+      ventilators: [buildVentilator({ id: "vent_1" })],
+    });
+
+    const payload = ventilatorsPayloadFromCellWrites(
+      current,
+      [{ rowId: "vent_1", fieldKey: "record_id", value: "ERV-2" }],
+      {},
+    );
+
+    expect(payload.field_defs).toEqual(ventilatorsBuiltInFieldDefs);
+  });
+
+  test("ventilatorsPayloadFromRowDelete preserves field_defs", () => {
+    const ventilator = buildVentilator({ id: "vent_1" });
+    const current = buildVentilatorsSlice({ ventilators: [ventilator] });
+
+    const payload = ventilatorsPayloadFromRowDelete(current, [
+      { rowId: "vent_1", row: ventilator, anchorRowId: null },
+    ]);
+
+    expect(payload.field_defs).toEqual(ventilatorsBuiltInFieldDefs);
+  });
+
+  test("fansPayloadFromRowInsert preserves field_defs and field defaults", () => {
+    const current = buildFansSlice();
+
+    const payload = fansPayloadFromRowInsert(
+      current,
+      [{ rowId: "fan_browser", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) => ({ ...buildFan(), id: rowId }),
+    );
+
+    expect(payload.field_defs).toEqual(fansBuiltInFieldDefs);
+    expect(payload.fans[0]?.custom_values.quantity).toBe(1);
+    expect(payload.fans[0]?.custom_values.power_factor).toBe(0.8);
+  });
+
+  test("fansPayloadFromCellWrites preserves field_defs and routes datasheet writes", () => {
+    const current = buildFansSlice({
+      fans: [buildFan({ id: "fan_1" })],
+    });
+
+    const payload = fansPayloadFromCellWrites(
+      current,
+      [
+        { rowId: "fan_1", fieldKey: "record_id", value: "F-2" },
+        { rowId: "fan_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+      ],
+      {},
+    );
+
+    expect(payload.field_defs).toEqual(fansBuiltInFieldDefs);
+    expect(payload.fans[0]?.custom_values.record_id).toBe("F-2");
+    expect(payload.fans[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+  });
+
+  test("fansPayloadFromRowDelete preserves field_defs", () => {
+    const fan = buildFan({ id: "fan_1" });
+    const current = buildFansSlice({ fans: [fan] });
+
+    const payload = fansPayloadFromRowDelete(current, [
+      { rowId: "fan_1", row: fan, anchorRowId: null },
+    ]);
+
+    expect(payload.field_defs).toEqual(fansBuiltInFieldDefs);
+  });
+
+  test("hotWaterTanksPayloadFromRowInsert preserves field_defs and field defaults", () => {
+    const current = buildHotWaterTanksSlice();
+
+    const payload = hotWaterTanksPayloadFromRowInsert(
+      current,
+      [{ rowId: "hwt_browser", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) => ({ ...buildHotWaterTank(), id: rowId }),
+    );
+
+    expect(payload.field_defs).toEqual(hotWaterTanksBuiltInFieldDefs);
+    expect(payload.hot_water_tanks[0]?.custom_values.quantity).toBe(1);
+    expect(payload.hot_water_tanks[0]?.custom_values.power_factor).toBe(0.8);
+  });
+
+  test("hotWaterTanksPayloadFromCellWrites preserves field_defs and routes datasheet writes", () => {
+    const current = buildHotWaterTanksSlice({
+      hot_water_tanks: [buildHotWaterTank({ id: "hwt_1" })],
+    });
+
+    const payload = hotWaterTanksPayloadFromCellWrites(
+      current,
+      [
+        { rowId: "hwt_1", fieldKey: "record_id", value: "HWT-2" },
+        { rowId: "hwt_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+      ],
+      {},
+    );
+
+    expect(payload.field_defs).toEqual(hotWaterTanksBuiltInFieldDefs);
+    expect(payload.hot_water_tanks[0]?.custom_values.record_id).toBe("HWT-2");
+    expect(payload.hot_water_tanks[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+  });
+
+  test("hotWaterTanksPayloadFromRowDelete preserves field_defs", () => {
+    const tank = buildHotWaterTank({ id: "hwt_1" });
+    const current = buildHotWaterTanksSlice({ hot_water_tanks: [tank] });
+
+    const payload = hotWaterTanksPayloadFromRowDelete(current, [
+      { rowId: "hwt_1", row: tank, anchorRowId: null },
+    ]);
+
+    expect(payload.field_defs).toEqual(hotWaterTanksBuiltInFieldDefs);
+  });
+
+  test("electricHeatersPayloadFromRowInsert preserves field_defs", () => {
+    const current = buildElectricHeatersSlice();
+
+    const payload = electricHeatersPayloadFromRowInsert(
+      current,
+      [{ rowId: "heatr_browser", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) => ({ ...buildElectricHeater(), id: rowId }),
+    );
+
+    expect(payload.field_defs).toEqual(electricHeatersBuiltInFieldDefs);
+    expect(payload.electric_heaters[0]?.custom_values.watt).toBe(1000);
+  });
+
+  test("electricHeatersPayloadFromCellWrites preserves field_defs and routes typed writes", () => {
+    const current = buildElectricHeatersSlice({
+      electric_heaters: [buildElectricHeater({ id: "heatr_1" })],
+    });
+
+    const payload = electricHeatersPayloadFromCellWrites(current, [
+      { rowId: "heatr_1", fieldKey: "record_id", value: "EH-2" },
+      { rowId: "heatr_1", fieldKey: "url", value: " https://example.com/heater.pdf " },
+      { rowId: "heatr_1", fieldKey: "watt", value: null },
+    ]);
+
+    expect(payload.field_defs).toEqual(electricHeatersBuiltInFieldDefs);
+    expect(payload.electric_heaters[0]?.custom_values.record_id).toBe("EH-2");
+    expect(payload.electric_heaters[0]?.custom_values.watt).toBeNull();
+    expect(payload.electric_heaters[0]?.url).toBe("https://example.com/heater.pdf");
+  });
+
+  test("electricHeatersPayloadFromRowDelete preserves field_defs", () => {
+    const heater = buildElectricHeater({ id: "heatr_1" });
+    const current = buildElectricHeatersSlice({ electric_heaters: [heater] });
+
+    const payload = electricHeatersPayloadFromRowDelete(current, [
+      { rowId: "heatr_1", row: heater, anchorRowId: null },
+    ]);
+
+    expect(payload.field_defs).toEqual(electricHeatersBuiltInFieldDefs);
+  });
 });
 
 describe("nextCopySuffix", () => {
@@ -889,5 +1095,315 @@ describe("pumpsPayloadFromRowDuplicate", () => {
 
     const clone = payload.pumps.find((p) => p.id === "tmp_dup");
     expect(clone?.custom_values.record_id).toBe("P-1 (copy)");
+  });
+});
+
+describe("ventilatorsPayloadFromRowDuplicate", () => {
+  test("clones source ventilator with a record_id ' (copy)' suffix, sorted into place", () => {
+    const source = buildVentilator({ id: "vent_1" });
+    const current = buildVentilatorsSlice({
+      ventilators: [source],
+    });
+
+    const payload = ventilatorsPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "vent_1", sourceRow: source, anchorRowId: "vent_1" },
+    ]);
+
+    const clone = payload.ventilators.find((ventilator) => ventilator.id === "tmp_dup");
+    expect(clone?.custom_values.record_id).toBe("ERV-1 (copy)");
+  });
+
+  test("validates percent, MERV, URL, and inside/outside values", () => {
+    const valid = buildVentilatorsSlice({
+      ventilators: [buildVentilator()],
+    });
+    expect(validateVentilatorsPayload(valid)).toBeNull();
+
+    expect(
+      validateVentilatorsPayload({
+        ...valid,
+        ventilators: [
+          buildVentilator({
+            custom_values: { ...buildVentilator().custom_values, heat_recovery_percent: 101 },
+          }),
+        ],
+      }),
+    ).toBe("Heat Recovery % must be between 0 and 100.");
+
+    expect(
+      validateVentilatorsPayload({
+        ...valid,
+        ventilators: [
+          buildVentilator({
+            custom_values: { ...buildVentilator().custom_values, filter_merv_rating: 21 },
+          }),
+        ],
+      }),
+    ).toBe("Filter MERV Rating must be between 1 and 20.");
+
+    expect(
+      validateVentilatorsPayload({
+        ...valid,
+        ventilators: [buildVentilator({ url: "ftp://example.com/erv.pdf" })],
+      }),
+    ).toBe("Ventilator URL must start with http:// or https://.");
+  });
+});
+
+describe("fansPayloadFromRowDuplicate", () => {
+  test("clones source fan with a record_id ' (copy)' suffix, sorted into place", () => {
+    const source = buildFan({ id: "fan_1" });
+    const current = buildFansSlice({
+      fans: [source],
+    });
+
+    const payload = fansPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "fan_1", sourceRow: source, anchorRowId: "fan_1" },
+    ]);
+
+    const clone = payload.fans.find((fan) => fan.id === "tmp_dup");
+    expect(clone?.custom_values.record_id).toBe("F-1 (copy)");
+  });
+
+  test("validates type, phase, power factor, URL, and nonnegative values", () => {
+    const valid = buildFansSlice({
+      fans: [buildFan()],
+    });
+    expect(validateFansPayload(valid)).toBeNull();
+
+    expect(validateFansPayload({ ...valid, fans: [buildFan({ fan_type: "opt_missing" })] })).toBe(
+      "Fan type option is missing.",
+    );
+
+    expect(validateFansPayload({ ...valid, fans: [buildFan({ phase: 2 })] })).toBe(
+      "Phase must be 1 or 3.",
+    );
+
+    expect(
+      validateFansPayload({
+        ...valid,
+        fans: [
+          buildFan({
+            custom_values: { ...buildFan().custom_values, power_factor: 1.2 },
+          }),
+        ],
+      }),
+    ).toBe("Power Factor must be between 0 and 1.");
+
+    expect(
+      validateFansPayload({
+        ...valid,
+        fans: [buildFan({ url: "ftp://example.com/fan.pdf" })],
+      }),
+    ).toBe("Fan URL must start with http:// or https://.");
+
+    expect(
+      validateFansPayload({
+        ...valid,
+        fans: [
+          buildFan({
+            custom_values: { ...buildFan().custom_values, annual_runtime_min_yr: -1 },
+          }),
+        ],
+      }),
+    ).toBe("Annual Runtime must be zero or greater.");
+  });
+});
+
+describe("hotWaterTanksPayloadFromRowDuplicate", () => {
+  test("clones source tank with a record_id ' (copy)' suffix, sorted into place", () => {
+    const source = buildHotWaterTank({ id: "hwt_1" });
+    const current = buildHotWaterTanksSlice({
+      hot_water_tanks: [source],
+    });
+
+    const payload = hotWaterTanksPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "hwt_1", sourceRow: source, anchorRowId: "hwt_1" },
+    ]);
+
+    const clone = payload.hot_water_tanks.find((tank) => tank.id === "tmp_dup");
+    expect(clone?.custom_values.record_id).toBe("HWT-1 (copy)");
+  });
+
+  test("validates type, phase, power factor, URL, and nonnegative values", () => {
+    const valid = buildHotWaterTanksSlice({
+      hot_water_tanks: [buildHotWaterTank()],
+    });
+    expect(validateHotWaterTanksPayload(valid)).toBeNull();
+
+    expect(
+      validateHotWaterTanksPayload({
+        ...valid,
+        hot_water_tanks: [buildHotWaterTank({ tank_type: "opt_missing" })],
+      }),
+    ).toBe("Hot water tank type option is missing.");
+
+    expect(
+      validateHotWaterTanksPayload({
+        ...valid,
+        hot_water_tanks: [buildHotWaterTank({ phase: 2 })],
+      }),
+    ).toBe("Phase must be 1 or 3.");
+
+    expect(
+      validateHotWaterTanksPayload({
+        ...valid,
+        hot_water_tanks: [
+          buildHotWaterTank({
+            custom_values: { ...buildHotWaterTank().custom_values, power_factor: 1.2 },
+          }),
+        ],
+      }),
+    ).toBe("Power Factor must be between 0 and 1.");
+
+    expect(
+      validateHotWaterTanksPayload({
+        ...valid,
+        hot_water_tanks: [buildHotWaterTank({ url: "ftp://example.com/hwt.pdf" })],
+      }),
+    ).toBe("Hot water tank URL must start with http:// or https://.");
+
+    expect(
+      validateHotWaterTanksPayload({
+        ...valid,
+        hot_water_tanks: [
+          buildHotWaterTank({
+            custom_values: { ...buildHotWaterTank().custom_values, size_l: -1 },
+          }),
+        ],
+      }),
+    ).toBe("Size must be zero or greater.");
+  });
+});
+
+describe("electricHeatersPayloadFromRowDuplicate", () => {
+  test("clones source heater with a record_id ' (copy)' suffix, sorted into place", () => {
+    const source = buildElectricHeater({ id: "heatr_1" });
+    const current = buildElectricHeatersSlice({
+      electric_heaters: [source],
+    });
+
+    const payload = electricHeatersPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "heatr_1", sourceRow: source, anchorRowId: "heatr_1" },
+    ]);
+
+    const clone = payload.electric_heaters.find((heater) => heater.id === "tmp_dup");
+    expect(clone?.custom_values.record_id).toBe("EH-1 (copy)");
+  });
+
+  test("validates URL and nonnegative Watt values", () => {
+    const valid = buildElectricHeatersSlice({
+      electric_heaters: [buildElectricHeater()],
+    });
+    expect(validateElectricHeatersPayload(valid)).toBeNull();
+
+    expect(
+      validateElectricHeatersPayload({
+        ...valid,
+        electric_heaters: [buildElectricHeater({ url: "ftp://example.com/heater.pdf" })],
+      }),
+    ).toBe("Electric heater URL must start with http:// or https://.");
+
+    expect(
+      validateElectricHeatersPayload({
+        ...valid,
+        electric_heaters: [
+          buildElectricHeater({
+            custom_values: { ...buildElectricHeater().custom_values, watt: -1 },
+          }),
+        ],
+      }),
+    ).toBe("Watt must be zero or greater.");
+  });
+});
+
+describe("appliances payload helpers", () => {
+  test("inserts, edits, duplicates, and deletes while preserving field defs", () => {
+    const current = buildAppliancesSlice({
+      appliances: [buildAppliance({ id: "appl_1" })],
+    });
+
+    const inserted = appliancesPayloadFromRowInsert(
+      current,
+      [{ rowId: "appl_2", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) =>
+        buildAppliance({
+          id: rowId,
+          custom_values: { ...buildAppliance().custom_values, record_id: "A-2" },
+        }),
+    );
+    expect(inserted.field_defs).toEqual(appliancesBuiltInFieldDefs);
+    expect(inserted.appliances.map((appliance) => appliance.id)).toContain("appl_2");
+
+    const edited = appliancesPayloadFromCellWrites(
+      current,
+      [
+        { rowId: "appl_1", fieldKey: "capacity_m3", value: null },
+        { rowId: "appl_1", fieldKey: "energy_star", value: "opt_appl_energy_star_no" },
+        { rowId: "appl_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+      ],
+      {},
+      {},
+    );
+    expect(edited.appliances[0]?.custom_values.capacity_m3).toBeNull();
+    expect(edited.appliances[0]?.energy_star).toBe("opt_appl_energy_star_no");
+    expect(edited.appliances[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+
+    const duplicated = appliancesPayloadFromRowDuplicate(current, [
+      {
+        rowId: "appl_dup",
+        sourceRowId: "appl_1",
+        sourceRow: current.appliances[0]!,
+        anchorRowId: "appl_1",
+      },
+    ]);
+    expect(
+      duplicated.appliances.find((appliance) => appliance.id === "appl_dup")?.custom_values
+        .record_id,
+    ).toBe("A-1 (copy)");
+
+    const deleted = appliancesPayloadFromRowDelete(current, [
+      { rowId: "appl_1", row: current.appliances[0]!, anchorRowId: null },
+    ]);
+    expect(deleted.appliances).toHaveLength(0);
+  });
+
+  test("validates type, EnergyStar, URL, and nonnegative values", () => {
+    const valid = buildAppliancesSlice({
+      appliances: [buildAppliance()],
+    });
+    expect(validateAppliancesPayload(valid)).toBeNull();
+
+    expect(
+      validateAppliancesPayload({
+        ...valid,
+        appliances: [buildAppliance({ appliance_type: "opt_missing" })],
+      }),
+    ).toBe("Appliance type option is missing.");
+
+    expect(
+      validateAppliancesPayload({
+        ...valid,
+        appliances: [buildAppliance({ energy_star: "opt_missing" })],
+      }),
+    ).toBe("Appliance EnergyStar option is missing.");
+
+    expect(
+      validateAppliancesPayload({
+        ...valid,
+        appliances: [buildAppliance({ url: "ftp://example.com/appliance.pdf" })],
+      }),
+    ).toBe("Appliance URL must start with http:// or https://.");
+
+    expect(
+      validateAppliancesPayload({
+        ...valid,
+        appliances: [
+          buildAppliance({
+            custom_values: { ...buildAppliance().custom_values, annual_energy_kwh: -1 },
+          }),
+        ],
+      }),
+    ).toBe("Annual Energy must be zero or greater.");
   });
 });

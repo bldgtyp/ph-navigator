@@ -47,7 +47,13 @@ def get_pool() -> ConnectionPool[Connection[Any]]:
 def connection() -> Iterator[Connection[Any]]:
     """Yield a pooled connection for repository read operations."""
     with get_pool().connection() as conn:
-        yield conn
+        try:
+            yield conn
+        except Exception:
+            conn.rollback()
+            raise
+        else:
+            conn.commit()
 
 
 @contextmanager

@@ -110,6 +110,10 @@ describe("number unit registry", () => {
       "length_mm",
       "area",
       "volume",
+      "volume_liters",
+      "temperature",
+      "airflow",
+      "electric_efficiency",
     ]);
     expect(isCompatibleNumberUnitPair("area", "m2", "ft2")).toBe(true);
     expect(isCompatibleNumberUnitPair("area", "m3", "ft3")).toBe(false);
@@ -122,6 +126,10 @@ describe("number unit registry", () => {
       length_mm: { si: ["mm"], ip: ["in"] },
       area: { si: ["m2"], ip: ["ft2"] },
       volume: { si: ["m3"], ip: ["ft3"] },
+      volume_liters: { si: ["l"], ip: ["gal"] },
+      temperature: { si: ["c"], ip: ["f"] },
+      airflow: { si: ["m3_h"], ip: ["cfm"] },
+      electric_efficiency: { si: ["wh_m3"], ip: ["w_cfm"] },
     });
   });
 
@@ -180,6 +188,28 @@ describe("number unit registry", () => {
     };
     expect(convertNumberUnitsToDisplay(1, length)).toBeCloseTo(3.280839895, 9);
     expect(convertNumberUnitsToSi(3.280839895, length)).toBeCloseTo(1, 9);
+
+    const gallonsLiters = {
+      mode: "fixed" as const,
+      unit_type: "volume_liters" as const,
+      si_unit: "l" as const,
+      ip_unit: "gal" as const,
+      precision_si: 1,
+      precision_ip: 1,
+    };
+    expect(convertNumberUnitsToDisplay(3.785411784, gallonsLiters)).toBeCloseTo(1, 10);
+    expect(convertNumberUnitsToSi(1, gallonsLiters)).toBeCloseTo(3.785411784, 10);
+
+    const temperature = {
+      mode: "fixed" as const,
+      unit_type: "temperature" as const,
+      si_unit: "c" as const,
+      ip_unit: "f" as const,
+      precision_si: 1,
+      precision_ip: 1,
+    };
+    expect(convertNumberUnitsToDisplay(0, temperature)).toBe(32);
+    expect(convertNumberUnitsToSi(212, temperature)).toBe(100);
   });
 
   test("formatNumberUnitsDisplay renders bare numbers in active system", () => {
