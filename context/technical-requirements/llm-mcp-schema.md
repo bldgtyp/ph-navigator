@@ -164,7 +164,32 @@ set_custom_field_description(project_id, version_id, table_key, field_id, descri
                                      → CustomFieldDef
 set_custom_field_formula(project_id, version_id, table_key, field_id, config, expected_schema_fingerprint)
                                      → CustomFieldDef                # Phase 4
+
+# Apertures-feature semantic tools (Phase 13). Read tools require
+# `project:read`; `apply_aperture_command` requires `project:write` and
+# honors the same draft / ETag / locked-version / edit-lease policy as
+# browser writes. Audit entries are tagged `updated_via=mcp`.
+list_aperture_types(project_id, version_id, source?)
+                                     → { apertures: [{ id, name, element_count }] }
+get_aperture_type(project_id, version_id, aperture_type_id, source?)
+                                     → ApertureTypeEntry
+calculate_aperture_u_values(project_id, version_id, aperture_type_ids?, source?)
+                                     → { apertures: [ApertureUValueResult] }
+report_aperture_catalog_drift(project_id, version_id, source?)
+                                     → ApertureDriftReport
+apply_aperture_command(project_id, version_id, command,
+                       if_match?, if_match_version?)
+                                     → { response: AperturesSliceResponse,
+                                         audit: dict }
 ```
+
+`apply_aperture_command` accepts any kind in the shared `ApertureCommand`
+union — `createApertureType`, `renameApertureType`, `pickFrame`,
+`editDimension`, `mergeElements`, `splitElement`, `pasteAssignment`,
+`setManufacturerFilters`, `refreshRefFromCatalog`, … — and wraps the
+same dispatcher the browser uses. Validation errors are `fatal`; ETag
+conflicts and locked versions return `refresh` recoverability so the
+caller knows to re-read and retry.
 
 Assembly Builder MCP writes are intentionally narrower than the generic
 document-write backlog: `apply_envelope_command` accepts one semantic

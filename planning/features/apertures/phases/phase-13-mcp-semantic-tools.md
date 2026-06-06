@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
 TIME: 17:20 EDT
-STATUS: Active — not yet started
+STATUS: Done — shipped Phase 13 with the deviations noted in STATUS.md
 AUTHOR: Codex
 SCOPE: Surface the Apertures-feature semantic MCP tools:
        `list_aperture_types`, `get_aperture_type`,
