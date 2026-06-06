@@ -1,0 +1,65 @@
+{
+  "options": {},
+  "rows": [
+    {
+      "id": "heatr_1",
+      "url": "https://example.com/cadet-com2k.pdf",
+      "notes": "Bathroom supplemental heat.",
+      "custom_values": {
+        "record_id": "EH-1",
+        "name": "Bath Heater 1",
+        "model": "Com-Pak 2000W",
+        "manufacturer": "Cadet",
+        "watt": 2000
+      }
+    },
+    {
+      "id": "heatr_2",
+      "url": "https://example.com/cadet-com2k.pdf",
+      "notes": "Bathroom 2 supplemental heat.",
+      "custom_values": {
+        "record_id": "EH-2",
+        "name": "Bath Heater 2",
+        "model": "Com-Pak 2000W",
+        "manufacturer": "Cadet",
+        "watt": 2000
+      }
+    },
+    {
+      "id": "heatr_3",
+      "url": null,
+      "notes": "Mudroom toe-kick heater.",
+      "custom_values": {
+        "record_id": "EH-3",
+        "name": "Toe-kick Heater",
+        "model": "TK1500",
+        "manufacturer": "King",
+        "watt": 1500
+      }
+    },
+    {
+      "id": "heatr_4",
+      "url": null,
+      "notes": "Garage frost-protection heater.",
+      "custom_values": {
+        "record_id": "EH-4",
+        "name": "Garage Heater",
+        "model": "PAW4842",
+        "manufacturer": "Marley",
+        "watt": 4800
+      }
+    },
+    {
+      "id": "heatr_5",
+      "url": null,
+      "notes": "Outdoor heated walkway mat.",
+      "custom_values": {
+        "record_id": "EH-5",
+        "name": "Walkway Mat",
+        "model": "WM-120",
+        "manufacturer": "WarmlyYours",
+        "watt": 720
+      }
+    }
+  ]
+}

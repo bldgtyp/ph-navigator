@@ -1,0 +1,112 @@
+{
+  "options": {
+    "appliances.type": [
+      { "id": "opt_appl_dishwasher", "label": "Dishwasher", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_appl_washer", "label": "Clothes Washer", "color": "#22c55e", "order": 1 },
+      { "id": "opt_appl_dryer", "label": "Clothes Dryer", "color": "#f97316", "order": 2 },
+      { "id": "opt_appl_refrigerator", "label": "Refrigerator", "color": "#6366f1", "order": 3 },
+      { "id": "opt_appl_range", "label": "Cooking Range", "color": "#ef4444", "order": 4 }
+    ],
+    "appliances.energy_star": [
+      { "id": "opt_es_yes", "label": "Energy Star", "color": "#10b981", "order": 0 },
+      { "id": "opt_es_no", "label": "Not Energy Star", "color": "#9ca3af", "order": 1 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "appl_1",
+      "appliance_type": "opt_appl_dishwasher",
+      "energy_star": "opt_es_yes",
+      "url": "https://example.com/bosch-shpm88z75n.pdf",
+      "notes": "Kitchen dishwasher.",
+      "custom_values": {
+        "record_id": "A-1",
+        "name": "Dishwasher",
+        "quantity": 1,
+        "model": "SHPM88Z75N",
+        "manufacturer": "Bosch",
+        "capacity_m3": 0.06,
+        "cef": null,
+        "imef": null,
+        "mef": null,
+        "annual_energy_kwh": 240
+      }
+    },
+    {
+      "id": "appl_2",
+      "appliance_type": "opt_appl_washer",
+      "energy_star": "opt_es_yes",
+      "url": "https://example.com/lg-wm4000hwa.pdf",
+      "notes": "Front-load clothes washer.",
+      "custom_values": {
+        "record_id": "A-2",
+        "name": "Clothes Washer",
+        "quantity": 1,
+        "model": "WM4000HWA",
+        "manufacturer": "LG",
+        "capacity_m3": 0.13,
+        "cef": null,
+        "imef": 2.92,
+        "mef": null,
+        "annual_energy_kwh": 100
+      }
+    },
+    {
+      "id": "appl_3",
+      "appliance_type": "opt_appl_dryer",
+      "energy_star": "opt_es_yes",
+      "url": "https://example.com/lg-dlhc1455w.pdf",
+      "notes": "Heat-pump condensing dryer.",
+      "custom_values": {
+        "record_id": "A-3",
+        "name": "Clothes Dryer",
+        "quantity": 1,
+        "model": "DLHC1455W",
+        "manufacturer": "LG",
+        "capacity_m3": 0.13,
+        "cef": 5.16,
+        "imef": null,
+        "mef": null,
+        "annual_energy_kwh": 320
+      }
+    },
+    {
+      "id": "appl_4",
+      "appliance_type": "opt_appl_refrigerator",
+      "energy_star": "opt_es_yes",
+      "url": null,
+      "notes": "Kitchen refrigerator.",
+      "custom_values": {
+        "record_id": "A-4",
+        "name": "Refrigerator",
+        "quantity": 1,
+        "model": "RF28R7351SR",
+        "manufacturer": "Samsung",
+        "capacity_m3": 0.79,
+        "cef": null,
+        "imef": null,
+        "mef": null,
+        "annual_energy_kwh": 760
+      }
+    },
+    {
+      "id": "appl_5",
+      "appliance_type": "opt_appl_range",
+      "energy_star": "opt_es_no",
+      "url": null,
+      "notes": "Induction cooktop + electric oven.",
+      "custom_values": {
+        "record_id": "A-5",
+        "name": "Cooking Range",
+        "quantity": 1,
+        "model": "JS760SPSS",
+        "manufacturer": "GE",
+        "capacity_m3": 0.15,
+        "cef": null,
+        "imef": null,
+        "mef": null,
+        "annual_energy_kwh": 540
+      }
+    }
+  ]
+}

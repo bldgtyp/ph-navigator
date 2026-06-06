@@ -1,0 +1,129 @@
+{
+  "kind": "ph-navigator.catalog.materials",
+  "schema_version": 1,
+  "exported_at": "2026-06-05T12:00:00Z",
+  "exported_by": "bldgtyp:dev-seed",
+  "app_version": null,
+  "rows": [
+    {
+      "name": "Mineral Wool Batt | 24 kg/m³",
+      "category": "insulation",
+      "density_kg_m3": 24.0,
+      "specific_heat_j_kgk": 840.0,
+      "conductivity_w_mk": 0.038,
+      "emissivity": null,
+      "color": "#d9c7a3",
+      "source": "Manufacturer typical",
+      "url": null,
+      "comments": "Generic stone-wool batt for stud cavities."
+    },
+    {
+      "name": "Mineral Wool Board | 70 kg/m³",
+      "category": "insulation",
+      "density_kg_m3": 70.0,
+      "specific_heat_j_kgk": 840.0,
+      "conductivity_w_mk": 0.036,
+      "emissivity": null,
+      "color": "#bfa980",
+      "source": "Manufacturer typical",
+      "url": null,
+      "comments": "Semi-rigid exterior continuous insulation."
+    },
+    {
+      "name": "XPS Foam Board | 32 kg/m³",
+      "category": "insulation",
+      "density_kg_m3": 32.0,
+      "specific_heat_j_kgk": 1400.0,
+      "conductivity_w_mk": 0.029,
+      "emissivity": null,
+      "color": "#7fb9ff",
+      "source": "Manufacturer typical",
+      "url": null,
+      "comments": "Extruded polystyrene below-grade insulation."
+    },
+    {
+      "name": "Dense-Pack Cellulose | 56 kg/m³",
+      "category": "insulation",
+      "density_kg_m3": 56.0,
+      "specific_heat_j_kgk": 1600.0,
+      "conductivity_w_mk": 0.039,
+      "emissivity": null,
+      "color": "#a08060",
+      "source": "Manufacturer typical",
+      "url": null,
+      "comments": "Cavity-fill dense-pack cellulose."
+    },
+    {
+      "name": "Gypsum Wall Board | 1/2\"",
+      "category": "finishes",
+      "density_kg_m3": 700.0,
+      "specific_heat_j_kgk": 1090.0,
+      "conductivity_w_mk": 0.21,
+      "emissivity": 0.9,
+      "color": "#f5f1e6",
+      "source": "ASHRAE Handbook",
+      "url": null,
+      "comments": "Standard interior gypsum board."
+    },
+    {
+      "name": "Plywood Sheathing | 1/2\"",
+      "category": "woods",
+      "density_kg_m3": 540.0,
+      "specific_heat_j_kgk": 1210.0,
+      "conductivity_w_mk": 0.13,
+      "emissivity": null,
+      "color": "#c89c5e",
+      "source": "ASHRAE Handbook",
+      "url": null,
+      "comments": "Structural sheathing layer."
+    },
+    {
+      "name": "OSB Sheathing | 1/2\"",
+      "category": "woods",
+      "density_kg_m3": 650.0,
+      "specific_heat_j_kgk": 1880.0,
+      "conductivity_w_mk": 0.13,
+      "emissivity": null,
+      "color": "#b8843b",
+      "source": "ASHRAE Handbook",
+      "url": null,
+      "comments": "Oriented-strand-board sheathing."
+    },
+    {
+      "name": "Concrete | 2400 kg/m³",
+      "category": "masonry",
+      "density_kg_m3": 2400.0,
+      "specific_heat_j_kgk": 880.0,
+      "conductivity_w_mk": 2.3,
+      "emissivity": null,
+      "color": "#8a8a8a",
+      "source": "ASHRAE Handbook",
+      "url": null,
+      "comments": "Normal-weight cast-in-place concrete."
+    },
+    {
+      "name": "Stud Layer | Wood 2x6 @ 16\" o.c.",
+      "category": "stud_layers_wood",
+      "density_kg_m3": 500.0,
+      "specific_heat_j_kgk": 1600.0,
+      "conductivity_w_mk": 0.12,
+      "emissivity": null,
+      "color": "#a78050",
+      "source": null,
+      "url": null,
+      "comments": "Composite wood-stud cavity layer for 2x6 walls."
+    },
+    {
+      "name": "Air Cavity | 25mm, Horizontal Heat Flow",
+      "category": "air_horizontal_heat_flow",
+      "density_kg_m3": 1.2,
+      "specific_heat_j_kgk": 1006.0,
+      "conductivity_w_mk": 0.17,
+      "emissivity": null,
+      "color": null,
+      "source": "ISO 6946",
+      "url": null,
+      "comments": "Unventilated cavity, surface emissivity ≈ 0.9."
+    }
+  ]
+}

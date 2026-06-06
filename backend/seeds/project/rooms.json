@@ -1,0 +1,74 @@
+{
+  "options": {
+    "rooms.floor_level": [
+      { "id": "opt_level_1", "label": "Level 1", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_level_2", "label": "Level 2", "color": "#6366f1", "order": 1 }
+    ],
+    "rooms.building_zone": [
+      { "id": "opt_conditioned", "label": "Conditioned", "color": "#10b981", "order": 0 },
+      { "id": "opt_unconditioned", "label": "Unconditioned", "color": "#f59e0b", "order": 1 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "rm_101",
+      "floor_level": "opt_level_1",
+      "building_zone": "opt_conditioned",
+      "icfa_factor": 1.0,
+      "custom_values": {
+        "number": "101",
+        "name": "Living Room",
+        "num_people": 2,
+        "num_bedrooms": 0
+      }
+    },
+    {
+      "id": "rm_102",
+      "floor_level": "opt_level_1",
+      "building_zone": "opt_conditioned",
+      "icfa_factor": 1.0,
+      "custom_values": {
+        "number": "102",
+        "name": "Kitchen",
+        "num_people": 1,
+        "num_bedrooms": 0
+      }
+    },
+    {
+      "id": "rm_103",
+      "floor_level": "opt_level_2",
+      "building_zone": "opt_conditioned",
+      "icfa_factor": 1.0,
+      "custom_values": {
+        "number": "103",
+        "name": "Bedroom 1",
+        "num_people": 0,
+        "num_bedrooms": 1
+      }
+    },
+    {
+      "id": "rm_104",
+      "floor_level": "opt_level_2",
+      "building_zone": "opt_conditioned",
+      "icfa_factor": 1.0,
+      "custom_values": {
+        "number": "104",
+        "name": "Bedroom 2",
+        "num_people": 0,
+        "num_bedrooms": 1
+      }
+    },
+    {
+      "id": "rm_105",
+      "floor_level": "opt_level_1",
+      "building_zone": "opt_unconditioned",
+      "icfa_factor": 0.0,
+      "custom_values": {
+        "number": "105",
+        "name": "Basement",
+        "num_people": 0,
+        "num_bedrooms": 0
+      }
+    }
+  ]
+}

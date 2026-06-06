@@ -1,0 +1,101 @@
+{
+  "options": {
+    "pumps.device_type": [
+      { "id": "opt_circulator", "label": "Circulator", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_well_pump", "label": "Well Pump", "color": "#22c55e", "order": 1 },
+      { "id": "opt_sump_pump", "label": "Sump Pump", "color": "#f97316", "order": 2 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "pmp_1",
+      "device_type": "opt_circulator",
+      "phase": 1,
+      "link": "https://example.com/taco-0015e3.pdf",
+      "notes": "DHW recirculation pump.",
+      "custom_values": {
+        "record_id": "P-1",
+        "use": "DHW recirc",
+        "manufacturer": "Taco",
+        "model": "0015e3",
+        "volts": 120,
+        "horse_power": null,
+        "wattage": 45,
+        "flow_gpm": 4,
+        "runtime_khr_yr": 2.5
+      }
+    },
+    {
+      "id": "pmp_2",
+      "device_type": "opt_circulator",
+      "phase": 1,
+      "link": "https://example.com/grundfos-alpha2.pdf",
+      "notes": "Hydronic heating loop.",
+      "custom_values": {
+        "record_id": "P-2",
+        "use": "Hydronic heating",
+        "manufacturer": "Grundfos",
+        "model": "Alpha2 15-55",
+        "volts": 120,
+        "horse_power": null,
+        "wattage": 45,
+        "flow_gpm": 6,
+        "runtime_khr_yr": 4.0
+      }
+    },
+    {
+      "id": "pmp_3",
+      "device_type": "opt_well_pump",
+      "phase": 1,
+      "link": "https://example.com/goulds-jrs5.pdf",
+      "notes": "Shallow-well jet pump.",
+      "custom_values": {
+        "record_id": "P-3",
+        "use": "Domestic water supply",
+        "manufacturer": "Goulds",
+        "model": "JRS5",
+        "volts": 240,
+        "horse_power": 0.5,
+        "wattage": 750,
+        "flow_gpm": 12,
+        "runtime_khr_yr": 0.8
+      }
+    },
+    {
+      "id": "pmp_4",
+      "device_type": "opt_sump_pump",
+      "phase": 1,
+      "link": "https://example.com/zoeller-m53.pdf",
+      "notes": "Primary basement sump pump.",
+      "custom_values": {
+        "record_id": "P-4",
+        "use": "Sump",
+        "manufacturer": "Zoeller",
+        "model": "M53",
+        "volts": 120,
+        "horse_power": 0.33,
+        "wattage": 360,
+        "flow_gpm": 43,
+        "runtime_khr_yr": 0.15
+      }
+    },
+    {
+      "id": "pmp_5",
+      "device_type": "opt_circulator",
+      "phase": 1,
+      "link": null,
+      "notes": "Solar thermal loop pump (optional).",
+      "custom_values": {
+        "record_id": "P-5",
+        "use": "Solar thermal",
+        "manufacturer": "Wilo",
+        "model": "Star-Z 15",
+        "volts": 120,
+        "horse_power": null,
+        "wattage": 60,
+        "flow_gpm": 5,
+        "runtime_khr_yr": 1.6
+      }
+    }
+  ]
+}

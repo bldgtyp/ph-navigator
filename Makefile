@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-dev-data seed-glazing seed-frames e2e e2e-report clean
+        smoke seed-dev-user seed-dev-data seed-materials seed-glazing seed-frames db-seed e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -101,7 +101,7 @@ db-reset: ## Destroy and recreate the Postgres volume (DANGER — wipes BOTH dev
 	docker volume rm ph-navigator-v2_phn_v2_postgres_data 2>/dev/null || true
 	docker compose up -d db
 
-db-reset-dev: db-reset db-wait migrate seed-dev-data ## Recreate local Postgres, migrate, and seed starter dev data
+db-reset-dev: db-reset db-wait migrate db-seed ## Recreate local Postgres, migrate, and seed starter dev data
 
 db-create-test: db-up ## Create the ph_navigator_v2_test database if missing (idempotent)
 	@docker exec phn-v2-postgres sh -c '\
@@ -199,11 +199,18 @@ seed-dev-user: migrate ## Create/reset the default local editor login
 seed-dev-data: migrate ## Reset app rows and seed the default user + starter project
 	cd backend && uv run python -m scripts.seed_dev_db --reset
 
+seed-materials: migrate ## Load the canonical Materials catalog seed (10 rows)
+	cd backend && uv run python -m scripts.seed_materials_catalog
+
 seed-glazing: migrate ## Load the canonical Window-Glazing catalog seed (~42 rows)
 	cd backend && uv run python -m scripts.seed_glazing_catalog
 
 seed-frames: migrate ## Load the canonical Window-Frame Elements catalog seed (~190 rows)
 	cd backend && uv run python -m scripts.seed_frame_catalog
+
+db-seed: seed-dev-data seed-materials seed-glazing seed-frames ## Wipe app tables + seed user, starter project, and all three catalogs from backend/seeds/
+	@echo ""
+	@echo "Local dev DB seeded from backend/seeds/."
 
 clean: ## Remove caches and build artifacts (does NOT touch .venv or node_modules)
 	find . -type d -name __pycache__ -exec rm -rf {} +

@@ -1,0 +1,121 @@
+{
+  "options": {
+    "hot_water_tanks.type": [
+      { "id": "opt_hwt_heat_pump", "label": "Heat Pump", "color": "#10b981", "order": 0 },
+      { "id": "opt_hwt_electric", "label": "Electric Resistance", "color": "#ef4444", "order": 1 },
+      { "id": "opt_hwt_gas", "label": "Gas", "color": "#f59e0b", "order": 2 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "hwt_1",
+      "tank_type": "opt_hwt_heat_pump",
+      "phase": 1,
+      "url": "https://example.com/rheem-proterra-65.pdf",
+      "notes": "Primary DHW heat pump tank.",
+      "custom_values": {
+        "record_id": "HWT-1",
+        "name": "DHW Heat Pump",
+        "quantity": 1,
+        "model": "ProTerra 65",
+        "manufacturer": "Rheem",
+        "size_l": 246,
+        "temperature_c": 49,
+        "amps": 20,
+        "volts": 240,
+        "phase": 1,
+        "power_factor": 0.8,
+        "watts": 4500,
+        "uef": 4.0
+      }
+    },
+    {
+      "id": "hwt_2",
+      "tank_type": "opt_hwt_heat_pump",
+      "phase": 1,
+      "url": "https://example.com/aosmith-hpts50.pdf",
+      "notes": "Secondary HPWH for ADU.",
+      "custom_values": {
+        "record_id": "HWT-2",
+        "name": "ADU HPWH",
+        "quantity": 1,
+        "model": "HPTS-50",
+        "manufacturer": "A.O. Smith",
+        "size_l": 189,
+        "temperature_c": 49,
+        "amps": 20,
+        "volts": 240,
+        "phase": 1,
+        "power_factor": 0.8,
+        "watts": 4500,
+        "uef": 3.88
+      }
+    },
+    {
+      "id": "hwt_3",
+      "tank_type": "opt_hwt_electric",
+      "phase": 1,
+      "url": null,
+      "notes": "Backup electric resistance tank.",
+      "custom_values": {
+        "record_id": "HWT-3",
+        "name": "Backup Electric",
+        "quantity": 1,
+        "model": "EE40R55D",
+        "manufacturer": "Rheem",
+        "size_l": 151,
+        "temperature_c": 49,
+        "amps": 18.75,
+        "volts": 240,
+        "phase": 1,
+        "power_factor": 0.8,
+        "watts": 4500,
+        "uef": 0.92
+      }
+    },
+    {
+      "id": "hwt_4",
+      "tank_type": "opt_hwt_heat_pump",
+      "phase": 1,
+      "url": null,
+      "notes": "Solar-coupled buffer tank.",
+      "custom_values": {
+        "record_id": "HWT-4",
+        "name": "Solar Buffer",
+        "quantity": 1,
+        "model": "SC-119",
+        "manufacturer": "Stiebel Eltron",
+        "size_l": 450,
+        "temperature_c": 49,
+        "amps": null,
+        "volts": null,
+        "phase": null,
+        "power_factor": 0.8,
+        "watts": null,
+        "uef": null
+      }
+    },
+    {
+      "id": "hwt_5",
+      "tank_type": "opt_hwt_gas",
+      "phase": 1,
+      "url": null,
+      "notes": "Legacy gas tank (baseline only).",
+      "custom_values": {
+        "record_id": "HWT-5",
+        "name": "Legacy Gas",
+        "quantity": 1,
+        "model": "GPV40",
+        "manufacturer": "Bradford White",
+        "size_l": 151,
+        "temperature_c": 49,
+        "amps": null,
+        "volts": null,
+        "phase": null,
+        "power_factor": 0.8,
+        "watts": null,
+        "uef": 0.65
+      }
+    }
+  ]
+}
