@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-05
-TIME: 21:05 EDT
-STATUS: In progress — Phases 01–12 shipped (Phase 05 split into two PRs).
+TIME: 21:30 EDT
+STATUS: Complete — All 13 phases shipped (Phase 05 split into two PRs).
 AUTHOR: Claude
 SCOPE: Current state, decisions, and next steps for the Apertures / Aperture Builder build-out.
 RELATED:
@@ -70,10 +70,65 @@ RELATED:
 
 ## Next Step
 
-Begin Phase 13 (`phases/phase-13-mcp-semantic-tools.md`) —
-semantic MCP write tools (`list_aperture_types`,
-`get_aperture_type`, `report_aperture_catalog_drift`,
-`calculate_aperture_u_values`, `apply_aperture_command`).
+Feature complete. Cleanup-phase items remain (see "Still
+deferred" above): legacy `Window*` → `Aperture*` rename + alias
+re-exports, `tables.window_types` → `tables.apertures` field
+rename with `@computed_field` alias, document-load migration
+shim, Alembic migration that munges JSON + seeds defaults,
+delete `frontend/src/features/windows/`, sidebar polish, and
+Playwright E2E. These ship as a separate cleanup phase.
+
+## Phase 13 — Semantic MCP write tools (shipped)
+
+- New `backend/features/apertures_mcp/tools.py` ships five thin
+  wrappers over existing services:
+  - `tool_list_aperture_types(project_id, version_id, source?)`
+    → `{ apertures: [{ id, name, element_count }] }`.
+  - `tool_get_aperture_type(project_id, version_id,
+    aperture_type_id, source?)` → full `ApertureTypeEntry`;
+    unknown id → fatal `aperture_type_not_found`.
+  - `tool_calculate_aperture_u_values(project_id, version_id,
+    aperture_type_ids?, source?)` → Phase 09 service results;
+    null ids returns every aperture.
+  - `tool_report_aperture_catalog_drift(project_id, version_id,
+    source?)` → Phase 12 detector output.
+  - `tool_apply_aperture_command(project_id, version_id,
+    command, if_match?, if_match_version?)` → wraps
+    `apply_aperture_command_to_draft(updated_via="mcp")` so
+    ETag preflight, locked-version rejection, draft buffer
+    semantics, edit-lease policy, and audit envelope all come
+    from the same path the browser uses.
+- Registered in `features/mcp/server.py` next to the Phase 10
+  read tool. Each registration is a one-line stub closure with
+  the public MCP description.
+- `context/technical-requirements/llm-mcp-schema.md` documents
+  the five tool signatures.
+- Per-error-code recoverability map sends ETag conflicts and
+  locked-version errors back as `refresh` (the caller re-reads
+  and retries) while validation errors stay `fatal` (no LLM
+  retry loop on a malformed payload).
+
+## Phase 13 deviations from the doc
+
+- **No separate `auth.py` / `schemas.py`.** The auth helpers
+  already live in `features/mcp/helpers.py`; the schemas already
+  live in `features/project_document/...` and the Phase 09/12
+  modules. Splitting them out again would duplicate.
+- **No `mcp_actor_id` audit field.** V2's audit envelope already
+  carries `updated_via="mcp"` and the token's user id; adding a
+  separate `mcp_actor_id` only makes sense when MCP tokens carry
+  a distinct identity (LLM service account vs. impersonation).
+  That distinction is not yet in V2; the doc-prescribed field
+  can be folded in when it is.
+- **No explicit edit-lease acquire / release.** V2's
+  `load_draft_context` is the single seam that gates concurrent
+  writes via per-user drafts. The browser and MCP share that
+  seam; a separate lease object is unnecessary in v1.
+- **Edit-lease holder name `mcp:<token_id>` deferred** along
+  with the lease object above. When the lease layer arrives, the
+  holder name follows.
+- **Audit tagging stays at `updated_via=mcp`.** Browser conflict
+  toasts can already distinguish source via this field.
 
 ## Phase 12 — Catalog provenance polish (shipped)
 

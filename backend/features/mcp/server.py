@@ -18,6 +18,13 @@ from pydantic import AnyHttpUrl
 
 from config import settings
 from features.aperture_hbjson_export.mcp import tool_get_aperture_window_constructions
+from features.apertures_mcp.tools import (
+    tool_apply_aperture_command,
+    tool_calculate_aperture_u_values,
+    tool_get_aperture_type,
+    tool_list_aperture_types,
+    tool_report_aperture_catalog_drift,
+)
 from features.mcp.models import (
     McpDocumentEnvelope,
     McpProjectEnvelope,
@@ -610,6 +617,94 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
             ctx,
             allow_env_token=allow_env_token,
             source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def list_aperture_types(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Return ``{ apertures: [{ id, name, element_count }] }`` for the draft / version."""
+        return tool_list_aperture_types(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def get_aperture_type(
+        project_id: str,
+        version_id: str,
+        aperture_type_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Return the full ApertureTypeEntry for one aperture type id."""
+        return tool_get_aperture_type(
+            project_id,
+            version_id,
+            aperture_type_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def calculate_aperture_u_values(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        aperture_type_ids: list[str] | None = None,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Return per-aperture composite U-Value results; null `aperture_type_ids` returns every aperture."""
+        return tool_calculate_aperture_u_values(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            aperture_type_ids=aperture_type_ids,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def report_aperture_catalog_drift(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        source: str = "draft",
+    ) -> dict[str, object]:
+        """Return the per-project drift report (field-delta + catalog_row_missing)."""
+        return tool_report_aperture_catalog_drift(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def apply_aperture_command(
+        project_id: str,
+        version_id: str,
+        command: dict[str, object],
+        ctx: Context,
+        if_match: str | None = None,
+        if_match_version: str | None = None,
+    ) -> dict[str, object]:
+        """Apply one semantic aperture command through the same draft-buffer dispatcher the browser uses."""
+        return tool_apply_aperture_command(
+            project_id,
+            version_id,
+            command,
+            ctx,
+            allow_env_token=allow_env_token,
+            if_match=if_match,
+            if_match_version=if_match_version,
         )
 
     return mcp
