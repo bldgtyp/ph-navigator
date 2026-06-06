@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-03
-TIME: 17:51 EDT
+DATE: 2026-06-05
+TIME: 20:46 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -13,7 +13,7 @@ feature-first planning.
 |---|---|---|
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
-| Attachments | Planned / PRD and phase plans drafted | `features/attachments/STATUS.md` |
+| Attachments | In review / partially implemented on main; full acceptance still open | `features/attachments/STATUS.md` |
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
 

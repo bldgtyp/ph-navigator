@@ -1,5 +1,5 @@
 ---
-DATE: 2026-05-25
+DATE: 2026-06-05
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — attachments cell type
         and supporting upload/preview/download/delete pipeline.
 RELATED: context/PRD.md §6.5 (asset backbone),
@@ -46,13 +46,17 @@ Attachment cells exist ONLY on these PHN-declared core fields:
 | `tables.equipment.ervs[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.equipment.pumps[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.equipment.fans[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.hot_water_tanks[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.electric_heaters[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.appliances[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.thermal_bridges[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.thermal_bridges[*]` | `simulation_file_asset_ids[]` | `simulation_file` / `hbjson` | `application/pdf`, `image/png`, `image/jpeg`, `application/json` (`.hbjson`), `application/octet-stream` (`.hbjson`) | 5 | 25 MB |
 
 Per-field config (allowed MIME, `max_count`, `max_file_size_mb`) lives
-in code on each registered table contract (see `data-model.md` §6.6.7
-registered-table-contract pattern). Adding a new attachment cell in
-v1.1+ is a code change, not a runtime change.
+in code in `backend/features/assets/registry.py`, with row-table
+contracts in `backend/features/project_document/tables/attachments.py`
+(see `data-model.md` §6.6.7 registered-table-contract pattern). Adding
+a new attachment cell in v1.1+ is a code change, not a runtime change.
 
 Cell value shape (every entry above):
 ```jsonc
