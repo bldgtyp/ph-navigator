@@ -100,8 +100,8 @@ truth.
   of builder data from HBJSON.** The two stay manually
   cross-referenced in V2 v1 (§11.4.6).
 - **Equipment / appliance catalogs.** V2 v1 ships only the three
-  envelope catalogs (Materials, Window-Frame Elements,
-  Window-Glazing). The 9 deferred equipment catalogs (ERVs, Pumps,
+  envelope catalogs (Materials, Frame Types, Glazing Types).
+  The 9 deferred equipment catalogs (ERVs, Pumps,
   Fans, Appliances, Hot-Water Heaters, Hot-Water Tanks, Heat-Pumps,
   Direct-Elec Heaters, Boilers) are not in v1; full roster captured
   in §7.0 / US-2 for forward planning.
@@ -140,7 +140,7 @@ frontend affordance.
   (data model supports; transfer UI post-MVP).
 - **Viewers:** anyone with a project URL. Read-only,
   no auth required. Can browse the project workspace (Status,
-  Windows, Envelope, Equipment, Model tabs), browse versions,
+  Apertures, Envelope, Equipment, Model tabs), browse versions,
   download project JSON, download table JSON, view uploaded
   HBJSON. **Cannot edit anything.** Edit affordances render hidden
   / disabled in the frontend; the backend rejects any write request
@@ -247,7 +247,7 @@ Core commitments:
 - `ProjectDocumentV1` is a Pydantic-validated JSON document with stable
   ULID-style IDs for document rows and nested entities.
 - Project data is organized as tables: assemblies, project materials,
-  window types, rooms, thermal bridges, equipment, manufacturer filters,
+  apertures, rooms, thermal bridges, equipment, manufacturer filters,
   and single-select option lists.
 - Catalog picks are copied into the project document. `catalog_origin`
   records where a copied value came from, but projects never resolve
@@ -308,7 +308,7 @@ object-key systems. Details live in
 ## 7. Catalog (bookshelf model)
 
 The catalog is a curated starting library. V2 v1 ships three global
-catalogs: Materials, Window-Frame Elements, and Window-Glazing. Future
+catalogs: Materials, Frame Types, and Glazing Types. Future
 equipment catalogs are planned but out of v1 scope.
 
 When a user picks a catalog entry into a project, values are copied into
@@ -323,7 +323,7 @@ Implementation contract: `context/technical-requirements/data-model.md`.
 
 ### 7.0 Catalog roster
 
-V2 v1 ships Materials, Window-Frame Elements, and Window-Glazing. The
+V2 v1 ships Materials, Frame Types, and Glazing Types. The
 future catalog roster lives in
 `context/technical-requirements/data-model.md` §7.0 and
 `context/USER_STORIES.md` US-2.
@@ -559,7 +559,7 @@ workflow. Calculations and data manipulation live in the backend.
 Top-level surfaces:
 
 - editor dashboard (`/dashboard`);
-- project workspace (`/projects/{id}/{tab}`) with Status, Windows,
+- project workspace (`/projects/{id}/{tab}`) with Status, Apertures,
   Envelope, Equipment, and Model tabs;
 - project header with version dropdown, save state, Save / Save As,
   overflow menu, and IP/SI toggle;
@@ -731,7 +731,7 @@ lives in `context/technical-requirements/stack-auth-migration.md` §14.1.
 
 ## 16. Success criteria (v1)
 
-- Ed can create a new V2 project, add assemblies / window-types / rooms,
+- Ed can create a new V2 project, add assemblies / apertures / rooms,
   pick materials / frames / glazings from the catalog, and save.
 - Save (overwrite active version) and Save As (create new version)
   both work; old versions load identically to their save state and
@@ -852,7 +852,7 @@ acceptance, but each shapes a downstream decision:
 21. **User-action-log retention** (US-C1) — keep forever vs. roll
     off. Lean: keep forever (volume trivial).
 22. ~~**Project landing page layout** (US-3 Q1).~~ **Resolved
-    2026-05-10:** tab bar — Status / Windows / Envelope / Equipment /
+    2026-05-10:** tab bar — Status / Apertures / Envelope / Equipment /
     Model. Status is the default landing tab. Versions are a header
     dropdown (US-3.1), not a tab. Settings live behind the header
     `⋯` overflow menu. New schema additions:

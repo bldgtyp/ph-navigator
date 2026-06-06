@@ -640,7 +640,7 @@ because the screen lacks a secondary information model.
   dropdown instead). **No "Settings" tab** (overflow menu).
 - Selected tab shows an active-state underline / fill.
 - Tab selection updates the URL:
-  `/projects/{id}/status`, `/projects/{id}/windows`,
+  `/projects/{id}/status`, `/projects/{id}/apertures`,
   `/projects/{id}/envelope`, `/projects/{id}/equipment`,
   `/projects/{id}/model`. Browser back/forward work.
 - Each tab loads independently (no full-page reload between tabs;
@@ -782,11 +782,12 @@ small annotations; if they are gates, they need action affordance.
 
 Reference: V1 Status page screenshot supplied 2026-05-10.
 
-### 2.6 Windows tab (`/projects/{id}/windows`) — placeholder
+### 2.6 Apertures tab (`/projects/{id}/apertures`)
 
-**(Detailed in US-Builder-Windows.)** Window types: shadcn-table
-of window-type rows; clicking a row opens the per-window-type
-editor (rows, columns, frames, glazings).
+**(Detailed in US-Builder-Apertures.)** Aperture types (doors,
+windows, skylights): left-rail list of aperture-type entries; clicking
+an entry opens the per-aperture-type editor (rows, columns, frames,
+glazings, operation).
 
 Use the shared builder shell: object browser/list on the left, visual
 aperture editor in the center, computed U-w / dimension summary near
@@ -835,7 +836,7 @@ sub-tab.
 
 **Layout:** assembly-list sidebar (left, ≈260 px, default closed) and
 active-assembly canvas/workbench (right). Same shell pattern as the
-Windows tab. The assembly visual is the primary object, not a decorative
+Apertures tab. The assembly visual is the primary object, not a decorative
 preview.
 
 **Sidebar (US-ENV-2):**
@@ -1430,7 +1431,7 @@ content review.
 | Version dropdown picker (header) | Drafted | MVP |
 | Locked-version edit lockout banner | Drafted | MVP |
 | Status tab (`/projects/{id}/status`) | Placeholder | MVP |
-| Windows tab (`/projects/{id}/windows`) | Placeholder | MVP |
+| Apertures tab (`/projects/{id}/apertures`) | Shipped | MVP |
 | Envelope tab (`/projects/{id}/envelope`) — sub-tab structure + Assemblies + Specifications | Drafted | MVP |
 | Envelope · Airtightness sub-tab | Placeholder | MVP |
 | Envelope · Site Photos sub-tab | Placeholder | MVP |

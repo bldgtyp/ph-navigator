@@ -346,19 +346,19 @@ GET    /api/v1/projects/{pid}/jobs/{job_id}
 `status` ∈ `'queued' | 'running' | 'completed' | 'failed'`.
 `progress` is a 0.0–1.0 float, advisory only.
 
-### 9.10a Window Type Catalog Refresh
+### 9.10a Aperture Catalog Drift Report
 
 ```
-GET /api/v1/projects/{pid}/versions/{vid}/refresh/window-types?source=draft|version
+GET /api/v1/projects/{pid}/versions/{vid}/apertures/drift-report?source=draft|version
 ```
 
-Returns the TB-09 refresh report for copied FrameRef / GlazingRef values
-in `tables.window_types[]`. The route is editor-only in V2 v1, omits
-hand-entered refs without `catalog_origin`, and reports each copied slot
-as `in_sync`, `drifted`, or `source_deactivated` with per-field catalog
-vs project values and override flags. Apply actions write through the
-existing `PUT /draft/tables/window_types` replace-slice path; there is no
-bulk update endpoint.
+Returns the per-field drift report for catalog-sourced FrameRef /
+GlazingRef values in `tables.apertures[]`. The route is editor-only,
+omits hand-entered refs without `catalog_origin`, and reports each
+ref as `in_sync`, `drifted`, or `catalog_row_missing` with per-field
+catalog-vs-project deltas plus the `local_overrides` flag. Apply
+actions write through the `refreshRefFromCatalog` aperture command on
+`POST /apertures/command`.
 
 ### 9.11 HBJSON files
 
@@ -402,6 +402,6 @@ suffix is the *document schema* version, independent of the API version
 (see §10.5). Dedicated project-document, Room row, and Rooms table
 envelope endpoints remain for stable inspector links. Registered table
 row schemas are served through `{schema_slug}` from the table-contract
-registry; current slugs include `window-type`, `project-material`, and
+registry; current slugs include `aperture-type`, `project-material`, and
 `assembly-segment`. Catalog (Materials, Frame, Glazing) schemas will be
 added as those table contracts land.

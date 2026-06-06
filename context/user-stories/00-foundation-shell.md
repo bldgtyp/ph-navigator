@@ -261,7 +261,7 @@ None — all US-1 questions resolved 2026-05-10.
                  "phius_number": null, "phius_dropbox_url": null },
     "tables": {
       "assemblies": [],
-      "window_types": [],
+      "apertures": [],
       "rooms": [],
       "equipment": { "fans": [], "pumps": [], "ervs": [] },
       "manufacturer_filters": []

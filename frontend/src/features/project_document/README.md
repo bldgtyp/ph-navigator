@@ -3,7 +3,7 @@
 This feature owns the **JSON-document data model** for a project — draft
 summaries, document fetches, diffs, save/discard mutations, and the
 generic `createTableSliceFeature` factory used by table features
-(`equipment`, `windows`, ...) to wire their slices into the document.
+(`equipment`, `rooms`, ...) to wire their slices into the document.
 
 ## No `routes/`
 

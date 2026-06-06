@@ -179,7 +179,7 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     next_tables = ProjectDocumentTables(
         assemblies=body.tables.assemblies,
         project_materials=body.tables.project_materials,
-        window_types=body.tables.window_types,
+        apertures=body.tables.apertures,
         rooms=RoomsTableEnvelope(
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],

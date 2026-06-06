@@ -4,17 +4,12 @@ import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
 import { StatusTab } from "../../project_status/routes/StatusTab";
-import { WindowsTab } from "../../windows/routes/WindowsTab";
 import { TAB_COPY, TAB_LABELS, type ProjectTab } from "../lib";
 import type { ProjectDetail } from "../types";
 
 export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
   if (tab === "status") {
     return <StatusTab project={project} />;
-  }
-
-  if (tab === "windows") {
-    return <WindowsTab project={project} />;
   }
 
   if (tab === "apertures") {

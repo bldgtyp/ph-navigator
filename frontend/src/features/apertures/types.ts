@@ -1,8 +1,42 @@
-import type { FrameRef, GlazingRef } from "../windows/types";
+import type { CatalogOrigin } from "../project_document/catalog-origin";
 
-export type { CatalogOrigin, CatalogTableName, FrameRef, GlazingRef } from "../windows/types";
+export type { CatalogOrigin, CatalogTableName } from "../project_document/catalog-origin";
 
 export const APERTURES_TABLE_NAME = "apertures";
+
+export type FrameRef = {
+  name: string;
+  manufacturer: string | null;
+  brand: string | null;
+  use: string | null;
+  operation: string | null;
+  location: string | null;
+  mull_type: string | null;
+  prefix: string | null;
+  suffix: string | null;
+  material: string | null;
+  width_mm: number | null;
+  u_value_w_m2k: number | null;
+  psi_g_w_mk: number | null;
+  psi_install_w_mk: number | null;
+  color: string | null;
+  source: string | null;
+  comments: string | null;
+  catalog_origin: CatalogOrigin | null;
+};
+
+export type GlazingRef = {
+  name: string;
+  manufacturer: string | null;
+  brand: string | null;
+  suffix: string | null;
+  u_value_w_m2k: number | null;
+  g_value: number | null;
+  color: string | null;
+  source: string | null;
+  comments: string | null;
+  catalog_origin: CatalogOrigin | null;
+};
 
 export type ApertureOperationType = "swing" | "slide";
 export type ApertureOperationDirection = "left" | "right" | "up" | "down";

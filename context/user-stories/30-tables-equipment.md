@@ -73,16 +73,16 @@ the row/detail surface that resolves the gap.
    shift-click rectangular selections; ⌘C copies as TSV
    (Excel-compatible); ⌘A selects whole table.
 6. **`naturalSortCompare` for default sort** — same comparator
-   used in US-WIN-1 / US-ENV-2 sidebar lists. "Room 2" sorts
+   used in US-APT-1 / US-ENV-2 sidebar lists. "Room 2" sorts
    before "Room 10."
 7. **Add row** — two-path UX matching US-ENV-7 (segment) and
-   US-WIN-4 (window-element):
+   US-APT-4 (aperture-element):
    - **Hand-enter row** — opens an inline-edit row with
      `catalog_origin: null` and the table's empty-defaults.
      Always available.
    - **Pick from catalog** — only available when the table
      has a corresponding catalog. **In V2 v1, only Materials,
-     Window-Frames, and Window-Glazing have catalogs** (PRD
+     Frame Types, and Glazing Types have catalogs** (PRD
      §3 non-goals); the equipment catalogs (ERVs, Pumps, Fans,
      Heat-Pumps, etc.) are deferred to v1.1+. Story copy:
      when the catalog ships, "Pick from catalog" appears next
@@ -101,14 +101,14 @@ the row/detail surface that resolves the gap.
    row-detail modal.
 10. **Delete row** — destructive shadcn `Dialog`, simple
     Cancel/Delete confirm. No name retyping (matches
-    US-WIN-1.2 / US-ENV-2 patterns). Single JSON-Patch
+    US-APT-1.2 / US-ENV-2 patterns). Single JSON-Patch
     `remove`. **No** physical purge of orphans this row may
     have referenced (consistent with envelope's "Unused
     materials" treatment, Q-ENV-2).
 11. **Drift badges for catalog-linked rows** — when a row's
     `catalog_origin.catalog_version_id !=
     current_catalog_version_id`, render the same drift badge
-    + diff dialog as US-WIN-4.2 / US-ENV-11. Hidden in V2 v1
+    + diff dialog as US-APT-4.2 / US-ENV-11. Hidden in V2 v1
     for tables whose catalogs haven't shipped.
 12. **Empty-state.** Table-specific copy + primary CTA wired
     to the table's add-row flow. E.g. "No rooms yet. **[+ Add
@@ -261,7 +261,7 @@ type added gets MCP support for free.
 - **Q-TBL-2: Per-row deep-link URLs.** Resolved: defer to
   v1.1+. URL format when added would be
   `/projects/{id}/equipment/rooms/{row_id}` mirroring Q-ENV-9
-  / Q-WIN-5.
+  / Q-APT-5.
 - **Q-TBL-3: Bulk row operations** (delete N rows, set field
   on N rows). Resolved: defer to v1.1+. Multi-select + ⌘C
   copy ships in V2 v1; multi-edit / bulk-delete doesn't.
@@ -515,7 +515,7 @@ mutations, locked-version, JSON download).
    row). All 8 columns editable; `notes` (multi-line)
    available under a "Notes" expander.
 5. **`number` uniqueness** enforced like
-   US-WIN-1's name-uniqueness — trim + case-insensitive
+   US-APT-1's name-uniqueness — trim + case-insensitive
    comparison; add/duplicate auto-suffix `(2)`, `(3)`; rename
    rejects collisions with toast.
 6. **`erv_unit_id` referential integrity.** When the

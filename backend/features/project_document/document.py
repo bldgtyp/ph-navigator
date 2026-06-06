@@ -752,75 +752,6 @@ class ApertureTypeEntry(BaseModel):
         return self
 
 
-class WindowElementFrames(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    top: FrameRef | None = None
-    right: FrameRef | None = None
-    bottom: FrameRef | None = None
-    left: FrameRef | None = None
-
-
-class WindowElement(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^winel_[A-Za-z0-9_-]+$", max_length=80)
-    row_span: tuple[int, int]
-    column_span: tuple[int, int]
-    frames: WindowElementFrames = Field(default_factory=WindowElementFrames)
-    glazing: GlazingRef | None = None
-
-    @field_validator("row_span", "column_span")
-    @classmethod
-    def _validate_span(cls, value: tuple[int, int]) -> tuple[int, int]:
-        start, end = value
-        if start < 0 or end < 0:
-            raise ValueError("span indices must be >= 0")
-        if start > end:
-            raise ValueError("span start must be <= end")
-        return value
-
-
-class WindowTypeEntry(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^win_[A-Za-z0-9_-]+$", max_length=80)
-    name: str = Field(min_length=1, max_length=200)
-    row_heights_mm: list[float] = Field(min_length=1)
-    column_widths_mm: list[float] = Field(min_length=1)
-    elements: list[WindowElement] = Field(min_length=1)
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _strip_name(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @field_validator("row_heights_mm", "column_widths_mm")
-    @classmethod
-    def _positive_dimensions(cls, value: list[float]) -> list[float]:
-        for dim in value:
-            if dim <= 0:
-                raise ValueError("grid dimensions must be > 0")
-        return value
-
-    @model_validator(mode="after")
-    def _validate_element_spans(self) -> WindowTypeEntry:
-        rows = len(self.row_heights_mm)
-        cols = len(self.column_widths_mm)
-        element_ids: set[str] = set()
-        for element in self.elements:
-            if element.id in element_ids:
-                raise ValueError(f"Duplicate window element id: {element.id}")
-            element_ids.add(element.id)
-            if element.row_span[1] >= rows:
-                raise ValueError(f"Window element {element.id} row_span out of bounds")
-            if element.column_span[1] >= cols:
-                raise ValueError(f"Window element {element.id} column_span out of bounds")
-        return self
-
-
 class RoomsTableEnvelope(BaseModel):
     """`{ field_defs, rows }` envelope around the Rooms table.
 
@@ -867,7 +798,6 @@ class ProjectDocumentTables(BaseModel):
 
     assemblies: list[Assembly] = Field(default_factory=list)
     project_materials: list[ProjectMaterial] = Field(default_factory=list)
-    window_types: list[WindowTypeEntry] = Field(default_factory=list)
     apertures: list[ApertureTypeEntry] = Field(default_factory=list)
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     thermal_bridges: list[dict[str, object]] = Field(default_factory=list)
@@ -1109,18 +1039,6 @@ class ProjectDocumentV1(BaseModel):
             if normalized_aperture_name in aperture_names:
                 raise ValueError(f"Duplicate aperture name: {aperture.name}")
             aperture_names.add(normalized_aperture_name)
-
-        window_type_ids: set[str] = set()
-        window_type_names: set[str] = set()
-        for window_type in self.tables.window_types:
-            if window_type.id in window_type_ids:
-                raise ValueError(f"Duplicate window type id: {window_type.id}")
-            window_type_ids.add(window_type.id)
-
-            normalized_name = normalize_display_name(window_type.name)
-            if normalized_name in window_type_names:
-                raise ValueError(f"Duplicate window type name: {window_type.name}")
-            window_type_names.add(normalized_name)
 
         _validate_envelope_references(self.tables.project_materials, self.tables.assemblies)
 

@@ -488,7 +488,7 @@ def test_phase_2_slice_replace_rejects_non_namespaced_extras(
 
     initial = client.get(_draft_rooms_url(project_id, version_id)).json()
     payload = _rooms_payload(initial["field_defs"], [_room("rm_101", "101", {})])
-    payload["single_select_options"]["window_types.foo"] = []
+    payload["single_select_options"]["apertures.foo"] = []
     response = client.put(
         _draft_rooms_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},

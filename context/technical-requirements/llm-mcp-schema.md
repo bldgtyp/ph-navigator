@@ -273,11 +273,11 @@ stable row targets for follow-up calls:
 {
   "matches": [
     {
-      "row_id": "win_...",
+      "row_id": "apt_...",
       "row_target": {
         "type": "table_row",
-        "table_name": "windows",
-        "row_id": "win_..."
+        "table_name": "apertures",
+        "row_id": "apt_..."
       },
       "summary": {"name": "W-101", "area_m2": 2.4}
     }

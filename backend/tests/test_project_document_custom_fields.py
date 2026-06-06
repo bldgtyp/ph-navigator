@@ -60,15 +60,15 @@ def _make_number_units_config(**overrides: object) -> dict[str, object]:
 
 def test_rooms_contract_exposes_field_registry() -> None:
     rooms = get_table_contract("rooms")
-    window_types = get_table_contract("window_types")
+    apertures = get_table_contract("apertures")
 
     assert rooms.field_registry is not None
     assert rooms.table_path == ("rooms",)
     assert rooms.field_registry.field_keys == ROOMS_BUILT_IN_FIELD_KEYS
     assert rooms.field_registry.option_list_namespace_prefix == "rooms"
 
-    assert window_types.field_registry is None
-    assert window_types.table_path == ("window_types",)
+    assert apertures.field_registry is None
+    assert apertures.table_path == ("apertures",)
 
 
 def test_rooms_fingerprint_changes_when_custom_field_added() -> None:
