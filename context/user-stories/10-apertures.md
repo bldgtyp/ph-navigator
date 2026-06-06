@@ -4,17 +4,26 @@ STATUS: Split from context/USER_STORIES.md; canonical story body.
 SOURCE: context/USER_STORIES.md
 ---
 
-# PH-Navigator V2 — User Stories: Windows
+> **Naming note (2026-06-05):** the V2 tab originally shipped under
+> the name "Windows" and was renamed to **Apertures** to match the
+> domain language (doors, windows, skylights — all apertures in
+> the envelope). The old "Windows" terminology used to be canonical
+> in this file; canonical V2 vocabulary is now Apertures / Aperture
+> Type / Aperture Builder. Verbatim V1 references to "Window
+> Builder" / `../ph-navigator/.../windows/...` paths are preserved
+> because V1 still uses the old names.
 
-## US-Builder-Windows — Windows tab (US-3.3)
+# PH-Navigator V2 — User Stories: Apertures
+
+## US-Builder-Apertures — Apertures tab (US-3.3)
 
 **Status:** Draft (parent — sub-stories range Draft → Placeholder)
 **Priority:** MVP
-**PRD ref:** §6.2 (`tables.window_types` shape), §7 (catalog
+**PRD ref:** §6.2 (`tables.apertures` shape), §7 (catalog
 bookshelf), §11.1 (project tabs), §11.5 (units architecture),
-§8 (save / version model — Window-Builder edits flow into the
+§8 (save / version model — Aperture-Builder edits flow into the
 draft buffer, persisted by Save / Save As)
-**UI/UX ref:** §2.6 *Windows tab* (placeholder — expanded by these
+**UI/UX ref:** §2.6 *Apertures tab* (placeholder — expanded by these
 sub-stories)
 **V1 reference:** `research/v1-window-builder-reference.md`
 — deep enumeration of V1 behavior; consult for any "what does V1
@@ -29,18 +38,18 @@ do here" question. Cited as `V1 ref §N` below.
 > ISO 10077-1 window U-values, and feed downstream tools (Rhino +
 > honeybee_ph, certification submittals) without leaving the app.
 
-### Why this is a story-cluster (US-WIN-1..12)
-Window-Builder is the densest editing surface in PHN — V1 has 12+
+### Why this is a story-cluster (US-APT-1..12)
+Aperture-Builder is the densest editing surface in PHN — V1 has 12+
 named subsystems (sidebar, dimensions panel, canvas, elements table,
 frame & glazing selectors, operation editor, manufacturer filter,
 copy/paste, view direction, zoom, U-value). Splitting into an
-`US-WIN-N` cluster lets us walk one subsystem at a time without
+`US-APT-N` cluster lets us walk one subsystem at a time without
 losing the cross-cutting picture. Sub-stories share the project's
 versioned-document + bookshelf-catalog architecture (PRD §6.2, §7).
 
 ### Key V1 → V2 shifts (read first)
-1. **All window-type data lives in the versioned project document.**
-   `body.tables.window_types[]` per PRD §6.2. Edits flow into the
+1. **All aperture-type data lives in the versioned project document.**
+   `body.tables.apertures[]` per PRD §6.2. Edits flow into the
    draft buffer (PRD §8.3); explicit **Save** or **Save As** persists
    to a version. No V1-style per-edit autosave round-trip
    (V1 ref §14.1).
@@ -48,7 +57,7 @@ versioned-document + bookshelf-catalog architecture (PRD §6.2, §7).
    the catalog, not live-referenced** (PRD §7.1). At pick time, the
    catalog row's values are *copied into the document* and stamped with a
    `catalog_origin` block. Catalog edits do not propagate into the
-   project. Refresh-from-catalog (US-WIN-11) is the explicit
+   project. Refresh-from-catalog (US-APT-11) is the explicit
    re-sync gesture.
 3. **No AirTable.** V2 catalog is hand-curated in the catalog manager
    (a separate top-level area; PRD §7.3, US-2). No "Refresh frame
@@ -59,7 +68,7 @@ versioned-document + bookshelf-catalog architecture (PRD §6.2, §7).
    mode (V1 ref §17); V2 must respect the per-user IP/SI toggle
    everywhere — selectors, table cells, dimensions, U-value labels.
 5. **Locked versions block all edits** (US-3.1). When the active
-   version is locked, the entire Windows tab renders read-only with
+   version is locked, the entire Apertures tab renders read-only with
    the "Save As to copy and edit" banner; no inline edit
    affordances anywhere in this cluster.
 6. **Sort order normalized.** V1 has three different sort orders for
@@ -77,9 +86,9 @@ versioned-document + bookshelf-catalog architecture (PRD §6.2, §7).
 
 These four shape the document body and need to be settled before
 Pydantic models are written. They are not blockers for this PRD's
-acceptance, but are blockers for the first US-WIN-N implementation.
+acceptance, but are blockers for the first US-APT-N implementation.
 
-- **Q-WIN-1: Element span representation.** PRD §6.2 sketch shows
+- **Q-APT-1: Element span representation.** PRD §6.2 sketch shows
   `row_span: [start, end]` and `column_span: [start, end]` (range
   form). V1 stores `row_number + row_span` (offset + length;
   V1 ref §2.2). V2 picks the **range form** per the sketch — cleaner,
@@ -88,7 +97,7 @@ acceptance, but are blockers for the first US-WIN-N implementation.
   form. Convention: `[start, end]` is **inclusive** on both ends, so
   a 1×1 cell at row 0 col 0 is `row_span: [0, 0]`,
   `column_span: [0, 0]`.**
-- **Q-WIN-2: Per-side frames.** **Resolved 2026-05-11:** V2 uses
+- **Q-APT-2: Per-side frames.** **Resolved 2026-05-11:** V2 uses
   four inlined frame values per element
   (`frames: { top, right, bottom, left }`; V1 ref §2.2), now reflected
   in PRD §6.2 and the glossary. Reasons: Phius / WUFI
@@ -96,7 +105,7 @@ acceptance, but are blockers for the first US-WIN-N implementation.
   asymmetric jamb cases (e.g. structurally reinforced bottom) need
   per-side; V1's ISO 10077-1 calc assumes per-side
   (V1 ref §10.1).
-- **Q-WIN-3: Default frame / glazing on element create.** V1 picks
+- **Q-APT-3: Default frame / glazing on element create.** V1 picks
   catalog row named "Default", falls back to first row, raises
   `NoFrameTypesException` / `NoGlazingTypesException` if catalog is
   empty (V1 ref §17). V2 has no AirTable seed.
@@ -115,7 +124,7 @@ acceptance, but are blockers for the first US-WIN-N implementation.
   picks, keeps `catalog_origin` clean (only present when a real
   catalog pick happened), avoids "everyone forgot to change the
   default" pattern. Confirm.
-- **Q-WIN-4: Manufacturer-filter storage.** V1 stores
+- **Q-APT-4: Manufacturer-filter storage.** V1 stores
   `ProjectManufacturerFilter (project_id, manufacturer, filter_type,
   is_enabled)` — relational (V1 ref §9.3). V2 options:
   (a) Lives in the project document as
@@ -123,7 +132,7 @@ acceptance, but are blockers for the first US-WIN-N implementation.
       includes this name). Filter state versions with the project,
       so locking a Submitted version captures filter at submit
       time.
-  (b) Per-user app-level preference (`users.window_builder_manufacturer_filter`).
+  (b) Per-user app-level preference (`users.aperture_builder_manufacturer_filter`).
       Lighter; doesn't travel with the version; doesn't capture
       filter state in cert submits.
   **Lean: (a) — store in the project document.** A Submitted
@@ -132,17 +141,17 @@ acceptance, but are blockers for the first US-WIN-N implementation.
 
 ### Other open questions (UX-shaping; can be resolved per-sub-story)
 
-- **Q-WIN-5: Per-window-type deep-link URL.** V1 has no per-aperture
-  URL (V1 ref §18). V2 lean: `/projects/{id}/windows` lists,
-  `/projects/{id}/windows/{window_type_id}` opens a specific type.
+- **Q-APT-5: Per-aperture-type deep-link URL.** V1 has no per-aperture
+  URL (V1 ref §18). V2 lean: `/projects/{id}/apertures` lists,
+  `/projects/{id}/apertures/{aperture_type_id}` opens a specific type.
   Confirm.
-- **Q-WIN-6: Split behavior.** V1 splits a merged element into 1×1
+- **Q-APT-6: Split behavior.** V1 splits a merged element into 1×1
   cells whose frame / glazing / operation revert to defaults — the
   source assignments are lost (V1 ref §17, §7.9). V2 lean: **preserve
   source assignments on every new cell.** The document model makes
   this cheap (one JSON-Patch instead of N inserts), and the V1
   behavior is a known papercut. Confirm.
-- **Q-WIN-7: Frame-label flip semantics on interior view.** V1 flips
+- **Q-APT-7: Frame-label flip semantics on interior view.** V1 flips
   both the SVG (visual right edge reads `frames.left`) AND the
   elements-table label (table row "Right Frame:" reads
   `element.frames.left` when interior view is active;
@@ -150,7 +159,7 @@ acceptance, but are blockers for the first US-WIN-N implementation.
   reliably surprises new readers. V2 lean: **keep the flip** —
   changing it would break the "what you see is what you label"
   invariant when looking from interior.
-- **Q-WIN-8: HBJSON window-constructions export.** V1 ships
+- **Q-APT-8: HBJSON window-constructions export.** V1 ships
   `GET /aperture/get-window-constructions-as-hbjson/{bt_number}`
   building Honeybee-Energy `WindowConstruction` per element on
   demand (V1 ref §13.1, §17). V2 with PRD §11.4.6 builder ↔ HBJSON
@@ -160,58 +169,58 @@ acceptance, but are blockers for the first US-WIN-N implementation.
   JSON is the bridge into the Rhino + honeybee_ph workflow that
   PRD §11.4.6 acknowledges as the design-time exchange surface.
   Confirm.
-- **Q-WIN-9: Display-unit format selector scope.** V1 keeps SI
+- **Q-APT-9: Display-unit format selector scope.** V1 keeps SI
   (`mm | cm | m`) and IP (`in | ft | ft-in`) last-choices separately
   in localStorage (V1 ref §4.7). V2 with per-user
   `users.units_preference` chooses **system** but not **format**;
-  inside the Window-Builder, the user still picks `mm` vs `cm`
+  inside the Aperture-Builder, the user still picks `mm` vs `cm`
   vs `m` (in SI mode) or `in` vs `ft` vs `ft-in` (in IP mode).
-  Storage: per-user (`users.window_builder_dim_format_si`,
-  `users.window_builder_dim_format_ip`) or per-project
+  Storage: per-user (`users.aperture_builder_dim_format_si`,
+  `users.aperture_builder_dim_format_ip`) or per-project
   document? **Lean: per-user.** Confirm.
 
 ### Sub-story sequence
 
 | Sub-story | Topic | Status |
 |---|---|---|
-| US-WIN-1 | Window-type list (sidebar) — add / rename / duplicate / delete | Draft |
-| US-WIN-2 | Compose the grid — rows × columns, dimensions, edge add | Draft |
-| US-WIN-3 | Window-elements — naming, selection, merge, split | Draft |
-| US-WIN-4 | Pick frame & glazing — bookshelf flow from the catalog | Draft (key V2 shift) |
-| US-WIN-5 | Operation editor — fixed / swing / slide + directions | Draft |
-| US-WIN-6 | U-value display — per-element + window-level (ISO 10077-1) | Draft |
-| US-WIN-7 | Copy / paste assignments — eyedropper / paint-bucket | Draft |
-| US-WIN-8 | Manufacturer filter — project-scoped, gates selectors | Draft |
-| US-WIN-9 | Canvas — SVG render, view direction, zoom, label overlay | Draft |
-| US-WIN-10 | Dimensions panel — input parsing, expressions, ft-in | Draft |
-| US-WIN-11 | Refresh-from-catalog (per-entry) — bookshelf re-sync | Draft (new in V2) |
-| US-WIN-12 | HBJSON window-constructions export | Placeholder (gated by Q-WIN-8) |
+| US-APT-1 | Aperture-type list (sidebar) — add / rename / duplicate / delete | Draft |
+| US-APT-2 | Compose the grid — rows × columns, dimensions, edge add | Draft |
+| US-APT-3 | Window-elements — naming, selection, merge, split | Draft |
+| US-APT-4 | Pick frame & glazing — bookshelf flow from the catalog | Draft (key V2 shift) |
+| US-APT-5 | Operation editor — fixed / swing / slide + directions | Draft |
+| US-APT-6 | U-value display — per-element + window-level (ISO 10077-1) | Draft |
+| US-APT-7 | Copy / paste assignments — eyedropper / paint-bucket | Draft |
+| US-APT-8 | Manufacturer filter — project-scoped, gates selectors | Draft |
+| US-APT-9 | Canvas — SVG render, view direction, zoom, label overlay | Draft |
+| US-APT-10 | Dimensions panel — input parsing, expressions, ft-in | Draft |
+| US-APT-11 | Refresh-from-catalog (per-entry) — bookshelf re-sync | Draft (new in V2) |
+| US-APT-12 | HBJSON window-constructions export | Placeholder (gated by Q-APT-8) |
 
 ---
 
-## US-WIN-1 — Window-type list (sidebar)
+## US-APT-1 — Aperture-type list (sidebar)
 
 **Status:** Draft · **Priority:** MVP
-**PRD ref:** §6.2 (`tables.window_types[]`), §11.1 (Windows tab),
+**PRD ref:** §6.2 (`tables.apertures[]`), §11.1 (Apertures tab),
 §8 (draft + Save flow)
 **V1 ref:** §5 (Sidebar), §3.3 (UnitBuilder shell), §4.1
 (AperturesProvider)
 
 ### Story
-> As an editor, I want a left-rail list of every window type in this
+> As an editor, I want a left-rail list of every aperture type in this
 > project version, with quick-access actions to add, rename,
 > duplicate, and delete a type, so I can navigate and reorganize my
 > window set without leaving the canvas.
 
 ### Acceptance criteria
 
-1. **Layout.** The Windows tab is split:
+1. **Layout.** The Apertures tab is split:
    - Left sidebar (≈260 px wide; collapsible to a 0-px rail with a
      chevron toggle), default state **closed** for first-time visits
      to a project (mirroring V1 ref §3.3).
    - Right main area = canvas + elements table for the active type
-     (US-WIN-2..5).
-2. **List source.** Renders `body.tables.window_types[]` from the
+     (US-APT-2..5).
+2. **List source.** Renders `body.tables.apertures[]` from the
    currently-open version's draft body (or saved body if no draft).
 3. **Sort order.** `naturalSortCompare` ascending by `name`. So
    `Type A`, `Type B`, ..., `Type 2`, `Type 10`. (V1 ref §5.1.)
@@ -220,8 +229,8 @@ acceptance, but are blockers for the first US-WIN-N implementation.
    post-MVP). Active type is highlighted.
 5. **Click a row → set active.** The clicked type becomes the
    editing target in the main area. Selection state is local to
-   the tab (not persisted to URL in v1 unless Q-WIN-5 resolves
-   yes; if so, URL becomes `/projects/{id}/windows/{wt_id}`).
+   the tab (not persisted to URL in v1 unless Q-APT-5 resolves
+   yes; if so, URL becomes `/projects/{id}/apertures/{apt_id}`).
 6. **Hover-revealed row actions** (logged-in editor on an unlocked
    version only):
    - **Edit name** — opens the rename dialog (criterion 9).
@@ -231,10 +240,10 @@ acceptance, but are blockers for the first US-WIN-N implementation.
    tab is read-only per US-3.1 cross-cutting). On a public view
    link, icons are also hidden.
 7. **Add button.** Sticky at the top of the sidebar:
-   `+ Add new window type`. Disabled on locked versions and public
-   Viewers. Clicking creates a new window type (criterion 8) and
+   `+ Add new aperture type`. Disabled on locked versions and public
+   Viewers. Clicking creates a new aperture type (criterion 8) and
    sets it as active.
-8. **Add new window type.** Creates the following object in the
+8. **Add new aperture type.** Creates the following object in the
    draft body:
    ```jsonc
    {
@@ -258,43 +267,43 @@ acceptance, but are blockers for the first US-WIN-N implementation.
    ```
    Newly added type becomes the active selection. Default values
    match V1 (V1 ref §2.1, §6.10) except for the null frames/glazing
-   per Q-WIN-3 lean.
+   per Q-APT-3 lean.
 
    **8a. Auto-named to satisfy uniqueness (per criterion 9a).**
-   The default name is **"Unnamed Window Type"**. If a window type
+   The default name is **"Unnamed Aperture Type"**. If an aperture type
    with that name already exists in the active version's
-   `tables.window_types`, the suffix ` (2)`, ` (3)`, …, is appended
+   `tables.apertures`, the suffix ` (2)`, ` (3)`, …, is appended
    to find the first available integer. So a project that already
-   has `Unnamed Window Type` and `Unnamed Window Type (2)` gets a
-   new add named `Unnamed Window Type (3)`. Suffix-search uses the
+   has `Unnamed Aperture Type` and `Unnamed Aperture Type (2)` gets a
+   new add named `Unnamed Aperture Type (3)`. Suffix-search uses the
    same case-insensitive trimmed comparison as criterion 9a.
 9. **Rename dialog.**
-   - Modal title: **"Window Type Name"**.
-   - Single text field labelled **"Window Type Name"**, autofocus,
+   - Modal title: **"Aperture Type Name"**.
+   - Single text field labelled **"Aperture Type Name"**, autofocus,
      full-select on focus.
    - Submit on **Enter**.
    - **Save** button disabled while:
      - the field is empty / whitespace, OR
      - the trimmed value equals the current name (no-op), OR
-     - the trimmed value collides with another window type's name
+     - the trimmed value collides with another aperture type's name
        per criterion 9a.
    - **Cancel** / **Save** buttons (Cancel is the default action
      on Esc).
    - On Save, applies a JSON-Patch `replace` op to
-     `tables.window_types[<idx>].name` in the draft body.
+     `tables.apertures[<idx>].name` in the draft body.
 
-   **9a. Uniqueness rule (Q-WIN-1.1, resolved).** Window-type
+   **9a. Uniqueness rule (Q-APT-1.1, resolved).** Aperture-type
    names **must be unique within a project version**. Comparison
    is **trim + case-insensitive**: `"Type A"`, `"type a "`, and
    `"  TYPE A"` are all treated as the same name. Display preserves
    the user's original casing.
    - Uniqueness is per-version-body (each version's
-     `tables.window_types[]` is independent — duplicates across
+     `tables.apertures[]` is independent — duplicates across
      versions are fine; locked versions are immutable so they
      can't conflict anyway).
    - Names are **not required to be unique across projects**.
    - When the rename input would collide, the dialog shows a red
-     helper line under the field: **"A window type named '<value>'
+     helper line under the field: **"An aperture type named '<value>'
      already exists in this version."** The Save button stays
      disabled.
    - The same rule blocks Add (criterion 8a auto-suffixes to
@@ -314,7 +323,7 @@ acceptance, but are blockers for the first US-WIN-N implementation.
     produces `Type A (Copy)`, then `Type A (Copy) (2)`.
 11. **Delete.**
     - shadcn `Dialog` confirm (not `window.confirm`):
-      title **"Delete window type?"**, body **"This will remove
+      title **"Delete aperture type?"**, body **"This will remove
       '<name>' and all its elements from this version. Save or
       Save As to persist. Cancel keeps it in your draft."**,
       buttons **Cancel** / **Delete** (delete is the destructive
@@ -326,9 +335,9 @@ acceptance, but are blockers for the first US-WIN-N implementation.
     - **No `window.confirm`. No type-name re-typing** (deletion is
       reversible by Discard-changes or by not-Saving — much lower
       stakes than project deletion in US-1.4).
-12. **Empty list state.** When `tables.window_types` is empty, the
-    sidebar shows only the **+ Add new window type** button; the
-    main area shows: "No window types yet. **[+ Add window
+12. **Empty list state.** When `tables.apertures` is empty, the
+    sidebar shows only the **+ Add new aperture type** button; the
+    main area shows: "No aperture types yet. **[+ Add window
     type]**" centered, with the same primary action as the sidebar
     button.
 13. **Locked-version + Viewer rendering.** All edit affordances
@@ -341,32 +350,32 @@ acceptance, but are blockers for the first US-WIN-N implementation.
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-1.1: Name uniqueness within a project version?**
+- **Q-APT-1.1: Name uniqueness within a project version?**
   **Resolved:** **enforced** within a project version (per criterion
   9a). Trim + case-insensitive. Not required across projects. Add
   and Duplicate auto-suffix to avoid collision; Rename rejects.
-- **Q-WIN-1.2: Delete confirmation.**
+- **Q-APT-1.2: Delete confirmation.**
   **Resolved:** simple shadcn `Dialog` with Cancel / Delete (no
   type-name re-typing). Per criterion 11.
-- **Q-WIN-1.3: Reorder.**
+- **Q-APT-1.3: Reorder.**
   **Resolved:** alphabetical (`naturalSortCompare`) only for MVP.
   Drag-reorder deferred to v1.1+ if requested.
 
 ### Open questions
-None — all US-WIN-1 questions resolved 2026-05-10.
+None — all US-APT-1 questions resolved 2026-05-10.
 
 ---
 
-## US-WIN-2 — Compose the grid
+## US-APT-2 — Compose the grid
 
 **Status:** Draft · **Priority:** MVP
-**PRD ref:** §6.2 (`tables.window_types[].row_heights_mm` /
+**PRD ref:** §6.2 (`tables.apertures[].row_heights_mm` /
 `column_widths_mm`), §11.5 (units architecture)
 **V1 ref:** §6 (Dimensions panel), §7.1 (canvas grid layout),
 §7.6 (EdgeAddButtons)
 
 ### Story
-> As an editor, after creating a window type, I want to define the
+> As an editor, after creating an aperture type, I want to define the
 > internal grid — number and sizes of rows and columns — by typing
 > dimensions in any familiar unit (mm, in, `2'-6"`, `100+50`) and by
 > adding rows / columns at any edge, so the grid matches the
@@ -374,18 +383,18 @@ None — all US-WIN-1 questions resolved 2026-05-10.
 
 ### Acceptance criteria
 
-1. **Initial state.** A newly created window type has one row
+1. **Initial state.** A newly created aperture type has one row
    (1000 mm) × one column (1000 mm). User edits from there.
 2. **Display formats.**
    - Per-user **system** preference (SI / IP) drives the default
      unit per PRD §11.5.
-   - Inside the Windows tab, a small unit-format selector (in the
+   - Inside the Apertures tab, a small unit-format selector (in the
      dimensions strip's gutter) lets the user pick:
      - SI mode: `mm | cm | m` (default `mm`).
      - IP mode: `in | ft | ft-in` (default `in`).
-   - Format choice persists per-user across projects per Q-WIN-9.
+   - Format choice persists per-user across projects per Q-APT-9.
 3. **Add row / column** — two paths (no keyboard shortcuts in MVP
-   per Q-WIN-2.1):
+   per Q-APT-2.1):
    - **Edge-add hover buttons** on the canvas: a 40-px hot-zone
      above / below / left / right of the grid reveals a small
      blue **+** button when hovered. Tooltips: `Add row at top`,
@@ -396,14 +405,14 @@ None — all US-WIN-1 questions resolved 2026-05-10.
 4. **Default new row / column dimensions** = 1000 mm.
 5. **Adding at the START** shifts every existing element's
    `row_span` / `column_span` by +1 (the document update is a
-   single JSON-Patch `replace` of the entire window type, simpler
+   single JSON-Patch `replace` of the entire aperture type, simpler
    than V1's bulk-update SQL; V1 ref §6.10).
 6. **Adding a row / column auto-creates one element per
    opposing-axis cell**, each:
    - `row_span` / `column_span` set to the new cell's coordinates,
    - `frames` all `null`, `glazing: null`, `operation: null`,
    - `name: "Unnamed"`.
-   Per Q-WIN-3 lean (b) — null frames force pick. (V1 ref §6.10
+   Per Q-APT-3 lean (b) — null frames force pick. (V1 ref §6.10
    creates with default catalog refs; V2 differs.)
 7. **Delete row / column.**
    - Hover reveals a small `–` button on each dimension label.
@@ -411,7 +420,7 @@ None — all US-WIN-1 questions resolved 2026-05-10.
      element assignments that would be lost (any frame / glazing
      non-null) — quiet delete otherwise.
    - **Last row / column cannot be deleted.** Button is disabled
-     with a tooltip: **"A window type must have at least one row
+     with a tooltip: **"An aperture type must have at least one row
      and one column."** (V1 ref §6.11 returns 403; V2 makes it a
      UI-level lock.)
    - Deleting shifts subsequent indices down; element spans clamp.
@@ -428,7 +437,7 @@ None — all US-WIN-1 questions resolved 2026-05-10.
    pre-edit display string AND (b) `parseToMM(input)` is a
    positive non-NaN number (matches V1 ref §6.3 invariant).
    Otherwise the input reverts and no patch is sent.
-10. **Parser** behavior matches V1 (US-WIN-10 fully specs):
+10. **Parser** behavior matches V1 (US-APT-10 fully specs):
     - SI mode: arithmetic with `+ - * /` (no parens; no negative
       second operand). Feet-inch markers in SI mode → invalid.
     - IP mode: feet-inches forms (`2'`, `6"`, `2' 6"`, `6-1/2"`,
@@ -451,23 +460,23 @@ None — all US-WIN-1 questions resolved 2026-05-10.
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-2.1: Keyboard shortcuts for add-row/col?**
+- **Q-APT-2.1: Keyboard shortcuts for add-row/col?**
   **Resolved:** **no — not in MVP.** Edge-hover **+** buttons and
   the canvas-toolbar `+ Row` / `+ Column` buttons are the only
   add paths. Defer keyboard shortcuts to v1.1+ if requested.
-- **Q-WIN-2.2: Drag-to-resize dimension labels?**
+- **Q-APT-2.2: Drag-to-resize dimension labels?**
   **Resolved:** **no — not in MVP.** Dimension editing is
   text-input only (matches V1 ref §18). Defer to v1.1+ if
   requested.
-- **Q-WIN-2.3: Equal-divide tool ("split column into N equal")?**
+- **Q-APT-2.3: Equal-divide tool ("split column into N equal")?**
   **Resolved:** **no — not in MVP.** Defer to v1.1+ if requested.
 
 ### Open questions
-None — all US-WIN-2 questions resolved 2026-05-10.
+None — all US-APT-2 questions resolved 2026-05-10.
 
 ---
 
-## US-WIN-3 — Window-elements (naming, selection, merge, split)
+## US-APT-3 — Window-elements (naming, selection, merge, split)
 
 **Status:** Draft · **Priority:** MVP
 **PRD ref:** §6.2 (`elements[]` shape)
@@ -485,7 +494,7 @@ None — all US-WIN-2 questions resolved 2026-05-10.
 
 1. **Element identity.** Every element has a stable `id`
    (`winel_<ULID>`), a `row_span: [r0, r1]` and
-   `column_span: [c0, c1]` (inclusive ranges per Q-WIN-1), an
+   `column_span: [c0, c1]` (inclusive ranges per Q-APT-1), an
    optional `name`, four `frames`, one `glazing`, an optional
    `operation`. Default `name` on create is `"Unnamed"`.
 2. **Click an element on the canvas → single-select.**
@@ -526,13 +535,13 @@ None — all US-WIN-2 questions resolved 2026-05-10.
    - Enabled when exactly 1 element selected AND that element has
      `row_span[1] > row_span[0]` OR `column_span[1] > column_span[0]`.
    - On click: replaces the merged element with N 1×1 elements
-     covering the same area. Per Q-WIN-6 lean, **each new cell
+     covering the same area. Per Q-APT-6 lean, **each new cell
      inherits the source's frames / glazing / operation** (V1 ref §17
      papercut fixed in V2). Each new cell gets a fresh `id` and
      name `"Unnamed"`.
 8. **Clear selection** — toolbar button + `Esc` keypress.
 9. **No holes invariant — no direct Delete-element gesture.**
-   Per Q-WIN-3.3 (resolved): every cell of the grid is always
+   Per Q-APT-3.3 (resolved): every cell of the grid is always
    covered by exactly one element. There is no "empty cell" /
    dashed-hole render state.
    - **Delete / Backspace key with a selection** is **not a
@@ -545,8 +554,8 @@ None — all US-WIN-2 questions resolved 2026-05-10.
        the merged target keeps its own assignments per
        criterion 6's top-left rule.
      - **Delete the row or column** that contains it
-       (US-WIN-2 criterion 7).
-   - **Deleting a window type** (US-WIN-1 criterion 11) removes
+       (US-APT-2 criterion 7).
+   - **Deleting an aperture type** (US-APT-1 criterion 11) removes
      all its elements at once and is unaffected by this rule.
    - **Direct Delete-element-with-auto-merge** is a v1.1+
      candidate if the merge-or-delete-row workflow proves
@@ -554,7 +563,7 @@ None — all US-WIN-2 questions resolved 2026-05-10.
 10. **Multi-select copy/paste** — V1 supports single-source →
     single-target paste only (V1 ref §18). V2 NEW (only if Ed
     wants): **multi-select paste** — picked source pasted onto
-    every selected target. Defer to US-WIN-7. Confirm.
+    every selected target. Defer to US-APT-7. Confirm.
 11. **Adjacency check.** "Adjacent" = the two elements share an
     edge fully or partially (their bounding rectangles touch
     along a row or column boundary, accounting for spans). Same
@@ -562,23 +571,23 @@ None — all US-WIN-2 questions resolved 2026-05-10.
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-3.1: Shift-click rule.**
+- **Q-APT-3.1: Shift-click rule.**
   **Resolved:** **relax** the V1 adjacency-only rule. Any
   shift-click extends the selection; **merge** validates the
   contiguous-rectangle invariant at commit time and shows a
   clear toast on failure (per criterion 3 + 6). The silent-ignore
   V1 behavior is dropped.
-- **Q-WIN-3.2: Merged inheritance source.**
+- **Q-APT-3.2: Merged inheritance source.**
   **Resolved:** **top-left** source element's assignments are
   inherited (frames, glazing, operation, name) — per criterion 6.
   Toast confirms which source provided the assignments. No
   user prompt, no alternative source.
-- **Q-WIN-3.3: Holes in the grid.**
+- **Q-APT-3.3: Holes in the grid.**
   **Resolved:** **no holes allowed.** Every cell of the grid
   must always be covered by exactly one element. Deletion of an
   element is only valid if the freed cells can be re-merged with
   an adjacent element (or if the element is the last one and the
-  whole window-type would be deleted, which is blocked by the
+  whole aperture-type would be deleted, which is blocked by the
   "at least one element" invariant). Practically, criterion 9 is
   revised: Delete-key on selection only succeeds if the freed
   cells form a rectangle adjacent to exactly one neighbor — that
@@ -586,11 +595,11 @@ None — all US-WIN-2 questions resolved 2026-05-10.
   re-shape first. (See revised criterion 9 below.)
 
 ### Open questions
-None — all US-WIN-3 questions resolved 2026-05-10.
+None — all US-APT-3 questions resolved 2026-05-10.
 
 ---
 
-## US-WIN-4 — Pick frame & glazing (bookshelf flow)
+## US-APT-4 — Pick frame & glazing (bookshelf flow)
 
 **Status:** Draft · **Priority:** MVP — **the key V2 shift**
 **PRD ref:** §7.1 (bookshelf semantics), §7.4 (refresh from
@@ -611,12 +620,12 @@ preview — V2 fixes)
 ### Acceptance criteria
 
 1. **Where the picker lives.** In the per-element table card
-   (US-WIN-3 / V1 ref §8.2), each side-frame row and the glazing
+   (US-APT-3 / V1 ref §8.2), each side-frame row and the glazing
    row has a combobox-style selector (shadcn `Combobox` / `Command`
    primitive, replacing V1's MUI `Autocomplete`).
 2. **Picker open behavior.**
    - Trigger: click the chip showing the current frame / glazing
-     name. If unset (per Q-WIN-3 lean), trigger reads
+     name. If unset (per Q-APT-3 lean), trigger reads
      **"Pick a frame…"** / **"Pick a glazing…"**.
    - Opens a popover with:
      - Search input (autofocus). Search matches `name`, `manufacturer`,
@@ -625,7 +634,7 @@ preview — V2 fixes)
      - Filtered catalog list, sorted `naturalSortCompare` by `name`.
      - Manufacturer filter active by default — frames whose
        `manufacturer` is `null` always pass; otherwise `manufacturer`
-       must be in the project's enabled set (US-WIN-8).
+       must be in the project's enabled set (US-APT-8).
    - Each row shows:
      - Bold `name`.
      - Secondary line: `Width: 100 mm · U-value: 0.85 W/(m²K) ·
@@ -661,7 +670,7 @@ preview — V2 fixes)
 4. **After the first pick, the project owns its copy.** Editing
    the catalog row (in the catalog manager) does NOT change the
    element's frame. To re-sync, the user runs Refresh-from-catalog
-   (US-WIN-11).
+   (US-APT-11).
 5. **Inline override.** The element table also exposes inline
    editable cells for the bookshelf-copied values:
    - Frame: editable `name`, `width_mm`, `u_value_w_m2k`,
@@ -688,22 +697,22 @@ preview — V2 fixes)
 8. **Empty catalog.** If the catalog is empty (e.g. fresh DB), the
    picker shows: **"No frames in the catalog yet. [Open catalog
    manager]"** linking to the catalog page in a new tab.
-9. **Set all four sides — deferred to v1.1+ (Q-WIN-4.3).**
+9. **Set all four sides — deferred to v1.1+ (Q-APT-4.3).**
    Not in MVP. Each of the four sides is picked individually.
    The convenience shortcut "Apply this frame to all four sides"
    may be added post-MVP if it surfaces as a real papercut.
 10. **All edits flow through the draft buffer.** Pickers debounce
     patches per PRD §8.3. The save status indicator updates.
 11. **U-value live-recompute.** After every pick / inline edit,
-    the per-element and window-level U-value labels (US-WIN-6)
-    recompute (300 ms debounce; immediate on window-type switch,
+    the per-element and window-level U-value labels (US-APT-6)
+    recompute (300 ms debounce; immediate on aperture-type switch,
     matching V1 ref §10.2).
 12. **Read-only on locked versions / for Viewers.** Pickers are
     disabled; chips render as static labels with the badge.
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-4.1: Inline override field set (criterion 5).**
+- **Q-APT-4.1: Inline override field set (criterion 5).**
   **Resolved:** the **full FrameType / GlazingType field set is
   editable inline** in the elements table. Power fields
   (`source`, `link`, `datasheet_url`, `comments`) and any other
@@ -711,31 +720,31 @@ preview — V2 fixes)
   the row to keep the default density tight. Editing any field
   adds the edited field key to `catalog_origin.local_overrides` per
   criterion 5.
-- **Q-WIN-4.2: Diverged-from-catalog visualization (criterion 6).**
+- **Q-APT-4.2: Diverged-from-catalog visualization (criterion 6).**
   **Resolved:** **inline diff modal on click of the badge**,
   showing three columns: **Catalog (current) · Yours · Choose new
   value**. The "Choose new value" column lets the user pick
   per-row (Take catalog · Keep mine · Edit a third value). Full
-  spec lives under **US-WIN-11** (refresh-from-catalog) — same
+  spec lives under **US-APT-11** (refresh-from-catalog) — same
   modal, reachable from the per-element badge or from the
   project-wide drift summary.
 
 ### Resolved questions (continued — 2026-05-10)
 
-- **Q-WIN-4.3: Apply to all four sides shortcut?**
+- **Q-APT-4.3: Apply to all four sides shortcut?**
   **Resolved:** **deferred to v1.1+; not in MVP.** Each side
   picked individually. (Criterion 9 updated.)
-- **Q-WIN-4.4: Promote hand-entered frame into catalog?**
+- **Q-APT-4.4: Promote hand-entered frame into catalog?**
   **Resolved:** **deferred to v1.1+; not in MVP.** Hand-entered
   values stay in the project document with no `catalog_origin`;
   no UI to push them back into the shared catalog in v1.
 
 ### Open questions
-None — all US-WIN-4 questions resolved 2026-05-10.
+None — all US-APT-4 questions resolved 2026-05-10.
 
 ---
 
-## US-WIN-5 — Operation editor
+## US-APT-5 — Operation editor
 
 **Status:** Draft · **Priority:** MVP
 **PRD ref:** §6.2 (`elements[].operation`)
@@ -790,12 +799,12 @@ None — all US-WIN-4 questions resolved 2026-05-10.
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-5.1: Operation presets in MVP?**
+- **Q-APT-5.1: Operation presets in MVP?**
   **Resolved:** **yes — in MVP.** The `Common patterns` menu
   (Tilt-turn, Awning, Hopper, Casement (hinge L/R), Slider (L/R))
   ships in v1 per criterion 6. Short list, recurring papercut
   removal.
-- **Q-WIN-5.2: Operation feeds U-value?**
+- **Q-APT-5.2: Operation feeds U-value?**
   **Resolved:** **no — operation does not affect U-value.** The
   thermal effect of operability (gasket / weatherseal / extra
   meeting-rail at sashes) is **already baked into the chosen
@@ -808,15 +817,15 @@ None — all US-WIN-4 questions resolved 2026-05-10.
     direction does NOT trigger a U-value refetch.
 
 ### Open questions
-None — all US-WIN-5 questions resolved 2026-05-10.
+None — all US-APT-5 questions resolved 2026-05-10.
 
 ---
 
-## US-WIN-6 — U-value display
+## US-APT-6 — U-value display
 
 **Status:** Draft · **Priority:** MVP (promoted from Placeholder
 2026-05-10)
-**PRD ref:** §6.2 (`tables.window_types`), §10.4 (glossary)
+**PRD ref:** §6.2 (`tables.apertures`), §10.4 (glossary)
 **V1 ref:** §10 (full ISO 10077-1 calc + display components)
 **Convention reference:** `context/GLOSSARY.md` — Thermal
 performance section. **U-Value (no films) only**, never
@@ -825,23 +834,23 @@ Model-tab info panel (US-VIEW-6).
 
 ### Story
 
-> As an editor composing a window type, I want a single live
-> U-Value number in the Windows tab — both at the window-type
+> As an editor composing an aperture type, I want a single live
+> U-Value number in the Apertures tab — both at the aperture-type
 > level and per-element — so I know at a glance whether the
 > assembly hits my design target, using the same convention
 > the rest of PHN uses.
 
 ### Acceptance criteria
 
-1. **Window-type-level chip.** Inside the Windows tab content
-   header (NOT the project header bar — per Q-WIN-6.1
+1. **Aperture-type-level chip.** Inside the Apertures tab content
+   header (NOT the project header bar — per Q-APT-6.1
    resolved: window U-Value is window-scoped, not
-   project-scoped). Renders alongside the window-type
+   project-scoped). Renders alongside the aperture-type
    selector / name.
 
 2. **Per-element chip.** Each elements-table card shows its
    own U-Value chip (per-element data, since per-side frame
-   selection per Q-WIN-2 means each element has a distinct
+   selection per Q-APT-2 means each element has a distinct
    composite U-Value).
 
 3. **Label text — per active unit system, no films
@@ -859,7 +868,7 @@ Model-tab info panel (US-VIEW-6).
 
    > **Window U-Value**
    >
-   > Composite per-window-type U-Value computed per ISO
+   > Composite per-aperture-type U-Value computed per ISO
    > 10077-1, combining frame, glazing, and spacer
    > performance with area-weighted aggregation across all
    > sides of each element.
@@ -877,19 +886,19 @@ Model-tab info panel (US-VIEW-6).
 
 5. **Backend calculation** — port V1's
    `backend/features/aperture/services/window_u_value.py`
-   (renaming the V1 `aperture` concept → V2 `window_type`).
+   (renaming the V1 `aperture` concept → V2 `aperture_type`).
    Algorithm unchanged: per ISO 10077-1, area-weighted
    composite over frame / glazing / spacer.
 
 6. **Caching.** Backend keys the cached result by a
-   **content-hash** of the window-type subtree
+   **content-hash** of the aperture-type subtree
    (`row_heights_mm`, `column_widths_mm`, `elements[*]`
    with each element's `frame.{top,right,bottom,left}` +
    `glazing` — only the U-Value-affecting fields). Frontend
    refetches on hash change. V1 ref §10.1 pattern preserved.
 
 7. **Refetch trigger — explicitly EXCLUDES `operation`**
-   (per Q-WIN-5.2 resolution). V1 ref §17 flagged this as
+   (per Q-APT-5.2 resolution). V1 ref §17 flagged this as
    a papercut where the frontend dep key included
    `operation`, triggering unnecessary refetches when
    only the operation enum changed. V2 fixes: the
@@ -898,7 +907,7 @@ Model-tab info panel (US-VIEW-6).
 
 8. **Refetch trigger fires on:**
    - Add / remove / merge / split element
-     (`tables.window_types[<wt>].elements[]` shape change)
+     (`tables.apertures[<wt>].elements[]` shape change)
    - Element's frame or glazing reference change
    - Inline override of frame / glazing values (any
      U-Value-affecting field — `u_value_w_m2k`,
@@ -916,8 +925,8 @@ Model-tab info panel (US-VIEW-6).
     the chip renders `…` with low-opacity tween.
 
 11. **Invalid-state handling.** When any element is
-    missing a frame or glazing (per Q-WIN-3 — `null` is
-    allowed in draft), the window-type chip renders
+    missing a frame or glazing (per Q-APT-3 — `null` is
+    allowed in draft), the aperture-type chip renders
     with the same **"unfinished"** qualifier as
     US-ENV-10 criterion 8:
     - Compact form: `Window U-Value: 1.20 W/m²K
@@ -933,9 +942,9 @@ Model-tab info panel (US-VIEW-6).
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-6.1: Where to render the window-type-level
-  chip — project header vs Windows tab content header?**
-  Resolved: **Windows tab content header.** Window
+- **Q-APT-6.1: Where to render the aperture-type-level
+  chip — project header vs Apertures tab content header?**
+  Resolved: **Apertures tab content header.** Window
   U-Value is window-scoped, not project-scoped.
 
 ### Open questions
@@ -947,7 +956,7 @@ None outstanding.
   drives the U-Value-only label + tooltip text.
 - **Q-ENV-4 resolution** — sibling envelope decision; same
   policy applies here.
-- **Q-WIN-5.2 resolution** — operation does not feed
+- **Q-APT-5.2 resolution** — operation does not feed
   U-Value; ensures cache key correctness (criterion 7).
 - **US-ENV-10** — envelope-side parallel; identical
   pattern for canvas-header thermal display.
@@ -956,11 +965,11 @@ None outstanding.
 
 ---
 
-## US-WIN-7 — Copy / paste assignments
+## US-APT-7 — Copy / paste assignments
 
 **Status:** Draft · **Priority:** MVP (promoted from Placeholder
 2026-05-10)
-**PRD ref:** §6.2 (`tables.window_types`), §8.3 (JSON-Patch via
+**PRD ref:** §6.2 (`tables.apertures`), §8.3 (JSON-Patch via
 draft buffer)
 **V1 ref:** §4.10 (CopyPaste context), §7.2 (toolbar buttons)
 **Mirrors:** US-ENV-9 (envelope-side copy/paste) — same
@@ -970,7 +979,7 @@ consistency per Ed 2026-05-10)
 
 ### Story
 
-> As an editor composing a complex window type, I want to copy
+> As an editor composing a complex aperture type, I want to copy
 > the operation + glazing + per-side frame assignments from
 > one window-element onto others with an eyedropper / paint-
 > bucket gesture — without re-walking the bookshelf picker for
@@ -979,7 +988,7 @@ consistency per Ed 2026-05-10)
 
 ### Acceptance criteria
 
-1. **Toolbar buttons** in the Windows tab header:
+1. **Toolbar buttons** in the Apertures tab header:
    - **Eyedropper** — enters "pick" mode.
    - **Paint-bucket** — enters "paste" mode (enabled only
      after a pick).
@@ -1027,13 +1036,13 @@ consistency per Ed 2026-05-10)
    JSON-Patch** with multiple `replace` ops covering the
    6 payload fields, atomic at the draft-buffer level.
 
-5. **No cross-window-type paste in V2 v1** (mirrors
+5. **No cross-aperture-type paste in V2 v1** (mirrors
    US-ENV-9's no-cross-assembly-paste decision per Ed
-   2026-05-10). Switching the active window type clears
+   2026-05-10). Switching the active aperture type clears
    all pick / paste state. **Rationale:** V2-wide
    consistency with US-ENV-9; the cross-tier mental
    model (does state survive a tier switch?) shouldn't
-   differ between Windows and Envelope. The data model
+   differ between Apertures and Envelope. The data model
    supports it trivially (just copy values +
    `catalog_origin` blocks), so v1.1+ can lift this
    without schema work.
@@ -1041,23 +1050,23 @@ consistency per Ed 2026-05-10)
 6. **No multi-select paste in V2 v1** (mirrors US-ENV-9
    criterion 6). One click = one target. v1.1+ candidate.
 
-7. **No keyboard shortcuts (⌘C / ⌘V) on the windows
+7. **No keyboard shortcuts (⌘C / ⌘V) on the apertures
    canvas** (mirrors US-ENV-9 criterion 7). Toolbar +
    ESC + ⌘Z are the full interaction surface.
 
 8. **Bounded undo stack — 20 entries per active
-   window type** (matches V1 + US-ENV-9 criterion 8).
+   aperture type** (matches V1 + US-ENV-9 criterion 8).
    - ⌘Z undoes the last paste; subsequent presses pop
      the stack.
    - Undo-last-paste toolbar button is the mouse-driven
      equivalent.
-   - In-memory only, per-window-type, cleared on type /
+   - In-memory only, per-aperture-type, cleared on type /
      version / document switch. Not persisted.
 
 9. **Refetch window U-Value after every paste** —
    paste mutates `glazing` and the four `frames` (all
    U-Value-affecting). `operation` is excluded from the
-   cache key per Q-WIN-5.2 / US-WIN-6 criterion 7, so
+   cache key per Q-APT-5.2 / US-APT-6 criterion 7, so
    the post-paste refetch fires only when there's a
    real frame / glazing change.
 
@@ -1067,7 +1076,7 @@ consistency per Ed 2026-05-10)
       criterion 10.
     - Target element 600 ms pulse animation on paste.
     - Element-select / merge / split affordances hidden
-      during pick / paste mode (parallel to US-WIN-9 +
+      during pick / paste mode (parallel to US-APT-9 +
       US-ENV-4 criterion 5 patterns).
 
 11. **Locked-version + Viewer rendering.** All
@@ -1075,14 +1084,14 @@ consistency per Ed 2026-05-10)
     the read-only element panel as normal.
 
 12. **All paste state is ephemeral frontend state** —
-    lives in the windows-builder Zustand store
+    lives in the apertures-builder Zustand store
     (parallel to envelope-builder's `pickPasteState`),
-    keyed per `window_type_id`. Not part of the project
+    keyed per `aperture_type_id`. Not part of the project
     document.
 
 ### Resolved questions (2026-05-10)
 
-- **Cross-window-type paste?** Resolved: **no — V2 v1
+- **Cross-aperture-type paste?** Resolved: **no — V2 v1
   mirrors US-ENV-9's "no cross-tier paste"** decision
   for consistency. V1 allowed it; V2 v1 doesn't. v1.1+
   can lift trivially.
@@ -1101,14 +1110,14 @@ None outstanding.
   behind a shared `<PickPasteToolbar>` primitive if the
   abstraction is clean (call the implementer makes
   during build).
-- **US-WIN-6 criterion 7** — refetch trigger fires
+- **US-APT-6 criterion 7** — refetch trigger fires
   after every paste; cache key excludes `operation`.
-- **Q-WIN-5.2 resolution** — operation does not feed
-  U-Value; captured in US-WIN-6.
+- **Q-APT-5.2 resolution** — operation does not feed
+  U-Value; captured in US-APT-6.
 
 ---
 
-## US-WIN-8 — Manufacturer filter
+## US-APT-8 — Manufacturer filter
 
 **Status:** Draft · **Priority:** MVP (promoted from Placeholder
 2026-05-10)
@@ -1127,7 +1136,7 @@ project-document section), §7 (catalog model)
 
 ### Acceptance criteria
 
-1. **Storage** (per Q-WIN-4 resolved): `body.tables.manufacturer_filters`
+1. **Storage** (per Q-APT-4 resolved): `body.tables.manufacturer_filters`
    — a project-document section, versioned with the project
    like everything else under `body`. Shape:
    ```jsonc
@@ -1169,7 +1178,7 @@ project-document section), §7 (catalog model)
      checkbox disabled, with tooltip *"In use on N window
      elements — can't be disabled while referenced."*
      (V1 ref §9.2). Computed live from
-     `tables.window_types[*].elements[*].frame.*` +
+     `tables.apertures[*].elements[*].frame.*` +
      `glazing` `manufacturer` field references.
    - Top of each list: **Select all** / **Clear all**
      bulk-action links (V2 NEW vs V1; small ergonomic win).
@@ -1180,8 +1189,8 @@ project-document section), §7 (catalog model)
    `replace` on `body.tables.manufacturer_filters` to the
    draft buffer (PRD §8.3). Closes the modal on success.
 
-5. **Picker integration** — both US-WIN-4 (Pick frame &
-   glazing) and US-WIN-11 (Refresh-from-catalog) filter
+5. **Picker integration** — both US-APT-4 (Pick frame &
+   glazing) and US-APT-11 (Refresh-from-catalog) filter
    their candidate lists through these filters:
    - Frame picker shows products from manufacturers in
      `frame_manufacturers_enabled` (or all when `null`).
@@ -1229,7 +1238,7 @@ project-document section), §7 (catalog model)
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-8.1: Per-project preset of "default-on"
+- **Q-APT-8.1: Per-project preset of "default-on"
   manufacturers** (e.g. BLDGTYP defaults to a curated
   subset rather than "all enabled")? Resolved: **defer
   to v1.1+**. Default stays "all enabled" (V1 parity).
@@ -1243,22 +1252,22 @@ None outstanding.
 
 ### Cross-references
 
-- **Q-WIN-4 resolution** — storage location
+- **Q-APT-4 resolution** — storage location
   (`body.tables.manufacturer_filters`).
 - **PRD §6.2** — `tables.manufacturer_filters` shown in
   the canonical project-document sketch.
-- **US-WIN-4** — picker filters its catalog rows through
+- **US-APT-4** — picker filters its catalog rows through
   this.
-- **US-WIN-11 (Refresh from catalog)** — diff dialog's
+- **US-APT-11 (Refresh from catalog)** — diff dialog's
   pickers honor this filter.
 
 ---
 
-## US-WIN-9 — Canvas (SVG render, view direction, zoom, label overlay)
+## US-APT-9 — Canvas (SVG render, view direction, zoom, label overlay)
 
 **Status:** Draft · **Priority:** MVP (promoted from Placeholder
 2026-05-10)
-**PRD ref:** §6.2 (`tables.window_types`)
+**PRD ref:** §6.2 (`tables.apertures`)
 **V1 ref:** §7 (full canvas — SVG composition + view direction
 + zoom + labels)
 **Mirrors:** US-ENV-4 (envelope canvas) — shares the
@@ -1267,23 +1276,23 @@ in Q-ENV-4.1
 
 ### Story
 
-> As an editor composing a window type, I want a proportional
+> As an editor composing an aperture type, I want a proportional
 > SVG canvas showing the elements grid — each cell drawn with
 > its four frames around its glazing — with toggleable view
 > direction (interior ↔ exterior), zoom controls, and editable
 > element-name labels overlaying each cell, so I can compose
-> and review window types visually.
+> and review aperture types visually.
 
 ### Acceptance criteria
 
 1. **Container layout** (V1 ref §7.1 parity):
-   - Canvas wrapper fills the Windows tab content area below
+   - Canvas wrapper fills the Apertures tab content area below
      the per-type header.
    - **View-direction label** at the top reads
      `"Viewing from inside"` or `"Viewing from outside"`
      depending on the current direction (criterion 4).
-   - Below the canvas: U-Value display chips (US-WIN-6) +
-     dimensions panel (US-WIN-10).
+   - Below the canvas: U-Value display chips (US-APT-6) +
+     dimensions panel (US-APT-10).
 
 2. **Per-element rendering** (V1 ref §7.3 parity — the
    four-rectangles-per-element pattern):
@@ -1302,9 +1311,9 @@ in Q-ENV-4.1
        dashed `#999` 1.5 px outline**.
      - Visually flags "no frame/glazing picked yet" — the
        same affordance as null-material segments on the
-       envelope canvas. Pairs with the US-WIN-6 criterion
+       envelope canvas. Pairs with the US-APT-6 criterion
        11 "unfinished" U-Value qualifier.
-   - **Merged elements** (per US-WIN-3) span their
+   - **Merged elements** (per US-APT-3) span their
      `row_span × column_span` cells; the 5-rect composition
      scales up with the merged area.
 
@@ -1312,7 +1321,7 @@ in Q-ENV-4.1
    criterion 9 + Q-ENV-4.1):
    - Single scale state: `windowCanvasZoom: number`,
      default `1.0`. **Per-user preference** stored at
-     `userPreferencesStore.window_builder_canvas_zoom`
+     `userPreferencesStore.aperture_builder_canvas_zoom`
      (sibling to envelope's `envelope_canvas_zoom`).
    - Both axes always scale together by the same factor
      — **aspect ratio is never independent**, fixing
@@ -1339,13 +1348,13 @@ in Q-ENV-4.1
        left↔right since you're now looking from the
        other side).
    - **Frame-label flip on interior view: KEEP** (per
-     Q-WIN-7 resolved). The elements-table label text
+     Q-APT-7 resolved). The elements-table label text
      also flips so what you see on the canvas matches
      what you read in the table — "what you see is what
      you label."
    - **View-direction storage: per-user preference**
-     (per Q-WIN-9.1 — see Open Questions). Lives at
-     `userPreferencesStore.window_builder_view_direction`
+     (per Q-APT-9.1 — see Open Questions). Lives at
+     `userPreferencesStore.aperture_builder_view_direction`
      (`'exterior' | 'interior'`).
 
 5. **Label overlay — editable element name pills** (V1
@@ -1355,37 +1364,37 @@ in Q-ENV-4.1
      the SVG, in a DOM layer that scales with zoom).
    - **Click-to-edit**: pill becomes an input field;
      Enter commits (single JSON-Patch `replace` on
-     `tables.window_types[<wt>].elements[<el>].display_name`),
+     `tables.apertures[<wt>].elements[<el>].display_name`),
      Escape cancels, blur commits.
    - Empty names rejected (silently revert to prior
      value); whitespace trimmed.
    - Same name allowed across multiple elements in the
-     same window-type (no uniqueness constraint — elements
+     same aperture-type (no uniqueness constraint — elements
      are identified by `id`, not name).
 
 6. **Hover affordances:**
    - **Hover on element** → subtle ring outline + the
      element becomes the click target for selection
-     (US-WIN-3 element selection).
+     (US-APT-3 element selection).
    - **Hover on frame region (one of the four rects)** →
      stronger ring on just that rect; click opens the
-     per-side frame picker (US-WIN-4) scoped to that side.
+     per-side frame picker (US-APT-4) scoped to that side.
    - **Hover on glazing region** → ring on glazing rect;
      click opens the glazing picker.
 
 7. **Click semantics:**
    - **Click on an element (background area)** → selects
-     the element (US-WIN-3).
+     the element (US-APT-3).
    - **Click on a frame rect** → opens the frame picker
-     for that side (US-WIN-4).
+     for that side (US-APT-4).
    - **Click on the glazing rect** → opens the glazing
-     picker for that element (US-WIN-4).
-   - **In pick / paste mode (US-WIN-7)** → click drives
+     picker for that element (US-APT-4).
+   - **In pick / paste mode (US-APT-7)** → click drives
      the copy / paste state machine instead.
 
 8. **Hover-`+` add row/col affordances** (mirrors V1 +
    US-ENV-4 hover-circle pattern — V1's edge-hot-zone
-   pattern noted in Q-ENV-10 stays here on the windows
+   pattern noted in Q-ENV-10 stays here on the apertures
    side per its actual V1 implementation):
    - **+ Add row above / below** circular `+` buttons
      revealed on hover at the top / bottom edges of the
@@ -1396,7 +1405,7 @@ in Q-ENV-4.1
      pick / paste mode (hidden for Viewers).
 
 9. **Loading state.** Canvas renders nothing (or a quiet
-   skeleton) when the active window-type is in flight or
+   skeleton) when the active aperture-type is in flight or
    null.
 
 10. **Locked-version + Viewer rendering.** Canvas
@@ -1406,21 +1415,21 @@ in Q-ENV-4.1
     cluster remain functional (viewing aids, not edits).
 
 11. **Horizontal scroll on overflow.** When the scaled
-    window-type exceeds canvas width, the canvas
+    aperture-type exceeds canvas width, the canvas
     scrolls horizontally — never compresses (matches
     US-ENV-4 criterion 2 fix).
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-9.1: View-direction storage scope?** Resolved:
+- **Q-APT-9.1: View-direction storage scope?** Resolved:
   **per-user preference** in
-  `userPreferencesStore.window_builder_view_direction`.
+  `userPreferencesStore.aperture_builder_view_direction`.
   V1 used `sessionStorage` (per-tab), which is awkward
   when a user opens the same project in a new tab. Per-
   user matches the pattern locked in for canvas zoom +
   unit-system + window-builder dim format.
 - **Zoom persistence?** Resolved: **per-user preference**
-  in `userPreferencesStore.window_builder_canvas_zoom`,
+  in `userPreferencesStore.aperture_builder_canvas_zoom`,
   parallel to envelope. V1 was per-tab session; V2
   upgrades to per-user.
 
@@ -1433,44 +1442,44 @@ None outstanding.
   locked-aspect-ratio + per-user-zoom pattern.
 - **Q-ENV-4.1 resolution** — drives the aspect-ratio
   + zoom-control design.
-- **Q-WIN-7 resolution** — frame-label flip on interior
+- **Q-APT-7 resolution** — frame-label flip on interior
   view stays in.
-- **US-WIN-3** — element selection / merge / split feeds
+- **US-APT-3** — element selection / merge / split feeds
   click semantics.
-- **US-WIN-4** — frame / glazing pickers triggered by
+- **US-APT-4** — frame / glazing pickers triggered by
   per-region clicks.
-- **US-WIN-6** — unfinished-U-Value qualifier pairs with
+- **US-APT-6** — unfinished-U-Value qualifier pairs with
   the null-frame / null-glazing dashed outline.
-- **US-WIN-7** — pick / paste mode preempts normal click
+- **US-APT-7** — pick / paste mode preempts normal click
   behavior.
-- **US-WIN-10** — dimensions panel sits below the canvas.
+- **US-APT-10** — dimensions panel sits below the canvas.
 
 ---
 
-## US-WIN-10 — Dimensions panel (parser + display)
+## US-APT-10 — Dimensions panel (parser + display)
 
 **Status:** Draft · **Priority:** MVP (promoted from Placeholder
 2026-05-10)
 **PRD ref:** §6.2 (`row_heights_mm`, `column_widths_mm` on
-window types), §11.5 (units architecture — backend SI canonical,
+aperture types), §11.5 (units architecture — backend SI canonical,
 frontend converts)
 **V1 ref:** §6 (full Dimensions panel + parser tests)
 
 ### Story
 
-> As an editor sizing a window type, I want a Dimensions panel
+> As an editor sizing an aperture type, I want a Dimensions panel
 > below the canvas that lists each row height and column width
 > with editable inline labels — and I want to type those values
 > in whatever format is natural (decimal mm, fractions, feet-
 > and-inches, or a simple expression like "100 + 50") with the
-> parser figuring out what I meant — so I can size windows
+> parser figuring out what I meant — so I can size apertures
 > without context-switching to a calculator or a unit converter.
 
 ### Acceptance criteria
 
 1. **Panel layout** (V1 ref §6.1 parity):
-   - Sits directly below the canvas (US-WIN-9), within the
-     Windows tab content area.
+   - Sits directly below the canvas (US-APT-9), within the
+     Apertures tab content area.
    - Two sections side by side: **Row Heights** (left) and
      **Column Widths** (right). Each section is a vertical
      list of editable rows.
@@ -1490,11 +1499,11 @@ frontend converts)
      ¹⁄₁₆" precision)
 
 3. **Display unit persistence — per-user, per-system**
-   (per Q-WIN-9 resolved). Two preferences in
+   (per Q-APT-9 resolved). Two preferences in
    `userPreferencesStore`:
-   - `window_builder_dim_format_si` — picked when active
+   - `aperture_builder_dim_format_si` — picked when active
      unit system is SI (`mm` / `cm` / `m`).
-   - `window_builder_dim_format_ip` — picked when active
+   - `aperture_builder_dim_format_ip` — picked when active
      unit system is IP (`in` / `ft` / `ft-in` / `in-frac`).
    - Switching the unit-system toggle (US-3 header)
      auto-switches which preference is read.
@@ -1530,7 +1539,7 @@ frontend converts)
      on the same fraction-formatting helpers.
 
 5. **`evaluateExpression` — add parens support in V2 v1**
-   (per Q-WIN-10.1 resolved). V1 ref §18 noted parens
+   (per Q-APT-10.1 resolved). V1 ref §18 noted parens
    were absent; users hit this regularly when typing
    `(1200 - 50) / 4` for evenly-spaced mullions. V2's
    parser handles standard precedence + parens.
@@ -1554,7 +1563,7 @@ frontend converts)
    - Escape → cancel; original value returns.
    - Enter / blur → commit. Single JSON-Patch `replace`
      on
-     `tables.window_types[<wt>].row_heights_mm[<index>]`
+     `tables.apertures[<wt>].row_heights_mm[<index>]`
      or `column_widths_mm[<index>]`.
    - **Backend stores mm-canonical** (PRD §11.5 — backend
      is SI). Display conversion happens at render time.
@@ -1573,15 +1582,15 @@ frontend converts)
    - On `Save As` to a `submitted` / `closed` version
      kind, validation re-runs; any rows / cols that
      remain unparseable raise a structured error in the
-     Save As flow (mirrors US-WIN-1's name-uniqueness +
+     Save As flow (mirrors US-APT-1's name-uniqueness +
      null-frame Save-As validation pattern).
 
 9. **Refetch window U-Value after every dimension save**
    — dimensions affect element areas, which affect the
-   area-weighted composite per US-WIN-6 criterion 8.
+   area-weighted composite per US-APT-6 criterion 8.
 
 10. **Canvas + panel stay synced.** Editing a row /
-    column value here re-renders the canvas (US-WIN-9)
+    column value here re-renders the canvas (US-APT-9)
     immediately — the panel and canvas read the same
     `row_heights_mm` / `column_widths_mm` arrays from
     the draft buffer.
@@ -1594,7 +1603,7 @@ frontend converts)
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-10.1: Add parens to `evaluateExpression`?**
+- **Q-APT-10.1: Add parens to `evaluateExpression`?**
   Resolved: **yes — add parens in V2 v1.** V1 ref §18
   flagged the absence as a papercut. Expression parser
   is small enough that inline implementation is fine
@@ -1607,16 +1616,16 @@ None outstanding.
 
 - **PRD §11.5** — backend SI canonical (mm); frontend
   converts at display.
-- **Q-WIN-9 resolution** — drives the per-user display-
+- **Q-APT-9 resolution** — drives the per-user display-
   format preference (criterion 3).
 - **V1 ref §6** — parser test cases lift verbatim to V2.
-- **US-WIN-9** — canvas re-renders on dimension change.
-- **US-WIN-6 criterion 8** — refetch trigger fires on
+- **US-APT-9** — canvas re-renders on dimension change.
+- **US-APT-6 criterion 8** — refetch trigger fires on
   row / column dimension change.
 
 ---
 
-## US-WIN-11 — Refresh-from-catalog (per-entry bookshelf re-sync)
+## US-APT-11 — Refresh-from-catalog (per-entry bookshelf re-sync)
 
 **Status:** Draft · **Priority:** MVP — **NEW in V2**
 **PRD ref:** §7.4 (refresh-from-catalog UX)
@@ -1645,8 +1654,8 @@ None outstanding.
      drifted. Hover tooltip: **"Catalog has changed since pick.
      Click to review."**
    - **Project-wide drift summary** — small banner at the top of
-     the Windows tab when *any* drift exists in the active
-     window-type's elements: **"3 entries drifted from catalog
+     the Apertures tab when *any* drift exists in the active
+     aperture-type's elements: **"3 entries drifted from catalog
      [Review all]"**.
    - **Across-the-project report** — accessible from the project
      header `⋯ → Catalog drift report`. Per PRD §7.4 final ¶,
@@ -1672,7 +1681,7 @@ None outstanding.
      post-refresh field values is deferred until full field-level
      override management ships beyond the `u_value_w_m2k` tracer.
 4. **Diverged user-edited fields.** If the user previously
-   inline-edited a value (US-WIN-4 criterion 5, field key in
+   inline-edited a value (US-APT-4 criterion 5, field key in
    `catalog_origin.local_overrides`), the diff explicitly tags
    those rows with **"You edited this"** and defaults the row radio to
    **Keep mine** so the user doesn't forget why their value differs.
@@ -1688,7 +1697,7 @@ None outstanding.
 
 ### Resolved questions (2026-05-10)
 
-- **Q-WIN-11.1: Catalog version pinning — drift compared to what?**
+- **Q-APT-11.1: Catalog version pinning — drift compared to what?**
   **Resolved 2026-05-10; revised 2026-05-14 (TB-09.a):** drift is
   detected whenever `catalog_origin.catalog_version_id !=
   catalog_*_records.current_version_id` **or** any compared catalog
@@ -1701,7 +1710,7 @@ None outstanding.
   `local_overrides` default to **Keep mine** in the refresh dialog;
   they do not by themselves make an entry "not drifted" if anything
   else differs.
-- **Q-WIN-11.2: Renamed-field handling in the diff dialog —
+- **Q-APT-11.2: Renamed-field handling in the diff dialog —
   deferred to schema-migration design.**
   **Revised 2026-05-11:** catalog-schema migration tooling is
   deferred from MVP and kept as a post-MVP goal. MVP refresh
@@ -1740,22 +1749,22 @@ post-MVP goal in PRD §7.5.
 
 ---
 
-## US-WIN-12 — HBJSON window-constructions export
+## US-APT-12 — HBJSON window-constructions export
 
-**Status:** Placeholder · **Priority:** v1.1 (gated by Q-WIN-8)
+**Status:** Placeholder · **Priority:** v1.1 (gated by Q-APT-8)
 **V1 ref:** §13.1 (`get-window-constructions-as-hbjson` route),
 §17 (hard-coded VT = 0.6)
 
 ### Notes for full draft
 - Behavior matches V1: per-element Honeybee-Energy
   `WindowConstruction` JSON; identifier
-  `"{window_type_name}_C{col}_R{row}"`; U-factor from per-element
+  `"{aperture_type_name}_C{col}_R{row}"`; U-factor from per-element
   ISO 10077-1 result; SHGC from glazing's `g_value`; VT hard-coded
   to 0.6.
 - Surfaced in the project header `⋯ → Download window
   constructions (HBJSON)`.
 - Per-version: takes the active version's body as input.
-- Open per Q-WIN-8: confirm we're keeping this in V2 at all,
+- Open per Q-APT-8: confirm we're keeping this in V2 at all,
   given the PRD §11.4.6 deliberate disconnect.
 
 ---

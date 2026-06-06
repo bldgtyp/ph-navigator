@@ -534,20 +534,20 @@ def test_unsupported_table_names_fail_through_registry(clean_document_tables: No
     version_id = project["active_version_id"]
     url = version_url(project_id, version_id)
 
-    saved = client.get(f"{url}/document/tables/windows")
-    draft = client.get(f"{url}/draft/tables/windows")
+    saved = client.get(f"{url}/document/tables/nonexistent_table")
+    draft = client.get(f"{url}/draft/tables/nonexistent_table")
     write = client.put(
-        f"{url}/draft/tables/windows",
+        f"{url}/draft/tables/nonexistent_table",
         headers={"Origin": ORIGIN, "If-Match-Version": "unused"},
         json={"rows": []},
     )
-    download = client.get(f"{url}/download/tables/windows", headers={"X-Request-ID": "missing-table"})
+    download = client.get(f"{url}/download/tables/nonexistent_table", headers={"X-Request-ID": "missing-table"})
 
     for response in (saved, draft, write, download):
         assert response.status_code == 404
         body = response.json()
         assert body["error_code"] == "document_table_not_found"
-        assert body["details"]["supported_tables"] == ["rooms", "window_types"]
+        assert body["details"]["supported_tables"] == ["rooms", "apertures"]
 
     assert download.headers["X-Request-ID"] == "missing-table"
     assert download.json()["request_id"] == "missing-table"

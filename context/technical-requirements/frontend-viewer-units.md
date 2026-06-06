@@ -115,7 +115,7 @@ are deliberately disconnected in V2 v1; see §11.4.6 for rationale.
 ```
 
 User flow:
-1. Edit assemblies / window_types / rooms / equipment in the PHN
+1. Edit assemblies / apertures / rooms / equipment in the PHN
    builder.
 2. Reference that data while building the 3D model in Rhino.
 3. Run honeybee_ph in Grasshopper to export HBJSON.
@@ -258,7 +258,7 @@ without a code-enforced relationship. Rationale:
   downstream tools (PHX → WUFI / PHPP). Treating it as an upload
   artifact in PHN preserves that role.
 - A future phase may bridge the two (validate that an uploaded
-  HBJSON's apertures match the project document's `window_types`,
+  HBJSON's apertures match the project document's `tables.apertures[]`,
   generate Rhino-ready exports from the project document, or
   eventually fold geometry authoring into PHN). Out of scope for V2
   v1; this PRD does not commit to a direction.

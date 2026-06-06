@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     )
     from features.project_document.tables.rooms import RoomsSliceResponse
     from features.project_document.tables.ventilators import VentilatorsSliceResponse
-    from features.project_document.tables.window_types import WindowTypesSliceResponse
 
     RegisteredTableResponse = (
         RoomsSliceResponse
@@ -30,7 +29,6 @@ if TYPE_CHECKING:
         | PumpsSliceResponse
         | FansSliceResponse
         | HotWaterTanksSliceResponse
-        | WindowTypesSliceResponse
         | AperturesSliceResponse
         | TableRowsResponse
     )
@@ -73,10 +71,6 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
         return VentilatorsSliceResponse
-    if name == "WindowTypesSliceResponse":
-        from features.project_document.tables.window_types import WindowTypesSliceResponse
-
-        return WindowTypesSliceResponse
     if name == "AperturesSliceResponse":
         from features.project_document.tables.apertures import AperturesSliceResponse
 
@@ -95,7 +89,6 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.pumps import PumpsSliceResponse
         from features.project_document.tables.rooms import RoomsSliceResponse
         from features.project_document.tables.ventilators import VentilatorsSliceResponse
-        from features.project_document.tables.window_types import WindowTypesSliceResponse
 
         return (
             RoomsSliceResponse
@@ -105,7 +98,6 @@ def __getattr__(name: str) -> Any:
             | PumpsSliceResponse
             | FansSliceResponse
             | HotWaterTanksSliceResponse
-            | WindowTypesSliceResponse
             | AperturesSliceResponse
             | TableRowsResponse
         )
@@ -125,7 +117,6 @@ __all__ = [
     "TableContract",
     "TableRowsResponse",
     "VentilatorsSliceResponse",
-    "WindowTypesSliceResponse",
     "get_table_contract",
     "get_table_contract_by_schema_slug",
     "iter_table_contracts",

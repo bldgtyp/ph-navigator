@@ -28,7 +28,6 @@ from features.project_document.tables.hot_water_tanks import hot_water_tanks_con
 from features.project_document.tables.pumps import pumps_contract
 from features.project_document.tables.rooms import rooms_contract
 from features.project_document.tables.ventilators import ventilators_contract
-from features.project_document.tables.window_types import window_types_contract
 from features.shared.errors import api_error
 
 
@@ -41,7 +40,7 @@ def get_table_contract(table_name: str) -> TableContract:
             "Document table not found.",
             # Keep the legacy diagnostic stable for existing clients/tests;
             # attachment tables are discoverable by name from their owning UI.
-            {"table_name": table_name, "supported_tables": ["rooms", "window_types"]},
+            {"table_name": table_name, "supported_tables": ["rooms", "apertures"]},
         )
     return contract
 
@@ -62,7 +61,7 @@ def get_table_contract_by_schema_slug(schema_slug: str) -> TableContract:
 
 
 def iter_table_contracts() -> Iterable[TableContract]:
-    priority = {"rooms": 0, "window_types": 1}
+    priority = {"rooms": 0, "apertures": 1}
     return sorted(_TABLES.values(), key=lambda contract: (priority.get(contract.name, 100), contract.name))
 
 
@@ -83,6 +82,5 @@ _TABLES: dict[str, TableContract] = {
     equipment_hot_water_tanks_contract.name: equipment_hot_water_tanks_contract,
     equipment_electric_heaters_contract.name: equipment_electric_heaters_contract,
     equipment_appliances_contract.name: equipment_appliances_contract,
-    window_types_contract.name: window_types_contract,
     apertures_contract.name: apertures_contract,
 }

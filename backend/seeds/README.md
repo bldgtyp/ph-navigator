@@ -11,8 +11,8 @@ backend/seeds/
   user.json                       # default editor account
   catalogs/
     materials.v1.json             # Materials catalog (10 rows)
-    glazing-types.v1.json         # Window-Glazing catalog (~42 rows)
-    frame-types.v1.json           # Window-Frame Elements catalog (~190 rows)
+    glazing-types.v1.json         # Glazing Types catalog (~42 rows)
+    frame-types.v1.json           # Frame Types catalog (~190 rows)
   project/
     project.json                  # starter project metadata
     rooms.json                    # 5 rooms + floor/zone options

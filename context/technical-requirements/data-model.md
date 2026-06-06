@@ -307,36 +307,39 @@ JSON document. Illustrative sketch (the canonical model is the
         }
       }
     ],
-    "window_types": [
+    "apertures": [
       {
-        "id": "win_...",
+        "id": "apt_...",
         "name": "Type A",
         "row_heights_mm": [1000.0],
         "column_widths_mm": [1000.0],
         "elements": [
           {
-            "id": "winel_...",
+            "id": "aptel_...",
+            "name": "Aptel 1",
             "row_span": [0, 0],
             "column_span": [0, 0],
-            "frames": {                          // each side: FrameRef | null (TB-08.b)
+            "frames": {                          // each side: FrameRef | null
               "top":    { /* FrameRef: see below */ },
               "right":  null,
               "bottom": null,
               "left":   null
             },
-            "glazing": { /* GlazingRef | null: see below */ }
+            "glazing": { /* GlazingRef | null: see below */ },
+            "operation": null                    // null | { type: "swing"|"slide", directions: [...] }
           }
         ]
       }
     ],
-    // FrameRef fields (TB-08.b, mirrors catalog_frame_type_versions):
-    //   name, manufacturer, brand, width_mm, u_value_w_m2k, psi_g_w_mk,
-    //   psi_install_w_mk, color, notes, source_provenance,
+    // FrameRef fields (mirrors catalog_frame_types):
+    //   name, manufacturer, brand, use, operation, location, mull_type,
+    //   prefix, suffix, material, width_mm, u_value_w_m2k, psi_g_w_mk,
+    //   psi_install_w_mk, color, source, comments,
     //   catalog_origin (nullable; null when hand-entered)
-    // GlazingRef fields (TB-08.b, mirrors catalog_glazing_type_versions):
-    //   name, manufacturer, brand, u_value_w_m2k, g_value, color,
-    //   notes, source_provenance, catalog_origin (nullable)
-    // Authoritative schema: GET /api/v1/schemas/window-type/v1.json
+    // GlazingRef fields (mirrors catalog_glazing_types):
+    //   name, manufacturer, brand, suffix, u_value_w_m2k, g_value, color,
+    //   source, comments, catalog_origin (nullable)
+    // Authoritative schema: GET /api/v1/schemas/aperture-type/v1.json
     "rooms": [                               // see US-EQ-2
       {
         "id": "rm_...",
@@ -399,9 +402,9 @@ JSON document. Illustrative sketch (the canonical model is the
 Properties of the document shape:
 
 - **Catalog values inlined; segments reference materials by ID.**
-  - **Frames / glazings** (windows side) are still inlined per
-    window-element. Frame/glazing reuse within a project is rare
-    (each window-type's frames are typically unique to that type).
+  - **Frames / glazings** (aperture side) are still inlined per
+    aperture-element. Frame/glazing reuse within a project is rare
+    (each aperture-type's frames are typically unique to that type).
   - **Materials** (envelope side) live in `tables.project_materials[]`
     once per unique product per project. Segments reference them by
     `project_material_id`. Picking the same catalog material into
@@ -420,7 +423,7 @@ Properties of the document shape:
   / construction team on each project. See auto-memory
   `qa_principle_per_project_datasheets.md`.
 - **Stable IDs.** Every entity has a ULID-style id (`asm_…`,
-  `lyr_…`, `seg_…`, `pmat_…`, `win_…`, `winel_…`, `rm_…`,
+  `lyr_…`, `seg_…`, `pmat_…`, `apt_…`, `aptel_…`, `rm_…`,
   `tb_…`, `fan_…`, `pmp_…`, `erv_…`, `opt_…`).
   Browser-created document rows generate final ids in the frontend
   before optimistic display; the server validates prefix, shape, and
@@ -436,7 +439,7 @@ Properties of the document shape:
   at read time through the `project_assets` backbone (§6.5).
   Asset endpoints are designed to be LLM-callable from day 1 (§10).
 - **Tables, not entity tree.** The top level is `tables.{
-  assemblies, project_materials, window_types, rooms,
+  assemblies, project_materials, apertures, rooms,
   thermal_bridges, equipment, manufacturer_filters, ... }`.
   New table types plug in by adding to `tables`. Per-table JSON
   download is a keyed slice of this shape, e.g. `{ "rooms": [...] }`.

@@ -69,7 +69,7 @@ These mirror the Windows cluster's framing (US-Builder-Windows §
    `purge_unused_materials` behavior; no
    `NoMaterialsException` hard-failure on first use
    (V1 ref §13.8). New segments in V2 ship with `material: null`
-   per Q-WIN-3-style lean (lifted to assemblies as Q-ENV-3).
+   per Q-APT-3-style lean (lifted to assemblies as Q-ENV-3).
 4. **Backend is SI-only; frontend converts** (PRD §11.5). V1's
    `DetailsModal` material-data block hard-coded SI even when the
    user was in IP mode (V1 ref §12.8); V2 must respect the
@@ -95,7 +95,7 @@ These mirror the Windows cluster's framing (US-Builder-Windows §
    V1 enforces these server-side and surfaces backend exceptions
    via `alert()` (V1 ref §13.3). V2 disables the Delete button at
    the UI level with an explanatory tooltip, matching the
-   US-WIN-2 criterion-7 pattern.
+   US-APT-2 criterion-7 pattern.
 10. **Per-segment property updates collapse into one document
     patch.** V1 issues up to 4 PATCHes from the Segment-Properties
     modal Save and 5 PATCHes per copy/paste (V1 ref §13.14), with
@@ -408,7 +408,7 @@ Pydantic models are written.
 
   Re-evaluation trigger: if BLDGTYP's catalog crosses
   ~150–200 materials, revisit in v1.1+. The replacement design
-  would mirror US-WIN-8 — a project-document
+  would mirror US-APT-8 — a project-document
   `body.tables.material_filters` table that versions with the
   project — so adding it later is a clean additive change with
   no migration of existing project documents.
@@ -437,7 +437,7 @@ Pydantic models are written.
 - **Q-ENV-9: Per-assembly deep-link URL.** Resolved 2026-05-10:
   **`/projects/{project_id}/envelope/assemblies` lists** and
   **`/projects/{project_id}/envelope/assemblies/{assembly_id}`
-  opens a specific assembly.** Mirrors Q-WIN-5 (per-window-type
+  opens a specific assembly.** Mirrors Q-APT-5 (per-aperture-type
   URL). V1's active assembly was React-state-only — refresh
   dropped you to "first assembly," and links couldn't be shared.
   V2 syncs `selectedAssemblyId` ↔ URL ↔ store. Edge case:
@@ -446,7 +446,7 @@ Pydantic models are written.
 
 - **Q-ENV-10: Layer add behavior — V1's hidden "+ Above" /
   "+ Below" hover buttons (V1 ref §9.2) or V2-style edge-add
-  hover zones (US-WIN-2 criterion 3)?** Resolved 2026-05-10:
+  hover zones (US-APT-2 criterion 3)?** Resolved 2026-05-10:
   **(a) match V1.** Small `+` circle buttons revealed on hover
   at each layer's top and bottom edges, magenta `#b2087c`. Same
   pattern for segments (`+ Add Segment Left / Right` on segment
@@ -471,7 +471,7 @@ Pydantic models are written.
     that applies to rooms (US-EQ-2) applies to assemblies.
     Captured in PRD §3 non-goals.
   - **Export only**, surfaced under the project header
-    `⋯ → Download constructions (HBJSON)`. Mirrors Q-WIN-8
+    `⋯ → Download constructions (HBJSON)`. Mirrors Q-APT-8
     placement (windows-side HBJSON download). Per-version —
     each download is a snapshot of the active version's body.
   - Detail in US-ENV-12.
@@ -657,7 +657,7 @@ None — resolved by Q-ENV-7 / Q-ENV-8 above.
    **9a. Uniqueness rule.** Assembly names must be unique within
    a project version. Comparison is **trim + case-insensitive**.
    Display preserves the user's original casing. Mirrors
-   US-WIN-1 criterion 9a.
+   US-APT-1 criterion 9a.
 
 10. **Duplicate.**
     - Deep-copies the active assembly into a new entry. New `id`s
@@ -713,7 +713,7 @@ None outstanding for V1 parity. Drag-reorder of the sidebar is
 deferred (matches V1 — no reorder; alphabetical only).
 
 ### Open questions
-None — defaults track US-WIN-1's resolved patterns.
+None — defaults track US-APT-1's resolved patterns.
 
 ---
 
@@ -1077,7 +1077,7 @@ None outstanding.
    - **Last-layer guard (Q-ENV-5.1):** if the assembly has only
      one layer, the Delete button is **disabled** with tooltip
      **"An assembly must have at least one layer."** UI-level
-     lock matching the US-WIN-2 criterion-7 pattern (V2 fix for
+     lock matching the US-APT-2 criterion-7 pattern (V2 fix for
      V1's server-side `LastLayerAssemblyException` + alert
      pattern, V1 ref §13.3).
    - On click of an enabled Delete: shadcn `Dialog` confirm —
@@ -1095,7 +1095,7 @@ None outstanding.
 
 - **Q-ENV-5.1: Last-layer guard — UI lock or backend exception?**
   **Resolved:** UI lock at the Delete button level (criterion
-  3). Mirrors US-WIN-2 criterion 7's pattern.
+  3). Mirrors US-APT-2 criterion 7's pattern.
 
 ### Open questions
 None — V1 parity covered.
@@ -1456,11 +1456,11 @@ in V1)
 - **Q-ENV-7.1 (Resolved):** Inline override field set =
   full ProjectMaterial Pydantic field set, with rarely-used
   fields (`emissivity`, `color`) under a "More fields…"
-  expander. Mirrors Q-WIN-4.1. (Editing applies to the
+  expander. Mirrors Q-APT-4.1. (Editing applies to the
   project_materials row, with shared-segments banner per
   US-ENV-6 criterion 2.4.)
 - **Q-ENV-7.2 (Resolved):** Promote hand-entered material into
-  catalog — deferred to v1.1+; not in MVP. Mirrors Q-WIN-4.4.
+  catalog — deferred to v1.1+; not in MVP. Mirrors Q-APT-4.4.
 - **Q-ENV-7.3 (NEW, Resolved):** Picker shows existing
   project-materials in their own section above the catalog
   list, so users can re-use the same product across assemblies
@@ -1608,7 +1608,7 @@ behavior — fixed in V2)
    call, not a data-model constraint.
 
 6. **No multi-select paste in V2 v1** (Ed 2026-05-10). One
-   click = one target. Mirror of US-WIN-7 deferred-NEW. v1.1+
+   click = one target. Mirror of US-APT-7 deferred-NEW. v1.1+
    candidate.
 
 7. **No keyboard shortcuts (⌘C / ⌘V) on the envelope canvas**
@@ -1877,7 +1877,7 @@ purged (V1 ref §13.9); V2 is bookshelf
 1. **Drift detection.** A segment's material is "drifted from
    catalog" if `material.catalog_origin.catalog_version_id !=
    catalog_materials.current_version_id`. Computed at read
-   time. **Identical mechanism to US-WIN-11** for frame /
+   time. **Identical mechanism to US-APT-11** for frame /
    glazing.
 2. **Surfaces.**
    - **Per-segment badge** — material chip in the
@@ -1892,8 +1892,8 @@ purged (V1 ref §13.9); V2 is bookshelf
    - **Across-the-project report** — accessible from the project
      header `⋯ → Catalog drift report`. Per PRD §7.4 final ¶,
      "lives in the catalog manager view of a project." Shared
-     surface with US-WIN-11's drift report.
-3. **Per-segment refresh dialog.** Mirrors US-WIN-11
+     surface with US-APT-11's drift report.
+3. **Per-segment refresh dialog.** Mirrors US-APT-11
    criterion 3 — three-column diff (Catalog · Yours · Choose),
    per-row radio + bulk actions, **Save** writes the chosen
    values into the document, updates
@@ -1906,7 +1906,7 @@ purged (V1 ref §13.9); V2 is bookshelf
    `catalog_origin.local_overrides`, so the user doesn't forget why
    their value differs.
 5. **No bulk "refresh everything" auto-apply** in v1 (PRD §7.4
-   + §17 question 9 lean shared with US-WIN-11). **Review all** opens
+   + §17 question 9 lean shared with US-APT-11). **Review all** opens
    the drift report with per-entry actions; it does not auto-apply
    multiple materials.
 6. **Read-only on locked versions / for Viewers.** Drift badges
@@ -1922,7 +1922,7 @@ purged (V1 ref §13.9); V2 is bookshelf
 ### Resolved questions (2026-05-10)
 
 - **Q-ENV-11.1: Drift compared to what?** **Resolved (mirrors
-  Q-WIN-11.1):** drift only when `catalog_version_id !=
+  Q-APT-11.1):** drift only when `catalog_version_id !=
   current_version_id`. Intermediate non-current versions don't
   trigger. If `local_overrides` is non-empty while the catalog version
   is current, the material is customized, not stale.
@@ -1988,7 +1988,7 @@ MVP per Ed 2026-05-10:
 ### Acceptance criteria
 
 1. **Surface.** Single action in the project header `⋯` menu:
-   **"Download constructions (HBJSON)"**. Mirrors Q-WIN-8's
+   **"Download constructions (HBJSON)"**. Mirrors Q-APT-8's
    windows-side HBJSON download placement. **No import
    action exists in V2 v1.**
 

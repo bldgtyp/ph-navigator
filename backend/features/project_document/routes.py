@@ -17,15 +17,10 @@ from features.project_document.models import (
     DiscardDraftResponse,
     ProjectDiffResponse,
     ProjectDocumentReadSafeEnvelope,
-    ProjectDocumentSource,
     ProjectDraftSummary,
     SaveAsDraftRequest,
     SaveDraftResponse,
     VersionPatchRequest,
-)
-from features.project_document.refresh import (
-    WindowTypesRefreshReport,
-    get_window_types_refresh_report,
 )
 from features.project_document.schema_mutations import FieldSchemaMutation
 from features.project_document.service import (
@@ -167,15 +162,6 @@ def post_aperture_command(
         request=request,
     )
     return response
-
-
-@router.get("/refresh/window-types", response_model=WindowTypesRefreshReport)
-def get_window_types_refresh(
-    version_id: UUID,
-    access: ProjectEditAccess,
-    source: Annotated[ProjectDocumentSource, Query()] = "draft",
-) -> WindowTypesRefreshReport:
-    return get_window_types_refresh_report(version_id, access, source)
 
 
 @router.delete("/draft", response_model=DiscardDraftResponse)

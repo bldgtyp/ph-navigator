@@ -52,31 +52,54 @@ RELATED:
 - **Existing TB-08/TB-09 Windows tracer-bullet keeps working
   unmodified.** Both tabs coexist in the project nav.
 
-## Still deferred (to a future cleanup phase, ideally before / with Phase 12)
+## Cleanup phase — shipped 2026-06-05
 
-- Rename `WindowTypeEntry` / `WindowElement` / `WindowElementFrames`
-  → `Aperture*` and re-export the legacy names as aliases.
-- Rename `body.tables.window_types` → `body.tables.apertures` with
-  a `@computed_field` alias.
-- Document-load migration shim that rewrites `win_` / `winel_`
-  ids to `apt_` / `aptel_`.
-- Alembic migration that munges existing JSON documents AND
-  seeds the `PHN-Default-Frame` / `PHN-Default-Glazing` rows.
-- Delete `frontend/src/features/windows/` and remove the
-  `Windows` tab from `PROJECT_TABS`.
-- `/projects/:id/windows` → `/projects/:id/apertures` redirect.
+The deferred cleanup landed as a single follow-up commit (no
+backwards-compat aliasing, since V2 has no public DB deploy and
+no existing users to migrate):
+
+- `WindowTypeEntry` / `WindowElement` / `WindowElementFrames`
+  classes deleted from `backend/features/project_document/document.py`.
+- `tables.window_types` field dropped from `ProjectDocumentTables`;
+  duplicate-id/name validation block deleted.
+- `backend/features/project_document/tables/window_types.py`
+  deleted along with its `tables/registry.py` + `tables/__init__.py`
+  + `scripts/seed_dev_db.py` wiring. `supported_tables` error detail
+  is now `["rooms", "apertures"]`.
+- `backend/features/project_document/refresh.py` (window-types
+  refresh) deleted plus its `/refresh/window-types` route and
+  `test_project_document_refresh.py`. Apertures already ships its
+  own drift mechanism through `aperture_drift/`.
+- `backend/tests/test_project_document_window_types.py` deleted;
+  remaining suites updated to use `apertures` instead of
+  `window_types` for "this is a valid table" assertions.
+- `frontend/src/features/windows/` entire feature folder deleted.
+  Shared types (`FrameRef`, `GlazingRef`, `CatalogOrigin`,
+  `CatalogTableName`) now live in
+  `frontend/src/features/apertures/types.ts` directly.
+- `"windows"` removed from `PROJECT_TABS` / `TAB_LABELS` /
+  `TAB_COPY` in `frontend/src/features/projects/lib.ts`.
+- `WindowsTab` import + branch removed from `ProjectTabContent.tsx`.
+- `@import "./features/windows/windows.css"` removed from `App.css`.
+- Window-refresh-dialog test + fixtures removed from `App.test.tsx`.
+- Context docs updated: `GLOSSARY.md`, `USER_STORIES.md`, `PRD.md`,
+  `UI_UX.md`, `technical-requirements/api.md`,
+  `technical-requirements/data-model.md`,
+  `technical-requirements/frontend-viewer-units.md`,
+  `technical-requirements/llm-mcp-schema.md`. Story id renames:
+  `US-Builder-Windows` → `US-Builder-Apertures`, `US-WIN-N` →
+  `US-APT-N`, `Q-WIN-N` → `Q-APT-N`.
+- `context/user-stories/10-windows.md` → `10-apertures.md` (git
+  mv preserves history) with a header note recording the rename.
+
+## Deferred (still open)
+
+- `/projects/:id/windows` → `/projects/:id/apertures` redirect — not
+  shipped this round. With no existing users, a hard-404 on the old
+  path is acceptable for now; the redirect can land as a small
+  follow-up if anyone bookmarks `/windows`.
 - Sidebar collapse / chevron, sticky `+ Add`, V1-pixel-parity
-  styling.
-
-## Next Step
-
-Feature complete. Cleanup-phase items remain (see "Still
-deferred" above): legacy `Window*` → `Aperture*` rename + alias
-re-exports, `tables.window_types` → `tables.apertures` field
-rename with `@computed_field` alias, document-load migration
-shim, Alembic migration that munges JSON + seeds defaults,
-delete `frontend/src/features/windows/`, sidebar polish, and
-Playwright E2E. These ship as a separate cleanup phase.
+  styling — UX polish, separate phase.
 
 ## Phase 13 — Semantic MCP write tools (shipped)
 

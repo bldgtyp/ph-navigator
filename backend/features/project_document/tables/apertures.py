@@ -1,10 +1,4 @@
-"""Apertures table contract for the project document registry.
-
-Mirrors `tables/window_types.py` — Phase 01 ships both contracts
-side-by-side. The Aperture Builder (Phase 02+) reads / writes the new
-`tables.apertures[]` slice exclusively; the legacy Windows tracer-bullet
-keeps using `tables.window_types[]` until Phase 02 cuts the route over.
-"""
+"""Apertures table contract for the project document registry."""
 
 from __future__ import annotations
 

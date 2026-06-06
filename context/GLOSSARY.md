@@ -26,7 +26,7 @@
 
 | Term                       | Definition                                                                                                 | Aliases to avoid                            |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **Catalog**                | The shared, curated starting library of reusable entries (Materials, Window-Frame Elements, Window-Glazing) | Library, master list, reference data        |
+| **Catalog**                | The shared, curated starting library of reusable entries (Materials, Frame Types, Glazing Types)            | Library, master list, reference data        |
 | **Catalog entry**          | One identity row in a Catalog (e.g. one material), with one or more Catalog versions                       | Catalog row, catalog record, item           |
 | **Catalog version**        | A specific snapshot of a Catalog entry's values (e.g. "Skyline Ridge frame, 2024 spec")                    | Catalog revision, spec, edition             |
 | **Pick** *(verb)*          | Copying a Catalog version's values into a Project document; the Project then owns its copy                 | Import, link, reference, attach             |
@@ -35,7 +35,7 @@
 | **catalog_schema_version** | Integer pinned at Pick time recording the Catalog's row schema at that moment; drives shim chains         | Catalog spec version, catalog format        |
 | **Project Material**       | A row in `tables.project_materials` — the Project's own copy of a Material, referenced by Segments by ID  | Material instance, used material            |
 
-## Envelope (assemblies & windows)
+## Envelope (assemblies & apertures)
 
 | Term                  | Definition                                                                                                | Aliases to avoid                                   |
 | --------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -44,8 +44,8 @@
 | **Segment**           | A horizontal slice of a Layer occupying a width (e.g. stud bay vs. stud); references a Project Material  | Strip, region, bay                                 |
 | **Material**          | A physical product with thermal properties (conductivity, density, etc.); lives in the Catalog           | Product, substance (when ambiguous, qualify it)    |
 | **Datasheet**         | A per-project QA submittal PDF attached to a Project Material; **never lives in the Catalog**             | Spec sheet (only if it's literally the PDF)        |
-| **Window Type**       | A named window family defined by a row × column grid of Window Elements                                   | Window family, fenestration type                   |
-| **Window Element**    | One pane/cell within a Window Type, carrying inlined per-side Frame data (`top/right/bottom/left`) and Glazing data | Sash, lite (lite is sometimes specifically glass)  |
+| **Aperture Type**     | A named aperture family (doors, windows, skylights) defined by a row × column grid of Aperture Elements   | Window type, fenestration type                     |
+| **Aperture Element**  | One pane/cell within an Aperture Type, carrying inlined per-side Frame data (`top/right/bottom/left`) and Glazing data | Window element, sash, lite (lite = glass)   |
 | **Frame Type**        | A frame product (jamb, head, sill, mullion) with U-value, psi-install, etc.; catalogged                   | Profile, frame product                             |
 | **Glazing Type**      | A glazing assembly (IGU spec) with U-value, SHGC, etc.; catalogged                                        | Glass, IGU (unless literally referring to the IGU) |
 | **Thermal Bridge**    | A linear envelope discontinuity carrying a psi-value, optional simulation file, and length                | TB, junction (junction is the geometric thing)     |
@@ -76,7 +76,7 @@
 | ------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | **Dashboard**       | The signed-in landing page (`/dashboard`) listing the User's owned Projects                                    | Home, projects page                               |
 | **Project workspace** | The per-Project page (`/projects/{id}`) hosting the tab strip and Version panel                              | Project page, editor                              |
-| **Tab**             | One section of the Project workspace: Status, Windows, Envelope, Equipment, Model                              | Page, panel, view (use only contextually)         |
+| **Tab**             | One section of the Project workspace: Status, Apertures, Envelope, Equipment, Model                              | Page, panel, view (use only contextually)         |
 | **Builder**         | The collective editing surfaces inside the Project workspace (everything that writes to the document)          | Editor, authoring mode                            |
 | **Catalog manager** | The top-nav surface for editing Catalog entries (`/catalog/{slug}`)                                            | Library admin, catalog editor                     |
 | **DataTable**       | The shared React grid component used by every tabular surface (Catalog pages, Builder sub-tabs, picker, etc.) | Grid, table (lowercase "table" = data table)    |
@@ -90,10 +90,10 @@
 - A **Project** has one or more **Versions**; one is the **Active version**.
 - A **Version** holds one **Project document** (its `body`). Editing flows through a **Draft**, never the Version body directly.
 - **Save** overwrites the Active version; **Save As** creates a new Version. Locked Versions reject Save.
-- A **Project document** contains **Tables**: `assemblies`, `project_materials`, `window_types`, `rooms`, `thermal_bridges`, `equipment`, `manufacturer_filters`.
+- A **Project document** contains **Tables**: `assemblies`, `project_materials`, `apertures`, `rooms`, `thermal_bridges`, `equipment`, `manufacturer_filters`.
 - An **Assembly** has ordered **Layers**; each Layer has **Segments**; each Segment references a **Project Material** by id.
 - A **Project Material** is the Project's copy of a Catalog **Material**, linked back via **catalog_origin**.
-- A **Window Type** is a grid of **Window Elements**, each inlining four side-specific **Frame Type** values and one **Glazing Type** (no `project_frame_types` table — frames are inlined, unlike Materials).
+- An **Aperture Type** is a grid of **Aperture Elements**, each inlining four side-specific **Frame Type** values and one **Glazing Type** (no `project_frame_types` table — frames are inlined, unlike Materials). Apertures cover all envelope openings — doors, windows, skylights.
 - **Catalog entries** have **Catalog versions**; Picking copies values in. A Project never references a Catalog version live.
 - **HBJSON** files are independent of Versions and never feed Builder tables.
 
@@ -117,6 +117,6 @@
 - **"Material"** is overloaded: it can mean a **Catalog entry** (`catalog_materials`), a **Catalog version** (`catalog_material_versions`), or a **Project Material** (the inlined copy in `tables.project_materials`). Use the qualified term — the distinction matters for Refresh-from-catalog semantics.
 - **"Draft"** is *not* a kind of Version — it's a server-side WIP buffer for crash-recovery. Never list it as a Version, never include it in diff `from`/`to` selectors except for "live vs last save" explicitly.
 - **"Owner"** is a dashboard-organization label, not a permission. Either Editor can edit any Project; ownership only filters the dashboard view. Don't conflate with ACL — there is no per-project ACL in v1.
-- **"Tab"** in this product means a workspace section (Status/Windows/Envelope/Equipment/Model), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
+- **"Tab"** in this product means a workspace section (Status/Apertures/Envelope/Equipment/Model), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
 - **"Snapshot"** appears as both (a) a Version `kind` (`'snapshot'`) and (b) loose talk for any saved Version. Prefer **Version** for the general concept; reserve **snapshot** for the specific `kind`.
 - **"Status"** is the workspace **Tab** name *and* the project-lifecycle tracker (`project_status_items`). The two are aligned (the Tab renders the tracker), but "Status" alone is ambiguous in code — prefer `project_status_items` or "Status tab" depending on context.

@@ -50,9 +50,9 @@ def _refuse_to_truncate_dev_db() -> None:
 def clean_document_tables() -> Iterator[None]:
     """Truncate project-document and auth state before and after a test.
 
-    Reused by `test_project_document.py` and `test_project_document_window_types.py`
-    so cross-table contract tests don't need to import the fixture across files
-    (which trips ruff F811).
+    Shared across the project-document test modules so cross-table contract
+    tests don't need to import the fixture across files (which trips ruff
+    F811).
     """
     _truncate()
     yield
