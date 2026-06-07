@@ -20,7 +20,7 @@ import {
   totalApertureWidthMm,
 } from "../aperture-geometry";
 import { deleteColumnImpact, deleteRowImpact } from "../delete-dimension-impact";
-import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
+import type { ApertureDimFormatState } from "../hooks/useApertureDimFormat";
 import {
   selectionForAperture,
   useApertureBuilderStore,
@@ -38,7 +38,6 @@ import { visualSideToCanonical } from "../frame-label-map";
 import type { ApertureRegionKind } from "./ApertureHitTarget";
 import type { ApertureSide, FrameRef, GlazingRef } from "../types";
 import { DeleteDimensionDialog } from "./DeleteDimensionDialog";
-import { DisplayFormatSelector } from "./DisplayFormatSelector";
 import { EdgeAddButtons } from "./EdgeAddButtons";
 import { HorizontalDimensionStrip } from "./HorizontalDimensionStrip";
 import { TotalDimensionsCaption } from "./TotalDimensionsCaption";
@@ -74,6 +73,7 @@ const EMPTY_DISMISSED: readonly string[] = Object.freeze([]);
 // the actual dispatch + error handling.
 export function ApertureCanvasContainer({
   aperture,
+  dimFormat,
   canEdit = false,
   onSetElementName,
   onEditDimension,
@@ -92,6 +92,7 @@ export function ApertureCanvasContainer({
   uValueByElementId,
 }: {
   aperture: ApertureTypeEntry;
+  dimFormat: ApertureDimFormatState;
   canEdit?: boolean;
   onSetElementName?: (elementId: string, newName: string) => void;
   onEditDimension?: (axis: "row" | "column", index: number, newMm: number) => void;
@@ -152,7 +153,6 @@ export function ApertureCanvasContainer({
     sendEsc,
   } = usePickPasteHandlers({ apertureId: aperture.id, onPasteAssignment });
 
-  const dimFormat = useApertureDimFormat();
   const unitSystem = dimFormat.system === "ip" ? "ip" : "si";
 
   // Selection is purely a viewing aid: clear this aperture's selection when
@@ -342,9 +342,7 @@ export function ApertureCanvasContainer({
       ) : null}
       <div className="aperture-canvas-scroll" ref={scrollRef} data-testid="aperture-canvas-scroll">
         <div className="aperture-canvas-grid">
-          <div className="aperture-canvas-grid__gutter">
-            <DisplayFormatSelector {...dimFormat} />
-          </div>
+          <div className="aperture-canvas-grid__gutter" />
           <div className="aperture-canvas-grid__top-edge" />
           <div className="aperture-canvas-grid__left-edge">
             <VerticalDimensionStrip

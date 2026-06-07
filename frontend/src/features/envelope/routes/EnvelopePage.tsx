@@ -4,7 +4,7 @@
 // while canvas/sidebar/specification layout details stay in feature components
 // so browser and MCP mutations share the semantic command boundary.
 import "../../assets/attachments.css";
-import { Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";

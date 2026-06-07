@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitPreferenceContextValue } from "../../../lib/units/preference-context";
 import { ApertureCanvasContainer } from "../components/ApertureCanvasContainer";
+import { DisplayFormatMenuGroup } from "../components/DisplayFormatSelector";
+import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureBuilderStore } from "../store/builder-store";
 import type { ApertureElement, ApertureTypeEntry } from "../types";
 
@@ -42,6 +44,22 @@ function UnitStub({ children }: { children: ReactNode }) {
   return <UnitPreferenceContext.Provider value={value}>{children}</UnitPreferenceContext.Provider>;
 }
 
+function ApertureCanvasHarness({ entry }: { entry: ApertureTypeEntry }) {
+  const dimFormat = useApertureDimFormat();
+
+  return (
+    <>
+      <details className="app-subtabs__menu-wrap" open>
+        <summary>Aperture actions</summary>
+        <div className="app-subtabs__menu" role="menu">
+          <DisplayFormatMenuGroup {...dimFormat} />
+        </div>
+      </details>
+      <ApertureCanvasContainer aperture={entry} dimFormat={dimFormat} canEdit />
+    </>
+  );
+}
+
 beforeEach(() => {
   window.localStorage.clear();
   useApertureBuilderStore.setState({
@@ -57,8 +75,8 @@ describe("ApertureCanvasContainer", () => {
   it("applies the selected SI dimension display format to captions and labels", () => {
     render(
       <UnitStub>
-        <ApertureCanvasContainer
-          aperture={aperture({
+        <ApertureCanvasHarness
+          entry={aperture({
             column_widths_mm: [1000, 800],
             row_heights_mm: [1200],
             elements: [
@@ -66,7 +84,6 @@ describe("ApertureCanvasContainer", () => {
               element({ id: "aptel_2", column_span: [1, 1] }),
             ],
           })}
-          canEdit
         />
       </UnitStub>,
     );
@@ -77,9 +94,8 @@ describe("ApertureCanvasContainer", () => {
     expect(screen.getByTestId("col-w-0-value")).toHaveTextContent("1000.0");
     expect(screen.getByTestId("row-h-0-value")).toHaveTextContent("1200.0");
 
-    fireEvent.change(screen.getByLabelText("Dimension display format"), {
-      target: { value: "cm" },
-    });
+    fireEvent.click(screen.getByText("Dimension display"));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Centimeters (cm)" }));
 
     expect(screen.getByTestId("aperture-total-dim-caption")).toHaveTextContent(
       "180.00 cm × 120.00 cm",

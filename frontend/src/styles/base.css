@@ -1654,6 +1654,57 @@ button:disabled {
   opacity: 0.5;
 }
 
+.app-subtabs__submenu {
+  display: grid;
+}
+
+.app-subtabs__submenu > summary {
+  list-style: none;
+}
+
+.app-subtabs__submenu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.app-subtabs__submenu-trigger {
+  justify-content: space-between;
+}
+
+.app-subtabs__menu-item-value {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  margin-left: var(--space-4);
+}
+
+.app-subtabs__submenu-panel {
+  display: grid;
+  gap: 2px;
+  padding: 0 0 var(--space-1) var(--space-3);
+}
+
+.app-subtabs__menu-radio {
+  color: var(--text-secondary);
+}
+
+.app-subtabs__menu-radio[aria-checked="true"] {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.app-subtabs__menu-radio-mark {
+  border: 1px solid currentcolor;
+  border-radius: 50%;
+  display: inline-flex;
+  height: 8px;
+  width: 8px;
+}
+
+.app-subtabs__menu-radio[aria-checked="true"] .app-subtabs__menu-radio-mark {
+  background: currentcolor;
+}
+
 .tab-panel {
   min-height: 280px;
   border: 0;
