@@ -1,11 +1,11 @@
 // Scale + zoom constants for the Aperture Builder SVG canvas. Mirrors the
 // envelope canvas precedent so behavior stays consistent across builders.
 //
-// `BASE_PX_PER_MM` keeps a 1000 mm aperture at 180 px at zoom 1.0, which gives
+// `BASE_PX_PER_MM` keeps a 1000 mm aperture at 90 px at zoom 1.0, which gives
 // the Phase 03 substrate roughly the same on-screen weight as the V1 Window
 // Builder screenshots.
 
-export const BASE_PX_PER_MM = 0.18;
+export const BASE_PX_PER_MM = 0.09;
 export const MIN_CANVAS_WIDTH_PX = 360;
 export const ZOOM_STEPS = [0.5, 0.75, 1.0, 1.5, 2.0, 3.0] as const;
 export const ZOOM_MIN = zoomBoundary(0);

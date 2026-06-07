@@ -39,6 +39,8 @@
   --accent-edge: color-mix(in oklab, var(--accent) 60%, transparent);
   --gutter-width: 42px;
   --bg-table-outside: color-mix(in oklab, var(--accent) 4%, var(--bg-page));
+  --aperture-frame-fill-default: #f0f0f0;
+  --aperture-glazing-fill-default: #e0f8ff;
   --data-table-font-size: 13px;
   --data-table-header-font-size: 0.72rem;
   --data-table-row-height: 34px;
