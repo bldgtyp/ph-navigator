@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  blankHandEnterFrameRef,
-  blankHandEnterGlazingRef,
-  catalogRowToFrameRef,
-  catalogRowToGlazingRef,
-} from "../ref-builders";
+import { catalogRowToFrameRef, catalogRowToGlazingRef } from "../ref-builders";
 
 const FRAME_ROW = {
   id: "rec000000000FRAME",
@@ -38,20 +33,6 @@ describe("ref-builders", () => {
     expect(ref.catalog_origin?.catalog_table).toBe("frame_types");
     expect(ref.catalog_origin?.catalog_record_id).toBe("rec000000000FRAME");
     expect(ref.catalog_origin?.local_overrides).toEqual([]);
-  });
-
-  it("blankHandEnterFrameRef leaves catalog_origin null and name set to Unnamed", () => {
-    const ref = blankHandEnterFrameRef();
-    expect(ref.catalog_origin).toBeNull();
-    expect(ref.name).toBe("Unnamed");
-    expect(ref.width_mm).toBeNull();
-  });
-
-  it("blankHandEnterGlazingRef mirrors the frame builder", () => {
-    const ref = blankHandEnterGlazingRef();
-    expect(ref.catalog_origin).toBeNull();
-    expect(ref.name).toBe("Unnamed");
-    expect(ref.u_value_w_m2k).toBeNull();
   });
 
   it("catalogRowToGlazingRef copies fields and stamps catalog_origin", () => {

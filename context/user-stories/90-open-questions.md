@@ -60,10 +60,10 @@ to the per-story sections above.
 | ~~Q-APT-3.1~~ | ~~US-APT-3~~ | ~~Shift-click rule (V1 adjacency-only or relax)?~~ | **Resolved 2026-05-10:** relax — any shift-click extends; merge validates contiguous-rectangle at commit |
 | ~~Q-APT-3.2~~ | ~~US-APT-3~~ | ~~Merged inheritance source?~~ | **Resolved 2026-05-10:** top-left source; toast confirms |
 | ~~Q-APT-3.3~~ | ~~US-APT-3~~ | ~~Holes in grid allowed?~~ | **Resolved 2026-05-10:** no holes; no direct Delete-element gesture in MVP — remove via merge or row/col delete |
-| ~~Q-APT-4.1~~ | ~~US-APT-4~~ | ~~Inline override field set?~~ | **Resolved 2026-05-10:** full field set editable inline; power fields (`source`/`link`/`datasheet_url`/`comments`) under `More fields…` expander |
+| ~~Q-APT-4.1~~ | ~~US-APT-4~~ | ~~Inline override field set?~~ | **Revised 2026-06-07:** no inline aperture frame/glazing overrides; width, U-value, g-value, and psi-value are reported catalog-copied values; no `More fields…` expander |
 | ~~Q-APT-4.2~~ | ~~US-APT-4~~ | ~~Diverged-from-catalog visualization?~~ | **Resolved 2026-05-10:** inline diff modal on badge click — three columns (Catalog · Yours · Choose new value); shared with US-APT-11 |
 | ~~Q-APT-4.3~~ | ~~US-APT-4~~ | ~~Apply-to-all-four-sides shortcut?~~ | **Resolved 2026-05-10:** deferred to v1.1+; not in MVP |
-| ~~Q-APT-4.4~~ | ~~US-APT-4~~ | ~~Promote hand-entered frame into catalog?~~ | **Resolved 2026-05-10:** deferred to v1.1+; not in MVP |
+| ~~Q-APT-4.4~~ | ~~US-APT-4~~ | ~~Promote hand-entered frame into catalog?~~ | **Revised 2026-06-07:** no hand-entered aperture frame/glazing refs in MVP; create catalog rows first, then pick |
 | ~~Q-APT-5.1~~ | ~~US-APT-5~~ | ~~Operation presets in MVP?~~ | **Resolved 2026-05-10:** yes; Tilt-turn, Awning, Hopper, Casement (L/R), Slider (L/R) ship in v1 |
 | ~~Q-APT-5.2~~ | ~~US-APT-5~~ | ~~Operation feeds U-value?~~ | **Resolved 2026-05-10:** no — already captured in the picked frame's `u_value_w_m2k`; backend ignores; frontend dep key excludes |
 | ~~Q-APT-6.1~~ | ~~US-APT-6~~ | ~~Where to render the aperture-type-level U-Value chip — project header vs Apertures tab content header?~~ | **Resolved 2026-05-10:** Apertures tab content header. Window U-Value is window-scoped, not project-scoped |

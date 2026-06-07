@@ -40,7 +40,7 @@ export function UValueChip({
       data-testid="aperture-uvalue-chip"
     >
       {compact ? (
-        text
+        fullValue
       ) : (
         <>
           <span className="aperture-uvalue-chip__label">U-Value</span>

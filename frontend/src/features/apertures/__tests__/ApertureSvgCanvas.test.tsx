@@ -137,6 +137,23 @@ describe("ApertureSvgCanvas", () => {
     expect(screen.getByTestId("region-aptel_1-top").getAttribute("stroke-width")).toBe("0.5");
   });
 
+  it("renders swing operation lines with a heavier dashed stroke", () => {
+    const el = element({
+      operation: { type: "swing", directions: ["left"] },
+    });
+    const { container } = render(
+      <ApertureSvgCanvas aperture={entry({ elements: [el] })} zoom={1} viewDirection="exterior" />,
+    );
+    const lines = Array.from(
+      container.querySelectorAll('[data-testid="operation-symbols-aptel_1"] line[data-direction]'),
+    );
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      expect(line.getAttribute("stroke-width")).toBe("8");
+      expect(line.getAttribute("stroke-dasharray")).toBe("20,10");
+    }
+  });
+
   it("flips column order for the interior view direction", () => {
     const a = element({ id: "aptel_a", column_span: [0, 0] });
     const b = element({ id: "aptel_b", column_span: [1, 1] });

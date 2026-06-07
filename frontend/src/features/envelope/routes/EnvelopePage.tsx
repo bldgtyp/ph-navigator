@@ -429,9 +429,22 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           commandBusy={commandMutation.isPending}
           paint={paintController}
           onAddAssembly={() => setDialog({ kind: "create-assembly" })}
+          onRenameActive={(name) =>
+            void applyCommand({
+              kind: "rename_assembly",
+              assembly_id: activeAssembly.id,
+              name,
+            })
+          }
           onZoomIn={() => setZoom(nextZoomStep)}
           onZoomOut={() => setZoom(previousZoomStep)}
-          onRename={(assembly) => setDialog({ kind: "rename-assembly", assembly })}
+          onRename={(assembly, name) =>
+            void applyCommand({
+              kind: "rename_assembly",
+              assembly_id: assembly.id,
+              name,
+            })
+          }
           onTypeChange={(assembly) => setDialog({ kind: "type-assembly", assembly })}
           onDuplicate={(assembly) => setDialog({ kind: "duplicate-assembly", assembly })}
           onDelete={(assembly) => setDialog({ kind: "delete-assembly", assembly })}

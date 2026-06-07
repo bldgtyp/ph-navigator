@@ -27,6 +27,7 @@ export function AssemblyWorkspace({
   paint,
   children,
   onAddAssembly,
+  onRenameActive,
   onZoomIn,
   onZoomOut,
   onRename,
@@ -55,9 +56,10 @@ export function AssemblyWorkspace({
   paint: AssemblyCanvasPaintController;
   children?: ReactNode;
   onAddAssembly: () => void;
+  onRenameActive: (name: string) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
-  onRename: (assembly: Assembly) => void;
+  onRename: (assembly: Assembly, name: string) => void;
   onTypeChange: (assembly: Assembly) => void;
   onDuplicate: (assembly: Assembly) => void;
   onDelete: (assembly: Assembly) => void;
@@ -118,6 +120,9 @@ export function AssemblyWorkspace({
             activeAssembly={activeAssembly}
             thermal={thermal}
             thermalLoading={thermalLoading}
+            canEdit={canEdit}
+            busy={commandBusy}
+            onRename={onRenameActive}
           />
           {children}
           <AssemblyCanvas

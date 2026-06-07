@@ -637,10 +637,8 @@ class ApertureOperation(BaseModel):
     """Aperture-element operation (Fixed when omitted at the element level).
 
     `swing` (hinge) and `slide` (track) are the two parametric families.
-    `directions` is the per-leaf set of hinge or slide directions — V1's
-    preset menu (tilt-turn, awning, casement L/R, slider L/R) materializes
-    as `(type, directions)` pairs here; the canvas-side symbol picker
-    (Phase 07) ships those presets.
+    `directions` is the per-leaf set of hinge or slide directions. Multiple
+    directions remain valid for compound operations such as tilt-turn.
     """
 
     model_config = ConfigDict(extra="forbid")

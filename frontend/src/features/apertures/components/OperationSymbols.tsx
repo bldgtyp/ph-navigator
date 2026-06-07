@@ -8,6 +8,9 @@
 import { slideArrow, swingLines, type RectLike, type ViewDirection } from "../operation-symbols";
 import type { ApertureOperation } from "../types";
 
+const SWING_LINE_DASH = "20,10";
+const SWING_LINE_STROKE_WIDTH = 8;
+
 export type OperationSymbolsProps = {
   elementId: string;
   glazing: RectLike;
@@ -40,8 +43,8 @@ export function OperationSymbols({
                 y1={seg.y1}
                 x2={seg.x2}
                 y2={seg.y2}
-                strokeDasharray="4,3"
-                strokeWidth={1}
+                strokeDasharray={SWING_LINE_DASH}
+                strokeWidth={SWING_LINE_STROKE_WIDTH}
                 data-direction={direction}
               />
             )),
@@ -55,7 +58,7 @@ export function OperationSymbols({
                   y1={arrow.shaft.y1}
                   x2={arrow.shaft.x2}
                   y2={arrow.shaft.y2}
-                  strokeWidth={1}
+                  strokeWidth={4}
                 />
                 <polygon
                   points={arrow.head.map((p) => `${p.x},${p.y}`).join(" ")}

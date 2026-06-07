@@ -130,19 +130,6 @@ export type ApertureCommand =
       glazing: GlazingRef;
     }
   | {
-      // Phase 06 inline override on a per-side frame or the glazing.
-      // ``target`` selects the slot; ``field_key`` names the field on
-      // that ref. The backend writes the value through Pydantic's
-      // per-field validator and tracks ``local_overrides`` when the
-      // slot is catalog-sourced.
-      kind: "editFieldOverride";
-      aperture_type_id: string;
-      element_id: string;
-      target: "frame.top" | "frame.right" | "frame.bottom" | "frame.left" | "glazing";
-      field_key: string;
-      new_value: string | number | null;
-    }
-  | {
       // Phase 08 element-level structural edits + assignment paste.
       kind: "mergeElements";
       aperture_type_id: string;

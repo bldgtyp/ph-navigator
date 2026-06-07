@@ -16,7 +16,6 @@ import { ExportHbjsonAction } from "../components/ExportHbjsonAction";
 import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
 import { ProjectRefsView } from "../components/ProjectRefsView";
 import { RefreshDialog } from "../components/RefreshDialog";
-import { RenameApertureDialog } from "../components/RenameApertureDialog";
 import type { ApertureDriftEntry } from "../drift-types";
 import { useApplyApertureCommandMutation, useAperturesSliceQuery } from "../hooks";
 import { useApertureDriftReport } from "../hooks/useApertureDriftReport";
@@ -32,10 +31,7 @@ import type {
   ManufacturerFilters,
 } from "../types";
 
-type DialogState =
-  | { kind: "none" }
-  | { kind: "rename"; aperture: ApertureTypeEntry }
-  | { kind: "delete"; aperture: ApertureTypeEntry };
+type DialogState = { kind: "none" } | { kind: "delete"; aperture: ApertureTypeEntry };
 
 type AperturesSubtab = "apertures" | "glazings" | "frames";
 
@@ -110,17 +106,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
       (entry) => !apertures.some((prior) => prior.id === entry.id),
     );
     if (newEntry) setSelectedId(newEntry.id);
-  };
-
-  const handleRename = async (newName: string) => {
-    if (dialog.kind !== "rename") return;
-    const target = dialog.aperture;
-    await dispatch({
-      kind: "renameApertureType",
-      aperture_type_id: target.id,
-      new_name: newName,
-    });
-    setDialog({ kind: "none" });
   };
 
   const handleDuplicate = async (aperture: ApertureTypeEntry) => {
@@ -295,15 +280,32 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
                 onSelect={setSelectedId}
                 onAdd={() => void handleAdd()}
-                onRename={(aperture) => setDialog({ kind: "rename", aperture })}
+                onRename={(aperture, newName) =>
+                  void dispatch({
+                    kind: "renameApertureType",
+                    aperture_type_id: aperture.id,
+                    new_name: newName,
+                  })
+                }
                 onDuplicate={(aperture) => void handleDuplicate(aperture)}
                 onDelete={(aperture) => setDialog({ kind: "delete", aperture })}
               />
               <main className="apertures-page__main">
                 <AperturesHeader
                   activeAperture={activeAperture}
+                  apertures={sorted}
                   uValue={activeUValue}
                   loading={uValueQuery.isLoading}
+                  canEdit={canEdit}
+                  busy={mutation.isPending}
+                  onRename={(newName) => {
+                    if (!activeAperture) return;
+                    void dispatch({
+                      kind: "renameApertureType",
+                      aperture_type_id: activeAperture.id,
+                      new_name: newName,
+                    });
+                  }}
                 />
                 <BuilderDriftBanner apertureTypeId={activeAperture?.id ?? null} />
                 {activeAperture ? (
@@ -374,26 +376,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                         glazing,
                       })
                     }
-                    onEditFrameField={(element_id, side, field_key, new_value) =>
-                      void dispatch({
-                        kind: "editFieldOverride",
-                        aperture_type_id: activeAperture.id,
-                        element_id,
-                        target: `frame.${side}`,
-                        field_key,
-                        new_value,
-                      })
-                    }
-                    onEditGlazingField={(element_id, field_key, new_value) =>
-                      void dispatch({
-                        kind: "editFieldOverride",
-                        aperture_type_id: activeAperture.id,
-                        element_id,
-                        target: "glazing",
-                        field_key,
-                        new_value,
-                      })
-                    }
                     onSetElementOperation={(element_id, operation) =>
                       void dispatch({
                         kind: "setElementOperation",
@@ -432,16 +414,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 )}
               </main>
             </div>
-          ) : null}
-          {dialog.kind === "rename" ? (
-            <RenameApertureDialog
-              aperture={dialog.aperture}
-              allApertures={sorted}
-              busy={mutation.isPending}
-              error={actionError}
-              onClose={() => setDialog({ kind: "none" })}
-              onSubmit={(newName) => void handleRename(newName)}
-            />
           ) : null}
           {dialog.kind === "delete" ? (
             <DeleteApertureDialog

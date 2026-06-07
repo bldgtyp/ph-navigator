@@ -1,11 +1,11 @@
-// One full element card composing name row, U-Value chip placeholder,
-// glazing row, four frame rows (top / right / bottom / left), and a
-// read-only operation row (Phase 07 wires the editor).
+// One full element card composing name row, U-Value chip, glazing row,
+// four frame rows (top / right / bottom / left), and an operation row.
 //
 // The card surfaces five dispatch callbacks that the parent stack
 // fans into the page-level command dispatch.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import type { ApertureElement, ApertureSide, FrameRef, GlazingRef } from "../types";
 import type { ViewDirection } from "../frame-label-map";
 import { FrameRow } from "./FrameRow";
@@ -26,8 +26,6 @@ export type ApertureElementCardProps = {
   onSetName: (newName: string) => void;
   onPickFrame: (side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing: (glazing: GlazingRef) => void;
-  onEditFrameField: (side: ApertureSide, fieldKey: string, value: string | number | null) => void;
-  onEditGlazingField: (fieldKey: string, value: string | number | null) => void;
   onSetOperation: (operation: ApertureOperation | null) => void;
   operationWarningDismissed: boolean;
   onDismissOperationWarning: () => void;
@@ -44,8 +42,6 @@ export function ApertureElementCard({
   onSetName,
   onPickFrame,
   onPickGlazing,
-  onEditFrameField,
-  onEditGlazingField,
   onSetOperation,
   operationWarningDismissed,
   onDismissOperationWarning,
@@ -53,11 +49,6 @@ export function ApertureElementCard({
 }: ApertureElementCardProps) {
   const { unitSystem } = useUnitPreference();
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const [nameDraft, setNameDraft] = useState(element.name);
-
-  useEffect(() => {
-    setNameDraft(element.name);
-  }, [element.name]);
 
   useEffect(() => {
     if (focusedSide && cardRef.current) {
@@ -65,70 +56,65 @@ export function ApertureElementCard({
     }
   }, [focusedSide]);
 
-  const commitName = () => {
-    const trimmed = nameDraft.trim();
-    if (!trimmed) {
-      setNameDraft(element.name);
-      return;
-    }
-    if (trimmed !== element.name) onSetName(trimmed);
-  };
-
   const mismatched = mismatchedSides(element);
 
   return (
     <div className="aperture-element-card" data-testid={`element-card-${element.id}`} ref={cardRef}>
       <div className="aperture-element-card__header">
-        <input
+        <InlineHeaderNameEditor
           className="aperture-element-card__name"
-          value={nameDraft}
-          disabled={!canEdit}
-          onChange={(e) => setNameDraft(e.target.value)}
-          onBlur={commitName}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
-            if (e.key === "Escape") {
-              setNameDraft(element.name);
-              (e.currentTarget as HTMLInputElement).blur();
-            }
+          variant="inline"
+          value={element.name}
+          fallbackValue="Unnamed"
+          canEdit={canEdit}
+          busy={false}
+          editLabel={`Rename ${element.name || "element"}`}
+          inputLabel="Element name"
+          getValidationMessage={(value) => {
+            if (value.length === 0) return "Element name is required.";
+            return null;
           }}
-          aria-label="Element name"
+          onSubmit={onSetName}
         />
-        <UValueChip
-          valueWm2k={uValueWm2k ?? null}
-          unitSystem={unitSystem === "IP" ? "ip" : "si"}
-          compact
-        />
-      </div>
-      <GlazingRow
-        glazing={element.glazing}
-        canEdit={canEdit}
-        elementId={element.id}
-        onPick={onPickGlazing}
-        onEditField={onEditGlazingField}
-      />
-      {ALL_SIDES.map((side) => {
-        const isMismatch = !operationWarningDismissed && mismatched.includes(side);
-        return (
-          <FrameRow
-            key={side}
-            side={side}
-            viewDirection={viewDirection}
-            frame={element.frames[side]}
-            operation={element.operation}
-            canEdit={canEdit}
-            mismatchIndicator={
-              isMismatch
-                ? mismatchTooltip(element.frames[side]?.operation, element.operation)
-                : null
-            }
-            elementId={element.id}
-            onPick={(frame) => onPickFrame(side, frame)}
-            onEditField={(k, v) => onEditFrameField(side, k, v)}
+        <span className="aperture-element-card__summary-uvalue">
+          U-w:{" "}
+          <UValueChip
+            valueWm2k={uValueWm2k ?? null}
+            unitSystem={unitSystem === "IP" ? "ip" : "si"}
+            compact
           />
-        );
-      })}
-      <OperationRow operation={element.operation} canEdit={canEdit} onCommit={onSetOperation} />
+        </span>
+      </div>
+      <div className="aperture-element-table" role="table" aria-label={`${element.name} details`}>
+        <div className="aperture-element-table__head" role="row">
+          <span role="columnheader">Element</span>
+          <span role="columnheader">Name</span>
+          <span role="columnheader">U-Value</span>
+          <span role="columnheader">Width</span>
+          <span role="columnheader">g-Value</span>
+        </div>
+        <GlazingRow glazing={element.glazing} canEdit={canEdit} onPick={onPickGlazing} />
+        {ALL_SIDES.map((side) => {
+          const isMismatch = !operationWarningDismissed && mismatched.includes(side);
+          return (
+            <FrameRow
+              key={side}
+              side={side}
+              viewDirection={viewDirection}
+              frame={element.frames[side]}
+              operation={element.operation}
+              canEdit={canEdit}
+              mismatchIndicator={
+                isMismatch
+                  ? mismatchTooltip(element.frames[side]?.operation, element.operation)
+                  : null
+              }
+              onPick={(frame) => onPickFrame(side, frame)}
+            />
+          );
+        })}
+        <OperationRow operation={element.operation} canEdit={canEdit} onCommit={onSetOperation} />
+      </div>
       {!operationWarningDismissed && (
         <OperationWarningBanner
           mismatchedSides={mismatched}

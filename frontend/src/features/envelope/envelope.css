@@ -103,8 +103,11 @@
 }
 
 .envelope-sidebar-row-name {
+  color: inherit;
+  display: block;
   min-width: 0;
   overflow: hidden;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

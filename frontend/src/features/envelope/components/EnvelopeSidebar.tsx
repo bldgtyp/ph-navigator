@@ -8,7 +8,9 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
 import { NavLink, createSearchParams } from "react-router-dom";
+import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import { envelopeAssemblyPath } from "../paths";
 import type { Assembly } from "../types";
 
@@ -36,12 +38,13 @@ export function EnvelopeSidebar({
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onAddAssembly: () => void;
-  onRename: (assembly: Assembly) => void;
+  onRename: (assembly: Assembly, name: string) => void;
   onTypeChange: (assembly: Assembly) => void;
   onDuplicate: (assembly: Assembly) => void;
   onDelete: (assembly: Assembly) => void;
 }) {
   const query = createSearchParams(search).toString();
+  const [editingAssemblyId, setEditingAssemblyId] = useState<string | null>(null);
   const addAssemblyButton = (
     <button
       id={collapsed ? "assembly-sidebar-add-collapsed" : "assembly-sidebar-add"}
@@ -86,20 +89,40 @@ export function EnvelopeSidebar({
         <div id="assembly-sidebar-list" className="envelope-sidebar-list">
           {assemblies.map((assembly) => {
             const isCurrent = assembly.id === activeId;
+            const isEditing = editingAssemblyId === assembly.id;
             return (
-              <NavLink
+              <div
                 key={assembly.id}
                 id={`assembly-sidebar-row-${assembly.id}`}
-                className={({ isActive }) =>
-                  isActive || isCurrent ? "envelope-sidebar-row active" : "envelope-sidebar-row"
-                }
-                to={{
-                  pathname: envelopeAssemblyPath(projectId, assembly.id),
-                  search: query,
-                }}
+                className={isCurrent ? "envelope-sidebar-row active" : "envelope-sidebar-row"}
               >
-                <span className="envelope-sidebar-row-name">{assembly.name}</span>
-                {canEdit ? (
+                {isEditing ? (
+                  <InlineHeaderNameEditor
+                    value={assembly.name}
+                    variant="inline"
+                    canEdit={canEdit}
+                    busy={actionDisabled}
+                    editLabel="Edit assembly name"
+                    inputLabel="Assembly name"
+                    showEditButton={false}
+                    editing={isEditing}
+                    onEditingChange={(editing) =>
+                      setEditingAssemblyId(editing ? assembly.id : null)
+                    }
+                    onSubmit={(name) => onRename(assembly, name)}
+                  />
+                ) : (
+                  <NavLink
+                    className="envelope-sidebar-row-name"
+                    to={{
+                      pathname: envelopeAssemblyPath(projectId, assembly.id),
+                      search: query,
+                    }}
+                  >
+                    {assembly.name}
+                  </NavLink>
+                )}
+                {canEdit && !isEditing ? (
                   <span
                     id={`assembly-sidebar-row-actions-${assembly.id}`}
                     className="envelope-sidebar-row-actions"
@@ -111,7 +134,7 @@ export function EnvelopeSidebar({
                       tooltip="Rename assembly"
                       icon={Pencil}
                       disabled={actionDisabled}
-                      onClick={() => onRename(assembly)}
+                      onClick={() => setEditingAssemblyId(assembly.id)}
                     />
                     <SidebarActionButton
                       id={`assembly-sidebar-change-type-${assembly.id}`}
@@ -140,7 +163,7 @@ export function EnvelopeSidebar({
                     />
                   </span>
                 ) : null}
-              </NavLink>
+              </div>
             );
           })}
         </div>

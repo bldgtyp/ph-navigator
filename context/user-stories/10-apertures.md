@@ -671,17 +671,14 @@ preview — V2 fixes)
    the catalog row (in the catalog manager) does NOT change the
    element's frame. To re-sync, the user runs Refresh-from-catalog
    (US-APT-11).
-5. **Inline override.** The element table also exposes inline
-   editable cells for the bookshelf-copied values:
-   - Frame: editable `name`, `width_mm`, `u_value_w_m2k`,
-     `psi_g_w_mk` directly in the row (the rest read-only;
-     reachable via a "More fields…" expander).
-   - Glazing: editable `name`, `u_value_w_m2k`, `g_value`.
-   Editing any of these fields:
-   - Updates the document inline.
-   - Adds that field key to `catalog_origin.local_overrides` so
-     refresh-from-catalog can default that field to **Keep mine** and
-     tag it **"You edited this"**. (Catalog row itself is not affected.)
+5. **Reported values only.** The element card reports the
+   bookshelf-copied performance values but does not allow local
+   spot-edits:
+   - Frame: report `width_mm`, `u_value_w_m2k`, and `psi_g_w_mk`.
+   - Glazing: report `u_value_w_m2k` and `g_value`.
+   To change these values, the user edits or creates the frame/glazing
+   in the catalog, then picks or refreshes the catalog-sourced ref.
+   Aperture frame/glazing overrides are not an MVP affordance.
 6. **"Sourced from catalog" badge.** Each frame / glazing chip
    shows a small `📚` (or shadcn `Library` icon — no emoji per
    project conventions) badge if `catalog_origin` is non-null.
@@ -689,11 +686,10 @@ preview — V2 fixes)
    2026-05-10. Catalog has changed since pick — refresh to update."**
    (only shows the "changed" suffix when the catalog has a newer
    `current_version_id` than the synced one).
-7. **Hand-entered values.** A "+ Hand-enter" entry at the bottom
-   of the picker creates an entry with no `catalog_origin`. User
-   types in `name`, `width_mm`, `u_value_w_m2k`, `psi_g_w_mk`
-   inline. The element gets a small `✎` (handwritten) badge —
-   tooltip: **"Hand-entered. Not linked to the catalog."**
+7. **Catalog-only picks.** There is no "+ Hand-enter" row in the
+   aperture frame/glazing picker. New frame or glazing specs must be
+   created in the catalog first; aperture picks must carry a
+   non-null `catalog_origin`.
 8. **Empty catalog.** If the catalog is empty (e.g. fresh DB), the
    picker shows: **"No frames in the catalog yet. [Open catalog
    manager]"** linking to the catalog page in a new tab.
@@ -703,23 +699,21 @@ preview — V2 fixes)
    may be added post-MVP if it surfaces as a real papercut.
 10. **All edits flow through the draft buffer.** Pickers debounce
     patches per PRD §8.3. The save status indicator updates.
-11. **U-value live-recompute.** After every pick / inline edit,
-    the per-element and window-level U-value labels (US-APT-6)
-    recompute (300 ms debounce; immediate on aperture-type switch,
-    matching V1 ref §10.2).
+11. **U-value live-recompute.** After every pick or refresh, the
+    per-element and window-level U-value labels (US-APT-6) recompute
+    (300 ms debounce; immediate on aperture-type switch, matching V1
+    ref §10.2).
 12. **Read-only on locked versions / for Viewers.** Pickers are
     disabled; chips render as static labels with the badge.
 
 ### Resolved questions (2026-05-10)
 
 - **Q-APT-4.1: Inline override field set (criterion 5).**
-  **Resolved:** the **full FrameType / GlazingType field set is
-  editable inline** in the elements table. Power fields
-  (`source`, `link`, `datasheet_url`, `comments`) and any other
-  rarely-used metadata hide behind a `More fields…` expander on
-  the row to keep the default density tight. Editing any field
-  adds the edited field key to `catalog_origin.local_overrides` per
-  criterion 5.
+  **Revised 2026-06-07:** no inline aperture frame/glazing overrides
+  in the element card. Width, U-value, g-value, and psi-value are
+  reported values copied from the catalog. Users must edit or create
+  the catalog frame/glazing first, then pick or refresh it here. The
+  `More fields…` expander is removed from the aperture card stack.
 - **Q-APT-4.2: Diverged-from-catalog visualization (criterion 6).**
   **Resolved:** **inline diff modal on click of the badge**,
   showing three columns: **Catalog (current) · Yours · Choose new
@@ -735,9 +729,9 @@ preview — V2 fixes)
   **Resolved:** **deferred to v1.1+; not in MVP.** Each side
   picked individually. (Criterion 9 updated.)
 - **Q-APT-4.4: Promote hand-entered frame into catalog?**
-  **Resolved:** **deferred to v1.1+; not in MVP.** Hand-entered
-  values stay in the project document with no `catalog_origin`;
-  no UI to push them back into the shared catalog in v1.
+  **Revised 2026-06-07:** hand-entered aperture frame/glazing refs are
+  not an MVP input path. Users create the frame/glazing in the catalog
+  first, then pick it into the aperture element.
 
 ### Open questions
 None — all US-APT-4 questions resolved 2026-05-10.
@@ -765,7 +759,7 @@ None — all US-APT-4 questions resolved 2026-05-10.
    - shadcn `Select` with options **Fixed**, **Swing**, **Slide**.
    - Picking **Fixed** sets `operation = null`.
    - Picking **Swing** or **Slide** sets `operation = { type, directions: [] }`.
-   - When type is non-fixed, four `Toggle` buttons appear:
+   - When type is non-fixed, four buttons appear:
      **Left**, **Right**, **Up**, **Down**. Multiple selections
      allowed (V1 ref §8.7 allows tilt-turn = swing + [left, up]).
 3. **Display label.**
@@ -783,27 +777,17 @@ None — all US-APT-4 questions resolved 2026-05-10.
 5. **Inside-view flip.** Left ↔ Right swap when interior view is
    active (V1 ref §7.4); Up / Down unchanged. Mirror-image, as a
    real interior viewer would see.
-6. **Pre-built operation presets** (NEW v.s. V1; V1 ref §18 lists
-   absence). A small `Common patterns` menu at the top of the
-   editor lists:
-   - **Tilt-turn** (= swing + [left, up])
-   - **Awning** (= swing + [up])
-   - **Hopper** (= swing + [down])
-   - **Casement, hinge left** (= swing + [left])
-   - **Casement, hinge right** (= swing + [right])
-   - **Slider, opens left** (= slide + [left])
-   - **Slider, opens right** (= slide + [right])
-   Picking applies the preset's directions; user can still
-   customize after. **Confirm: MVP or v1.1?**
+6. **No pre-built operation presets.** Editors compose tilt-turn,
+   awning, casement, hopper, and slider patterns directly with the
+   operation type menu plus direction buttons.
 7. **Read-only on locked versions / for Viewers.**
 
 ### Resolved questions (2026-05-10)
 
 - **Q-APT-5.1: Operation presets in MVP?**
-  **Resolved:** **yes — in MVP.** The `Common patterns` menu
-  (Tilt-turn, Awning, Hopper, Casement (hinge L/R), Slider (L/R))
-  ships in v1 per criterion 6. Short list, recurring papercut
-  removal.
+  **Resolved:** **no.** The `Common patterns` preset menu was removed
+  from MVP. Editors use the regular operation type menu and direction
+  buttons only.
 - **Q-APT-5.2: Operation feeds U-value?**
   **Resolved:** **no — operation does not affect U-value.** The
   thermal effect of operability (gasket / weatherseal / extra
