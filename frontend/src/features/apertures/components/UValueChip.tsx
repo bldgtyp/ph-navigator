@@ -29,12 +29,11 @@ export function UValueChip({
   loading = false,
 }: UValueChipProps) {
   const text = loading
-    ? compact
-      ? "U-Value: --"
-      : "Window U-Value: --"
+    ? "U-Value: --"
     : compact
       ? formatElementUValue(valueWm2k, unitSystem)
       : formatWindowUValue(valueWm2k, unitSystem);
+  const fullValue = text.replace("Window U-Value: ", "").replace("U-Value: ", "");
 
   const tooltip =
     unfinishedCount > 0
@@ -49,7 +48,15 @@ export function UValueChip({
       data-testid="aperture-uvalue-chip"
       title={tooltip}
     >
-      {text}
+      {compact ? (
+        text
+      ) : (
+        <>
+          <span className="aperture-uvalue-chip__dot" aria-hidden="true" />
+          <span className="aperture-uvalue-chip__label">U-Value</span>
+          <span className="aperture-uvalue-chip__value">{fullValue}</span>
+        </>
+      )}
       {unfinishedCount > 0 && <em className="aperture-uvalue-chip__unfinished"> (unfinished)</em>}
     </span>
   );

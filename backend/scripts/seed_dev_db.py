@@ -38,6 +38,8 @@ from features.project_document.document import (
     RoomRow,
     RoomsTableEnvelope,
     SingleSelectOption,
+    VentilatorRow,
+    VentilatorsTableEnvelope,
 )
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
@@ -45,6 +47,7 @@ from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import body_size_bytes, validate_document
 from features.projects.models import CreateProjectRequest
 from features.projects.repository import insert_project_with_initial_version
@@ -57,6 +60,7 @@ from scripts._seed_paths import (
     PROJECT_META_PATH,
     PUMPS_SEED_PATH,
     ROOMS_SEED_PATH,
+    VENTILATORS_SEED_PATH,
     default_user_kwargs,
 )
 
@@ -194,12 +198,21 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     rooms_seed = _load_table_seed(ROOMS_SEED_PATH)
     pumps_seed = _load_table_seed(PUMPS_SEED_PATH)
     fans_seed = _load_table_seed(FANS_SEED_PATH)
+    ventilators_seed = _load_table_seed(VENTILATORS_SEED_PATH)
     hot_water_tanks_seed = _load_table_seed(HOT_WATER_TANKS_SEED_PATH)
     electric_heaters_seed = _load_table_seed(ELECTRIC_HEATERS_SEED_PATH)
     appliances_seed = _load_table_seed(APPLIANCES_SEED_PATH)
 
     next_options = dict(body.single_select_options)
-    for seed in (rooms_seed, pumps_seed, fans_seed, hot_water_tanks_seed, electric_heaters_seed, appliances_seed):
+    for seed in (
+        rooms_seed,
+        pumps_seed,
+        fans_seed,
+        ventilators_seed,
+        hot_water_tanks_seed,
+        electric_heaters_seed,
+        appliances_seed,
+    ):
         next_options.update(seed.options)
 
     next_equipment = body.tables.equipment.model_copy(
@@ -211,6 +224,10 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
             "fans": FansTableEnvelope(
                 field_defs=list(FANS_BUILT_IN_FIELD_DEFS),
                 rows=[FanRow.model_validate(row) for row in fans_seed.rows],
+            ),
+            "ervs": VentilatorsTableEnvelope(
+                field_defs=list(VENTILATORS_BUILT_IN_FIELD_DEFS),
+                rows=[VentilatorRow.model_validate(row) for row in ventilators_seed.rows],
             ),
             "hot_water_tanks": HotWaterTanksTableEnvelope(
                 field_defs=list(HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS),

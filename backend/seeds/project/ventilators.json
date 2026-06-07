@@ -1,0 +1,95 @@
+{
+  "options": {
+    "ventilators.inside_outside": [
+      { "id": "opt_vent_inside", "label": "Inside", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_vent_outside", "label": "Outside", "color": "#10b981", "order": 1 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "vent_1",
+      "inside_outside": "opt_vent_inside",
+      "url": "https://example.com/zehnder-q350.pdf",
+      "notes": "Apartment-level ERV serving units 1-4.",
+      "custom_values": {
+        "record_id": "ERV-1",
+        "name": "Apartment ERV",
+        "airflow_rate_m3h": 425,
+        "model": "Q350",
+        "manufacturer": "Zehnder",
+        "heat_recovery_percent": 84,
+        "moisture_recovery_percent": 70,
+        "electrical_efficiency_wh_m3": 0.42,
+        "filter_merv_rating": 13
+      }
+    },
+    {
+      "id": "vent_2",
+      "inside_outside": "opt_vent_inside",
+      "url": "https://example.com/zehnder-q600.pdf",
+      "notes": "Common-area ERV serving the lobby and corridor.",
+      "custom_values": {
+        "record_id": "ERV-2",
+        "name": "Lobby ERV",
+        "airflow_rate_m3h": 600,
+        "model": "Q600",
+        "manufacturer": "Zehnder",
+        "heat_recovery_percent": 82,
+        "moisture_recovery_percent": 68,
+        "electrical_efficiency_wh_m3": 0.48,
+        "filter_merv_rating": 13
+      }
+    },
+    {
+      "id": "vent_3",
+      "inside_outside": "opt_vent_outside",
+      "url": "https://example.com/renewaire-ev300.pdf",
+      "notes": "Rooftop ERV serving the gym.",
+      "custom_values": {
+        "record_id": "ERV-3",
+        "name": "Rooftop ERV",
+        "airflow_rate_m3h": 510,
+        "model": "EV300",
+        "manufacturer": "RenewAire",
+        "heat_recovery_percent": 76,
+        "moisture_recovery_percent": 55,
+        "electrical_efficiency_wh_m3": 0.55,
+        "filter_merv_rating": 8
+      }
+    },
+    {
+      "id": "vent_4",
+      "inside_outside": "opt_vent_inside",
+      "url": null,
+      "notes": "Backup unit for Apartment ERV-1.",
+      "custom_values": {
+        "record_id": "ERV-4",
+        "name": "Backup Apartment ERV",
+        "airflow_rate_m3h": 350,
+        "model": "ComfoAir 350",
+        "manufacturer": "Zehnder",
+        "heat_recovery_percent": 80,
+        "moisture_recovery_percent": 60,
+        "electrical_efficiency_wh_m3": 0.45,
+        "filter_merv_rating": 13
+      }
+    },
+    {
+      "id": "vent_5",
+      "inside_outside": "opt_vent_outside",
+      "url": "https://example.com/lifebreath-rnc155.pdf",
+      "notes": "HRV serving the parking-garage ventilation.",
+      "custom_values": {
+        "record_id": "HRV-1",
+        "name": "Garage HRV",
+        "airflow_rate_m3h": 264,
+        "model": "RNC 155",
+        "manufacturer": "Lifebreath",
+        "heat_recovery_percent": 72,
+        "moisture_recovery_percent": 0,
+        "electrical_efficiency_wh_m3": 0.6,
+        "filter_merv_rating": 8
+      }
+    }
+  ]
+}

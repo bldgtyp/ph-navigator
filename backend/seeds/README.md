@@ -18,6 +18,7 @@ backend/seeds/
     rooms.json                    # 5 rooms + floor/zone options
     pumps.json                    # 5 pumps + device-type options
     fans.json                     # 5 fans + type options
+    ventilators.json              # 5 ventilators (ERVs/HRVs) + inside/outside options
     hot-water-tanks.json          # 5 tanks + type options
     electric-heaters.json         # 5 heaters
     appliances.json               # 5 appliances + type / energy-star options

@@ -5,6 +5,7 @@
 // V1 Frame Types / Glazing Types sub-tabs.
 
 import { useState } from "react";
+import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import type { ApertureTypeEntry } from "../types";
 import {
   aggregateFrameRefs,
@@ -39,24 +40,18 @@ export function ProjectRefsView({ open, apertures, onClose }: ProjectRefsViewPro
       >
         <header className="project-refs__header">
           <h2>Picked frames &amp; glazings</h2>
-          <nav className="project-refs__tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "frames"}
-              onClick={() => setTab("frames")}
-            >
+          <AppSubTabs ariaLabel="Picked reference tables" role="tablist">
+            <AppSubTabButton role="tab" active={tab === "frames"} onClick={() => setTab("frames")}>
               Frames ({frameRefs.length})
-            </button>
-            <button
-              type="button"
+            </AppSubTabButton>
+            <AppSubTabButton
               role="tab"
-              aria-selected={tab === "glazings"}
+              active={tab === "glazings"}
               onClick={() => setTab("glazings")}
             >
               Glazings ({glazingRefs.length})
-            </button>
-          </nav>
+            </AppSubTabButton>
+          </AppSubTabs>
         </header>
         {tab === "frames" ? <FramesTab refs={frameRefs} /> : <GlazingsTab refs={glazingRefs} />}
         <footer className="project-refs__footer">

@@ -1,48 +1,16 @@
-import { MoreHorizontal } from "lucide-react";
 import { useUnitPreference } from "../../../lib/units";
 import type { ApertureTypeEntry } from "../types";
 import type { ApertureUValueResult } from "../hooks/useApertureUValues";
-import { ExportHbjsonAction } from "./ExportHbjsonAction";
 import { UValueChip } from "./UValueChip";
-
-// Optional Phase-10 export wiring. Hidden for Viewers / projects with no
-// active version; the export action is disabled when no apertures exist.
-export type AperturesHeaderExportContext = {
-  projectId: string;
-  versionId: string;
-  source: "draft" | "version";
-  projectBtNumber: string;
-  versionLabel: string;
-  hasApertures: boolean;
-  onError: (message: string) => void;
-};
-
-// Phase-11 overflow action: open the manufacturer-filters modal. The
-// callback is wired from ``AperturesTab``; the header hides the entry
-// when no callback is supplied (Viewers, or the tab is read-only).
-export type AperturesHeaderFiltersContext = {
-  onConfigureFilters: () => void;
-};
-
-// Phase-12 overflow action: open the project-scoped refs view.
-export type AperturesHeaderRefsContext = {
-  onViewPickedRefs: () => void;
-};
 
 export function AperturesHeader({
   activeAperture,
   uValue,
   loading = false,
-  exportContext,
-  filtersContext,
-  refsContext,
 }: {
   activeAperture: ApertureTypeEntry | null;
   uValue?: ApertureUValueResult | null;
   loading?: boolean;
-  exportContext?: AperturesHeaderExportContext;
-  filtersContext?: AperturesHeaderFiltersContext;
-  refsContext?: AperturesHeaderRefsContext;
 }) {
   const { unitSystem } = useUnitPreference();
   return (
@@ -54,48 +22,6 @@ export function AperturesHeader({
         unfinishedCount={uValue?.warnings.length ?? 0}
         loading={loading}
       />
-      {exportContext || filtersContext || refsContext ? (
-        <details className="apertures-overflow">
-          <summary
-            className="apertures-overflow__trigger"
-            aria-label="Aperture actions"
-            title="Aperture actions"
-          >
-            <MoreHorizontal size={16} aria-hidden="true" />
-          </summary>
-          <div className="apertures-overflow__menu" role="menu">
-            {exportContext ? (
-              <ExportHbjsonAction
-                projectId={exportContext.projectId}
-                versionId={exportContext.versionId}
-                source={exportContext.source}
-                projectBtNumber={exportContext.projectBtNumber}
-                versionLabel={exportContext.versionLabel}
-                disabled={!exportContext.hasApertures}
-                onError={exportContext.onError}
-              />
-            ) : null}
-            {filtersContext ? (
-              <button
-                type="button"
-                className="apertures-overflow__item"
-                onClick={filtersContext.onConfigureFilters}
-              >
-                Configure manufacturer filters
-              </button>
-            ) : null}
-            {refsContext ? (
-              <button
-                type="button"
-                className="apertures-overflow__item"
-                onClick={refsContext.onViewPickedRefs}
-              >
-                View picked frames &amp; glazings
-              </button>
-            ) : null}
-          </div>
-        </details>
-      ) : null}
     </header>
   );
 }

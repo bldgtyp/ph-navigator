@@ -24,33 +24,7 @@
 }
 
 .equipment-panel {
+  align-content: start;
   display: grid;
   gap: 18px;
-}
-
-.equipment-subtabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.equipment-subtab {
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 650;
-  padding: 8px 10px 9px;
-}
-
-.equipment-subtab:hover,
-.equipment-subtab[aria-selected="true"] {
-  color: var(--text-strong);
-}
-
-.equipment-subtab[aria-selected="true"] {
-  border-bottom-color: var(--accent);
 }

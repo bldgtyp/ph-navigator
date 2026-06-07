@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
 import { AppliancesTableSlot } from "../components/AppliancesTableSlot";
@@ -451,20 +452,18 @@ export function EquipmentPageBody(props: {
       onReloadDraft={() => void reloadDraft()}
       actionError={activeController.actionError}
     >
-      <div className="equipment-subtabs" role="tablist" aria-label="Equipment tables">
+      <AppSubTabs ariaLabel="Equipment tables" role="tablist">
         {EQUIPMENT_TABS.map((tab) => (
-          <button
+          <AppSubTabButton
             key={tab.key}
-            type="button"
             role="tab"
-            aria-selected={activeTab === tab.key}
-            className="equipment-subtab"
+            active={activeTab === tab.key}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
-          </button>
+          </AppSubTabButton>
         ))}
-      </div>
+      </AppSubTabs>
       {renderActiveEquipmentTable()}
     </SliceTableShell>
   );
