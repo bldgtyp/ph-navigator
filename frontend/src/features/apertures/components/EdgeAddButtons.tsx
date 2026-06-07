@@ -4,6 +4,7 @@
 //
 // Read-only mode hides every hot-zone — no add affordance.
 
+import { Plus } from "lucide-react";
 import type { ApertureTypeEntry } from "../types";
 
 export type EdgeAddButtonsProps = {
@@ -78,7 +79,7 @@ function EdgeHotZone({
         aria-label={label}
         data-testid={`aperture-edge-add-${edge}`}
       >
-        +
+        <Plus size={15} aria-hidden="true" />
       </button>
     </div>
   );

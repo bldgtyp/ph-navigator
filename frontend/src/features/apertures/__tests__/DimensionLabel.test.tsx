@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DimensionLabel } from "../components/DimensionLabel";
 
 const baseProps = {
+  axis: "vertical" as const,
   system: "si" as const,
   format: "mm" as const,
   ariaLabel: "Row 1 height",

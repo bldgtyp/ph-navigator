@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-dev-data seed-materials seed-glazing seed-frames db-seed e2e e2e-report clean
+        smoke seed-dev-user seed-agent-user seed-dev-data seed-materials seed-glazing seed-frames db-seed e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -195,6 +195,9 @@ smoke: db-up ## Verify the box is wired up (run after `make setup`)
 
 seed-dev-user: migrate ## Create/reset the default local editor login
 	cd backend && uv run python -m scripts.seed_user --email ed@example.com --display-name "Ed May" --password "password"
+
+seed-agent-user: migrate ## Create/reset the dedicated local Codex/agent editor login
+	cd backend && uv run python -m scripts.seed_user --email codex@example.com --display-name "Codex Agent" --password "password"
 
 seed-dev-data: migrate ## Reset app rows and seed the default user + starter project
 	cd backend && uv run python -m scripts.seed_dev_db --reset

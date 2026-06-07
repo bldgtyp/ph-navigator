@@ -278,9 +278,11 @@
   --aperture-glazing-default-fill: var(--aperture-glazing-fill-default);
   --aperture-region-stroke: rgba(0, 0, 0, 0.5);
   --aperture-null-stroke: color-mix(in oklab, var(--text-secondary) 60%, transparent);
-  --aperture-hover-ring: color-mix(in oklab, var(--accent) 55%, transparent);
-  --aperture-hover-ring-strong: color-mix(in oklab, var(--accent) 80%, transparent);
-  --aperture-selected-ring: var(--accent);
+  --aperture-canvas-add: var(--highlight-text);
+  --aperture-hover-ring: color-mix(in oklab, var(--highlight-text) 76%, transparent);
+  --aperture-hover-tint: color-mix(in oklab, var(--highlight-text) 8%, transparent);
+  --aperture-selected-ring: var(--highlight-text);
+  --aperture-selected-tint: color-mix(in oklab, var(--highlight-text) 12%, transparent);
   --aperture-pill-bg: var(--bg-card);
   --aperture-pill-border: var(--border-subtle);
   --aperture-pill-text: var(--text-primary);
@@ -464,17 +466,20 @@
 }
 
 .aperture-hit--element[data-hovered="true"] {
-  outline: 2px solid var(--aperture-hover-ring);
+  background: var(--aperture-hover-tint);
+  outline: 2px dashed var(--aperture-hover-ring);
   outline-offset: -2px;
 }
 
 .aperture-hit--element[data-selected="true"] {
+  background: var(--aperture-selected-tint);
   outline: 2px solid var(--aperture-selected-ring);
   outline-offset: -2px;
 }
 
 .aperture-hit--region[data-hovered="true"] {
-  outline: 2px solid var(--aperture-hover-ring-strong);
+  background: var(--aperture-hover-tint);
+  outline: 2px dashed var(--aperture-selected-ring);
   outline-offset: -2px;
 }
 
@@ -540,9 +545,12 @@
    aligned without per-segment math. */
 
 .aperture-canvas-grid {
+  --aperture-dimension-strip-width: 64px;
+  --aperture-dimension-strip-height: 40px;
+
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-columns: var(--aperture-dimension-strip-width) 1fr;
+  grid-template-rows: auto 1fr var(--aperture-dimension-strip-height);
   grid-template-areas:
     "gutter top"
     "left   stage"
@@ -589,59 +597,67 @@
 }
 
 .aperture-dim-strip--horizontal {
-  height: 32px;
+  --dimension-axis-y: 12px;
+  --dimension-extension-gap: 6px;
+
+  height: var(--aperture-dimension-strip-height);
 }
 
 .aperture-dim-strip--vertical {
-  width: 64px;
+  --dimension-axis-x: 52px;
+  --dimension-extension-gap: 6px;
+
+  width: var(--aperture-dimension-strip-width);
 }
 
 .aperture-dim-tick {
-  position: absolute;
-  background: var(--border-subtle);
-}
-
-.aperture-dim-tick--horizontal {
-  top: 0;
-  width: 1px;
-  height: 6px;
-}
-
-.aperture-dim-tick--vertical {
-  left: 0;
-  width: 6px;
-  height: 1px;
+  --dimension-axis-color: color-mix(in oklab, var(--text-secondary) 72%, transparent);
 }
 
 .aperture-dim-label {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  --dimension-axis-color: color-mix(in oklab, var(--text-secondary) 72%, transparent);
+
+  color: var(--text-primary);
+  font-family: var(--font-mono);
 }
 
-.aperture-dim-strip--horizontal .aperture-dim-label {
-  top: 10px;
-  height: 22px;
+.aperture-dim-label--horizontal {
+  --dimension-axis-y: 12px;
+  --dimension-extension-gap: 6px;
+
+  top: 0;
+  height: 100%;
 }
 
-.aperture-dim-strip--vertical .aperture-dim-label {
-  left: 10px;
-  width: 50px;
-  flex-direction: column;
+.aperture-dim-label--vertical {
+  --dimension-axis-x: 52px;
+  --dimension-extension-gap: 6px;
+
+  left: 0;
+  width: 100%;
 }
 
 .aperture-dim-label__value {
-  font: inherit;
-  color: inherit;
-  background: transparent;
   border: 1px dashed transparent;
   border-radius: var(--radius-sm);
-  padding: 2px 6px;
   cursor: pointer;
+}
+
+.aperture-dim-label--horizontal .aperture-dim-label__value {
+  left: 50%;
+  min-width: 42px;
+  text-align: center;
+  top: calc(var(--dimension-axis-y) + 6px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.aperture-dim-label--vertical .aperture-dim-label__value {
+  left: 4px;
+  text-align: right;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
 }
 
 .aperture-dim-label__value:hover:not(:disabled) {
@@ -655,7 +671,16 @@
 }
 
 .aperture-dim-label__delete {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  min-height: 18px;
+  min-width: 18px;
   opacity: 0;
+  padding: 0;
+  position: absolute;
+  z-index: calc(var(--z-base) + 4);
   width: 18px;
   height: 18px;
   font-size: 0.875rem;
@@ -664,6 +689,17 @@
   background: var(--bg-card);
   cursor: pointer;
   line-height: 1;
+}
+
+.aperture-dim-label--horizontal .aperture-dim-label__delete {
+  left: calc(50% + 31px);
+  top: calc(var(--dimension-axis-y) + 6px);
+}
+
+.aperture-dim-label--vertical .aperture-dim-label__delete {
+  left: 43px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .aperture-dim-label:hover .aperture-dim-label__delete {
@@ -677,11 +713,27 @@
 
 .aperture-dim-label__input {
   font: inherit;
-  width: 100%;
+  color: var(--text-primary);
+  position: absolute;
   padding: 2px 4px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   background: var(--bg-card);
+  z-index: calc(var(--z-base) + 6);
+}
+
+.aperture-dim-label--horizontal .aperture-dim-label__input {
+  left: 50%;
+  top: calc(var(--dimension-axis-y) + 4px);
+  transform: translateX(-50%);
+  width: 92px;
+}
+
+.aperture-dim-label--vertical .aperture-dim-label__input {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 58px;
 }
 
 .aperture-dim-label__input[data-error="true"] {
@@ -689,24 +741,21 @@
 }
 
 .aperture-edge-hot-zone {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: var(--z-base-elevated);
+  position: absolute;
 }
 
 .aperture-edge-hot-zone .aperture-edge-add {
   opacity: 0;
-  transform: scale(0.7);
+  transform: var(--aperture-edge-add-transform) scale(0.7);
   transition:
-    opacity 200ms ease-out,
-    transform 200ms ease-out;
+    opacity 0.14s var(--ease),
+    transform 0.14s var(--ease);
 }
 
 .aperture-edge-hot-zone:hover .aperture-edge-add {
   opacity: 1;
-  transform: scale(1);
+  transform: var(--aperture-edge-add-transform);
 }
 
 .aperture-edge-hot-zone--top {
@@ -738,21 +787,60 @@
 }
 
 .aperture-edge-add {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: none;
-  background: var(--accent);
+  align-items: center;
+  background: var(--aperture-canvas-add);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 1px 6px color-mix(in oklab, var(--aperture-canvas-add) 45%, transparent);
   color: white;
   cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  box-shadow: var(--shadow-elev-1);
+  display: flex;
+  height: 18px;
+  justify-content: center;
+  min-height: 18px;
+  min-width: 18px;
+  padding: 0;
+  position: absolute;
+  width: 18px;
 }
 
-.aperture-edge-add:hover {
-  filter: brightness(1.05);
-  transform: scale(1.1);
+.aperture-edge-add svg {
+  height: 11px;
+  width: 11px;
+}
+
+.aperture-edge-hot-zone--top .aperture-edge-add {
+  --aperture-edge-add-transform: translate(-50%, 50%);
+
+  bottom: 0;
+  left: 50%;
+}
+
+.aperture-edge-hot-zone--bottom .aperture-edge-add {
+  --aperture-edge-add-transform: translate(-50%, -50%);
+
+  left: 50%;
+  top: 0;
+}
+
+.aperture-edge-hot-zone--left .aperture-edge-add {
+  --aperture-edge-add-transform: translate(50%, -50%);
+
+  right: 0;
+  top: 50%;
+}
+
+.aperture-edge-hot-zone--right .aperture-edge-add {
+  --aperture-edge-add-transform: translate(-50%, -50%);
+
+  left: 0;
+  top: 50%;
+}
+
+.aperture-edge-add:hover,
+.aperture-edge-add:focus-visible {
+  outline: 0;
+  transform: var(--aperture-edge-add-transform) scale(1.08);
 }
 
 /* ---- Phase 06: element cards + pickers + badges --------------------------- */

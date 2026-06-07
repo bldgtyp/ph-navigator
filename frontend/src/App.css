@@ -1,6 +1,7 @@
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/modals.css";
+@import "./shared/ui/dimensions/DimensionChrome.css";
 @import "./features/auth/auth-page.css";
 @import "./features/project_document/version-controls.css";
 @import "./features/equipment/equipment.css";

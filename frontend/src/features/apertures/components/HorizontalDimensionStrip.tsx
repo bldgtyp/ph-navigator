@@ -52,6 +52,7 @@ export function HorizontalDimensionStrip({
         return (
           <DimensionLabel
             key={index}
+            axis="horizontal"
             mm={mm}
             system={system}
             format={format}
@@ -73,7 +74,7 @@ export function HorizontalDimensionStrip({
         return (
           <span
             key={`tick-${tickIndex}`}
-            className="aperture-dim-tick aperture-dim-tick--horizontal"
+            className="aperture-dim-tick aperture-dim-tick--horizontal dimension-chrome-tick dimension-chrome-tick--horizontal"
             style={{ left: `${leftPx}px` }}
             data-testid={`col-tick-${tickIndex}`}
             aria-hidden

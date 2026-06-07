@@ -11,6 +11,7 @@ import type { DisplayFormat, UnitSystem } from "../../../lib/units/length/types"
 import { useDimensionDraft, type DimensionDraftCommit } from "../hooks/useDimensionDraft";
 
 export type DimensionLabelProps = {
+  axis: "horizontal" | "vertical";
   mm: number;
   system: UnitSystem;
   format: DisplayFormat;
@@ -25,6 +26,7 @@ export type DimensionLabelProps = {
 };
 
 export function DimensionLabel({
+  axis,
   mm,
   system,
   format,
@@ -65,7 +67,10 @@ export function DimensionLabel({
 
   if (draft.editing && canEdit) {
     return (
-      <div className="aperture-dim-label aperture-dim-label--editing" style={style}>
+      <div
+        className={`aperture-dim-label aperture-dim-label--${axis} aperture-dim-label--editing dimension-chrome-cell dimension-chrome-cell--${axis}`}
+        style={style}
+      >
         <input
           ref={inputRef}
           className="aperture-dim-label__input"
@@ -90,14 +95,14 @@ export function DimensionLabel({
 
   return (
     <div
-      className="aperture-dim-label"
+      className={`aperture-dim-label aperture-dim-label--${axis} dimension-chrome-cell dimension-chrome-cell--${axis}`}
       data-testid={testIdPrefix}
       data-readonly={canEdit ? undefined : "true"}
       style={style}
     >
       <button
         type="button"
-        className="aperture-dim-label__value"
+        className="aperture-dim-label__value dimension-chrome-label-button"
         onClick={handleStartEdit}
         disabled={!canEdit}
         data-testid={`${testIdPrefix}-value`}

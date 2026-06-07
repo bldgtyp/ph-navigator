@@ -98,7 +98,7 @@ function LayerDimensionControls({
   return (
     <div
       id={`assembly-layer-dimension-${layer.id}`}
-      className="assembly-layer-dimension"
+      className="assembly-layer-dimension dimension-chrome-cell dimension-chrome-cell--vertical"
       style={{
         top: `${pxFromMm(layerGeometry.yMm, zoom)}px`,
         width: `${DIMENSION_COLUMN_WIDTH_PX}px`,
@@ -106,8 +106,14 @@ function LayerDimensionControls({
       }}
       aria-label={`Layer ${layerNumber} thickness controls`}
     >
-      <span className="dimension-tick dimension-tick-top" aria-hidden="true" />
-      <span className="dimension-tick dimension-tick-bottom" aria-hidden="true" />
+      <span
+        className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-top"
+        aria-hidden="true"
+      />
+      <span
+        className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-bottom"
+        aria-hidden="true"
+      />
       <LayerThicknessEditor
         layer={layer}
         layerNumber={layerNumber}
@@ -236,7 +242,7 @@ function LayerThicknessEditor({
     <button
       id={`assembly-layer-${layer.id}-thickness-editor`}
       type="button"
-      className="dimension-label-button"
+      className="dimension-label-button dimension-chrome-label-button"
       aria-label={`Edit layer ${layerNumber} thickness`}
       onClick={startEditing}
     >

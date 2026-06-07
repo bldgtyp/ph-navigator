@@ -486,50 +486,10 @@
 
 .assembly-layer-dimension {
   --dimension-axis-x: 50px;
+  --dimension-axis-color: var(--assembly-dimension-line);
+  --dimension-extension-reach-x: calc(100% - var(--dimension-axis-x) + 6px);
 
-  align-items: center;
-  background-image: linear-gradient(
-    90deg,
-    transparent calc(var(--dimension-axis-x) - 0.5px),
-    var(--assembly-dimension-line) calc(var(--dimension-axis-x) - 0.5px),
-    var(--assembly-dimension-line) calc(var(--dimension-axis-x) + 0.5px),
-    transparent calc(var(--dimension-axis-x) + 0.5px)
-  );
-  display: flex;
-  justify-content: center;
   left: 0;
-}
-
-.assembly-layer-dimension::before,
-.assembly-layer-dimension::after {
-  border-top: 1px solid var(--assembly-dimension-line);
-  content: "";
-  left: calc(var(--dimension-axis-x) - 2px);
-  position: absolute;
-  width: calc(100% - var(--dimension-axis-x) + 8px);
-}
-
-.assembly-layer-dimension::before {
-  top: 0;
-}
-
-.assembly-layer-dimension::after {
-  bottom: 0;
-}
-
-.assembly-layer-dimension + .assembly-layer-dimension::before {
-  display: none;
-}
-
-.dimension-tick {
-  background: var(--assembly-dimension-line);
-  border-radius: 999px;
-  height: 5px;
-  left: var(--dimension-axis-x);
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: 5px;
-  z-index: calc(var(--z-base) + 2);
 }
 
 .dimension-tick-top {
@@ -541,26 +501,9 @@
 }
 
 .dimension-label-button {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 14px;
-  min-height: 18px;
-  padding: 1px 2px;
-  position: absolute;
   left: 4px;
   text-align: right;
   width: 40px;
-  z-index: calc(var(--z-base) + 3);
-}
-
-.dimension-label-button:hover,
-.dimension-label-button:focus-visible {
-  color: var(--accent-text);
-  outline: 0;
 }
 
 .dimension-input-wrap {

@@ -62,6 +62,62 @@
   `MINIO_API_CORS_ALLOW_ORIGIN=*` for local signed PUT/GET browser
   tests. Do not copy that wildcard to Cloudflare or Render.
 
+## Live UI access for agents
+
+Use a single, repeatable local browser path for Codex/Claude/Playwright
+inspection:
+
+- Frontend: `http://localhost:5173`.
+- Backend API: `http://localhost:8000`.
+- Dedicated agent login: `codex@example.com` / `password`.
+
+Setup/repair sequence:
+
+```bash
+make dev
+make backend
+make frontend
+make seed-agent-user
+```
+
+Run `make backend` and `make frontend` in separate long-lived terminals.
+`make frontend` should bind Vite to `5173`. If `5173` is already
+responding, agents should use that server instead of starting another
+one. If an agent must start Vite directly, use a strict port from
+`frontend/`:
+
+```bash
+pnpm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+Do not inspect the app on a Vite fallback port such as `5174` unless
+the backend CORS config has also been changed. Local CORS defaults allow
+`localhost:5173`, `127.0.0.1:5173`, `localhost:3000`, and
+`127.0.0.1:3000`.
+
+Before browser work, check the API:
+
+```bash
+curl -i http://localhost:8000/api/v1/auth/session
+```
+
+Expected unauthenticated response is `401` with `not_authenticated`.
+That means the backend is alive and the browser should show the sign-in
+page. Browser text like `SESSION CHECK FAILED` / `Failed to fetch`
+means the frontend could not reach the backend, usually because the
+backend is down or the frontend origin is not in CORS.
+
+Agents should sign in with `codex@example.com` / `password`, not
+`ed@example.com`, unless explicitly asked. The auth model has a
+single-active-session rule per user, so logging in as Ed from an
+isolated Playwright browser can invalidate the user's own live browser
+session. The dedicated agent user avoids that collision while still
+exercising the authenticated UI.
+
+If the Playwright MCP browser profile is locked, use the Node REPL
+Playwright fallback with `frontend/node_modules` and an isolated browser
+profile. Keep the same `5173`/`8000` URLs and the same agent login.
+
 ### Cloudflare R2
 
 Canonical PHN bucket plan:
