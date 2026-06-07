@@ -42,6 +42,26 @@ describe("DimensionLabel", () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it("sizes edit input from long feet-inch draft text", () => {
+    render(
+      <DimensionLabel
+        {...baseProps}
+        system="ip"
+        format="ft-in"
+        mm={1000}
+        canEdit
+        canDelete
+        onCommit={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("row-h-0-value"));
+    const input = screen.getByTestId("row-h-0-input") as HTMLInputElement;
+    const editor = screen.getByTestId("row-h-0-editor");
+    expect(input.value).toBe("3' 3-3/8\"");
+    expect(editor).toHaveStyle({ "--aperture-dim-input-ch": String(input.value.length + 1) });
+  });
+
   it("Enter commits parsed mm", () => {
     const onCommit = vi.fn();
     render(
@@ -103,7 +123,7 @@ describe("DimensionLabel", () => {
 
   it("delete button fires onDelete and is disabled at last-row guard", () => {
     const onDelete = vi.fn();
-    const { rerender } = render(
+    const { unmount } = render(
       <DimensionLabel
         {...baseProps}
         mm={1200}
@@ -113,10 +133,13 @@ describe("DimensionLabel", () => {
         onDelete={onDelete}
       />,
     );
+    expect(screen.queryByTestId("row-h-0-delete")).toBeNull();
+    fireEvent.click(screen.getByTestId("row-h-0-value"));
     fireEvent.click(screen.getByTestId("row-h-0-delete"));
     expect(onDelete).toHaveBeenCalledTimes(1);
+    unmount();
 
-    rerender(
+    render(
       <DimensionLabel
         {...baseProps}
         mm={1200}
@@ -127,6 +150,7 @@ describe("DimensionLabel", () => {
         onDelete={onDelete}
       />,
     );
+    fireEvent.click(screen.getByTestId("row-h-0-value"));
     const disabled = screen.getByTestId("row-h-0-delete") as HTMLButtonElement;
     expect(disabled.disabled).toBe(true);
     expect(disabled.title).toBe("At least one row required");

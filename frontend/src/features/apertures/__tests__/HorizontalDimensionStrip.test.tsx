@@ -72,6 +72,8 @@ describe("HorizontalDimensionStrip", () => {
         onRequestDeleteColumn={() => {}}
       />,
     );
+    expect(screen.queryByTestId("col-w-0-delete")).toBeNull();
+    fireEvent.click(screen.getByTestId("col-w-0-value"));
     const deleteBtn = screen.getByTestId("col-w-0-delete") as HTMLButtonElement;
     expect(deleteBtn.disabled).toBe(true);
   });
@@ -89,6 +91,8 @@ describe("HorizontalDimensionStrip", () => {
         onRequestDeleteColumn={onRequestDeleteColumn}
       />,
     );
+    expect(screen.queryByTestId("col-w-1-delete")).toBeNull();
+    fireEvent.click(screen.getByTestId("col-w-1-value"));
     fireEvent.click(screen.getByTestId("col-w-1-delete"));
     expect(onRequestDeleteColumn).toHaveBeenCalledWith(1);
   });
