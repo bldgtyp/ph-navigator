@@ -4,10 +4,12 @@
 // while canvas/sidebar/specification layout details stay in feature components
 // so browser and MCP mutations share the semantic command boundary.
 import "../../assets/attachments.css";
+import { Download } from "lucide-react";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
+import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { useMaterialsQuery } from "../../catalogs/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import {
@@ -343,7 +345,24 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       className="tab-panel envelope-panel"
       aria-label="Assembly Builder"
     >
-      <AppSubTabs id="envelope-subtabs" ariaLabel="Envelope views">
+      <AppSubTabs
+        id="envelope-subtabs"
+        ariaLabel="Envelope views"
+        actions={
+          isAssembliesRoute ? (
+            <AppMenu label="Assembly actions">
+              <AppMenuItem
+                id="assembly-builder-export-hbjson"
+                icon={Download}
+                disabled={exportMutation.isPending}
+                onClick={() => void exportHbjson()}
+              >
+                Download constructions HBJSON
+              </AppMenuItem>
+            </AppMenu>
+          ) : null
+        }
+      >
         <AppSubTabLink
           to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}
         >
@@ -407,13 +426,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           canEdit={canEdit}
           thermal={thermalQuery.data ?? null}
           thermalLoading={thermalQuery.isFetching}
-          exportBusy={exportMutation.isPending}
           commandBusy={commandMutation.isPending}
           paint={paintController}
           onAddAssembly={() => setDialog({ kind: "create-assembly" })}
           onZoomIn={() => setZoom(nextZoomStep)}
           onZoomOut={() => setZoom(previousZoomStep)}
-          onExportHbjson={() => void exportHbjson()}
           onRename={(assembly) => setDialog({ kind: "rename-assembly", assembly })}
           onTypeChange={(assembly) => setDialog({ kind: "type-assembly", assembly })}
           onDuplicate={(assembly) => setDialog({ kind: "duplicate-assembly", assembly })}

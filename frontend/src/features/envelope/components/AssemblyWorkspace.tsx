@@ -23,14 +23,12 @@ export function AssemblyWorkspace({
   canEdit,
   thermal,
   thermalLoading,
-  exportBusy,
   commandBusy,
   paint,
   children,
   onAddAssembly,
   onZoomIn,
   onZoomOut,
-  onExportHbjson,
   onRename,
   onTypeChange,
   onDuplicate,
@@ -53,14 +51,12 @@ export function AssemblyWorkspace({
   canEdit: boolean;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
-  exportBusy: boolean;
   commandBusy: boolean;
   paint: AssemblyCanvasPaintController;
   children?: ReactNode;
   onAddAssembly: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
-  onExportHbjson: () => void;
   onRename: (assembly: Assembly) => void;
   onTypeChange: (assembly: Assembly) => void;
   onDuplicate: (assembly: Assembly) => void;
@@ -107,8 +103,6 @@ export function AssemblyWorkspace({
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
         onAddAssembly={onAddAssembly}
-        exportBusy={exportBusy}
-        onExportHbjson={onExportHbjson}
         onRename={onRename}
         onTypeChange={onTypeChange}
         onDuplicate={onDuplicate}
@@ -121,10 +115,7 @@ export function AssemblyWorkspace({
           className="assembly-interaction-region"
         >
           <AssemblyHeader
-            projectId={projectId}
-            assemblies={assemblies}
             activeAssembly={activeAssembly}
-            search={search}
             thermal={thermal}
             thermalLoading={thermalLoading}
           />

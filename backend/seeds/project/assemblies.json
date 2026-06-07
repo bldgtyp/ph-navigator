@@ -1,0 +1,213 @@
+{
+  "project_materials": [
+    {
+      "id": "pmat_seed_fiber_cement",
+      "name": "Fiber-cement siding",
+      "category": "cladding",
+      "density_kg_m3": 1300.0,
+      "specific_heat_j_kgk": 840.0,
+      "conductivity_w_mk": 0.25,
+      "emissivity": 0.9,
+      "color": "#9ca3af",
+      "source": "PHN seed data",
+      "url": null,
+      "comments": "Generic exterior cladding for the seeded 2x4 wall.",
+      "specification_status": "missing",
+      "datasheet_asset_ids": [],
+      "catalog_origin": null
+    },
+    {
+      "id": "pmat_seed_osb",
+      "name": "OSB sheathing",
+      "category": "sheathing",
+      "density_kg_m3": 600.0,
+      "specific_heat_j_kgk": 1700.0,
+      "conductivity_w_mk": 0.13,
+      "emissivity": 0.9,
+      "color": "#c49a6c",
+      "source": "PHN seed data",
+      "url": null,
+      "comments": "Generic wood structural sheathing.",
+      "specification_status": "missing",
+      "datasheet_asset_ids": [],
+      "catalog_origin": null
+    },
+    {
+      "id": "pmat_seed_fiberglass_batt",
+      "name": "Fiberglass batt insulation",
+      "category": "insulation",
+      "density_kg_m3": 12.0,
+      "specific_heat_j_kgk": 840.0,
+      "conductivity_w_mk": 0.04,
+      "emissivity": 0.9,
+      "color": "#f8d7a4",
+      "source": "PHN seed data",
+      "url": null,
+      "comments": "Generic cavity insulation for 2x4 stud bays.",
+      "specification_status": "missing",
+      "datasheet_asset_ids": [],
+      "catalog_origin": null
+    },
+    {
+      "id": "pmat_seed_softwood_stud",
+      "name": "Softwood framing",
+      "category": "framing",
+      "density_kg_m3": 500.0,
+      "specific_heat_j_kgk": 1600.0,
+      "conductivity_w_mk": 0.12,
+      "emissivity": 0.9,
+      "color": "#d8b384",
+      "source": "PHN seed data",
+      "url": null,
+      "comments": "Generic SPF 2x4 framing.",
+      "specification_status": "missing",
+      "datasheet_asset_ids": [],
+      "catalog_origin": null
+    },
+    {
+      "id": "pmat_seed_gypsum",
+      "name": "Gypsum wallboard",
+      "category": "interior finish",
+      "density_kg_m3": 800.0,
+      "specific_heat_j_kgk": 1090.0,
+      "conductivity_w_mk": 0.16,
+      "emissivity": 0.9,
+      "color": "#f4f4f0",
+      "source": "PHN seed data",
+      "url": null,
+      "comments": "Generic interior gypsum board.",
+      "specification_status": "missing",
+      "datasheet_asset_ids": [],
+      "catalog_origin": null
+    },
+    {
+      "id": "pmat_seed_concrete",
+      "name": "Normal-weight concrete",
+      "category": "mass",
+      "density_kg_m3": 2300.0,
+      "specific_heat_j_kgk": 880.0,
+      "conductivity_w_mk": 1.4,
+      "emissivity": 0.9,
+      "color": "#b8b8b8",
+      "source": "PHN seed data",
+      "url": null,
+      "comments": "Generic homogeneous concrete assembly material.",
+      "specification_status": "missing",
+      "datasheet_asset_ids": [],
+      "catalog_origin": null
+    }
+  ],
+  "assemblies": [
+    {
+      "id": "asm_seed_wall_2x4",
+      "name": "WALL-2X4-STUD",
+      "type": "wall",
+      "orientation": "first_layer_outside",
+      "layers": [
+        {
+          "id": "lyr_seed_wall_cladding",
+          "order": 0,
+          "thickness_mm": 8.0,
+          "segments": [
+            {
+              "id": "seg_seed_wall_cladding",
+              "order": 0,
+              "width_mm": 406.4,
+              "is_continuous_insulation": false,
+              "steel_stud_spacing_mm": null,
+              "project_material_id": "pmat_seed_fiber_cement",
+              "photo_asset_ids": [],
+              "use_site_notes": null
+            }
+          ]
+        },
+        {
+          "id": "lyr_seed_wall_sheathing",
+          "order": 1,
+          "thickness_mm": 11.0,
+          "segments": [
+            {
+              "id": "seg_seed_wall_sheathing",
+              "order": 0,
+              "width_mm": 406.4,
+              "is_continuous_insulation": false,
+              "steel_stud_spacing_mm": null,
+              "project_material_id": "pmat_seed_osb",
+              "photo_asset_ids": [],
+              "use_site_notes": null
+            }
+          ]
+        },
+        {
+          "id": "lyr_seed_wall_cavity",
+          "order": 2,
+          "thickness_mm": 89.0,
+          "segments": [
+            {
+              "id": "seg_seed_wall_stud",
+              "order": 0,
+              "width_mm": 38.0,
+              "is_continuous_insulation": false,
+              "steel_stud_spacing_mm": 406.4,
+              "project_material_id": "pmat_seed_softwood_stud",
+              "photo_asset_ids": [],
+              "use_site_notes": "Nominal 2x4 stud at 16 in o.c."
+            },
+            {
+              "id": "seg_seed_wall_batt",
+              "order": 1,
+              "width_mm": 368.4,
+              "is_continuous_insulation": false,
+              "steel_stud_spacing_mm": null,
+              "project_material_id": "pmat_seed_fiberglass_batt",
+              "photo_asset_ids": [],
+              "use_site_notes": "Cavity insulation between studs."
+            }
+          ]
+        },
+        {
+          "id": "lyr_seed_wall_gypsum",
+          "order": 3,
+          "thickness_mm": 12.7,
+          "segments": [
+            {
+              "id": "seg_seed_wall_gypsum",
+              "order": 0,
+              "width_mm": 406.4,
+              "is_continuous_insulation": false,
+              "steel_stud_spacing_mm": null,
+              "project_material_id": "pmat_seed_gypsum",
+              "photo_asset_ids": [],
+              "use_site_notes": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "asm_seed_homogeneous_concrete",
+      "name": "WALL-HOMOGENEOUS-CONCRETE",
+      "type": "wall",
+      "orientation": "first_layer_outside",
+      "layers": [
+        {
+          "id": "lyr_seed_concrete",
+          "order": 0,
+          "thickness_mm": 200.0,
+          "segments": [
+            {
+              "id": "seg_seed_concrete",
+              "order": 0,
+              "width_mm": 1000.0,
+              "is_continuous_insulation": false,
+              "steel_stud_spacing_mm": null,
+              "project_material_id": "pmat_seed_concrete",
+              "photo_asset_ids": [],
+              "use_site_notes": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

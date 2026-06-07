@@ -25,6 +25,8 @@ GLAZING_SEED_PATH: Final[pathlib.Path] = CATALOGS_DIR / "glazing-types.v1.json"
 FRAME_SEED_PATH: Final[pathlib.Path] = CATALOGS_DIR / "frame-types.v1.json"
 
 PROJECT_META_PATH: Final[pathlib.Path] = PROJECT_DIR / "project.json"
+ASSEMBLIES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "assemblies.json"
+APERTURES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "apertures.json"
 ROOMS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "rooms.json"
 PUMPS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "pumps.json"
 FANS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "fans.json"

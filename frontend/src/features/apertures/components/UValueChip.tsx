@@ -3,15 +3,14 @@
 // label). The chip is purely presentational; the parent computes the
 // value from ``useApertureUValues`` and the project's unit system.
 //
-// PRD §8 tooltip text is the canonical no-films / no-operation
-// reminder. Keep it verbatim so the in-app copy matches the docs.
+// Tooltip copy follows the PH-Nav-V1 effective window U-Value bubble.
 
+import { Info } from "lucide-react";
 import { formatElementUValue, formatWindowUValue, type UValueUnitSystem } from "../format-u-value";
 
 export const U_VALUE_TOOLTIP =
-  "Composite window U-Value per ISO 10077-1:2006. Excludes surface films and operation (sash type / direction). " +
-  "Frames, glazing, and edge spacer (Ψg) contributions are included; psi_install is excluded — that's the " +
-  "installation thermal-bridge, accounted separately.";
+  "Effective Window U-Value (U-w). Calculated per ISO 10077-1:2006. " +
+  "Uw = (Ag·Ug + Af·Uf + lg·Ψg) / Aw. Uninstalled value (excludes ψ-install).";
 
 export type UValueChipProps = {
   valueWm2k: number | null | undefined;
@@ -35,28 +34,37 @@ export function UValueChip({
       : formatWindowUValue(valueWm2k, unitSystem);
   const fullValue = text.replace("Window U-Value: ", "").replace("U-Value: ", "");
 
-  const tooltip =
-    unfinishedCount > 0
-      ? `${U_VALUE_TOOLTIP}\n\n${unfinishedCount} element${unfinishedCount === 1 ? "" : "s"} ` +
-        "missing a frame or glazing assignment. The value above is computed from the picked " +
-        "elements only."
-      : U_VALUE_TOOLTIP;
-
   return (
     <span
       className={`aperture-uvalue-chip${compact ? " aperture-uvalue-chip--compact" : ""}`}
       data-testid="aperture-uvalue-chip"
-      title={tooltip}
     >
       {compact ? (
         text
       ) : (
         <>
-          <span className="aperture-uvalue-chip__dot" aria-hidden="true" />
           <span className="aperture-uvalue-chip__label">U-Value</span>
           <span className="aperture-uvalue-chip__value">{fullValue}</span>
         </>
       )}
+      <button
+        type="button"
+        className="aperture-uvalue-chip__info-button"
+        aria-label="Effective Window U-Value details"
+      >
+        <Info aria-hidden="true" size={12} strokeWidth={1.8} />
+        <span className="aperture-uvalue-chip__info-tooltip" role="tooltip">
+          <strong>Effective Window U-Value (U-w)</strong>
+          <span>Calculated per ISO 10077-1:2006</span>
+          <span>
+            <em>
+              U<sub>w</sub> = (A<sub>g</sub>·U<sub>g</sub> + A<sub>f</sub>·U
+              <sub>f</sub> + l<sub>g</sub>·Ψ<sub>g</sub>) / A<sub>w</sub>
+            </em>
+          </span>
+          <span>Uninstalled value (excludes ψ-install)</span>
+        </span>
+      </button>
       {unfinishedCount > 0 && <em className="aperture-uvalue-chip__unfinished"> (unfinished)</em>}
     </span>
   );

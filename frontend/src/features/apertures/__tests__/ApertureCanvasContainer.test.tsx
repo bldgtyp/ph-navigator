@@ -110,6 +110,19 @@ describe("ApertureCanvasContainer", () => {
     expect(screen.getByTestId("row-h-0-value")).toHaveTextContent("120.00");
   });
 
+  it("renders the total dimension caption before the canvas toolbar", () => {
+    render(
+      <UnitStub>
+        <ApertureCanvasHarness entry={aperture()} />
+      </UnitStub>,
+    );
+
+    const caption = screen.getByTestId("aperture-total-dim-caption");
+    const toolbar = screen.getByRole("toolbar", { name: "Aperture canvas tools" });
+
+    expect(caption.compareDocumentPosition(toolbar)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it("flips horizontal dimension strip with the interior SVG view", () => {
     const onEditDimension = vi.fn();
     render(

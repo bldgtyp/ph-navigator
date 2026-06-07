@@ -1,6 +1,5 @@
 import {
   Copy,
-  Download,
   Pencil,
   Shapes,
   Trash2,
@@ -23,8 +22,6 @@ export function EnvelopeSidebar({
   collapsed,
   onToggleCollapsed,
   onAddAssembly,
-  exportBusy,
-  onExportHbjson,
   onRename,
   onTypeChange,
   onDuplicate,
@@ -39,8 +36,6 @@ export function EnvelopeSidebar({
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onAddAssembly: () => void;
-  exportBusy: boolean;
-  onExportHbjson: () => void;
   onRename: (assembly: Assembly) => void;
   onTypeChange: (assembly: Assembly) => void;
   onDuplicate: (assembly: Assembly) => void;
@@ -84,22 +79,7 @@ export function EnvelopeSidebar({
               <PanelLeftClose size={16} aria-hidden="true" />
             )}
           </button>
-          {collapsed ? null : (
-            <>
-              <button
-                id="assembly-sidebar-export-hbjson"
-                type="button"
-                className="icon-button"
-                aria-label="Download constructions HBJSON"
-                data-sidebar-tooltip="Download constructions (HBJSON)"
-                disabled={exportBusy}
-                onClick={onExportHbjson}
-              >
-                <Download size={16} aria-hidden="true" />
-              </button>
-              {addAssemblyButton}
-            </>
-          )}
+          {collapsed ? null : addAssemblyButton}
         </div>
       </div>
       {collapsed ? null : (
