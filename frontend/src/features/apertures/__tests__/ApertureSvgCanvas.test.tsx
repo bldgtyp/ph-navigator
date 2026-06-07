@@ -104,26 +104,37 @@ describe("ApertureSvgCanvas", () => {
     );
     const topRegion = screen.getByTestId("region-aptel_1-top");
     expect(topRegion.getAttribute("fill")).toBe("none");
+    expect(topRegion.getAttribute("stroke-width")).toBe("0.5");
     expect(topRegion.getAttribute("stroke-dasharray")).toBe("4,3");
     expect(topRegion.getAttribute("data-region-null")).toBe("true");
   });
 
-  it("uses the catalog hex color when valid", () => {
+  it("uses the glazing diagram fill token instead of the catalog color", () => {
     const el = element({ glazing: glazing("#aabbcc") });
-    render(
-      <ApertureSvgCanvas aperture={entry({ elements: [el] })} zoom={1} viewDirection="exterior" />,
-    );
-    expect(screen.getByTestId("region-aptel_1-glazing").getAttribute("fill")).toBe("#aabbcc");
-  });
-
-  it("falls back to a CSS token when the catalog color is not a valid hex", () => {
-    const el = element({ glazing: glazing("not-a-hex") });
     render(
       <ApertureSvgCanvas aperture={entry({ elements: [el] })} zoom={1} viewDirection="exterior" />,
     );
     expect(screen.getByTestId("region-aptel_1-glazing").getAttribute("fill")).toBe(
       "var(--aperture-glazing-default-fill)",
     );
+  });
+
+  it("uses the frame diagram fill token instead of the catalog color", () => {
+    const el = element({
+      frames: {
+        top: frame(50, "#aabbcc"),
+        right: frame(50),
+        bottom: frame(50),
+        left: frame(50),
+      },
+    });
+    render(
+      <ApertureSvgCanvas aperture={entry({ elements: [el] })} zoom={1} viewDirection="exterior" />,
+    );
+    expect(screen.getByTestId("region-aptel_1-top").getAttribute("fill")).toBe(
+      "var(--aperture-frame-default-fill)",
+    );
+    expect(screen.getByTestId("region-aptel_1-top").getAttribute("stroke-width")).toBe("0.5");
   });
 
   it("flips column order for the interior view direction", () => {
@@ -148,7 +159,7 @@ describe("ApertureSvgCanvas", () => {
   it("renders proportionally: px width/height matches mm width/height ratio", () => {
     render(
       <ApertureSvgCanvas
-        aperture={entry({ column_widths_mm: [1000, 2000], row_heights_mm: [1000] })}
+        aperture={entry({ column_widths_mm: [2000, 4000], row_heights_mm: [2000] })}
         zoom={1}
         viewDirection="exterior"
       />,

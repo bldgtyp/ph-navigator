@@ -3,7 +3,7 @@
 // switch (SI vs IP) is owned by the global units preference; this
 // selector only swaps the format *within* the active system.
 
-import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
+import type { ApertureDimFormatState } from "../hooks/useApertureDimFormat";
 import type { IpDisplayFormat, SiDisplayFormat } from "../../../lib/units/length/types";
 
 const SI_OPTIONS: ReadonlyArray<{ value: SiDisplayFormat; label: string }> = [
@@ -19,8 +19,14 @@ const IP_OPTIONS: ReadonlyArray<{ value: IpDisplayFormat; label: string }> = [
   { value: "in-frac", label: "Fractional Inches (in-frac)" },
 ];
 
-export function DisplayFormatSelector() {
-  const { system, format, setSiFormat, setIpFormat } = useApertureDimFormat();
+export type DisplayFormatSelectorProps = ApertureDimFormatState;
+
+export function DisplayFormatSelector({
+  system,
+  format,
+  setSiFormat,
+  setIpFormat,
+}: DisplayFormatSelectorProps) {
   const options = system === "si" ? SI_OPTIONS : IP_OPTIONS;
   return (
     <label className="aperture-dim-format-selector" data-testid="aperture-dim-format-selector">

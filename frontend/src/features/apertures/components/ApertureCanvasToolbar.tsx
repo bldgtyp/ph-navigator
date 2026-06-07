@@ -1,3 +1,13 @@
+import {
+  Combine,
+  PaintBucket,
+  Pipette,
+  RotateCcw,
+  Scissors,
+  type LucideIcon,
+  X,
+} from "lucide-react";
+import type { ButtonHTMLAttributes } from "react";
 import type { AperturePickPasteMode } from "../store/builder-store";
 import type { ApertureViewDirection } from "./ApertureSvgCanvas";
 import { ViewDirectionToggle } from "./ViewDirectionToggle";
@@ -43,77 +53,108 @@ export function ApertureCanvasToolbar({
   onUndoPaste: () => void;
 }) {
   return (
-    <div className="aperture-canvas-toolbar" role="toolbar" aria-label="Aperture canvas tools">
+    <div
+      className="aperture-canvas-toolbar assembly-canvas-toolbar"
+      role="toolbar"
+      aria-label="Aperture canvas tools"
+    >
       <ViewDirectionToggle viewDirection={viewDirection} onToggle={onToggleViewDirection} />
-      <span className="aperture-canvas-toolbar__divider" aria-hidden="true" />
+      <ApertureToolbarDivider />
       <ZoomCluster zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onFit={onFit} />
       {canEdit ? (
         <>
-          <span className="aperture-canvas-toolbar__divider" aria-hidden="true" />
-          <button
-            type="button"
-            className="aperture-canvas-toolbar__button"
+          <ApertureToolbarDivider />
+          <ApertureToolbarButton
+            icon={X}
+            label="Clear selection"
+            tooltip="Clear selection"
             data-testid="aperture-canvas-clear-selection"
             onClick={onClearSelection}
             disabled={selectionCount === 0}
-          >
-            Clear selection
-          </button>
-          <span className="aperture-canvas-toolbar__divider" aria-hidden="true" />
-          <button
-            type="button"
-            className="aperture-canvas-toolbar__button"
+          />
+          <ApertureToolbarDivider />
+          <ApertureToolbarButton
+            icon={Combine}
+            label="Merge selected elements"
+            tooltip={`Merge selected (${selectionCount})`}
             data-testid="aperture-canvas-merge"
             onClick={onMerge}
             disabled={!canMerge}
-            title={canMerge ? `Merge selected (${selectionCount} elements)` : undefined}
-          >
-            Merge
-          </button>
-          <button
-            type="button"
-            className="aperture-canvas-toolbar__button"
+          />
+          <ApertureToolbarButton
+            icon={Scissors}
+            label="Split selected element"
+            tooltip="Split selected element"
             data-testid="aperture-canvas-split"
             onClick={onSplit}
             disabled={!canSplit}
-            title={canSplit ? "Split selected element into 1×1 cells" : undefined}
-          >
-            Split
-          </button>
-          <span className="aperture-canvas-toolbar__divider" aria-hidden="true" />
-          <button
-            type="button"
-            className="aperture-canvas-toolbar__button"
+          />
+          <ApertureToolbarDivider />
+          <ApertureToolbarButton
+            icon={Pipette}
+            label="Eyedropper"
+            tooltip="Copy element assignment"
             data-testid="aperture-canvas-eyedropper"
             onClick={onEyedropper}
             aria-pressed={pickPasteMode === "picking" || pickPasteMode === "picked"}
-            title="Eyedropper — copy element assignment"
-          >
-            Eyedropper
-          </button>
-          <button
-            type="button"
-            className="aperture-canvas-toolbar__button"
+          />
+          <ApertureToolbarButton
+            icon={PaintBucket}
+            label="Paint bucket"
+            tooltip="Paste captured assignment"
             data-testid="aperture-canvas-paint-bucket"
             onClick={onPaintBucket}
             aria-pressed={pickPasteMode === "pasting"}
             disabled={pickPasteMode !== "picked" && pickPasteMode !== "pasting"}
-            title="Paint bucket — paste captured assignment"
-          >
-            Paint bucket
-          </button>
-          <button
-            type="button"
-            className="aperture-canvas-toolbar__button"
+          />
+          <ApertureToolbarButton
+            icon={RotateCcw}
+            label="Undo paste"
+            tooltip="Undo paste"
             data-testid="aperture-canvas-undo-paste"
             onClick={onUndoPaste}
             disabled={undoDepth === 0}
-            title={undoDepth > 0 ? `Undo last paste (${undoDepth} available)` : undefined}
-          >
-            Undo paste
-          </button>
+          />
         </>
       ) : null}
     </div>
+  );
+}
+
+function ApertureToolbarButton({
+  icon: Icon,
+  label,
+  tooltip,
+  disabled = false,
+  onClick,
+  ...buttonProps
+}: {
+  icon: LucideIcon;
+  label: string;
+  tooltip: string;
+  disabled?: boolean;
+  onClick: () => void;
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "onClick">) {
+  return (
+    <button
+      {...buttonProps}
+      type="button"
+      className="aperture-canvas-toolbar__button assembly-canvas-toolbar-button"
+      aria-label={label}
+      data-toolbar-tooltip={tooltip}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon size={14} aria-hidden="true" />
+    </button>
+  );
+}
+
+function ApertureToolbarDivider() {
+  return (
+    <span
+      className="aperture-canvas-toolbar__divider assembly-canvas-toolbar-divider"
+      aria-hidden="true"
+    />
   );
 }

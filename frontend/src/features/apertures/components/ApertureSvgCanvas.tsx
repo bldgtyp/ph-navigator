@@ -11,16 +11,6 @@ import { OperationSymbols } from "./OperationSymbols";
 
 export type ApertureViewDirection = "exterior" | "interior";
 
-// Match hex colors so we only inline catalog colors that are safe to drop into
-// `fill="…"`. Anything else (named, missing, junk) falls back to a CSS token
-// so theming stays consistent.
-const HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/;
-
-function safeHexFill(color: string | null | undefined, fallbackVar: string): string {
-  if (color && HEX_COLOR.test(color)) return color;
-  return `var(${fallbackVar})`;
-}
-
 export function ApertureSvgCanvas({
   aperture,
   zoom,
@@ -93,7 +83,7 @@ function FrameRegion({
   elementId: string;
 }) {
   const isNull = frame === null;
-  const fill = isNull ? "none" : safeHexFill(frame.color, "--aperture-frame-default-fill");
+  const fill = isNull ? "none" : "var(--aperture-frame-default-fill)";
   return (
     <rect
       data-testid={`region-${elementId}-${side}`}
@@ -105,6 +95,7 @@ function FrameRegion({
       height={rect.height}
       fill={fill}
       stroke={isNull ? "var(--aperture-null-stroke)" : "var(--aperture-region-stroke)"}
+      strokeWidth={0.5}
       strokeDasharray={isNull ? "4,3" : undefined}
       vectorEffect="non-scaling-stroke"
     />
@@ -121,7 +112,7 @@ function GlazingRegion({
   elementId: string;
 }) {
   const isNull = glazing === null;
-  const fill = isNull ? "none" : safeHexFill(glazing.color, "--aperture-glazing-default-fill");
+  const fill = isNull ? "none" : "var(--aperture-glazing-default-fill)";
   return (
     <rect
       data-testid={`region-${elementId}-glazing`}
@@ -133,6 +124,7 @@ function GlazingRegion({
       height={rect.height}
       fill={fill}
       stroke={isNull ? "var(--aperture-null-stroke)" : "var(--aperture-region-stroke)"}
+      strokeWidth={0.5}
       strokeDasharray={isNull ? "4,3" : undefined}
       vectorEffect="non-scaling-stroke"
     />

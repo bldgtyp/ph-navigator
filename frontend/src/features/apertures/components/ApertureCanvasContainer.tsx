@@ -343,16 +343,9 @@ export function ApertureCanvasContainer({
       <div className="aperture-canvas-scroll" ref={scrollRef} data-testid="aperture-canvas-scroll">
         <div className="aperture-canvas-grid">
           <div className="aperture-canvas-grid__gutter">
-            <DisplayFormatSelector />
+            <DisplayFormatSelector {...dimFormat} />
           </div>
-          <div className="aperture-canvas-grid__top-edge">
-            <EdgeAddButtons
-              aperture={aperture}
-              canEdit={canEdit}
-              onAddRow={(at) => onAddRow?.(at)}
-              onAddColumn={(at) => onAddColumn?.(at)}
-            />
-          </div>
+          <div className="aperture-canvas-grid__top-edge" />
           <div className="aperture-canvas-grid__left-edge">
             <VerticalDimensionStrip
               aperture={aperture}
@@ -371,6 +364,12 @@ export function ApertureCanvasContainer({
               data-testid="aperture-canvas-stage"
             >
               <ApertureSvgCanvas aperture={aperture} zoom={zoom} viewDirection={viewDirection} />
+              <EdgeAddButtons
+                aperture={aperture}
+                canEdit={canEdit}
+                onAddRow={(at) => onAddRow?.(at)}
+                onAddColumn={(at) => onAddColumn?.(at)}
+              />
               <ApertureCanvasOverlay
                 aperture={aperture}
                 zoom={zoom}
