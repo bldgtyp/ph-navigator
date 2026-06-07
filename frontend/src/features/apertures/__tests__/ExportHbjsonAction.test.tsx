@@ -50,7 +50,7 @@ describe("ExportHbjsonAction", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Export window constructions (HBJSON)" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const firstCall = fetchMock.mock.calls[0] ?? [];
@@ -84,7 +84,7 @@ describe("ExportHbjsonAction", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Export window constructions (HBJSON)" }));
 
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
     const message = (onError.mock.calls[0] ?? [""])[0] as string;
@@ -103,6 +103,8 @@ describe("ExportHbjsonAction", () => {
         disabled
       />,
     );
-    expect(screen.getByRole("button")).toBeDisabled();
+    expect(
+      screen.getByRole("menuitem", { name: "Export window constructions (HBJSON)" }),
+    ).toBeDisabled();
   });
 });

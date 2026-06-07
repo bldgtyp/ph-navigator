@@ -1,7 +1,7 @@
 /* Z-index contract: base < sticky headers < dropdowns/popovers < overlay HUD < modals < tooltips. */
 :root {
   color-scheme: light;
-  --radius-sm: 4px;
+  --radius-sm: 5px;
   --phn-radius: var(--radius-sm);
   --phn-control-radius: 6px;
   --z-base: 0;

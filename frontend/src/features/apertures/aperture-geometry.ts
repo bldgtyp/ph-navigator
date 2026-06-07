@@ -6,7 +6,7 @@
 // and no zoom math here — `canvas-constants.pxFromMm` handles the px mapping
 // at the component layer.
 
-import type { ApertureElement, ApertureTypeEntry } from "./types";
+import type { ApertureElement, ApertureSide, ApertureTypeEntry } from "./types";
 
 export type RectMm = { x: number; y: number; width: number; height: number };
 
@@ -16,6 +16,15 @@ export type ElementRegionsMm = {
   bottom: RectMm;
   left: RectMm;
   glazing: RectMm;
+};
+
+export type ElementInsertTarget = {
+  edge: ApertureSide;
+  axis: "row" | "column";
+  atIndex: number;
+  rowIndex: number;
+  columnIndex: number;
+  cellRect: RectMm;
 };
 
 export function totalApertureWidthMm(entry: ApertureTypeEntry): number {
@@ -52,6 +61,47 @@ export function elementRectMm(entry: ApertureTypeEntry, element: ApertureElement
   let height = 0;
   for (let i = r0; i <= r1; i += 1) height += entry.row_heights_mm[i] ?? 0;
   return { x, y, width, height };
+}
+
+export function elementInsertTargetAtPointMm(
+  entry: ApertureTypeEntry,
+  element: ApertureElement,
+  point: { x: number; y: number },
+): ElementInsertTarget {
+  const columnIndex = gridIndexAtPoint(
+    entry.column_widths_mm,
+    point.x,
+    element.column_span[0],
+    element.column_span[1],
+  );
+  const rowIndex = gridIndexAtPoint(
+    entry.row_heights_mm,
+    point.y,
+    element.row_span[0],
+    element.row_span[1],
+  );
+  const cellRect = {
+    x: columnXOffsetMm(entry, columnIndex),
+    y: rowYOffsetMm(entry, rowIndex),
+    width: entry.column_widths_mm[columnIndex] ?? 0,
+    height: entry.row_heights_mm[rowIndex] ?? 0,
+  };
+  const edge = nearestCellEdge(point, cellRect);
+  return {
+    edge,
+    axis: edge === "top" || edge === "bottom" ? "row" : "column",
+    atIndex:
+      edge === "top"
+        ? rowIndex
+        : edge === "bottom"
+          ? rowIndex + 1
+          : edge === "left"
+            ? columnIndex
+            : columnIndex + 1,
+    rowIndex,
+    columnIndex,
+    cellRect,
+  };
 }
 
 // Slice an element rect into its four frame strips plus the glazing rect.
@@ -136,4 +186,32 @@ export function mirrorApertureForInterior(entry: ApertureTypeEntry): ApertureTyp
     column_widths_mm: [...entry.column_widths_mm].reverse(),
     elements: entry.elements.map((element) => flipColumnForInterior(entry, element)),
   };
+}
+
+function gridIndexAtPoint(
+  sizes: number[],
+  coordinateMm: number,
+  minIndex: number,
+  maxIndex: number,
+): number {
+  let cursor = 0;
+  for (let index = 0; index < sizes.length; index += 1) {
+    const next = cursor + (sizes[index] ?? 0);
+    if (coordinateMm < next || index === sizes.length - 1) {
+      return Math.min(maxIndex, Math.max(minIndex, index));
+    }
+    cursor = next;
+  }
+  return minIndex;
+}
+
+function nearestCellEdge(point: { x: number; y: number }, cell: RectMm): ApertureSide {
+  const distances: Array<{ edge: ApertureSide; distance: number }> = [
+    { edge: "top", distance: Math.abs(point.y - cell.y) },
+    { edge: "right", distance: Math.abs(cell.x + cell.width - point.x) },
+    { edge: "bottom", distance: Math.abs(cell.y + cell.height - point.y) },
+    { edge: "left", distance: Math.abs(point.x - cell.x) },
+  ];
+  distances.sort((a, b) => a.distance - b.distance);
+  return distances[0]?.edge ?? "top";
 }

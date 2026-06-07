@@ -539,22 +539,23 @@
   color: var(--phn-danger);
 }
 
-/* Phase 05 — dimension strips, edge-add hot-zones, format selector,
+/* Phase 05 — dimension strips, insert affordance, format selector,
    total caption, error-state input border. CSS-grid composition keeps
-   the strip gutters, edge hot-zones, and the SVG/overlay stage all
-   aligned without per-segment math. */
+   the strip gutters and the SVG/overlay stage aligned. */
 
 .aperture-canvas-grid {
   --aperture-dimension-strip-width: 64px;
   --aperture-dimension-strip-height: 40px;
 
   display: grid;
-  grid-template-columns: var(--aperture-dimension-strip-width) 1fr;
+  grid-template-columns: var(--aperture-dimension-strip-width) max-content;
   grid-template-rows: auto 1fr var(--aperture-dimension-strip-height);
   grid-template-areas:
     "gutter top"
     "left   stage"
     "gutter-bottom bottom";
+  margin-inline: auto;
+  width: max-content;
 }
 
 .aperture-canvas-grid__gutter {
@@ -751,52 +752,6 @@
   color: var(--phn-danger);
 }
 
-.aperture-edge-hot-zone {
-  z-index: var(--z-base-elevated);
-  position: absolute;
-}
-
-.aperture-edge-hot-zone .aperture-edge-add {
-  opacity: 0;
-  transform: var(--aperture-edge-add-transform) scale(0.7);
-  transition:
-    opacity 0.14s var(--ease),
-    transform 0.14s var(--ease);
-}
-
-.aperture-edge-hot-zone:hover .aperture-edge-add {
-  opacity: 1;
-  transform: var(--aperture-edge-add-transform);
-}
-
-.aperture-edge-hot-zone--top {
-  top: calc(-1 * var(--aperture-edge-zone, 40px));
-  left: 0;
-  right: 0;
-  height: var(--aperture-edge-zone, 40px);
-}
-
-.aperture-edge-hot-zone--bottom {
-  bottom: calc(-1 * var(--aperture-edge-zone, 40px));
-  left: 0;
-  right: 0;
-  height: var(--aperture-edge-zone, 40px);
-}
-
-.aperture-edge-hot-zone--left {
-  left: calc(-1 * var(--aperture-edge-zone, 40px));
-  top: 0;
-  bottom: 0;
-  width: var(--aperture-edge-zone, 40px);
-}
-
-.aperture-edge-hot-zone--right {
-  right: calc(-1 * var(--aperture-edge-zone, 40px));
-  top: 0;
-  bottom: 0;
-  width: var(--aperture-edge-zone, 40px);
-}
-
 .aperture-edge-add {
   align-items: center;
   background: var(--aperture-canvas-add);
@@ -820,32 +775,27 @@
   width: 11px;
 }
 
-.aperture-edge-hot-zone--top .aperture-edge-add {
-  --aperture-edge-add-transform: translate(-50%, 50%);
-
-  bottom: 0;
-  left: 50%;
+.aperture-insert-button {
+  z-index: calc(var(--z-base-elevated) + 2);
+  opacity: 1;
+  transform: var(--aperture-edge-add-transform);
+  transition: transform 0.14s var(--ease);
 }
 
-.aperture-edge-hot-zone--bottom .aperture-edge-add {
+.aperture-insert-button--top {
   --aperture-edge-add-transform: translate(-50%, -50%);
-
-  left: 50%;
-  top: 0;
 }
 
-.aperture-edge-hot-zone--left .aperture-edge-add {
-  --aperture-edge-add-transform: translate(50%, -50%);
-
-  right: 0;
-  top: 50%;
-}
-
-.aperture-edge-hot-zone--right .aperture-edge-add {
+.aperture-insert-button--bottom {
   --aperture-edge-add-transform: translate(-50%, -50%);
+}
 
-  left: 0;
-  top: 50%;
+.aperture-insert-button--left {
+  --aperture-edge-add-transform: translate(-50%, -50%);
+}
+
+.aperture-insert-button--right {
+  --aperture-edge-add-transform: translate(-50%, -50%);
 }
 
 .aperture-edge-add:hover,

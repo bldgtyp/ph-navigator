@@ -516,6 +516,24 @@ def test_add_row_into_straddling_element_extends_span() -> None:
     assert entry.row_heights_mm == [1000.0, 500.0, 800.0]
 
 
+def test_add_column_into_straddling_element_extends_span() -> None:
+    span_element = _element(id="aptel_span", row_span=(0, 0), column_span=(0, 1))
+    apt = _aperture(
+        column_widths_mm=[1000.0, 800.0],
+        elements=[span_element],
+    )
+    raw_body = _empty_body().model_dump(mode="json")
+    raw_body["tables"]["apertures"] = [apt.model_dump(mode="json")]
+    body = ProjectDocumentV1.model_validate(raw_body)
+
+    body, _ = _apply(body, AddColumn(aperture_type_id=apt.id, at_index=1, width_mm=350.0))
+
+    entry = body.tables.apertures[0]
+    assert len(entry.elements) == 1
+    assert entry.elements[0].column_span == (0, 2)
+    assert entry.column_widths_mm == [1000.0, 350.0, 800.0]
+
+
 def test_add_column_creates_one_default_per_row() -> None:
     body, apt_id = _seeded_body_with_aperture()
     body, _ = _apply(body, AddRow(aperture_type_id=apt_id, at_index=1, height_mm=500.0))

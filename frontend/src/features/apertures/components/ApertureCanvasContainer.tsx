@@ -38,7 +38,6 @@ import { visualSideToCanonical } from "../frame-label-map";
 import type { ApertureRegionKind } from "./ApertureHitTarget";
 import type { ApertureSide, FrameRef, GlazingRef } from "../types";
 import { DeleteDimensionDialog } from "./DeleteDimensionDialog";
-import { EdgeAddButtons } from "./EdgeAddButtons";
 import { HorizontalDimensionStrip } from "./HorizontalDimensionStrip";
 import { TotalDimensionsCaption } from "./TotalDimensionsCaption";
 import { VerticalDimensionStrip } from "./VerticalDimensionStrip";
@@ -197,6 +196,13 @@ export function ApertureCanvasContainer({
   const heightMm = totalApertureHeightMm(rendered);
   const pxW = Math.max(MIN_CANVAS_WIDTH_PX, pxFromMm(widthMm, zoom));
   const pxH = pxFromMm(heightMm, zoom);
+  const columnIndexForVisual = useCallback(
+    (visualIndex: number) =>
+      viewDirection === "interior"
+        ? aperture.column_widths_mm.length - 1 - visualIndex
+        : visualIndex,
+    [aperture.column_widths_mm.length, viewDirection],
+  );
 
   const handleSetElementName = useCallback(
     (elementId: string, newName: string) => {
@@ -362,12 +368,6 @@ export function ApertureCanvasContainer({
               data-testid="aperture-canvas-stage"
             >
               <ApertureSvgCanvas aperture={aperture} zoom={zoom} viewDirection={viewDirection} />
-              <EdgeAddButtons
-                aperture={aperture}
-                canEdit={canEdit}
-                onAddRow={(at) => onAddRow?.(at)}
-                onAddColumn={(at) => onAddColumn?.(at)}
-              />
               <ApertureCanvasOverlay
                 aperture={aperture}
                 zoom={zoom}
@@ -386,18 +386,21 @@ export function ApertureCanvasContainer({
                 pasteFlashElementId={pasteFlashTargetId}
                 onPickElement={(el) => capturePickFromElement(el)}
                 onPasteElement={(el) => void pasteOnto(el)}
+                onInsertRow={(at) => onAddRow?.(at)}
+                onInsertColumn={(at) => onAddColumn?.(at)}
               />
             </div>
           </div>
           <div className="aperture-canvas-grid__bottom-edge">
             <HorizontalDimensionStrip
-              aperture={aperture}
+              aperture={rendered}
               zoom={zoom}
               system={unitSystem}
               format={dimFormat.format}
               canEdit={canEdit}
               onEditColumn={handleEditColumn}
               onRequestDeleteColumn={handleRequestDeleteColumn}
+              columnIndexForVisual={columnIndexForVisual}
             />
           </div>
         </div>

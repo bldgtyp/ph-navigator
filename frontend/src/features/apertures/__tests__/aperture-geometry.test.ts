@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   columnXOffsetMm,
+  elementInsertTargetAtPointMm,
   elementRectMm,
   elementRegionsMm,
   flipColumnForInterior,
@@ -111,6 +112,44 @@ describe("elementRectMm", () => {
     });
     const rect = elementRectMm(e, merged);
     expect(rect).toEqual({ x: 0, y: 0, width: 700, height: 500 });
+  });
+});
+
+describe("elementInsertTargetAtPointMm", () => {
+  it("targets the nearest edge of the underlying single cell", () => {
+    const merged = element({ id: "aptel_m", row_span: [0, 1], column_span: [0, 1] });
+    const e = entry({
+      column_widths_mm: [300, 400],
+      row_heights_mm: [200, 500],
+      elements: [merged],
+    });
+
+    const target = elementInsertTargetAtPointMm(e, merged, { x: 400, y: 210 });
+
+    expect(target).toMatchObject({
+      edge: "top",
+      axis: "row",
+      atIndex: 1,
+      rowIndex: 1,
+      columnIndex: 1,
+      cellRect: { x: 300, y: 200, width: 400, height: 500 },
+    });
+  });
+
+  it("can target an interior column line inside a merged element", () => {
+    const merged = element({ id: "aptel_m", row_span: [0, 0], column_span: [0, 2] });
+    const e = entry({
+      column_widths_mm: [300, 400, 500],
+      row_heights_mm: [600],
+      elements: [merged],
+    });
+
+    const target = elementInsertTargetAtPointMm(e, merged, { x: 720, y: 300 });
+
+    expect(target.edge).toBe("left");
+    expect(target.axis).toBe("column");
+    expect(target.atIndex).toBe(2);
+    expect(target.columnIndex).toBe(2);
   });
 });
 

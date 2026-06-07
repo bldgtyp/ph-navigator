@@ -4,6 +4,8 @@
 
 import type { ApertureDimFormatState } from "../hooks/useApertureDimFormat";
 import type { IpDisplayFormat, SiDisplayFormat } from "../../../lib/units/length/types";
+import { Ruler } from "lucide-react";
+import { AppMenu, AppMenuRadioItem } from "../../../shared/ui/AppMenu";
 
 const SI_OPTIONS: ReadonlyArray<{ value: SiDisplayFormat; label: string }> = [
   { value: "mm", label: "Millimeters (mm)" },
@@ -29,36 +31,27 @@ export function DisplayFormatMenuGroup({
   const options = system === "si" ? SI_OPTIONS : IP_OPTIONS;
   const activeOptionLabel = options.find((opt) => opt.value === format)?.label ?? "Default";
 
-  const handleSelect = (value: SiDisplayFormat | IpDisplayFormat, target: EventTarget | null) => {
+  const handleSelect = (value: SiDisplayFormat | IpDisplayFormat) => {
     if (system === "si") setSiFormat(value as SiDisplayFormat);
     else setIpFormat(value as IpDisplayFormat);
-
-    if (target instanceof Element) {
-      target.closest("details.app-subtabs__menu-wrap")?.removeAttribute("open");
-    }
   };
 
   return (
-    <details className="app-subtabs__submenu" data-testid="aperture-dim-format-selector">
-      <summary className="app-subtabs__menu-item app-subtabs__submenu-trigger">
-        <span>Dimension display</span>
-        <span className="app-subtabs__menu-item-value">{activeOptionLabel}</span>
-      </summary>
-      <div className="app-subtabs__submenu-panel" role="menu" aria-label="Dimension display format">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className="app-subtabs__menu-item app-subtabs__menu-radio"
-            role="menuitemradio"
-            aria-checked={opt.value === format}
-            onClick={(event) => handleSelect(opt.value, event.currentTarget)}
-          >
-            <span className="app-subtabs__menu-radio-mark" aria-hidden="true" />
-            <span>{opt.label}</span>
-          </button>
-        ))}
-      </div>
-    </details>
+    <AppMenu
+      label="Dimension display"
+      title={`Dimension display: ${activeOptionLabel}`}
+      triggerIcon={Ruler}
+      className="aperture-dim-format-menu"
+    >
+      {options.map((opt) => (
+        <AppMenuRadioItem
+          key={opt.value}
+          checked={opt.value === format}
+          onClick={() => handleSelect(opt.value)}
+        >
+          {opt.label}
+        </AppMenuRadioItem>
+      ))}
+    </AppMenu>
   );
 }
