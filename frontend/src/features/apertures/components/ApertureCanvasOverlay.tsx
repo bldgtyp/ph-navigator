@@ -1,8 +1,11 @@
-import { useMemo, type CSSProperties, type MouseEvent } from "react";
+import { Plus } from "lucide-react";
+import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
 import {
+  elementInsertTargetAtPointMm,
   elementRectMm,
   elementRegionsMm,
   mirrorApertureForInterior,
+  type ElementInsertTarget,
   totalApertureHeightMm,
   totalApertureWidthMm,
   type RectMm,
@@ -38,6 +41,8 @@ export function ApertureCanvasOverlay({
   pasteFlashElementId = null,
   onPickElement,
   onPasteElement,
+  onInsertRow,
+  onInsertColumn,
 }: {
   aperture: ApertureTypeEntry;
   zoom: number;
@@ -54,7 +59,14 @@ export function ApertureCanvasOverlay({
   onPickElement?: (element: ApertureElement) => void;
   /** Click intent when ``pickPasteMode === "pasting"``. */
   onPasteElement?: (element: ApertureElement) => void;
+  onInsertRow?: (atIndex: number) => void;
+  onInsertColumn?: (atIndex: number) => void;
 }) {
+  const [insertTarget, setInsertTarget] = useState<{
+    elementId: string;
+    target: ElementInsertTarget;
+    elementRect: RectMm;
+  } | null>(null);
   const rendered = useMemo(
     () => (viewDirection === "interior" ? mirrorApertureForInterior(aperture) : aperture),
     [aperture, viewDirection],
@@ -103,6 +115,41 @@ export function ApertureCanvasOverlay({
   };
 
   const style: CSSProperties = { width: `${pxW}px`, height: `${pxH}px` };
+  const allowInsert = canEdit && pickPasteMode === "idle";
+
+  const handleElementMouseMove = (
+    element: ApertureElement,
+    rect: RectMm,
+    event: MouseEvent<HTMLDivElement>,
+  ) => {
+    if (!allowInsert) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const scale = pxFromMm(1, zoom);
+    if (bounds.width <= 0 || bounds.height <= 0 || scale <= 0) return;
+    const point = {
+      x: rect.x + (event.clientX - bounds.left) / scale,
+      y: rect.y + (event.clientY - bounds.top) / scale,
+    };
+    setInsertTarget({
+      elementId: element.id,
+      target: elementInsertTargetAtPointMm(rendered, element, point),
+      elementRect: rect,
+    });
+  };
+
+  const handleInsertClick = (target: ElementInsertTarget, event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (target.axis === "row") {
+      onInsertRow?.(target.atIndex);
+      return;
+    }
+    const canonicalIndex =
+      viewDirection === "interior"
+        ? aperture.column_widths_mm.length - target.atIndex
+        : target.atIndex;
+    onInsertColumn?.(canonicalIndex);
+  };
 
   return (
     <div
@@ -114,6 +161,7 @@ export function ApertureCanvasOverlay({
       onMouseLeave={() => {
         setHoveredElement(null);
         setHoveredRegion(null);
+        setInsertTarget(null);
       }}
     >
       {rendered.elements.map((element) => {
@@ -134,7 +182,11 @@ export function ApertureCanvasOverlay({
             style={elementStyle(rect, zoom)}
             onClick={(event) => onElementClick(element, event)}
             onMouseEnter={() => setHoveredElement(element.id)}
-            onMouseLeave={() => setHoveredElement(null)}
+            onMouseMove={(event) => handleElementMouseMove(element, rect, event)}
+            onMouseLeave={() => {
+              setHoveredElement(null);
+              setInsertTarget((current) => (current?.elementId === element.id ? null : current));
+            }}
           >
             {REGIONS.map((region) => (
               <ApertureHitTarget
@@ -158,6 +210,23 @@ export function ApertureCanvasOverlay({
               canEdit={canEdit}
               onCommit={onSetElementName}
             />
+            {allowInsert && insertTarget?.elementId === element.id ? (
+              <button
+                type="button"
+                className={`aperture-edge-add aperture-insert-button aperture-insert-button--${insertTarget.target.edge}`}
+                style={insertButtonStyle(insertTarget.target, insertTarget.elementRect, zoom)}
+                title={insertLabel(insertTarget.target)}
+                aria-label={insertLabel(insertTarget.target)}
+                data-testid={`aperture-insert-${element.id}-${insertTarget.target.edge}`}
+                data-insert-axis={insertTarget.target.axis}
+                data-insert-index={insertTarget.target.atIndex}
+                data-insert-row={insertTarget.target.rowIndex}
+                data-insert-column={insertTarget.target.columnIndex}
+                onClick={(event) => handleInsertClick(insertTarget.target, event)}
+              >
+                <Plus size={15} aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         );
       })}
@@ -180,4 +249,35 @@ function isRegionHovered(
   region: ApertureRegionKind,
 ): boolean {
   return hovered?.elementId === elementId && hovered.region === region;
+}
+
+function insertButtonStyle(
+  target: ElementInsertTarget,
+  elementRect: RectMm,
+  zoom: number,
+): CSSProperties {
+  const { edge, cellRect } = target;
+  const xMm =
+    edge === "left"
+      ? cellRect.x
+      : edge === "right"
+        ? cellRect.x + cellRect.width
+        : cellRect.x + cellRect.width / 2;
+  const yMm =
+    edge === "top"
+      ? cellRect.y
+      : edge === "bottom"
+        ? cellRect.y + cellRect.height
+        : cellRect.y + cellRect.height / 2;
+  return {
+    left: `${pxFromMm(xMm - elementRect.x, zoom)}px`,
+    top: `${pxFromMm(yMm - elementRect.y, zoom)}px`,
+  };
+}
+
+function insertLabel(target: ElementInsertTarget): string {
+  if (target.edge === "top") return "Insert row above";
+  if (target.edge === "bottom") return "Insert row below";
+  if (target.edge === "left") return "Insert column left";
+  return "Insert column right";
 }

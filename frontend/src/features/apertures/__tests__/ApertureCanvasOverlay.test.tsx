@@ -75,8 +75,24 @@ function renderOverlay(props: Partial<Parameters<typeof ApertureCanvasOverlay>[0
       canEdit={props.canEdit ?? true}
       onSetElementName={props.onSetElementName ?? vi.fn()}
       onRegionClick={props.onRegionClick}
+      onInsertRow={props.onInsertRow}
+      onInsertColumn={props.onInsertColumn}
     />,
   );
+}
+
+function mockBounds(element: HTMLElement, width: number, height: number) {
+  element.getBoundingClientRect = vi.fn(() => ({
+    x: 0,
+    y: 0,
+    left: 0,
+    top: 0,
+    right: width,
+    bottom: height,
+    width,
+    height,
+    toJSON: () => ({}),
+  }));
 }
 
 beforeEach(() => {
@@ -170,5 +186,51 @@ describe("ApertureCanvasOverlay", () => {
     renderOverlay({ onRegionClick });
     fireEvent.click(screen.getByTestId("hit-aptel_1-glazing"));
     expect(onRegionClick).toHaveBeenCalledWith("aptel_1", "glazing");
+  });
+
+  it("inserts at an interior row line within a merged element", () => {
+    const onInsertRow = vi.fn();
+    const merged = element({ id: "aptel_m", row_span: [0, 1], column_span: [0, 1] });
+    renderOverlay({
+      aperture: entry({
+        column_widths_mm: [300, 400],
+        row_heights_mm: [200, 500],
+        elements: [merged],
+      }),
+      onInsertRow,
+    });
+    const hit = screen.getByTestId("hit-element-aptel_m");
+    mockBounds(hit, 63, 63);
+
+    fireEvent.mouseMove(hit, { clientX: 45, clientY: 19 });
+
+    const button = screen.getByRole("button", { name: "Insert row above" });
+    expect(button).toHaveAttribute("data-insert-index", "1");
+    expect(button).toHaveAttribute("data-insert-row", "1");
+    fireEvent.click(button);
+    expect(onInsertRow).toHaveBeenCalledWith(1);
+  });
+
+  it("maps interior-view column inserts back to canonical column indexes", () => {
+    const onInsertColumn = vi.fn();
+    const right = element({ id: "aptel_right", column_span: [2, 2] });
+    renderOverlay({
+      aperture: entry({
+        column_widths_mm: [100, 200, 300],
+        row_heights_mm: [1000],
+        elements: [right],
+      }),
+      viewDirection: "interior",
+      onInsertColumn,
+    });
+    const hit = screen.getByTestId("hit-element-aptel_right");
+    mockBounds(hit, 27, 90);
+
+    fireEvent.mouseMove(hit, { clientX: 1, clientY: 45 });
+
+    const button = screen.getByRole("button", { name: "Insert column left" });
+    expect(button).toHaveAttribute("data-insert-index", "0");
+    fireEvent.click(button);
+    expect(onInsertColumn).toHaveBeenCalledWith(3);
   });
 });

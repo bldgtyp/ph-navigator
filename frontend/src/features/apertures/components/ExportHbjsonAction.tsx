@@ -10,6 +10,7 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { ApiRequestError, fetchJson } from "../../../shared/api/client";
+import { AppMenuItem } from "../../../shared/ui/AppMenu";
 import { downloadJsonFile } from "../download-file";
 
 type Props = {
@@ -49,15 +50,14 @@ export function ExportHbjsonAction({
   };
 
   return (
-    <button
-      type="button"
-      className="app-subtabs__menu-item"
+    <AppMenuItem
+      icon={Download}
       onClick={() => void handleClick()}
       disabled={busy || disabled}
+      closeOnSelect={!disabled}
     >
-      <Download size={14} aria-hidden="true" />
-      <span>Export window constructions (HBJSON)</span>
-    </button>
+      Export window constructions (HBJSON)
+    </AppMenuItem>
   );
 }
 

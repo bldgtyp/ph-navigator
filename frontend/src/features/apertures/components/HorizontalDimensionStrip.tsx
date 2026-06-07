@@ -18,6 +18,7 @@ export type HorizontalDimensionStripProps = {
   canEdit: boolean;
   onEditColumn: (index: number, newMm: number) => void;
   onRequestDeleteColumn: (index: number) => void;
+  columnIndexForVisual?: (visualIndex: number) => number;
 };
 
 const LAST_COLUMN_REASON = "An aperture type must have at least one row and one column.";
@@ -30,6 +31,7 @@ export function HorizontalDimensionStrip({
   canEdit,
   onEditColumn,
   onRequestDeleteColumn,
+  columnIndexForVisual = (visualIndex) => visualIndex,
 }: HorizontalDimensionStripProps) {
   const widthPx = pxFromMm(totalApertureWidthMm(aperture), zoom);
   const cols = aperture.column_widths_mm.length;
@@ -42,6 +44,7 @@ export function HorizontalDimensionStrip({
       style={{ width: `${widthPx}px` }}
     >
       {aperture.column_widths_mm.map((mm, index) => {
+        const canonicalIndex = columnIndexForVisual(index);
         const xMm = columnXOffsetMm(aperture, index);
         const leftPx = pxFromMm(xMm, zoom);
         const widthForSegmentPx = pxFromMm(mm, zoom);
@@ -59,8 +62,8 @@ export function HorizontalDimensionStrip({
             canEdit={canEdit}
             canDelete={canEdit && canDelete}
             deleteDisabledReason={canDelete ? null : LAST_COLUMN_REASON}
-            onCommit={(newMm) => onEditColumn(index, newMm)}
-            onDelete={() => onRequestDeleteColumn(index)}
+            onCommit={(newMm) => onEditColumn(canonicalIndex, newMm)}
+            onDelete={() => onRequestDeleteColumn(canonicalIndex)}
             style={style}
             ariaLabel={`Column ${index + 1} width`}
             testIdPrefix={`col-w-${index}`}

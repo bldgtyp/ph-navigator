@@ -1580,15 +1580,16 @@ button:disabled {
 .app-subtabs__actions {
   align-items: center;
   display: flex;
+  gap: 2px;
   justify-content: flex-end;
   padding-bottom: 6px;
 }
 
-.app-subtabs__menu-wrap {
+.app-menu {
   position: relative;
 }
 
-.app-subtabs__trigger {
+.app-menu__trigger {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
@@ -1596,33 +1597,32 @@ button:disabled {
   color: var(--text-secondary);
   cursor: pointer;
   display: inline-flex;
-  height: 32px;
+  height: 28px;
   justify-content: center;
-  list-style: none;
-  width: 32px;
+  min-height: 28px;
+  padding: 0;
+  width: 28px;
 }
 
-.app-subtabs__trigger::-webkit-details-marker {
-  display: none;
-}
-
-.app-subtabs__trigger svg circle {
-  r: 0.5px;
-}
-
-.app-subtabs__trigger:hover,
-.app-subtabs__trigger:focus-visible {
+.app-menu__trigger:hover,
+.app-menu__trigger:focus-visible {
   background: color-mix(in oklab, var(--text-primary) 6%, transparent);
   color: var(--text-primary);
   outline: 0;
 }
 
-.app-subtabs__menu {
+.app-menu__trigger svg circle {
+  fill: currentcolor;
+  r: 0.5px;
+  stroke: currentcolor;
+}
+
+.app-menu__panel {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
-  min-width: 260px;
+  min-width: 272px;
   padding: var(--space-1);
   position: absolute;
   right: 0;
@@ -1630,70 +1630,93 @@ button:disabled {
   z-index: var(--z-dropdown);
 }
 
-.app-subtabs__menu-item {
+.app-menu__item {
   align-items: center;
   background: transparent;
   border: 0;
   border-radius: 6px;
   color: var(--text-primary);
   cursor: pointer;
-  display: inline-flex;
-  font: inherit;
+  display: grid;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
   gap: var(--space-2);
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  line-height: 1.25;
   padding: var(--space-2) var(--space-3);
   text-align: left;
+  text-decoration: none;
   width: 100%;
 }
 
-.app-subtabs__menu-item:hover:not(:disabled) {
+.app-menu__item:hover:not(:disabled) {
   background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 
-.app-subtabs__menu-item:disabled {
+.app-menu__item:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.app-subtabs__submenu {
+.app-menu__item[data-danger="true"] {
+  color: var(--danger);
+}
+
+.app-menu__item-icon {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 16px;
+}
+
+.app-menu__item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-menu__submenu {
   display: grid;
 }
 
-.app-subtabs__submenu > summary {
+.app-menu__submenu > summary {
   list-style: none;
 }
 
-.app-subtabs__submenu > summary::-webkit-details-marker {
+.app-menu__submenu > summary::-webkit-details-marker {
   display: none;
 }
 
-.app-subtabs__submenu-trigger {
-  justify-content: space-between;
+.app-menu__submenu-trigger {
+  user-select: none;
 }
 
-.app-subtabs__menu-item-value {
+.app-menu__item-value {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.03em;
-  margin-left: var(--space-4);
+  white-space: nowrap;
 }
 
-.app-subtabs__submenu-panel {
+.app-menu__submenu-panel {
   display: grid;
   gap: 2px;
   padding: 0 0 var(--space-1) var(--space-3);
 }
 
-.app-subtabs__menu-radio {
+.app-menu__radio-item {
   color: var(--text-secondary);
 }
 
-.app-subtabs__menu-radio[aria-checked="true"] {
+.app-menu__radio-item[aria-checked="true"] {
   color: var(--accent-text);
   font-weight: 700;
 }
 
-.app-subtabs__menu-radio-mark {
+.app-menu__radio-mark {
   border: 1px solid currentcolor;
   border-radius: 50%;
   display: inline-flex;
@@ -1701,7 +1724,7 @@ button:disabled {
   width: 8px;
 }
 
-.app-subtabs__menu-radio[aria-checked="true"] .app-subtabs__menu-radio-mark {
+.app-menu__radio-item[aria-checked="true"] .app-menu__radio-mark {
   background: currentcolor;
 }
 

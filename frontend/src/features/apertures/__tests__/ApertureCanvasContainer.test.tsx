@@ -44,18 +44,24 @@ function UnitStub({ children }: { children: ReactNode }) {
   return <UnitPreferenceContext.Provider value={value}>{children}</UnitPreferenceContext.Provider>;
 }
 
-function ApertureCanvasHarness({ entry }: { entry: ApertureTypeEntry }) {
+function ApertureCanvasHarness({
+  entry,
+  onEditDimension,
+}: {
+  entry: ApertureTypeEntry;
+  onEditDimension?: (axis: "row" | "column", index: number, newMm: number) => void;
+}) {
   const dimFormat = useApertureDimFormat();
 
   return (
     <>
-      <details className="app-subtabs__menu-wrap" open>
-        <summary>Aperture actions</summary>
-        <div className="app-subtabs__menu" role="menu">
-          <DisplayFormatMenuGroup {...dimFormat} />
-        </div>
-      </details>
-      <ApertureCanvasContainer aperture={entry} dimFormat={dimFormat} canEdit />
+      <DisplayFormatMenuGroup {...dimFormat} />
+      <ApertureCanvasContainer
+        aperture={entry}
+        dimFormat={dimFormat}
+        canEdit
+        onEditDimension={onEditDimension}
+      />
     </>
   );
 }
@@ -94,7 +100,7 @@ describe("ApertureCanvasContainer", () => {
     expect(screen.getByTestId("col-w-0-value")).toHaveTextContent("1000.0");
     expect(screen.getByTestId("row-h-0-value")).toHaveTextContent("1200.0");
 
-    fireEvent.click(screen.getByText("Dimension display"));
+    fireEvent.click(screen.getByRole("button", { name: "Dimension display" }));
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Centimeters (cm)" }));
 
     expect(screen.getByTestId("aperture-total-dim-caption")).toHaveTextContent(
@@ -102,5 +108,46 @@ describe("ApertureCanvasContainer", () => {
     );
     expect(screen.getByTestId("col-w-0-value")).toHaveTextContent("100.00");
     expect(screen.getByTestId("row-h-0-value")).toHaveTextContent("120.00");
+  });
+
+  it("flips horizontal dimension strip with the interior SVG view", () => {
+    const onEditDimension = vi.fn();
+    render(
+      <UnitStub>
+        <ApertureCanvasHarness
+          entry={aperture({
+            column_widths_mm: [100, 200, 300],
+            row_heights_mm: [1000],
+            elements: [
+              element({ id: "aptel_a", column_span: [0, 0] }),
+              element({ id: "aptel_b", column_span: [1, 1] }),
+              element({ id: "aptel_c", column_span: [2, 2] }),
+            ],
+          })}
+          onEditDimension={onEditDimension}
+        />
+      </UnitStub>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Viewing from Exterior" }));
+
+    const visualLeft = screen.getByTestId("col-w-0");
+    const visualRight = screen.getByTestId("col-w-2");
+    const visualMiddle = screen.getByTestId("col-w-1");
+    const tick1 = screen.getByTestId("col-tick-1");
+    expect(screen.getByTestId("col-w-0-value")).toHaveTextContent("300.0");
+    expect(screen.getByTestId("col-w-2-value")).toHaveTextContent("100.0");
+    expect(visualLeft).toHaveStyle({ left: "0px" });
+    expect(parseFloat(visualLeft.style.width)).toBeGreaterThan(parseFloat(visualRight.style.width));
+    expect(parseFloat(tick1.style.left)).toBeCloseTo(parseFloat(visualLeft.style.width), 5);
+    expect(parseFloat(visualRight.style.left)).toBeCloseTo(
+      parseFloat(visualLeft.style.width) + parseFloat(visualMiddle.style.width),
+      5,
+    );
+
+    fireEvent.click(screen.getByTestId("col-w-0-value"));
+    fireEvent.change(screen.getByTestId("col-w-0-input"), { target: { value: "350" } });
+    fireEvent.keyDown(screen.getByTestId("col-w-0-input"), { key: "Enter" });
+    expect(onEditDimension).toHaveBeenCalledWith("column", 2, 350);
   });
 });

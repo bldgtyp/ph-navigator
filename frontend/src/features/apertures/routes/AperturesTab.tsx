@@ -1,7 +1,8 @@
 import "../apertures.css";
 import { useEffect, useMemo, useState } from "react";
-import { MoreVertical } from "lucide-react";
+import { Filter, Waypoints } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import type { ProjectDetail } from "../../projects/types";
 import { ApertureCanvasContainer } from "../components/ApertureCanvasContainer";
@@ -191,16 +192,9 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
             id="aperture-subtabs"
             ariaLabel="Aperture views"
             actions={
-              <details className="app-subtabs__menu-wrap">
-                <summary
-                  className="app-subtabs__trigger"
-                  aria-label="Aperture actions"
-                  title="Aperture actions"
-                >
-                  <MoreVertical size={22} aria-hidden="true" />
-                </summary>
-                <div className="app-subtabs__menu" role="menu">
-                  <DisplayFormatMenuGroup {...dimFormat} />
+              <>
+                <DisplayFormatMenuGroup {...dimFormat} />
+                <AppMenu label="Aperture actions">
                   {exportContext ? (
                     <ExportHbjsonAction
                       projectId={exportContext.projectId}
@@ -213,25 +207,17 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                     />
                   ) : null}
                   {filtersContext ? (
-                    <button
-                      type="button"
-                      className="app-subtabs__menu-item"
-                      onClick={filtersContext.onConfigureFilters}
-                    >
+                    <AppMenuItem icon={Filter} onClick={filtersContext.onConfigureFilters}>
                       Configure manufacturer filters
-                    </button>
+                    </AppMenuItem>
                   ) : null}
                   {refsContext ? (
-                    <button
-                      type="button"
-                      className="app-subtabs__menu-item"
-                      onClick={refsContext.onViewPickedRefs}
-                    >
+                    <AppMenuItem icon={Waypoints} onClick={refsContext.onViewPickedRefs}>
                       View picked frames &amp; glazings
-                    </button>
+                    </AppMenuItem>
                   ) : null}
-                </div>
-              </details>
+                </AppMenu>
+              </>
             }
           >
             {APERTURE_SUBTABS.map((subtab) => (
