@@ -1,0 +1,115 @@
+.dimension-chrome-cell {
+  --dimension-axis-color: color-mix(in oklab, var(--text-secondary) 72%, transparent);
+  --dimension-axis-x: 50px;
+  --dimension-axis-y: 12px;
+  --dimension-extension-gap: 6px;
+  --dimension-extension-reach-x: calc(
+    100% - var(--dimension-axis-x) - var(--dimension-extension-gap)
+  );
+  --dimension-extension-reach-y: calc(var(--dimension-axis-y) - var(--dimension-extension-gap));
+
+  position: absolute;
+}
+
+.dimension-chrome-cell--vertical {
+  align-items: center;
+  background-image: linear-gradient(
+    90deg,
+    transparent calc(var(--dimension-axis-x) - 0.5px),
+    var(--dimension-axis-color) calc(var(--dimension-axis-x) - 0.5px),
+    var(--dimension-axis-color) calc(var(--dimension-axis-x) + 0.5px),
+    transparent calc(var(--dimension-axis-x) + 0.5px)
+  );
+  display: flex;
+  justify-content: center;
+}
+
+.dimension-chrome-cell--horizontal {
+  align-items: start;
+  background-image: linear-gradient(
+    180deg,
+    transparent calc(var(--dimension-axis-y) - 0.5px),
+    var(--dimension-axis-color) calc(var(--dimension-axis-y) - 0.5px),
+    var(--dimension-axis-color) calc(var(--dimension-axis-y) + 0.5px),
+    transparent calc(var(--dimension-axis-y) + 0.5px)
+  );
+  display: flex;
+  justify-content: center;
+}
+
+.dimension-chrome-cell--vertical::before,
+.dimension-chrome-cell--vertical::after {
+  border-top: 1px solid var(--dimension-axis-color);
+  content: "";
+  left: calc(var(--dimension-axis-x) - 2px);
+  position: absolute;
+  width: var(--dimension-extension-reach-x);
+}
+
+.dimension-chrome-cell--vertical::before {
+  top: 0;
+}
+
+.dimension-chrome-cell--vertical::after {
+  bottom: 0;
+}
+
+.dimension-chrome-cell--horizontal::before,
+.dimension-chrome-cell--horizontal::after {
+  border-left: 1px solid var(--dimension-axis-color);
+  content: "";
+  height: var(--dimension-extension-reach-y);
+  position: absolute;
+  top: var(--dimension-extension-gap);
+}
+
+.dimension-chrome-cell--horizontal::before {
+  left: 0;
+}
+
+.dimension-chrome-cell--horizontal::after {
+  right: 0;
+}
+
+.dimension-chrome-cell + .dimension-chrome-cell::before {
+  display: none;
+}
+
+.dimension-chrome-tick {
+  background: var(--dimension-axis-color);
+  border-radius: 999px;
+  height: 5px;
+  position: absolute;
+  width: 5px;
+  z-index: calc(var(--z-base) + 2);
+}
+
+.dimension-chrome-tick--vertical {
+  left: var(--dimension-axis-x);
+  transform: translate(-50%, -50%);
+}
+
+.dimension-chrome-tick--horizontal {
+  top: var(--dimension-axis-y);
+  transform: translate(-50%, -50%);
+}
+
+.dimension-chrome-label-button {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 14px;
+  min-height: 18px;
+  padding: 1px 2px;
+  position: absolute;
+  z-index: calc(var(--z-base) + 3);
+}
+
+.dimension-chrome-label-button:hover,
+.dimension-chrome-label-button:focus-visible {
+  color: var(--accent-text);
+  outline: 0;
+}

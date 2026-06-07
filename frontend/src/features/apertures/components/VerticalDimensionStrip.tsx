@@ -51,6 +51,7 @@ export function VerticalDimensionStrip({
         return (
           <DimensionLabel
             key={index}
+            axis="vertical"
             mm={mm}
             system={system}
             format={format}
@@ -71,7 +72,7 @@ export function VerticalDimensionStrip({
         return (
           <span
             key={`tick-${tickIndex}`}
-            className="aperture-dim-tick aperture-dim-tick--vertical"
+            className="aperture-dim-tick aperture-dim-tick--vertical dimension-chrome-tick dimension-chrome-tick--vertical"
             style={{ top: `${topPx}px` }}
             data-testid={`row-tick-${tickIndex}`}
             aria-hidden

@@ -28,6 +28,7 @@ V1's catalog spike as precedent.
   and temporary notes
 
 Start here in `context/`:
+
 - `README.md` — reading order and doc routing
 - `ENVIRONMENT.md` — how this dev environment is set up
 - `PRD.md` — canonical V2 architecture PRD
@@ -147,6 +148,33 @@ Manual `playwright` CLI tests live under `frontend/tests/e2e/` and run via
 `make e2e`. Use these for regression-level tests; use the MCP for
 interactive verification.
 
+### Live UI access for agents
+
+Use one stable path for browser inspection so agents do not burn time on
+alternate ports or missing cookies:
+
+1. Keep the frontend on `http://localhost:5173` and the backend on
+   `http://localhost:8000`. If `5173` is already responding, use it; do
+   not start another Vite server that falls through to `5174`.
+2. If an agent must start the frontend, use strict port 5173 from
+   `frontend/`: `pnpm run dev -- --host 127.0.0.1 --port 5173 --strictPort`.
+   If that fails, inspect the existing `5173` server instead of using
+   the fallback port. Backend CORS is configured for 5173, not arbitrary
+   Vite fallback ports.
+3. Before browser work, verify the API is alive:
+   `curl -i http://localhost:8000/api/v1/auth/session`. A 401 response
+   with `not_authenticated` is fine; `Failed to fetch` in the browser
+   means the backend is unreachable or CORS/origin is wrong.
+4. Seed and use the dedicated local agent account:
+   `make seed-agent-user`, then sign in as `codex@example.com` /
+   `password`. Do not sign in as `ed@example.com` unless the user asks;
+   PHN uses a single-active-session rule and that can invalidate the
+   user's browser session.
+5. Prefer Playwright/browser inspection with an isolated browser session
+   signed in as `codex@example.com`. If the Playwright MCP browser
+   profile is locked, use the Node REPL Playwright fallback with
+   `frontend/node_modules`; do not switch to another app port.
+
 ## Planning
 
 - Durable description docs live in `context/`.
@@ -189,6 +217,7 @@ When the user invokes `$graphify`, `/graphify`, or otherwise asks to use
 Graphify, load the Graphify skill before doing anything else.
 
 Rules:
+
 - For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
