@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -22,17 +23,25 @@ from pydantic import BaseModel, Field
 from config import settings
 from database import transaction
 from features.auth.service import create_or_update_user
+from features.project_document.apertures.factories import build_default_aperture_type
 from features.project_document.document import (
+    APERTURE_DEFAULT_FRAME_NAME,
+    APERTURE_DEFAULT_GLAZING_NAME,
     ApplianceRow,
     AppliancesTableEnvelope,
+    Assembly,
+    CatalogOrigin,
     ElectricHeaterRow,
     ElectricHeatersTableEnvelope,
     FanRow,
     FansTableEnvelope,
+    FrameRef,
+    GlazingRef,
     HotWaterTankRow,
     HotWaterTanksTableEnvelope,
     ProjectDocumentTables,
     ProjectDocumentV1,
+    ProjectMaterial,
     PumpRow,
     PumpsTableEnvelope,
     RoomRow,
@@ -53,7 +62,9 @@ from features.projects.models import CreateProjectRequest
 from features.projects.repository import insert_project_with_initial_version
 from features.projects.service import empty_project_document
 from scripts._seed_paths import (
+    APERTURES_SEED_PATH,
     APPLIANCES_SEED_PATH,
+    ASSEMBLIES_SEED_PATH,
     ELECTRIC_HEATERS_SEED_PATH,
     FANS_SEED_PATH,
     HOT_WATER_TANKS_SEED_PATH,
@@ -75,8 +86,34 @@ class _TableSeed(BaseModel):
     rows: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class _EnvelopeSeed(BaseModel):
+    """Assembly Builder seed JSON: project materials plus assemblies."""
+
+    project_materials: list[dict[str, Any]] = Field(default_factory=list)
+    assemblies: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class _ApertureSeedRow(BaseModel):
+    """One starter aperture row using the built-in default frame/glazing."""
+
+    id: str
+    name: str
+
+
+class _ApertureSeed(BaseModel):
+    rows: list[_ApertureSeedRow] = Field(default_factory=list)
+
+
 def _load_table_seed(path: Any) -> _TableSeed:
     return _TableSeed.model_validate_json(path.read_text())
+
+
+def _load_envelope_seed(path: Any) -> _EnvelopeSeed:
+    return _EnvelopeSeed.model_validate_json(path.read_text())
+
+
+def _load_aperture_seed(path: Any) -> _ApertureSeed:
+    return _ApertureSeed.model_validate_json(path.read_text())
 
 
 def main() -> None:
@@ -153,6 +190,43 @@ _APERTURE_DEFAULT_GLAZING_ID = "recPHNDefGlazng01"
 _APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
 
 
+class _SeedDefaultsCatalog:
+    """In-memory default refs matching the DB rows reseeded above."""
+
+    def get_default_frame(self) -> FrameRef:
+        return FrameRef(
+            name=APERTURE_DEFAULT_FRAME_NAME,
+            width_mm=50.0,
+            u_value_w_m2k=1.5,
+            psi_g_w_mk=0.04,
+            color="#888888",
+            source="PH-Navigator built-in default",
+            catalog_origin=CatalogOrigin(
+                catalog_table="frame_types",
+                catalog_record_id=_APERTURE_DEFAULT_FRAME_ID,
+                catalog_schema_version=1,
+                synced_at=datetime.now(tz=UTC),
+                local_overrides=[],
+            ),
+        )
+
+    def get_default_glazing(self) -> GlazingRef:
+        return GlazingRef(
+            name=APERTURE_DEFAULT_GLAZING_NAME,
+            u_value_w_m2k=1.0,
+            g_value=0.5,
+            color="#a8c8ff",
+            source="PH-Navigator built-in default",
+            catalog_origin=CatalogOrigin(
+                catalog_table="glazing_types",
+                catalog_record_id=_APERTURE_DEFAULT_GLAZING_ID,
+                catalog_schema_version=1,
+                synced_at=datetime.now(tz=UTC),
+                local_overrides=[],
+            ),
+        )
+
+
 def _reseed_aperture_default_catalog_rows(conn: Any) -> None:
     conn.execute(
         """
@@ -195,6 +269,8 @@ def _reseed_aperture_default_catalog_rows(conn: Any) -> None:
 def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
     body = empty_project_document(payload)
 
+    envelope_seed = _load_envelope_seed(ASSEMBLIES_SEED_PATH)
+    apertures_seed = _load_aperture_seed(APERTURES_SEED_PATH)
     rooms_seed = _load_table_seed(ROOMS_SEED_PATH)
     pumps_seed = _load_table_seed(PUMPS_SEED_PATH)
     fans_seed = _load_table_seed(FANS_SEED_PATH)
@@ -245,9 +321,12 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     )
 
     next_tables = ProjectDocumentTables(
-        assemblies=body.tables.assemblies,
-        project_materials=body.tables.project_materials,
-        apertures=body.tables.apertures,
+        assemblies=[Assembly.model_validate(row) for row in envelope_seed.assemblies],
+        project_materials=[ProjectMaterial.model_validate(row) for row in envelope_seed.project_materials],
+        apertures=[
+            build_default_aperture_type(_SeedDefaultsCatalog(), name=row.name, aperture_id=row.id)
+            for row in apertures_seed.rows
+        ],
         rooms=RoomsTableEnvelope(
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],

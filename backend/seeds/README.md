@@ -15,6 +15,8 @@ backend/seeds/
     frame-types.v1.json           # Frame Types catalog (~190 rows)
   project/
     project.json                  # starter project metadata
+    assemblies.json               # 2 assemblies + referenced project materials
+    apertures.json                # 1 default 1000 mm x 1000 mm aperture
     rooms.json                    # 5 rooms + floor/zone options
     pumps.json                    # 5 pumps + device-type options
     fans.json                     # 5 fans + type options
@@ -28,7 +30,7 @@ Catalog files use the canonical import envelope
 (`{kind, schema_version, exported_at, rows}`) so they round-trip
 through the same preview → commit pipeline the import UI uses.
 
-Project-document files use a simpler shape:
+Most project-document files use a simpler shape:
 
 ```jsonc
 {
@@ -40,6 +42,17 @@ Project-document files use a simpler shape:
 `seed_dev_db.py` validates every row through the actual Pydantic models
 (`RoomRow`, `PumpRow`, etc.) before assembling the project document, so
 a typo here surfaces as a clear validation error at seed time.
+
+`project/assemblies.json` seeds Assembly Builder directly with
+`{project_materials, assemblies}` because assemblies reference
+project-owned material rows by `project_material_id`. The seed script
+validates those rows through `ProjectMaterial`, `Assembly`, and the full
+project document validator.
+
+`project/apertures.json` names the starter aperture row. The seed script
+builds the full 1000 mm x 1000 mm aperture through the same default
+aperture factory used by the UI, so it bookshelf-copies
+`PHN-Default-Frame` and `PHN-Default-Glazing`.
 
 ## Reset & reseed (one command)
 

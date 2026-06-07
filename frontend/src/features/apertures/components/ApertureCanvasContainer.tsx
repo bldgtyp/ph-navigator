@@ -306,6 +306,7 @@ export function ApertureCanvasContainer({
       onKeyDown={handleKeyDown}
       data-testid="aperture-canvas-container"
     >
+      <TotalDimensionsCaption aperture={aperture} format={dimFormat.format} />
       <ApertureCanvasToolbar
         zoom={zoom}
         viewDirection={viewDirection}
@@ -328,7 +329,6 @@ export function ApertureCanvasContainer({
         onPaintBucket={handlePaintBucket}
         onUndoPaste={() => void undoLastPaste()}
       />
-      <TotalDimensionsCaption aperture={aperture} format={dimFormat.format} />
       {deleteTip ? (
         <div
           className="aperture-canvas-notice"

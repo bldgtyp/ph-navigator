@@ -1,6 +1,4 @@
 import { Info } from "lucide-react";
-import { createSearchParams, useNavigate } from "react-router-dom";
-import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import {
   formatLengthFromMm,
   formatRValueFromM2KPerW,
@@ -8,46 +6,25 @@ import {
   useUnitPreference,
 } from "../../../lib/units";
 import { statusLabel, totalThicknessMm } from "../lib";
-import { envelopeAssemblyPath } from "../paths";
 import type { Assembly, AssemblyThermalResponse } from "../types";
 
 export function AssemblyHeader({
-  projectId,
-  assemblies,
   activeAssembly,
-  search,
   thermal,
   thermalLoading,
 }: {
-  projectId: string;
-  assemblies: Assembly[];
   activeAssembly: Assembly;
-  search: URLSearchParams;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
 }) {
   const { unitSystem } = useUnitPreference();
-  const navigate = useNavigate();
-  const query = createSearchParams(search).toString();
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
   const assemblyWarning = activeAssembly.status.is_complete
     ? null
     : statusLabel(activeAssembly.status.flags);
   return (
     <header id="assembly-builder-header" className="assembly-header">
-      <div id="assembly-picker-field" className="assembly-picker-field">
-        <AutocompleteSelect
-          id="assembly-picker"
-          label="Assembly"
-          value={activeAssembly.id}
-          compact
-          options={assemblies.map((assembly) => ({ value: assembly.id, label: assembly.name }))}
-          onChange={(nextAssemblyId) => {
-            const path = envelopeAssemblyPath(projectId, nextAssemblyId);
-            navigate(`${path}${query ? `?${query}` : ""}`);
-          }}
-        />
-      </div>
+      <h2>{activeAssembly.name}</h2>
       <dl id="assembly-header-metrics" className="assembly-header-metrics">
         <div id="assembly-total-thickness-metric">
           <dt>Total thickness</dt>

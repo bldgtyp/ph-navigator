@@ -961,7 +961,8 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByRole("link", { name: /WALL-C3/ });
-    await userEvent.click(screen.getByRole("button", { name: "Download constructions HBJSON" }));
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Download constructions HBJSON" }));
 
     expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("last committed version"));
     expect(fetchMock).toHaveBeenCalledWith(

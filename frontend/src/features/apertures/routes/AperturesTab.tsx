@@ -230,21 +230,12 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
               </AppSubTabButton>
             ))}
           </AppSubTabs>
-          {activeSubtab === "apertures" ? (
-            <>
-              <AperturesHeader
-                activeAperture={activeAperture}
-                uValue={activeUValue}
-                loading={uValueQuery.isLoading}
-              />
-              <BuilderDriftBanner apertureTypeId={activeAperture?.id ?? null} />
-            </>
-          ) : (
+          {activeSubtab !== "apertures" ? (
             <section
               className="apertures-placeholder-panel"
               aria-label={activeSubtab === "glazings" ? "Glazings" : "Frames"}
             />
-          )}
+          ) : null}
           <RefreshDialog
             open={refreshEntry !== null}
             entry={refreshEntry}
@@ -309,6 +300,12 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 onDelete={(aperture) => setDialog({ kind: "delete", aperture })}
               />
               <main className="apertures-page__main">
+                <AperturesHeader
+                  activeAperture={activeAperture}
+                  uValue={activeUValue}
+                  loading={uValueQuery.isLoading}
+                />
+                <BuilderDriftBanner apertureTypeId={activeAperture?.id ?? null} />
                 {activeAperture ? (
                   <ApertureCanvasContainer
                     aperture={activeAperture}
