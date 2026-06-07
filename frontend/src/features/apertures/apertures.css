@@ -670,74 +670,85 @@
   opacity: 0.85;
 }
 
-.aperture-dim-label__delete {
+.aperture-dim-label__input-wrap {
   align-items: center;
-  color: var(--text-secondary);
+  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  box-shadow: var(--shadow-elev-1);
   display: flex;
+  gap: 3px;
   justify-content: center;
-  min-height: 18px;
-  min-width: 18px;
-  opacity: 0;
-  padding: 0;
+  padding: 2px;
   position: absolute;
-  z-index: calc(var(--z-base) + 4);
-  width: 18px;
-  height: 18px;
-  font-size: 0.875rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: 50%;
-  background: var(--bg-card);
-  cursor: pointer;
-  line-height: 1;
+  z-index: calc(var(--z-base) + 7);
 }
 
-.aperture-dim-label--horizontal .aperture-dim-label__delete {
-  left: calc(50% + 31px);
-  top: calc(var(--dimension-axis-y) + 6px);
+.aperture-dim-label__input-wrap:has(.aperture-dim-label__input[data-error="true"]) {
+  border-color: var(--phn-danger);
 }
 
-.aperture-dim-label--vertical .aperture-dim-label__delete {
-  left: 43px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.aperture-dim-label:hover .aperture-dim-label__delete {
-  opacity: 1;
-}
-
-.aperture-dim-label__delete:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.aperture-dim-label__input {
-  font: inherit;
-  color: var(--text-primary);
-  position: absolute;
-  padding: 2px 4px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-  z-index: calc(var(--z-base) + 6);
-}
-
-.aperture-dim-label--horizontal .aperture-dim-label__input {
+.aperture-dim-label--horizontal .aperture-dim-label__input-wrap {
   left: 50%;
   top: calc(var(--dimension-axis-y) + 4px);
   transform: translateX(-50%);
-  width: 92px;
 }
 
-.aperture-dim-label--vertical .aperture-dim-label__input {
+.aperture-dim-label--vertical .aperture-dim-label__input-wrap {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 58px;
 }
 
-.aperture-dim-label__input[data-error="true"] {
-  border-color: var(--phn-danger);
+.aperture-dim-label__input-wrap
+  input.aperture-dim-label__input:not([type="checkbox"]):not([type="radio"]):not(
+    [type="color"]
+  ):not([type="range"]) {
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  font: inherit;
+  min-height: 26px;
+  outline: none;
+  padding: 3px 6px;
+  text-align: center;
+  width: clamp(68px, calc((var(--aperture-dim-input-ch, 7) * 1ch) + 14px), 180px);
+}
+
+.aperture-dim-label__delete {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  min-height: 26px;
+  min-width: 26px;
+  padding: 0;
+  position: relative;
+  transition:
+    background 0.14s var(--ease),
+    color 0.14s var(--ease);
+  width: 26px;
+}
+
+.aperture-dim-label__delete:hover:not(:disabled),
+.aperture-dim-label__delete:focus-visible:not(:disabled) {
+  background: var(--phn-danger-bg);
+  color: var(--phn-danger);
+  outline: 0;
+}
+
+.aperture-dim-label__delete:disabled {
+  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
+  cursor: not-allowed;
+}
+
+.aperture-dim-label__input-wrap .aperture-dim-label__input[data-error="true"] {
+  color: var(--phn-danger);
 }
 
 .aperture-edge-hot-zone {
