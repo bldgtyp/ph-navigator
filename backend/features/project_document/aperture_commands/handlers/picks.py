@@ -19,15 +19,18 @@ from typing import TypeVar
 
 from starlette import status
 
+from features.project_document.aperture_commands.handlers._shared import (
+    build_audit,
+    find_element,
+    find_entry,
+    replace_element,
+)
 from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
     PickFrame,
     PickGlazing,
 )
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
-    ApertureElement,
-    ApertureTypeEntry,
     FrameRef,
     GlazingRef,
     ProjectDocumentV1,
@@ -43,7 +46,8 @@ def apply_pick_frame(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, element_idx, aperture, element = _resolve(body, command.aperture_type_id, command.element_id)
+    aperture_idx, aperture = find_entry(body, command.aperture_type_id)
+    element_idx, element = find_element(aperture, command.element_id)
     _require_catalog_origin(command.frame, "frame")
     frame_ref = _stamp_synced_at(command.frame)
     frame_origin = frame_ref.catalog_origin
@@ -51,8 +55,8 @@ def apply_pick_frame(
         raise AssertionError("catalog origin is required after stamping a picked frame ref")
     next_frames = element.frames.model_copy(update={command.side: frame_ref})
     next_element = element.model_copy(update={"frames": next_frames})
-    next_body = _replace_element(body, aperture_idx, aperture, element_idx, next_element)
-    return next_body, _audit(
+    next_body = replace_element(body, aperture_idx, aperture, element_idx, next_element)
+    return next_body, build_audit(
         "pickFrame",
         actor_user_id,
         aperture_type_id=aperture.id,
@@ -70,15 +74,16 @@ def apply_pick_glazing(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, element_idx, aperture, element = _resolve(body, command.aperture_type_id, command.element_id)
+    aperture_idx, aperture = find_entry(body, command.aperture_type_id)
+    element_idx, element = find_element(aperture, command.element_id)
     _require_catalog_origin(command.glazing, "glazing")
     glazing_ref = _stamp_synced_at(command.glazing)
     glazing_origin = glazing_ref.catalog_origin
     if glazing_origin is None:
         raise AssertionError("catalog origin is required after stamping a picked glazing ref")
     next_element = element.model_copy(update={"glazing": glazing_ref})
-    next_body = _replace_element(body, aperture_idx, aperture, element_idx, next_element)
-    return next_body, _audit(
+    next_body = replace_element(body, aperture_idx, aperture, element_idx, next_element)
+    return next_body, build_audit(
         "pickGlazing",
         actor_user_id,
         aperture_type_id=aperture.id,
@@ -105,7 +110,13 @@ def _require_catalog_origin(ref: FrameRef | GlazingRef, target: str) -> None:
 
 def _stamp_synced_at(ref: _RefT) -> _RefT:
     """Refresh ``synced_at`` and reset ``local_overrides`` on a freshly
-    picked catalog ref. Hand-entered refs (null origin) round-trip."""
+    picked catalog ref. Hand-entered refs (null origin) round-trip.
+
+    Unlike :func:`apertures._ref_helpers.reset_origin`, this preserves
+    the source's ``catalog_schema_version`` when non-zero — the pick
+    can originate from a catalog row pinned to an older schema and
+    we should not silently bump it.
+    """
 
     origin = ref.catalog_origin
     if origin is None:
@@ -118,54 +129,6 @@ def _stamp_synced_at(ref: _RefT) -> _RefT:
         }
     )
     return ref.model_copy(update={"catalog_origin": refreshed})
-
-
-def _resolve(
-    body: ProjectDocumentV1,
-    aperture_type_id: str,
-    element_id: str,
-) -> tuple[int, int, ApertureTypeEntry, ApertureElement]:
-    for aperture_idx, aperture in enumerate(body.tables.apertures):
-        if aperture.id != aperture_type_id:
-            continue
-        for element_idx, element in enumerate(aperture.elements):
-            if element.id == element_id:
-                return aperture_idx, element_idx, aperture, element
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "No aperture element matches the requested id.",
-            {"aperture_type_id": aperture_type_id, "element_id": element_id},
-        )
-    raise api_error(
-        status.HTTP_404_NOT_FOUND,
-        "aperture_type_not_found",
-        "No aperture type matches the requested id.",
-        {"aperture_type_id": aperture_type_id},
-    )
-
-
-def _replace_element(
-    body: ProjectDocumentV1,
-    aperture_idx: int,
-    aperture: ApertureTypeEntry,
-    element_idx: int,
-    element: ApertureElement,
-) -> ProjectDocumentV1:
-    next_elements = list(aperture.elements)
-    next_elements[element_idx] = element
-    next_aperture = aperture.model_copy(update={"elements": next_elements})
-    next_apertures = list(body.tables.apertures)
-    next_apertures[aperture_idx] = next_aperture
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
-
-
-def _audit(kind: str, actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND[kind],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }
 
 
 __all__ = ["apply_pick_frame", "apply_pick_glazing"]

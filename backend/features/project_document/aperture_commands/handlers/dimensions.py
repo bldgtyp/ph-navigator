@@ -44,13 +44,21 @@ from datetime import UTC, datetime
 
 from starlette import status
 
+from features.project_document.aperture_commands.handlers._shared import (
+    build_audit,
+    find_entry,
+    replace_aperture,
+)
 from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
     AddColumn,
     AddRow,
     DeleteColumn,
     DeleteRow,
     EditDimension,
+)
+from features.project_document.apertures._ref_helpers import (
+    bookshelf_copy_frame,
+    bookshelf_copy_glazing,
 )
 from features.project_document.apertures.factories import (
     DefaultsCatalogReader,
@@ -61,7 +69,6 @@ from features.project_document.document import (
     ApertureElement,
     ApertureElementFrames,
     ApertureTypeEntry,
-    CatalogOrigin,
     FrameRef,
     GlazingRef,
     ProjectDocumentV1,
@@ -80,7 +87,7 @@ def apply_edit_dimension(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     is_row = command.axis == "row"
     dims = list(entry.row_heights_mm if is_row else entry.column_widths_mm)
     if command.index >= len(dims):
@@ -94,8 +101,8 @@ def apply_edit_dimension(
     dims[command.index] = command.new_value_mm
     field = "row_heights_mm" if is_row else "column_widths_mm"
     next_entry = entry.model_copy(update={field: dims})
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
-    return next_body, _audit(
+    next_body = replace_aperture(body, aperture_idx, next_entry)
+    return next_body, build_audit(
         "editDimension",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -113,7 +120,7 @@ def apply_add_row(
     actor_user_id: str,
     catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     next_entry = _add_along_axis(
         entry,
         axis="row",
@@ -121,8 +128,8 @@ def apply_add_row(
         new_dim_mm=command.height_mm,
         catalog=catalog,
     )
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
-    return next_body, _audit(
+    next_body = replace_aperture(body, aperture_idx, next_entry)
+    return next_body, build_audit(
         "addRow",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -138,7 +145,7 @@ def apply_add_column(
     actor_user_id: str,
     catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     next_entry = _add_along_axis(
         entry,
         axis="column",
@@ -146,8 +153,8 @@ def apply_add_column(
         new_dim_mm=command.width_mm,
         catalog=catalog,
     )
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
-    return next_body, _audit(
+    next_body = replace_aperture(body, aperture_idx, next_entry)
+    return next_body, build_audit(
         "addColumn",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -163,10 +170,10 @@ def apply_delete_row(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     next_entry = _delete_along_axis(entry, axis="row", at_index=command.index)
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
-    return next_body, _audit(
+    next_body = replace_aperture(body, aperture_idx, next_entry)
+    return next_body, build_audit(
         "deleteRow",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -181,10 +188,10 @@ def apply_delete_column(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     next_entry = _delete_along_axis(entry, axis="column", at_index=command.index)
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
-    return next_body, _audit(
+    next_body = replace_aperture(body, aperture_idx, next_entry)
+    return next_body, build_audit(
         "deleteColumn",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -244,8 +251,9 @@ def _add_along_axis(
     # one fresh default-frame / default-glazing element apiece.
     frame, glazing = _read_defaults(catalog)
     synced_at = datetime.now(tz=UTC)
-    frame_copy = _bookshelf_copy_frame(frame, synced_at=synced_at)
-    glazing_copy = _bookshelf_copy_glazing(glazing, synced_at=synced_at)
+    frame_copy = bookshelf_copy_frame(frame, synced_at=synced_at)
+    glazing_copy = bookshelf_copy_glazing(glazing, synced_at=synced_at)
+    assert glazing_copy is not None  # glazing came from _read_defaults; non-None guaranteed
 
     for c in range(cross_size):
         if c in extended_cross_cells:
@@ -321,31 +329,6 @@ def _delete_along_axis(entry: ApertureTypeEntry, *, axis: str, at_index: int) ->
 # ---- Helpers --------------------------------------------------------------
 
 
-def _find_entry(
-    body: ProjectDocumentV1,
-    aperture_type_id: str,
-) -> tuple[int, ApertureTypeEntry]:
-    for idx, entry in enumerate(body.tables.apertures):
-        if entry.id == aperture_type_id:
-            return idx, entry
-    raise api_error(
-        status.HTTP_404_NOT_FOUND,
-        "aperture_type_not_found",
-        "No aperture type matches the requested id.",
-        {"aperture_type_id": aperture_type_id},
-    )
-
-
-def _replace_aperture(
-    body: ProjectDocumentV1,
-    aperture_idx: int,
-    entry: ApertureTypeEntry,
-) -> ProjectDocumentV1:
-    apertures = list(body.tables.apertures)
-    apertures[aperture_idx] = entry
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": apertures})})
-
-
 def _read_defaults(catalog: DefaultsCatalogReader) -> tuple[FrameRef, GlazingRef]:
     frame = catalog.get_default_frame()
     if frame is None:
@@ -376,45 +359,19 @@ def _build_seeded_element(
     frame: FrameRef,
     glazing: GlazingRef,
 ) -> ApertureElement:
+    # deep=True keeps each seeded element independent — see split handler
+    # for the same defensive stance against latent aliasing.
     return ApertureElement(
         id=f"aptel_{uuid.uuid4().hex[:12]}",
         name="Unnamed",
         row_span=row_span,
         column_span=column_span,
         frames=ApertureElementFrames(
-            top=frame.model_copy(),
-            right=frame.model_copy(),
-            bottom=frame.model_copy(),
-            left=frame.model_copy(),
+            top=frame.model_copy(deep=True),
+            right=frame.model_copy(deep=True),
+            bottom=frame.model_copy(deep=True),
+            left=frame.model_copy(deep=True),
         ),
-        glazing=glazing,
+        glazing=glazing.model_copy(deep=True),
         operation=None,
     )
-
-
-def _bookshelf_copy_frame(frame: FrameRef, *, synced_at: datetime) -> FrameRef:
-    return frame.model_copy(
-        update={"catalog_origin": _refresh_origin(frame.catalog_origin, synced_at=synced_at)},
-    )
-
-
-def _bookshelf_copy_glazing(glazing: GlazingRef, *, synced_at: datetime) -> GlazingRef:
-    return glazing.model_copy(
-        update={"catalog_origin": _refresh_origin(glazing.catalog_origin, synced_at=synced_at)},
-    )
-
-
-def _refresh_origin(origin: CatalogOrigin | None, *, synced_at: datetime) -> CatalogOrigin | None:
-    if origin is None:
-        return None
-    return origin.model_copy(
-        update={"catalog_schema_version": 1, "synced_at": synced_at, "local_overrides": []},
-    )
-
-
-def _audit(kind: str, actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND[kind],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }

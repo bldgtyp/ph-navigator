@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import { applyApertureCommand, fetchAperturesSlice } from "./api";
+import { apertureDriftReportQueryKey } from "./hooks/useApertureDriftReport";
 import { apertureUValuesQueryKey } from "./hooks/useApertureUValues";
 import { apertureQueryKeys } from "./query-keys";
 import type { ApertureCommand, AperturesSlice } from "./types";
@@ -25,6 +26,27 @@ const U_VALUE_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
   "mergeElements",
   "splitElement",
   "pasteAssignment",
+]);
+
+/** Wire kinds that change a catalog-aware ref shape (origin / fields)
+ *  or the document's ref population, so the drift report needs a
+ *  re-fetch to reflect the new state. ``refreshRefFromCatalog`` is the
+ *  obvious one; the structural commands also reshuffle which refs
+ *  exist or which catalog rows they point at. */
+const DRIFT_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
+  "createApertureType",
+  "duplicateApertureType",
+  "deleteApertureType",
+  "addRow",
+  "addColumn",
+  "deleteRow",
+  "deleteColumn",
+  "pickFrame",
+  "pickGlazing",
+  "mergeElements",
+  "splitElement",
+  "pasteAssignment",
+  "refreshRefFromCatalog",
 ]);
 
 export function useAperturesSliceQuery(
@@ -62,6 +84,11 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       if (U_VALUE_AFFECTING_KINDS.has(variables.command.kind)) {
         queryClient.invalidateQueries({
           queryKey: apertureUValuesQueryKey(projectId, slice.version_id, slice.source),
+        });
+      }
+      if (DRIFT_AFFECTING_KINDS.has(variables.command.kind)) {
+        queryClient.invalidateQueries({
+          queryKey: apertureDriftReportQueryKey(projectId, slice.version_id, slice.source),
         });
       }
     },

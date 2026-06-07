@@ -38,7 +38,9 @@ export function FramePicker({
     operation: operationFilter,
     manufacturers: effectiveManufacturers,
   });
-  const { rows: allRows } = useFrameCatalog({ manufacturers: effectiveManufacturers });
+  // Unfiltered lookup so the current-value chip survives even when the
+  // active manufacturer/location/operation filters would drop it.
+  const { rows: allRows } = useFrameCatalog();
   const visible = filteredRows;
   const selectedRow = currentCatalogId
     ? allRows.find((row) => row.id === currentCatalogId)

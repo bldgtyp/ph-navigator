@@ -32,6 +32,7 @@ class CatalogGlazingTypeListItem(BaseModel):
     g_value: float | None
     color: str | None
     source: str | None
+    datasheet_url: str | None
     comments: str | None
     is_active: bool
     created_at: datetime
@@ -71,9 +72,10 @@ class _CatalogGlazingTypeFields(BaseModel):
     g_value: float | None = Field(default=None, ge=0.0, le=1.0)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
+    datasheet_url: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
 
-    @field_validator("manufacturer", "brand", "suffix", "source", "comments", mode="before")
+    @field_validator("manufacturer", "brand", "suffix", "source", "datasheet_url", "comments", mode="before")
     @classmethod
     def _strip_optional_text(cls, value: object) -> object:
         return strip_optional(value)

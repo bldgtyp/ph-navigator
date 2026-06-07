@@ -20,7 +20,8 @@ renaming an aperture.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+
+from pydantic import BaseModel, ConfigDict
 
 from features.shared.errors import api_error
 
@@ -45,16 +46,14 @@ def escape_hbjson_identifier(raw: str) -> str:
     return cleaned
 
 
-@dataclass(frozen=True)
-class Collision:
+class Collision(BaseModel):
     """Two aperture identifiers that escape to the same Honeybee id."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     escaped: str
     first: str
     second: str
-
-    def model_dump(self) -> dict[str, str]:
-        return {"escaped": self.escaped, "first": self.first, "second": self.second}
 
 
 def detect_collisions(identifiers: list[tuple[str, str]]) -> list[Collision]:

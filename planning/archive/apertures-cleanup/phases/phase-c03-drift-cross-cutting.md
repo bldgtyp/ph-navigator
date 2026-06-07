@@ -1,7 +1,13 @@
 ---
 DATE: 2026-06-07
 TIME: (compiled)
-STATUS: Active — queued behind Phase C-02
+STATUS: **Mostly done** (2026-06-07). Steps 1 (load_document_body),
+        3 (LiveCatalogReader consolidation — non-bulk), 4 (_Wrap
+        hoist), 5 (NoReturn — already shipped), 6 (cache FIFO),
+        7 (Collision BaseModel), 8 (drift query invalidation)
+        shipped. **Deferred:** Step 2 (BulkCatalogReader N+1 fix)
+        and the corresponding regression test. See `../STATUS.md`
+        close-out notes for details.
 AUTHOR: Claude
 SCOPE: Fix the N+1 catalog-read pattern in drift detection,
        consolidate the duplicated `_LiveCatalogReader` across REST
@@ -16,7 +22,7 @@ SCOPE: Fix the N+1 catalog-read pattern in drift detection,
 RELATED:
   - planning/code-reviews/2026-06-07/aperture-builder-review.md
     (sections "Backend §9–§15" + Frontend §12)
-  - planning/features/apertures-cleanup/PRD.md §C.1 (drift
+  - planning/archive/apertures-cleanup/PRD.md §C.1 (drift
     report cache key — separate concern, not this phase)
   - context/CODING_STANDARDS.md
 ---

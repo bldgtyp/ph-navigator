@@ -24,6 +24,7 @@ const ROW_KEY_ORDER: (keyof CatalogFileRow)[] = [
   "g_value",
   "color",
   "source",
+  "datasheet_url",
   "comments",
 ];
 

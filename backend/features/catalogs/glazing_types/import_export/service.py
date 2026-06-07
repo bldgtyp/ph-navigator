@@ -156,6 +156,7 @@ def commit_import(token: str, user: UserPublic, request: Request) -> CommitRespo
                     g_value=_optional_float(payload, "g_value"),
                     color=_optional_str(payload, "color"),
                     source=_optional_str(payload, "source"),
+                    datasheet_url=_optional_str(payload, "datasheet_url"),
                     comments=_optional_str(payload, "comments"),
                     user_id=user.id,
                 )

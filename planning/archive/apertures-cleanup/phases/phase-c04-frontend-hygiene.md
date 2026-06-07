@@ -1,9 +1,15 @@
 ---
 DATE: 2026-06-07
 TIME: (compiled)
-STATUS: Active — queued behind Phase C-03; can ship in parallel
-        with C-02 if branch-management permits since they touch
-        disjoint files
+STATUS: **Partial** (2026-06-07). Latent-bug fixes shipped
+        (popUndoEntry contract, FramePicker manufacturer-filter
+        silent-drop, RefreshDialog seed deps, canvas mirror memo,
+        pick-paste ternary, EdgeAddButtons dead-code removal).
+        Larger refactor steps (test fixtures, container
+        decomposition, ALL_SIDES / ViewDirection consolidation,
+        catalog-totals hoist) and the coverage backfill deferred —
+        mechanical cleanup, not correctness work. See
+        `../STATUS.md` close-out notes for the full split.
 AUTHOR: Claude
 SCOPE: Frontend-only hygiene pass over the Aperture-Builder.
        Memoise the interior-mirroring computation, share canvas
@@ -17,7 +23,7 @@ SCOPE: Frontend-only hygiene pass over the Aperture-Builder.
 RELATED:
   - planning/code-reviews/2026-06-07/aperture-builder-review.md
     (Frontend §1–§15)
-  - planning/features/apertures-cleanup/PRD.md
+  - planning/archive/apertures-cleanup/PRD.md
   - frontend/CODING_STANDARDS.md (via context/CODING_STANDARDS.md)
 ---
 

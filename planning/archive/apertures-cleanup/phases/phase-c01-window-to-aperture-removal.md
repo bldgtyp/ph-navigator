@@ -1,9 +1,11 @@
 ---
 DATE: 2026-06-07
 TIME: (compiled)
-STATUS: Active — first in the cleanup queue. Prerequisite for
-        C-02, C-03, and C-04 because the rename touches files
-        all three later phases also touch.
+STATUS: **Done** (2026-06-07). §A.1–§A.5 were already shipped in
+        earlier work (rename + JSON migration + seed + frontend
+        deletion); the 2026-06-07 session closed §A.6 (route
+        redirect) and §B.2 (`datasheet_url` column). See
+        `../STATUS.md` close-out notes for details.
 AUTHOR: Claude
 SCOPE: Retire the legacy `Window*` tracer-bullet that the
        13-phase Apertures build deliberately left in place.
@@ -17,8 +19,8 @@ SCOPE: Retire the legacy `Window*` tracer-bullet that the
        on FrameRef / GlazingRef) per the PRD note that it ships
        co-located with the rename.
 RELATED:
-  - planning/features/apertures-cleanup/PRD.md §A.1–§A.6, §B.2
-  - planning/features/apertures-cleanup/STATUS.md (phase queue)
+  - planning/archive/apertures-cleanup/PRD.md §A.1–§A.6, §B.2
+  - planning/archive/apertures-cleanup/STATUS.md (phase queue)
   - planning/archive/apertures/phases/phase-01-terminology-schema-command-seam.md
     (the original V2 type introduction)
   - planning/archive/apertures/phases/phase-02-shell-sidebar.md

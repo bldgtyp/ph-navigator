@@ -15,13 +15,16 @@ import uuid
 from datetime import UTC, datetime
 from typing import Protocol
 
+from features.project_document.apertures._ref_helpers import (
+    bookshelf_copy_frame,
+    bookshelf_copy_glazing,
+)
 from features.project_document.document import (
     APERTURE_DEFAULT_FRAME_NAME,
     APERTURE_DEFAULT_GLAZING_NAME,
     ApertureElement,
     ApertureElementFrames,
     ApertureTypeEntry,
-    CatalogOrigin,
     FrameRef,
     GlazingRef,
 )
@@ -73,8 +76,9 @@ def build_default_aperture_type(
         )
 
     now = datetime.now(tz=UTC)
-    frame_copy = _bookshelf_copy_frame(frame, synced_at=now)
-    glazing_copy = _bookshelf_copy_glazing(glazing, synced_at=now)
+    frame_copy = bookshelf_copy_frame(frame, synced_at=now)
+    glazing_copy = bookshelf_copy_glazing(glazing, synced_at=now)
+    assert glazing_copy is not None  # glazing was not-None above; helper passes through
 
     aperture_id_final = aperture_id or f"apt_{_short_uuid()}"
     element_id = f"aptel_{_short_uuid()}"
@@ -91,10 +95,10 @@ def build_default_aperture_type(
                 row_span=(0, 0),
                 column_span=(0, 0),
                 frames=ApertureElementFrames(
-                    top=frame_copy.model_copy(),
-                    right=frame_copy.model_copy(),
-                    bottom=frame_copy.model_copy(),
-                    left=frame_copy.model_copy(),
+                    top=frame_copy.model_copy(deep=True),
+                    right=frame_copy.model_copy(deep=True),
+                    bottom=frame_copy.model_copy(deep=True),
+                    left=frame_copy.model_copy(deep=True),
                 ),
                 glazing=glazing_copy,
                 operation=None,
@@ -105,31 +109,3 @@ def build_default_aperture_type(
 
 def _short_uuid() -> str:
     return uuid.uuid4().hex[:12]
-
-
-def _bookshelf_copy_frame(frame: FrameRef, *, synced_at: datetime) -> FrameRef:
-    return frame.model_copy(
-        update={
-            "catalog_origin": _refresh_origin(frame.catalog_origin, synced_at=synced_at),
-        }
-    )
-
-
-def _bookshelf_copy_glazing(glazing: GlazingRef, *, synced_at: datetime) -> GlazingRef:
-    return glazing.model_copy(
-        update={
-            "catalog_origin": _refresh_origin(glazing.catalog_origin, synced_at=synced_at),
-        }
-    )
-
-
-def _refresh_origin(origin: CatalogOrigin | None, *, synced_at: datetime) -> CatalogOrigin | None:
-    if origin is None:
-        return None
-    return origin.model_copy(
-        update={
-            "catalog_schema_version": 1,
-            "synced_at": synced_at,
-            "local_overrides": [],
-        }
-    )

@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -182,7 +183,10 @@ export function ApertureCanvasContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aperture.id]);
 
-  const rendered = viewDirection === "interior" ? mirrorApertureForInterior(aperture) : aperture;
+  const rendered = useMemo(
+    () => (viewDirection === "interior" ? mirrorApertureForInterior(aperture) : aperture),
+    [aperture, viewDirection],
+  );
   const widthMm = totalApertureWidthMm(rendered);
   const heightMm = totalApertureHeightMm(rendered);
   const pxW = Math.max(MIN_CANVAS_WIDTH_PX, pxFromMm(widthMm, zoom));

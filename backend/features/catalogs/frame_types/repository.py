@@ -56,6 +56,7 @@ SELECT
     psi_install_w_mk,
     color,
     source,
+    datasheet_url,
     comments,
     (deleted_at IS NULL) AS is_active,
     created_at,
@@ -83,6 +84,7 @@ _UPDATABLE_FIELDS = frozenset(
         "psi_install_w_mk",
         "color",
         "source",
+        "datasheet_url",
         "comments",
     }
 )
@@ -165,6 +167,7 @@ def insert_frame_type(
     psi_install_w_mk: float | None,
     color: str | None,
     source: str | None,
+    datasheet_url: str | None,
     comments: str | None,
     user_id: UUID,
 ) -> None:
@@ -176,7 +179,7 @@ def insert_frame_type(
             "use", operation, location, mull_type,
             prefix, suffix, material,
             width_mm, u_value_w_m2k, psi_g_w_mk, psi_install_w_mk,
-            color, source, comments,
+            color, source, datasheet_url, comments,
             created_by, updated_by
         )
         VALUES (
@@ -185,7 +188,7 @@ def insert_frame_type(
             %(use)s, %(operation)s, %(location)s, %(mull_type)s,
             %(prefix)s, %(suffix)s, %(material)s,
             %(width_mm)s, %(u_value_w_m2k)s, %(psi_g_w_mk)s, %(psi_install_w_mk)s,
-            %(color)s, %(source)s, %(comments)s,
+            %(color)s, %(source)s, %(datasheet_url)s, %(comments)s,
             %(user_id)s, %(user_id)s
         )
         """,
@@ -207,6 +210,7 @@ def insert_frame_type(
             "psi_install_w_mk": psi_install_w_mk,
             "color": color,
             "source": source,
+            "datasheet_url": datasheet_url,
             "comments": comments,
             "user_id": user_id,
         },

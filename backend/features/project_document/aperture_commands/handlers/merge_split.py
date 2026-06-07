@@ -23,17 +23,22 @@ from datetime import UTC, datetime
 
 from starlette import status
 
+from features.project_document.aperture_commands.handlers._shared import (
+    build_audit,
+    find_element,
+    find_entry,
+    replace_aperture,
+)
 from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
     MergeElements,
     SplitElement,
 )
+from features.project_document.apertures._ref_helpers import advance_origin
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
     ApertureElement,
     ApertureElementFrames,
     ApertureTypeEntry,
-    CatalogOrigin,
     FrameRef,
     GlazingRef,
     ProjectDocumentV1,
@@ -47,7 +52,7 @@ def apply_merge_elements(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     sources = _resolve_sources(entry, command.element_ids)
     union = _validate_rectangle(sources, command.element_ids)
     top_left = _top_left(sources)
@@ -66,9 +71,9 @@ def apply_merge_elements(
     survivors = [el for el in entry.elements if el.id not in source_ids]
     survivors.append(merged)
     next_entry = entry.model_copy(update={"elements": survivors})
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
+    next_body = replace_aperture(body, aperture_idx, next_entry)
 
-    return next_body, _audit(
+    return next_body, build_audit(
         "mergeElements",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -85,8 +90,8 @@ def apply_split_element(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
-    source_idx, source = _find_element(entry, command.element_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
+    source_idx, source = find_element(entry, command.element_id)
 
     rs, re = source.row_span
     cs, ce = source.column_span
@@ -118,9 +123,9 @@ def apply_split_element(
     survivors.pop(source_idx)
     survivors.extend(new_elements)
     next_entry = entry.model_copy(update={"elements": survivors})
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
+    next_body = replace_aperture(body, aperture_idx, next_entry)
 
-    return next_body, _audit(
+    return next_body, build_audit(
         "splitElement",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -205,7 +210,7 @@ def _clone_frame(frame: FrameRef | None, *, synced_at: datetime) -> FrameRef | N
     if frame is None:
         return None
     return frame.model_copy(
-        update={"catalog_origin": _refresh_origin(frame.catalog_origin, synced_at=synced_at)},
+        update={"catalog_origin": advance_origin(frame.catalog_origin, synced_at=synced_at)},
         deep=True,
     )
 
@@ -214,68 +219,9 @@ def _clone_glazing(glazing: GlazingRef | None, *, synced_at: datetime) -> Glazin
     if glazing is None:
         return None
     return glazing.model_copy(
-        update={"catalog_origin": _refresh_origin(glazing.catalog_origin, synced_at=synced_at)},
+        update={"catalog_origin": advance_origin(glazing.catalog_origin, synced_at=synced_at)},
         deep=True,
     )
-
-
-def _refresh_origin(origin: CatalogOrigin | None, *, synced_at: datetime) -> CatalogOrigin | None:
-    if origin is None:
-        return None
-    return origin.model_copy(
-        update={"synced_at": synced_at, "catalog_schema_version": origin.catalog_schema_version or 1}
-    )
-
-
-# ---- Shared boilerplate ---------------------------------------------------
-
-
-def _find_entry(
-    body: ProjectDocumentV1,
-    aperture_type_id: str,
-) -> tuple[int, ApertureTypeEntry]:
-    for idx, entry in enumerate(body.tables.apertures):
-        if entry.id == aperture_type_id:
-            return idx, entry
-    raise api_error(
-        status.HTTP_404_NOT_FOUND,
-        "aperture_type_not_found",
-        "No aperture type matches the requested id.",
-        {"aperture_type_id": aperture_type_id},
-    )
-
-
-def _find_element(
-    entry: ApertureTypeEntry,
-    element_id: str,
-) -> tuple[int, ApertureElement]:
-    for idx, el in enumerate(entry.elements):
-        if el.id == element_id:
-            return idx, el
-    raise api_error(
-        status.HTTP_404_NOT_FOUND,
-        "aperture_element_not_found",
-        "No aperture element matches the requested id.",
-        {"aperture_type_id": entry.id, "element_id": element_id},
-    )
-
-
-def _replace_aperture(
-    body: ProjectDocumentV1,
-    aperture_idx: int,
-    entry: ApertureTypeEntry,
-) -> ProjectDocumentV1:
-    apertures = list(body.tables.apertures)
-    apertures[aperture_idx] = entry
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": apertures})})
-
-
-def _audit(kind: str, actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND[kind],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }
 
 
 __all__ = ["apply_merge_elements", "apply_split_element"]

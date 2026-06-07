@@ -53,6 +53,7 @@ function buildEmptyFrameTypeRow({ rowId }: { rowId: string }): FrameTypeRow {
     psi_install_w_mk: null,
     color: null,
     source: null,
+    datasheet_url: null,
     comments: null,
     is_active: true,
     created_at: PLACEHOLDER_TIMESTAMP,

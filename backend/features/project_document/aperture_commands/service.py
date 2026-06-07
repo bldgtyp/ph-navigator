@@ -29,7 +29,7 @@ from features.project_document.tables.apertures import (
     AperturesSliceResponse,
     apertures_response,
 )
-from features.project_document.validation import document_etag, next_draft_etag
+from features.project_document.validation import next_draft_etag
 from features.projects.access import ProjectAccess, require_editor_user
 
 
@@ -96,10 +96,6 @@ def apply_aperture_command_to_draft(
             extra_details={**audit_payload, "updated_via": updated_via},
         )
 
-    # `document_etag` is left available for callers that want to advertise
-    # the new saved etag separately; the response envelope itself carries
-    # version_etag (the saved-side ETag, unchanged here) and draft_etag.
-    _ = document_etag
     response = apertures_response(
         access.project_id,
         version_id,

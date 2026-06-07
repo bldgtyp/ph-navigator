@@ -41,6 +41,7 @@ _FIELD_MAX_LENGTHS: Final[dict[str, int]] = {
     "suffix": 80,
     "material": 80,
     "source": 400,
+    "datasheet_url": 400,
     "comments": 4000,
     "color": 40,
 }
@@ -63,6 +64,7 @@ _TEXT_FIELDS: Final[tuple[str, ...]] = (
     "suffix",
     "material",
     "source",
+    "datasheet_url",
     "comments",
 )
 

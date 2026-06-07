@@ -23,6 +23,7 @@ export type CatalogFileRow = {
   psi_install_w_mk: number | null;
   color: string | null;
   source: string | null;
+  datasheet_url: string | null;
   comments: string | null;
 };
 

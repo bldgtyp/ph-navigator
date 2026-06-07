@@ -81,6 +81,7 @@ def create_glazing_type(
             g_value=payload.g_value,
             color=payload.color,
             source=payload.source,
+            datasheet_url=payload.datasheet_url,
             comments=payload.comments,
             user_id=user.id,
         )
@@ -162,6 +163,7 @@ def duplicate_glazing_type(record_id: str, user: UserPublic, request: Request) -
             g_value=source["g_value"],
             color=source["color"],
             source=source["source"],
+            datasheet_url=source["datasheet_url"],
             comments=source["comments"],
             user_id=user.id,
         )

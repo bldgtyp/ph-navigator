@@ -3,9 +3,9 @@ DATE: 2026-06-05 (last content update — items themselves are
       unchanged from the original 13-phase deferral list)
 LAST_REVIEWED: 2026-06-07 (post-build review noted below)
 TIME: 21:45 EDT
-STATUS: Active — backlog. §A.1–§A.6 + §B.2 scheduled as Phase C-01
-        (plan in `phases/phase-c01-window-to-aperture-removal.md`).
-        Everything else in §B–§F remains unclaimed.
+STATUS: Active — §A.1–§A.6 + §B.2 shipped 2026-06-07 as Phase C-01
+        (close-out notes in STATUS.md). Everything else in §B–§F
+        remains unclaimed.
 AUTHOR: Claude
 SCOPE: Every cleanup / polish / followup item that was knowingly
        deferred during the 13-phase Apertures build. Grouped by
@@ -13,9 +13,9 @@ SCOPE: Every cleanup / polish / followup item that was knowingly
        it was deferred so a future cleanup phase can pick them up
        with full context.
 RELATED:
-  - planning/features/apertures-cleanup/STATUS.md
+  - planning/archive/apertures-cleanup/STATUS.md
     (canonical phase queue + ship order)
-  - planning/features/apertures-cleanup/phases/
+  - planning/archive/apertures-cleanup/phases/
     (Phase C-02 / C-03 / C-04 plans — review-driven, NOT in this
     PRD)
   - planning/code-reviews/2026-06-07/aperture-builder-review.md

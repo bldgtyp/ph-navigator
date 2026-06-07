@@ -8,7 +8,7 @@ SCOPE: Post-13-phase quality review of the Aperture-Builder feature
        `aperture_drift`, `aperture_u_value`, `aperture_hbjson_export`,
        `apertures_mcp`, `project_document/apertures`)
 RELATED:
-  - planning/features/apertures-cleanup/PRD.md (existing backlog —
+  - planning/archive/apertures-cleanup/PRD.md (existing backlog —
     findings below are deliberately *not* duplicates of A.1–F items)
   - planning/archive/apertures/STATUS.md (final state of the 13-phase build)
 ---
@@ -531,7 +531,7 @@ house convention for wire shapes) or use `dataclasses.asdict`.
 
 ## Documentation
 
-The `planning/features/apertures-cleanup/PRD.md` backlog accurately
+The `planning/archive/apertures-cleanup/PRD.md` backlog accurately
 reflects what was deferred during the 13-phase build and is the
 authoritative starting point for any cleanup phase. Nothing in this
 review contradicts it.

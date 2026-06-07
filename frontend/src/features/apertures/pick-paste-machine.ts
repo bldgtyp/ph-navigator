@@ -25,7 +25,7 @@ export type PickPasteAction =
 
 export function nextMode(current: PickPasteMode, action: PickPasteAction): PickPasteMode {
   if (action.type === "esc" || action.type === "clear") return "idle";
-  if (action.type === "click-background") return current === "idle" ? "idle" : "idle";
+  if (action.type === "click-background") return "idle";
 
   switch (current) {
     case "idle":

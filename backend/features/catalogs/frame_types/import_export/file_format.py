@@ -39,6 +39,7 @@ class CatalogFileRow(BaseModel):
     psi_install_w_mk: float | str | None = None
     color: str | None = None
     source: str | None = None
+    datasheet_url: str | None = None
     comments: str | None = None
 
 

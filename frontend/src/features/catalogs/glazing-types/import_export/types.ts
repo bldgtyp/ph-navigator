@@ -15,6 +15,7 @@ export type CatalogFileRow = {
   g_value: number | null;
   color: string | null;
   source: string | null;
+  datasheet_url: string | null;
   comments: string | null;
 };
 
