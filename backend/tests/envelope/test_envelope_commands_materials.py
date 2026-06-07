@@ -199,3 +199,47 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
     remaining_ids = {material["id"] for material in cleaned.json()["project_materials"]}
     assert custom["id"] not in remaining_ids
     assert detached_material["id"] in remaining_ids
+
+
+def test_pick_project_material_assigns_existing_material_and_rejects_unknown(
+    clean_envelope_material_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = envelope_body()
+    write_saved_body(version_id, saved_body)
+
+    picked = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "command": {
+                "kind": "pick_project_material",
+                "assembly_id": "asm_wall_c3",
+                "layer_id": "lyr_service_cavity",
+                "segment_id": "seg_null",
+                "project_material_id": "pmat_insul",
+            }
+        },
+    )
+    assert picked.status_code == 200
+    segment = picked.json()["assemblies"][0]["layers"][1]["segments"][0]
+    assert segment["project_material_id"] == "pmat_insul"
+
+    missing = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": picked.json()["draft_etag"]},
+        json={
+            "command": {
+                "kind": "pick_project_material",
+                "assembly_id": "asm_wall_c3",
+                "layer_id": "lyr_service_cavity",
+                "segment_id": "seg_null",
+                "project_material_id": "pmat_does_not_exist",
+            }
+        },
+    )
+    assert missing.status_code == 409
+    assert missing.json()["error_code"] == "project_material_not_found"

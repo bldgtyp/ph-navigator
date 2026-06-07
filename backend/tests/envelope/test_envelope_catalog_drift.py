@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 import pytest
+from fastapi.testclient import TestClient
 
 from database import transaction
 from features.project_document.validation import document_etag
@@ -210,3 +211,108 @@ def test_drift_report_marks_deactivated_source(
     )
     assert rejected.status_code == 409
     assert rejected.json()["error_code"] == "catalog_material_source_deactivated"
+
+
+def _pick_catalog(client: TestClient, project_id: object, version_id: object) -> tuple[dict, str, dict]:
+    saved_body = envelope_body()
+    write_saved_body(version_id, saved_body)
+    catalog = client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload()).json()
+    picked = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "command": {
+                "kind": "pick_catalog_material",
+                "assembly_id": "asm_wall_c3",
+                "layer_id": "lyr_service_cavity",
+                "segment_id": "seg_null",
+                "catalog_material_id": catalog["id"],
+            }
+        },
+    )
+    assert picked.status_code == 200
+    copied = next(material for material in picked.json()["project_materials"] if material["name"] == "XPS")
+    return catalog, picked.json()["draft_etag"], copied
+
+
+def test_drift_report_marks_in_sync_when_catalog_matches(
+    clean_envelope_drift_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    _, _, copied = _pick_catalog(client, project_id, version_id)
+
+    report = client.get(drift_url(project_id, version_id)).json()
+    item = next(row for row in report["materials"] if row["project_material_id"] == copied["id"])
+    assert item["state"] == "in_sync"
+    assert item["local_overrides"] == []
+
+
+def test_drift_report_marks_customized_when_only_local_overrides_present(
+    clean_envelope_drift_tables: None,
+) -> None:
+    """``customized`` is the state where the field value matches catalog but
+    ``local_overrides`` still records prior intent. Reached by editing a field
+    then refreshing with ``take_catalog`` for that same field — value snaps
+    back, override marker persists."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    _, draft_etag, copied = _pick_catalog(client, project_id, version_id)
+
+    overridden = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": draft_etag},
+        json={
+            "command": {
+                "kind": "update_project_material",
+                "project_material_id": copied["id"],
+                "conductivity_w_mk": 0.031,
+            }
+        },
+    )
+    assert overridden.status_code == 200
+
+    refreshed = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": overridden.json()["draft_etag"]},
+        json={
+            "command": {
+                "kind": "refresh_project_material_from_catalog",
+                "project_material_id": copied["id"],
+                "field_choices": [{"key": "conductivity_w_mk", "action": "take_catalog"}],
+            }
+        },
+    )
+    assert refreshed.status_code == 200
+
+    report = client.get(drift_url(project_id, version_id)).json()
+    item = next(row for row in report["materials"] if row["project_material_id"] == copied["id"])
+    assert item["state"] == "customized"
+    assert item["local_overrides"] == ["conductivity_w_mk"]
+
+
+def test_drift_report_marks_source_missing_when_catalog_record_gone(
+    clean_envelope_drift_tables: None,
+) -> None:
+    """``source_missing`` is the defensive state for catalog rows that vanished entirely.
+
+    The catalog API soft-deletes (marks ``is_active=False``), which surfaces as
+    ``source_deactivated``; emulate a hard delete at the database layer so the join
+    lookup returns no row.
+    """
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    catalog, _, copied = _pick_catalog(client, project_id, version_id)
+
+    with transaction() as conn:
+        conn.execute("DELETE FROM catalog_materials WHERE id = %(id)s", {"id": catalog["id"]})
+
+    report = client.get(drift_url(project_id, version_id)).json()
+    item = next(row for row in report["materials"] if row["project_material_id"] == copied["id"])
+    assert item["state"] == "source_missing"

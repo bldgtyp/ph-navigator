@@ -295,6 +295,42 @@ describe("EnvelopePage", () => {
     });
   });
 
+  test("flip outside posts semantic flip_orientation command", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Flip outside" }));
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: { kind: "flip_orientation", assembly_id: "asm_wall_c3" },
+    });
+  });
+
+  test("flip layers posts semantic flip_layers command", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Flip layers" }));
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: { kind: "flip_layers", assembly_id: "asm_wall_c3" },
+    });
+  });
+
   test("pending flip segments command disables duplicate submission", async () => {
     let resolveCommand: (response: Response) => void = () => {};
     const commandResponse = new Promise<Response>((resolve) => {

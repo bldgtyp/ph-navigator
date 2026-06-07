@@ -1,12 +1,13 @@
-// @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
+// @size-exception: planning/features/assembly-builder-hardening/phases/phase-04-frontend-refactors.md
 // EnvelopePage owns route guarding, active assembly selection, dialog dispatch,
-// and zoom for the envelope workspace. Server state lives in the envelope hooks,
-// while canvas/sidebar/specification layout details stay in feature components
-// so browser and MCP mutations share the semantic command boundary.
+// and zoom for the envelope workspace. Paint-mode and dialog state live in
+// `usePaintMode` / `useEnvelopeDialogs`; server state lives in the envelope
+// hooks; canvas/sidebar/specification layout details stay in feature
+// components so browser and MCP mutations share the semantic command boundary.
 import "../../assets/attachments.css";
 import { Download } from "lucide-react";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
@@ -30,10 +31,9 @@ import {
   isEnvelopeSubroute,
 } from "../paths";
 import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
-import {
-  EnvelopeEditorDialogs,
-  type EnvelopeEditorDialogState,
-} from "../components/EnvelopeEditorDialogs";
+import { EnvelopeEditorDialogs } from "../components/EnvelopeEditorDialogs";
+import { usePaintMode } from "../hooks/usePaintMode";
+import { useEnvelopeDialogs } from "../hooks/useEnvelopeDialogs";
 import {
   EnvelopeEmptyState,
   EnvelopeErrorState,
@@ -42,22 +42,7 @@ import {
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { SpecificationsPanel } from "../components/SpecificationsPanel";
 import { nextZoomStep, previousZoomStep } from "../canvas-constants";
-import {
-  assignmentFromSegment,
-  assignmentsEqual,
-  pasteAssignmentCommand,
-  segmentCanvasKey,
-  type AssemblyCanvasPaintController,
-  type AssemblyCanvasPaintMode,
-  type LastPaintAssignment,
-  type PickedSegmentAssignment,
-} from "../canvas-paint";
-import type {
-  AssemblyLayer,
-  AssemblySegment,
-  EnvelopeAttachmentChangeArgs,
-  EnvelopeCommand,
-} from "../types";
+import type { EnvelopeAttachmentChangeArgs, EnvelopeCommand } from "../types";
 import {
   countAssemblyMaterialDrift,
   exportErrorDetails,
@@ -78,7 +63,18 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     source,
     query.isSuccess && hasCatalogOriginMaterials(query.data.project_materials),
   );
-  const [commandError, setCommandError] = useState<string | null>(null);
+  const {
+    dialog,
+    setDialog,
+    catalogPickerOpen,
+    setCatalogPickerOpen,
+    refreshMaterialId,
+    setRefreshMaterialId,
+    commandError,
+    setCommandError,
+    closeDialog,
+    closeRefresh,
+  } = useEnvelopeDialogs();
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
   const attachmentMutation = useEnvelopeAttachmentMutation({
@@ -87,14 +83,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     onError: setCommandError,
   });
   const [zoom, setZoom] = useState(1);
-  const [dialog, setDialog] = useState<EnvelopeEditorDialogState | null>(null);
-  const [paintMode, setPaintMode] = useState<AssemblyCanvasPaintMode>("idle");
-  const [pickedAssignment, setPickedAssignment] = useState<PickedSegmentAssignment | null>(null);
-  const [lastPaint, setLastPaint] = useState<LastPaintAssignment | null>(null);
-  const [pastePulseKey, setPastePulseKey] = useState<string | null>(null);
   const commandInFlightRef = useRef(false);
-  const paintCommandInFlightRef = useRef(false);
-  const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
   const catalogMaterialsQuery = useMaterialsQuery(
     canEdit && dialog?.kind === "segment" && catalogPickerOpen,
   );
@@ -104,7 +93,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     () => (catalogMaterialsQuery.data ?? []).filter((m) => m.is_active),
     [catalogMaterialsQuery.data],
   );
-  const [refreshMaterialId, setRefreshMaterialId] = useState<string | null>(null);
   const subpath = envelopeSubpath(location.pathname, project.id);
   const isAssembliesRoute = isEnvelopeSubroute(subpath, "assemblies");
   const isSpecificationsRoute = isEnvelopeSubroute(subpath, "specifications");
@@ -140,35 +128,12 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     ? (driftByMaterialId.get(refreshMaterialId) ?? null)
     : null;
 
-  useEffect(() => {
-    if (catalogPickerOpen && dialog?.kind !== "segment") setCatalogPickerOpen(false);
-  }, [catalogPickerOpen, dialog]);
-
-  useEffect(() => {
-    if (!canEdit) clearCanvasPaintMode();
-  }, [canEdit]);
-
-  useEffect(() => {
-    clearCanvasPaintMode();
-    setLastPaint(null);
-  }, [activeAssembly?.id]);
-
-  useEffect(() => {
-    if (paintMode === "idle") return;
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      clearCanvasPaintMode();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [paintMode]);
-
-  useEffect(() => {
-    if (!pastePulseKey) return;
-    const timeoutId = window.setTimeout(() => setPastePulseKey(null), 600);
-    return () => window.clearTimeout(timeoutId);
-  }, [pastePulseKey]);
+  const paintController = usePaintMode({
+    canEdit,
+    activeAssembly,
+    applyCommand: (command) => applyCommand(command),
+    commandPending: commandMutation.isPending,
+  });
 
   if (subpath === "" || subpath === "/") {
     return (
@@ -235,70 +200,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     }
   }
 
-  function clearCanvasPaintMode(): void {
-    setPaintMode("idle");
-    setPickedAssignment(null);
-  }
-
-  function startPicking(): void {
-    if (!canEdit) return;
-    setPickedAssignment(null);
-    setPaintMode("picking");
-  }
-
-  function startPasting(): void {
-    if (!canEdit || !pickedAssignment) return;
-    setPaintMode("pasting");
-  }
-
-  function pickSegment(layer: AssemblyLayer, segment: AssemblySegment): void {
-    if (!canEdit) return;
-    setPickedAssignment({
-      ...assignmentFromSegment(segment),
-      sourceLayerId: layer.id,
-      sourceSegmentId: segment.id,
-    });
-    setPaintMode("picked");
-  }
-
-  async function paintSegment(layer: AssemblyLayer, segment: AssemblySegment): Promise<void> {
-    if (!canEdit || !activeAssembly || !pickedAssignment) return;
-    if (paintCommandInFlightRef.current || commandMutation.isPending) return;
-    const previous = assignmentFromSegment(segment);
-    if (assignmentsEqual(previous, pickedAssignment)) return;
-    paintCommandInFlightRef.current = true;
-    const success = await applyCommand(
-      pasteAssignmentCommand({
-        assemblyId: activeAssembly.id,
-        layerId: layer.id,
-        segmentId: segment.id,
-        assignment: pickedAssignment,
-      }),
-    );
-    paintCommandInFlightRef.current = false;
-    if (!success) return;
-    setLastPaint({ layerId: layer.id, segmentId: segment.id, previous });
-    setPastePulseKey(segmentCanvasKey(layer.id, segment.id));
-  }
-
-  async function undoLastPaint(): Promise<void> {
-    if (!canEdit || !activeAssembly || !lastPaint) return;
-    if (paintCommandInFlightRef.current || commandMutation.isPending) return;
-    paintCommandInFlightRef.current = true;
-    const success = await applyCommand(
-      pasteAssignmentCommand({
-        assemblyId: activeAssembly.id,
-        layerId: lastPaint.layerId,
-        segmentId: lastPaint.segmentId,
-        assignment: lastPaint.previous,
-      }),
-    );
-    paintCommandInFlightRef.current = false;
-    if (!success) return;
-    setPastePulseKey(segmentCanvasKey(lastPaint.layerId, lastPaint.segmentId));
-    setLastPaint(null);
-  }
-
   async function exportHbjson(): Promise<void> {
     const current = query.data;
     if (!current) return;
@@ -322,22 +223,6 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     setCommandError(null);
     await attachmentMutation.mutateAsync({ current, change });
   }
-
-  const paintController: AssemblyCanvasPaintController = {
-    mode: paintMode,
-    pickedSourceKey: pickedAssignment
-      ? segmentCanvasKey(pickedAssignment.sourceLayerId, pickedAssignment.sourceSegmentId)
-      : null,
-    pastePulseKey,
-    canStartPasting: pickedAssignment !== null && !commandMutation.isPending,
-    canUndoPaint: lastPaint !== null && !commandMutation.isPending,
-    startPicking,
-    startPasting,
-    undoLastPaint: () => void undoLastPaint(),
-    clear: clearCanvasPaintMode,
-    pickSegment,
-    paintSegment: (layer, segment) => void paintSegment(layer, segment),
-  };
 
   return (
     <section
@@ -499,11 +384,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         busy={commandMutation.isPending}
         error={commandError}
         onOpenCatalogPicker={() => setCatalogPickerOpen(true)}
-        onClose={() => {
-          setDialog(null);
-          setCatalogPickerOpen(false);
-          setCommandError(null);
-        }}
+        onClose={closeDialog}
         onReplaceDialog={setDialog}
         onCommand={(command) => void applyCommand(command)}
       />
@@ -513,10 +394,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           item={refreshDriftItem}
           busy={commandMutation.isPending}
           error={commandError}
-          onClose={() => {
-            setRefreshMaterialId(null);
-            setCommandError(null);
-          }}
+          onClose={closeRefresh}
           onCommand={(command) => void applyCommand(command)}
         />
       ) : null}

@@ -480,21 +480,21 @@ Pydantic models are written.
 
 | Sub-story | Topic | Status |
 |---|---|---|
-| US-ENV-1 | Envelope tab structure (sub-tabs) | Draft |
-| US-ENV-2 | Assembly list (sidebar) — add / rename / duplicate / delete | Draft |
-| US-ENV-3 | Assembly header (name, totals, header actions) | Draft |
-| US-ENV-4 | Canvas — layers, segments, orientation labels, legend | Draft |
-| US-ENV-5 | Layer ops — add / edit thickness / delete | Draft |
-| US-ENV-6 | Segment ops — add / edit properties / delete | Draft |
-| US-ENV-7 | Pick material — bookshelf flow from the catalog | Draft (key V2 shift) |
-| US-ENV-8 | Orientation — flip orientation, flip layers | Draft |
-| US-ENV-9 | Copy / paste material assignments | Draft |
-| US-ENV-10 | Effective R-value / U-value display | Draft |
-| US-ENV-11 | Refresh-from-catalog (per-segment material) | Draft (new in V2) |
-| US-ENV-12 | HBJSON construction **export** (download only — import not in V2 v1) | Draft |
-| US-ENV-13 | Specifications sub-tab (per-segment status, photos, datasheets) | Draft |
+| US-ENV-1 | Envelope tab structure (sub-tabs) | Shipped (Assemblies + Specifications routed; Airtightness / Site Photos still placeholders) |
+| US-ENV-2 | Assembly list (sidebar) — add / rename / duplicate / delete | Shipped |
+| US-ENV-3 | Assembly header (name, totals, header actions) | Shipped |
+| US-ENV-4 | Canvas — layers, segments, orientation labels, legend | Shipped |
+| US-ENV-5 | Layer ops — add / edit thickness / delete | Shipped |
+| US-ENV-6 | Segment ops — add / edit properties / delete | Shipped |
+| US-ENV-7 | Pick material — bookshelf flow from the catalog | Shipped (key V2 shift) |
+| US-ENV-8 | Orientation — flip orientation, flip layers | Shipped |
+| US-ENV-9 | Copy / paste material assignments | Shipped |
+| US-ENV-10 | Effective R-value / U-value display | Shipped |
+| US-ENV-11 | Refresh-from-catalog (per-segment material) | Shipped (new in V2) |
+| US-ENV-12 | HBJSON construction **export** (download only — import not in V2 v1) | Shipped |
+| US-ENV-13 | Specifications sub-tab (per-segment status, photos, datasheets) | Shipped |
 | US-ENV-14 | Airtightness sub-tab | Placeholder (out of cluster scope) |
-| US-ENV-15 | Site Photos sub-tab — contractor-facing regrouped view of US-ENV-13 photo data | Draft |
+| US-ENV-15 | Site Photos sub-tab — contractor-facing regrouped view of US-ENV-13 photo data | Draft (sub-tab not yet wired) |
 
 ---
 
