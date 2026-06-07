@@ -45,6 +45,7 @@ SELECT
     g_value,
     color,
     source,
+    datasheet_url,
     comments,
     (deleted_at IS NULL) AS is_active,
     created_at,
@@ -64,6 +65,7 @@ _UPDATABLE_FIELDS = frozenset(
         "g_value",
         "color",
         "source",
+        "datasheet_url",
         "comments",
     }
 )
@@ -119,6 +121,7 @@ def insert_glazing_type(
     g_value: float | None,
     color: str | None,
     source: str | None,
+    datasheet_url: str | None,
     comments: str | None,
     user_id: UUID,
 ) -> None:
@@ -128,14 +131,14 @@ def insert_glazing_type(
             id, name,
             manufacturer, brand, suffix,
             u_value_w_m2k, g_value,
-            color, source, comments,
+            color, source, datasheet_url, comments,
             created_by, updated_by
         )
         VALUES (
             %(id)s, %(name)s,
             %(manufacturer)s, %(brand)s, %(suffix)s,
             %(u_value_w_m2k)s, %(g_value)s,
-            %(color)s, %(source)s, %(comments)s,
+            %(color)s, %(source)s, %(datasheet_url)s, %(comments)s,
             %(user_id)s, %(user_id)s
         )
         """,
@@ -149,6 +152,7 @@ def insert_glazing_type(
             "g_value": g_value,
             "color": color,
             "source": source,
+            "datasheet_url": datasheet_url,
             "comments": comments,
             "user_id": user_id,
         },

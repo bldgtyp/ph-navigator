@@ -15,15 +15,14 @@ from __future__ import annotations
 
 from starlette import status
 
-from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
-    PasteAssignment,
+from features.project_document.aperture_commands.handlers._shared import (
+    build_audit,
+    find_entry,
+    replace_aperture,
 )
+from features.project_document.aperture_commands.models import PasteAssignment
 from features.project_document.apertures.factories import DefaultsCatalogReader
-from features.project_document.document import (
-    ApertureTypeEntry,
-    ProjectDocumentV1,
-)
+from features.project_document.document import ProjectDocumentV1
 from features.shared.errors import api_error
 
 
@@ -33,7 +32,7 @@ def apply_paste_assignment(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, entry = _find_entry(body, command.aperture_type_id)
+    aperture_idx, entry = find_entry(body, command.aperture_type_id)
     by_id = {el.id: (i, el) for i, el in enumerate(entry.elements)}
 
     if command.source_element_id not in by_id:
@@ -75,9 +74,9 @@ def apply_paste_assignment(
         )
 
     next_entry = entry.model_copy(update={"elements": next_elements})
-    next_body = _replace_aperture(body, aperture_idx, next_entry)
+    next_body = replace_aperture(body, aperture_idx, next_entry)
 
-    return next_body, _audit(
+    return next_body, build_audit(
         "pasteAssignment",
         actor_user_id,
         aperture_type_id=entry.id,
@@ -85,39 +84,6 @@ def apply_paste_assignment(
         target_element_ids=list(command.target_element_ids),
         affects_u_value=True,
     )
-
-
-def _find_entry(
-    body: ProjectDocumentV1,
-    aperture_type_id: str,
-) -> tuple[int, ApertureTypeEntry]:
-    for idx, entry in enumerate(body.tables.apertures):
-        if entry.id == aperture_type_id:
-            return idx, entry
-    raise api_error(
-        status.HTTP_404_NOT_FOUND,
-        "aperture_type_not_found",
-        "No aperture type matches the requested id.",
-        {"aperture_type_id": aperture_type_id},
-    )
-
-
-def _replace_aperture(
-    body: ProjectDocumentV1,
-    aperture_idx: int,
-    entry: ApertureTypeEntry,
-) -> ProjectDocumentV1:
-    apertures = list(body.tables.apertures)
-    apertures[aperture_idx] = entry
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": apertures})})
-
-
-def _audit(kind: str, actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND[kind],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }
 
 
 __all__ = ["apply_paste_assignment"]

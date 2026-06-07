@@ -31,6 +31,7 @@ class CatalogFileRow(BaseModel):
     g_value: float | str | None = None
     color: str | None = None
     source: str | None = None
+    datasheet_url: str | None = None
     comments: str | None = None
 
 

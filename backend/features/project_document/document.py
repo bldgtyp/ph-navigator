@@ -459,6 +459,7 @@ class FrameRef(BaseModel):
     psi_install_w_mk: float | None = Field(default=None, ge=0)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
+    datasheet_url: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
     catalog_origin: CatalogOrigin | None = None
 
@@ -488,6 +489,7 @@ class GlazingRef(BaseModel):
     g_value: float | None = Field(default=None, ge=0.0, le=1.0)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
+    datasheet_url: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
     catalog_origin: CatalogOrigin | None = None
 

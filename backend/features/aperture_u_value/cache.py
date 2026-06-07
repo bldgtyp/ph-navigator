@@ -1,4 +1,4 @@
-"""Content-hash + LRU cache for ``calculate_aperture_u_values``.
+"""Content-hash + FIFO cache for ``calculate_aperture_u_values``.
 
 The cache key is a SHA-256 over the canonical-JSON representation of
 the U-Value-affecting subtree. ``operation`` and ``name`` are
@@ -39,16 +39,16 @@ class _BoundedCache:
         self._data: OrderedDict[str, object] = OrderedDict()
 
     def get(self, key: str) -> object | None:
-        if key in self._data:
-            self._data.move_to_end(key)
-            return self._data[key]
-        return None
+        return self._data.get(key)
 
     def set(self, key: str, value: object) -> None:
+        # FIFO: leave existing keys in place; only new keys land at the
+        # end. ``move_to_end`` here would silently make this LRU.
+        is_new = key not in self._data
         self._data[key] = value
-        self._data.move_to_end(key)
-        while len(self._data) > self._max:
-            self._data.popitem(last=False)
+        if is_new:
+            while len(self._data) > self._max:
+                self._data.popitem(last=False)
 
     def clear(self) -> None:
         self._data.clear()

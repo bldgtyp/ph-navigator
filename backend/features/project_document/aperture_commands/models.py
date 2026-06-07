@@ -124,7 +124,7 @@ class MergeElements(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["mergeElements"] = "mergeElements"
     aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
-    element_ids: list[str] = Field(min_length=2)
+    element_ids: list[str] = Field(min_length=2, max_length=400)
 
 
 class SplitElement(BaseModel):

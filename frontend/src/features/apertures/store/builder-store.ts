@@ -76,7 +76,7 @@ export type ApertureBuilderState = {
   clearAllUndoStacks: () => void;
 };
 
-export const useApertureBuilderStore = create<ApertureBuilderState>((set) => ({
+export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) => ({
   selectionByAperture: {},
   hoveredElementId: null,
   hoveredRegion: null,
@@ -177,16 +177,19 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set) => ({
     }),
 
   popUndoEntry: (apertureId) => {
-    let popped: PasteUndoEntry | null = null;
-    set((state) => {
-      const current = state.undoStacksByAperture[apertureId] ?? [];
-      if (current.length === 0) return state;
-      const next = [...current];
-      popped = next.pop() ?? null;
-      return {
-        undoStacksByAperture: { ...state.undoStacksByAperture, [apertureId]: next },
-      };
-    });
+    // Read-then-write via get/set rather than mutating a closure inside
+    // the set() updater — Zustand may invoke the updater more than once
+    // under React 18 concurrent batching, which would lose or duplicate
+    // the popped entry against the closure variable.
+    const stack = get().undoStacksByAperture[apertureId] ?? [];
+    const popped = stack.at(-1) ?? null;
+    if (popped === null) return null;
+    set((state) => ({
+      undoStacksByAperture: {
+        ...state.undoStacksByAperture,
+        [apertureId]: stack.slice(0, -1),
+      },
+    }));
     return popped;
   },
 

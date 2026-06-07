@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-07
 TIME: (compiled)
-STATUS: Active — queued behind Phase C-01 (Window→Aperture rename)
+STATUS: **Done** (2026-06-07). Steps 1–7 shipped; Step 8 test-backfill
+        deferred (existing integration tests cover the extracted
+        helpers). See `../STATUS.md` close-out notes.
 AUTHOR: Claude
 SCOPE: Consolidate duplicated helpers across the eight
        `aperture_commands` handler modules and the document-layer
@@ -15,7 +17,7 @@ SCOPE: Consolidate duplicated helpers across the eight
 RELATED:
   - planning/code-reviews/2026-06-07/aperture-builder-review.md
     (sections "Backend §1–§8")
-  - planning/features/apertures-cleanup/PRD.md
+  - planning/archive/apertures-cleanup/PRD.md
   - context/CODING_STANDARDS.md
   - planning/archive/apertures/STATUS.md
 ---

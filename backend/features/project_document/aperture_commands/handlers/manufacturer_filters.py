@@ -9,10 +9,10 @@ cannot strand the user's existing picks.
 
 from __future__ import annotations
 
-from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
-    SetManufacturerFilters,
-)
+from starlette import status
+
+from features.project_document.aperture_commands.handlers._shared import build_audit
+from features.project_document.aperture_commands.models import SetManufacturerFilters
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
     ManufacturerFilters,
@@ -48,7 +48,8 @@ def apply_set_manufacturer_filters(
     )
     next_tables = body.tables.model_copy(update={"manufacturer_filters": filters})
     next_body = body.model_copy(update={"tables": next_tables})
-    return next_body, _audit(
+    return next_body, build_audit(
+        "setManufacturerFilters",
         actor_user_id,
         frame_manufacturers_enabled=filters.frame_manufacturers_enabled,
         glazing_manufacturers_enabled=filters.glazing_manufacturers_enabled,
@@ -68,7 +69,7 @@ def _check_in_use(
     proposed_set = {m.casefold() for m in proposed}
     stranded = sorted({m for m in in_use if m.casefold() not in proposed_set})
     if stranded:
-        raise api_error(422, error_code, message, {"in_use": stranded})
+        raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, error_code, message, {"in_use": stranded})
 
 
 def _canonical_list(value: list[str] | None) -> list[str] | None:
@@ -95,11 +96,3 @@ def _collect_in_use(body: ProjectDocumentV1) -> tuple[set[str], set[str]]:
             if element.glazing is not None and element.glazing.manufacturer:
                 glazings.add(element.glazing.manufacturer.strip())
     return frames, glazings
-
-
-def _audit(actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND["setManufacturerFilters"],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }

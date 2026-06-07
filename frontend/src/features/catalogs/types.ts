@@ -76,6 +76,7 @@ export type CatalogFrameType = {
   psi_install_w_mk: number | null;
   color: string | null;
   source: string | null;
+  datasheet_url: string | null;
   comments: string | null;
   is_active: boolean;
   created_at: string;
@@ -101,6 +102,7 @@ export type CatalogFrameTypeCreatePayload = {
   psi_install_w_mk?: number | null;
   color?: string | null;
   source?: string | null;
+  datasheet_url?: string | null;
   comments?: string | null;
 };
 
@@ -116,6 +118,7 @@ export type CatalogGlazingType = {
   g_value: number | null;
   color: string | null;
   source: string | null;
+  datasheet_url: string | null;
   comments: string | null;
   is_active: boolean;
   created_at: string;
@@ -140,6 +143,7 @@ export type CatalogGlazingTypeCreatePayload = {
   g_value?: number | null;
   color?: string | null;
   source?: string | null;
+  datasheet_url?: string | null;
   comments?: string | null;
 };
 

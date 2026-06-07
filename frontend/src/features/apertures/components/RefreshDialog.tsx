@@ -32,7 +32,17 @@ type RowState = {
 
 export function RefreshDialog({ open, entry, busy = false, onClose, onSave }: RefreshDialogProps) {
   const [rows, setRows] = useState<RowState[]>([]);
-  const seedKey = entry ? `${entry.element_id}:${entry.target}` : "";
+  // Re-seed when the (element, target) changes OR when the underlying
+  // delta set itself changes — a drift-query refetch while the dialog
+  // is open updates `entry.deltas` and the dialog needs to refresh.
+  // Hashing the field keys + catalog values into the seed key avoids
+  // reading `entry` outside the deps without re-seeding on every
+  // wrapping-object identity change.
+  const seedKey = entry
+    ? `${entry.element_id}:${entry.target}:${entry.deltas
+        .map((d) => `${d.field_key}=${stringify(d.catalog_value)}`)
+        .join("|")}`
+    : "";
 
   // Seed row state whenever a new entry is shown. Diverged user-edited
   // fields default to "yours" per PRD §15.
@@ -45,10 +55,6 @@ export function RefreshDialog({ open, entry, busy = false, onClose, onSave }: Re
         editValue: stringify(delta.catalog_value),
       })),
     );
-    // Re-seed on entry identity change (different field/element); the
-    // ``seedKey`` is enough — the ``entry`` ref is intentionally read
-    // outside the deps array to avoid re-seeding when only the wrapping
-    // object identity changes without a different (element, target).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seedKey]);
 

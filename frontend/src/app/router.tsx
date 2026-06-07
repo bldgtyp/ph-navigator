@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { RequireAuth } from "../features/auth/routes/RequireAuth";
 import { SignInPage } from "../features/auth/routes/SignInPage";
 import { FrameTypesCatalogPage } from "../features/catalogs/routes/FrameTypesCatalogPage";
@@ -35,6 +35,7 @@ export function AppRouter() {
         }
       />
       <Route path="/projects/:projectId" element={<ProjectTabRedirect />} />
+      <Route path="/projects/:projectId/windows/*" element={<WindowsToAperturesRedirect />} />
       <Route path="/projects/:projectId/:tab/*" element={<ProjectShell />} />
       <Route path="/" element={<RootRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -44,4 +45,9 @@ export function AppRouter() {
 
 function RootRoute() {
   return <RequireAuth>{() => <Navigate to="/dashboard" replace />}</RequireAuth>;
+}
+
+function WindowsToAperturesRedirect() {
+  const { projectId } = useParams();
+  return <Navigate to={`/projects/${projectId}/apertures`} replace />;
 }

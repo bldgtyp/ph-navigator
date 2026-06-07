@@ -24,14 +24,15 @@ from typing import TypeVar
 
 from starlette import status
 
-from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
-    RefreshRefFromCatalog,
+from features.project_document.aperture_commands.handlers._shared import (
+    build_audit,
+    find_element,
+    find_entry,
+    replace_element,
 )
+from features.project_document.aperture_commands.models import RefreshRefFromCatalog
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
-    ApertureElement,
-    ApertureTypeEntry,
     FrameRef,
     GlazingRef,
     ProjectDocumentV1,
@@ -49,7 +50,8 @@ def apply_refresh_ref_from_catalog(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, element_idx, aperture, element = _resolve(body, command.aperture_type_id, command.element_id)
+    aperture_idx, aperture = find_entry(body, command.aperture_type_id)
+    element_idx, element = find_element(aperture, command.element_id)
     target = command.target
 
     if target == "glazing":
@@ -74,8 +76,9 @@ def apply_refresh_ref_from_catalog(
         next_frames = element.frames.model_copy(update={side: next_ref})
         next_element = element.model_copy(update={"frames": next_frames})
 
-    next_body = _replace_element(body, aperture_idx, aperture, element_idx, next_element)
-    return next_body, _audit(
+    next_body = replace_element(body, aperture_idx, aperture, element_idx, next_element)
+    return next_body, build_audit(
+        "refreshRefFromCatalog",
         actor_user_id,
         aperture_type_id=aperture.id,
         element_id=element.id,
@@ -133,51 +136,3 @@ def _target_unset_error(element_id: str, target: str) -> Exception:
         "Cannot refresh a slot that has not been picked yet.",
         {"element_id": element_id, "target": target},
     )
-
-
-def _resolve(
-    body: ProjectDocumentV1,
-    aperture_type_id: str,
-    element_id: str,
-) -> tuple[int, int, ApertureTypeEntry, ApertureElement]:
-    for aperture_idx, aperture in enumerate(body.tables.apertures):
-        if aperture.id != aperture_type_id:
-            continue
-        for element_idx, element in enumerate(aperture.elements):
-            if element.id == element_id:
-                return aperture_idx, element_idx, aperture, element
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "No aperture element matches the requested id.",
-            {"aperture_type_id": aperture_type_id, "element_id": element_id},
-        )
-    raise api_error(
-        status.HTTP_404_NOT_FOUND,
-        "aperture_type_not_found",
-        "No aperture type matches the requested id.",
-        {"aperture_type_id": aperture_type_id},
-    )
-
-
-def _replace_element(
-    body: ProjectDocumentV1,
-    aperture_idx: int,
-    aperture: ApertureTypeEntry,
-    element_idx: int,
-    element: ApertureElement,
-) -> ProjectDocumentV1:
-    next_elements = list(aperture.elements)
-    next_elements[element_idx] = element
-    next_aperture = aperture.model_copy(update={"elements": next_elements})
-    next_apertures = list(body.tables.apertures)
-    next_apertures[aperture_idx] = next_aperture
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
-
-
-def _audit(actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND["refreshRefFromCatalog"],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }

@@ -17,18 +17,16 @@ lives behind the dispatcher; this module is wiring.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException
 from mcp.server.fastmcp import Context
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from features.aperture_drift.detector import detect_aperture_drift
 from features.aperture_drift.models import ApertureDriftReport
+from features.aperture_drift.reader import LiveCatalogReader
 from features.aperture_u_value.service import calculate_aperture_u_values as _calc_u_values
-from features.catalogs.frame_types import repository as frame_repo
-from features.catalogs.glazing_types import repository as glazing_repo
 from features.mcp.helpers import (
     current_token,
     parse_uuid,
@@ -43,7 +41,7 @@ from features.project_document.aperture_commands.service import (
 )
 from features.project_document.document import ApertureTypeEntry, ProjectDocumentV1
 from features.project_document.models import ProjectDocumentSource
-from features.project_document.store import get_current_document_view, get_saved_document
+from features.project_document.store import load_document_body
 from features.projects.access import ProjectAccess
 
 # Per-error-code recoverability. ETag conflicts and locked versions tell
@@ -131,7 +129,7 @@ def tool_report_aperture_catalog_drift(
     """Return the full ``ApertureDriftReport`` for the chosen body."""
 
     body = _load_body(project_id, version_id, ctx, allow_env_token, source)
-    report: ApertureDriftReport = detect_aperture_drift(body, _LiveCatalogReader())
+    report: ApertureDriftReport = detect_aperture_drift(body, LiveCatalogReader())
     return report.model_dump(mode="json")
 
 
@@ -209,11 +207,7 @@ def _read_body(
     ctx: Context,
 ) -> ProjectDocumentV1:
     try:
-        return (
-            get_saved_document(version_id, access)
-            if source == "version"
-            else get_current_document_view(version_id, access).body
-        )
+        return load_document_body(version_id, access, source)
     except HTTPException as exc:
         raise_http_exception_as_mcp_error(
             exc,
@@ -238,21 +232,19 @@ def _find_aperture(body: ProjectDocumentV1, aperture_type_id: str, ctx: Context)
     )
 
 
+class _CommandEnvelope(BaseModel):
+    """Single-field wrapper that lets Pydantic walk the discriminator on
+    ``ApertureCommand`` — a bare ``Annotated`` union doesn't validate as
+    a top-level model on its own. Hoisted to module scope so the class
+    object isn't rebuilt on every ``apply_aperture_command`` call."""
+
+    model_config = ConfigDict(extra="forbid")
+    command: ApertureCommand = Field()
+
+
 def _validate_command(payload: dict[str, object], ctx: Context) -> ApertureCommand:
-    """Coerce the wire-shaped command into the discriminated union.
-
-    Wrap it in a single-field model so Pydantic walks the discriminator
-    correctly even though ``ApertureCommand`` is a bare ``Annotated`` union.
-    """
-
-    from pydantic import BaseModel, ConfigDict, Field
-
-    class _Wrap(BaseModel):
-        model_config = ConfigDict(extra="forbid")
-        command: ApertureCommand = Field()
-
     try:
-        return _Wrap.model_validate({"command": payload}).command
+        return _CommandEnvelope.model_validate({"command": payload}).command
     except ValidationError as exc:
         raise_mcp_error(
             "validation_error",
@@ -261,19 +253,3 @@ def _validate_command(payload: dict[str, object], ctx: Context) -> ApertureComma
             ctx,
             {"errors": [str(error.get("msg", error)) for error in exc.errors()]},
         )
-
-
-class _LiveCatalogReader:
-    """Repository-backed catalog reader shared by the drift route."""
-
-    def get_frame_type(self, record_id: str) -> dict[str, Any] | None:
-        from database import connection
-
-        with connection() as conn:
-            return frame_repo.get_frame_type(conn, record_id)
-
-    def get_glazing_type(self, record_id: str) -> dict[str, Any] | None:
-        from database import connection
-
-        with connection() as conn:
-            return glazing_repo.get_glazing_type(conn, record_id)

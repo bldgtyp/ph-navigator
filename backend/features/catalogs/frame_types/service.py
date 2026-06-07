@@ -99,6 +99,7 @@ def create_frame_type(
             psi_install_w_mk=payload.psi_install_w_mk,
             color=payload.color,
             source=payload.source,
+            datasheet_url=payload.datasheet_url,
             comments=payload.comments,
             user_id=user.id,
         )
@@ -188,6 +189,7 @@ def duplicate_frame_type(record_id: str, user: UserPublic, request: Request) -> 
             psi_install_w_mk=src["psi_install_w_mk"],
             color=src["color"],
             source=src["source"],
+            datasheet_url=src["datasheet_url"],
             comments=src["comments"],
             user_id=user.id,
         )

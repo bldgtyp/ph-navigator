@@ -32,6 +32,7 @@ const ROW_KEY_ORDER: (keyof CatalogFileRow)[] = [
   "psi_install_w_mk",
   "color",
   "source",
+  "datasheet_url",
   "comments",
 ];
 

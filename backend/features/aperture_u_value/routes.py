@@ -18,10 +18,8 @@ from fastapi import APIRouter, Depends, Query
 
 from features.aperture_u_value.models import AperturesUValueListResponse
 from features.aperture_u_value.service import calculate_aperture_u_values
-from features.project_document.store import (
-    get_current_document_view,
-    get_saved_document,
-)
+from features.project_document.models import ProjectDocumentSource
+from features.project_document.store import load_document_body
 from features.projects.access import (
     ProjectAccess,
     require_project_view_access,
@@ -40,17 +38,14 @@ def get_aperture_u_values(
     project_id: UUID,
     version_id: UUID,
     access: ProjectViewAccess,
-    source: Annotated[str, Query(pattern=r"^(draft|version)$")] = "draft",
+    source: Annotated[ProjectDocumentSource, Query(pattern=r"^(draft|version)$")] = "draft",
 ) -> AperturesUValueListResponse:
     del project_id  # Path arg only — access carries the project id.
-    if source == "draft":
-        body = get_current_document_view(version_id, access).body
-    else:
-        body = get_saved_document(version_id, access)
+    body = load_document_body(version_id, access, source)
     results = [calculate_aperture_u_values(entry) for entry in body.tables.apertures]
     return AperturesUValueListResponse(
         project_id=access.project_id,
         version_id=version_id,
-        source="draft" if source == "draft" else "version",
+        source=source,
         apertures=results,
     )

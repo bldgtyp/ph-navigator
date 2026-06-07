@@ -35,6 +35,7 @@ _FIELD_MAX_LENGTHS: Final[dict[str, int]] = {
     "brand": 200,
     "suffix": 80,
     "source": 400,
+    "datasheet_url": 400,
     "comments": 4000,
     "color": 40,
 }
@@ -48,6 +49,7 @@ _CANONICAL_FIELDS: Final[set[str]] = {
     "g_value",
     "color",
     "source",
+    "datasheet_url",
     "comments",
 }
 
@@ -106,6 +108,7 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
         "g_value": g_value,
         "color": color,
         "source": _coerce_text(raw.get("source"), warnings, field_name="source"),
+        "datasheet_url": _coerce_text(raw.get("datasheet_url"), warnings, field_name="datasheet_url"),
         "comments": _coerce_text(raw.get("comments"), warnings, field_name="comments"),
     }
     return CoercedRow(row=cleaned, id=row_id, warnings=warnings, errors=[])

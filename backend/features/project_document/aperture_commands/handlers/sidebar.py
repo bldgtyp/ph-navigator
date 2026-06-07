@@ -11,8 +11,13 @@ from __future__ import annotations
 
 import uuid
 
+from starlette import status
+
+from features.project_document.aperture_commands.handlers._shared import (
+    build_audit,
+    find_entry,
+)
 from features.project_document.aperture_commands.models import (
-    AUDIT_KIND_BY_APERTURE_COMMAND,
     CreateApertureType,
     DeleteApertureType,
     DuplicateApertureType,
@@ -43,7 +48,7 @@ def apply_create_aperture_type(
     entry = build_default_aperture_type(catalog, name=name)
     next_apertures = [*body.tables.apertures, entry]
     next_body = body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
-    return next_body, _audit("createApertureType", actor_user_id, aperture_type_id=entry.id, name=entry.name)
+    return next_body, build_audit("createApertureType", actor_user_id, aperture_type_id=entry.id, name=entry.name)
 
 
 def apply_rename_aperture_type(
@@ -53,15 +58,14 @@ def apply_rename_aperture_type(
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     new_name = command.new_name.strip()
-    target_idx = _find_index(body, command.aperture_type_id)
-    target = body.tables.apertures[target_idx]
+    target_idx, target = find_entry(body, command.aperture_type_id)
     normalized_new = normalize_display_name(new_name)
     for other_idx, other in enumerate(body.tables.apertures):
         if other_idx == target_idx:
             continue
         if normalize_display_name(other.name) == normalized_new:
             raise api_error(
-                422,
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "aperture_name_collision",
                 "Another aperture type already uses this name.",
                 {"aperture_type_id": other.id, "name": other.name},
@@ -70,7 +74,7 @@ def apply_rename_aperture_type(
     next_apertures = list(body.tables.apertures)
     next_apertures[target_idx] = updated
     next_body = body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
-    return next_body, _audit(
+    return next_body, build_audit(
         "renameApertureType",
         actor_user_id,
         aperture_type_id=updated.id,
@@ -85,7 +89,7 @@ def apply_duplicate_aperture_type(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    source = body.tables.apertures[_find_index(body, command.aperture_type_id)]
+    _, source = find_entry(body, command.aperture_type_id)
     proposed = command.new_name or f"{source.name} (copy)"
     new_name = _autoname(body, proposed)
     new_id = f"apt_{_short_uuid()}"
@@ -104,7 +108,7 @@ def apply_duplicate_aperture_type(
     )
     next_apertures = [*body.tables.apertures, duplicate]
     next_body = body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
-    return next_body, _audit(
+    return next_body, build_audit(
         "duplicateApertureType",
         actor_user_id,
         aperture_type_id=duplicate.id,
@@ -119,27 +123,14 @@ def apply_delete_aperture_type(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    target_idx = _find_index(body, command.aperture_type_id)
-    target = body.tables.apertures[target_idx]
+    target_idx, target = find_entry(body, command.aperture_type_id)
     next_apertures = [*body.tables.apertures[:target_idx], *body.tables.apertures[target_idx + 1 :]]
     next_body = body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
-    return next_body, _audit(
+    return next_body, build_audit(
         "deleteApertureType",
         actor_user_id,
         aperture_type_id=target.id,
         name=target.name,
-    )
-
-
-def _find_index(body: ProjectDocumentV1, aperture_type_id: str) -> int:
-    for idx, entry in enumerate(body.tables.apertures):
-        if entry.id == aperture_type_id:
-            return idx
-    raise api_error(
-        404,
-        "aperture_type_not_found",
-        "No aperture type matches the requested id.",
-        {"aperture_type_id": aperture_type_id},
     )
 
 
@@ -162,11 +153,3 @@ def _autoname(body: ProjectDocumentV1, proposed: str | None) -> str:
 
 def _short_uuid() -> str:
     return uuid.uuid4().hex[:12]
-
-
-def _audit(kind: str, actor_user_id: str, **payload: object) -> dict[str, object]:
-    return {
-        "action_kind": AUDIT_KIND_BY_APERTURE_COMMAND[kind],
-        "actor_user_id": actor_user_id,
-        "payload": payload,
-    }

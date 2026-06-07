@@ -45,6 +45,7 @@ function buildEmptyGlazingTypeRow({ rowId }: { rowId: string }): GlazingTypeRow 
     g_value: null,
     color: null,
     source: null,
+    datasheet_url: null,
     comments: null,
     is_active: true,
     created_at: PLACEHOLDER_TIMESTAMP,

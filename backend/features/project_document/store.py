@@ -52,6 +52,24 @@ def get_saved_document(version_id: UUID, access: ProjectAccess) -> ProjectDocume
         return validate_document(version["body"])
 
 
+def load_document_body(
+    version_id: UUID,
+    access: ProjectAccess,
+    source: ProjectDocumentSource,
+) -> ProjectDocumentV1:
+    """Dispatch on ``source`` and return the corresponding document body.
+
+    Aperture-derived REST routes and the MCP read path all need the same
+    "draft → current view's body, version → saved" branch. Centralising it
+    here keeps the dispatch consistent and removes the repeated literal
+    `if source == "draft": ...` block from every caller.
+    """
+
+    if source == "draft":
+        return get_current_document_view(version_id, access).body
+    return get_saved_document(version_id, access)
+
+
 def get_saved_document_or_read_safe(
     version_id: UUID, access: ProjectAccess, request_id: str
 ) -> ProjectDocumentV1 | ProjectDocumentReadSafeEnvelope:
