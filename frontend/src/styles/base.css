@@ -1512,6 +1512,146 @@ button:disabled {
   border-bottom: 2px solid var(--accent);
   background: transparent;
   color: var(--accent-text);
+  font-weight: 700;
+}
+
+.app-subtabs {
+  align-items: end;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 0;
+  min-height: 42px;
+  overflow: visible;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.app-subtabs__list {
+  align-items: end;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app-subtabs__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  margin-bottom: -1px;
+  min-height: auto;
+  overflow: hidden;
+  padding: 0 2px 10px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-subtabs__tab:hover,
+.app-subtabs__tab.active,
+.app-subtabs__tab[data-active="true"],
+.app-subtabs__tab[aria-selected="true"] {
+  color: var(--text-primary);
+}
+
+.app-subtabs__tab.active,
+.app-subtabs__tab[data-active="true"],
+.app-subtabs__tab[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.app-subtabs__actions {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 6px;
+}
+
+.app-subtabs__menu-wrap {
+  position: relative;
+}
+
+.app-subtabs__trigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  list-style: none;
+  width: 32px;
+}
+
+.app-subtabs__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.app-subtabs__trigger svg circle {
+  r: 0.5px;
+}
+
+.app-subtabs__trigger:hover,
+.app-subtabs__trigger:focus-visible {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+  outline: 0;
+}
+
+.app-subtabs__menu {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
+  min-width: 260px;
+  padding: var(--space-1);
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: var(--z-dropdown);
+}
+
+.app-subtabs__menu-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  width: 100%;
+}
+
+.app-subtabs__menu-item:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+
+.app-subtabs__menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .tab-panel {
@@ -1519,6 +1659,10 @@ button:disabled {
   border: 0;
   background: transparent;
   padding: 18px 0 0;
+}
+
+.tab-panel:has(> .app-subtabs) {
+  padding-top: 0;
 }
 
 .read-safe-panel {

@@ -4,9 +4,10 @@
 // while canvas/sidebar/specification layout details stay in feature components
 // so browser and MCP mutations share the semantic command boundary.
 import "../../assets/attachments.css";
-import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { useMaterialsQuery } from "../../catalogs/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import {
@@ -342,19 +343,21 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       className="tab-panel envelope-panel"
       aria-label="Assembly Builder"
     >
-      <nav id="envelope-subtabs" className="envelope-subtabs" aria-label="Envelope views">
-        <NavLink to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}>
+      <AppSubTabs id="envelope-subtabs" ariaLabel="Envelope views">
+        <AppSubTabLink
+          to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}
+        >
           Assemblies
-        </NavLink>
-        <NavLink
+        </AppSubTabLink>
+        <AppSubTabLink
           to={{
             pathname: envelopeSpecificationsPath(project.id),
             search: location.search,
           }}
         >
           Specifications
-        </NavLink>
-      </nav>
+        </AppSubTabLink>
+      </AppSubTabs>
       {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
         <div className="envelope-command-banner" role="status">
           {activeAssemblyDriftCount} material{" "}

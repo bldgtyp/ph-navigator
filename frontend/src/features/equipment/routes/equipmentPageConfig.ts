@@ -44,12 +44,12 @@ export const EQUIPMENT_TABS = [
   { key: "fans", label: "Fans", emptyMessage: "No fans yet." },
   {
     key: "hot-water-tanks",
-    label: "Hot-Water Tanks",
+    label: "Hot-water tanks",
     emptyMessage: "No hot water tanks yet.",
   },
   {
     key: "electric-heaters",
-    label: "Electric Heaters",
+    label: "Electric heaters",
     emptyMessage: "No electric heaters yet.",
   },
   { key: "appliances", label: "Appliances", emptyMessage: "No appliances yet." },

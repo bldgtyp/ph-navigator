@@ -51,7 +51,7 @@ export function ExportHbjsonAction({
   return (
     <button
       type="button"
-      className="apertures-overflow__item"
+      className="app-subtabs__menu-item"
       onClick={() => void handleClick()}
       disabled={busy || disabled}
     >
