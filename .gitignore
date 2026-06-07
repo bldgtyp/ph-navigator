@@ -66,3 +66,6 @@ phase3-walk/
 
 # ─── Local working notes / agent scratch ───
 working/
+
+# ─── Graphify output ───
+graphify-out/

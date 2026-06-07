@@ -1,0 +1,30 @@
+# graphify scope for PH-Navigator V2
+# .gitignore is also respected automatically; this file adds exclusions on top.
+
+# Historical planning material — not load-bearing for the live codebase
+planning/archive/
+planning/code-reviews/
+
+# Precedent code from V1's catalog spike; not on the import path
+research/
+
+# Graphify's own output
+graphify-out/
+
+# Generated artifacts that .gitignore already covers but make explicit
+node_modules/
+.venv/
+dist/
+build/
+*.tsbuildinfo
+
+# Skill/config material — not part of the product
+.claude/
+working/
+
+# Lockfiles — large, low signal
+pnpm-lock.yaml
+uv.lock
+
+# Roadmap HTML — derived view, not the source of truth
+planning/ROADMAP.html
