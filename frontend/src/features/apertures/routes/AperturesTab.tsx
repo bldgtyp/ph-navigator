@@ -10,6 +10,7 @@ import { ApertureSidebar } from "../components/ApertureSidebar";
 import { AperturesHeader } from "../components/AperturesHeader";
 import { BuilderDriftBanner } from "../components/BuilderDriftBanner";
 import { DeleteApertureDialog } from "../components/DeleteApertureDialog";
+import { DisplayFormatMenuGroup } from "../components/DisplayFormatSelector";
 import { ExportHbjsonAction } from "../components/ExportHbjsonAction";
 import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
 import { ProjectRefsView } from "../components/ProjectRefsView";
@@ -18,6 +19,7 @@ import { RenameApertureDialog } from "../components/RenameApertureDialog";
 import type { ApertureDriftEntry } from "../drift-types";
 import { useApplyApertureCommandMutation, useAperturesSliceQuery } from "../hooks";
 import { useApertureDriftReport } from "../hooks/useApertureDriftReport";
+import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureUValues } from "../hooks/useApertureUValues";
 import { DriftProvider } from "../hooks/useDriftContext";
 import { ManufacturerFilterProvider } from "../hooks/useManufacturerFilter";
@@ -62,9 +64,10 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSubtab, setActiveSubtab] = useState<AperturesSubtab>("apertures");
+  const dimFormat = useApertureDimFormat();
 
   const slice = sliceQuery.data;
-  const apertures = slice?.apertures ?? [];
+  const apertures = useMemo(() => slice?.apertures ?? [], [slice?.apertures]);
   const sorted = useMemo(() => naturalSortApertures(apertures), [apertures]);
 
   useEffect(() => {
@@ -174,7 +177,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const refsContext = project.active_version_id
     ? { onViewPickedRefs: () => setRefsViewOpen(true) }
     : null;
-  const hasApertureActions = exportContext || filtersContext || refsContext;
 
   return (
     <ManufacturerFilterProvider
@@ -189,48 +191,47 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
             id="aperture-subtabs"
             ariaLabel="Aperture views"
             actions={
-              hasApertureActions ? (
-                <details className="app-subtabs__menu-wrap">
-                  <summary
-                    className="app-subtabs__trigger"
-                    aria-label="Aperture actions"
-                    title="Aperture actions"
-                  >
-                    <MoreVertical size={22} aria-hidden="true" />
-                  </summary>
-                  <div className="app-subtabs__menu" role="menu">
-                    {exportContext ? (
-                      <ExportHbjsonAction
-                        projectId={exportContext.projectId}
-                        versionId={exportContext.versionId}
-                        source={exportContext.source}
-                        projectBtNumber={exportContext.projectBtNumber}
-                        versionLabel={exportContext.versionLabel}
-                        disabled={!exportContext.hasApertures}
-                        onError={exportContext.onError}
-                      />
-                    ) : null}
-                    {filtersContext ? (
-                      <button
-                        type="button"
-                        className="app-subtabs__menu-item"
-                        onClick={filtersContext.onConfigureFilters}
-                      >
-                        Configure manufacturer filters
-                      </button>
-                    ) : null}
-                    {refsContext ? (
-                      <button
-                        type="button"
-                        className="app-subtabs__menu-item"
-                        onClick={refsContext.onViewPickedRefs}
-                      >
-                        View picked frames &amp; glazings
-                      </button>
-                    ) : null}
-                  </div>
-                </details>
-              ) : null
+              <details className="app-subtabs__menu-wrap">
+                <summary
+                  className="app-subtabs__trigger"
+                  aria-label="Aperture actions"
+                  title="Aperture actions"
+                >
+                  <MoreVertical size={22} aria-hidden="true" />
+                </summary>
+                <div className="app-subtabs__menu" role="menu">
+                  <DisplayFormatMenuGroup {...dimFormat} />
+                  {exportContext ? (
+                    <ExportHbjsonAction
+                      projectId={exportContext.projectId}
+                      versionId={exportContext.versionId}
+                      source={exportContext.source}
+                      projectBtNumber={exportContext.projectBtNumber}
+                      versionLabel={exportContext.versionLabel}
+                      disabled={!exportContext.hasApertures}
+                      onError={exportContext.onError}
+                    />
+                  ) : null}
+                  {filtersContext ? (
+                    <button
+                      type="button"
+                      className="app-subtabs__menu-item"
+                      onClick={filtersContext.onConfigureFilters}
+                    >
+                      Configure manufacturer filters
+                    </button>
+                  ) : null}
+                  {refsContext ? (
+                    <button
+                      type="button"
+                      className="app-subtabs__menu-item"
+                      onClick={refsContext.onViewPickedRefs}
+                    >
+                      View picked frames &amp; glazings
+                    </button>
+                  ) : null}
+                </div>
+              </details>
             }
           >
             {APERTURE_SUBTABS.map((subtab) => (
@@ -441,6 +442,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                       }).then(() => undefined)
                     }
                     uValueByElementId={elementUValueById}
+                    dimFormat={dimFormat}
                   />
                 ) : (
                   <ApertureEmptyState canEdit={canEdit} onAdd={() => void handleAdd()} />

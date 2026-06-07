@@ -1,7 +1,6 @@
-// Native `<select>` for the dimension display format. Lives in the
-// strip gutter (top-left corner where the two strips meet). System
-// switch (SI vs IP) is owned by the global units preference; this
-// selector only swaps the format *within* the active system.
+// Menu controls for the dimension display format. The global SI/IP
+// toggle owns the unit system; this menu swaps the display style within
+// the active system.
 
 import type { ApertureDimFormatState } from "../hooks/useApertureDimFormat";
 import type { IpDisplayFormat, SiDisplayFormat } from "../../../lib/units/length/types";
@@ -19,34 +18,47 @@ const IP_OPTIONS: ReadonlyArray<{ value: IpDisplayFormat; label: string }> = [
   { value: "in-frac", label: "Fractional Inches (in-frac)" },
 ];
 
-export type DisplayFormatSelectorProps = ApertureDimFormatState;
+export type DisplayFormatMenuGroupProps = ApertureDimFormatState;
 
-export function DisplayFormatSelector({
+export function DisplayFormatMenuGroup({
   system,
   format,
   setSiFormat,
   setIpFormat,
-}: DisplayFormatSelectorProps) {
+}: DisplayFormatMenuGroupProps) {
   const options = system === "si" ? SI_OPTIONS : IP_OPTIONS;
+  const activeOptionLabel = options.find((opt) => opt.value === format)?.label ?? "Default";
+
+  const handleSelect = (value: SiDisplayFormat | IpDisplayFormat, target: EventTarget | null) => {
+    if (system === "si") setSiFormat(value as SiDisplayFormat);
+    else setIpFormat(value as IpDisplayFormat);
+
+    if (target instanceof Element) {
+      target.closest("details.app-subtabs__menu-wrap")?.removeAttribute("open");
+    }
+  };
+
   return (
-    <label className="aperture-dim-format-selector" data-testid="aperture-dim-format-selector">
-      <span className="aperture-dim-format-selector__label">Display</span>
-      <select
-        className="aperture-dim-format-selector__select"
-        value={format}
-        onChange={(event) => {
-          const next = event.target.value;
-          if (system === "si") setSiFormat(next as SiDisplayFormat);
-          else setIpFormat(next as IpDisplayFormat);
-        }}
-        aria-label="Dimension display format"
-      >
+    <details className="app-subtabs__submenu" data-testid="aperture-dim-format-selector">
+      <summary className="app-subtabs__menu-item app-subtabs__submenu-trigger">
+        <span>Dimension display</span>
+        <span className="app-subtabs__menu-item-value">{activeOptionLabel}</span>
+      </summary>
+      <div className="app-subtabs__submenu-panel" role="menu" aria-label="Dimension display format">
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
+          <button
+            key={opt.value}
+            type="button"
+            className="app-subtabs__menu-item app-subtabs__menu-radio"
+            role="menuitemradio"
+            aria-checked={opt.value === format}
+            onClick={(event) => handleSelect(opt.value, event.currentTarget)}
+          >
+            <span className="app-subtabs__menu-radio-mark" aria-hidden="true" />
+            <span>{opt.label}</span>
+          </button>
         ))}
-      </select>
-    </label>
+      </div>
+    </details>
   );
 }
