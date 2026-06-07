@@ -26,7 +26,12 @@ ThermalStatusFlag = Literal[
 
 
 class AssemblyThermalStatus(BaseModel):
-    """Placeholder completeness flags until Phase 5 adds calculations."""
+    """Completeness flags derived from ``thermal.thermal_issues``.
+
+    ``is_complete`` is true when no issues are reported; ``flags`` enumerates
+    user-actionable problems (missing materials, missing conductivity,
+    invalid geometry, broken material references).
+    """
 
     model_config = ConfigDict(extra="forbid")
 

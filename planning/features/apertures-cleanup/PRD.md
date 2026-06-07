@@ -1,13 +1,24 @@
 ---
-DATE: 2026-06-05
+DATE: 2026-06-05 (last content update — items themselves are
+      unchanged from the original 13-phase deferral list)
+LAST_REVIEWED: 2026-06-07 (post-build review noted below)
 TIME: 21:45 EDT
-STATUS: Active — backlog
+STATUS: Active — backlog. §A.1–§A.6 + §B.2 scheduled as Phase C-01
+        (plan in `phases/phase-c01-window-to-aperture-removal.md`).
+        Everything else in §B–§F remains unclaimed.
 AUTHOR: Claude
-SCOPE: Every cleanup / polish / followup item deferred during the
-       13-phase Apertures build. Grouped by area, each item carries
-       the originating phase + the reason it was deferred so a
-       future cleanup phase can pick them up with full context.
+SCOPE: Every cleanup / polish / followup item that was knowingly
+       deferred during the 13-phase Apertures build. Grouped by
+       area, each item carries the originating phase + the reason
+       it was deferred so a future cleanup phase can pick them up
+       with full context.
 RELATED:
+  - planning/features/apertures-cleanup/STATUS.md
+    (canonical phase queue + ship order)
+  - planning/features/apertures-cleanup/phases/
+    (Phase C-02 / C-03 / C-04 plans — review-driven, NOT in this
+    PRD)
+  - planning/code-reviews/2026-06-07/aperture-builder-review.md
   - planning/archive/apertures/STATUS.md
   - planning/archive/apertures/PRD.md
   - planning/archive/apertures/phases/phase-01-terminology-schema-command-seam.md
@@ -15,6 +26,35 @@ RELATED:
 ---
 
 # Apertures cleanup — backlog
+
+This PRD lists the items that were **knowingly deferred during the
+original 13-phase Apertures build**. It is still the source of
+truth for those items.
+
+The 2026-06-07 post-build review surfaced **additional** refactor
+candidates that are not in this PRD — those live in the phase
+plans under `phases/` and are tracked in `STATUS.md`. Specifically:
+
+- **Phase C-02** (`phases/phase-c02-backend-handler-consolidation.md`) —
+  duplicated handler helpers (`_find_entry`, `_replace_aperture`,
+  `_audit`, `_refresh_origin`, etc.) and the
+  `merge_split._refresh_origin` semantic divergence. **Not in this
+  PRD.**
+- **Phase C-03** (`phases/phase-c03-drift-cross-cutting.md`) —
+  drift detection N+1, `_LiveCatalogReader` duplication, shared
+  `load_document_body`, MCP `_Wrap` hoist, cache FIFO/LRU
+  mismatch, `Collision` → Pydantic. **Not in this PRD.** Note:
+  PRD §C.1 (drift-report cache key) is a separate concern and
+  remains in this PRD.
+- **Phase C-04** (`phases/phase-c04-frontend-hygiene.md`) — canvas
+  mirror memoisation, `popUndoEntry` contract fix, picker
+  manufacturer-filter bug, catalog-totals hoist, canvas-container
+  decomposition, fixture extraction, test-coverage backfill.
+  **Not in this PRD.**
+
+If a reader is picking up cleanup work, start at `STATUS.md`. This
+PRD is what the §A–§F items below cover; the phase plans cover the
+rest.
 
 The 13 shipped phases left the legacy `Window*` tracer-bullet
 intact. The items below are the durable backlog. Order is roughly

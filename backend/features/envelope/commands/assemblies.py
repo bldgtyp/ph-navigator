@@ -43,10 +43,12 @@ def create_assembly(body: ProjectDocumentV1, command: CreateAssemblyCommand) -> 
 
 
 def rename_assembly(body: ProjectDocumentV1, command: RenameAssemblyCommand) -> ProjectDocumentV1:
+    name = command.name.strip()
+    ops.ensure_unique_assembly_name(body.tables.assemblies, name, exclude_id=command.assembly_id)
     return ops.update_assembly(
         body,
         command.assembly_id,
-        lambda assembly: assembly.model_copy(update={"name": command.name}),
+        lambda assembly: assembly.model_copy(update={"name": name}),
     )
 
 

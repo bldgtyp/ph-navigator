@@ -176,15 +176,22 @@ def ensure_project_material_exists(body: ProjectDocumentV1, project_material_id:
         )
 
 
-def ensure_unique_assembly_name(assemblies: list[Assembly], name: str) -> None:
+def ensure_unique_assembly_name(
+    assemblies: list[Assembly],
+    name: str,
+    exclude_id: str | None = None,
+) -> None:
     normalized = name.strip().casefold()
-    if any(assembly.name.strip().casefold() == normalized for assembly in assemblies):
-        raise api_error(
-            status.HTTP_409_CONFLICT,
-            "duplicate_assembly_name",
-            "An assembly with that name already exists.",
-            {"name": name},
-        )
+    for assembly in assemblies:
+        if exclude_id is not None and assembly.id == exclude_id:
+            continue
+        if assembly.name.strip().casefold() == normalized:
+            raise api_error(
+                status.HTTP_409_CONFLICT,
+                "duplicate_assembly_name",
+                "An assembly with that name already exists.",
+                {"name": name},
+            )
 
 
 def next_unique_name(existing: list[str], base: str, fallback_suffix: str) -> str:

@@ -360,6 +360,33 @@ catalog-vs-project deltas plus the `local_overrides` flag. Apply
 actions write through the `refreshRefFromCatalog` aperture command on
 `POST /apertures/command`.
 
+### 9.10b Envelope (Assembly Builder)
+
+```
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/assemblies/{aid}/thermal?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/material-catalog-drift?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/export/hbjson
+POST /api/v1/projects/{pid}/versions/{vid}/draft/envelope/commands
+```
+
+The `envelope` slice composes assemblies, project materials, and per-
+segment use-site notes / photo refs for the Assembly Builder UI. All
+edits flow through the semantic-command POST; there is no per-field
+PATCH endpoint. See:
+
+- `context/technical-requirements/envelope-commands.md` — the 23
+  command kinds, request shapes, and conflict codes shared by the
+  frontend and the MCP server.
+- `context/technical-requirements/envelope-thermal-preview.md` — the
+  thermal R/U preview contract, flag vocabulary, and input-hash cache
+  semantics.
+- `context/technical-requirements/envelope-catalog-drift.md` — the
+  five drift states and the `refresh_project_material_from_catalog`
+  three-action contract.
+- `context/technical-requirements/envelope-hbjson-export.md` — the
+  saved-version-only opaque-construction export payload.
+
 ### 9.11 HBJSON files
 
 ```

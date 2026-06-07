@@ -20,6 +20,14 @@ GOAL: Sanity-check the foundation before a real UI/UX build-out. The
 
 # Assembly Builder — Foundation Code Review
 
+> **2026-06-07 update:** The H1/H2 findings in this review — the
+> 1,061-line `service.py`, the `isinstance` dispatch, and the proposed
+> commands-file split — were closed by `assembly-builder-tools/`
+> Phases 9–11 (archived under `planning/archive/`). This document is
+> preserved as the rationale for that work, not as a current action
+> list. For the 2026-06-07 review's findings, see
+> `planning/code-reviews/2026-06-07/assembly-builder-review.md`.
+
 ## TL;DR
 
 The foundation is **broadly sound** and clearly the result of disciplined,

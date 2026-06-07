@@ -22,20 +22,6 @@ export function exportErrorDetails(error: unknown): string | null {
   return `HBJSON export needs attention: ${lines.join("; ")}${suffix}`;
 }
 
-export function envelopeShellNotice({
-  isViewer,
-  isLocked,
-  source,
-}: {
-  isViewer: boolean;
-  isLocked: boolean;
-  source: "draft" | "version";
-}): string {
-  if (isViewer) return "Viewer mode";
-  if (isLocked) return "Locked version";
-  return source === "draft" ? "Draft view" : "Saved version";
-}
-
 export function countAssemblyMaterialDrift(
   assembly: Assembly,
   driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>,
