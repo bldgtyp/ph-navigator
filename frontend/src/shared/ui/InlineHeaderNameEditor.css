@@ -1,0 +1,103 @@
+.inline-header-name-editor {
+  align-items: center;
+  color: var(--text-primary);
+  display: inline-flex;
+  flex: 1 1 auto;
+  font-size: 1.55rem;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin: 0;
+  min-width: 0;
+}
+
+.inline-header-name-editor > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inline-header-name-editor--inline {
+  font-size: 0.875rem;
+  font-weight: inherit;
+  gap: 4px;
+  line-height: 1.2;
+  width: 100%;
+}
+
+.inline-header-name-editor__edit,
+.inline-header-name-editor__button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+  width: 28px;
+}
+
+.inline-header-name-editor__edit {
+  opacity: 0;
+  transition: opacity 0.12s var(--ease);
+}
+
+.assembly-header:hover .inline-header-name-editor__edit,
+.assembly-header:focus-within .inline-header-name-editor__edit,
+.apertures-page__header:hover .inline-header-name-editor__edit,
+.apertures-page__header:focus-within .inline-header-name-editor__edit,
+.aperture-element-card__header:hover .inline-header-name-editor__edit,
+.aperture-element-card__header:focus-within .inline-header-name-editor__edit {
+  opacity: 1;
+}
+
+.inline-header-name-editor__edit:hover:not(:disabled),
+.inline-header-name-editor__edit:focus-visible,
+.inline-header-name-editor__button:hover:not(:disabled),
+.inline-header-name-editor__button:focus-visible {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+  outline: 0;
+}
+
+.inline-header-name-editor__edit:disabled,
+.inline-header-name-editor__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.inline-header-name-editor.is-editing {
+  flex-wrap: wrap;
+}
+
+.inline-header-name-editor input {
+  color: var(--text-primary);
+  flex: 1 1 min(360px, 100%);
+  font: inherit;
+  min-width: min(360px, 100%);
+}
+
+.inline-header-name-editor--inline input {
+  font-size: 0.875rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.inline-header-name-editor--inline .inline-header-name-editor__button {
+  height: 24px;
+  min-height: 24px;
+  min-width: 24px;
+  width: 24px;
+}
+
+.inline-header-name-editor__validation {
+  color: var(--phn-danger);
+  flex: 1 0 100%;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.3;
+}

@@ -5,6 +5,7 @@ import {
   formatUValueFromWm2K,
   useUnitPreference,
 } from "../../../lib/units";
+import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import { statusLabel, totalThicknessMm } from "../lib";
 import type { Assembly, AssemblyThermalResponse } from "../types";
 
@@ -12,10 +13,16 @@ export function AssemblyHeader({
   activeAssembly,
   thermal,
   thermalLoading,
+  canEdit,
+  busy,
+  onRename,
 }: {
   activeAssembly: Assembly;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
+  canEdit: boolean;
+  busy: boolean;
+  onRename: (name: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
@@ -24,7 +31,14 @@ export function AssemblyHeader({
     : statusLabel(activeAssembly.status.flags);
   return (
     <header id="assembly-builder-header" className="assembly-header">
-      <h2>{activeAssembly.name}</h2>
+      <InlineHeaderNameEditor
+        value={activeAssembly.name}
+        canEdit={canEdit}
+        busy={busy}
+        editLabel="Edit assembly name"
+        inputLabel="Assembly name"
+        onSubmit={onRename}
+      />
       <dl id="assembly-header-metrics" className="assembly-header-metrics">
         <div id="assembly-total-thickness-metric">
           <dt>Total thickness</dt>

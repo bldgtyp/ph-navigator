@@ -7,6 +7,9 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
+import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
+import { nameCollides } from "../lib";
 import type { ApertureTypeEntry } from "../types";
 
 export function ApertureSidebar({
@@ -30,10 +33,11 @@ export function ApertureSidebar({
   onToggleCollapsed: () => void;
   onSelect: (id: string) => void;
   onAdd: () => void;
-  onRename: (aperture: ApertureTypeEntry) => void;
+  onRename: (aperture: ApertureTypeEntry, name: string) => void;
   onDuplicate: (aperture: ApertureTypeEntry) => void;
   onDelete: (aperture: ApertureTypeEntry) => void;
 }) {
+  const [editingApertureId, setEditingApertureId] = useState<string | null>(null);
   const addButton = canEdit ? (
     <button
       type="button"
@@ -76,14 +80,39 @@ export function ApertureSidebar({
         <ul className="aperture-sidebar__list">
           {apertures.map((aperture) => {
             const isActive = aperture.id === activeApertureId;
+            const isEditing = editingApertureId === aperture.id;
             return (
               <li
                 key={aperture.id}
                 className={`aperture-sidebar__item${isActive ? " is-active" : ""}`}
-                onClick={() => onSelect(aperture.id)}
+                onClick={() => {
+                  if (isEditing) return;
+                  onSelect(aperture.id);
+                }}
               >
-                <span className="aperture-sidebar__item-name">{aperture.name}</span>
-                {canEdit ? (
+                {isEditing ? (
+                  <InlineHeaderNameEditor
+                    value={aperture.name}
+                    variant="inline"
+                    canEdit={canEdit}
+                    busy={actionDisabled}
+                    editLabel="Edit aperture type name"
+                    inputLabel="Aperture type name"
+                    showEditButton={false}
+                    editing={isEditing}
+                    onEditingChange={(editing) =>
+                      setEditingApertureId(editing ? aperture.id : null)
+                    }
+                    getValidationMessage={(name) => {
+                      if (!nameCollides(apertures, name.trim(), aperture.id)) return null;
+                      return `An aperture type named '${name.trim()}' already exists in this version.`;
+                    }}
+                    onSubmit={(name) => onRename(aperture, name)}
+                  />
+                ) : (
+                  <span className="aperture-sidebar__item-name">{aperture.name}</span>
+                )}
+                {canEdit && !isEditing ? (
                   <span
                     id={`aperture-sidebar-row-actions-${aperture.id}`}
                     className="aperture-sidebar__row-actions"
@@ -94,7 +123,7 @@ export function ApertureSidebar({
                       tooltip="Rename aperture type"
                       icon={Pencil}
                       disabled={actionDisabled}
-                      onClick={() => onRename(aperture)}
+                      onClick={() => setEditingApertureId(aperture.id)}
                     />
                     <SidebarActionButton
                       label="Duplicate aperture type"

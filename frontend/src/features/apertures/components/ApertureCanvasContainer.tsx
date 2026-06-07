@@ -82,8 +82,6 @@ export function ApertureCanvasContainer({
   onDeleteColumn,
   onPickFrame,
   onPickGlazing,
-  onEditFrameField,
-  onEditGlazingField,
   onSetElementOperation,
   onMergeElements,
   onSplitElement,
@@ -101,13 +99,6 @@ export function ApertureCanvasContainer({
   onDeleteColumn?: (index: number) => void;
   onPickFrame?: (elementId: string, side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing?: (elementId: string, glazing: GlazingRef) => void;
-  onEditFrameField?: (
-    elementId: string,
-    side: ApertureSide,
-    fieldKey: string,
-    value: string | number | null,
-  ) => void;
-  onEditGlazingField?: (elementId: string, fieldKey: string, value: string | number | null) => void;
   onSetElementOperation?: (
     elementId: string,
     operation: import("../types").ApertureOperation | null,
@@ -405,11 +396,7 @@ export function ApertureCanvasContainer({
           </div>
         </div>
       </div>
-      {(onPickFrame ||
-        onPickGlazing ||
-        onEditFrameField ||
-        onEditGlazingField ||
-        onSetElementName) && (
+      {(onPickFrame || onPickGlazing || onSetElementName) && (
         <ApertureElementCardStack
           aperture={aperture}
           viewDirection={viewDirection}
@@ -418,8 +405,6 @@ export function ApertureCanvasContainer({
           onSetElementName={(elementId, newName) => handleSetElementName(elementId, newName)}
           onPickFrame={(elementId, side, frame) => onPickFrame?.(elementId, side, frame)}
           onPickGlazing={(elementId, glazing) => onPickGlazing?.(elementId, glazing)}
-          onEditFrameField={(elementId, side, k, v) => onEditFrameField?.(elementId, side, k, v)}
-          onEditGlazingField={(elementId, k, v) => onEditGlazingField?.(elementId, k, v)}
           onSetElementOperation={(elementId, operation) =>
             onSetElementOperation?.(elementId, operation)
           }

@@ -22,7 +22,6 @@ const U_VALUE_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
   "deleteColumn",
   "pickFrame",
   "pickGlazing",
-  "editFieldOverride",
   "mergeElements",
   "splitElement",
   "pasteAssignment",

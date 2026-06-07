@@ -34,7 +34,6 @@ from features.project_document.aperture_commands.handlers.paste import (
     apply_paste_assignment,
 )
 from features.project_document.aperture_commands.handlers.picks import (
-    apply_edit_field_override,
     apply_pick_frame,
     apply_pick_glazing,
 )
@@ -72,7 +71,6 @@ _HANDLERS: dict[str, _Handler] = {
     "deleteColumn": cast(_Handler, apply_delete_column),
     "pickFrame": cast(_Handler, apply_pick_frame),
     "pickGlazing": cast(_Handler, apply_pick_glazing),
-    "editFieldOverride": cast(_Handler, apply_edit_field_override),
     "mergeElements": cast(_Handler, apply_merge_elements),
     "splitElement": cast(_Handler, apply_split_element),
     "pasteAssignment": cast(_Handler, apply_paste_assignment),
@@ -80,10 +78,8 @@ _HANDLERS: dict[str, _Handler] = {
     "refreshRefFromCatalog": cast(_Handler, apply_refresh_ref_from_catalog),
 }
 
-# Commands declared in the union but not yet wired up. Each phase that
-# owns the gesture removes its entry here as it lands the handler.
-# Phase 08 wires the last three reserved kinds — the set is now empty.
-_NOT_IMPLEMENTED_KINDS: frozenset[str] = frozenset()
+# Commands declared in the union but intentionally not wired up.
+_NOT_IMPLEMENTED_KINDS: frozenset[str] = frozenset({"editFieldOverride"})
 
 
 def apply_aperture_command(

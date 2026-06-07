@@ -27,13 +27,6 @@ export type ApertureElementCardStackProps = {
   onSetElementName: (elementId: string, newName: string) => void;
   onPickFrame: (elementId: string, side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing: (elementId: string, glazing: GlazingRef) => void;
-  onEditFrameField: (
-    elementId: string,
-    side: ApertureSide,
-    fieldKey: string,
-    value: string | number | null,
-  ) => void;
-  onEditGlazingField: (elementId: string, fieldKey: string, value: string | number | null) => void;
   onSetElementOperation: (elementId: string, operation: ApertureOperation | null) => void;
   dismissedOperationWarnings: readonly string[];
   onDismissOperationWarning: (elementId: string) => void;
@@ -48,8 +41,6 @@ export function ApertureElementCardStack({
   onSetElementName,
   onPickFrame,
   onPickGlazing,
-  onEditFrameField,
-  onEditGlazingField,
   onSetElementOperation,
   dismissedOperationWarnings,
   onDismissOperationWarning,
@@ -70,8 +61,6 @@ export function ApertureElementCardStack({
           onSetName={(n) => onSetElementName(element.id, n)}
           onPickFrame={(side, frame) => onPickFrame(element.id, side, frame)}
           onPickGlazing={(glazing) => onPickGlazing(element.id, glazing)}
-          onEditFrameField={(side, k, v) => onEditFrameField(element.id, side, k, v)}
-          onEditGlazingField={(k, v) => onEditGlazingField(element.id, k, v)}
           onSetOperation={(op) => onSetElementOperation(element.id, op)}
           operationWarningDismissed={dismissedOperationWarnings.includes(element.id)}
           onDismissOperationWarning={() => onDismissOperationWarning(element.id)}

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
@@ -34,6 +35,7 @@ function aperture(overrides: Partial<ApertureTypeEntry> = {}): ApertureTypeEntry
 }
 
 function UnitStub({ children }: { children: ReactNode }) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const value: UnitPreferenceContextValue = {
     unitSystem: "SI",
     source: "default",
@@ -41,15 +43,21 @@ function UnitStub({ children }: { children: ReactNode }) {
     setUnitSystem: vi.fn(),
     toggleUnitSystem: vi.fn(),
   };
-  return <UnitPreferenceContext.Provider value={value}>{children}</UnitPreferenceContext.Provider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <UnitPreferenceContext.Provider value={value}>{children}</UnitPreferenceContext.Provider>
+    </QueryClientProvider>
+  );
 }
 
 function ApertureCanvasHarness({
   entry,
   onEditDimension,
+  onSetElementName,
 }: {
   entry: ApertureTypeEntry;
   onEditDimension?: (axis: "row" | "column", index: number, newMm: number) => void;
+  onSetElementName?: (elementId: string, newName: string) => void;
 }) {
   const dimFormat = useApertureDimFormat();
 
@@ -61,6 +69,7 @@ function ApertureCanvasHarness({
         dimFormat={dimFormat}
         canEdit
         onEditDimension={onEditDimension}
+        onSetElementName={onSetElementName}
       />
     </>
   );
@@ -121,6 +130,45 @@ describe("ApertureCanvasContainer", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Aperture canvas tools" });
 
     expect(caption.compareDocumentPosition(toolbar)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("renames an element card through the inline edit controls", () => {
+    const onSetElementName = vi.fn();
+    render(
+      <UnitStub>
+        <ApertureCanvasHarness
+          entry={aperture({ elements: [element({ id: "aptel_named", name: "A" })] })}
+          onSetElementName={onSetElementName}
+        />
+      </UnitStub>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Rename A" }));
+    fireEvent.change(screen.getByLabelText("Element name"), { target: { value: "A-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+
+    expect(onSetElementName).toHaveBeenCalledWith("aptel_named", "A-1");
+  });
+
+  it("cancels an element card name edit when focus leaves the editor", () => {
+    const onSetElementName = vi.fn();
+    render(
+      <UnitStub>
+        <ApertureCanvasHarness
+          entry={aperture({ elements: [element({ id: "aptel_named", name: "A" })] })}
+          onSetElementName={onSetElementName}
+        />
+      </UnitStub>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Rename A" }));
+    const input = screen.getByLabelText("Element name");
+    fireEvent.change(input, { target: { value: "A-1" } });
+    fireEvent.blur(input, { relatedTarget: document.body });
+
+    expect(onSetElementName).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("Element name")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rename A" })).toBeInTheDocument();
   });
 
   it("flips horizontal dimension strip with the interior SVG view", () => {

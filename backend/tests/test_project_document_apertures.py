@@ -595,7 +595,7 @@ def test_delete_column_last_remaining_rejects() -> None:
     assert "aperture_dimension_min_violation" in str(exc.value)
 
 
-# ------------------------ Pick + override commands (Phase 06) ----------------
+# ------------------------ Pick commands (Phase 06) ----------------
 
 
 def _picked_frame(*, name: str = "ABC Head", catalog: bool = True) -> FrameRef:
@@ -665,20 +665,13 @@ def test_pick_frame_writes_ref_and_refreshes_synced_at() -> None:
     assert payload["catalog_record_id"] == "rec000000000FRAME"
 
 
-def test_pick_frame_hand_enter_leaves_origin_null() -> None:
+def test_pick_frame_hand_enter_rejected() -> None:
     body, _ = _seeded_body_with_aperture()
     apt_id, el_id = _seeded_element_id(body)
     frame = _picked_frame(name="Unnamed", catalog=False)
-    body, audit = _apply(
-        body,
-        PickFrame(aperture_type_id=apt_id, element_id=el_id, side="right", frame=frame),
-    )
-    right = body.tables.apertures[0].elements[0].frames.right
-    assert right is not None
-    assert right.catalog_origin is None
-    payload = cast(dict[str, object], audit["payload"])
-    assert payload["hand_enter"] is True
-    assert payload["catalog_record_id"] is None
+    with pytest.raises(Exception) as exc:
+        _apply(body, PickFrame(aperture_type_id=apt_id, element_id=el_id, side="right", frame=frame))
+    assert "aperture_pick_catalog_required" in str(exc.value)
 
 
 def test_pick_glazing_writes_ref() -> None:
@@ -694,100 +687,7 @@ def test_pick_glazing_writes_ref() -> None:
     assert glz.catalog_origin is not None
 
 
-def test_edit_field_override_appends_to_local_overrides() -> None:
-    body, _ = _seeded_body_with_aperture()
-    apt_id, el_id = _seeded_element_id(body)
-    body, _ = _apply(
-        body,
-        PickFrame(aperture_type_id=apt_id, element_id=el_id, side="top", frame=_picked_frame()),
-    )
-    body, audit = _apply(
-        body,
-        EditFieldOverride(
-            aperture_type_id=apt_id,
-            element_id=el_id,
-            target="frame.top",
-            field_key="u_value_w_m2k",
-            new_value=0.95,
-        ),
-    )
-    top = body.tables.apertures[0].elements[0].frames.top
-    assert top is not None
-    assert top.u_value_w_m2k == 0.95
-    assert top.catalog_origin is not None
-    assert top.catalog_origin.local_overrides == ["u_value_w_m2k"]
-    # Re-editing the same key is idempotent.
-    body, _ = _apply(
-        body,
-        EditFieldOverride(
-            aperture_type_id=apt_id,
-            element_id=el_id,
-            target="frame.top",
-            field_key="u_value_w_m2k",
-            new_value=0.9,
-        ),
-    )
-    top = body.tables.apertures[0].elements[0].frames.top
-    assert top is not None
-    assert top.catalog_origin is not None
-    assert top.catalog_origin.local_overrides == ["u_value_w_m2k"]
-    payload = cast(dict[str, object], audit["payload"])
-    assert payload["affects_u_value"] is True
-
-
-def test_edit_field_override_hand_enter_does_not_touch_overrides() -> None:
-    body, _ = _seeded_body_with_aperture()
-    apt_id, el_id = _seeded_element_id(body)
-    body, _ = _apply(
-        body,
-        PickFrame(
-            aperture_type_id=apt_id,
-            element_id=el_id,
-            side="left",
-            frame=_picked_frame(name="Hand", catalog=False),
-        ),
-    )
-    body, _ = _apply(
-        body,
-        EditFieldOverride(
-            aperture_type_id=apt_id,
-            element_id=el_id,
-            target="frame.left",
-            field_key="width_mm",
-            new_value=120.0,
-        ),
-    )
-    left = body.tables.apertures[0].elements[0].frames.left
-    assert left is not None
-    assert left.width_mm == 120.0
-    assert left.catalog_origin is None
-
-
-def test_edit_field_override_unset_slot_raises_422() -> None:
-    body, _ = _seeded_body_with_aperture()
-    apt_id, el_id = _seeded_element_id(body)
-    # Default factory writes all four frames + glazing, so blank the
-    # `top` slot first via a hand-enter pick we then remove? Simpler:
-    # build a brand-new aperture with an empty top via model edits is
-    # not possible at the command boundary — instead exercise via a
-    # bogus target-side string.
-    with pytest.raises(Exception) as exc:
-        _apply(
-            body,
-            EditFieldOverride(
-                aperture_type_id=apt_id,
-                element_id=el_id,
-                target=cast(Any, "frame.bogus"),
-                field_key="width_mm",
-                new_value=80.0,
-            ),
-        )
-    # Pydantic rejects this at command validation time as a Literal
-    # violation before the handler runs.
-    assert exc.value is not None
-
-
-def test_edit_field_override_invalid_value_raises_422() -> None:
+def test_edit_field_override_reserved_command_rejected() -> None:
     body, _ = _seeded_body_with_aperture()
     apt_id, el_id = _seeded_element_id(body)
     body, _ = _apply(
@@ -801,32 +701,11 @@ def test_edit_field_override_invalid_value_raises_422() -> None:
                 aperture_type_id=apt_id,
                 element_id=el_id,
                 target="frame.top",
-                field_key="width_mm",
-                new_value=-5.0,
+                field_key="u_value_w_m2k",
+                new_value=0.95,
             ),
         )
-    assert "aperture_override_invalid_value" in str(exc.value)
-
-
-def test_edit_field_override_unknown_field_raises_422() -> None:
-    body, _ = _seeded_body_with_aperture()
-    apt_id, el_id = _seeded_element_id(body)
-    body, _ = _apply(
-        body,
-        PickGlazing(aperture_type_id=apt_id, element_id=el_id, glazing=_picked_glazing()),
-    )
-    with pytest.raises(Exception) as exc:
-        _apply(
-            body,
-            EditFieldOverride(
-                aperture_type_id=apt_id,
-                element_id=el_id,
-                target="glazing",
-                field_key="not_a_real_field",
-                new_value="x",
-            ),
-        )
-    assert "aperture_override_unknown_field" in str(exc.value)
+    assert "aperture_command_not_implemented" in str(exc.value)
 
 
 def test_edit_field_override_audit_kind_registered() -> None:

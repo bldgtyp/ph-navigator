@@ -598,10 +598,10 @@ describe("EnvelopePage", () => {
 
     await screen.findByRole("link", { name: /WALL-C3/ });
     await userEvent.click(screen.getByRole("button", { name: "Rename assembly" }));
-    const nameInput = screen.getByLabelText("Name");
+    const nameInput = screen.getByLabelText("Assembly name");
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "WALL-C4");
-    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save name" }));
 
     expect(await screen.findByRole("link", { name: /WALL-C4/ })).toBeInTheDocument();
     const commandCall = fetchMock.mock.calls.find((call) =>
@@ -612,6 +612,36 @@ describe("EnvelopePage", () => {
     expect(commandCall[0]).toContain("/draft/envelope/commands");
     expect(headers.get("If-Match")).toBe("draft-etag");
     expect(JSON.parse(commandOptions?.body as string)).toEqual({
+      command: { kind: "rename_assembly", assembly_id: "asm_wall_c3", name: "WALL-C4" },
+    });
+  });
+
+  test("header inline rename updates the assembly heading and sidebar label", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            draft_etag: "draft-etag-2",
+            assemblies: [{ ...envelopePayload.assemblies[0], name: "WALL-C4" }],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    expect(await screen.findByRole("heading", { name: "WALL-C3" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Edit assembly name" }));
+    const nameInput = screen.getByLabelText("Assembly name");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "WALL-C4");
+    await userEvent.click(screen.getByRole("button", { name: "Save name" }));
+
+    expect(await screen.findByRole("heading", { name: "WALL-C4" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /WALL-C4/ })).toBeInTheDocument();
+    expect(commandRequestBodies().at(-1)).toEqual({
       command: { kind: "rename_assembly", assembly_id: "asm_wall_c3", name: "WALL-C4" },
     });
   });

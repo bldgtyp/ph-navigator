@@ -17,7 +17,6 @@ import { SegmentDialog } from "./dialogs/SegmentDialog";
 
 type DialogState =
   | { kind: "create-assembly" }
-  | { kind: "rename-assembly"; assembly: Assembly }
   | { kind: "type-assembly"; assembly: Assembly }
   | { kind: "duplicate-assembly"; assembly: Assembly }
   | { kind: "delete-assembly"; assembly: Assembly }
@@ -69,22 +68,6 @@ export function EnvelopeEditorDialogs({
         error={error}
         onClose={onClose}
         onSubmit={(name, type) => onCommand({ kind: "create_assembly", name, type })}
-      />
-    );
-  }
-  if (dialog.kind === "rename-assembly") {
-    return (
-      <AssemblyNameDialog
-        title="Rename assembly"
-        initialName={dialog.assembly.name}
-        initialType={dialog.assembly.type}
-        hideType
-        busy={busy}
-        error={error}
-        onClose={onClose}
-        onSubmit={(name) =>
-          onCommand({ kind: "rename_assembly", assembly_id: dialog.assembly.id, name })
-        }
       />
     );
   }

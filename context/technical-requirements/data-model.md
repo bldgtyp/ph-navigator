@@ -335,7 +335,8 @@ JSON document. Illustrative sketch (the canonical model is the
     //   name, manufacturer, brand, use, operation, location, mull_type,
     //   prefix, suffix, material, width_mm, u_value_w_m2k, psi_g_w_mk,
     //   psi_install_w_mk, color, source, comments,
-    //   catalog_origin (nullable; null when hand-entered)
+    //   catalog_origin (nullable for historical/imported data; aperture
+    //   builder pick commands require catalog-sourced refs)
     // GlazingRef fields (mirrors catalog_glazing_types):
     //   name, manufacturer, brand, suffix, u_value_w_m2k, g_value, color,
     //   source, comments, catalog_origin (nullable)

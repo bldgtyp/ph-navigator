@@ -1,14 +1,13 @@
 // Read-only display label for an element's operation. Reused by the
 // locked / Viewer card view, by the OperationRow when the editor is
-// disabled, and by the preset menu's "this preset's payload formats
-// as…" check. Matches PRD §11.3:
+// disabled. Matches PRD §11.3:
 //
 //   null                                  → "Fixed"
 //   { type: swing, directions: [] }       → "Swing"
 //   { type: swing, directions: [l, u] }   → "Swing (Left, Up)"
 //
 // Direction order is preserved (the editor controls the order via
-// toggle interaction order, presets supply their own).
+// toggle interaction order).
 
 import type { ApertureOperation, ApertureOperationDirection } from "./types";
 
