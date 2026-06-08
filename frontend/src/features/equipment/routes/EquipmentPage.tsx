@@ -6,6 +6,7 @@ import {
   useElectricHeatersSliceQuery,
   useFansSliceQuery,
   useHotWaterHeatersSliceQuery,
+  useHotWaterTanksSliceQuery,
   usePumpsSliceQuery,
   useVentilatorsSliceQuery,
 } from "../hooks";
@@ -20,6 +21,11 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
   const pumpsQuery = usePumpsSliceQuery(project.id, project.active_version_id, project.access_mode);
   const fansQuery = useFansSliceQuery(project.id, project.active_version_id, project.access_mode);
   const hotWaterHeatersQuery = useHotWaterHeatersSliceQuery(
+    project.id,
+    project.active_version_id,
+    project.access_mode,
+  );
+  const hotWaterTanksQuery = useHotWaterTanksSliceQuery(
     project.id,
     project.active_version_id,
     project.access_mode,
@@ -39,6 +45,7 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
     pumpsQuery.isLoading ||
     fansQuery.isLoading ||
     hotWaterHeatersQuery.isLoading ||
+    hotWaterTanksQuery.isLoading ||
     electricHeatersQuery.isLoading ||
     appliancesQuery.isLoading
   ) {
@@ -57,6 +64,8 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
     !fansQuery.data ||
     hotWaterHeatersQuery.isError ||
     !hotWaterHeatersQuery.data ||
+    hotWaterTanksQuery.isError ||
+    !hotWaterTanksQuery.data ||
     electricHeatersQuery.isError ||
     !electricHeatersQuery.data ||
     appliancesQuery.isError ||
@@ -81,6 +90,8 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
       refetchFans={fansQuery.refetch}
       hotWaterHeatersSlice={hotWaterHeatersQuery.data}
       refetchHotWaterHeaters={hotWaterHeatersQuery.refetch}
+      hotWaterTanksSlice={hotWaterTanksQuery.data}
+      refetchHotWaterTanks={hotWaterTanksQuery.refetch}
       electricHeatersSlice={electricHeatersQuery.data}
       refetchElectricHeaters={electricHeatersQuery.refetch}
       appliancesSlice={appliancesQuery.data}

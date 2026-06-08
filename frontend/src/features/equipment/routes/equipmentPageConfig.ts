@@ -24,6 +24,13 @@ export const HOT_WATER_HEATERS_CONFLICT_MESSAGES = {
   versionLocked: "This version is locked. Save As to copy it into a new version.",
 };
 
+export const HOT_WATER_TANKS_CONFLICT_MESSAGES = {
+  activeRowConflict:
+    "The Hot Water Tanks draft changed in another tab. Reload the draft before editing.",
+  deleteConflict: "Could not delete hot water tank.",
+  versionLocked: "This version is locked. Save As to copy it into a new version.",
+};
+
 export const ELECTRIC_HEATERS_CONFLICT_MESSAGES = {
   activeRowConflict:
     "The Electric Heaters draft changed in another tab. Reload the draft before editing.",
@@ -48,6 +55,11 @@ export const EQUIPMENT_TABS = [
     emptyMessage: "No hot water heaters yet.",
   },
   {
+    key: "hot-water-tanks",
+    label: "Hot-water tanks",
+    emptyMessage: "No hot water tanks yet.",
+  },
+  {
     key: "electric-heaters",
     label: "Electric heaters",
     emptyMessage: "No electric heaters yet.",
@@ -59,6 +71,7 @@ export type EquipmentTabKey = (typeof EQUIPMENT_TABS)[number]["key"];
 
 export function equipmentTabLabel(tab: EquipmentTabKey): string {
   if (tab === "hot-water-heaters") return "Hot Water Heaters";
+  if (tab === "hot-water-tanks") return "Hot Water Tanks";
   if (tab === "electric-heaters") return "Electric Heaters";
   const entry = EQUIPMENT_TABS.find((candidate) => candidate.key === tab);
   return entry?.label ?? "Equipment";

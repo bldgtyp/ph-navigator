@@ -1,0 +1,85 @@
+import {
+  buildTableSchema,
+  useTableSchema,
+  type TableFieldDef,
+  type TableSchema,
+} from "../../../shared/ui/data-table";
+import { HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS, hotWaterTanksFieldOverlay } from "../lib";
+import {
+  HOT_WATER_TANK_TYPE_OPTION_KEY,
+  HOT_WATER_TANKS_TABLE_NAME,
+  type HotWaterTankRow,
+  type HotWaterTanksSlice,
+} from "../types";
+
+function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
+  return { ...fieldDef, config: { ...fieldDef.config } };
+}
+
+export const hotWaterTanksBuiltInFieldDefs: TableFieldDef[] = [
+  ...HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS.map(copyTableFieldDef),
+];
+
+export function hotWaterTanksFieldDefs(...customFields: TableFieldDef[]): TableFieldDef[] {
+  return [...hotWaterTanksBuiltInFieldDefs, ...customFields];
+}
+
+export function buildHotWaterTank(overrides: Partial<HotWaterTankRow> = {}): HotWaterTankRow {
+  return {
+    id: "hwt_1",
+    tank_type: "opt_hwt_dhw_heating",
+    url: null,
+    notes: null,
+    datasheet_asset_ids: [],
+    custom_values: {
+      record_id: "HWT-1",
+      name: "DHW storage tank",
+      quantity: 1,
+      inside_outside: "Inside",
+      manufacturer: "Acme",
+      model: "ST-80",
+      size_l: 302.8,
+      heat_loss_rate_w_k: 1.8,
+    },
+    ...overrides,
+  };
+}
+
+export function buildHotWaterTanksSlice(
+  overrides: Partial<HotWaterTanksSlice> = {},
+): HotWaterTanksSlice {
+  return {
+    project_id: "proj_1",
+    version_id: "ver_1",
+    source: "draft",
+    version_etag: "v1",
+    draft_etag: "d1",
+    hot_water_tanks: [],
+    field_defs: hotWaterTanksFieldDefs(),
+    single_select_options: {
+      [HOT_WATER_TANK_TYPE_OPTION_KEY]: [
+        { id: "opt_hwt_dhw_heating", label: "1-DHW and Heating", color: "#0ea5e9", order: 0 },
+        { id: "opt_hwt_dhw_only", label: "2-DHW only", color: "#14b8a6", order: 1 },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+export function schemaForHotWaterTanks(slice: HotWaterTanksSlice): TableSchema {
+  return buildTableSchema({
+    tableKey: HOT_WATER_TANKS_TABLE_NAME,
+    fieldDefs: slice.field_defs,
+    fieldOverlay: hotWaterTanksFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
+  });
+}
+
+export function useHotWaterTanksTableSchema(slice: HotWaterTanksSlice): TableSchema {
+  return useTableSchema({
+    tableKey: HOT_WATER_TANKS_TABLE_NAME,
+    fieldDefs: slice.field_defs,
+    fieldOverlay: hotWaterTanksFieldOverlay(slice),
+    singleSelectOptions: slice.single_select_options,
+  });
+}

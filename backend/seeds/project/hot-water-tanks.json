@@ -1,0 +1,95 @@
+{
+  "options": {
+    "hot_water_tanks.type": [
+      { "id": "opt_hwt_dhw_heating", "label": "1-DHW and Heating", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_hwt_dhw_only", "label": "2-DHW only", "color": "#14b8a6", "order": 1 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "hwt_1",
+      "tank_type": "opt_hwt_dhw_heating",
+      "url": "https://example.com/buffer-combi-300.pdf",
+      "notes": "Combined buffer/storage tank for UI testing.",
+      "datasheet_asset_ids": [],
+      "custom_values": {
+        "record_id": "HWT-1",
+        "name": "Combi Buffer Tank",
+        "quantity": 1,
+        "inside_outside": "Inside",
+        "manufacturer": "Viessmann",
+        "model": "Vitocell 300-B",
+        "size_l": 300,
+        "heat_loss_rate_w_k": 1.8
+      }
+    },
+    {
+      "id": "hwt_2",
+      "tank_type": "opt_hwt_dhw_only",
+      "url": "https://example.com/dhw-189.pdf",
+      "notes": "Apartment DHW-only storage tank.",
+      "datasheet_asset_ids": [],
+      "custom_values": {
+        "record_id": "HWT-2",
+        "name": "Apartment DHW Tank",
+        "quantity": 2,
+        "inside_outside": "Inside",
+        "manufacturer": "A.O. Smith",
+        "model": "DRE-52",
+        "size_l": 189,
+        "heat_loss_rate_w_k": 1.2
+      }
+    },
+    {
+      "id": "hwt_3",
+      "tank_type": "opt_hwt_dhw_heating",
+      "url": null,
+      "notes": "Heating buffer tank placeholder.",
+      "datasheet_asset_ids": [],
+      "custom_values": {
+        "record_id": "HWT-3",
+        "name": "Heating Buffer",
+        "quantity": 1,
+        "inside_outside": "Inside",
+        "manufacturer": "Stiebel Eltron",
+        "model": "SBP 200 E",
+        "size_l": 200,
+        "heat_loss_rate_w_k": 1.5
+      }
+    },
+    {
+      "id": "hwt_4",
+      "tank_type": "opt_hwt_dhw_only",
+      "url": null,
+      "notes": "Exterior mechanical-yard tank placeholder.",
+      "datasheet_asset_ids": [],
+      "custom_values": {
+        "record_id": "HWT-4",
+        "name": "Outdoor DHW Tank",
+        "quantity": 1,
+        "inside_outside": "Outside",
+        "manufacturer": "Bradford White",
+        "model": "SW-2-120",
+        "size_l": 454,
+        "heat_loss_rate_w_k": 2.7
+      }
+    },
+    {
+      "id": "hwt_5",
+      "tank_type": "opt_hwt_dhw_heating",
+      "url": "https://example.com/thermal-store-500.pdf",
+      "notes": "Large central thermal-store test row.",
+      "datasheet_asset_ids": [],
+      "custom_values": {
+        "record_id": "HWT-5",
+        "name": "Central Thermal Store",
+        "quantity": 1,
+        "inside_outside": "Inside",
+        "manufacturer": "Lochinvar",
+        "model": "TST-500",
+        "size_l": 500,
+        "heat_loss_rate_w_k": 3.1
+      }
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import {
   electricHeatersSliceFeature,
   fansSliceFeature,
   hotWaterHeatersSliceFeature,
+  hotWaterTanksSliceFeature,
   pumpsSliceFeature,
   roomsSliceFeature,
   thermalBridgesSliceFeature,
@@ -51,6 +52,10 @@ export const useReplaceHotWaterHeatersSliceMutation =
   hotWaterHeatersSliceFeature.useReplaceSliceMutation;
 export const useHotWaterHeatersSchemaMutation =
   hotWaterHeatersSliceFeature.useSchemaMutationMutation;
+export const useHotWaterTanksSliceQuery = hotWaterTanksSliceFeature.useSliceQuery;
+export const useReplaceHotWaterTanksSliceMutation =
+  hotWaterTanksSliceFeature.useReplaceSliceMutation;
+export const useHotWaterTanksSchemaMutation = hotWaterTanksSliceFeature.useSchemaMutationMutation;
 export const useElectricHeatersSliceQuery = electricHeatersSliceFeature.useSliceQuery;
 export const useReplaceElectricHeatersSliceMutation =
   electricHeatersSliceFeature.useReplaceSliceMutation;

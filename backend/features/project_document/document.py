@@ -56,6 +56,9 @@ FAN_OPTION_KEYS: tuple[FanOptionKey, ...] = (FAN_TYPE_OPTION_KEY,)
 HOT_WATER_HEATER_TYPE_OPTION_KEY = "hot_water_heaters.type"
 HotWaterHeaterOptionKey = Literal["hot_water_heaters.type"]
 HOT_WATER_HEATER_OPTION_KEYS: tuple[HotWaterHeaterOptionKey, ...] = (HOT_WATER_HEATER_TYPE_OPTION_KEY,)
+HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type"
+HotWaterTankOptionKey = Literal["hot_water_tanks.type"]
+HOT_WATER_TANK_OPTION_KEYS: tuple[HotWaterTankOptionKey, ...] = (HOT_WATER_TANK_TYPE_OPTION_KEY,)
 APPLIANCE_TYPE_OPTION_KEY = "appliances.type"
 APPLIANCE_ENERGY_STAR_OPTION_KEY = "appliances.energy_star"
 ApplianceOptionKey = Literal["appliances.type", "appliances.energy_star"]
@@ -96,6 +99,9 @@ FANS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 )
 HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "heater_type", "phase", "url", "notes", "datasheet_asset_ids"}
+)
+HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "tank_type", "url", "notes", "datasheet_asset_ids"}
 )
 ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "url", "notes"})
 APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
@@ -289,7 +295,7 @@ class HotWaterHeaterRow(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    id: str = Field(pattern=r"^(hwh|hwt)_[A-Za-z0-9_-]+$", max_length=80)
+    id: str = Field(pattern=r"^hwh_[A-Za-z0-9_-]+$", max_length=80)
     heater_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     phase: int | None = None
     url: str | None = Field(default=None, max_length=2000)
@@ -325,6 +331,41 @@ class HotWaterHeatersTableEnvelope(BaseModel):
 
     field_defs: list[TableFieldDef] = Field(default_factory=list)
     rows: list[HotWaterHeaterRow] = Field(default_factory=list)
+
+
+class HotWaterTankRow(BaseModel):
+    """A row in the Hot Water Tanks equipment table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^hwt_[A-Za-z0-9_-]+$", max_length=80)
+    tank_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=4000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+
+    @field_validator("url", "notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str | None) -> str | None:
+        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
+            raise ValueError("url must start with http:// or https://")
+        return value
+
+
+class HotWaterTanksTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[HotWaterTankRow] = Field(default_factory=list)
 
 
 class ElectricHeaterRow(BaseModel):
@@ -430,6 +471,7 @@ class EmptyEquipmentTables(BaseModel):
     electric_heaters: ElectricHeatersTableEnvelope = Field(default_factory=ElectricHeatersTableEnvelope)
     fans: FansTableEnvelope = Field(default_factory=FansTableEnvelope)
     hot_water_heaters: HotWaterHeatersTableEnvelope = Field(default_factory=HotWaterHeatersTableEnvelope)
+    hot_water_tanks: HotWaterTanksTableEnvelope = Field(default_factory=HotWaterTanksTableEnvelope)
     pumps: PumpsTableEnvelope = Field(default_factory=PumpsTableEnvelope)
     ervs: VentilatorsTableEnvelope = Field(default_factory=VentilatorsTableEnvelope)
 
@@ -471,33 +513,6 @@ def _require_catalog_origin_family(
         return
     if version_id is None or not version_id.startswith(expected_version_prefix):
         raise ValueError(f"catalog_origin.catalog_version_id must start with {expected_version_prefix!r}")
-
-
-def _normalize_legacy_hot_water_heater_envelope(value: object) -> object:
-    if not isinstance(value, dict):
-        return value
-    envelope = dict(value)
-    field_defs = envelope.get("field_defs")
-    if isinstance(field_defs, list):
-        envelope["field_defs"] = [
-            {**field, "field_key": "heater_type"}
-            if isinstance(field, dict) and field.get("field_key") == "tank_type"
-            else field
-            for field in field_defs
-        ]
-    rows = envelope.get("rows")
-    if isinstance(rows, list):
-        envelope["rows"] = [_normalize_legacy_hot_water_heater_row(row) for row in rows]
-    return envelope
-
-
-def _normalize_legacy_hot_water_heater_row(value: object) -> object:
-    if not isinstance(value, dict):
-        return value
-    row = dict(value)
-    legacy_type = row.pop("tank_type", None)
-    row.setdefault("heater_type", legacy_type)
-    return row
 
 
 class FrameRef(BaseModel):
@@ -892,37 +907,12 @@ class ProjectDocumentV1(BaseModel):
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [],
             FAN_TYPE_OPTION_KEY: [],
             HOT_WATER_HEATER_TYPE_OPTION_KEY: [],
+            HOT_WATER_TANK_TYPE_OPTION_KEY: [],
             APPLIANCE_TYPE_OPTION_KEY: [],
             APPLIANCE_ENERGY_STAR_OPTION_KEY: [],
             THERMAL_BRIDGE_TYPE_OPTION_KEY: [],
         }
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def normalize_legacy_hot_water_heater_table(cls, value: object) -> object:
-        if not isinstance(value, dict):
-            return value
-        body = dict(value)
-        tables = body.get("tables")
-        if isinstance(tables, dict):
-            tables = dict(tables)
-            equipment = tables.get("equipment")
-            if isinstance(equipment, dict):
-                equipment = dict(equipment)
-                legacy = equipment.pop("hot_water_tanks", None)
-                if "hot_water_heaters" not in equipment and legacy is not None:
-                    equipment["hot_water_heaters"] = _normalize_legacy_hot_water_heater_envelope(legacy)
-                tables["equipment"] = equipment
-            body["tables"] = tables
-        options = body.get("single_select_options")
-        if isinstance(options, dict) and HOT_WATER_HEATER_TYPE_OPTION_KEY not in options:
-            options = dict(options)
-            legacy_options = options.pop("hot_water_tanks.type", None)
-            if legacy_options is not None:
-                options[HOT_WATER_HEATER_TYPE_OPTION_KEY] = legacy_options
-            body["single_select_options"] = options
-        return body
 
     @model_validator(mode="after")
     def validate_document_references(self) -> ProjectDocumentV1:
@@ -935,6 +925,8 @@ class ProjectDocumentV1(BaseModel):
         for key in FAN_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
         for key in HOT_WATER_HEATER_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in HOT_WATER_TANK_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
         for key in APPLIANCE_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
@@ -1046,6 +1038,30 @@ class ProjectDocumentV1(BaseModel):
             row_label="hot water heater",
             rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.hot_water_heaters.rows],
             field_defs_by_key=hot_water_heaters_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
+        hot_water_tanks_field_defs_by_key = _index_table_field_defs(
+            "hot_water_tanks", self.tables.equipment.hot_water_tanks.field_defs
+        )
+        _require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
+        hot_water_tank_type_ids = {option.id for option in self.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]}
+        hot_water_tank_ids: set[str] = set()
+        for tank in self.tables.equipment.hot_water_tanks.rows:
+            if tank.id in hot_water_tank_ids:
+                raise ValueError(f"Duplicate hot water tank id: {tank.id}")
+            hot_water_tank_ids.add(tank.id)
+            if tank.tank_type is not None and tank.tank_type not in hot_water_tank_type_ids:
+                raise ValueError(f"Missing hot water tank type option for tank {tank.id}: {tank.tank_type}")
+            heat_loss_rate = tank.custom_values.get("heat_loss_rate_w_k")
+            if isinstance(heat_loss_rate, (int, float)) and heat_loss_rate < 0:
+                raise ValueError(f"Hot water tank heat_loss_rate_w_k must be zero or greater: {tank.id}")
+
+        _validate_rows_custom_values(
+            table_label="hot_water_tanks",
+            row_label="hot water tank",
+            rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
+            field_defs_by_key=hot_water_tanks_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
 

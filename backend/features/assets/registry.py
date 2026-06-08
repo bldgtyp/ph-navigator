@@ -63,6 +63,7 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
             "equipment_pumps",
             "equipment_fans",
             "equipment_hot_water_heaters",
+            "equipment_hot_water_tanks",
             "equipment_electric_heaters",
             "equipment_appliances",
             "thermal_bridges",
@@ -179,6 +180,8 @@ def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[st
         return attachment_table_rows(tables.get("equipment", {}).get("fans"))
     if table_key == "equipment_hot_water_heaters":
         return attachment_table_rows(tables.get("equipment", {}).get("hot_water_heaters"))
+    if table_key == "equipment_hot_water_tanks":
+        return attachment_table_rows(tables.get("equipment", {}).get("hot_water_tanks"))
     if table_key == "equipment_electric_heaters":
         return attachment_table_rows(tables.get("equipment", {}).get("electric_heaters"))
     if table_key == "equipment_appliances":

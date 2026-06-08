@@ -167,6 +167,7 @@ def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
         "volume_liters": {"si": ["l"], "ip": ["gal"]},
         "temperature": {"si": ["c"], "ip": ["f"]},
         "electric_efficiency": {"si": ["wh_m3"], "ip": ["w_cfm"]},
+        "heat_loss_rate": {"si": ["w_k"], "ip": ["btu_h_f"]},
     }
 
 

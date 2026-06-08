@@ -18,12 +18,14 @@ from features.project_document.tables.attachments import (
     equipment_ervs_contract,
     equipment_fans_contract,
     equipment_hot_water_heaters_contract,
+    equipment_hot_water_tanks_contract,
     equipment_pumps_contract,
 )
 from features.project_document.tables.contracts import TableContract
 from features.project_document.tables.electric_heaters import electric_heaters_contract
 from features.project_document.tables.fans import fans_contract
 from features.project_document.tables.hot_water_heaters import hot_water_heaters_contract
+from features.project_document.tables.hot_water_tanks import hot_water_tanks_contract
 from features.project_document.tables.pumps import pumps_contract
 from features.project_document.tables.rooms import rooms_contract
 from features.project_document.tables.thermal_bridges import thermal_bridges_contract
@@ -74,12 +76,14 @@ _TABLES: dict[str, TableContract] = {
     pumps_contract.name: pumps_contract,
     fans_contract.name: fans_contract,
     hot_water_heaters_contract.name: hot_water_heaters_contract,
+    hot_water_tanks_contract.name: hot_water_tanks_contract,
     electric_heaters_contract.name: electric_heaters_contract,
     thermal_bridges_contract.name: thermal_bridges_contract,
     equipment_ervs_contract.name: equipment_ervs_contract,
     equipment_pumps_contract.name: equipment_pumps_contract,
     equipment_fans_contract.name: equipment_fans_contract,
     equipment_hot_water_heaters_contract.name: equipment_hot_water_heaters_contract,
+    equipment_hot_water_tanks_contract.name: equipment_hot_water_tanks_contract,
     equipment_electric_heaters_contract.name: equipment_electric_heaters_contract,
     equipment_appliances_contract.name: equipment_appliances_contract,
     apertures_contract.name: apertures_contract,

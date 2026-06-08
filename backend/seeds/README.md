@@ -22,7 +22,8 @@ backend/seeds/
     pumps.json                    # 5 pumps + device-type options
     fans.json                     # 5 fans + type options
     ventilators.json              # 5 ventilators (ERVs/HRVs) + inside/outside options
-    hot-water-heaters.json          # 5 hot-water heaters + type options
+    hot-water-heaters.json        # 5 hot-water heaters + type options
+    hot-water-tanks.json          # 5 hot-water tanks + type options
     electric-heaters.json         # 5 heaters
     appliances.json               # 5 appliances + type / energy-star options
 ```

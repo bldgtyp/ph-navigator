@@ -114,6 +114,7 @@ describe("number unit registry", () => {
       "temperature",
       "airflow",
       "electric_efficiency",
+      "heat_loss_rate",
     ]);
     expect(isCompatibleNumberUnitPair("area", "m2", "ft2")).toBe(true);
     expect(isCompatibleNumberUnitPair("area", "m3", "ft3")).toBe(false);
@@ -130,6 +131,7 @@ describe("number unit registry", () => {
       temperature: { si: ["c"], ip: ["f"] },
       airflow: { si: ["m3_h"], ip: ["cfm"] },
       electric_efficiency: { si: ["wh_m3"], ip: ["w_cfm"] },
+      heat_loss_rate: { si: ["w_k"], ip: ["btu_h_f"] },
     });
   });
 

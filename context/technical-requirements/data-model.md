@@ -385,7 +385,7 @@ JSON document. Illustrative sketch (the canonical model is the
   "single_select_options": {                 // V2 NEW — user-defined options for single-select columns (US-Builder-Tables criteria 16–17)
     // Most V2 v1 single-select option lists are empty by default
     // (Ed 2026-05-10: user controls vocabulary per-project).
-    // Pump, hot-water heater, and appliance type lists are exceptions
+    // Pump, hot-water heater, hot-water tank, and appliance type lists are exceptions
     // because their labels mirror WUFI-coded categories; keep embedded
     // numbers as-is even when the sequence is not numerically sorted.
     "rooms.floor_level": [
@@ -409,6 +409,10 @@ JSON document. Illustrative sketch (the canonical model is the
       { "id": "opt_hwh_heat_pump_annual_cop", "label": "5-Heat Pump (Annual COP)", "color": "#10b981", "order": 4 },
       { "id": "opt_hwh_heat_pump_monthly_cop", "label": "6-Heat Pump (Monthly COP)", "color": "#14b8a6", "order": 5 },
       { "id": "opt_hwh_heat_pump_inside", "label": "7-Heat Pump (Inside)", "color": "#0ea5e9", "order": 6 }
+    ],
+    "hot_water_tanks.type": [
+      { "id": "opt_hwt_dhw_heating", "label": "1-DHW and Heating", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_hwt_dhw_only", "label": "2-DHW only", "color": "#14b8a6", "order": 1 }
     ],
     "appliances.type": [
       { "id": "opt_appl_dishwasher", "label": "1-dishwasher", "color": "#0ea5e9", "order": 0 },

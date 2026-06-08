@@ -109,6 +109,7 @@ NUMBER_UNIT_REGISTRY: dict[str, dict[str, frozenset[str]]] = {
     "temperature": {"si": frozenset({"c"}), "ip": frozenset({"f"})},
     "airflow": {"si": frozenset({"m3_h"}), "ip": frozenset({"cfm"})},
     "electric_efficiency": {"si": frozenset({"wh_m3"}), "ip": frozenset({"w_cfm"})},
+    "heat_loss_rate": {"si": frozenset({"w_k"}), "ip": frozenset({"btu_h_f"})},
 }
 NUMBER_UNITS_REQUIRED_KEYS = frozenset({"mode", "unit_type", "si_unit", "ip_unit", "precision_si", "precision_ip"})
 NUMBER_UNIT_MODES = frozenset({"editable", "fixed"})
