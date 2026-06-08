@@ -66,25 +66,26 @@
    Two-axis blends shift the hue toward the midpoint of the two
    single-axis tones; the three-axis blend (`fsg`) sits in a
    desaturated cool grey so it reads as "everything" without competing
-   with cell content. Header variants are ~3% deeper saturation. */
+   with cell content. Header variants stay slightly stronger than body
+   cells so the active axis remains legible without dominating the grid. */
 :root {
   /* single axes */
-  --data-table-tint-f-body: oklch(96% 0.04 145);
-  --data-table-tint-f-header: oklch(93% 0.06 145);
-  --data-table-tint-s-body: oklch(95% 0.05 50);
-  --data-table-tint-s-header: oklch(91% 0.08 50);
-  --data-table-tint-g-body: oklch(96% 0.03 290);
-  --data-table-tint-g-header: oklch(92% 0.05 290);
+  --data-table-tint-f-body: oklch(98% 0.018 145);
+  --data-table-tint-f-header: oklch(96.5% 0.03 145);
+  --data-table-tint-s-body: oklch(98% 0.02 50);
+  --data-table-tint-s-header: oklch(96% 0.035 50);
+  --data-table-tint-g-body: oklch(98% 0.016 290);
+  --data-table-tint-g-header: oklch(96.5% 0.028 290);
 
   /* two-axis blends */
-  --data-table-tint-fs-body: oklch(94% 0.04 95);
-  --data-table-tint-fs-header: oklch(90% 0.06 95);
-  --data-table-tint-fg-body: oklch(94% 0.04 220);
-  --data-table-tint-fg-header: oklch(90% 0.06 220);
-  --data-table-tint-sg-body: oklch(94% 0.04 350);
-  --data-table-tint-sg-header: oklch(90% 0.06 350);
+  --data-table-tint-fs-body: oklch(97.5% 0.018 95);
+  --data-table-tint-fs-header: oklch(95.5% 0.032 95);
+  --data-table-tint-fg-body: oklch(97.5% 0.017 220);
+  --data-table-tint-fg-header: oklch(95.5% 0.03 220);
+  --data-table-tint-sg-body: oklch(97.5% 0.018 350);
+  --data-table-tint-sg-header: oklch(95.5% 0.032 350);
 
   /* three-axis blend */
-  --data-table-tint-fsg-body: oklch(93% 0.03 280);
-  --data-table-tint-fsg-header: oklch(89% 0.05 280);
+  --data-table-tint-fsg-body: oklch(97% 0.014 280);
+  --data-table-tint-fsg-header: oklch(95% 0.025 280);
 }

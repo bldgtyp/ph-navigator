@@ -2,6 +2,7 @@
   --data-table-gutter-width: 72px;
   --data-table-gutter-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
   --data-table-gutter-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--bg-card));
+  --data-table-group-row-bg: color-mix(in oklab, var(--accent-light) 18%, var(--bg-card));
   overflow: auto;
   /* The wrap MUST be the scroll container for the row virtualizer to
      work. Without an explicit ceiling, the wrap expands to its
@@ -78,22 +79,6 @@
   background: var(--bg-page);
 }
 
-.data-table-toolbar .project-actions-icon {
-  width: 14px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 0;
-}
-
-.data-table-toolbar .project-actions-icon span {
-  height: 1px;
-  border: 0;
-  border-radius: 999px;
-  background: currentColor;
-  padding: 0;
-}
-
 .data-table-toolbar-actions button {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
@@ -142,6 +127,28 @@
 
 .data-table-toolbar-button:hover {
   background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+
+.data-table-toolbar-button--icon {
+  border-radius: 6px;
+  color: var(--text-secondary);
+  height: 28px;
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0;
+  width: 28px;
+}
+
+.data-table-toolbar-button--icon:hover,
+.data-table-toolbar-button--icon:focus-visible {
+  color: var(--text-primary);
+  outline: 0;
+}
+
+.data-table-toolbar-button--icon svg circle {
+  fill: currentcolor;
+  r: 0.5px;
+  stroke: currentcolor;
 }
 
 .data-table-toolbar-button[data-axis="filter"][data-axis-active="true"] {
@@ -269,7 +276,7 @@
    padding; per-column aggregation cells fill the rest of the row
    right-aligned to mirror data-cell alignment. */
 .data-table-group-row {
-  background: var(--bg-card);
+  background: var(--data-table-group-row-bg);
   font-weight: 500;
   height: 32px;
 }
@@ -1094,11 +1101,16 @@
   letter-spacing: 0;
 }
 
-.data-table tbody tr:hover td {
+.data-table .data-table-group-row td {
+  --data-table-cell-bg: var(--data-table-group-row-bg);
+  background: var(--data-table-group-row-bg);
+}
+
+.data-table tbody tr:not(.data-table-group-row):hover td {
   background: var(--data-table-row-hover-bg);
 }
 
-.data-table tbody tr:hover .data-table-gutter {
+.data-table tbody tr:not(.data-table-group-row):hover .data-table-gutter {
   background: var(--data-table-gutter-hover-bg);
 }
 
@@ -1708,7 +1720,7 @@
   background: var(--data-table-cell-bg, var(--data-table-header-bg, var(--bg-card)));
 }
 
-.data-table tbody tr:hover td.data-table-frozen {
+.data-table tbody tr:not(.data-table-group-row):hover td.data-table-frozen {
   background: var(--data-table-row-hover-bg);
 }
 

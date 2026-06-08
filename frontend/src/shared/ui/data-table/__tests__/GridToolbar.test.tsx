@@ -156,6 +156,13 @@ describe("GridToolbar", () => {
     expect(onResetView).toHaveBeenCalledTimes(1);
   });
 
+  test("overflow trigger uses the shared icon-only toolbar style", () => {
+    renderToolbar();
+    const trigger = screen.getByRole("button", { name: "More view actions" });
+    expect(trigger).toHaveClass("data-table-toolbar-button--icon");
+    expect(trigger.querySelector(".lucide-ellipsis-vertical")).not.toBeNull();
+  });
+
   test("Reset view is disabled when both filter and sort are empty", () => {
     const onResetView = vi.fn();
     renderToolbar(emptyViewState(), { onResetView });

@@ -1,3 +1,4 @@
+// @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { useMemo, useState } from "react";
 import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";

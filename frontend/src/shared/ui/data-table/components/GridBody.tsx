@@ -112,6 +112,7 @@ export type GridBodyProps<TRow> = {
     y: number;
     returnFocus: HTMLElement | null;
   }) => void;
+  onGroupHeaderContextMenu?: (args: { x: number; y: number }) => void;
   editingActive?: boolean;
 };
 
@@ -149,6 +150,7 @@ export function GridBody<TRow>({
   rowVirtualizer,
   bodyPlanIndexByDataRowIndex,
   onRowContextMenu,
+  onGroupHeaderContextMenu,
   editingActive = false,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
@@ -181,30 +183,41 @@ export function GridBody<TRow>({
     hasExplicitRange &&
     (normalizedActiveRange.rowStart !== normalizedActiveRange.rowEnd ||
       normalizedActiveRange.columnStart !== normalizedActiveRange.columnEnd);
-  const handleTbodyContextMenu = onRowContextMenu
-    ? (event: ReactMouseEvent<HTMLTableSectionElement>) => {
-        const target = event.target as HTMLElement;
-        if (isPointerInActiveEditor(target, { editingActive })) return;
-        if (target.closest("input.data-table-gutter-checkbox")) return;
-        const tr = target.closest<HTMLTableRowElement>("tr[data-row-id]");
-        if (!tr) return;
-        const rowIdAttr = tr.dataset.rowId;
-        if (!rowIdAttr) return;
-        const dataIndex = Number(tr.dataset.index);
-        const item = bodyPlan[dataIndex];
-        if (!item || item.kind !== "data") return;
-        const rowNumber = (dataRowIndexByBodyPlanIndex[dataIndex] ?? -1) + 1;
-        if (rowNumber <= 0) return;
-        event.preventDefault();
-        onRowContextMenu({
-          rowId: rowIdAttr,
-          rowNumber,
-          x: event.clientX,
-          y: event.clientY,
-          returnFocus: null,
-        });
-      }
-    : undefined;
+  const handleTbodyContextMenu =
+    onRowContextMenu || onGroupHeaderContextMenu
+      ? (event: ReactMouseEvent<HTMLTableSectionElement>) => {
+          const target = event.target as HTMLElement;
+          if (isPointerInActiveEditor(target, { editingActive })) return;
+          if (target.closest("input.data-table-gutter-checkbox")) return;
+          const groupRow = target.closest<HTMLTableRowElement>("tr.data-table-group-row");
+          if (groupRow && onGroupHeaderContextMenu) {
+            event.preventDefault();
+            onGroupHeaderContextMenu({
+              x: event.clientX,
+              y: event.clientY,
+            });
+            return;
+          }
+          if (!onRowContextMenu) return;
+          const tr = target.closest<HTMLTableRowElement>("tr[data-row-id]");
+          if (!tr) return;
+          const rowIdAttr = tr.dataset.rowId;
+          if (!rowIdAttr) return;
+          const dataIndex = Number(tr.dataset.index);
+          const item = bodyPlan[dataIndex];
+          if (!item || item.kind !== "data") return;
+          const rowNumber = (dataRowIndexByBodyPlanIndex[dataIndex] ?? -1) + 1;
+          if (rowNumber <= 0) return;
+          event.preventDefault();
+          onRowContextMenu({
+            rowId: rowIdAttr,
+            rowNumber,
+            x: event.clientX,
+            y: event.clientY,
+            returnFocus: null,
+          });
+        }
+      : undefined;
 
   return (
     <tbody onContextMenu={handleTbodyContextMenu}>
