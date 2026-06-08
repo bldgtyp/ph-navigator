@@ -170,6 +170,11 @@ equipment_hot_water_heaters_contract = make_simple_attachment_contract(
     schema_slug="equipment-hot-water-heater",
     table_path=("equipment", "hot_water_heaters"),
 )
+equipment_hot_water_tanks_contract = make_simple_attachment_contract(
+    name="equipment_hot_water_tanks",
+    schema_slug="equipment-hot-water-tank",
+    table_path=("equipment", "hot_water_tanks"),
+)
 equipment_electric_heaters_contract = make_simple_attachment_contract(
     name="equipment_electric_heaters",
     schema_slug="equipment-electric-heater",

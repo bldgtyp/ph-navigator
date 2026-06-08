@@ -22,6 +22,7 @@ from features.project_document.document import (
     APPLIANCE_TYPE_OPTION_KEY,
     FAN_TYPE_OPTION_KEY,
     HOT_WATER_HEATER_TYPE_OPTION_KEY,
+    HOT_WATER_TANK_TYPE_OPTION_KEY,
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     AppliancesTableEnvelope,
@@ -29,6 +30,7 @@ from features.project_document.document import (
     EmptyEquipmentTables,
     FansTableEnvelope,
     HotWaterHeatersTableEnvelope,
+    HotWaterTanksTableEnvelope,
     ProjectDocumentProject,
     ProjectDocumentTables,
     ProjectDocumentV1,
@@ -42,6 +44,7 @@ from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIEL
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
@@ -107,6 +110,7 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                 pumps=PumpsTableEnvelope(field_defs=list(PUMPS_BUILT_IN_FIELD_DEFS)),
                 fans=FansTableEnvelope(field_defs=list(FANS_BUILT_IN_FIELD_DEFS)),
                 hot_water_heaters=HotWaterHeatersTableEnvelope(field_defs=list(HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS)),
+                hot_water_tanks=HotWaterTanksTableEnvelope(field_defs=list(HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS)),
             ),
         ),
         single_select_options={
@@ -159,6 +163,10 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                     color="#0ea5e9",
                     order=6,
                 ),
+            ],
+            HOT_WATER_TANK_TYPE_OPTION_KEY: [
+                SingleSelectOption(id="opt_hwt_dhw_heating", label="1-DHW and Heating", color="#0ea5e9", order=0),
+                SingleSelectOption(id="opt_hwt_dhw_only", label="2-DHW only", color="#14b8a6", order=1),
             ],
             APPLIANCE_TYPE_OPTION_KEY: [
                 SingleSelectOption(id="opt_appl_dishwasher", label="1-dishwasher", color="#0ea5e9", order=0),

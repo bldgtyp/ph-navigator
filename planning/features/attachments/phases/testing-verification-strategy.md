@@ -369,8 +369,8 @@ Automate now:
 Automate next, now that Pumps has landed:
 
 - frontend attachment cell tests against real Equipment tables;
-  **done for delete/write behavior on Pumps, Fans, Hot Water Heaters, and
-  Appliances** via `frontend/src/features/equipment/__tests__/`;
+  **done for delete/write behavior on Pumps, Fans, Hot Water Heaters, Hot Water Tanks,
+  and Appliances** via `frontend/src/features/equipment/__tests__/`;
 - Playwright local browser workflow for upload / preview / detach /
   reload;
 - Render staging checklist, possibly as a manual release checklist

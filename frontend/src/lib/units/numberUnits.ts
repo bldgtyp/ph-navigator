@@ -10,6 +10,7 @@ export type NumberUnitMode = "editable" | "fixed";
 const MIN_NUMBER_PRECISION = 0;
 const MAX_NUMBER_PRECISION = 10;
 const L_PER_GAL = 3.785411784;
+const W_PER_K_TO_BTU_PER_H_F = 3.412141633 / 1.8;
 
 type UnitDefinitionInput = {
   id: string;
@@ -98,6 +99,12 @@ export const NUMBER_UNIT_TYPES = [
     label: "Electrical Efficiency",
     siUnits: [{ id: "wh_m3", label: "Wh/m3", system: "SI" }],
     ipUnits: [{ id: "w_cfm", label: "W/cfm", system: "IP" }],
+  },
+  {
+    id: "heat_loss_rate",
+    label: "Heat Loss Rate",
+    siUnits: [{ id: "w_k", label: "W/K", system: "SI" }],
+    ipUnits: [{ id: "btu_h_f", label: "Btu/hr-F", system: "IP" }],
   },
 ] as const satisfies readonly UnitTypeDefinitionInput[];
 
@@ -221,6 +228,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return m3hToCfm(valueSi);
     case "electric_efficiency":
       return valueSi / m3hToCfm(1);
+    case "heat_loss_rate":
+      return valueSi * W_PER_K_TO_BTU_PER_H_F;
   }
 }
 
@@ -250,6 +259,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return cfmToM3h(valueIp);
     case "electric_efficiency":
       return valueIp * m3hToCfm(1);
+    case "heat_loss_rate":
+      return valueIp / W_PER_K_TO_BTU_PER_H_F;
   }
 }
 

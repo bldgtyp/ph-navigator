@@ -54,6 +54,12 @@ def empty_hot_water_heaters_table(rows: list[dict[str, Any]] | None = None) -> d
     return hot_water_heaters
 
 
+def empty_hot_water_tanks_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    hot_water_tanks = _empty_document_tables()["equipment"]["hot_water_tanks"]
+    hot_water_tanks["rows"] = rows or []
+    return hot_water_tanks
+
+
 def empty_electric_heaters_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     electric_heaters = _empty_document_tables()["equipment"]["electric_heaters"]
     electric_heaters["rows"] = rows or []

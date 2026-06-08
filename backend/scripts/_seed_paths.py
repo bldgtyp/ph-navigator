@@ -33,6 +33,7 @@ FANS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "fans.json"
 THERMAL_BRIDGES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "thermal-bridges.json"
 VENTILATORS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "ventilators.json"
 HOT_WATER_HEATERS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "hot-water-heaters.json"
+HOT_WATER_TANKS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "hot-water-tanks.json"
 ELECTRIC_HEATERS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "electric-heaters.json"
 APPLIANCES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "appliances.json"
 

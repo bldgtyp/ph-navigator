@@ -4,6 +4,7 @@ import {
   ELECTRIC_HEATERS_TABLE_NAME,
   FANS_TABLE_NAME,
   HOT_WATER_HEATERS_TABLE_NAME,
+  HOT_WATER_TANKS_TABLE_NAME,
   PUMPS_TABLE_NAME,
   ROOMS_TABLE_NAME,
   VENTILATORS_TABLE_NAME,
@@ -15,6 +16,8 @@ import {
   type FansSlice,
   type HotWaterHeatersReplacePayload,
   type HotWaterHeatersSlice,
+  type HotWaterTanksReplacePayload,
+  type HotWaterTanksSlice,
   type PumpsReplacePayload,
   type PumpsSlice,
   type RoomsReplacePayload,
@@ -93,6 +96,17 @@ export const hotWaterHeatersSliceFeature = createTableSliceFeature<
 
 export const fetchHotWaterHeatersSlice = hotWaterHeatersSliceFeature.fetchSlice;
 export const replaceHotWaterHeatersSlice = hotWaterHeatersSliceFeature.replaceSlice;
+
+export const hotWaterTanksSliceFeature = createTableSliceFeature<
+  HotWaterTanksSlice,
+  HotWaterTanksReplacePayload
+>({
+  tableName: HOT_WATER_TANKS_TABLE_NAME,
+  missingVersionMessage: "Cannot update Hot Water Tanks without an active project version.",
+});
+
+export const fetchHotWaterTanksSlice = hotWaterTanksSliceFeature.fetchSlice;
+export const replaceHotWaterTanksSlice = hotWaterTanksSliceFeature.replaceSlice;
 
 export const electricHeatersSliceFeature = createTableSliceFeature<
   ElectricHeatersSlice,

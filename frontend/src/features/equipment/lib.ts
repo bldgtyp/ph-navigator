@@ -16,6 +16,10 @@ import type {
   HotWaterHeaterRow,
   HotWaterHeatersReplacePayload,
   HotWaterHeatersSlice,
+  HotWaterTankOptionKey,
+  HotWaterTankRow,
+  HotWaterTanksReplacePayload,
+  HotWaterTanksSlice,
   PumpOptionKey,
   PumpRow,
   PumpsReplacePayload,
@@ -46,6 +50,10 @@ import {
   HOT_WATER_HEATER_TYPE_COLUMN_ID,
   HOT_WATER_HEATER_TYPE_KEY,
   HOT_WATER_HEATER_TYPE_OPTION_KEY,
+  HOT_WATER_TANK_DATASHEET_FIELD_KEY,
+  HOT_WATER_TANK_TYPE_COLUMN_ID,
+  HOT_WATER_TANK_TYPE_KEY,
+  HOT_WATER_TANK_TYPE_OPTION_KEY,
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
@@ -106,6 +114,7 @@ export const PUMP_ID_PREFIX = "pmp";
 export const VENTILATOR_ID_PREFIX = "vent";
 export const FAN_ID_PREFIX = "fan";
 export const HOT_WATER_HEATER_ID_PREFIX = "hwh";
+export const HOT_WATER_TANK_ID_PREFIX = "hwt";
 export const ELECTRIC_HEATER_ID_PREFIX = "heatr";
 export const APPLIANCE_ID_PREFIX = "appl";
 
@@ -115,6 +124,7 @@ type PumpCellWrite = { rowId: string; fieldKey: string; value: unknown };
 type VentilatorCellWrite = { rowId: string; fieldKey: string; value: unknown };
 type FanCellWrite = { rowId: string; fieldKey: string; value: unknown };
 type HotWaterHeaterCellWrite = { rowId: string; fieldKey: string; value: unknown };
+type HotWaterTankCellWrite = { rowId: string; fieldKey: string; value: unknown };
 type ElectricHeaterCellWrite = { rowId: string; fieldKey: string; value: unknown };
 
 // Namespace prefix for custom single-select option lists scoped to the
@@ -167,6 +177,15 @@ export const HOT_WATER_HEATERS_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
+  "custom_values",
+] as const;
+
+export const HOT_WATER_TANKS_SCHEMA_CORE_FIELD_KEYS = [
+  "id",
+  HOT_WATER_TANK_TYPE_KEY,
+  "url",
+  "notes",
+  HOT_WATER_TANK_DATASHEET_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -236,6 +255,16 @@ const HOT_WATER_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "power_factor",
   "watts",
   "uef",
+]);
+const HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "record_id",
+  "name",
+  "quantity",
+  "inside_outside",
+  "manufacturer",
+  "model",
+  "size_l",
+  "heat_loss_rate_w_k",
 ]);
 const ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -421,6 +450,45 @@ export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef(HOT_WATER_HEATER_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
 ];
 
+export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("quantity", "Quantity", "number", 1),
+  builtInFieldDef(HOT_WATER_TANK_TYPE_KEY, "Type", "single_select"),
+  builtInFieldDef("inside_outside", "Inside / Outside", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
+  builtInFieldDef("model", "Model", "short_text"),
+  {
+    ...builtInFieldDef("size_l", "Size", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "volume_liters",
+        si_unit: "l",
+        ip_unit: "gal",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  {
+    ...builtInFieldDef("heat_loss_rate_w_k", "Heat Loss Rate", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "heat_loss_rate",
+        si_unit: "w_k",
+        ip_unit: "btu_h_f",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  builtInFieldDef(HOT_WATER_TANK_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef("url", "URL", "url"),
+  builtInFieldDef("notes", "Notes", "long_text"),
+];
+
 export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
   builtInFieldDef("name", "Name", "short_text"),
@@ -517,6 +585,12 @@ export function hotWaterHeatersTableFieldDefs(
   hotWaterHeatersSlice: HotWaterHeatersSlice,
 ): TableFieldDef[] {
   return hotWaterHeatersSlice.field_defs ?? HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS;
+}
+
+export function hotWaterTanksTableFieldDefs(
+  hotWaterTanksSlice: HotWaterTanksSlice,
+): TableFieldDef[] {
+  return hotWaterTanksSlice.field_defs ?? HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS;
 }
 
 export function electricHeatersTableFieldDefs(
@@ -809,6 +883,64 @@ export function hotWaterHeatersTableColumnsForSanitize(
   }));
 }
 
+export function hotWaterTanksFieldOverlay(
+  hotWaterTanksSlice: HotWaterTanksSlice,
+): Record<string, TableFieldRenderOverlay> {
+  return {
+    record_id: {
+      locked: ["display_name", "delete", "duplicate"],
+    },
+    name: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    quantity: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [HOT_WATER_TANK_TYPE_KEY]: {
+      options: hotWaterTanksSlice.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    inside_outside: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    manufacturer: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    model: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    size_l: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    heat_loss_rate_w_k: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [HOT_WATER_TANK_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+    url: {
+      locked: ["field_type", "delete", "duplicate"],
+    },
+    notes: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+  };
+}
+
+export function hotWaterTanksTableColumnsForSanitize(
+  fieldDefs: readonly FieldDef[],
+): DataTableColumnDef<unknown>[] {
+  return fieldDefs.map((fieldDef) => ({
+    id:
+      fieldDef.field_key === HOT_WATER_TANK_TYPE_KEY
+        ? HOT_WATER_TANK_TYPE_COLUMN_ID
+        : fieldDef.field_key,
+    fieldKey: fieldDef.field_key,
+    header: fieldDef.display_name,
+    accessor: () => null,
+  }));
+}
+
 export function electricHeatersFieldOverlay(): Record<string, TableFieldRenderOverlay> {
   return {
     record_id: {
@@ -1007,6 +1139,26 @@ export function emptyHotWaterHeater(): HotWaterHeaterRow {
   };
 }
 
+export function emptyHotWaterTank(): HotWaterTankRow {
+  return {
+    id: generatedId(HOT_WATER_TANK_ID_PREFIX),
+    tank_type: null,
+    url: null,
+    notes: null,
+    datasheet_asset_ids: [],
+    custom_values: {
+      record_id: null,
+      name: null,
+      quantity: 1,
+      inside_outside: null,
+      manufacturer: null,
+      model: null,
+      size_l: null,
+      heat_loss_rate_w_k: null,
+    },
+  };
+}
+
 export function emptyElectricHeater(): ElectricHeaterRow {
   return {
     id: generatedId(ELECTRIC_HEATER_ID_PREFIX),
@@ -1147,6 +1299,26 @@ export function sortedHotWaterHeaters(hotWaterHeaters: HotWaterHeaterRow[]): Hot
       });
     })
     .map(({ heater }) => heater);
+}
+
+export function sortedHotWaterTanks(hotWaterTanks: HotWaterTankRow[]): HotWaterTankRow[] {
+  return hotWaterTanks
+    .map((tank) => ({
+      tank,
+      primary: customTextValue(tank, "record_id") || customTextValue(tank, "name") || tank.id,
+    }))
+    .sort((a, b) => {
+      const primary = a.primary.localeCompare(b.primary, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      if (primary !== 0) return primary;
+      return a.tank.id.localeCompare(b.tank.id, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    })
+    .map(({ tank }) => tank);
 }
 
 export function sortedElectricHeaters(electricHeaters: ElectricHeaterRow[]): ElectricHeaterRow[] {
@@ -1455,6 +1627,30 @@ export function hotWaterHeatersPayloadFromRowInsert(
   };
 }
 
+export function hotWaterTanksPayloadFromRowInsert(
+  current: HotWaterTanksSlice,
+  inserts: RowInsertPayload[],
+  build: BuildEmptyRow<HotWaterTankRow>,
+): HotWaterTanksReplacePayload {
+  const built = inserts.map((payload) => {
+    const anchorRow = payload.anchorRowId
+      ? (current.hot_water_tanks.find((tank) => tank.id === payload.anchorRowId) ?? null)
+      : null;
+    return normalizeHotWaterTankForPayload(
+      build({
+        rowId: payload.rowId,
+        fieldDefaults: payload.fieldDefaults,
+        anchorRow,
+      }),
+    );
+  });
+  return {
+    hot_water_tanks: sortedHotWaterTanks([...current.hot_water_tanks, ...built]),
+    single_select_options: cloneHotWaterTankOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
 export function electricHeatersPayloadFromRowInsert(
   current: ElectricHeatersSlice,
   inserts: RowInsertPayload[],
@@ -1617,6 +1813,33 @@ export function hotWaterHeatersPayloadFromRowDuplicate(
   };
 }
 
+export function hotWaterTanksPayloadFromRowDuplicate(
+  current: HotWaterTanksSlice,
+  duplicates: RowDuplicatePayload[],
+): HotWaterTanksReplacePayload {
+  const hotWaterTanks = [...current.hot_water_tanks];
+  const liveNames = new Set(
+    hotWaterTanks.map((tank) => stringFromCustomValues(tank.custom_values, "record_id")),
+  );
+  for (const duplicate of duplicates) {
+    const source = duplicate.sourceRow as HotWaterTankRow;
+    const sourceName = stringFromCustomValues(source.custom_values, "record_id");
+    const newName = nextCopySuffix(sourceName, liveNames);
+    liveNames.add(newName);
+    const clone: HotWaterTankRow = {
+      ...source,
+      id: duplicate.rowId,
+      custom_values: { ...source.custom_values, record_id: newName },
+    };
+    hotWaterTanks.push(normalizeHotWaterTankForPayload(clone));
+  }
+  return {
+    hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
+    single_select_options: cloneHotWaterTankOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
 export function electricHeatersPayloadFromRowDuplicate(
   current: ElectricHeatersSlice,
   duplicates: RowDuplicatePayload[],
@@ -1715,6 +1938,18 @@ export function hotWaterHeatersPayloadFromRowDelete(
   return {
     hot_water_heaters: current.hot_water_heaters.filter((heater) => !toDelete.has(heater.id)),
     single_select_options: cloneHotWaterHeaterOptions(current),
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function hotWaterTanksPayloadFromRowDelete(
+  current: HotWaterTanksSlice,
+  deletes: RowDeletePayload[],
+): HotWaterTanksReplacePayload {
+  const toDelete = new Set(deletes.map((entry) => entry.rowId));
+  return {
+    hot_water_tanks: current.hot_water_tanks.filter((tank) => !toDelete.has(tank.id)),
+    single_select_options: cloneHotWaterTankOptions(current),
     field_defs: [...current.field_defs],
   };
 }
@@ -1934,6 +2169,45 @@ export function hotWaterHeatersPayloadFromCellWrites(
   );
   return {
     hot_water_heaters: sortedHotWaterHeaters(hotWaterHeaters),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
+export function hotWaterTanksPayloadFromCellWrites(
+  current: HotWaterTanksSlice,
+  writes: HotWaterTankCellWrite[],
+  newOptions: Record<string, FieldOption[]>,
+  removedOptions: Record<string, string[]> = {},
+): HotWaterTanksReplacePayload {
+  const options = cloneHotWaterTankOptions(current);
+  for (const [fieldKey, removedIds] of Object.entries(removedOptions)) {
+    const optionKey = hotWaterTankOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey || removedIds.length === 0) continue;
+    const remove = new Set(removedIds);
+    options[optionKey] = normalizeOptionOrders(
+      options[optionKey].filter((option) => !remove.has(option.id)),
+    );
+  }
+  for (const [fieldKey, createdOptions] of Object.entries(newOptions)) {
+    const optionKey = hotWaterTankOptionListKeyForFieldKey(fieldKey);
+    if (!optionKey) continue;
+    options[optionKey] = normalizeOptionOrders([...options[optionKey], ...createdOptions]);
+  }
+  const writesByRowId = writes.reduce((byRowId, write) => {
+    const rowWrites = byRowId.get(write.rowId);
+    if (rowWrites) {
+      rowWrites.push(write);
+    } else {
+      byRowId.set(write.rowId, [write]);
+    }
+    return byRowId;
+  }, new Map<string, HotWaterTankCellWrite[]>());
+  const hotWaterTanks = current.hot_water_tanks.map((tank) =>
+    applyWritesToHotWaterTank(tank, writesByRowId.get(tank.id) ?? []),
+  );
+  return {
+    hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
     single_select_options: options,
     field_defs: [...current.field_defs],
   };
@@ -2159,6 +2433,32 @@ export function validateHotWaterHeatersPayload(
   return null;
 }
 
+export function validateHotWaterTanksPayload(payload: HotWaterTanksReplacePayload): string | null {
+  const ids = new Set<string>();
+  const typeIds = new Set(
+    payload.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY].map((option) => option.id),
+  );
+  for (const tank of payload.hot_water_tanks) {
+    if (ids.has(tank.id)) return "Hot water tank id already exists in this project.";
+    ids.add(tank.id);
+    if (tank.tank_type && !typeIds.has(tank.tank_type)) {
+      return "Hot water tank type option is missing.";
+    }
+    if (tank.url && !/^https?:\/\//.test(tank.url)) {
+      return "Hot water tank URL must start with http:// or https://.";
+    }
+    const quantity = customNumberValue(tank, "quantity");
+    if (quantity !== null && quantity < 0) return "Quantity must be zero or greater.";
+    const size = customNumberValue(tank, "size_l");
+    if (size !== null && size < 0) return "Size must be zero or greater.";
+    const heatLossRate = customNumberValue(tank, "heat_loss_rate_w_k");
+    if (heatLossRate !== null && heatLossRate < 0) {
+      return "Heat Loss Rate must be zero or greater.";
+    }
+  }
+  return null;
+}
+
 export function validateElectricHeatersPayload(
   payload: ElectricHeatersReplacePayload,
 ): string | null {
@@ -2348,6 +2648,40 @@ export function replaceHotWaterHeaterOptionsPayload(
   };
 }
 
+export function replaceHotWaterTankOptionsPayload(
+  current: HotWaterTanksSlice,
+  key: HotWaterTankOptionKey,
+  nextOptions: SingleSelectOption[],
+  replacements: Record<string, string | null> = {},
+): HotWaterTanksReplacePayload {
+  const options = cloneHotWaterTankOptions(current);
+  options[key] = normalizeOptionOrders(nextOptions);
+  const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const removedReferencedOptionIds = new Set(
+    current.hot_water_tanks
+      .map((tank) => tank.tank_type)
+      .filter(
+        (optionId): optionId is string =>
+          optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
+      ),
+  );
+  for (const optionId of removedReferencedOptionIds) {
+    if (!(optionId in replacements)) {
+      throw new Error(`Missing replacement for referenced ${key} option ${optionId}.`);
+    }
+  }
+  const hotWaterTanks = current.hot_water_tanks.map((tank) => {
+    const currentOptionId = tank.tank_type;
+    if (!currentOptionId || !(currentOptionId in replacements)) return tank;
+    return { ...tank, tank_type: replacements[currentOptionId] ?? null };
+  });
+  return {
+    hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
+    single_select_options: options,
+    field_defs: [...current.field_defs],
+  };
+}
+
 export function replaceApplianceOptionsPayload(
   current: AppliancesSlice,
   key: ApplianceOptionKey,
@@ -2529,6 +2863,18 @@ function applyWritesToHotWaterHeater(
   return normalizeHotWaterHeaterForPayload(next);
 }
 
+function applyWritesToHotWaterTank(
+  tank: HotWaterTankRow,
+  writes: HotWaterTankCellWrite[],
+): HotWaterTankRow {
+  if (writes.length === 0) return tank;
+  let next = tank;
+  for (const write of writes) {
+    next = applyWriteToHotWaterTank(next, write.fieldKey, write.value);
+  }
+  return normalizeHotWaterTankForPayload(next);
+}
+
 function applyWritesToElectricHeater(
   heater: ElectricHeaterRow,
   writes: ElectricHeaterCellWrite[],
@@ -2631,6 +2977,26 @@ function applyWriteToHotWaterHeater(
   return heater;
 }
 
+function applyWriteToHotWaterTank(
+  tank: HotWaterTankRow,
+  fieldKey: string,
+  value: unknown,
+): HotWaterTankRow {
+  if (fieldKey === HOT_WATER_TANK_TYPE_KEY && isNullableOptionId(value)) {
+    return { ...tank, tank_type: value };
+  }
+  if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
+    return { ...tank, [fieldKey]: value };
+  }
+  if (fieldKey === HOT_WATER_TANK_DATASHEET_FIELD_KEY) {
+    return { ...tank, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
+    return setCustomValue(tank, fieldKey, value);
+  }
+  return tank;
+}
+
 function applyWriteToElectricHeater(
   heater: ElectricHeaterRow,
   fieldKey: string,
@@ -2692,6 +3058,10 @@ export function isHotWaterHeaterOptionKey(key: string): key is HotWaterHeaterOpt
   return key === HOT_WATER_HEATER_TYPE_OPTION_KEY;
 }
 
+export function isHotWaterTankOptionKey(key: string): key is HotWaterTankOptionKey {
+  return key === HOT_WATER_TANK_TYPE_OPTION_KEY;
+}
+
 export function isApplianceOptionKey(key: string): key is ApplianceOptionKey {
   return key === APPLIANCE_TYPE_OPTION_KEY || key === APPLIANCE_ENERGY_STAR_OPTION_KEY;
 }
@@ -2743,6 +3113,13 @@ function fanOptionListKeyForFieldKey(fieldKey: string): FanOptionKey | null {
 function hotWaterHeaterOptionListKeyForFieldKey(fieldKey: string): HotWaterHeaterOptionKey | null {
   if (fieldKey === HOT_WATER_HEATER_TYPE_KEY || fieldKey === HOT_WATER_HEATER_TYPE_OPTION_KEY) {
     return HOT_WATER_HEATER_TYPE_OPTION_KEY;
+  }
+  return null;
+}
+
+function hotWaterTankOptionListKeyForFieldKey(fieldKey: string): HotWaterTankOptionKey | null {
+  if (fieldKey === HOT_WATER_TANK_TYPE_KEY || fieldKey === HOT_WATER_TANK_TYPE_OPTION_KEY) {
+    return HOT_WATER_TANK_TYPE_OPTION_KEY;
   }
   return null;
 }
@@ -2943,6 +3320,26 @@ function normalizeHotWaterHeaterForPayload(heater: HotWaterHeaterRow): HotWaterH
   };
 }
 
+function normalizeHotWaterTankForPayload(tank: HotWaterTankRow): HotWaterTankRow {
+  return {
+    ...tank,
+    custom_values: {
+      ...tank.custom_values,
+      record_id: nullableTrimmed(customTextValue(tank, "record_id")),
+      name: nullableTrimmed(customTextValue(tank, "name")),
+      quantity: nonNegativeOrNull(customNumberValue(tank, "quantity")),
+      inside_outside: nullableTrimmed(customTextValue(tank, "inside_outside")),
+      manufacturer: nullableTrimmed(customTextValue(tank, "manufacturer")),
+      model: nullableTrimmed(customTextValue(tank, "model")),
+      size_l: nonNegativeOrNull(customNumberValue(tank, "size_l")),
+      heat_loss_rate_w_k: nonNegativeOrNull(customNumberValue(tank, "heat_loss_rate_w_k")),
+    },
+    notes: tank.notes?.trim() || null,
+    url: tank.url?.trim() || null,
+    datasheet_asset_ids: readAttachmentAssetIds(tank.datasheet_asset_ids),
+  };
+}
+
 function normalizeElectricHeaterForPayload(heater: ElectricHeaterRow): ElectricHeaterRow {
   return {
     ...heater,
@@ -3043,6 +3440,16 @@ function cloneHotWaterHeaterOptions(
   return {
     [HOT_WATER_HEATER_TYPE_OPTION_KEY]: [
       ...current.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY],
+    ],
+  };
+}
+
+function cloneHotWaterTankOptions(
+  current: HotWaterTanksSlice,
+): HotWaterTanksReplacePayload["single_select_options"] {
+  return {
+    [HOT_WATER_TANK_TYPE_OPTION_KEY]: [
+      ...current.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
     ],
   };
 }

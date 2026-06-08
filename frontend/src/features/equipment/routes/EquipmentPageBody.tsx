@@ -6,6 +6,7 @@ import { AppliancesTableSlot } from "../components/AppliancesTableSlot";
 import { ElectricHeatersTableSlot } from "../components/ElectricHeatersTableSlot";
 import { FansTableSlot } from "../components/FansTableSlot";
 import { HotWaterHeatersTableSlot } from "../components/HotWaterHeatersTableSlot";
+import { HotWaterTanksTableSlot } from "../components/HotWaterTanksTableSlot";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { VentilatorsTableSlot } from "../components/VentilatorsTableSlot";
 import {
@@ -13,11 +14,13 @@ import {
   useElectricHeatersSchemaMutation,
   useFansSchemaMutation,
   useHotWaterHeatersSchemaMutation,
+  useHotWaterTanksSchemaMutation,
   usePumpsSchemaMutation,
   useReplaceAppliancesSliceMutation,
   useReplaceElectricHeatersSliceMutation,
   useReplaceFansSliceMutation,
   useReplaceHotWaterHeatersSliceMutation,
+  useReplaceHotWaterTanksSliceMutation,
   useReplacePumpsSliceMutation,
   useReplaceVentilatorsSliceMutation,
   useVentilatorsSchemaMutation,
@@ -35,6 +38,9 @@ import {
   hotWaterHeatersFieldOverlay,
   hotWaterHeatersTableColumnsForSanitize,
   hotWaterHeatersTableFieldDefs,
+  hotWaterTanksFieldOverlay,
+  hotWaterTanksTableColumnsForSanitize,
+  hotWaterTanksTableFieldDefs,
   pumpsFieldOverlay,
   pumpsTableColumnsForSanitize,
   pumpsTableFieldDefs,
@@ -48,11 +54,13 @@ import { makeBuildEmptyApplianceRow } from "../lib/buildEmptyApplianceRow";
 import { makeBuildEmptyElectricHeaterRow } from "../lib/buildEmptyElectricHeaterRow";
 import { makeBuildEmptyFanRow } from "../lib/buildEmptyFanRow";
 import { makeBuildEmptyHotWaterHeaterRow } from "../lib/buildEmptyHotWaterHeaterRow";
+import { makeBuildEmptyHotWaterTankRow } from "../lib/buildEmptyHotWaterTankRow";
 import { makeBuildEmptyPumpRow } from "../lib/buildEmptyPumpRow";
 import { makeBuildEmptyVentilatorRow } from "../lib/buildEmptyVentilatorRow";
 import { electricHeatersPayloadBuilders } from "../lib/electricHeatersController";
 import { fansPayloadBuilders } from "../lib/fansController";
 import { hotWaterHeatersPayloadBuilders } from "../lib/hotWaterHeatersController";
+import { hotWaterTanksPayloadBuilders } from "../lib/hotWaterTanksController";
 import { pumpsPayloadBuilders } from "../lib/pumpsController";
 import { useEquipmentTablePreview } from "../lib/useEquipmentTablePreview";
 import { ventilatorsPayloadBuilders } from "../lib/ventilatorsController";
@@ -61,12 +69,14 @@ import {
   ELECTRIC_HEATERS_TABLE_NAME,
   FANS_TABLE_NAME,
   HOT_WATER_HEATERS_TABLE_NAME,
+  HOT_WATER_TANKS_TABLE_NAME,
   PUMPS_TABLE_NAME,
   VENTILATORS_TABLE_NAME,
   type AppliancesSlice,
   type ElectricHeatersSlice,
   type FansSlice,
   type HotWaterHeatersSlice,
+  type HotWaterTanksSlice,
   type PumpsSlice,
   type VentilatorsSlice,
 } from "../types";
@@ -76,6 +86,7 @@ import {
   EQUIPMENT_TABS,
   FANS_CONFLICT_MESSAGES,
   HOT_WATER_HEATERS_CONFLICT_MESSAGES,
+  HOT_WATER_TANKS_CONFLICT_MESSAGES,
   PUMPS_CONFLICT_MESSAGES,
   VENTILATORS_CONFLICT_MESSAGES,
   equipmentTabLabel,
@@ -93,6 +104,8 @@ export function EquipmentPageBody(props: {
   refetchFans: () => Promise<unknown>;
   hotWaterHeatersSlice: HotWaterHeatersSlice;
   refetchHotWaterHeaters: () => Promise<unknown>;
+  hotWaterTanksSlice: HotWaterTanksSlice;
+  refetchHotWaterTanks: () => Promise<unknown>;
   electricHeatersSlice: ElectricHeatersSlice;
   refetchElectricHeaters: () => Promise<unknown>;
   appliancesSlice: AppliancesSlice;
@@ -108,6 +121,8 @@ export function EquipmentPageBody(props: {
     refetchFans,
     hotWaterHeatersSlice,
     refetchHotWaterHeaters,
+    hotWaterTanksSlice,
+    refetchHotWaterTanks,
     electricHeatersSlice,
     refetchElectricHeaters,
     appliancesSlice,
@@ -142,6 +157,13 @@ export function EquipmentPageBody(props: {
     tableFieldDefs: hotWaterHeatersTableFieldDefs,
     columnsForSanitize: hotWaterHeatersTableColumnsForSanitize,
   });
+  const hotWaterTanksPreview = useEquipmentTablePreview({
+    slice: hotWaterTanksSlice,
+    tableKey: HOT_WATER_TANKS_TABLE_NAME,
+    fieldOverlay: hotWaterTanksFieldOverlay,
+    tableFieldDefs: hotWaterTanksTableFieldDefs,
+    columnsForSanitize: hotWaterTanksTableColumnsForSanitize,
+  });
   const electricHeatersPreview = useEquipmentTablePreview({
     slice: electricHeatersSlice,
     tableKey: ELECTRIC_HEATERS_TABLE_NAME,
@@ -160,6 +182,7 @@ export function EquipmentPageBody(props: {
   const buildEmptyPumpRow = useMemo(() => makeBuildEmptyPumpRow(), []);
   const buildEmptyFanRow = useMemo(() => makeBuildEmptyFanRow(), []);
   const buildEmptyHotWaterHeaterRow = useMemo(() => makeBuildEmptyHotWaterHeaterRow(), []);
+  const buildEmptyHotWaterTankRow = useMemo(() => makeBuildEmptyHotWaterTankRow(), []);
   const buildEmptyElectricHeaterRow = useMemo(() => makeBuildEmptyElectricHeaterRow(), []);
   const buildEmptyApplianceRow = useMemo(() => makeBuildEmptyApplianceRow(), []);
   const ventilatorsReplaceMutation = useReplaceVentilatorsSliceMutation(
@@ -179,6 +202,11 @@ export function EquipmentPageBody(props: {
     project.id,
     activeVersionId,
   );
+  const hotWaterTanksReplaceMutation = useReplaceHotWaterTanksSliceMutation(
+    project.id,
+    activeVersionId,
+  );
+  const hotWaterTanksSchemaMutation = useHotWaterTanksSchemaMutation(project.id, activeVersionId);
   const electricHeatersReplaceMutation = useReplaceElectricHeatersSliceMutation(
     project.id,
     activeVersionId,
@@ -270,6 +298,25 @@ export function EquipmentPageBody(props: {
     schemaMutation: hotWaterHeatersSchemaMutation,
     refetch: refetchHotWaterHeaters,
   });
+  const hotWaterTanksController = useSliceTableController({
+    projectId: project.id,
+    activeVersionId,
+    accessMode: project.access_mode,
+    versionLocked: project.active_version?.locked ?? false,
+    tableKey: HOT_WATER_TANKS_TABLE_NAME,
+    slice: hotWaterTanksSlice,
+    fieldDefs: hotWaterTanksPreview.fieldDefs,
+    fieldOverlay: hotWaterTanksPreview.fieldRenderOverlay,
+    singleSelectOptions: hotWaterTanksSlice.single_select_options,
+    columnsForSanitize: hotWaterTanksPreview.columnsForSanitize,
+    payloadBuilders: hotWaterTanksPayloadBuilders,
+    conflictMessages: HOT_WATER_TANKS_CONFLICT_MESSAGES,
+    buildEmptyRow: buildEmptyHotWaterTankRow,
+    activeRow: null,
+    replaceMutation: hotWaterTanksReplaceMutation,
+    schemaMutation: hotWaterTanksSchemaMutation,
+    refetch: refetchHotWaterTanks,
+  });
   const electricHeatersController = useSliceTableController({
     projectId: project.id,
     activeVersionId,
@@ -317,11 +364,13 @@ export function EquipmentPageBody(props: {
           ? fansController
           : activeTab === "hot-water-heaters"
             ? hotWaterHeatersController
-            : activeTab === "electric-heaters"
-              ? electricHeatersController
-              : activeTab === "appliances"
-                ? appliancesController
-                : pumpsController;
+            : activeTab === "hot-water-tanks"
+              ? hotWaterTanksController
+              : activeTab === "electric-heaters"
+                ? electricHeatersController
+                : activeTab === "appliances"
+                  ? appliancesController
+                  : pumpsController;
   const activeSlice =
     activeTab === "ventilators"
       ? ventilatorsSlice
@@ -329,11 +378,13 @@ export function EquipmentPageBody(props: {
         ? fansSlice
         : activeTab === "hot-water-heaters"
           ? hotWaterHeatersSlice
-          : activeTab === "electric-heaters"
-            ? electricHeatersSlice
-            : activeTab === "appliances"
-              ? appliancesSlice
-              : pumpsSlice;
+          : activeTab === "hot-water-tanks"
+            ? hotWaterTanksSlice
+            : activeTab === "electric-heaters"
+              ? electricHeatersSlice
+              : activeTab === "appliances"
+                ? appliancesSlice
+                : pumpsSlice;
   const activeConflictMessages =
     activeTab === "ventilators"
       ? VENTILATORS_CONFLICT_MESSAGES
@@ -341,11 +392,13 @@ export function EquipmentPageBody(props: {
         ? FANS_CONFLICT_MESSAGES
         : activeTab === "hot-water-heaters"
           ? HOT_WATER_HEATERS_CONFLICT_MESSAGES
-          : activeTab === "electric-heaters"
-            ? ELECTRIC_HEATERS_CONFLICT_MESSAGES
-            : activeTab === "appliances"
-              ? APPLIANCES_CONFLICT_MESSAGES
-              : PUMPS_CONFLICT_MESSAGES;
+          : activeTab === "hot-water-tanks"
+            ? HOT_WATER_TANKS_CONFLICT_MESSAGES
+            : activeTab === "electric-heaters"
+              ? ELECTRIC_HEATERS_CONFLICT_MESSAGES
+              : activeTab === "appliances"
+                ? APPLIANCES_CONFLICT_MESSAGES
+                : PUMPS_CONFLICT_MESSAGES;
 
   const reloadDraft = async () => {
     await activeController.reloadDraft();
@@ -406,6 +459,20 @@ export function EquipmentPageBody(props: {
             "Add hot water heater",
             hotWaterHeatersController.canEdit,
             () => insertEquipmentRow(hotWaterHeatersController, "hwh"),
+          )}
+        />
+      );
+    }
+    if (activeTab === "hot-water-tanks") {
+      return (
+        <HotWaterTanksTableSlot
+          controller={hotWaterTanksController}
+          hotWaterTanksSlice={hotWaterTanksSlice}
+          projectId={project.id}
+          activeVersionId={activeVersionId}
+          buildEmptyRow={buildEmptyHotWaterTankRow}
+          footerAction={addRowButton("Add hot water tank", hotWaterTanksController.canEdit, () =>
+            insertEquipmentRow(hotWaterTanksController, "hwt"),
           )}
         />
       );

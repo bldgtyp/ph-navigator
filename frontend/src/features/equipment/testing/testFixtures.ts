@@ -41,6 +41,7 @@ import {
 const CREATED_AT = "2026-05-25T00:00:00Z";
 
 export * from "./hotWaterHeatersFixtures";
+export * from "./hotWaterTanksFixtures";
 export * from "./electricHeatersFixtures";
 export * from "./appliancesFixtures";
 
