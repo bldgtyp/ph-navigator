@@ -2,11 +2,13 @@
 DATE: 2026-06-08
 TIME: -
 STATUS: DRAFT — Approach-2 baseline committed (see options.md §5).
-        Open questions are tracked in §11; each is resolved through
-        a use-case conversation and the relevant section is updated
-        in place when an answer lands. No code work begins until
-        every Q1–Q10 anchor below is resolved (or explicitly
-        deferred).
+        All open questions Q1–Q10 resolved 2026-06-08 through paired
+        use-case discussion. Implementation-shape decisions Q11–Q28
+        resolved 2026-06-08 through PRD review pass; sections §2 / §5
+        / §6 / §7 / §8 / §10 reflect those decisions. Next step:
+        produce phase plans under `phases/` for Phase 1 (link values),
+        Phase 2 (inverse view + perf gate), and Phase 3 (rollups +
+        document-level cycle detection). No code work has started.
 AUTHOR: Ed May (with Claude)
 SCOPE: Add AirTable-style record-linking between project-document
        tables in PHN V2 — a new user-creatable `linked_record` field
@@ -47,20 +49,31 @@ Concretely, the canonical user story:
   link is a plain set of row ids. If per-link metadata becomes needed,
   the storage shape (§5) can grow without rewriting consumers — see
   options.md §4 Approach 3.
-- **Catalog linking.** A linked-record cell points at another row in
-  the *same* project document. Linking to global catalog records
-  (Materials, Frame Types, Glazing Types) is a separate design.
+- **Catalog linking via this field type** (Q23). A linked-record cell
+  points at another row in the *same* project document. Linking to
+  global catalog records (Materials, Frame Types, Glazing Types) will
+  ship as a *separate* field type (e.g. `linked_catalog_record`) if
+  and when needed. `linked_record.config.target_table_path` will
+  never accept catalog paths.
 - **Cross-project linking.** V2 has no cross-project queries; this
   feature does not change that.
-- **Mass-assignment UI** ("link these 12 rooms to that pump in one
-  shot"). The picker is single-cell. Bulk fill via fill-handle and
-  paste is the same primitive as for any other field type.
+- **Dedicated mass-assignment UI** ("link these 12 rooms to that pump
+  in one shot"). The picker is single-cell. Fill-handle drag and
+  paste are the bulk primitives (Q24) and behave identically to the
+  same primitives for any other field type. No bulk-link dialog.
 - **Frontend-computed rollups.** All rollup math runs server-side via
   the existing formula evaluator. Frontend renders the computed
   overlay only.
 - **MCP-driven schema mutation for linked-record fields** is in scope
   only to the extent the existing schema-mutation MCP tool already
   covers field add / edit / delete. No new MCP tools.
+- **Manual pill reordering** (Q20). Insertion order is preserved on
+  storage; the cell editor has no drag-to-reorder affordance in v1.
+- **Editing `target_table_path` on an existing linked_record field**
+  (Q13). The schema-mutation validator rejects it. To change a
+  field's target, the editor deletes the field and re-adds with the
+  new target.
+- **Self-links** (Q2). Reopen trigger documented in Q22 below.
 
 ## 3. User stories
 
@@ -90,11 +103,14 @@ Concretely, the canonical user story:
 - **US-LR-7 — Survive a target delete.** Editor deletes a target row
   that incoming links point at; on next save the orphan ids are
   silently dropped from every source cell and a toast surfaces the
-  cleanup. *(Resolution depends on Q5; current draft assumes
-  silent-drop-with-toast.)*
+  cleanup. *(Per Q5: read filter is against the snapshot being read,
+  not "the live target table" — see Q5 below.)*
 - **US-LR-8 — Viewer mode.** Read-only viewers see linked-record
   pills, can navigate via pill click, and see inverse columns and
   rollups. They cannot open the picker.
+- **US-LR-9 — Bulk fill via fill-handle.** Editor links one Room to
+  Pump A, then drags the fill-handle down 50 rows. All 50 destination
+  rows now point at Pump A (full id-list copy, not union — see Q24).
 
 ## 4. Approach — committed
 
@@ -108,20 +124,30 @@ Three implementation phases (sequencing TBD in `phases/`):
 - **Phase 1 — Link values.** New field type; schema-mutation,
   document validation, frontend picker + pill renderer. No inverse
   view, no rollup. Cell navigation works in the source direction
-  only.
+  only. Phase 1 also lands the shared `RowWithCustomFields` mixin /
+  `_validate_rows_custom_links` validator refactor and the
+  `link_targetable` flag on `TableContract` (Q15).
 - **Phase 2 — Inverse view.** Server-side read overlay projects
   incoming links onto the target table. Inverse column appears in
   the wire response; frontend renders identically to a source-side
-  linked-record column except for being read-only.
+  linked-record column except for being read-only. Phase 2 lands
+  cross-table ETag invalidation (Q14) and the per-request inverse-
+  view perf gate (Q27).
 - **Phase 3 — Rollups.** Formula grammar gains `linked_from(...)`
   (and possibly `linked(...)` for source-side rollups). Document-
-  level formula cycle detection lands here.
+  level formula cycle detection lands here, structured as a
+  topological sort across the document's formula graph treating
+  `linked_from` / `linked` edges as dependencies (Q26).
 
 ## 5. Data model — committed shape
 
 **Storage on the row.** Parallel `custom_links: dict[str, list[str]]`
 bag, always list-shaped regardless of `max_links` (a single-link cell
-is `[]` or `["pmp_xyz"]`). `CustomValue` stays scalar.
+is `[]` or `["pmp_xyz"]`). `CustomValue` stays scalar. **A given
+`field_key` appears in exactly one of `custom_values` /
+`custom_links`** based on its FieldDef's `field_type`; the validator
+rejects co-existence in both bags (Q16). Insertion order in the list
+is preserved across save round-trips (Q20).
 
 ```jsonc
 // inside a RoomRow:
@@ -138,6 +164,11 @@ is `[]` or `["pmp_xyz"]`). `CustomValue` stays scalar.
   }
 }
 ```
+
+To keep the row-model surface small across the nine `*Row` models, a
+shared `RowWithCustomFields` Pydantic mixin owns both `custom_values`
+and `custom_links` with their default factories. Each row class
+inherits the mixin (see §9 Phase 1 deliverables).
 
 **Field definition.** A new entry in the table's `field_defs` array:
 
@@ -157,6 +188,12 @@ is `[]` or `["pmp_xyz"]`). `CustomValue` stays scalar.
 }
 ```
 
+The schema fingerprint includes both `config.target_table_path` and
+`config.max_links` (Q11). Renaming `display_name` does not change the
+fingerprint; re-targeting or changing cardinality does — and
+re-targeting is rejected at the schema-mutation validator anyway
+(Q13).
+
 **CustomFieldType enum** gains one member:
 
 ```python
@@ -171,45 +208,154 @@ class CustomFieldType(StrEnum):
     linked_record = "linked_record"   # NEW
 ```
 
+`linked_record` is **unlocked** for `changeType` (not added to any
+`field_type_locked_keys`) — the editor can retype a custom
+linked-record field to any other type, and vice versa. Row data on
+both sides of the bag boundary is wiped for that `field_key` on
+changeType (Q12), the same precedent as `single_select` → `number`
+clearing the option id.
+
+**`TableContract` gains `link_targetable: bool = True`** (Q15). Every
+FieldDef-capable table opts in by default; future per-table opt-outs
+are a one-line change without reshaping the data model. The
+field-config modal's target-table dropdown lists only contracts where
+`link_targetable is True` and `table_path != self`.
+
 **Validator additions** in `validate_document_references`:
 
 - Each `field_defs` entry of type `linked_record` must declare a
   `config.target_table_path` that resolves to a registered FieldDef-
-  capable project-document table.
+  capable project-document table whose contract has
+  `link_targetable=True`.
 - `config.target_table_path` must NOT equal the field's own
-  table_path (self-links disallowed per Q2).
-- Each linked-record cell's id list must contain only ids that exist
-  in the resolved target table at validate time (cascade behaviour
-  per Q5).
+  `table_path` (self-links disallowed per Q2 / Q22).
+- A given `field_key` on a row must appear in `custom_values` XOR
+  `custom_links` based on its FieldDef's `field_type`; co-existence
+  is rejected (Q16).
+- Each linked-record cell's id list contains only ids that exist in
+  the resolved target table at validate time, **filtered against the
+  snapshot being read** (Q5 amendment, see Q5 below). Orphans are
+  silently stripped on save.
 - Cardinality respected per `config.max_links` (Q3).
+- Within-cell duplicates are silently deduped — `["x", "x"]` becomes
+  `["x"]` without error (Q25).
+
+The shared validator helper `_validate_rows_custom_links` mirrors the
+existing `_validate_rows_custom_values` so per-table validation stays
+declarative.
 
 **Inverse view (Phase 2)** is a per-request read overlay computed by
 walking every linked-record field on every table. Shape: each target
-row gains an `inverse_links` map keyed by source `<table>.<field_key>`
+row gains an `inverse_links` map keyed by `<source_table>.<field_key>`
 whose value is the list of source row ids pointing at this target.
+Render-time the frontend headers this column as `<source_table_
+display> ← <source_field_display_name>` (e.g. "Rooms ← Pump") so
+multiple incoming links from the same source table disambiguate
+visually (Q21). The inverse overlay rides alongside the existing
+`rows_computed` overlay on the table's wire response.
 
 ## 6. API / wire surface
 
-TBD when Q4 (storage shape) and Q5 (cascade) are resolved. Expect:
+**Cell write op.** A single `cell` `WriteOp` variant (Q11). The
+existing `cell` op gains a `linked_ids: list[str] | None` field
+alongside the scalar value slot. The validator dispatches by the
+resolved FieldDef's `field_type`: if `field_type is linked_record`
+the write reads `linked_ids` and writes to `row.custom_links`; for
+any other type it reads the scalar slot and writes to
+`row.custom_values`. A write that supplies the wrong slot for the
+field's type is rejected at draft sync with `422 invalid_cell_value`.
+No new op type; one cell write, one cell undo, one cell paste path,
+one MCP tool — all already exist.
 
-- Existing per-table slice-replace endpoints absorb the new
-  `custom_links` bag without a new route.
-- Existing schema-mutation surface gains `linked_record` as a valid
-  `field_type` for `addField` / `changeType`.
-- Existing read endpoints add the `inverse_links` overlay in Phase 2
-  alongside the existing `rows_computed` overlay.
+**Schema mutation.** The existing schema-mutation surface gains
+`linked_record` as a valid `field_type` for `addField` and
+`changeType`:
+
+- `addField`: validates `config.target_table_path` resolves, target
+  contract is `link_targetable`, and target is not self.
+- `changeType to linked_record` (or away from it): row data for that
+  `field_key` is wiped on both bags on every row in the same
+  transaction (Q12). The mutation's response includes the count of
+  cleared rows in its standard `summary` envelope.
+- `editField` rejects any change to `config.target_table_path` for
+  linked-record fields (Q13). `config.max_links` is freely editable
+  (no row migration needed per Q4); the validator's cap check is the
+  only consumer of that config field.
+
+**Per-table replace endpoints** absorb the new `custom_links` bag
+without a new route; the request model widens by one optional field.
+
+**ETag scope.** The source table's ETag stays slice-local — writes to
+Rooms change Rooms' ETag because the slice changed. The target
+table's fingerprint additionally includes a content hash of every
+incoming linked-record field's id-list contents from every source
+table that targets it (Q14). A write on Rooms that touches
+`cf_pumps` therefore updates both Rooms' ETag (slice change) and
+Pumps' ETag (inverse-content change). Without this, a client with a
+cached Pumps response would never see the new inverse pill.
+
+**Diff.** `diff.py` renders `custom_links.<field_key>` changes as
+list-aware add/remove pairs over the id arrays — the same shape it
+uses for the namespaced single_select option list today. Pill-aware
+rendering (resolving ids to `record_id`) is a frontend concern; the
+backend diff stays id-level.
+
+**Inverse view (Phase 2).** Read endpoints add an `inverse_links`
+overlay on the target table's wire response alongside the existing
+`rows_computed` overlay. Overlay shape per row:
+
+```jsonc
+{
+  "id": "pmp_xyz",
+  ...,
+  "inverse_links": {
+    "rooms.cf_pumps": ["rm_a", "rm_b", "rm_c"]
+  }
+}
+```
 
 ## 7. Frontend surface
 
-TBD when storage shape and picker UX are resolved. Expect:
-
 - `FieldType` union widens by one.
 - `FieldConfigModal` exposes a target-table picker (only when the
-  type picker is set to "linked record").
-- New cell renderer (pill list using the linked row's `record_id`).
-- New cell editor (modal record-picker reusing the catalog-picker
-  shell).
-- Formula editor (Phase 3) learns `linked_from(...)`.
+  type picker is set to "linked record"). Dropdown lists every
+  `TableContract` where `link_targetable=True` and `table_path` is
+  not the current table's path. A cardinality toggle ("Single record
+  / Multiple records") sets `max_links` to `1` or `null`; default is
+  Single (Q3).
+- **Cell renderer** is a pill list using the target row's `record_id`
+  field. When `record_id` is empty / null, the pill falls back to the
+  row id (e.g. `pmp_a1b2`) rendered in a muted/italic style (Q18).
+  Multi-link cells wrap pills inside the cell; the row height
+  expands. No truncation in v1.
+- **Cell editor** is a modal record-picker. Columns: `record_id` and
+  the target table's `display_name` field if present. Search:
+  case-insensitive substring on `record_id` (using the document's
+  existing display-name normalization). Sort: `record_id` ascending.
+  Past 100 candidate rows the picker virtualizes (Q17). "Show which
+  source rows already link to this target" is a Phase-2 polish, not
+  v1. Reuses the catalog-picker modal shell.
+- **Pill click navigation** routes to the target table with
+  `?focus=<row_id>` (Q19). The destination table reads `focus` on
+  mount, scrolls to that row, and applies a transient highlight
+  class. This reuses the existing route-with-query primitive — no
+  new routing infrastructure.
+- **Inverse column header** is rendered as `<source_table_display>
+  ← <source_field_display_name>` so two source fields from the same
+  source table disambiguate (Q21).
+- **Fill-handle drag** copies the source cell's full id list to every
+  destination cell (Q24). No union with existing destination
+  contents, no dedupe across cells. Same as how fill-handle copies
+  `single_select` option ids today.
+- **Paste** between linked-record cells succeeds only when source and
+  destination `target_table_path` match. Mismatched paths reject at
+  draft sync (`422 invalid_cell_value`). Paste of non-link types
+  into a link cell, or of stringified pill text, rejects (Q24).
+- **WriteOp** rides the existing `cell` op variant (per §6 / Q11).
+- **Formula editor (Phase 3)** learns `linked_from(...)` and
+  `linked(...)` ref completion from a new `FieldRegistryEntry` kind.
+- **Picker for viewer mode** does not open; pills still click-
+  navigate.
 
 ## 8. Migration
 
@@ -221,54 +367,100 @@ TBD when storage shape and picker UX are resolved. Expect:
 - `ROOMS_TYPED_COLUMN_FIELD_KEYS` and
   `ROOMS_TYPED_COLUMN_FORMULA_TYPES` drop their `erv_unit_ids`
   entries.
+- Every dev seed, test fixture, factory, and JSON fixture that
+  references `erv_unit_ids` is purged in the same change. Fixture
+  sweep runs in lockstep with the `schema_version 4 → 5` bump so CI
+  stays green on a single commit.
 - Pre-deploy posture (no production data) means no data-migration
-  script is required; dev DBs rebuild on the schema-version bump
-  (document `schema_version` goes from 4 → 5 when this feature
-  lands).
+  script is required; dev DBs rebuild on the schema-version bump.
 - No other tables ship built-in linked-record FieldDefs at v1.
+- **HBJSON / download export** (Q28): the document JSON download
+  emits raw id arrays in `custom_links`. Round-trips cleanly through
+  the validator on re-read. Downstream HBJSON / PHX / WUFI export is
+  a downstream consumer concern and is **not in this feature's
+  scope**. If downstream consumers want resolved row data inlined,
+  they dereference using the same document.
 
 ## 9. Phasing
 
 See §4. Phase boundaries and concrete deliverables go in
-`phases/phase-01-link-values.md` etc. once open questions are
-resolved.
+`phases/phase-01-link-values.md` etc. once phase plans are written.
+Notable cross-phase deliverables:
+
+- **Phase 1 also lands**: shared `RowWithCustomFields` mixin
+  across the nine `*Row` models, shared `_validate_rows_custom_links`
+  helper, and the `link_targetable: bool` flag on `TableContract`
+  (defaults `True` on every existing contract).
+- **Phase 2 also lands**: cross-table ETag (Q14) and the perf gate
+  fixture + CI assertion (Q27).
+- **Phase 3 also lands**: document-level formula cycle detector
+  structured as a topological sort over the formula graph (Q26).
 
 ## 10. Acceptance criteria (v1 — Phases 1 + 2)
 
 - Editor can add a linked-record column on any FieldDef-capable
-  table targeting any permitted target table (Q1).
+  `link_targetable` table targeting any permitted target table (Q1,
+  Q15).
 - Editor can link / unlink rows through the picker.
-- Pills render the linked row's `record_id` and click-navigate.
-- Wire response on the target table includes the inverse view.
-- Validator rejects unknown target_table_path on field add.
-- Validator handles orphan target ids per Q5.
+- Pills render the linked row's `record_id` (with row-id fallback
+  when `record_id` is empty per Q18) and click-navigate via the
+  `?focus=` query param (Q19).
+- Wire response on the target table includes the inverse view
+  (Phase 2).
+- Validator rejects unknown `target_table_path` on field add.
+- Validator rejects editing `target_table_path` on an existing
+  linked_record field (Q13).
+- Validator rejects a `field_key` co-existing in `custom_values` and
+  `custom_links` (Q16).
+- Validator silently dedupes within-cell duplicate ids (Q25).
+- Validator handles orphan target ids per Q5 (filter against the
+  snapshot being read; strip silently on save).
+- changeType to/from `linked_record` wipes row data for that
+  `field_key` on both bag sides and reports the cleared row count in
+  the mutation summary (Q12).
+- Source-table writes that touch `custom_links` invalidate the target
+  table's ETag (Q14) — verified by integration test.
+- Fill-handle drag copies the full id list to destination cells; no
+  union with existing contents (Q24).
+- Paste between linked-record cells of matching `target_table_path`
+  succeeds; mismatched paths reject at draft sync with `422` (Q24).
 - Frontend Viewer mode renders linked + inverse columns read-only.
 - Document JSON download round-trips through validator on re-read.
-- JSON Schema export includes the new field type.
+- JSON Schema export includes the new field type and the
+  `custom_links` row shape (`dict[str, list[str]]` with id pattern).
+- Diff between two versions renders `custom_links.<field_key>`
+  changes as list-aware add/remove pairs.
+- **Phase 2 perf gate (Q27):** total inverse-view build for a single
+  read response on the pinned synthetic fixture (4000 source rows ×
+  50 target rows × 3 linked fields, plus 5 additional tables each
+  with 200 rows × 1 linked field) completes in under 100ms on the
+  pinned CI runner class. Regression check: fail if measured time
+  exceeds the baseline by >20% on 3 consecutive CI runs.
 - All `make ci` gates green.
 
 Phase 3 acceptance criteria land in the Phase 3 plan.
 
-## 11. Open questions (driving the use-case conversation)
+## 11. Open questions
 
-Each anchor is resolved through a paired use-case discussion. When an
-answer lands, the relevant section above is updated and the anchor is
-marked **RESOLVED** with a one-line summary.
+Each anchor is resolved through a paired use-case discussion (Q1–Q10)
+or through the PRD review pass (Q11–Q28). When an answer lands, the
+relevant section above is updated and the anchor is marked
+**RESOLVED** with a one-line summary.
+
+### Use-case-driven (Q1–Q10)
 
 - **Q1. Allowable target tables.** **RESOLVED 2026-06-08:** open
-  baseline. Every FieldDef-capable project-document table is a valid
-  link target, with no curated per-table allow-list. Catalogs remain
-  out of scope (see §2). If a recurring cross-link footgun emerges,
-  a curation layer can be added later without reshaping the data
-  model.
+  baseline. Every FieldDef-capable project-document table with
+  `link_targetable=True` is a valid link target, with no curated
+  per-table allow-list. Catalogs remain out of scope (see §2). The
+  `link_targetable` flag (Q15) is the one-line opt-out path if a
+  recurring cross-link footgun emerges.
 
 - **Q2. Self-links.** **RESOLVED 2026-06-08:** disallowed. The
   field-config modal hides the current table from the target-table
   dropdown; the validator rejects a `linked_record` field whose
-  `config.target_table_path` equals the field's own table_path. If
-  a same-table relation use case emerges later (e.g. Room ↔ Room
-  "adjacent to") it can be reopened — closing it now keeps the
-  rollup / cycle surface narrower.
+  `config.target_table_path` equals the field's own table_path. See
+  Q22 for the reopen trigger.
 
 - **Q3. Cardinality.** **RESOLVED 2026-06-08:** field config exposes
   a "Single record / Multiple records" toggle. **Default = single
@@ -280,35 +472,41 @@ marked **RESOLVED** with a one-line summary.
 
 - **Q4. Storage shape inside the row.** **RESOLVED 2026-06-08:**
   parallel bag `custom_links: dict[str, list[str]]`, always list-
-  shaped regardless of `max_links` config (a single-link cell is
-  `[]` or `["pmp_xyz"]`). `CustomValue` stays scalar. The
-  `TableFieldRegistry` gains `read_row_links` / `set_row_links`
-  accessors mirroring the existing custom-values pair. Flipping a
-  field's `max_links` config from `1` to `null` (or vice versa)
-  requires no row-data migration — only the validator's cap check
-  changes.
+  shaped regardless of `max_links` config. `CustomValue` stays
+  scalar. The `TableFieldRegistry` gains `read_row_links` /
+  `set_row_links` accessors mirroring the existing custom-values
+  pair. Flipping a field's `max_links` config from `1` to `null`
+  (or vice versa) requires no row-data migration — only the
+  validator's cap check changes.
 
-- **Q5. Cascade on delete.** **RESOLVED 2026-06-08:** permissive
-  delete with read-time filter + lazy persistence cleanup (Stance
-  2c). Deleting a target row replaces only the target table's slice;
-  no cross-table cascade write. Every wire response (cells + inverse
-  view) filters orphan ids against the live target table so the
-  editor never sees a dangling pill. Whenever a source row is later
-  saved, the validator silently strips orphan ids from its
-  `custom_links` cells. No error is raised at any point; the save
-  succeeds. An optional toast on delete ("Pump A removed; unlinked
-  from 3 rooms") is a Phase-2 polish.
+- **Q5. Cascade on delete.** **RESOLVED 2026-06-08 (amended):**
+  permissive delete with read-time filter + lazy persistence cleanup
+  (Stance 2c). Deleting a target row replaces only the target
+  table's slice; no cross-table cascade write. **Amendment:** every
+  wire response (cells + inverse view) filters orphan ids against
+  *the snapshot being read*, not "the live target table." For draft
+  reads "the snapshot" is the current draft state; for saved-version
+  reads it is the rows present in that immutable version. This means
+  reading version N six months from now will still surface the link
+  ids that were valid in version N's snapshot, even if those target
+  rows have been deleted from later drafts. Whenever a source row is
+  later saved, the validator silently strips orphan ids from its
+  `custom_links` cells (current-draft snapshot only). An optional
+  toast on delete ("Pump A removed; unlinked from 3 rooms") is a
+  Phase-2 polish.
 
 - **Q6. Validation timing.** **RESOLVED 2026-06-08:** split by error
   kind. **Shape errors** (not-a-list, wrong id prefix, exceeds
-  `max_links`) fail-closed at every checkpoint — picker prevents at
-  source, draft sync rejects malformed paste / fill / MCP writes,
-  Save hard-fails (422). **Referential errors** (well-formed id whose
-  target row doesn't exist) follow Q5: never blocking, orphans
-  silently stripped at save time, save succeeds with the cleaned
-  cells. The MCP response includes dropped ids in a `warnings`
-  envelope so LLM clients can self-correct; editor-driven writes
-  never trigger this because the picker only surfaces live rows.
+  `max_links`, wrong cell-write slot per Q11, mismatched
+  `target_table_path` on paste per Q24) fail-closed at every
+  checkpoint — picker prevents at source, draft sync rejects
+  malformed paste / fill / MCP writes, Save hard-fails (422).
+  **Referential errors** (well-formed id whose target row doesn't
+  exist in the snapshot) follow Q5: never blocking, orphans silently
+  stripped at save time, save succeeds with the cleaned cells. The
+  MCP response includes dropped ids in a `warnings` envelope so LLM
+  clients can self-correct; editor-driven writes never trigger this
+  because the picker only surfaces live rows.
 
 - **Q7. Existing `erv_unit_ids` retirement.** **RESOLVED 2026-06-08:**
   delete the typed column entirely; do NOT seed any built-in
@@ -318,10 +516,11 @@ marked **RESOLVED** with a one-line summary.
   validator rule that rejected non-empty `erv_unit_ids` goes away,
   the `RoomRow.erv_unit_ids` Pydantic field is removed,
   `ROOMS_TYPED_COLUMN_FIELD_KEYS` / `ROOMS_TYPED_COLUMN_FORMULA_TYPES`
-  drop the entry, and the document `schema_version` bumps from 4 →
-  5. v1 ships with zero built-in linked-record FieldDefs anywhere;
-  if PH-canonical built-in pairs become useful later they land as
-  deliberate follow-ups.
+  drop the entry, every fixture / seed / factory referencing
+  `erv_unit_ids` is purged in lockstep, and the document
+  `schema_version` bumps from 4 → 5. v1 ships with zero built-in
+  linked-record FieldDefs anywhere; if PH-canonical built-in pairs
+  become useful later they land as deliberate follow-ups.
 
 - **Q8. Rollup grammar (Phase 3).** **RESOLVED 2026-06-08:** Phase 3
   ships `count`, `sum`, and `avg` only. Both directions are
@@ -331,31 +530,191 @@ marked **RESOLVED** with a one-line summary.
   table that point at the current row). `min`, `max`, `concat`,
   `array_join`, `count_unique`, and boolean aggregators are deferred
   until a concrete PH use case justifies them. Phase 3 also lands
-  document-level formula cycle detection (extension of the existing
-  per-table check).
+  document-level formula cycle detection (see Q26 for evaluation-
+  order shape).
 
 - **Q9. MCP write surface.** **RESOLVED 2026-06-08:** full read /
   write in Phase 1, riding the existing MCP tools. No new MCP tools.
   The existing schema-mutation tool admits `field_type:
   "linked_record"` and the existing cell-write tool admits the new
-  `custom_links` bag. Safety boundaries are layered at the validator
-  (Q2, Q3, Q5, Q6) so MCP inherits them automatically — bad ids get
-  silently stripped with a `warnings` envelope, cap violations and
-  self-link attempts hard-fail at 422. Audit-log + idempotency-key
-  middleware covers the new field type the same as any other.
-  A "preview write" tool (Option C in the use-case) is deferred —
-  ship if Phase 2/3 LLM workflows show real friction.
+  `linked_ids` slot on the `cell` op (Q11). Safety boundaries are
+  layered at the validator (Q2, Q3, Q5, Q6, Q16, Q25) so MCP
+  inherits them automatically — bad ids get silently stripped with a
+  `warnings` envelope, cap violations and self-link attempts hard-
+  fail at 422. Audit-log + idempotency-key middleware covers the new
+  field type the same as any other. A "preview write" tool (Option C
+  in the use-case) is deferred — ship if Phase 2/3 LLM workflows
+  show real friction.
 
-- **Q10. Performance budget.** **RESOLVED 2026-06-08:** compute the
-  inverse view on every read, no caching layer (Option A). Cost is
-  bounded by document size (O(N + M) per linked-record field, not
-  O(N×M)); even worst-case multifamily projects sit well under the
-  per-request budget. **Measurement gate before Phase 2 ships:** a
-  smoke-level perf test with a synthetic 4000-source-row ×
-  50-target-row × 3-linked-field document must build the inverse
-  view in under 50ms on the dev profile; CI fails if it regresses.
-  If real telemetry ever shows >100ms p95, the cheap escalation is
-  per-`(project_id, version_id)` memoization in Redis or in-process
-  LRU — saved versions are immutable so cache hits would dominate.
-  A relational sidecar index is explicitly out-of-scope because it
-  reintroduces the relational shadow V2 was designed to avoid.
+- **Q10. Performance budget.** **RESOLVED 2026-06-08 (superseded by
+  Q27).** See Q27 for the sharpened gate.
+
+### Implementation-shape decisions (Q11–Q28)
+
+- **Q11. Cell write-op wire shape.** **RESOLVED 2026-06-08:** single
+  `cell` `WriteOp` variant carries both scalar and link payloads.
+  Adds `linked_ids: list[str] | None` to the existing op alongside
+  the scalar value slot. The validator dispatches by the resolved
+  FieldDef's `field_type` — `linked_record` writes go to
+  `row.custom_links`, every other type goes to `row.custom_values`.
+  Wrong-slot writes reject at draft sync (`422
+  invalid_cell_value`). One op, one undo, one paste path, one MCP
+  tool. Rejected the alternative `cellLink` op variant because it
+  would fork the entire WriteOp pipeline for no payoff over a single
+  optional field on the existing op.
+
+- **Q12. changeType across the bag boundary.** **RESOLVED 2026-06-08:**
+  changeType to/from `linked_record` (in either direction) wipes the
+  row data for that `field_key` on **both** bag sides on every row
+  in the same transaction. Precedent: `single_select → number`
+  already clears the option id today. The mutation's response
+  includes the cleared row count in its `summary` envelope so the
+  editor can see what was lost. linked-record fields are
+  **unlocked** for changeType — they live in
+  `field_type_locked_keys` for built-ins only (none ship in v1).
+
+- **Q13. Editing `target_table_path` on an existing linked-record
+  field.** **RESOLVED 2026-06-08:** rejected at the schema-mutation
+  validator. The editor must delete the field and re-add with the
+  new target. The "smart re-target with orphan strip" alternative
+  is deferred until a real use case surfaces — closing it now keeps
+  the schema-mutation surface narrow and avoids a quietly-destructive
+  edit path. `config.max_links` remains freely editable.
+
+- **Q14. Target-table ETag invalidation.** **RESOLVED 2026-06-08:**
+  source-table ETag stays slice-local. Target table's fingerprint
+  additionally includes a content hash of every incoming linked-
+  record field's id-list contents from every source table that
+  targets it. A write to Rooms that touches `cf_pumps` therefore
+  updates Rooms' ETag (slice change) AND Pumps' ETag (inverse-
+  content change). The hash is cheap (one pass over each source
+  table's `custom_links` slice keyed by target path). Without this,
+  a cached Pumps response would never see new inverse pills.
+  Integration test asserts the invalidation pair.
+
+- **Q15. `link_targetable` per-table opt-out flag.** **RESOLVED
+  2026-06-08:** every `TableContract` gains `link_targetable: bool
+  = True`. Phase 1 ships every existing FieldDef-capable contract
+  with the default `True`. Future per-table opt-outs (e.g.
+  Attachments, Thermal Bridges, anything we decide shouldn't be a
+  user-facing link target) are a one-line change. Cheap to add now,
+  expensive to retrofit later.
+
+- **Q16. Bag exclusivity.** **RESOLVED 2026-06-08:** a `field_key`
+  may appear in exactly one of `custom_values` / `custom_links`
+  based on its FieldDef's `field_type`. The validator rejects
+  co-existence with `invalid_project_document`. Prevents drift
+  between the two bags on a changeType-during-merge race.
+
+- **Q17. Picker UX defaults.** **RESOLVED 2026-06-08:** columns =
+  target row's `record_id` + the target table's `display_name`
+  field if present. Search = case-insensitive substring on
+  `record_id` using the document's existing display-name
+  normalization. Sort = `record_id` ascending. Virtualize past 100
+  candidate rows. "Show which source rows already link to this
+  target" is a Phase-2 polish — useful, but not v1-blocking.
+
+- **Q18. Pill fallback when `record_id` is empty.** **RESOLVED
+  2026-06-08:** the pill renders the row id (e.g. `pmp_a1b2`) in
+  muted / italic style. Same fallback in the picker. Prevents blank
+  pills when an editor adds a linked-record field before backfilling
+  the target table's `record_id` formula inputs.
+
+- **Q19. Pill click navigation.** **RESOLVED 2026-06-08:** pill
+  click routes to the target table with `?focus=<row_id>`. The
+  destination table reads `focus` on mount, scrolls to that row,
+  and applies a transient highlight class. Reuses the existing
+  route-with-query primitive. No new routing infrastructure.
+
+- **Q20. Pill ordering.** **RESOLVED 2026-06-08:** insertion order
+  preserved on storage. No manual drag-to-reorder affordance in v1.
+  If a use case surfaces (e.g. "primary pump must be listed first")
+  it can ship as a Phase-2 polish; storage doesn't change.
+
+- **Q21. Inverse-column header naming.** **RESOLVED 2026-06-08:**
+  header reads `<source_table_display> ← <source_field_display_
+  name>` (e.g. "Rooms ← Pump"). Lives in the `inverse_links`
+  overlay namespace so structural collision is impossible; only the
+  rendered header needs disambiguation. Two source fields from the
+  same source table targeting the same target table therefore read
+  as "Rooms ← Primary Pump" and "Rooms ← Backup Pump."
+
+- **Q22. Self-link reopen trigger.** **RESOLVED 2026-06-08:**
+  deferred use cases that would justify reopening Q2 include
+  Room ↔ Room adjacency (heat flow through internal partitions —
+  Phius / PHI care about this), Aperture ↔ Aperture twinning,
+  Pump ↔ Pump primary/backup chains. Re-open when any of these
+  becomes a real product ask. Cost to reopen: remove the validator
+  block, ship an `allow_self: bool` config flag on the field, and
+  lean on the document-level cycle detector already landing in
+  Phase 3 (Q26).
+
+- **Q23. Catalog linking direction.** **RESOLVED 2026-06-08:**
+  catalog linking will ship as a *separate* field type (working
+  name `linked_catalog_record`) when a use case demands it. Do not
+  extend `linked_record.config.target_table_path` to accept catalog
+  paths. Reason: catalog records are global, addressed by `rec*`
+  ids, lifecycle is decoupled from the project document, and
+  validation must hit the catalog read-model rather than walking
+  the document. Sharing the field type would conflate two storage
+  shapes inside one type.
+
+- **Q24. Fill-handle and paste semantics.** **RESOLVED 2026-06-08:**
+  fill-handle drag copies the source cell's full id list to every
+  destination cell. No union with existing destination contents, no
+  cross-cell dedupe. Same as how fill copies `single_select` ids
+  today. Paste between linked-record cells of matching
+  `target_table_path` succeeds; mismatched paths reject at draft
+  sync with `422 invalid_cell_value`. Paste of non-link cell types
+  into a link cell rejects. Paste of stringified pill text rejects
+  (no parsing of `"Pump A, Pump B"` into ids). The non-goal in §2
+  is reworded accordingly — fill and paste *are* the bulk
+  primitives.
+
+- **Q25. MCP within-cell dedupe.** **RESOLVED 2026-06-08:**
+  validator silently dedupes within-cell duplicates: `["x", "x"]`
+  becomes `["x"]` without error or warning. Across-cell consistency
+  (e.g. "Pump A linked from 47 rooms") is the editor's
+  responsibility and is exposed visually through the inverse view.
+  Cap violations (over `max_links`) still hard-fail at 422.
+
+- **Q26. Cross-table formula evaluation order (Phase 3).**
+  **RESOLVED 2026-06-08 (shape only):** evaluation is a topological
+  sort across the document's formula graph treating `linked_from`
+  and `linked` edges as dependencies in addition to the existing
+  per-table ref edges. Cycles reject at `validate_document_
+  references` with a hard error (not silently absorbed). The Phase 3
+  plan owns implementation details (graph construction, cache
+  shape, error envelope). Locking the *shape* now lets Phase 2 plan
+  the inverse-view overlay without locking in a structure that
+  conflicts.
+
+- **Q27. Performance gate sharpening.** **RESOLVED 2026-06-08:**
+  - **Gate is per request, not per inverse build.** The total
+    inverse-view build time across all tables in a single read
+    response must complete in **under 100ms** on the pinned CI
+    profile.
+  - **Pinned fixture**, committed as a test asset: 4000 source rows ×
+    50 target rows × 3 linked-record fields (the "fat single
+    relation" worst case), plus 5 additional tables each with 200
+    rows × 1 linked-record field (the "broad cross-linking" case).
+  - **Profile pin**: GitHub Actions `ubuntu-latest` (current
+    pinned runner class for `make ci`). If we change runner class,
+    we re-baseline.
+  - **Regression check**: CI fails if the measured time exceeds the
+    rolling baseline by >20% on 3 consecutive CI runs. Single-run
+    spikes do not fail (flake tolerance).
+  - **Escalation path**: if real telemetry ever shows >100ms p95 in
+    production, ship per-`(project_id, version_id, document_hash)`
+    in-process LRU. Saved versions are immutable so cache hits would
+    dominate. A relational sidecar index is explicitly out-of-scope.
+
+- **Q28. HBJSON / download export of linked-record cells.**
+  **RESOLVED 2026-06-08:** the document JSON download emits raw id
+  arrays in `custom_links` as-is. Round-trips cleanly through the
+  validator on re-read. Downstream HBJSON / PHX / WUFI export is a
+  downstream consumer concern and is **out of scope** for this
+  feature. If downstream consumers want resolved row data inlined
+  alongside the ids, they dereference using the same document
+  they're already reading. Keeps this feature decoupled from the
+  honeybee-ph / PHX export surface.
