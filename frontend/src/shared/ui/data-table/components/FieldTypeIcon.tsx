@@ -1,5 +1,6 @@
 import {
   AlignLeft,
+  ArrowRightLeft,
   CircleChevronDown,
   Hash,
   Link,
@@ -29,6 +30,7 @@ const FIELD_TYPE_ICON_META: Record<FieldTypeIconKind, FieldTypeIconMeta> = {
   computed: { Icon: SquareFunction, label: "Computed" },
   attachment: { Icon: Paperclip, label: "Attachment" },
   color: { Icon: Palette, label: "Color" },
+  linked_record: { Icon: ArrowRightLeft, label: "Linked record" },
 };
 
 function fieldTypeIconKind(fieldDef: FieldDef): FieldTypeIconKind {

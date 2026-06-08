@@ -302,7 +302,6 @@ async def test_mcp_custom_field_tools_full_surface(clean_mcp_tables: None) -> No
                                     "floor_level": "opt_g",
                                     "building_zone": None,
                                     "icfa_factor": 1.0,
-                                    "erv_unit_ids": [],
                                     "catalog_origin": None,
                                     "notes": None,
                                     "custom_values": {

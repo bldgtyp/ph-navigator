@@ -76,6 +76,9 @@ export function getFilterOperators(fieldDef: FieldDef | undefined): readonly Fil
       return fieldDef.computed_type === "number" ? NUMBER_OPERATORS : TEXT_OPERATORS;
     case "attachment":
       return EMPTY_OPERATORS;
+    case "linked_record":
+      // Phase 1: no filter operators surfaced for linked_record cells.
+      return EMPTY_OPERATORS;
   }
 }
 

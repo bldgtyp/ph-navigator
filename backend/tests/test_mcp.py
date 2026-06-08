@@ -95,7 +95,6 @@ def room_payload(field_defs: list[dict[str, object]]) -> dict[str, object]:
                 "floor_level": "opt_ground",
                 "building_zone": "opt_residential",
                 "icfa_factor": 1.0,
-                "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
                 "custom_values": {

@@ -117,7 +117,6 @@ def _with_room(
             floor_level=floor_opts[0].id,
             building_zone=None,
             icfa_factor=1.0,
-            erv_unit_ids=[],
             catalog_origin=None,
             notes=None,
             custom_values=cast(

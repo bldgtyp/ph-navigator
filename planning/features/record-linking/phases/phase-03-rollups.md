@@ -2,6 +2,8 @@
 DATE: 2026-06-08
 TIME: planning
 STATUS: Proposed implementation plan for Record-linking Phase 3.
+        NOT STARTED — blocked on Phases 1 + 2 landing (see
+        `../STATUS.md`).
 AUTHOR: Ed May (with Claude)
 SCOPE: Cross-table formula primitives `linked(...)` and
        `linked_from(...)` with `count` / `sum` / `avg` aggregators,

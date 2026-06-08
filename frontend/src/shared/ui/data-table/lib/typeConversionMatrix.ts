@@ -12,7 +12,8 @@ export type ConversionPolicy =
   | "create_options"
   | "substitute_labels"
   | "substitute_option_colors"
-  | "discard_then_author";
+  | "discard_then_author"
+  | "linked_record_wipe";
 
 export const CONVERSION_MATRIX: Partial<
   Record<CustomFieldType, Partial<Record<CustomFieldType, ConversionPolicy>>>
@@ -24,6 +25,7 @@ export const CONVERSION_MATRIX: Partial<
     color: "lossy",
     single_select: "create_options",
     formula: "discard_then_author",
+    linked_record: "linked_record_wipe",
   },
   long_text: {
     short_text: "lossy",
@@ -32,18 +34,21 @@ export const CONVERSION_MATRIX: Partial<
     color: "lossy",
     single_select: "create_options",
     formula: "discard_then_author",
+    linked_record: "linked_record_wipe",
   },
   number: {
     short_text: "lossless",
     long_text: "lossless",
     single_select: "create_options",
     formula: "discard_then_author",
+    linked_record: "linked_record_wipe",
   },
   url: {
     short_text: "lossless",
     long_text: "lossless",
     color: "lossy",
     formula: "discard_then_author",
+    linked_record: "linked_record_wipe",
   },
   single_select: {
     short_text: "substitute_labels",
@@ -53,11 +58,13 @@ export const CONVERSION_MATRIX: Partial<
     number: "substitute_labels",
     color: "substitute_option_colors",
     formula: "discard_then_author",
+    linked_record: "linked_record_wipe",
   },
   color: {
     short_text: "lossless",
     long_text: "lossless",
     formula: "discard_then_author",
+    linked_record: "linked_record_wipe",
   },
   formula: {
     short_text: "lossless",
@@ -66,6 +73,16 @@ export const CONVERSION_MATRIX: Partial<
     url: "lossy",
     single_select: "create_options",
     color: "lossy",
+    linked_record: "linked_record_wipe",
+  },
+  linked_record: {
+    short_text: "linked_record_wipe",
+    long_text: "linked_record_wipe",
+    number: "linked_record_wipe",
+    url: "linked_record_wipe",
+    single_select: "linked_record_wipe",
+    color: "linked_record_wipe",
+    formula: "linked_record_wipe",
   },
 };
 

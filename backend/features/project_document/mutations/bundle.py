@@ -113,6 +113,21 @@ def apply_edit_field_bundle(
     )
 
     type_changed = after.field_type != existing.field_type
+
+    # PRD Q13: `target_table_path` on an existing linked_record field is
+    # not editable. Retarget requires delete + re-add. `max_links` stays
+    # freely editable (no row-data migration needed per Q4).
+    if (
+        not type_changed
+        and existing.field_type is CustomFieldType.linked_record
+        and existing.config.get("target_table_path") != after.config.get("target_table_path")
+    ):
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "linked_record_retarget_not_supported",
+            "Editing target_table_path on an existing linked_record field is not supported.",
+            {"field_id": mutation.field_id},
+        )
     next_body = body
     cleared_row_count = 0
     created_option_count = 0

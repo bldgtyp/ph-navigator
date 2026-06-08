@@ -136,10 +136,10 @@ export const ROOMS_SCHEMA_CORE_FIELD_KEYS = [
   "floor_level",
   "building_zone",
   "icfa_factor",
-  "erv_unit_ids",
   "catalog_origin",
   "notes",
   "custom_values",
+  "custom_links",
 ] as const;
 
 export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
@@ -316,7 +316,6 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
   builtInFieldDef("icfa_factor", "iCFA", "number"),
-  builtInFieldDef("erv_unit_ids", "ERVs", "long_text"),
 ];
 
 export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -556,10 +555,6 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
     },
     icfa_factor: {
       // icfa_factor ∈ [0, 1] — domain invariant doesn't survive a retype.
-      locked: ["field_type", "delete", "duplicate"],
-    },
-    erv_unit_ids: {
-      read_only: true,
       locked: ["field_type", "delete", "duplicate"],
     },
   };
@@ -1203,7 +1198,6 @@ export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
     floor_level: defaultFloorLevel,
     building_zone: null,
     icfa_factor: 1,
-    erv_unit_ids: [],
     catalog_origin: null,
     notes: null,
     custom_values: {
@@ -1212,6 +1206,7 @@ export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
       num_people: 0,
       num_bedrooms: 0,
     },
+    custom_links: {},
   };
 }
 
@@ -2288,9 +2283,6 @@ export function validateRoomsPayload(payload: RoomsReplacePayload): string | nul
     }
     if (room.building_zone && !zoneOptionIds.has(room.building_zone)) {
       return "Building zone option is missing.";
-    }
-    if (room.erv_unit_ids.length > 0) {
-      return "ERV assignments are deferred until ERV units are available.";
     }
     if ((customNumberValue(room, "num_people") ?? 0) < 0) {
       return "People must be zero or greater.";
@@ -3502,10 +3494,10 @@ function roomFingerprint(room: RoomRow): string {
   return JSON.stringify([
     room.id,
     room.custom_values,
+    room.custom_links,
     room.floor_level,
     room.building_zone,
     room.icfa_factor,
-    room.erv_unit_ids,
     room.catalog_origin,
     room.notes,
   ]);

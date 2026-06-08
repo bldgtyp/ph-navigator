@@ -12,7 +12,14 @@ import type { FieldRegistryEntry } from "./lib/formula/resolver";
 // paint each cell without any per-render JS work.
 export type AxisRoleSubset = "f" | "s" | "g" | "fs" | "fg" | "sg" | "fsg";
 
-export type FieldType = "text" | "number" | "single_select" | "computed" | "attachment" | "color";
+export type FieldType =
+  | "text"
+  | "number"
+  | "single_select"
+  | "computed"
+  | "attachment"
+  | "color"
+  | "linked_record";
 
 // Closed v1 set, mirrored from backend `CustomFieldType`.
 export type CustomFieldType =
@@ -22,7 +29,8 @@ export type CustomFieldType =
   | "url"
   | "single_select"
   | "color"
-  | "formula";
+  | "formula"
+  | "linked_record";
 
 // Per-attribute lock keys. Each entry in `FieldDef.locked` forbids
 // one user edit through the field-config modal / header context menu.
@@ -87,6 +95,13 @@ export type FieldDef = {
     ast: unknown;
     deps: string[];
     result_type?: string;
+  };
+  // Carries `target_table_path` + `max_links` for `linked_record`
+  // custom fields (PRD §5). Absent on every other field type.
+  // `max_links: null` → multi-link; `1` → single-link.
+  linked_record_config?: {
+    target_table_path: string[];
+    max_links: number | null;
   };
 };
 

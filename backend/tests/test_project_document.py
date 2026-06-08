@@ -94,7 +94,6 @@ def room_payload() -> dict[str, Any]:
                 "floor_level": "opt_ground",
                 "building_zone": "opt_residential",
                 "icfa_factor": 1.0,
-                "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
                 "custom_values": {
@@ -413,17 +412,6 @@ def test_rooms_validation_rejects_duplicate_options_and_missing_option(
     assert response.status_code == 422
     assert response.json()["error_code"] == "invalid_project_document"
 
-    invalid = room_payload()
-    invalid["rooms"][0]["erv_unit_ids"] = ["erv_fake"]
-    response = client.put(
-        draft_rooms_url(project_id, version_id),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=invalid,
-    )
-
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "invalid_project_document"
-
 
 def test_rooms_validation_allows_blank_room_identity_fields(
     clean_document_tables: None,
@@ -655,7 +643,7 @@ def test_project_download_returns_raw_body_when_schema_is_invalid(
     document_body = document.json()
     assert document_body["schema_version_unsupported"] is True
     assert document_body["schema_version"] == 999
-    assert document_body["current_schema_version"] == 4
+    assert document_body["current_schema_version"] == 5
     assert document_body["error_code"] == "schema_validation_failed_after_migration"
     assert document_body["request_id"] == "schema-safe"
     assert document_body["body"]["schema_version"] == 999
@@ -901,7 +889,7 @@ def test_rooms_envelope_rejects_unknown_custom_key(
 
 def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
     body = {
-        "schema_version": 4,
+        "schema_version": 5,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {
@@ -941,7 +929,7 @@ def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
 
 def test_rooms_custom_field_collides_with_core_display_name_rejected() -> None:
     body = {
-        "schema_version": 4,
+        "schema_version": 5,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {

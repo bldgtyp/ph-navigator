@@ -49,7 +49,7 @@ def test_document_rejects_duplicate_electric_heater_id() -> None:
     first = electric_heater_payload()["electric_heaters"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 4,
+        "schema_version": 5,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -101,7 +101,7 @@ def test_legacy_equipment_electric_heaters_contract_preserves_table_envelope() -
     tables = empty_required_tables()
     body = ProjectDocumentV1.model_validate(
         {
-            "schema_version": 4,
+            "schema_version": 5,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": {
                 **tables,

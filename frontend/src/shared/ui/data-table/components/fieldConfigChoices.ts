@@ -14,4 +14,9 @@ export const FIELD_TYPE_CHOICES: ReadonlyArray<FieldTypeChoice> = [
   { kind: "single_select", label: "Single select", hint: "Pick one option from a defined list." },
   { kind: "color", label: "Color", hint: "Stored as a normalized hex value." },
   { kind: "formula", label: "Formula", hint: "Read-only value computed from other fields." },
+  {
+    kind: "linked_record",
+    label: "Linked record",
+    hint: "Link one or more rows from another table in this project.",
+  },
 ];

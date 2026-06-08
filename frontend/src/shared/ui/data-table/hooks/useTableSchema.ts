@@ -82,6 +82,7 @@ const CUSTOM_FIELD_TYPE_TO_FIELD_TYPE: Record<CustomFieldType, FieldType> = {
   single_select: "single_select",
   color: "color",
   formula: "computed",
+  linked_record: "linked_record",
 };
 
 export function useTableSchema(args: UseTableSchemaArgs): TableSchema {

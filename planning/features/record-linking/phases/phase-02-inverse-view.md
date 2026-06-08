@@ -2,6 +2,8 @@
 DATE: 2026-06-08
 TIME: planning
 STATUS: Proposed implementation plan for Record-linking Phase 2.
+        NOT STARTED — blocked on Phase 1 data-table integration
+        landing (see `../STATUS.md` and `phase-01-link-values.md`).
 AUTHOR: Ed May (with Claude)
 SCOPE: Server-computed inverse view: target tables surface "incoming
        links" as read-only columns, cross-table ETag invalidation

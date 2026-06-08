@@ -151,7 +151,6 @@ def _seed_rooms(
                 "floor_level": "opt_ground",
                 "building_zone": None,
                 "icfa_factor": 1.0,
-                "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
                 "custom_values": {
@@ -166,7 +165,6 @@ def _seed_rooms(
                 "floor_level": "opt_ground",
                 "building_zone": None,
                 "icfa_factor": 0.7,
-                "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
                 "custom_values": {
